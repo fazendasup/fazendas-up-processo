@@ -31,6 +31,7 @@ import {
   LogOut,
   User,
   ShieldCheck,
+  BarChart3,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/_core/hooks/useAuth';
@@ -54,6 +55,7 @@ export default function Header() {
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/germinacao', label: 'Germinação', icon: Sprout },
     { href: '/manutencao', label: 'Manutenção', icon: Wrench },
+    { href: '/analytics', label: 'Analytics', icon: BarChart3, requiredRole: 'admin' },
     { href: '/ciclos', label: 'Ciclos', icon: CalendarClock, requiredRole: 'admin' },
     { href: '/config', label: 'Config', icon: Settings, requiredRole: 'admin' },
     { href: '/usuarios', label: 'Usuários', icon: Users, requiredRole: 'admin' },

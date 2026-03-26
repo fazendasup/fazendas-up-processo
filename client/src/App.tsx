@@ -13,12 +13,20 @@ import ConfigPage from "./pages/ConfigPage";
 import GerminacaoPage from "./pages/GerminacaoPage";
 import ManutencaoPage from "./pages/ManutencaoPage";
 import UsersPage from "./pages/UsersPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
 
 function Router() {
   return (
     <Switch>
       {/* Dashboard — público (leitura) */}
       <Route path="/" component={Home} />
+
+      {/* Analytics — admin */}
+      <Route path="/analytics">
+        <ProtectedRoute requiredRole="admin">
+          <AnalyticsPage />
+        </ProtectedRoute>
+      </Route>
 
       {/* Páginas operacionais — requerem login (operador + admin) */}
       <Route path="/torre/:id">

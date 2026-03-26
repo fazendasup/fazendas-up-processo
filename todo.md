@@ -83,3 +83,16 @@
 - [x] Operador vê: Dashboard, Germinação, Manutenção, Torre Detail
 - [x] Admin vê: tudo do operador + Ciclos, Config, Usuários
 - [x] Esconder "Resetar Dados" para operadores
+
+## Página de Analytics
+- [x] Gráfico de evolução EC por caixa d'água (área temporal com faixa ideal)
+- [x] Gráfico de evolução pH por caixa d'água (área temporal com faixa ideal)
+- [x] Faixas ideais EC/pH sobrepostas nos gráficos (referência visual)
+- [x] Análise de ocupação por fase (barras de progresso + variedades mais plantadas)
+- [x] Análise de produtividade: transplantios por dia e por variedade
+- [x] Análise de germinação: taxa por variedade + distribuição por status
+- [x] Análise de manutenções: frequência por tipo, tempo médio, timeline abertas/concluídas
+- [x] Análise de desperdício: taxa por variedade + por motivo
+- [x] Filtros por período (7d, 30d, 90d, tudo)
+- [x] Dados processados no frontend via loadAll (sem rota extra)
+- [x] Integrar página no sistema de rotas e navegação (admin only)
