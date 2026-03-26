@@ -1,7 +1,7 @@
 // ============================================================
-// Fazendas Up - Modelo de Dados
-// Design: Agronomic Dashboard
-// Todas as entidades persistidas via LocalStorage
+// Fazendas Up - Modelo de Dados v2
+// Inclui: variedades com ciclo por fase, perfis/furos 6x6,
+// germinação, manutenção, desperdício, KPIs
 // ============================================================
 
 export type Fase = 'mudas' | 'vegetativa' | 'maturacao';
@@ -12,7 +12,7 @@ export interface FaseConfig {
   ecMax: number;
   phMin: number;
   phMax: number;
-  diasCiclo: number; // dias até transplante/colheita
+  diasCiclo: number; // dias padrão (fallback se variedade não definir)
   cor: string;
   corLight: string;
   icon: string;
@@ -54,19 +54,111 @@ export const FASES_CONFIG: Record<Fase, FaseConfig> = {
   },
 };
 
+// ---- Variedades com ciclo por fase ----
+export interface VariedadeConfig {
+  id: string;
+  nome: string;
+  diasMudas: number;
+  diasVegetativa: number;
+  diasMaturacao: number;
+}
+
+export const VARIEDADES_PADRAO: VariedadeConfig[] = [
+  { id: 'alface-crespa', nome: 'Alface Crespa', diasMudas: 14, diasVegetativa: 21, diasMaturacao: 28 },
+  { id: 'alface-americana', nome: 'Alface Americana', diasMudas: 14, diasVegetativa: 25, diasMaturacao: 35 },
+  { id: 'alface-roxa', nome: 'Alface Roxa', diasMudas: 14, diasVegetativa: 21, diasMaturacao: 30 },
+  { id: 'rucula', nome: 'Rúcula', diasMudas: 10, diasVegetativa: 15, diasMaturacao: 20 },
+  { id: 'agriao', nome: 'Agrião', diasMudas: 12, diasVegetativa: 18, diasMaturacao: 25 },
+  { id: 'espinafre', nome: 'Espinafre', diasMudas: 14, diasVegetativa: 21, diasMaturacao: 30 },
+  { id: 'couve', nome: 'Couve', diasMudas: 18, diasVegetativa: 28, diasMaturacao: 35 },
+  { id: 'manjericao', nome: 'Manjericão', diasMudas: 14, diasVegetativa: 21, diasMaturacao: 28 },
+  { id: 'salsa', nome: 'Salsa', diasMudas: 18, diasVegetativa: 25, diasMaturacao: 30 },
+  { id: 'cebolinha', nome: 'Cebolinha', diasMudas: 21, diasVegetativa: 28, diasMaturacao: 35 },
+  { id: 'hortela', nome: 'Hortelã', diasMudas: 14, diasVegetativa: 21, diasMaturacao: 28 },
+  { id: 'coentro', nome: 'Coentro', diasMudas: 10, diasVegetativa: 18, diasMaturacao: 25 },
+];
+
+// ---- Perfis e Furos (6 perfis x 6 furos = 36 plantas por andar) ----
+export type FuroStatus = 'vazio' | 'plantado' | 'colhido';
+
+export interface Furo {
+  perfilIndex: number; // 0-5
+  furoIndex: number;   // 0-5
+  status: FuroStatus;
+  variedadeId?: string;
+}
+
+// ---- Germinação (pré-mudas) ----
+export interface LoteGerminacao {
+  id: string;
+  variedadeId: string;
+  variedadeNome: string;
+  quantidade: number;
+  dataPlantio: string; // ISO
+  dataHora: string;    // ISO - data/hora exata do plantio
+  diasParaTransplantio: number; // padrão 1 dia (24h) antes de ir para mudas
+  germinadas: number;
+  naoGerminadas: number;
+  transplantadas: number;
+  status: 'germinando' | 'pronto' | 'transplantado';
+  observacoes?: string;
+}
+
+// ---- Registro de Transplantio ----
+export interface RegistroTransplantio {
+  id: string;
+  dataHora: string;
+  faseOrigem: 'germinacao' | Fase;
+  faseDestino: Fase;
+  variedadeId: string;
+  variedadeNome: string;
+  quantidadeTransplantada: number;
+  quantidadeDesperdicio: number;
+  motivoDesperdicio?: string; // 'nao_germinou' | 'morta' | 'doente' | 'outro'
+  torreDestinoId?: string;
+  andarDestinoId?: string;
+}
+
+// ---- Manutenção ----
+export type ManutencaoTipo = 'vazamento_injetor' | 'vazamento_coletor' | 'lampada_queimada' | 'outro';
+export type ManutencaoStatus = 'aberta' | 'em_andamento' | 'concluida';
+
+export interface Manutencao {
+  id: string;
+  torreId: string;
+  andarNumero?: number; // se null, é da torre inteira
+  tipo: ManutencaoTipo;
+  descricao: string;
+  dataAbertura: string;
+  prazo?: string;
+  dataConclusao?: string;
+  solucao?: string;
+  status: ManutencaoStatus;
+  lampadaIndex?: number; // 0-4 para lâmpadas (5 por andar)
+}
+
+export const MANUTENCAO_TIPOS = [
+  { value: 'vazamento_injetor', label: 'Vazamento Tubo Injetor' },
+  { value: 'vazamento_coletor', label: 'Vazamento Tubo Coletor' },
+  { value: 'lampada_queimada', label: 'Lâmpada Queimada' },
+  { value: 'outro', label: 'Outro' },
+] as const;
+
+// ---- Torres ----
 export interface Torre {
   id: string;
   nome: string;
   fase: Fase;
   andares: number;
-  caixaAguaId: string; // referência à caixa d'água
+  caixaAguaId: string;
 }
 
+// ---- Caixas d'Água ----
 export interface CaixaAgua {
   id: string;
   nome: string;
   fase: Fase;
-  torreIds: string[]; // torres atendidas
+  torreIds: string[];
   medicoes: MedicaoCaixa[];
   aplicacoes: AplicacaoCaixa[];
 }
@@ -75,7 +167,7 @@ export interface MedicaoCaixa {
   id: string;
   ec: number;
   ph: number;
-  dataHora: string; // ISO string
+  dataHora: string;
 }
 
 export interface AplicacaoCaixa {
@@ -86,13 +178,20 @@ export interface AplicacaoCaixa {
   dataHora: string;
 }
 
+// ---- Andares ----
 export interface Andar {
   id: string;
   torreId: string;
   numero: number;
-  variedades: string[];
-  dataEntrada: string | null; // ISO string
+  variedades: string[]; // nomes
+  variedadeIds: string[]; // IDs das variedades
+  dataEntrada: string | null;
   aplicacoes: AplicacaoAndar[];
+  // Sistema de perfis/furos 6x6
+  furos: Furo[];
+  // Pós-colheita
+  lavado: boolean; // se todos os perfis foram lavados após colheita total
+  dataColheitaTotal?: string; // data da última colheita total
 }
 
 export interface AplicacaoAndar {
@@ -103,30 +202,46 @@ export interface AplicacaoAndar {
   dataHora: string;
 }
 
+// ---- Ciclos ----
 export interface CicloAplicacao {
   id: string;
   nome: string;
   frequencia: 'diaria' | 'semanal' | 'quinzenal' | 'mensal' | 'personalizada';
-  diasSemana?: number[]; // 0=dom, 1=seg, ...
+  diasSemana?: number[];
   intervaloDias?: number;
   produto: string;
   tipo: string;
   fasesAplicaveis: Fase[];
   alvo: 'caixa' | 'andar' | 'ambos';
-  ultimaExecucao?: string; // ISO string
+  ultimaExecucao?: string;
   ativo: boolean;
 }
 
-// Estrutura da fazenda conforme especificação
+// ---- Dados da Fazenda ----
 export interface FazendaData {
   torres: Torre[];
   caixasAgua: CaixaAgua[];
   andares: Andar[];
   ciclos: CicloAplicacao[];
   fasesConfig: Record<Fase, FaseConfig>;
+  variedades: VariedadeConfig[];
+  germinacao: LoteGerminacao[];
+  transplantios: RegistroTransplantio[];
+  manutencoes: Manutencao[];
 }
 
-// Gerar dados iniciais da fazenda
+// ---- Gerar furos iniciais para um andar (6 perfis x 6 furos) ----
+export function gerarFurosIniciais(): Furo[] {
+  const furos: Furo[] = [];
+  for (let p = 0; p < 6; p++) {
+    for (let f = 0; f < 6; f++) {
+      furos.push({ perfilIndex: p, furoIndex: f, status: 'vazio' });
+    }
+  }
+  return furos;
+}
+
+// ---- Gerar dados iniciais da fazenda ----
 export function gerarDadosIniciais(): FazendaData {
   const torres: Torre[] = [];
   const caixasAgua: CaixaAgua[] = [];
@@ -157,8 +272,11 @@ export function gerarDadosIniciais(): FazendaData {
       torreId: 't-mudas-1',
       numero: a,
       variedades: [],
+      variedadeIds: [],
       dataEntrada: null,
       aplicacoes: [],
+      furos: gerarFurosIniciais(),
+      lavado: true,
     });
   }
 
@@ -190,8 +308,11 @@ export function gerarDadosIniciais(): FazendaData {
         torreId,
         numero: a,
         variedades: [],
+        variedadeIds: [],
         dataEntrada: null,
         aplicacoes: [],
+        furos: gerarFurosIniciais(),
+        lavado: true,
       });
     }
   }
@@ -202,7 +323,6 @@ export function gerarDadosIniciais(): FazendaData {
     const caixaId = `ca-mat-${caixaIndex}`;
     const torreId = `t-mat-${t}`;
 
-    // Criar caixa apenas para torres ímpares (1,3,5,7,9)
     if (t % 2 === 1) {
       const torreParId = `t-mat-${t + 1}`;
       caixasAgua.push({
@@ -229,8 +349,11 @@ export function gerarDadosIniciais(): FazendaData {
         torreId,
         numero: a,
         variedades: [],
+        variedadeIds: [],
         dataEntrada: null,
         aplicacoes: [],
+        furos: gerarFurosIniciais(),
+        lavado: true,
       });
     }
   }
@@ -241,5 +364,9 @@ export function gerarDadosIniciais(): FazendaData {
     andares,
     ciclos: [],
     fasesConfig: { ...FASES_CONFIG },
+    variedades: [...VARIEDADES_PADRAO],
+    germinacao: [],
+    transplantios: [],
+    manutencoes: [],
   };
 }

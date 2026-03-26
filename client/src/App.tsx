@@ -9,6 +9,8 @@ import Home from "./pages/Home";
 import TorreDetail from "./pages/TorreDetail";
 import CiclosPage from "./pages/CiclosPage";
 import ConfigPage from "./pages/ConfigPage";
+import GerminacaoPage from "./pages/GerminacaoPage";
+import ManutencaoPage from "./pages/ManutencaoPage";
 
 function Router() {
   return (
@@ -17,6 +19,8 @@ function Router() {
       <Route path="/torre/:id" component={TorreDetail} />
       <Route path="/ciclos" component={CiclosPage} />
       <Route path="/config" component={ConfigPage} />
+      <Route path="/germinacao" component={GerminacaoPage} />
+      <Route path="/manutencao" component={ManutencaoPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

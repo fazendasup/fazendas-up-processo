@@ -1,6 +1,6 @@
 // ============================================================
-// Header — Agronomic Dashboard
-// Barra superior com logo, navegação e ações rápidas
+// Header v2 — Agronomic Dashboard
+// Navegação atualizada com Germinação e Manutenção
 // ============================================================
 
 import { Link, useLocation } from 'wouter';
@@ -23,6 +23,8 @@ import {
   Menu,
   Leaf,
   CalendarClock,
+  Sprout,
+  Wrench,
 } from 'lucide-react';
 import { useRef } from 'react';
 import { toast } from 'sonner';
@@ -34,8 +36,10 @@ export default function Header() {
 
   const navItems = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/germinacao', label: 'Germinação', icon: Sprout },
     { href: '/ciclos', label: 'Ciclos', icon: CalendarClock },
-    { href: '/config', label: 'Configurações', icon: Settings },
+    { href: '/manutencao', label: 'Manutenção', icon: Wrench },
+    { href: '/config', label: 'Config', icon: Settings },
   ];
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,37 +59,37 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-md">
-      <div className="container flex items-center justify-between h-16">
+      <div className="container flex items-center justify-between h-14">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 no-underline">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center"
+        <Link href="/" className="flex items-center gap-2 no-underline">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center"
                style={{ background: 'linear-gradient(135deg, oklch(0.65 0.19 160), oklch(0.55 0.14 220))' }}>
-            <Leaf className="w-5 h-5 text-white" />
+            <Leaf className="w-4.5 h-4.5 text-white" />
           </div>
           <div className="flex flex-col">
-            <span className="font-display text-lg font-bold leading-tight tracking-tight text-foreground">
+            <span className="font-display text-base font-bold leading-tight tracking-tight text-foreground">
               Fazendas Up
             </span>
-            <span className="text-[10px] font-medium text-muted-foreground leading-none tracking-wider uppercase">
+            <span className="text-[9px] font-medium text-muted-foreground leading-none tracking-wider uppercase">
               Sistema Supervisório
             </span>
           </div>
         </Link>
 
         {/* Nav Desktop */}
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden lg:flex items-center gap-0.5">
           {navItems.map((item) => {
-            const isActive = location === item.href;
+            const isActive = location === item.href || (item.href !== '/' && location.startsWith(item.href));
             return (
               <Link key={item.href} href={item.href}>
                 <button
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     isActive
                       ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                   }`}
                 >
-                  <item.icon className="w-4 h-4" />
+                  <item.icon className="w-3.5 h-3.5" />
                   {item.label}
                 </button>
               </Link>
@@ -98,22 +102,22 @@ export default function Header() {
           <Button
             variant="outline"
             size="sm"
-            className="hidden sm:flex gap-1.5 text-xs"
+            className="hidden sm:flex gap-1.5 text-xs h-8"
             onClick={exportCSV}
           >
             <FileDown className="w-3.5 h-3.5" />
-            Exportar CSV
+            CSV
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" className="h-9 w-9">
+              <Button variant="outline" size="icon" className="h-8 w-8">
                 <Menu className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               {/* Mobile nav */}
-              <div className="md:hidden">
+              <div className="lg:hidden">
                 {navItems.map((item) => (
                   <DropdownMenuItem key={item.href} asChild>
                     <Link href={item.href} className="flex items-center gap-2">

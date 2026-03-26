@@ -1,189 +1,238 @@
 // ============================================================
-// Home — Dashboard principal do sistema supervisório
-// Agronomic Dashboard: visão geral com torres agrupadas por fase
+// Home v2 — Dashboard com KPIs, ciclos corrigidos, config atualizada
+// Design: Agronomic Dashboard
 // ============================================================
 
 import Header from '@/components/Header';
 import TorreCard from '@/components/TorreCard';
 import { useFazenda } from '@/contexts/FazendaContext';
-import { resumoFazenda, formatarDataHora, contarCiclosPendentes } from '@/lib/utils-farm';
-import { FASES_CONFIG, type Fase } from '@/lib/types';
+import { FASES_CONFIG } from '@/lib/types';
+import type { Fase } from '@/lib/types';
 import {
-  Layers,
+  resumoFazenda,
+  contarCiclosPendentes,
+  cicloPendenteHoje,
+  calcularKPIs,
+  contarPlantasAndar,
+  contarColhidasAndar,
+  andarPrecisaLavagem,
+} from '@/lib/utils-farm';
+import {
+  BarChart3,
   Droplets,
   AlertTriangle,
-  CalendarClock,
+  Sprout,
+  Scissors,
   TrendingUp,
+  Wrench,
+  Leaf,
   Clock,
+  Layers,
+  Target,
+  Droplet,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const HERO_IMG = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663464614308/V8Zeqmat63YDtBSE4w4iyd/torres-real_5df07c31.jpeg';
+const HERO_URL = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663464614308/V8Zeqmat63YDtBSE4w4iyd/hero-farm_32d256d5.png';
 
 export default function Home() {
   const { data } = useFazenda();
   const resumo = resumoFazenda(data);
+  const kpis = calcularKPIs(data);
 
   const fases: Fase[] = ['mudas', 'vegetativa', 'maturacao'];
 
-  const statCards = [
-    {
-      label: 'Torres Ativas',
-      value: resumo.totalTorres,
-      icon: Layers,
-      color: 'text-emerald-600',
-      bg: 'bg-emerald-50',
-    },
-    {
-      label: 'Andares Ocupados',
-      value: `${resumo.andaresOcupados}/${resumo.totalAndares}`,
-      icon: TrendingUp,
-      color: 'text-cyan-600',
-      bg: 'bg-cyan-50',
-    },
-    {
-      label: 'Ciclos Pendentes',
-      value: resumo.ciclosPendentes,
-      icon: CalendarClock,
-      color: resumo.ciclosPendentes > 0 ? 'text-amber-600' : 'text-emerald-600',
-      bg: resumo.ciclosPendentes > 0 ? 'bg-amber-50' : 'bg-emerald-50',
-    },
-    {
-      label: 'Previsões Vencidas',
-      value: resumo.previsaoVencida,
-      icon: AlertTriangle,
-      color: resumo.previsaoVencida > 0 ? 'text-red-600' : 'text-emerald-600',
-      bg: resumo.previsaoVencida > 0 ? 'bg-red-50' : 'bg-emerald-50',
-    },
-  ];
+  // Plantas por fase
+  const plantasPorFase = fases.map((fase) => {
+    const torres = data.torres.filter((t) => t.fase === fase);
+    const andaresFase = data.andares.filter((a) => torres.some((t) => t.id === a.torreId));
+    const plantadas = andaresFase.reduce((sum, a) => sum + contarPlantasAndar(a), 0);
+    const colhidas = andaresFase.reduce((sum, a) => sum + contarColhidasAndar(a), 0);
+    return { fase, plantadas, colhidas };
+  });
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Hero section with real farm image */}
-      <div className="relative h-48 sm:h-56 overflow-hidden">
-        <img
-          src={HERO_IMG}
-          alt="Torres da fazenda vertical"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent" />
+      {/* Hero */}
+      <div className="relative h-40 sm:h-48 overflow-hidden">
+        <img src={HERO_URL} alt="Fazenda Vertical" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
         <div className="absolute inset-0 flex items-center">
           <div className="container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <h1 className="font-display text-2xl sm:text-3xl font-bold text-white mb-1">
-                Painel de Controle
-              </h1>
-              <p className="text-white/70 text-sm sm:text-base">
-                Monitoramento em tempo real da operação
-              </p>
-              {resumo.ultimaMedicao && (
-                <p className="text-white/50 text-xs mt-2 flex items-center gap-1.5">
-                  <Clock className="w-3 h-3" />
-                  Última medição: {formatarDataHora(resumo.ultimaMedicao)}
-                </p>
-              )}
-            </motion.div>
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-white">
+              Painel de Controle
+            </h1>
+            <p className="text-white/70 text-sm mt-1">
+              {resumo.totalTorres} torres &middot; {resumo.totalAndares} andares &middot; {resumo.andaresOcupados} ocupados
+            </p>
           </div>
         </div>
       </div>
 
-      <main className="container py-6">
-        {/* Stats grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-          {statCards.map((stat, i) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: i * 0.08 }}
-              className="bg-card rounded-xl p-4 shadow-sm border"
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-lg ${stat.bg} flex items-center justify-center`}>
-                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
+      <main className="container py-6 space-y-8">
+        {/* KPIs Grid */}
+        <section>
+          <h2 className="font-display font-bold text-base mb-3 flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Indicadores (KPIs)
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <KPICard icon={<Sprout className="w-4 h-4 text-emerald-600" />} label="Plantas Ativas" value={kpis.totalPlantas} color="emerald" />
+            <KPICard icon={<Target className="w-4 h-4 text-blue-600" />} label="Taxa Ocupação" value={`${kpis.taxaOcupacao}%`} color="blue" />
+            <KPICard icon={<Scissors className="w-4 h-4 text-amber-600" />} label="Prontas Colheita" value={kpis.plantasProntasColheita} color="amber" />
+            <KPICard icon={<Leaf className="w-4 h-4 text-emerald-600" />} label="Taxa Germinação" value={kpis.taxaGerminacao > 0 ? `${kpis.taxaGerminacao}%` : '-'} color="emerald" />
+            <KPICard icon={<AlertTriangle className="w-4 h-4 text-red-600" />} label="Desperdício" value={kpis.totalDesperdicio > 0 ? `${kpis.taxaDesperdicio}%` : '-'} color="red" />
+            <KPICard icon={<Wrench className="w-4 h-4 text-orange-600" />} label="Manutenções" value={kpis.manutencoesAbertas} color={kpis.manutencoesVencidas > 0 ? 'red' : 'orange'} />
+          </div>
+        </section>
+
+        {/* Alertas rápidos */}
+        {(resumo.ciclosPendentes > 0 || resumo.previsaoVencida > 0 || kpis.andaresLavagemPendente > 0 || kpis.manutencoesVencidas > 0 || kpis.totalGerminando > 0) && (
+          <section className="flex flex-wrap gap-2">
+            {resumo.ciclosPendentes > 0 && (
+              <AlertBadge icon={<Clock className="w-3 h-3" />} text={`${resumo.ciclosPendentes} ciclo(s) pendente(s)`} color="amber" />
+            )}
+            {resumo.previsaoVencida > 0 && (
+              <AlertBadge icon={<AlertTriangle className="w-3 h-3" />} text={`${resumo.previsaoVencida} andar(es) com previsão vencida`} color="red" />
+            )}
+            {kpis.andaresLavagemPendente > 0 && (
+              <AlertBadge icon={<Droplet className="w-3 h-3" />} text={`${kpis.andaresLavagemPendente} andar(es) aguardando lavagem`} color="red" />
+            )}
+            {kpis.manutencoesVencidas > 0 && (
+              <AlertBadge icon={<Wrench className="w-3 h-3" />} text={`${kpis.manutencoesVencidas} manutenção(ões) com prazo vencido`} color="red" />
+            )}
+            {kpis.totalGerminando > 0 && (
+              <AlertBadge icon={<Sprout className="w-3 h-3" />} text={`${kpis.totalGerminando} lote(s) germinando`} color="emerald" />
+            )}
+          </section>
+        )}
+
+        {/* Plantas por fase */}
+        <section>
+          <h2 className="font-display font-bold text-base mb-3 flex items-center gap-2">
+            <Layers className="w-4 h-4" />
+            Plantas por Fase
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {plantasPorFase.map(({ fase, plantadas, colhidas }) => {
+              const cfg = data.fasesConfig?.[fase] || FASES_CONFIG[fase];
+              return (
+                <div key={fase} className="bg-card rounded-xl border p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-display font-bold text-sm">{cfg.icon} {cfg.label}</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      EC {cfg.ecMin}-{cfg.ecMax} | pH {cfg.phMin}-{cfg.phMax} | {cfg.diasCiclo}d
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-center">
+                    <div className="p-2 rounded-lg bg-emerald-50">
+                      <p className="font-display font-bold text-xl text-emerald-700">{plantadas}</p>
+                      <p className="text-[10px] text-muted-foreground">{fase === 'maturacao' ? 'Em Processo' : 'Em Processo'}</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-amber-50">
+                      <p className="font-display font-bold text-xl text-amber-700">{colhidas}</p>
+                      <p className="text-[10px] text-muted-foreground">{fase === 'maturacao' ? 'Colhidas' : 'Colhidas'}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-2xl font-display font-bold text-card-foreground">
-                    {stat.value}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{stat.label}</p>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Ciclos pendentes */}
+        {data.ciclos.filter((c) => cicloPendenteHoje(c)).length > 0 && (
+          <section>
+            <h2 className="font-display font-bold text-base mb-3 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-amber-600" />
+              Ciclos Pendentes Hoje
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {data.ciclos.filter((c) => cicloPendenteHoje(c)).map((ciclo) => (
+                <div key={ciclo.id} className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                  <p className="text-xs font-semibold">{ciclo.nome}</p>
+                  <p className="text-[10px] text-muted-foreground">{ciclo.produto} &middot; {ciclo.fasesAplicaveis.map((f) => (data.fasesConfig?.[f] || FASES_CONFIG[f]).label).join(', ')}</p>
                 </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Torres por fase */}
         {fases.map((fase) => {
-          const config = FASES_CONFIG[fase];
+          const cfg = data.fasesConfig?.[fase] || FASES_CONFIG[fase];
           const torresFase = data.torres.filter((t) => t.fase === fase);
-          const pendentes = contarCiclosPendentes(data.ciclos, fase);
+          const ciclosPendentes = contarCiclosPendentes(data.ciclos, fase);
 
           return (
-            <motion.section
-              key={fase}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.4 }}
-              className="mb-8"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className="w-3 h-8 rounded-full"
-                    style={{ backgroundColor: config.cor }}
-                  />
-                  <div>
-                    <h2 className="font-display font-bold text-lg text-foreground">
-                      {config.label}
-                    </h2>
-                    <p className="text-xs text-muted-foreground">
-                      {torresFase.length} torre{torresFase.length !== 1 ? 's' : ''} &middot;
-                      EC {config.ecMin}-{config.ecMax} &middot;
-                      pH {config.phMin}-{config.phMax} &middot;
-                      Ciclo {config.diasCiclo} dias
-                    </p>
-                  </div>
-                </div>
-                {pendentes > 0 && (
-                  <span className="flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">
-                    <CalendarClock className="w-3 h-3" />
-                    {pendentes} ciclo{pendentes !== 1 ? 's' : ''} pendente{pendentes !== 1 ? 's' : ''}
+            <section key={fase}>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-display font-bold text-base flex items-center gap-2">
+                  <span>{cfg.icon}</span>
+                  {cfg.label}
+                  <span className="text-xs font-normal text-muted-foreground">
+                    ({torresFase.length} torre{torresFase.length !== 1 ? 's' : ''})
                   </span>
-                )}
+                </h2>
+                <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                  <span>EC {cfg.ecMin}-{cfg.ecMax}</span>
+                  <span>pH {cfg.phMin}-{cfg.phMax}</span>
+                  <span>{cfg.diasCiclo}d ciclo</span>
+                  {ciclosPendentes > 0 && (
+                    <span className="text-amber-600 font-semibold">{ciclosPendentes} ciclo(s) pendente(s)</span>
+                  )}
+                </div>
               </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                {torresFase.map((torre, i) => {
-                  const andaresTorre = data.andares.filter((a) => a.torreId === torre.id);
-                  const caixa = data.caixasAgua.find((c) => c.id === torre.caixaAguaId);
-                  return (
-                    <motion.div
-                      key={torre.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.25, delay: i * 0.05 }}
-                    >
-                      <TorreCard
-                        torre={torre}
-                        andares={andaresTorre}
-                        ciclos={data.ciclos}
-                        caixaNome={caixa?.nome || '-'}
-                      />
-                    </motion.div>
-                  );
-                })}
+                {torresFase.map((torre) => (
+                  <TorreCard key={torre.id} torre={torre} />
+                ))}
               </div>
-            </motion.section>
+            </section>
           );
         })}
       </main>
     </div>
+  );
+}
+
+// ---- Sub-components ----
+
+function KPICard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: string | number; color: string }) {
+  const bgMap: Record<string, string> = {
+    emerald: 'bg-emerald-50',
+    blue: 'bg-blue-50',
+    amber: 'bg-amber-50',
+    red: 'bg-red-50',
+    orange: 'bg-orange-50',
+  };
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`p-3 rounded-xl border ${bgMap[color] || 'bg-muted/50'}`}
+    >
+      <div className="flex items-center gap-1.5 mb-1">
+        {icon}
+        <span className="text-[10px] text-muted-foreground font-medium">{label}</span>
+      </div>
+      <p className="font-display font-bold text-xl">{value}</p>
+    </motion.div>
+  );
+}
+
+function AlertBadge({ icon, text, color }: { icon: React.ReactNode; text: string; color: string }) {
+  const colorMap: Record<string, string> = {
+    amber: 'bg-amber-50 border-amber-200 text-amber-700',
+    red: 'bg-red-50 border-red-200 text-red-700',
+    emerald: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+  };
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium ${colorMap[color]}`}>
+      {icon}
+      {text}
+    </span>
   );
 }
