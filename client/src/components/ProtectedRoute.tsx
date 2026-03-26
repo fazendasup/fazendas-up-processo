@@ -3,7 +3,6 @@
 // ============================================================
 
 import { useAuth } from '@/_core/hooks/useAuth';
-import { getLoginUrl } from '@/const';
 import { Button } from '@/components/ui/button';
 import { Loader2, ShieldAlert, LogIn } from 'lucide-react';
 
@@ -37,7 +36,7 @@ export default function ProtectedRoute({ children, requiredRole = 'user', fallba
             Você precisa estar logado para acessar esta funcionalidade.
           </p>
           <Button asChild>
-            <a href={getLoginUrl()}>Fazer Login</a>
+            <a href="/login">Fazer Login</a>
           </Button>
         </div>
       </div>

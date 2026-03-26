@@ -6,7 +6,6 @@ import { Link, useLocation } from 'wouter';
 import { useFazenda } from '@/contexts/FazendaContext';
 import { useFazendaMutations } from '@/hooks/useFazendaMutations';
 import { useRole } from '@/hooks/useRole';
-import { getLoginUrl } from '@/const';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -145,7 +144,7 @@ export default function Header() {
               className="hidden sm:flex gap-1.5 text-xs h-9"
               asChild
             >
-              <a href={getLoginUrl()}>
+              <a href="/login">
                 <LogIn className="w-3.5 h-3.5" />
                 Entrar
               </a>
@@ -231,7 +230,7 @@ export default function Header() {
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem asChild>
-                  <a href={getLoginUrl()} className="flex items-center gap-2">
+                  <a href="/login" className="flex items-center gap-2">
                     <LogIn className="w-4 h-4" />
                     Entrar
                   </a>

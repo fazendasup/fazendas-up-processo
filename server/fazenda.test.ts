@@ -256,8 +256,9 @@ describe("ciclos CRUD (admin)", () => {
       ativo: false,
     });
 
-    const data = await caller.fazenda.loadAll();
-    const found = data.ciclos.find((c: any) => c.id === cicloId);
+    // Use ciclos.list instead of loadAll to avoid race condition with parallel seed test
+    const allCiclos = await caller.ciclos.list();
+    const found = allCiclos.find((c: any) => c.id === cicloId);
     expect(found).toBeDefined();
     expect(found!.ativo).toBe(false);
   });
@@ -273,8 +274,11 @@ describe("ciclos CRUD (admin)", () => {
       ultimaExecucao: new Date(),
     });
 
-    const data = await caller.fazenda.loadAll();
-    const found = data.ciclos.find((c: any) => c.id === cicloId);
+    // Use ciclos.list instead of loadAll to avoid race condition with parallel seed test
+    const adminCtx = createAdminContext();
+    const adminCaller = appRouter.createCaller(adminCtx);
+    const allCiclos = await adminCaller.ciclos.list();
+    const found = allCiclos.find((c: any) => c.id === cicloId);
     expect(found).toBeDefined();
     expect(found!.ultimaExecucao).toBeDefined();
   });

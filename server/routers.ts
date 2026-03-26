@@ -1,9 +1,12 @@
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
+import { sdk } from "./_core/sdk";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
+import bcrypt from "bcryptjs";
 
 // ============================================================
 // Fazendas Up — tRPC Routers
@@ -18,6 +21,34 @@ export const appRouter = router({
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    login: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+        password: z.string().min(1),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const user = await db.getUserByEmail(input.email.toLowerCase().trim());
+        if (!user || !user.passwordHash) {
+          throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Email ou senha inválidos' });
+        }
+        const valid = await bcrypt.compare(input.password, user.passwordHash);
+        if (!valid) {
+          throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Email ou senha inválidos' });
+        }
+        // Criar sessão JWT usando o mesmo mecanismo do OAuth
+        const sessionToken = await sdk.createSessionToken(user.openId, {
+          name: user.name || '',
+          expiresInMs: ONE_YEAR_MS,
+        });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        // Atualizar último login
+        await db.upsertUser({ openId: user.openId, lastSignedIn: new Date() });
+        return {
+          success: true,
+          user: { id: user.id, name: user.name, email: user.email, role: user.role },
+        };
+      }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -489,6 +520,28 @@ export const appRouter = router({
     list: adminProcedure.query(async () => {
       return db.getAllUsers();
     }),
+    create: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        email: z.string().email(),
+        password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
+        role: z.enum(['user', 'admin']),
+      }))
+      .mutation(async ({ input }) => {
+        // Verificar se email já existe
+        const existing = await db.getUserByEmail(input.email.toLowerCase().trim());
+        if (existing) {
+          throw new TRPCError({ code: 'CONFLICT', message: 'Já existe um usuário com este email' });
+        }
+        const passwordHash = await bcrypt.hash(input.password, 10);
+        const result = await db.createUserWithPassword({
+          name: input.name,
+          email: input.email.toLowerCase().trim(),
+          passwordHash,
+          role: input.role,
+        });
+        return { success: true, id: result.id };
+      }),
     updateRole: adminProcedure
       .input(z.object({
         id: z.number(),
@@ -496,6 +549,26 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         await db.updateUserRole(input.id, input.role);
+        return { success: true };
+      }),
+    resetPassword: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        newPassword: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
+      }))
+      .mutation(async ({ input }) => {
+        const passwordHash = await bcrypt.hash(input.newPassword, 10);
+        await db.updateUserPassword(input.id, passwordHash);
+        return { success: true };
+      }),
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        // Não permitir deletar a si mesmo
+        if (ctx.user.id === input.id) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Não é possível excluir seu próprio usuário' });
+        }
+        await db.deleteUser(input.id);
         return { success: true };
       }),
   }),

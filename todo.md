@@ -96,3 +96,14 @@
 - [x] Filtros por período (7d, 30d, 90d, tudo)
 - [x] Dados processados no frontend via loadAll (sem rota extra)
 - [x] Integrar página no sistema de rotas e navegação (admin only)
+
+## Autenticação Própria (Email/Senha)
+- [x] Adicionar campo passwordHash na tabela users
+- [x] Implementar rota de login (email + senha) com bcrypt
+- [x] Implementar rota de registro de usuário (admin only)
+- [x] Criar tela de login própria (/login)
+- [x] Atualizar frontend para usar /login em vez de OAuth (main.tsx, useAuth, ProtectedRoute, Header)
+- [x] Seed do usuário admin: comercial@visioneer.com.br / Fup@2026
+- [x] Atualizar página de Usuários para admin cadastrar novos operadores/admins com email e senha
+- [x] Permitir admin definir role (operador/admin) ao cadastrar
+- [x] Permitir admin resetar senha de usuário + excluir usuário

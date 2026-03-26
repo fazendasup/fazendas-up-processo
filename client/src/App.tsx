@@ -14,10 +14,14 @@ import GerminacaoPage from "./pages/GerminacaoPage";
 import ManutencaoPage from "./pages/ManutencaoPage";
 import UsersPage from "./pages/UsersPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
+import LoginPage from "./pages/LoginPage";
 
 function Router() {
   return (
     <Switch>
+      {/* Login */}
+      <Route path="/login" component={LoginPage} />
+
       {/* Dashboard — público (leitura) */}
       <Route path="/" component={Home} />
 
