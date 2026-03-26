@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const HERO_URL = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663464614308/V8Zeqmat63YDtBSE4w4iyd/hero-farm_32d256d5.png';
+const HERO_URL = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663464614308/V8Zeqmat63YDtBSE4w4iyd/torres-real_fb616389.jpeg';
 
 export default function Home() {
   const { data } = useFazenda();
