@@ -1,28 +1,47 @@
-# Fazendas Up — Melhorias v3
+# Fazendas Up — Migração Full-Stack
 
-## Modelo de Dados
-- [ ] Adicionar `variedadeId` por perfil (não mais por furo individual em mudas)
-- [ ] Mudas: perfis abertos (sem furos), apenas perfil/andar
-- [ ] Remover `diasCiclo` do FaseConfig (ciclo é por variedade)
+## Migração para Banco de Dados (Backend)
+- [x] Resolver conflito de merge Home.tsx (useAuth removido)
+- [x] Criar schema completo PostgreSQL (torres, andares, furos, perfis, caixas_dagua, variedades, fases_config, germinacao, transplantios, manutencoes, medicoes_caixa, aplicacoes_caixa, aplicacoes_andar, ciclos)
+- [x] Implementar query helpers em server/db.ts
+- [x] Implementar rotas tRPC para Torres (CRUD + listagem por fase)
+- [x] Implementar rotas tRPC para Andares (CRUD + furos + perfis + plantio/colheita)
+- [x] Implementar rotas tRPC para Caixas d'Água (CRUD + medições + aplicações)
+- [x] Implementar rotas tRPC para Variedades (CRUD)
+- [x] Implementar rotas tRPC para Fases Config (leitura + atualização)
+- [x] Implementar rotas tRPC para Germinação (CRUD + status transitions)
+- [x] Implementar rotas tRPC para Transplantios (CRUD)
+- [x] Implementar rotas tRPC para Manutenções (CRUD + status transitions)
+- [x] Implementar rotas tRPC para Ciclos (CRUD + marcar executado)
+- [x] Implementar rota de seed/inicialização dos dados padrão
+- [x] Implementar rota de export CSV/JSON (via loadAll)
+- [x] Push schema para banco de dados (pnpm db:push)
 
-## TorreDetail
-- [ ] Unificar aba Perfis/Furos com Dados em painel único
-- [ ] Ao transplantar/plantar: definir variedade + data + habilitar perfis
-- [ ] Colheita APENAS na fase maturação
-- [ ] Mudas: sem furos, apenas perfis abertos (espuma fenólica)
-- [ ] Vegetativa/Maturação: manter furos por perfil
-- [ ] Variedade por perfil (cada perfil pode ter variedade diferente)
-- [ ] Opção de definir variedade para andar todo
+## Migração Frontend
+- [x] Migrar FazendaContext para usar tRPC em vez de LocalStorage
+- [ ] Migrar Home.tsx (Dashboard) para tRPC
+- [ ] Migrar TorreDetail.tsx para tRPC
+- [ ] Migrar CiclosPage.tsx para tRPC
+- [ ] Migrar ConfigPage.tsx para tRPC
+- [ ] Migrar GerminacaoPage.tsx para tRPC
+- [ ] Migrar ManutencaoPage.tsx para tRPC
+- [ ] Migrar Header.tsx (export/import) para tRPC
 
-## Dashboard
-- [ ] "Colhidas" só aparece na Maturação
-- [ ] Mudas e Vegetativa: apenas "Em Processo"
-- [ ] Remover indicação de ciclo por fase no dashboard
+## Testes
+- [ ] Testes Vitest para rotas de Torres
+- [ ] Testes Vitest para rotas de Andares
+- [ ] Testes Vitest para rotas de Caixas d'Água
+- [ ] Testes Vitest para rotas de Germinação
+- [ ] Testes Vitest para rotas de Ciclos
 
-## Configurações
-- [ ] Remover dias de ciclo por fase (manter apenas por variedade)
-- [ ] Manter EC/pH por fase
-
-## PerfilFurosGrid
-- [ ] Adaptar para mudas (sem furos, perfis abertos)
-- [ ] Mostrar variedade por perfil no grid
+## Itens Anteriores (v3 - já implementados)
+- [x] Variedade por perfil (não mais por furo individual em mudas)
+- [x] Mudas: perfis abertos (sem furos), apenas perfil/andar
+- [x] Remover diasCiclo do FaseConfig (ciclo é por variedade)
+- [x] Colheita APENAS na fase maturação
+- [x] Grid de perfis/furos compacto e responsivo
+- [x] Banner com foto real das torres
+- [x] KPIs no dashboard
+- [x] Sistema de manutenção com alertas
+- [x] Sistema de germinação
+- [x] Ciclos recorrentes

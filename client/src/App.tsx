@@ -11,8 +11,8 @@ import CiclosPage from "./pages/CiclosPage";
 import ConfigPage from "./pages/ConfigPage";
 import GerminacaoPage from "./pages/GerminacaoPage";
 import ManutencaoPage from "./pages/ManutencaoPage";
-
 function Router() {
+  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path="/" component={Home} />
