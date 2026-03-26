@@ -1,6 +1,6 @@
 // ============================================================
-// PerfilFurosGrid v5 — Layout ultra-compacto
-// Furos como dots pequenos, todos os perfis visíveis sem scroll
+// PerfilFurosGrid v6 — Mobile-first responsivo
+// Touch targets mínimos de 36px, layout adaptativo por breakpoint
 // Mudas: 12 perfis abertos (espuma fenólica)
 // Vegetativa: 12 perfis × 9 furos = 108 plantas
 // Maturação: 6 perfis × 6 furos = 36 plantas
@@ -30,7 +30,6 @@ interface Props {
   onAndarVariedadeTodos?: (variedadeId: string) => void;
 }
 
-// Cor do dot por status
 function dotColor(status: string) {
   if (status === 'plantado') return 'bg-emerald-500';
   if (status === 'colhido') return 'bg-amber-400';
@@ -62,25 +61,32 @@ export default function PerfilFurosGrid({
 
     return (
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+        {/* Header com legenda */}
+        <div className="flex items-center justify-between flex-wrap gap-1">
+          <h4 className="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider">
             Perfis de Espuma Fenólica
           </h4>
-          <div className="flex items-center gap-2 text-[9px]">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-200 border border-gray-300" /> Vazio ({perfisInativos})</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Ativo ({perfisAtivos})</span>
+          <div className="flex items-center gap-3 text-xs">
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-gray-200 border border-gray-300" />
+              Vazio ({perfisInativos})
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-emerald-500" />
+              Ativo ({perfisAtivos})
+            </span>
           </div>
         </div>
 
         {/* Seletor de variedade para todos */}
         {isInteractive && (
           <Select onValueChange={(val) => onAndarVariedadeTodos?.(val)}>
-            <SelectTrigger className="h-7 text-[10px]">
+            <SelectTrigger className="h-10 text-sm">
               <SelectValue placeholder="Variedade para todos os perfis..." />
             </SelectTrigger>
             <SelectContent>
               {variedades.map((v) => (
-                <SelectItem key={v.id} value={v.id} className="text-xs">
+                <SelectItem key={v.id} value={v.id} className="text-sm py-2">
                   {v.nome} ({v.diasMudas}d)
                 </SelectItem>
               ))}
@@ -88,8 +94,8 @@ export default function PerfilFurosGrid({
           </Select>
         )}
 
-        {/* Grid 6x2 compacto para 12 perfis */}
-        <div className="grid grid-cols-6 gap-1.5">
+        {/* Grid: 3 colunas mobile, 4 colunas tablet, 6 colunas desktop */}
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
           {Array.from({ length: numPerfis }, (_, i) => {
             const perfil = perfis.find((p) => p.perfilIndex === i);
             const isAtivo = perfil?.ativo || false;
@@ -104,18 +110,23 @@ export default function PerfilFurosGrid({
                     type="button"
                     disabled={!isInteractive}
                     onClick={() => onPerfilToggle?.(i, perfil?.variedadeId)}
-                    className={`relative flex flex-col items-center justify-center rounded-md border transition-all py-1.5 px-0.5 ${
+                    className={`relative flex flex-col items-center justify-center rounded-lg border-2 transition-all min-h-[56px] py-2 px-1 ${
                       isAtivo
                         ? 'bg-emerald-50 border-emerald-400 shadow-sm'
                         : 'bg-gray-50 border-gray-200'
-                    } ${isInteractive ? 'hover:shadow-md hover:scale-105 cursor-pointer' : ''}`}
+                    } ${isInteractive ? 'hover:shadow-md active:scale-95 cursor-pointer' : ''}`}
                   >
-                    <span className={`text-[8px] font-bold ${isAtivo ? 'text-emerald-700' : 'text-gray-400'}`}>
+                    <span className={`text-sm font-bold ${isAtivo ? 'text-emerald-700' : 'text-gray-400'}`}>
                       P{i + 1}
                     </span>
                     {variedade && (
-                      <span className="text-[6px] text-muted-foreground truncate w-full text-center leading-tight mt-0.5">
-                        {variedade.nome.slice(0, 6)}
+                      <span className="text-[10px] text-muted-foreground truncate w-full text-center leading-tight mt-0.5">
+                        {variedade.nome.length > 8 ? variedade.nome.slice(0, 7) + '…' : variedade.nome}
+                      </span>
+                    )}
+                    {isInteractive && (
+                      <span className={`text-[9px] mt-0.5 font-semibold ${isAtivo ? 'text-red-500' : 'text-emerald-600'}`}>
+                        {isAtivo ? 'Desativar' : 'Ativar'}
                       </span>
                     )}
                   </button>
@@ -131,30 +142,32 @@ export default function PerfilFurosGrid({
 
         {/* Seletores de variedade por perfil (colapsável) */}
         {isInteractive && (
-          <details className="text-[9px]">
-            <summary className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors">
-              Definir variedade por perfil individual...
+          <details className="text-xs">
+            <summary className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors py-1">
+              ▸ Definir variedade por perfil individual...
             </summary>
-            <div className="grid grid-cols-4 gap-1 mt-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
               {Array.from({ length: numPerfis }, (_, i) => {
                 const perfil = perfis.find((p) => p.perfilIndex === i);
                 return (
-                  <Select
-                    key={i}
-                    value={perfil?.variedadeId || ''}
-                    onValueChange={(val) => onPerfilVariedadeChange?.(i, val)}
-                  >
-                    <SelectTrigger className="h-5 text-[8px] px-1">
-                      <SelectValue placeholder={`P${i + 1}`} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {variedades.map((v) => (
-                        <SelectItem key={v.id} value={v.id} className="text-xs">
-                          {v.nome} ({v.diasMudas}d)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div key={i} className="flex items-center gap-1">
+                    <span className="text-xs font-semibold text-muted-foreground w-6">P{i + 1}</span>
+                    <Select
+                      value={perfil?.variedadeId || ''}
+                      onValueChange={(val) => onPerfilVariedadeChange?.(i, val)}
+                    >
+                      <SelectTrigger className="h-9 text-xs flex-1">
+                        <SelectValue placeholder="Variedade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {variedades.map((v) => (
+                          <SelectItem key={v.id} value={v.id} className="text-sm py-2">
+                            {v.nome} ({v.diasMudas}d)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 );
               })}
             </div>
@@ -166,11 +179,10 @@ export default function PerfilFurosGrid({
           <Button
             type="button"
             variant="outline"
-            size="sm"
-            className="w-full text-[10px] h-7 gap-1"
+            className="w-full h-11 text-sm gap-2 font-semibold"
             onClick={() => onAndarTodo?.()}
           >
-            <Sprout className="w-3 h-3" />
+            <Sprout className="w-4 h-4" />
             Ativar/Desativar Andar Todo ({numPerfis} perfis)
           </Button>
         )}
@@ -191,63 +203,82 @@ export default function PerfilFurosGrid({
     );
   }
 
-  // Calcular grid de perfis: 2 colunas para maturação (6 perfis), 3 colunas para vegetativa (12 perfis)
-  const perfilCols = isMaturacao ? 2 : 3;
+  // Grid responsivo: 1 coluna mobile, 2 tablet, 3 desktop (vegetativa) ou 2 (maturação)
+  const gridColsClass = isMaturacao
+    ? 'grid-cols-1 sm:grid-cols-2'
+    : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+      <div className="flex items-center justify-between flex-wrap gap-1">
+        <h4 className="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider">
           {numPerfis} Perfis × {numFuros} Furos
         </h4>
-        <div className="flex items-center gap-2 text-[9px]">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-200 border border-gray-300" /> {contagens.vazio}</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> {contagens.plantado}</span>
+        <div className="flex items-center gap-3 text-xs">
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-gray-200 border border-gray-300" />
+            {contagens.vazio}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-emerald-500" />
+            {contagens.plantado}
+          </span>
           {isMaturacao && (
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" /> {contagens.colhido}</span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-amber-400" />
+              {contagens.colhido}
+            </span>
           )}
         </div>
       </div>
 
-      {/* Grid compacto de todos os perfis */}
-      <div className={`grid gap-1.5`} style={{ gridTemplateColumns: `repeat(${perfilCols}, minmax(0, 1fr))` }}>
+      {/* Grid de perfis */}
+      <div className={`grid gap-2 ${gridColsClass}`}>
         {furosPorPerfil.map((perfilFuros, pIndex) => {
           const perfil = perfis.find((p) => p.perfilIndex === pIndex);
           const variedade = perfil?.variedadeId
             ? variedades.find((v) => v.id === perfil.variedadeId)
             : undefined;
           const plantadosNoPerfil = perfilFuros.filter((f) => f.status === 'plantado').length;
-          const colhidosNoPerfil = perfilFuros.filter((f) => f.status === 'colhido').length;
 
           return (
-            <div key={pIndex} className="border rounded-md p-1.5 bg-muted/20">
-              {/* Header do perfil - compacto */}
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-1">
-                  <span className="text-[9px] font-bold text-muted-foreground">P{pIndex + 1}</span>
-                  <span className="text-[8px] text-muted-foreground">
+            <div key={pIndex} className="border rounded-lg p-2 bg-muted/20">
+              {/* Header do perfil */}
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="text-xs font-bold text-muted-foreground shrink-0">P{pIndex + 1}</span>
+                  <span className="text-[10px] text-muted-foreground shrink-0">
                     {plantadosNoPerfil}/{numFuros}
                   </span>
                   {variedade && (
-                    <span className="text-[7px] bg-primary/10 text-primary px-1 py-px rounded-full truncate max-w-[50px]">
-                      {variedade.nome.length > 8 ? variedade.nome.slice(0, 7) + '…' : variedade.nome}
+                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full truncate">
+                      {variedade.nome.length > 10 ? variedade.nome.slice(0, 9) + '…' : variedade.nome}
                     </span>
                   )}
                 </div>
                 {isInteractive && (
                   <button
                     type="button"
-                    className="text-[7px] text-primary hover:underline font-medium"
+                    className={`text-xs font-semibold px-3 py-1.5 rounded-md transition-colors min-h-[32px] ${
+                      modo === 'transplantio'
+                        ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 active:bg-emerald-300'
+                        : 'bg-amber-100 text-amber-700 hover:bg-amber-200 active:bg-amber-300'
+                    }`}
                     onClick={() => onPerfilToggle?.(pIndex, perfil?.variedadeId)}
                   >
-                    {modo === 'transplantio' ? 'Plantar' : 'Colher'}
+                    {modo === 'transplantio' ? '🌱 Plantar' : '✂️ Colher'}
                   </button>
                 )}
               </div>
 
-              {/* Furos como dots compactos em grid */}
-              <div className="grid gap-[3px]" style={{ gridTemplateColumns: `repeat(${numFuros <= 6 ? numFuros : Math.ceil(numFuros / 2)}, minmax(0, 1fr))` }}>
+              {/* Furos como dots — grid responsivo */}
+              <div
+                className="grid gap-1"
+                style={{
+                  gridTemplateColumns: `repeat(${numFuros <= 6 ? numFuros : Math.ceil(numFuros / 2)}, minmax(0, 1fr))`,
+                }}
+              >
                 {perfilFuros.map((furo) => (
                   <Tooltip key={`${furo.perfilIndex}-${furo.furoIndex}`}>
                     <TooltipTrigger asChild>
@@ -255,11 +286,13 @@ export default function PerfilFurosGrid({
                         type="button"
                         disabled={!isInteractive}
                         onClick={() => onFuroToggle?.(pIndex, furo.furoIndex, perfil?.variedadeId)}
-                        className={`w-full aspect-square rounded-sm border transition-all flex items-center justify-center min-w-[14px] min-h-[14px] max-w-[22px] max-h-[22px] ${dotColor(furo.status)} ${dotBorder(furo.status)} ${
-                          isInteractive ? 'hover:scale-125 hover:shadow cursor-pointer' : ''
+                        className={`w-full aspect-square rounded-md border-2 transition-all flex items-center justify-center min-w-[28px] min-h-[28px] ${dotColor(furo.status)} ${dotBorder(furo.status)} ${
+                          isInteractive ? 'hover:scale-110 active:scale-95 hover:shadow cursor-pointer' : ''
                         }`}
                       >
-                        <span className="text-[6px] text-white/80 font-medium leading-none">
+                        <span className={`text-[10px] font-bold leading-none ${
+                          furo.status === 'vazio' ? 'text-gray-400' : 'text-white/90'
+                        }`}>
                           {furo.furoIndex + 1}
                         </span>
                       </button>
@@ -282,7 +315,7 @@ export default function PerfilFurosGrid({
       </div>
 
       {/* Rodapé: total */}
-      <div className="flex items-center justify-between text-[9px] text-muted-foreground pt-1 border-t">
+      <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
         <span>
           {contagens.plantado}/{totalFuros} plantados
           {isMaturacao && contagens.colhido > 0 && ` · ${contagens.colhido} colhidos`}
@@ -291,14 +324,14 @@ export default function PerfilFurosGrid({
 
       {/* Variedade para todos + Ação do andar todo */}
       {isInteractive && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Select onValueChange={(val) => onAndarVariedadeTodos?.(val)}>
-            <SelectTrigger className="h-7 text-[10px]">
+            <SelectTrigger className="h-10 text-sm">
               <SelectValue placeholder="Variedade para todos os perfis..." />
             </SelectTrigger>
             <SelectContent>
               {variedades.map((v) => (
-                <SelectItem key={v.id} value={v.id} className="text-xs">
+                <SelectItem key={v.id} value={v.id} className="text-sm py-2">
                   {v.nome} ({fase === 'vegetativa' ? v.diasVegetativa : v.diasMaturacao}d)
                 </SelectItem>
               ))}
@@ -306,30 +339,32 @@ export default function PerfilFurosGrid({
           </Select>
 
           {/* Seletores individuais colapsáveis */}
-          <details className="text-[9px]">
-            <summary className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors">
-              Definir variedade por perfil individual...
+          <details className="text-xs">
+            <summary className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors py-1">
+              ▸ Definir variedade por perfil individual...
             </summary>
-            <div className={`grid gap-1 mt-1`} style={{ gridTemplateColumns: `repeat(${perfilCols}, minmax(0, 1fr))` }}>
+            <div className={`grid gap-2 mt-2 grid-cols-2 sm:grid-cols-3`}>
               {Array.from({ length: numPerfis }, (_, i) => {
                 const perfil = perfis.find((p) => p.perfilIndex === i);
                 return (
-                  <Select
-                    key={i}
-                    value={perfil?.variedadeId || ''}
-                    onValueChange={(val) => onPerfilVariedadeChange?.(i, val)}
-                  >
-                    <SelectTrigger className="h-5 text-[7px] px-1">
-                      <SelectValue placeholder={`P${i + 1}`} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {variedades.map((v) => (
-                        <SelectItem key={v.id} value={v.id} className="text-xs">
-                          {v.nome} ({fase === 'vegetativa' ? v.diasVegetativa : v.diasMaturacao}d)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div key={i} className="flex items-center gap-1">
+                    <span className="text-xs font-semibold text-muted-foreground w-6">P{i + 1}</span>
+                    <Select
+                      value={perfil?.variedadeId || ''}
+                      onValueChange={(val) => onPerfilVariedadeChange?.(i, val)}
+                    >
+                      <SelectTrigger className="h-9 text-xs flex-1">
+                        <SelectValue placeholder="Var." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {variedades.map((v) => (
+                          <SelectItem key={v.id} value={v.id} className="text-sm py-2">
+                            {v.nome} ({fase === 'vegetativa' ? v.diasVegetativa : v.diasMaturacao}d)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 );
               })}
             </div>
@@ -338,18 +373,17 @@ export default function PerfilFurosGrid({
           <Button
             type="button"
             variant="outline"
-            size="sm"
-            className="w-full text-[10px] h-7 gap-1"
+            className="w-full h-11 text-sm gap-2 font-semibold"
             onClick={() => onAndarTodo?.()}
           >
             {modo === 'transplantio' ? (
               <>
-                <Sprout className="w-3 h-3" />
+                <Sprout className="w-4 h-4" />
                 Plantar Andar Todo ({totalFuros} furos)
               </>
             ) : (
               <>
-                <Scissors className="w-3 h-3" />
+                <Scissors className="w-4 h-4" />
                 Colher Andar Todo
               </>
             )}

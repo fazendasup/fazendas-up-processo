@@ -102,7 +102,7 @@ export default function Header() {
           <Button
             variant="outline"
             size="sm"
-            className="hidden sm:flex gap-1.5 text-xs h-8"
+            className="hidden sm:flex gap-1.5 text-xs h-9"
             onClick={exportCSV}
           >
             <FileDown className="w-3.5 h-3.5" />
@@ -111,16 +111,16 @@ export default function Header() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" className="h-8 w-8">
-                <Menu className="w-4 h-4" />
+              <Button variant="outline" size="icon" className="h-10 w-10 sm:h-8 sm:w-8">
+                <Menu className="w-5 h-5 sm:w-4 sm:h-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-52">
               {/* Mobile nav */}
               <div className="lg:hidden">
                 {navItems.map((item) => (
-                  <DropdownMenuItem key={item.href} asChild>
-                    <Link href={item.href} className="flex items-center gap-2">
+                  <DropdownMenuItem key={item.href} asChild className="py-2.5">
+                    <Link href={item.href} className="flex items-center gap-2 text-sm">
                       <item.icon className="w-4 h-4" />
                       {item.label}
                     </Link>

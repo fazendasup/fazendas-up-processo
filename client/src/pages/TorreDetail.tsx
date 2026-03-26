@@ -419,7 +419,7 @@ export default function TorreDetail() {
       <main className="container py-6">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-6">
-          <Link href="/"><Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground"><ArrowLeft className="w-4 h-4" />Dashboard</Button></Link>
+                      <Link href="/"><Button variant="ghost" className="gap-1.5 text-muted-foreground h-10 text-sm"><ArrowLeft className="w-4 h-4" />Dashboard</Button></Link>
           <span className="text-muted-foreground">/</span>
           <span className={`text-sm font-semibold px-2 py-0.5 rounded-full ${badgeClass}`}>{torre.nome}</span>
         </div>
@@ -482,11 +482,11 @@ export default function TorreDetail() {
                   const varNomes = Array.from(varNomesSet);
 
                   return (
-                    <button
+                      <button
                       key={andar.id}
                       type="button"
                       onClick={() => setSelectedAndar(andar.id === selectedAndar ? null : andar.id)}
-                      className={`w-full text-left px-3 py-2.5 border-b last:border-b-0 transition-all text-xs ${
+                      className={`w-full text-left px-3 py-3 sm:py-2.5 border-b last:border-b-0 transition-all text-xs min-h-[44px] ${
                         isSelected ? 'bg-primary/10' : 'hover:bg-muted/50'
                       }`}
                     >
@@ -611,9 +611,9 @@ export default function TorreDetail() {
                               )}
                               <button
                                 onClick={() => item._type === 'medicao' ? handleDeleteMedicao(item.id) : handleDeleteAplicacaoCaixa(item.id)}
-                                className="text-muted-foreground hover:text-destructive p-1"
+                                className="text-muted-foreground hover:text-destructive p-2 min-w-[36px] min-h-[36px] flex items-center justify-center"
                               >
-                                <Trash2 className="w-3 h-3" />
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
                           ))}
@@ -644,12 +644,12 @@ export default function TorreDetail() {
                       </p>
                     )}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => setShowTransplantio(true)}>
-                      <Sprout className="w-3 h-3" /> Transplantio
+                  <div className="flex items-center gap-1.5">
+                    <Button variant="outline" className="text-xs gap-1.5 h-9 px-3" onClick={() => setShowTransplantio(true)}>
+                      <Sprout className="w-4 h-4" /> Transplantio
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-xs text-destructive" onClick={handleClearAndar}>
-                      <Trash2 className="w-3 h-3 mr-1" /> Limpar
+                    <Button variant="ghost" className="text-xs text-destructive h-9 px-3" onClick={handleClearAndar}>
+                      <Trash2 className="w-4 h-4 mr-1" /> Limpar
                     </Button>
                   </div>
                 </div>
@@ -664,7 +664,7 @@ export default function TorreDetail() {
                         <p className="text-[10px] text-red-600">Colheita total em {formatarData(andarSelecionado.dataColheitaTotal || null)}</p>
                       </div>
                     </div>
-                    <Button size="sm" variant="outline" className="text-xs gap-1 text-emerald-600 border-emerald-300" onClick={handleMarcarLavado}>
+                    <Button variant="outline" className="text-sm gap-1.5 h-9 px-3 text-emerald-600 border-emerald-300" onClick={handleMarcarLavado}>
                       <CheckCircle2 className="w-3 h-3" /> Marcar Lavado
                     </Button>
                   </div>
@@ -680,11 +680,11 @@ export default function TorreDetail() {
                           name="dataEntrada"
                           type="date"
                           defaultValue={andarSelecionado.dataEntrada ? new Date(andarSelecionado.dataEntrada).toISOString().split('T')[0] : ''}
-                          className="h-8 text-sm"
+                          className="h-10 text-sm"
                           key={andarSelecionado.id + '-date'}
                         />
                       </div>
-                      <Button type="submit" size="sm" className="h-8 text-xs">Salvar Data</Button>
+                      <Button type="submit" className="h-10 text-sm px-4">Salvar Data</Button>
                     </div>
                     {andarSelecionado.dataEntrada && (
                       <div className="grid grid-cols-2 gap-2 mt-2 text-center">
@@ -719,7 +719,7 @@ export default function TorreDetail() {
                         key={m}
                         type="button"
                         onClick={() => setModoFuros(m)}
-                        className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                        className={`flex-1 py-2.5 sm:py-2 rounded-lg text-sm sm:text-xs font-semibold border transition-colors min-h-[40px] ${
                           modoFuros === m
                             ? m === 'transplantio' ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
                             : m === 'colheita' ? 'bg-amber-100 text-amber-700 border-amber-300'
@@ -779,7 +779,7 @@ export default function TorreDetail() {
                                     <p className="font-medium">{apl.produto} ({apl.quantidade})</p>
                                     <p className="text-[10px] text-muted-foreground">{TIPOS_APLICACAO_ANDAR.find((t) => t.value === apl.tipo)?.label} · {formatarDataHora(apl.dataHora)}</p>
                                   </div>
-                                  <button onClick={() => handleDeleteAplicacaoAndar(apl.id)} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="w-3 h-3" /></button>
+                                  <button onClick={() => handleDeleteAplicacaoAndar(apl.id)} className="text-muted-foreground hover:text-destructive p-2 min-w-[36px] min-h-[36px] flex items-center justify-center"><Trash2 className="w-4 h-4" /></button>
                                 </div>
                               ))
                           )}
