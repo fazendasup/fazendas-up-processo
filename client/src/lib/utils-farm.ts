@@ -1,19 +1,19 @@
 // ============================================================
-// Utilitários de cálculo para Fazendas Up v2
-// Inclui: ciclo por variedade, contagem de plantas, KPIs
+// Utilitários de cálculo para Fazendas Up v3
+// Mudanças: ciclo apenas por variedade, contagem de plantas
+// adaptada para mudas (perfis abertos) vs vegetativa/maturação (furos)
 // ============================================================
 
-import type { Fase, FaseConfig, CicloAplicacao, Torre, Andar, FazendaData, VariedadeConfig, Furo, LoteGerminacao, Manutencao } from './types';
+import type { Fase, FaseConfig, CicloAplicacao, Torre, Andar, FazendaData, VariedadeConfig, Manutencao } from './types';
 import { FASES_CONFIG } from './types';
 
 // ---- Dias de ciclo por variedade ----
 
-/** Retorna dias de ciclo para uma variedade em uma fase, ou fallback da config */
+/** Retorna dias de ciclo para uma variedade em uma fase. Retorna 0 se não encontrar. */
 export function diasCicloVariedade(
   variedadeId: string | undefined,
   fase: Fase,
   variedades: VariedadeConfig[],
-  fasesConfig?: Record<Fase, FaseConfig>
 ): number {
   if (variedadeId) {
     const v = variedades.find((vr) => vr.id === variedadeId);
@@ -23,8 +23,7 @@ export function diasCicloVariedade(
       return v.diasMaturacao;
     }
   }
-  const cfg = fasesConfig?.[fase] || FASES_CONFIG[fase];
-  return cfg.diasCiclo;
+  return 0; // sem variedade definida, sem previsão
 }
 
 /** Calcula dias decorridos desde uma data */
@@ -42,10 +41,10 @@ export function dataPrevista(
   fase: Fase,
   variedadeId?: string,
   variedades?: VariedadeConfig[],
-  fasesConfig?: Record<Fase, FaseConfig>
 ): string | null {
   if (!dataEntrada) return null;
-  const dias = diasCicloVariedade(variedadeId, fase, variedades || [], fasesConfig);
+  const dias = diasCicloVariedade(variedadeId, fase, variedades || []);
+  if (dias <= 0) return null; // sem variedade = sem previsão
   const entrada = new Date(dataEntrada);
   const prevista = new Date(entrada.getTime() + dias * 24 * 60 * 60 * 1000);
   return prevista.toISOString();
@@ -63,17 +62,16 @@ export function diasRestantes(
   fase: Fase,
   variedadeId?: string,
   variedades?: VariedadeConfig[],
-  fasesConfig?: Record<Fase, FaseConfig>
 ): number | null {
   if (!dataEntrada) return null;
-  const prev = dataPrevista(dataEntrada, fase, variedadeId, variedades, fasesConfig);
+  const prev = dataPrevista(dataEntrada, fase, variedadeId, variedades);
   if (!prev) return null;
   const hoje = new Date();
   const prevDate = new Date(prev);
   return Math.ceil((prevDate.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-/** Verifica se EC está fora do range (usa fasesConfig do estado) */
+/** Verifica se EC está fora do range */
 export function ecForaRange(ec: number, fase: Fase, fasesConfig?: Record<Fase, FaseConfig>): 'baixo' | 'alto' | 'ok' {
   const config = fasesConfig?.[fase] || FASES_CONFIG[fase];
   if (ec < config.ecMin) return 'baixo';
@@ -81,7 +79,7 @@ export function ecForaRange(ec: number, fase: Fase, fasesConfig?: Record<Fase, F
   return 'ok';
 }
 
-/** Verifica se pH está fora do range (usa fasesConfig do estado) */
+/** Verifica se pH está fora do range */
 export function phForaRange(ph: number, fase: Fase, fasesConfig?: Record<Fase, FaseConfig>): 'baixo' | 'alto' | 'ok' {
   const config = fasesConfig?.[fase] || FASES_CONFIG[fase];
   if (ph < config.phMin) return 'baixo';
@@ -89,7 +87,7 @@ export function phForaRange(ph: number, fase: Fase, fasesConfig?: Record<Fase, F
   return 'ok';
 }
 
-// ---- Ciclos (com fix do bug: verificar se já executou HOJE) ----
+// ---- Ciclos (com fix: verificar se já executou HOJE) ----
 
 /** Verifica se um ciclo está pendente hoje */
 export function cicloPendenteHoje(ciclo: CicloAplicacao): boolean {
@@ -104,7 +102,7 @@ export function cicloPendenteHoje(ciclo: CicloAplicacao): boolean {
       ultima.getFullYear() === hoje.getFullYear() &&
       ultima.getMonth() === hoje.getMonth() &&
       ultima.getDate() === hoje.getDate();
-    if (mesmodia) return false; // Já executado hoje!
+    if (mesmodia) return false;
   }
 
   if (ciclo.frequencia === 'diaria') return true;
@@ -131,30 +129,32 @@ export function contarCiclosPendentes(ciclos: CicloAplicacao[], fase: Fase): num
   ).length;
 }
 
-// ---- Contagem de plantas por andar/torre/geral ----
+// ---- Contagem de plantas ----
 
-/** Conta plantas plantadas (status 'plantado') em um andar */
-export function contarPlantasAndar(andar: Andar): number {
+/** Conta plantas ativas em um andar (status 'plantado') */
+export function contarPlantasAndar(andar: Andar, fase?: Fase): number {
+  // Para mudas: contar perfis ativos
+  if (fase === 'mudas') {
+    return (andar.perfis || []).filter((p) => p.ativo).length;
+  }
+  // Para vegetativa/maturação: contar furos plantados
   if (!andar.furos) return 0;
   return andar.furos.filter((f) => f.status === 'plantado').length;
 }
 
-/** Conta plantas colhidas em um andar */
+/** Conta plantas colhidas em um andar (só faz sentido na maturação) */
 export function contarColhidasAndar(andar: Andar): number {
   if (!andar.furos) return 0;
   return andar.furos.filter((f) => f.status === 'colhido').length;
 }
 
 /** Conta furos vazios em um andar */
-export function contarVaziosAndar(andar: Andar): number {
+export function contarVaziosAndar(andar: Andar, fase?: Fase): number {
+  if (fase === 'mudas') {
+    return 6 - (andar.perfis || []).filter((p) => p.ativo).length;
+  }
   if (!andar.furos) return 36;
   return andar.furos.filter((f) => f.status === 'vazio').length;
-}
-
-/** Verifica se andar teve colheita total */
-export function andarColheitaTotal(andar: Andar): boolean {
-  if (!andar.furos) return false;
-  return andar.furos.every((f) => f.status === 'colhido' || f.status === 'vazio');
 }
 
 /** Verifica se andar precisa de lavagem pós-colheita */
@@ -163,13 +163,37 @@ export function andarPrecisaLavagem(andar: Andar): boolean {
   return !andar.lavado;
 }
 
+/** Obtém a variedade principal de um perfil */
+export function variedadePerfil(andar: Andar, perfilIndex: number): string | undefined {
+  const perfil = (andar.perfis || []).find((p) => p.perfilIndex === perfilIndex);
+  return perfil?.variedadeId;
+}
+
+/** Obtém a variedade principal do andar (a mais comum entre os perfis) */
+export function variedadePrincipalAndar(andar: Andar): string | undefined {
+  const perfis = andar.perfis || [];
+  const ativos = perfis.filter((p) => p.ativo && p.variedadeId);
+  if (ativos.length === 0) return andar.variedadeIds?.[0];
+  // Retorna a mais frequente
+  const counts: Record<string, number> = {};
+  ativos.forEach((p) => {
+    if (p.variedadeId) counts[p.variedadeId] = (counts[p.variedadeId] || 0) + 1;
+  });
+  let maxId = ativos[0].variedadeId;
+  let maxCount = 0;
+  Object.entries(counts).forEach(([id, count]) => {
+    if (count > maxCount) { maxId = id; maxCount = count; }
+  });
+  return maxId;
+}
+
 /** Conta alertas de uma torre */
 export function contarAlertasTorre(
   torre: Torre,
   andares: Andar[],
   ciclos: CicloAplicacao[],
   variedades?: VariedadeConfig[],
-  fasesConfig?: Record<Fase, FaseConfig>,
+  _fasesConfig?: Record<Fase, FaseConfig>,
   manutencoes?: Manutencao[]
 ): number {
   let alertas = 0;
@@ -177,8 +201,8 @@ export function contarAlertasTorre(
 
   andaresTorre.forEach((andar) => {
     if (andar.dataEntrada) {
-      const varId = andar.variedadeIds?.[0];
-      const restantes = diasRestantes(andar.dataEntrada, torre.fase, varId, variedades, fasesConfig);
+      const varId = variedadePrincipalAndar(andar);
+      const restantes = diasRestantes(andar.dataEntrada, torre.fase, varId, variedades);
       if (restantes !== null && restantes <= 0) alertas++;
     }
     if (andarPrecisaLavagem(andar)) alertas++;
@@ -186,7 +210,6 @@ export function contarAlertasTorre(
 
   alertas += contarCiclosPendentes(ciclos, torre.fase);
 
-  // Manutenções abertas
   if (manutencoes) {
     alertas += manutencoes.filter(
       (m) => m.torreId === torre.id && m.status !== 'concluida'
@@ -203,10 +226,10 @@ export interface FazendaKPIs {
   plantasEmProcesso: number;
   plantasProntasColheita: number;
   plantasColhidas: number;
-  taxaOcupacao: number; // %
-  taxaGerminacao: number; // %
+  taxaOcupacao: number;
+  taxaGerminacao: number;
   totalDesperdicio: number;
-  taxaDesperdicio: number; // %
+  taxaDesperdicio: number;
   totalGerminando: number;
   totalTransplantios: number;
   manutencoesAbertas: number;
@@ -225,16 +248,22 @@ export function calcularKPIs(data: FazendaData): FazendaKPIs {
     const torre = data.torres.find((t) => t.id === andar.torreId);
     if (!torre) return;
 
-    const plantadas = contarPlantasAndar(andar);
-    const colhidas = contarColhidasAndar(andar);
-    totalPlantas += plantadas + colhidas;
-    plantasColhidas += colhidas;
+    const plantadas = contarPlantasAndar(andar, torre.fase);
+    totalPlantas += plantadas;
 
-    if (torre.fase === 'maturacao' && andar.dataEntrada) {
-      const varId = andar.variedadeIds?.[0];
-      const rest = diasRestantes(andar.dataEntrada, torre.fase, varId, data.variedades, data.fasesConfig);
-      if (rest !== null && rest <= 0) {
-        plantasProntasColheita += plantadas;
+    // Colhidas só na maturação
+    if (torre.fase === 'maturacao') {
+      const colhidas = contarColhidasAndar(andar);
+      plantasColhidas += colhidas;
+
+      if (andar.dataEntrada) {
+        const varId = variedadePrincipalAndar(andar);
+        const rest = diasRestantes(andar.dataEntrada, torre.fase, varId, data.variedades);
+        if (rest !== null && rest <= 0) {
+          plantasProntasColheita += plantadas;
+        } else {
+          plantasEmProcesso += plantadas;
+        }
       } else {
         plantasEmProcesso += plantadas;
       }
@@ -245,8 +274,13 @@ export function calcularKPIs(data: FazendaData): FazendaKPIs {
     if (andarPrecisaLavagem(andar)) andaresLavagemPendente++;
   });
 
-  // Capacidade total: 138 andares x 36 furos
-  const capacidadeTotal = data.andares.length * 36;
+  // Capacidade: mudas=6 perfis/andar, vegetativa/maturação=36 furos/andar
+  let capacidadeTotal = 0;
+  data.andares.forEach((andar) => {
+    const torre = data.torres.find((t) => t.id === andar.torreId);
+    if (!torre) return;
+    capacidadeTotal += torre.fase === 'mudas' ? 6 : 36;
+  });
   const taxaOcupacao = capacidadeTotal > 0 ? (totalPlantas / capacidadeTotal) * 100 : 0;
 
   // Germinação
@@ -294,7 +328,7 @@ export function calcularKPIs(data: FazendaData): FazendaKPIs {
   };
 }
 
-// ---- Resumo da fazenda (atualizado) ----
+// ---- Resumo da fazenda ----
 
 export function resumoFazenda(data: FazendaData) {
   const totalTorres = data.torres.length;
@@ -316,8 +350,8 @@ export function resumoFazenda(data: FazendaData) {
     if (andar.dataEntrada) {
       const torre = data.torres.find((t) => t.id === andar.torreId);
       if (torre) {
-        const varId = andar.variedadeIds?.[0];
-        const rest = diasRestantes(andar.dataEntrada, torre.fase, varId, data.variedades, data.fasesConfig);
+        const varId = variedadePrincipalAndar(andar);
+        const rest = diasRestantes(andar.dataEntrada, torre.fase, varId, data.variedades);
         if (rest !== null && rest <= 0) previsaoVencida++;
       }
     }

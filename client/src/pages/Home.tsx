@@ -1,6 +1,6 @@
 // ============================================================
-// Home v2 — Dashboard com KPIs, ciclos corrigidos, config atualizada
-// Design: Agronomic Dashboard
+// Home v3 — Dashboard com KPIs, colhidas só maturação,
+// sem diasCiclo por fase, config atualizada
 // ============================================================
 
 import Header from '@/components/Header';
@@ -15,15 +15,12 @@ import {
   calcularKPIs,
   contarPlantasAndar,
   contarColhidasAndar,
-  andarPrecisaLavagem,
 } from '@/lib/utils-farm';
 import {
   BarChart3,
-  Droplets,
   AlertTriangle,
   Sprout,
   Scissors,
-  TrendingUp,
   Wrench,
   Leaf,
   Clock,
@@ -46,8 +43,8 @@ export default function Home() {
   const plantasPorFase = fases.map((fase) => {
     const torres = data.torres.filter((t) => t.fase === fase);
     const andaresFase = data.andares.filter((a) => torres.some((t) => t.id === a.torreId));
-    const plantadas = andaresFase.reduce((sum, a) => sum + contarPlantasAndar(a), 0);
-    const colhidas = andaresFase.reduce((sum, a) => sum + contarColhidasAndar(a), 0);
+    const plantadas = andaresFase.reduce((sum, a) => sum + contarPlantasAndar(a, fase), 0);
+    const colhidas = fase === 'maturacao' ? andaresFase.reduce((sum, a) => sum + contarColhidasAndar(a), 0) : 0;
     return { fase, plantadas, colhidas };
   });
 
@@ -118,24 +115,34 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {plantasPorFase.map(({ fase, plantadas, colhidas }) => {
               const cfg = data.fasesConfig?.[fase] || FASES_CONFIG[fase];
+              const isMaturacao = fase === 'maturacao';
               return (
                 <div key={fase} className="bg-card rounded-xl border p-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-display font-bold text-sm">{cfg.icon} {cfg.label}</span>
                     <span className="text-[10px] text-muted-foreground">
-                      EC {cfg.ecMin}-{cfg.ecMax} | pH {cfg.phMin}-{cfg.phMax} | {cfg.diasCiclo}d
+                      EC {cfg.ecMin}-{cfg.ecMax} | pH {cfg.phMin}-{cfg.phMax}
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-center">
-                    <div className="p-2 rounded-lg bg-emerald-50">
-                      <p className="font-display font-bold text-xl text-emerald-700">{plantadas}</p>
-                      <p className="text-[10px] text-muted-foreground">{fase === 'maturacao' ? 'Em Processo' : 'Em Processo'}</p>
+                  {isMaturacao ? (
+                    <div className="grid grid-cols-2 gap-2 text-center">
+                      <div className="p-2 rounded-lg bg-emerald-50">
+                        <p className="font-display font-bold text-xl text-emerald-700">{plantadas}</p>
+                        <p className="text-[10px] text-muted-foreground">Em Processo</p>
+                      </div>
+                      <div className="p-2 rounded-lg bg-amber-50">
+                        <p className="font-display font-bold text-xl text-amber-700">{colhidas}</p>
+                        <p className="text-[10px] text-muted-foreground">Colhidas</p>
+                      </div>
                     </div>
-                    <div className="p-2 rounded-lg bg-amber-50">
-                      <p className="font-display font-bold text-xl text-amber-700">{colhidas}</p>
-                      <p className="text-[10px] text-muted-foreground">{fase === 'maturacao' ? 'Colhidas' : 'Colhidas'}</p>
+                  ) : (
+                    <div className="text-center">
+                      <div className="p-2 rounded-lg bg-emerald-50">
+                        <p className="font-display font-bold text-xl text-emerald-700">{plantadas}</p>
+                        <p className="text-[10px] text-muted-foreground">Em Processo</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               );
             })}
@@ -179,7 +186,6 @@ export default function Home() {
                 <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
                   <span>EC {cfg.ecMin}-{cfg.ecMax}</span>
                   <span>pH {cfg.phMin}-{cfg.phMax}</span>
-                  <span>{cfg.diasCiclo}d ciclo</span>
                   {ciclosPendentes > 0 && (
                     <span className="text-amber-600 font-semibold">{ciclosPendentes} ciclo(s) pendente(s)</span>
                   )}

@@ -1,6 +1,6 @@
 // ============================================================
-// ConfigPage v2 — Configurações de fases + variedades
-// Fix: usar key para forçar re-render dos inputs quando config muda
+// ConfigPage v3 — Sem diasCiclo por fase (apenas por variedade)
+// Fases: apenas EC/pH ranges
 // ============================================================
 
 import Header from '@/components/Header';
@@ -21,7 +21,7 @@ import { motion } from 'framer-motion';
 export default function ConfigPage() {
   const { data, updateData, resetData, backupJSON } = useFazenda();
   const [showAddVar, setShowAddVar] = useState(false);
-  const [configVersion, setConfigVersion] = useState(0); // force re-render key
+  const [configVersion, setConfigVersion] = useState(0);
 
   const fases: Fase[] = ['mudas', 'vegetativa', 'maturacao'];
 
@@ -32,9 +32,8 @@ export default function ConfigPage() {
     const ecMax = parseFloat(fd.get('ecMax') as string);
     const phMin = parseFloat(fd.get('phMin') as string);
     const phMax = parseFloat(fd.get('phMax') as string);
-    const diasCiclo = parseInt(fd.get('diasCiclo') as string);
 
-    if (isNaN(ecMin) || isNaN(ecMax) || isNaN(phMin) || isNaN(phMax) || isNaN(diasCiclo)) {
+    if (isNaN(ecMin) || isNaN(ecMax) || isNaN(phMin) || isNaN(phMax)) {
       toast.error('Preencha todos os campos corretamente');
       return;
     }
@@ -45,7 +44,7 @@ export default function ConfigPage() {
         ...prev.fasesConfig,
         [fase]: {
           ...prev.fasesConfig[fase],
-          ecMin, ecMax, phMin, phMax, diasCiclo,
+          ecMin, ecMax, phMin, phMax,
         },
       },
     }));
@@ -133,7 +132,7 @@ export default function ConfigPage() {
               Configurações
             </h1>
             <p className="text-sm text-muted-foreground">
-              Parâmetros por fase e variedades com ciclos personalizados
+              Parâmetros EC/pH por fase e ciclos por variedade
             </p>
           </div>
           <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleResetConfig}>
@@ -142,7 +141,7 @@ export default function ConfigPage() {
           </Button>
         </div>
 
-        {/* Fases Config */}
+        {/* Fases Config — apenas EC/pH */}
         <div className="space-y-4 mb-8">
           {fases.map((fase, i) => {
             const config = data.fasesConfig?.[fase] || FASES_CONFIG[fase];
@@ -158,9 +157,10 @@ export default function ConfigPage() {
                   <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${badgeClass(fase)}`}>
                     {FASES_CONFIG[fase].icon} {FASES_CONFIG[fase].label}
                   </span>
+                  <span className="text-[10px] text-muted-foreground">Parâmetros de referência EC/pH</span>
                 </div>
                 <form onSubmit={(e) => handleSaveConfig(fase, e)} className="p-4">
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
                     <div>
                       <Label className="text-xs">EC Mín</Label>
                       <Input name="ecMin" type="number" step="0.1" min="0" max="10" defaultValue={config.ecMin} className="h-9 text-sm" required />
@@ -177,10 +177,6 @@ export default function ConfigPage() {
                       <Label className="text-xs">pH Máx</Label>
                       <Input name="phMax" type="number" step="0.1" min="0" max="14" defaultValue={config.phMax} className="h-9 text-sm" required />
                     </div>
-                    <div>
-                      <Label className="text-xs">Dias Ciclo (padrão)</Label>
-                      <Input name="diasCiclo" type="number" min="1" max="365" defaultValue={config.diasCiclo} className="h-9 text-sm" required />
-                    </div>
                   </div>
                   <Button type="submit" size="sm" className="gap-1.5 text-xs">
                     <Save className="w-3.5 h-3.5" />
@@ -192,16 +188,16 @@ export default function ConfigPage() {
           })}
         </div>
 
-        {/* Variedades */}
+        {/* Variedades — ciclo por planta */}
         <section>
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="font-display font-bold text-lg flex items-center gap-2">
                 <Leaf className="w-5 h-5 text-emerald-600" />
-                Variedades
+                Variedades e Ciclos
               </h2>
               <p className="text-xs text-muted-foreground">
-                Cada variedade tem seu próprio ciclo de dias por fase
+                Cada variedade tem seu próprio ciclo de dias por fase (Mudas → Vegetativa → Maturação)
               </p>
             </div>
             <div className="flex gap-2">
@@ -325,10 +321,9 @@ export default function ConfigPage() {
             Sobre os Parâmetros
           </h3>
           <div className="text-xs text-muted-foreground space-y-1.5">
-            <p><strong>EC (Condutividade Elétrica):</strong> Concentração de nutrientes na solução (mS/cm).</p>
-            <p><strong>pH:</strong> Acidez/alcalinidade da solução (ideal 5.5-6.5 para hidroponia).</p>
-            <p><strong>Dias Ciclo (padrão):</strong> Usado quando a variedade não tem ciclo definido.</p>
-            <p><strong>Dias por Variedade:</strong> Cada variedade pode ter seu próprio tempo em cada fase, sobrescrevendo o padrão.</p>
+            <p><strong>EC (Condutividade Elétrica):</strong> Concentração de nutrientes na solução (mS/cm). Valores ideais variam por fase.</p>
+            <p><strong>pH:</strong> Acidez/alcalinidade da solução. Ideal entre 5.5-6.5 para hidroponia.</p>
+            <p><strong>Dias por Variedade:</strong> Cada variedade tem seu próprio ciclo de dias em cada fase. Defina na tabela de variedades acima.</p>
           </div>
         </div>
 

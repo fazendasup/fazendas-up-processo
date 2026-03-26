@@ -1,7 +1,7 @@
 // ============================================================
-// Fazendas Up - Modelo de Dados v2
-// Inclui: variedades com ciclo por fase, perfis/furos 6x6,
-// germinação, manutenção, desperdício, KPIs
+// Fazendas Up - Modelo de Dados v3
+// Mudanças: variedade por perfil, mudas sem furos (perfis abertos),
+// colheita só na maturação, removido diasCiclo de FaseConfig
 // ============================================================
 
 export type Fase = 'mudas' | 'vegetativa' | 'maturacao';
@@ -12,7 +12,6 @@ export interface FaseConfig {
   ecMax: number;
   phMin: number;
   phMax: number;
-  diasCiclo: number; // dias padrão (fallback se variedade não definir)
   cor: string;
   corLight: string;
   icon: string;
@@ -25,7 +24,6 @@ export const FASES_CONFIG: Record<Fase, FaseConfig> = {
     ecMax: 1.2,
     phMin: 5.8,
     phMax: 6.2,
-    diasCiclo: 21,
     cor: 'oklch(0.65 0.19 160)',
     corLight: 'oklch(0.92 0.08 160)',
     icon: '🌱',
@@ -36,7 +34,6 @@ export const FASES_CONFIG: Record<Fase, FaseConfig> = {
     ecMax: 2.0,
     phMin: 5.5,
     phMax: 6.5,
-    diasCiclo: 28,
     cor: 'oklch(0.55 0.14 220)',
     corLight: 'oklch(0.92 0.06 220)',
     icon: '🌿',
@@ -47,7 +44,6 @@ export const FASES_CONFIG: Record<Fase, FaseConfig> = {
     ecMax: 2.5,
     phMin: 5.8,
     phMax: 6.2,
-    diasCiclo: 35,
     cor: 'oklch(0.62 0.18 50)',
     corLight: 'oklch(0.93 0.06 50)',
     icon: '🥬',
@@ -78,7 +74,9 @@ export const VARIEDADES_PADRAO: VariedadeConfig[] = [
   { id: 'coentro', nome: 'Coentro', diasMudas: 10, diasVegetativa: 18, diasMaturacao: 25 },
 ];
 
-// ---- Perfis e Furos (6 perfis x 6 furos = 36 plantas por andar) ----
+// ---- Perfis e Furos ----
+// Mudas: perfis abertos (espuma fenólica), sem furos individuais
+// Vegetativa/Maturação: 6 perfis x 6 furos = 36 plantas por andar
 export type FuroStatus = 'vazio' | 'plantado' | 'colhido';
 
 export interface Furo {
@@ -86,6 +84,13 @@ export interface Furo {
   furoIndex: number;   // 0-5
   status: FuroStatus;
   variedadeId?: string;
+}
+
+// Perfil com variedade própria (para suportar múltiplas variedades por andar)
+export interface PerfilData {
+  perfilIndex: number; // 0-5
+  variedadeId?: string;
+  ativo: boolean; // se o perfil está em uso
 }
 
 // ---- Germinação (pré-mudas) ----
@@ -126,7 +131,7 @@ export type ManutencaoStatus = 'aberta' | 'em_andamento' | 'concluida';
 export interface Manutencao {
   id: string;
   torreId: string;
-  andarNumero?: number; // se null, é da torre inteira
+  andarNumero?: number;
   tipo: ManutencaoTipo;
   descricao: string;
   dataAbertura: string;
@@ -183,15 +188,17 @@ export interface Andar {
   id: string;
   torreId: string;
   numero: number;
-  variedades: string[]; // nomes
+  variedades: string[]; // nomes (legacy, mantido para compatibilidade)
   variedadeIds: string[]; // IDs das variedades
   dataEntrada: string | null;
   aplicacoes: AplicacaoAndar[];
-  // Sistema de perfis/furos 6x6
+  // Sistema de perfis/furos 6x6 (vegetativa/maturação)
   furos: Furo[];
+  // Dados por perfil (variedade por perfil)
+  perfis: PerfilData[];
   // Pós-colheita
-  lavado: boolean; // se todos os perfis foram lavados após colheita total
-  dataColheitaTotal?: string; // data da última colheita total
+  lavado: boolean;
+  dataColheitaTotal?: string;
 }
 
 export interface AplicacaoAndar {
@@ -228,6 +235,14 @@ export interface FazendaData {
   germinacao: LoteGerminacao[];
   transplantios: RegistroTransplantio[];
   manutencoes: Manutencao[];
+}
+
+// ---- Gerar perfis iniciais ----
+export function gerarPerfisIniciais(): PerfilData[] {
+  return Array.from({ length: 6 }, (_, i) => ({
+    perfilIndex: i,
+    ativo: false,
+  }));
 }
 
 // ---- Gerar furos iniciais para um andar (6 perfis x 6 furos) ----
@@ -276,6 +291,7 @@ export function gerarDadosIniciais(): FazendaData {
       dataEntrada: null,
       aplicacoes: [],
       furos: gerarFurosIniciais(),
+      perfis: gerarPerfisIniciais(),
       lavado: true,
     });
   }
@@ -312,6 +328,7 @@ export function gerarDadosIniciais(): FazendaData {
         dataEntrada: null,
         aplicacoes: [],
         furos: gerarFurosIniciais(),
+        perfis: gerarPerfisIniciais(),
         lavado: true,
       });
     }
@@ -353,6 +370,7 @@ export function gerarDadosIniciais(): FazendaData {
         dataEntrada: null,
         aplicacoes: [],
         furos: gerarFurosIniciais(),
+        perfis: gerarPerfisIniciais(),
         lavado: true,
       });
     }

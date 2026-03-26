@@ -1,6 +1,5 @@
 // ============================================================
-// TorreCard v2 — Card clicável de torre no dashboard
-// Usa contexto diretamente, mostra contagem de plantas
+// TorreCard v3 — Colhidas só na maturação, sem diasCiclo
 // ============================================================
 
 import { Link } from 'wouter';
@@ -13,6 +12,7 @@ import {
   contarPlantasAndar,
   contarColhidasAndar,
   andarPrecisaLavagem,
+  variedadePrincipalAndar,
 } from '@/lib/utils-farm';
 import { AlertTriangle, Droplets, ChevronRight, Sprout, Scissors, Droplet } from 'lucide-react';
 
@@ -28,8 +28,9 @@ export default function TorreCard({ torre }: TorreCardProps) {
   const alertas = contarAlertasTorre(torre, andares, data.ciclos, data.variedades, data.fasesConfig, data.manutencoes);
   const andaresOcupados = andares.filter((a) => a.dataEntrada).length;
 
-  const totalPlantas = andares.reduce((sum, a) => sum + contarPlantasAndar(a), 0);
-  const totalColhidas = andares.reduce((sum, a) => sum + contarColhidasAndar(a), 0);
+  const isMaturacao = torre.fase === 'maturacao';
+  const totalPlantas = andares.reduce((sum, a) => sum + contarPlantasAndar(a, torre.fase), 0);
+  const totalColhidas = isMaturacao ? andares.reduce((sum, a) => sum + contarColhidasAndar(a), 0) : 0;
   const andaresLavagem = andares.filter((a) => andarPrecisaLavagem(a)).length;
 
   const faseClass =
@@ -66,8 +67,8 @@ export default function TorreCard({ torre }: TorreCardProps) {
               if (precisaLavar) {
                 bgColor = 'bg-red-400 animate-pulse';
               } else if (ocupado) {
-                const varId = andar.variedadeIds?.[0];
-                const rest = diasRestantes(andar.dataEntrada, torre.fase, varId, data.variedades, data.fasesConfig);
+                const varId = variedadePrincipalAndar(andar);
+                const rest = diasRestantes(andar.dataEntrada, torre.fase, varId, data.variedades);
                 if (rest !== null && rest <= 0) {
                   bgColor = 'bg-destructive/70';
                 } else if (rest !== null && rest <= 3) {
@@ -80,7 +81,7 @@ export default function TorreCard({ torre }: TorreCardProps) {
                 <div
                   key={andar.id}
                   className={`flex-1 rounded-sm ${bgColor} transition-colors`}
-                  title={`A${andar.numero}${ocupado ? ` - ${andar.variedades.join(', ') || 'Sem variedade'}` : ' - Vazio'}${precisaLavar ? ' [LAVAR]' : ''}`}
+                  title={`A${andar.numero}${ocupado ? ' - Ocupado' : ' - Vazio'}${precisaLavar ? ' [LAVAR]' : ''}`}
                 />
               );
             })}
@@ -90,12 +91,12 @@ export default function TorreCard({ torre }: TorreCardProps) {
           <div className="flex items-center gap-3 mb-2 text-xs">
             <span className="flex items-center gap-1 text-emerald-600">
               <Sprout className="w-3 h-3" />
-              <strong>{totalPlantas}</strong>
+              <strong>{totalPlantas}</strong> em processo
             </span>
-            {totalColhidas > 0 && (
+            {isMaturacao && totalColhidas > 0 && (
               <span className="flex items-center gap-1 text-amber-600">
                 <Scissors className="w-3 h-3" />
-                <strong>{totalColhidas}</strong>
+                <strong>{totalColhidas}</strong> colhidas
               </span>
             )}
             {andaresLavagem > 0 && (

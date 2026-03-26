@@ -1,19 +1,22 @@
 // ============================================================
-// TorreDetail v2 — Painel detalhado de torre
-// Inclui: perfis/furos 6x6, colheita, lavagem, transplantio,
-// desperdício, ciclo por variedade
+// TorreDetail v3 — Painel unificado
+// Mudas: perfis abertos, sem furos, sem colheita
+// Vegetativa: perfis com furos, sem colheita
+// Maturação: perfis com furos, com colheita
+// Variedade por perfil, data de entrada integrada
 // ============================================================
 
 import { useParams, Link } from 'wouter';
 import Header from '@/components/Header';
 import { useFazenda } from '@/contexts/FazendaContext';
-import { FASES_CONFIG } from '@/lib/types';
-import type { MedicaoCaixa, AplicacaoCaixa, AplicacaoAndar, Furo, FuroStatus, RegistroTransplantio } from '@/lib/types';
+import { FASES_CONFIG, gerarPerfisIniciais } from '@/lib/types';
+import type { MedicaoCaixa, AplicacaoCaixa, AplicacaoAndar, FuroStatus, RegistroTransplantio, PerfilData } from '@/lib/types';
 import {
   diasDecorridos, diasRestantes, dataPrevista, labelPrevisao,
   formatarData, formatarDataHora, ecForaRange, phForaRange,
-  gerarId, diasCicloVariedade, contarPlantasAndar, contarColhidasAndar,
-  andarPrecisaLavagem, TIPOS_APLICACAO_CAIXA, TIPOS_APLICACAO_ANDAR,
+  gerarId, contarPlantasAndar, contarColhidasAndar,
+  andarPrecisaLavagem, variedadePrincipalAndar,
+  TIPOS_APLICACAO_CAIXA, TIPOS_APLICACAO_ANDAR,
   MOTIVOS_DESPERDICIO,
 } from '@/lib/utils-farm';
 import PerfilFurosGrid from '@/components/PerfilFurosGrid';
@@ -28,7 +31,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import {
-  ArrowLeft, Droplets, Plus, AlertTriangle, Clock, Beaker, Leaf,
+  ArrowLeft, Droplets, AlertTriangle, Clock, Leaf,
   Trash2, Sprout, Scissors, Droplet, CheckCircle2, Wrench,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -42,9 +45,9 @@ export default function TorreDetail() {
   const [tipoCaixa, setTipoCaixa] = useState<string>('');
   const [tipoAndar, setTipoAndar] = useState<string>('');
   const [modoFuros, setModoFuros] = useState<'visualizacao' | 'transplantio' | 'colheita'>('visualizacao');
-  const [variedadeSelect, setVariedadeSelect] = useState<string>('');
   const [showTransplantio, setShowTransplantio] = useState(false);
   const [motivoDesperdicio, setMotivoDesperdicio] = useState<string>('');
+  const [variedadeTransplantio, setVariedadeTransplantio] = useState<string>('');
 
   const torre = data.torres.find((t) => t.id === id);
   if (!torre) {
@@ -66,6 +69,9 @@ export default function TorreDetail() {
     .sort((a, b) => b.numero - a.numero);
   const andarSelecionado = andares.find((a) => a.id === selectedAndar);
 
+  const isMudas = torre.fase === 'mudas';
+  const isMaturacao = torre.fase === 'maturacao';
+
   const badgeClass = torre.fase === 'mudas' ? 'badge-mudas' : torre.fase === 'vegetativa' ? 'badge-vegetativa' : 'badge-maturacao';
 
   const ultimaMedicao = caixa?.medicoes?.length ? caixa.medicoes[caixa.medicoes.length - 1] : null;
@@ -74,8 +80,8 @@ export default function TorreDetail() {
   const localDatetime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
   // Total de plantas na torre
-  const totalPlantasTorre = andares.reduce((sum, a) => sum + contarPlantasAndar(a), 0);
-  const totalColhidasTorre = andares.reduce((sum, a) => sum + contarColhidasAndar(a), 0);
+  const totalPlantasTorre = andares.reduce((sum, a) => sum + contarPlantasAndar(a, torre.fase), 0);
+  const totalColhidasTorre = isMaturacao ? andares.reduce((sum, a) => sum + contarColhidasAndar(a), 0) : 0;
 
   // Manutenções abertas desta torre
   const manutencoesTorre = data.manutencoes.filter((m) => m.torreId === torre.id && m.status !== 'concluida');
@@ -121,31 +127,24 @@ export default function TorreDetail() {
     e.preventDefault();
     if (!andarSelecionado) return;
     const fd = new FormData(e.currentTarget);
-    const variedadesStr = (fd.get('variedades') as string).split(',').map((v) => v.trim()).filter(Boolean);
     const dataEntrada = fd.get('dataEntrada') as string;
-
-    // Mapear nomes para IDs
-    const variedadeIds = variedadesStr.map((nome) => {
-      const v = data.variedades.find((vr) => vr.nome.toLowerCase() === nome.toLowerCase());
-      return v?.id || '';
-    }).filter(Boolean);
 
     updateData((prev) => ({
       ...prev,
       andares: prev.andares.map((a) =>
         a.id === andarSelecionado.id
-          ? { ...a, variedades: variedadesStr, variedadeIds, dataEntrada: dataEntrada ? new Date(dataEntrada).toISOString() : a.dataEntrada }
+          ? { ...a, dataEntrada: dataEntrada ? new Date(dataEntrada).toISOString() : a.dataEntrada }
           : a
       ),
     }));
-    toast.success(`Andar ${andarSelecionado.numero} atualizado!`);
+    toast.success(`Data de entrada do Andar ${andarSelecionado.numero} atualizada!`);
   };
 
-  const handleFuroToggle = (perfilIndex: number, furoIndex: number) => {
+  // ---- Furos handlers (vegetativa/maturação) ----
+
+  const handleFuroToggle = (perfilIndex: number, furoIndex: number, variedadeId?: string) => {
     if (!andarSelecionado) return;
-    const newStatus: FuroStatus = modoFuros === 'transplantio'
-      ? 'plantado'
-      : 'colhido';
+    const newStatus: FuroStatus = modoFuros === 'transplantio' ? 'plantado' : 'colhido';
 
     updateData((prev) => ({
       ...prev,
@@ -153,9 +152,8 @@ export default function TorreDetail() {
         if (a.id !== andarSelecionado.id) return a;
         const furos = (a.furos || []).map((f) => {
           if (f.perfilIndex === perfilIndex && f.furoIndex === furoIndex) {
-            // Toggle: se já está no status alvo, volta para vazio
             if (f.status === newStatus) return { ...f, status: 'vazio' as FuroStatus, variedadeId: undefined };
-            return { ...f, status: newStatus, variedadeId: variedadeSelect || undefined };
+            return { ...f, status: newStatus, variedadeId: variedadeId || f.variedadeId };
           }
           return f;
         });
@@ -164,8 +162,26 @@ export default function TorreDetail() {
     }));
   };
 
-  const handlePerfilToggle = (perfilIndex: number) => {
+  const handlePerfilToggle = (perfilIndex: number, variedadeId?: string) => {
     if (!andarSelecionado) return;
+
+    if (isMudas) {
+      // Mudas: toggle perfil ativo/inativo
+      updateData((prev) => ({
+        ...prev,
+        andares: prev.andares.map((a) => {
+          if (a.id !== andarSelecionado.id) return a;
+          const perfis = (a.perfis || gerarPerfisIniciais()).map((p) => {
+            if (p.perfilIndex !== perfilIndex) return p;
+            return { ...p, ativo: !p.ativo };
+          });
+          return { ...a, perfis };
+        }),
+      }));
+      return;
+    }
+
+    // Vegetativa/Maturação: toggle furos do perfil
     const newStatus: FuroStatus = modoFuros === 'transplantio' ? 'plantado' : 'colhido';
     updateData((prev) => ({
       ...prev,
@@ -176,15 +192,79 @@ export default function TorreDetail() {
         const furos = a.furos.map((f) => {
           if (f.perfilIndex !== perfilIndex) return f;
           if (allTarget) return { ...f, status: 'vazio' as FuroStatus, variedadeId: undefined };
-          return { ...f, status: newStatus, variedadeId: variedadeSelect || undefined };
+          return { ...f, status: newStatus, variedadeId: variedadeId || f.variedadeId };
         });
         return { ...a, furos };
       }),
     }));
   };
 
+  const handlePerfilVariedadeChange = (perfilIndex: number, variedadeId: string) => {
+    if (!andarSelecionado) return;
+    updateData((prev) => ({
+      ...prev,
+      andares: prev.andares.map((a) => {
+        if (a.id !== andarSelecionado.id) return a;
+        const perfis = (a.perfis || gerarPerfisIniciais()).map((p) => {
+          if (p.perfilIndex !== perfilIndex) return p;
+          return { ...p, variedadeId };
+        });
+        // Atualizar variedadeId dos furos desse perfil também
+        const furos = (a.furos || []).map((f) => {
+          if (f.perfilIndex !== perfilIndex) return f;
+          if (f.status !== 'vazio') return { ...f, variedadeId };
+          return f;
+        });
+        return { ...a, perfis, furos };
+      }),
+    }));
+    toast.success(`Variedade do Perfil ${perfilIndex + 1} atualizada!`);
+  };
+
+  const handleAndarVariedadeTodos = (variedadeId: string) => {
+    if (!andarSelecionado) return;
+    updateData((prev) => ({
+      ...prev,
+      andares: prev.andares.map((a) => {
+        if (a.id !== andarSelecionado.id) return a;
+        const perfis = (a.perfis || gerarPerfisIniciais()).map((p) => ({ ...p, variedadeId }));
+        const furos = (a.furos || []).map((f) => {
+          if (f.status !== 'vazio') return { ...f, variedadeId };
+          return f;
+        });
+        // Atualizar variedadeIds do andar
+        const variedade = data.variedades.find((v) => v.id === variedadeId);
+        return {
+          ...a,
+          perfis,
+          furos,
+          variedadeIds: [variedadeId],
+          variedades: variedade ? [variedade.nome] : a.variedades,
+        };
+      }),
+    }));
+    const variedade = data.variedades.find((v) => v.id === variedadeId);
+    toast.success(`Todos os perfis: ${variedade?.nome || variedadeId}`);
+  };
+
   const handleAndarTodo = () => {
     if (!andarSelecionado) return;
+
+    if (isMudas) {
+      // Toggle todos os perfis
+      updateData((prev) => ({
+        ...prev,
+        andares: prev.andares.map((a) => {
+          if (a.id !== andarSelecionado.id) return a;
+          const perfis = a.perfis || gerarPerfisIniciais();
+          const allAtivo = perfis.every((p) => p.ativo);
+          return { ...a, perfis: perfis.map((p) => ({ ...p, ativo: !allAtivo })) };
+        }),
+      }));
+      return;
+    }
+
+    // Vegetativa/Maturação
     const newStatus: FuroStatus = modoFuros === 'transplantio' ? 'plantado' : 'colhido';
     updateData((prev) => ({
       ...prev,
@@ -193,9 +273,9 @@ export default function TorreDetail() {
         const allTarget = a.furos.every((f) => f.status === newStatus);
         const furos = a.furos.map((f) => {
           if (allTarget) return { ...f, status: 'vazio' as FuroStatus, variedadeId: undefined };
-          return { ...f, status: newStatus, variedadeId: variedadeSelect || undefined };
+          const perfil = (a.perfis || []).find((p) => p.perfilIndex === f.perfilIndex);
+          return { ...f, status: newStatus, variedadeId: perfil?.variedadeId || f.variedadeId };
         });
-        // Se colheita total, marcar para lavagem
         const isColheitaTotal = !allTarget && modoFuros === 'colheita';
         return {
           ...a,
@@ -238,12 +318,22 @@ export default function TorreDetail() {
 
   const handleClearAndar = () => {
     if (!andarSelecionado) return;
-    if (!window.confirm('Limpar dados deste andar? (variedades, data de entrada, furos e aplicações)')) return;
+    if (!window.confirm('Limpar dados deste andar? (variedades, data de entrada, furos/perfis e aplicações)')) return;
     updateData((prev) => ({
       ...prev,
       andares: prev.andares.map((a) =>
         a.id === andarSelecionado.id
-          ? { ...a, variedades: [], variedadeIds: [], dataEntrada: null, aplicacoes: [], furos: a.furos.map((f) => ({ ...f, status: 'vazio' as FuroStatus, variedadeId: undefined })), lavado: true, dataColheitaTotal: undefined }
+          ? {
+              ...a,
+              variedades: [],
+              variedadeIds: [],
+              dataEntrada: null,
+              aplicacoes: [],
+              furos: a.furos.map((f) => ({ ...f, status: 'vazio' as FuroStatus, variedadeId: undefined })),
+              perfis: gerarPerfisIniciais(),
+              lavado: true,
+              dataColheitaTotal: undefined,
+            }
           : a
       ),
     }));
@@ -281,15 +371,15 @@ export default function TorreDetail() {
     const qtdTransplantada = parseInt(fd.get('qtdTransplantada') as string) || 0;
     const qtdDesperdicio = parseInt(fd.get('qtdDesperdicio') as string) || 0;
 
-    if (!variedadeSelect) { toast.error('Selecione a variedade'); return; }
+    if (!variedadeTransplantio) { toast.error('Selecione a variedade'); return; }
 
-    const variedade = data.variedades.find((v) => v.id === variedadeSelect);
+    const variedade = data.variedades.find((v) => v.id === variedadeTransplantio);
     const registro: RegistroTransplantio = {
       id: gerarId(),
       dataHora: new Date().toISOString(),
       faseOrigem: torre.fase === 'mudas' ? 'germinacao' : torre.fase === 'vegetativa' ? 'mudas' : 'vegetativa',
       faseDestino: torre.fase,
-      variedadeId: variedadeSelect,
+      variedadeId: variedadeTransplantio,
       variedadeNome: variedade?.nome || '',
       quantidadeTransplantada: qtdTransplantada,
       quantidadeDesperdicio: qtdDesperdicio,
@@ -305,7 +395,21 @@ export default function TorreDetail() {
 
     setShowTransplantio(false);
     setMotivoDesperdicio('');
+    setVariedadeTransplantio('');
     toast.success('Transplantio registrado!');
+  };
+
+  // Modos disponíveis conforme a fase
+  const modosDisponiveis = isMudas
+    ? ['visualizacao', 'transplantio'] as const
+    : isMaturacao
+    ? ['visualizacao', 'transplantio', 'colheita'] as const
+    : ['visualizacao', 'transplantio'] as const;
+
+  const modoLabels: Record<string, string> = {
+    visualizacao: 'Visualizar',
+    transplantio: 'Plantar',
+    colheita: 'Colher',
   };
 
   return (
@@ -327,17 +431,22 @@ export default function TorreDetail() {
             <div className="bg-card rounded-xl shadow-sm border p-4">
               <h2 className="font-display font-bold text-lg">{torre.nome}</h2>
               <p className="text-xs text-muted-foreground mb-3">
-                {torre.andares} andares &middot; {fConfig.label} &middot; Ciclo {fConfig.diasCiclo}d (padrão)
+                {torre.andares} andares &middot; {fConfig.label}
+                {isMudas ? ' · Perfis abertos' : ' · 6x6 furos'}
               </p>
-              <div className="grid grid-cols-2 gap-2 text-center">
+              <div className={`grid ${isMaturacao ? 'grid-cols-2' : 'grid-cols-1'} gap-2 text-center`}>
                 <div className="p-2 bg-emerald-50 rounded-lg">
                   <p className="font-display font-bold text-lg text-emerald-700">{totalPlantasTorre}</p>
-                  <p className="text-[10px] text-muted-foreground">Plantas Ativas</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {isMudas ? 'Perfis Ativos' : 'Plantas Ativas'}
+                  </p>
                 </div>
-                <div className="p-2 bg-amber-50 rounded-lg">
-                  <p className="font-display font-bold text-lg text-amber-700">{totalColhidasTorre}</p>
-                  <p className="text-[10px] text-muted-foreground">Colhidas</p>
-                </div>
+                {isMaturacao && (
+                  <div className="p-2 bg-amber-50 rounded-lg">
+                    <p className="font-display font-bold text-lg text-amber-700">{totalColhidasTorre}</p>
+                    <p className="text-[10px] text-muted-foreground">Colhidas</p>
+                  </div>
+                )}
               </div>
               {manutencoesTorre.length > 0 && (
                 <div className="mt-3 p-2 bg-red-50 rounded-lg flex items-center gap-2">
@@ -354,11 +463,21 @@ export default function TorreDetail() {
               </div>
               <div className="max-h-[500px] overflow-y-auto">
                 {andares.map((andar) => {
-                  const varId = andar.variedadeIds?.[0];
-                  const plantadas = contarPlantasAndar(andar);
-                  const rest = andar.dataEntrada ? diasRestantes(andar.dataEntrada, torre.fase, varId, data.variedades, data.fasesConfig) : null;
+                  const varId = variedadePrincipalAndar(andar);
+                  const plantadas = contarPlantasAndar(andar, torre.fase);
+                  const rest = andar.dataEntrada ? diasRestantes(andar.dataEntrada, torre.fase, varId, data.variedades) : null;
                   const precisaLavar = andarPrecisaLavagem(andar);
                   const isSelected = andar.id === selectedAndar;
+                  const maxSlots = isMudas ? 6 : 36;
+
+                  // Variedades no andar
+                  const perfisAtivos = (andar.perfis || []).filter((p) => p.ativo && p.variedadeId);
+                  const varNomesSet = new Set<string>();
+                  perfisAtivos.forEach((p) => {
+                    const v = data.variedades.find((vr) => vr.id === p.variedadeId);
+                    if (v?.nome) varNomesSet.add(v.nome);
+                  });
+                  const varNomes = Array.from(varNomesSet);
 
                   return (
                     <button
@@ -382,14 +501,14 @@ export default function TorreDetail() {
                         </div>
                         <div className="flex items-center gap-2">
                           {plantadas > 0 && (
-                            <span className="text-[10px] text-emerald-600 font-medium">{plantadas}/36</span>
+                            <span className="text-[10px] text-emerald-600 font-medium">{plantadas}/{maxSlots}</span>
                           )}
                           {precisaLavar && (
                             <span className="text-[10px] bg-red-100 text-red-700 px-1 py-0.5 rounded font-semibold">LAVAR</span>
                           )}
-                          {andar.variedades.length > 0 && (
+                          {varNomes.length > 0 && (
                             <span className="text-[10px] text-muted-foreground truncate max-w-[80px]">
-                              {andar.variedades.join(', ')}
+                              {varNomes.join(', ')}
                             </span>
                           )}
                         </div>
@@ -471,15 +590,29 @@ export default function TorreDetail() {
                           .slice(0, 20)
                           .map((item) => (
                             <div key={item.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50 text-xs">
-                              <div>
-                                {item._type === 'medicao' ? (
-                                  <span className="flex items-center gap-1"><Beaker className="w-3 h-3 text-blue-500" />EC: {(item as MedicaoCaixa).ec} | pH: {(item as MedicaoCaixa).ph}</span>
-                                ) : (
-                                  <span className="flex items-center gap-1"><Plus className="w-3 h-3 text-emerald-500" />{(item as AplicacaoCaixa).produto} ({(item as AplicacaoCaixa).quantidade})</span>
-                                )}
-                                <p className="text-[10px] text-muted-foreground mt-0.5">{formatarDataHora(item.dataHora)}</p>
-                              </div>
-                              <button onClick={() => { if (item._type === 'medicao') handleDeleteMedicao(item.id); else handleDeleteAplicacaoCaixa(item.id); }} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="w-3 h-3" /></button>
+                              {item._type === 'medicao' ? (
+                                <div>
+                                  <p className="font-medium">
+                                    EC <span className={ecForaRange((item as MedicaoCaixa).ec, torre.fase, data.fasesConfig) !== 'ok' ? 'text-red-600' : 'text-emerald-600'}>{(item as MedicaoCaixa).ec}</span>
+                                    {' · '}
+                                    pH <span className={phForaRange((item as MedicaoCaixa).ph, torre.fase, data.fasesConfig) !== 'ok' ? 'text-red-600' : 'text-emerald-600'}>{(item as MedicaoCaixa).ph}</span>
+                                  </p>
+                                  <p className="text-[10px] text-muted-foreground">Medição · {formatarDataHora(item.dataHora)}</p>
+                                </div>
+                              ) : (
+                                <div>
+                                  <p className="font-medium">{(item as AplicacaoCaixa).produto} ({(item as AplicacaoCaixa).quantidade})</p>
+                                  <p className="text-[10px] text-muted-foreground">
+                                    {TIPOS_APLICACAO_CAIXA.find((t) => t.value === (item as AplicacaoCaixa).tipo)?.label} · {formatarDataHora(item.dataHora)}
+                                  </p>
+                                </div>
+                              )}
+                              <button
+                                onClick={() => item._type === 'medicao' ? handleDeleteMedicao(item.id) : handleDeleteAplicacaoCaixa(item.id)}
+                                className="text-muted-foreground hover:text-destructive p-1"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
                             </div>
                           ))}
                       </div>
@@ -489,21 +622,25 @@ export default function TorreDetail() {
               </motion.div>
             )}
 
-            {/* Andar detail */}
+            {/* Andar selecionado — Painel UNIFICADO */}
             {andarSelecionado && (
-              <motion.div key={andarSelecionado.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl shadow-sm border overflow-hidden">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl shadow-sm border overflow-hidden">
                 <div className="p-4 border-b flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Leaf className="w-5 h-5 text-emerald-600" />
-                    <div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Leaf className="w-4 h-4 text-emerald-600" />
                       <h3 className="font-display font-bold text-sm">Andar {andarSelecionado.numero}</h3>
-                      {andarSelecionado.dataEntrada && (
-                        <p className="text-[10px] text-muted-foreground">
-                          {diasDecorridos(andarSelecionado.dataEntrada)}d &middot;
-                          {labelPrevisao(torre.fase)}: {formatarData(dataPrevista(andarSelecionado.dataEntrada, torre.fase, andarSelecionado.variedadeIds?.[0], data.variedades, data.fasesConfig))}
-                        </p>
-                      )}
                     </div>
+                    {andarSelecionado.dataEntrada && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {diasDecorridos(andarSelecionado.dataEntrada)}d decorridos
+                        {(() => {
+                          const varId = variedadePrincipalAndar(andarSelecionado);
+                          const prev = dataPrevista(andarSelecionado.dataEntrada, torre.fase, varId, data.variedades);
+                          return prev ? ` · ${labelPrevisao(torre.fase)}: ${formatarData(prev)}` : '';
+                        })()}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-1">
                     <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => setShowTransplantio(true)}>
@@ -532,128 +669,122 @@ export default function TorreDetail() {
                 )}
 
                 <div className="p-4">
-                  <Tabs defaultValue="furos">
-                    <TabsList className="w-full mb-3">
-                      <TabsTrigger value="furos" className="flex-1 text-xs">Perfis/Furos</TabsTrigger>
-                      <TabsTrigger value="dados" className="flex-1 text-xs">Dados</TabsTrigger>
-                      <TabsTrigger value="aplicar" className="flex-1 text-xs">Aplicação</TabsTrigger>
-                      <TabsTrigger value="hist" className="flex-1 text-xs">Histórico</TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="furos">
-                      {/* Modo selector */}
-                      <div className="flex gap-2 mb-3">
-                        {(['visualizacao', 'transplantio', 'colheita'] as const).map((m) => (
-                          <button
-                            key={m}
-                            type="button"
-                            onClick={() => setModoFuros(m)}
-                            className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                              modoFuros === m
-                                ? m === 'transplantio' ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
-                                : m === 'colheita' ? 'bg-amber-100 text-amber-700 border-amber-300'
-                                : 'bg-primary/10 text-primary border-primary/30'
-                                : 'bg-muted text-muted-foreground border-border hover:bg-accent'
-                            }`}
-                          >
-                            {m === 'visualizacao' ? 'Visualizar' : m === 'transplantio' ? 'Plantar' : 'Colher'}
-                          </button>
-                        ))}
+                  {/* Data de entrada */}
+                  <form onSubmit={handleUpdateAndar} className="mb-4 p-3 bg-muted/30 rounded-lg border border-dashed">
+                    <div className="flex items-end gap-3">
+                      <div className="flex-1">
+                        <Label className="text-xs">Data de Entrada</Label>
+                        <Input
+                          name="dataEntrada"
+                          type="date"
+                          defaultValue={andarSelecionado.dataEntrada ? new Date(andarSelecionado.dataEntrada).toISOString().split('T')[0] : ''}
+                          className="h-8 text-sm"
+                          key={andarSelecionado.id + '-date'}
+                        />
                       </div>
-
-                      {/* Variedade select for transplantio */}
-                      {modoFuros !== 'visualizacao' && (
-                        <div className="mb-3">
-                          <Label className="text-xs">Variedade</Label>
-                          <Select value={variedadeSelect} onValueChange={setVariedadeSelect}>
-                            <SelectTrigger className="h-8 text-xs">
-                              <SelectValue placeholder="Selecione variedade..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {data.variedades.map((v) => (
-                                <SelectItem key={v.id} value={v.id}>
-                                  {v.nome} ({torre.fase === 'mudas' ? v.diasMudas : torre.fase === 'vegetativa' ? v.diasVegetativa : v.diasMaturacao}d)
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                      <Button type="submit" size="sm" className="h-8 text-xs">Salvar Data</Button>
+                    </div>
+                    {andarSelecionado.dataEntrada && (
+                      <div className="grid grid-cols-2 gap-2 mt-2 text-center">
+                        <div className="p-1.5 rounded bg-background">
+                          <p className="text-[10px] text-muted-foreground">Dias Decorridos</p>
+                          <p className="font-display font-bold text-base">{diasDecorridos(andarSelecionado.dataEntrada)}</p>
                         </div>
-                      )}
-
-                      <PerfilFurosGrid
-                        furos={andarSelecionado.furos || []}
-                        modo={modoFuros}
-                        onFuroToggle={handleFuroToggle}
-                        onPerfilToggle={handlePerfilToggle}
-                        onAndarTodo={handleAndarTodo}
-                        variedadeNome={data.variedades.find((v) => v.id === variedadeSelect)?.nome}
-                      />
-                    </TabsContent>
-
-                    <TabsContent value="dados">
-                      <form onSubmit={handleUpdateAndar} className="space-y-3">
-                        <div>
-                          <Label className="text-xs">Variedades (separar por vírgula)</Label>
-                          <Input name="variedades" defaultValue={andarSelecionado.variedades.join(', ')} placeholder="Ex: Alface Crespa, Rúcula" className="h-9 text-sm" list="variedades-list" />
-                          <datalist id="variedades-list">{data.variedades.map((v) => (<option key={v.id} value={v.nome} />))}</datalist>
-                        </div>
-                        <div>
-                          <Label className="text-xs">Data de Entrada</Label>
-                          <Input name="dataEntrada" type="date" defaultValue={andarSelecionado.dataEntrada ? new Date(andarSelecionado.dataEntrada).toISOString().split('T')[0] : ''} className="h-9 text-sm" />
-                        </div>
-                        {andarSelecionado.dataEntrada && (
-                          <div className="grid grid-cols-2 gap-2 p-3 rounded-lg bg-muted/50">
-                            <div className="text-center">
-                              <p className="text-[10px] text-muted-foreground">Dias Decorridos</p>
-                              <p className="font-display font-bold text-lg">{diasDecorridos(andarSelecionado.dataEntrada)}</p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-[10px] text-muted-foreground">{labelPrevisao(torre.fase)} em</p>
-                              <p className={`font-display font-bold text-lg ${
-                                (diasRestantes(andarSelecionado.dataEntrada, torre.fase, andarSelecionado.variedadeIds?.[0], data.variedades, data.fasesConfig) ?? 999) <= 0 ? 'text-red-600' :
-                                (diasRestantes(andarSelecionado.dataEntrada, torre.fase, andarSelecionado.variedadeIds?.[0], data.variedades, data.fasesConfig) ?? 999) <= 3 ? 'text-amber-600' : 'text-emerald-600'
+                        <div className="p-1.5 rounded bg-background">
+                          <p className="text-[10px] text-muted-foreground">{labelPrevisao(torre.fase)} em</p>
+                          {(() => {
+                            const varId = variedadePrincipalAndar(andarSelecionado);
+                            const rest = diasRestantes(andarSelecionado.dataEntrada, torre.fase, varId, data.variedades);
+                            return (
+                              <p className={`font-display font-bold text-base ${
+                                rest === null ? 'text-muted-foreground' :
+                                rest <= 0 ? 'text-red-600' :
+                                rest <= 3 ? 'text-amber-600' : 'text-emerald-600'
                               }`}>
-                                {diasRestantes(andarSelecionado.dataEntrada, torre.fase, andarSelecionado.variedadeIds?.[0], data.variedades, data.fasesConfig)}d
+                                {rest !== null ? `${rest}d` : 'Defina variedade'}
                               </p>
-                            </div>
-                          </div>
-                        )}
-                        <Button type="submit" size="sm" className="w-full">Salvar Dados do Andar</Button>
-                      </form>
-                    </TabsContent>
-
-                    <TabsContent value="aplicar">
-                      <form onSubmit={handleAddAplicacaoAndar} className="space-y-3">
-                        <div><Label className="text-xs">Tipo</Label>
-                          <Select value={tipoAndar} onValueChange={setTipoAndar}><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Selecione o tipo..." /></SelectTrigger><SelectContent>{TIPOS_APLICACAO_ANDAR.map((t) => (<SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>))}</SelectContent></Select>
+                            );
+                          })()}
                         </div>
-                        <div><Label className="text-xs">Produto</Label><Input name="produto" placeholder="Ex: Solução nutritiva A" className="h-9 text-sm" required /></div>
-                        <div><Label className="text-xs">Quantidade</Label><Input name="quantidade" placeholder="Ex: 10ml" className="h-9 text-sm" /></div>
-                        <div><Label className="text-xs">Data/Hora</Label><Input name="dataHora" type="datetime-local" defaultValue={localDatetime} className="h-9 text-sm" required /></div>
-                        <Button type="submit" size="sm" className="w-full">Registrar Aplicação</Button>
-                      </form>
-                    </TabsContent>
-
-                    <TabsContent value="hist">
-                      <div className="max-h-48 overflow-y-auto space-y-2">
-                        {andarSelecionado.aplicacoes.length === 0 ? (
-                          <p className="text-xs text-muted-foreground text-center py-4">Nenhuma aplicação registrada.</p>
-                        ) : (
-                          andarSelecionado.aplicacoes
-                            .sort((a, b) => new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime())
-                            .map((apl) => (
-                              <div key={apl.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50 text-xs">
-                                <div>
-                                  <p className="font-medium">{apl.produto} ({apl.quantidade})</p>
-                                  <p className="text-[10px] text-muted-foreground">{TIPOS_APLICACAO_ANDAR.find((t) => t.value === apl.tipo)?.label} &middot; {formatarDataHora(apl.dataHora)}</p>
-                                </div>
-                                <button onClick={() => handleDeleteAplicacaoAndar(apl.id)} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="w-3 h-3" /></button>
-                              </div>
-                            ))
-                        )}
                       </div>
-                    </TabsContent>
-                  </Tabs>
+                    )}
+                  </form>
+
+                  {/* Modo selector */}
+                  <div className="flex gap-2 mb-3">
+                    {modosDisponiveis.map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setModoFuros(m)}
+                        className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                          modoFuros === m
+                            ? m === 'transplantio' ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
+                            : m === 'colheita' ? 'bg-amber-100 text-amber-700 border-amber-300'
+                            : 'bg-primary/10 text-primary border-primary/30'
+                            : 'bg-muted text-muted-foreground border-border hover:bg-accent'
+                        }`}
+                      >
+                        {modoLabels[m]}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Grid de perfis/furos */}
+                  <PerfilFurosGrid
+                    furos={andarSelecionado.furos || []}
+                    perfis={andarSelecionado.perfis || gerarPerfisIniciais()}
+                    fase={torre.fase}
+                    modo={modoFuros}
+                    variedades={data.variedades}
+                    onFuroToggle={handleFuroToggle}
+                    onPerfilToggle={handlePerfilToggle}
+                    onPerfilVariedadeChange={handlePerfilVariedadeChange}
+                    onAndarTodo={handleAndarTodo}
+                    onAndarVariedadeTodos={handleAndarVariedadeTodos}
+                  />
+
+                  {/* Aplicações no andar */}
+                  <div className="mt-4 pt-4 border-t">
+                    <Tabs defaultValue="aplicar">
+                      <TabsList className="w-full mb-3">
+                        <TabsTrigger value="aplicar" className="flex-1 text-xs">Aplicação</TabsTrigger>
+                        <TabsTrigger value="hist" className="flex-1 text-xs">Histórico</TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent value="aplicar">
+                        <form onSubmit={handleAddAplicacaoAndar} className="space-y-3">
+                          <div><Label className="text-xs">Tipo</Label>
+                            <Select value={tipoAndar} onValueChange={setTipoAndar}><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Selecione o tipo..." /></SelectTrigger><SelectContent>{TIPOS_APLICACAO_ANDAR.map((t) => (<SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>))}</SelectContent></Select>
+                          </div>
+                          <div><Label className="text-xs">Produto</Label><Input name="produto" placeholder="Ex: Solução nutritiva A" className="h-9 text-sm" required /></div>
+                          <div><Label className="text-xs">Quantidade</Label><Input name="quantidade" placeholder="Ex: 10ml" className="h-9 text-sm" /></div>
+                          <div><Label className="text-xs">Data/Hora</Label><Input name="dataHora" type="datetime-local" defaultValue={localDatetime} className="h-9 text-sm" required /></div>
+                          <Button type="submit" size="sm" className="w-full">Registrar Aplicação</Button>
+                        </form>
+                      </TabsContent>
+
+                      <TabsContent value="hist">
+                        <div className="max-h-48 overflow-y-auto space-y-2">
+                          {andarSelecionado.aplicacoes.length === 0 ? (
+                            <p className="text-xs text-muted-foreground text-center py-4">Nenhuma aplicação registrada.</p>
+                          ) : (
+                            andarSelecionado.aplicacoes
+                              .sort((a, b) => new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime())
+                              .map((apl) => (
+                                <div key={apl.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50 text-xs">
+                                  <div>
+                                    <p className="font-medium">{apl.produto} ({apl.quantidade})</p>
+                                    <p className="text-[10px] text-muted-foreground">{TIPOS_APLICACAO_ANDAR.find((t) => t.value === apl.tipo)?.label} · {formatarDataHora(apl.dataHora)}</p>
+                                  </div>
+                                  <button onClick={() => handleDeleteAplicacaoAndar(apl.id)} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="w-3 h-3" /></button>
+                                </div>
+                              ))
+                          )}
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -667,17 +798,24 @@ export default function TorreDetail() {
                 <form onSubmit={handleRegistrarTransplantio} className="space-y-4">
                   <div>
                     <Label className="text-xs">Variedade</Label>
-                    <Select value={variedadeSelect} onValueChange={setVariedadeSelect}>
+                    <Select value={variedadeTransplantio} onValueChange={setVariedadeTransplantio}>
                       <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>{data.variedades.map((v) => (<SelectItem key={v.id} value={v.id}>{v.nome}</SelectItem>))}</SelectContent>
                     </Select>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label className="text-xs">Transplantadas</Label><Input name="qtdTransplantada" type="number" min="0" placeholder="0" className="h-9 text-sm" /></div>
-                    <div><Label className="text-xs">Desperdício</Label><Input name="qtdDesperdicio" type="number" min="0" placeholder="0" className="h-9 text-sm" /></div>
+                    <div>
+                      <Label className="text-xs">
+                        {torre.fase === 'mudas' ? 'Não germinadas' : 'Desperdício'}
+                      </Label>
+                      <Input name="qtdDesperdicio" type="number" min="0" placeholder="0" className="h-9 text-sm" />
+                    </div>
                   </div>
                   <div>
-                    <Label className="text-xs">Motivo do Desperdício</Label>
+                    <Label className="text-xs">
+                      {torre.fase === 'mudas' ? 'Motivo' : 'Motivo do Desperdício'}
+                    </Label>
                     <Select value={motivoDesperdicio} onValueChange={setMotivoDesperdicio}>
                       <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>{MOTIVOS_DESPERDICIO.map((m) => (<SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>))}</SelectContent>
