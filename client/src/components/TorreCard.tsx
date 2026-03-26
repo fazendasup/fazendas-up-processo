@@ -12,6 +12,7 @@ import {
   contarPlantasAndar,
   contarColhidasAndar,
   andarPrecisaLavagem,
+  andarOcupado,
   variedadePrincipalAndar,
 } from '@/lib/utils-farm';
 import { AlertTriangle, Droplets, ChevronRight, Sprout, Scissors, Droplet } from 'lucide-react';
@@ -26,7 +27,7 @@ export default function TorreCard({ torre }: TorreCardProps) {
   const andares = data.andares.filter((a) => a.torreId === torre.id).sort((a, b) => a.numero - b.numero);
   const caixa = data.caixasAgua.find((c) => c.id === torre.caixaAguaId);
   const alertas = contarAlertasTorre(torre, andares, data.ciclos, data.variedades, data.fasesConfig, data.manutencoes);
-  const andaresOcupados = andares.filter((a) => a.dataEntrada).length;
+  const andaresOcupados = andares.filter((a) => andarOcupado(a, torre.fase)).length;
 
   const isMaturacao = torre.fase === 'maturacao';
   const totalPlantas = andares.reduce((sum, a) => sum + contarPlantasAndar(a, torre.fase), 0);
@@ -61,7 +62,7 @@ export default function TorreCard({ torre }: TorreCardProps) {
           {/* Mini tower visualization */}
           <div className="flex gap-0.5 mb-3 h-14">
             {andares.map((andar) => {
-              const ocupado = !!andar.dataEntrada;
+              const ocupado = andarOcupado(andar, torre.fase);
               const precisaLavar = andarPrecisaLavagem(andar);
               let bgColor = 'bg-muted';
               if (precisaLavar) {

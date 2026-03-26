@@ -165,6 +165,15 @@ export function contarVaziosAndar(andar: Andar, fase?: Fase): number {
   return andar.furos.filter((f) => f.status === 'vazio').length;
 }
 
+/** Verifica se um andar está ocupado (tem plantas ou perfis ativos) */
+export function andarOcupado(andar: Andar, fase?: Fase): boolean {
+  if (fase === 'mudas') {
+    return (andar.perfis || []).some((p) => p.ativo);
+  }
+  if (andar.furos && andar.furos.some((f) => f.status === 'plantado' || f.status === 'colhido')) return true;
+  return !!andar.dataEntrada;
+}
+
 /** Verifica se andar precisa de lavagem pós-colheita */
 export function andarPrecisaLavagem(andar: Andar): boolean {
   if (!andar.dataColheitaTotal) return false;
@@ -341,7 +350,10 @@ export function calcularKPIs(data: FazendaData): FazendaKPIs {
 export function resumoFazenda(data: FazendaData) {
   const totalTorres = data.torres.length;
   const totalAndares = data.andares.length;
-  const andaresOcupados = data.andares.filter((a) => a.dataEntrada).length;
+  const andaresOcupados = data.andares.filter((a) => {
+    const torre = data.torres.find((t) => t.id === a.torreId);
+    return andarOcupado(a, torre?.fase);
+  }).length;
   const ciclosPendentes = data.ciclos.filter((c) => cicloPendenteHoje(c)).length;
 
   let ultimaMedicao: string | null = null;
