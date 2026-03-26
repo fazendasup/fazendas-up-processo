@@ -1,47 +1,35 @@
 // ============================================================
-// ManutencaoPage — Registro de manutenção por torre/andar
-// Tipos: vazamento injetor/coletor, lâmpadas, outros
+// ManutencaoPage — Migrado para tRPC mutations
 // ============================================================
 
 import Header from '@/components/Header';
 import { useFazenda } from '@/contexts/FazendaContext';
 import type { Manutencao, ManutencaoStatus } from '@/lib/types';
 import { MANUTENCAO_TIPOS } from '@/lib/types';
-import { gerarId, formatarData, formatarDataHora } from '@/lib/utils-farm';
+import { formatarData, formatarDataHora } from '@/lib/utils-farm';
+import { useFazendaMutations } from '@/hooks/useFazendaMutations';
+import { useDbIdResolver } from '@/hooks/useDbIdResolver';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from '@/components/ui/dialog';
 import {
-  Wrench,
-  Plus,
-  Trash2,
-  CheckCircle2,
-  AlertTriangle,
-  Clock,
-  Play,
+  Wrench, Plus, Trash2, CheckCircle2, AlertTriangle, Clock, Play,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
 export default function ManutencaoPage() {
-  const { data, updateData } = useFazenda();
+  const { data } = useFazenda();
+  const mutations = useFazendaMutations();
+  const resolver = useDbIdResolver();
   const [showForm, setShowForm] = useState(false);
   const [torreId, setTorreId] = useState<string>('');
   const [tipo, setTipo] = useState<string>('');
@@ -60,22 +48,18 @@ export default function ManutencaoPage() {
       return;
     }
 
-    const manutencao: Manutencao = {
-      id: gerarId(),
-      torreId,
-      andarNumero,
-      tipo: tipo as Manutencao['tipo'],
-      descricao,
-      dataAbertura: new Date().toISOString(),
-      prazo: prazo ? new Date(prazo).toISOString() : undefined,
-      status: 'aberta',
-      lampadaIndex: tipo === 'lampada_queimada' && !isNaN(lampadaIndex) ? lampadaIndex : undefined,
-    };
+    const torreDbId = resolver.torreSlugToId.get(torreId);
+    if (!torreDbId) { toast.error('Torre não encontrada'); return; }
 
-    updateData((prev) => ({
-      ...prev,
-      manutencoes: [...prev.manutencoes, manutencao],
-    }));
+    mutations.createManutencao.mutate({
+      torreId: torreDbId,
+      andarNumero: andarNumero || undefined,
+      tipo,
+      descricao,
+      dataAbertura: new Date(),
+      prazo: prazo ? new Date(prazo) : undefined,
+      lampadaIndex: tipo === 'lampada_queimada' && !isNaN(lampadaIndex) ? lampadaIndex : undefined,
+    });
 
     setShowForm(false);
     setTorreId('');
@@ -84,34 +68,30 @@ export default function ManutencaoPage() {
   };
 
   const handleIniciar = (id: string) => {
-    updateData((prev) => ({
-      ...prev,
-      manutencoes: prev.manutencoes.map((m) =>
-        m.id === id ? { ...m, status: 'em_andamento' as ManutencaoStatus } : m
-      ),
-    }));
+    const dbId = resolver.manutencaoFrontIdToDbId.get(id);
+    if (!dbId) return;
+    mutations.updateManutencao.mutate({ id: dbId, status: 'em_andamento' });
     toast.success('Manutenção iniciada!');
   };
 
   const handleConcluir = (id: string, solucao: string) => {
-    updateData((prev) => ({
-      ...prev,
-      manutencoes: prev.manutencoes.map((m) =>
-        m.id === id
-          ? { ...m, status: 'concluida' as ManutencaoStatus, dataConclusao: new Date().toISOString(), solucao }
-          : m
-      ),
-    }));
+    const dbId = resolver.manutencaoFrontIdToDbId.get(id);
+    if (!dbId) return;
+    mutations.updateManutencao.mutate({
+      id: dbId,
+      status: 'concluida',
+      dataConclusao: new Date(),
+      solucao,
+    });
     setShowConcluir(null);
     toast.success('Manutenção concluída!');
   };
 
   const handleDelete = (id: string) => {
     if (!window.confirm('Excluir esta manutenção?')) return;
-    updateData((prev) => ({
-      ...prev,
-      manutencoes: prev.manutencoes.filter((m) => m.id !== id),
-    }));
+    const dbId = resolver.manutencaoFrontIdToDbId.get(id);
+    if (!dbId) return;
+    mutations.deleteManutencao.mutate({ id: dbId });
     toast.success('Manutenção excluída!');
   };
 

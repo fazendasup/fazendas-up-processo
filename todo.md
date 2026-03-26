@@ -19,13 +19,13 @@
 
 ## Migração Frontend
 - [x] Migrar FazendaContext para usar tRPC em vez de LocalStorage
-- [ ] Migrar Home.tsx (Dashboard) para tRPC
-- [ ] Migrar TorreDetail.tsx para tRPC
-- [ ] Migrar CiclosPage.tsx para tRPC
-- [ ] Migrar ConfigPage.tsx para tRPC
-- [ ] Migrar GerminacaoPage.tsx para tRPC
-- [ ] Migrar ManutencaoPage.tsx para tRPC
-- [ ] Migrar Header.tsx (export/import) para tRPC
+- [x] Migrar Home.tsx (Dashboard) para tRPC (leitura via FazendaContext)
+- [x] Migrar TorreDetail.tsx para tRPC
+- [x] Migrar CiclosPage.tsx para tRPC
+- [x] Migrar ConfigPage.tsx para tRPC
+- [x] Migrar GerminacaoPage.tsx para tRPC
+- [x] Migrar ManutencaoPage.tsx para tRPC
+- [x] Migrar Header.tsx (export/backup/reset) para tRPC
 
 ## Testes
 - [ ] Testes Vitest para rotas de Torres

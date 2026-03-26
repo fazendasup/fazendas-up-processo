@@ -1,12 +1,12 @@
 // ============================================================
-// ConfigPage v3 — Sem diasCiclo por fase (apenas por variedade)
-// Fases: apenas EC/pH ranges
+// ConfigPage — Migrado para tRPC mutations
 // ============================================================
 
 import Header from '@/components/Header';
 import { useFazenda } from '@/contexts/FazendaContext';
 import { FASES_CONFIG, VARIEDADES_PADRAO, type Fase, type VariedadeConfig } from '@/lib/types';
-import { gerarId } from '@/lib/utils-farm';
+import { useFazendaMutations } from '@/hooks/useFazendaMutations';
+import { useDbIdResolver } from '@/hooks/useDbIdResolver';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,14 +14,18 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from '@/components/ui/dialog';
 import { Settings, Save, RotateCcw, Plus, Trash2, Leaf } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
 export default function ConfigPage() {
-  const { data, updateData, resetData, backupJSON } = useFazenda();
+  const { data, exportCSV, backupJSON } = useFazenda();
+  const mutations = useFazendaMutations();
+  const resolver = useDbIdResolver();
   const [showAddVar, setShowAddVar] = useState(false);
   const [configVersion, setConfigVersion] = useState(0);
+  // Debounce timers for inline variedade edits
+  const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const fases: Fase[] = ['mudas', 'vegetativa', 'maturacao'];
 
@@ -38,26 +42,38 @@ export default function ConfigPage() {
       return;
     }
 
-    updateData((prev) => ({
-      ...prev,
-      fasesConfig: {
-        ...prev.fasesConfig,
-        [fase]: {
-          ...prev.fasesConfig[fase],
-          ecMin, ecMax, phMin, phMax,
-        },
-      },
-    }));
+    const cfg = FASES_CONFIG[fase];
+    mutations.upsertFaseConfig.mutate({
+      fase,
+      label: cfg.label,
+      ecMin,
+      ecMax,
+      phMin,
+      phMax,
+      cor: cfg.cor,
+      corLight: cfg.corLight,
+      icon: cfg.icon,
+    });
     setConfigVersion((v) => v + 1);
     toast.success(`Configurações de ${FASES_CONFIG[fase].label} salvas!`);
   };
 
   const handleResetConfig = () => {
     if (!window.confirm('Restaurar configurações padrão?')) return;
-    updateData((prev) => ({
-      ...prev,
-      fasesConfig: { ...FASES_CONFIG },
-    }));
+    fases.forEach((fase) => {
+      const cfg = FASES_CONFIG[fase];
+      mutations.upsertFaseConfig.mutate({
+        fase,
+        label: cfg.label,
+        ecMin: cfg.ecMin,
+        ecMax: cfg.ecMax,
+        phMin: cfg.phMin,
+        phMax: cfg.phMax,
+        cor: cfg.cor,
+        corLight: cfg.corLight,
+        icon: cfg.icon,
+      });
+    });
     setConfigVersion((v) => v + 1);
     toast.success('Configurações restauradas!');
   };
@@ -77,41 +93,51 @@ export default function ConfigPage() {
       return;
     }
 
-    const id = nome.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + gerarId().slice(-4);
-    const novaVar: VariedadeConfig = { id, nome, diasMudas, diasVegetativa, diasMaturacao };
-
-    updateData((prev) => ({
-      ...prev,
-      variedades: [...prev.variedades, novaVar],
-    }));
+    mutations.createVariedade.mutate({
+      nome,
+      diasMudas,
+      diasVegetativa,
+      diasMaturacao,
+    });
     setShowAddVar(false);
     toast.success(`Variedade "${nome}" adicionada!`);
   };
 
   const handleUpdateVariedade = (varId: string, field: keyof VariedadeConfig, value: string | number) => {
-    updateData((prev) => ({
-      ...prev,
-      variedades: prev.variedades.map((v) =>
-        v.id === varId ? { ...v, [field]: value } : v
-      ),
-    }));
+    const dbId = resolver.varSlugToId.get(varId);
+    if (!dbId) return;
+
+    // Debounce inline edits
+    const key = `${varId}-${field}`;
+    if (debounceTimers.current[key]) clearTimeout(debounceTimers.current[key]);
+    debounceTimers.current[key] = setTimeout(() => {
+      mutations.updateVariedade.mutate({ id: dbId, [field]: value });
+    }, 500);
   };
 
   const handleDeleteVariedade = (varId: string) => {
     if (!window.confirm('Excluir esta variedade?')) return;
-    updateData((prev) => ({
-      ...prev,
-      variedades: prev.variedades.filter((v) => v.id !== varId),
-    }));
+    const dbId = resolver.varSlugToId.get(varId);
+    if (!dbId) return;
+    mutations.deleteVariedade.mutate({ id: dbId });
     toast.success('Variedade excluída!');
   };
 
   const handleResetVariedades = () => {
     if (!window.confirm('Restaurar variedades padrão? Variedades personalizadas serão removidas.')) return;
-    updateData((prev) => ({
-      ...prev,
-      variedades: [...VARIEDADES_PADRAO],
-    }));
+    // Delete all existing, then create defaults
+    data.variedades.forEach((v) => {
+      const dbId = resolver.varSlugToId.get(v.id);
+      if (dbId) mutations.deleteVariedade.mutate({ id: dbId });
+    });
+    VARIEDADES_PADRAO.forEach((v) => {
+      mutations.createVariedade.mutate({
+        nome: v.nome,
+        diasMudas: v.diasMudas,
+        diasVegetativa: v.diasVegetativa,
+        diasMaturacao: v.diasMaturacao,
+      });
+    });
     toast.success('Variedades restauradas!');
   };
 
@@ -334,11 +360,14 @@ export default function ConfigPage() {
             <Button variant="outline" size="sm" className="text-xs" onClick={backupJSON}>
               Fazer Backup (JSON)
             </Button>
+            <Button variant="outline" size="sm" className="text-xs" onClick={exportCSV}>
+              Exportar CSV
+            </Button>
             <Button variant="outline" size="sm" className="text-xs text-destructive" onClick={() => {
-              if (window.confirm('ATENÇÃO: Isso apagará TODOS os dados. Deseja continuar?')) {
-                resetData();
-                setConfigVersion((v) => v + 1);
-                toast.success('Dados resetados!');
+              if (window.confirm('ATENÇÃO: Isso apagará TODOS os dados e recriará a estrutura padrão. Deseja continuar?')) {
+                mutations.reset.mutate();
+                toast.success('Dados resetados! Recarregando...');
+                setTimeout(() => mutations.seed.mutate(), 1000);
               }
             }}>
               Resetar Todos os Dados

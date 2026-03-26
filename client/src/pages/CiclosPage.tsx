@@ -1,47 +1,34 @@
 // ============================================================
-// CiclosPage — Cadastro e gestão de ciclos de aplicação
-// Agronomic Dashboard: ciclos globais com alertas visuais
-// Select components use controlled state
+// CiclosPage — Migrado para tRPC mutations
 // ============================================================
 
 import Header from '@/components/Header';
 import { useFazenda } from '@/contexts/FazendaContext';
 import type { CicloAplicacao, Fase } from '@/lib/types';
 import { FASES_CONFIG } from '@/lib/types';
-import { cicloPendenteHoje, gerarId, formatarDataHora, DIAS_SEMANA } from '@/lib/utils-farm';
+import { cicloPendenteHoje, formatarDataHora, DIAS_SEMANA } from '@/lib/utils-farm';
+import { useFazendaMutations } from '@/hooks/useFazendaMutations';
+import { useDbIdResolver } from '@/hooks/useDbIdResolver';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from '@/components/ui/dialog';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
-  CalendarClock,
-  Plus,
-  Trash2,
-  AlertTriangle,
-  CheckCircle2,
-  Power,
+  CalendarClock, Plus, Trash2, AlertTriangle, CheckCircle2, Power,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
 export default function CiclosPage() {
-  const { data, updateData } = useFazenda();
+  const { data } = useFazenda();
+  const mutations = useFazendaMutations();
+  const resolver = useDbIdResolver();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -86,28 +73,32 @@ export default function CiclosPage() {
       return;
     }
 
-    const ciclo: CicloAplicacao = {
-      id: editingId || gerarId(),
-      nome,
-      frequencia: frequencia as CicloAplicacao['frequencia'],
-      diasSemana: frequencia === 'semanal' ? diasSelecionados : undefined,
-      intervaloDias: frequencia === 'personalizada' ? intervaloDias : undefined,
-      produto,
-      tipo,
-      fasesAplicaveis: fasesSelecionadas,
-      alvo: alvo as CicloAplicacao['alvo'],
-      ativo: true,
-    };
-
-    updateData((prev) => {
-      if (editingId) {
-        return {
-          ...prev,
-          ciclos: prev.ciclos.map((c) => (c.id === editingId ? ciclo : c)),
-        };
-      }
-      return { ...prev, ciclos: [...prev.ciclos, ciclo] };
-    });
+    if (editingId) {
+      const dbId = resolver.cicloFrontIdToDbId.get(editingId);
+      if (!dbId) { toast.error('Ciclo não encontrado'); return; }
+      mutations.updateCiclo.mutate({
+        id: dbId,
+        nome,
+        frequencia,
+        diasSemana: frequencia === 'semanal' ? diasSelecionados : undefined,
+        intervaloDias: frequencia === 'personalizada' ? intervaloDias : undefined,
+        produto,
+        tipo,
+        fasesAplicaveis: fasesSelecionadas,
+        alvo,
+      });
+    } else {
+      mutations.createCiclo.mutate({
+        nome,
+        frequencia,
+        diasSemana: frequencia === 'semanal' ? diasSelecionados : undefined,
+        intervaloDias: frequencia === 'personalizada' ? intervaloDias : undefined,
+        produto,
+        tipo,
+        fasesAplicaveis: fasesSelecionadas,
+        alvo,
+      });
+    }
 
     setShowForm(false);
     resetForm();
@@ -116,29 +107,24 @@ export default function CiclosPage() {
 
   const handleDelete = (id: string) => {
     if (!window.confirm('Excluir este ciclo?')) return;
-    updateData((prev) => ({
-      ...prev,
-      ciclos: prev.ciclos.filter((c) => c.id !== id),
-    }));
+    const dbId = resolver.cicloFrontIdToDbId.get(id);
+    if (!dbId) return;
+    mutations.deleteCiclo.mutate({ id: dbId });
     toast.success('Ciclo excluído!');
   };
 
   const handleToggle = (id: string) => {
-    updateData((prev) => ({
-      ...prev,
-      ciclos: prev.ciclos.map((c) =>
-        c.id === id ? { ...c, ativo: !c.ativo } : c
-      ),
-    }));
+    const ciclo = data.ciclos.find((c) => c.id === id);
+    if (!ciclo) return;
+    const dbId = resolver.cicloFrontIdToDbId.get(id);
+    if (!dbId) return;
+    mutations.updateCiclo.mutate({ id: dbId, ativo: !ciclo.ativo });
   };
 
   const handleMarcarExecutado = (id: string) => {
-    updateData((prev) => ({
-      ...prev,
-      ciclos: prev.ciclos.map((c) =>
-        c.id === id ? { ...c, ultimaExecucao: new Date().toISOString() } : c
-      ),
-    }));
+    const dbId = resolver.cicloFrontIdToDbId.get(id);
+    if (!dbId) return;
+    mutations.updateCiclo.mutate({ id: dbId, ultimaExecucao: new Date() });
     toast.success('Ciclo marcado como executado!');
   };
 
@@ -287,7 +273,7 @@ export default function CiclosPage() {
           >
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle className="w-4 h-4 text-amber-600" />
-              <h2 className="font-display font-bold text-base text-amber-700">
+              <h2 className="font-display font-bold text-base">
                 Pendentes Hoje ({ciclosPendentes.length})
               </h2>
             </div>

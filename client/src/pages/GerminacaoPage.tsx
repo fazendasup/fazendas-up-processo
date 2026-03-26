@@ -1,45 +1,33 @@
 // ============================================================
-// GerminacaoPage — Fase pré-mudas: plantio de sementes
-// Registra variedade, quantidade, data/hora, acompanha germinação
+// GerminacaoPage — Migrado para tRPC mutations
 // ============================================================
 
 import Header from '@/components/Header';
 import { useFazenda } from '@/contexts/FazendaContext';
 import type { LoteGerminacao } from '@/lib/types';
-import { gerarId, formatarDataHora, diasDecorridos } from '@/lib/utils-farm';
+import { formatarDataHora, diasDecorridos } from '@/lib/utils-farm';
+import { useFazendaMutations } from '@/hooks/useFazendaMutations';
+import { useDbIdResolver } from '@/hooks/useDbIdResolver';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from '@/components/ui/dialog';
 import {
-  Sprout,
-  Plus,
-  Trash2,
-  CheckCircle2,
-  Clock,
-  AlertTriangle,
-  ArrowRight,
+  Sprout, Plus, Trash2, CheckCircle2, Clock, AlertTriangle, ArrowRight,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
 export default function GerminacaoPage() {
-  const { data, updateData } = useFazenda();
+  const { data } = useFazenda();
+  const mutations = useFazendaMutations();
+  const resolver = useDbIdResolver();
   const [showForm, setShowForm] = useState(false);
   const [variedadeId, setVariedadeId] = useState<string>('');
 
@@ -62,30 +50,20 @@ export default function GerminacaoPage() {
     }
 
     const variedade = data.variedades.find((v) => v.id === variedadeId);
-    if (!variedade) {
-      toast.error('Variedade não encontrada');
-      return;
-    }
+    if (!variedade) { toast.error('Variedade não encontrada'); return; }
 
-    const lote: LoteGerminacao = {
-      id: gerarId(),
-      variedadeId,
+    const varDbId = resolver.varSlugToId.get(variedadeId);
+    if (!varDbId) { toast.error('Erro ao resolver variedade'); return; }
+
+    mutations.createGerminacao.mutate({
+      variedadeId: varDbId,
       variedadeNome: variedade.nome,
       quantidade,
-      dataPlantio: new Date(dataHora).toISOString(),
-      dataHora: new Date(dataHora).toISOString(),
+      dataPlantio: new Date(dataHora),
+      dataHora: new Date(dataHora),
       diasParaTransplantio: diasTransplantio,
-      germinadas: 0,
-      naoGerminadas: 0,
-      transplantadas: 0,
-      status: 'germinando',
       observacoes: observacoes || undefined,
-    };
-
-    updateData((prev) => ({
-      ...prev,
-      germinacao: [...prev.germinacao, lote],
-    }));
+    });
 
     setShowForm(false);
     setVariedadeId('');
@@ -93,18 +71,28 @@ export default function GerminacaoPage() {
   };
 
   const handleUpdateLote = (loteId: string, updates: Partial<LoteGerminacao>) => {
-    updateData((prev) => ({
-      ...prev,
-      germinacao: prev.germinacao.map((g) =>
-        g.id === loteId ? { ...g, ...updates } : g
-      ),
-    }));
+    const dbId = resolver.germinacaoFrontIdToDbId.get(loteId);
+    if (!dbId) return;
+
+    // Map frontend fields to DB fields
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.germinadas !== undefined) dbUpdates.germinadas = updates.germinadas;
+    if (updates.naoGerminadas !== undefined) dbUpdates.naoGerminadas = updates.naoGerminadas;
+    if (updates.transplantadas !== undefined) dbUpdates.transplantadas = updates.transplantadas;
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.observacoes !== undefined) dbUpdates.observacoes = updates.observacoes;
+
+    mutations.updateGerminacao.mutate({ id: dbId, ...dbUpdates } as any);
   };
 
   const handleMarcarPronto = (loteId: string) => {
     const lote = data.germinacao.find((g) => g.id === loteId);
     if (!lote) return;
-    handleUpdateLote(loteId, {
+    const dbId = resolver.germinacaoFrontIdToDbId.get(loteId);
+    if (!dbId) return;
+
+    mutations.updateGerminacao.mutate({
+      id: dbId,
       status: 'pronto',
       germinadas: lote.germinadas || lote.quantidade,
       naoGerminadas: lote.naoGerminadas || 0,
@@ -113,16 +101,17 @@ export default function GerminacaoPage() {
   };
 
   const handleMarcarTransplantado = (loteId: string) => {
-    handleUpdateLote(loteId, { status: 'transplantado' });
+    const dbId = resolver.germinacaoFrontIdToDbId.get(loteId);
+    if (!dbId) return;
+    mutations.updateGerminacao.mutate({ id: dbId, status: 'transplantado' });
     toast.success('Lote marcado como transplantado!');
   };
 
   const handleDeleteLote = (loteId: string) => {
     if (!window.confirm('Excluir este lote?')) return;
-    updateData((prev) => ({
-      ...prev,
-      germinacao: prev.germinacao.filter((g) => g.id !== loteId),
-    }));
+    const dbId = resolver.germinacaoFrontIdToDbId.get(loteId);
+    if (!dbId) return;
+    mutations.deleteGerminacao.mutate({ id: dbId });
     toast.success('Lote excluído!');
   };
 

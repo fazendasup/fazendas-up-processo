@@ -35,14 +35,15 @@ export const appRouter = router({
     }),
     create: publicProcedure
       .input(z.object({
-        slug: z.string(),
+        slug: z.string().optional(),
         nome: z.string(),
         diasMudas: z.number(),
         diasVegetativa: z.number(),
         diasMaturacao: z.number(),
       }))
       .mutation(async ({ input }) => {
-        return db.createVariedade(input);
+        const slug = input.slug || input.nome.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + Date.now().toString(36);
+        return db.createVariedade({ ...input, slug });
       }),
     update: publicProcedure
       .input(z.object({

@@ -1,9 +1,5 @@
 // ============================================================
-// TorreDetail v3 — Painel unificado
-// Mudas: perfis abertos, sem furos, sem colheita
-// Vegetativa: perfis com furos, sem colheita
-// Maturação: perfis com furos, com colheita
-// Variedade por perfil, data de entrada integrada
+// TorreDetail v4 — Migrado para tRPC mutations
 // ============================================================
 
 import { useParams, Link } from 'wouter';
@@ -19,6 +15,8 @@ import {
   TIPOS_APLICACAO_CAIXA, TIPOS_APLICACAO_ANDAR,
   MOTIVOS_DESPERDICIO,
 } from '@/lib/utils-farm';
+import { useFazendaMutations } from '@/hooks/useFazendaMutations';
+import { useDbIdResolver } from '@/hooks/useDbIdResolver';
 import PerfilFurosGrid from '@/components/PerfilFurosGrid';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,7 +38,9 @@ import { motion } from 'framer-motion';
 
 export default function TorreDetail() {
   const { id } = useParams<{ id: string }>();
-  const { data, updateData } = useFazenda();
+  const { data } = useFazenda();
+  const mutations = useFazendaMutations();
+  const resolver = useDbIdResolver();
   const [selectedAndar, setSelectedAndar] = useState<string | null>(null);
   const [tipoCaixa, setTipoCaixa] = useState<string>('');
   const [tipoAndar, setTipoAndar] = useState<string>('');
@@ -79,14 +79,12 @@ export default function TorreDetail() {
   const now = new Date();
   const localDatetime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
-  // Total de plantas na torre
   const totalPlantasTorre = andares.reduce((sum, a) => sum + contarPlantasAndar(a, torre.fase), 0);
   const totalColhidasTorre = isMaturacao ? andares.reduce((sum, a) => sum + contarColhidasAndar(a), 0) : 0;
 
-  // Manutenções abertas desta torre
   const manutencoesTorre = data.manutencoes.filter((m) => m.torreId === torre.id && m.status !== 'concluida');
 
-  // ---- Handlers ----
+  // ---- Handlers (tRPC mutations) ----
 
   const handleAddMedicao = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -95,11 +93,16 @@ export default function TorreDetail() {
     const ph = parseFloat(fd.get('ph') as string);
     const dataHora = fd.get('dataHora') as string;
     if (isNaN(ec) || isNaN(ph) || !dataHora) { toast.error('Preencha todos os campos'); return; }
-    const medicao: MedicaoCaixa = { id: gerarId(), ec, ph, dataHora: new Date(dataHora).toISOString() };
-    updateData((prev) => ({
-      ...prev,
-      caixasAgua: prev.caixasAgua.map((c) => c.id === caixa?.id ? { ...c, medicoes: [...c.medicoes, medicao] } : c),
-    }));
+
+    const caixaDbId = caixa ? resolver.caixaSlugToId.get(caixa.id) : undefined;
+    if (!caixaDbId) { toast.error('Caixa d\'água não encontrada'); return; }
+
+    mutations.addMedicaoCaixa.mutate({
+      caixaAguaId: caixaDbId,
+      ec,
+      ph,
+      dataHora: new Date(dataHora),
+    });
     e.currentTarget.reset();
     toast.success('Medição registrada!');
     if (ecForaRange(ec, torre.fase, data.fasesConfig) !== 'ok') toast.warning(`EC fora do ideal (${fConfig.ecMin}-${fConfig.ecMax})`);
@@ -113,11 +116,17 @@ export default function TorreDetail() {
     const quantidade = fd.get('quantidade') as string;
     const dataHora = fd.get('dataHora') as string;
     if (!tipoCaixa || !produto || !dataHora) { toast.error('Preencha todos os campos'); return; }
-    const aplicacao: AplicacaoCaixa = { id: gerarId(), tipo: tipoCaixa as AplicacaoCaixa['tipo'], produto, quantidade, dataHora: new Date(dataHora).toISOString() };
-    updateData((prev) => ({
-      ...prev,
-      caixasAgua: prev.caixasAgua.map((c) => c.id === caixa?.id ? { ...c, aplicacoes: [...c.aplicacoes, aplicacao] } : c),
-    }));
+
+    const caixaDbId = caixa ? resolver.caixaSlugToId.get(caixa.id) : undefined;
+    if (!caixaDbId) { toast.error('Caixa d\'água não encontrada'); return; }
+
+    mutations.addAplicacaoCaixa.mutate({
+      caixaAguaId: caixaDbId,
+      tipo: tipoCaixa,
+      produto,
+      quantidade,
+      dataHora: new Date(dataHora),
+    });
     e.currentTarget.reset();
     setTipoCaixa('');
     toast.success('Aplicação registrada na caixa d\'água!');
@@ -129,172 +138,219 @@ export default function TorreDetail() {
     const fd = new FormData(e.currentTarget);
     const dataEntrada = fd.get('dataEntrada') as string;
 
-    updateData((prev) => ({
-      ...prev,
-      andares: prev.andares.map((a) =>
-        a.id === andarSelecionado.id
-          ? { ...a, dataEntrada: dataEntrada ? new Date(dataEntrada).toISOString() : a.dataEntrada }
-          : a
-      ),
-    }));
+    const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
+    if (!andarDbId) return;
+
+    mutations.updateAndar.mutate({
+      id: andarDbId,
+      dataEntrada: dataEntrada ? new Date(dataEntrada) : null,
+    });
     toast.success(`Data de entrada do Andar ${andarSelecionado.numero} atualizada!`);
   };
 
-  // ---- Furos handlers (vegetativa/maturação) ----
+  // ---- Furos handlers ----
 
   const handleFuroToggle = (perfilIndex: number, furoIndex: number, variedadeId?: string) => {
     if (!andarSelecionado) return;
-    const newStatus: FuroStatus = modoFuros === 'transplantio' ? 'plantado' : 'colhido';
+    const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
+    if (!andarDbId) return;
 
-    updateData((prev) => ({
-      ...prev,
-      andares: prev.andares.map((a) => {
-        if (a.id !== andarSelecionado.id) return a;
-        const furos = (a.furos || []).map((f) => {
-          if (f.perfilIndex === perfilIndex && f.furoIndex === furoIndex) {
-            if (f.status === newStatus) return { ...f, status: 'vazio' as FuroStatus, variedadeId: undefined };
-            return { ...f, status: newStatus, variedadeId: variedadeId || f.variedadeId };
-          }
-          return f;
-        });
-        return { ...a, furos };
-      }),
-    }));
+    const newStatus: FuroStatus = modoFuros === 'transplantio' ? 'plantado' : 'colhido';
+    const currentFuro = (andarSelecionado.furos || []).find(
+      (f) => f.perfilIndex === perfilIndex && f.furoIndex === furoIndex
+    );
+
+    const varDbId = variedadeId ? (resolver.varSlugToId.get(variedadeId) || null) : null;
+
+    if (currentFuro?.status === newStatus) {
+      // Toggle back to vazio
+      mutations.updateFuro.mutate({
+        andarId: andarDbId,
+        perfilIndex,
+        furoIndex,
+        status: 'vazio',
+        variedadeId: null,
+      });
+    } else {
+      mutations.updateFuro.mutate({
+        andarId: andarDbId,
+        perfilIndex,
+        furoIndex,
+        status: newStatus,
+        variedadeId: varDbId || (currentFuro?.variedadeId ? (resolver.varSlugToId.get(currentFuro.variedadeId) || null) : null),
+      });
+    }
   };
 
   const handlePerfilToggle = (perfilIndex: number, variedadeId?: string) => {
     if (!andarSelecionado) return;
+    const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
+    if (!andarDbId) return;
 
     if (isMudas) {
-      // Mudas: toggle perfil ativo/inativo
-      updateData((prev) => ({
-        ...prev,
-        andares: prev.andares.map((a) => {
-          if (a.id !== andarSelecionado.id) return a;
-          const perfis = (a.perfis || gerarPerfisIniciais(torre.fase)).map((p) => {
-            if (p.perfilIndex !== perfilIndex) return p;
-            return { ...p, ativo: !p.ativo };
-          });
-          return { ...a, perfis };
-        }),
-      }));
+      // Toggle perfil ativo/inativo
+      const currentPerfil = (andarSelecionado.perfis || []).find((p) => p.perfilIndex === perfilIndex);
+      mutations.updatePerfil.mutate({
+        andarId: andarDbId,
+        perfilIndex,
+        ativo: !(currentPerfil?.ativo ?? false),
+      });
       return;
     }
 
-    // Vegetativa/Maturação: toggle furos do perfil
+    // Vegetativa/Maturação: toggle all furos of this perfil
     const newStatus: FuroStatus = modoFuros === 'transplantio' ? 'plantado' : 'colhido';
-    updateData((prev) => ({
-      ...prev,
-      andares: prev.andares.map((a) => {
-        if (a.id !== andarSelecionado.id) return a;
-        const perfilFuros = a.furos.filter((f) => f.perfilIndex === perfilIndex);
-        const allTarget = perfilFuros.every((f) => f.status === newStatus);
-        const furos = a.furos.map((f) => {
-          if (f.perfilIndex !== perfilIndex) return f;
-          if (allTarget) return { ...f, status: 'vazio' as FuroStatus, variedadeId: undefined };
-          return { ...f, status: newStatus, variedadeId: variedadeId || f.variedadeId };
+    const perfilFuros = (andarSelecionado.furos || []).filter((f) => f.perfilIndex === perfilIndex);
+    const allTarget = perfilFuros.every((f) => f.status === newStatus);
+
+    const varDbId = variedadeId ? (resolver.varSlugToId.get(variedadeId) || null) : null;
+
+    perfilFuros.forEach((f) => {
+      if (allTarget) {
+        mutations.updateFuro.mutate({
+          andarId: andarDbId,
+          perfilIndex,
+          furoIndex: f.furoIndex,
+          status: 'vazio',
+          variedadeId: null,
         });
-        return { ...a, furos };
-      }),
-    }));
+      } else {
+        mutations.updateFuro.mutate({
+          andarId: andarDbId,
+          perfilIndex,
+          furoIndex: f.furoIndex,
+          status: newStatus,
+          variedadeId: varDbId || (f.variedadeId ? (resolver.varSlugToId.get(f.variedadeId) || null) : null),
+        });
+      }
+    });
   };
 
   const handlePerfilVariedadeChange = (perfilIndex: number, variedadeId: string) => {
     if (!andarSelecionado) return;
-    updateData((prev) => ({
-      ...prev,
-      andares: prev.andares.map((a) => {
-        if (a.id !== andarSelecionado.id) return a;
-        const perfis = (a.perfis || gerarPerfisIniciais(torre.fase)).map((p) => {
-          if (p.perfilIndex !== perfilIndex) return p;
-          return { ...p, variedadeId };
-        });
-        // Atualizar variedadeId dos furos desse perfil também
-        const furos = (a.furos || []).map((f) => {
-          if (f.perfilIndex !== perfilIndex) return f;
-          if (f.status !== 'vazio') return { ...f, variedadeId };
-          return f;
-        });
-        return { ...a, perfis, furos };
-      }),
-    }));
+    const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
+    if (!andarDbId) return;
+
+    const varDbId = resolver.varSlugToId.get(variedadeId) || null;
+
+    // Update perfil variedade
+    mutations.updatePerfil.mutate({
+      andarId: andarDbId,
+      perfilIndex,
+      variedadeId: varDbId,
+    });
+
+    // Update furos of this perfil that are not vazio
+    const perfilFuros = (andarSelecionado.furos || []).filter(
+      (f) => f.perfilIndex === perfilIndex && f.status !== 'vazio'
+    );
+    perfilFuros.forEach((f) => {
+      mutations.updateFuro.mutate({
+        andarId: andarDbId,
+        perfilIndex,
+        furoIndex: f.furoIndex,
+        variedadeId: varDbId,
+      });
+    });
+
     toast.success(`Variedade do Perfil ${perfilIndex + 1} atualizada!`);
   };
 
   const handleAndarVariedadeTodos = (variedadeId: string) => {
     if (!andarSelecionado) return;
-    updateData((prev) => ({
-      ...prev,
-      andares: prev.andares.map((a) => {
-        if (a.id !== andarSelecionado.id) return a;
-        const perfis = (a.perfis || gerarPerfisIniciais(torre.fase)).map((p) => ({ ...p, variedadeId }));
-        const furos = (a.furos || []).map((f) => {
-          if (f.status !== 'vazio') return { ...f, variedadeId };
-          return f;
-        });
-        // Atualizar variedadeIds do andar
-        const variedade = data.variedades.find((v) => v.id === variedadeId);
-        return {
-          ...a,
-          perfis,
-          furos,
-          variedadeIds: [variedadeId],
-          variedades: variedade ? [variedade.nome] : a.variedades,
-        };
-      }),
-    }));
+    const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
+    if (!andarDbId) return;
+
+    const varDbId = resolver.varSlugToId.get(variedadeId) || null;
+    const est = ESTRUTURA_FASE[torre.fase];
+
+    // Update all perfis
+    for (let i = 0; i < est.perfis; i++) {
+      mutations.updatePerfil.mutate({
+        andarId: andarDbId,
+        perfilIndex: i,
+        variedadeId: varDbId,
+      });
+    }
+
+    // Update all non-vazio furos
+    const nonVazioFuros = (andarSelecionado.furos || []).filter((f) => f.status !== 'vazio');
+    nonVazioFuros.forEach((f) => {
+      mutations.updateFuro.mutate({
+        andarId: andarDbId,
+        perfilIndex: f.perfilIndex,
+        furoIndex: f.furoIndex,
+        variedadeId: varDbId,
+      });
+    });
+
     const variedade = data.variedades.find((v) => v.id === variedadeId);
-    toast.success(`Todos os perfis: ${variedade?.nome || variedadeId}`);
+    toast.success(`Todos os perfis definidos como ${variedade?.nome || variedadeId}!`);
   };
 
   const handleAndarTodo = () => {
     if (!andarSelecionado) return;
+    const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
+    if (!andarDbId) return;
 
     if (isMudas) {
-      // Toggle todos os perfis
-      updateData((prev) => ({
-        ...prev,
-        andares: prev.andares.map((a) => {
-          if (a.id !== andarSelecionado.id) return a;
-          const perfis = a.perfis || gerarPerfisIniciais(torre.fase);
-          const allAtivo = perfis.every((p) => p.ativo);
-          return { ...a, perfis: perfis.map((p) => ({ ...p, ativo: !allAtivo })) };
-        }),
-      }));
+      const perfis = andarSelecionado.perfis || gerarPerfisIniciais(torre.fase);
+      const allAtivo = perfis.every((p) => p.ativo);
+      const est = ESTRUTURA_FASE[torre.fase];
+      for (let i = 0; i < est.perfis; i++) {
+        mutations.updatePerfil.mutate({
+          andarId: andarDbId,
+          perfilIndex: i,
+          ativo: !allAtivo,
+        });
+      }
       return;
     }
 
     // Vegetativa/Maturação
     const newStatus: FuroStatus = modoFuros === 'transplantio' ? 'plantado' : 'colhido';
-    updateData((prev) => ({
-      ...prev,
-      andares: prev.andares.map((a) => {
-        if (a.id !== andarSelecionado.id) return a;
-        const allTarget = a.furos.every((f) => f.status === newStatus);
-        const furos = a.furos.map((f) => {
-          if (allTarget) return { ...f, status: 'vazio' as FuroStatus, variedadeId: undefined };
-          const perfil = (a.perfis || []).find((p) => p.perfilIndex === f.perfilIndex);
-          return { ...f, status: newStatus, variedadeId: perfil?.variedadeId || f.variedadeId };
+    const allTarget = (andarSelecionado.furos || []).every((f) => f.status === newStatus);
+
+    (andarSelecionado.furos || []).forEach((f) => {
+      if (allTarget) {
+        mutations.updateFuro.mutate({
+          andarId: andarDbId,
+          perfilIndex: f.perfilIndex,
+          furoIndex: f.furoIndex,
+          status: 'vazio',
+          variedadeId: null,
         });
-        const isColheitaTotal = !allTarget && modoFuros === 'colheita';
-        return {
-          ...a,
-          furos,
-          ...(isColheitaTotal ? { dataColheitaTotal: new Date().toISOString(), lavado: false } : {}),
-        };
-      }),
-    }));
+      } else {
+        const perfil = (andarSelecionado.perfis || []).find((p) => p.perfilIndex === f.perfilIndex);
+        const varDbId = perfil?.variedadeId ? (resolver.varSlugToId.get(perfil.variedadeId) || null) : (f.variedadeId ? (resolver.varSlugToId.get(f.variedadeId) || null) : null);
+        mutations.updateFuro.mutate({
+          andarId: andarDbId,
+          perfilIndex: f.perfilIndex,
+          furoIndex: f.furoIndex,
+          status: newStatus,
+          variedadeId: varDbId,
+        });
+      }
+    });
+
+    // If colheita total
+    if (!allTarget && modoFuros === 'colheita') {
+      mutations.updateAndar.mutate({
+        id: andarDbId,
+        dataColheitaTotal: new Date(),
+        lavado: false,
+      });
+    }
+
     toast.success(modoFuros === 'transplantio' ? 'Andar todo plantado!' : 'Andar todo colhido!');
   };
 
   const handleMarcarLavado = () => {
     if (!andarSelecionado) return;
-    updateData((prev) => ({
-      ...prev,
-      andares: prev.andares.map((a) =>
-        a.id === andarSelecionado.id ? { ...a, lavado: true } : a
-      ),
-    }));
+    const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
+    if (!andarDbId) return;
+
+    mutations.updateAndar.mutate({ id: andarDbId, lavado: true });
     toast.success('Perfis marcados como lavados!');
   };
 
@@ -306,11 +362,17 @@ export default function TorreDetail() {
     const quantidade = fd.get('quantidade') as string;
     const dataHora = fd.get('dataHora') as string;
     if (!tipoAndar || !produto || !dataHora) { toast.error('Preencha todos os campos'); return; }
-    const aplicacao: AplicacaoAndar = { id: gerarId(), tipo: tipoAndar as AplicacaoAndar['tipo'], produto, quantidade, dataHora: new Date(dataHora).toISOString() };
-    updateData((prev) => ({
-      ...prev,
-      andares: prev.andares.map((a) => a.id === andarSelecionado.id ? { ...a, aplicacoes: [...a.aplicacoes, aplicacao] } : a),
-    }));
+
+    const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
+    if (!andarDbId) return;
+
+    mutations.addAplicacaoAndar.mutate({
+      andarId: andarDbId,
+      tipo: tipoAndar,
+      produto,
+      quantidade,
+      dataHora: new Date(dataHora),
+    });
     e.currentTarget.reset();
     setTipoAndar('');
     toast.success('Aplicação registrada no andar!');
@@ -319,49 +381,33 @@ export default function TorreDetail() {
   const handleClearAndar = () => {
     if (!andarSelecionado) return;
     if (!window.confirm('Limpar dados deste andar? (variedades, data de entrada, furos/perfis e aplicações)')) return;
-    updateData((prev) => ({
-      ...prev,
-      andares: prev.andares.map((a) =>
-        a.id === andarSelecionado.id
-          ? {
-              ...a,
-              variedades: [],
-              variedadeIds: [],
-              dataEntrada: null,
-              aplicacoes: [],
-              furos: gerarFurosIniciais(torre.fase),
-              perfis: gerarPerfisIniciais(torre.fase),
-              lavado: true,
-              dataColheitaTotal: undefined,
-            }
-          : a
-      ),
-    }));
+
+    const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
+    if (!andarDbId) return;
+
+    mutations.clearAndar.mutate({ id: andarDbId });
     toast.success('Andar limpo!');
   };
 
   const handleDeleteMedicao = (medicaoId: string) => {
-    updateData((prev) => ({
-      ...prev,
-      caixasAgua: prev.caixasAgua.map((c) => c.id === caixa?.id ? { ...c, medicoes: c.medicoes.filter((m) => m.id !== medicaoId) } : c),
-    }));
+    const dbId = resolver.medicaoFrontIdToDbId.get(medicaoId);
+    if (!dbId) return;
+    mutations.deleteMedicaoCaixa.mutate({ id: dbId });
     toast.success('Medição removida!');
   };
 
   const handleDeleteAplicacaoCaixa = (aplicacaoId: string) => {
-    updateData((prev) => ({
-      ...prev,
-      caixasAgua: prev.caixasAgua.map((c) => c.id === caixa?.id ? { ...c, aplicacoes: c.aplicacoes.filter((a) => a.id !== aplicacaoId) } : c),
-    }));
+    const dbId = resolver.aplicacaoCaixaFrontIdToDbId.get(aplicacaoId);
+    if (!dbId) return;
+    mutations.deleteAplicacaoCaixa.mutate({ id: dbId });
     toast.success('Aplicação removida!');
   };
 
   const handleDeleteAplicacaoAndar = (aplicacaoId: string) => {
     if (!andarSelecionado) return;
-    updateData((prev) => ({
-      ...prev,
-      andares: prev.andares.map((a) => a.id === andarSelecionado.id ? { ...a, aplicacoes: a.aplicacoes.filter((ap) => ap.id !== aplicacaoId) } : a),
-    }));
+    const dbId = resolver.aplicacaoAndarFrontIdToDbId.get(aplicacaoId);
+    if (!dbId) return;
+    mutations.deleteAplicacaoAndar.mutate({ id: dbId });
     toast.success('Aplicação removida!');
   };
 
@@ -374,24 +420,24 @@ export default function TorreDetail() {
     if (!variedadeTransplantio) { toast.error('Selecione a variedade'); return; }
 
     const variedade = data.variedades.find((v) => v.id === variedadeTransplantio);
-    const registro: RegistroTransplantio = {
-      id: gerarId(),
-      dataHora: new Date().toISOString(),
+    const varDbId = resolver.varSlugToId.get(variedadeTransplantio);
+    const torreDbId = resolver.torreSlugToId.get(torre.id);
+    const andarDbId = andarSelecionado ? resolver.andarFrontIdToDbId.get(andarSelecionado.id) : undefined;
+
+    if (!varDbId || !torreDbId) { toast.error('Erro ao resolver IDs'); return; }
+
+    mutations.createTransplantio.mutate({
+      dataHora: new Date(),
       faseOrigem: torre.fase === 'mudas' ? 'germinacao' : torre.fase === 'vegetativa' ? 'mudas' : 'vegetativa',
       faseDestino: torre.fase,
-      variedadeId: variedadeTransplantio,
+      variedadeId: varDbId,
       variedadeNome: variedade?.nome || '',
       quantidadeTransplantada: qtdTransplantada,
       quantidadeDesperdicio: qtdDesperdicio,
       motivoDesperdicio: motivoDesperdicio || undefined,
-      torreDestinoId: torre.id,
-      andarDestinoId: andarSelecionado?.id,
-    };
-
-    updateData((prev) => ({
-      ...prev,
-      transplantios: [...prev.transplantios, registro],
-    }));
+      torreDestinoId: torreDbId,
+      andarDestinoId: andarDbId,
+    });
 
     setShowTransplantio(false);
     setMotivoDesperdicio('');
@@ -472,7 +518,6 @@ export default function TorreDetail() {
                   const isSelected = andar.id === selectedAndar;
                   const maxSlots = capacidadeAndar(torre.fase);
 
-                  // Variedades no andar
                   const perfisAtivos = (andar.perfis || []).filter((p) => p.ativo && p.variedadeId);
                   const varNomesSet = new Set<string>();
                   perfisAtivos.forEach((p) => {
@@ -687,7 +732,7 @@ export default function TorreDetail() {
                       <Button type="submit" className="h-10 text-sm px-4">Salvar Data</Button>
                     </div>
                     {andarSelecionado.dataEntrada && (
-                      <div className="grid grid-cols-2 gap-2 mt-2 text-center">
+                      <div className="mt-2 grid grid-cols-2 gap-2">
                         <div className="p-1.5 rounded bg-background">
                           <p className="text-[10px] text-muted-foreground">Dias Decorridos</p>
                           <p className="font-display font-bold text-base">{diasDecorridos(andarSelecionado.dataEntrada)}</p>

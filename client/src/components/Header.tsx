@@ -1,10 +1,10 @@
 // ============================================================
-// Header v2 — Agronomic Dashboard
-// Navegação atualizada com Germinação e Manutenção
+// Header v3 — Migrado para tRPC mutations
 // ============================================================
 
 import { Link, useLocation } from 'wouter';
 import { useFazenda } from '@/contexts/FazendaContext';
+import { useFazendaMutations } from '@/hooks/useFazendaMutations';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -17,7 +17,6 @@ import {
   LayoutDashboard,
   RefreshCcw,
   Download,
-  Upload,
   Settings,
   FileDown,
   Menu,
@@ -26,13 +25,12 @@ import {
   Sprout,
   Wrench,
 } from 'lucide-react';
-import { useRef } from 'react';
 import { toast } from 'sonner';
 
 export default function Header() {
   const [location] = useLocation();
-  const { exportCSV, backupJSON, importJSON, resetData } = useFazenda();
-  const fileRef = useRef<HTMLInputElement>(null);
+  const { exportCSV, backupJSON } = useFazenda();
+  const mutations = useFazendaMutations();
 
   const navItems = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -42,18 +40,14 @@ export default function Header() {
     { href: '/config', label: 'Config', icon: Settings },
   ];
 
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      importJSON(file);
-      toast.success('Dados importados com sucesso!');
-    }
-  };
-
   const handleReset = () => {
     if (window.confirm('Tem certeza que deseja resetar todos os dados? Esta ação não pode ser desfeita.')) {
-      resetData();
-      toast.success('Dados resetados com sucesso!');
+      mutations.reset.mutate(undefined, {
+        onSuccess: () => {
+          toast.success('Dados resetados! Recriando estrutura...');
+          setTimeout(() => mutations.seed.mutate(), 500);
+        },
+      });
     }
   };
 
@@ -136,10 +130,6 @@ export default function Header() {
                 <Download className="w-4 h-4" />
                 Backup JSON
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => fileRef.current?.click()} className="flex items-center gap-2">
-                <Upload className="w-4 h-4" />
-                Importar Backup
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleReset} className="flex items-center gap-2 text-destructive">
                 <RefreshCcw className="w-4 h-4" />
@@ -147,14 +137,6 @@ export default function Header() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".json"
-            className="hidden"
-            onChange={handleImport}
-          />
         </div>
       </div>
     </header>
