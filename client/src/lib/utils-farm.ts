@@ -5,7 +5,7 @@
 // ============================================================
 
 import type { Fase, FaseConfig, CicloAplicacao, Torre, Andar, FazendaData, VariedadeConfig, Manutencao } from './types';
-import { FASES_CONFIG } from './types';
+import { FASES_CONFIG, ESTRUTURA_FASE } from './types';
 
 // ---- Dias de ciclo por variedade ----
 
@@ -142,6 +142,13 @@ export function contarPlantasAndar(andar: Andar, fase?: Fase): number {
   return andar.furos.filter((f) => f.status === 'plantado').length;
 }
 
+/** Retorna a capacidade total de um andar (perfis para mudas, furos para as demais) */
+export function capacidadeAndar(fase: Fase): number {
+  const est = ESTRUTURA_FASE[fase];
+  if (est.furosPorPerfil === 0) return est.perfis; // mudas
+  return est.perfis * est.furosPorPerfil; // vegetativa=108, maturacao=36
+}
+
 /** Conta plantas colhidas em um andar (só faz sentido na maturação) */
 export function contarColhidasAndar(andar: Andar): number {
   if (!andar.furos) return 0;
@@ -150,10 +157,11 @@ export function contarColhidasAndar(andar: Andar): number {
 
 /** Conta furos vazios em um andar */
 export function contarVaziosAndar(andar: Andar, fase?: Fase): number {
+  const cap = capacidadeAndar(fase || 'maturacao');
   if (fase === 'mudas') {
-    return 6 - (andar.perfis || []).filter((p) => p.ativo).length;
+    return cap - (andar.perfis || []).filter((p) => p.ativo).length;
   }
-  if (!andar.furos) return 36;
+  if (!andar.furos) return cap;
   return andar.furos.filter((f) => f.status === 'vazio').length;
 }
 
@@ -274,12 +282,12 @@ export function calcularKPIs(data: FazendaData): FazendaKPIs {
     if (andarPrecisaLavagem(andar)) andaresLavagemPendente++;
   });
 
-  // Capacidade: mudas=6 perfis/andar, vegetativa/maturação=36 furos/andar
+  // Capacidade dinâmica por fase
   let capacidadeTotal = 0;
   data.andares.forEach((andar) => {
     const torre = data.torres.find((t) => t.id === andar.torreId);
     if (!torre) return;
-    capacidadeTotal += torre.fase === 'mudas' ? 6 : 36;
+    capacidadeTotal += capacidadeAndar(torre.fase);
   });
   const taxaOcupacao = capacidadeTotal > 0 ? (totalPlantas / capacidadeTotal) * 100 : 0;
 

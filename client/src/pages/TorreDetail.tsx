@@ -9,12 +9,12 @@
 import { useParams, Link } from 'wouter';
 import Header from '@/components/Header';
 import { useFazenda } from '@/contexts/FazendaContext';
-import { FASES_CONFIG, gerarPerfisIniciais } from '@/lib/types';
+import { FASES_CONFIG, ESTRUTURA_FASE, gerarPerfisIniciais, gerarFurosIniciais } from '@/lib/types';
 import type { MedicaoCaixa, AplicacaoCaixa, AplicacaoAndar, FuroStatus, RegistroTransplantio, PerfilData } from '@/lib/types';
 import {
   diasDecorridos, diasRestantes, dataPrevista, labelPrevisao,
   formatarData, formatarDataHora, ecForaRange, phForaRange,
-  gerarId, contarPlantasAndar, contarColhidasAndar,
+  gerarId, contarPlantasAndar, contarColhidasAndar, capacidadeAndar,
   andarPrecisaLavagem, variedadePrincipalAndar,
   TIPOS_APLICACAO_CAIXA, TIPOS_APLICACAO_ANDAR,
   MOTIVOS_DESPERDICIO,
@@ -171,7 +171,7 @@ export default function TorreDetail() {
         ...prev,
         andares: prev.andares.map((a) => {
           if (a.id !== andarSelecionado.id) return a;
-          const perfis = (a.perfis || gerarPerfisIniciais()).map((p) => {
+          const perfis = (a.perfis || gerarPerfisIniciais(torre.fase)).map((p) => {
             if (p.perfilIndex !== perfilIndex) return p;
             return { ...p, ativo: !p.ativo };
           });
@@ -205,7 +205,7 @@ export default function TorreDetail() {
       ...prev,
       andares: prev.andares.map((a) => {
         if (a.id !== andarSelecionado.id) return a;
-        const perfis = (a.perfis || gerarPerfisIniciais()).map((p) => {
+        const perfis = (a.perfis || gerarPerfisIniciais(torre.fase)).map((p) => {
           if (p.perfilIndex !== perfilIndex) return p;
           return { ...p, variedadeId };
         });
@@ -227,7 +227,7 @@ export default function TorreDetail() {
       ...prev,
       andares: prev.andares.map((a) => {
         if (a.id !== andarSelecionado.id) return a;
-        const perfis = (a.perfis || gerarPerfisIniciais()).map((p) => ({ ...p, variedadeId }));
+        const perfis = (a.perfis || gerarPerfisIniciais(torre.fase)).map((p) => ({ ...p, variedadeId }));
         const furos = (a.furos || []).map((f) => {
           if (f.status !== 'vazio') return { ...f, variedadeId };
           return f;
@@ -256,7 +256,7 @@ export default function TorreDetail() {
         ...prev,
         andares: prev.andares.map((a) => {
           if (a.id !== andarSelecionado.id) return a;
-          const perfis = a.perfis || gerarPerfisIniciais();
+          const perfis = a.perfis || gerarPerfisIniciais(torre.fase);
           const allAtivo = perfis.every((p) => p.ativo);
           return { ...a, perfis: perfis.map((p) => ({ ...p, ativo: !allAtivo })) };
         }),
@@ -329,8 +329,8 @@ export default function TorreDetail() {
               variedadeIds: [],
               dataEntrada: null,
               aplicacoes: [],
-              furos: a.furos.map((f) => ({ ...f, status: 'vazio' as FuroStatus, variedadeId: undefined })),
-              perfis: gerarPerfisIniciais(),
+              furos: gerarFurosIniciais(torre.fase),
+              perfis: gerarPerfisIniciais(torre.fase),
               lavado: true,
               dataColheitaTotal: undefined,
             }
@@ -432,7 +432,9 @@ export default function TorreDetail() {
               <h2 className="font-display font-bold text-lg">{torre.nome}</h2>
               <p className="text-xs text-muted-foreground mb-3">
                 {torre.andares} andares &middot; {fConfig.label}
-                {isMudas ? ' · Perfis abertos' : ' · 6x6 furos'}
+                {isMudas
+                  ? ` · ${ESTRUTURA_FASE.mudas.perfis} perfis abertos`
+                  : ` · ${ESTRUTURA_FASE[torre.fase].perfis}×${ESTRUTURA_FASE[torre.fase].furosPorPerfil} furos`}
               </p>
               <div className={`grid ${isMaturacao ? 'grid-cols-2' : 'grid-cols-1'} gap-2 text-center`}>
                 <div className="p-2 bg-emerald-50 rounded-lg">
@@ -468,7 +470,7 @@ export default function TorreDetail() {
                   const rest = andar.dataEntrada ? diasRestantes(andar.dataEntrada, torre.fase, varId, data.variedades) : null;
                   const precisaLavar = andarPrecisaLavagem(andar);
                   const isSelected = andar.id === selectedAndar;
-                  const maxSlots = isMudas ? 6 : 36;
+                  const maxSlots = capacidadeAndar(torre.fase);
 
                   // Variedades no andar
                   const perfisAtivos = (andar.perfis || []).filter((p) => p.ativo && p.variedadeId);
@@ -733,7 +735,7 @@ export default function TorreDetail() {
                   {/* Grid de perfis/furos */}
                   <PerfilFurosGrid
                     furos={andarSelecionado.furos || []}
-                    perfis={andarSelecionado.perfis || gerarPerfisIniciais()}
+                    perfis={andarSelecionado.perfis || gerarPerfisIniciais(torre.fase)}
                     fase={torre.fase}
                     modo={modoFuros}
                     variedades={data.variedades}

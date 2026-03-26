@@ -4,12 +4,12 @@
 // ============================================================
 
 import { useState, useCallback, useEffect } from 'react';
-import type { FazendaData, Andar } from '@/lib/types';
-import { gerarDadosIniciais, gerarFurosIniciais, VARIEDADES_PADRAO } from '@/lib/types';
+import type { FazendaData, Andar, Fase } from '@/lib/types';
+import { gerarDadosIniciais, gerarFurosIniciais, gerarPerfisIniciais, VARIEDADES_PADRAO, ESTRUTURA_FASE } from '@/lib/types';
 
 const STORAGE_KEY = 'fazendas-up-data';
 
-/** Migra dados antigos (v1) para o formato v2 */
+/** Migra dados antigos para o formato atual com estrutura dinâmica por fase */
 function migrateData(raw: any): FazendaData {
   const data = raw as FazendaData;
 
@@ -19,15 +19,49 @@ function migrateData(raw: any): FazendaData {
   if (!data.transplantios) data.transplantios = [];
   if (!data.manutencoes) data.manutencoes = [];
 
-  // Migrar andares: adicionar furos se não existem
+  // Determinar fase de cada torre para migração
+  const torreMap = new Map<string, Fase>();
+  (data.torres || []).forEach((t: any) => torreMap.set(t.id, t.fase));
+
+  // Migrar andares: gerar furos e perfis com a estrutura correta por fase
   if (data.andares) {
-    data.andares = data.andares.map((andar: any) => ({
-      ...andar,
-      variedadeIds: andar.variedadeIds || [],
-      furos: andar.furos || gerarFurosIniciais(),
-      lavado: andar.lavado !== undefined ? andar.lavado : true,
-      dataColheitaTotal: andar.dataColheitaTotal || undefined,
-    }));
+    data.andares = data.andares.map((andar: any) => {
+      const fase = torreMap.get(andar.torreId) || 'maturacao';
+      const est = ESTRUTURA_FASE[fase];
+      const expectedFuros = est.furosPorPerfil === 0 ? 0 : est.perfis * est.furosPorPerfil;
+      const expectedPerfis = est.perfis;
+
+      // Verificar se furos precisam ser regenerados (quantidade errada)
+      let furos = andar.furos;
+      if (!furos || (expectedFuros > 0 && furos.length !== expectedFuros)) {
+        // Preservar status dos furos existentes se possível
+        const oldFuros = furos || [];
+        furos = gerarFurosIniciais(fase).map((newF: any) => {
+          const existing = oldFuros.find((of: any) => of.perfilIndex === newF.perfilIndex && of.furoIndex === newF.furoIndex);
+          return existing || newF;
+        });
+      }
+      if (expectedFuros === 0) furos = [];
+
+      // Verificar se perfis precisam ser regenerados
+      let perfis = andar.perfis;
+      if (!perfis || perfis.length !== expectedPerfis) {
+        const oldPerfis = perfis || [];
+        perfis = gerarPerfisIniciais(fase).map((newP: any) => {
+          const existing = oldPerfis.find((op: any) => op.perfilIndex === newP.perfilIndex);
+          return existing || newP;
+        });
+      }
+
+      return {
+        ...andar,
+        variedadeIds: andar.variedadeIds || [],
+        furos,
+        perfis,
+        lavado: andar.lavado !== undefined ? andar.lavado : true,
+        dataColheitaTotal: andar.dataColheitaTotal || undefined,
+      };
+    });
   }
 
   return data;
@@ -92,8 +126,12 @@ export function useFazendaData() {
     data.andares.forEach((andar) => {
       const torre = data.torres.find((t) => t.id === andar.torreId);
       if (!torre) return;
-      const plantadas = andar.furos?.filter((f) => f.status === 'plantado').length || 0;
-      const colhidas = andar.furos?.filter((f) => f.status === 'colhido').length || 0;
+      const plantadas = torre.fase === 'mudas'
+        ? (andar.perfis || []).filter((p: any) => p.ativo).length
+        : (andar.furos || []).filter((f: any) => f.status === 'plantado').length;
+      const colhidas = torre.fase === 'maturacao'
+        ? (andar.furos || []).filter((f: any) => f.status === 'colhido').length
+        : 0;
       if (andar.dataEntrada) {
         rows.push(`Registro Andar,"${torre.nome}",${andar.numero},${torre.fase},${andar.dataEntrada},-,-,"${andar.variedades.join('; ')}",-,-,-,${plantadas},${colhidas},-`);
       }

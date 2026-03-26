@@ -74,21 +74,28 @@ export const VARIEDADES_PADRAO: VariedadeConfig[] = [
   { id: 'coentro', nome: 'Coentro', diasMudas: 10, diasVegetativa: 18, diasMaturacao: 25 },
 ];
 
-// ---- Perfis e Furos ----
-// Mudas: perfis abertos (espuma fenólica), sem furos individuais
-// Vegetativa/Maturação: 6 perfis x 6 furos = 36 plantas por andar
+// ---- Configuração de perfis/furos por fase ----
+// Mudas: 12 perfis abertos (espuma fenólica), sem furos individuais
+// Vegetativa: 12 perfis x 9 furos = 108 plantas por andar
+// Maturação: 6 perfis x 6 furos = 36 plantas por andar
+export const ESTRUTURA_FASE: Record<Fase, { perfis: number; furosPorPerfil: number }> = {
+  mudas: { perfis: 12, furosPorPerfil: 0 },
+  vegetativa: { perfis: 12, furosPorPerfil: 9 },
+  maturacao: { perfis: 6, furosPorPerfil: 6 },
+};
+
 export type FuroStatus = 'vazio' | 'plantado' | 'colhido';
 
 export interface Furo {
-  perfilIndex: number; // 0-5
-  furoIndex: number;   // 0-5
+  perfilIndex: number; // 0-based
+  furoIndex: number;   // 0-based
   status: FuroStatus;
   variedadeId?: string;
 }
 
 // Perfil com variedade própria (para suportar múltiplas variedades por andar)
 export interface PerfilData {
-  perfilIndex: number; // 0-5
+  perfilIndex: number; // 0-based
   variedadeId?: string;
   ativo: boolean; // se o perfil está em uso
 }
@@ -237,19 +244,22 @@ export interface FazendaData {
   manutencoes: Manutencao[];
 }
 
-// ---- Gerar perfis iniciais ----
-export function gerarPerfisIniciais(): PerfilData[] {
-  return Array.from({ length: 6 }, (_, i) => ({
+// ---- Gerar perfis iniciais por fase ----
+export function gerarPerfisIniciais(fase: Fase = 'maturacao'): PerfilData[] {
+  const numPerfis = ESTRUTURA_FASE[fase].perfis;
+  return Array.from({ length: numPerfis }, (_, i) => ({
     perfilIndex: i,
     ativo: false,
   }));
 }
 
-// ---- Gerar furos iniciais para um andar (6 perfis x 6 furos) ----
-export function gerarFurosIniciais(): Furo[] {
+// ---- Gerar furos iniciais por fase ----
+export function gerarFurosIniciais(fase: Fase = 'maturacao'): Furo[] {
+  const { perfis, furosPorPerfil } = ESTRUTURA_FASE[fase];
+  if (furosPorPerfil === 0) return []; // mudas não tem furos
   const furos: Furo[] = [];
-  for (let p = 0; p < 6; p++) {
-    for (let f = 0; f < 6; f++) {
+  for (let p = 0; p < perfis; p++) {
+    for (let f = 0; f < furosPorPerfil; f++) {
       furos.push({ perfilIndex: p, furoIndex: f, status: 'vazio' });
     }
   }
@@ -290,8 +300,8 @@ export function gerarDadosIniciais(): FazendaData {
       variedadeIds: [],
       dataEntrada: null,
       aplicacoes: [],
-      furos: gerarFurosIniciais(),
-      perfis: gerarPerfisIniciais(),
+      furos: gerarFurosIniciais('mudas'),
+      perfis: gerarPerfisIniciais('mudas'),
       lavado: true,
     });
   }
@@ -327,8 +337,8 @@ export function gerarDadosIniciais(): FazendaData {
         variedadeIds: [],
         dataEntrada: null,
         aplicacoes: [],
-        furos: gerarFurosIniciais(),
-        perfis: gerarPerfisIniciais(),
+        furos: gerarFurosIniciais('vegetativa'),
+        perfis: gerarPerfisIniciais('vegetativa'),
         lavado: true,
       });
     }
@@ -369,8 +379,8 @@ export function gerarDadosIniciais(): FazendaData {
         variedadeIds: [],
         dataEntrada: null,
         aplicacoes: [],
-        furos: gerarFurosIniciais(),
-        perfis: gerarPerfisIniciais(),
+        furos: gerarFurosIniciais('maturacao'),
+        perfis: gerarPerfisIniciais('maturacao'),
         lavado: true,
       });
     }
