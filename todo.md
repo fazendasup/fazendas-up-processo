@@ -28,11 +28,11 @@
 - [x] Migrar Header.tsx (export/backup/reset) para tRPC
 
 ## Testes
-- [ ] Testes Vitest para rotas de Torres
-- [ ] Testes Vitest para rotas de Andares
-- [ ] Testes Vitest para rotas de Caixas d'Água
-- [ ] Testes Vitest para rotas de Germinação
-- [ ] Testes Vitest para rotas de Ciclos
+- [x] Testes Vitest para rotas de Torres (via loadAll)
+- [x] Testes Vitest para rotas de Andares (via loadAll)
+- [x] Testes Vitest para rotas de Caixas d'Água (via loadAll)
+- [x] Testes Vitest para rotas de Germinação (CRUD completo)
+- [x] Testes Vitest para rotas de Ciclos (CRUD completo)
 
 ## Itens Anteriores (v3 - já implementados)
 - [x] Variedade por perfil (não mais por furo individual em mudas)
