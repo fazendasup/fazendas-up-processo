@@ -99,6 +99,8 @@ export const medicoesCaixa = mysqlTable("medicoes_caixa", {
   ec: float("ec").notNull(),
   ph: float("ph").notNull(),
   dataHora: timestamp("dataHora").notNull(),
+  executadoPorId: int("executadoPorId"),
+  executadoPorNome: varchar("executadoPorNome", { length: 128 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -113,6 +115,8 @@ export const aplicacoesCaixa = mysqlTable("aplicacoes_caixa", {
   produto: varchar("produto", { length: 256 }).notNull(),
   quantidade: varchar("quantidade", { length: 128 }).notNull(),
   dataHora: timestamp("dataHora").notNull(),
+  executadoPorId: int("executadoPorId"),
+  executadoPorNome: varchar("executadoPorNome", { length: 128 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -167,6 +171,8 @@ export const aplicacoesAndar = mysqlTable("aplicacoes_andar", {
   produto: varchar("produto", { length: 256 }).notNull(),
   quantidade: varchar("quantidade", { length: 128 }).notNull(),
   dataHora: timestamp("dataHora").notNull(),
+  executadoPorId: int("executadoPorId"),
+  executadoPorNome: varchar("executadoPorNome", { length: 128 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -187,6 +193,8 @@ export const germinacao = mysqlTable("germinacao", {
   transplantadas: int("transplantadas").notNull().default(0),
   status: varchar("status", { length: 32 }).notNull().default("germinando"),
   observacoes: text("observacoes"),
+  executadoPorId: int("executadoPorId"),
+  executadoPorNome: varchar("executadoPorNome", { length: 128 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -207,6 +215,8 @@ export const transplantios = mysqlTable("transplantios", {
   motivoDesperdicio: varchar("motivoDesperdicio", { length: 64 }),
   torreDestinoId: int("torreDestinoId"),
   andarDestinoId: int("andarDestinoId"),
+  executadoPorId: int("executadoPorId"),
+  executadoPorNome: varchar("executadoPorNome", { length: 128 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -226,6 +236,10 @@ export const manutencoes = mysqlTable("manutencoes", {
   solucao: text("solucao"),
   status: varchar("status", { length: 32 }).notNull().default("aberta"),
   lampadaIndex: int("lampadaIndex"),
+  abertoPorId: int("abertoPorId"),
+  abertoPorNome: varchar("abertoPorNome", { length: 128 }),
+  concluidoPorId: int("concluidoPorId"),
+  concluidoPorNome: varchar("concluidoPorNome", { length: 128 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -245,6 +259,8 @@ export const ciclos = mysqlTable("ciclos", {
   fasesAplicaveis: json("fasesAplicaveis").notNull(),
   alvo: varchar("alvo", { length: 16 }).notNull().default("caixa"),
   ultimaExecucao: timestamp("ultimaExecucao"),
+  ultimoExecutorId: int("ultimoExecutorId"),
+  ultimoExecutorNome: varchar("ultimoExecutorNome", { length: 128 }),
   ativo: boolean("ativo").notNull().default(true),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

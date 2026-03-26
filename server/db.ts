@@ -540,3 +540,27 @@ export async function bulkInsertFasesConfig(data: InsertFaseConfig[]) {
     await upsertFaseConfig(fc);
   }
 }
+
+// ============================================================
+// User management (admin)
+// ============================================================
+
+export async function getAllUsers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: users.id,
+    openId: users.openId,
+    name: users.name,
+    email: users.email,
+    role: users.role,
+    createdAt: users.createdAt,
+    lastSignedIn: users.lastSignedIn,
+  }).from(users);
+}
+
+export async function updateUserRole(id: number, role: 'user' | 'admin') {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set({ role }).where(eq(users.id, id));
+}

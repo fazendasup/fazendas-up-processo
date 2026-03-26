@@ -114,6 +114,7 @@ export interface LoteGerminacao {
   transplantadas: number;
   status: 'germinando' | 'pronto' | 'transplantado';
   observacoes?: string;
+  executadoPorNome?: string;
 }
 
 // ---- Registro de Transplantio ----
@@ -129,6 +130,7 @@ export interface RegistroTransplantio {
   motivoDesperdicio?: string; // 'nao_germinou' | 'morta' | 'doente' | 'outro'
   torreDestinoId?: string;
   andarDestinoId?: string;
+  executadoPorNome?: string;
 }
 
 // ---- Manutenção ----
@@ -147,6 +149,8 @@ export interface Manutencao {
   solucao?: string;
   status: ManutencaoStatus;
   lampadaIndex?: number; // 0-4 para lâmpadas (5 por andar)
+  abertoPorNome?: string;
+  concluidoPorNome?: string;
 }
 
 export const MANUTENCAO_TIPOS = [
@@ -180,6 +184,7 @@ export interface MedicaoCaixa {
   ec: number;
   ph: number;
   dataHora: string;
+  executadoPorNome?: string;
 }
 
 export interface AplicacaoCaixa {
@@ -188,6 +193,7 @@ export interface AplicacaoCaixa {
   produto: string;
   quantidade: string;
   dataHora: string;
+  executadoPorNome?: string;
 }
 
 // ---- Andares ----
@@ -214,6 +220,7 @@ export interface AplicacaoAndar {
   produto: string;
   quantidade: string;
   dataHora: string;
+  executadoPorNome?: string;
 }
 
 // ---- Ciclos ----
@@ -228,6 +235,7 @@ export interface CicloAplicacao {
   fasesAplicaveis: Fase[];
   alvo: 'caixa' | 'andar' | 'ambos';
   ultimaExecucao?: string;
+  ultimoExecutorNome?: string;
   ativo: boolean;
 }
 

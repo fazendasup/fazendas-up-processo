@@ -1,10 +1,12 @@
 // ============================================================
-// Header v3 — Migrado para tRPC mutations
+// Header v4 — Com controle de acesso por role e login/logout
 // ============================================================
 
 import { Link, useLocation } from 'wouter';
 import { useFazenda } from '@/contexts/FazendaContext';
 import { useFazendaMutations } from '@/hooks/useFazendaMutations';
+import { useRole } from '@/hooks/useRole';
+import { getLoginUrl } from '@/const';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -24,21 +26,44 @@ import {
   CalendarClock,
   Sprout,
   Wrench,
+  Users,
+  LogIn,
+  LogOut,
+  User,
+  ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/_core/hooks/useAuth';
+
+type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  requiredRole?: 'admin';
+};
 
 export default function Header() {
   const [location] = useLocation();
   const { exportCSV, backupJSON } = useFazenda();
   const mutations = useFazendaMutations();
+  const { isAdmin, isLoggedIn } = useRole();
+  const { user, logout } = useAuth();
 
-  const navItems = [
+  // Nav items com controle de visibilidade por role
+  const allNavItems: NavItem[] = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/germinacao', label: 'Germinação', icon: Sprout },
-    { href: '/ciclos', label: 'Ciclos', icon: CalendarClock },
     { href: '/manutencao', label: 'Manutenção', icon: Wrench },
-    { href: '/config', label: 'Config', icon: Settings },
+    { href: '/ciclos', label: 'Ciclos', icon: CalendarClock, requiredRole: 'admin' },
+    { href: '/config', label: 'Config', icon: Settings, requiredRole: 'admin' },
+    { href: '/usuarios', label: 'Usuários', icon: Users, requiredRole: 'admin' },
   ];
+
+  // Filtrar itens visíveis baseado no role
+  const navItems = allNavItems.filter((item) => {
+    if (item.requiredRole === 'admin') return isAdmin;
+    return true;
+  });
 
   const handleReset = () => {
     if (window.confirm('Tem certeza que deseja resetar todos os dados? Esta ação não pode ser desfeita.')) {
@@ -49,6 +74,12 @@ export default function Header() {
         },
       });
     }
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    toast.success('Logout realizado!');
+    window.location.href = '/';
   };
 
   return (
@@ -93,6 +124,32 @@ export default function Header() {
 
         {/* Actions */}
         <div className="flex items-center gap-2">
+          {/* User info / Login */}
+          {isLoggedIn ? (
+            <div className="hidden sm:flex items-center gap-2">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                {isAdmin ? (
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                ) : (
+                  <User className="w-3.5 h-3.5 text-blue-600" />
+                )}
+                <span className="max-w-[100px] truncate">{user?.name || 'Usuário'}</span>
+              </div>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="hidden sm:flex gap-1.5 text-xs h-9"
+              asChild
+            >
+              <a href={getLoginUrl()}>
+                <LogIn className="w-3.5 h-3.5" />
+                Entrar
+              </a>
+            </Button>
+          )}
+
           <Button
             variant="outline"
             size="sm"
@@ -110,6 +167,26 @@ export default function Header() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
+              {/* User info mobile */}
+              {isLoggedIn && (
+                <>
+                  <div className="px-2 py-2 sm:hidden">
+                    <div className="flex items-center gap-2">
+                      {isAdmin ? (
+                        <ShieldCheck className="w-4 h-4 text-amber-600" />
+                      ) : (
+                        <User className="w-4 h-4 text-blue-600" />
+                      )}
+                      <div>
+                        <p className="text-sm font-medium">{user?.name || 'Usuário'}</p>
+                        <p className="text-[10px] text-muted-foreground">{isAdmin ? 'Administrador' : 'Operador'}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator className="sm:hidden" />
+                </>
+              )}
+
               {/* Mobile nav */}
               <div className="lg:hidden">
                 {navItems.map((item) => (
@@ -122,6 +199,7 @@ export default function Header() {
                 ))}
                 <DropdownMenuSeparator />
               </div>
+
               <DropdownMenuItem onClick={exportCSV} className="flex items-center gap-2 sm:hidden">
                 <FileDown className="w-4 h-4" />
                 Exportar CSV
@@ -130,11 +208,33 @@ export default function Header() {
                 <Download className="w-4 h-4" />
                 Backup JSON
               </DropdownMenuItem>
+
+              {/* Admin-only actions */}
+              {isAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleReset} className="flex items-center gap-2 text-destructive">
+                    <RefreshCcw className="w-4 h-4" />
+                    Resetar Dados
+                  </DropdownMenuItem>
+                </>
+              )}
+
+              {/* Login/Logout */}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleReset} className="flex items-center gap-2 text-destructive">
-                <RefreshCcw className="w-4 h-4" />
-                Resetar Dados
-              </DropdownMenuItem>
+              {isLoggedIn ? (
+                <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2">
+                  <LogOut className="w-4 h-4" />
+                  Sair
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem asChild>
+                  <a href={getLoginUrl()} className="flex items-center gap-2">
+                    <LogIn className="w-4 h-4" />
+                    Entrar
+                  </a>
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

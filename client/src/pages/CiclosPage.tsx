@@ -124,7 +124,7 @@ export default function CiclosPage() {
   const handleMarcarExecutado = (id: string) => {
     const dbId = resolver.cicloFrontIdToDbId.get(id);
     if (!dbId) return;
-    mutations.updateCiclo.mutate({ id: dbId, ultimaExecucao: new Date() });
+    mutations.marcarCicloExecutado.mutate({ id: dbId, ultimaExecucao: new Date() });
     toast.success('Ciclo marcado como executado!');
   };
 

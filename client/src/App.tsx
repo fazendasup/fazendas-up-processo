@@ -5,22 +5,55 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { FazendaProvider } from "./contexts/FazendaContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import TorreDetail from "./pages/TorreDetail";
 import CiclosPage from "./pages/CiclosPage";
 import ConfigPage from "./pages/ConfigPage";
 import GerminacaoPage from "./pages/GerminacaoPage";
 import ManutencaoPage from "./pages/ManutencaoPage";
+import UsersPage from "./pages/UsersPage";
+
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
+      {/* Dashboard — público (leitura) */}
       <Route path="/" component={Home} />
-      <Route path="/torre/:id" component={TorreDetail} />
-      <Route path="/ciclos" component={CiclosPage} />
-      <Route path="/config" component={ConfigPage} />
-      <Route path="/germinacao" component={GerminacaoPage} />
-      <Route path="/manutencao" component={ManutencaoPage} />
+
+      {/* Páginas operacionais — requerem login (operador + admin) */}
+      <Route path="/torre/:id">
+        {(params) => (
+          <ProtectedRoute>
+            <TorreDetail />
+          </ProtectedRoute>
+        )}
+      </Route>
+      <Route path="/germinacao">
+        <ProtectedRoute>
+          <GerminacaoPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/manutencao">
+        <ProtectedRoute>
+          <ManutencaoPage />
+        </ProtectedRoute>
+      </Route>
+
+      {/* Páginas administrativas — requerem admin */}
+      <Route path="/ciclos">
+        <ProtectedRoute requiredRole="admin">
+          <CiclosPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/config">
+        <ProtectedRoute requiredRole="admin">
+          <ConfigPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/usuarios">
+        <UsersPage />
+      </Route>
+
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

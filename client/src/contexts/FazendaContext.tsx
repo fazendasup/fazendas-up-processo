@@ -80,6 +80,7 @@ function transformData(raw: any): FazendaData {
         ec: m.ec,
         ph: m.ph,
         dataHora: toDateStr(m.dataHora) || '',
+        executadoPorNome: m.executadoPorNome || undefined,
       }));
     const aplicacoes: AplicacaoCaixa[] = (raw.aplicacoesCaixa || [])
       .filter((a: any) => a.caixaAguaId === c.id)
@@ -89,6 +90,7 @@ function transformData(raw: any): FazendaData {
         produto: a.produto,
         quantidade: a.quantidade,
         dataHora: toDateStr(a.dataHora) || '',
+        executadoPorNome: a.executadoPorNome || undefined,
       }));
     return {
       id: c.slug,
@@ -145,6 +147,7 @@ function transformData(raw: any): FazendaData {
       produto: ap.produto,
       quantidade: ap.quantidade,
       dataHora: toDateStr(ap.dataHora) || '',
+      executadoPorNome: ap.executadoPorNome || undefined,
     }));
 
     return {
@@ -176,6 +179,7 @@ function transformData(raw: any): FazendaData {
     transplantadas: g.transplantadas,
     status: g.status as LoteGerminacao['status'],
     observacoes: g.observacoes || undefined,
+    executadoPorNome: g.executadoPorNome || undefined,
   }));
 
   // Transplantios
@@ -191,6 +195,7 @@ function transformData(raw: any): FazendaData {
     motivoDesperdicio: t.motivoDesperdicio || undefined,
     torreDestinoId: t.torreDestinoId ? (torreSlugMap.get(t.torreDestinoId) || undefined) : undefined,
     andarDestinoId: t.andarDestinoId ? `a-${t.andarDestinoId}` : undefined,
+    executadoPorNome: t.executadoPorNome || undefined,
   }));
 
   // Manutenções
@@ -206,6 +211,8 @@ function transformData(raw: any): FazendaData {
     solucao: m.solucao || undefined,
     status: m.status as Manutencao['status'],
     lampadaIndex: m.lampadaIndex ?? undefined,
+    abertoPorNome: m.abertoPorNome || undefined,
+    concluidoPorNome: m.concluidoPorNome || undefined,
   }));
 
   // Ciclos
@@ -220,6 +227,7 @@ function transformData(raw: any): FazendaData {
     fasesAplicaveis: (c.fasesAplicaveis as Fase[]) || [],
     alvo: c.alvo as CicloAplicacao['alvo'],
     ultimaExecucao: toDateStr(c.ultimaExecucao) || undefined,
+    ultimoExecutorNome: c.ultimoExecutorNome || undefined,
     ativo: c.ativo,
   }));
 

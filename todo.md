@@ -45,3 +45,41 @@
 - [x] Sistema de manutenção com alertas
 - [x] Sistema de germinação
 - [x] Ciclos recorrentes
+
+## Sistema de Permissões e Rastreabilidade
+- [x] Criar middleware adminProcedure e protectedProcedure no backend
+- [x] Migrar rotas de leitura para publicProcedure (dashboard acessível sem login)
+- [x] Migrar rotas de escrita operacional para protectedProcedure (operador+admin)
+- [x] Migrar rotas de configuração/exclusão para adminProcedure (só admin)
+- [x] Proteger rotas admin.seed e admin.reset com adminProcedure
+
+## Rastreabilidade de Atividades (quem executou)
+- [x] Adicionar campo executadoPorId (userId) nas tabelas: germinacao, transplantios, manutencoes, medicoesCaixa, aplicacoesCaixa, aplicacoesAndar
+- [x] Adicionar campo executadoPorNome nas mesmas tabelas (desnormalizado para exibição rápida)
+- [x] Passar userId automaticamente nas mutations do backend (ctx.user.id)
+- [x] Propagar campos de executor nos tipos e transformações
+
+## Integração do Cadastro de Variedades
+- [x] Páginas de plantio/germinação/transplantio já buscam variedades do banco
+- [x] Dropdown de seleção de variedade em vez de texto livre (já implementado)
+- [x] Garantir que dias por fase venham do cadastro da variedade (já implementado)
+
+## Gestão de Usuários (Admin)
+- [x] Criar página de listagem de usuários para Admin (/usuarios)
+- [x] Permitir Admin alterar role de usuário (user/admin)
+- [x] Exibir último login de cada usuário
+
+## Testes
+- [x] Teste Vitest: adminProcedure bloqueia operador (seed, reset, variedades, ciclos, fasesConfig)
+- [x] Teste Vitest: protectedProcedure permite operador e admin, bloqueia anônimo
+- [ ] Teste Vitest: mutations registram userId corretamente
+
+## Controle de Acesso Frontend
+- [x] Criar componente ProtectedRoute para controle de acesso por role
+- [x] Criar hook useRole para verificar permissões
+- [x] Atualizar App.tsx com rotas protegidas (operador vs admin)
+- [x] Atualizar Header.tsx com navegação baseada em role
+- [x] Adicionar botão de login/logout no Header
+- [x] Operador vê: Dashboard, Germinação, Manutenção, Torre Detail
+- [x] Admin vê: tudo do operador + Ciclos, Config, Usuários
+- [x] Esconder "Resetar Dados" para operadores

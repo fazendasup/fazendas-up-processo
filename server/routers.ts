@@ -1,12 +1,16 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
 
 // ============================================================
 // Fazendas Up — tRPC Routers
+// Permissões:
+//   publicProcedure   → leitura (dashboard, listagens)
+//   protectedProcedure → operador + admin (registrar atividades)
+//   adminProcedure     → somente admin (config, CRUD variedades/ciclos, exclusões, seed, users)
 // ============================================================
 
 export const appRouter = router({
@@ -21,19 +25,19 @@ export const appRouter = router({
     }),
   }),
 
-  // ---- Full Data Load ----
+  // ---- Full Data Load (público — dashboard) ----
   fazenda: router({
     loadAll: publicProcedure.query(async () => {
       return db.loadFullFazendaData();
     }),
   }),
 
-  // ---- Variedades ----
+  // ---- Variedades (leitura pública, escrita admin) ----
   variedades: router({
     list: publicProcedure.query(async () => {
       return db.getAllVariedades();
     }),
-    create: publicProcedure
+    create: adminProcedure
       .input(z.object({
         slug: z.string().optional(),
         nome: z.string(),
@@ -45,7 +49,7 @@ export const appRouter = router({
         const slug = input.slug || input.nome.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + Date.now().toString(36);
         return db.createVariedade({ ...input, slug });
       }),
-    update: publicProcedure
+    update: adminProcedure
       .input(z.object({
         id: z.number(),
         slug: z.string().optional(),
@@ -59,7 +63,7 @@ export const appRouter = router({
         await db.updateVariedade(id, data);
         return { success: true };
       }),
-    delete: publicProcedure
+    delete: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteVariedade(input.id);
@@ -67,12 +71,12 @@ export const appRouter = router({
       }),
   }),
 
-  // ---- Fases Config ----
+  // ---- Fases Config (leitura pública, escrita admin) ----
   fasesConfig: router({
     list: publicProcedure.query(async () => {
       return db.getAllFasesConfig();
     }),
-    upsert: publicProcedure
+    upsert: adminProcedure
       .input(z.object({
         fase: z.string(),
         label: z.string(),
@@ -90,7 +94,7 @@ export const appRouter = router({
       }),
   }),
 
-  // ---- Torres ----
+  // ---- Torres (leitura pública) ----
   torres: router({
     list: publicProcedure.query(async () => {
       return db.getAllTorres();
@@ -107,31 +111,35 @@ export const appRouter = router({
       }),
   }),
 
-  // ---- Caixas d'Água ----
+  // ---- Caixas d'Água (leitura pública) ----
   caixasAgua: router({
     list: publicProcedure.query(async () => {
       return db.getAllCaixasAgua();
     }),
   }),
 
-  // ---- Medições Caixa ----
+  // ---- Medições Caixa (leitura pública, escrita operador, exclusão admin) ----
   medicoesCaixa: router({
     listByCaixa: publicProcedure
       .input(z.object({ caixaAguaId: z.number() }))
       .query(async ({ input }) => {
         return db.getMedicoesByCaixaId(input.caixaAguaId);
       }),
-    create: publicProcedure
+    create: protectedProcedure
       .input(z.object({
         caixaAguaId: z.number(),
         ec: z.number(),
         ph: z.number(),
         dataHora: z.date(),
       }))
-      .mutation(async ({ input }) => {
-        return db.createMedicaoCaixa(input);
+      .mutation(async ({ input, ctx }) => {
+        return db.createMedicaoCaixa({
+          ...input,
+          executadoPorId: ctx.user.id,
+          executadoPorNome: ctx.user.name || 'Usuário',
+        });
       }),
-    delete: publicProcedure
+    delete: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteMedicaoCaixa(input.id);
@@ -139,14 +147,14 @@ export const appRouter = router({
       }),
   }),
 
-  // ---- Aplicações Caixa ----
+  // ---- Aplicações Caixa (leitura pública, escrita operador, exclusão admin) ----
   aplicacoesCaixa: router({
     listByCaixa: publicProcedure
       .input(z.object({ caixaAguaId: z.number() }))
       .query(async ({ input }) => {
         return db.getAplicacoesByCaixaId(input.caixaAguaId);
       }),
-    create: publicProcedure
+    create: protectedProcedure
       .input(z.object({
         caixaAguaId: z.number(),
         tipo: z.string(),
@@ -154,10 +162,14 @@ export const appRouter = router({
         quantidade: z.string(),
         dataHora: z.date(),
       }))
-      .mutation(async ({ input }) => {
-        return db.createAplicacaoCaixa(input);
+      .mutation(async ({ input, ctx }) => {
+        return db.createAplicacaoCaixa({
+          ...input,
+          executadoPorId: ctx.user.id,
+          executadoPorNome: ctx.user.name || 'Usuário',
+        });
       }),
-    delete: publicProcedure
+    delete: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteAplicacaoCaixa(input.id);
@@ -165,7 +177,7 @@ export const appRouter = router({
       }),
   }),
 
-  // ---- Andares ----
+  // ---- Andares (leitura pública, escrita operador) ----
   andares: router({
     list: publicProcedure.query(async () => {
       return db.getAllAndares();
@@ -180,7 +192,7 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return db.getAndarById(input.id);
       }),
-    update: publicProcedure
+    update: protectedProcedure
       .input(z.object({
         id: z.number(),
         dataEntrada: z.date().nullable().optional(),
@@ -192,7 +204,7 @@ export const appRouter = router({
         await db.updateAndar(id, data);
         return { success: true };
       }),
-    clearAndar: publicProcedure
+    clearAndar: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.updateAndar(input.id, { dataEntrada: null, lavado: true, dataColheitaTotal: null });
@@ -202,14 +214,14 @@ export const appRouter = router({
       }),
   }),
 
-  // ---- Perfis ----
+  // ---- Perfis (escrita operador) ----
   perfis: router({
     listByAndar: publicProcedure
       .input(z.object({ andarId: z.number() }))
       .query(async ({ input }) => {
         return db.getPerfisByAndarId(input.andarId);
       }),
-    update: publicProcedure
+    update: protectedProcedure
       .input(z.object({
         andarId: z.number(),
         perfilIndex: z.number(),
@@ -221,7 +233,7 @@ export const appRouter = router({
         await db.updatePerfilByAndarAndIndex(andarId, perfilIndex, data);
         return { success: true };
       }),
-    resetByAndar: publicProcedure
+    resetByAndar: protectedProcedure
       .input(z.object({ andarId: z.number() }))
       .mutation(async ({ input }) => {
         await db.resetPerfisByAndarId(input.andarId);
@@ -229,14 +241,14 @@ export const appRouter = router({
       }),
   }),
 
-  // ---- Furos ----
+  // ---- Furos (escrita operador) ----
   furos: router({
     listByAndar: publicProcedure
       .input(z.object({ andarId: z.number() }))
       .query(async ({ input }) => {
         return db.getFurosByAndarId(input.andarId);
       }),
-    update: publicProcedure
+    update: protectedProcedure
       .input(z.object({
         andarId: z.number(),
         perfilIndex: z.number(),
@@ -249,7 +261,7 @@ export const appRouter = router({
         await db.updateFuroByAndarAndIndex(andarId, perfilIndex, furoIndex, data);
         return { success: true };
       }),
-    resetByAndar: publicProcedure
+    resetByAndar: protectedProcedure
       .input(z.object({ andarId: z.number() }))
       .mutation(async ({ input }) => {
         await db.resetFurosByAndarId(input.andarId);
@@ -257,14 +269,14 @@ export const appRouter = router({
       }),
   }),
 
-  // ---- Aplicações Andar ----
+  // ---- Aplicações Andar (escrita operador, exclusão admin) ----
   aplicacoesAndar: router({
     listByAndar: publicProcedure
       .input(z.object({ andarId: z.number() }))
       .query(async ({ input }) => {
         return db.getAplicacoesByAndarId(input.andarId);
       }),
-    create: publicProcedure
+    create: protectedProcedure
       .input(z.object({
         andarId: z.number(),
         tipo: z.string(),
@@ -272,10 +284,14 @@ export const appRouter = router({
         quantidade: z.string(),
         dataHora: z.date(),
       }))
-      .mutation(async ({ input }) => {
-        return db.createAplicacaoAndar(input);
+      .mutation(async ({ input, ctx }) => {
+        return db.createAplicacaoAndar({
+          ...input,
+          executadoPorId: ctx.user.id,
+          executadoPorNome: ctx.user.name || 'Usuário',
+        });
       }),
-    delete: publicProcedure
+    delete: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteAplicacaoAndar(input.id);
@@ -283,12 +299,12 @@ export const appRouter = router({
       }),
   }),
 
-  // ---- Germinação ----
+  // ---- Germinação (escrita operador, exclusão admin) ----
   germinacao: router({
     list: publicProcedure.query(async () => {
       return db.getAllGerminacao();
     }),
-    create: publicProcedure
+    create: protectedProcedure
       .input(z.object({
         variedadeId: z.number(),
         variedadeNome: z.string(),
@@ -298,10 +314,14 @@ export const appRouter = router({
         diasParaTransplantio: z.number().default(1),
         observacoes: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
-        return db.createGerminacao(input);
+      .mutation(async ({ input, ctx }) => {
+        return db.createGerminacao({
+          ...input,
+          executadoPorId: ctx.user.id,
+          executadoPorNome: ctx.user.name || 'Usuário',
+        });
       }),
-    update: publicProcedure
+    update: protectedProcedure
       .input(z.object({
         id: z.number(),
         germinadas: z.number().optional(),
@@ -315,7 +335,7 @@ export const appRouter = router({
         await db.updateGerminacao(id, data);
         return { success: true };
       }),
-    delete: publicProcedure
+    delete: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteGerminacao(input.id);
@@ -323,12 +343,12 @@ export const appRouter = router({
       }),
   }),
 
-  // ---- Transplantios ----
+  // ---- Transplantios (escrita operador, exclusão admin) ----
   transplantios: router({
     list: publicProcedure.query(async () => {
       return db.getAllTransplantios();
     }),
-    create: publicProcedure
+    create: protectedProcedure
       .input(z.object({
         dataHora: z.date(),
         faseOrigem: z.string(),
@@ -341,10 +361,14 @@ export const appRouter = router({
         torreDestinoId: z.number().optional(),
         andarDestinoId: z.number().optional(),
       }))
-      .mutation(async ({ input }) => {
-        return db.createTransplantio(input);
+      .mutation(async ({ input, ctx }) => {
+        return db.createTransplantio({
+          ...input,
+          executadoPorId: ctx.user.id,
+          executadoPorNome: ctx.user.name || 'Usuário',
+        });
       }),
-    delete: publicProcedure
+    delete: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteTransplantio(input.id);
@@ -352,12 +376,12 @@ export const appRouter = router({
       }),
   }),
 
-  // ---- Manutenções ----
+  // ---- Manutenções (abertura/atualização operador, exclusão admin) ----
   manutencoes: router({
     list: publicProcedure.query(async () => {
       return db.getAllManutencoes();
     }),
-    create: publicProcedure
+    create: protectedProcedure
       .input(z.object({
         torreId: z.number(),
         andarNumero: z.number().optional(),
@@ -367,22 +391,32 @@ export const appRouter = router({
         prazo: z.date().optional(),
         lampadaIndex: z.number().optional(),
       }))
-      .mutation(async ({ input }) => {
-        return db.createManutencao(input);
+      .mutation(async ({ input, ctx }) => {
+        return db.createManutencao({
+          ...input,
+          abertoPorId: ctx.user.id,
+          abertoPorNome: ctx.user.name || 'Usuário',
+        });
       }),
-    update: publicProcedure
+    update: protectedProcedure
       .input(z.object({
         id: z.number(),
         status: z.string().optional(),
         dataConclusao: z.date().nullable().optional(),
         solucao: z.string().nullable().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const { id, ...data } = input;
-        await db.updateManutencao(id, data);
+        // Se está concluindo, registrar quem concluiu
+        const updateData: Record<string, any> = { ...data };
+        if (data.status === 'concluida' || data.dataConclusao) {
+          updateData.concluidoPorId = ctx.user.id;
+          updateData.concluidoPorNome = ctx.user.name || 'Usuário';
+        }
+        await db.updateManutencao(id, updateData);
         return { success: true };
       }),
-    delete: publicProcedure
+    delete: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteManutencao(input.id);
@@ -390,12 +424,12 @@ export const appRouter = router({
       }),
   }),
 
-  // ---- Ciclos ----
+  // ---- Ciclos (leitura pública, marcar executado operador, CRUD admin) ----
   ciclos: router({
     list: publicProcedure.query(async () => {
       return db.getAllCiclos();
     }),
-    create: publicProcedure
+    create: adminProcedure
       .input(z.object({
         nome: z.string(),
         frequencia: z.string(),
@@ -410,7 +444,7 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return db.createCiclo(input);
       }),
-    update: publicProcedure
+    update: adminProcedure
       .input(z.object({
         id: z.number(),
         nome: z.string().optional(),
@@ -421,7 +455,6 @@ export const appRouter = router({
         tipo: z.string().optional(),
         fasesAplicaveis: z.array(z.string()).optional(),
         alvo: z.string().optional(),
-        ultimaExecucao: z.date().nullable().optional(),
         ativo: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
@@ -429,7 +462,21 @@ export const appRouter = router({
         await db.updateCiclo(id, data);
         return { success: true };
       }),
-    delete: publicProcedure
+    // Marcar ciclo como executado — operador pode fazer
+    marcarExecutado: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        ultimaExecucao: z.date(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.updateCiclo(input.id, {
+          ultimaExecucao: input.ultimaExecucao,
+          ultimoExecutorId: ctx.user.id,
+          ultimoExecutorNome: ctx.user.name || 'Usuário',
+        });
+        return { success: true };
+      }),
+    delete: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteCiclo(input.id);
@@ -437,9 +484,25 @@ export const appRouter = router({
       }),
   }),
 
-  // ---- Seed / Reset ----
+  // ---- Gestão de Usuários (admin) ----
+  users: router({
+    list: adminProcedure.query(async () => {
+      return db.getAllUsers();
+    }),
+    updateRole: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        role: z.enum(['user', 'admin']),
+      }))
+      .mutation(async ({ input }) => {
+        await db.updateUserRole(input.id, input.role);
+        return { success: true };
+      }),
+  }),
+
+  // ---- Seed / Reset (admin) ----
   admin: router({
-    seed: publicProcedure.mutation(async () => {
+    seed: adminProcedure.mutation(async () => {
       const VARIEDADES_PADRAO = [
         { slug: 'alface-crespa', nome: 'Alface Crespa', diasMudas: 14, diasVegetativa: 21, diasMaturacao: 28 },
         { slug: 'alface-americana', nome: 'Alface Americana', diasMudas: 14, diasVegetativa: 25, diasMaturacao: 35 },
@@ -475,7 +538,6 @@ export const appRouter = router({
       if (!dbInst) throw new Error("DB not available");
       const schema = await import("../drizzle/schema");
 
-      // Helper to create torre with andares + perfis + furos
       async function createTorreWithAndares(torreData: { slug: string; nome: string; fase: string; numAndares: number; caixaAguaId: number }, numAndares: number) {
         const torreResult = await dbInst!.insert(schema.torres).values(torreData);
         const torreId = torreResult[0].insertId;
@@ -485,13 +547,11 @@ export const appRouter = router({
           const andarResult = await dbInst!.insert(schema.andares).values({ torreId, numero: a, lavado: true });
           const andarId = andarResult[0].insertId;
 
-          // Perfis
           const perfilData = Array.from({ length: est.perfis }, (_, i) => ({
             andarId, perfilIndex: i, ativo: false,
           }));
           if (perfilData.length > 0) await dbInst!.insert(schema.perfis).values(perfilData);
 
-          // Furos (only for vegetativa/maturacao)
           if (est.furosPorPerfil > 0) {
             const furoData: any[] = [];
             for (let p = 0; p < est.perfis; p++) {
@@ -532,7 +592,7 @@ export const appRouter = router({
       return { success: true, message: "Dados iniciais criados com sucesso" };
     }),
 
-    reset: publicProcedure.mutation(async () => {
+    reset: adminProcedure.mutation(async () => {
       await db.resetAllData();
       return { success: true, message: "Todos os dados foram removidos" };
     }),

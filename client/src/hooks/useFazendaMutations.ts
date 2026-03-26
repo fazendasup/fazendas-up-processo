@@ -53,6 +53,7 @@ export function useFazendaMutations() {
   // ---- Ciclos ----
   const createCiclo = trpc.ciclos.create.useMutation({ onSuccess: invalidate });
   const updateCiclo = trpc.ciclos.update.useMutation({ onSuccess: invalidate });
+  const marcarCicloExecutado = trpc.ciclos.marcarExecutado.useMutation({ onSuccess: invalidate });
   const deleteCiclo = trpc.ciclos.delete.useMutation({ onSuccess: invalidate });
 
   // ---- Variedades ----
@@ -100,6 +101,7 @@ export function useFazendaMutations() {
     // Ciclos
     createCiclo,
     updateCiclo,
+    marcarCicloExecutado,
     deleteCiclo,
     // Variedades
     createVariedade,

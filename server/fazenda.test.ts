@@ -2,22 +2,56 @@ import { describe, expect, it, beforeAll } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
-// Create a minimal public context (no auth needed for public procedures)
+// ---- Context helpers ----
+
 function createPublicContext(): TrpcContext {
   return {
     user: null,
-    req: {
-      protocol: "https",
-      headers: {},
-    } as TrpcContext["req"],
-    res: {
-      clearCookie: () => {},
-    } as TrpcContext["res"],
+    req: { protocol: "https", headers: {} } as TrpcContext["req"],
+    res: { clearCookie: () => {} } as TrpcContext["res"],
   };
 }
 
+function createOperatorContext(): TrpcContext {
+  return {
+    user: {
+      id: 2,
+      openId: "test-operator",
+      email: "operator@test.com",
+      name: "Operator User",
+      loginMethod: "manus",
+      role: "user",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastSignedIn: new Date(),
+    },
+    req: { protocol: "https", headers: {} } as TrpcContext["req"],
+    res: { clearCookie: () => {} } as TrpcContext["res"],
+  };
+}
+
+function createAdminContext(): TrpcContext {
+  return {
+    user: {
+      id: 1,
+      openId: "test-admin",
+      email: "admin@test.com",
+      name: "Admin User",
+      loginMethod: "manus",
+      role: "admin",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastSignedIn: new Date(),
+    },
+    req: { protocol: "https", headers: {} } as TrpcContext["req"],
+    res: { clearCookie: () => {} } as TrpcContext["res"],
+  };
+}
+
+// ---- Tests ----
+
 describe("fazenda.loadAll", () => {
-  it("returns the full fazenda data structure", async () => {
+  it("returns the full fazenda data structure (public)", async () => {
     const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
 
@@ -39,18 +73,17 @@ describe("fazenda.loadAll", () => {
     expect(data).toHaveProperty("perfis");
     expect(data).toHaveProperty("furos");
 
-    // Arrays
     expect(Array.isArray(data.torres)).toBe(true);
     expect(Array.isArray(data.andares)).toBe(true);
     expect(Array.isArray(data.variedades)).toBe(true);
   });
 });
 
-describe("variedades CRUD", () => {
+describe("variedades CRUD (admin)", () => {
   let createdId: number;
 
   it("creates a new variedade", async () => {
-    const ctx = createPublicContext();
+    const ctx = createAdminContext();
     const caller = appRouter.createCaller(ctx);
 
     const result = await caller.variedades.create({
@@ -61,7 +94,6 @@ describe("variedades CRUD", () => {
     });
 
     expect(result).toBeDefined();
-    // db.createVariedade returns { id: insertId }
     expect(result.id).toBeDefined();
     createdId = result.id;
     expect(createdId).toBeGreaterThan(0);
@@ -79,7 +111,7 @@ describe("variedades CRUD", () => {
   });
 
   it("updates a variedade", async () => {
-    const ctx = createPublicContext();
+    const ctx = createAdminContext();
     const caller = appRouter.createCaller(ctx);
 
     await caller.variedades.update({
@@ -96,7 +128,7 @@ describe("variedades CRUD", () => {
   });
 
   it("deletes a variedade", async () => {
-    const ctx = createPublicContext();
+    const ctx = createAdminContext();
     const caller = appRouter.createCaller(ctx);
 
     await caller.variedades.delete({ id: createdId });
@@ -107,7 +139,7 @@ describe("variedades CRUD", () => {
   });
 });
 
-describe("manutencoes CRUD", () => {
+describe("manutencoes CRUD (operador)", () => {
   let torreId: number;
   let manutencaoId: number;
 
@@ -123,7 +155,7 @@ describe("manutencoes CRUD", () => {
   it("creates a new manutencao", async () => {
     if (!torreId) return;
 
-    const ctx = createPublicContext();
+    const ctx = createOperatorContext();
     const caller = appRouter.createCaller(ctx);
 
     const result = await caller.manutencoes.create({
@@ -142,7 +174,7 @@ describe("manutencoes CRUD", () => {
   it("updates manutencao status", async () => {
     if (!manutencaoId) return;
 
-    const ctx = createPublicContext();
+    const ctx = createOperatorContext();
     const caller = appRouter.createCaller(ctx);
 
     await caller.manutencoes.update({
@@ -159,7 +191,7 @@ describe("manutencoes CRUD", () => {
   it("concludes a manutencao", async () => {
     if (!manutencaoId) return;
 
-    const ctx = createPublicContext();
+    const ctx = createOperatorContext();
     const caller = appRouter.createCaller(ctx);
 
     await caller.manutencoes.update({
@@ -176,10 +208,10 @@ describe("manutencoes CRUD", () => {
     expect(found!.solucao).toBe("Resolvido via teste");
   });
 
-  it("deletes a manutencao", async () => {
+  it("deletes a manutencao (admin)", async () => {
     if (!manutencaoId) return;
 
-    const ctx = createPublicContext();
+    const ctx = createAdminContext();
     const caller = appRouter.createCaller(ctx);
 
     await caller.manutencoes.delete({ id: manutencaoId });
@@ -190,11 +222,11 @@ describe("manutencoes CRUD", () => {
   });
 });
 
-describe("ciclos CRUD", () => {
+describe("ciclos CRUD (admin)", () => {
   let cicloId: number;
 
   it("creates a new ciclo", async () => {
-    const ctx = createPublicContext();
+    const ctx = createAdminContext();
     const caller = appRouter.createCaller(ctx);
 
     const result = await caller.ciclos.create({
@@ -204,6 +236,7 @@ describe("ciclos CRUD", () => {
       tipo: "sanitizacao",
       fasesAplicaveis: ["mudas", "vegetativa"],
       alvo: "ambos",
+      ativo: true,
     });
 
     expect(result).toBeDefined();
@@ -215,7 +248,7 @@ describe("ciclos CRUD", () => {
   it("updates a ciclo", async () => {
     if (!cicloId) return;
 
-    const ctx = createPublicContext();
+    const ctx = createAdminContext();
     const caller = appRouter.createCaller(ctx);
 
     await caller.ciclos.update({
@@ -229,16 +262,15 @@ describe("ciclos CRUD", () => {
     expect(found!.ativo).toBe(false);
   });
 
-  it("marks ciclo as executed", async () => {
+  it("marks ciclo as executed (operador)", async () => {
     if (!cicloId) return;
 
-    const ctx = createPublicContext();
+    const ctx = createOperatorContext();
     const caller = appRouter.createCaller(ctx);
 
-    const execDate = new Date();
-    await caller.ciclos.update({
+    await caller.ciclos.marcarExecutado({
       id: cicloId,
-      ultimaExecucao: execDate,
+      ultimaExecucao: new Date(),
     });
 
     const data = await caller.fazenda.loadAll();
@@ -250,7 +282,7 @@ describe("ciclos CRUD", () => {
   it("deletes a ciclo", async () => {
     if (!cicloId) return;
 
-    const ctx = createPublicContext();
+    const ctx = createAdminContext();
     const caller = appRouter.createCaller(ctx);
 
     await caller.ciclos.delete({ id: cicloId });
@@ -261,7 +293,7 @@ describe("ciclos CRUD", () => {
   });
 });
 
-describe("germinacao CRUD", () => {
+describe("germinacao CRUD (operador)", () => {
   let germinacaoId: number;
   let variedadeId: number;
 
@@ -277,7 +309,7 @@ describe("germinacao CRUD", () => {
   it("creates a new germinacao lote", async () => {
     if (!variedadeId) return;
 
-    const ctx = createPublicContext();
+    const ctx = createOperatorContext();
     const caller = appRouter.createCaller(ctx);
 
     const result = await caller.germinacao.create({
@@ -298,7 +330,7 @@ describe("germinacao CRUD", () => {
   it("updates germinacao status to pronto", async () => {
     if (!germinacaoId) return;
 
-    const ctx = createPublicContext();
+    const ctx = createOperatorContext();
     const caller = appRouter.createCaller(ctx);
 
     await caller.germinacao.update({
@@ -315,10 +347,10 @@ describe("germinacao CRUD", () => {
     expect(found!.germinadas).toBe(60);
   });
 
-  it("deletes a germinacao lote", async () => {
+  it("deletes a germinacao lote (admin)", async () => {
     if (!germinacaoId) return;
 
-    const ctx = createPublicContext();
+    const ctx = createAdminContext();
     const caller = appRouter.createCaller(ctx);
 
     await caller.germinacao.delete({ id: germinacaoId });
