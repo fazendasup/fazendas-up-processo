@@ -14,9 +14,50 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from '@/components/ui/dialog';
 import { Settings, Save, RotateCcw, Plus, Trash2, Leaf } from 'lucide-react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+
+// Local-state input that debounces writes to server
+function DebouncedNumberInput({
+  value: serverValue,
+  onCommit,
+  className,
+  min,
+}: {
+  value: number;
+  onCommit: (val: number) => void;
+  className?: string;
+  min?: string;
+}) {
+  const [localVal, setLocalVal] = useState(String(serverValue));
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync from server when it changes (e.g. after refetch)
+  useEffect(() => {
+    setLocalVal(String(serverValue));
+  }, [serverValue]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setLocalVal(raw);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      const num = parseInt(raw) || 0;
+      if (num > 0) onCommit(num);
+    }, 600);
+  };
+
+  return (
+    <Input
+      type="number"
+      min={min}
+      value={localVal}
+      onChange={handleChange}
+      className={className}
+    />
+  );
+}
 
 export default function ConfigPage() {
   const { data, exportCSV, backupJSON } = useFazenda();
@@ -295,29 +336,26 @@ export default function ConfigPage() {
                     <tr key={v.id} className="border-b last:border-b-0 hover:bg-muted/30">
                       <td className="p-3 font-medium">{v.nome}</td>
                       <td className="p-3 text-center">
-                        <Input
-                          type="number"
-                          min="1"
+                        <DebouncedNumberInput
                           value={v.diasMudas}
-                          onChange={(e) => handleUpdateVariedade(v.id, 'diasMudas', parseInt(e.target.value) || 0)}
+                          onCommit={(val) => handleUpdateVariedade(v.id, 'diasMudas', val)}
+                          min="1"
                           className="h-7 w-16 text-xs text-center mx-auto"
                         />
                       </td>
                       <td className="p-3 text-center">
-                        <Input
-                          type="number"
-                          min="1"
+                        <DebouncedNumberInput
                           value={v.diasVegetativa}
-                          onChange={(e) => handleUpdateVariedade(v.id, 'diasVegetativa', parseInt(e.target.value) || 0)}
+                          onCommit={(val) => handleUpdateVariedade(v.id, 'diasVegetativa', val)}
+                          min="1"
                           className="h-7 w-16 text-xs text-center mx-auto"
                         />
                       </td>
                       <td className="p-3 text-center">
-                        <Input
-                          type="number"
-                          min="1"
+                        <DebouncedNumberInput
                           value={v.diasMaturacao}
-                          onChange={(e) => handleUpdateVariedade(v.id, 'diasMaturacao', parseInt(e.target.value) || 0)}
+                          onCommit={(val) => handleUpdateVariedade(v.id, 'diasMaturacao', val)}
+                          min="1"
                           className="h-7 w-16 text-xs text-center mx-auto"
                         />
                       </td>

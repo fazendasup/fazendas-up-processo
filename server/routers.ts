@@ -270,6 +270,30 @@ export const appRouter = router({
         await db.resetPerfisByAndarId(input.andarId);
         return { success: true };
       }),
+    batchUpdate: protectedProcedure
+      .input(z.object({
+        andarId: z.number(),
+        updates: z.array(z.object({
+          perfilIndex: z.number(),
+          variedadeId: z.number().nullable().optional(),
+          ativo: z.boolean().optional(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        await db.batchUpdatePerfis(input.andarId, input.updates);
+        return { success: true };
+      }),
+    setAll: protectedProcedure
+      .input(z.object({
+        andarId: z.number(),
+        variedadeId: z.number().nullable().optional(),
+        ativo: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { andarId, ...data } = input;
+        await db.setAllPerfisOfAndar(andarId, data);
+        return { success: true };
+      }),
   }),
 
   // ---- Furos (escrita operador) ----
@@ -296,6 +320,31 @@ export const appRouter = router({
       .input(z.object({ andarId: z.number() }))
       .mutation(async ({ input }) => {
         await db.resetFurosByAndarId(input.andarId);
+        return { success: true };
+      }),
+    batchUpdate: protectedProcedure
+      .input(z.object({
+        andarId: z.number(),
+        updates: z.array(z.object({
+          perfilIndex: z.number(),
+          furoIndex: z.number(),
+          status: z.string().optional(),
+          variedadeId: z.number().nullable().optional(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        await db.batchUpdateFuros(input.andarId, input.updates);
+        return { success: true };
+      }),
+    setAll: protectedProcedure
+      .input(z.object({
+        andarId: z.number(),
+        status: z.string().optional(),
+        variedadeId: z.number().nullable().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { andarId, ...data } = input;
+        await db.setAllFurosOfAndar(andarId, data);
         return { success: true };
       }),
   }),

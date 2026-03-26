@@ -107,3 +107,13 @@
 - [x] Atualizar página de Usuários para admin cadastrar novos operadores/admins com email e senha
 - [x] Permitir admin definir role (operador/admin) ao cadastrar
 - [x] Permitir admin resetar senha de usuário + excluir usuário
+
+## Performance — Delay nas Ações (Corrigido)
+- [x] Implementar rotas batch para furos (batchUpdate, setAll)
+- [x] Implementar rotas batch para perfis (batchUpdate, setAll)
+- [x] Atualizações otimistas no FazendaContext para furos/perfis
+- [x] Debounced invalidation (300-500ms) para evitar refetch storm
+- [x] DebouncedNumberInput para campos de dias de ciclo nas variedades
+- [x] Aumentar staleTime do loadAll para 30s + refetchInterval 60s
+- [x] Migrar handleAndarTodo/handlePerfilToggle para usar rotas batch
+- [x] Memoizar contextValue com useMemo para evitar re-renders

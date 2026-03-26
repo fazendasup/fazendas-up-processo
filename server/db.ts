@@ -306,6 +306,71 @@ export async function resetFurosByAndarId(andarId: number) {
   await db.update(furos).set({ status: "vazio", variedadeId: null }).where(eq(furos.andarId, andarId));
 }
 
+// Batch update all furos of an andar
+export async function batchUpdateFuros(
+  andarId: number,
+  updates: Array<{ perfilIndex: number; furoIndex: number; status?: string; variedadeId?: number | null }>
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Use Promise.all for parallel DB writes within one request
+  await Promise.all(
+    updates.map((u) => {
+      const data: Partial<InsertFuro> = {};
+      if (u.status !== undefined) data.status = u.status;
+      if (u.variedadeId !== undefined) data.variedadeId = u.variedadeId;
+      return db.update(furos).set(data).where(
+        and(eq(furos.andarId, andarId), eq(furos.perfilIndex, u.perfilIndex), eq(furos.furoIndex, u.furoIndex))
+      );
+    })
+  );
+}
+
+// Batch update all perfis of an andar
+export async function batchUpdatePerfis(
+  andarId: number,
+  updates: Array<{ perfilIndex: number; variedadeId?: number | null; ativo?: boolean }>
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await Promise.all(
+    updates.map((u) => {
+      const data: Partial<InsertPerfil> = {};
+      if (u.variedadeId !== undefined) data.variedadeId = u.variedadeId;
+      if (u.ativo !== undefined) data.ativo = u.ativo;
+      return db.update(perfis).set(data).where(
+        and(eq(perfis.andarId, andarId), eq(perfis.perfilIndex, u.perfilIndex))
+      );
+    })
+  );
+}
+
+// Set all furos of an andar to a single status/variedade in one query
+export async function setAllFurosOfAndar(
+  andarId: number,
+  data: { status?: string; variedadeId?: number | null }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const setData: Partial<InsertFuro> = {};
+  if (data.status !== undefined) setData.status = data.status;
+  if (data.variedadeId !== undefined) setData.variedadeId = data.variedadeId;
+  await db.update(furos).set(setData).where(eq(furos.andarId, andarId));
+}
+
+// Set all perfis of an andar
+export async function setAllPerfisOfAndar(
+  andarId: number,
+  data: { variedadeId?: number | null; ativo?: boolean }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const setData: Partial<InsertPerfil> = {};
+  if (data.variedadeId !== undefined) setData.variedadeId = data.variedadeId;
+  if (data.ativo !== undefined) setData.ativo = data.ativo;
+  await db.update(perfis).set(setData).where(eq(perfis.andarId, andarId));
+}
+
 // ============================================================
 // Aplicações Andar
 // ============================================================

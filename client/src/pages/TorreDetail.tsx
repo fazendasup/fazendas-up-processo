@@ -163,7 +163,6 @@ export default function TorreDetail() {
     const varDbId = variedadeId ? (resolver.varSlugToId.get(variedadeId) || null) : null;
 
     if (currentFuro?.status === newStatus) {
-      // Toggle back to vazio
       mutations.updateFuro.mutate({
         andarId: andarDbId,
         perfilIndex,
@@ -188,7 +187,6 @@ export default function TorreDetail() {
     if (!andarDbId) return;
 
     if (isMudas) {
-      // Toggle perfil ativo/inativo
       const currentPerfil = (andarSelecionado.perfis || []).find((p) => p.perfilIndex === perfilIndex);
       mutations.updatePerfil.mutate({
         andarId: andarDbId,
@@ -198,32 +196,21 @@ export default function TorreDetail() {
       return;
     }
 
-    // Vegetativa/Maturação: toggle all furos of this perfil
+    // Vegetativa/Maturação: batch toggle all furos of this perfil
     const newStatus: FuroStatus = modoFuros === 'transplantio' ? 'plantado' : 'colhido';
     const perfilFuros = (andarSelecionado.furos || []).filter((f) => f.perfilIndex === perfilIndex);
     const allTarget = perfilFuros.every((f) => f.status === newStatus);
 
     const varDbId = variedadeId ? (resolver.varSlugToId.get(variedadeId) || null) : null;
 
-    perfilFuros.forEach((f) => {
-      if (allTarget) {
-        mutations.updateFuro.mutate({
-          andarId: andarDbId,
-          perfilIndex,
-          furoIndex: f.furoIndex,
-          status: 'vazio',
-          variedadeId: null,
-        });
-      } else {
-        mutations.updateFuro.mutate({
-          andarId: andarDbId,
-          perfilIndex,
-          furoIndex: f.furoIndex,
-          status: newStatus,
-          variedadeId: varDbId || (f.variedadeId ? (resolver.varSlugToId.get(f.variedadeId) || null) : null),
-        });
-      }
-    });
+    const updates = perfilFuros.map((f) => ({
+      perfilIndex,
+      furoIndex: f.furoIndex,
+      status: allTarget ? 'vazio' : newStatus,
+      variedadeId: allTarget ? null : (varDbId || (f.variedadeId ? (resolver.varSlugToId.get(f.variedadeId) || null) : null)),
+    }));
+
+    mutations.batchUpdateFuros.mutate({ andarId: andarDbId, updates });
   };
 
   const handlePerfilVariedadeChange = (perfilIndex: number, variedadeId: string) => {
@@ -240,18 +227,20 @@ export default function TorreDetail() {
       variedadeId: varDbId,
     });
 
-    // Update furos of this perfil that are not vazio
+    // Batch update furos of this perfil that are not vazio
     const perfilFuros = (andarSelecionado.furos || []).filter(
       (f) => f.perfilIndex === perfilIndex && f.status !== 'vazio'
     );
-    perfilFuros.forEach((f) => {
-      mutations.updateFuro.mutate({
+    if (perfilFuros.length > 0) {
+      mutations.batchUpdateFuros.mutate({
         andarId: andarDbId,
-        perfilIndex,
-        furoIndex: f.furoIndex,
-        variedadeId: varDbId,
+        updates: perfilFuros.map((f) => ({
+          perfilIndex,
+          furoIndex: f.furoIndex,
+          variedadeId: varDbId,
+        })),
       });
-    });
+    }
 
     toast.success(`Variedade do Perfil ${perfilIndex + 1} atualizada!`);
   };
@@ -262,27 +251,22 @@ export default function TorreDetail() {
     if (!andarDbId) return;
 
     const varDbId = resolver.varSlugToId.get(variedadeId) || null;
-    const est = ESTRUTURA_FASE[torre.fase];
 
-    // Update all perfis
-    for (let i = 0; i < est.perfis; i++) {
-      mutations.updatePerfil.mutate({
+    // Batch: set all perfis variedade
+    mutations.setAllPerfis.mutate({ andarId: andarDbId, variedadeId: varDbId });
+
+    // Batch: set all non-vazio furos variedade
+    const nonVazioFuros = (andarSelecionado.furos || []).filter((f) => f.status !== 'vazio');
+    if (nonVazioFuros.length > 0) {
+      mutations.batchUpdateFuros.mutate({
         andarId: andarDbId,
-        perfilIndex: i,
-        variedadeId: varDbId,
+        updates: nonVazioFuros.map((f) => ({
+          perfilIndex: f.perfilIndex,
+          furoIndex: f.furoIndex,
+          variedadeId: varDbId,
+        })),
       });
     }
-
-    // Update all non-vazio furos
-    const nonVazioFuros = (andarSelecionado.furos || []).filter((f) => f.status !== 'vazio');
-    nonVazioFuros.forEach((f) => {
-      mutations.updateFuro.mutate({
-        andarId: andarDbId,
-        perfilIndex: f.perfilIndex,
-        furoIndex: f.furoIndex,
-        variedadeId: varDbId,
-      });
-    });
 
     const variedade = data.variedades.find((v) => v.id === variedadeId);
     toast.success(`Todos os perfis definidos como ${variedade?.nome || variedadeId}!`);
@@ -296,42 +280,33 @@ export default function TorreDetail() {
     if (isMudas) {
       const perfis = andarSelecionado.perfis || gerarPerfisIniciais(torre.fase);
       const allAtivo = perfis.every((p) => p.ativo);
-      const est = ESTRUTURA_FASE[torre.fase];
-      for (let i = 0; i < est.perfis; i++) {
-        mutations.updatePerfil.mutate({
-          andarId: andarDbId,
-          perfilIndex: i,
-          ativo: !allAtivo,
-        });
-      }
+      // Batch: set all perfis ativo/inativo in one request
+      mutations.setAllPerfis.mutate({ andarId: andarDbId, ativo: !allAtivo });
       return;
     }
 
-    // Vegetativa/Maturação
+    // Vegetativa/Maturação — batch all furos in one request
     const newStatus: FuroStatus = modoFuros === 'transplantio' ? 'plantado' : 'colhido';
-    const allTarget = (andarSelecionado.furos || []).every((f) => f.status === newStatus);
+    const allFuros = andarSelecionado.furos || [];
+    const allTarget = allFuros.every((f) => f.status === newStatus);
 
-    (andarSelecionado.furos || []).forEach((f) => {
-      if (allTarget) {
-        mutations.updateFuro.mutate({
-          andarId: andarDbId,
-          perfilIndex: f.perfilIndex,
-          furoIndex: f.furoIndex,
-          status: 'vazio',
-          variedadeId: null,
-        });
-      } else {
+    if (allTarget) {
+      // Reset all to vazio
+      mutations.setAllFuros.mutate({ andarId: andarDbId, status: 'vazio', variedadeId: null });
+    } else {
+      // Set all to target status, preserving variedade from perfil
+      const updates = allFuros.map((f) => {
         const perfil = (andarSelecionado.perfis || []).find((p) => p.perfilIndex === f.perfilIndex);
         const varDbId = perfil?.variedadeId ? (resolver.varSlugToId.get(perfil.variedadeId) || null) : (f.variedadeId ? (resolver.varSlugToId.get(f.variedadeId) || null) : null);
-        mutations.updateFuro.mutate({
-          andarId: andarDbId,
+        return {
           perfilIndex: f.perfilIndex,
           furoIndex: f.furoIndex,
           status: newStatus,
           variedadeId: varDbId,
-        });
-      }
-    });
+        };
+      });
+      mutations.batchUpdateFuros.mutate({ andarId: andarDbId, updates });
+    }
 
     // If colheita total
     if (!allTarget && modoFuros === 'colheita') {
