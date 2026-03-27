@@ -269,3 +269,84 @@ export const ciclos = mysqlTable("ciclos", {
 
 export type CicloRow = typeof ciclos.$inferSelect;
 export type InsertCiclo = typeof ciclos.$inferInsert;
+
+// ---- Receitas de Crescimento ----
+export const receitasCrescimento = mysqlTable("receitas_crescimento", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 256 }).notNull(),
+  variedadeId: int("variedadeId").notNull(),
+  metodoColheita: varchar("metodoColheita", { length: 32 }).notNull().default("corte_unico"),
+  diasGerminacao: int("diasGerminacao").notNull().default(5),
+  diasMudas: int("diasMudas").notNull().default(14),
+  diasVegetativa: int("diasVegetativa").notNull().default(21),
+  diasMaturacao: int("diasMaturacao").notNull().default(28),
+  ecPorFase: json("ecPorFase"), // { mudas: { min, max }, vegetativa: { min, max }, maturacao: { min, max } }
+  phPorFase: json("phPorFase"), // { mudas: { min, max }, vegetativa: { min, max }, maturacao: { min, max } }
+  temperaturaMin: float("temperaturaMin"),
+  temperaturaMax: float("temperaturaMax"),
+  umidadeMin: float("umidadeMin"),
+  umidadeMax: float("umidadeMax"),
+  horasLuz: int("horasLuz"),
+  densidadePorPerfil: int("densidadePorPerfil"),
+  yieldEsperadoGramas: float("yieldEsperadoGramas"),
+  observacoes: text("observacoes"),
+  ativa: boolean("ativa").notNull().default(true),
+  criadoPorId: int("criadoPorId"),
+  criadoPorNome: varchar("criadoPorNome", { length: 128 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ReceitaCrescimento = typeof receitasCrescimento.$inferSelect;
+export type InsertReceitaCrescimento = typeof receitasCrescimento.$inferInsert;
+
+// ---- Tarefas Operacionais ----
+export const tarefas = mysqlTable("tarefas", {
+  id: int("id").autoincrement().primaryKey(),
+  titulo: varchar("titulo", { length: 256 }).notNull(),
+  descricao: text("descricao"),
+  tipo: varchar("tipo", { length: 32 }).notNull().default("outro"),
+  // tipos: ciclo, transplantio, colheita, lavagem, medicao, manutencao, outro
+  prioridade: varchar("prioridade", { length: 16 }).notNull().default("media"),
+  // prioridades: baixa, media, alta, urgente
+  dataVencimento: timestamp("dataVencimento").notNull(),
+  torreId: int("torreId"),
+  andarNumero: int("andarNumero"),
+  caixaAguaId: int("caixaAguaId"),
+  cicloId: int("cicloId"),
+  atribuidoParaId: int("atribuidoParaId"),
+  atribuidoParaNome: varchar("atribuidoParaNome", { length: 128 }),
+  status: varchar("status", { length: 32 }).notNull().default("pendente"),
+  // status: pendente, em_andamento, concluida, cancelada
+  concluidoPorId: int("concluidoPorId"),
+  concluidoPorNome: varchar("concluidoPorNome", { length: 128 }),
+  concluidoEm: timestamp("concluidoEm"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Tarefa = typeof tarefas.$inferSelect;
+export type InsertTarefa = typeof tarefas.$inferInsert;
+
+// ---- Registros de Colheita ----
+export const registrosColheita = mysqlTable("registros_colheita", {
+  id: int("id").autoincrement().primaryKey(),
+  torreId: int("torreId").notNull(),
+  andarId: int("andarId").notNull(),
+  variedadeId: int("variedadeId"),
+  variedadeNome: varchar("variedadeNome", { length: 128 }),
+  receitaId: int("receitaId"),
+  dataColheita: timestamp("dataColheita").notNull(),
+  quantidadePlantas: int("quantidadePlantas").notNull().default(0),
+  pesoTotalGramas: float("pesoTotalGramas"),
+  qualidade: varchar("qualidade", { length: 8 }).default("B"),
+  // qualidade: A (excelente), B (boa), C (abaixo)
+  destino: varchar("destino", { length: 256 }),
+  observacoes: text("observacoes"),
+  executadoPorId: int("executadoPorId"),
+  executadoPorNome: varchar("executadoPorNome", { length: 128 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type RegistroColheita = typeof registrosColheita.$inferSelect;
+export type InsertRegistroColheita = typeof registrosColheita.$inferInsert;

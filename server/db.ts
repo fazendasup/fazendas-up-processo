@@ -16,6 +16,9 @@ import {
   transplantios, InsertTransplantio,
   manutencoes, InsertManutencao,
   ciclos, InsertCiclo,
+  receitasCrescimento, InsertReceitaCrescimento,
+  tarefas, InsertTarefa,
+  registrosColheita, InsertRegistroColheita,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -527,6 +530,9 @@ export async function loadFullFazendaData() {
     allTransplantios,
     allManutencoes,
     allCiclos,
+    allReceitas,
+    allTarefas,
+    allRegistrosColheita,
   ] = await Promise.all([
     db.select().from(torres),
     db.select().from(caixasAgua),
@@ -542,6 +548,9 @@ export async function loadFullFazendaData() {
     db.select().from(transplantios),
     db.select().from(manutencoes),
     db.select().from(ciclos),
+    db.select().from(receitasCrescimento),
+    db.select().from(tarefas),
+    db.select().from(registrosColheita),
   ]);
 
   return {
@@ -559,6 +568,9 @@ export async function loadFullFazendaData() {
     transplantios: allTransplantios,
     manutencoes: allManutencoes,
     ciclos: allCiclos,
+    receitas: allReceitas,
+    tarefas: allTarefas,
+    registrosColheita: allRegistrosColheita,
   };
 }
 
@@ -584,6 +596,9 @@ export async function resetAllData() {
   await db.delete(ciclos);
   await db.delete(variedades);
   await db.delete(fasesConfig);
+  await db.delete(receitasCrescimento);
+  await db.delete(tarefas);
+  await db.delete(registrosColheita);
 }
 
 // ============================================================
@@ -675,4 +690,122 @@ export async function updateUserRole(id: number, role: 'user' | 'admin') {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(users).set({ role }).where(eq(users.id, id));
+}
+
+// ============================================================
+// Receitas de Crescimento
+// ============================================================
+
+export async function getAllReceitas() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(receitasCrescimento);
+}
+
+export async function getReceitaById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(receitasCrescimento).where(eq(receitasCrescimento.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getReceitasByVariedadeId(variedadeId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(receitasCrescimento).where(eq(receitasCrescimento.variedadeId, variedadeId));
+}
+
+export async function createReceita(data: InsertReceitaCrescimento) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(receitasCrescimento).values(data);
+  return { id: result[0].insertId };
+}
+
+export async function updateReceita(id: number, data: Partial<InsertReceitaCrescimento>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(receitasCrescimento).set(data).where(eq(receitasCrescimento.id, id));
+}
+
+export async function deleteReceita(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(receitasCrescimento).where(eq(receitasCrescimento.id, id));
+}
+
+// ============================================================
+// Tarefas Operacionais
+// ============================================================
+
+export async function getAllTarefas() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(tarefas);
+}
+
+export async function getTarefasByDate(date: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  // Retorna todas as tarefas — filtragem por data é feita no frontend
+  return db.select().from(tarefas);
+}
+
+export async function createTarefa(data: InsertTarefa) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(tarefas).values(data);
+  return { id: result[0].insertId };
+}
+
+export async function updateTarefa(id: number, data: Partial<InsertTarefa>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(tarefas).set(data).where(eq(tarefas.id, id));
+}
+
+export async function deleteTarefa(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(tarefas).where(eq(tarefas.id, id));
+}
+
+export async function concluirTarefa(id: number, userId: number, userName: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(tarefas).set({
+    status: 'concluida',
+    concluidoPorId: userId,
+    concluidoPorNome: userName,
+    concluidoEm: new Date(),
+  }).where(eq(tarefas.id, id));
+}
+
+// ============================================================
+// Registros de Colheita
+// ============================================================
+
+export async function getAllRegistrosColheita() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(registrosColheita);
+}
+
+export async function getRegistrosColheitaByAndarId(andarId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(registrosColheita).where(eq(registrosColheita.andarId, andarId));
+}
+
+export async function createRegistroColheita(data: InsertRegistroColheita) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(registrosColheita).values(data);
+  return { id: result[0].insertId };
+}
+
+export async function deleteRegistroColheita(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(registrosColheita).where(eq(registrosColheita.id, id));
 }

@@ -117,3 +117,23 @@
 - [x] Aumentar staleTime do loadAll para 30s + refetchInterval 60s
 - [x] Migrar handleAndarTodo/handlePerfilToggle para usar rotas batch
 - [x] Memoizar contextValue com useMemo para evitar re-renders
+
+## Onda 1 — Receitas + Tarefas + Colheita
+- [x] Schema: tabela receitas_crescimento
+- [x] Schema: tabela tarefas
+- [x] Schema: tabela registros_colheita
+- [x] Push schema para banco (pnpm db:push)
+- [x] Query helpers para receitas (CRUD)
+- [x] Rotas tRPC para receitas (admin CRUD + leitura pública)
+- [x] Página de Receitas (listagem em cards + formulário CRUD)
+- [x] Query helpers para tarefas (CRUD + geração automática)
+- [x] Rotas tRPC para tarefas (listar, concluir, gerar automáticas)
+- [x] Página de Tarefas com checklist diário
+- [x] Geração automática de tarefas a partir de ciclos pendentes
+- [x] Geração automática de tarefas a partir de manutenções vencidas
+- [x] Query helpers para registros de colheita
+- [x] Rotas tRPC para registros de colheita
+- [x] Modal de registro de colheita no TorreDetail
+- [x] Integrar Receitas e Tarefas na navegação (Header)
+- [ ] Atualizar Dashboard com contagem de tarefas pendentes
+- [x] Testes Vitest para receitas, tarefas e colheita

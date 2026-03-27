@@ -32,6 +32,7 @@ import {
   ArrowLeft, Droplets, AlertTriangle, Clock, Leaf,
   Trash2, Sprout, Scissors, Droplet, CheckCircle2, Wrench,
 } from 'lucide-react';
+import { trpc } from '@/lib/trpc';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -46,8 +47,13 @@ export default function TorreDetail() {
   const [tipoAndar, setTipoAndar] = useState<string>('');
   const [modoFuros, setModoFuros] = useState<'visualizacao' | 'transplantio' | 'colheita'>('visualizacao');
   const [showTransplantio, setShowTransplantio] = useState(false);
+  const [showColheita, setShowColheita] = useState(false);
   const [motivoDesperdicio, setMotivoDesperdicio] = useState<string>('');
   const [variedadeTransplantio, setVariedadeTransplantio] = useState<string>('');
+  const [colheitaPeso, setColheitaPeso] = useState<string>('');
+  const [colheitaQualidade, setColheitaQualidade] = useState<string>('A');
+  const [colheitaDestino, setColheitaDestino] = useState<string>('');
+  const [colheitaObs, setColheitaObs] = useState<string>('');
 
   const torre = data.torres.find((t) => t.id === id);
   if (!torre) {
@@ -420,6 +426,49 @@ export default function TorreDetail() {
     toast.success('Transplantio registrado!');
   };
 
+  // ---- Colheita: query + mutation ----
+  const andarDbIdForColheita = andarSelecionado ? resolver.andarFrontIdToDbId.get(andarSelecionado.id) : undefined;
+  const { data: registrosColheita, refetch: refetchColheita } = trpc.registrosColheita.listByAndar.useQuery(
+    { andarId: andarDbIdForColheita! },
+    { enabled: !!andarDbIdForColheita }
+  );
+  const createColheita = trpc.registrosColheita.create.useMutation({
+    onSuccess: () => { refetchColheita(); toast.success('Colheita registrada!'); },
+    onError: (err: any) => { toast.error(`Erro: ${err.message}`); },
+  });
+
+  const handleRegistrarColheita = () => {
+    if (!andarSelecionado) return;
+    const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
+    const torreDbId = resolver.torreSlugToId.get(torre.id);
+    if (!andarDbId || !torreDbId) { toast.error('Erro ao resolver IDs'); return; }
+    const colhidas = contarColhidasAndar(andarSelecionado);
+    if (colhidas === 0) { toast.error('Nenhuma planta marcada como colhida neste andar'); return; }
+    const varId = variedadePrincipalAndar(andarSelecionado);
+    const varDbId = varId ? (resolver.varSlugToId.get(varId) || null) : null;
+    const varNome = varId ? (data.variedades.find(v => v.id === varId)?.nome || null) : null;
+    createColheita.mutate({
+      torreId: torreDbId,
+      andarId: andarDbId,
+      variedadeId: varDbId,
+      variedadeNome: varNome,
+      dataColheita: new Date(),
+      quantidadePlantas: colhidas,
+      pesoTotalGramas: colheitaPeso ? Number(colheitaPeso) : null,
+      qualidade: colheitaQualidade || undefined,
+      destino: colheitaDestino || null,
+      observacoes: colheitaObs || null,
+    }, {
+      onSuccess: () => {
+        setShowColheita(false);
+        setColheitaPeso('');
+        setColheitaQualidade('A');
+        setColheitaDestino('');
+        setColheitaObs('');
+      },
+    });
+  };
+
   // Modos disponíveis conforme a fase
   const modosDisponiveis = isMudas
     ? ['visualizacao', 'transplantio'] as const
@@ -752,6 +801,19 @@ export default function TorreDetail() {
                     ))}
                   </div>
 
+                  {/* Botão de Registrar Colheita (quando modo colheita) */}
+                  {modoFuros === 'colheita' && isMaturacao && andarSelecionado && contarColhidasAndar(andarSelecionado) > 0 && (
+                    <div className="mb-3">
+                      <Button
+                        className="w-full bg-amber-600 hover:bg-amber-700 gap-1.5"
+                        onClick={() => setShowColheita(true)}
+                      >
+                        <Scissors className="w-4 h-4" />
+                        Registrar Colheita ({contarColhidasAndar(andarSelecionado)} plantas)
+                      </Button>
+                    </div>
+                  )}
+
                   {/* Grid de perfis/furos */}
                   <PerfilFurosGrid
                     furos={andarSelecionado.furos || []}
@@ -807,6 +869,93 @@ export default function TorreDetail() {
                       </TabsContent>
                     </Tabs>
                   </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Colheita dialog */}
+            <Dialog open={showColheita} onOpenChange={setShowColheita}>
+              <DialogContent className="max-w-sm">
+                <DialogHeader>
+                  <DialogTitle className="font-display">Registrar Colheita</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  {andarSelecionado && (
+                    <div className="p-3 bg-emerald-50 rounded-lg text-center">
+                      <p className="text-sm font-semibold text-emerald-700">
+                        {contarColhidasAndar(andarSelecionado)} planta(s) colhida(s)
+                      </p>
+                      <p className="text-xs text-muted-foreground">Andar {andarSelecionado.numero}</p>
+                    </div>
+                  )}
+                  <div>
+                    <Label className="text-xs">Peso Total (gramas)</Label>
+                    <Input type="number" step="0.1" placeholder="Ex: 250" value={colheitaPeso} onChange={(e) => setColheitaPeso(e.target.value)} className="h-9 text-sm" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Qualidade</Label>
+                    <Select value={colheitaQualidade} onValueChange={setColheitaQualidade}>
+                      <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="A">A - Excelente</SelectItem>
+                        <SelectItem value="B">B - Boa</SelectItem>
+                        <SelectItem value="C">C - Regular</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Destino</Label>
+                    <Select value={colheitaDestino} onValueChange={setColheitaDestino}>
+                      <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="venda_direta">Venda Direta</SelectItem>
+                        <SelectItem value="restaurante">Restaurante</SelectItem>
+                        <SelectItem value="mercado">Mercado</SelectItem>
+                        <SelectItem value="consumo_interno">Consumo Interno</SelectItem>
+                        <SelectItem value="doacao">Doação</SelectItem>
+                        <SelectItem value="descarte">Descarte</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Observações</Label>
+                    <Input placeholder="Notas sobre esta colheita..." value={colheitaObs} onChange={(e) => setColheitaObs(e.target.value)} className="h-9 text-sm" />
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleRegistrarColheita} disabled={createColheita.isPending} className="w-full bg-amber-600 hover:bg-amber-700">
+                      {createColheita.isPending ? 'Registrando...' : 'Registrar Colheita'}
+                    </Button>
+                  </DialogFooter>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Histórico de colheitas do andar */}
+            {andarSelecionado && isMaturacao && registrosColheita && registrosColheita.length > 0 && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl shadow-sm border overflow-hidden">
+                <div className="p-3 border-b">
+                  <h3 className="font-display font-semibold text-sm flex items-center gap-2">
+                    <Scissors className="w-4 h-4 text-amber-600" />
+                    Histórico de Colheitas — A{andarSelecionado.numero}
+                  </h3>
+                </div>
+                <div className="p-3 space-y-2 max-h-48 overflow-y-auto">
+                  {registrosColheita.map((reg: any) => (
+                    <div key={reg.id} className="flex items-center justify-between p-2 rounded-lg bg-amber-50/50 text-xs">
+                      <div>
+                        <p className="font-medium">
+                          {reg.quantidadePlantas} plantas
+                          {reg.pesoTotalGramas ? ` · ${reg.pesoTotalGramas}g` : ''}
+                          {reg.qualidade ? ` · Qualidade ${reg.qualidade}` : ''}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {new Date(reg.dataColheita).toLocaleDateString('pt-BR')}
+                          {reg.destino ? ` · ${reg.destino.replace('_', ' ')}` : ''}
+                          {reg.executadoPorNome ? ` · por ${reg.executadoPorNome}` : ''}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </motion.div>
             )}

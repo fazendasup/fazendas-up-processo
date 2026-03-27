@@ -622,6 +622,236 @@ export const appRouter = router({
       }),
   }),
 
+  // ---- Receitas de Crescimento (leitura pública, escrita admin) ----
+  receitas: router({
+    list: publicProcedure.query(async () => {
+      return db.getAllReceitas();
+    }),
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getReceitaById(input.id);
+      }),
+    getByVariedade: publicProcedure
+      .input(z.object({ variedadeId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getReceitasByVariedadeId(input.variedadeId);
+      }),
+    create: adminProcedure
+      .input(z.object({
+        nome: z.string(),
+        variedadeId: z.number(),
+        metodoColheita: z.string().optional(),
+        diasGerminacao: z.number().optional(),
+        diasMudas: z.number().optional(),
+        diasVegetativa: z.number().optional(),
+        diasMaturacao: z.number().optional(),
+        ecPorFase: z.any().optional(),
+        phPorFase: z.any().optional(),
+        temperaturaMin: z.number().nullable().optional(),
+        temperaturaMax: z.number().nullable().optional(),
+        umidadeMin: z.number().nullable().optional(),
+        umidadeMax: z.number().nullable().optional(),
+        horasLuz: z.number().nullable().optional(),
+        densidadePorPerfil: z.number().nullable().optional(),
+        yieldEsperadoGramas: z.number().nullable().optional(),
+        observacoes: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return db.createReceita({
+          ...input,
+          criadoPorId: ctx.user.id,
+          criadoPorNome: ctx.user.name || 'Admin',
+        });
+      }),
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        nome: z.string().optional(),
+        variedadeId: z.number().optional(),
+        metodoColheita: z.string().optional(),
+        diasGerminacao: z.number().optional(),
+        diasMudas: z.number().optional(),
+        diasVegetativa: z.number().optional(),
+        diasMaturacao: z.number().optional(),
+        ecPorFase: z.any().optional(),
+        phPorFase: z.any().optional(),
+        temperaturaMin: z.number().nullable().optional(),
+        temperaturaMax: z.number().nullable().optional(),
+        umidadeMin: z.number().nullable().optional(),
+        umidadeMax: z.number().nullable().optional(),
+        horasLuz: z.number().nullable().optional(),
+        densidadePorPerfil: z.number().nullable().optional(),
+        yieldEsperadoGramas: z.number().nullable().optional(),
+        observacoes: z.string().nullable().optional(),
+        ativa: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateReceita(id, data);
+        return { success: true };
+      }),
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteReceita(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ---- Tarefas Operacionais (leitura protegida, escrita protegida, admin CRUD completo) ----
+  tarefas: router({
+    list: protectedProcedure.query(async () => {
+      return db.getAllTarefas();
+    }),
+    create: protectedProcedure
+      .input(z.object({
+        titulo: z.string(),
+        descricao: z.string().nullable().optional(),
+        tipo: z.string().optional(),
+        prioridade: z.string().optional(),
+        dataVencimento: z.date(),
+        torreId: z.number().nullable().optional(),
+        andarNumero: z.number().nullable().optional(),
+        caixaAguaId: z.number().nullable().optional(),
+        cicloId: z.number().nullable().optional(),
+        atribuidoParaId: z.number().nullable().optional(),
+        atribuidoParaNome: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return db.createTarefa(input);
+      }),
+    concluir: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.concluirTarefa(input.id, ctx.user.id, ctx.user.name || 'Usuário');
+        return { success: true };
+      }),
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        titulo: z.string().optional(),
+        descricao: z.string().nullable().optional(),
+        tipo: z.string().optional(),
+        prioridade: z.string().optional(),
+        dataVencimento: z.date().optional(),
+        status: z.string().optional(),
+        atribuidoParaId: z.number().nullable().optional(),
+        atribuidoParaNome: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateTarefa(id, data);
+        return { success: true };
+      }),
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteTarefa(input.id);
+        return { success: true };
+      }),
+    gerarAutomaticas: protectedProcedure.mutation(async ({ ctx }) => {
+      const data = await db.loadFullFazendaData();
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const amanha = new Date(hoje);
+      amanha.setDate(amanha.getDate() + 1);
+      const tarefasCriadas: string[] = [];
+      const tarefasHoje = data.tarefas.filter(t => {
+        const dv = new Date(t.dataVencimento);
+        return dv >= hoje && dv < amanha;
+      });
+      const titulosExistentes = new Set(tarefasHoje.map(t => t.titulo));
+
+      for (const ciclo of data.ciclos.filter(c => c.ativo)) {
+        let pendente = false;
+        if (!ciclo.ultimaExecucao) {
+          pendente = true;
+        } else {
+          const ultima = new Date(ciclo.ultimaExecucao);
+          if (ciclo.frequencia === 'diario') pendente = ultima < hoje;
+          else if (ciclo.frequencia === 'semanal' && Array.isArray(ciclo.diasSemana)) {
+            pendente = (ciclo.diasSemana as number[]).includes(hoje.getDay()) && ultima < hoje;
+          } else if (ciclo.frequencia === 'intervalo' && ciclo.intervaloDias) {
+            pendente = Math.floor((hoje.getTime() - ultima.getTime()) / 86400000) >= ciclo.intervaloDias;
+          }
+        }
+        if (pendente) {
+          const titulo = `Ciclo: ${ciclo.nome} — ${ciclo.produto}`;
+          if (!titulosExistentes.has(titulo)) {
+            await db.createTarefa({ titulo, descricao: `Aplicar ${ciclo.produto} (${ciclo.tipo}) nas fases: ${(ciclo.fasesAplicaveis as string[]).join(', ')}`, tipo: 'ciclo', prioridade: 'alta', dataVencimento: hoje, cicloId: ciclo.id });
+            tarefasCriadas.push(titulo);
+            titulosExistentes.add(titulo);
+          }
+        }
+      }
+
+      for (const m of data.manutencoes.filter(m => m.status === 'aberta' && m.prazo)) {
+        const prazo = new Date(m.prazo!);
+        if (prazo <= hoje) {
+          const torre = data.torres.find(t => t.id === m.torreId);
+          const titulo = `Manutenção URGENTE: ${m.tipo} — ${torre?.nome || 'Torre'}${m.andarNumero ? ` A${m.andarNumero}` : ''}`;
+          if (!titulosExistentes.has(titulo)) {
+            await db.createTarefa({ titulo, descricao: m.descricao, tipo: 'manutencao', prioridade: 'urgente', dataVencimento: hoje, torreId: m.torreId, andarNumero: m.andarNumero });
+            tarefasCriadas.push(titulo);
+            titulosExistentes.add(titulo);
+          }
+        }
+      }
+
+      for (const andar of data.andares.filter(a => !a.lavado)) {
+        const torre = data.torres.find(t => t.id === andar.torreId);
+        const titulo = `Lavagem: ${torre?.nome || 'Torre'} — Andar ${andar.numero}`;
+        if (!titulosExistentes.has(titulo)) {
+          await db.createTarefa({ titulo, descricao: `Andar ${andar.numero} aguardando lavagem`, tipo: 'lavagem', prioridade: 'media', dataVencimento: hoje, torreId: andar.torreId, andarNumero: andar.numero });
+          tarefasCriadas.push(titulo);
+          titulosExistentes.add(titulo);
+        }
+      }
+
+      return { success: true, criadas: tarefasCriadas.length, tarefas: tarefasCriadas };
+    }),
+  }),
+
+  // ---- Registros de Colheita (escrita operador, leitura pública) ----
+  registrosColheita: router({
+    list: publicProcedure.query(async () => {
+      return db.getAllRegistrosColheita();
+    }),
+    listByAndar: publicProcedure
+      .input(z.object({ andarId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getRegistrosColheitaByAndarId(input.andarId);
+      }),
+    create: protectedProcedure
+      .input(z.object({
+        torreId: z.number(),
+        andarId: z.number(),
+        variedadeId: z.number().nullable().optional(),
+        variedadeNome: z.string().nullable().optional(),
+        receitaId: z.number().nullable().optional(),
+        dataColheita: z.date(),
+        quantidadePlantas: z.number(),
+        pesoTotalGramas: z.number().nullable().optional(),
+        qualidade: z.string().optional(),
+        destino: z.string().nullable().optional(),
+        observacoes: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return db.createRegistroColheita({
+          ...input,
+          executadoPorId: ctx.user.id,
+          executadoPorNome: ctx.user.name || 'Usuário',
+        });
+      }),
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteRegistroColheita(input.id);
+        return { success: true };
+      }),
+  }),
+
   // ---- Seed / Reset (admin) ----
   admin: router({
     seed: adminProcedure.mutation(async () => {

@@ -15,6 +15,8 @@ import ManutencaoPage from "./pages/ManutencaoPage";
 import UsersPage from "./pages/UsersPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import LoginPage from "./pages/LoginPage";
+import ReceitasPage from "./pages/ReceitasPage";
+import TarefasPage from "./pages/TarefasPage";
 
 function Router() {
   return (
@@ -60,6 +62,14 @@ function Router() {
       <Route path="/config">
         <ProtectedRoute requiredRole="admin">
           <ConfigPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/receitas">
+        <ReceitasPage />
+      </Route>
+      <Route path="/tarefas">
+        <ProtectedRoute>
+          <TarefasPage />
         </ProtectedRoute>
       </Route>
       <Route path="/usuarios">
