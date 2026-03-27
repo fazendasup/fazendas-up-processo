@@ -376,6 +376,122 @@ export async function setAllPerfisOfAndar(
 }
 
 // ============================================================
+// Movimentação de Perfis / Andares
+// ============================================================
+
+// Move a single perfil (and its furos) from one andar to another
+export async function moverPerfil(
+  origemAndarId: number,
+  perfilIndex: number,
+  destinoAndarId: number,
+  destinoPerfilIndex: number
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // 1. Read source perfil
+  const srcPerfis = await db.select().from(perfis)
+    .where(and(eq(perfis.andarId, origemAndarId), eq(perfis.perfilIndex, perfilIndex)));
+  const srcPerfil = srcPerfis[0];
+  if (!srcPerfil) throw new Error("Perfil de origem não encontrado");
+
+  // 2. Read source furos for this perfil
+  const srcFuros = await db.select().from(furos)
+    .where(and(eq(furos.andarId, origemAndarId), eq(furos.perfilIndex, perfilIndex)));
+
+  // 3. Update destination perfil with source data
+  await db.update(perfis).set({
+    variedadeId: srcPerfil.variedadeId,
+    ativo: srcPerfil.ativo,
+  }).where(and(eq(perfis.andarId, destinoAndarId), eq(perfis.perfilIndex, destinoPerfilIndex)));
+
+  // 4. Update destination furos with source data
+  for (const srcFuro of srcFuros) {
+    await db.update(furos).set({
+      status: srcFuro.status,
+      variedadeId: srcFuro.variedadeId,
+    }).where(and(
+      eq(furos.andarId, destinoAndarId),
+      eq(furos.perfilIndex, destinoPerfilIndex),
+      eq(furos.furoIndex, srcFuro.furoIndex)
+    ));
+  }
+
+  // 5. Reset source perfil
+  await db.update(perfis).set({ ativo: false, variedadeId: null })
+    .where(and(eq(perfis.andarId, origemAndarId), eq(perfis.perfilIndex, perfilIndex)));
+
+  // 6. Reset source furos
+  await db.update(furos).set({ status: "vazio", variedadeId: null })
+    .where(and(eq(furos.andarId, origemAndarId), eq(furos.perfilIndex, perfilIndex)));
+}
+
+// Move ALL perfis (and furos) from one andar to another
+export async function moverTodosPerfilAndar(
+  origemAndarId: number,
+  destinoAndarId: number
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // 1. Read all source perfis
+  const srcPerfis = await db.select().from(perfis)
+    .where(eq(perfis.andarId, origemAndarId));
+
+  // 2. Read all source furos
+  const srcFuros = await db.select().from(furos)
+    .where(eq(furos.andarId, origemAndarId));
+
+  // 3. Read source andar metadata
+  const srcAndarArr = await db.select().from(andares)
+    .where(eq(andares.id, origemAndarId)).limit(1);
+  const srcAndar = srcAndarArr[0];
+
+  // 4. Copy perfis to destination
+  for (const p of srcPerfis) {
+    await db.update(perfis).set({
+      variedadeId: p.variedadeId,
+      ativo: p.ativo,
+    }).where(and(eq(perfis.andarId, destinoAndarId), eq(perfis.perfilIndex, p.perfilIndex)));
+  }
+
+  // 5. Copy furos to destination
+  for (const f of srcFuros) {
+    await db.update(furos).set({
+      status: f.status,
+      variedadeId: f.variedadeId,
+    }).where(and(
+      eq(furos.andarId, destinoAndarId),
+      eq(furos.perfilIndex, f.perfilIndex),
+      eq(furos.furoIndex, f.furoIndex)
+    ));
+  }
+
+  // 6. Copy andar metadata (dataEntrada, lavado)
+  if (srcAndar) {
+    await db.update(andares).set({
+      dataEntrada: srcAndar.dataEntrada,
+      lavado: srcAndar.lavado,
+    }).where(eq(andares.id, destinoAndarId));
+  }
+
+  // 7. Reset source perfis
+  await db.update(perfis).set({ ativo: false, variedadeId: null })
+    .where(eq(perfis.andarId, origemAndarId));
+
+  // 8. Reset source furos
+  await db.update(furos).set({ status: "vazio", variedadeId: null })
+    .where(eq(furos.andarId, origemAndarId));
+
+  // 9. Reset source andar metadata
+  await db.update(andares).set({
+    dataEntrada: null,
+    lavado: true,
+    dataColheitaTotal: null,
+  }).where(eq(andares.id, origemAndarId));
+}
+
+// ============================================================
 // Aplicações Andar
 // ============================================================
 

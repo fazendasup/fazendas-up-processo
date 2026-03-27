@@ -243,6 +243,47 @@ export const appRouter = router({
         await db.resetFurosByAndarId(input.id);
         return { success: true };
       }),
+    // ---- Movimentação ----
+    moverPerfil: protectedProcedure
+      .input(z.object({
+        origemAndarId: z.number(),
+        perfilIndex: z.number(),
+        destinoAndarId: z.number(),
+        destinoPerfilIndex: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        // Validate same phase
+        const origemAndar = await db.getAndarById(input.origemAndarId);
+        const destinoAndar = await db.getAndarById(input.destinoAndarId);
+        if (!origemAndar || !destinoAndar) throw new TRPCError({ code: 'NOT_FOUND', message: 'Andar não encontrado' });
+        const origemTorre = await db.getTorreById(origemAndar.torreId);
+        const destinoTorre = await db.getTorreById(destinoAndar.torreId);
+        if (!origemTorre || !destinoTorre) throw new TRPCError({ code: 'NOT_FOUND', message: 'Torre não encontrada' });
+        if (origemTorre.fase !== destinoTorre.fase) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Movimentação só é permitida entre torres da mesma fase' });
+        }
+        await db.moverPerfil(input.origemAndarId, input.perfilIndex, input.destinoAndarId, input.destinoPerfilIndex);
+        return { success: true };
+      }),
+    moverAndar: protectedProcedure
+      .input(z.object({
+        origemAndarId: z.number(),
+        destinoAndarId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        // Validate same phase
+        const origemAndar = await db.getAndarById(input.origemAndarId);
+        const destinoAndar = await db.getAndarById(input.destinoAndarId);
+        if (!origemAndar || !destinoAndar) throw new TRPCError({ code: 'NOT_FOUND', message: 'Andar não encontrado' });
+        const origemTorre = await db.getTorreById(origemAndar.torreId);
+        const destinoTorre = await db.getTorreById(destinoAndar.torreId);
+        if (!origemTorre || !destinoTorre) throw new TRPCError({ code: 'NOT_FOUND', message: 'Torre não encontrada' });
+        if (origemTorre.fase !== destinoTorre.fase) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Movimentação só é permitida entre torres da mesma fase' });
+        }
+        await db.moverTodosPerfilAndar(input.origemAndarId, input.destinoAndarId);
+        return { success: true };
+      }),
   }),
 
   // ---- Perfis (escrita operador) ----

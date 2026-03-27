@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/dialog';
 import {
   ArrowLeft, Droplets, AlertTriangle, Clock, Leaf,
-  Trash2, Sprout, Scissors, Droplet, CheckCircle2, Wrench,
+  Trash2, Sprout, Scissors, Droplet, CheckCircle2, Wrench, ArrowRightLeft,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { useState } from 'react';
@@ -54,6 +54,12 @@ export default function TorreDetail() {
   const [colheitaQualidade, setColheitaQualidade] = useState<string>('A');
   const [colheitaDestino, setColheitaDestino] = useState<string>('');
   const [colheitaObs, setColheitaObs] = useState<string>('');
+  const [showMover, setShowMover] = useState(false);
+  const [moverTipo, setMoverTipo] = useState<'perfil' | 'andar'>('andar');
+  const [moverPerfilIndex, setMoverPerfilIndex] = useState<number>(0);
+  const [moverDestinoTorre, setMoverDestinoTorre] = useState<string>('');
+  const [moverDestinoAndar, setMoverDestinoAndar] = useState<string>('');
+  const [moverDestinoPerfilIndex, setMoverDestinoPerfilIndex] = useState<string>('');
 
   const torre = data.torres.find((t) => t.id === id);
   if (!torre) {
@@ -717,6 +723,9 @@ export default function TorreDetail() {
                     <Button variant="outline" className="text-xs gap-1.5 h-9 px-3" onClick={() => setShowTransplantio(true)}>
                       <Sprout className="w-4 h-4" /> Transplantio
                     </Button>
+                    <Button variant="outline" className="text-xs gap-1.5 h-9 px-3" onClick={() => { setShowMover(true); setMoverTipo('andar'); setMoverDestinoTorre(''); setMoverDestinoAndar(''); setMoverDestinoPerfilIndex(''); }}>
+                      <ArrowRightLeft className="w-4 h-4" /> Mover
+                    </Button>
                     <Button variant="ghost" className="text-xs text-destructive h-9 px-3" onClick={handleClearAndar}>
                       <Trash2 className="w-4 h-4 mr-1" /> Limpar
                     </Button>
@@ -959,6 +968,197 @@ export default function TorreDetail() {
                 </div>
               </motion.div>
             )}
+
+            {/* Movimentação dialog */}
+            <Dialog open={showMover} onOpenChange={setShowMover}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="font-display flex items-center gap-2">
+                    <ArrowRightLeft className="w-5 h-5" />
+                    Mover {moverTipo === 'andar' ? 'Andar Inteiro' : 'Perfil Individual'}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  {/* Tipo de movimentação */}
+                  <div>
+                    <Label className="text-xs">Tipo de Movimentação</Label>
+                    <div className="flex gap-2 mt-1">
+                      <button
+                        type="button"
+                        onClick={() => { setMoverTipo('andar'); setMoverDestinoPerfilIndex(''); }}
+                        className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+                          moverTipo === 'andar' ? 'bg-primary/10 text-primary border-primary/30' : 'bg-muted text-muted-foreground border-border'
+                        }`}
+                      >
+                        Andar Inteiro
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMoverTipo('perfil')}
+                        className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+                          moverTipo === 'perfil' ? 'bg-primary/10 text-primary border-primary/30' : 'bg-muted text-muted-foreground border-border'
+                        }`}
+                      >
+                        Perfil Individual
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Origem */}
+                  {andarSelecionado && (
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <p className="text-xs text-muted-foreground">Origem</p>
+                      <p className="text-sm font-semibold">{torre.nome} — Andar {andarSelecionado.numero}</p>
+                    </div>
+                  )}
+
+                  {/* Perfil de origem (se mover perfil individual) */}
+                  {moverTipo === 'perfil' && andarSelecionado && (() => {
+                    const perfisAtivos = (andarSelecionado.perfis || []).filter(p => p.ativo || (andarSelecionado.furos || []).some(f => f.perfilIndex === p.perfilIndex && f.status !== 'vazio'));
+                    return perfisAtivos.length > 0 ? (
+                      <div>
+                        <Label className="text-xs">Perfil de Origem</Label>
+                        <Select value={String(moverPerfilIndex)} onValueChange={(v) => setMoverPerfilIndex(Number(v))}>
+                          <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                          <SelectContent>
+                            {perfisAtivos.map(p => {
+                              const varNome = p.variedadeId ? data.variedades.find(v => v.id === p.variedadeId)?.nome : null;
+                              return (
+                                <SelectItem key={p.perfilIndex} value={String(p.perfilIndex)}>
+                                  Perfil {p.perfilIndex + 1}{varNome ? ` (${varNome})` : ''}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-amber-50 rounded-lg text-xs text-amber-700">Nenhum perfil ativo neste andar para mover.</div>
+                    );
+                  })()}
+
+                  {/* Torre de destino (mesma fase) */}
+                  <div>
+                    <Label className="text-xs">Torre de Destino ({fConfig.label})</Label>
+                    <Select value={moverDestinoTorre} onValueChange={(v) => { setMoverDestinoTorre(v); setMoverDestinoAndar(''); setMoverDestinoPerfilIndex(''); }}>
+                      <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Selecione a torre..." /></SelectTrigger>
+                      <SelectContent>
+                        {data.torres.filter(t => t.fase === torre.fase).map(t => (
+                          <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Andar de destino */}
+                  {moverDestinoTorre && (() => {
+                    const torreDestino = data.torres.find(t => t.id === moverDestinoTorre);
+                    const andaresDestino = data.andares
+                      .filter(a => a.torreId === moverDestinoTorre)
+                      .filter(a => !(a.torreId === torre.id && a.id === andarSelecionado?.id))
+                      .sort((a, b) => b.numero - a.numero);
+                    return (
+                      <div>
+                        <Label className="text-xs">Andar de Destino</Label>
+                        <Select value={moverDestinoAndar} onValueChange={(v) => { setMoverDestinoAndar(v); setMoverDestinoPerfilIndex(''); }}>
+                          <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Selecione o andar..." /></SelectTrigger>
+                          <SelectContent>
+                            {andaresDestino.map(a => {
+                              const plantadas = contarPlantasAndar(a, torre.fase);
+                              const maxSlots = capacidadeAndar(torre.fase);
+                              return (
+                                <SelectItem key={a.id} value={a.id}>
+                                  Andar {a.numero} ({plantadas}/{maxSlots} ocupados)
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Perfil de destino (se mover perfil individual) */}
+                  {moverTipo === 'perfil' && moverDestinoAndar && (() => {
+                    const andarDest = data.andares.find(a => a.id === moverDestinoAndar);
+                    if (!andarDest) return null;
+                    const estrutura = isMudas ? { perfis: 12 } : torre.fase === 'vegetativa' ? { perfis: 12 } : { perfis: 6 };
+                    const perfisDestino = Array.from({ length: estrutura.perfis }, (_, i) => {
+                      const p = (andarDest.perfis || []).find(pp => pp.perfilIndex === i);
+                      const ocupado = p?.ativo || (andarDest.furos || []).some(f => f.perfilIndex === i && f.status !== 'vazio');
+                      return { index: i, ocupado };
+                    });
+                    return (
+                      <div>
+                        <Label className="text-xs">Perfil de Destino</Label>
+                        <Select value={moverDestinoPerfilIndex} onValueChange={setMoverDestinoPerfilIndex}>
+                          <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Selecione o perfil..." /></SelectTrigger>
+                          <SelectContent>
+                            {perfisDestino.map(p => (
+                              <SelectItem key={p.index} value={String(p.index)}>
+                                Perfil {p.index + 1} {p.ocupado ? '(ocupado)' : '(livre)'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    );
+                  })()}
+
+                  <DialogFooter>
+                    <Button
+                      className="w-full gap-1.5"
+                      disabled={
+                        !moverDestinoAndar ||
+                        (moverTipo === 'perfil' && moverDestinoPerfilIndex === '') ||
+                        mutations.moverPerfil.isPending ||
+                        mutations.moverAndar.isPending
+                      }
+                      onClick={() => {
+                        if (!andarSelecionado || !moverDestinoAndar) return;
+                        const origemDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
+                        const destinoDbId = resolver.andarFrontIdToDbId.get(moverDestinoAndar);
+                        if (!origemDbId || !destinoDbId) { toast.error('Erro ao resolver IDs dos andares'); return; }
+
+                        if (moverTipo === 'andar') {
+                          mutations.moverAndar.mutate(
+                            { origemAndarId: origemDbId, destinoAndarId: destinoDbId },
+                            {
+                              onSuccess: () => {
+                                setShowMover(false);
+                                toast.success('Andar movido com sucesso!');
+                              },
+                              onError: (err: any) => toast.error(`Erro: ${err.message}`),
+                            }
+                          );
+                        } else {
+                          mutations.moverPerfil.mutate(
+                            {
+                              origemAndarId: origemDbId,
+                              perfilIndex: moverPerfilIndex,
+                              destinoAndarId: destinoDbId,
+                              destinoPerfilIndex: Number(moverDestinoPerfilIndex),
+                            },
+                            {
+                              onSuccess: () => {
+                                setShowMover(false);
+                                toast.success('Perfil movido com sucesso!');
+                              },
+                              onError: (err: any) => toast.error(`Erro: ${err.message}`),
+                            }
+                          );
+                        }
+                      }}
+                    >
+                      <ArrowRightLeft className="w-4 h-4" />
+                      {mutations.moverPerfil.isPending || mutations.moverAndar.isPending
+                        ? 'Movendo...'
+                        : `Mover ${moverTipo === 'andar' ? 'Andar' : 'Perfil'}`}
+                    </Button>
+                  </DialogFooter>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             {/* Transplantio dialog */}
             <Dialog open={showTransplantio} onOpenChange={setShowTransplantio}>

@@ -161,3 +161,11 @@
 
 ## Pendente Onda 1
 - [x] Atualizar Dashboard com contagem de tarefas pendentes
+
+## Movimentação de Perfis entre Andares/Torres
+- [x] Rota tRPC: moverPerfil (perfil individual para outro andar da mesma fase)
+- [x] Rota tRPC: moverAndar (todos os perfis de um andar para outro andar da mesma fase)
+- [x] Validação: destino deve ser da mesma fase que a origem
+- [x] UI: botão/modal de movimentação no TorreDetail (selecionar destino)
+- [x] UI: opção de mover 1 perfil ou andar inteiro
+- [x] Testes Vitest para rotas de movimentação

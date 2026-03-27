@@ -243,6 +243,10 @@ export function useFazendaMutations() {
   // ---- Fases Config ----
   const upsertFaseConfig = trpc.fasesConfig.upsert.useMutation({ onSuccess: invalidate });
 
+  // ---- Movimentação ----
+  const moverPerfil = trpc.andares.moverPerfil.useMutation({ onSuccess: invalidate });
+  const moverAndar = trpc.andares.moverAndar.useMutation({ onSuccess: invalidate });
+
   // ---- Admin ----
   const seed = trpc.admin.seed.useMutation({ onSuccess: invalidate });
   const reset = trpc.admin.reset.useMutation({ onSuccess: invalidate });
@@ -292,6 +296,9 @@ export function useFazendaMutations() {
     deleteVariedade,
     // Fases Config
     upsertFaseConfig,
+    // Movimentação
+    moverPerfil,
+    moverAndar,
     // Admin
     seed,
     reset,
