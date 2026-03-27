@@ -1,0 +1,22 @@
+CREATE TABLE `planos_plantio` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`receitaId` int NOT NULL,
+	`receitaNome` varchar(256) NOT NULL,
+	`variedadeId` int NOT NULL,
+	`variedadeNome` varchar(128) NOT NULL,
+	`quantidadePlantas` int NOT NULL,
+	`dataInicioGerminacao` timestamp NOT NULL,
+	`dataTransplantioMudas` timestamp NOT NULL,
+	`dataTransplantioVeg` timestamp NOT NULL,
+	`dataTransplantioMat` timestamp NOT NULL,
+	`dataColheitaPrevista` timestamp NOT NULL,
+	`torreDestinoId` int,
+	`andarDestinoId` int,
+	`status` varchar(32) NOT NULL DEFAULT 'planejado',
+	`observacoes` text,
+	`criadoPorId` int,
+	`criadoPorNome` varchar(128),
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `planos_plantio_id` PRIMARY KEY(`id`)
+);

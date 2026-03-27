@@ -27,7 +27,9 @@ import {
   Layers,
   Target,
   Droplet,
+  ClipboardList,
 } from 'lucide-react';
+import { trpc } from '@/lib/trpc';
 import { motion } from 'framer-motion';
 
 const HERO_URL = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663464614308/V8Zeqmat63YDtBSE4w4iyd/torres-real_fb616389.jpeg';
@@ -36,6 +38,12 @@ export default function Home() {
   const { data } = useFazenda();
   const resumo = resumoFazenda(data);
   const kpis = calcularKPIs(data);
+
+  // Tarefas pendentes para hoje
+  const tarefasQuery = trpc.tarefas.list.useQuery();
+  const tarefasPendentes = (tarefasQuery.data || []).filter(
+    (t: any) => t.status === 'pendente' || t.status === 'em_andamento'
+  ).length;
 
   const fases: Fase[] = ['mudas', 'vegetativa', 'maturacao'];
 
@@ -86,7 +94,7 @@ export default function Home() {
         </section>
 
         {/* Alertas rápidos */}
-        {(resumo.ciclosPendentes > 0 || resumo.previsaoVencida > 0 || kpis.andaresLavagemPendente > 0 || kpis.manutencoesVencidas > 0 || kpis.totalGerminando > 0) && (
+        {(resumo.ciclosPendentes > 0 || resumo.previsaoVencida > 0 || kpis.andaresLavagemPendente > 0 || kpis.manutencoesVencidas > 0 || kpis.totalGerminando > 0 || tarefasPendentes > 0) && (
           <section className="flex flex-wrap gap-2">
             {resumo.ciclosPendentes > 0 && (
               <AlertBadge icon={<Clock className="w-3 h-3" />} text={`${resumo.ciclosPendentes} ciclo(s) pendente(s)`} color="amber" />
@@ -102,6 +110,9 @@ export default function Home() {
             )}
             {kpis.totalGerminando > 0 && (
               <AlertBadge icon={<Sprout className="w-3 h-3" />} text={`${kpis.totalGerminando} lote(s) germinando`} color="emerald" />
+            )}
+            {tarefasPendentes > 0 && (
+              <AlertBadge icon={<ClipboardList className="w-3 h-3" />} text={`${tarefasPendentes} tarefa(s) pendente(s)`} color="amber" />
             )}
           </section>
         )}

@@ -350,3 +350,30 @@ export const registrosColheita = mysqlTable("registros_colheita", {
 
 export type RegistroColheita = typeof registrosColheita.$inferSelect;
 export type InsertRegistroColheita = typeof registrosColheita.$inferInsert;
+
+// ---- Planos de Plantio ----
+export const planosPlantio = mysqlTable("planos_plantio", {
+  id: int("id").autoincrement().primaryKey(),
+  receitaId: int("receitaId").notNull(),
+  receitaNome: varchar("receitaNome", { length: 256 }).notNull(),
+  variedadeId: int("variedadeId").notNull(),
+  variedadeNome: varchar("variedadeNome", { length: 128 }).notNull(),
+  quantidadePlantas: int("quantidadePlantas").notNull(),
+  dataInicioGerminacao: timestamp("dataInicioGerminacao").notNull(),
+  dataTransplantioMudas: timestamp("dataTransplantioMudas").notNull(),
+  dataTransplantioVeg: timestamp("dataTransplantioVeg").notNull(),
+  dataTransplantioMat: timestamp("dataTransplantioMat").notNull(),
+  dataColheitaPrevista: timestamp("dataColheitaPrevista").notNull(),
+  torreDestinoId: int("torreDestinoId"),
+  andarDestinoId: int("andarDestinoId"),
+  status: varchar("status", { length: 32 }).notNull().default("planejado"),
+  // status: planejado, em_germinacao, em_producao, colhido, cancelado
+  observacoes: text("observacoes"),
+  criadoPorId: int("criadoPorId"),
+  criadoPorNome: varchar("criadoPorNome", { length: 128 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PlanoPlantio = typeof planosPlantio.$inferSelect;
+export type InsertPlanoPlantio = typeof planosPlantio.$inferInsert;

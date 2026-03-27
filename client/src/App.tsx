@@ -15,8 +15,10 @@ import ManutencaoPage from "./pages/ManutencaoPage";
 import UsersPage from "./pages/UsersPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import LoginPage from "./pages/LoginPage";
-import ReceitasPage from "./pages/ReceitasPage";
-import TarefasPage from "./pages/TarefasPage";
+import ReceitasPage from './pages/ReceitasPage';
+import TarefasPage from './pages/TarefasPage';
+import PlanejamentoPage from './pages/PlanejamentoPage';
+import CapacidadePage from './pages/CapacidadePage';
 
 function Router() {
   return (
@@ -62,6 +64,16 @@ function Router() {
       <Route path="/config">
         <ProtectedRoute requiredRole="admin">
           <ConfigPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/planejamento">
+        <ProtectedRoute requiredRole="admin">
+          <PlanejamentoPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/capacidade">
+        <ProtectedRoute requiredRole="admin">
+          <CapacidadePage />
         </ProtectedRoute>
       </Route>
       <Route path="/receitas">

@@ -23,8 +23,10 @@ import {
 import {
   Activity, BarChart3, Sprout, Wrench, TrendingUp, Droplet,
   Scissors, AlertTriangle, Clock, Target, Leaf,
+  FileDown, FileText, CheckCircle2, XCircle,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
+import { trpc } from '@/lib/trpc';
 import type { FazendaData, Fase, CaixaAgua, MedicaoCaixa } from '@/lib/types';
 import { FASES_CONFIG } from '@/lib/types';
 import {
@@ -139,7 +141,7 @@ export default function AnalyticsPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="ecph" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 h-auto">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 h-auto">
             <TabsTrigger value="ecph" className="text-xs gap-1.5">
               <Droplet className="w-3.5 h-3.5" /> EC/pH
             </TabsTrigger>
@@ -157,6 +159,15 @@ export default function AnalyticsPage() {
             </TabsTrigger>
             <TabsTrigger value="desperdicio" className="text-xs gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5" /> Desperdício
+            </TabsTrigger>
+            <TabsTrigger value="yield" className="text-xs gap-1.5">
+              <TrendingUp className="w-3.5 h-3.5" /> Yield
+            </TabsTrigger>
+            <TabsTrigger value="planejado" className="text-xs gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Plan. vs Real
+            </TabsTrigger>
+            <TabsTrigger value="relatorios" className="text-xs gap-1.5">
+              <FileText className="w-3.5 h-3.5" /> Relatórios
             </TabsTrigger>
           </TabsList>
 
@@ -177,6 +188,15 @@ export default function AnalyticsPage() {
           </TabsContent>
           <TabsContent value="desperdicio">
             <DesperdicioSection data={data} period={period} />
+          </TabsContent>
+          <TabsContent value="yield">
+            <YieldSection data={data} period={period} />
+          </TabsContent>
+          <TabsContent value="planejado">
+            <PlanejadoVsRealizadoSection data={data} period={period} />
+          </TabsContent>
+          <TabsContent value="relatorios">
+            <RelatoriosSection data={data} period={period} />
           </TabsContent>
         </Tabs>
       </main>
@@ -1038,6 +1058,406 @@ function DesperdicioSection({ data, period }: { data: FazendaData; period: Perio
           </Card>
         </div>
       )}
+    </div>
+  );
+}
+
+// ============================================================
+// 7. Yield (g/planta por variedade)
+// ============================================================
+
+function YieldSection({ data, period }: { data: FazendaData; period: PeriodFilter }) {
+  const colheitasQuery = trpc.registrosColheita.list.useQuery();
+  const receitasQuery = trpc.receitas.list.useQuery();
+  const colheitas = colheitasQuery.data || [];
+  const receitas = receitasQuery.data || [];
+
+  // Build receita yield map
+  const receitaYieldMap = useMemo(() => {
+    const m = new Map<number, { nome: string; yieldEsperado: number | null; variedadeNome: string }>(); 
+    receitas.forEach((r: any) => m.set(r.id, { nome: r.nome, yieldEsperado: r.yieldEsperadoGramas, variedadeNome: r.variedadeNome || '' }));
+    return m;
+  }, [receitas]);
+
+  // Yield por variedade
+  const yieldPorVariedade = useMemo(() => {
+    const map = new Map<string, { totalPeso: number; totalPlantas: number; esperado: number | null }>(); 
+    colheitas.forEach((c: any) => {
+      const nome = c.variedadeNome || 'Desconhecida';
+      const entry = map.get(nome) || { totalPeso: 0, totalPlantas: 0, esperado: null };
+      entry.totalPeso += c.pesoTotalGramas || 0;
+      entry.totalPlantas += c.quantidadePlantas || 0;
+      // Try to get expected yield from receita
+      if (c.receitaId && receitaYieldMap.has(c.receitaId)) {
+        entry.esperado = receitaYieldMap.get(c.receitaId)!.yieldEsperado;
+      }
+      map.set(nome, entry);
+    });
+    return Array.from(map.entries())
+      .map(([nome, vals]) => ({
+        nome,
+        gPorPlanta: vals.totalPlantas > 0 ? Math.round((vals.totalPeso / vals.totalPlantas) * 10) / 10 : 0,
+        esperado: vals.esperado || 0,
+        totalPeso: Math.round(vals.totalPeso),
+        totalPlantas: vals.totalPlantas,
+      }))
+      .filter((v) => v.totalPlantas > 0)
+      .sort((a, b) => b.gPorPlanta - a.gPorPlanta);
+  }, [colheitas, receitaYieldMap]);
+
+  // Qualidade distribution
+  const qualidadeData = useMemo(() => {
+    const map = { A: 0, B: 0, C: 0 };
+    colheitas.forEach((c: any) => {
+      const q = (c.qualidade || 'B') as keyof typeof map;
+      if (map[q] !== undefined) map[q]++;
+    });
+    return [
+      { qualidade: 'A (Excelente)', count: map.A },
+      { qualidade: 'B (Boa)', count: map.B },
+      { qualidade: 'C (Abaixo)', count: map.C },
+    ].filter((d) => d.count > 0);
+  }, [colheitas]);
+
+  const totalColheitas = colheitas.length;
+  const totalPeso = colheitas.reduce((s: number, c: any) => s + (c.pesoTotalGramas || 0), 0);
+  const totalPlantas = colheitas.reduce((s: number, c: any) => s + (c.quantidadePlantas || 0), 0);
+  const avgYield = totalPlantas > 0 ? Math.round((totalPeso / totalPlantas) * 10) / 10 : 0;
+
+  const yieldConfig: ChartConfig = {
+    gPorPlanta: { label: 'g/planta (Real)', color: COLORS.success },
+    esperado: { label: 'g/planta (Esperado)', color: COLORS.info },
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <MiniStat label="Total Colheitas" value={totalColheitas} color="emerald" icon={<Scissors className="w-4 h-4" />} />
+        <MiniStat label="Peso Total" value={`${Math.round(totalPeso / 1000 * 10) / 10}kg`} color="blue" icon={<TrendingUp className="w-4 h-4" />} />
+        <MiniStat label="Plantas Colhidas" value={totalPlantas} color="amber" icon={<Leaf className="w-4 h-4" />} />
+        <MiniStat label="Yield Médio" value={`${avgYield}g/pl`} color="emerald" icon={<Target className="w-4 h-4" />} />
+      </div>
+
+      {yieldPorVariedade.length === 0 ? (
+        <EmptyState icon={TrendingUp} message="Nenhum registro de colheita encontrado" />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Yield por Variedade (g/planta)</CardTitle>
+              <CardDescription className="text-xs">Real vs Esperado (da receita)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={yieldConfig} className="h-[300px] w-full">
+                <BarChart data={yieldPorVariedade} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="nome" tick={{ fontSize: 10 }} angle={-30} textAnchor="end" height={60} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <ChartLegend content={<ChartLegendContent />} />
+                  <Bar dataKey="gPorPlanta" fill={COLORS.success} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="esperado" fill={COLORS.info} radius={[4, 4, 0, 0]} opacity={0.5} />
+                </BarChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Distribuição de Qualidade</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {qualidadeData.length === 0 ? (
+                <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">Sem dados</div>
+              ) : (
+                <ChartContainer config={{ count: { label: 'Colheitas', color: COLORS.success } }} className="h-[300px] w-full">
+                  <PieChart>
+                    <Pie data={qualidadeData} cx="50%" cy="50%" outerRadius={100} innerRadius={50} dataKey="count" nameKey="qualidade" label={({ qualidade, count }) => `${qualidade}: ${count}`} labelLine={false}>
+                      <Cell fill={COLORS.success} />
+                      <Cell fill={COLORS.info} />
+                      <Cell fill={COLORS.danger} />
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent nameKey="qualidade" />} />
+                  </PieChart>
+                </ChartContainer>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// 8. Planejado vs Realizado
+// ============================================================
+
+function PlanejadoVsRealizadoSection({ data, period }: { data: FazendaData; period: PeriodFilter }) {
+  const planosQuery = trpc.planosPlantio.list.useQuery();
+  const colheitasQuery = trpc.registrosColheita.list.useQuery();
+  const tarefasQuery = trpc.tarefas.list.useQuery();
+  const planos = planosQuery.data || [];
+  const colheitas = colheitasQuery.data || [];
+  const tarefas = tarefasQuery.data || [];
+
+  // KPIs
+  const stats = useMemo(() => {
+    const totalPlanos = planos.length;
+    const colhidos = planos.filter((p: any) => p.status === 'colhido').length;
+    const cancelados = planos.filter((p: any) => p.status === 'cancelado').length;
+    const emAndamento = planos.filter((p: any) => p.status === 'em_germinacao' || p.status === 'em_producao').length;
+    const taxaConclusao = totalPlanos > 0 ? Math.round((colhidos / totalPlanos) * 100) : 0;
+
+    // Atraso médio (dias entre colheita prevista e real)
+    const atrasos: number[] = [];
+    planos.filter((p: any) => p.status === 'colhido').forEach((p: any) => {
+      // Find matching colheita
+      const match = colheitas.find((c: any) => c.variedadeNome === p.variedadeNome);
+      if (match) {
+        const prevista = new Date(p.dataColheitaPrevista);
+        const real = new Date((match as any).dataColheita);
+        const diff = Math.round((real.getTime() - prevista.getTime()) / (1000 * 60 * 60 * 24));
+        atrasos.push(diff);
+      }
+    });
+    const atrasoMedio = atrasos.length > 0 ? Math.round(atrasos.reduce((a, b) => a + b, 0) / atrasos.length) : null;
+
+    // Tarefas stats
+    const tarefasConcluidas = tarefas.filter((t: any) => t.status === 'concluida').length;
+    const tarefasTotal = tarefas.length;
+    const taxaTarefas = tarefasTotal > 0 ? Math.round((tarefasConcluidas / tarefasTotal) * 100) : 0;
+
+    // Desvio de quantidade (plantas planejadas vs colhidas)
+    let plantasPlanejadas = 0;
+    let plantasColhidas = 0;
+    planos.filter((p: any) => p.status === 'colhido').forEach((p: any) => {
+      plantasPlanejadas += p.quantidadePlantas;
+      const matches = colheitas.filter((c: any) => c.variedadeNome === p.variedadeNome);
+      plantasColhidas += matches.reduce((s: number, c: any) => s + (c.quantidadePlantas || 0), 0);
+    });
+    const desvioQtd = plantasPlanejadas > 0 ? Math.round(((plantasColhidas - plantasPlanejadas) / plantasPlanejadas) * 100) : null;
+
+    return { totalPlanos, colhidos, cancelados, emAndamento, taxaConclusao, atrasoMedio, taxaTarefas, tarefasConcluidas, tarefasTotal, desvioQtd };
+  }, [planos, colheitas, tarefas]);
+
+  // Status distribution for chart
+  const statusData = useMemo(() => [
+    { status: 'Planejado', count: planos.filter((p: any) => p.status === 'planejado').length },
+    { status: 'Em Germinação', count: planos.filter((p: any) => p.status === 'em_germinacao').length },
+    { status: 'Em Produção', count: planos.filter((p: any) => p.status === 'em_producao').length },
+    { status: 'Colhido', count: planos.filter((p: any) => p.status === 'colhido').length },
+    { status: 'Cancelado', count: planos.filter((p: any) => p.status === 'cancelado').length },
+  ].filter((d) => d.count > 0), [planos]);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <MiniStat label="Total Planos" value={stats.totalPlanos} color="blue" icon={<Target className="w-4 h-4" />} />
+        <MiniStat label="Taxa Conclusão" value={`${stats.taxaConclusao}%`} color="emerald" icon={<CheckCircle2 className="w-4 h-4" />} />
+        <MiniStat label="Atraso Médio" value={stats.atrasoMedio !== null ? `${stats.atrasoMedio}d` : '-'} color={stats.atrasoMedio && stats.atrasoMedio > 3 ? 'red' : 'blue'} icon={<Clock className="w-4 h-4" />} />
+        <MiniStat label="Tarefas Concluídas" value={`${stats.tarefasConcluidas}/${stats.tarefasTotal}`} color="amber" icon={<CheckCircle2 className="w-4 h-4" />} />
+        <MiniStat label="Desvio Qtd" value={stats.desvioQtd !== null ? `${stats.desvioQtd > 0 ? '+' : ''}${stats.desvioQtd}%` : '-'} color={stats.desvioQtd && Math.abs(stats.desvioQtd) > 10 ? 'red' : 'emerald'} icon={<TrendingUp className="w-4 h-4" />} />
+      </div>
+
+      {planos.length === 0 ? (
+        <EmptyState icon={CheckCircle2} message="Nenhum plano de plantio encontrado. Crie planos na página de Planejamento." />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Distribuição de Status dos Planos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={{ count: { label: 'Planos', color: COLORS.info } }} className="h-[280px] w-full">
+                <PieChart>
+                  <Pie data={statusData} cx="50%" cy="50%" outerRadius={100} innerRadius={50} dataKey="count" nameKey="status" label={({ status, count }) => `${status}: ${count}`} labelLine={false}>
+                    {statusData.map((_, i) => (
+                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<ChartTooltipContent nameKey="status" />} />
+                </PieChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Resumo Operacional</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span>Planos concluídos</span>
+                  <span className="font-semibold">{stats.colhidos}/{stats.totalPlanos}</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${stats.taxaConclusao}%` }} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span>Tarefas concluídas</span>
+                  <span className="font-semibold">{stats.tarefasConcluidas}/{stats.tarefasTotal}</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500 rounded-full" style={{ width: `${stats.taxaTarefas}%` }} />
+                </div>
+              </div>
+              {stats.atrasoMedio !== null && (
+                <div className="p-2 rounded-lg bg-muted/50 text-xs">
+                  <span className="text-muted-foreground">Atraso médio na colheita: </span>
+                  <span className={`font-semibold ${stats.atrasoMedio > 3 ? 'text-red-600' : 'text-emerald-600'}`}>
+                    {stats.atrasoMedio > 0 ? `+${stats.atrasoMedio}` : stats.atrasoMedio} dias
+                  </span>
+                </div>
+              )}
+              {stats.desvioQtd !== null && (
+                <div className="p-2 rounded-lg bg-muted/50 text-xs">
+                  <span className="text-muted-foreground">Desvio de quantidade: </span>
+                  <span className={`font-semibold ${Math.abs(stats.desvioQtd) > 10 ? 'text-red-600' : 'text-emerald-600'}`}>
+                    {stats.desvioQtd > 0 ? '+' : ''}{stats.desvioQtd}%
+                  </span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// 9. Relatórios Exportáveis
+// ============================================================
+
+function RelatoriosSection({ data, period }: { data: FazendaData; period: PeriodFilter }) {
+  const colheitasQuery = trpc.registrosColheita.list.useQuery();
+  const planosQuery = trpc.planosPlantio.list.useQuery();
+  const tarefasQuery = trpc.tarefas.list.useQuery();
+  const colheitas = colheitasQuery.data || [];
+  const planos = planosQuery.data || [];
+  const tarefas = tarefasQuery.data || [];
+
+  const exportCSV = useCallback((filename: string, headers: string[], rows: string[][]) => {
+    const csv = [headers.join(','), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filename}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
+  const exportProducao = useCallback(() => {
+    const headers = ['Data', 'Variedade', 'Torre', 'Andar', 'Plantas', 'Peso (g)', 'Qualidade', 'Destino', 'Observações'];
+    const rows = colheitas.map((c: any) => [
+      c.dataColheita ? new Date(c.dataColheita).toLocaleDateString('pt-BR') : '',
+      c.variedadeNome || '',
+      c.torreId || '',
+      c.andarId || '',
+      c.quantidadePlantas || 0,
+      c.pesoTotalGramas || 0,
+      c.qualidade || '',
+      c.destino || '',
+      c.observacoes || '',
+    ]);
+    exportCSV('relatorio-producao', headers, rows);
+  }, [colheitas, exportCSV]);
+
+  const exportOperacional = useCallback(() => {
+    const headers = ['Título', 'Tipo', 'Prioridade', 'Status', 'Vencimento', 'Concluído Em', 'Concluído Por'];
+    const rows = tarefas.map((t: any) => [
+      t.titulo || '',
+      t.tipo || '',
+      t.prioridade || '',
+      t.status || '',
+      t.dataVencimento ? new Date(t.dataVencimento).toLocaleDateString('pt-BR') : '',
+      t.concluidoEm ? new Date(t.concluidoEm).toLocaleDateString('pt-BR') : '',
+      t.concluidoPorNome || '',
+    ]);
+    exportCSV('relatorio-operacional', headers, rows);
+  }, [tarefas, exportCSV]);
+
+  const exportCapacidade = useCallback(() => {
+    const headers = ['Receita', 'Variedade', 'Plantas', 'Status', 'Início Germinação', 'Colheita Prevista', 'Criado Por'];
+    const rows = planos.map((p: any) => [
+      p.receitaNome || '',
+      p.variedadeNome || '',
+      p.quantidadePlantas || 0,
+      p.status || '',
+      p.dataInicioGerminacao ? new Date(p.dataInicioGerminacao).toLocaleDateString('pt-BR') : '',
+      p.dataColheitaPrevista ? new Date(p.dataColheitaPrevista).toLocaleDateString('pt-BR') : '',
+      p.criadoPorNome || '',
+    ]);
+    exportCSV('relatorio-capacidade', headers, rows);
+  }, [planos, exportCSV]);
+
+  const reports = [
+    {
+      title: 'Resumo de Produção',
+      description: 'Todas as colheitas com peso, qualidade, destino e observações',
+      icon: <Scissors className="w-5 h-5 text-emerald-600" />,
+      count: colheitas.length,
+      onExport: exportProducao,
+      color: 'emerald',
+    },
+    {
+      title: 'Performance Operacional',
+      description: 'Tarefas com tipo, prioridade, status e datas de conclusão',
+      icon: <CheckCircle2 className="w-5 h-5 text-blue-600" />,
+      count: tarefas.length,
+      onExport: exportOperacional,
+      color: 'blue',
+    },
+    {
+      title: 'Eficiência de Capacidade',
+      description: 'Planos de plantio com datas, status e variedades',
+      icon: <Target className="w-5 h-5 text-amber-600" />,
+      count: planos.length,
+      onExport: exportCapacidade,
+      color: 'amber',
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Exporte relatórios em formato CSV para análise externa ou compartilhamento.
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {reports.map((report) => (
+          <Card key={report.title} className="hover:shadow-md transition-shadow">
+            <CardContent className="p-5">
+              <div className="flex items-start gap-3 mb-4">
+                {report.icon}
+                <div>
+                  <h3 className="font-display font-bold text-sm">{report.title}</h3>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{report.description}</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">{report.count} registro(s)</span>
+                <button
+                  onClick={report.onExport}
+                  disabled={report.count === 0}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    report.count > 0
+                      ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                      : 'bg-muted text-muted-foreground cursor-not-allowed'
+                  }`}
+                >
+                  <FileDown className="w-3.5 h-3.5" />
+                  Exportar CSV
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

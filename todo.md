@@ -135,5 +135,29 @@
 - [x] Rotas tRPC para registros de colheita
 - [x] Modal de registro de colheita no TorreDetail
 - [x] Integrar Receitas e Tarefas na navegação (Header)
-- [ ] Atualizar Dashboard com contagem de tarefas pendentes
+- [x] Atualizar Dashboard com contagem de tarefas pendentes
 - [x] Testes Vitest para receitas, tarefas e colheita
+
+## Onda 2 — Planejamento de Plantio + Capacidade
+- [x] Schema: tabela planos_plantio
+- [x] Push schema para banco (pnpm db:push)
+- [x] Query helpers para planos de plantio (CRUD + avanço de status)
+- [x] Rotas tRPC para planos de plantio (admin CRUD + leitura pública)
+- [x] Página de Planejamento: Calendário de Plantio (visão mensal com eventos)
+- [x] Página de Planejamento: Formulário Novo Plano (3 passos: receita, quantidade/data, destino)
+- [x] Página de Planejamento: Lista de Planos (tabela com filtros e ações)
+- [x] Cálculo automático de datas intermediárias baseado na receita
+- [x] Sugestão de torre/andar com capacidade disponível
+- [x] Fluxo de status: Planejado → Em Germinação → Em Produção → Colhido / Cancelado
+- [x] Página de Gantt de Capacidade (barras horizontais por andar/torre, real + planejado)
+- [x] Projeção de Capacidade (andares disponíveis por fase nas próximas semanas)
+- [x] Integrar Planejamento e Capacidade na navegação (Header)
+
+## Onda 3 — Analytics Avançados + Relatórios
+-- [x] Analytics: aba Yield (g/planta por variedade, yield esperado vs realizado)
+- [x] Analytics: aba Planejado vs Realizado (atraso médio, taxa conclusão, desvio quantidade)
+- [x] Analytics: aba Relatórios exportáveis (CSV: Produção, Operacional, Capacidade), Eficiência Capacidade)
+- [x] Exportar relatórios como CSV
+
+## Pendente Onda 1
+- [x] Atualizar Dashboard com contagem de tarefas pendentes

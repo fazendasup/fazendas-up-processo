@@ -19,6 +19,7 @@ import {
   receitasCrescimento, InsertReceitaCrescimento,
   tarefas, InsertTarefa,
   registrosColheita, InsertRegistroColheita,
+  planosPlantio, InsertPlanoPlantio,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -533,6 +534,7 @@ export async function loadFullFazendaData() {
     allReceitas,
     allTarefas,
     allRegistrosColheita,
+    allPlanosPlantio,
   ] = await Promise.all([
     db.select().from(torres),
     db.select().from(caixasAgua),
@@ -551,6 +553,7 @@ export async function loadFullFazendaData() {
     db.select().from(receitasCrescimento),
     db.select().from(tarefas),
     db.select().from(registrosColheita),
+    db.select().from(planosPlantio),
   ]);
 
   return {
@@ -571,6 +574,7 @@ export async function loadFullFazendaData() {
     receitas: allReceitas,
     tarefas: allTarefas,
     registrosColheita: allRegistrosColheita,
+    planosPlantio: allPlanosPlantio,
   };
 }
 
@@ -599,6 +603,7 @@ export async function resetAllData() {
   await db.delete(receitasCrescimento);
   await db.delete(tarefas);
   await db.delete(registrosColheita);
+  await db.delete(planosPlantio);
 }
 
 // ============================================================
@@ -808,4 +813,33 @@ export async function deleteRegistroColheita(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(registrosColheita).where(eq(registrosColheita.id, id));
+}
+
+// ============================================================
+// Planos de Plantio
+// ============================================================
+
+export async function getAllPlanosPlantio() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(planosPlantio);
+}
+
+export async function createPlanoPlantio(data: InsertPlanoPlantio) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(planosPlantio).values(data);
+  return { id: result[0].insertId };
+}
+
+export async function updatePlanoPlantio(id: number, data: Partial<InsertPlanoPlantio>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(planosPlantio).set(data).where(eq(planosPlantio.id, id));
+}
+
+export async function deletePlanoPlantio(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(planosPlantio).where(eq(planosPlantio.id, id));
 }

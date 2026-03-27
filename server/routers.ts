@@ -852,6 +852,70 @@ export const appRouter = router({
       }),
   }),
 
+  // ---- Planos de Plantio ----
+  planosPlantio: router({
+    list: publicProcedure.query(async () => {
+      return db.getAllPlanosPlantio();
+    }),
+    create: adminProcedure
+      .input(z.object({
+        receitaId: z.number(),
+        receitaNome: z.string(),
+        variedadeId: z.number(),
+        variedadeNome: z.string(),
+        quantidadePlantas: z.number(),
+        dataInicioGerminacao: z.date(),
+        dataTransplantioMudas: z.date(),
+        dataTransplantioVeg: z.date(),
+        dataTransplantioMat: z.date(),
+        dataColheitaPrevista: z.date(),
+        torreDestinoId: z.number().nullable().optional(),
+        andarDestinoId: z.number().nullable().optional(),
+        observacoes: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return db.createPlanoPlantio({
+          ...input,
+          criadoPorId: ctx.user.id,
+          criadoPorNome: ctx.user.name || 'Admin',
+        });
+      }),
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        quantidadePlantas: z.number().optional(),
+        dataInicioGerminacao: z.date().optional(),
+        dataTransplantioMudas: z.date().optional(),
+        dataTransplantioVeg: z.date().optional(),
+        dataTransplantioMat: z.date().optional(),
+        dataColheitaPrevista: z.date().optional(),
+        torreDestinoId: z.number().nullable().optional(),
+        andarDestinoId: z.number().nullable().optional(),
+        status: z.string().optional(),
+        observacoes: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updatePlanoPlantio(id, data);
+        return { success: true };
+      }),
+    avancarStatus: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        novoStatus: z.enum(['em_germinacao', 'em_producao', 'colhido', 'cancelado']),
+      }))
+      .mutation(async ({ input }) => {
+        await db.updatePlanoPlantio(input.id, { status: input.novoStatus });
+        return { success: true, status: input.novoStatus };
+      }),
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deletePlanoPlantio(input.id);
+        return { success: true };
+      }),
+  }),
+
   // ---- Seed / Reset (admin) ----
   admin: router({
     seed: adminProcedure.mutation(async () => {
