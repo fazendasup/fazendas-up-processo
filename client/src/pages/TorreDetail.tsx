@@ -232,11 +232,12 @@ export default function TorreDetail() {
 
     const varDbId = resolver.varSlugToId.get(variedadeId) || null;
 
-    // Update perfil variedade
+    // Update perfil variedade (em mudas, ativar automaticamente ao atribuir variedade)
     mutations.updatePerfil.mutate({
       andarId: andarDbId,
       perfilIndex,
       variedadeId: varDbId,
+      ...(isMudas && varDbId ? { ativo: true } : {}),
     });
 
     // Batch update furos of this perfil that are not vazio
@@ -264,8 +265,8 @@ export default function TorreDetail() {
 
     const varDbId = resolver.varSlugToId.get(variedadeId) || null;
 
-    // Batch: set all perfis variedade
-    mutations.setAllPerfis.mutate({ andarId: andarDbId, variedadeId: varDbId });
+    // Batch: set all perfis variedade (em mudas, ativar automaticamente ao atribuir variedade)
+    mutations.setAllPerfis.mutate({ andarId: andarDbId, variedadeId: varDbId, ...(isMudas && varDbId ? { ativo: true } : {}) });
 
     // Batch: set all non-vazio furos variedade
     const nonVazioFuros = (andarSelecionado.furos || []).filter((f) => f.status !== 'vazio');

@@ -169,3 +169,6 @@
 - [x] UI: botão/modal de movimentação no TorreDetail (selecionar destino)
 - [x] UI: opção de mover 1 perfil ou andar inteiro
 - [x] Testes Vitest para rotas de movimentação
+
+## Bug Fix
+- [x] Dados inseridos no andar 1 da torre de mudas não aparecem no dashboard nem na torre

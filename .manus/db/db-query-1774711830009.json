@@ -1,0 +1,22 @@
+{
+  "query": "SELECT t.fase, COUNT(a.id) as total_andares FROM andares a JOIN torres t ON a.torreId = t.id GROUP BY t.fase;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3QoEV5smxrvcKgg.89e310025238 --database V8Zeqmat63YDtBSE4w4iyd --execute SELECT t.fase, COUNT(a.id) as total_andares FROM andares a JOIN torres t ON a.torreId = t.id GROUP BY t.fase;",
+  "rows": [
+    {
+      "fase": "vegetativa",
+      "total_andares": "36"
+    },
+    {
+      "fase": "mudas",
+      "total_andares": "12"
+    },
+    {
+      "fase": "maturacao",
+      "total_andares": "90"
+    }
+  ],
+  "messages": [],
+  "stdout": "fase\ttotal_andares\nvegetativa\t36\nmudas\t12\nmaturacao\t90\n",
+  "stderr": "",
+  "execution_time_ms": 63
+}

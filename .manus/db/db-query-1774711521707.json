@@ -1,0 +1,18 @@
+{
+  "query": "SELECT 'perfis' as tabela, COUNT(*) as total FROM perfis WHERE andarId = 120008 UNION ALL SELECT 'furos', COUNT(*) FROM furos WHERE andarId = 120008;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3QoEV5smxrvcKgg.89e310025238 --database V8Zeqmat63YDtBSE4w4iyd --execute SELECT 'perfis' as tabela, COUNT(*) as total FROM perfis WHERE andarId = 120008 UNION ALL SELECT 'furos', COUNT(*) FROM furos WHERE andarId = 120008;",
+  "rows": [
+    {
+      "tabela": "perfis",
+      "total": "12"
+    },
+    {
+      "tabela": "furos",
+      "total": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "tabela\ttotal\nperfis\t12\nfuros\t0\n",
+  "stderr": "",
+  "execution_time_ms": 78
+}

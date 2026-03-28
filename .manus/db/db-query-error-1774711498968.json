@@ -1,0 +1,8 @@
+{
+  "query": "SELECT t.id as torre_id, t.nome, t.fase, a.id as andar_id, a.numero FROM torres t JOIN andares a ON a.torre_id = t.id WHERE t.fase = 'mudas' AND a.numero = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3QoEV5smxrvcKgg.89e310025238 --database V8Zeqmat63YDtBSE4w4iyd --execute SELECT t.id as torre_id, t.nome, t.fase, a.id as andar_id, a.numero FROM torres t JOIN andares a ON a.torre_id = t.id WHERE t.fase = 'mudas' AND a.numero = 1;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'a.torre_id' in 'on clause'"
+  ]
+}

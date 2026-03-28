@@ -1,0 +1,82 @@
+{
+  "query": "SELECT p.id, p.perfilIndex, p.ativo, p.variedadeId FROM perfis p WHERE p.andarId = 120008 ORDER BY p.perfilIndex;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3QoEV5smxrvcKgg.89e310025238 --database V8Zeqmat63YDtBSE4w4iyd --execute SELECT p.id, p.perfilIndex, p.ativo, p.variedadeId FROM perfis p WHERE p.andarId = 120008 ORDER BY p.perfilIndex;",
+  "rows": [
+    {
+      "id": "120085",
+      "perfilIndex": "0",
+      "ativo": "0",
+      "variedadeId": "120016"
+    },
+    {
+      "id": "120086",
+      "perfilIndex": "1",
+      "ativo": "0",
+      "variedadeId": "120025"
+    },
+    {
+      "id": "120087",
+      "perfilIndex": "2",
+      "ativo": "0",
+      "variedadeId": "120015"
+    },
+    {
+      "id": "120088",
+      "perfilIndex": "3",
+      "ativo": "0",
+      "variedadeId": "120013"
+    },
+    {
+      "id": "120089",
+      "perfilIndex": "4",
+      "ativo": "0",
+      "variedadeId": "120013"
+    },
+    {
+      "id": "120090",
+      "perfilIndex": "5",
+      "ativo": "0",
+      "variedadeId": "120013"
+    },
+    {
+      "id": "120091",
+      "perfilIndex": "6",
+      "ativo": "0",
+      "variedadeId": "120013"
+    },
+    {
+      "id": "120092",
+      "perfilIndex": "7",
+      "ativo": "0",
+      "variedadeId": "120013"
+    },
+    {
+      "id": "120093",
+      "perfilIndex": "8",
+      "ativo": "0",
+      "variedadeId": "120013"
+    },
+    {
+      "id": "120094",
+      "perfilIndex": "9",
+      "ativo": "0",
+      "variedadeId": "120013"
+    },
+    {
+      "id": "120095",
+      "perfilIndex": "10",
+      "ativo": "0",
+      "variedadeId": "120013"
+    },
+    {
+      "id": "120096",
+      "perfilIndex": "11",
+      "ativo": "0",
+      "variedadeId": "120013"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tperfilIndex\tativo\tvariedadeId\n120085\t0\t0\t120016\n120086\t1\t0\t120025\n120087\t2\t0\t120015\n120088\t3\t0\t120013\n120089\t4\t0\t120013\n120090\t5\t0\t120013\n120091\t6\t0\t120013\n120092\t7\t0\t120013\n120093\t8\t0\t120013\n120094\t9\t0\t120013\n120095\t10\t0\t120013\n120096\t11\t0\t120013\n",
+  "stderr": "",
+  "execution_time_ms": 64
+}

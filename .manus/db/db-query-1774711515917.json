@@ -1,0 +1,17 @@
+{
+  "query": "SELECT t.id as torre_id, t.nome, t.fase, a.id as andar_id, a.numero FROM torres t JOIN andares a ON a.torreId = t.id WHERE t.fase = 'mudas' AND a.numero = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3QoEV5smxrvcKgg.89e310025238 --database V8Zeqmat63YDtBSE4w4iyd --execute SELECT t.id as torre_id, t.nome, t.fase, a.id as andar_id, a.numero FROM torres t JOIN andares a ON a.torreId = t.id WHERE t.fase = 'mudas' AND a.numero = 1;",
+  "rows": [
+    {
+      "torre_id": "120002",
+      "nome": "Torre Mudas 1",
+      "fase": "mudas",
+      "andar_id": "120008",
+      "numero": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "torre_id\tnome\tfase\tandar_id\tnumero\n120002\tTorre Mudas 1\tmudas\t120008\t1\n",
+  "stderr": "",
+  "execution_time_ms": 62
+}

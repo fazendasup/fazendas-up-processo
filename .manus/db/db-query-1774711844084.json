@@ -1,0 +1,14 @@
+{
+  "query": "SELECT MIN(id) as min_id, MAX(id) as max_id FROM andares;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3QoEV5smxrvcKgg.89e310025238 --database V8Zeqmat63YDtBSE4w4iyd --execute SELECT MIN(id) as min_id, MAX(id) as max_id FROM andares;",
+  "rows": [
+    {
+      "min_id": "120703",
+      "max_id": "120840"
+    }
+  ],
+  "messages": [],
+  "stdout": "min_id\tmax_id\n120703\t120840\n",
+  "stderr": "",
+  "execution_time_ms": 75
+}

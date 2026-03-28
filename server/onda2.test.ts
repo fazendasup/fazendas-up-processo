@@ -64,10 +64,12 @@ async function getReceitaAndVariedade() {
   if (receitas.length > 0) {
     receita = receitas[0];
   } else {
-    receita = await adminCaller.receitas.create({
+    const created = await adminCaller.receitas.create({
       nome: "Receita Onda2 Test",
       variedadeId: variedade.id,
     });
+    // createReceita returns only {id}, so we add the nome manually
+    receita = { id: created.id, nome: "Receita Onda2 Test" };
   }
 
   return { receita, variedade };

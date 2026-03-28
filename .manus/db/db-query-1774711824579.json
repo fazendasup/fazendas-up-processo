@@ -1,0 +1,82 @@
+{
+  "query": "SELECT a.id, a.torreId, a.numero, t.fase FROM andares a JOIN torres t ON a.torreId = t.id WHERE t.fase = 'mudas' ORDER BY a.id LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3QoEV5smxrvcKgg.89e310025238 --database V8Zeqmat63YDtBSE4w4iyd --execute SELECT a.id, a.torreId, a.numero, t.fase FROM andares a JOIN torres t ON a.torreId = t.id WHERE t.fase = 'mudas' ORDER BY a.id LIMIT 20;",
+  "rows": [
+    {
+      "id": "120703",
+      "torreId": "120072",
+      "numero": "1",
+      "fase": "mudas"
+    },
+    {
+      "id": "120704",
+      "torreId": "120072",
+      "numero": "2",
+      "fase": "mudas"
+    },
+    {
+      "id": "120705",
+      "torreId": "120072",
+      "numero": "3",
+      "fase": "mudas"
+    },
+    {
+      "id": "120706",
+      "torreId": "120072",
+      "numero": "4",
+      "fase": "mudas"
+    },
+    {
+      "id": "120707",
+      "torreId": "120072",
+      "numero": "5",
+      "fase": "mudas"
+    },
+    {
+      "id": "120708",
+      "torreId": "120072",
+      "numero": "6",
+      "fase": "mudas"
+    },
+    {
+      "id": "120709",
+      "torreId": "120072",
+      "numero": "7",
+      "fase": "mudas"
+    },
+    {
+      "id": "120710",
+      "torreId": "120072",
+      "numero": "8",
+      "fase": "mudas"
+    },
+    {
+      "id": "120711",
+      "torreId": "120072",
+      "numero": "9",
+      "fase": "mudas"
+    },
+    {
+      "id": "120712",
+      "torreId": "120072",
+      "numero": "10",
+      "fase": "mudas"
+    },
+    {
+      "id": "120713",
+      "torreId": "120072",
+      "numero": "11",
+      "fase": "mudas"
+    },
+    {
+      "id": "120714",
+      "torreId": "120072",
+      "numero": "12",
+      "fase": "mudas"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttorreId\tnumero\tfase\n120703\t120072\t1\tmudas\n120704\t120072\t2\tmudas\n120705\t120072\t3\tmudas\n120706\t120072\t4\tmudas\n120707\t120072\t5\tmudas\n120708\t120072\t6\tmudas\n120709\t120072\t7\tmudas\n120710\t120072\t8\tmudas\n120711\t120072\t9\tmudas\n120712\t120072\t10\tmudas\n120713\t120072\t11\tmudas\n120714\t120072\t12\tmudas\n",
+  "stderr": "",
+  "execution_time_ms": 79
+}
