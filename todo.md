@@ -207,3 +207,11 @@
 - [x] TorreCard: indicar quando parte do andar está pronta e parte não
 - [x] Alertas: gerar alertas específicos por perfil quando previsão vence
 - [x] Testes Vitest: 67 testes passando (7 arquivos, 0 falhas, sem regressão)
+
+## Bug Fix: Datas e Clareza Visual nos Perfis
+- [x] BUG: Input de data individual por perfil — adicionado onBlur como fallback para garantir que a mutation é chamada
+- [x] UX: Banner de alerta no topo do andar mostrando perfis prontos para transplantio/colheita (com nomes)
+- [x] UX: Badges coloridos em cada card de perfil (TRANSPL./COLHER! em vermelho, Xd em verde/amarelo)
+- [x] UX: Resumo de status parcial (Transplante X/12, Em Processo Y/12)
+- [x] UX: Cards de perfil no grid com borda vermelha + animação pulse quando prontos
+- [x] Testes: 67 testes Vitest passando (7 arquivos, 0 falhas)

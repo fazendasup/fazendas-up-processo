@@ -798,6 +798,35 @@ export default function TorreDetail() {
                   </div>
                 )}
 
+                {/* Banner de alerta: perfis prontos para ação */}
+                {(() => {
+                  const perfisAtivos = (andarSelecionado.perfis || []).filter((p) => p.ativo);
+                  const prontos = perfisAtivos.filter((p) => {
+                    const dateStr = p.dataEntrada || andarSelecionado.dataEntrada;
+                    if (!dateStr) return false;
+                    const rest = diasRestantes(dateStr, torre.fase, p.variedadeId || undefined, data.variedades);
+                    return rest !== null && rest <= 0;
+                  });
+                  if (prontos.length === 0) return null;
+                  const acao = torre.fase === 'maturacao' ? 'colheita' : 'transplantio';
+                  const nomes = prontos.map((p) => `P${p.perfilIndex + 1}`).join(', ');
+                  return (
+                    <div className="mx-4 mt-3 p-3 bg-red-50 border-2 border-red-300 rounded-lg animate-pulse">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+                        <div>
+                          <p className="text-sm font-bold text-red-700">
+                            {prontos.length} perfil(is) pronto(s) para {acao}!
+                          </p>
+                          <p className="text-xs text-red-600 mt-0.5">
+                            Perfis: {nomes}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 <div className="p-4">
                   {/* Data de entrada (aplica a todos os perfis) */}
                   <form onSubmit={handleUpdateAndar} className="mb-4 p-3 bg-muted/30 rounded-lg border border-dashed">
@@ -809,7 +838,7 @@ export default function TorreDetail() {
                           type="date"
                           defaultValue={andarSelecionado.dataEntrada ? new Date(andarSelecionado.dataEntrada).toISOString().split('T')[0] : ''}
                           className="h-10 text-sm"
-                          key={andarSelecionado.id + '-date'}
+                          key={`${andarSelecionado.id}-date-${andarSelecionado.dataEntrada || 'empty'}`}
                         />
                       </div>
                       <Button type="submit" className="h-10 text-sm px-4">Salvar Data</Button>
@@ -817,15 +846,15 @@ export default function TorreDetail() {
 
                     {/* Resumo por perfil: mostra status de cada perfil com data */}
                     {(() => {
-                      const perfisComData = (andarSelecionado.perfis || []).filter((p) => p.ativo && p.dataEntrada);
-                      if (perfisComData.length === 0 && !andarSelecionado.dataEntrada) return null;
+                      const perfisAtivos = (andarSelecionado.perfis || []).filter((p) => p.ativo);
+                      if (perfisAtivos.length === 0) return null;
 
                       // Calcular status por perfil
-                      const perfilStatuses = (andarSelecionado.perfis || []).filter((p) => p.ativo).map((p) => {
+                      const perfilStatuses = perfisAtivos.map((p) => {
                         const dateStr = p.dataEntrada || andarSelecionado.dataEntrada;
-                        if (!dateStr) return { perfilIndex: p.perfilIndex, rest: null, varId: p.variedadeId };
+                        if (!dateStr) return { perfilIndex: p.perfilIndex, rest: null, varId: p.variedadeId, dateStr: null };
                         const rest = diasRestantes(dateStr, torre.fase, p.variedadeId || undefined, data.variedades);
-                        return { perfilIndex: p.perfilIndex, rest, varId: p.variedadeId };
+                        return { perfilIndex: p.perfilIndex, rest, varId: p.variedadeId, dateStr };
                       });
 
                       const prontos = perfilStatuses.filter((s) => s.rest !== null && s.rest <= 0).length;
@@ -835,7 +864,7 @@ export default function TorreDetail() {
                       const total = perfilStatuses.length;
 
                       return (
-                        <div className="mt-2 space-y-2">
+                        <div className="mt-3 space-y-3">
                           {/* Barra de resumo */}
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                             {prontos > 0 && (
@@ -864,50 +893,60 @@ export default function TorreDetail() {
                             )}
                           </div>
 
-                          {/* Detalhes por perfil (colapsável) */}
+                          {/* Datas individuais por perfil — sempre visível */}
                           {perfilStatuses.length > 0 && (
-                            <details className="text-xs">
-                              <summary className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors py-1">
-                                &#9656; Ver/editar datas individuais por perfil...
-                              </summary>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                            <div className="space-y-1">
+                              <p className="text-xs font-semibold text-muted-foreground">Datas por Perfil:</p>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                 {perfilStatuses.map((ps) => {
                                   const perfil = (andarSelecionado.perfis || []).find((p) => p.perfilIndex === ps.perfilIndex);
                                   const variedade = ps.varId ? data.variedades.find((v) => v.id === ps.varId) : undefined;
                                   const perfilDate = perfil?.dataEntrada || andarSelecionado.dataEntrada || '';
+                                  const dateValue = perfilDate ? new Date(perfilDate).toISOString().split('T')[0] : '';
                                   return (
-                                    <div key={ps.perfilIndex} className={`p-2 rounded-lg border ${
-                                      ps.rest !== null && ps.rest <= 0 ? 'border-red-300 bg-red-50' :
-                                      ps.rest !== null && ps.rest <= 3 ? 'border-amber-300 bg-amber-50' :
+                                    <div key={ps.perfilIndex} className={`p-2 rounded-lg border-2 ${
+                                      ps.rest !== null && ps.rest <= 0 ? 'border-red-400 bg-red-50 ring-1 ring-red-200' :
+                                      ps.rest !== null && ps.rest <= 3 ? 'border-amber-400 bg-amber-50' :
                                       ps.rest !== null ? 'border-emerald-300 bg-emerald-50' :
                                       'border-border bg-muted/30'
                                     }`}>
                                       <div className="flex items-center justify-between mb-1">
-                                        <span className="font-bold text-xs">P{ps.perfilIndex + 1}</span>
+                                        <div className="flex items-center gap-1">
+                                          <span className={`font-bold text-xs ${
+                                            ps.rest !== null && ps.rest <= 0 ? 'text-red-700' :
+                                            ps.rest !== null && ps.rest <= 3 ? 'text-amber-700' : ''
+                                          }`}>P{ps.perfilIndex + 1}</span>
+                                          {variedade && (
+                                            <span className="text-[10px] text-muted-foreground truncate max-w-[60px]">{variedade.nome}</span>
+                                          )}
+                                        </div>
                                         {ps.rest !== null && (
-                                          <span className={`text-[10px] font-semibold ${
-                                            ps.rest <= 0 ? 'text-red-600' :
-                                            ps.rest <= 3 ? 'text-amber-600' : 'text-emerald-600'
+                                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                            ps.rest <= 0 ? 'bg-red-200 text-red-800 animate-pulse' :
+                                            ps.rest <= 3 ? 'bg-amber-200 text-amber-800' : 'bg-emerald-200 text-emerald-800'
                                           }`}>
-                                            {ps.rest <= 0 ? 'PRONTO!' : `${ps.rest}d`}
+                                            {ps.rest <= 0 ? `${labelPrevisao(torre.fase)}!` : `${ps.rest}d`}
                                           </span>
                                         )}
                                       </div>
-                                      {variedade && (
-                                        <p className="text-[10px] text-muted-foreground truncate mb-1">{variedade.nome}</p>
-                                      )}
                                       <Input
                                         type="date"
                                         className="h-7 text-[11px]"
-                                        defaultValue={perfilDate ? new Date(perfilDate).toISOString().split('T')[0] : ''}
-                                        key={`${andarSelecionado.id}-p${ps.perfilIndex}-date`}
+                                        defaultValue={dateValue}
+                                        key={`${andarSelecionado.id}-p${ps.perfilIndex}-date-${dateValue}`}
                                         onChange={(e) => handleUpdatePerfilData(ps.perfilIndex, e.target.value)}
+                                        onBlur={(e) => {
+                                          const newVal = e.target.value;
+                                          if (newVal && newVal !== dateValue) {
+                                            handleUpdatePerfilData(ps.perfilIndex, newVal);
+                                          }
+                                        }}
                                       />
                                     </div>
                                   );
                                 })}
                               </div>
-                            </details>
+                            </div>
                           )}
                         </div>
                       );
@@ -954,6 +993,7 @@ export default function TorreDetail() {
                     fase={torre.fase}
                     modo={modoFuros}
                     variedades={data.variedades}
+                    andarDataEntrada={andarSelecionado.dataEntrada}
                     onFuroToggle={handleFuroToggle}
                     onPerfilToggle={handlePerfilToggle}
                     onPerfilVariedadeChange={handlePerfilVariedadeChange}

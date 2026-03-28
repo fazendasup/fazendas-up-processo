@@ -1,14 +1,13 @@
 // ============================================================
-// PerfilFurosGrid v6 — Mobile-first responsivo
-// Touch targets mínimos de 36px, layout adaptativo por breakpoint
-// Mudas: 12 perfis abertos (espuma fenólica)
-// Vegetativa: 12 perfis × 9 furos = 108 plantas
-// Maturação: 6 perfis × 6 furos = 36 plantas
+// PerfilFurosGrid v7 — Status de transplantio/colheita por perfil
+// Cada card de perfil mostra badge colorido indicando se está
+// pronto, quase pronto, ou em processo baseado na dataEntrada individual
 // ============================================================
 
 import type { Furo, PerfilData, VariedadeConfig, Fase } from '@/lib/types';
 import { ESTRUTURA_FASE } from '@/lib/types';
-import { Sprout, Scissors } from 'lucide-react';
+import { diasRestantes, labelPrevisao } from '@/lib/utils-farm';
+import { Sprout, Scissors, Clock, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -23,6 +22,7 @@ interface Props {
   fase: Fase;
   modo: 'visualizacao' | 'transplantio' | 'colheita';
   variedades: VariedadeConfig[];
+  andarDataEntrada?: string | null; // data de entrada do andar (fallback)
   onFuroToggle?: (perfilIndex: number, furoIndex: number, variedadeId?: string) => void;
   onPerfilToggle?: (perfilIndex: number, variedadeId?: string) => void;
   onPerfilVariedadeChange?: (perfilIndex: number, variedadeId: string) => void;
@@ -42,8 +42,33 @@ function dotBorder(status: string) {
   return 'border-gray-300';
 }
 
+/** Calcula status de um perfil baseado na sua data de entrada */
+function perfilStatus(
+  perfil: PerfilData | undefined,
+  andarDataEntrada: string | null | undefined,
+  fase: Fase,
+  variedades: VariedadeConfig[],
+): { rest: number | null; label: string; color: string; bgColor: string; borderColor: string } {
+  if (!perfil?.ativo) return { rest: null, label: '', color: '', bgColor: '', borderColor: '' };
+
+  const dateStr = perfil.dataEntrada || andarDataEntrada || null;
+  if (!dateStr) return { rest: null, label: 'Sem data', color: 'text-muted-foreground', bgColor: '', borderColor: '' };
+
+  const rest = diasRestantes(dateStr, fase, perfil.variedadeId || undefined, variedades);
+  if (rest === null) return { rest: null, label: 'Sem variedade', color: 'text-muted-foreground', bgColor: '', borderColor: '' };
+
+  if (rest <= 0) {
+    const lbl = fase === 'maturacao' ? 'COLHER!' : 'TRANSPLANTAR!';
+    return { rest, label: lbl, color: 'text-red-700', bgColor: 'bg-red-50', borderColor: 'border-red-400' };
+  }
+  if (rest <= 3) {
+    return { rest, label: `${rest}d restantes`, color: 'text-amber-700', bgColor: 'bg-amber-50', borderColor: 'border-amber-400' };
+  }
+  return { rest, label: `${rest}d restantes`, color: 'text-emerald-700', bgColor: 'bg-emerald-50/50', borderColor: '' };
+}
+
 export default function PerfilFurosGrid({
-  furos, perfis, fase, modo, variedades,
+  furos, perfis, fase, modo, variedades, andarDataEntrada,
   onFuroToggle, onPerfilToggle, onPerfilVariedadeChange,
   onAndarTodo, onAndarVariedadeTodos,
 }: Props) {
@@ -102,6 +127,7 @@ export default function PerfilFurosGrid({
             const variedade = perfil?.variedadeId
               ? variedades.find((v) => v.id === perfil.variedadeId)
               : undefined;
+            const ps = perfilStatus(perfil, andarDataEntrada, fase, variedades);
 
             return (
               <Tooltip key={i}>
@@ -110,13 +136,21 @@ export default function PerfilFurosGrid({
                     type="button"
                     disabled={!isInteractive}
                     onClick={() => onPerfilToggle?.(i, perfil?.variedadeId)}
-                    className={`relative flex flex-col items-center justify-center rounded-lg border-2 transition-all min-h-[56px] py-2 px-1 ${
-                      isAtivo
+                    className={`relative flex flex-col items-center justify-center rounded-lg border-2 transition-all min-h-[64px] py-2 px-1 ${
+                      ps.rest !== null && ps.rest <= 0
+                        ? 'bg-red-50 border-red-400 shadow-md ring-2 ring-red-200'
+                        : ps.rest !== null && ps.rest <= 3
+                        ? 'bg-amber-50 border-amber-400 shadow-sm'
+                        : isAtivo
                         ? 'bg-emerald-50 border-emerald-400 shadow-sm'
                         : 'bg-gray-50 border-gray-200'
                     } ${isInteractive ? 'hover:shadow-md active:scale-95 cursor-pointer' : ''}`}
                   >
-                    <span className={`text-sm font-bold ${isAtivo ? 'text-emerald-700' : 'text-gray-400'}`}>
+                    <span className={`text-sm font-bold ${
+                      ps.rest !== null && ps.rest <= 0 ? 'text-red-700' :
+                      ps.rest !== null && ps.rest <= 3 ? 'text-amber-700' :
+                      isAtivo ? 'text-emerald-700' : 'text-gray-400'
+                    }`}>
                       P{i + 1}
                     </span>
                     {variedade && (
@@ -124,9 +158,22 @@ export default function PerfilFurosGrid({
                         {variedade.nome.length > 8 ? variedade.nome.slice(0, 7) + '…' : variedade.nome}
                       </span>
                     )}
-                    {isInteractive && (
-                      <span className={`text-[9px] mt-0.5 font-semibold ${isAtivo ? 'text-red-500' : 'text-emerald-600'}`}>
-                        {isAtivo ? 'Desativar' : 'Ativar'}
+                    {/* Badge de status */}
+                    {isAtivo && ps.rest !== null && (
+                      <span className={`text-[9px] mt-0.5 font-bold ${ps.color}`}>
+                        {ps.rest <= 0 ? (
+                          <span className="flex items-center gap-0.5">
+                            <CheckCircle2 className="w-3 h-3" />
+                            TRANSPL.
+                          </span>
+                        ) : (
+                          `${ps.rest}d`
+                        )}
+                      </span>
+                    )}
+                    {isInteractive && !isAtivo && (
+                      <span className="text-[9px] mt-0.5 font-semibold text-emerald-600">
+                        Ativar
                       </span>
                     )}
                   </button>
@@ -134,6 +181,7 @@ export default function PerfilFurosGrid({
                 <TooltipContent side="top" className="text-xs">
                   <p className="font-semibold">Perfil {i + 1} — {isAtivo ? 'Ativo' : 'Vazio'}</p>
                   {variedade && <p className="text-muted-foreground">{variedade.nome}</p>}
+                  {ps.rest !== null && <p className={ps.color}>{ps.label}</p>}
                 </TooltipContent>
               </Tooltip>
             );
@@ -144,7 +192,7 @@ export default function PerfilFurosGrid({
         {isInteractive && (
           <details className="text-xs">
             <summary className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors py-1">
-              ▸ Definir variedade por perfil individual...
+              &#9654; Definir variedade por perfil individual...
             </summary>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
               {Array.from({ length: numPerfis }, (_, i) => {
@@ -241,19 +289,49 @@ export default function PerfilFurosGrid({
             ? variedades.find((v) => v.id === perfil.variedadeId)
             : undefined;
           const plantadosNoPerfil = perfilFuros.filter((f) => f.status === 'plantado').length;
+          const ps = perfilStatus(perfil, andarDataEntrada, fase, variedades);
 
           return (
-            <div key={pIndex} className="border rounded-lg p-2 bg-muted/20">
+            <div key={pIndex} className={`border-2 rounded-lg p-2 transition-all ${
+              ps.rest !== null && ps.rest <= 0
+                ? 'border-red-400 bg-red-50/50 ring-1 ring-red-200'
+                : ps.rest !== null && ps.rest <= 3
+                ? 'border-amber-400 bg-amber-50/50'
+                : 'border-border bg-muted/20'
+            }`}>
               {/* Header do perfil */}
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="text-xs font-bold text-muted-foreground shrink-0">P{pIndex + 1}</span>
+                  <span className={`text-xs font-bold shrink-0 ${
+                    ps.rest !== null && ps.rest <= 0 ? 'text-red-700' :
+                    ps.rest !== null && ps.rest <= 3 ? 'text-amber-700' :
+                    'text-muted-foreground'
+                  }`}>P{pIndex + 1}</span>
                   <span className="text-[10px] text-muted-foreground shrink-0">
                     {plantadosNoPerfil}/{numFuros}
                   </span>
                   {variedade && (
                     <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full truncate">
                       {variedade.nome.length > 10 ? variedade.nome.slice(0, 9) + '…' : variedade.nome}
+                    </span>
+                  )}
+                  {/* Badge de status inline */}
+                  {ps.rest !== null && (
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
+                      ps.rest <= 0
+                        ? 'bg-red-100 text-red-700 animate-pulse'
+                        : ps.rest <= 3
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-emerald-100 text-emerald-700'
+                    }`}>
+                      {ps.rest <= 0 ? (
+                        <span className="flex items-center gap-0.5">
+                          <Clock className="w-3 h-3" />
+                          {labelPrevisao(fase)}!
+                        </span>
+                      ) : (
+                        `${ps.rest}d`
+                      )}
                     </span>
                   )}
                 </div>
@@ -341,7 +419,7 @@ export default function PerfilFurosGrid({
           {/* Seletores individuais colapsáveis */}
           <details className="text-xs">
             <summary className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors py-1">
-              ▸ Definir variedade por perfil individual...
+              &#9654; Definir variedade por perfil individual...
             </summary>
             <div className={`grid gap-2 mt-2 grid-cols-2 sm:grid-cols-3`}>
               {Array.from({ length: numPerfis }, (_, i) => {
