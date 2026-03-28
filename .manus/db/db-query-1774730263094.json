@@ -1,0 +1,22 @@
+{
+  "query": "SELECT 'torres' as tbl, COUNT(*) as cnt FROM torres UNION ALL SELECT 'variedades', COUNT(*) FROM variedades UNION ALL SELECT 'perfis_ativos', SUM(ativo) FROM perfis;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3QoEV5smxrvcKgg.89e310025238 --database V8Zeqmat63YDtBSE4w4iyd --execute SELECT 'torres' as tbl, COUNT(*) as cnt FROM torres UNION ALL SELECT 'variedades', COUNT(*) FROM variedades UNION ALL SELECT 'perfis_ativos', SUM(ativo) FROM perfis;",
+  "rows": [
+    {
+      "tbl": "variedades",
+      "cnt": "12"
+    },
+    {
+      "tbl": "torres",
+      "cnt": "14"
+    },
+    {
+      "tbl": "perfis_ativos",
+      "cnt": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "tbl\tcnt\nvariedades\t12\ntorres\t14\nperfis_ativos\t0\n",
+  "stderr": "",
+  "execution_time_ms": 72
+}

@@ -220,3 +220,9 @@
 - [x] Investigar lógica de geração de tarefas no backend (routers.ts / db.ts)
 - [x] Corrigir detecção de transplantios e colheitas pendentes baseada em dataEntrada por perfil
 - [x] 67 testes Vitest passando (7 arquivos, 0 falhas)
+
+## BUG CRÍTICO: Dados do usuário sendo apagados durante deploy/checkpoint
+- [x] Causa raiz: teste permissions.test.ts executava admin.seed() que chama resetAllData() no banco de produção
+- [x] Corrigido: teste agora apenas verifica permissão sem executar seed real
+- [x] Nenhum outro teste chama seed/reset/resetAllData
+- [x] 67 testes passando, dados preservados após execução
