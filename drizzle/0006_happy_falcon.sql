@@ -1,0 +1,1 @@
+ALTER TABLE `perfis` ADD `dataEntrada` timestamp;

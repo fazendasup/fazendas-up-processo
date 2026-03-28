@@ -100,7 +100,7 @@ export default function Home() {
               <AlertBadge icon={<Clock className="w-3 h-3" />} text={`${resumo.ciclosPendentes} ciclo(s) pendente(s)`} color="amber" />
             )}
             {resumo.previsaoVencida > 0 && (
-              <AlertBadge icon={<AlertTriangle className="w-3 h-3" />} text={`${resumo.previsaoVencida} andar(es) com previsão vencida`} color="red" />
+              <AlertBadge icon={<AlertTriangle className="w-3 h-3" />} text={`${resumo.previsaoVencida} andar(es) com perfis prontos para ação`} color="red" />
             )}
             {kpis.andaresLavagemPendente > 0 && (
               <AlertBadge icon={<Droplet className="w-3 h-3" />} text={`${kpis.andaresLavagemPendente} andar(es) aguardando lavagem`} color="red" />

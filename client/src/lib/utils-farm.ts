@@ -217,11 +217,15 @@ export function contarAlertasTorre(
   const andaresTorre = andares.filter((a) => a.torreId === torre.id);
 
   andaresTorre.forEach((andar) => {
-    if (andar.dataEntrada) {
-      const varId = variedadePrincipalAndar(andar);
-      const restantes = diasRestantes(andar.dataEntrada, torre.fase, varId, variedades);
-      if (restantes !== null && restantes <= 0) alertas++;
-    }
+    // Verificar por perfil individual se há algum com previsão vencida
+    const perfisAtivos = (andar.perfis || []).filter((p) => p.ativo);
+    const temPerfilVencido = perfisAtivos.some((p) => {
+      const dateStr = p.dataEntrada || andar.dataEntrada;
+      if (!dateStr) return false;
+      const rest = diasRestantes(dateStr, torre.fase, p.variedadeId || undefined, variedades);
+      return rest !== null && rest <= 0;
+    });
+    if (temPerfilVencido) alertas++;
     if (andarPrecisaLavagem(andar)) alertas++;
   });
 
@@ -273,14 +277,22 @@ export function calcularKPIs(data: FazendaData): FazendaKPIs {
       const colhidas = contarColhidasAndar(andar);
       plantasColhidas += colhidas;
 
-      if (andar.dataEntrada) {
-        const varId = variedadePrincipalAndar(andar);
-        const rest = diasRestantes(andar.dataEntrada, torre.fase, varId, data.variedades);
-        if (rest !== null && rest <= 0) {
-          plantasProntasColheita += plantadas;
-        } else {
-          plantasEmProcesso += plantadas;
-        }
+      // Contar plantas prontas por perfil individual
+      const perfisAtivos = (andar.perfis || []).filter((p) => p.ativo);
+      if (perfisAtivos.length > 0) {
+        perfisAtivos.forEach((p) => {
+          const dateStr = p.dataEntrada || andar.dataEntrada;
+          if (dateStr) {
+            const rest = diasRestantes(dateStr, torre.fase, p.variedadeId || undefined, data.variedades);
+            if (rest !== null && rest <= 0) {
+              // Contar furos plantados deste perfil como prontos
+              const furosPerfil = (andar.furos || []).filter((f) => f.perfilIndex === p.perfilIndex && f.status === 'plantado');
+              plantasProntasColheita += furosPerfil.length;
+            }
+          }
+        });
+        // O restante são em processo
+        plantasEmProcesso += plantadas - Math.min(plantasProntasColheita, plantadas);
       } else {
         plantasEmProcesso += plantadas;
       }
@@ -365,16 +377,19 @@ export function resumoFazenda(data: FazendaData) {
     });
   });
 
+  // Contar andares com pelo menos 1 perfil com previsão vencida
   let previsaoVencida = 0;
   data.andares.forEach((andar) => {
-    if (andar.dataEntrada) {
-      const torre = data.torres.find((t) => t.id === andar.torreId);
-      if (torre) {
-        const varId = variedadePrincipalAndar(andar);
-        const rest = diasRestantes(andar.dataEntrada, torre.fase, varId, data.variedades);
-        if (rest !== null && rest <= 0) previsaoVencida++;
-      }
-    }
+    const torre = data.torres.find((t) => t.id === andar.torreId);
+    if (!torre) return;
+    const perfisAtivos = (andar.perfis || []).filter((p) => p.ativo);
+    const temPerfilVencido = perfisAtivos.some((p) => {
+      const dateStr = p.dataEntrada || andar.dataEntrada;
+      if (!dateStr) return false;
+      const rest = diasRestantes(dateStr, torre.fase, p.variedadeId || undefined, data.variedades);
+      return rest !== null && rest <= 0;
+    });
+    if (temPerfilVencido) previsaoVencida++;
   });
 
   return {

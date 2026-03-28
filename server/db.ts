@@ -283,7 +283,7 @@ export async function updatePerfilByAndarAndIndex(andarId: number, perfilIndex: 
 export async function resetPerfisByAndarId(andarId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.update(perfis).set({ ativo: false, variedadeId: null }).where(eq(perfis.andarId, andarId));
+  await db.update(perfis).set({ ativo: false, variedadeId: null, dataEntrada: null }).where(eq(perfis.andarId, andarId));
 }
 
 // ============================================================
@@ -333,7 +333,7 @@ export async function batchUpdateFuros(
 // Batch update all perfis of an andar
 export async function batchUpdatePerfis(
   andarId: number,
-  updates: Array<{ perfilIndex: number; variedadeId?: number | null; ativo?: boolean }>
+  updates: Array<{ perfilIndex: number; variedadeId?: number | null; ativo?: boolean; dataEntrada?: Date | null }>
 ) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -342,6 +342,7 @@ export async function batchUpdatePerfis(
       const data: Partial<InsertPerfil> = {};
       if (u.variedadeId !== undefined) data.variedadeId = u.variedadeId;
       if (u.ativo !== undefined) data.ativo = u.ativo;
+      if (u.dataEntrada !== undefined) data.dataEntrada = u.dataEntrada;
       return db.update(perfis).set(data).where(
         and(eq(perfis.andarId, andarId), eq(perfis.perfilIndex, u.perfilIndex))
       );
@@ -365,13 +366,14 @@ export async function setAllFurosOfAndar(
 // Set all perfis of an andar
 export async function setAllPerfisOfAndar(
   andarId: number,
-  data: { variedadeId?: number | null; ativo?: boolean }
+  data: { variedadeId?: number | null; ativo?: boolean; dataEntrada?: Date | null }
 ) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   const setData: Partial<InsertPerfil> = {};
   if (data.variedadeId !== undefined) setData.variedadeId = data.variedadeId;
   if (data.ativo !== undefined) setData.ativo = data.ativo;
+  if (data.dataEntrada !== undefined) setData.dataEntrada = data.dataEntrada;
   await db.update(perfis).set(setData).where(eq(perfis.andarId, andarId));
 }
 

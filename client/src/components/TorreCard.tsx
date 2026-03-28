@@ -1,9 +1,9 @@
 // ============================================================
-// TorreCard v3 — Colhidas só na maturação, sem diasCiclo
+// TorreCard v4 — Status parcial por perfil (dataEntrada individual)
 // ============================================================
 
 import { Link } from 'wouter';
-import type { Torre } from '@/lib/types';
+import type { Torre, Andar } from '@/lib/types';
 import { FASES_CONFIG } from '@/lib/types';
 import { useFazenda } from '@/contexts/FazendaContext';
 import {
@@ -13,12 +13,45 @@ import {
   contarColhidasAndar,
   andarPrecisaLavagem,
   andarOcupado,
-  variedadePrincipalAndar,
 } from '@/lib/utils-farm';
-import { AlertTriangle, Droplets, ChevronRight, Sprout, Scissors, Droplet } from 'lucide-react';
+import { AlertTriangle, Droplets, ChevronRight, Sprout, Scissors, Droplet, Clock } from 'lucide-react';
 
 interface TorreCardProps {
   torre: Torre;
+}
+
+/**
+ * Calcula o status de um andar baseado nas datas individuais dos perfis.
+ * Retorna: 'lavar' | 'pronto' | 'parcial' | 'quase' | 'ok' | 'vazio'
+ * E contagens de prontos/total
+ */
+function calcAndarPerfilStatus(
+  andar: Andar,
+  fase: string,
+  variedades: any[],
+): { status: string; prontos: number; quase: number; total: number } {
+  const perfisAtivos = (andar.perfis || []).filter((p) => p.ativo);
+  if (perfisAtivos.length === 0) return { status: 'vazio', prontos: 0, quase: 0, total: 0 };
+
+  let prontos = 0;
+  let quase = 0;
+  let comData = 0;
+
+  for (const p of perfisAtivos) {
+    const dateStr = p.dataEntrada || andar.dataEntrada;
+    if (!dateStr) continue;
+    comData++;
+    const rest = diasRestantes(dateStr, fase as any, p.variedadeId || undefined, variedades);
+    if (rest !== null && rest <= 0) prontos++;
+    else if (rest !== null && rest <= 3) quase++;
+  }
+
+  const total = perfisAtivos.length;
+  if (prontos === total && total > 0) return { status: 'pronto', prontos, quase, total };
+  if (prontos > 0) return { status: 'parcial', prontos, quase, total };
+  if (quase > 0) return { status: 'quase', prontos, quase, total };
+  if (comData > 0) return { status: 'ok', prontos, quase, total };
+  return { status: 'vazio', prontos, quase, total };
 }
 
 export default function TorreCard({ torre }: TorreCardProps) {
@@ -33,6 +66,17 @@ export default function TorreCard({ torre }: TorreCardProps) {
   const totalPlantas = andares.reduce((sum, a) => sum + contarPlantasAndar(a, torre.fase), 0);
   const totalColhidas = isMaturacao ? andares.reduce((sum, a) => sum + contarColhidasAndar(a), 0) : 0;
   const andaresLavagem = andares.filter((a) => andarPrecisaLavagem(a)).length;
+
+  // Calcular contagem de perfis prontos na torre
+  let perfisProntosTorre = 0;
+  let perfisQuaseTorre = 0;
+  let perfisTotalTorre = 0;
+  for (const andar of andares) {
+    const ps = calcAndarPerfilStatus(andar, torre.fase, data.variedades);
+    perfisProntosTorre += ps.prontos;
+    perfisQuaseTorre += ps.quase;
+    perfisTotalTorre += ps.total;
+  }
 
   const faseClass =
     torre.fase === 'mudas' ? 'card-mudas' : torre.fase === 'vegetativa' ? 'card-vegetativa' : 'card-maturacao';
@@ -59,37 +103,46 @@ export default function TorreCard({ torre }: TorreCardProps) {
             </div>
           </div>
 
-          {/* Mini tower visualization */}
+          {/* Mini tower visualization — agora com status parcial */}
           <div className="flex gap-0.5 mb-3 h-14">
             {andares.map((andar) => {
               const ocupado = andarOcupado(andar, torre.fase);
               const precisaLavar = andarPrecisaLavagem(andar);
+              const ps = calcAndarPerfilStatus(andar, torre.fase, data.variedades);
+
               let bgColor = 'bg-muted';
               if (precisaLavar) {
                 bgColor = 'bg-red-400 animate-pulse';
+              } else if (ps.status === 'pronto') {
+                bgColor = 'bg-destructive/70';
+              } else if (ps.status === 'parcial') {
+                // Parcialmente pronto — gradiente visual
+                bgColor = 'bg-gradient-to-t from-destructive/60 to-amber-400';
+              } else if (ps.status === 'quase') {
+                bgColor = 'bg-amber-400';
               } else if (ocupado) {
-                const varId = variedadePrincipalAndar(andar);
-                const rest = diasRestantes(andar.dataEntrada, torre.fase, varId, data.variedades);
-                if (rest !== null && rest <= 0) {
-                  bgColor = 'bg-destructive/70';
-                } else if (rest !== null && rest <= 3) {
-                  bgColor = 'bg-amber-400';
-                } else {
-                  bgColor = torre.fase === 'mudas' ? 'bg-emerald-500' : torre.fase === 'vegetativa' ? 'bg-cyan-600' : 'bg-orange-500';
-                }
+                bgColor = torre.fase === 'mudas' ? 'bg-emerald-500' : torre.fase === 'vegetativa' ? 'bg-cyan-600' : 'bg-orange-500';
               }
+
+              const titleParts = [`A${andar.numero}`];
+              if (precisaLavar) titleParts.push('[LAVAR]');
+              else if (ps.prontos > 0) titleParts.push(`${ps.prontos}/${ps.total} prontos`);
+              else if (ps.quase > 0) titleParts.push(`${ps.quase}/${ps.total} quase prontos`);
+              else if (!ocupado) titleParts.push('Vazio');
+              else titleParts.push('Em processo');
+
               return (
                 <div
                   key={andar.id}
                   className={`flex-1 rounded-sm ${bgColor} transition-colors`}
-                  title={`A${andar.numero}${ocupado ? ' - Ocupado' : ' - Vazio'}${precisaLavar ? ' [LAVAR]' : ''}`}
+                  title={titleParts.join(' - ')}
                 />
               );
             })}
           </div>
 
           {/* Plantas count */}
-          <div className="flex items-center gap-3 mb-2 text-xs">
+          <div className="flex items-center gap-3 mb-2 text-xs flex-wrap">
             <span className="flex items-center gap-1 text-emerald-600">
               <Sprout className="w-3 h-3" />
               <strong>{totalPlantas}</strong> em processo
@@ -107,6 +160,24 @@ export default function TorreCard({ torre }: TorreCardProps) {
               </span>
             )}
           </div>
+
+          {/* Status de perfis prontos (se houver) */}
+          {(perfisProntosTorre > 0 || perfisQuaseTorre > 0) && (
+            <div className="flex items-center gap-3 mb-2 text-xs flex-wrap">
+              {perfisProntosTorre > 0 && (
+                <span className="flex items-center gap-1 text-red-600 font-semibold">
+                  <Clock className="w-3 h-3" />
+                  <strong>{perfisProntosTorre}</strong>/{perfisTotalTorre} prontos
+                </span>
+              )}
+              {perfisQuaseTorre > 0 && (
+                <span className="flex items-center gap-1 text-amber-600">
+                  <Clock className="w-3 h-3" />
+                  <strong>{perfisQuaseTorre}</strong> quase
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Stats */}
           <div className="flex items-center justify-between text-xs text-muted-foreground">

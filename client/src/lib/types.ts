@@ -98,6 +98,7 @@ export interface PerfilData {
   perfilIndex: number; // 0-based
   variedadeId?: string;
   ativo: boolean; // se o perfil está em uso
+  dataEntrada?: string | null; // data de entrada individual do perfil
 }
 
 // ---- Germinação (pré-mudas) ----

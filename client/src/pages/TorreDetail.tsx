@@ -170,11 +170,35 @@ export default function TorreDetail() {
     const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
     if (!andarDbId) return;
 
+    const dateVal = dataEntrada ? new Date(dataEntrada) : null;
+
+    // Atualizar data do andar (legacy)
     mutations.updateAndar.mutate({
       id: andarDbId,
+      dataEntrada: dateVal,
+    });
+
+    // Propagar data para todos os perfis ativos que não têm data própria diferente
+    mutations.setAllPerfis.mutate({
+      andarId: andarDbId,
+      dataEntrada: dateVal,
+    });
+
+    toast.success(`Data de entrada do Andar ${andarSelecionado.numero} atualizada para todos os perfis!`);
+  };
+
+  // Handler para atualizar data de um perfil individual
+  const handleUpdatePerfilData = (perfilIndex: number, dataEntrada: string) => {
+    if (!andarSelecionado) return;
+    const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
+    if (!andarDbId) return;
+
+    mutations.updatePerfil.mutate({
+      andarId: andarDbId,
+      perfilIndex,
       dataEntrada: dataEntrada ? new Date(dataEntrada) : null,
     });
-    toast.success(`Data de entrada do Andar ${andarSelecionado.numero} atualizada!`);
+    toast.success(`Data do Perfil ${perfilIndex + 1} atualizada!`);
   };
 
   // ---- Furos handlers ----
@@ -548,9 +572,7 @@ export default function TorreDetail() {
               </div>
               <div className="max-h-[500px] overflow-y-auto">
                 {andares.map((andar) => {
-                  const varId = variedadePrincipalAndar(andar);
                   const plantadas = contarPlantasAndar(andar, torre.fase);
-                  const rest = andar.dataEntrada ? diasRestantes(andar.dataEntrada, torre.fase, varId, data.variedades) : null;
                   const precisaLavar = andarPrecisaLavagem(andar);
                   const isSelected = andar.id === selectedAndar;
                   const maxSlots = capacidadeAndar(torre.fase);
@@ -563,6 +585,28 @@ export default function TorreDetail() {
                   });
                   const varNomes = Array.from(varNomesSet);
 
+                  // Calcular status por perfil
+                  const perfisAtivosAll = (andar.perfis || []).filter((p) => p.ativo);
+                  let perfisProntos = 0;
+                  let perfisQuase = 0;
+                  let perfisComData = 0;
+                  perfisAtivosAll.forEach((p) => {
+                    const dateStr = p.dataEntrada || andar.dataEntrada;
+                    if (!dateStr) return;
+                    perfisComData++;
+                    const r = diasRestantes(dateStr, torre.fase, p.variedadeId || undefined, data.variedades);
+                    if (r !== null && r <= 0) perfisProntos++;
+                    else if (r !== null && r <= 3) perfisQuase++;
+                  });
+
+                  // Dot color baseado no status por perfil
+                  let dotColor = 'bg-gray-300';
+                  if (precisaLavar) dotColor = 'bg-red-500 animate-pulse';
+                  else if (perfisProntos > 0 && perfisProntos === perfisAtivosAll.length) dotColor = 'bg-red-500';
+                  else if (perfisProntos > 0) dotColor = 'bg-orange-500'; // parcial
+                  else if (perfisQuase > 0) dotColor = 'bg-amber-500';
+                  else if (perfisComData > 0) dotColor = 'bg-emerald-500';
+
                   return (
                       <button
                       key={andar.id}
@@ -574,14 +618,13 @@ export default function TorreDetail() {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className={`w-2 h-2 rounded-full ${
-                            precisaLavar ? 'bg-red-500 animate-pulse' :
-                            !andar.dataEntrada ? 'bg-gray-300' :
-                            rest !== null && rest <= 0 ? 'bg-red-500' :
-                            rest !== null && rest <= 3 ? 'bg-amber-500' :
-                            'bg-emerald-500'
-                          }`} />
+                          <span className={`w-2 h-2 rounded-full ${dotColor}`} />
                           <span className="font-semibold">A{andar.numero}</span>
+                          {perfisProntos > 0 && perfisAtivosAll.length > 0 && (
+                            <span className="text-[10px] text-red-600 font-semibold">
+                              {perfisProntos}/{perfisAtivosAll.length}
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           {plantadas > 0 && (
@@ -756,11 +799,11 @@ export default function TorreDetail() {
                 )}
 
                 <div className="p-4">
-                  {/* Data de entrada */}
+                  {/* Data de entrada (aplica a todos os perfis) */}
                   <form onSubmit={handleUpdateAndar} className="mb-4 p-3 bg-muted/30 rounded-lg border border-dashed">
                     <div className="flex items-end gap-3">
                       <div className="flex-1">
-                        <Label className="text-xs">Data de Entrada</Label>
+                        <Label className="text-xs">Data de Entrada (todos os perfis)</Label>
                         <Input
                           name="dataEntrada"
                           type="date"
@@ -771,30 +814,104 @@ export default function TorreDetail() {
                       </div>
                       <Button type="submit" className="h-10 text-sm px-4">Salvar Data</Button>
                     </div>
-                    {andarSelecionado.dataEntrada && (
-                      <div className="mt-2 grid grid-cols-2 gap-2">
-                        <div className="p-1.5 rounded bg-background">
-                          <p className="text-[10px] text-muted-foreground">Dias Decorridos</p>
-                          <p className="font-display font-bold text-base">{diasDecorridos(andarSelecionado.dataEntrada)}</p>
+
+                    {/* Resumo por perfil: mostra status de cada perfil com data */}
+                    {(() => {
+                      const perfisComData = (andarSelecionado.perfis || []).filter((p) => p.ativo && p.dataEntrada);
+                      if (perfisComData.length === 0 && !andarSelecionado.dataEntrada) return null;
+
+                      // Calcular status por perfil
+                      const perfilStatuses = (andarSelecionado.perfis || []).filter((p) => p.ativo).map((p) => {
+                        const dateStr = p.dataEntrada || andarSelecionado.dataEntrada;
+                        if (!dateStr) return { perfilIndex: p.perfilIndex, rest: null, varId: p.variedadeId };
+                        const rest = diasRestantes(dateStr, torre.fase, p.variedadeId || undefined, data.variedades);
+                        return { perfilIndex: p.perfilIndex, rest, varId: p.variedadeId };
+                      });
+
+                      const prontos = perfilStatuses.filter((s) => s.rest !== null && s.rest <= 0).length;
+                      const quaseProntos = perfilStatuses.filter((s) => s.rest !== null && s.rest > 0 && s.rest <= 3).length;
+                      const emProcesso = perfilStatuses.filter((s) => s.rest !== null && s.rest > 3).length;
+                      const semData = perfilStatuses.filter((s) => s.rest === null).length;
+                      const total = perfilStatuses.length;
+
+                      return (
+                        <div className="mt-2 space-y-2">
+                          {/* Barra de resumo */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {prontos > 0 && (
+                              <div className="p-1.5 rounded bg-red-50 border border-red-200 text-center">
+                                <p className="text-[10px] text-red-600 font-medium">{labelPrevisao(torre.fase)}</p>
+                                <p className="font-display font-bold text-base text-red-700">{prontos}/{total}</p>
+                              </div>
+                            )}
+                            {quaseProntos > 0 && (
+                              <div className="p-1.5 rounded bg-amber-50 border border-amber-200 text-center">
+                                <p className="text-[10px] text-amber-600 font-medium">Quase Prontos</p>
+                                <p className="font-display font-bold text-base text-amber-700">{quaseProntos}/{total}</p>
+                              </div>
+                            )}
+                            {emProcesso > 0 && (
+                              <div className="p-1.5 rounded bg-emerald-50 border border-emerald-200 text-center">
+                                <p className="text-[10px] text-emerald-600 font-medium">Em Processo</p>
+                                <p className="font-display font-bold text-base text-emerald-700">{emProcesso}/{total}</p>
+                              </div>
+                            )}
+                            {semData > 0 && (
+                              <div className="p-1.5 rounded bg-background text-center">
+                                <p className="text-[10px] text-muted-foreground">Sem Data</p>
+                                <p className="font-display font-bold text-base text-muted-foreground">{semData}/{total}</p>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Detalhes por perfil (colapsável) */}
+                          {perfilStatuses.length > 0 && (
+                            <details className="text-xs">
+                              <summary className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors py-1">
+                                &#9656; Ver/editar datas individuais por perfil...
+                              </summary>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                                {perfilStatuses.map((ps) => {
+                                  const perfil = (andarSelecionado.perfis || []).find((p) => p.perfilIndex === ps.perfilIndex);
+                                  const variedade = ps.varId ? data.variedades.find((v) => v.id === ps.varId) : undefined;
+                                  const perfilDate = perfil?.dataEntrada || andarSelecionado.dataEntrada || '';
+                                  return (
+                                    <div key={ps.perfilIndex} className={`p-2 rounded-lg border ${
+                                      ps.rest !== null && ps.rest <= 0 ? 'border-red-300 bg-red-50' :
+                                      ps.rest !== null && ps.rest <= 3 ? 'border-amber-300 bg-amber-50' :
+                                      ps.rest !== null ? 'border-emerald-300 bg-emerald-50' :
+                                      'border-border bg-muted/30'
+                                    }`}>
+                                      <div className="flex items-center justify-between mb-1">
+                                        <span className="font-bold text-xs">P{ps.perfilIndex + 1}</span>
+                                        {ps.rest !== null && (
+                                          <span className={`text-[10px] font-semibold ${
+                                            ps.rest <= 0 ? 'text-red-600' :
+                                            ps.rest <= 3 ? 'text-amber-600' : 'text-emerald-600'
+                                          }`}>
+                                            {ps.rest <= 0 ? 'PRONTO!' : `${ps.rest}d`}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {variedade && (
+                                        <p className="text-[10px] text-muted-foreground truncate mb-1">{variedade.nome}</p>
+                                      )}
+                                      <Input
+                                        type="date"
+                                        className="h-7 text-[11px]"
+                                        defaultValue={perfilDate ? new Date(perfilDate).toISOString().split('T')[0] : ''}
+                                        key={`${andarSelecionado.id}-p${ps.perfilIndex}-date`}
+                                        onChange={(e) => handleUpdatePerfilData(ps.perfilIndex, e.target.value)}
+                                      />
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </details>
+                          )}
                         </div>
-                        <div className="p-1.5 rounded bg-background">
-                          <p className="text-[10px] text-muted-foreground">{labelPrevisao(torre.fase)} em</p>
-                          {(() => {
-                            const varId = variedadePrincipalAndar(andarSelecionado);
-                            const rest = diasRestantes(andarSelecionado.dataEntrada, torre.fase, varId, data.variedades);
-                            return (
-                              <p className={`font-display font-bold text-base ${
-                                rest === null ? 'text-muted-foreground' :
-                                rest <= 0 ? 'text-red-600' :
-                                rest <= 3 ? 'text-amber-600' : 'text-emerald-600'
-                              }`}>
-                                {rest !== null ? `${rest}d` : 'Defina variedade'}
-                              </p>
-                            );
-                          })()}
-                        </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </form>
 
                   {/* Modo selector */}

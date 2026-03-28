@@ -133,6 +133,7 @@ function transformData(raw: any): FazendaData {
       perfilIndex: p.perfilIndex,
       variedadeId: p.variedadeId ? (varSlugMap.get(p.variedadeId) || undefined) : undefined,
       ativo: p.ativo,
+      dataEntrada: toDateStr(p.dataEntrada),
     }));
 
     const furos: Furo[] = andarFuros.map((f: any) => ({

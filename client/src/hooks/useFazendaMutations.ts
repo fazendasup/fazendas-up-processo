@@ -104,6 +104,7 @@ export function useFazendaMutations() {
         optimisticPerfilUpdate(frontId, input.perfilIndex, {
           ...(input.ativo !== undefined ? { ativo: input.ativo } : {}),
           ...(input.variedadeId !== undefined ? { variedadeId: input.variedadeId ? `var-lookup-${input.variedadeId}` : undefined } : {}),
+          ...((input as any).dataEntrada !== undefined ? { dataEntrada: (input as any).dataEntrada ? new Date((input as any).dataEntrada).toISOString() : null } : {}),
         });
       }
     },
@@ -127,6 +128,7 @@ export function useFazendaMutations() {
                 ...p,
                 ...(input.ativo !== undefined ? { ativo: input.ativo } : {}),
                 ...(input.variedadeId !== undefined ? { variedadeId: input.variedadeId ? `var-lookup-${input.variedadeId}` : undefined } : {}),
+                ...((input as any).dataEntrada !== undefined ? { dataEntrada: (input as any).dataEntrada ? new Date((input as any).dataEntrada).toISOString() : null } : {}),
               })),
             };
           }),

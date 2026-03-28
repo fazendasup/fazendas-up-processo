@@ -146,6 +146,7 @@ export const perfis = mysqlTable("perfis", {
   perfilIndex: int("perfilIndex").notNull(),
   variedadeId: int("variedadeId"),
   ativo: boolean("ativo").notNull().default(false),
+  dataEntrada: timestamp("dataEntrada"),
 });
 
 export type Perfil = typeof perfis.$inferSelect;

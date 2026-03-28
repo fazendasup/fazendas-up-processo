@@ -196,3 +196,14 @@
 - [x] QA: Testar Usuários via browser (listagem, roles, ações)
 - [x] QA: TypeScript sem erros (npx tsc --noEmit)
 - [x] QA: 67 testes Vitest passando (7 arquivos, 0 falhas)
+
+## Datas Individuais por Perfil
+- [x] Adicionar campo dataEntrada na tabela perfis (timestamp, nullable)
+- [x] Atualizar backend: permitir setar dataEntrada por perfil individualmente
+- [x] Atualizar TorreDetail: mostrar e editar dataEntrada por perfil (não apenas por andar)
+- [x] Manter compatibilidade: "Data de Entrada" do andar aplica a todos os perfis que não têm data própria
+- [x] Calcular previsão de transplantio/colheita por perfil (baseado em dataEntrada + dias da variedade)
+- [x] Dashboard: mostrar status parcial no andar (ex: "11/12 prontos para transplantio")
+- [x] TorreCard: indicar quando parte do andar está pronta e parte não
+- [x] Alertas: gerar alertas específicos por perfil quando previsão vence
+- [x] Testes Vitest: 67 testes passando (7 arquivos, 0 falhas, sem regressão)

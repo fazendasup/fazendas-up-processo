@@ -308,6 +308,7 @@ export const appRouter = router({
         perfilIndex: z.number(),
         variedadeId: z.number().nullable().optional(),
         ativo: z.boolean().optional(),
+        dataEntrada: z.date().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
         const { andarId, perfilIndex, ...data } = input;
@@ -327,6 +328,7 @@ export const appRouter = router({
           perfilIndex: z.number(),
           variedadeId: z.number().nullable().optional(),
           ativo: z.boolean().optional(),
+          dataEntrada: z.date().nullable().optional(),
         })),
       }))
       .mutation(async ({ input }) => {
@@ -338,6 +340,7 @@ export const appRouter = router({
         andarId: z.number(),
         variedadeId: z.number().nullable().optional(),
         ativo: z.boolean().optional(),
+        dataEntrada: z.date().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
         const { andarId, ...data } = input;
