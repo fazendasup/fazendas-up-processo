@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE users SET passwordHash = '$2b$10$/1aCPMRfmCwBHVzegv.TCuSv66y2W1cizMqQWobf6O0Js0GN3F9aC' WHERE email = 'comercial@visioneer.com.br';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3QoEV5smxrvcKgg.89e310025238 --database V8Zeqmat63YDtBSE4w4iyd --execute UPDATE users SET passwordHash = '$2b$10$/1aCPMRfmCwBHVzegv.TCuSv66y2W1cizMqQWobf6O0Js0GN3F9aC' WHERE email = 'comercial@visioneer.com.br';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 150
+}

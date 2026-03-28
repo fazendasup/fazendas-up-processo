@@ -1,0 +1,28 @@
+{
+  "query": "SELECT id, name, email, role FROM users ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3QoEV5smxrvcKgg.89e310025238 --database V8Zeqmat63YDtBSE4w4iyd --execute SELECT id, name, email, role FROM users ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Administrador",
+      "email": "comercial@visioneer.com.br",
+      "role": "admin"
+    },
+    {
+      "id": "180124",
+      "name": "Karla Maia",
+      "email": "karla.maia@visioneer.com.br",
+      "role": "admin"
+    },
+    {
+      "id": "180163",
+      "name": "Kailany",
+      "email": "kailanybarrossoares@gmail.com",
+      "role": "user"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\n1\tAdministrador\tcomercial@visioneer.com.br\tadmin\n180124\tKarla Maia\tkarla.maia@visioneer.com.br\tadmin\n180163\tKailany\tkailanybarrossoares@gmail.com\tuser\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

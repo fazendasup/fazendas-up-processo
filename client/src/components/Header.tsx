@@ -71,7 +71,9 @@ export default function Header() {
   // Filtrar itens visíveis baseado no role
   const navItems = allNavItems.filter((item) => {
     if (item.requiredRole === 'admin') return isAdmin;
-    return true;
+    // Itens operacionais (Germinação, Manutenção, Tarefas) requerem login
+    if (item.href !== '/') return isLoggedIn;
+    return true; // Dashboard sempre visível
   });
 
   const handleReset = () => {

@@ -77,7 +77,9 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/receitas">
-        <ReceitasPage />
+        <ProtectedRoute requiredRole="admin">
+          <ReceitasPage />
+        </ProtectedRoute>
       </Route>
       <Route path="/tarefas">
         <ProtectedRoute>
@@ -85,7 +87,9 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/usuarios">
-        <UsersPage />
+        <ProtectedRoute requiredRole="admin">
+          <UsersPage />
+        </ProtectedRoute>
       </Route>
 
       <Route path="/404" component={NotFound} />

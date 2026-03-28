@@ -61,6 +61,23 @@ export default function TorreDetail() {
   const [moverDestinoAndar, setMoverDestinoAndar] = useState<string>('');
   const [moverDestinoPerfilIndex, setMoverDestinoPerfilIndex] = useState<string>('');
 
+  // ---- Colheita: query + mutation (must be before early return to respect React hooks rules) ----
+  const colheitaAndarDbId = (() => {
+    const torreObj = data.torres.find((t) => t.id === id);
+    if (!torreObj) return undefined;
+    const andaresAll = data.andares.filter((a) => a.torreId === torreObj.id);
+    const selAndar = andaresAll.find((a) => a.id === selectedAndar);
+    return selAndar ? resolver.andarFrontIdToDbId.get(selAndar.id) : undefined;
+  })();
+  const { data: registrosColheita, refetch: refetchColheita } = trpc.registrosColheita.listByAndar.useQuery(
+    { andarId: colheitaAndarDbId! },
+    { enabled: !!colheitaAndarDbId }
+  );
+  const createColheita = trpc.registrosColheita.create.useMutation({
+    onSuccess: () => { refetchColheita(); toast.success('Colheita registrada!'); },
+    onError: (err: any) => { toast.error(`Erro: ${err.message}`); },
+  });
+
   const torre = data.torres.find((t) => t.id === id);
   if (!torre) {
     return (
@@ -432,17 +449,6 @@ export default function TorreDetail() {
     setVariedadeTransplantio('');
     toast.success('Transplantio registrado!');
   };
-
-  // ---- Colheita: query + mutation ----
-  const andarDbIdForColheita = andarSelecionado ? resolver.andarFrontIdToDbId.get(andarSelecionado.id) : undefined;
-  const { data: registrosColheita, refetch: refetchColheita } = trpc.registrosColheita.listByAndar.useQuery(
-    { andarId: andarDbIdForColheita! },
-    { enabled: !!andarDbIdForColheita }
-  );
-  const createColheita = trpc.registrosColheita.create.useMutation({
-    onSuccess: () => { refetchColheita(); toast.success('Colheita registrada!'); },
-    onError: (err: any) => { toast.error(`Erro: ${err.message}`); },
-  });
 
   const handleRegistrarColheita = () => {
     if (!andarSelecionado) return;

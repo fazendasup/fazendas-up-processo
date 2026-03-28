@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, email, role, passwordHash IS NOT NULL as hasPassword FROM users WHERE role = 'admin' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3QoEV5smxrvcKgg.89e310025238 --database V8Zeqmat63YDtBSE4w4iyd --execute SELECT id, email, role, passwordHash IS NOT NULL as hasPassword FROM users WHERE role = 'admin' LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "email": "comercial@visioneer.com.br",
+      "role": "admin",
+      "hasPassword": "1"
+    },
+    {
+      "id": "180124",
+      "email": "karla.maia@visioneer.com.br",
+      "role": "admin",
+      "hasPassword": "1"
+    },
+    {
+      "id": "210047",
+      "email": "newuser_1774640350377@test.com",
+      "role": "admin",
+      "hasPassword": "1"
+    },
+    {
+      "id": "210051",
+      "email": "newuser_1774640372196@test.com",
+      "role": "admin",
+      "hasPassword": "1"
+    },
+    {
+      "id": "420094",
+      "email": "newuser_1774711686182@test.com",
+      "role": "admin",
+      "hasPassword": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\trole\thasPassword\n1\tcomercial@visioneer.com.br\tadmin\t1\n180124\tkarla.maia@visioneer.com.br\tadmin\t1\n210047\tnewuser_1774640350377@test.com\tadmin\t1\n210051\tnewuser_1774640372196@test.com\tadmin\t1\n420094\tnewuser_1774711686182@test.com\tadmin\t1\n",
+  "stderr": "",
+  "execution_time_ms": 67
+}

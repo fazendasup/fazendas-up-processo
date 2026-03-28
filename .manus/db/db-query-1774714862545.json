@@ -1,0 +1,45 @@
+{
+  "query": "SELECT id, email, name, role, passwordHash FROM users WHERE role = 'admin' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3QoEV5smxrvcKgg.89e310025238 --database V8Zeqmat63YDtBSE4w4iyd --execute SELECT id, email, name, role, passwordHash FROM users WHERE role = 'admin' LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "email": "comercial@visioneer.com.br",
+      "name": "Administrador",
+      "role": "admin",
+      "passwordHash": "$2b$10$IJwx6eOjT2RzM1vqYW7UTuigUE2XYUmm01EHm5z4evVRukh9q8VQK"
+    },
+    {
+      "id": "180124",
+      "email": "karla.maia@visioneer.com.br",
+      "name": "Karla Maia",
+      "role": "admin",
+      "passwordHash": "$2b$10$zO5pJu0zP2gNynIL/YIC5urILzLLPdsTzcXjvufR/sq.qGY6VBWL2"
+    },
+    {
+      "id": "210047",
+      "email": "newuser_1774640350377@test.com",
+      "name": "Novo Operador",
+      "role": "admin",
+      "passwordHash": "$2b$10$HWRPeDcvDDMoW72.OxeYmOpwZAPmcyTJYTNJqP.ZouGjyBKknS2H."
+    },
+    {
+      "id": "210051",
+      "email": "newuser_1774640372196@test.com",
+      "name": "Novo Operador",
+      "role": "admin",
+      "passwordHash": "$2b$10$8TraMOT6k52nrWmwVUt59e091HIZkV4Z/aJDk8PjE4hz2df3vpgYi"
+    },
+    {
+      "id": "420094",
+      "email": "newuser_1774711686182@test.com",
+      "name": "Novo Operador",
+      "role": "admin",
+      "passwordHash": "$2b$10$AcE3JXq7KpNNZU/bEr/v3eh.dPOFbAeoay/Y1CYGno/9eXMSmHgFy"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\tname\trole\tpasswordHash\n1\tcomercial@visioneer.com.br\tAdministrador\tadmin\t$2b$10$IJwx6eOjT2RzM1vqYW7UTuigUE2XYUmm01EHm5z4evVRukh9q8VQK\n180124\tkarla.maia@visioneer.com.br\tKarla Maia\tadmin\t$2b$10$zO5pJu0zP2gNynIL/YIC5urILzLLPdsTzcXjvufR/sq.qGY6VBWL2\n210047\tnewuser_1774640350377@test.com\tNovo Operador\tadmin\t$2b$10$HWRPeDcvDDMoW72.OxeYmOpwZAPmcyTJYTNJqP.ZouGjyBKknS2H.\n210051\tnewuser_1774640372196@test.com\tNovo Operador\tadmin\t$2b$10$8TraMOT6k52nrWmwVUt59e091HIZkV4Z/aJDk8PjE4hz2df3vpgYi\n420094\tnewuser_1774711686182@test.com\tNovo Operador\tadmin\t$2b$10$AcE3JXq7KpNNZU/bEr/v3eh.dPOFbAeoay/Y1CYGno/9eXMSmHgFy\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

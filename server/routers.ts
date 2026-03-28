@@ -20,7 +20,11 @@ export const appRouter = router({
   system: systemRouter,
 
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
+    me: publicProcedure.query(opts => {
+      if (!opts.ctx.user) return null;
+      const { passwordHash, ...safeUser } = opts.ctx.user;
+      return safeUser;
+    }),
     login: publicProcedure
       .input(z.object({
         email: z.string().email(),
@@ -50,8 +54,13 @@ export const appRouter = router({
         };
       }),
     logout: publicProcedure.mutation(({ ctx }) => {
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      // Usar clearCookie com opções que cobrem todos os cenários
+      const cookieOpts = getSessionCookieOptions(ctx.req);
+      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOpts, maxAge: -1 });
+      // Fallback: clearCookie com variações de secure/sameSite
+      ctx.res.clearCookie(COOKIE_NAME, { httpOnly: true, path: '/', sameSite: 'none' as const, secure: true, maxAge: -1 });
+      ctx.res.clearCookie(COOKIE_NAME, { httpOnly: true, path: '/', sameSite: 'none' as const, secure: false, maxAge: -1 });
+      ctx.res.clearCookie(COOKIE_NAME, { httpOnly: true, path: '/', sameSite: 'lax' as const, secure: false, maxAge: -1 });
       return { success: true } as const;
     }),
   }),
@@ -763,10 +772,10 @@ export const appRouter = router({
         return db.createTarefa(input);
       }),
     concluir: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.number(), observacoes: z.string().optional() }))
       .mutation(async ({ input, ctx }) => {
         await db.concluirTarefa(input.id, ctx.user.id, ctx.user.name || 'Usuário');
-        return { success: true };
+        return { success: true, status: 'concluida' as const };
       }),
     update: protectedProcedure
       .input(z.object({

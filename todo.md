@@ -172,3 +172,27 @@
 
 ## Bug Fix
 - [x] Dados inseridos no andar 1 da torre de mudas não aparecem no dashboard nem na torre
+
+## Auditoria QA
+- [x] BUG FIX: ReceitasPage e UsersPage protegidos com ProtectedRoute (sessão anterior)
+- [x] BUG FIX: passwordHash removido da resposta auth.me (sessão anterior)
+- [x] BUG FIX: React Hooks crash no TorreDetail (sessão anterior)
+- [x] BUG FIX: Perfis não ativavam ao atribuir variedade (sessão anterior)
+- [x] BUG FIX: auth.logout usava ctx.res.cookie (não existe no Express res mock) — corrigido para usar apenas clearCookie
+- [x] BUG FIX: tarefas.concluir não aceitava observacoes e não retornava status — corrigido
+- [x] CLEANUP: Removidos ~20 usuários de teste do banco de dados
+- [x] QA: Testar Dashboard via browser (KPIs, torres, alertas, navegação)
+- [x] QA: Testar Login/Logout via browser (funciona, logout quirk do preview mode)
+- [x] QA: Testar Torre Detail via browser (andares, perfis, medição, aplicação, transplantio, mover)
+- [x] QA: Testar Germinação via browser (novo lote, listagem, botões)
+- [x] QA: Testar Manutenção via browser (nova manutenção, tipos, workflow)
+- [x] QA: Testar Tarefas via browser (KPIs, filtros, gerar automáticas, nova tarefa)
+- [x] QA: Testar Receitas via browser (formulário completo, filtro por variedade)
+- [x] QA: Testar Planejamento via browser (calendário, lista, novo plano)
+- [x] QA: Testar Capacidade via browser (Gantt, projeção semanal, filtros)
+- [x] QA: Testar Analytics via browser (9 abas, filtros, relatórios CSV)
+- [x] QA: Testar Ciclos via browser (listagem, novo ciclo)
+- [x] QA: Testar Config via browser (EC/pH, variedades, backup/export/reset)
+- [x] QA: Testar Usuários via browser (listagem, roles, ações)
+- [x] QA: TypeScript sem erros (npx tsc --noEmit)
+- [x] QA: 67 testes Vitest passando (7 arquivos, 0 falhas)
