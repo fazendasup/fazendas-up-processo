@@ -1,0 +1,15 @@
+{
+  "query": "SELECT COUNT(*) as total, SUM(ativo) as ativos, SUM(CASE WHEN variedadeId IS NOT NULL THEN 1 ELSE 0 END) as com_variedade FROM perfis;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3QoEV5smxrvcKgg.89e310025238 --database V8Zeqmat63YDtBSE4w4iyd --execute SELECT COUNT(*) as total, SUM(ativo) as ativos, SUM(CASE WHEN variedadeId IS NOT NULL THEN 1 ELSE 0 END) as com_variedade FROM perfis;",
+  "rows": [
+    {
+      "total": "1116",
+      "ativos": "0",
+      "com_variedade": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\tativos\tcom_variedade\n1116\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 67
+}

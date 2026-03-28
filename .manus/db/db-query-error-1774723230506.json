@@ -1,0 +1,8 @@
+{
+  "query": "SELECT p.id, p.andar_id, p.perfil_index, p.ativo, p.variedade_id, p.data_entrada FROM perfis p JOIN andares a ON p.andar_id = a.id JOIN torres t ON a.torre_id = t.id WHERE t.fase = 'mudas' AND p.ativo = 1 LIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3QoEV5smxrvcKgg.89e310025238 --database V8Zeqmat63YDtBSE4w4iyd --execute SELECT p.id, p.andar_id, p.perfil_index, p.ativo, p.variedade_id, p.data_entrada FROM perfis p JOIN andares a ON p.andar_id = a.id JOIN torres t ON a.torre_id = t.id WHERE t.fase = 'mudas' AND p.ativo = 1 LIMIT 30;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'p.andar_id' in 'on clause'"
+  ]
+}

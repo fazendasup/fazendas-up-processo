@@ -215,3 +215,8 @@
 - [x] UX: Resumo de status parcial (Transplante X/12, Em Processo Y/12)
 - [x] UX: Cards de perfil no grid com borda vermelha + animação pulse quando prontos
 - [x] Testes: 67 testes Vitest passando (7 arquivos, 0 falhas)
+
+## Bug Fix: Gerar Tarefas não detecta transplantios pendentes
+- [x] Investigar lógica de geração de tarefas no backend (routers.ts / db.ts)
+- [x] Corrigir detecção de transplantios e colheitas pendentes baseada em dataEntrada por perfil
+- [x] 67 testes Vitest passando (7 arquivos, 0 falhas)

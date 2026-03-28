@@ -1,0 +1,70 @@
+{
+  "query": "SELECT id, slug, nome FROM variedades ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3QoEV5smxrvcKgg.89e310025238 --database V8Zeqmat63YDtBSE4w4iyd --execute SELECT id, slug, nome FROM variedades ORDER BY id;",
+  "rows": [
+    {
+      "id": "150030",
+      "slug": "alface-crespa",
+      "nome": "Alface Crespa"
+    },
+    {
+      "id": "150031",
+      "slug": "alface-americana",
+      "nome": "Alface Americana"
+    },
+    {
+      "id": "150032",
+      "slug": "alface-roxa",
+      "nome": "Alface Roxa"
+    },
+    {
+      "id": "150033",
+      "slug": "rucula",
+      "nome": "Rúcula"
+    },
+    {
+      "id": "150034",
+      "slug": "agriao",
+      "nome": "Agrião"
+    },
+    {
+      "id": "150035",
+      "slug": "espinafre",
+      "nome": "Espinafre"
+    },
+    {
+      "id": "150036",
+      "slug": "couve",
+      "nome": "Couve"
+    },
+    {
+      "id": "150037",
+      "slug": "manjericao",
+      "nome": "Manjericão"
+    },
+    {
+      "id": "150038",
+      "slug": "salsa",
+      "nome": "Salsa"
+    },
+    {
+      "id": "150039",
+      "slug": "cebolinha",
+      "nome": "Cebolinha"
+    },
+    {
+      "id": "150040",
+      "slug": "hortela",
+      "nome": "Hortelã"
+    },
+    {
+      "id": "150041",
+      "slug": "coentro",
+      "nome": "Coentro"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tslug\tnome\n150030\talface-crespa\tAlface Crespa\n150031\talface-americana\tAlface Americana\n150032\talface-roxa\tAlface Roxa\n150033\trucula\tRúcula\n150034\tagriao\tAgrião\n150035\tespinafre\tEspinafre\n150036\tcouve\tCouve\n150037\tmanjericao\tManjericão\n150038\tsalsa\tSalsa\n150039\tcebolinha\tCebolinha\n150040\thortela\tHortelã\n150041\tcoentro\tCoentro\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

@@ -862,6 +862,81 @@ export const appRouter = router({
         }
       }
 
+      // ---- Transplantios e Colheitas pendentes (por perfil) ----
+      const variedadesMap = new Map(data.variedades.map(v => [v.id, v]));
+      const torresMap = new Map(data.torres.map(t => [t.id, t]));
+      const andaresMap = new Map(data.andares.map(a => [a.id, a]));
+
+      // Agrupar perfis ativos por andar para gerar tarefas por andar
+      const perfisAtivos = data.perfis.filter(p => p.ativo && p.variedadeId);
+      const perfisPorAndar = new Map<number, typeof perfisAtivos>();
+      for (const p of perfisAtivos) {
+        const arr = perfisPorAndar.get(p.andarId) || [];
+        arr.push(p);
+        perfisPorAndar.set(p.andarId, arr);
+      }
+
+      for (const [andarId, perfisAndar] of Array.from(perfisPorAndar)) {
+        const andar = andaresMap.get(andarId);
+        if (!andar) continue;
+        const torre = torresMap.get(andar.torreId);
+        if (!torre) continue;
+
+        // Determinar dias da fase para cada perfil
+        const prontosTransplantio: number[] = [];
+        const prontosColheita: number[] = [];
+
+        for (const perfil of perfisAndar) {
+          const variedade = variedadesMap.get(perfil.variedadeId!);
+          if (!variedade) continue;
+
+          // Data de entrada: prioridade perfil > andar
+          const dataEntrada = perfil.dataEntrada || andar.dataEntrada;
+          if (!dataEntrada) continue;
+
+          const entrada = new Date(dataEntrada);
+          entrada.setHours(0, 0, 0, 0);
+          const diasPassados = Math.floor((hoje.getTime() - entrada.getTime()) / 86400000);
+
+          // Determinar dias da fase atual
+          let diasFase = 0;
+          if (torre.fase === 'mudas') diasFase = variedade.diasMudas;
+          else if (torre.fase === 'vegetativa') diasFase = variedade.diasVegetativa;
+          else if (torre.fase === 'maturacao') diasFase = variedade.diasMaturacao;
+
+          if (diasFase > 0 && diasPassados >= diasFase) {
+            if (torre.fase === 'maturacao') {
+              prontosColheita.push(perfil.perfilIndex + 1);
+            } else {
+              prontosTransplantio.push(perfil.perfilIndex + 1);
+            }
+          }
+        }
+
+        // Gerar tarefa de transplantio se há perfis prontos
+        if (prontosTransplantio.length > 0) {
+          const proxFase = torre.fase === 'mudas' ? 'Vegetativa' : 'Maturação';
+          const titulo = `Transplantio: ${torre.nome} — Andar ${andar.numero} → ${proxFase}`;
+          if (!titulosExistentes.has(titulo)) {
+            const desc = `${prontosTransplantio.length} perfil(is) pronto(s) para transplantio: P${prontosTransplantio.join(', P')}. Mover de ${torre.fase} para ${proxFase}.`;
+            await db.createTarefa({ titulo, descricao: desc, tipo: 'transplantio', prioridade: 'alta', dataVencimento: hoje, torreId: torre.id, andarNumero: andar.numero });
+            tarefasCriadas.push(titulo);
+            titulosExistentes.add(titulo);
+          }
+        }
+
+        // Gerar tarefa de colheita se há perfis prontos
+        if (prontosColheita.length > 0) {
+          const titulo = `Colheita: ${torre.nome} — Andar ${andar.numero}`;
+          if (!titulosExistentes.has(titulo)) {
+            const desc = `${prontosColheita.length} perfil(is) pronto(s) para colheita: P${prontosColheita.join(', P')}. Fase de maturação concluída.`;
+            await db.createTarefa({ titulo, descricao: desc, tipo: 'colheita', prioridade: 'alta', dataVencimento: hoje, torreId: torre.id, andarNumero: andar.numero });
+            tarefasCriadas.push(titulo);
+            titulosExistentes.add(titulo);
+          }
+        }
+      }
+
       return { success: true, criadas: tarefasCriadas.length, tarefas: tarefasCriadas };
     }),
   }),

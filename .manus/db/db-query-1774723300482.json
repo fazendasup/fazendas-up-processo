@@ -1,0 +1,30 @@
+{
+  "query": "SELECT 'germinacao' as tbl, COUNT(*) as cnt FROM germinacao UNION ALL SELECT 'manutencoes', COUNT(*) FROM manutencoes UNION ALL SELECT 'transplantios', COUNT(*) FROM transplantios UNION ALL SELECT 'medicoes_caixa', COUNT(*) FROM medicoes_caixa UNION ALL SELECT 'aplicacoes_caixa', COUNT(*) FROM aplicacoes_caixa;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3QoEV5smxrvcKgg.89e310025238 --database V8Zeqmat63YDtBSE4w4iyd --execute SELECT 'germinacao' as tbl, COUNT(*) as cnt FROM germinacao UNION ALL SELECT 'manutencoes', COUNT(*) FROM manutencoes UNION ALL SELECT 'transplantios', COUNT(*) FROM transplantios UNION ALL SELECT 'medicoes_caixa', COUNT(*) FROM medicoes_caixa UNION ALL SELECT 'aplicacoes_caixa', COUNT(*) FROM aplicacoes_caixa;",
+  "rows": [
+    {
+      "tbl": "germinacao",
+      "cnt": "0"
+    },
+    {
+      "tbl": "manutencoes",
+      "cnt": "0"
+    },
+    {
+      "tbl": "medicoes_caixa",
+      "cnt": "0"
+    },
+    {
+      "tbl": "transplantios",
+      "cnt": "0"
+    },
+    {
+      "tbl": "aplicacoes_caixa",
+      "cnt": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "tbl\tcnt\ngerminacao\t0\nmanutencoes\t0\nmedicoes_caixa\t0\ntransplantios\t0\naplicacoes_caixa\t0\n",
+  "stderr": "",
+  "execution_time_ms": 67
+}
