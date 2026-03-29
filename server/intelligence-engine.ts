@@ -315,7 +315,7 @@ function avaliarManutencaoCritica(data: FazendaSnapshot, hoje: Date): AlertCandi
   // 4a. Manutenções abertas em itens críticos
   const tiposCriticos = ["vazamento_tubo_injetor", "bomba_defeito", "sistema_irrigacao", "falha_eletrica"];
   for (const m of data.manutencoes.filter((m: any) => m.status === "aberta")) {
-    const isCritico = tiposCriticos.some((tc) => m.tipo.toLowerCase().includes(tc.replace("_", " ")) || m.tipo.toLowerCase().includes(tc));
+    const isCritico = tiposCriticos.some((tc) => m.tipo.toLowerCase().includes(tc.replaceAll("_", " ")) || m.tipo.toLowerCase().includes(tc));
     if (!isCritico && !m.prazo) continue;
 
     const torre = torresMap.get(m.torreId);

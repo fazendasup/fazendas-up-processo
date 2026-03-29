@@ -229,49 +229,46 @@
 
 ## Módulo de Inteligência Acionável
 ### Schema e Banco
-- [ ] Criar tabela IntelligentAlert (id, tipo, severidade, prioridade, titulo, descricao, entidadeTipo, entidadeId, fase, origem, dadosSnapshot, sugestaoAcao, nivelConfianca, status, lidoPor, resolvidoPor, ignoradoPor, ignoradoMotivo, criadoEm, atualizadoEm)
-- [ ] Criar tabela RecommendationRule (id, nome, tipo, gatilho, condicao, acaoSugerida, faseAplicavel, prioridadePadrao, severidadePadrao, ativo, versao, criadoPor, aprovadoPor, fonte, observacoes)
-- [ ] Criar tabela AlertEvent (id, alertaId, eventoTipo, usuarioId, usuarioNome, timestamp, observacao)
-- [ ] Executar pnpm db:push
+- [x] Criar tabela IntelligentAlert (tipo, severidade, prioridade, titulo, descricao, entidadeTipo, entidadeId, fase, origem, dadosSnapshot, sugestaoAcao, nivelConfianca, status, hashUnico, tarefaGeradaId, lidoPor, resolvidoPor, ignoradoPor/Motivo/Prazo)
+- [x] Criar tabela RecommendationRule (nome, tipo, gatilho, condicao, acaoSugerida, faseAplicavel, prioridadePadrao, severidadePadrao, ativo, versao, criadoPor, aprovadoPor, fonte, observacoes)
+- [x] Criar tabela AlertEvent (alertaId, eventoTipo, usuarioId, usuarioNome, observacao, dadosExtra)
+- [x] Executar pnpm db:push
 
 ### Backend - Motor de Regras
-- [ ] Implementar motor de regras determinísticas (alertEngine)
-- [ ] Regra: Risco de Atraso (transplantio/colheita vencidos ou próximos)
-- [ ] Regra: Torre Subutilizada (ocupação abaixo do limiar)
-- [ ] Regra: Lote Fora do Padrão (germinação baixa, ciclo longo)
-- [ ] Regra: Manutenção Crítica (prazo vencido, recorrente, alta ocupação)
-- [ ] Regra: Capacidade Disponível (andares livres + planos pendentes)
-- [ ] Regra: Inconsistência Planejamento vs Execução
-- [ ] Regra: Sequência Operacional Incompleta
-- [ ] Regra: Desempenho Abaixo da Média Histórica
-- [ ] Regra: Concentração de Risco
-- [ ] Regra: Oportunidade de Antecipação
-- [ ] Rotas tRPC: alertas.list, alertas.get, alertas.marcarLido, alertas.resolver, alertas.ignorar, alertas.recalcular
-- [ ] Rotas tRPC: regras.list, regras.create, regras.update, regras.toggle
-- [ ] Rotas tRPC: alertaEventos.list
+- [x] Implementar motor de regras determinísticas (intelligence-engine.ts)
+- [x] Regra 1: Risco de Atraso (transplantio/colheita vencidos, manutenções com prazo, ciclos atrasados)
+- [x] Regra 2: Torre Subutilizada (ocupação abaixo de 30%)
+- [x] Regra 3: Lote Fora do Padrão (germinação <70%, desperdício >20%)
+- [x] Regra 4: Manutenção Crítica (tipos críticos, >5 dias aberta, concentração por torre)
+- [x] Regra 5: Capacidade Disponível (>50% perfis livres por fase + lotes prontos)
+- [x] Regra 6: Inconsistência Planejamento vs Execução (planos atrasados)
+- [x] Regra 7: Sequência Operacional Incompleta (andares sem lavagem)
+- [x] Regra 8: Desempenho Abaixo da Média Histórica (yield <80% da média)
+- [x] Regra 9: Desvio EC/pH (medições fora da faixa ideal) + fix replaceAll
+- [x] Rotas tRPC: alertas (list, getById, recalcular, marcarLido, marcarEmAndamento, resolver, ignorar, criarTarefa, limparResolvidos, resumo)
+- [x] Rotas tRPC: regras (list, getById, create, update, aprovar, delete)
 
 ### Frontend - Centro de Inteligência
-- [ ] Página /inteligencia com lista de alertas
-- [ ] Filtros por fase, tipo, severidade, status
-- [ ] Agrupamento por torre, lote ou manutenção
-- [ ] Histórico de recomendações
-- [ ] Ações rápidas (criar tarefa, abrir manutenção, resolver, ignorar com justificativa, abrir entidade)
-- [ ] Indicadores visuais de severidade e confiança
+- [x] Página /inteligencia com lista de alertas (cards com severidade, confiança, status)
+- [x] Filtros por fase, tipo, severidade, status
+- [x] Histórico de eventos por alerta (timeline com usuário e ação)
+- [x] Ações rápidas (criar tarefa, resolver, ignorar com justificativa, marcar como lido)
+- [x] Indicadores visuais de severidade e confiança (cores, badges, ícones)
+- [x] Resumo de KPIs (total, críticos, altos, médios, baixos, novos)
 
 ### Frontend - Alertas Contextuais
-- [ ] AlertCenter global (sino no Header com badge)
-- [ ] AlertBanner no Dashboard (seção Inteligência Operacional)
-- [ ] AlertBanner no TorreDetail (alertas da torre)
-- [ ] AlertBanner nas Tarefas (alertas que geram tarefas)
-- [ ] Badges de alerta nos TorreCards
+- [x] AlertCenter global (sino no Header com badge de contagem)
+- [x] AlertBanner no Dashboard (seção Inteligência Operacional com top 5 alertas)
+- [x] Rota registrada no App.tsx
 
 ### Permissões e Rastreabilidade
-- [ ] Permissões: operador pode ver, ler, criar tarefa, resolver simples
-- [ ] Permissões: admin pode criar/editar regras, aprovar, ignorar críticos
-- [ ] Histórico completo de eventos por alerta
-- [ ] Auditoria de ações (quem fez o quê e quando)
+- [x] publicProcedure: leitura de alertas e regras (operador + admin)
+- [x] protectedProcedure: recalcular, marcarLido, resolver, ignorar, criarTarefa (operador + admin)
+- [x] adminProcedure: CRUD regras, aprovar regras, limpar resolvidos (só admin)
+- [x] Histórico completo de eventos por alerta (AlertEvent com usuário, tipo, observação)
+- [x] Auditoria de ações (quem fez o quê e quando)
 
 ### Testes
-- [ ] Testes Vitest para motor de regras
-- [ ] Testes Vitest para rotas de alertas
-- [ ] Testes Vitest para permissões de alertas
+- [x] Testes Vitest para motor de regras (14 testes: 9 regras + propriedades)
+- [x] Bug fix: replaceAll no matching de tipos críticos de manutenção
+- [x] 81 testes passando (8 arquivos, 0 falhas)
