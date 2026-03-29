@@ -272,3 +272,6 @@
 - [x] Testes Vitest para motor de regras (14 testes: 9 regras + propriedades)
 - [x] Bug fix: replaceAll no matching de tipos críticos de manutenção
 - [x] 81 testes passando (8 arquivos, 0 falhas)
+
+## Fix: Layout do Header
+- [x] Corrigir posicionamento do nome/logo "Fazendas Up - Sistema Supervisório" no header com muitas abas

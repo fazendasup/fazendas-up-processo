@@ -101,38 +101,38 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-md">
-      <div className="container flex items-center justify-between h-14">
+      <div className="w-full px-4 flex items-center justify-between h-14 gap-4">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 no-underline">
+        <Link href="/" className="flex items-center gap-2 no-underline shrink-0">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center"
                style={{ background: 'linear-gradient(135deg, oklch(0.65 0.19 160), oklch(0.55 0.14 220))' }}>
             <Leaf className="w-4.5 h-4.5 text-white" />
           </div>
-          <div className="flex flex-col">
-            <span className="font-display text-base font-bold leading-tight tracking-tight text-foreground">
+          <div className="hidden sm:flex flex-col min-w-max">
+            <span className="font-display text-xs font-bold leading-tight text-foreground">
               Fazendas Up
             </span>
-            <span className="text-[9px] font-medium text-muted-foreground leading-none tracking-wider uppercase">
+            <span className="text-[7px] font-medium text-muted-foreground leading-none tracking-wider uppercase">
               Sistema Supervisório
             </span>
           </div>
         </Link>
 
         {/* Nav Desktop */}
-        <nav className="hidden lg:flex items-center gap-0.5">
+        <nav className="hidden md:flex items-center gap-0.5 flex-1 overflow-x-auto scrollbar-hide">
           {navItems.map((item) => {
             const isActive = location === item.href || (item.href !== '/' && location.startsWith(item.href));
             return (
               <Link key={item.href} href={item.href}>
                 <button
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all whitespace-nowrap ${
                     isActive
                       ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                   }`}
                 >
-                  <item.icon className="w-3.5 h-3.5" />
-                  {item.label}
+                  <item.icon className="w-3 h-3" />
+                  <span className="hidden lg:inline">{item.label}</span>
                   {item.href === '/inteligencia' && alertResumo && alertResumo.total > 0 && (
                     <span className={`ml-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold text-white ${
                       alertResumo.criticos > 0 ? 'bg-red-500 animate-pulse' : alertResumo.altos > 0 ? 'bg-amber-500' : 'bg-blue-500'
