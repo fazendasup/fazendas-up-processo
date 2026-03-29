@@ -1044,6 +1044,316 @@ export const appRouter = router({
       }),
   }),
 
+  // ---- Inteligência Acionável ----
+  inteligencia: router({
+    // Recalcular alertas (executa motor de regras)
+    recalcular: protectedProcedure.mutation(async ({ ctx }) => {
+      const { executarMotorInteligencia } = await import('./intelligence-engine');
+      const fazendaData = await db.loadFullFazendaData();
+      const candidatos = executarMotorInteligencia(fazendaData);
+
+      let criados = 0;
+      let atualizados = 0;
+      let resolvidos = 0;
+
+      // Buscar alertas existentes ativos
+      const alertasExistentes = await db.getAllAlerts();
+      const hashesAtivos = new Set(candidatos.map(c => c.hashUnico));
+      const hashesExistentes = new Map(alertasExistentes.map(a => [a.hashUnico, a]));
+
+      // Criar novos alertas ou atualizar existentes
+      for (const candidato of candidatos) {
+        const existente = hashesExistentes.get(candidato.hashUnico);
+        if (existente) {
+          // Atualizar se mudou severidade/prioridade/descrição
+          if (existente.status === 'resolvido' || existente.status === 'ignorado') continue;
+          if (existente.severidade !== candidato.severidade || existente.descricao !== candidato.descricao) {
+            await db.updateAlert(existente.id, {
+              severidade: candidato.severidade,
+              prioridade: candidato.prioridade,
+              descricao: candidato.descricao,
+              dadosSnapshot: candidato.dadosSnapshot,
+            });
+            await db.createAlertEvent({
+              alertaId: existente.id,
+              eventoTipo: 'atualizado',
+              usuarioId: ctx.user.id,
+              usuarioNome: ctx.user.name || 'Sistema',
+              observacao: 'Alerta atualizado pelo motor de regras',
+            });
+            atualizados++;
+          }
+        } else {
+          // Criar novo alerta
+          const { id: alertaId } = await db.createAlert({
+            tipo: candidato.tipo,
+            severidade: candidato.severidade,
+            prioridade: candidato.prioridade,
+            titulo: candidato.titulo,
+            descricao: candidato.descricao,
+            entidadeTipo: candidato.entidadeTipo,
+            entidadeId: candidato.entidadeId,
+            entidadeNome: candidato.entidadeNome,
+            fase: candidato.fase,
+            origem: candidato.origem,
+            ruleId: candidato.ruleId,
+            dadosSnapshot: candidato.dadosSnapshot,
+            sugestaoAcao: candidato.sugestaoAcao,
+            nivelConfianca: candidato.nivelConfianca,
+            gerarTarefa: candidato.gerarTarefa,
+            hashUnico: candidato.hashUnico,
+            status: 'novo',
+          });
+          await db.createAlertEvent({
+            alertaId,
+            eventoTipo: 'criado',
+            usuarioId: ctx.user.id,
+            usuarioNome: ctx.user.name || 'Sistema',
+            observacao: 'Alerta gerado pelo motor de regras',
+          });
+          criados++;
+        }
+      }
+
+      // Auto-resolver alertas que não existem mais nos candidatos
+      for (const existente of alertasExistentes) {
+        if (existente.status === 'resolvido' || existente.status === 'ignorado') continue;
+        if (!hashesAtivos.has(existente.hashUnico || '')) {
+          await db.updateAlert(existente.id, { status: 'resolvido' });
+          await db.createAlertEvent({
+            alertaId: existente.id,
+            eventoTipo: 'resolvido',
+            usuarioId: ctx.user.id,
+            usuarioNome: ctx.user.name || 'Sistema',
+            observacao: 'Auto-resolvido: condição não detectada mais',
+          });
+          resolvidos++;
+        }
+      }
+
+      return { success: true, criados, atualizados, resolvidos, totalCandidatos: candidatos.length };
+    }),
+
+    // Listar todos os alertas
+    list: publicProcedure.query(async () => {
+      return db.getAllAlerts();
+    }),
+
+    // Obter alerta por ID com eventos
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const alerta = await db.getAlertById(input.id);
+        if (!alerta) throw new TRPCError({ code: 'NOT_FOUND', message: 'Alerta não encontrado' });
+        const eventos = await db.getEventsByAlertId(input.id);
+        return { ...alerta, eventos };
+      }),
+
+    // Marcar como lido
+    marcarLido: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.updateAlert(input.id, {
+          status: 'lido',
+          lidoPorId: ctx.user.id,
+          lidoPorNome: ctx.user.name || 'Usuário',
+        });
+        await db.createAlertEvent({
+          alertaId: input.id,
+          eventoTipo: 'lido',
+          usuarioId: ctx.user.id,
+          usuarioNome: ctx.user.name || 'Usuário',
+        });
+        return { success: true };
+      }),
+
+    // Marcar em andamento
+    marcarEmAndamento: protectedProcedure
+      .input(z.object({ id: z.number(), observacao: z.string().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.updateAlert(input.id, { status: 'em_andamento' });
+        await db.createAlertEvent({
+          alertaId: input.id,
+          eventoTipo: 'em_andamento',
+          usuarioId: ctx.user.id,
+          usuarioNome: ctx.user.name || 'Usuário',
+          observacao: input.observacao,
+        });
+        return { success: true };
+      }),
+
+    // Resolver alerta
+    resolver: protectedProcedure
+      .input(z.object({ id: z.number(), observacao: z.string().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.updateAlert(input.id, {
+          status: 'resolvido',
+          resolvidoPorId: ctx.user.id,
+          resolvidoPorNome: ctx.user.name || 'Usuário',
+        });
+        await db.createAlertEvent({
+          alertaId: input.id,
+          eventoTipo: 'resolvido',
+          usuarioId: ctx.user.id,
+          usuarioNome: ctx.user.name || 'Usuário',
+          observacao: input.observacao,
+        });
+        return { success: true };
+      }),
+
+    // Ignorar alerta com justificativa
+    ignorar: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        motivo: z.string().min(1, 'Justificativa obrigatória'),
+        prazo: z.date().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.updateAlert(input.id, {
+          status: 'ignorado',
+          ignoradoPorId: ctx.user.id,
+          ignoradoPorNome: ctx.user.name || 'Usuário',
+          ignoradoMotivo: input.motivo,
+          ignoradoPrazo: input.prazo,
+        });
+        await db.createAlertEvent({
+          alertaId: input.id,
+          eventoTipo: 'ignorado',
+          usuarioId: ctx.user.id,
+          usuarioNome: ctx.user.name || 'Usuário',
+          observacao: `Motivo: ${input.motivo}`,
+        });
+        return { success: true };
+      }),
+
+    // Criar tarefa a partir de alerta
+    criarTarefa: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const alerta = await db.getAlertById(input.id);
+        if (!alerta) throw new TRPCError({ code: 'NOT_FOUND', message: 'Alerta não encontrado' });
+
+        const tarefa = await db.createTarefa({
+          titulo: `[Inteligência] ${alerta.titulo}`,
+          descricao: `${alerta.descricao}\n\nAção sugerida: ${alerta.sugestaoAcao}`,
+          tipo: alerta.tipo.includes('manutencao') ? 'manutencao' : alerta.tipo.includes('transplantio') || alerta.tipo.includes('atraso') ? 'transplantio' : 'outro',
+          prioridade: alerta.prioridade,
+          dataVencimento: new Date(),
+          torreId: alerta.entidadeTipo === 'torre' ? alerta.entidadeId : undefined,
+        });
+
+        await db.updateAlert(input.id, {
+          tarefaGeradaId: tarefa.id,
+          status: 'em_andamento',
+        });
+        await db.createAlertEvent({
+          alertaId: input.id,
+          eventoTipo: 'tarefa_criada',
+          usuarioId: ctx.user.id,
+          usuarioNome: ctx.user.name || 'Usuário',
+          observacao: `Tarefa #${tarefa.id} criada`,
+          dadosExtra: { tarefaId: tarefa.id },
+        });
+
+        return { success: true, tarefaId: tarefa.id };
+      }),
+
+    // Limpar alertas resolvidos/ignorados
+    limparResolvidos: adminProcedure.mutation(async ({ ctx }) => {
+      await db.deleteResolvedAlerts();
+      return { success: true };
+    }),
+
+    // Contagem resumida para badges
+    resumo: publicProcedure.query(async () => {
+      const alertas = await db.getAllAlerts();
+      const ativos = alertas.filter(a => a.status !== 'resolvido' && a.status !== 'ignorado');
+      return {
+        total: ativos.length,
+        criticos: ativos.filter(a => a.severidade === 'critica').length,
+        altos: ativos.filter(a => a.severidade === 'alta').length,
+        medios: ativos.filter(a => a.severidade === 'media').length,
+        baixos: ativos.filter(a => a.severidade === 'baixa').length,
+        novos: ativos.filter(a => a.status === 'novo').length,
+        porTipo: Object.fromEntries(
+          Array.from(new Set(ativos.map(a => a.tipo))).map(tipo => [
+            tipo,
+            ativos.filter(a => a.tipo === tipo).length,
+          ])
+        ),
+      };
+    }),
+  }),
+
+  // ---- Regras de Recomendação (admin) ----
+  regras: router({
+    list: publicProcedure.query(async () => {
+      return db.getAllRules();
+    }),
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const rule = await db.getRuleById(input.id);
+        if (!rule) throw new TRPCError({ code: 'NOT_FOUND', message: 'Regra não encontrada' });
+        return rule;
+      }),
+    create: adminProcedure
+      .input(z.object({
+        nome: z.string(),
+        tipo: z.string(),
+        gatilho: z.string(),
+        condicao: z.string(),
+        acaoSugerida: z.string(),
+        faseAplicavel: z.string().nullable().optional(),
+        prioridadePadrao: z.string().optional(),
+        severidadePadrao: z.string().optional(),
+        fonte: z.string().nullable().optional(),
+        observacoes: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return db.createRule({
+          ...input,
+          criadoPorId: ctx.user.id,
+          criadoPorNome: ctx.user.name || 'Admin',
+        });
+      }),
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        nome: z.string().optional(),
+        tipo: z.string().optional(),
+        gatilho: z.string().optional(),
+        condicao: z.string().optional(),
+        acaoSugerida: z.string().optional(),
+        faseAplicavel: z.string().nullable().optional(),
+        prioridadePadrao: z.string().optional(),
+        severidadePadrao: z.string().optional(),
+        ativo: z.boolean().optional(),
+        fonte: z.string().nullable().optional(),
+        observacoes: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateRule(id, data);
+        return { success: true };
+      }),
+    aprovar: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.updateRule(input.id, {
+          aprovadoPorId: ctx.user.id,
+          aprovadoPorNome: ctx.user.name || 'Admin',
+        });
+        return { success: true };
+      }),
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteRule(input.id);
+        return { success: true };
+      }),
+  }),
+
   // ---- Seed / Reset (admin) ----
   admin: router({
     seed: adminProcedure.mutation(async () => {

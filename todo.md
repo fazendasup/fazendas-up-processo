@@ -226,3 +226,52 @@
 - [x] Corrigido: teste agora apenas verifica permissão sem executar seed real
 - [x] Nenhum outro teste chama seed/reset/resetAllData
 - [x] 67 testes passando, dados preservados após execução
+
+## Módulo de Inteligência Acionável
+### Schema e Banco
+- [ ] Criar tabela IntelligentAlert (id, tipo, severidade, prioridade, titulo, descricao, entidadeTipo, entidadeId, fase, origem, dadosSnapshot, sugestaoAcao, nivelConfianca, status, lidoPor, resolvidoPor, ignoradoPor, ignoradoMotivo, criadoEm, atualizadoEm)
+- [ ] Criar tabela RecommendationRule (id, nome, tipo, gatilho, condicao, acaoSugerida, faseAplicavel, prioridadePadrao, severidadePadrao, ativo, versao, criadoPor, aprovadoPor, fonte, observacoes)
+- [ ] Criar tabela AlertEvent (id, alertaId, eventoTipo, usuarioId, usuarioNome, timestamp, observacao)
+- [ ] Executar pnpm db:push
+
+### Backend - Motor de Regras
+- [ ] Implementar motor de regras determinísticas (alertEngine)
+- [ ] Regra: Risco de Atraso (transplantio/colheita vencidos ou próximos)
+- [ ] Regra: Torre Subutilizada (ocupação abaixo do limiar)
+- [ ] Regra: Lote Fora do Padrão (germinação baixa, ciclo longo)
+- [ ] Regra: Manutenção Crítica (prazo vencido, recorrente, alta ocupação)
+- [ ] Regra: Capacidade Disponível (andares livres + planos pendentes)
+- [ ] Regra: Inconsistência Planejamento vs Execução
+- [ ] Regra: Sequência Operacional Incompleta
+- [ ] Regra: Desempenho Abaixo da Média Histórica
+- [ ] Regra: Concentração de Risco
+- [ ] Regra: Oportunidade de Antecipação
+- [ ] Rotas tRPC: alertas.list, alertas.get, alertas.marcarLido, alertas.resolver, alertas.ignorar, alertas.recalcular
+- [ ] Rotas tRPC: regras.list, regras.create, regras.update, regras.toggle
+- [ ] Rotas tRPC: alertaEventos.list
+
+### Frontend - Centro de Inteligência
+- [ ] Página /inteligencia com lista de alertas
+- [ ] Filtros por fase, tipo, severidade, status
+- [ ] Agrupamento por torre, lote ou manutenção
+- [ ] Histórico de recomendações
+- [ ] Ações rápidas (criar tarefa, abrir manutenção, resolver, ignorar com justificativa, abrir entidade)
+- [ ] Indicadores visuais de severidade e confiança
+
+### Frontend - Alertas Contextuais
+- [ ] AlertCenter global (sino no Header com badge)
+- [ ] AlertBanner no Dashboard (seção Inteligência Operacional)
+- [ ] AlertBanner no TorreDetail (alertas da torre)
+- [ ] AlertBanner nas Tarefas (alertas que geram tarefas)
+- [ ] Badges de alerta nos TorreCards
+
+### Permissões e Rastreabilidade
+- [ ] Permissões: operador pode ver, ler, criar tarefa, resolver simples
+- [ ] Permissões: admin pode criar/editar regras, aprovar, ignorar críticos
+- [ ] Histórico completo de eventos por alerta
+- [ ] Auditoria de ações (quem fez o quê e quando)
+
+### Testes
+- [ ] Testes Vitest para motor de regras
+- [ ] Testes Vitest para rotas de alertas
+- [ ] Testes Vitest para permissões de alertas

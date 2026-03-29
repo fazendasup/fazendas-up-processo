@@ -20,6 +20,9 @@ import {
   tarefas, InsertTarefa,
   registrosColheita, InsertRegistroColheita,
   planosPlantio, InsertPlanoPlantio,
+  intelligentAlerts, InsertIntelligentAlert,
+  recommendationRules, InsertRecommendationRule,
+  alertEvents, InsertAlertEvent,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -960,4 +963,108 @@ export async function deletePlanoPlantio(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(planosPlantio).where(eq(planosPlantio.id, id));
+}
+
+// ============================================================
+// Alertas Inteligentes
+// ============================================================
+
+export async function getAllAlerts() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(intelligentAlerts);
+}
+
+export async function getAlertById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(intelligentAlerts).where(eq(intelligentAlerts.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getAlertByHash(hash: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(intelligentAlerts).where(eq(intelligentAlerts.hashUnico, hash)).limit(1);
+  return result[0];
+}
+
+export async function createAlert(data: InsertIntelligentAlert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(intelligentAlerts).values(data);
+  return { id: result[0].insertId };
+}
+
+export async function updateAlert(id: number, data: Partial<InsertIntelligentAlert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(intelligentAlerts).set(data).where(eq(intelligentAlerts.id, id));
+}
+
+export async function deleteAlert(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(intelligentAlerts).where(eq(intelligentAlerts.id, id));
+}
+
+export async function deleteResolvedAlerts() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(intelligentAlerts).where(
+    inArray(intelligentAlerts.status, ["resolvido", "ignorado"])
+  );
+}
+
+// ============================================================
+// Regras de Recomendação
+// ============================================================
+
+export async function getAllRules() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(recommendationRules);
+}
+
+export async function getRuleById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(recommendationRules).where(eq(recommendationRules.id, id)).limit(1);
+  return result[0];
+}
+
+export async function createRule(data: InsertRecommendationRule) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(recommendationRules).values(data);
+  return { id: result[0].insertId };
+}
+
+export async function updateRule(id: number, data: Partial<InsertRecommendationRule>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(recommendationRules).set(data).where(eq(recommendationRules.id, id));
+}
+
+export async function deleteRule(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(recommendationRules).where(eq(recommendationRules.id, id));
+}
+
+// ============================================================
+// Eventos de Alerta (Histórico/Auditoria)
+// ============================================================
+
+export async function getEventsByAlertId(alertaId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(alertEvents).where(eq(alertEvents.alertaId, alertaId));
+}
+
+export async function createAlertEvent(data: InsertAlertEvent) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(alertEvents).values(data);
+  return { id: result[0].insertId };
 }

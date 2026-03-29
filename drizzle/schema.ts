@@ -378,3 +378,90 @@ export const planosPlantio = mysqlTable("planos_plantio", {
 
 export type PlanoPlantio = typeof planosPlantio.$inferSelect;
 export type InsertPlanoPlantio = typeof planosPlantio.$inferInsert;
+
+// ---- Regras de Recomendação (Intelligence) ----
+export const recommendationRules = mysqlTable("recommendation_rules", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 256 }).notNull(),
+  tipo: varchar("tipo", { length: 64 }).notNull(),
+  // tipos: risco_atraso, torre_subutilizada, lote_fora_padrao, manutencao_critica,
+  //        capacidade_disponivel, sequencia_incompleta, inconsistencia_plano,
+  //        desempenho_abaixo, concentracao_risco, oportunidade_antecipacao
+  gatilho: text("gatilho").notNull(),
+  condicao: text("condicao").notNull(),
+  acaoSugerida: text("acaoSugerida").notNull(),
+  faseAplicavel: varchar("faseAplicavel", { length: 32 }),
+  prioridadePadrao: varchar("prioridadePadrao", { length: 16 }).notNull().default("media"),
+  severidadePadrao: varchar("severidadePadrao", { length: 16 }).notNull().default("media"),
+  ativo: boolean("ativo").notNull().default(true),
+  versao: int("versao").notNull().default(1),
+  criadoPorId: int("criadoPorId"),
+  criadoPorNome: varchar("criadoPorNome", { length: 128 }),
+  aprovadoPorId: int("aprovadoPorId"),
+  aprovadoPorNome: varchar("aprovadoPorNome", { length: 128 }),
+  fonte: varchar("fonte", { length: 256 }),
+  observacoes: text("observacoes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type RecommendationRule = typeof recommendationRules.$inferSelect;
+export type InsertRecommendationRule = typeof recommendationRules.$inferInsert;
+
+// ---- Alertas Inteligentes ----
+export const intelligentAlerts = mysqlTable("intelligent_alerts", {
+  id: int("id").autoincrement().primaryKey(),
+  tipo: varchar("tipo", { length: 64 }).notNull(),
+  severidade: varchar("severidade", { length: 16 }).notNull().default("media"),
+  // severidade: baixa, media, alta, critica
+  prioridade: varchar("prioridade", { length: 16 }).notNull().default("media"),
+  // prioridade: baixa, media, alta, urgente
+  titulo: varchar("titulo", { length: 512 }).notNull(),
+  descricao: text("descricao").notNull(),
+  entidadeTipo: varchar("entidadeTipo", { length: 32 }),
+  // entidadeTipo: torre, andar, perfil, caixa_agua, manutencao, ciclo, plano, germinacao
+  entidadeId: int("entidadeId"),
+  entidadeNome: varchar("entidadeNome", { length: 256 }),
+  fase: varchar("fase", { length: 32 }),
+  origem: varchar("origem", { length: 64 }).notNull().default("motor_regras"),
+  // origem: motor_regras, manual
+  ruleId: int("ruleId"),
+  dadosSnapshot: json("dadosSnapshot"),
+  sugestaoAcao: text("sugestaoAcao").notNull(),
+  nivelConfianca: varchar("nivelConfianca", { length: 16 }).notNull().default("alta"),
+  // nivelConfianca: alta, media, baixa
+  status: varchar("status", { length: 16 }).notNull().default("novo"),
+  // status: novo, lido, em_andamento, resolvido, ignorado
+  lidoPorId: int("lidoPorId"),
+  lidoPorNome: varchar("lidoPorNome", { length: 128 }),
+  resolvidoPorId: int("resolvidoPorId"),
+  resolvidoPorNome: varchar("resolvidoPorNome", { length: 128 }),
+  ignoradoPorId: int("ignoradoPorId"),
+  ignoradoPorNome: varchar("ignoradoPorNome", { length: 128 }),
+  ignoradoMotivo: text("ignoradoMotivo"),
+  ignoradoPrazo: timestamp("ignoradoPrazo"),
+  gerarTarefa: boolean("gerarTarefa").notNull().default(false),
+  tarefaGeradaId: int("tarefaGeradaId"),
+  hashUnico: varchar("hashUnico", { length: 128 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type IntelligentAlert = typeof intelligentAlerts.$inferSelect;
+export type InsertIntelligentAlert = typeof intelligentAlerts.$inferInsert;
+
+// ---- Eventos de Alerta (Histórico/Auditoria) ----
+export const alertEvents = mysqlTable("alert_events", {
+  id: int("id").autoincrement().primaryKey(),
+  alertaId: int("alertaId").notNull(),
+  eventoTipo: varchar("eventoTipo", { length: 32 }).notNull(),
+  // eventoTipo: criado, lido, em_andamento, resolvido, ignorado, tarefa_criada, reaberto, atualizado
+  usuarioId: int("usuarioId"),
+  usuarioNome: varchar("usuarioNome", { length: 128 }),
+  observacao: text("observacao"),
+  dadosExtra: json("dadosExtra"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AlertEvent = typeof alertEvents.$inferSelect;
+export type InsertAlertEvent = typeof alertEvents.$inferInsert;

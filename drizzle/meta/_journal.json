@@ -50,6 +50,13 @@
       "when": 1774720301655,
       "tag": "0006_happy_falcon",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1774823155937,
+      "tag": "0007_thick_iron_lad",
+      "breakpoints": true
     }
   ]
 }

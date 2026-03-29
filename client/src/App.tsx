@@ -19,6 +19,7 @@ import ReceitasPage from './pages/ReceitasPage';
 import TarefasPage from './pages/TarefasPage';
 import PlanejamentoPage from './pages/PlanejamentoPage';
 import CapacidadePage from './pages/CapacidadePage';
+import Inteligencia from './pages/Inteligencia';
 
 function Router() {
   return (
@@ -84,6 +85,11 @@ function Router() {
       <Route path="/tarefas">
         <ProtectedRoute>
           <TarefasPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/inteligencia">
+        <ProtectedRoute>
+          <Inteligencia />
         </ProtectedRoute>
       </Route>
       <Route path="/usuarios">

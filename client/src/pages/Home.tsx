@@ -28,9 +28,17 @@ import {
   Target,
   Droplet,
   ClipboardList,
+  Brain,
+  ChevronRight,
+  Timer,
+  Zap,
+  Shield,
+  TrendingDown,
+  AlertCircle,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { motion } from 'framer-motion';
+import { Link } from 'wouter';
 
 const HERO_URL = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663464614308/V8Zeqmat63YDtBSE4w4iyd/torres-real_fb616389.jpeg';
 
@@ -116,6 +124,9 @@ export default function Home() {
             )}
           </section>
         )}
+
+        {/* Inteligência Operacional */}
+        <IntelligenceSection />
 
         {/* Plantas por fase */}
         <section>
@@ -237,6 +248,82 @@ function KPICard({ icon, label, value, color }: { icon: React.ReactNode; label: 
       </div>
       <p className="font-display font-bold text-xl">{value}</p>
     </motion.div>
+  );
+}
+
+const INTEL_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  risco_atraso: Timer,
+  torre_subutilizada: Layers,
+  lote_fora_padrao: AlertTriangle,
+  manutencao_critica: Wrench,
+  capacidade_disponivel: Zap,
+  desvio_ec_ph: Droplet,
+  atraso_rotina: Clock,
+  desperdicio_alto: TrendingDown,
+  yield_abaixo: Scissors,
+  manutencao_recorrente: Wrench,
+  inconsistencia_plano: AlertCircle,
+  sequencia_incompleta: ClipboardList,
+  concentracao_risco: Shield,
+};
+
+const SEV_STYLE: Record<string, string> = {
+  critica: 'bg-red-50 border-red-300 text-red-800',
+  alta: 'bg-amber-50 border-amber-300 text-amber-800',
+  media: 'bg-blue-50 border-blue-200 text-blue-800',
+  baixa: 'bg-gray-50 border-gray-200 text-gray-700',
+};
+
+function IntelligenceSection() {
+  const { data: alertas = [] } = trpc.inteligencia.list.useQuery(undefined, {
+    refetchInterval: 60000,
+  });
+
+  // Mostrar apenas alertas ativos (não resolvidos/ignorados), máximo 5
+  const ativos = alertas
+    .filter((a) => a.status !== 'resolvido' && a.status !== 'ignorado')
+    .slice(0, 5);
+
+  if (ativos.length === 0) return null;
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-display font-bold text-base flex items-center gap-2">
+          <Brain className="w-4 h-4 text-purple-600" />
+          Inteligência Operacional
+          <span className="text-xs font-normal text-muted-foreground">({ativos.length} alerta{ativos.length !== 1 ? 's' : ''})</span>
+        </h2>
+        <Link href="/inteligencia">
+          <button className="text-xs text-primary flex items-center gap-1 hover:underline">
+            Ver todos
+            <ChevronRight className="w-3 h-3" />
+          </button>
+        </Link>
+      </div>
+      <div className="space-y-2">
+        {ativos.map((alerta) => {
+          const Icon = INTEL_ICON_MAP[alerta.tipo] || AlertCircle;
+          const sevStyle = SEV_STYLE[alerta.severidade] || SEV_STYLE.baixa;
+          return (
+            <Link key={alerta.id} href="/inteligencia">
+              <div className={`p-3 rounded-xl border cursor-pointer hover:shadow-sm transition-shadow ${sevStyle}`}>
+                <div className="flex items-start gap-2.5">
+                  <Icon className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold">{alerta.titulo}</p>
+                    <p className="text-[10px] mt-0.5 opacity-80 line-clamp-1">{alerta.descricao}</p>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase flex-shrink-0">
+                    {alerta.severidade}
+                  </span>
+                </div>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 

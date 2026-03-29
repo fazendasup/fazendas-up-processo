@@ -38,6 +38,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/_core/hooks/useAuth';
+import { trpc } from '@/lib/trpc';
+import { Brain } from 'lucide-react';
 
 type NavItem = {
   href: string;
@@ -52,6 +54,9 @@ export default function Header() {
   const mutations = useFazendaMutations();
   const { isAdmin, isLoggedIn } = useRole();
   const { user, logout } = useAuth();
+  const { data: alertResumo } = trpc.inteligencia.resumo.useQuery(undefined, {
+    refetchInterval: 60000,
+  });
 
   // Nav items com controle de visibilidade por role
   const allNavItems: NavItem[] = [
@@ -63,6 +68,7 @@ export default function Header() {
     { href: '/planejamento', label: 'Planejamento', icon: CalendarIcon, requiredRole: 'admin' },
     { href: '/capacidade', label: 'Capacidade', icon: LayoutGrid, requiredRole: 'admin' },
     { href: '/analytics', label: 'Analytics', icon: BarChart3, requiredRole: 'admin' },
+    { href: '/inteligencia', label: 'Inteligência', icon: Brain },
     { href: '/ciclos', label: 'Ciclos', icon: CalendarClock, requiredRole: 'admin' },
     { href: '/config', label: 'Config', icon: Settings, requiredRole: 'admin' },
     { href: '/usuarios', label: 'Usuários', icon: Users, requiredRole: 'admin' },
@@ -127,6 +133,13 @@ export default function Header() {
                 >
                   <item.icon className="w-3.5 h-3.5" />
                   {item.label}
+                  {item.href === '/inteligencia' && alertResumo && alertResumo.total > 0 && (
+                    <span className={`ml-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold text-white ${
+                      alertResumo.criticos > 0 ? 'bg-red-500 animate-pulse' : alertResumo.altos > 0 ? 'bg-amber-500' : 'bg-blue-500'
+                    }`}>
+                      {alertResumo.total}
+                    </span>
+                  )}
                 </button>
               </Link>
             );
