@@ -1,0 +1,79 @@
+{
+  "query": "\n-- Listar todas as tabelas\nSHOW TABLES;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3QoEV5smxrvcKgg.89e310025238 --database V8Zeqmat63YDtBSE4w4iyd --execute \n-- Listar todas as tabelas\nSHOW TABLES;\n",
+  "rows": [
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "alert_events"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "andares"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "aplicacoes_andar"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "aplicacoes_caixa"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "caixas_agua"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "ciclos"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "fases_config"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "furos"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "germinacao"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "intelligent_alerts"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "manutencoes"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "medicoes_caixa"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "perfis"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "planos_plantio"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "receitas_crescimento"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "recommendation_rules"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "registros_colheita"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "tarefas"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "torres"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "transplantios"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "users"
+    },
+    {
+      "Tables_in_V8Zeqmat63YDtBSE4w4iyd": "variedades"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_V8Zeqmat63YDtBSE4w4iyd\n__drizzle_migrations\nalert_events\nandares\naplicacoes_andar\naplicacoes_caixa\ncaixas_agua\nciclos\nfases_config\nfuros\ngerminacao\nintelligent_alerts\nmanutencoes\nmedicoes_caixa\nperfis\nplanos_plantio\nreceitas_crescimento\nrecommendation_rules\nregistros_colheita\ntarefas\ntorres\ntransplantios\nusers\nvariedades\n",
+  "stderr": "",
+  "execution_time_ms": 49
+}

@@ -305,3 +305,6 @@
 - [x] Abrir modal com dados atuais do ciclo
 - [ ] Permitir editar frequencia, datas, dosagens, fases
 - [ ] Salvar alteracoes no banco
+
+## Bug Fix: Aba Duplicada
+- [x] Aba "Aplicação" aparece duplicada no detalhe do andar (início e final) — Removida seção de aplicação do andar, mantida apenas da caixa de água

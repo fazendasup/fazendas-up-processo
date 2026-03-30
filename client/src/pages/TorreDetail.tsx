@@ -1001,47 +1001,7 @@ export default function TorreDetail() {
                     onAndarVariedadeTodos={handleAndarVariedadeTodos}
                   />
 
-                  {/* Aplicações no andar */}
-                  <div className="mt-4 pt-4 border-t">
-                    <Tabs defaultValue="aplicar">
-                      <TabsList className="w-full mb-3">
-                        <TabsTrigger value="aplicar" className="flex-1 text-xs">Aplicação</TabsTrigger>
-                        <TabsTrigger value="hist" className="flex-1 text-xs">Histórico</TabsTrigger>
-                      </TabsList>
 
-                      <TabsContent value="aplicar">
-                        <form onSubmit={handleAddAplicacaoAndar} className="space-y-3">
-                          <div><Label className="text-xs">Tipo</Label>
-                            <Select value={tipoAndar} onValueChange={setTipoAndar}><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Selecione o tipo..." /></SelectTrigger><SelectContent>{TIPOS_APLICACAO_ANDAR.map((t) => (<SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>))}</SelectContent></Select>
-                          </div>
-                          <div><Label className="text-xs">Produto</Label><Input name="produto" placeholder="Ex: Solução nutritiva A" className="h-9 text-sm" required /></div>
-                          <div><Label className="text-xs">Quantidade</Label><Input name="quantidade" placeholder="Ex: 10ml" className="h-9 text-sm" /></div>
-                          <div><Label className="text-xs">Data/Hora</Label><Input name="dataHora" type="datetime-local" defaultValue={localDatetime} className="h-9 text-sm" required /></div>
-                          <Button type="submit" size="sm" className="w-full">Registrar Aplicação</Button>
-                        </form>
-                      </TabsContent>
-
-                      <TabsContent value="hist">
-                        <div className="max-h-48 overflow-y-auto space-y-2">
-                          {andarSelecionado.aplicacoes.length === 0 ? (
-                            <p className="text-xs text-muted-foreground text-center py-4">Nenhuma aplicação registrada.</p>
-                          ) : (
-                            andarSelecionado.aplicacoes
-                              .sort((a, b) => new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime())
-                              .map((apl) => (
-                                <div key={apl.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50 text-xs">
-                                  <div>
-                                    <p className="font-medium">{apl.produto} ({apl.quantidade})</p>
-                                    <p className="text-[10px] text-muted-foreground">{TIPOS_APLICACAO_ANDAR.find((t) => t.value === apl.tipo)?.label} · {formatarDataHora(apl.dataHora)}</p>
-                                  </div>
-                                  <button onClick={() => handleDeleteAplicacaoAndar(apl.id)} className="text-muted-foreground hover:text-destructive p-2 min-w-[36px] min-h-[36px] flex items-center justify-center"><Trash2 className="w-4 h-4" /></button>
-                                </div>
-                              ))
-                          )}
-                        </div>
-                      </TabsContent>
-                    </Tabs>
-                  </div>
                 </div>
               </motion.div>
             )}

@@ -1,0 +1,9 @@
+{
+  "query": "\n-- Limpar dados mantendo apenas o usuário comercial@visioneer.com.br\nDELETE FROM alert_events;\nDELETE FROM aplicacoes_andar;\nDELETE FROM aplicacoes_caixa;\nDELETE FROM caixas_agua;\nDELETE FROM ciclos;\nDELETE FROM furos;\nDELETE FROM germinacao;\nDELETE FROM intelligent_alerts;\nDELETE FROM manutencoes;\nDELETE FROM medicoes_caixa;\nDELETE FROM perfis;\nDELETE FROM planos_plantio;\nDELETE FROM receitas_crescimento;\nDELETE FROM recommendation_rules;\nDELETE FROM registros_colheita;\nDELETE FROM tarefas;\nDELETE FROM torres;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3QoEV5smxrvcKgg.89e310025238 --database V8Zeqmat63YDtBSE4w4iyd --execute \n-- Limpar dados mantendo apenas o usuário comercial@visioneer.com.br\nDELETE FROM alert_events;\nDELETE FROM aplicacoes_andar;\nDELETE FROM aplicacoes_caixa;\nDELETE FROM caixas_agua;\nDELETE FROM ciclos;\nDELETE FROM furos;\nDELETE FROM germinacao;\nDELETE FROM intelligent_alerts;\nDELETE FROM manutencoes;\nDELETE FROM medicoes_caixa;\nDELETE FROM perfis;\nDELETE FROM planos_plantio;\nDELETE FROM receitas_crescimento;\nDELETE FROM recommendation_rules;\nDELETE FROM registros_colheita;\nDELETE FROM tarefas;\nDELETE FROM torres;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 282
+}
