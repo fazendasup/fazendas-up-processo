@@ -18,7 +18,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from '@/components/ui/dialog';
 import {
-  CalendarClock, Plus, Trash2, AlertTriangle, CheckCircle2, Power,
+  CalendarClock, Plus, Trash2, AlertTriangle, CheckCircle2, Power, Edit,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -40,6 +40,8 @@ export default function CiclosPage() {
   const [fasesSelecionadas, setFasesSelecionadas] = useState<Fase[]>(['mudas', 'vegetativa', 'maturacao']);
   const [dataInicio, setDataInicio] = useState<string>(new Date().toISOString().split('T')[0]);
   const [datesEspecificas, setDatesEspecificas] = useState<string[]>([new Date().toISOString().split('T')[0]]);
+  const [dosagensEspecificas, setDosagensEspecificas] = useState<string[]>(['']);
+  const [dosagem, setDosagem] = useState<string>('');
   const [modoData, setModoData] = useState<'frequencia' | 'especifica'>('frequencia');
 
   const toggleDia = (dia: number) => {
@@ -70,10 +72,26 @@ export default function CiclosPage() {
     setFasesSelecionadas(['mudas', 'vegetativa', 'maturacao']);
     setDataInicio(new Date().toISOString().split('T')[0]);
     setDatesEspecificas([new Date().toISOString().split('T')[0]]);
+    setDosagensEspecificas(['']);
+    setDosagem('');
     setModoData('frequencia');
     setProduto('');
     setTipo('');
     setEditingId(null);
+  };
+
+  const handleEditCiclo = (id: string) => {
+    const ciclo = data.ciclos.find((c) => c.id === id);
+    if (!ciclo) return;
+    setEditingId(ciclo.id);
+    setProduto(ciclo.produto);
+    setTipo(ciclo.tipo || '');
+    setFrequencia(ciclo.frequencia);
+    setAlvo(ciclo.alvo);
+    setDiasSelecionados(ciclo.diasSemana || []);
+    setFasesSelecionadas(ciclo.fasesAplicaveis);
+    setModoData('frequencia');
+    setShowForm(true);
   };
 
   // Calcular próximas datas baseado na frequência
@@ -361,13 +379,24 @@ export default function CiclosPage() {
                         />
                       </div>
 
+                      <div className="mt-3">
+                        <Label className="text-xs">Dosagem</Label>
+                        <Input
+                          type="text"
+                          placeholder="Ex: 10ml/L, 5g/100L"
+                          value={dosagem}
+                          onChange={(e) => setDosagem(e.target.value)}
+                          className="h-9 text-sm"
+                        />
+                      </div>
+
                       {frequencia && (
                         <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                           <p className="text-xs text-blue-900 font-semibold mb-2">Próximas 5 aplicações:</p>
                           <div className="space-y-1">
                             {calcularProximasDatas(dataInicio, frequencia, diasSelecionados).map((data, idx) => (
                               <div key={idx} className="text-xs text-blue-800">
-                                📅 {new Date(data).toLocaleDateString('pt-BR')}
+                                📅 {new Date(data).toLocaleDateString('pt-BR')} {dosagem && `| 💧 ${dosagem}`}
                               </div>
                             ))}
                           </div>
@@ -392,6 +421,20 @@ export default function CiclosPage() {
                                 className="h-8 text-xs"
                               />
                             </div>
+                            <div className="flex-1">
+                              <Label className="text-xs">Dosagem</Label>
+                              <Input
+                                type="text"
+                                placeholder="Ex: 10ml/L"
+                                value={dosagensEspecificas[idx] || ''}
+                                onChange={(e) => {
+                                  const updated = [...dosagensEspecificas];
+                                  updated[idx] = e.target.value;
+                                  setDosagensEspecificas(updated);
+                                }}
+                                className="h-8 text-xs"
+                              />
+                            </div>
                             <Button
                               type="button"
                               variant="ghost"
@@ -400,6 +443,7 @@ export default function CiclosPage() {
                               onClick={() => {
                                 if (datesEspecificas.length > 1) {
                                   setDatesEspecificas(datesEspecificas.filter((_, i) => i !== idx));
+                                  setDosagensEspecificas(dosagensEspecificas.filter((_, i) => i !== idx));
                                 }
                               }}
                               disabled={datesEspecificas.length === 1}
@@ -419,6 +463,7 @@ export default function CiclosPage() {
                           const lastDate = new Date(datesEspecificas[datesEspecificas.length - 1]);
                           lastDate.setDate(lastDate.getDate() + 1);
                           setDatesEspecificas([...datesEspecificas, lastDate.toISOString().split('T')[0]]);
+                          setDosagensEspecificas([...dosagensEspecificas, '']);
                         }}
                       >
                         <Plus className="w-3 h-3 mr-1" />
@@ -430,7 +475,7 @@ export default function CiclosPage() {
                         <div className="space-y-1">
                           {datesEspecificas.map((data, idx) => (
                             <div key={idx} className="text-xs text-blue-800">
-                              📅 {new Date(data).toLocaleDateString('pt-BR')}
+                              📅 {new Date(data).toLocaleDateString('pt-BR')} {dosagensEspecificas[idx] && `| 💧 ${dosagensEspecificas[idx]}`}
                             </div>
                           ))}
                         </div>
@@ -471,6 +516,7 @@ export default function CiclosPage() {
                   onDelete={handleDelete}
                   onToggle={handleToggle}
                   onExecutar={handleMarcarExecutado}
+                  onEdit={handleEditCiclo}
                 />
               ))}
             </div>
@@ -498,6 +544,7 @@ export default function CiclosPage() {
                   onDelete={handleDelete}
                   onToggle={handleToggle}
                   onExecutar={handleMarcarExecutado}
+                  onEdit={handleEditCiclo}
                 />
               ))}
             </div>
@@ -514,12 +561,14 @@ function CicloItem({
   onDelete,
   onToggle,
   onExecutar,
+  onEdit,
 }: {
   ciclo: CicloAplicacao;
   pendente: boolean;
   onDelete: (id: string) => void;
   onToggle: (id: string) => void;
   onExecutar: (id: string) => void;
+  onEdit?: (id: string) => void;
 }) {
   const frequenciaLabel = () => {
     switch (ciclo.frequencia) {
@@ -573,6 +622,11 @@ function CicloItem({
           <Button variant="outline" size="sm" className="h-8 text-xs gap-1 text-emerald-600 border-emerald-300 hover:bg-emerald-50" onClick={() => onExecutar(ciclo.id)}>
             <CheckCircle2 className="w-3 h-3" />
             Feito
+          </Button>
+        )}
+        {onEdit && (
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(ciclo.id)} title="Editar">
+            <Edit className="w-3.5 h-3.5" />
           </Button>
         )}
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onToggle(ciclo.id)} title={ciclo.ativo ? 'Desativar' : 'Ativar'}>

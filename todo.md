@@ -294,3 +294,14 @@
 - [x] Calcular automaticamente proximas datas baseado na frequencia
 - [x] Mostrar preview das 5 proximas aplicacoes calculadas
 - [x] Remover conflito entre frequencia e datas multiplas
+
+## Bug Fix: Dosagem Removida
+- [x] Adicionar campo de dosagem na Opcao 1 (Frequencia) - unica dosagem para todas as aplicacoes
+- [x] Adicionar campo de dosagem na Opcao 2 (Datas Especificas) - dosagem individual por data
+- [x] Mostrar dosagem na preview das aplicacoes
+
+## Feature: Editar Ciclo Lancado
+- [x] Adicionar botao "Editar" em cada ciclo ja lancado
+- [x] Abrir modal com dados atuais do ciclo
+- [ ] Permitir editar frequencia, datas, dosagens, fases
+- [ ] Salvar alteracoes no banco
