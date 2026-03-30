@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import path from "node:path";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
-import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
+// Manus runtime plugin removed - using standard Vite
 
 // =============================================================================
 // Manus Debug Collector - Vite Plugin
@@ -69,14 +69,14 @@ function writeToLogFile(source: LogSource, entries: unknown[]) {
 }
 
 /**
- * Vite plugin to collect browser debug logs
+ * Debug collector plugin - collects browser logs for development
  * - POST /__manus__/logs: Browser sends logs, written directly to files
  * - Files: browserConsole.log, networkRequests.log, sessionReplay.log
  * - Auto-trimmed when exceeding 1MB (keeps newest entries)
  */
 function vitePluginManusDebugCollector(): Plugin {
   return {
-    name: "manus-debug-collector",
+    name: "debug-collector",
 
     transformIndexHtml(html) {
       if (process.env.NODE_ENV === "production") {
@@ -88,7 +88,7 @@ function vitePluginManusDebugCollector(): Plugin {
           {
             tag: "script",
             attrs: {
-              src: "/__manus__/debug-collector.js",
+              src: "/__debug__/collector.js",
               defer: true,
             },
             injectTo: "head",
@@ -150,7 +150,7 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusDebugCollector()];
 
 export default defineConfig({
   plugins,
@@ -162,6 +162,10 @@ export default defineConfig({
     },
   },
   envDir: path.resolve(import.meta.dirname),
+  define: {
+    'process.env.VITE_APP_ID': JSON.stringify(process.env.VITE_APP_ID || ''),
+    'process.env.VITE_OAUTH_PORTAL_URL': JSON.stringify(process.env.VITE_OAUTH_PORTAL_URL || ''),
+  },
   root: path.resolve(import.meta.dirname, "client"),
   publicDir: path.resolve(import.meta.dirname, "client", "public"),
   build: {
@@ -171,11 +175,6 @@ export default defineConfig({
   server: {
     host: true,
     allowedHosts: [
-      ".manuspre.computer",
-      ".manus.computer",
-      ".manus-asia.computer",
-      ".manuscomputer.ai",
-      ".manusvm.computer",
       "localhost",
       "127.0.0.1",
     ],
