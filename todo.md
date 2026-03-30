@@ -318,3 +318,7 @@
 - [ ] Frontend: Adicionar botões de excluir, ativar/desativar em cada torre
 - [ ] Frontend: Mostrar status de ativa/inativa nas torres
 - [ ] Testes: Validar que KPIs atualizam corretamente após operações de torres
+
+## UI/UX: Gerenciamento de Torres
+- [x] Mover gerenciamento de torres da aba Administrador para dentro de Configurações
+- [x] Remover aba Administrador
