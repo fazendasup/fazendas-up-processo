@@ -166,8 +166,10 @@ export interface Torre {
   id: string;
   nome: string;
   fase: Fase;
-  andares: number;
-  caixaAguaId: string;
+  andares?: number;
+  numAndares?: number;
+  caixaAguaId?: string;
+  ativa?: boolean;
 }
 
 // ---- Caixas d'Água ----

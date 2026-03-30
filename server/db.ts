@@ -175,6 +175,34 @@ export async function createTorre(data: InsertTorre) {
   return { id: result[0].insertId };
 }
 
+export async function updateTorre(id: number, updates: Partial<InsertTorre>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(torres).set(updates).where(eq(torres.id, id));
+  return getTorreById(id);
+}
+
+export async function toggleTorreAtiva(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const torre = await getTorreById(id);
+  if (!torre) throw new Error("Torre not found");
+  await db.update(torres).set({ ativa: !torre.ativa }).where(eq(torres.id, id));
+  return getTorreById(id);
+}
+
+export async function deleteTorre(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Verificar se há andares associados
+  const andaresList = await getAndaresByTorreId(id);
+  if (andaresList.length > 0) {
+    throw new Error("Não é possível deletar uma torre com andares. Remova os andares primeiro.");
+  }
+  await db.delete(torres).where(eq(torres.id, id));
+  return { success: true };
+}
+
 // ============================================================
 // Caixas d'Água
 // ============================================================

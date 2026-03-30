@@ -1,0 +1,1 @@
+ALTER TABLE `torres` ADD `ativa` boolean DEFAULT true NOT NULL;

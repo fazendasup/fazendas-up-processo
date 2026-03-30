@@ -86,6 +86,7 @@ export const torres = mysqlTable("torres", {
   fase: varchar("fase", { length: 32 }).notNull(),
   numAndares: int("numAndares").notNull().default(10),
   caixaAguaId: int("caixaAguaId"),
+  ativa: boolean("ativa").notNull().default(true),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -308,3 +308,13 @@
 
 ## Bug Fix: Aba Duplicada
 - [x] Aba "Aplicação" aparece duplicada no detalhe do andar (início e final) — Removida seção de aplicação do andar, mantida apenas da caixa de água
+
+## Feature: Gerenciamento de Torres
+- [ ] Backend: Adicionar rota para criar nova torre em qualquer fase
+- [ ] Backend: Adicionar rota para excluir torre (com validação de dados relacionados)
+- [ ] Backend: Adicionar rota para ativar/desativar torre
+- [ ] Backend: Garantir que exclusão/ativação/desativação recalcule KPIs e alertas
+- [ ] Frontend: Criar interface de gerenciamento de torres (CRUD)
+- [ ] Frontend: Adicionar botões de excluir, ativar/desativar em cada torre
+- [ ] Frontend: Mostrar status de ativa/inativa nas torres
+- [ ] Testes: Validar que KPIs atualizam corretamente após operações de torres

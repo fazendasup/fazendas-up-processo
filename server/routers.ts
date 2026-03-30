@@ -149,6 +149,39 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return db.getTorreBySlug(input.slug);
       }),
+    create: adminProcedure
+      .input(z.object({
+        nome: z.string().min(1),
+        fase: z.enum(['mudas', 'vegetativa', 'maturacao']),
+        numAndares: z.number().int().min(1).default(10),
+        caixaAguaId: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const slug = input.nome.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + Date.now().toString(36);
+        return db.createTorre({ ...input, slug });
+      }),
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        nome: z.string().optional(),
+        fase: z.enum(['mudas', 'vegetativa', 'maturacao']).optional(),
+        numAndares: z.number().int().min(1).optional(),
+        caixaAguaId: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...updates } = input;
+        return db.updateTorre(id, updates);
+      }),
+    toggleAtiva: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return db.toggleTorreAtiva(input.id);
+      }),
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return db.deleteTorre(input.id);
+      }),
   }),
 
   // ---- Caixas d'Água (leitura pública) ----
