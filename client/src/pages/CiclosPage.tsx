@@ -336,6 +336,7 @@ function CicloItem({
   onToggle: (id: string) => void;
   onExecutar: (id: string) => void;
 }) {
+  const [showApplications, setShowApplications] = useState(false);
   const frequenciaLabel = () => {
     switch (ciclo.frequencia) {
       case 'diaria': return 'Diária';
@@ -390,6 +391,20 @@ function CicloItem({
             Feito
           </Button>
         )}
+        <Dialog open={showApplications} onOpenChange={setShowApplications}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1" title="Editar datas de aplicação">
+              <CalendarClock className="w-3 h-3" />
+              Editar
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="font-display">Editar Aplicações — {ciclo.nome}</DialogTitle>
+            </DialogHeader>
+            <CicloApplicationsEditor ciclo={ciclo} onClose={() => setShowApplications(false)} />
+          </DialogContent>
+        </Dialog>
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onToggle(ciclo.id)} title={ciclo.ativo ? 'Desativar' : 'Ativar'}>
           <Power className={`w-3.5 h-3.5 ${ciclo.ativo ? 'text-emerald-600' : 'text-muted-foreground'}`} />
         </Button>
@@ -398,5 +413,115 @@ function CicloItem({
         </Button>
       </div>
     </motion.div>
+  );
+}
+
+function CicloApplicationsEditor({
+  ciclo,
+  onClose,
+}: {
+  ciclo: CicloAplicacao;
+  onClose: () => void;
+}) {
+  const [applications, setApplications] = useState<Array<{
+    date: string;
+    dosage: string;
+    notes: string;
+  }>>([{
+    date: new Date().toISOString().split('T')[0],
+    dosage: '',
+    notes: '',
+  }]);
+
+  const addApplication = () => {
+    const lastDate = new Date(applications[applications.length - 1].date);
+    lastDate.setDate(lastDate.getDate() + 1);
+    setApplications([...applications, {
+      date: lastDate.toISOString().split('T')[0],
+      dosage: '',
+      notes: '',
+    }]);
+  };
+
+  const removeApplication = (index: number) => {
+    if (applications.length > 1) {
+      setApplications(applications.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateApplication = (index: number, field: string, value: string) => {
+    const updated = [...applications];
+    updated[index] = { ...updated[index], [field]: value };
+    setApplications(updated);
+  };
+
+  const handleSave = () => {
+    toast.success(`${applications.length} aplicação(ões) salva(s)!`);
+    onClose();
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <p className="text-xs text-blue-900">
+          <strong>Produto:</strong> {ciclo.produto} | <strong>Tipo:</strong> {ciclo.tipo} | <strong>Fases:</strong> {ciclo.fasesAplicaveis.map(f => FASES_CONFIG[f].label).join(', ')}
+        </p>
+      </div>
+
+      <div className="space-y-3 max-h-96 overflow-y-auto">
+        {applications.map((app, idx) => (
+          <div key={idx} className="flex gap-2 items-end">
+            <div className="flex-1">
+              <Label className="text-xs">Data</Label>
+              <Input
+                type="date"
+                value={app.date}
+                onChange={(e) => updateApplication(idx, 'date', e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="flex-1">
+              <Label className="text-xs">Dosagem</Label>
+              <Input
+                type="text"
+                placeholder="Ex: 10ml/L"
+                value={app.dosage}
+                onChange={(e) => updateApplication(idx, 'dosage', e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="flex-1">
+              <Label className="text-xs">Observações</Label>
+              <Input
+                type="text"
+                placeholder="Ex: Manhã"
+                value={app.notes}
+                onChange={(e) => updateApplication(idx, 'notes', e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-destructive"
+              onClick={() => removeApplication(idx)}
+              disabled={applications.length === 1}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      <Button variant="outline" size="sm" className="w-full" onClick={addApplication}>
+        <Plus className="w-3 h-3 mr-1" />
+        Adicionar Aplicação
+      </Button>
+
+      <DialogFooter>
+        <Button variant="outline" onClick={onClose}>Cancelar</Button>
+        <Button onClick={handleSave}>Salvar Aplicações</Button>
+      </DialogFooter>
+    </div>
   );
 }

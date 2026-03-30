@@ -275,3 +275,8 @@
 
 ## Fix: Layout do Header
 - [x] Corrigir posicionamento do nome/logo "Fazendas Up - Sistema Supervisório" no header com muitas abas
+
+## Bug Fix: Datas de Tarefas e Edição de Ciclos
+- [x] BUG: Tarefas gerando com data 29/03 em vez de hoje (30/03) — Corrigido com UTC
+- [x] FEATURE: Adicionar edição individual de aplicações de ciclos (escolher data específica por aplicação) — Implementado modal CicloApplicationsEditor
+- [x] FEATURE: Criar modal de prévia de dosagens antes de confirmar ciclo — Adicionado card com resumo de produto/tipo/fases

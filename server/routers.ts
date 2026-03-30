@@ -805,14 +805,15 @@ export const appRouter = router({
       }),
     gerarAutomaticas: protectedProcedure.mutation(async ({ ctx }) => {
       const data = await db.loadFullFazendaData();
+      // Usar UTC para evitar timezone issues
       const hoje = new Date();
-      hoje.setHours(0, 0, 0, 0);
-      const amanha = new Date(hoje);
-      amanha.setDate(amanha.getDate() + 1);
+      const hojeUTC = new Date(Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth(), hoje.getUTCDate(), 0, 0, 0, 0));
+      const amanha = new Date(hojeUTC);
+      amanha.setUTCDate(amanha.getUTCDate() + 1);
       const tarefasCriadas: string[] = [];
       const tarefasHoje = data.tarefas.filter(t => {
         const dv = new Date(t.dataVencimento);
-        return dv >= hoje && dv < amanha;
+        return dv >= hojeUTC && dv < amanha;
       });
       const titulosExistentes = new Set(tarefasHoje.map(t => t.titulo));
 
@@ -822,17 +823,17 @@ export const appRouter = router({
           pendente = true;
         } else {
           const ultima = new Date(ciclo.ultimaExecucao);
-          if (ciclo.frequencia === 'diario') pendente = ultima < hoje;
+          if (ciclo.frequencia === 'diario') pendente = ultima < hojeUTC;
           else if (ciclo.frequencia === 'semanal' && Array.isArray(ciclo.diasSemana)) {
-            pendente = (ciclo.diasSemana as number[]).includes(hoje.getDay()) && ultima < hoje;
+            pendente = (ciclo.diasSemana as number[]).includes(hojeUTC.getUTCDay()) && ultima < hojeUTC;
           } else if (ciclo.frequencia === 'intervalo' && ciclo.intervaloDias) {
-            pendente = Math.floor((hoje.getTime() - ultima.getTime()) / 86400000) >= ciclo.intervaloDias;
+            pendente = Math.floor((hojeUTC.getTime() - ultima.getTime()) / 86400000) >= ciclo.intervaloDias;
           }
         }
         if (pendente) {
           const titulo = `Ciclo: ${ciclo.nome} — ${ciclo.produto}`;
           if (!titulosExistentes.has(titulo)) {
-            await db.createTarefa({ titulo, descricao: `Aplicar ${ciclo.produto} (${ciclo.tipo}) nas fases: ${(ciclo.fasesAplicaveis as string[]).join(', ')}`, tipo: 'ciclo', prioridade: 'alta', dataVencimento: hoje, cicloId: ciclo.id });
+            await db.createTarefa({ titulo, descricao: `Aplicar ${ciclo.produto} (${ciclo.tipo}) nas fases: ${(ciclo.fasesAplicaveis as string[]).join(', ')}`, tipo: 'ciclo', prioridade: 'alta', dataVencimento: hojeUTC, cicloId: ciclo.id });
             tarefasCriadas.push(titulo);
             titulosExistentes.add(titulo);
           }
@@ -841,11 +842,11 @@ export const appRouter = router({
 
       for (const m of data.manutencoes.filter(m => m.status === 'aberta' && m.prazo)) {
         const prazo = new Date(m.prazo!);
-        if (prazo <= hoje) {
+        if (prazo <= hojeUTC) {
           const torre = data.torres.find(t => t.id === m.torreId);
           const titulo = `Manutenção URGENTE: ${m.tipo} — ${torre?.nome || 'Torre'}${m.andarNumero ? ` A${m.andarNumero}` : ''}`;
           if (!titulosExistentes.has(titulo)) {
-            await db.createTarefa({ titulo, descricao: m.descricao, tipo: 'manutencao', prioridade: 'urgente', dataVencimento: hoje, torreId: m.torreId, andarNumero: m.andarNumero });
+            await db.createTarefa({ titulo, descricao: m.descricao, tipo: 'manutencao', prioridade: 'urgente', dataVencimento: hojeUTC, torreId: m.torreId, andarNumero: m.andarNumero });
             tarefasCriadas.push(titulo);
             titulosExistentes.add(titulo);
           }
@@ -856,7 +857,7 @@ export const appRouter = router({
         const torre = data.torres.find(t => t.id === andar.torreId);
         const titulo = `Lavagem: ${torre?.nome || 'Torre'} — Andar ${andar.numero}`;
         if (!titulosExistentes.has(titulo)) {
-          await db.createTarefa({ titulo, descricao: `Andar ${andar.numero} aguardando lavagem`, tipo: 'lavagem', prioridade: 'media', dataVencimento: hoje, torreId: andar.torreId, andarNumero: andar.numero });
+          await db.createTarefa({ titulo, descricao: `Andar ${andar.numero} aguardando lavagem`, tipo: 'lavagem', prioridade: 'media', dataVencimento: hojeUTC, torreId: andar.torreId, andarNumero: andar.numero });
           tarefasCriadas.push(titulo);
           titulosExistentes.add(titulo);
         }
@@ -896,7 +897,7 @@ export const appRouter = router({
 
           const entrada = new Date(dataEntrada);
           entrada.setHours(0, 0, 0, 0);
-          const diasPassados = Math.floor((hoje.getTime() - entrada.getTime()) / 86400000);
+          const diasPassados = Math.floor((hojeUTC.getTime() - entrada.getTime()) / 86400000);
 
           // Determinar dias da fase atual
           let diasFase = 0;
@@ -919,7 +920,7 @@ export const appRouter = router({
           const titulo = `Transplantio: ${torre.nome} — Andar ${andar.numero} → ${proxFase}`;
           if (!titulosExistentes.has(titulo)) {
             const desc = `${prontosTransplantio.length} perfil(is) pronto(s) para transplantio: P${prontosTransplantio.join(', P')}. Mover de ${torre.fase} para ${proxFase}.`;
-            await db.createTarefa({ titulo, descricao: desc, tipo: 'transplantio', prioridade: 'alta', dataVencimento: hoje, torreId: torre.id, andarNumero: andar.numero });
+            await db.createTarefa({ titulo, descricao: desc, tipo: 'transplantio', prioridade: 'alta', dataVencimento: hojeUTC, torreId: torre.id, andarNumero: andar.numero });
             tarefasCriadas.push(titulo);
             titulosExistentes.add(titulo);
           }
@@ -930,7 +931,7 @@ export const appRouter = router({
           const titulo = `Colheita: ${torre.nome} — Andar ${andar.numero}`;
           if (!titulosExistentes.has(titulo)) {
             const desc = `${prontosColheita.length} perfil(is) pronto(s) para colheita: P${prontosColheita.join(', P')}. Fase de maturação concluída.`;
-            await db.createTarefa({ titulo, descricao: desc, tipo: 'colheita', prioridade: 'alta', dataVencimento: hoje, torreId: torre.id, andarNumero: andar.numero });
+            await db.createTarefa({ titulo, descricao: desc, tipo: 'colheita', prioridade: 'alta', dataVencimento: hojeUTC, torreId: torre.id, andarNumero: andar.numero });
             tarefasCriadas.push(titulo);
             titulosExistentes.add(titulo);
           }
