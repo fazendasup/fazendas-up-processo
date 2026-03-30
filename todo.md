@@ -288,3 +288,9 @@
 - [x] Adicionar seletor de data por calendário no formulaário de criação (além das opções existentes)
 - [x] Mostrar dosagem de cada aplicação no formulaário de criação (não só na edição)
 - [x] Manter compatibilidade com opções que já existem
+## Refactor: Frequencia + Data de Inicio (Opcao Hibrida)
+- [x] Se Frequencia selecionada: mostrar apenas "Data de Inicio" (calendario)
+- [x] Se "Sem Recorrencia": mostrar calendario para multiplas datas especificas
+- [x] Calcular automaticamente proximas datas baseado na frequencia
+- [x] Mostrar preview das 5 proximas aplicacoes calculadas
+- [x] Remover conflito entre frequencia e datas multiplas

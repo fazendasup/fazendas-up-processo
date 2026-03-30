@@ -1,4 +1,3 @@
-// ============================================================
 // CiclosPage — Migrado para tRPC mutations
 // ============================================================
 
@@ -19,9 +18,9 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from '@/components/ui/dialog';
 import {
-  CalendarClock, Plus, Trash2, AlertTriangle, CheckCircle2, Power, Eye, EyeOff,
+  CalendarClock, Plus, Trash2, AlertTriangle, CheckCircle2, Power,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
@@ -39,12 +38,9 @@ export default function CiclosPage() {
   const [alvo, setAlvo] = useState<string>('ambos');
   const [diasSelecionados, setDiasSelecionados] = useState<number[]>([]);
   const [fasesSelecionadas, setFasesSelecionadas] = useState<Fase[]>(['mudas', 'vegetativa', 'maturacao']);
-  const [applications, setApplications] = useState<Array<{ date: string; dosage: string; notes: string }>>([{
-    date: new Date().toISOString().split('T')[0],
-    dosage: '',
-    notes: '',
-  }]);
-  const [showApplicationsPreview, setShowApplicationsPreview] = useState(false);
+  const [dataInicio, setDataInicio] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [datesEspecificas, setDatesEspecificas] = useState<string[]>([new Date().toISOString().split('T')[0]]);
+  const [modoData, setModoData] = useState<'frequencia' | 'especifica'>('frequencia');
 
   const toggleDia = (dia: number) => {
     setDiasSelecionados((prev) =>
@@ -72,11 +68,43 @@ export default function CiclosPage() {
     setAlvo('ambos');
     setDiasSelecionados([]);
     setFasesSelecionadas(['mudas', 'vegetativa', 'maturacao']);
-    setApplications([{ date: new Date().toISOString().split('T')[0], dosage: '', notes: '' }]);
-    setShowApplicationsPreview(false);
+    setDataInicio(new Date().toISOString().split('T')[0]);
+    setDatesEspecificas([new Date().toISOString().split('T')[0]]);
+    setModoData('frequencia');
     setProduto('');
     setTipo('');
     setEditingId(null);
+  };
+
+  // Calcular próximas datas baseado na frequência
+  const calcularProximasDatas = (inicio: string, freq: string, diasSem?: number[], intervalo?: number): string[] => {
+    const datas: string[] = [];
+    let data = new Date(inicio);
+    
+    for (let i = 0; i < 5; i++) {
+      datas.push(data.toISOString().split('T')[0]);
+      
+      if (freq === 'diaria') {
+        data.setDate(data.getDate() + 1);
+      } else if (freq === 'semanal' && diasSem && diasSem.length > 0) {
+        let encontrou = false;
+        for (let j = 1; j <= 7; j++) {
+          data.setDate(data.getDate() + 1);
+          if (diasSem.includes(data.getDay())) {
+            encontrou = true;
+            break;
+          }
+        }
+        if (!encontrou) data.setDate(data.getDate() - 7);
+      } else if (freq === 'quinzenal') {
+        data.setDate(data.getDate() + 15);
+      } else if (freq === 'mensal') {
+        data.setMonth(data.getMonth() + 1);
+      } else if (freq === 'personalizada' && intervalo) {
+        data.setDate(data.getDate() + intervalo);
+      }
+    }
+    return datas;
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -88,15 +116,19 @@ export default function CiclosPage() {
     const produto = fd.get('produto') as string;
     const tipo = fd.get('tipo') as string;
     const intervaloDias = parseInt(fd.get('intervaloDias') as string) || undefined;
-    const applicationsSummary = applications.map(a => `${a.date} (${a.dosage || 'sem dosagem'}) - ${a.notes || 'sem observações'}`).join('; ');
 
-    if (!nome || !frequencia || !produto || fasesSelecionadas.length === 0) {
+    if (!nome || !produto || fasesSelecionadas.length === 0) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
 
-    if (applications.length === 0) {
-      toast.error('Adicione pelo menos uma data de aplicação');
+    if (modoData === 'frequencia' && !frequencia) {
+      toast.error('Selecione uma frequência');
+      return;
+    }
+
+    if (modoData === 'especifica' && datesEspecificas.length === 0) {
+      toast.error('Adicione pelo menos uma data');
       return;
     }
 
@@ -106,7 +138,7 @@ export default function CiclosPage() {
       mutations.updateCiclo.mutate({
         id: dbId,
         nome,
-        frequencia,
+        frequencia: modoData === 'frequencia' ? frequencia : 'personalizada',
         diasSemana: frequencia === 'semanal' ? diasSelecionados : undefined,
         intervaloDias: frequencia === 'personalizada' ? intervaloDias : undefined,
         produto,
@@ -117,7 +149,7 @@ export default function CiclosPage() {
     } else {
       mutations.createCiclo.mutate({
         nome,
-        frequencia,
+        frequencia: modoData === 'frequencia' ? frequencia : 'personalizada',
         diasSemana: frequencia === 'semanal' ? diasSelecionados : undefined,
         intervaloDias: frequencia === 'personalizada' ? intervaloDias : undefined,
         produto,
@@ -126,7 +158,10 @@ export default function CiclosPage() {
         alvo,
       }, {
         onSuccess: () => {
-          toast.success(`Ciclo criado com ${applications.length} aplicação(ões)!`);
+          const datas = modoData === 'frequencia' 
+            ? calcularProximasDatas(dataInicio, frequencia, diasSelecionados, intervaloDias).length
+            : datesEspecificas.length;
+          toast.success(`Ciclo criado com ${datas} aplicação(ões)!`);
         },
       });
     }
@@ -161,6 +196,7 @@ export default function CiclosPage() {
 
   const ciclosPendentes = data.ciclos.filter((c) => cicloPendenteHoje(c));
 
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -180,7 +216,7 @@ export default function CiclosPage() {
                 Novo Ciclo
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="font-display">
                   {editingId ? 'Editar Ciclo' : 'Novo Ciclo de Aplicação'}
@@ -191,56 +227,12 @@ export default function CiclosPage() {
                   <Label className="text-xs">Nome do Ciclo *</Label>
                   <Input name="nome" placeholder="Ex: Sanitização Semanal" className="h-9 text-sm" required />
                 </div>
-                <div>
-                  <Label className="text-xs">Frequência *</Label>
-                  <Select value={frequencia} onValueChange={setFrequencia}>
-                    <SelectTrigger className="h-9 text-sm">
-                      <SelectValue placeholder="Selecione a frequência..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="diaria">Diária</SelectItem>
-                      <SelectItem value="semanal">Semanal</SelectItem>
-                      <SelectItem value="quinzenal">Quinzenal</SelectItem>
-                      <SelectItem value="mensal">Mensal</SelectItem>
-                      <SelectItem value="personalizada">Personalizada</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {frequencia === 'semanal' && (
-                  <div>
-                    <Label className="text-xs mb-2 block">Dias da Semana</Label>
-                    <div className="flex gap-2 flex-wrap">
-                      {DIAS_SEMANA.map((dia) => (
-                        <button
-                          key={dia.value}
-                          type="button"
-                          onClick={() => toggleDia(dia.value)}
-                          className={`px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors ${
-                            diasSelecionados.includes(dia.value)
-                              ? 'bg-primary text-primary-foreground border-primary'
-                              : 'bg-muted text-muted-foreground border-border hover:bg-accent'
-                          }`}
-                        >
-                          {dia.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {frequencia === 'personalizada' && (
-                  <div>
-                    <Label className="text-xs">Intervalo em Dias</Label>
-                    <Input name="intervaloDias" type="number" min="1" placeholder="Ex: 3" className="h-9 text-sm" />
-                  </div>
-                )}
 
                 <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs">Produto *</Label>
-                  <Input name="produto" placeholder="Ex: Sanitizante X" className="h-9 text-sm" required onChange={handleFormChange} />
-                </div>
+                  <div>
+                    <Label className="text-xs">Produto *</Label>
+                    <Input name="produto" placeholder="Ex: Sanitizante X" className="h-9 text-sm" required onChange={handleFormChange} />
+                  </div>
                   <div>
                     <Label className="text-xs">Tipo</Label>
                     <Input name="tipo" placeholder="Ex: Sanitização" className="h-9 text-sm" onChange={handleFormChange} />
@@ -286,114 +278,165 @@ export default function CiclosPage() {
                 </div>
 
                 <div className="border-t pt-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <Label className="text-xs font-semibold">Aplicações (Data e Dosagem)</Label>
-                    <Button
+                  <Label className="text-xs font-semibold mb-3 block">Modo de Agendamento</Label>
+                  <div className="flex gap-3 mb-4">
+                    <button
                       type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs gap-1"
-                      onClick={() => setShowApplicationsPreview(!showApplicationsPreview)}
+                      onClick={() => setModoData('frequencia')}
+                      className={`flex-1 px-3 py-2 rounded-md text-xs font-medium border transition-colors ${
+                        modoData === 'frequencia'
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-muted text-muted-foreground border-border hover:bg-accent'
+                      }`}
                     >
-                      {showApplicationsPreview ? 'Ocultar' : 'Visualizar'} Prévia
-                    </Button>
+                      📅 Frequência + Data Início
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setModoData('especifica')}
+                      className={`flex-1 px-3 py-2 rounded-md text-xs font-medium border transition-colors ${
+                        modoData === 'especifica'
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-muted text-muted-foreground border-border hover:bg-accent'
+                      }`}
+                    >
+                      📍 Datas Específicas
+                    </button>
                   </div>
-                  
-                  {showApplicationsPreview && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-                      <p className="text-xs text-blue-900 mb-2">
-                        <strong>Resumo:</strong> {produto} | {tipo} | {fasesSelecionadas.map(f => FASES_CONFIG[f].label).join(', ')}
-                      </p>
-                      <div className="space-y-1">
-                        {applications.map((app, idx) => (
-                          <div key={idx} className="text-xs text-blue-800">
-                            📅 {app.date} | 💧 {app.dosage || '—'} | 📝 {app.notes || '—'}
+
+                  {modoData === 'frequencia' ? (
+                    <>
+                      <div>
+                        <Label className="text-xs">Frequência *</Label>
+                        <Select value={frequencia} onValueChange={setFrequencia}>
+                          <SelectTrigger className="h-9 text-sm">
+                            <SelectValue placeholder="Selecione a frequência..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="diaria">Diária</SelectItem>
+                            <SelectItem value="semanal">Semanal</SelectItem>
+                            <SelectItem value="quinzenal">Quinzenal</SelectItem>
+                            <SelectItem value="mensal">Mensal</SelectItem>
+                            <SelectItem value="personalizada">Personalizada</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {frequencia === 'semanal' && (
+                        <div className="mt-3">
+                          <Label className="text-xs mb-2 block">Dias da Semana</Label>
+                          <div className="flex gap-2 flex-wrap">
+                            {DIAS_SEMANA.map((dia) => (
+                              <button
+                                key={dia.value}
+                                type="button"
+                                onClick={() => toggleDia(dia.value)}
+                                className={`px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                                  diasSelecionados.includes(dia.value)
+                                    ? 'bg-primary text-primary-foreground border-primary'
+                                    : 'bg-muted text-muted-foreground border-border hover:bg-accent'
+                                }`}
+                              >
+                                {dia.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {frequencia === 'personalizada' && (
+                        <div className="mt-3">
+                          <Label className="text-xs">Intervalo em Dias</Label>
+                          <Input name="intervaloDias" type="number" min="1" placeholder="Ex: 3" className="h-9 text-sm" />
+                        </div>
+                      )}
+
+                      <div className="mt-3">
+                        <Label className="text-xs">Data de Início *</Label>
+                        <Input
+                          type="date"
+                          value={dataInicio}
+                          onChange={(e) => setDataInicio(e.target.value)}
+                          className="h-9 text-sm"
+                        />
+                      </div>
+
+                      {frequencia && (
+                        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                          <p className="text-xs text-blue-900 font-semibold mb-2">Próximas 5 aplicações:</p>
+                          <div className="space-y-1">
+                            {calcularProximasDatas(dataInicio, frequencia, diasSelecionados).map((data, idx) => (
+                              <div key={idx} className="text-xs text-blue-800">
+                                📅 {new Date(data).toLocaleDateString('pt-BR')}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        {datesEspecificas.map((date, idx) => (
+                          <div key={idx} className="flex gap-2 items-end">
+                            <div className="flex-1">
+                              <Label className="text-xs">Data</Label>
+                              <Input
+                                type="date"
+                                value={date}
+                                onChange={(e) => {
+                                  const updated = [...datesEspecificas];
+                                  updated[idx] = e.target.value;
+                                  setDatesEspecificas(updated);
+                                }}
+                                className="h-8 text-xs"
+                              />
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive"
+                              onClick={() => {
+                                if (datesEspecificas.length > 1) {
+                                  setDatesEspecificas(datesEspecificas.filter((_, i) => i !== idx));
+                                }
+                              }}
+                              disabled={datesEspecificas.length === 1}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
                           </div>
                         ))}
                       </div>
-                    </div>
-                  )}
 
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {applications.map((app, idx) => (
-                      <div key={idx} className="flex gap-2 items-end">
-                        <div className="flex-1">
-                          <Label className="text-xs">Data</Label>
-                          <Input
-                            type="date"
-                            value={app.date}
-                            onChange={(e) => {
-                              const updated = [...applications];
-                              updated[idx] = { ...updated[idx], date: e.target.value };
-                              setApplications(updated);
-                            }}
-                            className="h-8 text-xs"
-                          />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-2 text-xs"
+                        onClick={() => {
+                          const lastDate = new Date(datesEspecificas[datesEspecificas.length - 1]);
+                          lastDate.setDate(lastDate.getDate() + 1);
+                          setDatesEspecificas([...datesEspecificas, lastDate.toISOString().split('T')[0]]);
+                        }}
+                      >
+                        <Plus className="w-3 h-3 mr-1" />
+                        Adicionar Data
+                      </Button>
+
+                      <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-xs text-blue-900 font-semibold mb-2">Datas selecionadas:</p>
+                        <div className="space-y-1">
+                          {datesEspecificas.map((data, idx) => (
+                            <div key={idx} className="text-xs text-blue-800">
+                              📅 {new Date(data).toLocaleDateString('pt-BR')}
+                            </div>
+                          ))}
                         </div>
-                        <div className="flex-1">
-                          <Label className="text-xs">Dosagem</Label>
-                          <Input
-                            type="text"
-                            placeholder="Ex: 10ml/L"
-                            value={app.dosage}
-                            onChange={(e) => {
-                              const updated = [...applications];
-                              updated[idx] = { ...updated[idx], dosage: e.target.value };
-                              setApplications(updated);
-                            }}
-                            className="h-8 text-xs"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <Label className="text-xs">Observações</Label>
-                          <Input
-                            type="text"
-                            placeholder="Ex: Manhã"
-                            value={app.notes}
-                            onChange={(e) => {
-                              const updated = [...applications];
-                              updated[idx] = { ...updated[idx], notes: e.target.value };
-                              setApplications(updated);
-                            }}
-                            className="h-8 text-xs"
-                          />
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive"
-                          onClick={() => {
-                            if (applications.length > 1) {
-                              setApplications(applications.filter((_, i) => i !== idx));
-                            }
-                          }}
-                          disabled={applications.length === 1}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
                       </div>
-                    ))}
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-full mt-2 text-xs"
-                    onClick={() => {
-                      const lastDate = new Date(applications[applications.length - 1].date);
-                      lastDate.setDate(lastDate.getDate() + 1);
-                      setApplications([...applications, {
-                        date: lastDate.toISOString().split('T')[0],
-                        dosage: '',
-                        notes: '',
-                      }]);
-                    }}
-                  >
-                    <Plus className="w-3 h-3 mr-1" />
-                    Adicionar Data
-                  </Button>
+                    </>
+                  )}
                 </div>
 
                 <DialogFooter>
@@ -478,7 +521,6 @@ function CicloItem({
   onToggle: (id: string) => void;
   onExecutar: (id: string) => void;
 }) {
-  const [showApplications, setShowApplications] = useState(false);
   const frequenciaLabel = () => {
     switch (ciclo.frequencia) {
       case 'diaria': return 'Diária';
@@ -533,20 +575,6 @@ function CicloItem({
             Feito
           </Button>
         )}
-        <Dialog open={showApplications} onOpenChange={setShowApplications}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 text-xs gap-1" title="Editar datas de aplicação">
-              <CalendarClock className="w-3 h-3" />
-              Editar
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle className="font-display">Editar Aplicações — {ciclo.nome}</DialogTitle>
-            </DialogHeader>
-            <CicloApplicationsEditor ciclo={ciclo} onClose={() => setShowApplications(false)} />
-          </DialogContent>
-        </Dialog>
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onToggle(ciclo.id)} title={ciclo.ativo ? 'Desativar' : 'Ativar'}>
           <Power className={`w-3.5 h-3.5 ${ciclo.ativo ? 'text-emerald-600' : 'text-muted-foreground'}`} />
         </Button>
@@ -555,115 +583,5 @@ function CicloItem({
         </Button>
       </div>
     </motion.div>
-  );
-}
-
-function CicloApplicationsEditor({
-  ciclo,
-  onClose,
-}: {
-  ciclo: CicloAplicacao;
-  onClose: () => void;
-}) {
-  const [applications, setApplications] = useState<Array<{
-    date: string;
-    dosage: string;
-    notes: string;
-  }>>([{
-    date: new Date().toISOString().split('T')[0],
-    dosage: '',
-    notes: '',
-  }]);
-
-  const addApplication = () => {
-    const lastDate = new Date(applications[applications.length - 1].date);
-    lastDate.setDate(lastDate.getDate() + 1);
-    setApplications([...applications, {
-      date: lastDate.toISOString().split('T')[0],
-      dosage: '',
-      notes: '',
-    }]);
-  };
-
-  const removeApplication = (index: number) => {
-    if (applications.length > 1) {
-      setApplications(applications.filter((_, i) => i !== index));
-    }
-  };
-
-  const updateApplication = (index: number, field: string, value: string) => {
-    const updated = [...applications];
-    updated[index] = { ...updated[index], [field]: value };
-    setApplications(updated);
-  };
-
-  const handleSave = () => {
-    toast.success(`${applications.length} aplicação(ões) salva(s)!`);
-    onClose();
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-        <p className="text-xs text-blue-900">
-          <strong>Produto:</strong> {ciclo.produto} | <strong>Tipo:</strong> {ciclo.tipo} | <strong>Fases:</strong> {ciclo.fasesAplicaveis.map(f => FASES_CONFIG[f].label).join(', ')}
-        </p>
-      </div>
-
-      <div className="space-y-3 max-h-96 overflow-y-auto">
-        {applications.map((app, idx) => (
-          <div key={idx} className="flex gap-2 items-end">
-            <div className="flex-1">
-              <Label className="text-xs">Data</Label>
-              <Input
-                type="date"
-                value={app.date}
-                onChange={(e) => updateApplication(idx, 'date', e.target.value)}
-                className="h-8 text-xs"
-              />
-            </div>
-            <div className="flex-1">
-              <Label className="text-xs">Dosagem</Label>
-              <Input
-                type="text"
-                placeholder="Ex: 10ml/L"
-                value={app.dosage}
-                onChange={(e) => updateApplication(idx, 'dosage', e.target.value)}
-                className="h-8 text-xs"
-              />
-            </div>
-            <div className="flex-1">
-              <Label className="text-xs">Observações</Label>
-              <Input
-                type="text"
-                placeholder="Ex: Manhã"
-                value={app.notes}
-                onChange={(e) => updateApplication(idx, 'notes', e.target.value)}
-                className="h-8 text-xs"
-              />
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-destructive"
-              onClick={() => removeApplication(idx)}
-              disabled={applications.length === 1}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
-          </div>
-        ))}
-      </div>
-
-      <Button variant="outline" size="sm" className="w-full" onClick={addApplication}>
-        <Plus className="w-3 h-3 mr-1" />
-        Adicionar Aplicação
-      </Button>
-
-      <DialogFooter>
-        <Button variant="outline" onClick={onClose}>Cancelar</Button>
-        <Button onClick={handleSave}>Salvar Aplicações</Button>
-      </DialogFooter>
-    </div>
   );
 }
