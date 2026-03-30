@@ -19,9 +19,9 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from '@/components/ui/dialog';
 import {
-  CalendarClock, Plus, Trash2, AlertTriangle, CheckCircle2, Power,
+  CalendarClock, Plus, Trash2, AlertTriangle, CheckCircle2, Power, Eye, EyeOff,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
@@ -31,12 +31,20 @@ export default function CiclosPage() {
   const resolver = useDbIdResolver();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [produto, setProduto] = useState<string>('');
+  const [tipo, setTipo] = useState<string>('');
 
   // Controlled form state
   const [frequencia, setFrequencia] = useState<string>('');
   const [alvo, setAlvo] = useState<string>('ambos');
   const [diasSelecionados, setDiasSelecionados] = useState<number[]>([]);
   const [fasesSelecionadas, setFasesSelecionadas] = useState<Fase[]>(['mudas', 'vegetativa', 'maturacao']);
+  const [applications, setApplications] = useState<Array<{ date: string; dosage: string; notes: string }>>([{
+    date: new Date().toISOString().split('T')[0],
+    dosage: '',
+    notes: '',
+  }]);
+  const [showApplicationsPreview, setShowApplicationsPreview] = useState(false);
 
   const toggleDia = (dia: number) => {
     setDiasSelecionados((prev) =>
@@ -50,11 +58,24 @@ export default function CiclosPage() {
     );
   };
 
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.name === 'produto') {
+      setProduto(e.target.value);
+    }
+    if (e.target.name === 'tipo') {
+      setTipo(e.target.value);
+    }
+  };
+
   const resetForm = () => {
     setFrequencia('');
     setAlvo('ambos');
     setDiasSelecionados([]);
     setFasesSelecionadas(['mudas', 'vegetativa', 'maturacao']);
+    setApplications([{ date: new Date().toISOString().split('T')[0], dosage: '', notes: '' }]);
+    setShowApplicationsPreview(false);
+    setProduto('');
+    setTipo('');
     setEditingId(null);
   };
 
@@ -67,9 +88,15 @@ export default function CiclosPage() {
     const produto = fd.get('produto') as string;
     const tipo = fd.get('tipo') as string;
     const intervaloDias = parseInt(fd.get('intervaloDias') as string) || undefined;
+    const applicationsSummary = applications.map(a => `${a.date} (${a.dosage || 'sem dosagem'}) - ${a.notes || 'sem observações'}`).join('; ');
 
     if (!nome || !frequencia || !produto || fasesSelecionadas.length === 0) {
       toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    if (applications.length === 0) {
+      toast.error('Adicione pelo menos uma data de aplicação');
       return;
     }
 
@@ -97,6 +124,10 @@ export default function CiclosPage() {
         tipo,
         fasesAplicaveis: fasesSelecionadas,
         alvo,
+      }, {
+        onSuccess: () => {
+          toast.success(`Ciclo criado com ${applications.length} aplicação(ões)!`);
+        },
       });
     }
 
@@ -206,13 +237,13 @@ export default function CiclosPage() {
                 )}
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs">Produto *</Label>
-                    <Input name="produto" placeholder="Ex: Sanitizante X" className="h-9 text-sm" required />
-                  </div>
+                <div>
+                  <Label className="text-xs">Produto *</Label>
+                  <Input name="produto" placeholder="Ex: Sanitizante X" className="h-9 text-sm" required onChange={handleFormChange} />
+                </div>
                   <div>
                     <Label className="text-xs">Tipo</Label>
-                    <Input name="tipo" placeholder="Ex: Sanitização" className="h-9 text-sm" />
+                    <Input name="tipo" placeholder="Ex: Sanitização" className="h-9 text-sm" onChange={handleFormChange} />
                   </div>
                 </div>
 
@@ -252,6 +283,117 @@ export default function CiclosPage() {
                       </button>
                     ))}
                   </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="text-xs font-semibold">Aplicações (Data e Dosagem)</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs gap-1"
+                      onClick={() => setShowApplicationsPreview(!showApplicationsPreview)}
+                    >
+                      {showApplicationsPreview ? 'Ocultar' : 'Visualizar'} Prévia
+                    </Button>
+                  </div>
+                  
+                  {showApplicationsPreview && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                      <p className="text-xs text-blue-900 mb-2">
+                        <strong>Resumo:</strong> {produto} | {tipo} | {fasesSelecionadas.map(f => FASES_CONFIG[f].label).join(', ')}
+                      </p>
+                      <div className="space-y-1">
+                        {applications.map((app, idx) => (
+                          <div key={idx} className="text-xs text-blue-800">
+                            📅 {app.date} | 💧 {app.dosage || '—'} | 📝 {app.notes || '—'}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {applications.map((app, idx) => (
+                      <div key={idx} className="flex gap-2 items-end">
+                        <div className="flex-1">
+                          <Label className="text-xs">Data</Label>
+                          <Input
+                            type="date"
+                            value={app.date}
+                            onChange={(e) => {
+                              const updated = [...applications];
+                              updated[idx] = { ...updated[idx], date: e.target.value };
+                              setApplications(updated);
+                            }}
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <Label className="text-xs">Dosagem</Label>
+                          <Input
+                            type="text"
+                            placeholder="Ex: 10ml/L"
+                            value={app.dosage}
+                            onChange={(e) => {
+                              const updated = [...applications];
+                              updated[idx] = { ...updated[idx], dosage: e.target.value };
+                              setApplications(updated);
+                            }}
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <Label className="text-xs">Observações</Label>
+                          <Input
+                            type="text"
+                            placeholder="Ex: Manhã"
+                            value={app.notes}
+                            onChange={(e) => {
+                              const updated = [...applications];
+                              updated[idx] = { ...updated[idx], notes: e.target.value };
+                              setApplications(updated);
+                            }}
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
+                          onClick={() => {
+                            if (applications.length > 1) {
+                              setApplications(applications.filter((_, i) => i !== idx));
+                            }
+                          }}
+                          disabled={applications.length === 1}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-2 text-xs"
+                    onClick={() => {
+                      const lastDate = new Date(applications[applications.length - 1].date);
+                      lastDate.setDate(lastDate.getDate() + 1);
+                      setApplications([...applications, {
+                        date: lastDate.toISOString().split('T')[0],
+                        dosage: '',
+                        notes: '',
+                      }]);
+                    }}
+                  >
+                    <Plus className="w-3 h-3 mr-1" />
+                    Adicionar Data
+                  </Button>
                 </div>
 
                 <DialogFooter>

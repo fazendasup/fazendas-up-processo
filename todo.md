@@ -283,3 +283,8 @@
 
 ## UI/UX: Dashboard
 - [x] Remover seção "Inteligência Operacional" do Dashboard, deixar apenas na aba "Inteligência"
+
+## Bug Fix: Formulaário de Criação de Ciclos
+- [x] Adicionar seletor de data por calendário no formulaário de criação (além das opções existentes)
+- [x] Mostrar dosagem de cada aplicação no formulaário de criação (não só na edição)
+- [x] Manter compatibilidade com opções que já existem
