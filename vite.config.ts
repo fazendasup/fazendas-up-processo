@@ -1,186 +1,81 @@
 import { jsxLocPlugin } from "@builder.io/vite-plugin-jsx-loc";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import fs from "node:fs";
 import path from "node:path";
-import { defineConfig, type Plugin, type ViteDevServer } from "vite";
-// Manus runtime plugin removed - using standard Vite
+import { defineConfig, type ConfigEnv, type PluginOption } from "vite";
 
-// =============================================================================
-// Manus Debug Collector - Vite Plugin
-// Writes browser logs directly to files, trimmed when exceeding size limit
-// =============================================================================
-
-const PROJECT_ROOT = import.meta.dirname;
-const LOG_DIR = path.join(PROJECT_ROOT, ".manus-logs");
-const MAX_LOG_SIZE_BYTES = 1 * 1024 * 1024; // 1MB per log file
-const TRIM_TARGET_BYTES = Math.floor(MAX_LOG_SIZE_BYTES * 0.6); // Trim to 60% to avoid constant re-trimming
-
-type LogSource = "browserConsole" | "networkRequests" | "sessionReplay";
-
-function ensureLogDir() {
-  if (!fs.existsSync(LOG_DIR)) {
-    fs.mkdirSync(LOG_DIR, { recursive: true });
+const pluginsForCommand = (command: ConfigEnv["command"]): PluginOption[] => {
+  const base: PluginOption[] = [react(), tailwindcss()];
+  /** Locators JSX só em dev — não entram no bundle de produção. */
+  if (command === "serve") {
+    base.push(jsxLocPlugin());
   }
-}
+  return base;
+};
 
-function trimLogFile(logPath: string, maxSize: number) {
-  try {
-    if (!fs.existsSync(logPath) || fs.statSync(logPath).size <= maxSize) {
-      return;
-    }
+/** Agrupa `node_modules` em chunks estáveis — cache do browser e builds mais silenciosos. */
+function manualChunks(id: string): string | undefined {
+  if (!id.includes("node_modules")) return undefined;
+  const n = id.replace(/\\/g, "/");
 
-    const lines = fs.readFileSync(logPath, "utf-8").split("\n");
-    const keptLines: string[] = [];
-    let keptBytes = 0;
-
-    // Keep newest lines (from end) that fit within 60% of maxSize
-    const targetSize = TRIM_TARGET_BYTES;
-    for (let i = lines.length - 1; i >= 0; i--) {
-      const lineBytes = Buffer.byteLength(`${lines[i]}\n`, "utf-8");
-      if (keptBytes + lineBytes > targetSize) break;
-      keptLines.unshift(lines[i]);
-      keptBytes += lineBytes;
-    }
-
-    fs.writeFileSync(logPath, keptLines.join("\n"), "utf-8");
-  } catch {
-    /* ignore trim errors */
+  if (n.includes("react-day-picker") || n.includes("date-fns")) return "vendor-calendar";
+  if (n.includes("recharts")) return "vendor-recharts";
+  if (n.includes("@radix-ui")) return "vendor-radix";
+  if (n.includes("@tanstack/react-query")) return "vendor-query";
+  if (n.includes("@trpc")) return "vendor-trpc";
+  if (n.includes("lucide-react")) return "vendor-icons";
+  if (n.includes("framer-motion")) return "vendor-motion";
+  if (n.includes("node_modules/react-dom") || n.includes("node_modules/scheduler")) {
+    return "vendor-react";
   }
+  if (n.includes("/node_modules/react/")) return "vendor-react";
+  if (n.includes("wouter")) return "vendor-router";
+  if (n.includes("node_modules/zod/") || n.includes("node_modules\\zod\\")) return "vendor-zod";
+  if (n.includes("superjson")) return "vendor-serialize";
+
+  return "vendor";
 }
 
-function writeToLogFile(source: LogSource, entries: unknown[]) {
-  if (entries.length === 0) return;
-
-  ensureLogDir();
-  const logPath = path.join(LOG_DIR, `${source}.log`);
-
-  // Format entries with timestamps
-  const lines = entries.map((entry) => {
-    const ts = new Date().toISOString();
-    return `[${ts}] ${JSON.stringify(entry)}`;
-  });
-
-  // Append to log file
-  fs.appendFileSync(logPath, `${lines.join("\n")}\n`, "utf-8");
-
-  // Trim if exceeds max size
-  trimLogFile(logPath, MAX_LOG_SIZE_BYTES);
-}
-
-/**
- * Debug collector plugin - collects browser logs for development
- * - POST /__manus__/logs: Browser sends logs, written directly to files
- * - Files: browserConsole.log, networkRequests.log, sessionReplay.log
- * - Auto-trimmed when exceeding 1MB (keeps newest entries)
- */
-function vitePluginManusDebugCollector(): Plugin {
-  return {
-    name: "debug-collector",
-
-    transformIndexHtml(html) {
-      if (process.env.NODE_ENV === "production") {
-        return html;
-      }
-      return {
-        html,
-        tags: [
-          {
-            tag: "script",
-            attrs: {
-              src: "/__debug__/collector.js",
-              defer: true,
-            },
-            injectTo: "head",
-          },
-        ],
-      };
-    },
-
-    configureServer(server: ViteDevServer) {
-      // POST /__manus__/logs: Browser sends logs (written directly to files)
-      server.middlewares.use("/__manus__/logs", (req, res, next) => {
-        if (req.method !== "POST") {
-          return next();
-        }
-
-        const handlePayload = (payload: any) => {
-          // Write logs directly to files
-          if (payload.consoleLogs?.length > 0) {
-            writeToLogFile("browserConsole", payload.consoleLogs);
-          }
-          if (payload.networkRequests?.length > 0) {
-            writeToLogFile("networkRequests", payload.networkRequests);
-          }
-          if (payload.sessionEvents?.length > 0) {
-            writeToLogFile("sessionReplay", payload.sessionEvents);
-          }
-
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ success: true }));
-        };
-
-        const reqBody = (req as { body?: unknown }).body;
-        if (reqBody && typeof reqBody === "object") {
-          try {
-            handlePayload(reqBody);
-          } catch (e) {
-            res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ success: false, error: String(e) }));
-          }
-          return;
-        }
-
-        let body = "";
-        req.on("data", (chunk) => {
-          body += chunk.toString();
-        });
-
-        req.on("end", () => {
-          try {
-            const payload = JSON.parse(body);
-            handlePayload(payload);
-          } catch (e) {
-            res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ success: false, error: String(e) }));
-          }
-        });
-      });
-    },
-  };
-}
-
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusDebugCollector()];
-
-export default defineConfig({
-  plugins,
+export default defineConfig(({ command }) => ({
+  plugins: pluginsForCommand(command),
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
       "@shared": path.resolve(import.meta.dirname, "shared"),
-      "@assets": path.resolve(import.meta.dirname, "attached_assets"),
     },
   },
   envDir: path.resolve(import.meta.dirname),
   define: {
-    'process.env.VITE_APP_ID': JSON.stringify(process.env.VITE_APP_ID || ''),
-    'process.env.VITE_OAUTH_PORTAL_URL': JSON.stringify(process.env.VITE_OAUTH_PORTAL_URL || ''),
+    "process.env.VITE_APP_ID": JSON.stringify(process.env.VITE_APP_ID || ""),
+    "process.env.VITE_OAUTH_PORTAL_URL": JSON.stringify(
+      process.env.VITE_OAUTH_PORTAL_URL || ""
+    ),
+    /** Opcional: Umami (ou compatível). Vazio = `main.tsx` não carrega script nem chama /umami. */
+    "import.meta.env.VITE_ANALYTICS_ENDPOINT": JSON.stringify(
+      process.env.VITE_ANALYTICS_ENDPOINT ?? ""
+    ),
+    "import.meta.env.VITE_ANALYTICS_WEBSITE_ID": JSON.stringify(
+      process.env.VITE_ANALYTICS_WEBSITE_ID ?? ""
+    ),
   },
   root: path.resolve(import.meta.dirname, "client"),
   publicDir: path.resolve(import.meta.dirname, "client", "public"),
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks,
+      },
+    },
   },
   server: {
     host: true,
-    allowedHosts: [
-      "localhost",
-      "127.0.0.1",
-    ],
+    /** true = celular/outro PC pelo IP na mesma rede (evita "host not allowed" do Vite). */
+    allowedHosts: true,
     fs: {
       strict: true,
       deny: ["**/.*"],
     },
   },
-});
+}));

@@ -1,0 +1,25 @@
+services:
+  # Opcional: broker MQTT local — `docker compose --profile mqtt up -d mosquitto`
+  mosquitto:
+    profiles: ["mqtt"]
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./docker/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: fazendas_up
+      MYSQL_USER: fazendas
+      MYSQL_PASSWORD: fazendas_dev
+      MYSQL_ROOT_PASSWORD: root_local_only
+    ports:
+      - "3306:3306"
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot_local_only"]
+      interval: 5s
+      timeout: 5s
+      retries: 12

@@ -105,6 +105,7 @@ export function useFazendaMutations() {
           ...(input.ativo !== undefined ? { ativo: input.ativo } : {}),
           ...(input.variedadeId !== undefined ? { variedadeId: input.variedadeId ? `var-lookup-${input.variedadeId}` : undefined } : {}),
           ...((input as any).dataEntrada !== undefined ? { dataEntrada: (input as any).dataEntrada ? new Date((input as any).dataEntrada).toISOString() : null } : {}),
+          ...((input as any).cultivoStatus !== undefined ? { cultivoStatus: (input as any).cultivoStatus } : {}),
         });
       }
     },
@@ -129,6 +130,7 @@ export function useFazendaMutations() {
                 ...(input.ativo !== undefined ? { ativo: input.ativo } : {}),
                 ...(input.variedadeId !== undefined ? { variedadeId: input.variedadeId ? `var-lookup-${input.variedadeId}` : undefined } : {}),
                 ...((input as any).dataEntrada !== undefined ? { dataEntrada: (input as any).dataEntrada ? new Date((input as any).dataEntrada).toISOString() : null } : {}),
+                ...((input as any).cultivoStatus !== undefined ? { cultivoStatus: (input as any).cultivoStatus } : {}),
               })),
             };
           }),
@@ -252,6 +254,10 @@ export function useFazendaMutations() {
   // ---- Admin ----
   const seed = trpc.admin.seed.useMutation({ onSuccess: invalidate });
   const reset = trpc.admin.reset.useMutation({ onSuccess: invalidate });
+  const resetOperationalClusters = trpc.admin.resetOperationalClusters.useMutation({ onSuccess: invalidate });
+  const restoreFvInfrastructureIfEmpty = trpc.admin.restoreFvInfrastructureIfEmpty.useMutation({
+    onSuccess: invalidate,
+  });
 
   return {
     // Medições
@@ -304,6 +310,8 @@ export function useFazendaMutations() {
     // Admin
     seed,
     reset,
+    resetOperationalClusters,
+    restoreFvInfrastructureIfEmpty,
     // Utility
     invalidate,
     debouncedInvalidate,

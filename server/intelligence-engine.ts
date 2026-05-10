@@ -9,6 +9,7 @@ import type {
   RecommendationRule,
 } from "../drizzle/schema";
 import * as crypto from "crypto";
+import { variedadePulaVegetativa } from "../shared/variedadesFase";
 
 // ---- Tipos internos ----
 
@@ -62,6 +63,197 @@ function diasEntre(d1: Date, d2: Date): number {
   return Math.floor(ms / 86400000);
 }
 
+function toDateStart(d: Date) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+// ============================================================
+// ALERTA: Medição atrasada (Caixa d'água)
+// ============================================================
+function avaliarMedicaoAtrasada(data: FazendaSnapshot, hoje: Date): AlertCandidate[] {
+  const alertas: AlertCandidate[] = [];
+  const caixasMap = new Map((data.caixasAgua || []).map((c: any) => [c.id, c]));
+
+  // última medição por caixa
+  const ultimaPorCaixa = new Map<number, any>();
+  for (const m of data.medicoesCaixa || []) {
+    if (!m.caixaAguaId || !m.dataHora) continue;
+    const prev = ultimaPorCaixa.get(m.caixaAguaId);
+    if (!prev || new Date(m.dataHora) > new Date(prev.dataHora)) {
+      ultimaPorCaixa.set(m.caixaAguaId, m);
+    }
+  }
+
+  for (const [caixaId, caixa] of Array.from(caixasMap)) {
+    const ultima = ultimaPorCaixa.get(caixaId);
+    if (!ultima?.dataHora) {
+      // Sem medição nenhuma registrada
+      alertas.push({
+        tipo: "medicao_atrasada",
+        severidade: "alta",
+        prioridade: "alta",
+        titulo: `Medição pendente: ${caixa.nome}`,
+        descricao: `Nenhuma medição registrada ainda para ${caixa.nome} (fase ${caixa.fase}).`,
+        entidadeTipo: "caixa_agua",
+        entidadeId: caixaId,
+        entidadeNome: caixa.nome,
+        fase: caixa.fase,
+        origem: "motor_regras",
+        sugestaoAcao: "Registrar medição de EC/pH agora.",
+        nivelConfianca: "alta",
+        gerarTarefa: true,
+        dadosSnapshot: { ultimaMedicao: null },
+        hashUnico: gerarHash("medicao_atrasada", "caixa_agua", caixaId, "sem_medicao"),
+      });
+      continue;
+    }
+
+    const dias = diasEntre(toDateStart(new Date(ultima.dataHora)), hoje);
+    if (dias > 2) {
+      const severidade = dias > 5 ? "critica" : dias > 3 ? "alta" : "media";
+      const prioridade = dias > 5 ? "urgente" : dias > 3 ? "alta" : "media";
+      alertas.push({
+        tipo: "medicao_atrasada",
+        severidade,
+        prioridade,
+        titulo: `Medição atrasada: ${caixa.nome} (${dias}d)`,
+        descricao: `${caixa.nome} (fase ${caixa.fase}) está sem medição há ${dias} dia(s). Última medição: ${new Date(
+          ultima.dataHora
+        ).toLocaleDateString("pt-BR")}.`,
+        entidadeTipo: "caixa_agua",
+        entidadeId: caixaId,
+        entidadeNome: caixa.nome,
+        fase: caixa.fase,
+        origem: "motor_regras",
+        sugestaoAcao: "Registrar EC/pH agora e corrigir solução se necessário.",
+        nivelConfianca: "alta",
+        gerarTarefa: true,
+        dadosSnapshot: { diasSemMedir: dias, ultimaMedicao: ultima.dataHora },
+        hashUnico: gerarHash("medicao_atrasada", "caixa_agua", caixaId, String(dias)),
+      });
+    }
+  }
+  return alertas;
+}
+
+// ============================================================
+// ALERTA: Colheita atrasada (crítico)
+// ============================================================
+function avaliarColheitaAtrasada(data: FazendaSnapshot, hoje: Date): AlertCandidate[] {
+  const alertas: AlertCandidate[] = [];
+  const varMap = new Map((data.variedades || []).map((v: any) => [v.id, v]));
+  const torresMap = new Map((data.torres || []).map((t: any) => [t.id, t]));
+  const andaresMap = new Map((data.andares || []).map((a: any) => [a.id, a]));
+
+  for (const perfil of (data.perfis || []).filter((p: any) => p.ativo && p.variedadeId)) {
+    const andar = andaresMap.get(perfil.andarId);
+    if (!andar) continue;
+    const torre = torresMap.get(andar.torreId);
+    if (!torre || torre.fase !== "maturacao") continue;
+    const variedade = varMap.get(perfil.variedadeId);
+    if (!variedade) continue;
+
+    const dataEntrada = perfil.dataEntrada || andar.dataEntrada;
+    if (!dataEntrada) continue;
+
+    const entrada = toDateStart(new Date(dataEntrada));
+    const diasPassados = diasEntre(entrada, hoje);
+    const diasFase = variedade.diasMaturacao;
+    if (!diasFase || diasFase <= 0) continue;
+
+    const diasAtraso = diasPassados - diasFase;
+    if (diasAtraso >= 3) {
+      alertas.push({
+        tipo: "colheita_atrasada",
+        severidade: diasAtraso >= 7 ? "critica" : "alta",
+        prioridade: "urgente",
+        titulo: `Colheita atrasada: ${torre.nome} A${andar.numero} P${perfil.perfilIndex + 1}`,
+        descricao: `${variedade.nome} está pronta para colheita há ${diasAtraso} dia(s). Risco de perder qualidade/produção.`,
+        entidadeTipo: "andar",
+        entidadeId: andar.id,
+        entidadeNome: `${torre.nome} — Andar ${andar.numero}`,
+        fase: "maturacao",
+        origem: "motor_regras",
+        sugestaoAcao: "Colher HOJE e registrar colheita.",
+        nivelConfianca: "alta",
+        gerarTarefa: true,
+        dadosSnapshot: { diasAtraso, diasFase, diasPassados, variedade: variedade.nome },
+        hashUnico: gerarHash("colheita_atrasada", "perfil", perfil.id, `${andar.id}`),
+      });
+    }
+  }
+
+  return alertas;
+}
+
+// ============================================================
+// ALERTA: Manutenção vencida (prazo passado)
+// ============================================================
+function avaliarManutencaoVencida(data: FazendaSnapshot, hoje: Date): AlertCandidate[] {
+  const alertas: AlertCandidate[] = [];
+  const torresMap = new Map((data.torres || []).map((t: any) => [t.id, t]));
+
+  for (const m of (data.manutencoes || []).filter((x: any) => x.status === "aberta" && x.prazo)) {
+    const prazo = toDateStart(new Date(m.prazo));
+    const diasVencido = diasEntre(prazo, hoje);
+    if (diasVencido >= 1) {
+      const torre = torresMap.get(m.torreId);
+      alertas.push({
+        tipo: "manutencao_vencida",
+        severidade: diasVencido >= 7 ? "critica" : diasVencido >= 3 ? "alta" : "media",
+        prioridade: diasVencido >= 7 ? "urgente" : "alta",
+        titulo: `Manutenção vencida: ${m.tipo} — ${torre?.nome || "Torre"}`,
+        descricao: `Manutenção "${m.tipo}" está vencida há ${diasVencido} dia(s).`,
+        entidadeTipo: "manutencao",
+        entidadeId: m.id,
+        entidadeNome: `${m.tipo} — ${torre?.nome || "Torre"}`,
+        fase: torre?.fase,
+        origem: "motor_regras",
+        sugestaoAcao: "Executar manutenção e registrar resolução.",
+        nivelConfianca: "alta",
+        gerarTarefa: true,
+        dadosSnapshot: { diasVencido, prazo: m.prazo },
+        hashUnico: gerarHash("manutencao_vencida", "manutencao", m.id, String(diasVencido)),
+      });
+    }
+  }
+  return alertas;
+}
+
+/** Inclui lotes “virtuais” da germinação dos planos de plantio no mesmo array usado pelas regras legado. */
+function mergeGerminacaoDesdePlanos(data: FazendaSnapshot): FazendaSnapshot {
+  const receitaById = new Map((data.receitas || []).map((r: any) => [r.id, r]));
+  const virtual = (data.planosPlantio || [])
+    .filter((p: any) => (p.status === "planejado" || p.status === "em_germinacao"))
+    .map((p: any) => {
+      const receita = receitaById.get(p.receitaId);
+      const diasGerm = receita?.diasGerminacao ?? 5;
+      const dataInicio = p.dataInicioGerminacao ? new Date(p.dataInicioGerminacao) : new Date();
+      const fase = p.germinacaoFase || "pendente";
+      const status = fase === "pronto_mudas" ? "pronto" : "germinando";
+      return {
+        id: -(Math.abs(Number(p.id)) + 1),
+        variedadeId: p.variedadeId,
+        variedadeNome: p.variedadeNome,
+        quantidade: p.quantidadePlantas,
+        germinadas: p.germinadas ?? 0,
+        naoGerminadas: p.naoGerminadas ?? 0,
+        dataPlantio: dataInicio,
+        dataHora: dataInicio,
+        diasParaTransplantio: diasGerm,
+        status,
+        observacoes: p.observacoes ?? null,
+      };
+    });
+
+  return {
+    ...data,
+    germinacao: [...(data.germinacao || []), ...virtual],
+  };
+}
+
 // ============================================================
 // REGRA 1: Risco de Atraso
 // ============================================================
@@ -87,10 +279,13 @@ function avaliarRiscoAtraso(data: FazendaSnapshot, hoje: Date): AlertCandidate[]
     entrada.setHours(0, 0, 0, 0);
     const diasPassados = diasEntre(entrada, hoje);
 
+    const pulaVeg = variedadePulaVegetativa(variedade.slug, variedade.nome);
     let diasFase = 0;
     if (torre.fase === "mudas") diasFase = variedade.diasMudas;
-    else if (torre.fase === "vegetativa") diasFase = variedade.diasVegetativa;
-    else if (torre.fase === "maturacao") diasFase = variedade.diasMaturacao;
+    else if (torre.fase === "vegetativa") {
+      if (pulaVeg) continue;
+      diasFase = variedade.diasVegetativa;
+    } else if (torre.fase === "maturacao") diasFase = variedade.diasMaturacao;
 
     if (diasFase <= 0) continue;
 
@@ -283,7 +478,8 @@ function avaliarLoteForaPadrao(data: FazendaSnapshot, _hoje: Date): AlertCandida
       const taxaDesperdicio = Math.round((t.quantidadeDesperdicio / total) * 100);
       if (taxaDesperdicio > 15) {
         alertas.push({
-          tipo: "lote_fora_padrao",
+          // Tipo próprio para não confundir com “lote fora do padrão” (germinação).
+          tipo: "desperdicio_alto",
           severidade: taxaDesperdicio > 30 ? "alta" : "media",
           prioridade: taxaDesperdicio > 30 ? "alta" : "media",
           titulo: `Desperdício alto em transplantio: ${t.variedadeNome} (${taxaDesperdicio}%)`,
@@ -296,7 +492,7 @@ function avaliarLoteForaPadrao(data: FazendaSnapshot, _hoje: Date): AlertCandida
           nivelConfianca: "alta",
           gerarTarefa: false,
           dadosSnapshot: { taxaDesperdicio, desperdicio: t.quantidadeDesperdicio, total },
-          hashUnico: gerarHash("lote_desperdicio", "transplantio", t.id),
+          hashUnico: gerarHash("desperdicio_alto", "transplantio", t.id),
         });
       }
     }
@@ -558,7 +754,8 @@ function avaliarDesempenhoAbaixo(data: FazendaSnapshot, _hoje: Date): AlertCandi
       const desvio = Math.round(((media - pesoUltima) / media) * 100);
 
       alertas.push({
-        tipo: "desempenho_abaixo",
+        // A UI já tem um rótulo/ícone para yield.
+        tipo: "yield_abaixo",
         severidade: desvio >= 40 ? "alta" : "media",
         prioridade: "media",
         titulo: `Yield abaixo da média: ${variedade?.nome || "Variedade"} (-${desvio}%)`,
@@ -571,7 +768,7 @@ function avaliarDesempenhoAbaixo(data: FazendaSnapshot, _hoje: Date): AlertCandi
         nivelConfianca: pesos.length >= 5 ? "alta" : "media",
         gerarTarefa: false,
         dadosSnapshot: { pesoUltima, media, desvio, totalColheitas: pesos.length },
-        hashUnico: gerarHash("desempenho_abaixo", "variedade", variedadeId, `${ultimaColheita.id}`),
+        hashUnico: gerarHash("yield_abaixo", "variedade", variedadeId, `${ultimaColheita.id}`),
       });
     }
   }
@@ -643,16 +840,21 @@ export function executarMotorInteligencia(data: FazendaSnapshot): AlertCandidate
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
 
+  const snap = mergeGerminacaoDesdePlanos(data);
+
   const todosAlertas: AlertCandidate[] = [
-    ...avaliarRiscoAtraso(data, hoje),
-    ...avaliarTorreSubutilizada(data, hoje),
-    ...avaliarLoteForaPadrao(data, hoje),
-    ...avaliarManutencaoCritica(data, hoje),
-    ...avaliarCapacidadeDisponivel(data, hoje),
-    ...avaliarInconsistenciaPlano(data, hoje),
-    ...avaliarSequenciaIncompleta(data, hoje),
-    ...avaliarDesempenhoAbaixo(data, hoje),
-    ...avaliarDesvioEcPh(data, hoje),
+    ...avaliarColheitaAtrasada(snap, hoje),
+    ...avaliarMedicaoAtrasada(snap, hoje),
+    ...avaliarManutencaoVencida(snap, hoje),
+    ...avaliarRiscoAtraso(snap, hoje),
+    ...avaliarTorreSubutilizada(snap, hoje),
+    ...avaliarLoteForaPadrao(snap, hoje),
+    ...avaliarManutencaoCritica(snap, hoje),
+    ...avaliarCapacidadeDisponivel(snap, hoje),
+    ...avaliarInconsistenciaPlano(snap, hoje),
+    ...avaliarSequenciaIncompleta(snap, hoje),
+    ...avaliarDesempenhoAbaixo(snap, hoje),
+    ...avaliarDesvioEcPh(snap, hoje),
   ];
 
   return todosAlertas;

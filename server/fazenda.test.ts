@@ -1,19 +1,24 @@
 import { describe, expect, it, beforeAll } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
+import { useMockProjetoResolve, withProjetoBase } from "./test-projeto-trpc";
 
-// ---- Context helpers ----
+useMockProjetoResolve();
+
+// ---- Context helpers (projeto ativo via header — alinhado com projectProcedure) ----
 
 function createPublicContext(): TrpcContext {
   return {
     user: null,
+    projetoId: null,
+    projetoTipo: null,
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
-    res: { clearCookie: () => {} } as TrpcContext["res"],
+    res: { clearCookie: () => {}, cookie: () => {} } as TrpcContext["res"],
   };
 }
 
 function createOperatorContext(): TrpcContext {
-  return {
+  return withProjetoBase({
     user: {
       id: 2,
       openId: "test-operator",
@@ -26,12 +31,12 @@ function createOperatorContext(): TrpcContext {
       lastSignedIn: new Date(),
     },
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
-    res: { clearCookie: () => {} } as TrpcContext["res"],
-  };
+    res: { clearCookie: () => {}, cookie: () => {} } as TrpcContext["res"],
+  });
 }
 
 function createAdminContext(): TrpcContext {
-  return {
+  return withProjetoBase({
     user: {
       id: 1,
       openId: "test-admin",
@@ -44,15 +49,15 @@ function createAdminContext(): TrpcContext {
       lastSignedIn: new Date(),
     },
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
-    res: { clearCookie: () => {} } as TrpcContext["res"],
-  };
+    res: { clearCookie: () => {}, cookie: () => {} } as TrpcContext["res"],
+  });
 }
 
 // ---- Tests ----
 
 describe("fazenda.loadAll", () => {
-  it("returns the full fazenda data structure (public)", async () => {
-    const ctx = createPublicContext();
+  it("returns the full fazenda data structure (utilizador + projeto)", async () => {
+    const ctx = createAdminContext();
     const caller = appRouter.createCaller(ctx);
 
     const data = await caller.fazenda.loadAll();
@@ -88,9 +93,6 @@ describe("variedades CRUD (admin)", () => {
 
     const result = await caller.variedades.create({
       nome: "Alface Teste Vitest",
-      diasMudas: 10,
-      diasVegetativa: 15,
-      diasMaturacao: 20,
     });
 
     expect(result).toBeDefined();
@@ -100,7 +102,7 @@ describe("variedades CRUD (admin)", () => {
   });
 
   it("lists variedades including the new one", async () => {
-    const ctx = createPublicContext();
+    const ctx = createAdminContext();
     const caller = appRouter.createCaller(ctx);
 
     const list = await caller.variedades.list();
@@ -144,7 +146,7 @@ describe("manutencoes CRUD (operador)", () => {
   let manutencaoId: number;
 
   beforeAll(async () => {
-    const ctx = createPublicContext();
+    const ctx = createAdminContext();
     const caller = appRouter.createCaller(ctx);
     const data = await caller.fazenda.loadAll();
     if (data.torres.length > 0) {
@@ -302,7 +304,7 @@ describe("germinacao CRUD (operador)", () => {
   let variedadeId: number;
 
   beforeAll(async () => {
-    const ctx = createPublicContext();
+    const ctx = createAdminContext();
     const caller = appRouter.createCaller(ctx);
     const data = await caller.fazenda.loadAll();
     if (data.variedades.length > 0) {

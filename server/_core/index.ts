@@ -74,7 +74,7 @@ async function startServer() {
     );
   }
   console.log("[Server] Ligação ao MySQL e migrações em curso… (se falhar: Docker `docker compose up -d mysql` e espere ~10–15 s)");
-  await ensureBootstrapAdmin();
+  await db.ensureUsersRoleVarchar();
   await db.ensureCiclosDosagemColumn();
   await db.ensurePlanosPlantioGerminacaoColumns();
   await db.ensureTransplantiosRastreioColumns();
@@ -106,6 +106,7 @@ async function startServer() {
       console.error("[Server] AUTO_MIGRATE_LEGACY_DATA falhou:", e);
     }
   }
+  await ensureBootstrapAdmin();
   console.log("[Server] Banco OK. Configurando HTTP…");
 
   const app = express();

@@ -1,7 +1,33 @@
-import { NOT_ADMIN_ERR_MSG, UNAUTHED_ERR_MSG } from '@shared/const';
+import {
+  MODULO_NAO_CONTRATADO_MSG,
+  NOT_ADMIN_ERR_MSG,
+  NOT_PLATFORM_ADMIN_MSG,
+  isOperationalAdminRole,
+  PROJETO_ATIVO_COOKIE,
+  PROJETO_FORBIDDEN_ERR_MSG,
+  PROJETO_HEADER,
+  PROJETO_INATIVO_ERR_MSG,
+  PROJETO_REQUIRED_ERR_MSG,
+  PROJETO_TIPO_ERR_MSG,
+  UNAUTHED_ERR_MSG,
+} from "@shared/const";
+import type { ModuloContratavel } from "@shared/const";
 import { initTRPC, TRPCError } from "@trpc/server";
+import { parse } from "cookie";
 import superjson from "superjson";
+import * as db from "../db";
+import type { User } from "../../drizzle/schema";
 import type { TrpcContext } from "./context";
+import type { ProjetoTipo } from "./context";
+
+/** Use in project-scoped procedures; runtime is guaranteed after requireProjetoMiddleware. */
+export function projetoIdFromCtx(ctx: TrpcContext): number {
+  const id = ctx.projetoId;
+  if (id == null) {
+    throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: PROJETO_REQUIRED_ERR_MSG });
+  }
+  return id;
+}
 
 const t = initTRPC.context<TrpcContext>().create({
   transformer: superjson,
@@ -10,7 +36,7 @@ const t = initTRPC.context<TrpcContext>().create({
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
-const requireUser = t.middleware(async opts => {
+const requireUser = t.middleware(async (opts) => {
   const { ctx, next } = opts;
 
   if (!ctx.user) {
@@ -27,19 +53,155 @@ const requireUser = t.middleware(async opts => {
 
 export const protectedProcedure = t.procedure.use(requireUser);
 
-export const adminProcedure = t.procedure.use(
-  t.middleware(async opts => {
-    const { ctx, next } = opts;
+function readProjetoIdFromRequest(req: TrpcContext["req"]): number | undefined {
+  const h = req.headers[PROJETO_HEADER] ?? req.headers[PROJETO_HEADER.toLowerCase()];
+  const fromHeader = Array.isArray(h) ? h[0] : h;
+  if (typeof fromHeader === "string" && fromHeader.trim() !== "") {
+    const n = Number(fromHeader.trim());
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  const cookieHeader = req.headers.cookie;
+  if (!cookieHeader) return undefined;
+  const cookies = parse(cookieHeader);
+  const raw = cookies[PROJETO_ATIVO_COOKIE];
+  if (!raw || raw.trim() === "") return undefined;
+  const n = Number(raw.trim());
+  if (Number.isFinite(n) && n > 0) return n;
+  return undefined;
+}
 
-    if (!ctx.user || ctx.user.role !== 'admin') {
-      throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
+const requireProjetoMiddleware = t.middleware(async (opts) => {
+  const { ctx, next } = opts;
+  if (!ctx.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
+  }
+  const pid = readProjetoIdFromRequest(ctx.req);
+  if (pid == null) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: PROJETO_REQUIRED_ERR_MSG });
+  }
+
+  const row = await db.resolveProjetoForUser(ctx.user.id, pid);
+  if (!row) {
+    const exists = await db.getProjetoByIdForUser(ctx.user.id, pid);
+    if (exists && exists.status !== "ativo") {
+      throw new TRPCError({ code: "FORBIDDEN", message: PROJETO_INATIVO_ERR_MSG });
     }
+    throw new TRPCError({ code: "FORBIDDEN", message: PROJETO_FORBIDDEN_ERR_MSG });
+  }
 
+  const projetoTipo = row.tipo as ProjetoTipo;
+  const projetoModulos = await db.getProjetoModulosMap(pid);
+
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user,
+      projetoId: pid,
+      projetoTipo,
+      projetoModulos,
+    },
+  });
+});
+
+/** Requer usuário logado + projeto válido (header/cookie) com acesso e status ativo. */
+export const projectProcedure = t.procedure.use(requireUser).use(requireProjetoMiddleware);
+
+function requireContratacaoModulo(modulo: ModuloContratavel) {
+  return t.middleware(async ({ ctx, next }) => {
+    if (!ctx.user) {
+      throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
+    }
+    const map = ctx.projetoModulos;
+    if (!map || !map[modulo]) {
+      throw new TRPCError({ code: "FORBIDDEN", message: MODULO_NAO_CONTRATADO_MSG });
+    }
+    const user = ctx.user as User;
     return next({
       ctx: {
         ...ctx,
-        user: ctx.user,
-      },
+        user,
+        projetoModulos: map,
+      } as TrpcContext,
     });
-  }),
-);
+  });
+}
+
+/** Projeto ativo + módulo contratado. */
+export function projectProcedureComModulo(modulo: ModuloContratavel) {
+  return projectProcedure.use(requireContratacaoModulo(modulo));
+}
+
+export const estoqueModuleProcedure = projectProcedureComModulo("estoque");
+export const automacaoModuleProcedure = projectProcedureComModulo("automacao");
+export const inteligenciaModuleProcedure = projectProcedureComModulo("inteligencia");
+export const visaoCultivoModuleProcedure = projectProcedureComModulo("visao_cultivo");
+
+const requireGlobalAdmin = t.middleware(async (opts) => {
+  const { ctx, next } = opts;
+  if (!ctx.user || !isOperationalAdminRole(ctx.user.role)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
+  }
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user,
+    },
+  });
+});
+
+export const adminProcedure = t.procedure.use(requireGlobalAdmin);
+
+const requirePlatformCommercialAdmin = t.middleware(async (opts) => {
+  const { ctx, next } = opts;
+  if (!ctx.user || ctx.user.role !== "platform_admin") {
+    throw new TRPCError({ code: "FORBIDDEN", message: NOT_PLATFORM_ADMIN_MSG });
+  }
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user,
+    },
+  });
+});
+
+/** Equipa da plataforma (contratação de módulos, etc.) — não confundir com `admin` operacional do cliente. */
+export const platformAdminProcedure = t.procedure
+  .use(requireUser)
+  .use(requirePlatformCommercialAdmin);
+
+/** Projeto ativo + role global admin (sem exigir tipo de projeto específico). */
+export const adminProjectProcedure = projectProcedure.use(requireGlobalAdmin);
+
+export const adminEstoqueProjectProcedure = estoqueModuleProcedure.use(requireGlobalAdmin);
+export const adminAutomacaoModuleProcedure = automacaoModuleProcedure.use(requireGlobalAdmin);
+export const adminInteligenciaProjectProcedure = inteligenciaModuleProcedure.use(requireGlobalAdmin);
+export const adminVisaoCultivoProjectProcedure = visaoCultivoModuleProcedure.use(requireGlobalAdmin);
+
+function isProjetoComTorres(tipo: ProjetoTipo | null | undefined): boolean {
+  return tipo === "fazenda_vertical" || tipo === "microverdes";
+}
+
+const requireProjetoComTorres = t.middleware(async (opts) => {
+  if (!isProjetoComTorres(opts.ctx.projetoTipo)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: PROJETO_TIPO_ERR_MSG });
+  }
+  return opts.next({ ctx: opts.ctx });
+});
+
+/** Torres / andares / perfis / furos — fazenda vertical e microverdes (estrutura semelhante). */
+export const fazendaVerticalProcedure = projectProcedure.use(requireProjetoComTorres);
+
+const requireHidroponia = t.middleware(async (opts) => {
+  if (opts.ctx.projetoTipo !== "hidroponia") {
+    throw new TRPCError({ code: "FORBIDDEN", message: PROJETO_TIPO_ERR_MSG });
+  }
+  return opts.next({ ctx: opts.ctx });
+});
+
+export const hidroponiaProcedure = projectProcedure.use(requireHidroponia);
+
+/** Admin global + projeto hidroponia (bancadas, caixas de bancada). */
+export const adminHidroponiaProcedure = hidroponiaProcedure.use(requireGlobalAdmin);
+
+/** Admin global + projeto fazenda vertical (torres, estrutura). */
+export const adminFazendaVerticalProcedure = fazendaVerticalProcedure.use(requireGlobalAdmin);

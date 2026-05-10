@@ -46,8 +46,8 @@ function diffDays(a: Date, b: Date): number {
 
 const FASE_COLORS: Record<string, string> = {
   mudas: 'bg-emerald-400',
-  vegetativa: 'bg-blue-400',
-  maturacao: 'bg-amber-400',
+  vegetativa: 'bg-emerald-600',
+  maturacao: 'bg-green-700',
 };
 
 const FASE_LABELS: Record<string, string> = {
@@ -328,11 +328,11 @@ export default function CapacidadePage() {
                           <div className="w-40 shrink-0 p-1.5 border-r flex items-center gap-1.5">
                             <span className="text-[10px] text-muted-foreground w-6">A{andar.numero}</span>
                             {isOccupied ? (
-                              <span className="text-[9px] text-emerald-600 font-medium">{occupancyPct}%</span>
+                              <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-medium">{occupancyPct}%</span>
                             ) : needsWash ? (
                               <span className="text-[9px] text-red-500">Lavagem</span>
                             ) : (
-                              <span className="text-[9px] text-green-600">Livre</span>
+                              <span className="text-[9px] text-green-600 dark:text-green-400">Livre</span>
                             )}
                           </div>
                           <div className="flex-1 relative h-7">
@@ -504,12 +504,12 @@ export default function CapacidadePage() {
                           <React.Fragment key={fase}>
                             <td className="p-1 text-center border-l">{d.total}</td>
                             <td className="p-1 text-center">
-                              <span className={pct > 80 ? 'text-red-600 font-semibold' : pct > 50 ? 'text-amber-600' : ''}>
+                              <span className={pct > 80 ? 'text-red-600 font-semibold' : pct > 50 ? 'text-amber-600 dark:text-amber-400' : ''}>
                                 {d.occupied}
                               </span>
                             </td>
                             <td className="p-1 text-center">
-                              <span className={d.available === 0 ? 'text-red-600 font-semibold' : 'text-green-600'}>
+                              <span className={d.available === 0 ? 'text-red-600 font-semibold' : 'text-green-600 dark:text-green-400'}>
                                 {d.available}
                               </span>
                             </td>

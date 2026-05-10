@@ -46,6 +46,11 @@ export function useDbIdResolver() {
     (rawData.aplicacoesCaixa || []).forEach((a: any) => aplicacaoCaixaFrontIdToDbId.set(`ac-${a.id}`, a.id));
     (rawData.aplicacoesAndar || []).forEach((a: any) => aplicacaoAndarFrontIdToDbId.set(`aa-${a.id}`, a.id));
     (rawData.germinacao || []).forEach((g: any) => germinacaoFrontIdToDbId.set(`g-${g.id}`, g.id));
+    (rawData.planosPlantio || []).forEach((p: any) => {
+      if (p.status === 'planejado' || p.status === 'em_germinacao') {
+        germinacaoFrontIdToDbId.set(`plano-g-${p.id}`, p.id);
+      }
+    });
     (rawData.transplantios || []).forEach((t: any) => transplantioFrontIdToDbId.set(`tr-${t.id}`, t.id));
     (rawData.manutencoes || []).forEach((m: any) => manutencaoFrontIdToDbId.set(`m-${m.id}`, m.id));
     (rawData.ciclos || []).forEach((c: any) => cicloFrontIdToDbId.set(`c-${c.id}`, c.id));

@@ -4,247 +4,11 @@
 // ============================================================
 
 import React, { createContext, useContext, useCallback, useEffect, useState, useMemo } from 'react';
+import { useAuth } from '@/_core/hooks/useAuth';
 import { trpc } from '@/lib/trpc';
-import type {
-  FazendaData,
-  Fase,
-  FaseConfig,
-  VariedadeConfig,
-  Torre,
-  CaixaAgua,
-  MedicaoCaixa,
-  AplicacaoCaixa,
-  Andar,
-  AplicacaoAndar,
-  Furo,
-  PerfilData,
-  LoteGerminacao,
-  RegistroTransplantio,
-  Manutencao,
-  CicloAplicacao,
-} from '@/lib/types';
-import { FASES_CONFIG, ESTRUTURA_FASE } from '@/lib/types';
-
-// ---- Transform DB data to legacy format ----
-
-function toDateStr(d: Date | string | null | undefined): string | null {
-  if (!d) return null;
-  if (d instanceof Date) return d.toISOString();
-  return d;
-}
-
-function transformData(raw: any): FazendaData {
-  // Build lookup maps
-  const torreSlugMap = new Map<number, string>();
-  const caixaSlugMap = new Map<number, string>();
-  const varSlugMap = new Map<number, string>();
-  const varNameMap = new Map<number, string>();
-
-  (raw.torres || []).forEach((t: any) => torreSlugMap.set(t.id, t.slug));
-  (raw.caixasAgua || []).forEach((c: any) => caixaSlugMap.set(c.id, c.slug));
-  (raw.variedades || []).forEach((v: any) => { varSlugMap.set(v.id, v.slug); varNameMap.set(v.id, v.nome); });
-
-  // Variedades
-  const variedades: VariedadeConfig[] = (raw.variedades || []).map((v: any) => ({
-    id: v.slug,
-    nome: v.nome,
-    diasMudas: v.diasMudas,
-    diasVegetativa: v.diasVegetativa,
-    diasMaturacao: v.diasMaturacao,
-  }));
-
-  // Fases config
-  const fasesConfig: Record<Fase, FaseConfig> = { ...FASES_CONFIG };
-  (raw.fasesConfig || []).forEach((fc: any) => {
-    const fase = fc.fase as Fase;
-    if (fasesConfig[fase]) {
-      fasesConfig[fase] = {
-        label: fc.label,
-        ecMin: fc.ecMin,
-        ecMax: fc.ecMax,
-        phMin: fc.phMin,
-        phMax: fc.phMax,
-        cor: fc.cor,
-        corLight: fc.corLight,
-        icon: fc.icon,
-      };
-    }
-  });
-
-  // Caixas d'água
-  const caixasAgua: CaixaAgua[] = (raw.caixasAgua || []).map((c: any) => {
-    const torreIds = (raw.torres || []).filter((t: any) => t.caixaAguaId === c.id).map((t: any) => t.slug);
-    const medicoes: MedicaoCaixa[] = (raw.medicoesCaixa || [])
-      .filter((m: any) => m.caixaAguaId === c.id)
-      .map((m: any) => ({
-        id: `mc-${m.id}`,
-        ec: m.ec,
-        ph: m.ph,
-        dataHora: toDateStr(m.dataHora) || '',
-        executadoPorNome: m.executadoPorNome || undefined,
-      }));
-    const aplicacoes: AplicacaoCaixa[] = (raw.aplicacoesCaixa || [])
-      .filter((a: any) => a.caixaAguaId === c.id)
-      .map((a: any) => ({
-        id: `ac-${a.id}`,
-        tipo: a.tipo as AplicacaoCaixa['tipo'],
-        produto: a.produto,
-        quantidade: a.quantidade,
-        dataHora: toDateStr(a.dataHora) || '',
-        executadoPorNome: a.executadoPorNome || undefined,
-      }));
-    return {
-      id: c.slug,
-      nome: c.nome,
-      fase: c.fase as Fase,
-      torreIds,
-      medicoes,
-      aplicacoes,
-    };
-  });
-
-  // Torres
-  const torres: Torre[] = (raw.torres || []).map((t: any) => ({
-    id: t.slug,
-    nome: t.nome,
-    fase: t.fase as Fase,
-    andares: t.numAndares,
-    caixaAguaId: t.caixaAguaId ? (caixaSlugMap.get(t.caixaAguaId) || '') : '',
-  }));
-
-  // Andares
-  const andares: Andar[] = (raw.andares || []).map((a: any) => {
-    const torreSlug = torreSlugMap.get(a.torreId) || '';
-    const andarPerfis = (raw.perfis || []).filter((p: any) => p.andarId === a.id);
-    const andarFuros = (raw.furos || []).filter((f: any) => f.andarId === a.id);
-    const andarApps = (raw.aplicacoesAndar || []).filter((ap: any) => ap.andarId === a.id);
-
-    // Build variedades list from active perfis
-    const variedadeIdsSet = new Set<string>();
-    const variedadeNamesSet = new Set<string>();
-    andarPerfis.filter((p: any) => p.ativo && p.variedadeId).forEach((p: any) => {
-      const slug = varSlugMap.get(p.variedadeId!) || '';
-      if (slug) variedadeIdsSet.add(slug);
-      const name = varNameMap.get(p.variedadeId!);
-      if (name) variedadeNamesSet.add(name);
-    });
-
-    const perfis: PerfilData[] = andarPerfis.map((p: any) => ({
-      perfilIndex: p.perfilIndex,
-      variedadeId: p.variedadeId ? (varSlugMap.get(p.variedadeId) || undefined) : undefined,
-      ativo: p.ativo,
-      dataEntrada: toDateStr(p.dataEntrada),
-    }));
-
-    const furos: Furo[] = andarFuros.map((f: any) => ({
-      perfilIndex: f.perfilIndex,
-      furoIndex: f.furoIndex,
-      status: f.status as Furo['status'],
-      variedadeId: f.variedadeId ? (varSlugMap.get(f.variedadeId) || undefined) : undefined,
-    }));
-
-    const aplicacoes: AplicacaoAndar[] = andarApps.map((ap: any) => ({
-      id: `aa-${ap.id}`,
-      tipo: ap.tipo as AplicacaoAndar['tipo'],
-      produto: ap.produto,
-      quantidade: ap.quantidade,
-      dataHora: toDateStr(ap.dataHora) || '',
-      executadoPorNome: ap.executadoPorNome || undefined,
-    }));
-
-    return {
-      id: `a-${a.id}`,
-      torreId: torreSlug,
-      numero: a.numero,
-      variedades: Array.from(variedadeNamesSet),
-      variedadeIds: Array.from(variedadeIdsSet),
-      dataEntrada: toDateStr(a.dataEntrada),
-      aplicacoes,
-      furos,
-      perfis,
-      lavado: a.lavado,
-      dataColheitaTotal: toDateStr(a.dataColheitaTotal) || undefined,
-    };
-  });
-
-  // Germinação
-  const germinacao: LoteGerminacao[] = (raw.germinacao || []).map((g: any) => ({
-    id: `g-${g.id}`,
-    variedadeId: varSlugMap.get(g.variedadeId) || '',
-    variedadeNome: g.variedadeNome,
-    quantidade: g.quantidade,
-    dataPlantio: toDateStr(g.dataPlantio) || '',
-    dataHora: toDateStr(g.dataHora) || '',
-    diasParaTransplantio: g.diasParaTransplantio,
-    germinadas: g.germinadas,
-    naoGerminadas: g.naoGerminadas,
-    transplantadas: g.transplantadas,
-    status: g.status as LoteGerminacao['status'],
-    observacoes: g.observacoes || undefined,
-    executadoPorNome: g.executadoPorNome || undefined,
-  }));
-
-  // Transplantios
-  const transplantios: RegistroTransplantio[] = (raw.transplantios || []).map((t: any) => ({
-    id: `tr-${t.id}`,
-    dataHora: toDateStr(t.dataHora) || '',
-    faseOrigem: t.faseOrigem as RegistroTransplantio['faseOrigem'],
-    faseDestino: t.faseDestino as Fase,
-    variedadeId: varSlugMap.get(t.variedadeId) || '',
-    variedadeNome: t.variedadeNome,
-    quantidadeTransplantada: t.quantidadeTransplantada,
-    quantidadeDesperdicio: t.quantidadeDesperdicio,
-    motivoDesperdicio: t.motivoDesperdicio || undefined,
-    torreDestinoId: t.torreDestinoId ? (torreSlugMap.get(t.torreDestinoId) || undefined) : undefined,
-    andarDestinoId: t.andarDestinoId ? `a-${t.andarDestinoId}` : undefined,
-    executadoPorNome: t.executadoPorNome || undefined,
-  }));
-
-  // Manutenções
-  const manutencoes: Manutencao[] = (raw.manutencoes || []).map((m: any) => ({
-    id: `m-${m.id}`,
-    torreId: torreSlugMap.get(m.torreId) || '',
-    andarNumero: m.andarNumero || undefined,
-    tipo: m.tipo as Manutencao['tipo'],
-    descricao: m.descricao,
-    dataAbertura: toDateStr(m.dataAbertura) || '',
-    prazo: toDateStr(m.prazo) || undefined,
-    dataConclusao: toDateStr(m.dataConclusao) || undefined,
-    solucao: m.solucao || undefined,
-    status: m.status as Manutencao['status'],
-    lampadaIndex: m.lampadaIndex ?? undefined,
-    abertoPorNome: m.abertoPorNome || undefined,
-    concluidoPorNome: m.concluidoPorNome || undefined,
-  }));
-
-  // Ciclos
-  const ciclos: CicloAplicacao[] = (raw.ciclos || []).map((c: any) => ({
-    id: `c-${c.id}`,
-    nome: c.nome,
-    frequencia: c.frequencia as CicloAplicacao['frequencia'],
-    diasSemana: c.diasSemana as number[] | undefined,
-    intervaloDias: c.intervaloDias || undefined,
-    produto: c.produto,
-    tipo: c.tipo,
-    fasesAplicaveis: (c.fasesAplicaveis as Fase[]) || [],
-    alvo: c.alvo as CicloAplicacao['alvo'],
-    ultimaExecucao: toDateStr(c.ultimaExecucao) || undefined,
-    ultimoExecutorNome: c.ultimoExecutorNome || undefined,
-    ativo: c.ativo,
-  }));
-
-  return {
-    torres,
-    caixasAgua,
-    andares,
-    ciclos,
-    fasesConfig,
-    variedades,
-    germinacao,
-    transplantios,
-    manutencoes,
-  };
-}
+import { useProjeto } from '@/contexts/ProjetoContext';
+import type { FazendaData } from '@/lib/types';
+import { EMPTY_FAZENDA_DATA, transformFazendaLoadAllResponse } from '@/lib/fazendaTransform';
 
 // ---- Context ----
 
@@ -260,36 +24,25 @@ interface FazendaContextType {
   importJSON: (file: File) => void;
 }
 
-const emptyData: FazendaData = {
-  torres: [],
-  caixasAgua: [],
-  andares: [],
-  ciclos: [],
-  fasesConfig: { ...FASES_CONFIG },
-  variedades: [],
-  germinacao: [],
-  transplantios: [],
-  manutencoes: [],
-};
-
 const FazendaContext = createContext<FazendaContextType | null>(null);
 
 export function FazendaProvider({ children }: { children: React.ReactNode }) {
-  const utils = trpc.useUtils();
-  const { data: rawData, isLoading, error, refetch } = trpc.fazenda.loadAll.useQuery(undefined, {
-    staleTime: 30_000,          // 30s — avoids refetch storm on rapid mutations
-    refetchOnWindowFocus: false, // manual refetch only
-    refetchInterval: 60_000,    // background sync every 60s
-  });
+  const { user } = useAuth();
+  const { activeProjetoId, ready: projetoReady } = useProjeto();
+  const loadEnabled = Boolean(user && activeProjetoId && projetoReady);
 
-  const seedMutation = trpc.admin.seed.useMutation({
-    onSuccess: () => { utils.fazenda.loadAll.invalidate(); },
+  const { data: rawData, isLoading, error, refetch } = trpc.fazenda.loadAll.useQuery(undefined, {
+    enabled: loadEnabled,
+    staleTime: 30_000, // 30s — avoids refetch storm on rapid mutations
+    /** Ao voltar ao separador (ex. alterou dias na receita noutro separador), alinha torre/dashboard. */
+    refetchOnWindowFocus: true,
+    refetchInterval: 60_000, // background sync every 60s
   });
 
   // Server-derived data (updated on refetch)
   const serverData = useMemo(() => {
-    if (!rawData) return emptyData;
-    return transformData(rawData);
+    if (!rawData) return EMPTY_FAZENDA_DATA;
+    return transformFazendaLoadAllResponse(rawData);
   }, [rawData]);
 
   // Local optimistic overlay — allows instant UI updates
@@ -305,23 +58,6 @@ export function FazendaProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setOptimisticOverrides(null);
   }, [rawData]);
-
-  const [needsSeed, setNeedsSeed] = useState(false);
-
-  useEffect(() => {
-    if (rawData) {
-      if (serverData.torres.length === 0 && !needsSeed) {
-        setNeedsSeed(true);
-      }
-    }
-  }, [rawData, serverData.torres.length]);
-
-  useEffect(() => {
-    if (needsSeed && !seedMutation.isPending) {
-      seedMutation.mutate();
-      setNeedsSeed(false);
-    }
-  }, [needsSeed]);
 
   // updateData: applies optimistic update locally AND triggers server refetch
   const updateData = useCallback((updater: (prev: FazendaData) => FazendaData) => {

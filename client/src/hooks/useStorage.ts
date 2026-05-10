@@ -15,6 +15,8 @@ function migrateData(raw: any): FazendaData {
 
   // Adicionar campos novos se ausentes
   if (!data.variedades) data.variedades = [...VARIEDADES_PADRAO];
+  if (!data.receitas) data.receitas = [];
+  if (!data.variedadeDbIdBySlug) data.variedadeDbIdBySlug = {};
   if (!data.germinacao) data.germinacao = [];
   if (!data.transplantios) data.transplantios = [];
   if (!data.manutencoes) data.manutencoes = [];

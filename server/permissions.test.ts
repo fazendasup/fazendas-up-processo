@@ -1,28 +1,45 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { PROJETO_HEADER, PROJETO_REQUIRED_ERR_MSG, UNAUTHED_ERR_MSG } from "@shared/const";
+import * as db from "./db";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
-// ---- Helpers ----
+/** Evita dependência de tabelas `projetos` no banco ao testar middleware + papéis. */
+beforeEach(() => {
+  vi.spyOn(db, "resolveProjetoForUser").mockImplementation(async (_userId, projetoId) => {
+    if (projetoId === 999999) return undefined;
+    return { id: projetoId, tipo: "fazenda_vertical", status: "ativo" };
+  });
+  vi.spyOn(db, "getProjetoByIdForUser").mockResolvedValue(undefined);
+});
 
-function createContext(role: "user" | "admin"): TrpcContext {
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+function createContext(role: "user" | "admin" | "platform_admin", opts?: { projetoHeader?: string }): TrpcContext {
+  const privileged = role === "admin" || role === "platform_admin";
   return {
     user: {
-      id: role === "admin" ? 1 : 2,
+      id: privileged ? 1 : 2,
       openId: `test-${role}`,
       email: `${role}@test.com`,
-      name: role === "admin" ? "Admin User" : "Operator User",
+      name: privileged ? "Admin User" : "Operator User",
       loginMethod: "manus",
       role,
       createdAt: new Date(),
       updatedAt: new Date(),
       lastSignedIn: new Date(),
     },
+    projetoId: null,
+    projetoTipo: null,
     req: {
       protocol: "https",
-      headers: {},
+      headers: opts?.projetoHeader ? { [PROJETO_HEADER]: opts.projetoHeader } : {},
     } as TrpcContext["req"],
     res: {
       clearCookie: () => {},
+      cookie: () => {},
     } as TrpcContext["res"],
   };
 }
@@ -30,123 +47,96 @@ function createContext(role: "user" | "admin"): TrpcContext {
 function createAnonymousContext(): TrpcContext {
   return {
     user: null,
+    projetoId: null,
+    projetoTipo: null,
     req: {
       protocol: "https",
       headers: {},
     } as TrpcContext["req"],
     res: {
       clearCookie: () => {},
+      cookie: () => {},
     } as TrpcContext["res"],
   };
 }
 
-// ---- Tests ----
-
-describe("Permissões: publicProcedure", () => {
-  it("permite acesso anônimo ao loadAll", async () => {
+describe("Permissões: fazenda.loadAll (projeto obrigatório)", () => {
+  it("bloqueia anônimo", async () => {
     const ctx = createAnonymousContext();
     const caller = appRouter.createCaller(ctx);
-    const result = await caller.fazenda.loadAll();
-    expect(result).toBeDefined();
-    expect(result).toHaveProperty("torres");
-    expect(result).toHaveProperty("caixasAgua");
-    expect(result).toHaveProperty("andares");
+    await expect(caller.fazenda.loadAll()).rejects.toMatchObject({
+      message: UNAUTHED_ERR_MSG,
+    });
   });
 
-  it("permite acesso de operador ao loadAll", async () => {
+  it("bloqueia usuário sem header/cookie de projeto", async () => {
     const ctx = createContext("user");
     const caller = appRouter.createCaller(ctx);
-    const result = await caller.fazenda.loadAll();
-    expect(result).toBeDefined();
-    expect(result).toHaveProperty("torres");
+    await expect(caller.fazenda.loadAll()).rejects.toMatchObject({
+      message: PROJETO_REQUIRED_ERR_MSG,
+    });
   });
 
-  it("permite acesso de admin ao loadAll", async () => {
-    const ctx = createContext("admin");
+  it("projeto inexistente/s sem vínculo retorna FORBIDDEN (não expõe dados)", async () => {
+    const ctx = createContext("user", { projetoHeader: "999999" });
     const caller = appRouter.createCaller(ctx);
-    const result = await caller.fazenda.loadAll();
-    expect(result).toBeDefined();
-    expect(result).toHaveProperty("torres");
+    await expect(caller.fazenda.loadAll()).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });
 
-describe("Permissões: protectedProcedure (operador + admin)", () => {
-  it("bloqueia acesso anônimo a medições", async () => {
+describe("Permissões: medicoesCaixa (operador + projeto)", () => {
+  it("bloqueia anônimo", async () => {
     const ctx = createAnonymousContext();
     const caller = appRouter.createCaller(ctx);
     await expect(
-      caller.medicoes.create({
+      caller.medicoesCaixa.create({
         caixaAguaId: 1,
         ec: 1.5,
         ph: 6.0,
         dataHora: new Date(),
-      })
+      }),
     ).rejects.toThrow();
   });
 
-  it("permite operador criar medição", async () => {
+  it("bloqueia sem projeto no contexto", async () => {
     const ctx = createContext("user");
     const caller = appRouter.createCaller(ctx);
-    // This may fail if caixaAguaId=1 doesn't exist, but it should NOT fail on auth
-    try {
-      await caller.medicoes.create({
+    await expect(
+      caller.medicoesCaixa.create({
         caixaAguaId: 1,
         ec: 1.5,
         ph: 6.0,
         dataHora: new Date(),
-      });
-    } catch (e: any) {
-      // Should NOT be an auth error
-      expect(e.code).not.toBe("UNAUTHORIZED");
-      expect(e.code).not.toBe("FORBIDDEN");
-    }
-  });
-
-  it("permite admin criar medição", async () => {
-    const ctx = createContext("admin");
-    const caller = appRouter.createCaller(ctx);
-    try {
-      await caller.medicoes.create({
-        caixaAguaId: 1,
-        ec: 1.5,
-        ph: 6.0,
-        dataHora: new Date(),
-      });
-    } catch (e: any) {
-      expect(e.code).not.toBe("UNAUTHORIZED");
-      expect(e.code).not.toBe("FORBIDDEN");
-    }
+      }),
+    ).rejects.toMatchObject({ message: PROJETO_REQUIRED_ERR_MSG });
   });
 });
 
-describe("Permissões: adminProcedure (só admin)", () => {
-  it("bloqueia operador de acessar seed", async () => {
-    const ctx = createContext("user");
+describe("Permissões: admin global + projeto (adminProjectProcedure)", () => {
+  it("bloqueia operador de seed", async () => {
+    const ctx = createContext("user", { projetoHeader: "1" });
     const caller = appRouter.createCaller(ctx);
     await expect(caller.admin.seed()).rejects.toThrow(/permission|forbidden/i);
   });
 
-  it("bloqueia operador de acessar reset", async () => {
-    const ctx = createContext("user");
+  it("bloqueia operador de reset", async () => {
+    const ctx = createContext("user", { projetoHeader: "1" });
     const caller = appRouter.createCaller(ctx);
     await expect(caller.admin.reset()).rejects.toThrow(/permission|forbidden/i);
   });
 
   it("bloqueia operador de criar variedade", async () => {
-    const ctx = createContext("user");
+    const ctx = createContext("user", { projetoHeader: "1" });
     const caller = appRouter.createCaller(ctx);
     await expect(
       caller.variedades.create({
         nome: "Test",
-        diasMudas: 14,
-        diasVegetativa: 21,
-        diasMaturacao: 28,
-      })
+      }),
     ).rejects.toThrow(/permission|forbidden/i);
   });
 
   it("bloqueia operador de criar ciclo", async () => {
-    const ctx = createContext("user");
+    const ctx = createContext("user", { projetoHeader: "1" });
     const caller = appRouter.createCaller(ctx);
     await expect(
       caller.ciclos.create({
@@ -157,12 +147,12 @@ describe("Permissões: adminProcedure (só admin)", () => {
         fasesAplicaveis: ["mudas"],
         alvo: "caixa",
         ativo: true,
-      })
+      }),
     ).rejects.toThrow(/permission|forbidden/i);
   });
 
-  it("bloqueia operador de atualizar config de fases", async () => {
-    const ctx = createContext("user");
+  it("bloqueia operador de upsert fases", async () => {
+    const ctx = createContext("user", { projetoHeader: "1" });
     const caller = appRouter.createCaller(ctx);
     await expect(
       caller.fasesConfig.upsert({
@@ -175,25 +165,19 @@ describe("Permissões: adminProcedure (só admin)", () => {
         cor: "#22c55e",
         corLight: "#dcfce7",
         icon: "\ud83c\udf31",
-      })
+      }),
     ).rejects.toThrow(/permission|forbidden/i);
   });
 
-  it("bloqueia anônimo de acessar seed", async () => {
+  it("bloqueia anônimo de seed", async () => {
     const ctx = createAnonymousContext();
     const caller = appRouter.createCaller(ctx);
     await expect(caller.admin.seed()).rejects.toThrow();
   });
 
-  it("permite admin executar seed (verifica apenas permissão, não executa)", async () => {
-    // IMPORTANTE: NÃO executar seed real nos testes!
-    // O seed chama resetAllData() que APAGA TODOS os dados de produção.
-    // Aqui verificamos apenas que o admin tem permissão (não é bloqueado por auth).
-    // Os testes de bloqueio para operador/anônimo acima já garantem que a
-    // proteção de role funciona.
+  it("admin tem role global para rotas administrativas", async () => {
     const ctx = createContext("admin");
     expect(ctx.user?.role).toBe("admin");
-    // Se chegou aqui sem erro, o admin tem a role correta para acessar adminProcedure
   });
 });
 

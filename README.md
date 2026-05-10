@@ -6,9 +6,32 @@ Sistema web de monitoramento e gestão operacional para fazendas verticais hidro
 
 ### Pré-requisitos
 
-- **Node.js** 18+ com pnpm
-- **Banco de Dados**: MySQL, PostgreSQL, SQLite ou qualquer banco suportado pelo Drizzle ORM
+- **Node.js** 18+ e [pnpm](https://pnpm.io/installation)
+- **Docker Desktop** (só para subir o MySQL local com um comando)
 - **Git** (para clonar o repositório)
+
+### Primeira vez — copie e cole no terminal (na pasta do projeto)
+
+Instale **Node (LTS)** e **Docker Desktop** com os instaladores oficiais (links nos nomes acima). Depois:
+
+```bash
+docker compose up -d
+pnpm install
+pnpm run setup:env
+pnpm db:migrate
+pnpm dev
+```
+
+Isso cria o `.env`, aplica as migrações SQL em `drizzle/`, sobe o MySQL em background e abre o site em [http://localhost:3456](http://localhost:3456) (porta padrão deste repo; ajuste `PORT` no `.env` se precisar).
+
+**Servidor — entrada canônica:** o app (Express + tRPC + Vite em dev) sobe a partir de `server/_core/index.ts`, invocado por `pnpm dev` e pelo bundle de produção (`pnpm build` → `dist/index.js`). O arquivo `server/index.ts` só reexporta esse fluxo para quem rodar `tsx server/index.ts`. Não use o servidor estático antigo isolado; o README e os scripts sempre apontam para `_core`.
+
+**Banco de dados — comandos:**
+
+- `pnpm db:migrate` — aplica migrações versionadas (`drizzle-kit migrate`). Use após clone ou quando houver arquivos `.sql` novos na pasta `drizzle/`.
+- `pnpm db:push` — sincroniza o schema do Drizzle com o banco **sem** gerar arquivo de migração (`drizzle-kit push`). Útil em desenvolvimento rápido; em equipe prefira `db:generate` + `db:migrate`.
+- `pnpm db:generate` — gera nova migração a partir de alterações em `drizzle/schema.ts`.
+- `pnpm db:studio` — interface visual do banco.
 
 ### 1. Clonar e Instalar
 
@@ -51,16 +74,31 @@ pnpm build
 pnpm start
 ```
 
-O servidor estará disponível em `http://localhost:3000`
+O servidor estará disponível em `http://localhost:3456` (ou a porta definida em `PORT` no `.env`).
 
-## 📋 Credenciais Padrão
+### Testar de outro lugar (ngrok)
 
-Após a primeira execução, um usuário admin é criado automaticamente:
+1. Crie conta em [ngrok](https://ngrok.com/), copie o **authtoken** e coloque em `.env` como `NGROK_AUTHTOKEN=...` (não commite o token).
+2. Terminal 1: `pnpm dev` — ao subir, o servidor grava a porta efetiva em `.dev-server-port` (gitignored).
+3. Terminal 2: `pnpm tunnel` — o script lê essa porta se o arquivo existir, para coincidir com quando o dev usa outra porta (ex.: `3457`). Caso contrário usa `PORT` do `.env` (padrão `3456`).
 
-- **Email**: comercial@visioneer.com.br
-- **Senha**: Fup@2026
+A URL HTTPS no log muda ao reiniciar o túnel no plano gratuito do ngrok.
 
-> ⚠️ **Importante**: Altere a senha após o primeiro login em produção!
+### Variáveis opcionais (OAuth e analytics)
+
+O fluxo padrão do projeto é **login por email e senha**. Isto não exige OAuth nem analytics.
+
+- **OAuth (portal Manus / WebDev):** só configure se for usar esse login. Defina no `.env` uma `OAUTH_SERVER_URL` **http ou https válida** (veja comentários em `env.defaults`). Valores “sentinela” como `http://127.0.0.1:9` são tratados como **desligado**, para não gerar chamadas nem ruído no terminal. No cliente, `VITE_OAUTH_PORTAL_URL` e `VITE_APP_ID` precisam estar coerentes para o botão que monta a URL do portal; caso contrário o app manda para `/login`.
+- **Analytics (Umami ou compatível):** opcional. Só são usados `VITE_ANALYTICS_ENDPOINT` e `VITE_ANALYTICS_WEBSITE_ID` quando **ambos** estão preenchidos com valores válidos; se faltarem, nenhum script é injetido em `client/src/main.tsx`.
+
+## 📋 Utilizador inicial (bootstrap)
+
+O arranque do servidor (`ensureBootstrapAdmin`) e/ou `pnpm db:seed-admin` podem criar o primeiro utilizador administrativo. **As credenciais concretas estão em `server/seed-admin.mjs` e no teu `.env` — não copie senhas deste README para produção.**
+
+- **Desenvolvimento:** use `env.defaults` / `pnpm run setup:env` e credenciais apenas locais.
+- **Produção:** defina `JWT_SECRET` forte (≥32 caracteres aleatórios), **altere** qualquer senha de seed antes do primeiro cliente e **nunca** reutilize segredos entre ambientes.
+
+Quando publicar o repositório ou partilhar o projeto, **não commite** `.env` nem exponha senhas reais em documentação.
 
 ## 🏗️ Arquitetura
 
@@ -70,7 +108,7 @@ Após a primeira execução, um usuário admin é criado automaticamente:
 - **Backend**: Express + tRPC + Node.js
 - **Banco de Dados**: Drizzle ORM (suporta MySQL, PostgreSQL, SQLite, etc.)
 - **Autenticação**: Email/Senha com bcrypt
-- **Testes**: Vitest
+- **Testes**: Vitest (API/backend) + Playwright (E2E)
 
 ### Estrutura de Pastas
 
@@ -129,17 +167,37 @@ Motor de 9 regras determinísticas gerando alertas e recomendações operacionai
 ### Usuários
 Gestão de usuários com roles (admin, operador).
 
+### Organização de módulos administrativos
+- **Configurações** (`/config`): parâmetros globais, regras operacionais, preferências, integrações e cadastros-base do domínio (ex.: variedades).
+- **Administração** (`/administracao`): governança e estrutura (torres, usuários e permissões).
+
 ## 🔧 Desenvolvimento
 
 ### Rodar Testes
 
 ```bash
-# Executar todos os testes
+# Testes unitários / integração (Vitest — server/**/*.test.ts)
 pnpm test
+
+# Cobertura (V8) só em `server/**/*.ts`
+pnpm test:coverage
 
 # Modo watch
 pnpm test --watch
+
+# E2E (Playwright): sobe `pnpm dev` automaticamente se nada estiver na porta base (3456).
+# Requer MySQL (ex.: docker compose) e `.env` com DATABASE_URL.
+pnpm exec playwright install chromium   # primeira vez
+pnpm test:e2e
+
+# Credenciais do E2E (opcional; padrão = admin do bootstrap)
+# E2E_ADMIN_EMAIL=... E2E_ADMIN_PASSWORD=... pnpm test:e2e
+
+# Servidor já rodando (não iniciar outro)
+# PLAYWRIGHT_SKIP_WEBSERVER=1 pnpm test:e2e
 ```
+
+O fluxo E2E cobre **login**, **Plantio** (`/planejamento`) e, se houver torres no banco, **detalhe de torre**. Sem torres cadastradas, o terceiro cenário é ignorado (`skipped`).
 
 ### Verificar TypeScript
 
@@ -158,7 +216,7 @@ pnpm format
 ### Adicionar Nova Tabela
 
 1. Editar `drizzle/schema.ts`
-2. Executar `pnpm db:push`
+2. Executar `pnpm db:generate` e depois `pnpm db:migrate` (ou `pnpm db:push` só em dev local)
 3. Criar query helpers em `server/db.ts`
 4. Criar rotas tRPC em `server/routers.ts`
 
@@ -185,7 +243,7 @@ export const appRouter = router({
 ### Opções de Hosting
 
 - **Vercel**: `pnpm build` → Deploy automático
-- **Railway**: Conectar GitHub → Deploy automático
+- **Railway**: Conectar GitHub → Deploy automático → [**primeiro login / senha admin (passo a passo)**](docs/RAILWAY-LOGIN.md)
 - **Render**: Conectar GitHub → Deploy automático
 - **Seu Servidor**: `pnpm build && pnpm start`
 - **Docker**: Criar Dockerfile com `pnpm build && pnpm start`

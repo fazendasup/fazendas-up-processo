@@ -1,19 +1,24 @@
 import { describe, it, expect } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
+import { useMockProjetoResolve, withProjetoBase } from "./test-projeto-trpc";
+
+useMockProjetoResolve();
 
 // ---- Context helpers ----
 
 function createPublicContext(): TrpcContext {
   return {
     user: null,
+    projetoId: null,
+    projetoTipo: null,
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
-    res: { clearCookie: () => {} } as TrpcContext["res"],
+    res: { clearCookie: () => {}, cookie: () => {} } as TrpcContext["res"],
   };
 }
 
 function createOperatorContext(): TrpcContext {
-  return {
+  return withProjetoBase({
     user: {
       id: 2,
       openId: "test-operator-onda2",
@@ -26,12 +31,12 @@ function createOperatorContext(): TrpcContext {
       lastSignedIn: new Date(),
     },
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
-    res: { clearCookie: () => {} } as TrpcContext["res"],
-  };
+    res: { clearCookie: () => {}, cookie: () => {} } as TrpcContext["res"],
+  });
 }
 
 function createAdminContext(): TrpcContext {
-  return {
+  return withProjetoBase({
     user: {
       id: 1,
       openId: "test-admin-onda2",
@@ -44,22 +49,21 @@ function createAdminContext(): TrpcContext {
       lastSignedIn: new Date(),
     },
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
-    res: { clearCookie: () => {} } as TrpcContext["res"],
-  };
+    res: { clearCookie: () => {}, cookie: () => {} } as TrpcContext["res"],
+  });
 }
 
 // Helper: get first receita and variedade
 async function getReceitaAndVariedade() {
-  const publicCaller = appRouter.createCaller(createPublicContext());
   const adminCaller = appRouter.createCaller(createAdminContext());
 
   // Get variedade
-  const data = await publicCaller.fazenda.loadAll();
+  const data = await adminCaller.fazenda.loadAll();
   if (!data.variedades || data.variedades.length === 0) return null;
   const variedade = data.variedades[0];
 
   // Get or create receita
-  const receitas = await publicCaller.receitas.list();
+  const receitas = await adminCaller.receitas.list();
   let receita: any;
   if (receitas.length > 0) {
     receita = receitas[0];
@@ -78,8 +82,8 @@ async function getReceitaAndVariedade() {
 // ---- Planos de Plantio Tests ----
 
 describe("planosPlantio", () => {
-  it("list returns an array (public)", async () => {
-    const caller = appRouter.createCaller(createPublicContext());
+  it("list returns an array (operador + projeto)", async () => {
+    const caller = appRouter.createCaller(createOperatorContext());
     const result = await caller.planosPlantio.list();
     expect(Array.isArray(result)).toBe(true);
   });
@@ -173,6 +177,45 @@ describe("planosPlantio", () => {
     });
     expect(result.success).toBe(true);
     expect(result.status).toBe("em_germinacao");
+  });
+
+  it("admin cannot skip germinação pronta when advancing to em_producao", async () => {
+    const rv = await getReceitaAndVariedade();
+    if (!rv) return;
+
+    const adminCaller = appRouter.createCaller(createAdminContext());
+    const now = new Date();
+    const plano = await adminCaller.planosPlantio.create({
+      receitaId: rv.receita.id,
+      receitaNome: rv.receita.nome,
+      variedadeId: rv.variedade.id,
+      variedadeNome: rv.variedade.nome,
+      quantidadePlantas: 25,
+      dataInicioGerminacao: now,
+      dataTransplantioMudas: new Date(now.getTime() + 7 * 86400000),
+      dataTransplantioVeg: new Date(now.getTime() + 14 * 86400000),
+      dataTransplantioMat: new Date(now.getTime() + 28 * 86400000),
+      dataColheitaPrevista: new Date(now.getTime() + 42 * 86400000),
+    });
+
+    await adminCaller.planosPlantio.avancarStatus({
+      id: plano.id,
+      novoStatus: "em_germinacao",
+    });
+
+    await expect(
+      adminCaller.planosPlantio.avancarStatus({
+        id: plano.id,
+        novoStatus: "em_producao",
+      })
+    ).rejects.toThrow();
+
+    await adminCaller.planosPlantio.marcarGerminacaoPronta({ id: plano.id });
+    const done = await adminCaller.planosPlantio.avancarStatus({
+      id: plano.id,
+      novoStatus: "em_producao",
+    });
+    expect(done.status).toBe("em_producao");
   });
 
   it("admin can update a plano", async () => {

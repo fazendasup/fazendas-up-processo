@@ -4,6 +4,8 @@
 // colheita só na maturação, removido diasCiclo de FaseConfig
 // ============================================================
 
+import { ESTRUTURA_OVERRIDE_FV_12x6, estruturaFaseParaProjeto, type TorreEstruturaOverride } from '@shared/types';
+
 export type Fase = 'mudas' | 'vegetativa' | 'maturacao';
 
 export interface FaseConfig {
@@ -34,8 +36,9 @@ export const FASES_CONFIG: Record<Fase, FaseConfig> = {
     ecMax: 2.0,
     phMin: 5.5,
     phMax: 6.5,
-    cor: 'oklch(0.55 0.14 220)',
-    corLight: 'oklch(0.92 0.06 220)',
+    /** Mesma base verde que mudas; matiz ligeiramente diferente para distinguir fases. */
+    cor: 'oklch(0.60 0.15 158)',
+    corLight: 'oklch(0.93 0.07 158)',
     icon: '🌿',
   },
   maturacao: {
@@ -44,8 +47,8 @@ export const FASES_CONFIG: Record<Fase, FaseConfig> = {
     ecMax: 2.5,
     phMin: 5.8,
     phMax: 6.2,
-    cor: 'oklch(0.62 0.18 50)',
-    corLight: 'oklch(0.93 0.06 50)',
+    cor: 'oklch(0.54 0.13 152)',
+    corLight: 'oklch(0.93 0.065 152)',
     icon: '🥬',
   },
 };
@@ -57,6 +60,8 @@ export interface VariedadeConfig {
   diasMudas: number;
   diasVegetativa: number;
   diasMaturacao: number;
+  /** Id numérico no BD (para escolher receita base em `data.receitas`). */
+  variedadeDbId?: number;
 }
 
 export const VARIEDADES_PADRAO: VariedadeConfig[] = [
@@ -68,6 +73,7 @@ export const VARIEDADES_PADRAO: VariedadeConfig[] = [
   { id: 'espinafre', nome: 'Espinafre', diasMudas: 14, diasVegetativa: 21, diasMaturacao: 30 },
   { id: 'couve', nome: 'Couve', diasMudas: 18, diasVegetativa: 28, diasMaturacao: 35 },
   { id: 'manjericao', nome: 'Manjericão', diasMudas: 14, diasVegetativa: 21, diasMaturacao: 28 },
+  { id: 'baby-leaf-beterraba', nome: 'Baby Leaf / Beterraba', diasMudas: 14, diasVegetativa: 21, diasMaturacao: 28 },
   { id: 'salsa', nome: 'Salsa', diasMudas: 18, diasVegetativa: 25, diasMaturacao: 30 },
   { id: 'cebolinha', nome: 'Cebolinha', diasMudas: 21, diasVegetativa: 28, diasMaturacao: 35 },
   { id: 'hortela', nome: 'Hortelã', diasMudas: 14, diasVegetativa: 21, diasMaturacao: 28 },
@@ -99,6 +105,10 @@ export interface PerfilData {
   variedadeId?: string;
   ativo: boolean; // se o perfil está em uso
   dataEntrada?: string | null; // data de entrada individual do perfil
+  /** Espelho no BD da receita priorizada da variedade (sincronizado ao salvar receita / mudar variedade). */
+  receitaId?: number | null;
+  /** Microverdes iluminação: cultivo por bandeja (sem furos). */
+  cultivoStatus?: 'vazio' | 'plantado' | 'colhido' | null;
 }
 
 // ---- Germinação (pré-mudas) ----
@@ -116,6 +126,8 @@ export interface LoteGerminacao {
   status: 'germinando' | 'pronto' | 'transplantado';
   observacoes?: string;
   executadoPorNome?: string;
+  /** `plano` = derivado do plano de plantio (receita); `cadastro` = módulo legado só germinação */
+  fonte?: 'plano' | 'cadastro';
 }
 
 // ---- Registro de Transplantio ----
@@ -168,8 +180,18 @@ export interface Torre {
   fase: Fase;
   andares?: number;
   numAndares?: number;
+  /** Número operacional fixo por projeto (único); ordenação do dashboard e relatórios — não depende do nome. */
+  numeroTorre: number;
+  /** Override da grelha física (ex.: 12×6 em veg/mat). */
+  estruturaOverride?: TorreEstruturaOverride | null;
   caixaAguaId?: string;
   ativa?: boolean;
+}
+
+/** Dashboard lista só torres ativas; MySQL pode devolver 0/1 em `ativa`. */
+export function torreEstaAtivaNoDashboard(t: { ativa?: boolean | number | null }): boolean {
+  if (t.ativa === false || t.ativa === 0) return false;
+  return true;
 }
 
 // ---- Caixas d'Água ----
@@ -235,6 +257,7 @@ export interface CicloAplicacao {
   intervaloDias?: number;
   produto: string;
   tipo: string;
+  dosagem?: string;
   fasesAplicaveis: Fase[];
   alvo: 'caixa' | 'andar' | 'ambos';
   ultimaExecucao?: string;
@@ -242,31 +265,51 @@ export interface CicloAplicacao {
   ativo: boolean;
 }
 
+/** Receitas de crescimento tal como vêm do servidor (`receitas_crescimento`) — fonte de verdade dos dias por fase. */
+export interface ReceitaCrescimentoResumo {
+  id: number;
+  nome: string;
+  variedadeId: number;
+  diasGerminacao: number;
+  diasMudas: number;
+  diasVegetativa: number;
+  diasMaturacao: number;
+  ativa: boolean;
+  updatedAt: string | null;
+}
+
 // ---- Dados da Fazenda ----
 export interface FazendaData {
+  /** Tipo do projeto ativo (vem do servidor em `fazenda.loadAll`). */
+  projetoTipo?: string | null;
   torres: Torre[];
   caixasAgua: CaixaAgua[];
   andares: Andar[];
   ciclos: CicloAplicacao[];
   fasesConfig: Record<Fase, FaseConfig>;
   variedades: VariedadeConfig[];
+  /** Catálogo real do projeto (BD); `variedades[].dias*` vêm da receita base fundida no servidor. */
+  receitas: ReceitaCrescimentoResumo[];
+  /** Slug da variedade → id numérico no BD (sempre que existir em `raw.variedades`); prazos não dependem só de bater linha em `variedades[]`). */
+  variedadeDbIdBySlug: Record<string, number>;
   germinacao: LoteGerminacao[];
   transplantios: RegistroTransplantio[];
   manutencoes: Manutencao[];
 }
 
 // ---- Gerar perfis iniciais por fase ----
-export function gerarPerfisIniciais(fase: Fase = 'maturacao'): PerfilData[] {
-  const numPerfis = ESTRUTURA_FASE[fase].perfis;
+export function gerarPerfisIniciais(fase: Fase = 'maturacao', projetoTipo?: string | null): PerfilData[] {
+  const numPerfis = estruturaFaseParaProjeto(projetoTipo, fase).perfis;
   return Array.from({ length: numPerfis }, (_, i) => ({
     perfilIndex: i,
     ativo: false,
+    ...(projetoTipo === 'microverdes' && fase !== 'mudas' ? { cultivoStatus: 'vazio' as const } : {}),
   }));
 }
 
 // ---- Gerar furos iniciais por fase ----
-export function gerarFurosIniciais(fase: Fase = 'maturacao'): Furo[] {
-  const { perfis, furosPorPerfil } = ESTRUTURA_FASE[fase];
+export function gerarFurosIniciais(fase: Fase = 'maturacao', projetoTipo?: string | null): Furo[] {
+  const { perfis, furosPorPerfil } = estruturaFaseParaProjeto(projetoTipo, fase);
   if (furosPorPerfil === 0) return []; // mudas não tem furos
   const furos: Furo[] = [];
   for (let p = 0; p < perfis; p++) {
@@ -299,6 +342,7 @@ export function gerarDadosIniciais(): FazendaData {
     nome: 'Torre Mudas 1',
     fase: 'mudas',
     andares: 12,
+    numeroTorre: 1,
     caixaAguaId: 'ca-mudas-1',
   });
 
@@ -336,6 +380,7 @@ export function gerarDadosIniciais(): FazendaData {
       nome: `Torre Vegetativa ${t}`,
       fase: 'vegetativa',
       andares: 12,
+      numeroTorre: 1 + t,
       caixaAguaId: caixaId,
     });
 
@@ -378,6 +423,8 @@ export function gerarDadosIniciais(): FazendaData {
       nome: `Torre Maturação ${t}`,
       fase: 'maturacao',
       andares: 9,
+      numeroTorre: 4 + t,
+      ...(t >= 9 ? { estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6 } : {}),
       caixaAguaId: caixaId,
     });
 
@@ -404,6 +451,8 @@ export function gerarDadosIniciais(): FazendaData {
     ciclos: [],
     fasesConfig: { ...FASES_CONFIG },
     variedades: [...VARIEDADES_PADRAO],
+    receitas: [],
+    variedadeDbIdBySlug: {},
     germinacao: [],
     transplantios: [],
     manutencoes: [],

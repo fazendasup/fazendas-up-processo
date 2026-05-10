@@ -2,16 +2,30 @@
 // Header v4 — Com controle de acesso por role e login/logout
 // ============================================================
 
+import { useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useFazenda } from '@/contexts/FazendaContext';
+import { useProjeto } from '@/contexts/ProjetoContext';
 import { useFazendaMutations } from '@/hooks/useFazendaMutations';
 import { useRole } from '@/hooks/useRole';
+import { useTheme } from '@/contexts/ThemeContext';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -23,7 +37,6 @@ import {
   Menu,
   Leaf,
   CalendarClock,
-  Sprout,
   Wrench,
   Users,
   Calendar as CalendarIcon,
@@ -31,56 +44,165 @@ import {
   LogIn,
   LogOut,
   User,
+  Sun,
+  Moon,
   ShieldCheck,
   BarChart3,
-  ClipboardList,
   BookOpen,
+  Package,
+  FolderKanban,
+  ChevronDown,
+  LineChart,
+  Settings2,
+  Cpu,
+  Camera,
+  Brain,
+  Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { trpc } from '@/lib/trpc';
-import { Brain } from 'lucide-react';
-
+import { navPermitidoPorModulo } from '@/lib/projetoModulosNav';
+import { FarmAssistantSheet } from '@/components/FarmAssistantSheet';
 type NavItem = {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   requiredRole?: 'admin';
+  projetoTipo?: 'fazenda_vertical' | 'hidroponia';
 };
 
+const OPERACAO_ITEMS: NavItem[] = [
+  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/planejamento', label: 'Plantio', icon: CalendarIcon },
+  { href: '/automacao', label: 'Automação', icon: Cpu },
+  { href: '/manutencao', label: 'Manutenção', icon: Wrench },
+  { href: '/estoque', label: 'Estoque', icon: Package },
+];
+
+const ANALISE_ADMIN_PREFIX: NavItem[] = [
+  { href: '/capacidade', label: 'Capacidade', icon: LayoutGrid, requiredRole: 'admin' },
+  { href: '/analytics', label: 'Analytics', icon: BarChart3, requiredRole: 'admin' },
+];
+
+const ANALISE_TODOS: NavItem = { href: '/inteligencia', label: 'Inteligência', icon: Brain };
+const ANALISE_VISAO: NavItem = { href: '/visao', label: 'Visão do cultivo', icon: Camera };
+
+const SISTEMA_EXTRAS_ADMIN: NavItem[] = [
+  { href: '/receitas', label: 'Receitas e cadastros', icon: BookOpen, requiredRole: 'admin' },
+  { href: '/config', label: 'Configurações', icon: Settings, requiredRole: 'admin' },
+  { href: '/ciclos', label: 'Ciclos', icon: CalendarClock, requiredRole: 'admin' },
+  { href: '/administracao', label: 'Administração', icon: Users, requiredRole: 'admin' },
+];
+
+const PROJETOS_ITEM: NavItem = { href: '/projetos', label: 'Projetos', icon: FolderKanban };
+
+function pathMatchesNav(location: string, href: string) {
+  if (href === '/') return location === '/';
+  return location === href || location.startsWith(`${href}/`);
+}
+
+function ThemeToggleBar() {
+  const { theme, setTheme, switchable } = useTheme();
+  if (!switchable || !setTheme) return null;
+  return (
+    <div
+      className="flex items-center rounded-lg border border-border/70 bg-muted/35 p-0.5 shadow-inner"
+      role="group"
+      aria-label="Tema da interface"
+    >
+      <button
+        type="button"
+        onClick={() => setTheme('light')}
+        className={cn(
+          'flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-wide transition-colors',
+          theme === 'light'
+            ? 'bg-background text-foreground shadow-sm ring-1 ring-border/80'
+            : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
+        )}
+        aria-pressed={theme === 'light'}
+      >
+        <Sun className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        <span className="hidden min-[400px]:inline">Claro</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => setTheme('dark')}
+        className={cn(
+          'flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-wide transition-colors',
+          theme === 'dark'
+            ? 'bg-background text-foreground shadow-sm ring-1 ring-border/80'
+            : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
+        )}
+        aria-pressed={theme === 'dark'}
+      >
+        <Moon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        <span className="hidden min-[400px]:inline">Escuro</span>
+      </button>
+    </div>
+  );
+}
+
 export default function Header() {
+  const [farmAssistantOpen, setFarmAssistantOpen] = useState(false);
   const [location] = useLocation();
   const { exportCSV, backupJSON } = useFazenda();
   const mutations = useFazendaMutations();
   const { isAdmin, isLoggedIn } = useRole();
   const { user, logout } = useAuth();
+  const { projetos, activeProjetoId, activeProjeto, switchProjeto, isSwitching, modulosAtivos } = useProjeto();
   const { data: alertResumo } = trpc.inteligencia.resumo.useQuery(undefined, {
+    enabled: Boolean(isLoggedIn && activeProjetoId && modulosAtivos?.inteligencia),
     refetchInterval: 60000,
   });
 
-  // Nav items com controle de visibilidade por role
-  const allNavItems: NavItem[] = [
-    { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/germinacao', label: 'Germinação', icon: Sprout },
-    { href: '/manutencao', label: 'Manutenção', icon: Wrench },
-    { href: '/tarefas', label: 'Tarefas', icon: ClipboardList },
-    { href: '/receitas', label: 'Receitas', icon: BookOpen, requiredRole: 'admin' },
-    { href: '/planejamento', label: 'Planejamento', icon: CalendarIcon, requiredRole: 'admin' },
-    { href: '/capacidade', label: 'Capacidade', icon: LayoutGrid, requiredRole: 'admin' },
-    { href: '/analytics', label: 'Analytics', icon: BarChart3, requiredRole: 'admin' },
-    { href: '/inteligencia', label: 'Inteligência', icon: Brain },
-    { href: '/ciclos', label: 'Ciclos', icon: CalendarClock, requiredRole: 'admin' },
-    { href: '/config', label: 'Config', icon: Settings, requiredRole: 'admin' },
-    { href: '/usuarios', label: 'Usuários', icon: Users, requiredRole: 'admin' },
-  ];
+  const operacaoItems = useMemo(() => {
+    if (!isLoggedIn || activeProjetoId == null) return [] as NavItem[];
+    return OPERACAO_ITEMS.filter((item) => {
+      if (item.requiredRole === "admin" && !isAdmin) return false;
+      if (item.projetoTipo != null) {
+        if (!activeProjeto || activeProjeto.tipo !== item.projetoTipo) return false;
+      }
+      if (!navPermitidoPorModulo(item.href, modulosAtivos)) return false;
+      return true;
+    });
+  }, [isAdmin, isLoggedIn, activeProjeto?.tipo, activeProjetoId, modulosAtivos]);
 
-  // Filtrar itens visíveis baseado no role
-  const navItems = allNavItems.filter((item) => {
-    if (item.requiredRole === 'admin') return isAdmin;
-    // Itens operacionais (Germinação, Manutenção, Tarefas) requerem login
-    if (item.href !== '/') return isLoggedIn;
-    return true; // Dashboard sempre visível
-  });
+  const analiseItems = useMemo(() => {
+    if (!isLoggedIn || activeProjetoId == null) return [] as NavItem[];
+    const list: NavItem[] = [];
+    if (isAdmin) list.push(...ANALISE_ADMIN_PREFIX);
+    list.push(ANALISE_TODOS);
+    list.push(ANALISE_VISAO);
+    return list.filter((item) => {
+      if (item.requiredRole === "admin" && !isAdmin) return false;
+      if (!navPermitidoPorModulo(item.href, modulosAtivos)) return false;
+      return true;
+    });
+  }, [isAdmin, isLoggedIn, activeProjetoId, modulosAtivos]);
+
+  const sistemaItems = useMemo(() => {
+    if (!isLoggedIn) return [] as NavItem[];
+    const list: NavItem[] = [PROJETOS_ITEM];
+    if (activeProjetoId == null) return list;
+    if (isAdmin) list.push(...SISTEMA_EXTRAS_ADMIN);
+    return list.filter((item) => {
+      if (item.requiredRole === "admin" && !isAdmin) return false;
+      if (item.projetoTipo != null) {
+        if (!activeProjeto || activeProjeto.tipo !== item.projetoTipo) return false;
+      }
+      return true;
+    });
+  }, [isAdmin, isLoggedIn, activeProjeto?.tipo, activeProjetoId]);
+
+  const analiseGroupActive = useMemo(
+    () => analiseItems.some((item) => pathMatchesNav(location, item.href)),
+    [location, analiseItems],
+  );
+  const sistemaGroupActive = useMemo(
+    () => sistemaItems.some((item) => pathMatchesNav(location, item.href)),
+    [location, sistemaItems],
+  );
 
   const handleReset = () => {
     if (window.confirm('Tem certeza que deseja resetar todos os dados? Esta ação não pode ser desfeita.')) {
@@ -96,17 +218,22 @@ export default function Header() {
   const handleLogout = async () => {
     await logout();
     toast.success('Logout realizado!');
-    window.location.href = '/';
+    window.location.href = "/login";
   };
 
+  const roleLabel = isAdmin ? 'Administrador' : 'Operador';
+  const displayName = user?.name?.trim() || 'Usuário';
+  /** Evita "Administrador" em cima e "ADMINISTRADOR" embaixo quando o nome já é o papel */
+  const showRoleLine =
+    displayName.toLowerCase() !== roleLabel.toLowerCase();
+
   return (
-    <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-md">
-      <div className="w-full px-4 flex items-center justify-between h-14 gap-4">
+    <header className="app-header-shell">
+      <div className="w-full px-4 flex items-center justify-between h-[3.25rem] gap-4">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 no-underline shrink-0">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-               style={{ background: 'linear-gradient(135deg, oklch(0.65 0.19 160), oklch(0.55 0.14 220))' }}>
-            <Leaf className="w-4.5 h-4.5 text-white" />
+        <Link href={activeProjetoId != null ? "/" : "/projetos"} className="flex items-center gap-2 no-underline shrink-0 group">
+          <div className="app-logo-mark w-9 h-9 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-[1.03]">
+            <Leaf className="w-[18px] h-[18px] text-white drop-shadow-sm" />
           </div>
           <div className="hidden sm:flex flex-col min-w-max">
             <span className="font-display text-xs font-bold leading-tight text-foreground">
@@ -118,59 +245,238 @@ export default function Header() {
           </div>
         </Link>
 
-        {/* Nav Desktop */}
-        <nav className="hidden md:flex items-center gap-0.5 flex-1 overflow-x-auto scrollbar-hide">
-          {navItems.map((item) => {
-            const isActive = location === item.href || (item.href !== '/' && location.startsWith(item.href));
+        {isLoggedIn && projetos.length > 1 && activeProjetoId != null && (
+          <div className="hidden sm:flex shrink-0 items-center gap-2 min-w-0 max-w-[min(40vw,14rem)]">
+            <Select
+              value={String(activeProjetoId)}
+              onValueChange={(v) => switchProjeto(Number(v))}
+              disabled={isSwitching}
+            >
+              <SelectTrigger size="sm" className="h-8 w-[min(10rem,40vw)] shrink-0" aria-label="Trocar projeto">
+                <SelectValue placeholder="Trocar" />
+              </SelectTrigger>
+              <SelectContent>
+                {projetos.map((p) => (
+                  <SelectItem key={p.id} value={String(p.id)}>
+                    {p.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Nav Desktop: Operação + Análise + Sistema */}
+        <nav className="hidden md:flex items-center gap-0.5 flex-1 min-w-0 justify-end overflow-x-hidden scrollbar-hide">
+          {operacaoItems.map((item) => {
+            const isActive = pathMatchesNav(location, item.href);
             return (
-              <Link key={item.href} href={item.href}>
-                <button
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all whitespace-nowrap ${
-                    isActive
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                  }`}
-                >
-                  <item.icon className="w-3 h-3" />
-                  <span className="hidden lg:inline">{item.label}</span>
-                  {item.href === '/inteligencia' && alertResumo && alertResumo.total > 0 && (
-                    <span className={`ml-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold text-white ${
-                      alertResumo.criticos > 0 ? 'bg-red-500 animate-pulse' : alertResumo.altos > 0 ? 'bg-amber-500' : 'bg-blue-500'
-                    }`}>
-                      {alertResumo.total}
-                    </span>
-                  )}
-                </button>
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'app-nav-pill no-underline inline-flex items-center',
+                  isActive
+                    ? 'app-nav-pill-active'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/80',
+                )}
+              >
+                <item.icon className="w-3 h-3" />
+                <span className="hidden lg:inline">{item.label}</span>
               </Link>
             );
           })}
+
+          {analiseItems.length > 0 &&
+            (analiseItems.length > 1 ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      'app-nav-pill',
+                      analiseGroupActive
+                        ? 'app-nav-pill-active'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/80',
+                    )}
+                    aria-haspopup="menu"
+                  >
+                    <LineChart className="w-3 h-3" />
+                    <span className="hidden lg:inline">Análise</span>
+                    <ChevronDown className="w-2.5 h-2.5 hidden lg:inline opacity-60" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  {analiseItems.map((item) => {
+                    const sub = pathMatchesNav(location, item.href);
+                    return (
+                      <DropdownMenuItem key={item.href} asChild>
+                        <Link
+                          href={item.href}
+                          className={cn('flex w-full items-center gap-2 cursor-pointer', sub && 'bg-accent/40')}
+                        >
+                          <item.icon className="w-4 h-4 shrink-0" />
+                          <span className="flex-1">{item.label}</span>
+                          {item.href === '/inteligencia' && alertResumo && alertResumo.total > 0 && (
+                            <span
+                              className={`ml-auto min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold text-white ${
+                                alertResumo.criticos > 0
+                                  ? 'bg-red-500 animate-pulse'
+                                  : alertResumo.altos > 0
+                                    ? 'bg-amber-500'
+                                    : 'bg-blue-500'
+                              }`}
+                            >
+                              {alertResumo.total}
+                            </span>
+                          )}
+                        </Link>
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (() => {
+                const a0 = analiseItems[0];
+                const AIcon = a0.icon;
+                return (
+              <Link
+                key={a0.href}
+                href={a0.href}
+                className={cn(
+                  'app-nav-pill no-underline inline-flex items-center',
+                  pathMatchesNav(location, a0.href)
+                    ? 'app-nav-pill-active'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/80',
+                )}
+              >
+                  <AIcon className="w-3 h-3" />
+                  <span className="hidden lg:inline">{a0.label}</span>
+                  {a0.href === '/inteligencia' && alertResumo && alertResumo.total > 0 && (
+                    <span
+                      className={`ml-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold text-white ${
+                        alertResumo.criticos > 0
+                          ? 'bg-red-500 animate-pulse'
+                          : alertResumo.altos > 0
+                            ? 'bg-amber-500'
+                            : 'bg-blue-500'
+                      }`}
+                    >
+                      {alertResumo.total}
+                    </span>
+                  )}
+              </Link>
+                );
+              })())}
+
+          {sistemaItems.length > 0 &&
+            (sistemaItems.length > 1 ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      'app-nav-pill',
+                      sistemaGroupActive
+                        ? 'app-nav-pill-active'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/80',
+                    )}
+                    aria-haspopup="menu"
+                  >
+                    <Settings2 className="w-3 h-3" />
+                    <span className="hidden lg:inline">Sistema</span>
+                    <ChevronDown className="w-2.5 h-2.5 hidden lg:inline opacity-60" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {sistemaItems.map((item) => {
+                    const sub = pathMatchesNav(location, item.href);
+                    return (
+                      <DropdownMenuItem key={item.href} asChild>
+                        <Link
+                          href={item.href}
+                          className={cn('flex w-full items-center gap-2 cursor-pointer', sub && 'bg-accent/40')}
+                        >
+                          <item.icon className="w-4 h-4 shrink-0" />
+                          {item.label}
+                        </Link>
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (() => {
+                const s0 = sistemaItems[0];
+                const SIcon = s0.icon;
+                return (
+              <Link
+                key={s0.href}
+                href={s0.href}
+                className={cn(
+                  'app-nav-pill no-underline inline-flex items-center',
+                  pathMatchesNav(location, s0.href)
+                    ? 'app-nav-pill-active'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/80',
+                )}
+              >
+                  <SIcon className="w-3 h-3" />
+                  <span className="hidden lg:inline">{s0.label}</span>
+              </Link>
+                );
+              })())}
         </nav>
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          {/* User info / Login */}
+          {/* Perfil + tipo de usuário + tema */}
           {isLoggedIn ? (
             <div className="hidden sm:flex items-center gap-2">
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-2.5 py-1.5 max-w-[min(100vw,220px)]">
                 {isAdmin ? (
-                  <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                  <ShieldCheck className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
                 ) : (
-                  <User className="w-3.5 h-3.5 text-blue-600" />
+                  <User className="w-4 h-4 shrink-0 text-primary" aria-hidden />
                 )}
-                <span className="max-w-[100px] truncate">{user?.name || 'Usuário'}</span>
+                <div className="min-w-0 flex flex-col leading-tight">
+                  <span className="truncate text-xs font-medium text-foreground">
+                    {displayName}
+                  </span>
+                  {showRoleLine && (
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {roleLabel}
+                    </span>
+                  )}
+                </div>
               </div>
+              <ThemeToggleBar />
             </div>
           ) : (
+            <div className="hidden sm:flex items-center gap-2">
+              <ThemeToggleBar />
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-xs h-9"
+                asChild
+              >
+                <a href="/login">
+                  <LogIn className="w-3.5 h-3.5" />
+                  Entrar
+                </a>
+              </Button>
+            </div>
+          )}
+
+          {isLoggedIn && activeProjetoId != null && (
             <Button
+              type="button"
               variant="outline"
               size="sm"
               className="hidden sm:flex gap-1.5 text-xs h-9"
-              asChild
+              onClick={() => setFarmAssistantOpen(true)}
             >
-              <a href="/login">
-                <LogIn className="w-3.5 h-3.5" />
-                Entrar
-              </a>
+              <Sparkles className="w-3.5 h-3.5" />
+              Assistente
             </Button>
           )}
 
@@ -191,37 +497,148 @@ export default function Header() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              {/* User info mobile */}
-              {isLoggedIn && (
-                <>
-                  <div className="px-2 py-2 sm:hidden">
-                    <div className="flex items-center gap-2">
-                      {isAdmin ? (
-                        <ShieldCheck className="w-4 h-4 text-amber-600" />
-                      ) : (
-                        <User className="w-4 h-4 text-blue-600" />
+              {/* Tema + perfil (mobile) */}
+              <div className="px-2 py-2 sm:hidden space-y-2">
+                <div className="flex justify-center">
+                  <ThemeToggleBar />
+                </div>
+                {isLoggedIn && (
+                  <div className="flex items-center gap-2 rounded-md border border-border/60 bg-muted/25 px-2 py-2">
+                    {isAdmin ? (
+                      <ShieldCheck className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                    ) : (
+                      <User className="w-4 h-4 shrink-0 text-primary" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{displayName}</p>
+                      {showRoleLine && (
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          {roleLabel}
+                        </p>
                       )}
-                      <div>
-                        <p className="text-sm font-medium">{user?.name || 'Usuário'}</p>
-                        <p className="text-[10px] text-muted-foreground">{isAdmin ? 'Administrador' : 'Operador'}</p>
-                      </div>
                     </div>
                   </div>
-                  <DropdownMenuSeparator className="sm:hidden" />
-                </>
-              )}
-
-              {/* Mobile nav */}
+                )}
+              </div>
+              {/* Mobile / tablet: mesma lógica Operação · Análise · Sistema (lg+ usa barra) */}
               <div className="lg:hidden">
-                {navItems.map((item) => (
-                  <DropdownMenuItem key={item.href} asChild className="py-2.5">
-                    <Link href={item.href} className="flex items-center gap-2 text-sm">
-                      <item.icon className="w-4 h-4" />
-                      {item.label}
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
+                {isLoggedIn && (
+                  <>
+                    {activeProjetoId != null && (
+                      <DropdownMenuItem
+                        className="flex items-center gap-2 py-2.5"
+                        onClick={() => setFarmAssistantOpen(true)}
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        Assistente IA
+                      </DropdownMenuItem>
+                    )}
+                    {operacaoItems.map((item) => {
+                      const PIcon = item.icon;
+                      return (
+                        <DropdownMenuItem key={item.href} asChild className="py-2.5">
+                          <Link href={item.href} className="flex items-center gap-2 text-sm">
+                            <PIcon className="w-4 h-4" />
+                            {item.label}
+                          </Link>
+                        </DropdownMenuItem>
+                      );
+                    })}
+                    {analiseItems.length > 1 && (
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="py-2.5">
+                          <LineChart className="w-4 h-4" />
+                          <span>Análise</span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent>
+                          {analiseItems.map((item) => {
+                            const SIcon = item.icon;
+                            return (
+                              <DropdownMenuItem key={item.href} asChild>
+                                <Link href={item.href} className="flex w-full items-center gap-2 text-sm">
+                                  <SIcon className="w-4 h-4 shrink-0" />
+                                  <span className="flex-1">{item.label}</span>
+                                  {item.href === '/inteligencia' && alertResumo && alertResumo.total > 0 && (
+                                    <span
+                                      className={`ml-auto min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold text-white ${
+                                        alertResumo.criticos > 0
+                                          ? 'bg-red-500'
+                                          : alertResumo.altos > 0
+                                            ? 'bg-amber-500'
+                                            : 'bg-blue-500'
+                                      }`}
+                                    >
+                                      {alertResumo.total}
+                                    </span>
+                                  )}
+                                </Link>
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+                    )}
+                    {analiseItems.length === 1 && (() => {
+                      const a = analiseItems[0];
+                      const Ic = a.icon;
+                      return (
+                        <DropdownMenuItem key={a.href} asChild className="py-2.5">
+                          <Link href={a.href} className="flex items-center gap-2 text-sm">
+                            <Ic className="w-4 h-4" />
+                            {a.label}
+                            {a.href === '/inteligencia' && alertResumo && alertResumo.total > 0 && (
+                              <span
+                                className={`ml-auto min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold text-white ${
+                                  alertResumo.criticos > 0
+                                    ? 'bg-red-500'
+                                    : alertResumo.altos > 0
+                                      ? 'bg-amber-500'
+                                      : 'bg-blue-500'
+                                }`}
+                              >
+                                {alertResumo.total}
+                              </span>
+                            )}
+                          </Link>
+                        </DropdownMenuItem>
+                      );
+                    })()}
+                    {sistemaItems.length > 1 && (
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="py-2.5">
+                          <Settings2 className="w-4 h-4" />
+                          <span>Sistema</span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent>
+                          {sistemaItems.map((item) => {
+                            const SIcon = item.icon;
+                            return (
+                              <DropdownMenuItem key={item.href} asChild>
+                                <Link href={item.href} className="flex items-center gap-2 text-sm">
+                                  <SIcon className="w-4 h-4" />
+                                  {item.label}
+                                </Link>
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+                    )}
+                    {sistemaItems.length === 1 && (() => {
+                      const s = sistemaItems[0];
+                      const SsIcon = s.icon;
+                      return (
+                        <DropdownMenuItem key={s.href} asChild className="py-2.5">
+                          <Link href={s.href} className="flex items-center gap-2 text-sm">
+                            <SsIcon className="w-4 h-4" />
+                            {s.label}
+                          </Link>
+                        </DropdownMenuItem>
+                      );
+                    })()}
+                    <DropdownMenuSeparator />
+                  </>
+                )}
               </div>
 
               <DropdownMenuItem onClick={exportCSV} className="flex items-center gap-2 sm:hidden">
@@ -263,6 +680,10 @@ export default function Header() {
           </DropdownMenu>
         </div>
       </div>
+
+      {isLoggedIn && activeProjetoId != null && (
+        <FarmAssistantSheet open={farmAssistantOpen} onOpenChange={setFarmAssistantOpen} />
+      )}
     </header>
   );
 }

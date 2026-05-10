@@ -1,3 +1,11 @@
+/**
+ * Design v2 — "Aurora" (visual mais sofisticado / futurista)
+ *
+ * REVERTER para o visual anterior:
+ * copie o arquivo `client/src/styles/design-legacy-backup.css`
+ * sobre este arquivo (`client/src/index.css`) e restaure no `index.html`
+ * o link das fontes Outfit + Plus Jakarta Sans.
+ */
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -40,64 +48,128 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-display: 'Outfit', system-ui, sans-serif;
-  /* Phase colors */
-  --color-mudas: oklch(0.65 0.19 160);
-  --color-mudas-light: oklch(0.92 0.08 160);
-  --color-vegetativa: oklch(0.55 0.14 220);
-  --color-vegetativa-light: oklch(0.92 0.06 220);
-  --color-maturacao: oklch(0.62 0.18 50);
-  --color-maturacao-light: oklch(0.93 0.06 50);
+  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-display: "Syne", system-ui, sans-serif;
+  /* Phase colors (ajustes para contraste no tema Aurora) */
+  --color-mudas: oklch(0.62 0.17 165);
+  --color-mudas-light: oklch(0.94 0.06 165);
+  --color-vegetativa: oklch(0.60 0.15 158);
+  --color-vegetativa-light: oklch(0.93 0.07 158);
+  --color-maturacao: oklch(0.54 0.13 152);
+  --color-maturacao-light: oklch(0.93 0.065 152);
 }
 
 :root {
-  --primary: oklch(0.55 0.14 160);
-  --primary-foreground: oklch(0.98 0 0);
-  --sidebar-primary: oklch(0.55 0.14 160);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --chart-1: oklch(0.65 0.19 160);
-  --chart-2: oklch(0.55 0.14 220);
-  --chart-3: oklch(0.62 0.18 50);
-  --chart-4: oklch(0.7 0.15 140);
-  --chart-5: oklch(0.5 0.12 260);
-  --radius: 0.5rem;
-  --background: oklch(0.985 0.003 80);
-  --foreground: oklch(0.22 0.01 60);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.01 60);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.01 60);
-  --secondary: oklch(0.96 0.005 80);
-  --secondary-foreground: oklch(0.35 0.01 60);
-  --muted: oklch(0.955 0.005 80);
-  --muted-foreground: oklch(0.5 0.01 60);
-  --accent: oklch(0.955 0.005 80);
-  --accent-foreground: oklch(0.22 0.01 60);
-  --destructive: oklch(0.58 0.22 25);
+  --radius: 0.75rem;
+  /* Ciano-esmerda + fundo frio — leitura em painel técnico */
+  --primary: oklch(0.52 0.14 195);
+  --primary-foreground: oklch(0.99 0 0);
+  --sidebar-primary: oklch(0.52 0.14 195);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --chart-1: oklch(0.62 0.17 165);
+  --chart-2: oklch(0.60 0.15 158);
+  --chart-3: oklch(0.54 0.13 152);
+  --chart-4: oklch(0.68 0.14 145);
+  --chart-5: oklch(0.55 0.12 280);
+  --background: oklch(0.97 0.012 220);
+  --foreground: oklch(0.2 0.02 250);
+  --card: oklch(0.995 0.008 220);
+  --card-foreground: oklch(0.2 0.02 250);
+  --popover: oklch(0.995 0.008 220);
+  --popover-foreground: oklch(0.2 0.02 250);
+  --secondary: oklch(0.94 0.02 220);
+  --secondary-foreground: oklch(0.28 0.03 250);
+  --muted: oklch(0.93 0.018 220);
+  --muted-foreground: oklch(0.45 0.03 250);
+  --accent: oklch(0.92 0.04 195);
+  --accent-foreground: oklch(0.22 0.04 250);
+  --destructive: oklch(0.55 0.24 22);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.88 0.025 220);
+  --input: oklch(0.88 0.025 220);
+  --ring: oklch(0.52 0.14 195);
+  --sidebar: oklch(0.98 0.01 220);
+  --sidebar-foreground: oklch(0.2 0.02 250);
+  --sidebar-accent: oklch(0.93 0.03 220);
+  --sidebar-accent-foreground: oklch(0.2 0.02 250);
+  --sidebar-border: oklch(0.88 0.025 220);
+  --sidebar-ring: oklch(0.52 0.14 195);
+}
+
+.dark {
+  --primary: oklch(0.72 0.14 195);
+  --primary-foreground: oklch(0.14 0.03 250);
+  --sidebar-primary: oklch(0.72 0.14 195);
+  --sidebar-primary-foreground: oklch(0.14 0.03 250);
+  --background: oklch(0.14 0.025 260);
+  --foreground: oklch(0.96 0.01 230);
+  --card: oklch(0.19 0.03 260);
+  --card-foreground: oklch(0.96 0.01 230);
+  --popover: oklch(0.19 0.03 260);
+  --popover-foreground: oklch(0.96 0.01 230);
+  --secondary: oklch(0.24 0.03 260);
+  --secondary-foreground: oklch(0.92 0.01 230);
+  --muted: oklch(0.26 0.03 260);
+  --muted-foreground: oklch(0.72 0.04 230);
+  --accent: oklch(0.28 0.05 260);
+  --accent-foreground: oklch(0.96 0.01 230);
+  --destructive: oklch(0.58 0.22 22);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.91 0.005 80);
-  --input: oklch(0.91 0.005 80);
-  --ring: oklch(0.55 0.14 160);
-  --sidebar: oklch(0.98 0.003 80);
-  --sidebar-foreground: oklch(0.22 0.01 60);
-  --sidebar-accent: oklch(0.955 0.005 80);
-  --sidebar-accent-foreground: oklch(0.22 0.01 60);
-  --sidebar-border: oklch(0.91 0.005 80);
-  --sidebar-ring: oklch(0.55 0.14 160);
+  --border: oklch(0.32 0.04 260);
+  --input: oklch(0.32 0.04 260);
+  --ring: oklch(0.72 0.14 195);
+  --sidebar: oklch(0.16 0.028 260);
+  --sidebar-foreground: oklch(0.96 0.01 230);
+  --sidebar-accent: oklch(0.26 0.04 260);
+  --sidebar-accent-foreground: oklch(0.96 0.01 230);
+  --sidebar-border: oklch(0.32 0.04 260);
+  --sidebar-ring: oklch(0.72 0.14 195);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01" on, "cv01" on;
   }
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Outfit', system-ui, sans-serif;
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 100% 80% at 100% -15%, oklch(0.72 0.12 195 / 0.18), transparent 55%),
+      radial-gradient(ellipse 70% 50% at -10% 110%, oklch(0.68 0.14 165 / 0.14), transparent 50%),
+      linear-gradient(180deg, oklch(0.99 0.008 220) 0%, oklch(0.96 0.012 220) 100%);
   }
+
+  .dark body::before {
+    background:
+      radial-gradient(ellipse 90% 70% at 95% 0%, oklch(0.45 0.12 195 / 0.35), transparent 55%),
+      radial-gradient(ellipse 60% 45% at 0% 100%, oklch(0.4 0.1 165 / 0.2), transparent 50%),
+      linear-gradient(165deg, oklch(0.12 0.03 270) 0%, oklch(0.16 0.025 260) 45%, oklch(0.14 0.02 250) 100%);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   [type="button"]:not(:disabled),
@@ -140,25 +212,102 @@
     }
   }
 
-  /* Phase badge colors */
-  .badge-mudas {
-    background-color: oklch(0.92 0.08 160);
-    color: oklch(0.35 0.12 160);
-    border: 1px solid oklch(0.82 0.1 160);
-  }
-  .badge-vegetativa {
-    background-color: oklch(0.92 0.06 220);
-    color: oklch(0.35 0.1 220);
-    border: 1px solid oklch(0.82 0.08 220);
-  }
-  .badge-maturacao {
-    background-color: oklch(0.93 0.06 50);
-    color: oklch(0.4 0.12 50);
-    border: 1px solid oklch(0.85 0.08 50);
+  /* Superfície tipo painel / vidro */
+  .surface-panel {
+    @apply rounded-xl border border-border/80 bg-card/85 backdrop-blur-md shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset,0_24px_48px_-24px_rgba(15,23,42,0.12)];
   }
 
-  /* Phase card accents */
-  .card-mudas { border-left: 4px solid oklch(0.65 0.19 160); }
-  .card-vegetativa { border-left: 4px solid oklch(0.55 0.14 220); }
-  .card-maturacao { border-left: 4px solid oklch(0.62 0.18 50); }
+  .dark .surface-panel {
+    @apply shadow-[0_0_0_1px_rgba(255,255,255,0.05)_inset,0_24px_56px_-28px_rgba(0,0,0,0.55)];
+  }
+
+  /* Phase badges — borda luminosa suave */
+  .badge-mudas {
+    background: linear-gradient(135deg, oklch(0.94 0.07 165), oklch(0.9 0.09 165));
+    color: oklch(0.32 0.11 165);
+    border: 1px solid oklch(0.78 0.1 165);
+    box-shadow: 0 0 20px -8px oklch(0.65 0.15 165 / 0.5);
+  }
+
+  .badge-vegetativa {
+    background: linear-gradient(135deg, oklch(0.94 0.065 158), oklch(0.9 0.085 158));
+    color: oklch(0.32 0.1 158);
+    border: 1px solid oklch(0.78 0.1 158);
+    box-shadow: 0 0 20px -8px oklch(0.6 0.14 158 / 0.42);
+  }
+
+  .badge-maturacao {
+    background: linear-gradient(135deg, oklch(0.94 0.06 152), oklch(0.89 0.08 152));
+    color: oklch(0.33 0.095 152);
+    border: 1px solid oklch(0.8 0.095 152);
+    box-shadow: 0 0 18px -10px oklch(0.55 0.12 152 / 0.32);
+  }
+
+  .card-mudas {
+    border-left: 4px solid oklch(0.62 0.17 165);
+    box-shadow: -4px 0 24px -12px oklch(0.62 0.17 165 / 0.4);
+  }
+
+  .card-vegetativa {
+    border-left: 4px solid oklch(0.60 0.15 158);
+    box-shadow: -4px 0 24px -12px oklch(0.60 0.15 158 / 0.32);
+  }
+
+  .card-maturacao {
+    border-left: 4px solid oklch(0.54 0.13 152);
+    box-shadow: -4px 0 24px -12px oklch(0.54 0.13 152 / 0.28);
+  }
+
+  /* Header fixo — usado pelo componente Header */
+  .app-header-shell {
+    @apply sticky top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-xl backdrop-saturate-150;
+    box-shadow:
+      0 1px 0 0 oklch(1 0 0 / 0.06) inset,
+      0 8px 32px -16px oklch(0.35 0.08 260 / 0.2);
+  }
+
+  .dark .app-header-shell {
+    box-shadow:
+      0 1px 0 0 oklch(1 0 0 / 0.05) inset,
+      0 12px 40px -20px oklch(0 0 0 / 0.65);
+  }
+
+  .app-nav-pill {
+    @apply flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-all duration-200 whitespace-nowrap;
+  }
+
+  .app-nav-pill-active {
+    @apply bg-primary/15 text-primary;
+    box-shadow: 0 0 24px -6px oklch(0.52 0.14 195 / 0.45);
+  }
+
+  .dark .app-nav-pill-active {
+    box-shadow: 0 0 28px -4px oklch(0.72 0.14 195 / 0.35);
+  }
+
+  .app-logo-mark {
+    background: linear-gradient(145deg, oklch(0.58 0.16 195), oklch(0.52 0.12 165));
+    box-shadow:
+      0 0 0 1px oklch(1 0 0 / 0.2) inset,
+      0 8px 24px -8px oklch(0.52 0.14 195 / 0.55);
+  }
+}
+
+/* Verde “cultivo” legível em fundos escuros (use nas páginas em vez de só text-emerald-600/700). */
+@layer utilities {
+  .text-fg-emerald {
+    @apply text-emerald-800 dark:text-emerald-200;
+  }
+
+  .text-fg-emerald-muted {
+    @apply text-emerald-700 dark:text-emerald-300;
+  }
+
+  .text-fg-emerald-soft {
+    @apply text-emerald-600 dark:text-emerald-400;
+  }
+
+  .text-fg-green-muted {
+    @apply text-green-700 dark:text-green-300;
+  }
 }

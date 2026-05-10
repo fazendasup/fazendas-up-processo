@@ -2970,6 +2970,30 @@ export async function ensureCiclosDosagemColumn(): Promise<void> {
   }
 }
 
+/**
+ * Coloca `users.role` em VARCHAR (mig. 0027). ENUM antigo sem `platform_admin` gerava 1265 no bootstrap.
+ * Idempotente: repetir o mesmo MODIFY é seguro.
+ */
+export async function ensureUsersRoleVarchar(): Promise<void> {
+  const dbConn = await getDb();
+  if (!dbConn) {
+    console.warn("[Database] ensureUsersRoleVarchar: sem ligação à BD.");
+    return;
+  }
+  try {
+    await dbConn.execute(
+      sql.raw(
+        "ALTER TABLE `users` MODIFY COLUMN `role` VARCHAR(32) NOT NULL DEFAULT 'user'",
+      ),
+    );
+    console.log("[Database] users.role = VARCHAR(32) (bootstrap/login com platform_admin OK).");
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
+    console.error("[Database] ensureUsersRoleVarchar:", err);
+  }
+}
+
 /** Garante coluna `cultivoStatus` em `perfis` (migração 0020) — microverdes iluminação sem furos. */
 export async function ensurePerfisCultivoStatusColumn(): Promise<void> {
   const db = await getDb();
@@ -3402,8 +3426,19 @@ export async function bulkInsertFasesConfig(data: InsertFaseConfig[]) {
 export async function getUserByEmail(email: string) {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+  const norm = email.trim().toLowerCase();
+  const rows = await db
+    .select()
+    .from(users)
+    .where(sql`LOWER(TRIM(${users.email})) = ${norm}`)
+    .orderBy(desc(users.id));
+  if (rows.length === 0) return undefined;
+  /** Várias linhas com o mesmo email são possíveis (schema antigo); login deve usar uma com senha válida. */
+  const withHash = rows.find((r) => {
+    const h = r.passwordHash;
+    return h != null && String(h).trim().length > 0;
+  });
+  return withHash ?? rows[0];
 }
 
 export async function getUserById(id: number) {
@@ -3438,6 +3473,13 @@ export async function updateUserPassword(id: number, passwordHash: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(users).set({ passwordHash }).where(eq(users.id, id));
+}
+
+export async function updateUserEmail(id: number, email: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const canon = email.trim().toLowerCase();
+  await db.update(users).set({ email: canon }).where(eq(users.id, id));
 }
 
 export async function deleteUser(id: number) {

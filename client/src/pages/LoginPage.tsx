@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { setActiveProjetoId } from '@/lib/projeto-header';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Sprout, AlertCircle } from 'lucide-react';
+import { Link } from 'wouter';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -13,8 +15,8 @@ export default function LoginPage() {
 
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: () => {
-      // Recarregar a página para que o auth.me pegue a sessão
-      window.location.href = '/';
+      setActiveProjetoId(null);
+      window.location.href = "/projetos";
     },
     onError: (err) => {
       setError(err.message || 'Erro ao fazer login');
@@ -50,9 +52,7 @@ export default function LoginPage() {
         <Card className="shadow-lg border-0">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-lg">Entrar</CardTitle>
-            <CardDescription>
-              Acesse com seu email e senha
-            </CardDescription>
+            <CardDescription>Acesse com seu email e senha</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -108,8 +108,14 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          Solicite seu acesso ao administrador do sistema
+        <p className="text-center text-xs text-muted-foreground mt-6 space-y-2">
+          <span className="block">Solicite seu acesso ao administrador do sistema</span>
+          <Link
+            href="/privacidade"
+            className="block text-emerald-700 dark:text-emerald-400 underline underline-offset-2 hover:text-emerald-800"
+          >
+            Privacidade e dados pessoais
+          </Link>
         </p>
       </div>
     </div>

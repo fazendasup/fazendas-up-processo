@@ -196,7 +196,7 @@ export default function ManutencaoPage() {
 
         {/* Abertas */}
         {abertas.length > 0 && (
-          <Section title="Abertas" count={abertas.length} icon={<AlertTriangle className="w-4 h-4 text-amber-600" />}>
+          <Section title="Abertas" count={abertas.length} icon={<AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />}>
             {abertas.map((m) => (
               <ManutencaoCard
                 key={m.id}
@@ -226,7 +226,7 @@ export default function ManutencaoPage() {
         )}
 
         {/* Concluídas */}
-        <Section title="Concluídas" count={concluidas.length} icon={<CheckCircle2 className="w-4 h-4 text-emerald-600" />}>
+        <Section title="Concluídas" count={concluidas.length} icon={<CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}>
           {concluidas.length === 0 && data.manutencoes.length === 0 ? (
             <div className="text-center py-12 bg-card rounded-xl border">
               <Wrench className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
@@ -339,7 +339,7 @@ function ManutencaoCard({
             {m.dataConclusao && <span>Concluída: {formatarData(m.dataConclusao)}</span>}
           </div>
           {m.solucao && (
-            <p className="text-[10px] text-emerald-700 mt-1 italic">Solução: {m.solucao}</p>
+            <p className="text-[10px] text-emerald-700 dark:text-emerald-300 mt-1 italic">Solução: {m.solucao}</p>
           )}
         </div>
         <div className="flex items-center gap-1 shrink-0">
@@ -349,7 +349,7 @@ function ManutencaoCard({
             </Button>
           )}
           {m.status !== 'concluida' && onConcluir && (
-            <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 text-emerald-600" onClick={() => onConcluir(m.id)}>
+            <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 text-emerald-600 dark:text-emerald-400" onClick={() => onConcluir(m.id)}>
               <CheckCircle2 className="w-3 h-3" /> Concluir
             </Button>
           )}

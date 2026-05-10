@@ -1,19 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
+import { useMockProjetoResolve, withProjetoBase } from "./test-projeto-trpc";
+
+useMockProjetoResolve();
 
 // ---- Context helpers ----
 
 function createPublicContext(): TrpcContext {
   return {
     user: null,
+    projetoId: null,
+    projetoTipo: null,
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
-    res: { clearCookie: () => {} } as TrpcContext["res"],
+    res: { clearCookie: () => {}, cookie: () => {} } as TrpcContext["res"],
   };
 }
 
 function createOperatorContext(): TrpcContext {
-  return {
+  return withProjetoBase({
     user: {
       id: 2,
       openId: "test-operator",
@@ -26,12 +31,12 @@ function createOperatorContext(): TrpcContext {
       lastSignedIn: new Date(),
     },
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
-    res: { clearCookie: () => {} } as TrpcContext["res"],
-  };
+    res: { clearCookie: () => {}, cookie: () => {} } as TrpcContext["res"],
+  });
 }
 
 function createAdminContext(): TrpcContext {
-  return {
+  return withProjetoBase({
     user: {
       id: 1,
       openId: "test-admin",
@@ -44,14 +49,14 @@ function createAdminContext(): TrpcContext {
       lastSignedIn: new Date(),
     },
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
-    res: { clearCookie: () => {} } as TrpcContext["res"],
-  };
+    res: { clearCookie: () => {}, cookie: () => {} } as TrpcContext["res"],
+  });
 }
 
 // Helper: get a valid variedadeId from the DB
 async function getFirstVariedadeId(): Promise<number | null> {
-  const publicCaller = appRouter.createCaller(createPublicContext());
-  const data = await publicCaller.fazenda.loadAll();
+  const adminCaller = appRouter.createCaller(createAdminContext());
+  const data = await adminCaller.fazenda.loadAll();
   if (data.variedades && data.variedades.length > 0) {
     return data.variedades[0].id;
   }
@@ -61,8 +66,8 @@ async function getFirstVariedadeId(): Promise<number | null> {
 // ---- Receitas Tests ----
 
 describe("receitas", () => {
-  it("list returns an array (public)", async () => {
-    const caller = appRouter.createCaller(createPublicContext());
+  it("list returns an array (operador + projeto)", async () => {
+    const caller = appRouter.createCaller(createOperatorContext());
     const result = await caller.receitas.list();
     expect(Array.isArray(result)).toBe(true);
   });
@@ -177,16 +182,16 @@ describe("tarefas", () => {
 // ---- Registros de Colheita Tests ----
 
 describe("registrosColheita", () => {
-  it("list returns an array (public)", async () => {
-    const caller = appRouter.createCaller(createPublicContext());
+  it("list returns an array (operador + projeto)", async () => {
+    const caller = appRouter.createCaller(createOperatorContext());
     const result = await caller.registrosColheita.list();
     expect(Array.isArray(result)).toBe(true);
   });
 
   it("operator can create a registro de colheita", async () => {
     const caller = appRouter.createCaller(createOperatorContext());
-    const publicCaller = appRouter.createCaller(createPublicContext());
-    const data = await publicCaller.fazenda.loadAll();
+    const adminCaller = appRouter.createCaller(createAdminContext());
+    const data = await adminCaller.fazenda.loadAll();
 
     if (data.torres.length > 0 && data.andares.length > 0) {
       const torre = data.torres[0];
@@ -222,10 +227,10 @@ describe("registrosColheita", () => {
   });
 
   it("listByAndar returns records for a specific andar", async () => {
-    const publicCaller = appRouter.createCaller(createPublicContext());
-    const data = await publicCaller.fazenda.loadAll();
+    const opCaller = appRouter.createCaller(createOperatorContext());
+    const data = await opCaller.fazenda.loadAll();
     if (data.andares.length > 0) {
-      const result = await publicCaller.registrosColheita.listByAndar({
+      const result = await opCaller.registrosColheita.listByAndar({
         andarId: data.andares[0].id,
       });
       expect(Array.isArray(result)).toBe(true);

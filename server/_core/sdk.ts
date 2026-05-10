@@ -180,11 +180,15 @@ class SDKServer {
     openId: string,
     options: { expiresInMs?: number; name?: string } = {}
   ): Promise<string> {
+    const name =
+      options.name && String(options.name).trim().length > 0
+        ? String(options.name).trim()
+        : "Usuário";
     return this.signSession(
       {
         openId,
         appId: ENV.appId,
-        name: options.name || "",
+        name,
       },
       options
     );
@@ -227,19 +231,20 @@ class SDKServer {
       });
       const { openId, appId, name } = payload as Record<string, unknown>;
 
-      if (
-        !isNonEmptyString(openId) ||
-        !isNonEmptyString(appId) ||
-        !isNonEmptyString(name)
-      ) {
-        console.warn("[Auth] Session payload missing required fields");
+      if (!isNonEmptyString(openId) || !isNonEmptyString(appId)) {
+        console.warn("[Auth] Session payload missing openId/appId");
         return null;
       }
+
+      const safeName =
+        isNonEmptyString(name) && String(name).trim().length > 0
+          ? String(name).trim()
+          : "Usuário";
 
       return {
         openId,
         appId,
-        name,
+        name: safeName,
       };
     } catch (error) {
       console.warn("[Auth] Session verification failed", String(error));

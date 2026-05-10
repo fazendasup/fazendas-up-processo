@@ -18,10 +18,13 @@ import {
   DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Users, ShieldCheck, User, Loader2, Clock, Plus, KeyRound, Trash2, AlertCircle,
+  Users, ShieldCheck, User, Loader2, Clock, Plus, KeyRound, Trash2, AlertCircle, Layers,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { useRole } from '@/hooks/useRole';
+
+type GlobalAppRole = 'user' | 'admin' | 'platform_admin';
 
 export default function UsersPage() {
   return (
@@ -32,6 +35,7 @@ export default function UsersPage() {
 }
 
 function UsersContent() {
+  const { isPlatformAdmin } = useRole();
   const { data: users, isLoading, refetch } = trpc.users.list.useQuery();
   const updateRole = trpc.users.updateRole.useMutation({
     onSuccess: () => { refetch(); toast.success('Permissão atualizada!'); },
@@ -55,7 +59,7 @@ function UsersContent() {
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [newRole, setNewRole] = useState<'user' | 'admin'>('user');
+  const [newRole, setNewRole] = useState<GlobalAppRole>('user');
   const [createError, setCreateError] = useState('');
 
   // Estado do dialog de reset de senha
@@ -63,13 +67,18 @@ function UsersContent() {
   const [resetNewPassword, setResetNewPassword] = useState('');
   const [resetError, setResetError] = useState('');
 
-  const handleRoleChange = (userId: number, newRole: 'user' | 'admin') => {
-    if (!window.confirm(
-      newRole === 'admin'
-        ? 'Promover este usuário a Administrador? Ele terá acesso total ao sistema.'
-        : 'Rebaixar este usuário a Operador? Ele perderá acesso às configurações.'
-    )) return;
-    updateRole.mutate({ id: userId, role: newRole });
+  const handleRoleChange = (userId: number, next: GlobalAppRole) => {
+    let msg: string;
+    if (next === 'platform_admin') {
+      msg =
+        'Promover a Equipa da plataforma? Esta conta poderá gerir módulos contratados (estoque, automação, etc.) para todos os projetos.';
+    } else if (next === 'admin') {
+      msg = 'Promover este utilizador a Administrador operacional? Terá acesso a configurações e gestão de utilizadores.';
+    } else {
+      msg = 'Rebaixar a Operador? Perderá acesso às áreas administrativas.';
+    }
+    if (!window.confirm(msg)) return;
+    updateRole.mutate({ id: userId, role: next });
   };
 
   const handleCreate = () => {
@@ -186,13 +195,20 @@ function UsersContent() {
                 </div>
                 <div className="space-y-2">
                   <Label>Perfil</Label>
-                  <Select value={newRole} onValueChange={(v) => setNewRole(v as 'user' | 'admin')} disabled={createUser.isPending}>
+                  <Select
+                    value={newRole}
+                    onValueChange={(v) => setNewRole(v as GlobalAppRole)}
+                    disabled={createUser.isPending}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="user">Operador</SelectItem>
-                      <SelectItem value="admin">Administrador</SelectItem>
+                      <SelectItem value="admin">Administrador operacional</SelectItem>
+                      {isPlatformAdmin && (
+                        <SelectItem value="platform_admin">Equipa da plataforma</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -220,21 +236,30 @@ function UsersContent() {
         </div>
 
         {/* Legenda de roles */}
-        <div className="flex gap-4 mb-6 p-4 bg-card rounded-xl border">
+        <div className="flex flex-wrap gap-4 mb-6 p-4 bg-card rounded-xl border">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-amber-600" />
+            <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400" />
             <div>
-              <p className="text-xs font-semibold">Administrador</p>
-              <p className="text-[10px] text-muted-foreground">Acesso total: config, variedades, ciclos, analytics, gestão de usuários</p>
+              <p className="text-xs font-semibold">Administrador operacional</p>
+              <p className="text-[10px] text-muted-foreground">Config, variedades, ciclos, analytics, gestão de utilizadores</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <User className="w-4 h-4 text-blue-600" />
             <div>
               <p className="text-xs font-semibold">Operador</p>
-              <p className="text-[10px] text-muted-foreground">Dashboard + registrar medições, plantio, colheita, manutenção, germinação</p>
+              <p className="text-[10px] text-muted-foreground">Dashboard + operações (medições, plantio, colheita, etc.)</p>
             </div>
           </div>
+          {isPlatformAdmin && (
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+              <div>
+                <p className="text-xs font-semibold">Equipa da plataforma</p>
+                <p className="text-[10px] text-muted-foreground">Contratação de módulos por projeto (além de permissões de admin operacional)</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {isLoading ? (
@@ -258,10 +283,22 @@ function UsersContent() {
                 className="p-4 bg-card rounded-xl border flex items-center justify-between gap-4"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                    u.role === 'admin' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
-                  }`}>
-                    {u.role === 'admin' ? <ShieldCheck className="w-5 h-5" /> : <User className="w-5 h-5" />}
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                      u.role === 'platform_admin'
+                        ? 'bg-violet-100 text-violet-800 dark:bg-violet-950/50 dark:text-violet-300'
+                        : u.role === 'admin'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-blue-100 text-blue-700'
+                    }`}
+                  >
+                    {u.role === 'platform_admin' ? (
+                      <Layers className="w-5 h-5" />
+                    ) : u.role === 'admin' ? (
+                      <ShieldCheck className="w-5 h-5" />
+                    ) : (
+                      <User className="w-5 h-5" />
+                    )}
                   </div>
                   <div className="min-w-0">
                     <p className="font-semibold text-sm truncate">{u.name || 'Sem nome'}</p>
@@ -274,20 +311,29 @@ function UsersContent() {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  {/* Role selector */}
-                  <Select
-                    value={u.role}
-                    onValueChange={(val) => handleRoleChange(u.id, val as 'user' | 'admin')}
-                    disabled={updateRole.isPending}
-                  >
-                    <SelectTrigger className="w-[130px] h-9 text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="user">Operador</SelectItem>
-                      <SelectItem value="admin">Administrador</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {/* Role selector — conta plataforma só pode ser alterada por outro platform_admin */}
+                  {!isPlatformAdmin && u.role === 'platform_admin' ? (
+                    <span className="text-xs font-medium text-violet-700 dark:text-violet-300 px-2 py-1.5 rounded-md border border-violet-200 dark:border-violet-800 whitespace-nowrap">
+                      Equipa da plataforma
+                    </span>
+                  ) : (
+                    <Select
+                      value={u.role}
+                      onValueChange={(val) => handleRoleChange(u.id, val as GlobalAppRole)}
+                      disabled={updateRole.isPending}
+                    >
+                      <SelectTrigger className="w-[min(100%,11rem)] h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">Operador</SelectItem>
+                        <SelectItem value="admin">Administrador operacional</SelectItem>
+                        {isPlatformAdmin && (
+                          <SelectItem value="platform_admin">Equipa da plataforma</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  )}
 
                   {/* Reset password */}
                   <Button

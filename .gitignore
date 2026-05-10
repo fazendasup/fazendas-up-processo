@@ -7,6 +7,12 @@ dist/
 build/
 *.dist
 
+# Porta efetiva em dev (gerada ao subir o servidor; usada por pnpm tunnel)
+.dev-server-port
+
+# URL publica atual do ngrok (regravada a cada `pnpm tunnel`)
+.ngrok-public-url
+
 # Environment variables
 .env
 .env.local
@@ -49,6 +55,10 @@ pids
 # Coverage directory used by tools like istanbul
 coverage/
 *.lcov
+
+# Playwright
+playwright-report/
+test-results/
 
 # nyc test coverage
 .nyc_output
@@ -109,5 +119,5 @@ temp/
 # Webdev artifacts (checkpoint zips, migrations, etc.)
 .webdev/
 
-# Manus version file (auto-generated, not part of source)
-client/public/__manus__/version.json
+# Artefactos locais de debug (se voltarem a ser gerados)
+.manus-logs/

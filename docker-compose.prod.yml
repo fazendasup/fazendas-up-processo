@@ -1,0 +1,32 @@
+# Referência: app + MySQL gerido na mesma rede Docker. Em cloud costuma usar BD gerido (RDS, etc.) — só ligue DATABASE_URL.
+services:
+  app:
+    build: .
+    ports:
+      - "${PORT:-3456}:3456"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      NODE_ENV: production
+      PORT: "3456"
+      HOST: "0.0.0.0"
+      RATE_LIMIT_MAX_PER_MINUTE: ${RATE_LIMIT_MAX_PER_MINUTE:-500}
+    depends_on:
+      mysql:
+        condition: service_healthy
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: fazendas_up
+      MYSQL_USER: fazendas
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change_me}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_change_me}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot_change_me"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+volumes:
+  mysql_data: {}

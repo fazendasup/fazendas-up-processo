@@ -16,16 +16,39 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart';
 import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, ReferenceLine, Area, AreaChart,
-  ResponsiveContainer,
-} from 'recharts';
+  Line,
+  LineChart,
+  BarChart,
+  Bar,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ReferenceLine,
+  ReferenceArea,
+  ComposedChart,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  ScatterChart,
+  Scatter,
+  ZAxis,
+} from "recharts";
+import {
+  ChartPlotChrome,
+  HorizontalLollipopShape,
+  ChartEmptyWell,
+  shouldUseRadar,
+  ANALYTICS_MARGIN,
+} from "@/components/analytics/analyticsChartUi";
 import {
   Activity, BarChart3, Sprout, Wrench, TrendingUp, Droplet,
   Scissors, AlertTriangle, Clock, Target, Leaf,
   FileDown, FileText, CheckCircle2, XCircle,
 } from 'lucide-react';
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback } from "react";
 import { trpc } from '@/lib/trpc';
 import type { FazendaData, Fase, CaixaAgua, MedicaoCaixa } from '@/lib/types';
 import { FASES_CONFIG } from '@/lib/types';
@@ -77,8 +100,8 @@ const COLORS = {
   ecRange: '#dcfce7',  // green-100
   phRange: '#dbeafe',  // blue-100
   mudas: '#22c55e',
-  vegetativa: '#3b82f6',
-  maturacao: '#f59e0b',
+  vegetativa: '#16a34a',
+  maturacao: '#15803d',
   success: '#22c55e',
   warning: '#f59e0b',
   danger: '#ef4444',
@@ -329,35 +352,40 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
                 Evolução EC (mS/cm)
               </CardTitle>
               <CardDescription className="text-xs">
-                Faixa ideal: {idealRange.ecMin} - {idealRange.ecMax}
+                Faixa ideal sombreada · série em degrau (leitura tipo painel SCADA)
               </CardDescription>
             </CardHeader>
             <CardContent>
+              <ChartPlotChrome>
               <ChartContainer config={ecChartConfig} className="h-[280px] w-full">
-                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="ecGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={COLORS.ec} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={COLORS.ec} stopOpacity={0.05} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <ComposedChart data={chartData} margin={{ ...ANALYTICS_MARGIN, left: 2, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
                   <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} domain={['auto', 'auto']} />
-                  <ReferenceLine y={idealRange.ecMin} stroke={COLORS.ec} strokeDasharray="5 5" strokeOpacity={0.5} />
-                  <ReferenceLine y={idealRange.ecMax} stroke={COLORS.ec} strokeDasharray="5 5" strokeOpacity={0.5} />
+                  <YAxis tick={{ fontSize: 11 }} domain={["auto", "auto"]} />
+                  <ReferenceArea
+                    y1={idealRange.ecMin}
+                    y2={idealRange.ecMax}
+                    fill={COLORS.ecRange}
+                    fillOpacity={0.65}
+                    strokeOpacity={0}
+                    ifOverflow="extendDomain"
+                  />
+                  <ReferenceLine y={idealRange.ecMin} stroke={COLORS.ec} strokeDasharray="4 4" strokeOpacity={0.45} />
+                  <ReferenceLine y={idealRange.ecMax} stroke={COLORS.ec} strokeDasharray="4 4" strokeOpacity={0.45} />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Area
-                    type="monotone"
+                  <Line
+                    type="stepAfter"
                     dataKey="ec"
                     stroke={COLORS.ec}
-                    strokeWidth={2}
-                    fill="url(#ecGradient)"
-                    dot={{ r: 3, fill: COLORS.ec }}
-                    activeDot={{ r: 5 }}
+                    strokeWidth={2.5}
+                    strokeLinecap="square"
+                    dot={{ r: 4, fill: COLORS.ec, stroke: "hsl(var(--background))", strokeWidth: 2 }}
+                    activeDot={{ r: 6 }}
+                    connectNulls
                   />
-                </AreaChart>
+                </ComposedChart>
               </ChartContainer>
+              </ChartPlotChrome>
             </CardContent>
           </Card>
 
@@ -369,35 +397,40 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
                 Evolução pH
               </CardTitle>
               <CardDescription className="text-xs">
-                Faixa ideal: {idealRange.phMin} - {idealRange.phMax}
+                Faixa ideal sombreada · série em degrau
               </CardDescription>
             </CardHeader>
             <CardContent>
+              <ChartPlotChrome>
               <ChartContainer config={phChartConfig} className="h-[280px] w-full">
-                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="phGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={COLORS.ph} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={COLORS.ph} stopOpacity={0.05} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <ComposedChart data={chartData} margin={{ ...ANALYTICS_MARGIN, left: 2, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
                   <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} domain={['auto', 'auto']} />
-                  <ReferenceLine y={idealRange.phMin} stroke={COLORS.ph} strokeDasharray="5 5" strokeOpacity={0.5} />
-                  <ReferenceLine y={idealRange.phMax} stroke={COLORS.ph} strokeDasharray="5 5" strokeOpacity={0.5} />
+                  <YAxis tick={{ fontSize: 11 }} domain={["auto", "auto"]} />
+                  <ReferenceArea
+                    y1={idealRange.phMin}
+                    y2={idealRange.phMax}
+                    fill={COLORS.phRange}
+                    fillOpacity={0.55}
+                    strokeOpacity={0}
+                    ifOverflow="extendDomain"
+                  />
+                  <ReferenceLine y={idealRange.phMin} stroke={COLORS.ph} strokeDasharray="4 4" strokeOpacity={0.45} />
+                  <ReferenceLine y={idealRange.phMax} stroke={COLORS.ph} strokeDasharray="4 4" strokeOpacity={0.45} />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Area
-                    type="monotone"
+                  <Line
+                    type="stepAfter"
                     dataKey="ph"
                     stroke={COLORS.ph}
-                    strokeWidth={2}
-                    fill="url(#phGradient)"
-                    dot={{ r: 3, fill: COLORS.ph }}
-                    activeDot={{ r: 5 }}
+                    strokeWidth={2.5}
+                    strokeLinecap="square"
+                    dot={{ r: 4, fill: COLORS.ph, stroke: "hsl(var(--background))", strokeWidth: 2 }}
+                    activeDot={{ r: 6 }}
+                    connectNulls
                   />
-                </AreaChart>
+                </ComposedChart>
               </ChartContainer>
+              </ChartPlotChrome>
             </CardContent>
           </Card>
         </div>
@@ -457,6 +490,8 @@ function ProducaoSection({ data, period }: { data: FazendaData; period: PeriodFi
   const totalTransplantadas = transplantios.reduce((s, t) => s + t.quantidadeTransplantada, 0);
   const totalDesperdicio = transplantios.reduce((s, t) => s + t.quantidadeDesperdicio, 0);
 
+  const usarBarrasPorDia = porDia.length > 0 && porDia.length <= 5;
+
   const barConfig: ChartConfig = {
     quantidade: { label: 'Transplantadas', color: COLORS.mudas },
   };
@@ -480,41 +515,82 @@ function ProducaoSection({ data, period }: { data: FazendaData; period: PeriodFi
         <EmptyState icon={Scissors} message="Nenhum transplantio registrado no período selecionado" />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Timeline */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Transplantios por Dia</CardTitle>
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full shrink-0" style={{ background: COLORS.mudas }} />
+                Transplantios por dia
+              </CardTitle>
+              <CardDescription className="text-xs">
+                {usarBarrasPorDia
+                  ? "Barras por dia — leitura mais clara com poucos dias no período"
+                  : "Histograma em degrau — volume acumulado por dia"}
+              </CardDescription>
             </CardHeader>
             <CardContent>
+              <ChartPlotChrome>
               <ChartContainer config={barConfig} className="h-[280px] w-full">
-                <BarChart data={porDia} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="dia" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="quantidade" fill={COLORS.mudas} radius={[4, 4, 0, 0]} />
-                </BarChart>
+                {usarBarrasPorDia ? (
+                  <BarChart data={porDia} margin={{ ...ANALYTICS_MARGIN, left: 2, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
+                    <XAxis dataKey="dia" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} domain={[0, "auto"]} allowDecimals={false} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar
+                      dataKey="quantidade"
+                      fill={COLORS.mudas}
+                      radius={[8, 8, 0, 0]}
+                      maxBarSize={56}
+                    />
+                  </BarChart>
+                ) : (
+                  <LineChart data={porDia} margin={{ ...ANALYTICS_MARGIN, left: 2, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
+                    <XAxis dataKey="dia" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} domain={[0, "auto"]} allowDecimals={false} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Line
+                      type="stepAfter"
+                      dataKey="quantidade"
+                      stroke={COLORS.mudas}
+                      strokeWidth={2.5}
+                      dot={{ r: 3, fill: COLORS.mudas }}
+                      activeDot={{ r: 5 }}
+                    />
+                  </LineChart>
+                )}
               </ChartContainer>
+              </ChartPlotChrome>
             </CardContent>
           </Card>
 
-          {/* By variety */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Por Variedade</CardTitle>
+              <CardTitle className="text-sm font-medium flex items-center gap-2 flex-wrap">
+                <span className="w-3 h-3 rounded-full shrink-0" style={{ background: COLORS.mudas }} />
+                <span className="w-3 h-3 rounded-full shrink-0" style={{ background: COLORS.danger }} />
+                Por variedade
+              </CardTitle>
+              <CardDescription className="text-xs">Barras empilhadas 100% operacional (cores chapadas)</CardDescription>
             </CardHeader>
             <CardContent>
+              <ChartPlotChrome>
               <ChartContainer config={barVarConfig} className="h-[280px] w-full">
-                <BarChart data={porVariedade} layout="vertical" margin={{ top: 10, right: 10, left: 60, bottom: 0 }}>
+                <BarChart
+                  data={porVariedade}
+                  layout="vertical"
+                  margin={{ ...ANALYTICS_MARGIN, left: 60, bottom: 4 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis type="number" tick={{ fontSize: 11 }} />
                   <YAxis type="category" dataKey="nome" tick={{ fontSize: 10 }} width={55} />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <ChartLegend content={<ChartLegendContent />} />
-                  <Bar dataKey="transplantadas" fill={COLORS.mudas} radius={[0, 4, 4, 0]} stackId="a" />
-                  <Bar dataKey="desperdicio" fill={COLORS.danger} radius={[0, 4, 4, 0]} stackId="a" />
+                  <Bar dataKey="transplantadas" stackId="a" fill={COLORS.mudas} radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="desperdicio" stackId="a" fill={COLORS.danger} radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ChartContainer>
+              </ChartPlotChrome>
             </CardContent>
           </Card>
         </div>
@@ -565,15 +641,33 @@ function GerminacaoSection({ data, period }: { data: FazendaData; period: Period
   const taxaGeral = totalSementes > 0 ? Math.round((totalGerminadas / totalSementes) * 100) : 0;
 
   const barConfig: ChartConfig = {
-    taxa: { label: 'Taxa Germinação (%)', color: COLORS.mudas },
+    taxa: { label: "Taxa germinação (%)", color: COLORS.mudas },
   };
 
   const statusLabels: Record<string, string> = {
-    germinando: 'Germinando',
-    pronto: 'Pronto',
-    transplantado: 'Transplantado',
-    cancelado: 'Cancelado',
+    germinando: "Germinando",
+    pronto: "Pronto",
+    transplantado: "Transplantado",
+    cancelado: "Cancelado",
   };
+
+  const radarStatusConfig: ChartConfig = {
+    lotes: { label: "Lotes", color: COLORS.mudas },
+  };
+
+  const radarStatusData = useMemo(
+    () =>
+      statusDist.map((s) => ({
+        subject: statusLabels[s.status] ?? s.status,
+        lotes: s.count,
+      })),
+    [statusDist]
+  );
+
+  const showStatusRadar = useMemo(
+    () => shouldUseRadar(radarStatusData.map((r) => ({ value: r.lotes }))),
+    [radarStatusData]
+  );
 
   return (
     <div className="space-y-4">
@@ -591,51 +685,89 @@ function GerminacaoSection({ data, period }: { data: FazendaData; period: Period
           {/* Taxa por variedade */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Taxa de Germinação por Variedade</CardTitle>
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full shrink-0" style={{ background: COLORS.success }} />
+                <span className="w-3 h-3 rounded-full shrink-0" style={{ background: COLORS.warning }} />
+                <span className="w-3 h-3 rounded-full shrink-0" style={{ background: COLORS.danger }} />
+                Taxa por variedade (lollipop horizontal)
+              </CardTitle>
+              <CardDescription className="text-xs">Verde ≥80% · Âmbar 60–79% · Vermelho &lt;60%</CardDescription>
             </CardHeader>
             <CardContent>
+              <ChartPlotChrome>
               <ChartContainer config={barConfig} className="h-[280px] w-full">
-                <BarChart data={porVariedade} layout="vertical" margin={{ top: 10, right: 10, left: 60, bottom: 0 }}>
+                <BarChart
+                  data={porVariedade}
+                  layout="vertical"
+                  margin={{ ...ANALYTICS_MARGIN, left: 60, bottom: 4 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
                   <YAxis type="category" dataKey="nome" tick={{ fontSize: 10 }} width={55} />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="taxa" radius={[0, 4, 4, 0]}>
-                    {porVariedade.map((entry, i) => (
-                      <Cell key={i} fill={entry.taxa >= 80 ? COLORS.success : entry.taxa >= 60 ? COLORS.warning : COLORS.danger} />
-                    ))}
-                  </Bar>
+                  <Bar
+                    dataKey="taxa"
+                    fill="transparent"
+                    barSize={14}
+                    shape={HorizontalLollipopShape}
+                  />
                 </BarChart>
               </ChartContainer>
+              </ChartPlotChrome>
             </CardContent>
           </Card>
 
-          {/* Status distribution */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Distribuição por Status</CardTitle>
+              <CardTitle className="text-sm font-medium">Perfil de status</CardTitle>
+              <CardDescription className="text-xs">
+                {showStatusRadar
+                  ? "Comparativo angular entre etapas"
+                  : "Barras horizontais — melhor leitura com poucas categorias"}
+              </CardDescription>
             </CardHeader>
-            <CardContent className="flex items-center justify-center">
-              <ChartContainer config={{ status: { label: 'Status' } }} className="h-[280px] w-full max-w-[320px]">
-                <PieChart>
-                  <Pie
-                    data={statusDist}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    innerRadius={50}
-                    dataKey="count"
-                    nameKey="status"
-                    label={({ status, count }) => `${statusLabels[status] || status}: ${count}`}
-                    labelLine={false}
+            <CardContent>
+              <ChartPlotChrome className="mx-auto max-w-md">
+              <ChartContainer
+                config={radarStatusConfig}
+                className={showStatusRadar ? "mx-auto h-[280px] w-full max-w-md aspect-square" : "h-[280px] w-full"}
+              >
+                {showStatusRadar ? (
+                  <RadarChart cx="50%" cy="50%" outerRadius="72%" data={radarStatusData} margin={ANALYTICS_MARGIN}>
+                    <PolarGrid gridType="polygon" className="stroke-muted" />
+                    <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10 }} />
+                    <PolarRadiusAxis angle={30} domain={[0, "auto"]} tick={{ fontSize: 9 }} />
+                    <Radar
+                      name="Lotes"
+                      dataKey="lotes"
+                      stroke={COLORS.mudas}
+                      fill={COLORS.mudas}
+                      fillOpacity={0.22}
+                      strokeWidth={2}
+                      dot={{ r: 4, fill: COLORS.mudas }}
+                    />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                  </RadarChart>
+                ) : (
+                  <BarChart
+                    data={radarStatusData}
+                    layout="vertical"
+                    margin={{ ...ANALYTICS_MARGIN, left: 8, bottom: 4 }}
                   >
-                    {statusDist.map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <ChartTooltip content={<ChartTooltipContent nameKey="status" />} />
-                </PieChart>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis type="number" tick={{ fontSize: 11 }} />
+                    <YAxis type="category" dataKey="subject" tick={{ fontSize: 10 }} width={100} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar
+                      dataKey="lotes"
+                      fill={COLORS.mudas}
+                      radius={[0, 6, 6, 0]}
+                      maxBarSize={18}
+                    />
+                  </BarChart>
+                )}
               </ChartContainer>
+              </ChartPlotChrome>
             </CardContent>
           </Card>
         </div>
@@ -752,42 +884,55 @@ function ManutencaoSection({ data, period }: { data: FazendaData; period: Period
           {/* Timeline */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Abertas vs Concluídas por Dia</CardTitle>
+              <CardTitle className="text-sm font-medium flex items-center gap-2 flex-wrap">
+                <span className="w-3 h-3 rounded-full shrink-0" style={{ background: COLORS.warning }} />
+                <span className="w-3 h-3 rounded-full shrink-0" style={{ background: COLORS.success }} />
+                Abertas vs concluídas por dia
+              </CardTitle>
+              <CardDescription className="text-xs">Barras agrupadas por dia (abertas vs concluídas)</CardDescription>
             </CardHeader>
             <CardContent>
+              <ChartPlotChrome>
               <ChartContainer config={barConfig} className="h-[280px] w-full">
-                <BarChart data={porDia} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <BarChart data={porDia} margin={{ ...ANALYTICS_MARGIN, left: 2, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
                   <XAxis dataKey="dia" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} domain={[0, "auto"]} allowDecimals={false} />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <ChartLegend content={<ChartLegendContent />} />
-                  <Bar dataKey="abertas" fill={COLORS.warning} radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="concluidas" fill={COLORS.success} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="abertas" fill={COLORS.warning} radius={[4, 4, 0, 0]} maxBarSize={28} />
+                  <Bar dataKey="concluidas" fill={COLORS.success} radius={[4, 4, 0, 0]} maxBarSize={28} />
                 </BarChart>
               </ChartContainer>
+              </ChartPlotChrome>
             </CardContent>
           </Card>
 
-          {/* Por tipo */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Frequência por Tipo</CardTitle>
+              <CardTitle className="text-sm font-medium">Frequência por tipo</CardTitle>
+              <CardDescription className="text-xs">Barras ranqueadas (cor sólida por linha)</CardDescription>
             </CardHeader>
             <CardContent>
+              <ChartPlotChrome>
               <ChartContainer config={tipoConfig} className="h-[280px] w-full">
-                <BarChart data={porTipo} layout="vertical" margin={{ top: 10, right: 10, left: 80, bottom: 0 }}>
+                <BarChart
+                  data={porTipo}
+                  layout="vertical"
+                  margin={{ ...ANALYTICS_MARGIN, left: 80, bottom: 4 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis type="number" tick={{ fontSize: 11 }} />
                   <YAxis type="category" dataKey="tipo" tick={{ fontSize: 10 }} width={75} />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                  <Bar dataKey="count" radius={[0, 6, 6, 0]}>
                     {porTipo.map((_, i) => (
                       <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                     ))}
                   </Bar>
                 </BarChart>
               </ChartContainer>
+              </ChartPlotChrome>
             </CardContent>
           </Card>
         </div>
@@ -817,8 +962,11 @@ function OcupacaoSection({ data }: { data: FazendaData }) {
         const perfisAndar = a.perfis || [];
         return sum + perfisAndar.filter((p) => p.ativo).length;
       }, 0);
-      const plantas = andaresFase.reduce((sum, a) => sum + contarPlantasAndar(a, fase), 0);
-      const colhidas = fase === 'maturacao' ? andaresFase.reduce((sum, a) => sum + contarColhidasAndar(a), 0) : 0;
+      const plantas = andaresFase.reduce((sum, a) => sum + contarPlantasAndar(a, fase, data.projetoTipo), 0);
+      const colhidas =
+        fase === 'maturacao' || (data.projetoTipo === 'microverdes' && fase === 'vegetativa')
+          ? andaresFase.reduce((sum, a) => sum + contarColhidasAndar(a, fase, data.projetoTipo), 0)
+          : 0;
       const cfg = data.fasesConfig[fase] || FASES_CONFIG[fase];
       return {
         fase: cfg.label,
@@ -847,13 +995,22 @@ function OcupacaoSection({ data }: { data: FazendaData }) {
       .slice(0, 10);
   }, [data.andares]);
 
-  const faseConfig: ChartConfig = {
-    taxa: { label: 'Taxa Ocupação (%)', color: COLORS.info },
+  const radarFaseConfig: ChartConfig = {
+    taxa: { label: "Ocupação (%)", color: COLORS.info },
   };
 
   const varConfig: ChartConfig = {
     count: { label: 'Andares', color: COLORS.mudas },
   };
+
+  const ocupacaoRadarData = useMemo(
+    () => porFase.map((f) => ({ subject: f.fase, taxa: f.taxa })),
+    [porFase]
+  );
+  const showOcupacaoRadar = useMemo(
+    () => shouldUseRadar(porFase.map((f) => ({ value: f.taxa }))),
+    [porFase]
+  );
 
   return (
     <div className="space-y-4">
@@ -865,61 +1022,102 @@ function OcupacaoSection({ data }: { data: FazendaData }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Ocupação por fase */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Ocupação por Fase</CardTitle>
+            <CardTitle className="text-sm font-medium">Ocupação por fase</CardTitle>
+            <CardDescription className="text-xs">
+              {showOcupacaoRadar
+                ? "Triângulo operacional: as três fases no mesmo gráfico polar"
+                : "Barras horizontais — leitura mais estável quando há pouca variação entre fases"}
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          <CardContent className="space-y-3">
+            <ChartPlotChrome className="mx-auto max-w-sm">
+            <ChartContainer
+              config={radarFaseConfig}
+              className={
+                showOcupacaoRadar
+                  ? "mx-auto h-[240px] w-full max-w-sm aspect-square"
+                  : "h-[240px] w-full"
+              }
+            >
+              {showOcupacaoRadar ? (
+                <RadarChart cx="50%" cy="50%" outerRadius="75%" data={ocupacaoRadarData} margin={ANALYTICS_MARGIN}>
+                  <PolarGrid gridType="polygon" className="stroke-muted" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10 }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 9 }} />
+                  <Radar
+                    name="Ocupação"
+                    dataKey="taxa"
+                    stroke={COLORS.info}
+                    fill={COLORS.info}
+                    fillOpacity={0.2}
+                    strokeWidth={2}
+                    dot={{ r: 4, fill: COLORS.info }}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                </RadarChart>
+              ) : (
+                <BarChart
+                  data={ocupacaoRadarData}
+                  layout="vertical"
+                  margin={{ ...ANALYTICS_MARGIN, left: 8, bottom: 4 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
+                  <YAxis type="category" dataKey="subject" tick={{ fontSize: 10 }} width={72} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="taxa" fill={COLORS.info} radius={[0, 6, 6, 0]} maxBarSize={18} />
+                </BarChart>
+              )}
+            </ChartContainer>
+            </ChartPlotChrome>
+            <ul className="text-[11px] text-muted-foreground space-y-1 border-t border-border pt-3">
               {porFase.map((f) => (
-                <div key={f.fase} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">{f.fase}</span>
-                    <span className="text-muted-foreground text-xs">
-                      {f.ocupados}/{f.totalSlots} perfis ({f.taxa}%) &middot; {f.torres} torres &middot; {f.plantas} plantas
-                    </span>
-                  </div>
-                  <div className="h-3 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{
-                        width: `${f.taxa}%`,
-                        background: f.fase === 'Mudas' ? COLORS.mudas : f.fase === 'Vegetativa' ? COLORS.vegetativa : COLORS.maturacao,
-                      }}
-                    />
-                  </div>
-                </div>
+                <li key={f.fase} className="flex justify-between gap-2">
+                  <span className="font-medium text-foreground">{f.fase}</span>
+                  <span>
+                    {f.ocupados}/{f.totalSlots} perfis · {f.torres} torres · {f.plantas} plantas
+                  </span>
+                </li>
               ))}
-            </div>
+            </ul>
           </CardContent>
         </Card>
 
         {/* Variedades mais plantadas */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Variedades Mais Plantadas</CardTitle>
-            <CardDescription className="text-xs">Quantidade de andares com cada variedade</CardDescription>
+            <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Variedades mais plantadas</CardTitle>
+            <CardDescription className="text-xs">Ranking em barras horizontais (cores sólidas)</CardDescription>
           </CardHeader>
           <CardContent>
             {variedadesPlantadas.length === 0 ? (
-              <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">
-                Nenhuma variedade plantada
-              </div>
+              <ChartEmptyWell
+                icon={Leaf}
+                title="Nenhuma variedade plantada"
+                hint="Associe variedades aos andares para ver o ranking aqui."
+              />
             ) : (
+              <ChartPlotChrome>
               <ChartContainer config={varConfig} className="h-[280px] w-full">
-                <BarChart data={variedadesPlantadas} layout="vertical" margin={{ top: 10, right: 10, left: 60, bottom: 0 }}>
+                <BarChart
+                  data={variedadesPlantadas}
+                  layout="vertical"
+                  margin={{ ...ANALYTICS_MARGIN, left: 60, bottom: 4 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis type="number" tick={{ fontSize: 11 }} />
                   <YAxis type="category" dataKey="nome" tick={{ fontSize: 10 }} width={55} />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                  <Bar dataKey="count" radius={[0, 6, 6, 0]}>
                     {variedadesPlantadas.map((_, i) => (
                       <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                     ))}
                   </Bar>
                 </BarChart>
               </ChartContainer>
+              </ChartPlotChrome>
             )}
           </CardContent>
         </Card>
@@ -951,6 +1149,7 @@ function DesperdicioSection({ data, period }: { data: FazendaData; period: Perio
         taxa: vals.total > 0 ? Math.round((vals.desperdicio / vals.total) * 100) : 0,
         desperdicio: vals.desperdicio,
         total: vals.total,
+        lollipopInvert: true as const,
       }))
       .filter((v) => v.total > 0)
       .sort((a, b) => b.taxa - a.taxa);
@@ -980,6 +1179,16 @@ function DesperdicioSection({ data, period }: { data: FazendaData; period: Perio
     taxa: { label: 'Taxa Desperdício (%)', color: COLORS.danger },
   };
 
+  const motivoBarConfig: ChartConfig = Object.fromEntries(
+    porMotivo.map((m, i) => [
+      m.motivo,
+      {
+        label: m.motivo.length > 28 ? `${m.motivo.slice(0, 26)}…` : m.motivo,
+        color: PIE_COLORS[i % PIE_COLORS.length],
+      },
+    ])
+  );
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -1001,23 +1210,32 @@ function DesperdicioSection({ data, period }: { data: FazendaData; period: Perio
             </CardHeader>
             <CardContent>
               {porVariedade.length === 0 ? (
-                <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">
-                  Sem dados de transplantio
-                </div>
+                <ChartEmptyWell
+                  icon={Sprout}
+                  title="Sem dados de transplantio"
+                  hint="Registre transplantios com variedade no período para ver a taxa por linha."
+                />
               ) : (
+                <ChartPlotChrome>
                 <ChartContainer config={barConfig} className="h-[280px] w-full">
-                  <BarChart data={porVariedade} layout="vertical" margin={{ top: 10, right: 10, left: 60, bottom: 0 }}>
+                  <BarChart
+                    data={porVariedade}
+                    layout="vertical"
+                    margin={{ ...ANALYTICS_MARGIN, left: 60, bottom: 4 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
                     <YAxis type="category" dataKey="nome" tick={{ fontSize: 10 }} width={55} />
                     <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="taxa" radius={[0, 4, 4, 0]}>
-                      {porVariedade.map((entry, i) => (
-                        <Cell key={i} fill={entry.taxa > 20 ? COLORS.danger : entry.taxa > 10 ? COLORS.warning : COLORS.success} />
-                      ))}
-                    </Bar>
+                    <Bar
+                      dataKey="taxa"
+                      fill="transparent"
+                      barSize={14}
+                      shape={HorizontalLollipopShape}
+                    />
                   </BarChart>
                 </ChartContainer>
+                </ChartPlotChrome>
               )}
             </CardContent>
           </Card>
@@ -1025,34 +1243,38 @@ function DesperdicioSection({ data, period }: { data: FazendaData; period: Perio
           {/* Por motivo */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Perdas por Motivo</CardTitle>
+              <CardTitle className="text-sm font-medium">Pareto de motivos (barras ranqueadas)</CardTitle>
+              <CardDescription className="text-xs">
+                Ordenação por volume — formato clássico de análise de causa (sem pizza)
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {porMotivo.length === 0 ? (
-                <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">
-                  Nenhum desperdício registrado
-                </div>
+                <ChartEmptyWell
+                  icon={AlertTriangle}
+                  title="Nenhum desperdício registrado"
+                  hint="Quando houver perdas com motivo informado, elas aparecem ranqueadas aqui."
+                />
               ) : (
-                <ChartContainer config={{ quantidade: { label: 'Quantidade', color: COLORS.danger } }} className="h-[280px] w-full">
-                  <PieChart>
-                    <Pie
-                      data={porMotivo}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      innerRadius={50}
-                      dataKey="quantidade"
-                      nameKey="motivo"
-                      label={({ motivo, quantidade }) => `${motivo}: ${quantidade}`}
-                      labelLine={false}
-                    >
+                <ChartPlotChrome>
+                <ChartContainer config={motivoBarConfig} className="h-[280px] w-full">
+                  <BarChart
+                    data={porMotivo}
+                    layout="vertical"
+                    margin={{ ...ANALYTICS_MARGIN, left: 8, bottom: 8 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis type="number" tick={{ fontSize: 11 }} />
+                    <YAxis type="category" dataKey="motivo" tick={{ fontSize: 9 }} width={100} />
+                    <ChartTooltip content={<ChartTooltipContent nameKey="motivo" />} />
+                    <Bar dataKey="quantidade" barSize={14} radius={[0, 6, 6, 0]}>
                       {porMotivo.map((_, i) => (
                         <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                       ))}
-                    </Pie>
-                    <ChartTooltip content={<ChartTooltipContent nameKey="motivo" />} />
-                  </PieChart>
+                    </Bar>
+                  </BarChart>
                 </ChartContainer>
+                </ChartPlotChrome>
               )}
             </CardContent>
           </Card>
@@ -1125,9 +1347,40 @@ function YieldSection({ data, period }: { data: FazendaData; period: PeriodFilte
   const avgYield = totalPlantas > 0 ? Math.round((totalPeso / totalPlantas) * 10) / 10 : 0;
 
   const yieldConfig: ChartConfig = {
-    gPorPlanta: { label: 'g/planta (Real)', color: COLORS.success },
-    esperado: { label: 'g/planta (Esperado)', color: COLORS.info },
+    gPorPlanta: { label: "g/planta (real)", color: COLORS.success },
+    esperado: { label: "g/planta (esperado)", color: COLORS.info },
   };
+
+  const qualRadarConfig: ChartConfig = {
+    colheitas: { label: "Colheitas", color: COLORS.success },
+  };
+
+  const scatterYield = useMemo(
+    () =>
+      yieldPorVariedade
+        .filter((d) => d.esperado > 0)
+        .map((d) => ({
+          esperado: d.esperado,
+          real: d.gPorPlanta,
+          nome: d.nome,
+        })),
+    [yieldPorVariedade]
+  );
+  const useScatter = scatterYield.length >= 2;
+
+  const qualRadarData = useMemo(
+    () =>
+      qualidadeData.map((d) => ({
+        subject: d.qualidade.split(" ")[0] ?? d.qualidade,
+        colheitas: d.count,
+      })),
+    [qualidadeData]
+  );
+
+  const showQualRadar = useMemo(
+    () => shouldUseRadar(qualidadeData.map((d) => ({ value: d.count }))),
+    [qualidadeData]
+  );
 
   return (
     <div className="space-y-4">
@@ -1148,38 +1401,129 @@ function YieldSection({ data, period }: { data: FazendaData; period: PeriodFilte
               <CardDescription className="text-xs">Real vs Esperado (da receita)</CardDescription>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={yieldConfig} className="h-[300px] w-full">
-                <BarChart data={yieldPorVariedade} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="nome" tick={{ fontSize: 10 }} angle={-30} textAnchor="end" height={60} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <ChartLegend content={<ChartLegendContent />} />
-                  <Bar dataKey="gPorPlanta" fill={COLORS.success} radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="esperado" fill={COLORS.info} radius={[4, 4, 0, 0]} opacity={0.5} />
-                </BarChart>
-              </ChartContainer>
+              {useScatter ? (
+                <ChartPlotChrome>
+                <ChartContainer
+                  config={{
+                    esperado: { label: "Esperado (g/pl)", color: COLORS.info },
+                    real: { label: "Real (g/pl)", color: COLORS.success },
+                  }}
+                  className="h-[300px] w-full"
+                >
+                  <ScatterChart margin={{ ...ANALYTICS_MARGIN, left: 10, bottom: 12 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis type="number" dataKey="esperado" name="Esperado" tick={{ fontSize: 11 }} />
+                    <YAxis type="number" dataKey="real" name="Real" tick={{ fontSize: 11 }} />
+                    <ZAxis range={[80, 80]} />
+                    <ChartTooltip
+                      cursor={{ strokeDasharray: "4 4" }}
+                      content={({ active, payload }) =>
+                        active && payload?.[0]?.payload ? (
+                          <div className="rounded-md border border-border bg-card px-2 py-1.5 text-xs shadow-sm">
+                            <p className="font-medium">
+                              {(payload[0].payload as { nome: string }).nome}
+                            </p>
+                            <p className="text-muted-foreground">
+                              Real: {(payload[0].payload as { real: number }).real} g/pl · Esperado:{" "}
+                              {(payload[0].payload as { esperado: number }).esperado} g/pl
+                            </p>
+                          </div>
+                        ) : null
+                      }
+                    />
+                    <Scatter name="Variedades" data={scatterYield} fill={COLORS.success} />
+                  </ScatterChart>
+                </ChartContainer>
+                </ChartPlotChrome>
+              ) : (
+                <ChartPlotChrome>
+                <ChartContainer config={yieldConfig} className="h-[300px] w-full">
+                  <BarChart
+                    data={yieldPorVariedade}
+                    layout="vertical"
+                    margin={{ ...ANALYTICS_MARGIN, left: 4, bottom: 8 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis type="number" tick={{ fontSize: 11 }} />
+                    <YAxis type="category" dataKey="nome" tick={{ fontSize: 10 }} width={88} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartLegend content={<ChartLegendContent />} />
+                    <Bar dataKey="gPorPlanta" fill={COLORS.success} radius={[0, 4, 4, 0]} maxBarSize={16} />
+                    <Bar dataKey="esperado" fill={COLORS.info} radius={[0, 4, 4, 0]} maxBarSize={16} opacity={0.85} />
+                  </BarChart>
+                </ChartContainer>
+                </ChartPlotChrome>
+              )}
+              {!useScatter && (
+                <p className="text-[11px] text-muted-foreground mt-2">
+                  Dispersão real×esperado aparece quando há pelo menos duas variedades com meta de receita.
+                </p>
+              )}
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Distribuição de Qualidade</CardTitle>
+              <CardTitle className="text-sm font-medium">Qualidade da colheita</CardTitle>
+              <CardDescription className="text-xs">
+                {showQualRadar
+                  ? "Forma do polígono mostra o mix A/B/C"
+                  : "Barras — radar fica frágil com poucos pontos ou uma nota dominante"}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {qualidadeData.length === 0 ? (
-                <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">Sem dados</div>
+                <ChartEmptyWell
+                  icon={Target}
+                  title="Sem dados de qualidade"
+                  hint="Classifique as colheitas (A/B/C) para ver a distribuição."
+                />
               ) : (
-                <ChartContainer config={{ count: { label: 'Colheitas', color: COLORS.success } }} className="h-[300px] w-full">
-                  <PieChart>
-                    <Pie data={qualidadeData} cx="50%" cy="50%" outerRadius={100} innerRadius={50} dataKey="count" nameKey="qualidade" label={({ qualidade, count }) => `${qualidade}: ${count}`} labelLine={false}>
-                      <Cell fill={COLORS.success} />
-                      <Cell fill={COLORS.info} />
-                      <Cell fill={COLORS.danger} />
-                    </Pie>
-                    <ChartTooltip content={<ChartTooltipContent nameKey="qualidade" />} />
-                  </PieChart>
+                <ChartPlotChrome className="mx-auto max-w-sm">
+                <ChartContainer
+                  config={qualRadarConfig}
+                  className={
+                    showQualRadar
+                      ? "mx-auto h-[280px] w-full max-w-sm aspect-square"
+                      : "h-[280px] w-full"
+                  }
+                >
+                  {showQualRadar ? (
+                    <RadarChart cx="50%" cy="50%" outerRadius="72%" data={qualRadarData} margin={ANALYTICS_MARGIN}>
+                      <PolarGrid gridType="polygon" className="stroke-muted" />
+                      <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11 }} />
+                      <PolarRadiusAxis angle={30} domain={[0, "auto"]} tick={{ fontSize: 9 }} />
+                      <Radar
+                        name="Colheitas"
+                        dataKey="colheitas"
+                        stroke={COLORS.success}
+                        fill={COLORS.success}
+                        fillOpacity={0.22}
+                        strokeWidth={2}
+                        dot={{ r: 4, fill: COLORS.success }}
+                      />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                    </RadarChart>
+                  ) : (
+                    <BarChart
+                      data={qualRadarData}
+                      layout="vertical"
+                      margin={{ ...ANALYTICS_MARGIN, left: 8, bottom: 4 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis type="number" tick={{ fontSize: 11 }} />
+                      <YAxis type="category" dataKey="subject" tick={{ fontSize: 11 }} width={36} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar
+                        dataKey="colheitas"
+                        fill={COLORS.success}
+                        radius={[0, 6, 6, 0]}
+                        maxBarSize={18}
+                      />
+                    </BarChart>
+                  )}
                 </ChartContainer>
+                </ChartPlotChrome>
               )}
             </CardContent>
           </Card>
@@ -1250,6 +1594,28 @@ function PlanejadoVsRealizadoSection({ data, period }: { data: FazendaData; peri
     { status: 'Cancelado', count: planos.filter((p: any) => p.status === 'cancelado').length },
   ].filter((d) => d.count > 0), [planos]);
 
+  const planoStatusConfig: ChartConfig = {
+    Planejado: { label: "Planejado", color: PIE_COLORS[0] },
+    "Em Germinação": { label: "Em germinação", color: PIE_COLORS[1] },
+    "Em Produção": { label: "Em produção", color: PIE_COLORS[2] },
+    Colhido: { label: "Colhido", color: PIE_COLORS[3] },
+    Cancelado: { label: "Cancelado", color: PIE_COLORS[4] },
+  };
+
+  const radarPlanoConfig: ChartConfig = {
+    planos: { label: "Planos", color: COLORS.teal },
+  };
+
+  const radarPlanoData = useMemo(
+    () => statusData.map((s) => ({ subject: s.status, planos: s.count })),
+    [statusData]
+  );
+
+  const showPlanoRadar = useMemo(
+    () => shouldUseRadar(statusData.map((s) => ({ value: s.count }))),
+    [statusData]
+  );
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -1261,24 +1627,59 @@ function PlanejadoVsRealizadoSection({ data, period }: { data: FazendaData; peri
       </div>
 
       {planos.length === 0 ? (
-        <EmptyState icon={CheckCircle2} message="Nenhum plano de plantio encontrado. Crie planos na página de Planejamento." />
+        <EmptyState icon={CheckCircle2} message="Nenhum plano de plantio encontrado. Crie planos em Plantio (menu superior)." />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Distribuição de Status dos Planos</CardTitle>
+              <CardTitle className="text-sm font-medium">Pipeline de planos</CardTitle>
+              <CardDescription className="text-xs">
+                {showPlanoRadar
+                  ? "Forma do polígono = mix de etapas (substitui o donut)"
+                  : "Barras horizontais — melhor com poucos status ou concentração em uma etapa"}
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={{ count: { label: 'Planos', color: COLORS.info } }} className="h-[280px] w-full">
-                <PieChart>
-                  <Pie data={statusData} cx="50%" cy="50%" outerRadius={100} innerRadius={50} dataKey="count" nameKey="status" label={({ status, count }) => `${status}: ${count}`} labelLine={false}>
-                    {statusData.map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <ChartTooltip content={<ChartTooltipContent nameKey="status" />} />
-                </PieChart>
+              <ChartPlotChrome className="mx-auto max-w-md">
+              <ChartContainer
+                config={{ ...planoStatusConfig, ...radarPlanoConfig }}
+                className={
+                  showPlanoRadar
+                    ? "mx-auto h-[280px] w-full max-w-md aspect-square"
+                    : "h-[280px] w-full"
+                }
+              >
+                {showPlanoRadar ? (
+                  <RadarChart cx="50%" cy="50%" outerRadius="72%" data={radarPlanoData} margin={ANALYTICS_MARGIN}>
+                    <PolarGrid gridType="polygon" className="stroke-muted" />
+                    <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9 }} />
+                    <PolarRadiusAxis angle={30} domain={[0, "auto"]} tick={{ fontSize: 9 }} />
+                    <Radar
+                      name="Planos"
+                      dataKey="planos"
+                      stroke={COLORS.teal}
+                      fill={COLORS.teal}
+                      fillOpacity={0.2}
+                      strokeWidth={2}
+                      dot={{ r: 4, fill: COLORS.teal }}
+                    />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                  </RadarChart>
+                ) : (
+                  <BarChart
+                    data={radarPlanoData}
+                    layout="vertical"
+                    margin={{ ...ANALYTICS_MARGIN, left: 8, bottom: 4 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis type="number" tick={{ fontSize: 11 }} />
+                    <YAxis type="category" dataKey="subject" tick={{ fontSize: 9 }} width={100} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="planos" fill={COLORS.teal} radius={[0, 6, 6, 0]} maxBarSize={18} />
+                  </BarChart>
+                )}
               </ChartContainer>
+              </ChartPlotChrome>
             </CardContent>
           </Card>
 
@@ -1308,7 +1709,7 @@ function PlanejadoVsRealizadoSection({ data, period }: { data: FazendaData; peri
               {stats.atrasoMedio !== null && (
                 <div className="p-2 rounded-lg bg-muted/50 text-xs">
                   <span className="text-muted-foreground">Atraso médio na colheita: </span>
-                  <span className={`font-semibold ${stats.atrasoMedio > 3 ? 'text-red-600' : 'text-emerald-600'}`}>
+                  <span className={`font-semibold ${stats.atrasoMedio > 3 ? 'text-red-600' : 'text-emerald-600 dark:text-emerald-400'}`}>
                     {stats.atrasoMedio > 0 ? `+${stats.atrasoMedio}` : stats.atrasoMedio} dias
                   </span>
                 </div>
@@ -1316,7 +1717,7 @@ function PlanejadoVsRealizadoSection({ data, period }: { data: FazendaData; peri
               {stats.desvioQtd !== null && (
                 <div className="p-2 rounded-lg bg-muted/50 text-xs">
                   <span className="text-muted-foreground">Desvio de quantidade: </span>
-                  <span className={`font-semibold ${Math.abs(stats.desvioQtd) > 10 ? 'text-red-600' : 'text-emerald-600'}`}>
+                  <span className={`font-semibold ${Math.abs(stats.desvioQtd) > 10 ? 'text-red-600' : 'text-emerald-600 dark:text-emerald-400'}`}>
                     {stats.desvioQtd > 0 ? '+' : ''}{stats.desvioQtd}%
                   </span>
                 </div>
@@ -1400,7 +1801,7 @@ function RelatoriosSection({ data, period }: { data: FazendaData; period: Period
     {
       title: 'Resumo de Produção',
       description: 'Todas as colheitas com peso, qualidade, destino e observações',
-      icon: <Scissors className="w-5 h-5 text-emerald-600" />,
+      icon: <Scissors className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />,
       count: colheitas.length,
       onExport: exportProducao,
       color: 'emerald',
@@ -1416,7 +1817,7 @@ function RelatoriosSection({ data, period }: { data: FazendaData; period: Period
     {
       title: 'Eficiência de Capacidade',
       description: 'Planos de plantio com datas, status e variedades',
-      icon: <Target className="w-5 h-5 text-amber-600" />,
+      icon: <Target className="w-5 h-5 text-amber-600 dark:text-amber-400" />,
       count: planos.length,
       onExport: exportCapacidade,
       color: 'amber',
@@ -1489,7 +1890,7 @@ function MiniStat({
     orange: 'bg-orange-50 border-orange-100',
   };
   const textMap: Record<string, string> = {
-    emerald: 'text-emerald-700',
+    emerald: 'text-emerald-700 dark:text-emerald-300',
     blue: 'text-blue-700',
     amber: 'text-amber-700',
     red: 'text-red-700',
@@ -1515,9 +1916,8 @@ function MiniStat({
 function EmptyState({ icon: Icon, message }: { icon: React.ComponentType<{ className?: string }>; message: string }) {
   return (
     <Card>
-      <CardContent className="flex flex-col items-center justify-center py-12 gap-3">
-        <Icon className="w-10 h-10 text-muted-foreground/40" />
-        <p className="text-sm text-muted-foreground">{message}</p>
+      <CardContent className="pt-6 pb-6">
+        <ChartEmptyWell icon={Icon} title={message} />
       </CardContent>
     </Card>
   );

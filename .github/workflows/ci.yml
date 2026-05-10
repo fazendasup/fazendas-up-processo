@@ -1,0 +1,45 @@
+name: CI
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root_ci
+          MYSQL_DATABASE: fazendas_ci
+          MYSQL_USER: ci
+          MYSQL_PASSWORD: ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot_ci"
+          --health-interval=8s
+          --health-timeout=5s
+          --health-retries=30
+    env:
+      DATABASE_URL: mysql://ci:ci@127.0.0.1:3306/fazendas_ci?charset=utf8mb4
+      JWT_SECRET: ci-jwt-secret-at-least-32-characters-long!!
+      # Disponível para builds/imagem; em produção injete o mesmo no runtime (GET /healthz expõe commit).
+      GIT_COMMIT: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - name: Drizzle migrate
+        run: pnpm exec drizzle-kit migrate
+      - run: pnpm run check
+      - run: pnpm test
+      - run: pnpm run build

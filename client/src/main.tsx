@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
-import { UNAUTHED_ERR_MSG } from '@shared/const';
+import { getActiveProjetoId } from "@/lib/projeto-header";
+import { PROJETO_HEADER, UNAUTHED_ERR_MSG } from "@shared/const";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
@@ -7,7 +8,52 @@ import superjson from "superjson";
 import App from "./App";
 import "./index.css";
 
-const queryClient = new QueryClient();
+/** Umami (ou compatível): só carrega com env real (sem placeholder / %VITE_*). */
+function loadOptionalAnalytics() {
+  const endpoint = String(
+    import.meta.env.VITE_ANALYTICS_ENDPOINT ?? ""
+  ).trim();
+  const websiteId = String(
+    import.meta.env.VITE_ANALYTICS_WEBSITE_ID ?? ""
+  ).trim();
+  if (
+    !endpoint ||
+    !websiteId ||
+    endpoint.includes("%VITE_") ||
+    websiteId.includes("%VITE_")
+  ) {
+    return;
+  }
+  try {
+    const u = new URL(endpoint);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return;
+  } catch {
+    return;
+  }
+  const base = endpoint.replace(/\/$/, "");
+  const s = document.createElement("script");
+  s.src = `${base}/umami`;
+  s.defer = true;
+  s.setAttribute("data-website-id", websiteId);
+  document.body.appendChild(s);
+}
+loadOptionalAnalytics();
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 15_000,
+      gcTime: 30 * 60 * 1000,
+      retry: (failureCount, err) => {
+        if (err instanceof TRPCClientError && err.message === UNAUTHED_ERR_MSG) {
+          return false;
+        }
+        return failureCount < 2;
+      },
+    },
+    mutations: { retry: 0 },
+  },
+});
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
@@ -41,6 +87,10 @@ const trpcClient = trpc.createClient({
     httpBatchLink({
       url: "/api/trpc",
       transformer: superjson,
+      headers() {
+        const id = getActiveProjetoId();
+        return id != null ? { [PROJETO_HEADER]: String(id) } : {};
+      },
       fetch(input, init) {
         return globalThis.fetch(input, {
           ...(init ?? {}),

@@ -11,7 +11,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 
 function Calendar({
   className,
-  classNames,
+  classNames: userClassNames,
   showOutsideDays = true,
   captionLayout = "label",
   buttonVariant = "ghost",
@@ -22,6 +22,7 @@ function Calendar({
   buttonVariant?: React.ComponentProps<typeof Button>["variant"];
 }) {
   const defaultClassNames = getDefaultClassNames();
+  const { day: userDayClass, ...restUserClassNames } = userClassNames ?? {};
 
   return (
     <DayPicker
@@ -99,7 +100,8 @@ function Calendar({
         ),
         day: cn(
           "relative w-full h-full p-0 text-center [&:first-child[data-selected=true]_button]:rounded-l-md [&:last-child[data-selected=true]_button]:rounded-r-md group/day aspect-square select-none",
-          defaultClassNames.day
+          defaultClassNames.day,
+          userDayClass
         ),
         range_start: cn(
           "rounded-l-md bg-accent",
@@ -120,7 +122,7 @@ function Calendar({
           defaultClassNames.disabled
         ),
         hidden: cn("invisible", defaultClassNames.hidden),
-        ...classNames,
+        ...restUserClassNames,
       }}
       components={{
         Root: ({ className, rootRef, ...props }) => {

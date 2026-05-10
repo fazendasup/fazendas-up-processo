@@ -1,11 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
+import { useMockProjetoResolve, withProjetoBase } from "./test-projeto-trpc";
+
+useMockProjetoResolve();
 
 // ---- Context helpers ----
 
 function createOperatorContext(): TrpcContext {
-  return {
+  return withProjetoBase({
     user: {
       id: 2,
       openId: "test-operator",
@@ -18,8 +21,8 @@ function createOperatorContext(): TrpcContext {
       lastSignedIn: new Date(),
     },
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
-    res: { clearCookie: () => {} } as TrpcContext["res"],
-  };
+    res: { clearCookie: () => {}, cookie: () => {} } as TrpcContext["res"],
+  });
 }
 
 /** Helper: find N andares of the same phase */
