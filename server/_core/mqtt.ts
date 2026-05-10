@@ -50,7 +50,8 @@ export function parseProjetoIdFromMqttTopic(topic: string): number | null {
 }
 
 export function isMqttConfigured(): boolean {
-  return ENV.mqttUrl.length > 0;
+  const url = ENV.mqttUrl;
+  return typeof url === "string" && url.length > 0;
 }
 
 export type MqttBridgeStatus = {

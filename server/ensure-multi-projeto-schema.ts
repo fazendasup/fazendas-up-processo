@@ -47,15 +47,35 @@ export async function tableExists(db: DbConn, table: string): Promise<boolean> {
   return Number(row?.c ?? 0) > 0;
 }
 
+function mysqlErrorChain(e: unknown): unknown[] {
+  const out: unknown[] = [];
+  let cur: unknown = e;
+  for (let i = 0; i < 12 && cur != null; i++) {
+    out.push(cur);
+    cur = cur instanceof Error ? cur.cause : undefined;
+  }
+  return out;
+}
+
+/** Drizzle envolve erros MySQL — percorrer `cause` como em `server/db.ts`. */
 function isBenignMysqlError(e: unknown): boolean {
-  const msg = e instanceof Error ? e.message : String(e);
-  const errno = (e as { errno?: number }).errno;
-  if (errno === 1060 || errno === 1061 || errno === 1091 || errno === 1005 || errno === 1826) return true;
-  if (/Duplicate column name/i.test(msg)) return true;
-  if (/Duplicate key name/i.test(msg)) return true;
-  if (/Can't DROP/i.test(msg) && /check that column\/key exists/i.test(msg)) return true;
-  if (/Duplicate foreign key constraint name/i.test(msg)) return true;
-  if (/already exists/i.test(msg) && /Foreign key/i.test(msg)) return true;
+  for (const cur of mysqlErrorChain(e)) {
+    const msg = cur instanceof Error ? cur.message : String(cur);
+    const sqlMsg =
+      typeof (cur as { sqlMessage?: string }).sqlMessage === "string"
+        ? (cur as { sqlMessage?: string }).sqlMessage
+        : "";
+    const combined = `${msg} ${sqlMsg}`;
+    const errno = (cur as { errno?: number }).errno;
+    const code = (cur as { code?: string }).code;
+    if (errno === 1060 || errno === 1061 || errno === 1091 || errno === 1005 || errno === 1826) return true;
+    if (code === "ER_DUP_FIELDNAME" || code === "ER_DUP_KEYNAME" || code === "ER_FK_DUP_NAME") return true;
+    if (/Duplicate column name/i.test(combined)) return true;
+    if (/Duplicate key name/i.test(combined)) return true;
+    if (/Can't DROP/i.test(combined) && /check that column\/key exists/i.test(combined)) return true;
+    if (/Duplicate foreign key constraint name/i.test(combined)) return true;
+    if (/already exists/i.test(combined) && /Foreign key/i.test(combined)) return true;
+  }
   return false;
 }
 
