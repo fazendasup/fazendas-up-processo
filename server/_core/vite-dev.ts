@@ -3,13 +3,28 @@ import fs from "fs";
 import { type Server } from "http";
 import { nanoid } from "nanoid";
 import path from "path";
-import { createServer as createViteServer } from "vite";
-import viteConfig from "../../vite.config";
+import { createServer as createViteServer, type ConfigEnv, type UserConfig } from "vite";
+import viteConfigExport from "../../vite.config";
+
+function resolveViteUserConfig(): UserConfig {
+  const env: ConfigEnv = {
+    command: "serve",
+    mode: "development",
+    isSsrBuild: false,
+  };
+  return typeof viteConfigExport === "function" ? viteConfigExport(env) : viteConfigExport;
+}
 
 export async function setupVite(app: Express, server: Server) {
+  const viteConfig = resolveViteUserConfig();
+  const baseServer = viteConfig.server ?? {};
+  const baseHmr =
+    baseServer.hmr && typeof baseServer.hmr === "object" && !Array.isArray(baseServer.hmr) ? baseServer.hmr : {};
   const serverOptions = {
-    middlewareMode: true,
-    hmr: { server },
+    ...baseServer,
+    middlewareMode: true as const,
+    hmr: { ...baseHmr, server },
+    /** Sempre permitir Host = IPv4/hostname da LAN (createViteServer substitui `server` inteiro). */
     allowedHosts: true as const,
   };
 
@@ -44,24 +59,5 @@ export async function setupVite(app: Express, server: Server) {
       vite.ssrFixStacktrace(e as Error);
       next(e);
     }
-  });
-}
-
-export function serveStatic(app: Express) {
-  const distPath =
-    process.env.NODE_ENV === "development"
-      ? path.resolve(import.meta.dirname, "../..", "dist", "public")
-      : path.resolve(import.meta.dirname, "public");
-  if (!fs.existsSync(distPath)) {
-    console.error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`
-    );
-  }
-
-  app.use(express.static(distPath));
-
-  // fall through to index.html if the file doesn't exist
-  app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
   });
 }

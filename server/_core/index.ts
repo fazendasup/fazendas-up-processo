@@ -11,7 +11,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 // OAuth routes removed - using email/password authentication instead
 import { appRouter } from "../routers";
 import { createContext } from "./context";
-import { serveStatic, setupVite } from "./vite";
+import { serveStatic } from "./static";
 import { ensureBootstrapAdmin } from "../bootstrap-admin";
 import * as db from "../db";
 import { initMqttFromEnv, shutdownMqtt } from "./mqtt";
@@ -153,8 +153,9 @@ async function startServer() {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
-  // development mode uses Vite, production mode uses static files
+  // development mode uses Vite (módulo à parte — não empacotar `vite` na imagem --prod)
   if (process.env.NODE_ENV === "development") {
+    const { setupVite } = await import("./vite-dev.js");
     await setupVite(app, server);
   } else {
     serveStatic(app);
