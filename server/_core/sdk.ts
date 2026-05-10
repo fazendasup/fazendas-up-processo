@@ -30,10 +30,10 @@ const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserI
 
 class OAuthService {
   constructor(private client: ReturnType<typeof axios.create>) {
-    console.log("[OAuth] Initialized with baseURL:", ENV.oAuthServerUrl);
-    if (!ENV.oAuthServerUrl) {
-      console.error(
-        "[OAuth] ERROR: OAUTH_SERVER_URL is not configured! Set OAUTH_SERVER_URL environment variable."
+    if (ENV.oauthIntegrationEnabled && !ENV.isProduction) {
+      console.log(
+        "[OAuth] Integracao opcional ativa — servidor:",
+        ENV.oAuthServerUrl
       );
     }
   }
@@ -78,9 +78,19 @@ class OAuthService {
 
 const createOAuthHttpClient = (): AxiosInstance =>
   axios.create({
-    baseURL: ENV.oAuthServerUrl,
+    baseURL: ENV.oauthIntegrationEnabled
+      ? ENV.oAuthServerUrl
+      : "http://oauth.disabled.invalid",
     timeout: AXIOS_TIMEOUT_MS,
   });
+
+function assertOAuthIntegrationEnabled(): void {
+  if (!ENV.oauthIntegrationEnabled) {
+    throw new Error(
+      "Integracao OAuth desligada. Defina OAUTH_SERVER_URL com uma URL http(s) valida para usar o fluxo Manus/WebDev."
+    );
+  }
+}
 
 class SDKServer {
   private readonly client: AxiosInstance;
@@ -122,6 +132,7 @@ class SDKServer {
     code: string,
     state: string
   ): Promise<ExchangeTokenResponse> {
+    assertOAuthIntegrationEnabled();
     return this.oauthService.getTokenByCode(code, state);
   }
 
@@ -131,6 +142,7 @@ class SDKServer {
    * const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
    */
   async getUserInfo(accessToken: string): Promise<GetUserInfoResponse> {
+    assertOAuthIntegrationEnabled();
     const data = await this.oauthService.getUserInfoByToken({
       accessToken,
     } as ExchangeTokenResponse);
@@ -201,7 +213,10 @@ class SDKServer {
     cookieValue: string | undefined | null
   ): Promise<{ openId: string; appId: string; name: string } | null> {
     if (!cookieValue) {
-      console.warn("[Auth] Missing session cookie");
+      // Normal para rotas públicas / primeiro load — não poluir logs em produção.
+      if (process.env.AUTH_DEBUG_SESSION === "1") {
+        console.warn("[Auth] Missing session cookie");
+      }
       return null;
     }
 
@@ -235,6 +250,7 @@ class SDKServer {
   async getUserInfoWithJwt(
     jwtToken: string
   ): Promise<GetUserInfoWithJwtResponse> {
+    assertOAuthIntegrationEnabled();
     const payload: GetUserInfoWithJwtRequest = {
       jwtToken,
       projectId: ENV.appId,
@@ -270,8 +286,11 @@ class SDKServer {
     const signedInAt = new Date();
     let user = await db.getUserByOpenId(sessionUserId);
 
-    // If user not in DB, sync from OAuth server automatically
+    // Se OAuth estiver ligado: usuario novo na sessao pode ser sincronizado do servidor Manus.
     if (!user) {
+      if (!ENV.oauthIntegrationEnabled) {
+        throw ForbiddenError("User not found");
+      }
       try {
         const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
         await db.upsertUser({

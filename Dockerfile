@@ -16,7 +16,8 @@ RUN pnpm install --frozen-lockfile --prod
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/drizzle ./drizzle
 COPY --from=build /app/drizzle.config.ts ./drizzle.config.ts
+COPY --from=build /app/scripts/start.mjs ./scripts/start.mjs
 EXPOSE 3456
-# Migrações na subida (BD vazia na Railway até aqui); depois idempotente.
+# Migrações na subida (`scripts/start.mjs`); depois idempotente.
 # Healthcheck: configure no orchestrator (Fly/Railway/K8s) com GET /healthz.
-CMD ["sh", "-c", "pnpm exec drizzle-kit migrate && exec node dist/index.js"]
+CMD ["node", "scripts/start.mjs"]
