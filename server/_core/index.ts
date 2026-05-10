@@ -145,9 +145,11 @@ async function startServer() {
   );
 
   const preferredPort = parseInt(process.env.PORT || String(DEFAULT_HTTP_PORT), 10);
-  const port = await findAvailablePort(preferredPort);
+  /** Railway/Fly/Render injetam `PORT`; o proxy só encaminha para essa porta — não procurar porta livre em produção. */
+  const port =
+    isProd ? preferredPort : await findAvailablePort(preferredPort);
 
-  if (port !== preferredPort) {
+  if (!isProd && port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
