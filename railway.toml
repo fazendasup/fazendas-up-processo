@@ -1,0 +1,15 @@
+# Railway — config-as-code (combina com variáveis definidas no painel).
+# Docs: https://docs.railway.app/reference/config-as-code
+#
+# Migrações: o Dockerfile corre `drizzle-kit migrate` antes de `node dist/index.js`
+# (drizzle-kit está em dependencies para ir na imagem --prod).
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "sh -c \"pnpm exec drizzle-kit migrate && exec node dist/index.js\""
+healthcheckPath = "/healthz"
+healthcheckTimeout = 180
+restartPolicyType = "ON_FAILURE"
