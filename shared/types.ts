@@ -153,6 +153,7 @@ export interface CicloData {
   intervaloDias: number | null;
   produto: string;
   tipo: string;
+  dosagem: string | null;
   fasesAplicaveis: string[];
   alvo: string;
   ultimaExecucao: Date | null;
@@ -182,6 +183,86 @@ export const ESTRUTURA_FASE: Record<Fase, { perfis: number; furosPorPerfil: numb
   maturacao: { perfis: 6, furosPorPerfil: 6 },
 };
 
+/** Patch por fase para torres com grelha física diferente do padrão FV. */
+export type TorreEstruturaFasePatch = { perfis: number; furosPorPerfil: number };
+
+/** Ex.: torres 13 e 14 com 12 perfis × 6 furos em vegetativa e maturação. */
+export type TorreEstruturaOverride = Partial<Record<Fase, TorreEstruturaFasePatch>>;
+
+/** Preset: 12 perfis × 6 furos nas fases com grelha (veg + mat). */
+export const ESTRUTURA_OVERRIDE_FV_12x6: TorreEstruturaOverride = {
+  vegetativa: { perfis: 12, furosPorPerfil: 6 },
+  maturacao: { perfis: 12, furosPorPerfil: 6 },
+};
+
+export function parseTorreEstruturaOverrideJson(raw: string | null | undefined): TorreEstruturaOverride | null {
+  if (raw == null || raw === "") return null;
+  try {
+    const o = JSON.parse(raw) as unknown;
+    if (!o || typeof o !== "object") return null;
+    const out: TorreEstruturaOverride = {};
+    for (const f of ["mudas", "vegetativa", "maturacao"] as Fase[]) {
+      const p = (o as Record<string, unknown>)[f];
+      if (!p || typeof p !== "object") continue;
+      const perfis = Number((p as Record<string, unknown>).perfis);
+      const furosPorPerfil = Number((p as Record<string, unknown>).furosPorPerfil);
+      if (!Number.isFinite(perfis) || !Number.isFinite(furosPorPerfil)) continue;
+      if (perfis < 1 || perfis > 64 || furosPorPerfil < 0 || furosPorPerfil > 64) continue;
+      out[f] = { perfis: Math.floor(perfis), furosPorPerfil: Math.floor(furosPorPerfil) };
+    }
+    return Object.keys(out).length ? out : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Compara dois presets (para UI: modelo padrão vs 12×6). */
+export function torreEstruturaOverrideIgual(a: TorreEstruturaOverride | null | undefined, b: TorreEstruturaOverride | null | undefined): boolean {
+  return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+}
+
+/** Máximo de andares físicos por torre em projeto microverdes. */
+export const MAX_ANDARES_TORRE_MICROVERDES = 6;
+
+/** Torres microverdes: 4 bandejas por andar (`perfis`). Iluminação: estado no perfil (`cultivoStatus`), sem furos. */
+export const ESTRUTURA_FASE_MICROVERDES = {
+  mudas: { perfis: 4, furosPorPerfil: 0 },
+  vegetativa: { perfis: 4, furosPorPerfil: 0 },
+} as const;
+
+export type ProjetoTipoOperacional = "fazenda_vertical" | "hidroponia" | "microverdes";
+
+/** Estrutura de perfis/furos conforme tipo de projeto e fase da torre; `torreOverride` aplica torres com grelha física diferente. */
+export function estruturaFaseParaProjeto(
+  tipoProjeto: ProjetoTipoOperacional | string | null | undefined,
+  fase: Fase,
+  torreOverride?: TorreEstruturaOverride | null,
+): { perfis: number; furosPorPerfil: number } {
+  let base: { perfis: number; furosPorPerfil: number };
+  if (tipoProjeto === "microverdes") {
+    if (fase === "mudas") {
+      base = {
+        perfis: ESTRUTURA_FASE_MICROVERDES.mudas.perfis,
+        furosPorPerfil: ESTRUTURA_FASE_MICROVERDES.mudas.furosPorPerfil,
+      };
+    } else {
+      base = {
+        perfis: ESTRUTURA_FASE_MICROVERDES.vegetativa.perfis,
+        furosPorPerfil: ESTRUTURA_FASE_MICROVERDES.vegetativa.furosPorPerfil,
+      };
+    }
+  } else {
+    base = ESTRUTURA_FASE[fase];
+  }
+  if (!torreOverride) return base;
+  const patch = torreOverride[fase];
+  if (!patch) return base;
+  return {
+    perfis: patch.perfis ?? base.perfis,
+    furosPorPerfil: patch.furosPorPerfil ?? base.furosPorPerfil,
+  };
+}
+
 export const FASES_CONFIG_DEFAULT: Record<Fase, Omit<FaseConfigData, 'id'>> = {
   mudas: {
     fase: 'mudas', label: 'Mudas', ecMin: 1.0, ecMax: 1.2, phMin: 5.8, phMax: 6.2,
@@ -189,10 +270,10 @@ export const FASES_CONFIG_DEFAULT: Record<Fase, Omit<FaseConfigData, 'id'>> = {
   },
   vegetativa: {
     fase: 'vegetativa', label: 'Vegetativa', ecMin: 1.5, ecMax: 2.0, phMin: 5.5, phMax: 6.5,
-    cor: 'oklch(0.55 0.14 220)', corLight: 'oklch(0.92 0.06 220)', icon: '🌿',
+    cor: 'oklch(0.60 0.15 158)', corLight: 'oklch(0.93 0.07 158)', icon: '🌿',
   },
   maturacao: {
     fase: 'maturacao', label: 'Maturação', ecMin: 2.0, ecMax: 2.5, phMin: 5.8, phMax: 6.2,
-    cor: 'oklch(0.62 0.18 50)', corLight: 'oklch(0.93 0.06 50)', icon: '🥬',
+    cor: 'oklch(0.54 0.13 152)', corLight: 'oklch(0.93 0.065 152)', icon: '🥬',
   },
 };
