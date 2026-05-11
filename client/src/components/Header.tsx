@@ -64,7 +64,9 @@ import { useAuth } from '@/_core/hooks/useAuth';
 import { trpc } from '@/lib/trpc';
 import { navPermitidoPorModulo } from '@/lib/projetoModulosNav';
 const FarmAssistantSheet = lazy(() =>
-  import('@/components/FarmAssistantSheet').then((m) => ({ default: m.FarmAssistantSheet })),
+  import(/* @vite-ignore */ "@/components/FarmAssistantSheet").then((m) => ({
+    default: m.FarmAssistantSheet,
+  })),
 );
 type NavItem = {
   href: string;

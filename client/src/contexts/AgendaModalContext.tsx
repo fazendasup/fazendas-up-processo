@@ -13,7 +13,7 @@ import type { AgendaFocus } from "@/lib/agendaFocus";
 
 /** O painel da agenda é pesado (+1000 linhas); só carrega o chunk quando o utilizador abre o modal pela 1.ª vez. */
 const AgendaDoDiaModal = lazy(async () => {
-  const m = await import("@/components/AgendaDoDiaModal");
+  const m = await import(/* @vite-ignore */ "@/components/AgendaDoDiaModal");
   return { default: m.AgendaDoDiaModal };
 });
 

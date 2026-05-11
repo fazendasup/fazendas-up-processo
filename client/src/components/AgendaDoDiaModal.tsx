@@ -39,7 +39,7 @@ export function AgendaDoDiaModal({
           <p className="text-xs text-muted-foreground pt-1">{agendaModalHint(focus)}</p>
         </DialogHeader>
         <div className="border-t border-border/60 pt-4">
-          <HojeAgendaPanel focus={focus} />
+          <HojeAgendaPanel focus={focus} onCloseModal={() => onOpenChange(false)} />
         </div>
       </DialogContent>
     </Dialog>

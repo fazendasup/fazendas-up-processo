@@ -1,6 +1,6 @@
 "use client";
 
-import { AIChatBox, type Message } from "@/components/AIChatBox";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Sheet,
   SheetContent,
@@ -13,8 +13,14 @@ import { Switch } from "@/components/ui/switch";
 import { trpc } from "@/lib/trpc";
 import { useProjeto } from "@/contexts/ProjetoContext";
 import { Sparkles } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState, type ComponentProps } from "react";
 import { toast } from "sonner";
+import type { Message } from "@/components/AIChatBox";
+
+/** streamdown/shiki são pesados — só carregar o chunk quando o sheet abre. */
+const AIChatBox = lazy(() =>
+  import(/* @vite-ignore */ "@/components/AIChatBox").then((m) => ({ default: m.AIChatBox })),
+);
 
 export type FarmAssistantSheetProps = {
   open: boolean;
@@ -95,20 +101,32 @@ export function FarmAssistantSheet({ open, onOpenChange }: FarmAssistantSheetPro
         </div>
 
         <div className="min-h-0 flex-1 overflow-hidden p-2">
-          <AIChatBox
-            messages={messages}
-            onSendMessage={handleSend}
-            isLoading={sendMutation.isPending}
-            placeholder="Pergunte sobre operação, cultivo ou dados do projeto…"
-            height="calc(100vh - 11rem)"
-            className="h-full min-h-[280px] rounded-lg border-0 shadow-none"
-            emptyStateMessage="Pergunte sobre a operação, cultivo ou boas práticas. Os dados do projeto entram automaticamente no contexto."
-            suggestedPrompts={[
-              "Dá um resumo operacional objetivo do meu projeto agora.",
-              "Quais tarefas ou riscos eu deveria priorizar esta semana?",
-              "Boas práticas de pH e EC em hidroponia para a minha fase atual.",
-            ]}
-          />
+          <Suspense
+            fallback={
+              <div
+                className="flex h-full min-h-[280px] items-center justify-center rounded-lg border border-dashed"
+                aria-busy="true"
+                aria-label="A carregar assistente"
+              >
+                <Spinner className="size-8 text-muted-foreground" />
+              </div>
+            }
+          >
+            <AIChatBox
+              messages={messages}
+              onSendMessage={handleSend}
+              isLoading={sendMutation.isPending}
+              placeholder="Pergunte sobre operação, cultivo ou dados do projeto…"
+              height="calc(100vh - 11rem)"
+              className="h-full min-h-[280px] rounded-lg border-0 shadow-none"
+              emptyStateMessage="Pergunte sobre a operação, cultivo ou boas práticas. Os dados do projeto entram automaticamente no contexto."
+              suggestedPrompts={[
+                "Dá um resumo operacional objetivo do meu projeto agora.",
+                "Quais tarefas ou riscos eu deveria priorizar esta semana?",
+                "Boas práticas de pH e EC em hidroponia para a minha fase atual.",
+              ]}
+            />
+          </Suspense>
         </div>
       </SheetContent>
     </Sheet>

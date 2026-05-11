@@ -66,7 +66,6 @@ import {
   startOfLocalDayTime,
   ymdLocalKey,
 } from '@/lib/planosPlantioOperacao';
-import { useAgendaModal } from '@/contexts/AgendaModalContext';
 import { Badge } from '@/components/ui/badge';
 import type { AgendaFocus } from '@/lib/agendaFocus';
 
@@ -367,8 +366,14 @@ function HojePlanoAcaoRow({
   );
 }
 
-export function HojeAgendaPanel({ focus = 'full' }: { focus?: AgendaFocus }) {
-  const { setOpen: setAgendaModalOpen } = useAgendaModal();
+export function HojeAgendaPanel({
+  focus = 'full',
+  /** Fecha o modal (evita `useAgendaModal` → contexto no entry → ciclo com este chunk). */
+  onCloseModal,
+}: {
+  focus?: AgendaFocus;
+  onCloseModal: () => void;
+}) {
   const { data, refetch: refetchFazenda } = useFazenda();
   const { isAdmin } = useRole();
   const planosQuery = trpc.planosPlantio.list.useQuery();
@@ -911,7 +916,7 @@ export function HojeAgendaPanel({ focus = 'full' }: { focus?: AgendaFocus }) {
   };
 
   const fecharAgendaAoIniciarGerminacaoPlantio = () => {
-    setAgendaModalOpen(false);
+    onCloseModal();
     void utils.fazenda.loadAll.invalidate();
     void refetchFazenda();
   };
@@ -1019,7 +1024,7 @@ export function HojeAgendaPanel({ focus = 'full' }: { focus?: AgendaFocus }) {
                             href={`/torre/${row.torreId}?andar=${encodeURIComponent(row.andarId)}`}
                             className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2.5 text-sm no-underline hover:bg-muted/40 transition-colors"
                             onClick={() => {
-                              setAgendaModalOpen(false);
+                              onCloseModal();
                               void utils.fazenda.loadAll.invalidate();
                               void refetchFazenda();
                             }}
@@ -1107,7 +1112,7 @@ export function HojeAgendaPanel({ focus = 'full' }: { focus?: AgendaFocus }) {
                         <Button variant="outline" size="sm" className="text-xs h-8" asChild>
                           <Link
                             href="/planejamento?tab=lista"
-                            onClick={() => setAgendaModalOpen(false)}
+                            onClick={() => onCloseModal()}
                           >
                             Planejamento
                             <ArrowRight className="w-3 h-3 ml-1" />
