@@ -1,3 +1,5 @@
+import { randomBytes } from "node:crypto";
+
 /**
  * URLs “sentinela” usadas no passado para silenciar OAuth: tratamos como **desligado**
  * para não disparar chamadas HTTP nem ruído no terminal quando o login é só email/senha.
@@ -22,11 +24,31 @@ export function resolveOAuthServerUrl(raw: string | undefined): string {
 
 const oauthServerUrl = resolveOAuthServerUrl(process.env.OAUTH_SERVER_URL);
 
+const isProduction = process.env.NODE_ENV === "production";
+
+/**
+ * Sem `JWT_SECRET` o processo não arranca em produção.
+ * `ALLOW_EPHEMERAL_JWT=1` gera um segredo só na memória (útil para desbloquear deploy; sessões resetam a cada restart — defina `JWT_SECRET` no painel).
+ */
+function resolveCookieSecret(): string {
+  const fromEnv = (process.env.JWT_SECRET ?? "").trim();
+  if (fromEnv.length > 0) return fromEnv;
+  if (!isProduction) return "";
+  if (process.env.ALLOW_EPHEMERAL_JWT === "1") {
+    const secret = randomBytes(32).toString("hex");
+    console.warn(
+      "[env] ALLOW_EPHEMERAL_JWT=1 — JWT efémero neste processo. Defina JWT_SECRET no Railway para sessões estáveis.",
+    );
+    return secret;
+  }
+  return "";
+}
+
 export const ENV = {
   // Required
   databaseUrl: process.env.DATABASE_URL ?? "",
-  cookieSecret: process.env.JWT_SECRET ?? "",
-  isProduction: process.env.NODE_ENV === "production",
+  cookieSecret: resolveCookieSecret(),
+  isProduction,
 
   /**
    * Opcional — integração OAuth (portal Manus / WebDev).
@@ -72,5 +94,8 @@ if (!ENV.databaseUrl) {
   throw new Error("DATABASE_URL environment variable is required");
 }
 if (!ENV.cookieSecret && ENV.isProduction) {
-  throw new Error("JWT_SECRET environment variable is required in production");
+  throw new Error(
+    "JWT_SECRET em falta em produção. No Railway: Variables → JWT_SECRET (string longa aleatória). " +
+      "Emergência pontual: ALLOW_EPHEMERAL_JWT=1 (sessões resetam a cada deploy).",
+  );
 }

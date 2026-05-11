@@ -1,8 +1,7 @@
 # Railway — config-as-code (combina com variáveis definidas no painel).
 # Docs: https://docs.railway.app/reference/config-as-code
 #
-# Migrações: `scripts/start.mjs` corre drizzle-kit migrate antes do servidor.
-# drizzle-kit está em dependencies para `pnpm install --prod` na imagem.
+# Migrações Drizzle: dentro do Node após HTTP à escuta (`runDrizzleMigrateFromEnv`); `start.mjs` só arranca o servidor.
 
 [build]
 builder = "DOCKERFILE"

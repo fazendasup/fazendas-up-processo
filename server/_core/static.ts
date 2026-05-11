@@ -2,11 +2,25 @@ import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
 
-function distPublicPath(): string {
-  /** Bundle em `dist/index.js`: `cwd` é a raiz da app (Docker WORKDIR /app). */
+/** Pasta `dist/public` do Vite (HTML + `/assets`). Em Docker: `cwd=/app` → `/app/dist/public`. */
+export function distPublicPath(): string {
   return process.env.NODE_ENV === "development"
     ? path.resolve(import.meta.dirname, "../..", "dist", "public")
     : path.resolve(process.cwd(), "dist", "public");
+}
+
+/** Para `/healthz` e diagnóstico Railway — não expõe segredos. */
+export function getStaticDeployReadiness(): {
+  cwd: string;
+  distPublicPath: string;
+  folderExists: boolean;
+  indexHtmlExists: boolean;
+} {
+  const cwd = process.cwd();
+  const distPublic = distPublicPath();
+  const folderExists = fs.existsSync(distPublic);
+  const indexHtmlExists = folderExists && fs.existsSync(path.join(distPublic, "index.html"));
+  return { cwd, distPublicPath: distPublic, folderExists, indexHtmlExists };
 }
 
 /**
@@ -14,10 +28,24 @@ function distPublicPath(): string {
  */
 export function serveStatic(app: Express) {
   const distPath = distPublicPath();
-  if (!fs.existsSync(distPath)) {
+  const indexPath = path.join(distPath, "index.html");
+  if (!fs.existsSync(distPath) || !fs.existsSync(indexPath)) {
     console.error(
-      `[static] Pasta em falta: ${distPath} (cwd=${process.cwd()}) — construa o cliente com vite build.`,
+      `[static] Build em falta: ${distPath} (cwd=${process.cwd()}) — falta pasta ou index.html. Corra vite build na imagem.`,
     );
+    /** Evita "Cannot GET /" sem pista: resposta 503 explícita até o artefacto existir. */
+    app.use((req, res, next) => {
+      if (req.method !== "GET" && req.method !== "HEAD") return next();
+      if (req.path.startsWith("/api")) return next();
+      res
+        .status(503)
+        .type("html")
+        .send(
+          `<!DOCTYPE html><meta charset="utf-8"><title>Fazendas Up — build em falta</title>` +
+            `<pre>Ficheiros estáticos em falta.\ncwd=${process.cwd()}\nesperado: ${indexPath}\n` +
+            `Verifique se o Docker/build corre \`pnpm run build\` e copia \`dist/\` para a imagem.</pre>`,
+        );
+    });
     return;
   }
   console.log(`[static] Ficheiros públicos: ${distPath}`);
@@ -36,7 +64,7 @@ export function serveStatic(app: Express) {
     if (req.path.startsWith("/api")) return next();
     if (req.path.startsWith("/assets/")) return next();
 
-    const indexFile = path.resolve(distPath, "index.html");
+    const indexFile = indexPath;
     res.sendFile(indexFile, (err) => {
       if (err) {
         console.error("[static] Falha ao enviar index.html:", err);

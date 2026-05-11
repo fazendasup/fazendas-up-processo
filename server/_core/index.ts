@@ -11,7 +11,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 // OAuth routes removed - using email/password authentication instead
 import { appRouter } from "../routers";
 import { createContext } from "./context";
-import { serveStatic } from "./static";
+import { getStaticDeployReadiness, serveStatic } from "./static";
 import { ensureBootstrapAdmin } from "../bootstrap-admin";
 import * as db from "../db";
 import { runDrizzleMigrateFromEnv } from "../run-drizzle-migrate";
@@ -81,13 +81,28 @@ async function startServer() {
   const server = createServer(app);
   const isProd = process.env.NODE_ENV === "production";
 
-  /** Railway healthcheck: tem de responder **antes** da preparação pesada da BD (senão "service unavailable"). */
+  /** Railway healthcheck: inclui readiness do build estático em produção (evita deploy “verde” sem SPA). */
   app.get("/healthz", (_req, res) => {
     res.setHeader("Cache-Control", "no-store");
-    res.status(200).json({
-      ok: true,
+    const readiness = isProd ? getStaticDeployReadiness() : null;
+    const staticReady = !isProd || (readiness?.indexHtmlExists ?? false);
+    const ok = staticReady;
+    res.status(ok ? 200 : 503).json({
+      ok,
       version: APP_VERSION,
       commit: process.env.GIT_COMMIT ?? process.env.VERCEL_GIT_COMMIT_SHA ?? null,
+      deploy: !isProd
+        ? { mode: "development" }
+        : {
+            staticIndexHtml: staticReady,
+            cwd: readiness?.cwd ?? process.cwd(),
+            distPublic: readiness?.distPublicPath ?? null,
+          },
+      /** Referência rápida — não indica se valores são válidos, só se existem variáveis. */
+      envPresent: {
+        databaseUrl: Boolean(process.env.DATABASE_URL?.trim()),
+        jwtSecret: Boolean(process.env.JWT_SECRET?.trim()),
+      },
     });
   });
 
@@ -101,10 +116,14 @@ async function startServer() {
     max: Number(process.env.RATE_LIMIT_MAX_PER_MINUTE ?? (isProd ? 500 : 4000)),
     standardHeaders: true,
     legacyHeaders: false,
+    /** Railway/proxies: validações estritas do pacote já causaram falhas opacas em ambientes geridos. */
+    validate: false,
   });
+  const jsonParser = express.json({ limit: "50mb" });
+  const urlencodedParser = express.urlencoded({ limit: "50mb", extended: true });
   app.use("/api/trpc", apiLimiter);
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  app.use("/api/trpc", jsonParser);
+  app.use("/api/trpc", urlencodedParser);
   app.use(
     "/api/trpc",
     createExpressMiddleware({
@@ -119,12 +138,28 @@ async function startServer() {
     serveStatic(app);
   }
 
-  const preferredPort = parseInt(process.env.PORT || String(DEFAULT_HTTP_PORT), 10);
+  const rawPort = process.env.PORT?.trim();
+  const parsedPort = rawPort ? Number.parseInt(rawPort, 10) : NaN;
+  const preferredPort = Number.isFinite(parsedPort) && parsedPort > 0 ? parsedPort : DEFAULT_HTTP_PORT;
+  if (isProd && rawPort && (!Number.isFinite(parsedPort) || parsedPort <= 0)) {
+    console.error(`[Server] PORT inválido (${JSON.stringify(rawPort)}). Railway deve definir PORT numérico.`);
+    process.exit(1);
+  }
+  if (isProd && !rawPort) {
+    console.warn(
+      `[Server] PORT não definido — a usar ${DEFAULT_HTTP_PORT}. No Railway defina PORT (geralmente injectado automaticamente).`,
+    );
+  }
   const port = isProd ? preferredPort : await findAvailablePort(preferredPort);
   if (!isProd && port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
   const listenHost = process.env.HOST?.trim() || "0.0.0.0";
+  if (isProd && (listenHost === "localhost" || listenHost === "127.0.0.1")) {
+    console.warn(
+      "[Server] HOST aponta para loopback — o tráfego externo (Railway) pode não chegar ao Node. Use 0.0.0.0 ou não defina HOST.",
+    );
+  }
 
   await new Promise<void>((resolve, reject) => {
     server.listen(port, listenHost, () => resolve());
