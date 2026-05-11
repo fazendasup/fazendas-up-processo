@@ -2,6 +2,18 @@ import type { CookieOptions, Request } from "express";
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
+/**
+ * Domínio opcional para o cookie de sessão (ex.: `.fazendasup.com.br`).
+ * Só use se souber o motivo (partilhar sessão entre vários subdomínios); por defeito o cookie fica **só no host** do app
+ * (`app.fazendasup.com.br`), o que é o recomendado para o painel.
+ */
+function resolveSessionCookieDomain(): string | undefined {
+  const raw = (process.env.SESSION_COOKIE_DOMAIN ?? "").trim();
+  if (!raw || raw.length > 253) return undefined;
+  if (/\s/.test(raw) || raw.includes("..")) return undefined;
+  return raw;
+}
+
 function isIpAddress(host: string) {
   // Basic IPv4 check and IPv6 presence detection.
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return true;
@@ -62,7 +74,9 @@ export function getSessionCookieOptions(
         ? ("strict" as const)
         : ("lax" as const);
   const effectiveSecure = sameSite === "none" ? true : secure;
+  const domain = resolveSessionCookieDomain();
   return {
+    ...(domain ? { domain } : {}),
     httpOnly: true,
     path: "/",
     sameSite,

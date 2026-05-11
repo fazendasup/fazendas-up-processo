@@ -243,7 +243,7 @@ export const appRouter = router({
 ### Opções de Hosting
 
 - **Vercel**: `pnpm build` → Deploy automático
-- **Railway**: Conectar GitHub → Deploy automático → [**primeiro login / senha admin (passo a passo)**](docs/RAILWAY-LOGIN.md)
+- **Railway**: Conectar GitHub → Deploy automático → [**primeiro login / senha admin (passo a passo)**](docs/RAILWAY-LOGIN.md) → [**domínio próprio tipo `app.fazendasup.com.br` + link no site institucional**](docs/DOMINIO-APP-FAZENDASUP.md)
 - **Render**: Conectar GitHub → Deploy automático
 - **Seu Servidor**: `pnpm build && pnpm start`
 - **Docker**: Criar Dockerfile com `pnpm build && pnpm start`
