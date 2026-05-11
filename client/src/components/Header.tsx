@@ -279,8 +279,8 @@ export default function Header() {
           </div>
         )}
 
-        {/* Nav Desktop: Operação + Análise + Sistema */}
-        <nav className="hidden md:flex items-center gap-0.5 flex-1 min-w-0 justify-end overflow-x-hidden scrollbar-hide">
+        {/* Nav em linha: só em ecrãs grandes (lg+). Em tablet (md–lg) usa-se o menu ☰ — evita itens cortados sem rolagem. */}
+        <nav className="hidden lg:flex max-w-full items-center gap-0.5 flex-1 min-w-0 justify-end overflow-x-auto overflow-y-visible py-0.5 [scrollbar-width:thin]">
           {operacaoItems.map((item) => {
             const isActive = pathMatchesNav(location, item.href);
             return (
@@ -533,7 +533,7 @@ export default function Header() {
                   </div>
                 )}
               </div>
-              {/* Mobile / tablet: mesma lógica Operação · Análise · Sistema (lg+ usa barra) */}
+              {/* Até lg: navegação principal só aqui (tablet não usa barra horizontal — evita overflow). */}
               <div className="lg:hidden">
                 {isLoggedIn && (
                   <>
