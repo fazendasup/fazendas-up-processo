@@ -2,7 +2,7 @@
 // Header v4 — Com controle de acesso por role e login/logout
 // ============================================================
 
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useFazenda } from '@/contexts/FazendaContext';
 import { useProjeto } from '@/contexts/ProjetoContext';
@@ -63,7 +63,9 @@ import { toast } from 'sonner';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { trpc } from '@/lib/trpc';
 import { navPermitidoPorModulo } from '@/lib/projetoModulosNav';
-import { FarmAssistantSheet } from '@/components/FarmAssistantSheet';
+const FarmAssistantSheet = lazy(() =>
+  import('@/components/FarmAssistantSheet').then((m) => ({ default: m.FarmAssistantSheet })),
+);
 type NavItem = {
   href: string;
   label: string;
@@ -682,7 +684,9 @@ export default function Header() {
       </div>
 
       {isLoggedIn && activeProjetoId != null && (
-        <FarmAssistantSheet open={farmAssistantOpen} onOpenChange={setFarmAssistantOpen} />
+        <Suspense fallback={null}>
+          <FarmAssistantSheet open={farmAssistantOpen} onOpenChange={setFarmAssistantOpen} />
+        </Suspense>
       )}
     </header>
   );

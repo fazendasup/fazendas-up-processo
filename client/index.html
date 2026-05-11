@@ -21,8 +21,28 @@
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Substituído pelo React; mantém texto visível se o JS falhar ou demorar (ex.: rede lenta). -->
+      <div
+        style="
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: system-ui, sans-serif;
+          font-size: 0.95rem;
+          color: #64748b;
+          background: #f8fafc;
+        ">
+        A carregar…
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
+    <noscript>
+      <p style="margin: 2rem; font-family: system-ui">
+        Ative JavaScript para usar o Fazendas Up.
+      </p>
+    </noscript>
   </body>
 
 </html>

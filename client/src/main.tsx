@@ -112,10 +112,24 @@ const trpcClient = trpc.createClient({
   ],
 });
 
-createRoot(document.getElementById("root")!).render(
-  <trpc.Provider client={trpcClient} queryClient={queryClient}>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
-  </trpc.Provider>
-);
+const rootEl = document.getElementById("root");
+if (!rootEl) {
+  throw new Error("[App] Elemento #root em falta no HTML.");
+}
+
+try {
+  createRoot(rootEl).render(
+    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    </trpc.Provider>,
+  );
+} catch (e) {
+  console.error("[App] Falha ao iniciar React:", e);
+  rootEl.innerHTML = `<div style="padding:2rem;font-family:system-ui,max-width:40rem">
+    <strong>Não foi possível iniciar a aplicação.</strong>
+    <p style="margin-top:0.75rem;color:#64748b">Atualize a página ou tente outro navegador. Se persistir, limpe a cache do site.</p>
+    <pre style="margin-top:1rem;font-size:11px;overflow:auto;background:#f1f5f9;padding:12px;border-radius:8px">${String(e)}</pre>
+  </div>`;
+}

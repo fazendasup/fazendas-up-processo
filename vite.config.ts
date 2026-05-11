@@ -32,6 +32,8 @@ function manualChunks(id: string): string | undefined {
   if (n.includes("wouter")) return "vendor-router";
   if (n.includes("node_modules/zod/") || n.includes("node_modules\\zod\\")) return "vendor-zod";
   if (n.includes("superjson")) return "vendor-serialize";
+  /** streamdown + KaTeX são pesados — chunk à parte para não monopolizar o vendor genérico. */
+  if (n.includes("streamdown") || n.includes("katex")) return "vendor-streamdown";
 
   return "vendor";
 }
