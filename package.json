@@ -22,6 +22,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed-admin": "node server/seed-admin.mjs",
+    "db:seed-fup-piloto": "node server/seed-fup-piloto.mjs",
     "db:cleanup-test-users": "node scripts/cleanup-dev-test-users.mjs",
     "autostart:install": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-windows-autostart.ps1",
     "autostart:uninstall": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/uninstall-windows-autostart.ps1"
