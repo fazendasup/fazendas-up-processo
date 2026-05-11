@@ -23,7 +23,7 @@ export default function ProtectedRoute({ children, requiredRole = "user", fallba
     if (isAuthenticated && user) return;
     if (typeof window === "undefined") return;
     const path = window.location.pathname.split("?")[0] ?? "";
-    if (path === "/login") return;
+    if (path === "/login" || path === "/login/") return;
     window.location.replace("/login");
   }, [loading, isAuthenticated, user]);
 

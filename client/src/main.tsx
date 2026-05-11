@@ -92,10 +92,21 @@ const trpcClient = trpc.createClient({
         return id != null ? { [PROJETO_HEADER]: String(id) } : {};
       },
       fetch(input, init) {
-        return globalThis.fetch(input, {
-          ...(init ?? {}),
-          credentials: "include",
-        });
+        const timeoutMs = 25_000;
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), timeoutMs);
+        const upstream = init?.signal;
+        if (upstream) {
+          if (upstream.aborted) ctrl.abort();
+          else upstream.addEventListener("abort", () => ctrl.abort(), { once: true });
+        }
+        return globalThis
+          .fetch(input, {
+            ...(init ?? {}),
+            credentials: "include",
+            signal: ctrl.signal,
+          })
+          .finally(() => clearTimeout(t));
       },
     }),
   ],

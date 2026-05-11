@@ -46,7 +46,9 @@ function Router() {
       <Suspense fallback={<RoutePageFallback />}>
         <Switch>
           <Route path="/login" component={LoginPage} />
+          <Route path="/login/" component={LoginPage} />
           <Route path="/privacidade" component={PrivacidadePage} />
+          <Route path="/privacidade/" component={PrivacidadePage} />
 
           <Route path="/">
             {() => (

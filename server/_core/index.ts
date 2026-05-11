@@ -91,6 +91,29 @@ async function startServer() {
     });
   });
 
+  /**
+   * tRPC tem de estar registado **antes** de `listen` e antes do trabalho pesado da BD.
+   * Caso contrário, o fallback SPA chama `next()` em `/api/*` e o pedido terminava em 404 até
+   * as migrações/bootstrap terminarem — o cliente nunca recebia `auth.me` e a app não mostrava o login.
+   */
+  const apiLimiter = rateLimit({
+    windowMs: 60_000,
+    max: Number(process.env.RATE_LIMIT_MAX_PER_MINUTE ?? (isProd ? 500 : 4000)),
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use("/api/trpc", apiLimiter);
+  app.use(express.json({ limit: "50mb" }));
+  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  app.use(
+    "/api/trpc",
+    createExpressMiddleware({
+      router: appRouter,
+      createContext,
+    }),
+  );
+  console.log("[Server] Rotas /api/trpc registadas (sessão anónima funciona durante o arranque da BD).");
+
   /** Site (HTML/JS/CSS) já disponível durante o arranque da BD — evita página em branco / 404. */
   if (process.env.NODE_ENV !== "development") {
     serveStatic(app);
@@ -174,32 +197,14 @@ async function startServer() {
     }
   }
   await ensureBootstrapAdmin();
-  console.log("[Server] Banco OK. A registar API…");
-
-  const apiLimiter = rateLimit({
-    windowMs: 60_000,
-    max: Number(process.env.RATE_LIMIT_MAX_PER_MINUTE ?? (isProd ? 500 : 4000)),
-    standardHeaders: true,
-    legacyHeaders: false,
-  });
-  app.use("/api/trpc", apiLimiter);
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
-
-  app.use(
-    "/api/trpc",
-    createExpressMiddleware({
-      router: appRouter,
-      createContext,
-    }),
-  );
+  console.log("[Server] Banco OK.");
 
   if (process.env.NODE_ENV === "development") {
     const { setupVite } = await import("./vite-dev.js");
     await setupVite(app, server);
   }
 
-  console.log("[Server] API pronta" + (isProd ? " (site estático já estava à escuta)." : " + Vite."));
+  console.log("[Server] API pronta" + (isProd ? " (site estático + tRPC à escuta)." : " + Vite."));
   void initMqttFromEnv().catch((e) => console.warn("[MQTT] Falha ao iniciar:", e));
 }
 

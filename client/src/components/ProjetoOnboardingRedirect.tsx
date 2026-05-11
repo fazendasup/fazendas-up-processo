@@ -15,8 +15,8 @@ export function ProjetoOnboardingRedirect({ children }: { children: React.ReactN
   useEffect(() => {
     if (authLoading || !user || !ready) return;
     const path = location.split("?")[0] ?? "";
-    if (path === "/login") return;
-    if (path === "/privacidade") return;
+    if (path === "/login" || path === "/login/") return;
+    if (path === "/privacidade" || path === "/privacidade/") return;
     if (path === "/projetos") return;
 
     const precisaSelecionar = projetos.length === 0 || activeProjetoId == null;
