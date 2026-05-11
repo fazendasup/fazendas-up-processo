@@ -78,6 +78,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePersistFn } from "@/hooks/usePersistFn";
+import { isInsecureHttpOnHttpsPage } from "@/lib/secureExternalUrl";
 import { cn } from "@/lib/utils";
 
 declare global {
@@ -87,15 +88,25 @@ declare global {
 }
 
 const API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
-const FORGE_BASE_URL =
-  import.meta.env.VITE_FRONTEND_FORGE_API_URL ||
-  "https://forge.butterfly-effect.dev";
-const MAPS_PROXY_URL = `${FORGE_BASE_URL}/v1/maps/proxy`;
+const DEFAULT_FORGE = "https://forge.butterfly-effect.dev";
+
+function forgeBaseUrl(): string {
+  const raw = String(import.meta.env.VITE_FRONTEND_FORGE_API_URL ?? "").trim();
+  const base = (raw || DEFAULT_FORGE).replace(/\/$/, "");
+  if (isInsecureHttpOnHttpsPage(base)) {
+    console.warn(
+      "[Map] VITE_FRONTEND_FORGE_API_URL em http:// num site https — usando URL segura por defeito.",
+    );
+    return DEFAULT_FORGE;
+  }
+  return base;
+}
 
 function loadMapScript() {
+  const mapsProxyUrl = `${forgeBaseUrl()}/v1/maps/proxy`;
   return new Promise(resolve => {
     const script = document.createElement("script");
-    script.src = `${MAPS_PROXY_URL}/maps/api/js?key=${API_KEY}&v=weekly&libraries=marker,places,geocoding,geometry`;
+    script.src = `${mapsProxyUrl}/maps/api/js?key=${API_KEY}&v=weekly&libraries=marker,places,geocoding,geometry`;
     script.async = true;
     script.crossOrigin = "anonymous";
     script.onload = () => {

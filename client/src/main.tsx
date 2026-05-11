@@ -7,6 +7,7 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import "./index.css";
+import { isInsecureHttpOnHttpsPage } from "@/lib/secureExternalUrl";
 
 /** Umami (ou compatível): só carrega com env real (sem placeholder / %VITE_*). */
 function loadOptionalAnalytics() {
@@ -27,6 +28,12 @@ function loadOptionalAnalytics() {
   try {
     const u = new URL(endpoint);
     if (u.protocol !== "http:" && u.protocol !== "https:") return;
+    if (isInsecureHttpOnHttpsPage(endpoint)) {
+      console.warn(
+        "[Analytics] VITE_ANALYTICS_ENDPOINT em http:// num site https — use https:// no Umami ou remova as variáveis para evitar aviso de conteúdo misto.",
+      );
+      return;
+    }
   } catch {
     return;
   }
