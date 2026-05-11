@@ -1,18 +1,4 @@
--- Estoque: unidades em kg e litros (antes g/ml); categorias legadas em VARCHAR já aceitam `embalagem`.
--- Converte quantidades: valores armazenados em gramas/ml passam a kg/L (÷ 1000).
+-- Conversão g/ml → kg/L idempotente em `ensureEstoqueUnidadesKgLFromLegacyGramMl()` (`server/db.ts`).
+-- Correr UPDATE aqui duplicaria divisão por 1000 se alguém reaplicasse o script manualmente.
 
-UPDATE `estoque_itens`
-SET
-  `quantidadeTotal` = `quantidadeTotal` / 1000,
-  `usoPorEvento` = `usoPorEvento` / 1000,
-  `nivelMinimo` = CASE WHEN `nivelMinimo` IS NOT NULL THEN `nivelMinimo` / 1000 ELSE NULL END,
-  `unidadeTipo` = 'kg'
-WHERE `unidadeTipo` = 'g';
-
-UPDATE `estoque_itens`
-SET
-  `quantidadeTotal` = `quantidadeTotal` / 1000,
-  `usoPorEvento` = `usoPorEvento` / 1000,
-  `nivelMinimo` = CASE WHEN `nivelMinimo` IS NOT NULL THEN `nivelMinimo` / 1000 ELSE NULL END,
-  `unidadeTipo` = 'l'
-WHERE `unidadeTipo` = 'ml';
+SELECT 1;

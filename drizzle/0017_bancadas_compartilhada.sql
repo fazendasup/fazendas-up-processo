@@ -1,2 +1,3 @@
--- Bancada compartilhada: uma linha/lógica para várias caixas (nutriente compartilhado)
-ALTER TABLE `bancadas` ADD COLUMN `compartilhada` tinyint(1) NOT NULL DEFAULT 0;
+-- Coluna `compartilhada` aplicada em `ensureBancadasSchemaColumns()` (`server/db.ts`).
+
+SELECT 1;

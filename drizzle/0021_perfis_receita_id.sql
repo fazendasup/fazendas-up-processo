@@ -1,1 +1,3 @@
-ALTER TABLE `perfis` ADD COLUMN `receitaId` int NULL;
+-- Coluna `perfis.receitaId` em `ensurePerfisReceitaIdColumn()` (`server/db.ts`).
+
+SELECT 1;

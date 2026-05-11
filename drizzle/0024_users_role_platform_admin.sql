@@ -1,7 +1,4 @@
--- Papel global: `platform_admin` = equipa comercial/plataforma (módulos contratados).
--- `admin` = administrador operacional do cliente (config, utilizadores no projeto).
+-- Não aplicar ENUM + UPDATE em migração SQL: o UPDATE `admin`→`platform_admin` era destrutivo em bases reais;
+-- `platform_admin` e VARCHAR são tratados em `ensureUsersRoleVarchar()` + login (`server/db.ts`).
 
-ALTER TABLE `users`
-  MODIFY COLUMN `role` ENUM('user', 'admin', 'platform_admin') NOT NULL DEFAULT 'user';
-
-UPDATE `users` SET `role` = 'platform_admin' WHERE `role` = 'admin';
+SELECT 1;

@@ -3151,6 +3151,103 @@ export async function ensureVisionCultivoTables(): Promise<void> {
   }
 }
 
+/**
+ * Converte quantidades armazenadas em g/ml para kg/L (migração 0025). Idempotente: só altera linhas com `unidadeTipo` 'g' ou 'ml'.
+ */
+export async function ensureEstoqueUnidadesKgLFromLegacyGramMl(): Promise<void> {
+  const dbConn = await getDb();
+  if (!dbConn || !(await tableExists(dbConn, "estoque_itens"))) return;
+  try {
+    await dbConn.execute(sql.raw(`UPDATE \`estoque_itens\` SET
+  \`quantidadeTotal\` = \`quantidadeTotal\` / 1000,
+  \`usoPorEvento\` = \`usoPorEvento\` / 1000,
+  \`nivelMinimo\` = CASE WHEN \`nivelMinimo\` IS NOT NULL THEN \`nivelMinimo\` / 1000 ELSE NULL END,
+  \`unidadeTipo\` = 'kg'
+WHERE \`unidadeTipo\` = 'g'`));
+    await dbConn.execute(sql.raw(`UPDATE \`estoque_itens\` SET
+  \`quantidadeTotal\` = \`quantidadeTotal\` / 1000,
+  \`usoPorEvento\` = \`usoPorEvento\` / 1000,
+  \`nivelMinimo\` = CASE WHEN \`nivelMinimo\` IS NOT NULL THEN \`nivelMinimo\` / 1000 ELSE NULL END,
+  \`unidadeTipo\` = 'l'
+WHERE \`unidadeTipo\` = 'ml'`));
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!/doesn't exist/i.test(msg) && !/ER_NO_SUCH_TABLE/i.test(msg)) {
+      console.error("[Database] ensureEstoqueUnidadesKgLFromLegacyGramMl:", err);
+    }
+  }
+}
+
+/**
+ * N.º operacional da torre + override JSON (migração 0026). Idempotente; requer `torres.projetoId` preenchido (multi-projeto).
+ */
+export async function ensureTorresNumeroEstruturaColumns(): Promise<void> {
+  const dbConn = await getDb();
+  if (!dbConn || !(await tableExists(dbConn, "torres"))) return;
+
+  const ignoreIdx = (err: unknown) => {
+    const chain = err instanceof Error ? err.message : String(err);
+    if (isMysqlDuplicateColumnError(err)) return true;
+    if (/Duplicate key name/i.test(chain)) return true;
+    if (/Can't DROP/i.test(chain)) return true;
+    const errno = (err as { errno?: number }).errno;
+    return errno === 1061 || errno === 1091;
+  };
+
+  const run = async (stmt: string) => {
+    try {
+      await dbConn.execute(sql.raw(stmt));
+    } catch (err: unknown) {
+      if (ignoreIdx(err)) return;
+      const msg = err instanceof Error ? err.message : String(err);
+      if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
+      console.error("[Database] ensureTorresNumeroEstruturaColumns:", err);
+    }
+  };
+
+  if (!(await columnExists(dbConn, "torres", "numeroTorre"))) {
+    await run("ALTER TABLE `torres` ADD COLUMN `numeroTorre` int NULL");
+  }
+  if (!(await columnExists(dbConn, "torres", "estruturaOverrideJson"))) {
+    await run("ALTER TABLE `torres` ADD COLUMN `estruturaOverrideJson` text NULL");
+  }
+
+  try {
+    await dbConn.execute(sql.raw(`UPDATE \`torres\` t
+INNER JOIN (
+  SELECT id, ROW_NUMBER() OVER (PARTITION BY \`projetoId\` ORDER BY \`id\`) AS rn
+  FROM \`torres\`
+) x ON t.\`id\` = x.\`id\`
+SET t.\`numeroTorre\` = x.rn
+WHERE t.\`numeroTorre\` IS NULL`));
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!/window/i.test(msg) && !/syntax/i.test(msg)) {
+      console.warn("[Database] ensureTorresNumeroEstruturaColumns backfill numeroTorre:", msg.slice(0, 160));
+    }
+  }
+
+  await run("ALTER TABLE `torres` MODIFY `numeroTorre` int NOT NULL DEFAULT 1");
+  await run(
+    "CREATE UNIQUE INDEX `torres_projeto_numero` ON `torres` (`projetoId`, `numeroTorre`)",
+  );
+
+  const ovJson =
+    '{"vegetativa":{"perfis":12,"furosPorPerfil":6},"maturacao":{"perfis":12,"furosPorPerfil":6}}';
+  try {
+    await dbConn.execute(
+      sql.raw(
+        `UPDATE \`torres\` SET \`estruturaOverrideJson\` = '${ovJson.replace(/'/g, "''")}' WHERE \`numeroTorre\` IN (13, 14) AND (\`estruturaOverrideJson\` IS NULL OR \`estruturaOverrideJson\` = '')`,
+      ),
+    );
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!/doesn't exist/i.test(msg) && !/ER_NO_SUCH_TABLE/i.test(msg)) {
+      console.warn("[Database] ensureTorresNumeroEstruturaColumns override 12x6:", msg.slice(0, 120));
+    }
+  }
+}
+
 // ============================================================
 // Reset all data (for re-seed)
 // ============================================================
