@@ -586,12 +586,24 @@ function shouldOccupyAndar(torre, numero) {
   return numero <= 8;
 }
 
-function dataEntradaPorFase(torre, andarNumero) {
+function dataEntradaPorFase(torre, andarNumero, variedade) {
   if (torre.fase === "mudas")
     return daysFromNow(-Math.max(3, 12 - andarNumero));
   if (torre.fase === "vegetativa")
     return daysFromNow(-Math.max(6, 20 - andarNumero));
-  return daysFromNow(-Math.max(18, 34 - andarNumero));
+  const restPattern = [5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 6, 8, 10, 12];
+  const rawRest =
+    restPattern[
+      (Number(torre.numeroTorre || 0) + Number(andarNumero || 0) * 2) %
+        restPattern.length
+    ] ?? 8;
+  const diasMaturacao = Number(variedade?.diasMaturacao ?? 14);
+  const targetRest = Math.max(
+    5,
+    Math.min(rawRest, Math.max(5, diasMaturacao - 1))
+  );
+  const elapsed = Math.max(1, diasMaturacao - targetRest);
+  return daysFromNow(-elapsed);
 }
 
 async function criarTorresEstrutura(
@@ -635,7 +647,7 @@ async function criarTorresEstrutura(
         torre.numeroTorre + andarNumero
       );
       const dataEntrada = ocupado
-        ? dataEntradaPorFase(torre, andarNumero)
+        ? dataEntradaPorFase(torre, andarNumero, variedade)
         : null;
       const andarResult = await exec(
         connection,
@@ -1365,10 +1377,10 @@ async function insertTarefas(
     ],
     [
       "Preparar colheita degustação",
-      "Separar Crespa Verde e Frisee para demonstração de rastreabilidade.",
+      "Separar lotes demonstrativos apenas no dia do evento; maturação escalonada para não concentrar colheita antes da apresentação.",
       "colheita",
-      "urgente",
-      daysFromNow(0, 10),
+      "media",
+      daysFromNow(3, 9),
       torreMat?.id,
       1,
       null,
