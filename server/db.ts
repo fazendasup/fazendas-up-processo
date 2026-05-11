@@ -2971,8 +2971,9 @@ export async function ensureCiclosDosagemColumn(): Promise<void> {
 }
 
 /**
- * Coloca `users.role` em VARCHAR (mig. 0027). ENUM antigo sem `platform_admin` gerava 1265 no bootstrap.
- * Idempotente: repetir o mesmo MODIFY é seguro.
+ * Coloca `users.role` em VARCHAR (legado mig. 0027 no journal; DDL efectivo é aqui).
+ * ENUM antigo sem `platform_admin` gerava 1265 no bootstrap.
+ * Evita ALTER na fase `drizzle-kit migrate` (metadata lock com deploy sobreposto na Railway).
  */
 export async function ensureUsersRoleVarchar(): Promise<void> {
   const dbConn = await getDb();
@@ -2980,17 +2981,45 @@ export async function ensureUsersRoleVarchar(): Promise<void> {
     console.warn("[Database] ensureUsersRoleVarchar: sem ligação à BD.");
     return;
   }
-  try {
-    await dbConn.execute(
-      sql.raw(
-        "ALTER TABLE `users` MODIFY COLUMN `role` VARCHAR(32) NOT NULL DEFAULT 'user'",
-      ),
-    );
-    console.log("[Database] users.role = VARCHAR(32) (bootstrap/login com platform_admin OK).");
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
-    console.error("[Database] ensureUsersRoleVarchar:", err);
+
+  const maxAttempts = 5;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const meta = await dbConn.execute(
+        sql.raw(
+          "SELECT COLUMN_TYPE AS ct FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'role' LIMIT 1",
+        ),
+      );
+      const rowsUnknown: unknown = Array.isArray(meta) ? meta[0] : meta;
+      const row0 =
+        Array.isArray(rowsUnknown) && rowsUnknown.length > 0 ? (rowsUnknown[0] as Record<string, unknown>) : null;
+      const ct = row0 && typeof row0.ct === "string" ? row0.ct : "";
+      if (/^varchar/i.test(ct)) {
+        return;
+      }
+
+      await dbConn.execute(sql.raw("SET SESSION lock_wait_timeout = 25"));
+      await dbConn.execute(
+        sql.raw(
+          "ALTER TABLE `users` MODIFY COLUMN `role` VARCHAR(32) NOT NULL DEFAULT 'user'",
+        ),
+      );
+      console.log("[Database] users.role = VARCHAR(32) (bootstrap/login com platform_admin OK).");
+      return;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
+      const lockWait = /1205|Lock wait timeout|errno: 1205/i.test(msg);
+      if (lockWait && attempt < maxAttempts - 1) {
+        console.warn(
+          `[Database] ensureUsersRoleVarchar: espera de lock na BD (deploy sobreposto?). Tentativa ${attempt + 2}/${maxAttempts} em 6s…`,
+        );
+        await new Promise((r) => setTimeout(r, 6000));
+        continue;
+      }
+      console.error("[Database] ensureUsersRoleVarchar:", err);
+      return;
+    }
   }
 }
 
