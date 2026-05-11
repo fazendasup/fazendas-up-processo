@@ -587,22 +587,29 @@ function shouldOccupyAndar(torre, numero) {
 }
 
 function dataEntradaPorFase(torre, andarNumero, variedade) {
-  if (torre.fase === "mudas")
-    return daysFromNow(-Math.max(3, 12 - andarNumero));
-  if (torre.fase === "vegetativa")
-    return daysFromNow(-Math.max(6, 20 - andarNumero));
-  const restPattern = [5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 6, 8, 10, 12];
+  const restPatterns = {
+    mudas: [0, 1, 2, 4, 6, 8, 10, 12, 3],
+    vegetativa: [0, 1, 2, 3, 5, 7, 9, 11, 13, 15, 4, 6],
+    maturacao: [0, 1, 2, 3, 5, 6, 8, 10, 12, 14, 4, 7, 9, 11, 15, 6, 8, 10],
+  };
+  const restPattern = restPatterns[torre.fase] ?? restPatterns.maturacao;
   const rawRest =
     restPattern[
       (Number(torre.numeroTorre || 0) + Number(andarNumero || 0) * 2) %
         restPattern.length
     ] ?? 8;
-  const diasMaturacao = Number(variedade?.diasMaturacao ?? 14);
+  const diasCiclo =
+    torre.fase === "mudas"
+      ? Number(variedade?.diasMudas ?? 14)
+      : torre.fase === "vegetativa"
+        ? Number(variedade?.diasVegetativa ?? 21)
+        : Number(variedade?.diasMaturacao ?? 14);
+  const minRest = rawRest <= 0 ? 0 : 1;
   const targetRest = Math.max(
-    5,
-    Math.min(rawRest, Math.max(5, diasMaturacao - 1))
+    minRest,
+    Math.min(rawRest, Math.max(minRest, diasCiclo - 1))
   );
-  const elapsed = Math.max(1, diasMaturacao - targetRest);
+  const elapsed = Math.max(0, diasCiclo - targetRest);
   return daysFromNow(-elapsed);
 }
 
