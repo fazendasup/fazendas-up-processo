@@ -233,7 +233,7 @@ export default function Header() {
 
   return (
     <header className="app-header-shell">
-      <div className="app-header-toolbar flex h-[3.25rem] w-full min-w-0 max-w-full flex-nowrap items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:thin] xl:overflow-x-visible">
+      <div className="app-header-toolbar flex h-[3.25rem] w-full min-w-0 max-w-full flex-nowrap items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:thin]">
         {/* Logo */}
         <Link href={activeProjetoId != null ? "/" : "/projetos"} className="flex items-center gap-2 no-underline shrink-0 group">
           <div className="app-logo-mark w-9 h-9 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-[1.03]">
@@ -250,7 +250,7 @@ export default function Header() {
         </Link>
 
         {isLoggedIn && activeProjetoId != null && activeProjeto && (
-          <div className="hidden sm:flex shrink-0 items-center gap-2 min-w-0 max-w-[min(28vw,9.5rem)] md:max-w-[min(36vw,12rem)] xl:max-w-[min(40vw,14rem)]">
+          <div className="hidden sm:flex shrink-0 items-center gap-2 min-w-0 max-w-[min(28vw,9.5rem)] md:max-w-[min(36vw,12rem)] 2xl:max-w-[min(40vw,14rem)]">
             {projetos.length > 1 ? (
               <Select
                 value={String(activeProjetoId)}
@@ -279,8 +279,8 @@ export default function Header() {
           </div>
         )}
 
-        {/* Nav em linha só a partir de xl: retratos ~1024px (lg) ainda usavam barra apertada; tablet fica no menu ☰. */}
-        <nav className="hidden xl:flex max-w-full min-w-0 flex-1 items-center justify-end gap-0.5 overflow-x-auto overflow-y-visible py-0.5 [scrollbar-width:thin]">
+        {/* Nav em linha só a partir de 2xl: iPad Pro paisagem (~1366px) fica abaixo de 1536px e esmagava a barra; menu ☰ até lá. */}
+        <nav className="hidden 2xl:flex max-w-full min-w-0 flex-1 items-center justify-end gap-0.5 overflow-x-auto overflow-y-visible py-0.5 [scrollbar-width:thin]">
           {operacaoItems.map((item) => {
             const isActive = pathMatchesNav(location, item.href);
             return (
@@ -295,7 +295,7 @@ export default function Header() {
                 )}
               >
                 <item.icon className="w-3 h-3" />
-                <span className="hidden xl:inline">{item.label}</span>
+                <span className="hidden 2xl:inline">{item.label}</span>
               </Link>
             );
           })}
@@ -315,8 +315,8 @@ export default function Header() {
                     aria-haspopup="menu"
                   >
                     <LineChart className="w-3 h-3" />
-                    <span className="hidden xl:inline">Análise</span>
-                    <ChevronDown className="w-2.5 h-2.5 hidden xl:inline opacity-60" />
+                    <span className="hidden 2xl:inline">Análise</span>
+                    <ChevronDown className="w-2.5 h-2.5 hidden 2xl:inline opacity-60" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-56">
@@ -364,7 +364,7 @@ export default function Header() {
                 )}
               >
                   <AIcon className="w-3 h-3" />
-                  <span className="hidden xl:inline">{a0.label}</span>
+                  <span className="hidden 2xl:inline">{a0.label}</span>
                   {a0.href === '/inteligencia' && alertResumo && alertResumo.total > 0 && (
                     <span
                       className={`ml-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold text-white ${
@@ -397,8 +397,8 @@ export default function Header() {
                     aria-haspopup="menu"
                   >
                     <Settings2 className="w-3 h-3" />
-                    <span className="hidden xl:inline">Sistema</span>
-                    <ChevronDown className="w-2.5 h-2.5 hidden xl:inline opacity-60" />
+                    <span className="hidden 2xl:inline">Sistema</span>
+                    <ChevronDown className="w-2.5 h-2.5 hidden 2xl:inline opacity-60" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
@@ -433,14 +433,14 @@ export default function Header() {
                 )}
               >
                   <SIcon className="w-3 h-3" />
-                  <span className="hidden xl:inline">{s0.label}</span>
+                  <span className="hidden 2xl:inline">{s0.label}</span>
               </Link>
                 );
               })())}
         </nav>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {/* Perfil + tipo de usuário + tema */}
           {isLoggedIn ? (
             <div className="hidden sm:flex items-center gap-2">
@@ -485,7 +485,7 @@ export default function Header() {
               type="button"
               variant="outline"
               size="sm"
-              className="hidden xl:flex gap-1.5 text-xs h-9"
+              className="hidden 2xl:flex gap-1.5 text-xs h-9"
               onClick={() => setFarmAssistantOpen(true)}
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -496,7 +496,7 @@ export default function Header() {
           <Button
             variant="outline"
             size="sm"
-            className="hidden xl:flex gap-1.5 text-xs h-9"
+            className="hidden 2xl:flex gap-1.5 text-xs h-9"
             onClick={exportCSV}
           >
             <FileDown className="w-3.5 h-3.5" />
@@ -533,8 +533,8 @@ export default function Header() {
                   </div>
                 )}
               </div>
-              {/* Até xl: navegação principal só aqui (incl. tablet retrato ~1024px). */}
-              <div className="xl:hidden">
+              {/* Até 2xl: navegação principal no ☰ (tablets e laptops estreitos). */}
+              <div className="2xl:hidden">
                 {isLoggedIn && (
                   <>
                     {activeProjetoId != null && (
@@ -654,7 +654,7 @@ export default function Header() {
                 )}
               </div>
 
-              <DropdownMenuItem onClick={exportCSV} className="flex items-center gap-2 xl:hidden">
+              <DropdownMenuItem onClick={exportCSV} className="flex items-center gap-2 2xl:hidden">
                 <FileDown className="w-4 h-4" />
                 Exportar CSV
               </DropdownMenuItem>
