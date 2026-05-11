@@ -83,7 +83,12 @@ async function runFupPilotoBootstrapIfNeeded() {
     return;
   }
 
-  const seedPath = path.join(projectRoot, "server", "seed-fup-piloto.mjs");
+  const seedPath =
+    [
+      path.join(process.cwd(), "server", "seed-fup-piloto.mjs"),
+      path.join(projectRoot, "server", "seed-fup-piloto.mjs"),
+    ].find(candidate => fs.existsSync(candidate)) ??
+    path.join(process.cwd(), "server", "seed-fup-piloto.mjs");
   if (!fs.existsSync(seedPath)) {
     console.warn(
       `[Server] Seed FUP - Piloto não encontrado em ${seedPath}; projeto demo não será criado.`
