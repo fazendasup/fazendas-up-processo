@@ -81,28 +81,45 @@ async function startServer() {
   const server = createServer(app);
   const isProd = process.env.NODE_ENV === "production";
 
-  /** Railway healthcheck: inclui readiness do build estático em produção (evita deploy “verde” sem SPA). */
+  /**
+   * Liveness: **sempre 200** se o processo responde — o Railway usa isto; 503 aqui derrubava o serviço
+   * quando o path estático era calculado mal (cwd). Readiness do SPA vai em `staticIndexHtml`.
+   */
   app.get("/healthz", (_req, res) => {
     res.setHeader("Cache-Control", "no-store");
     const readiness = isProd ? getStaticDeployReadiness() : null;
     const staticReady = !isProd || (readiness?.indexHtmlExists ?? false);
-    const ok = staticReady;
-    res.status(ok ? 200 : 503).json({
-      ok,
+    res.status(200).json({
+      ok: true,
       version: APP_VERSION,
       commit: process.env.GIT_COMMIT ?? process.env.VERCEL_GIT_COMMIT_SHA ?? null,
+      staticIndexHtml: staticReady,
       deploy: !isProd
         ? { mode: "development" }
         : {
-            staticIndexHtml: staticReady,
             cwd: readiness?.cwd ?? process.cwd(),
             distPublic: readiness?.distPublicPath ?? null,
           },
-      /** Referência rápida — não indica se valores são válidos, só se existem variáveis. */
       envPresent: {
         databaseUrl: Boolean(process.env.DATABASE_URL?.trim()),
         jwtSecret: Boolean(process.env.JWT_SECRET?.trim()),
       },
+    });
+  });
+
+  /** Opcional: readiness estrito (503 se não houver `index.html`) — use no orchestrator só se quiser. */
+  app.get("/readyz", (_req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    if (!isProd) {
+      res.status(200).json({ ok: true });
+      return;
+    }
+    const r = getStaticDeployReadiness();
+    const ready = r.indexHtmlExists;
+    res.status(ready ? 200 : 503).json({
+      ok: ready,
+      distPublic: r.distPublicPath,
+      cwd: r.cwd,
     });
   });
 

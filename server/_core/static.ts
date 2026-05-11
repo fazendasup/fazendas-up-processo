@@ -1,12 +1,19 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "node:url";
 
-/** Pasta `dist/public` do Vite (HTML + `/assets`). Em Docker: `cwd=/app` → `/app/dist/public`. */
+/**
+ * Pasta `dist/public` do Vite (HTML + `/assets`).
+ * Em produção o bundle é `dist/index.js` — resolvemos `dist/public` **ao lado do ficheiro em execução**,
+ * não com `process.cwd()` (Railway/outros hosts podem arrancar com cwd diferente da raiz → SPA “sumia”).
+ */
 export function distPublicPath(): string {
-  return process.env.NODE_ENV === "development"
-    ? path.resolve(import.meta.dirname, "../..", "dist", "public")
-    : path.resolve(process.cwd(), "dist", "public");
+  if (process.env.NODE_ENV === "development") {
+    return path.resolve(import.meta.dirname, "../..", "dist", "public");
+  }
+  const bundleDir = path.dirname(fileURLToPath(import.meta.url));
+  return path.resolve(bundleDir, "public");
 }
 
 /** Para `/healthz` e diagnóstico Railway — não expõe segredos. */
