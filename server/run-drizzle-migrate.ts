@@ -30,7 +30,15 @@ export async function runDrizzleMigrateFromEnv(): Promise<void> {
   }
 
   const migrationsFolder = path.resolve(process.cwd(), "drizzle");
-  const pool = mysql.createPool(mysqlUrlWithUtf8mb4(raw));
+  /**
+   * Os `.sql` em `drizzle/` podem ter vários ALTER/UPDATE na mesma migração.
+   * Sem `multipleStatements`, o mysql2 envia tudo num único query e o MySQL falha com ER_PARSE_ERROR na 2.ª instrução (ex.: 0009_planos_germinacao_cols.sql).
+   */
+  const pool = mysql.createPool({
+    uri: mysqlUrlWithUtf8mb4(raw),
+    multipleStatements: true,
+    connectionLimit: 2,
+  });
   const db = drizzle(pool);
   try {
     console.log("[Server] A aplicar migrações Drizzle…");
