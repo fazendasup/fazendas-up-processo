@@ -90,6 +90,11 @@ async function startServer() {
     });
   });
 
+  /** Site (HTML/JS/CSS) já disponível durante o arranque da BD — evita página em branco / 404. */
+  if (process.env.NODE_ENV !== "development") {
+    serveStatic(app);
+  }
+
   const preferredPort = parseInt(process.env.PORT || String(DEFAULT_HTTP_PORT), 10);
   const port = isProd ? preferredPort : await findAvailablePort(preferredPort);
   if (!isProd && port !== preferredPort) {
@@ -159,7 +164,7 @@ async function startServer() {
     }
   }
   await ensureBootstrapAdmin();
-  console.log("[Server] Banco OK. A registar API e site…");
+  console.log("[Server] Banco OK. A registar API…");
 
   const apiLimiter = rateLimit({
     windowMs: 60_000,
@@ -182,11 +187,9 @@ async function startServer() {
   if (process.env.NODE_ENV === "development") {
     const { setupVite } = await import("./vite-dev.js");
     await setupVite(app, server);
-  } else {
-    serveStatic(app);
   }
 
-  console.log("[Server] API + site estáticos prontos.");
+  console.log("[Server] API pronta" + (isProd ? " (site estático já estava à escuta)." : " + Vite."));
   void initMqttFromEnv().catch((e) => console.warn("[MQTT] Falha ao iniciar:", e));
 }
 
