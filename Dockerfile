@@ -20,6 +20,6 @@ COPY --from=build /app/drizzle ./drizzle
 COPY --from=build /app/drizzle.config.ts ./drizzle.config.ts
 COPY --from=build /app/scripts/start.mjs ./scripts/start.mjs
 EXPOSE 3456
-# Migrações na subida (`scripts/start.mjs`); depois idempotente.
+# Migrações Drizzle: dentro do Node após HTTP à escuta (`runDrizzleMigrateFromEnv`); `start.mjs` só arranca o servidor.
 # Healthcheck: configure no orchestrator (Fly/Railway/K8s) com GET /healthz.
 CMD ["node", "scripts/start.mjs"]

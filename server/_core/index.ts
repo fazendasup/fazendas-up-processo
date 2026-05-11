@@ -14,6 +14,7 @@ import { createContext } from "./context";
 import { serveStatic } from "./static";
 import { ensureBootstrapAdmin } from "../bootstrap-admin";
 import * as db from "../db";
+import { runDrizzleMigrateFromEnv } from "../run-drizzle-migrate";
 import { initMqttFromEnv, shutdownMqtt } from "./mqtt";
 import { APP_VERSION } from "./release-meta";
 
@@ -129,8 +130,17 @@ async function startServer() {
   process.once("SIGTERM", onSignal);
 
   console.log(
-    "[Server] A preparar base de dados em segundo plano… (Docker: espere o MySQL ~10–15 s na primeira vez)",
+    "[Server] A preparar base de dados… (Docker: espere o MySQL ~10–15 s na primeira vez)",
   );
+  try {
+    await runDrizzleMigrateFromEnv();
+  } catch (e) {
+    console.error("[Server] Migrações Drizzle falharam — o site pode abrir mas a API pode falhar:", e);
+    if (process.env.EXIT_ON_MIGRATE_FAILURE === "1") {
+      process.exit(1);
+    }
+  }
+
   await db.ensureUsersRoleVarchar();
   await db.ensureCiclosDosagemColumn();
   await db.ensurePlanosPlantioGerminacaoColumns();

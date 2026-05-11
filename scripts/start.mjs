@@ -1,4 +1,4 @@
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,23 +8,15 @@ process.env.NODE_ENV = "production";
 const pkgRoot = path.join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const entry = path.join(pkgRoot, "dist", "index.js");
 
-/** Mesmo pipeline que Docker/Railway: migrações antes do Node (idempotente). */
-if (process.env.SKIP_DRIZZLE_MIGRATE !== "1" && process.env.DATABASE_URL?.trim()) {
-  const drizzleBin = path.join(pkgRoot, "node_modules", "drizzle-kit", "bin.cjs");
-  if (!fs.existsSync(drizzleBin)) {
-    console.error(
-      "[start] DATABASE_URL definido mas drizzle-kit não está em node_modules. Rode `pnpm install` (prod) ou use a imagem Docker.",
-    );
-    process.exit(1);
-  }
-  const r = spawnSync(process.execPath, [drizzleBin, "migrate"], {
-    cwd: pkgRoot,
-    stdio: "inherit",
-    env: process.env,
-  });
-  if (r.status !== 0) process.exit(r.status ?? 1);
+if (!fs.existsSync(entry)) {
+  console.error(`[start] Entrada em falta: ${entry}. Rode pnpm build na imagem.`);
+  process.exit(1);
 }
 
+/**
+ * Migrações Drizzle correm **dentro** do servidor (`runDrizzleMigrateFromEnv`), depois de HTTP + estático,
+ * para o healthcheck e o site não ficarem bloqueados em `drizzle-kit migrate` / locks MySQL.
+ */
 const child = spawn(process.execPath, [entry], {
   cwd: pkgRoot,
   stdio: "inherit",
