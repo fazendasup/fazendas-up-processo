@@ -45,6 +45,11 @@ import { setActiveProjetoId } from "@/lib/projeto-header";
 
 export { NOME_PROJETO_FAZENDA_LEGADO };
 
+/** Navega ao `/` no tick seguinte para o estado `activeProjetoId` já estar aplicado (evita `ProjetoOnboardingRedirect` voltar a `/projetos`). */
+function goHomeAfterProjetoAck(setLocation: (path: string, opts?: { replace?: boolean }) => void) {
+  queueMicrotask(() => setLocation("/"));
+}
+
 function labelTipoProjeto(t: string) {
   if (t === "hidroponia") return "Hidroponia";
   if (t === "microverdes") return "Microverdes";
@@ -133,7 +138,7 @@ export default function ProjetosPage() {
       await utils.projetos.list.invalidate();
       await utils.projetos.operationalCounts.invalidate();
       switchProjeto(vars.toProjetoId);
-      setLocation("/");
+      goHomeAfterProjetoAck(setLocation);
     },
     onError: (err) => toast.error(err.message || "Não foi possível mover os dados"),
   });
@@ -156,7 +161,7 @@ export default function ProjetosPage() {
       await utils.projetos.operationalCounts.invalidate();
       switchProjeto(data.id);
       form.reset({ nome: "", tipo: "fazenda_vertical", descricao: "", endereco: "", usarCaixaAgua: false });
-      setLocation("/");
+      goHomeAfterProjetoAck(setLocation);
     },
     onError: (err) => {
       toast.error(err.message || "Não foi possível criar o projeto");
@@ -278,8 +283,9 @@ export default function ProjetosPage() {
             <h1 className="font-display text-2xl font-bold tracking-tight">Meus projetos</h1>
             <p className="text-sm text-muted-foreground mt-1">
               O projeto <strong>{NOME_PROJETO_FAZENDA_LEGADO}</strong> é o que contém os dados que já existiam no sistema
-              (após a migração). Pode <strong>Entrar</strong> nele ou noutro projeto a que tenha acesso; administradores
-              podem criar um projeto novo (fazenda vertical, microverdes ou hidroponia), que começa vazio.
+              (após a migração). Em cada linha use <strong>Entrar no painel</strong> para ir ao início com esse projeto
+              (se já for o ativo, o botão faz o mesmo). Administradores podem criar um projeto novo (fazenda vertical,
+              microverdes ou hidroponia), que começa vazio.
             </p>
           </div>
         </div>
@@ -422,13 +428,13 @@ export default function ProjetosPage() {
                         size="sm"
                         variant="secondary"
                         disabled
-                        title="Reative o projeto para poder entrar no painel."
+                        title="Reative o projeto (botão Reativar) para poder entrar no painel."
                       >
-                        Indisponível
+                        Arquivado
                       </Button>
                     ) : ativo ? (
                       <Button type="button" size="sm" asChild>
-                        <Link href="/">Abrir painel</Link>
+                        <Link href="/">Entrar no painel</Link>
                       </Button>
                     ) : (
                       <Button
@@ -437,10 +443,10 @@ export default function ProjetosPage() {
                         disabled={isSwitching}
                         onClick={() => {
                           switchProjeto(p.id);
-                          setLocation("/");
+                          goHomeAfterProjetoAck(setLocation);
                         }}
                       >
-                        Entrar
+                        Entrar no painel
                       </Button>
                     )}
                   </div>

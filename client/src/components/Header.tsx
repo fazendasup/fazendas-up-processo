@@ -249,24 +249,33 @@ export default function Header() {
           </div>
         </Link>
 
-        {isLoggedIn && projetos.length > 1 && activeProjetoId != null && (
+        {isLoggedIn && activeProjetoId != null && activeProjeto && (
           <div className="hidden sm:flex shrink-0 items-center gap-2 min-w-0 max-w-[min(40vw,14rem)]">
-            <Select
-              value={String(activeProjetoId)}
-              onValueChange={(v) => switchProjeto(Number(v))}
-              disabled={isSwitching}
-            >
-              <SelectTrigger size="sm" className="h-8 w-[min(10rem,40vw)] shrink-0" aria-label="Trocar projeto">
-                <SelectValue placeholder="Trocar" />
-              </SelectTrigger>
-              <SelectContent>
-                {projetos.map((p) => (
-                  <SelectItem key={p.id} value={String(p.id)}>
-                    {p.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {projetos.length > 1 ? (
+              <Select
+                value={String(activeProjetoId)}
+                onValueChange={(v) => switchProjeto(Number(v))}
+                disabled={isSwitching}
+              >
+                <SelectTrigger size="sm" className="h-8 w-[min(10rem,40vw)] shrink-0" aria-label="Trocar projeto">
+                  <SelectValue placeholder="Trocar" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projetos.map((p) => (
+                    <SelectItem key={p.id} value={String(p.id)}>
+                      {p.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <span
+                className="h-8 max-w-[min(11rem,42vw)] truncate rounded-md border border-border/70 bg-muted/25 px-2.5 text-xs font-medium leading-8 text-foreground"
+                title={activeProjeto.nome}
+              >
+                {activeProjeto.nome}
+              </span>
+            )}
           </div>
         )}
 
