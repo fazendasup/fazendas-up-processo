@@ -18,6 +18,7 @@ RUN pnpm install --frozen-lockfile --prod
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/drizzle ./drizzle
 COPY --from=build /app/drizzle.config.ts ./drizzle.config.ts
+COPY --from=build /app/server/seed-fup-piloto.mjs ./server/seed-fup-piloto.mjs
 COPY --from=build /app/scripts/start.mjs ./scripts/start.mjs
 EXPOSE 3456
 # Migrações Drizzle: dentro do Node após HTTP à escuta (`runDrizzleMigrateFromEnv`); `start.mjs` só arranca o servidor.

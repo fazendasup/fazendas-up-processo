@@ -2,6 +2,7 @@ import "dotenv/config";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import rateLimit from "express-rate-limit";
@@ -18,7 +19,11 @@ import { runDrizzleMigrateFromEnv } from "../run-drizzle-migrate";
 import { initMqttFromEnv, shutdownMqtt } from "./mqtt";
 import { APP_VERSION } from "./release-meta";
 
-const projectRoot = path.join(fileURLToPath(new URL(".", import.meta.url)), "..", "..");
+const projectRoot = path.join(
+  fileURLToPath(new URL(".", import.meta.url)),
+  "..",
+  ".."
+);
 const devPortFile = path.join(projectRoot, ".dev-server-port");
 
 /** Porta HTTP local padrão em dev (evita conflito com outros projetos na mesma máquina, ex. 3000). */
@@ -43,7 +48,9 @@ function isPortAvailable(port: number): Promise<boolean> {
   });
 }
 
-async function findAvailablePort(startPort: number = DEFAULT_HTTP_PORT): Promise<number> {
+async function findAvailablePort(
+  startPort: number = DEFAULT_HTTP_PORT
+): Promise<number> {
   for (let port = startPort; port < startPort + 20; port++) {
     if (await isPortAvailable(port)) {
       return port;
@@ -67,11 +74,51 @@ function listLanIPv4Urls(port: number): string[] {
   return urls;
 }
 
+async function runFupPilotoBootstrapIfNeeded() {
+  if (process.env.NODE_ENV !== "production") return;
+  if (process.env.FUP_PILOTO_BOOTSTRAP === "0") {
+    console.log(
+      "[Server] FUP_PILOTO_BOOTSTRAP=0 — bootstrap do projeto FUP - Piloto desativado."
+    );
+    return;
+  }
+
+  const seedPath = path.join(projectRoot, "server", "seed-fup-piloto.mjs");
+  if (!fs.existsSync(seedPath)) {
+    console.warn(
+      `[Server] Seed FUP - Piloto não encontrado em ${seedPath}; projeto demo não será criado.`
+    );
+    return;
+  }
+
+  await new Promise<void>(resolve => {
+    const child = spawn(process.execPath, [seedPath, "--bootstrap"], {
+      cwd: projectRoot,
+      stdio: "inherit",
+      env: process.env,
+    });
+    child.on("error", err => {
+      console.warn("[Server] Bootstrap FUP - Piloto não iniciou:", err);
+      resolve();
+    });
+    child.on("exit", (code, signal) => {
+      if (code === 0) {
+        console.log("[Server] Bootstrap FUP - Piloto OK.");
+      } else {
+        console.warn(
+          `[Server] Bootstrap FUP - Piloto falhou (code=${code}, signal=${signal ?? "none"}).`
+        );
+      }
+      resolve();
+    });
+  });
+}
+
 async function startServer() {
   console.log("[Server] Iniciando…");
   if (!process.env.DATABASE_URL?.trim()) {
     console.warn(
-      "[Server] DATABASE_URL não definido. Crie `.env` na raiz do projeto (copie `env.defaults` ou rode: node scripts/ensure-env.mjs)",
+      "[Server] DATABASE_URL não definido. Crie `.env` na raiz do projeto (copie `env.defaults` ou rode: node scripts/ensure-env.mjs)"
     );
   }
 
@@ -92,7 +139,8 @@ async function startServer() {
     res.status(200).json({
       ok: true,
       version: APP_VERSION,
-      commit: process.env.GIT_COMMIT ?? process.env.VERCEL_GIT_COMMIT_SHA ?? null,
+      commit:
+        process.env.GIT_COMMIT ?? process.env.VERCEL_GIT_COMMIT_SHA ?? null,
       staticIndexHtml: staticReady,
       deploy: !isProd
         ? { mode: "development" }
@@ -137,7 +185,10 @@ async function startServer() {
     validate: false,
   });
   const jsonParser = express.json({ limit: "50mb" });
-  const urlencodedParser = express.urlencoded({ limit: "50mb", extended: true });
+  const urlencodedParser = express.urlencoded({
+    limit: "50mb",
+    extended: true,
+  });
   app.use("/api/trpc", apiLimiter);
   app.use("/api/trpc", jsonParser);
   app.use("/api/trpc", urlencodedParser);
@@ -146,9 +197,11 @@ async function startServer() {
     createExpressMiddleware({
       router: appRouter,
       createContext,
-    }),
+    })
   );
-  console.log("[Server] Rotas /api/trpc registadas (sessão anónima funciona durante o arranque da BD).");
+  console.log(
+    "[Server] Rotas /api/trpc registadas (sessão anónima funciona durante o arranque da BD)."
+  );
 
   /** Site (HTML/JS/CSS) já disponível durante o arranque da BD — evita página em branco / 404. */
   if (process.env.NODE_ENV !== "development") {
@@ -157,14 +210,19 @@ async function startServer() {
 
   const rawPort = process.env.PORT?.trim();
   const parsedPort = rawPort ? Number.parseInt(rawPort, 10) : NaN;
-  const preferredPort = Number.isFinite(parsedPort) && parsedPort > 0 ? parsedPort : DEFAULT_HTTP_PORT;
+  const preferredPort =
+    Number.isFinite(parsedPort) && parsedPort > 0
+      ? parsedPort
+      : DEFAULT_HTTP_PORT;
   if (isProd && rawPort && (!Number.isFinite(parsedPort) || parsedPort <= 0)) {
-    console.error(`[Server] PORT inválido (${JSON.stringify(rawPort)}). Railway deve definir PORT numérico.`);
+    console.error(
+      `[Server] PORT inválido (${JSON.stringify(rawPort)}). Railway deve definir PORT numérico.`
+    );
     process.exit(1);
   }
   if (isProd && !rawPort) {
     console.warn(
-      `[Server] PORT não definido — a usar ${DEFAULT_HTTP_PORT}. No Railway defina PORT (geralmente injectado automaticamente).`,
+      `[Server] PORT não definido — a usar ${DEFAULT_HTTP_PORT}. No Railway defina PORT (geralmente injectado automaticamente).`
     );
   }
   const port = isProd ? preferredPort : await findAvailablePort(preferredPort);
@@ -174,7 +232,7 @@ async function startServer() {
   const listenHost = process.env.HOST?.trim() || "0.0.0.0";
   if (isProd && (listenHost === "localhost" || listenHost === "127.0.0.1")) {
     console.warn(
-      "[Server] HOST aponta para loopback — o tráfego externo (Railway) pode não chegar ao Node. Use 0.0.0.0 ou não defina HOST.",
+      "[Server] HOST aponta para loopback — o tráfego externo (Railway) pode não chegar ao Node. Use 0.0.0.0 ou não defina HOST."
     );
   }
 
@@ -183,7 +241,9 @@ async function startServer() {
     server.once("error", reject);
   });
   writeDevServerPortFile(port);
-  console.log(`[Server] À escuta na porta ${port} — healthcheck /healthz OK (Railway).`);
+  console.log(
+    `[Server] À escuta na porta ${port} — healthcheck /healthz OK (Railway).`
+  );
   console.log(`Server running on http://localhost:${port}/`);
   if (listenHost === "0.0.0.0" || listenHost === "::") {
     const lan = listLanIPv4Urls(port);
@@ -191,10 +251,12 @@ async function startServer() {
       console.log("LAN (mesma rede Wi‑Fi/Ethernet):");
       for (const u of lan) console.log(`  ${u}`);
       console.log(
-        "Se nao abrir no celular: o Firewall do Windows pode bloquear a porta — rode uma vez (como admin): npm run dev:firewall",
+        "Se nao abrir no celular: o Firewall do Windows pode bloquear a porta — rode uma vez (como admin): npm run dev:firewall"
       );
     } else {
-      console.log(`LAN: abra no outro aparelho http://<IPv4-deste-PC>:${port}/  (ipconfig → IPv4)`);
+      console.log(
+        `LAN: abra no outro aparelho http://<IPv4-deste-PC>:${port}/  (ipconfig → IPv4)`
+      );
     }
   }
 
@@ -205,12 +267,15 @@ async function startServer() {
   process.once("SIGTERM", onSignal);
 
   console.log(
-    "[Server] A preparar base de dados… (Docker: espere o MySQL ~10–15 s na primeira vez)",
+    "[Server] A preparar base de dados… (Docker: espere o MySQL ~10–15 s na primeira vez)"
   );
   try {
     await runDrizzleMigrateFromEnv();
   } catch (e) {
-    console.error("[Server] Migrações Drizzle falharam — o site pode abrir mas a API pode falhar:", e);
+    console.error(
+      "[Server] Migrações Drizzle falharam — o site pode abrir mas a API pode falhar:",
+      e
+    );
     if (process.env.EXIT_ON_MIGRATE_FAILURE === "1") {
       process.exit(1);
     }
@@ -234,7 +299,7 @@ async function startServer() {
   const schemaEns = await db.ensureIncompleteMultiProjetoSchema();
   if (schemaEns.ok && schemaEns.columnsAdded.length > 0) {
     console.log(
-      `[Server] Multi-projeto: colunas projetoId criadas em ${schemaEns.columnsAdded.length} tabela(s): ${schemaEns.columnsAdded.join(", ")} (nullRows=${schemaEns.nullRowsPatched})`,
+      `[Server] Multi-projeto: colunas projetoId criadas em ${schemaEns.columnsAdded.length} tabela(s): ${schemaEns.columnsAdded.join(", ")} (nullRows=${schemaEns.nullRowsPatched})`
     );
   }
   await db.ensureTorresNumeroEstruturaColumns();
@@ -246,13 +311,14 @@ async function startServer() {
         r.fvpId,
         r.verification.torres,
         r.verification.ciclos,
-        r.mergeErrors.length,
+        r.mergeErrors.length
       );
     } catch (e) {
       console.error("[Server] AUTO_MIGRATE_LEGACY_DATA falhou:", e);
     }
   }
   await ensureBootstrapAdmin();
+  await runFupPilotoBootstrapIfNeeded();
   console.log("[Server] Banco OK.");
 
   if (process.env.NODE_ENV === "development") {
@@ -260,8 +326,13 @@ async function startServer() {
     await setupVite(app, server);
   }
 
-  console.log("[Server] API pronta" + (isProd ? " (site estático + tRPC à escuta)." : " + Vite."));
-  void initMqttFromEnv().catch((e) => console.warn("[MQTT] Falha ao iniciar:", e));
+  console.log(
+    "[Server] API pronta" +
+      (isProd ? " (site estático + tRPC à escuta)." : " + Vite.")
+  );
+  void initMqttFromEnv().catch(e =>
+    console.warn("[MQTT] Falha ao iniciar:", e)
+  );
 }
 
 startServer().catch(console.error);

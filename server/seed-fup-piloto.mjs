@@ -15,6 +15,7 @@ if (!DATABASE_URL) {
 }
 
 const PROJETO_NOME = "FUP - Piloto";
+const BOOTSTRAP_ONLY = process.argv.includes("--bootstrap");
 const DEMO_PASSWORD = "Fup@2026";
 const EXECUTOR_NOME = "Equipe FUP";
 const MODULOS = ["estoque", "automacao", "inteligencia", "visao_cultivo"];
@@ -288,6 +289,31 @@ async function resetOperationalData(connection, projetoId) {
   for (const table of tables) {
     await safeDeleteByProjeto(connection, table, projetoId);
   }
+}
+
+async function countOperationalRows(connection, projetoId) {
+  const tables = [
+    "variedades",
+    "fases_config",
+    "caixas_agua",
+    "torres",
+    "receitas_crescimento",
+    "planos_plantio",
+    "estoque_itens",
+  ];
+  let total = 0;
+  for (const table of tables) {
+    try {
+      const [rows] = await connection.execute(
+        `SELECT COUNT(*) AS n FROM \`${table}\` WHERE projetoId = ?`,
+        [projetoId]
+      );
+      total += Number(rows[0]?.n ?? 0);
+    } catch (err) {
+      if (!isNoSuchTable(err)) throw err;
+    }
+  }
+  return total;
 }
 
 async function getOrCreateProjeto(connection) {
@@ -1656,9 +1682,21 @@ async function seed() {
     await connection.beginTransaction();
 
     const projeto = await getOrCreateProjeto(connection);
-    await resetOperationalData(connection, projeto.id);
     await enableModules(connection, projeto.id);
     const executorId = await ensureUsersAndMemberships(connection, projeto.id);
+
+    if (BOOTSTRAP_ONLY && !projeto.created) {
+      const existingRows = await countOperationalRows(connection, projeto.id);
+      if (existingRows > 0) {
+        await connection.commit();
+        console.log(
+          `Bootstrap FUP - Piloto ignorado: projeto id=${projeto.id} já possui ${existingRows} linha(s) operacionais.`
+        );
+        return;
+      }
+    }
+
+    await resetOperationalData(connection, projeto.id);
 
     const variedades = await insertVariedades(connection, projeto.id);
     await insertFasesConfig(connection, projeto.id);
@@ -1720,7 +1758,9 @@ async function seed() {
 
     await connection.commit();
     console.log(
-      `Seed concluído: "${PROJETO_NOME}" (id=${projeto.id}, ${projeto.created ? "criado" : "atualizado"}).`
+      `${BOOTSTRAP_ONLY ? "Bootstrap" : "Seed"} concluído: "${PROJETO_NOME}" (id=${projeto.id}, ${
+        projeto.created ? "criado" : "atualizado"
+      }).`
     );
     console.log(
       "Usuários demo: gerente.fup@demo.local, operador.fup@demo.local, visitante.fup@demo.local"
