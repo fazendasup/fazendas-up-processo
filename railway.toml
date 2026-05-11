@@ -12,5 +12,6 @@ dockerfilePath = "Dockerfile"
 # Sobrescreva só se precisar; o Dockerfile já usa `node scripts/start.mjs`.
 startCommand = "node scripts/start.mjs"
 healthcheckPath = "/healthz"
-healthcheckTimeout = 180
+# Arranque pode demorar (MySQL a aquecer + migrações); margem extra além de /healthz precoce.
+healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"

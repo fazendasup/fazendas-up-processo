@@ -73,7 +73,59 @@ async function startServer() {
       "[Server] DATABASE_URL não definido. Crie `.env` na raiz do projeto (copie `env.defaults` ou rode: node scripts/ensure-env.mjs)",
     );
   }
-  console.log("[Server] Ligação ao MySQL e migrações em curso… (se falhar: Docker `docker compose up -d mysql` e espere ~10–15 s)");
+
+  const app = express();
+  /** Railway / proxies: cookies `Secure` e rate-limit usam IP/proto corretos. */
+  app.set("trust proxy", Number(process.env.TRUST_PROXY_HOPS ?? "1") || 1);
+  const server = createServer(app);
+  const isProd = process.env.NODE_ENV === "production";
+
+  /** Railway healthcheck: tem de responder **antes** da preparação pesada da BD (senão "service unavailable"). */
+  app.get("/healthz", (_req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.status(200).json({
+      ok: true,
+      version: APP_VERSION,
+      commit: process.env.GIT_COMMIT ?? process.env.VERCEL_GIT_COMMIT_SHA ?? null,
+    });
+  });
+
+  const preferredPort = parseInt(process.env.PORT || String(DEFAULT_HTTP_PORT), 10);
+  const port = isProd ? preferredPort : await findAvailablePort(preferredPort);
+  if (!isProd && port !== preferredPort) {
+    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+  }
+  const listenHost = process.env.HOST?.trim() || "0.0.0.0";
+
+  await new Promise<void>((resolve, reject) => {
+    server.listen(port, listenHost, () => resolve());
+    server.once("error", reject);
+  });
+  writeDevServerPortFile(port);
+  console.log(`[Server] À escuta na porta ${port} — healthcheck /healthz OK (Railway).`);
+  console.log(`Server running on http://localhost:${port}/`);
+  if (listenHost === "0.0.0.0" || listenHost === "::") {
+    const lan = listLanIPv4Urls(port);
+    if (lan.length > 0) {
+      console.log("LAN (mesma rede Wi‑Fi/Ethernet):");
+      for (const u of lan) console.log(`  ${u}`);
+      console.log(
+        "Se nao abrir no celular: o Firewall do Windows pode bloquear a porta — rode uma vez (como admin): npm run dev:firewall",
+      );
+    } else {
+      console.log(`LAN: abra no outro aparelho http://<IPv4-deste-PC>:${port}/  (ipconfig → IPv4)`);
+    }
+  }
+
+  const onSignal = () => {
+    void shutdownMqtt();
+  };
+  process.once("SIGINT", onSignal);
+  process.once("SIGTERM", onSignal);
+
+  console.log(
+    "[Server] A preparar base de dados em segundo plano… (Docker: espere o MySQL ~10–15 s na primeira vez)",
+  );
   await db.ensureUsersRoleVarchar();
   await db.ensureCiclosDosagemColumn();
   await db.ensurePlanosPlantioGerminacaoColumns();
@@ -107,13 +159,8 @@ async function startServer() {
     }
   }
   await ensureBootstrapAdmin();
-  console.log("[Server] Banco OK. Configurando HTTP…");
+  console.log("[Server] Banco OK. A registar API e site…");
 
-  const app = express();
-  /** Railway / proxies: cookies `Secure` e rate-limit usam IP/proto corretos. */
-  app.set("trust proxy", Number(process.env.TRUST_PROXY_HOPS ?? "1") || 1);
-  const server = createServer(app);
-  const isProd = process.env.NODE_ENV === "production";
   const apiLimiter = rateLimit({
     windowMs: 60_000,
     max: Number(process.env.RATE_LIMIT_MAX_PER_MINUTE ?? (isProd ? 500 : 4000)),
@@ -121,40 +168,17 @@ async function startServer() {
     legacyHeaders: false,
   });
   app.use("/api/trpc", apiLimiter);
-  // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-  /** Health HTTP simples (uptime / load balancer) — não passa pelo rate limit do tRPC. */
-  app.get("/healthz", (_req, res) => {
-    res.setHeader("Cache-Control", "no-store");
-    res.status(200).json({
-      ok: true,
-      version: APP_VERSION,
-      commit: process.env.GIT_COMMIT ?? process.env.VERCEL_GIT_COMMIT_SHA ?? null,
-    });
-  });
-
-  // OAuth removed - using email/password authentication instead
-  // tRPC API
   app.use(
     "/api/trpc",
     createExpressMiddleware({
       router: appRouter,
       createContext,
-    })
+    }),
   );
 
-  const preferredPort = parseInt(process.env.PORT || String(DEFAULT_HTTP_PORT), 10);
-  /** Railway/Fly/Render injetam `PORT`; o proxy só encaminha para essa porta — não procurar porta livre em produção. */
-  const port =
-    isProd ? preferredPort : await findAvailablePort(preferredPort);
-
-  if (!isProd && port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
-  }
-
-  // development mode uses Vite (módulo à parte — não empacotar `vite` na imagem --prod)
   if (process.env.NODE_ENV === "development") {
     const { setupVite } = await import("./vite-dev.js");
     await setupVite(app, server);
@@ -162,32 +186,8 @@ async function startServer() {
     serveStatic(app);
   }
 
-  /** 0.0.0.0 = aceita conexões da rede local (celular/outro PC). Use HOST=127.0.0.1 só em localhost. */
-  const listenHost = process.env.HOST?.trim() || "0.0.0.0";
-
-  server.listen(port, listenHost, () => {
-    writeDevServerPortFile(port);
-    console.log(`Server running on http://localhost:${port}/`);
-    if (listenHost === "0.0.0.0" || listenHost === "::") {
-      const lan = listLanIPv4Urls(port);
-      if (lan.length > 0) {
-        console.log("LAN (mesma rede Wi‑Fi/Ethernet):");
-        for (const u of lan) console.log(`  ${u}`);
-        console.log(
-          "Se nao abrir no celular: o Firewall do Windows pode bloquear a porta — rode uma vez (como admin): npm run dev:firewall"
-        );
-      } else {
-        console.log(`LAN: abra no outro aparelho http://<IPv4-deste-PC>:${port}/  (ipconfig → IPv4)`);
-      }
-    }
-    void initMqttFromEnv().catch((e) => console.warn("[MQTT] Falha ao iniciar:", e));
-  });
-
-  const onSignal = () => {
-    void shutdownMqtt();
-  };
-  process.once("SIGINT", onSignal);
-  process.once("SIGTERM", onSignal);
+  console.log("[Server] API + site estáticos prontos.");
+  void initMqttFromEnv().catch((e) => console.warn("[MQTT] Falha ao iniciar:", e));
 }
 
 startServer().catch(console.error);
