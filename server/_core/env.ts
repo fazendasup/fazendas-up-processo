@@ -84,9 +84,9 @@ export const ENV = {
    */
   openAiApiKey: (process.env.OPENAI_API_KEY ?? "").trim(),
   /** Modelo para Chat Completions (sem pesquisa web). */
-  openAiChatModel: (process.env.OPENAI_CHAT_MODEL ?? "gpt-5.4-mini").trim() || "gpt-5.4-mini",
-  /** Modelo para Responses API + ferramenta `web_search`. */
-  openAiResponsesModel: (process.env.OPENAI_RESPONSES_MODEL ?? "gpt-5.4-mini").trim() || "gpt-5.4-mini",
+  openAiChatModel: (process.env.OPENAI_CHAT_MODEL ?? "gpt-4o-mini").trim() || "gpt-4o-mini",
+  /** Modelo para Responses API + ferramenta `web_search` (ids suportados variam; `gpt-4o` é referência estável). */
+  openAiResponsesModel: (process.env.OPENAI_RESPONSES_MODEL ?? "gpt-4o").trim() || "gpt-4o",
 };
 
 // Validate required environment variables

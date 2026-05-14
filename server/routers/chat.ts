@@ -12,6 +12,11 @@ const chatMessageSchema = z.object({
 });
 
 export const chatRouter = router({
+  /** Indica se o servidor tem chave OpenAI (sem expor segredos). */
+  assistantStatus: projectProcedure.query(() => ({
+    configured: Boolean(ENV.openAiApiKey?.trim()),
+  })),
+
   sendMessage: projectProcedure
     .input(
       z.object({
