@@ -80,13 +80,13 @@ export const ENV = {
 
   /**
    * Assistente de chat (OpenAI). Sem chave, o endpoint de chat devolve erro claro.
-   * @see https://platform.openai.com/docs/api-reference
+   * Modelos: https://developers.openai.com/api/docs/models/gpt-5.4-mini
    */
   openAiApiKey: (process.env.OPENAI_API_KEY ?? "").trim(),
-  /** Modelo para Chat Completions (sem pesquisa web). */
-  openAiChatModel: (process.env.OPENAI_CHAT_MODEL ?? "gpt-4o-mini").trim() || "gpt-4o-mini",
-  /** Modelo para Responses API + ferramenta `web_search` (ids suportados variam; `gpt-4o` é referência estável). */
-  openAiResponsesModel: (process.env.OPENAI_RESPONSES_MODEL ?? "gpt-4o").trim() || "gpt-4o",
+  /** Modelo para Chat Completions (sem pesquisa web). Predefinição: GPT-5.4 mini na API OpenAI. */
+  openAiChatModel: (process.env.OPENAI_CHAT_MODEL ?? "gpt-5.4-mini").trim() || "gpt-5.4-mini",
+  /** Modelo para Responses API + ferramenta `web_search` (mesma família que suporta web search na doc). */
+  openAiResponsesModel: (process.env.OPENAI_RESPONSES_MODEL ?? "gpt-5.4-mini").trim() || "gpt-5.4-mini",
 };
 
 // Validate required environment variables
