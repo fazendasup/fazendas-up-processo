@@ -4,6 +4,7 @@
  */
 
 import type { Fase } from '@/lib/types';
+import { PLANTAS_POR_PERFIL_FV } from '@shared/plantasPorPerfil';
 import {
   ESTRUTURA_OVERRIDE_FV_12x6,
   estruturaFaseParaProjeto,
@@ -16,9 +17,9 @@ export const GERMINACAO_DIAS = 1;
 
 /** Plantas por perfil em cada fase (operacional). */
 export const PLANTAS_POR_PERFIL: Record<Fase, number> = {
-  mudas: 60,
-  vegetativa: 9,
-  maturacao: 6,
+  mudas: PLANTAS_POR_PERFIL_FV.mudas,
+  vegetativa: PLANTAS_POR_PERFIL_FV.vegetativa,
+  maturacao: PLANTAS_POR_PERFIL_FV.maturacao,
 };
 
 export const DESPERDICIO = {

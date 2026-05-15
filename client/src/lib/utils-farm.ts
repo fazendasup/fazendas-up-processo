@@ -19,6 +19,11 @@ import type {
   ReceitaCrescimentoResumo,
 } from './types';
 import { FASES_CONFIG } from './types';
+import {
+  contarPlantasMudasFv,
+  plantasPorPerfilMudas,
+  PLANTAS_POR_PERFIL_FV,
+} from '@shared/plantasPorPerfil';
 import { variedadePulaVegetativa } from '@shared/variedadesFase';
 import { estruturaFaseParaProjeto, type TorreEstruturaOverride } from '@shared/types';
 import { receitaCicloPrioritariaParaVariedade } from '@shared/cicloReceita';
@@ -386,9 +391,19 @@ export function contarCiclosPendentes(ciclos: CicloAplicacao[], fase: Fase): num
 // ---- Contagem de plantas ----
 
 /** Conta plantas ativas em um andar (status 'plantado') */
-export function contarPlantasAndar(andar: Andar, fase?: Fase, projetoTipo?: string | null): number {
+export function contarPlantasAndar(
+  andar: Andar,
+  fase?: Fase,
+  projetoTipo?: string | null,
+  /** FV mudas: plantas por perfil ativo (predefinição 60). */
+  plantasPorPerfilMudasOverride?: number,
+): number {
   if (fase === 'mudas') {
-    return (andar.perfis || []).filter((p) => p.ativo).length;
+    if (projetoTipo === 'microverdes') {
+      return (andar.perfis || []).filter((p) => p.ativo).length;
+    }
+    const nPerfis = (andar.perfis || []).filter((p) => p.ativo).length;
+    return contarPlantasMudasFv(nPerfis, plantasPorPerfilMudas(plantasPorPerfilMudasOverride));
   }
   if (projetoTipo === 'microverdes' && fase) {
     const furos = andar.furos || [];
@@ -407,7 +422,10 @@ export function capacidadeAndar(
   estruturaOverride?: TorreEstruturaOverride | null,
 ): number {
   const est = estruturaFaseParaProjeto(projetoTipo, fase, estruturaOverride);
-  if (est.furosPorPerfil === 0) return est.perfis; // mudas
+  if (est.furosPorPerfil === 0) {
+    if (projetoTipo === 'microverdes') return est.perfis;
+    return est.perfis * PLANTAS_POR_PERFIL_FV.mudas;
+  }
   return est.perfis * est.furosPorPerfil; // vegetativa=108, maturacao=36
 }
 
@@ -432,7 +450,8 @@ export function contarVaziosAndar(
 ): number {
   const cap = capacidadeAndar(fase || 'maturacao', projetoTipo, estruturaOverride);
   if (fase === 'mudas') {
-    return cap - (andar.perfis || []).filter((p) => p.ativo).length;
+    const plantadas = contarPlantasAndar(andar, 'mudas', projetoTipo);
+    return Math.max(0, cap - plantadas);
   }
   if (projetoTipo === 'microverdes' && fase) {
     const furos = andar.furos || [];
@@ -529,7 +548,7 @@ export function contarAlertasTorre(
 
 // ---- KPIs ----
 
-/** Por fase: contagem e capacidade na mesma unidade (mudas=perfis; vegetativa/maturação=furos). */
+/** Por fase: contagem e capacidade na mesma unidade (mudas FV=plantas; vegetativa/maturação=furos). */
 export type OcupacaoFaseSnapshot = {
   ocupadas: number;
   capacidade: number;

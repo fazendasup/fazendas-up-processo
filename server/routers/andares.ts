@@ -1,3 +1,8 @@
+import {
+  contarPlantasMudasFv,
+  perfisMudasParaLiberar,
+  plantasPorPerfilMudas,
+} from "@shared/plantasPorPerfil";
 import { resolverFaseDestinoTransplantio } from "@shared/transplantioDestino";
 import { variedadePulaVegetativa } from "@shared/variedadesFase";
 import { projetoIdFromCtx, fazendaVerticalProcedure, router } from "../_core/trpc";
@@ -15,6 +20,26 @@ async function assertAndarAtivo(projetoId: number, andarId: number) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "A torre está desativada e não aceita operações" });
   }
   return { andar, torre };
+}
+
+async function plantasPorPerfilMudasDoAndar(
+  projetoId: number,
+  origemVariedadeId: number,
+  origemPerfis: { ativo: boolean; receitaId?: number | null }[],
+): Promise<number> {
+  const comReceita = origemPerfis.find((p) => p.ativo && p.receitaId);
+  if (comReceita?.receitaId) {
+    const rec = await db.getReceitaById(projetoId, comReceita.receitaId);
+    if (rec?.densidadePorPerfil && rec.densidadePorPerfil > 0) {
+      return rec.densidadePorPerfil;
+    }
+  }
+  const lista = await db.getReceitasByVariedadeId(projetoId, origemVariedadeId);
+  const ativa = lista.find((r) => r.ativa) ?? lista[0];
+  if (ativa?.densidadePorPerfil && ativa.densidadePorPerfil > 0) {
+    return ativa.densidadePorPerfil;
+  }
+  return plantasPorPerfilMudas(null);
 }
 
 export const andaresRouter = router({
@@ -173,9 +198,17 @@ export const andaresRouter = router({
         projetoTipo: projeto?.tipo ?? null,
       });
 
+      const plantasPorPerfilMudasVal =
+        faseOrigem === "mudas"
+          ? await plantasPorPerfilMudasDoAndar(pid, origemVariedadeId, origemPerfis)
+          : 0;
+
       const origemDisponivel =
         faseOrigem === "mudas"
-          ? origemPerfis.filter((p) => p.ativo).length
+          ? contarPlantasMudasFv(
+              origemPerfis.filter((p) => p.ativo).length,
+              plantasPorPerfilMudasVal,
+            )
           : origemFuros.filter((f) => f.status === "plantado").length;
 
       if (totalSolicitado > origemDisponivel) {
@@ -266,7 +299,11 @@ export const andaresRouter = router({
       }
 
       if (faseOrigem === "mudas") {
-        const ativos = origemPerfis.filter((p) => p.ativo).slice(0, totalSolicitado);
+        const nPerfisLiberar = perfisMudasParaLiberar(totalSolicitado, plantasPorPerfilMudasVal);
+        const ativos = origemPerfis
+          .filter((p) => p.ativo)
+          .sort((a, b) => a.perfilIndex - b.perfilIndex)
+          .slice(0, nPerfisLiberar);
         await db.batchUpdatePerfis(
           pid,
           input.andarOrigemId,

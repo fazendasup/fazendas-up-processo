@@ -259,8 +259,8 @@ export default function Home() {
               const cfg = dataAtiva.fasesConfig?.[fase] || FASES_CONFIG[fase];
               const o = kpis.ocupacaoPorFase[fase];
               const isMaturacao = fase === 'maturacao';
-              const unidade = fase === 'mudas' ? 'perfis' : 'furos';
-              const rotuloOperacao = fase === 'mudas' ? 'perfis plantados' : 'furos plantados';
+              const unidade = fase === 'mudas' ? 'plantas' : 'furos';
+              const rotuloOperacao = fase === 'mudas' ? 'plantas (perfis)' : 'furos plantados';
               return (
                 <div
                   key={fase}

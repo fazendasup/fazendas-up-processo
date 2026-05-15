@@ -15,6 +15,7 @@ import {
   resolverFaseDestinoTransplantio,
   type FaseDestinoTransplantioFv,
 } from "@shared/transplantioDestino";
+import { PLANTAS_POR_PERFIL_FV } from "@shared/plantasPorPerfil";
 import { variedadePulaVegetativa } from "@shared/variedadesFase";
 
 function rotuloTorreDestino(torre: Torre): string {
@@ -90,6 +91,11 @@ export function TransplantioDistribuidoModal({
     }
     return null;
   }, [origemTorre, pulaVegetativa, podeEscolherFaseDestino, destinoFase, projetoTipo]);
+  const origemPerfisAtivos = useMemo(
+    () => (origemAndar?.perfis || []).filter((p) => p.ativo).length,
+    [origemAndar],
+  );
+
   const origemQtd = useMemo(() => {
     if (!origemAndar || !origemTorre) return 0;
     return contarPlantasAndar(origemAndar, origemTorre.fase as Fase, projetoTipo);
@@ -224,7 +230,8 @@ export function TransplantioDistribuidoModal({
     }
   };
 
-  const unidadeLabel = origemTorre?.fase === "mudas" ? "perfis" : "plantas";
+  const unidadeLabel =
+    origemTorre?.fase === "mudas" && projetoTipo === "microverdes" ? "bandejas" : "plantas";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -252,6 +259,11 @@ export function TransplantioDistribuidoModal({
                 <p>
                   <strong>Quantidade:</strong> {origemQtd} {unidadeLabel}
                 </p>
+                {origemTorre.fase === "mudas" && projetoTipo !== "microverdes" && origemPerfisAtivos > 0 && (
+                  <p className="col-span-2 text-xs text-muted-foreground">
+                    {origemPerfisAtivos} perfil(is) ativo(s) × {PLANTAS_POR_PERFIL_FV.mudas} plantas por perfil
+                  </p>
+                )}
               </div>
             </Card>
 
