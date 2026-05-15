@@ -4,11 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
-import type { Andar, Torre, Fase } from "@/lib/types";
+import type { Andar, Torre, Fase, VariedadeConfig } from "@/lib/types";
 import { capacidadeAndar, contarPlantasAndar, contarVaziosAndar, andarDentroDoModeloDaTorre } from "@/lib/utils-farm";
+import { torreReservadaGrelhaBabyLeaf } from "@/lib/planejamentoContinuo";
+import {
+  resolverFaseDestinoTransplantio,
+  type FaseDestinoTransplantioFv,
+} from "@shared/transplantioDestino";
 import { variedadePulaVegetativa } from "@shared/variedadesFase";
+
+function rotuloTorreDestino(torre: Torre): string {
+  const baby = torreReservadaGrelhaBabyLeaf(torre as Parameters<typeof torreReservadaGrelhaBabyLeaf>[0]);
+  return baby ? `${torre.nome} · 12×6 baby leaf` : torre.nome;
+}
 
 type Destino = {
   andarIdFront: string;
@@ -21,20 +33,6 @@ type Destino = {
   quantidade: number;
 };
 
-function proximaFase(
-  fase: Fase,
-  pulaVegetativa: boolean,
-  projetoTipo: string | null | undefined,
-): Fase | null {
-  if (projetoTipo === "microverdes") {
-    if (fase === "mudas") return "vegetativa";
-    return null;
-  }
-  if (fase === "mudas") return pulaVegetativa ? "maturacao" : "vegetativa";
-  if (fase === "vegetativa") return "maturacao";
-  return null;
-}
-
 export function TransplantioDistribuidoModal({
   open,
   onOpenChange,
@@ -45,6 +43,7 @@ export function TransplantioDistribuidoModal({
   origemAndarDbId,
   resolver,
   projetoTipo,
+  variedades,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -58,6 +57,7 @@ export function TransplantioDistribuidoModal({
   };
   /** Alinha capacidade e fase destino ao modelo microverdes (mudas → iluminação). */
   projetoTipo?: string | null;
+  variedades?: VariedadeConfig[];
 }) {
   const utils = trpc.useUtils();
   const transplantar = trpc.andares.transplantarDistribuido.useMutation();
@@ -67,11 +67,29 @@ export function TransplantioDistribuidoModal({
     return p?.variedadeId ?? null;
   }, [origemAndar]);
 
-  const pulaVegetativa = variedadePulaVegetativa(slugVariedadeOrigem, undefined);
+  const nomeVariedadeOrigem = useMemo(() => {
+    if (!slugVariedadeOrigem) return undefined;
+    return variedades?.find((v) => v.id === slugVariedadeOrigem)?.nome;
+  }, [slugVariedadeOrigem, variedades]);
 
-  const faseDestino = origemTorre
-    ? proximaFase(origemTorre.fase as Fase, pulaVegetativa, projetoTipo)
-    : null;
+  const pulaVegetativa = variedadePulaVegetativa(slugVariedadeOrigem, nomeVariedadeOrigem);
+
+  const podeEscolherFaseDestino =
+    origemTorre?.fase === "mudas" && projetoTipo !== "microverdes";
+
+  const [destinoFase, setDestinoFase] = useState<FaseDestinoTransplantioFv>("vegetativa");
+
+  const faseDestino = useMemo((): Fase | null => {
+    if (!origemTorre) return null;
+    if (origemTorre.fase === "mudas" || origemTorre.fase === "vegetativa") {
+      return resolverFaseDestinoTransplantio(origemTorre.fase, {
+        pulaVegetativa,
+        faseDestinoInformada: podeEscolherFaseDestino ? destinoFase : null,
+        projetoTipo,
+      });
+    }
+    return null;
+  }, [origemTorre, pulaVegetativa, podeEscolherFaseDestino, destinoFase, projetoTipo]);
   const origemQtd = useMemo(() => {
     if (!origemAndar || !origemTorre) return 0;
     return contarPlantasAndar(origemAndar, origemTorre.fase as Fase, projetoTipo);
@@ -84,12 +102,21 @@ export function TransplantioDistribuidoModal({
     if (!open) {
       setDestinos([]);
       setObs("");
+      return;
     }
-  }, [open]);
+    if (podeEscolherFaseDestino) {
+      setDestinoFase(pulaVegetativa ? "maturacao" : "vegetativa");
+    }
+  }, [open, podeEscolherFaseDestino, pulaVegetativa]);
+
+  useEffect(() => {
+    setDestinos([]);
+  }, [faseDestino]);
 
   const destinosDisponiveis = useMemo(() => {
     if (!faseDestino) return [];
-    const torresDestino = torres.filter((t) => t.fase === faseDestino);
+    /** Todas as torres da fase destino (incl. 12×6 baby leaf); não filtra por variedade. */
+    const torresDestino = torres.filter((t) => t.fase === faseDestino && t.ativa !== false);
     const torreById = new Map(torresDestino.map((t) => [t.id, t]));
     return andares
       .filter((a) => {
@@ -127,7 +154,7 @@ export function TransplantioDistribuidoModal({
       {
         andarIdFront: item.andar.id,
         andarIdDb,
-        torreNome: item.torre.nome,
+        torreNome: rotuloTorreDestino(item.torre),
         andarNumero: item.andar.numero,
         capacidadeTotal: item.capTotal,
         capacidadeUsada: item.capUsada,
@@ -150,7 +177,7 @@ export function TransplantioDistribuidoModal({
       novo.push({
         andarIdFront: item.andar.id,
         andarIdDb,
-        torreNome: item.torre.nome,
+        torreNome: rotuloTorreDestino(item.torre),
         andarNumero: item.andar.numero,
         capacidadeTotal: item.capTotal,
         capacidadeUsada: item.capUsada,
@@ -184,6 +211,7 @@ export function TransplantioDistribuidoModal({
         andarOrigemId: origemAndarDbId,
         destinos: destinos.map((d) => ({ andarDestinoId: d.andarIdDb, quantidade: d.quantidade })),
         observacoes: obs.trim() || undefined,
+        ...(origemTorre.fase === "mudas" ? { faseDestino: faseDestino as FaseDestinoTransplantioFv } : {}),
       });
       // Garante atualização imediata do estado global após o transplantio.
       await utils.fazenda.loadAll.invalidate();
@@ -226,6 +254,41 @@ export function TransplantioDistribuidoModal({
                 </p>
               </div>
             </Card>
+
+            {podeEscolherFaseDestino && (
+              <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
+                <p className="text-sm font-semibold">Fase de destino</p>
+                <RadioGroup
+                  value={destinoFase}
+                  onValueChange={(v) => setDestinoFase(v as FaseDestinoTransplantioFv)}
+                  className="grid gap-2 sm:grid-cols-2"
+                >
+                  <div className="flex items-start gap-2 rounded-md border bg-card p-2.5">
+                    <RadioGroupItem value="vegetativa" id="dest-veg" className="mt-0.5" />
+                    <Label htmlFor="dest-veg" className="cursor-pointer text-xs font-normal leading-snug">
+                      <span className="font-medium text-foreground">Vegetativa</span>
+                      <span className="mt-0.5 block text-muted-foreground">
+                        Fluxo padrão (ex.: alface) — torres de vegetativa, incluindo grelha 12×6 se houver.
+                      </span>
+                    </Label>
+                  </div>
+                  <div className="flex items-start gap-2 rounded-md border bg-card p-2.5">
+                    <RadioGroupItem value="maturacao" id="dest-mat" className="mt-0.5" />
+                    <Label htmlFor="dest-mat" className="cursor-pointer text-xs font-normal leading-snug">
+                      <span className="font-medium text-foreground">Maturação (direto)</span>
+                      <span className="mt-0.5 block text-muted-foreground">
+                        Pula a vegetativa — todas as torres de maturação, incluindo baby leaf (12×6).
+                      </span>
+                    </Label>
+                  </div>
+                </RadioGroup>
+                {pulaVegetativa && destinoFase === "vegetativa" && (
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    Esta variedade costuma ir direto para maturação; confirme se quer mesmo passar pela vegetativa.
+                  </p>
+                )}
+              </div>
+            )}
 
             <Alert>
               <AlertDescription>
@@ -318,7 +381,7 @@ export function TransplantioDistribuidoModal({
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
                           <p className="text-sm font-semibold">
-                            {x.torre.nome} — Andar {x.andar.numero}
+                            {rotuloTorreDestino(x.torre)} — Andar {x.andar.numero}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {x.capUsada}/{x.capTotal} (disp {x.capDisp})

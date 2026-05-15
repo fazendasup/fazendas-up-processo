@@ -1962,6 +1962,7 @@ export default function TorreDetail() {
               origemAndarDbId={andarSelecionado ? (resolver.andarFrontIdToDbId.get(andarSelecionado.id) ?? null) : null}
               resolver={resolver as any}
               projetoTipo={projetoTipo}
+              variedades={data.variedades}
             />
 
             {/* No andar selected */}

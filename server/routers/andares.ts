@@ -1,3 +1,4 @@
+import { resolverFaseDestinoTransplantio } from "@shared/transplantioDestino";
 import { variedadePulaVegetativa } from "@shared/variedadesFase";
 import { projetoIdFromCtx, fazendaVerticalProcedure, router } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
@@ -122,6 +123,8 @@ export const andaresRouter = router({
           )
           .min(1),
         observacoes: z.string().optional(),
+        /** Só para origem em mudas: permite ir direto para maturação (ex.: baby leaf) ou forçar vegetativa. */
+        faseDestino: z.enum(["vegetativa", "maturacao"]).optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -156,12 +159,19 @@ export const andaresRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Variedade da origem não encontrada no cadastro." });
       }
 
-      let faseDestino: "vegetativa" | "maturacao";
-      if (faseOrigem === "mudas") {
-        faseDestino = variedadePulaVegetativa(vRow.slug, vRow.nome) ? "maturacao" : "vegetativa";
-      } else {
-        faseDestino = "maturacao";
+      const projeto = await db.getProjetoRow(pid);
+      const pulaVeg = variedadePulaVegetativa(vRow.slug, vRow.nome);
+      if (faseOrigem === "vegetativa" && input.faseDestino && input.faseDestino !== "maturacao") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "A partir da vegetativa o destino é sempre maturação.",
+        });
       }
+      const faseDestino = resolverFaseDestinoTransplantio(faseOrigem, {
+        pulaVegetativa: pulaVeg,
+        faseDestinoInformada: input.faseDestino ?? null,
+        projetoTipo: projeto?.tipo ?? null,
+      });
 
       const origemDisponivel =
         faseOrigem === "mudas"
