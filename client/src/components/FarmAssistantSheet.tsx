@@ -10,18 +10,24 @@ import {
 } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { useProjeto } from "@/contexts/ProjetoContext";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Sparkles } from "lucide-react";
+import { AlertCircle, CheckCircle2, Sparkles, X } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Message } from "@/components/AIChatBox";
+import type { PendingAssistantAction } from "@shared/assistant-actions";
 
 /** streamdown/shiki são pesados — só carregar o chunk quando o sheet abre. */
 const AIChatBox = lazy(() =>
   import(/* @vite-ignore */ "@/components/AIChatBox").then((m) => ({ default: m.AIChatBox })),
 );
+
+function summaryToPlain(summary: string): string {
+  return summary.replace(/\*\*/g, "");
+}
 
 export type FarmAssistantSheetProps = {
   open: boolean;
@@ -32,12 +38,20 @@ export function FarmAssistantSheet({ open, onOpenChange }: FarmAssistantSheetPro
   const { activeProjetoId } = useProjeto();
   const [messages, setMessages] = useState<Message[]>([]);
   const [useWebSearch, setUseWebSearch] = useState(false);
+  const [pendingActions, setPendingActions] = useState<PendingAssistantAction[]>([]);
+
+  const utils = trpc.useUtils();
 
   useEffect(() => {
     setMessages([]);
+    setPendingActions([]);
   }, [activeProjetoId]);
 
   const sendMutation = trpc.chat.sendMessage.useMutation({
+    onError: (e) => toast.error(e.message),
+  });
+
+  const confirmMutation = trpc.chat.confirmActions.useMutation({
     onError: (e) => toast.error(e.message),
   });
 
@@ -58,6 +72,7 @@ export function FarmAssistantSheet({ open, onOpenChange }: FarmAssistantSheetPro
       const before = messages;
       const history = [...messages, userMsg];
       setMessages(history);
+      setPendingActions([]);
 
       sendMutation.mutate(
         {
@@ -75,6 +90,9 @@ export function FarmAssistantSheet({ open, onOpenChange }: FarmAssistantSheetPro
               ...history,
               { role: "assistant", content: res.reply },
             ]);
+            if (res.pendingActions?.length) {
+              setPendingActions(res.pendingActions);
+            }
           },
           onError: () => {
             setMessages(before);
@@ -85,6 +103,41 @@ export function FarmAssistantSheet({ open, onOpenChange }: FarmAssistantSheetPro
     [assistantStatus.data, messages, sendMutation, useWebSearch],
   );
 
+  const handleConfirmActions = useCallback(() => {
+    if (pendingActions.length === 0) return;
+    confirmMutation.mutate(
+      { actions: pendingActions },
+      {
+        onSuccess: async (data) => {
+          const ok = data.results.filter((r) => r.ok);
+          const fail = data.results.filter((r) => !r.ok);
+          if (ok.length > 0) {
+            toast.success(
+              ok.length === 1 ? ok[0]!.message : `${ok.length} ação(ões) executada(s) com sucesso.`,
+            );
+            await utils.fazenda.loadAll.invalidate();
+          }
+          for (const f of fail) {
+            toast.error(f.message);
+          }
+          setPendingActions([]);
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content:
+                fail.length === 0
+                  ? `✅ Executado: ${ok.map((r) => r.message).join(" ")}`
+                  : `Resultado: ${data.results.map((r) => (r.ok ? "✅" : "❌") + " " + r.message).join("\n")}`,
+            },
+          ]);
+        },
+      },
+    );
+  }, [confirmMutation, pendingActions, utils.fazenda.loadAll]);
+
+  const operationsDisabled = useWebSearch || sendMutation.isPending || confirmMutation.isPending;
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
@@ -94,11 +147,12 @@ export function FarmAssistantSheet({ open, onOpenChange }: FarmAssistantSheetPro
             Assistente Fazendas Up
           </SheetTitle>
           <SheetDescription className="text-xs">
-            Interpreta os dados do projeto atual e pode usar pesquisa na web para referências globais.
+            Pode executar transplantio, concluir tarefas do dia e outras operações — sempre com confirmação
+            antes de gravar. Não apaga dados do sistema.
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b px-4 py-2">
+        <div className="flex shrink-0 flex-col gap-2 border-b px-4 py-2">
           <div className="flex items-center gap-2">
             <Switch
               id="farm-assistant-web"
@@ -106,15 +160,58 @@ export function FarmAssistantSheet({ open, onOpenChange }: FarmAssistantSheetPro
               onCheckedChange={setUseWebSearch}
               disabled={
                 sendMutation.isPending ||
+                confirmMutation.isPending ||
                 assistantStatus.isLoading ||
                 (assistantStatus.data != null && !assistantStatus.data.configured)
               }
             />
             <Label htmlFor="farm-assistant-web" className="cursor-pointer text-xs font-normal leading-snug">
-              Pesquisa na web (boas práticas e referências recentes)
+              Pesquisa na web (desativa execução de operações)
             </Label>
           </div>
         </div>
+
+        {pendingActions.length > 0 && (
+          <div className="shrink-0 space-y-2 border-b bg-amber-500/10 px-4 py-3">
+            <p className="text-xs font-medium text-amber-950 dark:text-amber-100">
+              Confirme antes de executar ({pendingActions.length} ação
+              {pendingActions.length > 1 ? "ões" : ""})
+            </p>
+            <ul className="max-h-36 space-y-2 overflow-y-auto text-xs text-foreground/90">
+              {pendingActions.map((a) => (
+                <li key={a.id} className="whitespace-pre-wrap rounded-md border bg-background/80 p-2">
+                  {summaryToPlain(a.summary)}
+                </li>
+              ))}
+            </ul>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                className="flex-1 gap-1"
+                disabled={confirmMutation.isPending}
+                onClick={handleConfirmActions}
+              >
+                {confirmMutation.isPending ? (
+                  <Spinner className="size-4" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4" aria-hidden />
+                )}
+                Confirmar e executar
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={confirmMutation.isPending}
+                onClick={() => setPendingActions([])}
+                aria-label="Cancelar ações pendentes"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="min-h-0 flex-1 overflow-hidden p-2">
           {assistantStatus.isLoading && open ? (
@@ -132,12 +229,7 @@ export function FarmAssistantSheet({ open, onOpenChange }: FarmAssistantSheetPro
               <AlertDescription className="text-destructive/95">
                 O servidor precisa da variável de ambiente{" "}
                 <code className="rounded bg-destructive/15 px-1 py-0.5 text-xs">OPENAI_API_KEY</code>{" "}
-                (ex.: painel do Railway → Variables). Sem a chave, o chat não consegue chamar a API
-                OpenAI. Opcionalmente ajuste{" "}
-                <code className="rounded bg-destructive/15 px-1 py-0.5 text-xs">OPENAI_CHAT_MODEL</code>{" "}
-                e{" "}
-                <code className="rounded bg-destructive/15 px-1 py-0.5 text-xs">OPENAI_RESPONSES_MODEL</code>{" "}
-                se a sua conta usar outros modelos.
+                (ex.: painel do Railway → Variables).
               </AlertDescription>
             </Alert>
           ) : (
@@ -155,15 +247,15 @@ export function FarmAssistantSheet({ open, onOpenChange }: FarmAssistantSheetPro
               <AIChatBox
                 messages={messages}
                 onSendMessage={handleSend}
-                isLoading={sendMutation.isPending}
-                placeholder="Pergunte sobre operação, cultivo ou dados do projeto…"
+                isLoading={operationsDisabled}
+                placeholder="Peça uma operação ou pergunta sobre o projeto…"
                 height="calc(100vh - 11rem)"
                 className="h-full min-h-[280px] rounded-lg border-0 shadow-none"
-                emptyStateMessage="Pergunte sobre a operação, cultivo ou boas práticas. Os dados do projeto entram automaticamente no contexto."
+                emptyStateMessage="Ex.: “Transplantar andar 2 da mudas 1 para vegetativa 3 andares 3 e 4” ou “Concluí o plantio do dia, marque como feito”."
                 suggestedPrompts={[
-                  "Dá um resumo operacional objetivo do meu projeto agora.",
-                  "Quais tarefas ou riscos eu deveria priorizar esta semana?",
-                  "Boas práticas de pH e EC em hidroponia para a minha fase atual.",
+                  "Transplantar o andar 2 da torre de mudas 1 para a vegetativa 3, andares 3 e 4.",
+                  "Concluir todas as tarefas de hoje e atrasadas do plantio.",
+                  "Resumo operacional objetivo do projeto agora.",
                 ]}
               />
             </Suspense>

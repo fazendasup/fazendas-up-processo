@@ -1,7 +1,10 @@
+import { confirmAssistantActionsInputSchema } from "@shared/assistant-actions";
+import { isOperationalAdminRole } from "@shared/const";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { ENV } from "../_core/env";
 import { projetoIdFromCtx, projectProcedure, router } from "../_core/trpc";
+import { executeAssistantActions } from "../assistant-actions/execute";
 import { runFarmAssistantChat } from "../chat-assistant";
 import { buildCompactFazendaSnapshotMarkdown } from "../chat-context";
 import * as db from "../db";
@@ -56,11 +59,17 @@ export const chatRouter = router({
           snapshotMarkdown: snapshot,
           messages,
           useWebSearch: Boolean(input.useWebSearch),
+          operationCtx: {
+            projetoId: pid,
+            projetoTipo: projeto?.tipo ?? null,
+            isAdmin: isOperationalAdminRole(ctx.user.role),
+          },
         });
         return {
           reply: result.reply,
           modelUsed: result.modelUsed,
           webSearchUsed: result.webSearchUsed,
+          pendingActions: result.pendingActions,
         };
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -75,5 +84,35 @@ export const chatRouter = router({
           message: msg.length > 200 ? `${msg.slice(0, 200)}…` : msg,
         });
       }
+    }),
+
+  /** Executa ações preparadas pelo assistente (após confirmação do utilizador). */
+  confirmActions: projectProcedure
+    .input(confirmAssistantActionsInputSchema)
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Não autenticado" });
+      }
+      const pid = projetoIdFromCtx(ctx);
+      const projeto = await db.getProjetoRow(pid);
+      const { results } = await executeAssistantActions(
+        {
+          projetoId: pid,
+          projetoTipo: projeto?.tipo ?? null,
+          projetoModulos: ctx.projetoModulos,
+          isAdmin: isOperationalAdminRole(ctx.user.role),
+          userId: ctx.user.id,
+          userName: ctx.user.name || "Usuário",
+        },
+        input.actions,
+      );
+      const failed = results.filter((r) => !r.ok);
+      if (failed.length > 0 && failed.length === results.length) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: failed.map((f) => f.message).join(" | "),
+        });
+      }
+      return { results };
     }),
 });

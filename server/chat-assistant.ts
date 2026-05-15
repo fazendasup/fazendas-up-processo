@@ -1,19 +1,53 @@
 import OpenAI from "openai";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import type { ResponseInput } from "openai/resources/responses/responses";
+import type { PendingAssistantAction } from "@shared/assistant-actions";
 import { ENV } from "./_core/env";
+import { getAssistantOperationTools, runAssistantToolCall } from "./assistant-actions/tools";
+import type { AssistantPreviewCtx } from "./assistant-actions/preview";
 
 export type FarmChatMessage = { role: "user" | "assistant"; content: string };
 
 const BASE_INSTRUCTIONS_PT = `És o assistente operacional da plataforma **Fazendas Up** (fazenda vertical, hidroponia e microverdes).
 
 Recebes um snapshot em Markdown com dados reais do projeto do utilizador — trata-o como fonte de verdade para contagens, nomes, fases e estado.
-Regras:
+
+### Operações no sistema (ferramentas preparar_*)
+Cada ferramenta **só prepara** a ação; o utilizador **confirma** na interface antes de gravar.
+
+**Torres (FV / microverdes):** transplantio, plantar/actualizar perfis, activar todos os perfis, furos, esvaziar furos, marcar lavado, liberar andar, colheita, aplicação no andar, mover perfil/andar.
+
+**Tarefas e ciclos:** concluir tarefas (ex. plantio do dia → escopo \`hoje_e_atrasadas\`), adiar, criar tarefa, marcar ciclo executado.
+
+**Germinação e planos:** criar/atualizar lote germinação, contagem no plano, marcar pronta para mudas.
+
+**Infra:** medição e aplicação na caixa d'água; abrir/concluir manutenção.
+
+**Hidroponia:** plantio em bancada.
+
+**Inteligência (se módulo activo):** alerta lido / em andamento / resolvido.
+
+**Proibido:** apagar registos, excluir histórico, ou qualquer operação de remoção. Não há ferramenta para isso. Regenerar tarefas automáticas do dia também não (envolve apagar tarefas).
+
+**Dicas:** torre = fase + número (ex. mudas 1). Andar = número do andar. Perfis P1–P12. Transplantio sem quantidades → reparte entre destinos. Pedidos ambíguos → pergunta antes de preparar.
+
+### Respostas
 - Responde em **português do Brasil**, salvo se o utilizador usar outro idioma.
-- Ancora recomendações nos dados do snapshot quando fizer sentido; não inventes números ou registos que não apareçam lá.
-- Para boas práticas gerais, normas ou literatura recente, raciocina com cuidado; quando a **pesquisa web** estiver ativa, podes citar orientações externas e deixar claro que são referências gerais (não substituem o snapshot local).
-- Mesmo para perguntas simples, acrescenta **um insight ou próximo passo prático** quando couber, sem ser prolixo.
-- Não afirmes ter alterado dados no sistema; alterações são sempre feitas pelo operador na app.`;
+- Ancora recomendações nos dados do snapshot; não inventes números.
+- Para boas práticas gerais, usa raciocínio cuidadoso; com pesquisa web ativa podes citar referências externas.`;
+
+const ADMIN_INSTRUCTIONS_PT = `
+
+### Administração do projeto (só utilizadores admin)
+Ferramentas \`preparar_*\` adicionais para cadastro e configuração — **sempre com confirmação**, **nunca apagam dados**.
+
+**Planos:** avançar status, actualizar plano, deslocar datas de todos os planos activos de uma variedade.
+
+**Cadastro:** criar/actualizar variedade, receita, ciclo de dosagem.
+
+**Infraestrutura:** criar/actualizar torre, activar/desactivar torre, criar caixa d'água, criar/actualizar bancada (hidroponia), configurar limites EC/pH por fase.
+
+Não uses estas ferramentas para operador comum; se o utilizador não for admin, explica que precisa de permissão de administrador do projeto.`;
 
 function getClient(): OpenAI | null {
   const key = ENV.openAiApiKey?.trim();
@@ -40,17 +74,28 @@ function toResponseInput(history: FarmChatMessage[]): ResponseInput {
   }));
 }
 
+const MAX_TOOL_ROUNDS = 6;
+
+export type FarmAssistantChatResult = {
+  reply: string;
+  modelUsed: string;
+  webSearchUsed: boolean;
+  pendingActions: PendingAssistantAction[];
+};
+
 export async function runFarmAssistantChat(params: {
   snapshotMarkdown: string;
   messages: FarmChatMessage[];
   useWebSearch: boolean;
-}): Promise<{ reply: string; modelUsed: string; webSearchUsed: boolean }> {
+  operationCtx?: AssistantPreviewCtx;
+}): Promise<FarmAssistantChatResult> {
   const client = getClient();
   if (!client) {
     throw new Error("OPENAI_API_KEY não configurada");
   }
 
-  const instructions = `${BASE_INSTRUCTIONS_PT}
+  const isAdmin = Boolean(params.operationCtx?.isAdmin);
+  const instructions = `${BASE_INSTRUCTIONS_PT}${isAdmin ? ADMIN_INSTRUCTIONS_PT : ""}
 
 ---
 
@@ -74,21 +119,68 @@ ${params.snapshotMarkdown}`;
       reply: text,
       modelUsed: String(resp.model),
       webSearchUsed: true,
+      pendingActions: [],
     };
   }
 
-  const completion = await client.chat.completions.create({
-    model: ENV.openAiChatModel,
-    messages: toChatMessages(instructions, params.messages),
-    max_completion_tokens: 4096,
-  });
-  const text = completion.choices[0]?.message?.content?.trim() ?? "";
-  if (!text) {
-    throw new Error("Resposta vazia do modelo (Chat Completions).");
+  const pendingActions: PendingAssistantAction[] = [];
+  const opCtx = params.operationCtx;
+  const chatMessages = toChatMessages(instructions, params.messages);
+
+  for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+    const completion = await client.chat.completions.create({
+      model: ENV.openAiChatModel,
+      messages: chatMessages,
+      tools: opCtx ? getAssistantOperationTools(Boolean(opCtx.isAdmin)) : undefined,
+      max_completion_tokens: 4096,
+    });
+
+    const choice = completion.choices[0]?.message;
+    if (!choice) {
+      throw new Error("Resposta vazia do modelo (Chat Completions).");
+    }
+
+    const toolCalls = choice.tool_calls;
+    if (!toolCalls?.length || !opCtx) {
+      const text = choice.content?.trim() ?? "";
+      if (!text && pendingActions.length > 0) {
+        return {
+          reply:
+            "Preparei as ações abaixo. **Confirme** na caixa de confirmação para executar no sistema.",
+          modelUsed: completion.model,
+          webSearchUsed: false,
+          pendingActions,
+        };
+      }
+      if (!text) {
+        throw new Error("Resposta vazia do modelo (Chat Completions).");
+      }
+      return {
+        reply: text,
+        modelUsed: completion.model,
+        webSearchUsed: false,
+        pendingActions,
+      };
+    }
+
+    chatMessages.push(choice);
+
+    for (const tc of toolCalls) {
+      if (tc.type !== "function") continue;
+      const result = await runAssistantToolCall(opCtx, tc.function.name, tc.function.arguments, pendingActions);
+      chatMessages.push({
+        role: "tool",
+        tool_call_id: tc.id,
+        content: result,
+      });
+    }
   }
+
   return {
-    reply: text,
-    modelUsed: completion.model,
+    reply:
+      "Limite de passos com ferramentas atingido. Revise as propostas abaixo e confirme, ou reformule o pedido.",
+    modelUsed: ENV.openAiChatModel,
     webSearchUsed: false,
+    pendingActions,
   };
 }
