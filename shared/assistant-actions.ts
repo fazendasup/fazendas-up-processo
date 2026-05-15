@@ -27,6 +27,8 @@ export const assistantActionTypeSchema = z.enum([
   "ativar_todos_perfis_andar",
   "atualizar_alerta_inteligencia",
   "bancada_atualizar_plantio",
+  /** Avança planos `planejado` → `em_germinacao` (mesmo botão "Iniciar germinação" do painel Plantio). */
+  "iniciar_germinacao_planos",
   // Admin (sem exclusão de dados)
   "avancar_status_plano",
   "atualizar_plano_plantio",
@@ -233,6 +235,10 @@ export const bancadaAtualizarPlantioParamsSchema = z.object({
   plantioPrevisaoColheita: z.coerce.date().nullable(),
 });
 
+export const iniciarGerminacaoPlanosParamsSchema = z.object({
+  planoIds: z.array(z.number().int().positive()).min(1).max(25),
+});
+
 export const avancarStatusPlanoParamsSchema = z.object({
   id: z.number().int().positive(),
   novoStatus: z.enum(["em_germinacao", "em_producao", "colhido", "cancelado"]),
@@ -389,6 +395,7 @@ const paramsByType = {
   ativar_todos_perfis_andar: ativarTodosPerfisAndarParamsSchema,
   atualizar_alerta_inteligencia: atualizarAlertaInteligenciaParamsSchema,
   bancada_atualizar_plantio: bancadaAtualizarPlantioParamsSchema,
+  iniciar_germinacao_planos: iniciarGerminacaoPlanosParamsSchema,
   avancar_status_plano: avancarStatusPlanoParamsSchema,
   atualizar_plano_plantio: atualizarPlanoPlantioParamsSchema,
   deslocar_datas_planos_variedade: deslocarDatasPlanosVariedadeParamsSchema,

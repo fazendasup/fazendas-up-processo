@@ -1,5 +1,7 @@
 import type { PendingAssistantAction } from "@shared/assistant-actions";
+import { filtrarPlanosPrioridadeSomenteGerminacaoPlantio } from "@shared/planosPlantioOperacao";
 import { randomUUID } from "crypto";
+import * as db from "../db";
 import type { AssistantPreviewCtx } from "./preview";
 import { labelTorre } from "./lookup";
 import {
@@ -428,4 +430,68 @@ export async function previewBancadaPlantio(
     plantioDataEntrada: plantioVariedadeId ? new Date() : null,
     plantioPrevisaoColheita: null,
   });
+}
+
+/**
+ * Mesma fila que "Germinação / plantio inicial" no painel Hoje: planos `planejado` onde o próximo passo é iniciar germinação.
+ * Não confundir com `concluir_tarefas` (tabela tarefas).
+ */
+export async function previewIniciarGerminacaoPlanos(
+  ctx: AssistantPreviewCtx,
+  args: Record<string, unknown>,
+): Promise<{ action: PendingAssistantAction } | { error: string }> {
+  const todos = await db.getAllPlanosPlantio(ctx.projetoId);
+  const ref = new Date();
+  const filaGerminacao = filtrarPlanosPrioridadeSomenteGerminacaoPlantio(todos as any[], ref).filter(
+    (p: { status: string }) => p.status === "planejado",
+  );
+
+  let selecionados: { id: number; variedadeNome?: string | null; quantidadePlantas?: number | null }[];
+
+  const idsArg = Array.isArray(args.plano_ids) ? args.plano_ids : undefined;
+  if (idsArg && idsArg.length > 0) {
+    const idSet = new Set(idsArg.map((x) => Number(x)).filter((n) => Number.isFinite(n)));
+    selecionados = [];
+    for (const id of Array.from(idSet)) {
+      const plano = await db.getPlanoPlantioById(ctx.projetoId, id);
+      if (!plano) return { error: `Plano #${id} não encontrado.` };
+      if (plano.status !== "planejado") {
+        return { error: `Plano #${id} não está em planejado (está \`${plano.status}\`); só é possível iniciar germinação a partir de planejado.` };
+      }
+      selecionados.push(plano);
+    }
+  } else {
+    selecionados = [...filaGerminacao];
+    const vnome = typeof args.variedade_nome === "string" ? args.variedade_nome.trim().toLowerCase() : "";
+    if (vnome) {
+      selecionados = selecionados.filter((p) => (p.variedadeNome ?? "").toLowerCase().includes(vnome));
+    }
+    const limite = Math.min(typeof args.limite === "number" && args.limite > 0 ? args.limite : 25, 25);
+    selecionados = selecionados.slice(0, limite);
+  }
+
+  if (selecionados.length === 0) {
+    return {
+      error:
+        "Nenhum plano em **planejado** na fila de germinação/plantio inicial com esses critérios. " +
+        "O painel Plantio lista **planos de plantio**, não a tabela de tarefas — peça **iniciar germinação** ou use o número do plano (ex. #383). " +
+        "Se precisar concluir linhas da lista de **tarefas** (checklist), use preparar_concluir_tarefas.",
+    };
+  }
+
+  const linhas = selecionados.map(
+    (p) =>
+      `  • **${p.variedadeNome ?? "—"}** — #${p.id} (${p.quantidadePlantas ?? "—"} plantas) → **em germinação**`,
+  );
+  const summary = [
+    `**Iniciar germinação** (${selecionados.length} plano(s) em planejado)`,
+    ...linhas,
+    filaGerminacao.length > selecionados.length && !idsArg?.length
+      ? `\n_(+${filaGerminacao.length - selecionados.length} na fila não incluídos; ajuste variedade_nome ou plano_ids)_`
+      : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return action("iniciar_germinacao_planos", summary, { planoIds: selecionados.map((p) => p.id) });
 }

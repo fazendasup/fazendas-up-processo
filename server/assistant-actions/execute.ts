@@ -6,7 +6,7 @@ import {
 import type { ModuloContratavel } from "@shared/const";
 import { receitaCicloPrioritariaParaVariedade } from "@shared/cicloReceita";
 import { TRPCError } from "@trpc/server";
-import type { InsertPerfil } from "../../drizzle/schema";
+import type { InsertPerfil, InsertPlanoPlantio } from "../../drizzle/schema";
 import * as db from "../db";
 import { runTransplantarDistribuido } from "../operacoes/transplantarDistribuido";
 import {
@@ -332,6 +332,25 @@ export async function executeAssistantAction(
           plantioPrevisaoColheita: p.plantioPrevisaoColheita,
         });
         return { ...base, ok: true, message: "Plantio da bancada atualizado." };
+      }
+      case "iniciar_germinacao_planos": {
+        const p = parseAssistantActionParams("iniciar_germinacao_planos", action.params);
+        let n = 0;
+        for (const id of p.planoIds) {
+          const plano = await db.getPlanoPlantioById(pid, id);
+          if (!plano) throw new TRPCError({ code: "NOT_FOUND", message: `Plano ${id} não encontrado` });
+          if (plano.status !== "planejado") {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `Plano #${id} não está em planejado (status actual: ${plano.status}).`,
+            });
+          }
+          const patch: Record<string, unknown> = { status: "em_germinacao" };
+          if (plano.germinacaoFase === "pendente") patch.germinacaoFase = "germinando";
+          await db.updatePlanoPlantio(pid, id, patch as Partial<InsertPlanoPlantio>);
+          n++;
+        }
+        return { ...base, ok: true, message: `${n} plano(s) passaram para em germinação.` };
       }
       default:
         return { ...base, ok: false, message: "Tipo de ação desconhecido." };

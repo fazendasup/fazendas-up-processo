@@ -10,16 +10,20 @@ export type FarmChatMessage = { role: "user" | "assistant"; content: string };
 
 const BASE_INSTRUCTIONS_PT = `És o assistente operacional da plataforma **Fazendas Up** (fazenda vertical, hidroponia e microverdes).
 
-Recebes um snapshot em Markdown com dados reais do projeto do utilizador — trata-o como fonte de verdade para contagens, nomes, fases e estado.
+Recebes abaixo um **resumo operacional do projeto** em Markdown (torres, planos, tarefas, ciclos, etc.) — dados **reais e consolidados**, actualizados **no momento em que o utilizador envia a mensagem**. Trata-o como fonte de verdade para contagens, nomes, fases e estado.
 
 ### Operações no sistema (ferramentas preparar_*)
 Cada ferramenta **só prepara** a ação; o utilizador **confirma** na interface antes de gravar.
 
+**Tarefas (checklist / tabela tarefas):** concluir tarefas por escopo ou título; adiar; criar tarefa — **não** são os cartões «Germinação / plantio inicial» do Plantio.
+
+**Germinação / plantio inicial (painel Plantio):** são **planos de plantio** em \`planejado\`; para equivaler ao botão verde «Iniciar germinação», use **preparar_iniciar_germinacao_planos** (neste resumo aparecem os **#id** desses planos).
+
 **Torres (FV / microverdes):** transplantio, plantar/actualizar perfis, activar todos os perfis, furos, esvaziar furos, marcar lavado, liberar andar, colheita, aplicação no andar, mover perfil/andar.
 
-**Tarefas e ciclos:** concluir tarefas (ex. plantio do dia → escopo \`hoje_e_atrasadas\`), adiar, criar tarefa, marcar ciclo executado.
+**Ciclos:** marcar ciclo executado.
 
-**Germinação e planos:** criar/atualizar lote germinação, contagem no plano, marcar pronta para mudas.
+**Germinação (lotes):** criar/atualizar lote germinação, contagem no plano, marcar pronta para mudas.
 
 **Infra:** medição e aplicação na caixa d'água; abrir/concluir manutenção.
 
@@ -33,7 +37,7 @@ Cada ferramenta **só prepara** a ação; o utilizador **confirma** na interface
 
 ### Respostas
 - Responde em **português do Brasil**, salvo se o utilizador usar outro idioma.
-- Ancora recomendações nos dados do snapshot; não inventes números.
+- Ancora recomendações no resumo operacional abaixo; não inventes números.
 - Para boas práticas gerais, usa raciocínio cuidadoso; com pesquisa web ativa podes citar referências externas.`;
 
 const ADMIN_INSTRUCTIONS_PT = `
@@ -84,7 +88,8 @@ export type FarmAssistantChatResult = {
 };
 
 export async function runFarmAssistantChat(params: {
-  snapshotMarkdown: string;
+  /** Markdown do resumo operacional (dados consolidados do projeto no envio). */
+  resumoOperacionalMarkdown: string;
   messages: FarmChatMessage[];
   useWebSearch: boolean;
   operationCtx?: AssistantPreviewCtx;
@@ -99,9 +104,9 @@ export async function runFarmAssistantChat(params: {
 
 ---
 
-### Snapshot do projeto (atual)
+### Resumo operacional do projeto
 
-${params.snapshotMarkdown}`;
+${params.resumoOperacionalMarkdown}`;
 
   if (params.useWebSearch) {
     const resp = await client.responses.create({

@@ -40,6 +40,7 @@ import {
   previewCriarManutencao,
   previewCriarTarefa,
   previewEsvaziarFurosAndar,
+  previewIniciarGerminacaoPlanos,
   previewLiberarAndar,
   previewMarcarGerminacaoProntaPlano,
   previewMoverAndar,
@@ -103,7 +104,7 @@ const OPERATOR_OPERATION_TOOLS: ChatCompletionTool[] = [
     function: {
       name: "preparar_concluir_tarefas",
       description:
-        "Prepara conclusão de tarefas operacionais (ex.: plantio do dia, ciclos pendentes). Use escopo hoje_e_atrasadas para 'concluir tudo do dia'.",
+        "Prepara conclusão de linhas na **tabela de tarefas** (checklist com título/vencimento). NÃO use para o cartão 'Germinação / plantio inicial' do Plantio — esses são **planos de plantio**; use preparar_iniciar_germinacao_planos.",
       parameters: {
         type: "object",
         properties: {
@@ -116,6 +117,23 @@ const OPERATOR_OPERATION_TOOLS: ChatCompletionTool[] = [
           limite: { type: "number", description: "Máx. tarefas (padrão 40)" },
         },
         required: ["escopo"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "preparar_iniciar_germinacao_planos",
+      description:
+        "Painel Plantio — 'Germinação / plantio inicial' / 'Iniciar germinação': avança planos em **planejado** para **em_germinacao** (equivalente ao botão verde). Sem plano_ids, usa a mesma fila de prioridade que o painel Hoje (hoje + atrasados). Opcional: filtrar por variedade_nome ou listar plano_ids explícitos (números do # na UI).",
+      parameters: {
+        type: "object",
+        properties: {
+          plano_ids: { type: "array", items: { type: "number" }, description: "Ids numéricos dos planos (ex.: 383, 390)" },
+          variedade_nome: { type: "string", description: "Subcadeia do nome da variedade quando não passar plano_ids" },
+          limite: { type: "number", description: "Máx. planos sem plano_ids (padrão 25)" },
+        },
         additionalProperties: false,
       },
     },
@@ -609,6 +627,8 @@ export async function runAssistantToolCall(
             limite: typeof args.limite === "number" ? args.limite : undefined,
           }),
         );
+      case "preparar_iniciar_germinacao_planos":
+        return pushPreview(pending, await previewIniciarGerminacaoPlanos(ctx, args));
       case "preparar_marcar_andar_lavado":
         return pushPreview(
           pending,

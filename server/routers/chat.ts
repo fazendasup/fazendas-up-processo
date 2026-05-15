@@ -43,7 +43,7 @@ export const chatRouter = router({
         db.getAllBancadas(pid),
       ]);
 
-      const snapshot = buildCompactFazendaSnapshotMarkdown(data, {
+      const resumoOperacionalMarkdown = buildCompactFazendaSnapshotMarkdown(data, {
         projetoId: pid,
         projetoNome: projeto?.nome ?? `Projeto ${pid}`,
         bancadas,
@@ -56,7 +56,7 @@ export const chatRouter = router({
 
       try {
         const result = await runFarmAssistantChat({
-          snapshotMarkdown: snapshot,
+          resumoOperacionalMarkdown,
           messages,
           useWebSearch: Boolean(input.useWebSearch),
           operationCtx: {

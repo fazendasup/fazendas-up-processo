@@ -1,3 +1,4 @@
+import { filtrarPlanosPrioridadeSomenteGerminacaoPlantio, ymdLocalKey } from "@shared/planosPlantioOperacao";
 import type * as db from "./db";
 
 export type FullFazendaData = Awaited<ReturnType<typeof db.loadFullFazendaData>>;
@@ -7,7 +8,7 @@ const MAX_SNAPSHOT_CHARS = 14_500;
 
 function clip(body: string): string {
   if (body.length <= MAX_SNAPSHOT_CHARS) return body;
-  return `${body.slice(0, MAX_SNAPSHOT_CHARS - 120)}\n\n[Snapshot truncado por limite de contexto.]`;
+  return `${body.slice(0, MAX_SNAPSHOT_CHARS - 120)}\n\n[Parte do resumo foi omitida por limite de tamanho.]`;
 }
 
 function ts(v: Date | null | undefined): string {
@@ -20,7 +21,8 @@ function ts(v: Date | null | undefined): string {
 }
 
 /**
- * Texto compacto em Markdown com dados operacionais do projeto para o modelo interpretar.
+ * Gera o **resumo operacional** do projeto em Markdown para o assistente (internamente: “snapshot” =
+ * cópia dos dados num instante; para gestores: resumo consolidado ao enviar a mensagem).
  * Não inclui PII além do que já está nas entidades operacionais.
  */
 export function buildCompactFazendaSnapshotMarkdown(
@@ -145,6 +147,23 @@ export function buildCompactFazendaSnapshotMarkdown(
   if (tarefasSorted.length > 35) lines.push(`- … +${tarefasSorted.length - 35} outras`);
   lines.push("");
 
+  const refSnap = new Date();
+  const filaGermSnap = filtrarPlanosPrioridadeSomenteGerminacaoPlantio(data.planosPlantio as any[], refSnap).filter(
+    (p: { status: string }) => p.status === "planejado",
+  );
+  lines.push("## Planos — germinação / plantio inicial (fila como no painel Plantio)");
+  lines.push(
+    `- Planos em **planejado** elegíveis a **Iniciar germinação** agora (hoje local ${ymdLocalKey(refSnap)}): **${filaGermSnap.length}**`,
+  );
+  for (const p of filaGermSnap.slice(0, 25)) {
+    const row = p as { id: number; variedadeNome: string; quantidadePlantas: number; status: string; dataInicioGerminacao: Date };
+    lines.push(
+      `- **#${row.id}** ${row.variedadeNome} — ${row.quantidadePlantas} plantas, status \`${row.status}\`, início germ. ${ts(row.dataInicioGerminacao)}`,
+    );
+  }
+  if (filaGermSnap.length > 25) lines.push(`- … +${filaGermSnap.length - 25} outros planos na mesma fila`);
+  lines.push("");
+
   lines.push("## Registros de colheita (últimos)");
   const rc = [...data.registrosColheita].slice(-12);
   for (const r of rc) {
@@ -159,7 +178,7 @@ export function buildCompactFazendaSnapshotMarkdown(
   lines.push(`- Total: ${data.planosPlantio.length}`);
   for (const p of data.planosPlantio.slice(0, 12)) {
     lines.push(
-      `- **${p.variedadeNome}** — status \`${p.status}\` — colheita prevista ${ts(p.dataColheitaPrevista)} — germinação ${ts(p.dataInicioGerminacao)}`,
+      `- **#${p.id}** ${p.variedadeNome} — status \`${p.status}\` — colheita prevista ${ts(p.dataColheitaPrevista)} — germinação ${ts(p.dataInicioGerminacao)}`,
     );
   }
 
