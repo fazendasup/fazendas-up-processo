@@ -86,7 +86,7 @@ export const chatRouter = router({
       }
     }),
 
-  /** Executa ações preparadas pelo assistente (após confirmação do utilizador). */
+  /** Executa ações preparadas pelo assistente (após confirmação do usuário). */
   confirmActions: projectProcedure
     .input(confirmAssistantActionsInputSchema)
     .mutation(async ({ ctx, input }) => {

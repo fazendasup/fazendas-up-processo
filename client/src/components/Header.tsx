@@ -48,6 +48,7 @@ import {
   Moon,
   ShieldCheck,
   BarChart3,
+  Coins,
   BookOpen,
   Package,
   FolderKanban,
@@ -87,6 +88,7 @@ const OPERACAO_ITEMS: NavItem[] = [
 const ANALISE_ADMIN_PREFIX: NavItem[] = [
   { href: '/capacidade', label: 'Capacidade', icon: LayoutGrid, requiredRole: 'admin' },
   { href: '/analytics', label: 'Analytics', icon: BarChart3, requiredRole: 'admin' },
+  { href: '/custos-producao', label: 'Custos de produção', icon: Coins, requiredRole: 'admin' },
 ];
 
 const ANALISE_TODOS: NavItem = { href: '/inteligencia', label: 'Inteligência', icon: Brain };

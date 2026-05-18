@@ -17,6 +17,7 @@ const operationalResetClustersSchema = z.object({
   registrosColheita: z.boolean(),
   tarefas: z.boolean(),
   estoque: z.boolean(),
+  custosProducao: z.boolean(),
   inteligenciaAlertas: z.boolean(),
   visao: z.boolean(),
   bancadasHidroponia: z.boolean(),
@@ -36,9 +37,10 @@ function resumoLimpezaOperacional(input: z.infer<typeof operationalResetClusters
   if (input.torresGrade) parts.push("manutenções em torres");
   else if (input.manutencoes) parts.push("manutenções");
   add(input.planosPlantio, "planos de plantio");
-  add(input.registrosColheita, "colheitas registadas");
+  add(input.registrosColheita, "colheitas registradas");
   add(input.tarefas, "tarefas");
   add(input.estoque, "estoque");
+  add(input.custosProducao, "custos de produção");
   add(input.inteligenciaAlertas, "inteligência e alertas");
   add(input.visao, "visão computacional");
   add(input.bancadasHidroponia, "bancadas hidroponia");

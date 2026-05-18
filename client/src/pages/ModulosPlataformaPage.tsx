@@ -12,16 +12,10 @@ import {
 import { trpc } from "@/lib/trpc";
 import { MODULOS_CONTRATAVEIS } from "@shared/const";
 import type { ModuloContratavel } from "@shared/const";
+import { ROTULO_MODULO_PROJETO } from "@shared/projetoModulos";
 import { Link } from "wouter";
 import { ArrowLeft, Layers } from "lucide-react";
 import { toast } from "sonner";
-
-const ROTULO_MODULO: Record<ModuloContratavel, string> = {
-  estoque: "Estoque",
-  automacao: "Automação",
-  inteligencia: "Inteligência",
-  visao_cultivo: "Visão do cultivo",
-};
 
 export default function ModulosPlataformaPage() {
   const utils = trpc.useUtils();
@@ -54,13 +48,13 @@ export default function ModulosPlataformaPage() {
             <div>
               <h1 className="font-display text-2xl font-bold">Módulos por projeto</h1>
               <p className="text-sm text-muted-foreground">
-                Liga ou desliga funcionalidades comerciais (estoque, automação, inteligência, visão) por projeto.
+                Liga ou desliga funcionalidades comerciais (estoque, automação, inteligência, visão, custos de produção) por projeto.
               </p>
             </div>
           </div>
         </div>
 
-        {isLoading && <p className="text-muted-foreground">A carregar…</p>}
+        {isLoading && <p className="text-muted-foreground">Carregando…</p>}
         {isError && <p className="text-destructive">Não foi possível carregar a listagem.</p>}
 
         {data && data.length === 0 && (
@@ -77,7 +71,7 @@ export default function ModulosPlataformaPage() {
                   <TableHead>Estado</TableHead>
                   {MODULOS_CONTRATAVEIS.map((m) => (
                     <TableHead key={m} className="text-center min-w-[7rem]">
-                      {ROTULO_MODULO[m]}
+                      {ROTULO_MODULO_PROJETO[m]}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -96,7 +90,7 @@ export default function ModulosPlataformaPage() {
                           onCheckedChange={(habilitado) =>
                             definir.mutate({ projetoId: row.id, modulo: m, habilitado })
                           }
-                          aria-label={`${ROTULO_MODULO[m]} — ${row.nome}`}
+                          aria-label={`${ROTULO_MODULO_PROJETO[m]} — ${row.nome}`}
                         />
                       </TableCell>
                     ))}

@@ -18,7 +18,7 @@ const PROJETO_NOME = "FUP - Piloto";
 const BOOTSTRAP_ONLY = process.argv.includes("--bootstrap");
 const DEMO_PASSWORD = "Fup@2026";
 const EXECUTOR_NOME = "Equipe FUP";
-const MODULOS = ["estoque", "automacao", "inteligencia", "visao_cultivo"];
+const MODULOS = ["estoque", "automacao", "inteligencia", "visao_cultivo", "custos_producao"];
 
 const FASES = {
   mudas: { perfis: 12, furosPorPerfil: 0, ec: 1.1, ph: 6.0 },

@@ -205,7 +205,7 @@ export default function EstoquePage() {
   const [tab, setTab] = useState<EstoqueTab>(TAB_GERAL);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
-  /** Categoria do item em edição (evita mover item se o utilizador mudar de aba com o diálogo aberto). */
+  /** Categoria do item em edição (evita mover item se o usuário mudar de aba com o diálogo aberto). */
   const [editCategoria, setEditCategoria] = useState<EstoqueCategoria | null>(null);
   /** Categoria ao criar item a partir da visão geral. */
   const [formCategoria, setFormCategoria] = useState<EstoqueCategoria>("sementes");
@@ -260,7 +260,7 @@ export default function EstoquePage() {
 
   const fornecedoresAgg = useMemo(() => agregarPorFornecedor(overviewFiltered), [overviewFiltered]);
 
-  /** Números como string para o utilizador poder apagar dígitos e deixar o campo vazio à medida que edita. */
+  /** Números como string para o usuário poder apagar dígitos e deixar o campo vazio à medida que edita. */
   const [form, setForm] = useState({
     nome: "",
     quantidadeTotal: "",
@@ -623,7 +623,7 @@ export default function EstoquePage() {
                     {isLoading && (
                       <TableRow>
                         <TableCell colSpan={14} className="text-muted-foreground text-sm">
-                          A carregar…
+                          Carregando…
                         </TableCell>
                       </TableRow>
                     )}
@@ -846,7 +846,7 @@ export default function EstoquePage() {
                       {isLoading && (
                         <TableRow>
                           <TableCell colSpan={10} className="text-muted-foreground text-sm">
-                            A carregar…
+                            Carregando…
                           </TableCell>
                         </TableRow>
                       )}

@@ -28,7 +28,7 @@ export const projetosRouter = router({
     return db.ensureProjetoMembershipsBootstrap();
   }),
 
-  /** Lista de projetos do utilizador — sem agregar contagens (evita falhar a lista inteira se uma tabela ainda não existir). */
+  /** Lista de projetos do usuário — sem agregar contagens (evita falhar a lista inteira se uma tabela ainda não existir). */
   list: protectedProcedure.query(async ({ ctx }) => {
     const includeInactive = isOperationalAdminRole(ctx.user.role);
     return db.listProjetosForUser(ctx.user.id, { includeInactive });
@@ -68,7 +68,7 @@ export const projetosRouter = router({
     }),
 
   /**
-   * Migra todo o cadastro operacional antigo para "Fazenda Vertical Principal" (qualquer utilizador autenticado).
+   * Migra todo o cadastro operacional antigo para "Fazenda Vertical Principal" (qualquer usuário autenticado).
    * Atribui `projetoId` em linhas NULL, une outras origens, devolve contagens de verificação e erros parciais.
    */
   /** Só administrador global — reatribui dados operacionais em massa (multi-tenant). */

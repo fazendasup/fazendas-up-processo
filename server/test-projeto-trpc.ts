@@ -13,7 +13,7 @@ export function projetoHeader(pid: number = TEST_PROJETO_ID): Record<string, str
   return { [PROJETO_HEADER]: String(pid) };
 }
 
-/** Instala mock de vínculo utilizador↔projeto (evita depender de `projeto_usuarios` preenchido). */
+/** Instala mock de vínculo usuário↔projeto (evita depender de `projeto_usuarios` preenchido). */
 export function useMockProjetoResolve(): void {
   beforeEach(() => {
     vi.spyOn(db, "resolveProjetoForUser").mockImplementation(async (_userId, pid) => {

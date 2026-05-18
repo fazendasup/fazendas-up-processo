@@ -707,6 +707,46 @@ export const estoqueItens = mysqlTable("estoque_itens", {
 export type EstoqueItemRow = typeof estoqueItens.$inferSelect;
 export type InsertEstoqueItem = typeof estoqueItens.$inferInsert;
 
+/** Rubricas de custo de produção por variedade (R$/planta ou derivados). */
+export const custosProducaoItens = mysqlTable("custos_producao_itens", {
+  id: int("id").autoincrement().primaryKey(),
+  projetoId: int("projetoId").notNull(),
+  /** Null = rubrica do projeto (com ou sem rateio entre variedades). */
+  variedadeId: int("variedadeId"),
+  grupo: varchar("grupo", { length: 64 }).notNull(),
+  rubrica: varchar("rubrica", { length: 160 }).notNull(),
+  descricao: text("descricao"),
+  modo: mysqlEnum("modo", [
+    "calculado",
+    "por_planta",
+    "por_ciclo",
+    "mensal_rateio",
+    "rateio_projeto",
+  ])
+    .notNull()
+    .default("por_planta"),
+  /** Para `rateio_projeto`: como repartir o valor mensal entre variedades. */
+  rateioMetodo: varchar("rateioMetodo", { length: 24 }),
+  /** Janela em dias para agregar colheitas quando o método usar dados de colheita. */
+  rateioDiasColheita: int("rateioDiasColheita"),
+  /** Preço da unidade de compra (R$), ex.: R$/kg — usado com quantidadePorPlanta */
+  precoReferencia: decimal("precoReferencia", { precision: 18, scale: 8 }),
+  unidadeCompra: varchar("unidadeCompra", { length: 32 }),
+  quantidadePorPlanta: decimal("quantidadePorPlanta", { precision: 20, scale: 10 }),
+  valorPorPlanta: decimal("valorPorPlanta", { precision: 14, scale: 6 }),
+  valorPorCiclo: decimal("valorPorCiclo", { precision: 14, scale: 2 }),
+  plantasPorCicloEstimado: int("plantasPorCicloEstimado"),
+  valorMensal: decimal("valorMensal", { precision: 14, scale: 2 }),
+  plantasMesEstimativa: int("plantasMesEstimativa"),
+  ordem: int("ordem").notNull().default(0),
+  ativo: boolean("ativo").notNull().default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CustoProducaoItemRow = typeof custosProducaoItens.$inferSelect;
+export type InsertCustoProducaoItem = typeof custosProducaoItens.$inferInsert;
+
 /** Análises de imagens do cultivo (visão computacional). */
 export const visionCultivoAnalyses = mysqlTable("vision_cultivo_analyses", {
   id: int("id").autoincrement().primaryKey(),

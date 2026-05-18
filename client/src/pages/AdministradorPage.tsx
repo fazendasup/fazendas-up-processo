@@ -55,7 +55,7 @@ export default function AdministradorPage() {
                 Módulos da plataforma
               </h2>
               <p className="text-sm text-muted-foreground mb-4">
-                Estoque, automação, inteligência e visão do cultivo por projeto (contratação).
+                Estoque, automação, inteligência, visão do cultivo e custos de produção por projeto.
               </p>
               <Link href="/plataforma/modulos">
                 <Button variant="outline">Gerir módulos</Button>

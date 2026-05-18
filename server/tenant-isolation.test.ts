@@ -1,5 +1,5 @@
 /**
- * Garante que operações sensíveis multi-tenant não ficam expostas a utilizadores sem papel adequado.
+ * Garante que operações sensíveis multi-tenant não ficam expostas a usuários sem papel adequado.
  * Usa mocks onde necessário para não depender de dados concretos na BD.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -107,7 +107,7 @@ describe("Isolamento: getById e contagens só com vínculo ao projeto", () => {
     });
   });
 
-  it("getById retorna FORBIDDEN se o utilizador não tem acesso ao id pedido", async () => {
+  it("getById retorna FORBIDDEN se o usuário não tem acesso ao id pedido", async () => {
     const caller = appRouter.createCaller({
       ...ctxUser("user"),
       user: {
@@ -120,7 +120,7 @@ describe("Isolamento: getById e contagens só com vínculo ao projeto", () => {
     expect(row).toMatchObject({ id: 100 });
   });
 
-  it("operationalCounts ignora ids de projetos que não pertencem ao utilizador", async () => {
+  it("operationalCounts ignora ids de projetos que não pertencem ao usuário", async () => {
     const caller = appRouter.createCaller({
       ...ctxUser("user"),
       user: {

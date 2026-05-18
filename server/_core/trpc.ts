@@ -135,6 +135,7 @@ export const estoqueModuleProcedure = projectProcedureComModulo("estoque");
 export const automacaoModuleProcedure = projectProcedureComModulo("automacao");
 export const inteligenciaModuleProcedure = projectProcedureComModulo("inteligencia");
 export const visaoCultivoModuleProcedure = projectProcedureComModulo("visao_cultivo");
+export const custosProducaoModuleProcedure = projectProcedureComModulo("custos_producao");
 
 const requireGlobalAdmin = t.middleware(async (opts) => {
   const { ctx, next } = opts;
@@ -176,6 +177,7 @@ export const adminEstoqueProjectProcedure = estoqueModuleProcedure.use(requireGl
 export const adminAutomacaoModuleProcedure = automacaoModuleProcedure.use(requireGlobalAdmin);
 export const adminInteligenciaProjectProcedure = inteligenciaModuleProcedure.use(requireGlobalAdmin);
 export const adminVisaoCultivoProjectProcedure = visaoCultivoModuleProcedure.use(requireGlobalAdmin);
+export const adminCustosProducaoProjectProcedure = custosProducaoModuleProcedure.use(requireGlobalAdmin);
 
 function isProjetoComTorres(tipo: ProjetoTipo | null | undefined): boolean {
   return tipo === "fazenda_vertical" || tipo === "microverdes";

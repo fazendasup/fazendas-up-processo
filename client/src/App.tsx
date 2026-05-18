@@ -30,6 +30,7 @@ const TarefasPage = lazy(() => import(/* @vite-ignore */"./pages/TarefasPage"));
 const PlanejamentoPage = lazy(() => import(/* @vite-ignore */"./pages/PlanejamentoPage"));
 const HojePage = lazy(() => import(/* @vite-ignore */"./pages/HojePage"));
 const CapacidadePage = lazy(() => import(/* @vite-ignore */"./pages/CapacidadePage"));
+const CustosProducaoPage = lazy(() => import(/* @vite-ignore */"./pages/CustosProducaoPage"));
 const Inteligencia = lazy(() => import(/* @vite-ignore */"./pages/Inteligencia"));
 const VisaoPage = lazy(() => import(/* @vite-ignore */"./pages/VisaoPage"));
 const AdministradorPage = lazy(() => import(/* @vite-ignore */"./pages/AdministradorPage"));
@@ -134,6 +135,13 @@ function Router() {
           <Route path="/capacidade">
             <ProtectedRoute requiredRole="admin">
               <CapacidadePage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/custos-producao">
+            <ProtectedRoute requiredRole="admin">
+              <ModuloProjetoRouteGuard modulo="custos_producao">
+                <CustosProducaoPage />
+              </ModuloProjetoRouteGuard>
             </ProtectedRoute>
           </Route>
           <Route path="/receitas">

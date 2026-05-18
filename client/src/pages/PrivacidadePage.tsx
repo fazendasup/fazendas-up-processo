@@ -34,7 +34,7 @@ export default function PrivacidadePage() {
         <section className="space-y-3 text-sm leading-relaxed">
           <h2 className="text-base font-semibold text-foreground">2. Que dados podemos tratar</h2>
           <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
-            <li>Dados de conta (nome, email, identificação interna de utilizador).</li>
+            <li>Dados de conta (nome, email, identificação interna de usuário).</li>
             <li>Dados operacionais inseridos na aplicação (produção, cultivo, equipas, etc.).</li>
             <li>Dados técnicos necessários ao funcionamento (sessão, logs operacionais limitados).</li>
           </ul>

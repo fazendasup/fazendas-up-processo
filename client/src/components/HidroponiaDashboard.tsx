@@ -134,7 +134,7 @@ export default function HidroponiaDashboard() {
             <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-cyan-100/90 mb-1">Hidroponia</p>
             <h1 className="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight">Painel de cultivo</h1>
             <p className="text-sm mt-2 max-w-xl text-white/90">
-              {activeProjeto?.nome ?? "Projeto"} — bancadas por fase. Toque numa bancada para registar EC/pH, aplicações e
+              {activeProjeto?.nome ?? "Projeto"} — bancadas por fase. Toque numa bancada para registrar EC/pH, aplicações e
               plantio por caixa. Cadastro em <strong>Configurações</strong>.
             </p>
           </div>
@@ -238,7 +238,7 @@ export default function HidroponiaDashboard() {
           </section>
         )}
 
-        {listQuery.isLoading && <p className="text-sm text-muted-foreground">A carregar bancadas…</p>}
+        {listQuery.isLoading && <p className="text-sm text-muted-foreground">Carregando bancadas…</p>}
         {listQuery.isError && <p className="text-sm text-destructive">Não foi possível carregar as bancadas.</p>}
 
         {fases.map((fase) => {

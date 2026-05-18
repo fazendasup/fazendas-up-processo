@@ -65,7 +65,7 @@ export async function runAdminAssistantAction(
     case "atualizar_plano_plantio": {
       const { id, ...data } = parseAssistantActionParams("atualizar_plano_plantio", params);
       await db.updatePlanoPlantio(pid, id, data);
-      return "Plano actualizado.";
+      return "Plano atualizado.";
     }
     case "deslocar_datas_planos_variedade": {
       const p = parseAssistantActionParams("deslocar_datas_planos_variedade", params);
@@ -100,7 +100,7 @@ export async function runAdminAssistantAction(
     case "atualizar_variedade": {
       const { id, ...data } = parseAssistantActionParams("atualizar_variedade", params);
       await db.updateVariedade(pid, id, data);
-      return "Variedade actualizada.";
+      return "Variedade atualizada.";
     }
     case "criar_receita": {
       const p = parseAssistantActionParams("criar_receita", params);
@@ -123,7 +123,7 @@ export async function runAdminAssistantAction(
       if (antes?.variedadeId != null && antes.variedadeId !== depois?.variedadeId) {
         await db.syncPerfisReceitaIdParaVariedade(pid, antes.variedadeId);
       }
-      return "Receita actualizada.";
+      return "Receita atualizada.";
     }
     case "criar_ciclo": {
       const p = parseAssistantActionParams("criar_ciclo", params);
@@ -133,7 +133,7 @@ export async function runAdminAssistantAction(
     case "atualizar_ciclo": {
       const { id, ...data } = parseAssistantActionParams("atualizar_ciclo", params);
       await db.updateCiclo(pid, id, data);
-      return "Ciclo actualizado.";
+      return "Ciclo atualizado.";
     }
     case "criar_torre": {
       requireProjetoComTorres(ctx.projetoTipo);
@@ -179,13 +179,13 @@ export async function runAdminAssistantAction(
       if (updates.numAndares != null) {
         await db.syncTorreAndaresToNumAndares(pid, id, updates.numAndares);
       }
-      return "Torre actualizada.";
+      return "Torre atualizada.";
     }
     case "toggle_torre_ativa": {
       requireProjetoComTorres(ctx.projetoTipo);
       const p = parseAssistantActionParams("toggle_torre_ativa", params);
       const row = await db.toggleTorreAtiva(pid, p.id);
-      return `Torre ${row?.nome ?? p.id} — agora ${row?.ativa === false ? "inactiva" : "activa"}.`;
+      return `Torre ${row?.nome ?? p.id} — agora ${row?.ativa === false ? "inativa" : "ativa"}.`;
     }
     case "criar_caixa_agua": {
       const p = parseAssistantActionParams("criar_caixa_agua", params);
@@ -212,7 +212,7 @@ export async function runAdminAssistantAction(
       if (quantidadeCaixas != null) {
         await db.syncCaixasBancadaForBancada(pid, id, quantidadeCaixas);
       }
-      return "Bancada actualizada.";
+      return "Bancada atualizada.";
     }
     case "upsert_fase_config": {
       const p = parseAssistantActionParams("upsert_fase_config", params);

@@ -5,7 +5,7 @@ import { useProjeto } from "@/contexts/ProjetoContext";
 
 /**
  * Só após escolher ou criar projeto em /projetos é que o restante da app fica acessível.
- * Sem projeto ativo (cookie/localStorage), mantém o utilizador em /projetos.
+ * Sem projeto ativo (cookie/localStorage), mantém o usuário em /projetos.
  */
 export function ProjetoOnboardingRedirect({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();

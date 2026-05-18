@@ -24,7 +24,8 @@ import {
   OPCOES_FASE_TORRE_MICROVERDES,
   labelFaseTorreMicroverdes,
 } from '@/lib/microverdesPhases';
-import { Settings, Save, RotateCcw, Plus, Trash2, SlidersHorizontal, Bell, Globe, Database, ShieldCheck, Building2, Power, Edit2, AlertTriangle } from 'lucide-react';
+import { ProjetoModulosCard } from '@/components/ProjetoModulosCard';
+import { Settings, Save, RotateCcw, Plus, Trash2, SlidersHorizontal, Bell, Globe, Database, ShieldCheck, Building2, Power, Edit2, AlertTriangle, Layers } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { proximoNumeroTorreOperacional, sugerirNomeNovaTorre } from '@/lib/sugerirNomeTorre';
 import { ESTRUTURA_OVERRIDE_FV_12x6, torreEstruturaOverrideIgual } from '@shared/types';
@@ -49,7 +50,7 @@ export default function ConfigPage() {
   /** Se false, esconde caixas do seed admin (Mudas 1, Veg 1–3, Mat 1–5) na lista de reutilização. */
   const [mostrarCaixasSeedNovaTorre, setMostrarCaixasSeedNovaTorre] = useState(false);
   const [editingTorre, setEditingTorre] = useState<any>(null);
-  /** true se o utilizador escreveu o nome na criação (não sobrescrever ao mudar a fase). */
+  /** true se o usuário escreveu o nome na criação (não sobrescrever ao mudar a fase). */
   const [novoTorreNomeManual, setNovoTorreNomeManual] = useState(false);
   const editTorreSnapshotRef = useRef<{
     caixaSlug: string;
@@ -98,6 +99,7 @@ export default function ConfigPage() {
       registrosColheita: true,
       tarefas: true,
       estoque: true,
+      custosProducao: true,
       inteligenciaAlertas: true,
       visao: true,
       bancadasHidroponia: true,
@@ -144,7 +146,7 @@ export default function ConfigPage() {
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { numeric: true, sensitivity: 'base' }));
   }, [data.caixasAgua, formData.fase, mostrarCaixasSeedNovaTorre]);
 
-  /** Editar torre: mostra todas as caixas da fase (incl. seed) para o utilizador escolher qualquer uma. */
+  /** Editar torre: mostra todas as caixas da fase (incl. seed) para o usuário escolher qualquer uma. */
   const caixasOpcoesEdicao = useMemo(() => {
     if (!editingTorre) return [];
     const f = editingTorre.fase as Fase;
@@ -707,7 +709,7 @@ export default function ConfigPage() {
                   )}
                   {microOmitCaixaAgua && (
                     <p className="text-xs text-amber-800/90 dark:text-amber-200/90 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-2">
-                      Caixa d&apos;água desactivada para este projeto (rega manual). Active em{" "}
+                      Caixa d&apos;água desativada para este projeto (rega manual). Ative em{" "}
                       <strong>Projetos</strong> → editar projeto → &quot;Caixa d&apos;água nas torres&quot; quando for
                       implementar rega automática.
                     </p>
@@ -1066,6 +1068,13 @@ export default function ConfigPage() {
             </div>
           </div>
           <div className="p-4 rounded-xl border bg-card">
+            <h3 className="font-display font-semibold text-sm mb-3 flex items-center gap-2">
+              <Layers className="w-4 h-4" />
+              Módulos do projeto
+            </h3>
+            <ProjetoModulosCard />
+          </div>
+          <div className="p-4 rounded-xl border bg-card">
             <h3 className="font-display font-semibold text-sm mb-2 flex items-center gap-2"><ShieldCheck className="w-4 h-4" /> Governança administrativa</h3>
             <div className="flex flex-wrap gap-2">
               <a href="/administracao"><Button variant="outline" size="sm" className="text-xs">Abrir Administração</Button></a>
@@ -1138,7 +1147,7 @@ export default function ConfigPage() {
                   </DialogTitle>
                   <p className="text-xs text-muted-foreground font-normal pt-1">
                     Marque o que deseja <strong>apagar</strong> neste projeto. Mantém sempre: variedades, receitas de
-                    crescimento, ciclos de aplicação, configuração de fases (cores/EC) e utilizadores.
+                    crescimento, ciclos de aplicação, configuração de fases (cores/EC) e usuários.
                   </p>
                 </DialogHeader>
                 {!resetClusters.torresGrade && !resetClusters.limparCultivoGrade && (
@@ -1345,6 +1354,19 @@ export default function ConfigPage() {
                           <span className="font-medium">Estoque (insumos)</span>
                         </span>
                       </label>
+                      <label className="flex gap-3 items-start rounded-lg border bg-muted/30 p-3 cursor-pointer hover:bg-muted/50">
+                        <Checkbox
+                          checked={resetClusters.custosProducao}
+                          onCheckedChange={(v) => setResetCluster('custosProducao', v === true)}
+                          className="mt-0.5"
+                        />
+                        <span className="text-xs leading-snug">
+                          <span className="font-medium">Custos de produção</span>
+                          <span className="block text-muted-foreground mt-0.5">
+                            Rubricas por variedade e do projeto (rateio).
+                          </span>
+                        </span>
+                      </label>
                     </section>
 
                     <Separator />
@@ -1381,7 +1403,7 @@ export default function ConfigPage() {
                         />
                         <span className="text-xs leading-snug">
                           <span className="font-medium">Bancadas hidroponia</span>
-                          <span className="block text-muted-foreground mt-0.5">Linhas, caixas de cultivo e registos.</span>
+                          <span className="block text-muted-foreground mt-0.5">Linhas, caixas de cultivo e registros.</span>
                         </span>
                       </label>
                     </section>

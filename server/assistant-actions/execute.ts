@@ -132,7 +132,7 @@ export async function executeAssistantAction(
           executadoPorNome: ctx.userName,
         });
         await syncPlanoFromColheita(pid, p.variedadeId ?? null);
-        return { ...base, ok: true, message: "Colheita registada." };
+        return { ...base, ok: true, message: "Colheita registrada." };
       }
       case "registrar_aplicacao_andar": {
         const p = parseAssistantActionParams("registrar_aplicacao_andar", action.params);
@@ -144,7 +144,7 @@ export async function executeAssistantAction(
           executadoPorId: ctx.userId,
           executadoPorNome: ctx.userName,
         });
-        return { ...base, ok: true, message: "Aplicação no andar registada." };
+        return { ...base, ok: true, message: "Aplicação no andar registrada." };
       }
       case "registrar_medicao_caixa": {
         const p = parseAssistantActionParams("registrar_medicao_caixa", action.params);
@@ -156,7 +156,7 @@ export async function executeAssistantAction(
           executadoPorId: ctx.userId,
           executadoPorNome: ctx.userName,
         });
-        return { ...base, ok: true, message: "Medição da caixa registada." };
+        return { ...base, ok: true, message: "Medição da caixa registrada." };
       }
       case "registrar_aplicacao_caixa": {
         const p = parseAssistantActionParams("registrar_aplicacao_caixa", action.params);
@@ -168,7 +168,7 @@ export async function executeAssistantAction(
           executadoPorId: ctx.userId,
           executadoPorNome: ctx.userName,
         });
-        return { ...base, ok: true, message: "Aplicação na caixa registada." };
+        return { ...base, ok: true, message: "Aplicação na caixa registrada." };
       }
       case "criar_manutencao": {
         const p = parseAssistantActionParams("criar_manutencao", action.params);
@@ -218,7 +218,7 @@ export async function executeAssistantAction(
         const statusAntes = plano.status;
         await db.updatePlanoPlantio(pid, p.id, { germinadas: p.germinadas, naoGerminadas: p.naoGerminadas });
         await syncPlanoAposContagemGerminacao(pid, p.id, statusAntes);
-        return { ...base, ok: true, message: "Contagem de germinação registada no plano." };
+        return { ...base, ok: true, message: "Contagem de germinação registrada no plano." };
       }
       case "marcar_germinacao_pronta_plano": {
         const p = parseAssistantActionParams("marcar_germinacao_pronta_plano", action.params);
@@ -276,7 +276,7 @@ export async function executeAssistantAction(
           ativo: true,
           dataEntrada: p.dataEntrada ?? new Date(),
         });
-        return { ...base, ok: true, message: "Todos os perfis do andar activados com a variedade." };
+        return { ...base, ok: true, message: "Todos os perfis do andar ativados com a variedade." };
       }
       case "atualizar_alerta_inteligencia": {
         requireModulo(ctx.projetoModulos, "inteligencia");
@@ -342,7 +342,7 @@ export async function executeAssistantAction(
           if (plano.status !== "planejado") {
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message: `Plano #${id} não está em planejado (status actual: ${plano.status}).`,
+              message: `Plano #${id} não está em planejado (status atual: ${plano.status}).`,
             });
           }
           const patch: Record<string, unknown> = { status: "em_germinacao" };

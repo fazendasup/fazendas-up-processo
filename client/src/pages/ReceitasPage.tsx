@@ -72,6 +72,20 @@ function phFromLegacyPh(phPorFase: Record<string, unknown> | null | undefined): 
   return n(phPorFase.mudas) ?? n(phPorFase.vegetativa) ?? n(phPorFase.maturacao);
 }
 
+/** Rótulo pt-BR para o valor persistido em `metodoColheita`. */
+function labelMetodoColheita(v: string): string {
+  switch (v) {
+    case "corte":
+      return "Corte";
+    case "arranque":
+      return "Arrancão";
+    case "colheita_parcial":
+      return "Colheita Parcial";
+    default:
+      return v;
+  }
+}
+
 /** Resumo curto para o cabeçalho do card (faixa ou valor único). */
 function resumoHorasLuzHeader(receita: { horasLuzPorFase?: unknown; horasLuz?: number | null }): string | null {
   const h = receita.horasLuzPorFase as Record<string, number> | null | undefined;
@@ -609,7 +623,7 @@ function ReceitasTabContent() {
                           <p className="font-semibold text-sm truncate">{receita.nome}</p>
                           <p className="text-xs text-muted-foreground">
                             {varNome}
-                            {receita.metodoColheita && ` · ${receita.metodoColheita}`}
+                            {receita.metodoColheita && ` · ${labelMetodoColheita(receita.metodoColheita)}`}
                           </p>
                         </div>
                       </div>
@@ -833,7 +847,7 @@ function ReceitasTabContent() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="corte">Corte</SelectItem>
-                    <SelectItem value="arranque">Arranque</SelectItem>
+                    <SelectItem value="arranque">Arrancão</SelectItem>
                     <SelectItem value="colheita_parcial">Colheita Parcial</SelectItem>
                   </SelectContent>
                 </Select>

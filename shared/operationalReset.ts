@@ -1,5 +1,5 @@
 /**
- * Opções para limpeza operacional por projeto (mantém variedades, receitas, ciclos, fases_config, utilizadores).
+ * Opções para limpeza operacional por projeto (mantém variedades, receitas, ciclos, fases_config, usuários).
  */
 export type OperationalResetClusters = {
   /**
@@ -23,6 +23,7 @@ export type OperationalResetClusters = {
   registrosColheita: boolean;
   tarefas: boolean;
   estoque: boolean;
+  custosProducao: boolean;
   inteligenciaAlertas: boolean;
   visao: boolean;
   /** Bancadas, caixas da bancada, medições e aplicações (hidroponia) */
@@ -42,6 +43,7 @@ export const DEFAULT_OPERATIONAL_RESET_CLUSTERS: OperationalResetClusters = {
   registrosColheita: true,
   tarefas: true,
   estoque: true,
+  custosProducao: false,
   inteligenciaAlertas: true,
   visao: true,
   bancadasHidroponia: true,
@@ -60,6 +62,7 @@ export function hasAnyOperationalResetCluster(c: OperationalResetClusters): bool
     c.registrosColheita ||
     c.tarefas ||
     c.estoque ||
+    c.custosProducao ||
     c.inteligenciaAlertas ||
     c.visao ||
     c.bancadasHidroponia

@@ -11,7 +11,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import type { AgendaFocus } from "@/lib/agendaFocus";
 
-/** O painel da agenda é pesado (+1000 linhas); só carrega o chunk quando o utilizador abre o modal pela 1.ª vez. */
+/** O painel da agenda é pesado (+1000 linhas); só carrega o chunk quando o usuário abre o modal pela 1.ª vez. */
 const AgendaDoDiaModal = lazy(async () => {
   const m = await import(/* @vite-ignore */ "@/components/AgendaDoDiaModal");
   return { default: m.AgendaDoDiaModal };
@@ -64,7 +64,7 @@ export function AgendaModalProvider({ children }: { children: ReactNode }) {
             <div
               className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80"
               aria-busy="true"
-              aria-label="A carregar agenda"
+              aria-label="Carregando agenda"
             >
               <Spinner className="size-10 text-primary" />
             </div>

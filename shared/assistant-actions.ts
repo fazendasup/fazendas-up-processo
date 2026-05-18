@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-/** Ações do assistente — nunca exclusão de registos/histórico. */
+/** Ações do assistente — nunca exclusão de registros/histórico. */
 export const assistantActionTypeSchema = z.enum([
   "transplantar_distribuido",
   "concluir_tarefas",

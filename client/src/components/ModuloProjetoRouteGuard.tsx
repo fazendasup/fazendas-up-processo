@@ -38,7 +38,7 @@ export function ModuloProjetoRouteGuard({
   if (modulosAtivos == null) {
     return (
       <div className="container py-16 text-center text-sm text-muted-foreground" aria-busy="true">
-        A carregar permissões do projeto…
+        Carregando permissões do projeto…
       </div>
     );
   }

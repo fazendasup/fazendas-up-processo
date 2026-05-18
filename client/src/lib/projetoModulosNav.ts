@@ -6,6 +6,7 @@ export const HREF_PARA_MODULO: Partial<Record<string, ModuloContratavel>> = {
   "/automacao": "automacao",
   "/inteligencia": "inteligencia",
   "/visao": "visao_cultivo",
+  "/custos-producao": "custos_producao",
 };
 
 export type ModulosProjetoMap = Record<ModuloContratavel, boolean>;

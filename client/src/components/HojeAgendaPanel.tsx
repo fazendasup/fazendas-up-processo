@@ -358,7 +358,7 @@ function HojePlanoAcaoRow({
       {status === 'em_germinacao' && (!mostrarContagem || faseG === 'pronto_mudas') && (
         <p className="text-[10px] text-muted-foreground">
           {mostrarContagem && faseG === 'pronto_mudas'
-            ? 'Taxa já registada e bandeja pronta — use Passar para produção (admin) quando fizer o transplantio.'
+            ? 'Taxa já registrada e bandeja pronta — use Passar para produção (admin) quando fizer o transplantio.'
             : `Contagem da bandeja disponível só no dia ${formatDatePlano(plano.dataTransplantioVeg as Date | string)} (mudas → vegetativa).`}
         </p>
       )}
@@ -513,7 +513,7 @@ export function HojeAgendaPanel({
         utils.fazenda.loadAll.invalidate(),
         refetchFazenda(),
       ]);
-      toast.success('Plano actualizado');
+      toast.success('Plano atualizado');
     },
     onError: (e) => toast.error(e.message),
   });
@@ -1010,7 +1010,7 @@ export function HojeAgendaPanel({
                     Andares com perfil pronto para acção ({perfisProntosRows.length})
                   </CardTitle>
                   <p className="text-xs text-muted-foreground font-normal">
-                    Abre a torre com o andar já seleccionado para transplantio, colheita ou registo na bandeja.
+                    Abre a torre com o andar já selecionado para transplantio, colheita ou registro na bandeja.
                   </p>
                 </CardHeader>
                 <CardContent className="pt-0">

@@ -292,7 +292,7 @@ export default function ProjetosPage() {
 
         {projetos.length === 0 ? (
           <div className="rounded-xl border border-border/70 bg-muted/20 p-5 text-sm space-y-3">
-            <p className="font-medium">Nenhum projeto encontrado para o seu utilizador.</p>
+            <p className="font-medium">Nenhum projeto encontrado para o seu usuário.</p>
             <p className="text-muted-foreground">
               O servidor associa contas ao projeto <strong>Fazenda Vertical Principal</strong> ao arrancar. Se a lista
               continua vazia, tente <strong>sincronizar</strong> abaixo ou aplique a migração:{" "}
@@ -529,9 +529,9 @@ export default function ProjetosPage() {
               Novo projeto
             </p>
             <p className="text-sm text-muted-foreground">
-              Crie um espaço vazio para fazenda vertical, microverdes (torres até 6 andares, rega manual por defeito) ou
+              Crie um espaço vazio para fazenda vertical, microverdes (torres até 6 andares, rega manual por padrão) ou
               hidroponia. O projeto herdado com os
-              seus dados costuma chamar-se <strong>Fazenda Vertical Principal</strong> (criado na migração ou no arranque
+              seus dados costuma chamar-se <strong>Fazenda Vertical Principal</strong> (criado na migração ou na inicialização
               do servidor).
             </p>
             <Form {...form}>
@@ -706,7 +706,7 @@ export default function ProjetosPage() {
                 disabled={deactivateMutation.isPending}
                 onClick={() => projetoArquivar && deactivateMutation.mutate({ id: projetoArquivar.id })}
               >
-                {deactivateMutation.isPending ? "A arquivar…" : "Arquivar"}
+                {deactivateMutation.isPending ? "Arquivando…" : "Arquivar"}
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -726,7 +726,7 @@ export default function ProjetosPage() {
               <DialogTitle className="text-destructive">Eliminar projeto definitivamente</DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground">
-              Isto apaga o projeto, vínculos de utilizadores, módulos contratados e <strong>todos</strong> os dados
+              Isto apaga o projeto, vínculos de usuários, módulos contratados e <strong>todos</strong> os dados
               operacionais. Não pode ser desfeito. Só a equipa da plataforma pode executar esta ação.
             </p>
             <p className="text-sm">

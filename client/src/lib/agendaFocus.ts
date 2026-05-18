@@ -44,7 +44,7 @@ export function agendaModalHint(focus: AgendaFocus): string {
     return 'Germinação/planos, ciclos e tarefas (para hoje e atrasadas separadas). Use Feito, Adiar ou Cancelar.';
   }
   if (focus === 'colheita') {
-    return 'Toque num andar para abrir essa torre já com o andar seleccionado.';
+    return 'Toque num andar para abrir essa torre já com o andar selecionado.';
   }
   return 'Itens deste alerta. Use Feito, Adiar ou Cancelar em cada tarefa.';
 }

@@ -56,7 +56,7 @@ export async function previewAtualizarPlanoPlantio(
   if (args.germinacao_fase === "pendente" || args.germinacao_fase === "germinando" || args.germinacao_fase === "pronto_mudas") {
     patch.germinacaoFase = args.germinacao_fase;
   }
-  const summary = `Actualizar plano **${p.plano.variedadeNome}** (id ${p.plano.id})`;
+  const summary = `Atualizar plano **${p.plano.variedadeNome}** (id ${p.plano.id})`;
   return adminAction("atualizar_plano_plantio", summary, patch);
 }
 
@@ -73,7 +73,7 @@ export async function previewDeslocarDatasPlanosVariedade(
   if (isResolveError(v)) return { error: v.error };
   const dias = Number(args.dias);
   if (!Number.isFinite(dias) || dias === 0) return { error: "Informe dias (positivo ou negativo, ≠ 0)." };
-  const summary = `Deslocar datas dos planos activos de **${v.variedade.nome}** em **${dias}** dia(s)`;
+  const summary = `Deslocar datas dos planos ativos de **${v.variedade.nome}** em **${dias}** dia(s)`;
   return adminAction("deslocar_datas_planos_variedade", summary, { variedadeId: v.variedade.id, dias });
 }
 
@@ -105,7 +105,7 @@ export async function previewAtualizarVariedade(
     nomeParcial: typeof args.variedade_nome === "string" ? args.variedade_nome : undefined,
   });
   if (isResolveError(v)) return { error: v.error };
-  const summary = `Actualizar variedade **${v.variedade.nome}** (id ${v.variedade.id})`;
+  const summary = `Atualizar variedade **${v.variedade.nome}** (id ${v.variedade.id})`;
   return adminAction("atualizar_variedade", summary, {
     id: v.variedade.id,
     nome: typeof args.novo_nome === "string" ? args.novo_nome : undefined,
@@ -150,7 +150,7 @@ export async function previewAtualizarReceita(
     nomeParcial: typeof args.receita_nome === "string" ? args.receita_nome : undefined,
   });
   if (isResolveError(r)) return { error: r.error };
-  const summary = `Actualizar receita **${r.receita.nome}** (id ${r.receita.id})`;
+  const summary = `Atualizar receita **${r.receita.nome}** (id ${r.receita.id})`;
   return adminAction("atualizar_receita", summary, {
     id: r.receita.id,
     nome: typeof args.nome === "string" ? args.nome : undefined,
@@ -196,7 +196,7 @@ export async function previewAtualizarCiclo(
     nomeParcial: typeof args.ciclo_nome === "string" ? args.ciclo_nome : undefined,
   });
   if (isResolveError(c)) return { error: c.error };
-  const summary = `Actualizar ciclo **${c.ciclo.nome}** (id ${c.ciclo.id})`;
+  const summary = `Atualizar ciclo **${c.ciclo.nome}** (id ${c.ciclo.id})`;
   return adminAction("atualizar_ciclo", summary, {
     id: c.ciclo.id,
     nome: typeof args.nome === "string" ? args.nome : undefined,
@@ -238,7 +238,7 @@ export async function previewAtualizarTorre(
     ...torreRefFromArgs(args),
   });
   if (isResolveError(t)) return { error: t.error };
-  const summary = `Actualizar torre **${t.torre.nome}** (id ${t.torre.id})`;
+  const summary = `Atualizar torre **${t.torre.nome}** (id ${t.torre.id})`;
   return adminAction("atualizar_torre", summary, {
     id: t.torre.id,
     nome: typeof args.nome === "string" ? args.nome : undefined,
@@ -260,7 +260,7 @@ export async function previewToggleTorreAtiva(
     ...torreRefFromArgs(args),
   });
   if (isResolveError(t)) return { error: t.error };
-  const summary = `Alternar activa/inactiva — torre **${t.torre.nome}** (actualmente ${t.torre.ativa === false ? "inactiva" : "activa"})`;
+  const summary = `Alternar ativa/inativa — torre **${t.torre.nome}** (atualmente ${t.torre.ativa === false ? "inativa" : "ativa"})`;
   return adminAction("toggle_torre_ativa", summary, { id: t.torre.id });
 }
 
@@ -309,7 +309,7 @@ export async function previewAtualizarBancada(
     nomeParcial: typeof args.bancada_nome === "string" ? args.bancada_nome : undefined,
   });
   if (isResolveError(b)) return { error: b.error };
-  const summary = `Actualizar bancada **${b.bancada.nome}** (id ${b.bancada.id})`;
+  const summary = `Atualizar bancada **${b.bancada.nome}** (id ${b.bancada.id})`;
   return adminAction("atualizar_bancada", summary, {
     id: b.bancada.id,
     nome: typeof args.nome === "string" ? args.nome : undefined,

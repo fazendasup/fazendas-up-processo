@@ -79,7 +79,7 @@ function manualChunks(id: string): string | undefined {
   /**
    * Não forçar chunks nomeados para Shiki/streamdown/micromark: há **ciclo** streamdown ↔ @shikijs e,
    * com `manualChunks` a separar os dois, o Rollup funde o `__vitePreload` no chunk do Shiki (~9MB) e o
-   * **entry** passa a importar esse ficheiro só para o helper de preload — o site fica em "A carregar…".
+   * **entry** passa a importar esse ficheiro só para o helper de preload — o site fica em "Carregando…".
    * Deixar o Rollup partir estes pacotes evita o critical path de multi‑MB no `index-*.js`.
    */
 

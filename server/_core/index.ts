@@ -177,7 +177,7 @@ async function startServer() {
   });
 
   /**
-   * tRPC tem de estar registado **antes** de `listen` e antes do trabalho pesado da BD.
+   * tRPC tem de estar registrado **antes** de `listen` e antes do trabalho pesado da BD.
    * Caso contrário, o fallback SPA chama `next()` em `/api/*` e o pedido terminava em 404 até
    * as migrações/bootstrap terminarem — o cliente nunca recebia `auth.me` e a app não mostrava o login.
    */
@@ -205,10 +205,10 @@ async function startServer() {
     })
   );
   console.log(
-    "[Server] Rotas /api/trpc registadas (sessão anónima funciona durante o arranque da BD)."
+    "[Server] Rotas /api/trpc registradas (sessão anônima funciona durante a inicialização da BD)."
   );
 
-  /** Site (HTML/JS/CSS) já disponível durante o arranque da BD — evita página em branco / 404. */
+  /** Site (HTML/JS/CSS) já disponível durante a inicialização da BD — evita página em branco / 404. */
   if (process.env.NODE_ENV !== "development") {
     serveStatic(app);
   }
@@ -272,7 +272,7 @@ async function startServer() {
   process.once("SIGTERM", onSignal);
 
   console.log(
-    "[Server] A preparar base de dados… (Docker: espere o MySQL ~10–15 s na primeira vez)"
+    "[Server] Preparando banco de dados… (Docker: espere o MySQL ~10–15 s na primeira vez)"
   );
   try {
     await runDrizzleMigrateFromEnv();

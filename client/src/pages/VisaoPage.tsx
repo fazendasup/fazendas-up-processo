@@ -395,7 +395,7 @@ export default function VisaoPage() {
               </CardHeader>
               <CardContent>
                 {listAnalises.isLoading ? (
-                  <p className="text-sm text-muted-foreground">A carregar…</p>
+                  <p className="text-sm text-muted-foreground">Carregando…</p>
                 ) : listAnalises.data?.length ? (
                   <ul className="space-y-2 text-sm">
                     {listAnalises.data.map((row) => {
@@ -529,7 +529,7 @@ export default function VisaoPage() {
               </CardHeader>
               <CardContent>
                 {listAmostras.isLoading ? (
-                  <p className="text-sm text-muted-foreground">A carregar…</p>
+                  <p className="text-sm text-muted-foreground">Carregando…</p>
                 ) : listAmostras.data?.length ? (
                   <ul className="space-y-2 text-sm">
                     {listAmostras.data.map((s) => (

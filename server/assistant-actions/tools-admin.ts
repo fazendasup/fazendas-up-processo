@@ -1,6 +1,6 @@
 import type { ChatCompletionTool } from "openai/resources/chat/completions";
 
-/** Ferramentas só para utilizadores com role admin do projeto. Nenhuma apaga dados. */
+/** Ferramentas só para usuários com role admin do projeto. Nenhuma apaga dados. */
 export const ADMIN_OPERATION_TOOLS: ChatCompletionTool[] = [
   {
     type: "function",
@@ -23,7 +23,7 @@ export const ADMIN_OPERATION_TOOLS: ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "preparar_atualizar_plano",
-      description: "Admin: actualiza campos do plano (status, observações, quantidade, germinacao_fase).",
+      description: "Admin: atualiza campos do plano (status, observações, quantidade, germinacao_fase).",
       parameters: {
         type: "object",
         properties: {
@@ -42,7 +42,7 @@ export const ADMIN_OPERATION_TOOLS: ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "preparar_deslocar_datas_planos",
-      description: "Admin: desloca datas de todos os planos activos de uma variedade.",
+      description: "Admin: desloca datas de todos os planos ativos de uma variedade.",
       parameters: {
         type: "object",
         properties: {
@@ -77,7 +77,7 @@ export const ADMIN_OPERATION_TOOLS: ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "preparar_atualizar_variedade",
-      description: "Admin: actualiza variedade existente.",
+      description: "Admin: atualiza variedade existente.",
       parameters: {
         type: "object",
         properties: {
@@ -116,7 +116,7 @@ export const ADMIN_OPERATION_TOOLS: ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "preparar_atualizar_receita",
-      description: "Admin: actualiza receita (dias, densidade, activa).",
+      description: "Admin: atualiza receita (dias, densidade, ativa).",
       parameters: {
         type: "object",
         properties: {
@@ -155,7 +155,7 @@ export const ADMIN_OPERATION_TOOLS: ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "preparar_atualizar_ciclo",
-      description: "Admin: actualiza ciclo existente.",
+      description: "Admin: atualiza ciclo existente.",
       parameters: {
         type: "object",
         properties: {
@@ -193,7 +193,7 @@ export const ADMIN_OPERATION_TOOLS: ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "preparar_atualizar_torre",
-      description: "Admin: actualiza torre (nome, fase, nº andares, modelo).",
+      description: "Admin: atualiza torre (nome, fase, nº andares, modelo).",
       parameters: {
         type: "object",
         properties: {
@@ -213,7 +213,7 @@ export const ADMIN_OPERATION_TOOLS: ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "preparar_toggle_torre_ativa",
-      description: "Admin: activa ou desactiva uma torre.",
+      description: "Admin: ativa ou desativa uma torre.",
       parameters: {
         type: "object",
         properties: {
@@ -262,7 +262,7 @@ export const ADMIN_OPERATION_TOOLS: ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "preparar_atualizar_bancada",
-      description: "Admin hidroponia: actualiza bancada.",
+      description: "Admin hidroponia: atualiza bancada.",
       parameters: {
         type: "object",
         properties: {

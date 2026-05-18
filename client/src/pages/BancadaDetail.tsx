@@ -86,7 +86,7 @@ export default function BancadaDetail() {
   );
   const createMed = trpc.medicoesBancada.create.useMutation({
     onSuccess: async () => {
-      toast.success("Medição registada");
+      toast.success("Medição registrada");
       await utils.medicoesBancada.listByBancada.invalidate({ bancadaId });
     },
     onError: (e) => toast.error(e.message || "Erro"),
@@ -100,7 +100,7 @@ export default function BancadaDetail() {
   });
   const createApl = trpc.aplicacoesBancada.create.useMutation({
     onSuccess: async () => {
-      toast.success("Aplicação registada");
+      toast.success("Aplicação registrada");
       await utils.aplicacoesBancada.listByBancada.invalidate({ bancadaId });
     },
     onError: (e) => toast.error(e.message || "Erro"),
@@ -338,7 +338,7 @@ export default function BancadaDetail() {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="container py-12 text-center text-sm text-muted-foreground">A carregar…</div>
+        <div className="container py-12 text-center text-sm text-muted-foreground">Carregando…</div>
       </div>
     );
   }
@@ -709,7 +709,7 @@ export default function BancadaDetail() {
               <TabsContent value="historico">
                 <div className="max-h-72 overflow-y-auto space-y-2">
                   {historicoMerged.length === 0 && (
-                    <p className="text-xs text-muted-foreground text-center py-4">Nenhum registo ainda.</p>
+                    <p className="text-xs text-muted-foreground text-center py-4">Nenhum registro ainda.</p>
                   )}
                   {historicoMerged.map((item) => (
                     <div

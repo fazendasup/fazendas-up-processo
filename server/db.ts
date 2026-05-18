@@ -1,5 +1,5 @@
 import { receitaCicloPrioritariaParaVariedade } from "@shared/cicloReceita";
-import { eq, and, or, inArray, sql, asc, desc, count, ne, isNull, gt, max } from "drizzle-orm";
+import { eq, and, or, inArray, sql, asc, desc, count, ne, isNull, gt, max, gte, isNotNull, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import type { Pool as Mysql2Pool } from "mysql2";
 import type { ResultSetHeader } from "mysql2/promise";
@@ -31,6 +31,8 @@ import {
   registrosColheita, InsertRegistroColheita,
   planosPlantio, InsertPlanoPlantio,
   estoqueItens, InsertEstoqueItem,
+  custosProducaoItens,
+  InsertCustoProducaoItem,
   visionCultivoAnalyses, InsertVisionCultivoAnalysis,
   visionTrainingSamples, InsertVisionTrainingSample,
   intelligentAlerts, InsertIntelligentAlert,
@@ -43,6 +45,7 @@ import {
   type InsertMedicaoBancada,
   type InsertAplicacaoBancada,
   type InsertCaixaBancada,
+  type CustoProducaoItemRow,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 import { MODULOS_CONTRATAVEIS, NOME_PROJETO_FAZENDA_LEGADO, type ModuloContratavel } from "../shared/const";
@@ -169,6 +172,7 @@ const OPERATIONAL_TABLE_NAMES_MYSQL = [
   "intelligent_alerts",
   "alert_events",
   "estoque_itens",
+  "custos_producao_itens",
   "bancadas",
   "caixas_bancada",
   "medicoes_bancada",
@@ -446,7 +450,7 @@ async function assertNoUniqueConflictsOnProjetoMerge(
 }
 
 /**
- * Move todas as linhas operacionais de `fromProjetoId` para `toProjetoId` (mesmo registo em `projetos`).
+ * Move todas as linhas operacionais de `fromProjetoId` para `toProjetoId` (mesmo registro em `projetos`).
  * Uso típico: dados legados ficaram num ID e o painel está noutro projeto vazio.
  * Só para administradores global; valida conflitos de slug/fase únicos.
  */
@@ -871,6 +875,7 @@ export async function getProjetoModulosMap(projetoId: number): Promise<Record<Mo
     automacao: false,
     inteligencia: false,
     visao_cultivo: false,
+    custos_producao: false,
   });
   const dbConn = await getDb();
   const out = base();
@@ -1103,6 +1108,13 @@ CROSS JOIN (
   } catch (err: unknown) {
     console.warn("[Database] ensureProjetoModulosTable backfill:", err);
   }
+  try {
+    await dbConn.execute(sql.raw(`INSERT IGNORE INTO \`projeto_modulos\` (\`projetoId\`, \`modulo\`, \`habilitado\`)
+SELECT \`p\`.\`id\`, 'custos_producao', 0
+FROM \`projetos\` \`p\``));
+  } catch (err: unknown) {
+    console.warn("[Database] ensureProjetoModulosTable custos_producao seed:", err);
+  }
 }
 
 /** Enum `microverdes` + coluna `usarCaixaAgua` (bases que só correram `ensureProjetosTables` antigo). */
@@ -1137,7 +1149,7 @@ export async function getProjetoRow(projetoId: number) {
 }
 
 /**
- * No arranque ou a pedido (tRPC): garante o projeto legado e liga **todos** os utilizadores a ele
+ * No arranque ou sob demanda (tRPC): garante o projeto legado e liga **todos** os usuários a ele
  * (INSERT IGNORE), não só quem ainda não tinha nenhum projeto ativo.
  *
  * Motivo: após multi-projeto, quem já tinha sido associado só a um projeto novo/vazio deixava de ver
@@ -1179,7 +1191,7 @@ export async function ensureProjetoMembershipsBootstrap(): Promise<{ ok: boolean
       }
     }
 
-    /** Liga cada utilizador ao projeto legado (idempotente; não remove outras filiações). */
+    /** Liga cada usuário ao projeto legado (idempotente; não remove outras filiações). */
     await dbConn.execute(
       sql.raw(`INSERT IGNORE INTO projeto_usuarios (projetoId, userId, role)
         SELECT ${pid}, u.id, 'admin' FROM users u`),
@@ -1684,7 +1696,149 @@ export async function updateVariedade(projetoId: number, id: number, data: Parti
 export async function deleteVariedade(projetoId: number, id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  await ensureCustosProducaoItensTable();
+  await db
+    .delete(custosProducaoItens)
+    .where(and(eq(custosProducaoItens.projetoId, projetoId), eq(custosProducaoItens.variedadeId, id)));
   await db.delete(variedades).where(and(eq(variedades.projetoId, projetoId), eq(variedades.id, id)));
+}
+
+// ============================================================
+// Custos de produção (por variedade)
+// ============================================================
+
+export async function getAllCustosProducaoItens(projetoId: number): Promise<CustoProducaoItemRow[]> {
+  await ensureCustosProducaoItensTable();
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(custosProducaoItens)
+    .where(eq(custosProducaoItens.projetoId, projetoId))
+    .orderBy(asc(custosProducaoItens.variedadeId), asc(custosProducaoItens.ordem), asc(custosProducaoItens.id));
+}
+
+export async function getCustosProducaoItensByVariedade(
+  projetoId: number,
+  variedadeId: number,
+): Promise<CustoProducaoItemRow[]> {
+  await ensureCustosProducaoItensTable();
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(custosProducaoItens)
+    .where(and(eq(custosProducaoItens.projetoId, projetoId), eq(custosProducaoItens.variedadeId, variedadeId)))
+    .orderBy(asc(custosProducaoItens.ordem), asc(custosProducaoItens.id));
+}
+
+export async function insertCustoProducaoItem(data: InsertCustoProducaoItem): Promise<number> {
+  await ensureCustosProducaoItensTable();
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const res = await db.insert(custosProducaoItens).values(data);
+  return Number(res[0].insertId);
+}
+
+export async function updateCustoProducaoItem(
+  projetoId: number,
+  id: number,
+  data: Partial<InsertCustoProducaoItem>,
+): Promise<void> {
+  await ensureCustosProducaoItensTable();
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(custosProducaoItens)
+    .set(data)
+    .where(and(eq(custosProducaoItens.projetoId, projetoId), eq(custosProducaoItens.id, id)));
+}
+
+export async function deleteCustoProducaoItem(projetoId: number, id: number): Promise<void> {
+  await ensureCustosProducaoItensTable();
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .delete(custosProducaoItens)
+    .where(and(eq(custosProducaoItens.projetoId, projetoId), eq(custosProducaoItens.id, id)));
+}
+
+/** Rubricas comuns ao projeto (`variedadeId` NULL). */
+export async function getCustosProducaoCompartilhados(projetoId: number): Promise<CustoProducaoItemRow[]> {
+  await ensureCustosProducaoItensTable();
+  const dbConn = await getDb();
+  if (!dbConn) return [];
+  return dbConn
+    .select()
+    .from(custosProducaoItens)
+    .where(and(eq(custosProducaoItens.projetoId, projetoId), isNull(custosProducaoItens.variedadeId)))
+    .orderBy(asc(custosProducaoItens.ordem), asc(custosProducaoItens.id));
+}
+
+/** Plantas com furo em «plantado» por variedade — proxy de capacidade usada. */
+export async function getPlantasOcupadasPorVariedadeFromFuros(projetoId: number): Promise<Map<number, number>> {
+  const dbConn = await getDb();
+  const out = new Map<number, number>();
+  if (!dbConn) return out;
+  try {
+    const rows = await dbConn
+      .select({
+        variedadeId: furos.variedadeId,
+        n: count(),
+      })
+      .from(furos)
+      .where(
+        and(
+          eq(furos.projetoId, projetoId),
+          eq(furos.status, "plantado"),
+          isNotNull(furos.variedadeId),
+        ),
+      )
+      .groupBy(furos.variedadeId);
+    for (const r of rows) {
+      if (r.variedadeId != null) out.set(r.variedadeId, Number(r.n));
+    }
+  } catch {
+    /* tabela ausente em bases muito antigas */
+  }
+  return out;
+}
+
+/** Soma peso (g) e plantas colhidas por variedade na janela de dias. */
+export async function getColheitaAggPorVariedade(projetoId: number, dias: number): Promise<
+  Map<number, { kg: number; plantas: number }>
+> {
+  const out = new Map<number, { kg: number; plantas: number }>();
+  const dbConn = await getDb();
+  if (!dbConn) return out;
+  const d = Math.min(730, Math.max(1, Math.floor(dias)));
+  const since = new Date(Date.now() - d * 86400000);
+  try {
+    const rows = await dbConn
+      .select({
+        variedadeId: registrosColheita.variedadeId,
+        gSum: sum(registrosColheita.pesoTotalGramas),
+        pSum: sum(registrosColheita.quantidadePlantas),
+      })
+      .from(registrosColheita)
+      .where(
+        and(
+          eq(registrosColheita.projetoId, projetoId),
+          isNotNull(registrosColheita.variedadeId),
+          gte(registrosColheita.dataColheita, since),
+        ),
+      )
+      .groupBy(registrosColheita.variedadeId);
+    for (const r of rows) {
+      if (r.variedadeId == null) continue;
+      const g = Number(r.gSum ?? 0);
+      const p = Number(r.pSum ?? 0);
+      out.set(r.variedadeId, { kg: g / 1000, plantas: p });
+    }
+  } catch {
+    /* sem tabela */
+  }
+  return out;
 }
 
 // ============================================================
@@ -2783,6 +2937,7 @@ export async function loadFullFazendaData(projetoId: number) {
   await ensureTransplantiosRastreioColumns();
   await ensureReceitasCrescimentoNovasColunas();
   await ensureEstoqueItensTable();
+  await ensureCustosProducaoItensTable();
   await ensureVisionCultivoTables();
   await ensurePerfisCultivoStatusColumn();
   await ensurePerfisReceitaIdColumn();
@@ -3088,6 +3243,63 @@ export async function ensureEstoqueItensTable(): Promise<void> {
     await db.execute(sql.raw("ALTER TABLE `estoque_itens` ADD COLUMN `projetoId` int NOT NULL DEFAULT 1"));
   } catch (err: unknown) {
     if (isMysqlDuplicateColumnError(err)) return;
+  }
+}
+
+/** Garante tabela `custos_producao_itens` (migrações 0028 + 0030). */
+export async function ensureCustosProducaoItensTable(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.execute(sql.raw(`CREATE TABLE IF NOT EXISTS \`custos_producao_itens\` (
+  \`id\` int AUTO_INCREMENT NOT NULL,
+  \`projetoId\` int NOT NULL,
+  \`variedadeId\` int NULL,
+  \`grupo\` varchar(64) NOT NULL,
+  \`rubrica\` varchar(160) NOT NULL,
+  \`descricao\` text,
+  \`modo\` enum('calculado','por_planta','por_ciclo','mensal_rateio','rateio_projeto') NOT NULL DEFAULT 'por_planta',
+  \`rateioMetodo\` varchar(24) NULL,
+  \`rateioDiasColheita\` int NULL,
+  \`precoReferencia\` decimal(18,8),
+  \`unidadeCompra\` varchar(32),
+  \`quantidadePorPlanta\` decimal(20,10),
+  \`valorPorPlanta\` decimal(14,6),
+  \`valorPorCiclo\` decimal(14,2),
+  \`plantasPorCicloEstimado\` int,
+  \`valorMensal\` decimal(14,2),
+  \`plantasMesEstimativa\` int,
+  \`ordem\` int NOT NULL DEFAULT 0,
+  \`ativo\` tinyint(1) NOT NULL DEFAULT 1,
+  \`createdAt\` timestamp NOT NULL DEFAULT (now()),
+  \`updatedAt\` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT \`custos_producao_itens_id\` PRIMARY KEY(\`id\`),
+  KEY \`idx_custos_prod_proj_var\` (\`projetoId\`,\`variedadeId\`)
+)`));
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!/already exists/i.test(msg) && !/ER_TABLE_EXISTS_ERROR/i.test(msg)) {
+      console.error("[Database] ensureCustosProducaoItensTable:", err);
+    }
+  }
+  const alters = [
+    "ALTER TABLE `custos_producao_itens` MODIFY COLUMN `variedadeId` int NULL",
+    "ALTER TABLE `custos_producao_itens` ADD COLUMN `rateioMetodo` varchar(24) NULL",
+    "ALTER TABLE `custos_producao_itens` ADD COLUMN `rateioDiasColheita` int NULL",
+    `ALTER TABLE \`custos_producao_itens\` MODIFY COLUMN \`modo\` ENUM(
+  'calculado','por_planta','por_ciclo','mensal_rateio','rateio_projeto'
+) NOT NULL DEFAULT 'por_planta'`,
+  ];
+  for (const stmt of alters) {
+    try {
+      await db.execute(sql.raw(stmt));
+    } catch (e: unknown) {
+      if (isMysqlDuplicateColumnError(e)) continue;
+      const msg = e instanceof Error ? e.message : String(e);
+      if (/Duplicate column name/i.test(msg)) continue;
+      if (/WARN_DATA_TRUNCATED|Invalid default value|Truncated incorrect/i.test(msg)) continue;
+      console.warn("[Database] ensureCustosProducaoItensTable ALTER:", msg.slice(0, 200));
+    }
   }
 }
 
@@ -3407,6 +3619,7 @@ export async function resetAllData(projetoId: number) {
   await db.delete(transplantios).where(eq(transplantios.projetoId, projetoId));
   await db.delete(ciclos).where(eq(ciclos.projetoId, projetoId));
   await db.delete(planosPlantio).where(eq(planosPlantio.projetoId, projetoId));
+  await db.delete(custosProducaoItens).where(eq(custosProducaoItens.projetoId, projetoId));
   await db.delete(registrosColheita).where(eq(registrosColheita.projetoId, projetoId));
   await db.delete(tarefas).where(eq(tarefas.projetoId, projetoId));
   await db.delete(receitasCrescimento).where(eq(receitasCrescimento.projetoId, projetoId));
@@ -3425,7 +3638,7 @@ export async function resetAllData(projetoId: number) {
 }
 
 /**
- * Limpeza operacional granular por projeto. Mantém variedades, receitas, ciclos, fases_config e utilizadores.
+ * Limpeza operacional granular por projeto. Mantém variedades, receitas, ciclos, fases_config e usuários.
  * Quando `torresGrade` está ativo, manutenções ligadas a torres são removidas antes das torres (integridade).
  */
 export async function resetOperationalDataByClusters(projetoId: number, clusters: OperationalResetClusters) {
@@ -3487,6 +3700,9 @@ export async function resetOperationalDataByClusters(projetoId: number, clusters
   }
   if (clusters.estoque) {
     await dbConn.delete(estoqueItens).where(eq(estoqueItens.projetoId, projetoId));
+  }
+  if (clusters.custosProducao) {
+    await dbConn.delete(custosProducaoItens).where(eq(custosProducaoItens.projetoId, projetoId));
   }
 
   if (clusters.bancadasHidroponia) {

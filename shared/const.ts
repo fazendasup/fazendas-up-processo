@@ -32,6 +32,7 @@ export const MODULOS_CONTRATAVEIS = [
   "automacao",
   "inteligencia",
   "visao_cultivo",
+  "custos_producao",
 ] as const;
 export type ModuloContratavel = (typeof MODULOS_CONTRATAVEIS)[number];
 

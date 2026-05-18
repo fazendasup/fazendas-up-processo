@@ -291,7 +291,7 @@ const OPERATOR_OPERATION_TOOLS: ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "preparar_criar_manutencao",
-      description: "Abre registo de manutenção numa torre.",
+      description: "Abre registro de manutenção numa torre.",
       parameters: {
         type: "object",
         properties: {
@@ -520,7 +520,7 @@ const OPERATOR_OPERATION_TOOLS: ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "preparar_ativar_todos_perfis_andar",
-      description: "Plantio rápido: activa todos os perfis do andar com uma variedade (mudas).",
+      description: "Plantio rápido: ativa todos os perfis do andar com uma variedade (mudas).",
       parameters: {
         type: "object",
         properties: {

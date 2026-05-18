@@ -73,7 +73,7 @@ function UsersContent() {
       msg =
         'Promover a Equipa da plataforma? Esta conta poderá gerir módulos contratados (estoque, automação, etc.) para todos os projetos.';
     } else if (next === 'admin') {
-      msg = 'Promover este utilizador a Administrador operacional? Terá acesso a configurações e gestão de utilizadores.';
+      msg = 'Promover este usuário a Administrador operacional? Terá acesso a configurações e gestão de usuários.';
     } else {
       msg = 'Rebaixar a Operador? Perderá acesso às áreas administrativas.';
     }
@@ -241,7 +241,7 @@ function UsersContent() {
             <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400" />
             <div>
               <p className="text-xs font-semibold">Administrador operacional</p>
-              <p className="text-[10px] text-muted-foreground">Config, variedades, ciclos, analytics, gestão de utilizadores</p>
+              <p className="text-[10px] text-muted-foreground">Config, variedades, ciclos, analytics, gestão de usuários</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

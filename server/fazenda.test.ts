@@ -56,7 +56,7 @@ function createAdminContext(): TrpcContext {
 // ---- Tests ----
 
 describe("fazenda.loadAll", () => {
-  it("returns the full fazenda data structure (utilizador + projeto)", async () => {
+  it("returns the full fazenda data structure (usuário + projeto)", async () => {
     const ctx = createAdminContext();
     const caller = appRouter.createCaller(ctx);
 

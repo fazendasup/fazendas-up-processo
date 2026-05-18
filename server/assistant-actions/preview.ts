@@ -358,7 +358,7 @@ export async function previewMarcarCicloExecutado(
   }
   if (!ciclo) return { error: "Ciclo não encontrado." };
 
-  const summary = `**Marcar ciclo executado**\n- **${ciclo.nome}** (${ciclo.produto}) — registo com data/hora atual`;
+  const summary = `**Marcar ciclo executado**\n- **${ciclo.nome}** (${ciclo.produto}) — registro com data/hora atual`;
 
   return {
     action: {
