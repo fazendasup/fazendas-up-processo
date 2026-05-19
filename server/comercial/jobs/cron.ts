@@ -22,7 +22,7 @@ export function isComercialIntegrationCronEnabled(): boolean {
 
 async function runScheduledSync(prisma: PrismaClient, env: Env, label: string) {
   try {
-    const result = await runContaAzulSync(prisma, env, { mode: "cron" });
+    const result = await runContaAzulSync(prisma, env, { mode: "cron", skipIfBusy: true });
     logger.info(
       { label, pedidosGravados: result.pedidosGravados, clientes: result.clientesProcessados },
       "Conta Azul: sync automático OK"

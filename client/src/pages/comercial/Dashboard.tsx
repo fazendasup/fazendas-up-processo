@@ -58,6 +58,7 @@ import {
 import { useTheme } from "@/contexts/ThemeContext";
 import { comercialPath } from "@/lib/comercial/routes";
 import { hojeIsoLocal, intervaloDoPreset, type PeriodoPreset } from "@/lib/comercial/periodo";
+import { useSyncContaAzul } from "@/hooks/useSyncContaAzul";
 import { trpc } from "@/lib/trpc";
 
 const ORDEM_TIPO_OPORTUNIDADE = ["UPSELL", "CROSS_SELL", "REATIVACAO", "NOVO_PRODUTO"] as const;
@@ -104,42 +105,13 @@ export function Dashboard() {
   );
   const { Tour, startTour } = useDashboardTour();
 
-  const utils = trpc.useUtils();
+  const { sync, busy: syncBusy } = useSyncContaAzul();
 
   const resumo = trpc.comercial.dashboard.resumo.useQuery(
     { inicio, fim },
     { refetchInterval: 60_000, staleTime: 30_000 },
   );
   const serie = trpc.comercial.dashboard.serieFaturamento.useQuery({ inicio, fim, bucket: "day" }, { staleTime: 30_000 });
-
-  const sync = trpc.comercial.integracoes.sincronizarContaAzul.useMutation({
-    onSuccess: async (data) => {
-      await Promise.all([
-        utils.comercial.dashboard.resumo.invalidate(),
-        utils.comercial.dashboard.serieFaturamento.invalidate(),
-        utils.comercial.kpis.resumoCalculado.invalidate(),
-        utils.comercial.kpis.snapshots.invalidate(),
-        utils.comercial.clientes.listar.invalidate(),
-        utils.comercial.clientes.listarCarteira.invalidate(),
-        utils.comercial.oportunidades.listar.invalidate(),
-        utils.comercial.execucoes.resumo.invalidate(),
-        utils.comercial.execucoes.listar.invalidate(),
-      ]);
-      toast.success(
-        `Sync: ${data.pedidosGravados} pedidos importados; inteligência: ${data.inteligenciaOportunidades} oportunidades (upsell/cross/reativação) e riscos atualizados no período do dashboard.`,
-      );
-    },
-    onError: (e) => {
-      const msg = e.message ?? "";
-      if (msg === "Não autenticado") {
-        toast.error(
-          "Sua sessão neste site expirou. Saia, entre de novo e teste o sync.",
-        );
-        return;
-      }
-      toast.error(msg || "Falha no sync");
-    },
-  });
 
   type TotaisComp = { bruto: number; frete: number; desconto: number; liquido: number };
 
@@ -239,11 +211,11 @@ export function Dashboard() {
             </form>
             <button
               type="button"
-              disabled={sync.isPending}
+              disabled={syncBusy}
               onClick={() => sync.mutate()}
               className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-600 px-4 py-2.5 text-sm font-bold text-white shadow-[0_0_24px_-4px_rgba(16,185,129,0.5)] transition hover:brightness-110 disabled:opacity-60"
             >
-              {sync.isPending ? <Spinner /> : <RefreshCw className="h-4 w-4" />}
+              {syncBusy ? <Spinner /> : <RefreshCw className="h-4 w-4" />}
               Sync Conta Azul
             </button>
           </motion.div>

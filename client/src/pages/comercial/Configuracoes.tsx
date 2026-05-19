@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/comercial/ui/PageHeader";
 import { Spinner } from "@/components/comercial/ui/Spinner";
 import { TooltipInfo } from "@/components/comercial/ui/TooltipInfo";
+import { useSyncContaAzul } from "@/hooks/useSyncContaAzul";
 import { trpc } from "@/lib/trpc";
 
 export function Configuracoes() {
@@ -46,40 +47,7 @@ export function Configuracoes() {
     onError: (e) => toast.error(e.message ?? "Não foi possível iniciar o Conta Azul"),
   });
 
-  const sync = trpc.comercial.integracoes.sincronizarContaAzul.useMutation({
-    onSuccess: async (data) => {
-      await Promise.all([
-        utils.comercial.dashboard.resumo.invalidate(),
-        utils.comercial.dashboard.serieFaturamento.invalidate(),
-        utils.comercial.kpis.resumoCalculado.invalidate(),
-        utils.comercial.kpis.snapshots.invalidate(),
-        utils.comercial.clientes.listar.invalidate(),
-        utils.comercial.clientes.listarCarteira.invalidate(),
-        utils.comercial.oportunidades.listar.invalidate(),
-        utils.comercial.execucoes.resumo.invalidate(),
-        utils.comercial.execucoes.listar.invalidate(),
-      ]);
-      toast.success(
-        `Sync: ${data.pedidosGravados} pedidos; ${data.inteligenciaOportunidades} oportunidades de sistema geradas (carteira e dashboard).`,
-      );
-    },
-    onError: (e) => {
-      const msg = e.message ?? "";
-      if (msg === "Não autenticado") {
-        toast.error(
-          "Sua sessão neste site expirou ou não está válida. Clique em Sair, entre de novo e teste o sync.",
-        );
-        return;
-      }
-      if (msg.includes("sem token")) {
-        toast.error(
-          "Ainda não há autorização da Conta Azul salva. Clique em «Conectar Conta Azul», termine o login até aparecer a mensagem de sucesso, e só então use Testar sync.",
-        );
-        return;
-      }
-      toast.error(msg);
-    },
-  });
+  const { sync, busy: syncBusy } = useSyncContaAzul();
 
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
@@ -138,10 +106,10 @@ export function Configuracoes() {
           <button
             type="button"
             className="inline-flex items-center gap-2 rounded-lg bg-[#10B981] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-[#059669] hover:shadow-[0_4px_12px_#00000020] disabled:opacity-50"
-            disabled={sync.isPending}
+            disabled={syncBusy}
             onClick={() => sync.mutate()}
           >
-            {sync.isPending ? <Spinner className="h-4 w-4" /> : <RefreshCw className="h-4 w-4" />}
+            {syncBusy ? <Spinner className="h-4 w-4" /> : <RefreshCw className="h-4 w-4" />}
             Sincronizar agora
           </button>
         </div>

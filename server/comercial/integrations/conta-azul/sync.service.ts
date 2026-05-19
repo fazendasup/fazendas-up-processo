@@ -278,12 +278,42 @@ let syncEmAndamento: Promise<ContaAzulSyncResult> | null = null;
 /**
  * Sincronização: GET /v1/pessoas e GET /v1/venda/busca (janela CONTA_AZUL_VENDAS_SYNC_DIAS, páginas completas) — grava clientes e pedidos.
  */
+export function isContaAzulSyncEmAndamento(): boolean {
+  return syncEmAndamento != null;
+}
+
+export type IniciarSyncContaAzulResult = { status: "started" } | { status: "already_running" };
+
+/** Dispara sync sem bloquear a requisição HTTP (evita timeout do navegador/proxy). */
+export function iniciarSyncContaAzulEmBackground(
+  prisma: PrismaClient,
+  env: Env,
+  mode: ContaAzulSyncMode = "manual",
+): IniciarSyncContaAzulResult {
+  if (syncEmAndamento) return { status: "already_running" };
+  const execucao = executarContaAzulSync(prisma, env, mode);
+  syncEmAndamento = execucao;
+  void execucao.finally(() => {
+    if (syncEmAndamento === execucao) syncEmAndamento = null;
+  });
+  return { status: "started" };
+}
+
 export async function runContaAzulSync(
   prisma: PrismaClient,
   env: Env,
-  options?: { mode?: ContaAzulSyncMode },
+  options?: { mode?: ContaAzulSyncMode; skipIfBusy?: boolean },
 ): Promise<ContaAzulSyncResult> {
   if (syncEmAndamento) {
+    if (options?.skipIfBusy) {
+      logger.info("Conta Azul: sync ignorado — outra sincronização já está em andamento");
+      return {
+        clientesProcessados: 0,
+        vendasRecebidas: 0,
+        pedidosGravados: 0,
+        inteligenciaOportunidades: 0,
+      };
+    }
     throw new Error(
       "Já existe uma sincronização Conta Azul em andamento. Aguarde terminar (pode levar vários minutos) antes de clicar de novo.",
     );

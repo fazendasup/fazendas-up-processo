@@ -2,7 +2,13 @@ import { trpc } from "@/lib/trpc";
 import { getActiveProjetoId } from "@/lib/projeto-header";
 import { PROJETO_HEADER, UNAUTHED_ERR_MSG } from "@shared/const";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink, TRPCClientError } from "@trpc/client";
+import { httpBatchLink, httpLink, splitLink, TRPCClientError } from "@trpc/client";
+import {
+  createTrpcFetch,
+  isLongRunningTrpcOp,
+  TRPC_DEFAULT_TIMEOUT_MS,
+  TRPC_LONG_TIMEOUT_MS,
+} from "@/lib/trpc-fetch";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
@@ -89,32 +95,29 @@ queryClient.getMutationCache().subscribe(event => {
   }
 });
 
+const trpcLinkOptions = {
+  url: "/api/trpc",
+  transformer: superjson,
+  headers() {
+    const id = getActiveProjetoId();
+    return id != null ? { [PROJETO_HEADER]: String(id) } : {};
+  },
+} as const;
+
 const trpcClient = trpc.createClient({
   links: [
-    httpBatchLink({
-      url: "/api/trpc",
-      transformer: superjson,
-      headers() {
-        const id = getActiveProjetoId();
-        return id != null ? { [PROJETO_HEADER]: String(id) } : {};
+    splitLink({
+      condition(op) {
+        return op.type === "mutation" && isLongRunningTrpcOp(op.path);
       },
-      fetch(input, init) {
-        const timeoutMs = 25_000;
-        const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), timeoutMs);
-        const upstream = init?.signal;
-        if (upstream) {
-          if (upstream.aborted) ctrl.abort();
-          else upstream.addEventListener("abort", () => ctrl.abort(), { once: true });
-        }
-        return globalThis
-          .fetch(input, {
-            ...(init ?? {}),
-            credentials: "include",
-            signal: ctrl.signal,
-          })
-          .finally(() => clearTimeout(t));
-      },
+      true: httpLink({
+        ...trpcLinkOptions,
+        fetch: createTrpcFetch(TRPC_LONG_TIMEOUT_MS),
+      }),
+      false: httpBatchLink({
+        ...trpcLinkOptions,
+        fetch: createTrpcFetch(TRPC_DEFAULT_TIMEOUT_MS),
+      }),
     }),
   ],
 });
