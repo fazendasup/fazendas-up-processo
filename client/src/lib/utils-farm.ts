@@ -254,6 +254,71 @@ export function diasDecorridos(
   return Math.max(0, diffCalendarDaysYmd(entradaYmd, hojeYmd));
 }
 
+/** Como informar a data no plantio: dia do plantio ou dia alvo da primeira colheita/transplante. */
+export type ModoDataPlantio = "plantio" | "colheita_alvo";
+
+/** Data de entrada a partir do dia alvo (colheita/transplante) menos o ciclo da fase. */
+export function dataEntradaFromDataAlvo(
+  dataAlvo: string,
+  fase: Fase,
+  variedadeId?: string,
+  variedades?: VariedadeConfig[],
+  opts?: CicloPrazoOpts,
+): string | null {
+  const dias = diasCicloParaPrevisao(variedadeId, fase, variedades || [], opts);
+  if (dias <= 0) return null;
+  const alvoYmd = entradaYmdOperacional(dataAlvo);
+  if (!alvoYmd) return null;
+  const entradaYmd = addCalendarDaysToYmd(alvoYmd, -dias);
+  return localNoonFromYmd(entradaYmd).toISOString();
+}
+
+/** Valor para `<input type="date">` quando o modo é colheita/transplante alvo. */
+export function dataAlvoYmdFromEntrada(
+  dataEntrada: string | null,
+  fase: Fase,
+  variedadeId?: string,
+  variedades?: VariedadeConfig[],
+  opts?: CicloPrazoOpts,
+): string | null {
+  const prev = dataPrevista(dataEntrada, fase, variedadeId, variedades, opts);
+  if (!prev) return null;
+  return entradaYmdOperacional(prev);
+}
+
+/** Converte o valor do campo de data (plantio ou alvo) em `dataEntrada` para gravar. */
+export function resolverDataPlantioCampo(
+  modo: ModoDataPlantio,
+  valorCampo: string,
+  fase: Fase,
+  variedadeId: string | undefined,
+  variedades: VariedadeConfig[],
+  opts?: CicloPrazoOpts,
+): Date | null {
+  const v = valorCampo.trim();
+  if (!v) return null;
+  if (modo === "plantio") return new Date(v);
+  const iso = dataEntradaFromDataAlvo(v, fase, variedadeId, variedades, opts);
+  return iso ? new Date(iso) : null;
+}
+
+/** Valor exibido no campo conforme o modo (yyyy-mm-dd). */
+export function valorCampoDataPlantio(
+  modo: ModoDataPlantio,
+  dataEntrada: string | null | undefined,
+  fase: Fase,
+  variedadeId: string | undefined,
+  variedades: VariedadeConfig[],
+  opts?: CicloPrazoOpts,
+): string {
+  if (!dataEntrada) return "";
+  if (modo === "plantio") {
+    const ymd = entradaYmdOperacional(dataEntrada);
+    return ymd ?? "";
+  }
+  return dataAlvoYmdFromEntrada(dataEntrada, fase, variedadeId, variedades, opts) ?? "";
+}
+
 /** Calcula data prevista (fim do ciclo em dia civil) — ISO do meio-dia local do dia de vencimento. */
 export function dataPrevista(
   dataEntrada: string | null,

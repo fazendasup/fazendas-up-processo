@@ -25,8 +25,12 @@ import {
   andarPrecisaLavagem, variedadePrincipalAndar, andaresDaTorreDeclarados,
   TIPOS_APLICACAO_CAIXA, TIPOS_APLICACAO_ANDAR,
   cultivoBandejaEfetivo,
+  resolverDataPlantioCampo,
+  valorCampoDataPlantio,
+  type ModoDataPlantio,
 } from '@/lib/utils-farm';
 import type { CultivoBandejaStatus } from '@/lib/utils-farm';
+import { PlantioModoDataSelector, labelCampoDataPlantio } from '@/components/PlantioModoDataSelector';
 import { useFazendaMutations } from '@/hooks/useFazendaMutations';
 import { useDbIdResolver } from '@/hooks/useDbIdResolver';
 import PerfilFurosGrid from '@/components/PerfilFurosGrid';
@@ -85,6 +89,7 @@ export default function TorreDetail() {
   const [lastClickedPerfil, setLastClickedPerfil] = useState<number | null>(null);
   const [bulkVariedade, setBulkVariedade] = useState<string>('');
   const [bulkDataEntrada, setBulkDataEntrada] = useState<string>('');
+  const [modoDataPlantio, setModoDataPlantio] = useState<ModoDataPlantio>('plantio');
   const [undoPayload, setUndoPayload] = useState<null | {
     andarDbId: number;
     perfis: Array<{ perfilIndex: number; ativo?: boolean; variedadeId?: number | null; dataEntrada?: Date | null }>;
@@ -154,6 +159,28 @@ export default function TorreDetail() {
       .map((p) => p.variedadeId as string)
   );
   const usandoVariedadeIndividual = variedadesAtivasNoAndar.size > 1;
+
+  const cicloOpts = cicloPrazoOptsFromFazenda(data);
+
+  const resolverDataPlantio = (valorCampo: string, variedadeSlug?: string | null): Date | null => {
+    if (!valorCampo.trim()) return null;
+    const dateVal = resolverDataPlantioCampo(
+      modoDataPlantio,
+      valorCampo,
+      torre.fase,
+      variedadeSlug ?? undefined,
+      data.variedades,
+      cicloOpts,
+    );
+    if (!dateVal && modoDataPlantio === "colheita_alvo") {
+      toast.error(
+        variedadeSlug
+          ? "Não foi possível calcular o plantio a partir da data alvo. Verifique o ciclo da variedade."
+          : "Selecione a variedade para usar a data alvo.",
+      );
+    }
+    return dateVal;
+  };
 
   const isMudas = torre.fase === 'mudas';
   const isMaturacao = torre.fase === 'maturacao';
@@ -247,7 +274,9 @@ export default function TorreDetail() {
     const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
     if (!andarDbId) return;
 
-    const dateVal = dataEntrada ? new Date(dataEntrada) : null;
+    const varSlug = variedadePrincipalAndar(andarSelecionado);
+    const dateVal = dataEntrada ? resolverDataPlantio(dataEntrada, varSlug) : null;
+    if (dataEntrada && !dateVal) return;
 
     // Atualizar data do andar (legacy)
     mutations.updateAndar.mutate({
@@ -274,10 +303,15 @@ export default function TorreDetail() {
     const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
     if (!andarDbId) return;
 
+    const perfil = (andarSelecionado.perfis || []).find((p) => p.perfilIndex === perfilIndex);
+    const varSlug = perfil?.variedadeId ?? variedadePrincipalAndar(andarSelecionado);
+    const dateVal = dataEntrada ? resolverDataPlantio(dataEntrada, varSlug) : null;
+    if (dataEntrada && !dateVal) return;
+
     mutations.updatePerfil.mutate({
       andarId: andarDbId,
       perfilIndex,
-      dataEntrada: dataEntrada ? new Date(dataEntrada) : null,
+      dataEntrada: dateVal,
     });
     toast.success(
       isMicroverdes
@@ -1303,18 +1337,39 @@ export default function TorreDetail() {
 
                 <div className="p-4">
                   {/* Data de entrada (aplica a todos os perfis) */}
-                  <form onSubmit={handleUpdateAndar} className="mb-4 p-3 bg-muted/30 rounded-lg border border-dashed">
+                  <form onSubmit={handleUpdateAndar} className="mb-4 p-3 bg-muted/30 rounded-lg border border-dashed space-y-3">
+                    {modoFuros === 'transplantio' && (
+                      <PlantioModoDataSelector
+                        value={modoDataPlantio}
+                        onChange={setModoDataPlantio}
+                        fase={torre.fase}
+                        projetoTipo={projetoTipo}
+                      />
+                    )}
                     <div className="flex items-end gap-3">
                       <div className="flex-1">
                         <Label className="text-xs">
-                          {isMicroverdes ? 'Data de entrada (todas as bandejas)' : 'Data de Entrada (todos os perfis)'}
+                          {modoFuros === 'transplantio'
+                            ? `${labelCampoDataPlantio(modoDataPlantio, torre.fase, projetoTipo)}${
+                                isMicroverdes ? ' (todas as bandejas)' : ' (todos os perfis)'
+                              }`
+                            : isMicroverdes
+                              ? 'Data de entrada (todas as bandejas)'
+                              : 'Data de Entrada (todos os perfis)'}
                         </Label>
                         <Input
                           name="dataEntrada"
                           type="date"
-                          defaultValue={andarSelecionado.dataEntrada ? new Date(andarSelecionado.dataEntrada).toISOString().split('T')[0] : ''}
+                          defaultValue={valorCampoDataPlantio(
+                            modoFuros === 'transplantio' ? modoDataPlantio : 'plantio',
+                            andarSelecionado.dataEntrada,
+                            torre.fase,
+                            variedadePrincipalAndar(andarSelecionado) ?? undefined,
+                            data.variedades,
+                            cicloOpts,
+                          )}
                           className="h-10 text-sm"
-                          key={`${andarSelecionado.id}-date-${andarSelecionado.dataEntrada || 'empty'}`}
+                          key={`${andarSelecionado.id}-date-${modoDataPlantio}-${andarSelecionado.dataEntrada || 'empty'}`}
                           disabled={usandoVariedadeIndividual}
                         />
                       </div>
@@ -1394,7 +1449,14 @@ export default function TorreDetail() {
                                   const perfil = (andarSelecionado.perfis || []).find((p) => p.perfilIndex === ps.perfilIndex);
                                   const variedade = ps.varId ? data.variedades.find((v) => v.id === ps.varId) : undefined;
                                   const perfilDate = perfil?.dataEntrada || andarSelecionado.dataEntrada || '';
-                                  const dateValue = perfilDate ? new Date(perfilDate).toISOString().split('T')[0] : '';
+                                  const dateValue = valorCampoDataPlantio(
+                                    modoFuros === 'transplantio' ? modoDataPlantio : 'plantio',
+                                    perfilDate || null,
+                                    torre.fase,
+                                    ps.varId ?? undefined,
+                                    data.variedades,
+                                    cicloOpts,
+                                  );
                                   return (
                                     <div key={ps.perfilIndex} className={`p-2 rounded-lg border-2 ${
                                       ps.rest !== null && ps.rest <= 0 ? 'border-red-400 bg-red-50 ring-1 ring-red-200 dark:border-red-700 dark:bg-red-950/35 dark:ring-red-900/60' :
@@ -1425,7 +1487,7 @@ export default function TorreDetail() {
                                         type="date"
                                         className="h-7 text-[11px]"
                                         defaultValue={dateValue}
-                                        key={`${andarSelecionado.id}-p${ps.perfilIndex}-date-${dateValue}`}
+                                        key={`${andarSelecionado.id}-p${ps.perfilIndex}-date-${modoDataPlantio}-${dateValue}`}
                                         onChange={(e) => handleUpdatePerfilData(ps.perfilIndex, e.target.value)}
                                         onBlur={(e) => {
                                           const newVal = e.target.value;
@@ -1508,6 +1570,15 @@ export default function TorreDetail() {
 
                       {selectionMode && (
                         <>
+                          {modoFuros === 'transplantio' && (
+                            <PlantioModoDataSelector
+                              value={modoDataPlantio}
+                              onChange={setModoDataPlantio}
+                              fase={torre.fase}
+                              projetoTipo={projetoTipo}
+                              className="mb-2"
+                            />
+                          )}
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                             <div className="space-y-1">
                               <Label className="text-xs">Variedade</Label>
@@ -1525,7 +1596,11 @@ export default function TorreDetail() {
                               </Select>
                             </div>
                             <div className="space-y-1">
-                              <Label className="text-xs">Data de entrada</Label>
+                              <Label className="text-xs">
+                                {modoFuros === 'transplantio'
+                                  ? labelCampoDataPlantio(modoDataPlantio, torre.fase, projetoTipo)
+                                  : 'Data de entrada'}
+                              </Label>
                               <Input
                                 type="date"
                                 value={bulkDataEntrada}
@@ -1539,7 +1614,13 @@ export default function TorreDetail() {
                                 className="h-9 text-xs bg-emerald-600 hover:bg-emerald-700"
                                 onClick={async () => {
                                   const varDbId = bulkVariedade ? (resolver.varSlugToId.get(bulkVariedade) ?? null) : null;
-                                  const dt = bulkDataEntrada ? new Date(bulkDataEntrada) : null;
+                                  const dt = bulkDataEntrada
+                                    ? resolverDataPlantio(
+                                        bulkDataEntrada,
+                                        bulkVariedade || variedadePrincipalAndar(andarSelecionado!),
+                                      )
+                                    : null;
+                                  if (bulkDataEntrada && !dt) return;
                                   await applyBulkToSelection({ ativo: true, variedadeId: varDbId, dataEntrada: dt }, 'Perfis ativados');
                                 }}
                               >
@@ -1551,7 +1632,13 @@ export default function TorreDetail() {
                                 className="h-9 text-xs"
                                 onClick={async () => {
                                   const varDbId = bulkVariedade ? (resolver.varSlugToId.get(bulkVariedade) ?? null) : null;
-                                  const dt = bulkDataEntrada ? new Date(bulkDataEntrada) : null;
+                                  const dt = bulkDataEntrada
+                                    ? resolverDataPlantio(
+                                        bulkDataEntrada,
+                                        bulkVariedade || variedadePrincipalAndar(andarSelecionado!),
+                                      )
+                                    : null;
+                                  if (bulkDataEntrada && !dt) return;
                                   await applyBulkToSelection(
                                     {
                                       ...(varDbId !== null ? { variedadeId: varDbId } : {}),
@@ -1660,6 +1747,7 @@ export default function TorreDetail() {
                     onPerfilDataChange={handleUpdatePerfilData}
                     onAndarTodo={handleAndarTodo}
                     onAndarVariedadeTodos={handleAndarVariedadeTodos}
+                    modoDataPlantio={modoFuros === 'transplantio' ? modoDataPlantio : 'plantio'}
                   />
 
 

@@ -19,7 +19,11 @@ import {
   cicloPrazoOptsFromFazenda,
   diasDecorridos,
   labelPrevisao,
+  resolverDataPlantioCampo,
+  valorCampoDataPlantio,
+  type ModoDataPlantio,
 } from "@/lib/utils-farm";
+import { PlantioModoDataSelector, labelCampoDataPlantio } from "@/components/PlantioModoDataSelector";
 import { useDbIdResolver } from "@/hooks/useDbIdResolver";
 import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
@@ -129,6 +133,7 @@ export default function BancadaDetail() {
 
   const [bulkVariedade, setBulkVariedade] = useState("");
   const [bulkDataEntrada, setBulkDataEntrada] = useState("");
+  const [modoDataPlantio, setModoDataPlantio] = useState<ModoDataPlantio>("plantio");
 
   const plantioVarSlug = useMemo(() => {
     if (!b?.plantioVariedadeId) return undefined;
@@ -148,12 +153,18 @@ export default function BancadaDetail() {
       }
     }
     setBulkVariedade(slug);
+    const cicloOpts = cicloPrazoOptsFromFazenda(data);
     setBulkDataEntrada(
-      b.plantioDataEntrada
-        ? new Date(b.plantioDataEntrada as string | Date).toISOString().split("T")[0]
-        : "",
+      valorCampoDataPlantio(
+        modoDataPlantio,
+        b.plantioDataEntrada ? String(b.plantioDataEntrada) : null,
+        fase,
+        slug || plantioVarSlug,
+        data.variedades,
+        cicloOpts,
+      ),
     );
-  }, [b?.id, b?.plantioVariedadeId, b?.plantioDataEntrada, data.variedades, resolver]);
+  }, [b?.id, b?.plantioVariedadeId, b?.plantioDataEntrada, data.variedades, resolver, modoDataPlantio, fase, plantioVarSlug]);
 
   const persistPlantio = async (input: {
     plantioVariedadeId: number | null;
@@ -204,7 +215,25 @@ export default function BancadaDetail() {
     if (!b) return;
     const fd = new FormData(e.currentTarget);
     const dataEntradaRaw = fd.get("dataEntrada") as string;
-    const dateVal = dataEntradaRaw ? new Date(dataEntradaRaw) : null;
+    const cicloOpts = cicloPrazoOptsFromFazenda(data);
+    const dateVal = dataEntradaRaw
+      ? resolverDataPlantioCampo(
+          modoDataPlantio,
+          dataEntradaRaw,
+          fase,
+          plantioVarSlug,
+          data.variedades,
+          cicloOpts,
+        )
+      : null;
+    if (dataEntradaRaw && !dateVal) {
+      toast.error(
+        plantioVarSlug
+          ? "Não foi possível calcular o plantio a partir da data alvo."
+          : "Selecione a variedade para usar a data alvo.",
+      );
+      return;
+    }
     if (!entradaNoFuturo(dateVal)) {
       toast.error("Data de entrada no futuro.");
       return;
@@ -477,21 +506,29 @@ export default function BancadaDetail() {
           <div className="p-4">
             <form
               onSubmit={handleSalvarData}
-              className="mb-4 p-3 bg-muted/30 rounded-lg border border-dashed"
+              className="mb-4 p-3 bg-muted/30 rounded-lg border border-dashed space-y-3"
             >
+              <PlantioModoDataSelector
+                value={modoDataPlantio}
+                onChange={setModoDataPlantio}
+                fase={fase}
+              />
               <div className="flex items-end gap-3">
                 <div className="flex-1">
-                  <Label className="text-xs">Data de Entrada</Label>
+                  <Label className="text-xs">{labelCampoDataPlantio(modoDataPlantio, fase)}</Label>
                   <Input
                     name="dataEntrada"
                     type="date"
-                    defaultValue={
-                      b.plantioDataEntrada
-                        ? new Date(b.plantioDataEntrada as string | Date).toISOString().split("T")[0]
-                        : ""
-                    }
+                    defaultValue={valorCampoDataPlantio(
+                      modoDataPlantio,
+                      b.plantioDataEntrada ? String(b.plantioDataEntrada) : null,
+                      fase,
+                      plantioVarSlug,
+                      data.variedades,
+                      cicloPrazoOptsFromFazenda(data),
+                    )}
                     className="h-10 text-sm"
-                    key={`${b.id}-date-${b.plantioDataEntrada || "empty"}`}
+                    key={`${b.id}-date-${modoDataPlantio}-${b.plantioDataEntrada || "empty"}`}
                   />
                 </div>
                 <Button type="submit" className="h-10 text-sm px-4" disabled={updatePlantio.isPending}>
@@ -518,7 +555,7 @@ export default function BancadaDetail() {
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Data de entrada</Label>
+                  <Label className="text-xs">{labelCampoDataPlantio(modoDataPlantio, fase)}</Label>
                   <Input
                     type="date"
                     value={bulkDataEntrada}
@@ -533,7 +570,26 @@ export default function BancadaDetail() {
                     disabled={updatePlantio.isPending}
                     onClick={async () => {
                       const varDbId = bulkVariedade ? (resolver.varSlugToId.get(bulkVariedade) ?? null) : null;
-                      const dt = bulkDataEntrada ? new Date(bulkDataEntrada) : null;
+                      const slug = bulkVariedade || plantioVarSlug;
+                      const cicloOpts = cicloPrazoOptsFromFazenda(data);
+                      const dt = bulkDataEntrada
+                        ? resolverDataPlantioCampo(
+                            modoDataPlantio,
+                            bulkDataEntrada,
+                            fase,
+                            slug,
+                            data.variedades,
+                            cicloOpts,
+                          )
+                        : null;
+                      if (bulkDataEntrada && !dt) {
+                        toast.error(
+                          slug
+                            ? "Não foi possível calcular o plantio a partir da data alvo."
+                            : "Selecione a variedade para usar a data alvo.",
+                        );
+                        return;
+                      }
                       const mergedDt =
                         dt ?? (b.plantioDataEntrada ? new Date(b.plantioDataEntrada as string | Date) : null);
                       const valid = validarAntesPlantio({
@@ -565,7 +621,26 @@ export default function BancadaDetail() {
                     disabled={updatePlantio.isPending}
                     onClick={async () => {
                       const varDbId = bulkVariedade ? (resolver.varSlugToId.get(bulkVariedade) ?? null) : null;
-                      const dt = bulkDataEntrada ? new Date(bulkDataEntrada) : null;
+                      const slug = bulkVariedade || plantioVarSlug;
+                      const cicloOpts = cicloPrazoOptsFromFazenda(data);
+                      const dt = bulkDataEntrada
+                        ? resolverDataPlantioCampo(
+                            modoDataPlantio,
+                            bulkDataEntrada,
+                            fase,
+                            slug,
+                            data.variedades,
+                            cicloOpts,
+                          )
+                        : null;
+                      if (bulkDataEntrada && !dt) {
+                        toast.error(
+                          slug
+                            ? "Não foi possível calcular o plantio a partir da data alvo."
+                            : "Selecione a variedade para usar a data alvo.",
+                        );
+                        return;
+                      }
                       const nextVar = varDbId ?? b.plantioVariedadeId ?? null;
                       const nextDt =
                         dt ?? (b.plantioDataEntrada ? new Date(b.plantioDataEntrada as string | Date) : null);

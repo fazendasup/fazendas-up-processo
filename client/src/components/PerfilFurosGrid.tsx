@@ -6,8 +6,9 @@
 
 import type { Furo, PerfilData, VariedadeConfig, Fase } from '@/lib/types';
 import { estruturaFaseParaProjeto, type TorreEstruturaOverride } from '@shared/types';
-import { diasRestantes, labelPrevisao } from '@/lib/utils-farm';
+import { diasRestantes, labelPrevisao, valorCampoDataPlantio, type ModoDataPlantio } from '@/lib/utils-farm';
 import type { CicloPrazoOpts } from '@/lib/utils-farm';
+import { labelCampoDataPlantio } from '@/components/PlantioModoDataSelector';
 import {
   BANDEJAS_POR_ANDAR_MICROVERDES,
   labelPosicaoProducao,
@@ -47,6 +48,8 @@ interface Props {
   onPerfilDataChange?: (perfilIndex: number, dataEntrada: string) => void;
   onAndarTodo?: () => void;
   onAndarVariedadeTodos?: (variedadeId: string) => void;
+  /** No modo Plantar: data informada como plantio ou colheita/transplante alvo. */
+  modoDataPlantio?: ModoDataPlantio;
 }
 
 function dotColor(status: string) {
@@ -105,6 +108,7 @@ export default function PerfilFurosGrid({
   onFuroToggle, onPerfilToggle, onPerfilVariedadeChange,
   onPerfilDataChange,
   onAndarTodo, onAndarVariedadeTodos,
+  modoDataPlantio = 'plantio',
 }: Props) {
   const isMudas = fase === 'mudas';
   const isMaturacao = fase === 'maturacao';
@@ -116,6 +120,21 @@ export default function PerfilFurosGrid({
   const numFuros = estrutura.furosPorPerfil;
   const mv = projetoTipo === 'microverdes';
   const unid = termoUnidadeProducao(projetoTipo);
+
+  const valorDateInputPerfil = (perfil: PerfilData | undefined) => {
+    const perfilDate = perfil?.dataEntrada || andarDataEntrada || '';
+    if (modo === 'transplantio') {
+      return valorCampoDataPlantio(
+        modoDataPlantio,
+        perfilDate || null,
+        fase,
+        perfil?.variedadeId,
+        variedades,
+        cicloOpts,
+      );
+    }
+    return perfilDate ? new Date(perfilDate).toISOString().split('T')[0] : '';
+  };
 
   // ---- MUDAS: FV = perfis abertos; microverdes = bandejas de germinação (4/andar) ----
   if (isMudas) {
@@ -454,8 +473,7 @@ export default function PerfilFurosGrid({
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
               {Array.from({ length: numPerfis }, (_, i) => {
                 const perfil = perfis.find((p) => p.perfilIndex === i);
-                const perfilDate = perfil?.dataEntrada || andarDataEntrada || '';
-                const dateValue = perfilDate ? new Date(perfilDate).toISOString().split('T')[0] : '';
+                const dateValue = valorDateInputPerfil(perfil);
                 return (
                   <div key={i} className="p-2 rounded border bg-muted/20 space-y-1.5">
                     <div className="flex items-center gap-1">
@@ -737,8 +755,7 @@ export default function PerfilFurosGrid({
             <div className={`grid gap-2 mt-2 grid-cols-2 sm:grid-cols-3`}>
               {Array.from({ length: numPerfis }, (_, i) => {
                 const perfil = perfis.find((p) => p.perfilIndex === i);
-                const perfilDate = perfil?.dataEntrada || andarDataEntrada || '';
-                const dateValue = perfilDate ? new Date(perfilDate).toISOString().split('T')[0] : '';
+                const dateValue = valorDateInputPerfil(perfil);
                 return (
                   <div key={i} className="p-2 rounded border bg-muted/20 space-y-1.5">
                     <div className="flex items-center gap-1">
@@ -763,6 +780,11 @@ export default function PerfilFurosGrid({
                       type="date"
                       value={dateValue}
                       onChange={(e) => onPerfilDataChange?.(i, e.target.value)}
+                      title={
+                        modo === 'transplantio'
+                          ? labelCampoDataPlantio(modoDataPlantio, fase, projetoTipo)
+                          : undefined
+                      }
                       className="h-8 w-full text-[11px] rounded-md border border-input bg-background px-2"
                     />
                   </div>
