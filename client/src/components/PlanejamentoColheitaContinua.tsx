@@ -36,9 +36,16 @@ import {
   taxaSobrevivenciaAcumulada,
 } from '@/lib/planejamentoContinuo';
 import { variedadeEhBabyLeafFV, variedadePulaVegetativa } from '@shared/variedadesFase';
-import { marcosCicloDesdeColheita, receitaCicloPrioritariaParaVariedade } from '@shared/cicloReceita';
+import {
+  marcosCicloDesdeColheita,
+  marcosCicloDesdeGerminacao,
+  receitaCicloPrioritariaParaVariedade,
+  type DiasCicloReceita,
+  type MarcosCicloPlantio,
+} from '@shared/cicloReceita';
 import type { Fase } from '@/lib/types';
-import { gerarId } from '@/lib/utils-farm';
+import { gerarId, type ModoDataPlantio } from '@/lib/utils-farm';
+import { labelCampoDataPlantio, PlantioModoDataSelector } from '@/components/PlantioModoDataSelector';
 import { Calculator, Plus, Trash2, Sprout, AlertTriangle } from 'lucide-react';
 
 type LinhaVar = {
@@ -75,6 +82,18 @@ function clampIntervaloDias(n: number): number {
   return Math.max(1, Math.min(365, Math.round(n)));
 }
 
+function marcosPrimeiroLote(
+  modo: ModoDataPlantio,
+  dataYmd: string,
+  dias: DiasCicloReceita,
+  pulaVegetativa: boolean,
+): MarcosCicloPlantio | null {
+  if (!dataYmd.trim()) return null;
+  const anchor = new Date(`${dataYmd}T12:00:00`);
+  if (modo === 'colheita_alvo') return marcosCicloDesdeColheita(anchor, dias, pulaVegetativa);
+  return marcosCicloDesdeGerminacao(anchor, dias, pulaVegetativa);
+}
+
 export default function PlanejamentoColheitaContinua() {
   const { data: fazenda } = useFazenda();
   const { isAdmin } = useRole();
@@ -96,7 +115,8 @@ export default function PlanejamentoColheitaContinua() {
   const [metaColheita, setMetaColheita] = useState('120');
   const [intervaloDias, setIntervaloDias] = useState(2);
   const [numLotes, setNumLotes] = useState('8');
-  const [dataPrimeiraColheita, setDataPrimeiraColheita] = useState(() => {
+  const [modoDataInicio, setModoDataInicio] = useState<ModoDataPlantio>('colheita_alvo');
+  const [dataReferencia, setDataReferencia] = useState(() => {
     const t = new Date();
     t.setDate(t.getDate() + 28);
     return t.toISOString().slice(0, 10);
@@ -215,22 +235,21 @@ export default function PlanejamentoColheitaContinua() {
 
   const lotes = Math.max(1, Math.min(52, parseInt(numLotes, 10) || 1));
 
-  const germ0PorVariedade = useMemo(() => {
-    const col = new Date(`${dataPrimeiraColheita}T12:00:00`);
-    const m = new Map<number, Date>();
+  const marcos0PorVariedade = useMemo(() => {
+    const m = new Map<number, MarcosCicloPlantio>();
     for (const r of resultado.rows) {
       if (!r.receita) continue;
-      const dias = {
+      const dias: DiasCicloReceita = {
         diasGerminacao: r.diasGerminacao,
         diasMudas: r.diasMudas,
         diasVegetativa: r.diasVegetativa,
         diasMaturacao: r.diasMaturacao,
       };
-      const marcos = marcosCicloDesdeColheita(col, dias, r.pulaVegetativa);
-      m.set(r.variedadeId, marcos.germinacao);
+      const marcos = marcosPrimeiroLote(modoDataInicio, dataReferencia, dias, r.pulaVegetativa);
+      if (marcos) m.set(r.variedadeId, marcos);
     }
     return m;
-  }, [resultado.rows, dataPrimeiraColheita]);
+  }, [resultado.rows, dataReferencia, modoDataInicio]);
 
   function addLinha() {
     setLinhas((prev) => [...prev, { id: gerarId(), variedadeId: null, percent: '0' }]);
@@ -256,7 +275,6 @@ export default function PlanejamentoColheitaContinua() {
       return;
     }
     const nLotes = Math.max(1, Math.min(52, parseInt(numLotes, 10) || 1));
-    const primeiraColheita = new Date(`${dataPrimeiraColheita}T12:00:00`);
     let criados = 0;
 
     for (const r of resultado.rows) {
@@ -264,13 +282,22 @@ export default function PlanejamentoColheitaContinua() {
         toast.error(`Cadastre uma receita ativa para a variedade "${r.nome}".`);
         return;
       }
-      const dias = {
+      const dias: DiasCicloReceita = {
         diasGerminacao: r.diasGerminacao,
         diasMudas: r.diasMudas,
         diasVegetativa: r.diasVegetativa,
         diasMaturacao: r.diasMaturacao,
       };
-      const m0 = marcosCicloDesdeColheita(primeiraColheita, dias, r.pulaVegetativa);
+      const m0 = marcosPrimeiroLote(modoDataInicio, dataReferencia, dias, r.pulaVegetativa);
+      if (!m0) {
+        toast.error('Informe uma data válida para o primeiro lote.');
+        return;
+      }
+
+      const obsData =
+        modoDataInicio === 'colheita_alvo'
+          ? `1.ª colheita alvo ${dataReferencia}`
+          : `1.º plantio (germinação) ${dataReferencia}`;
 
       try {
         await createMutation.mutateAsync({
@@ -285,7 +312,7 @@ export default function PlanejamentoColheitaContinua() {
           dataTransplantioMat: m0.mat,
           dataColheitaPrevista: m0.colheita,
           torreDestinoId: null,
-          observacoes: `Planejador colheita a cada ${intervaloDias} dia(s); 1.ª colheita alvo ${dataPrimeiraColheita}`,
+          observacoes: `Planejador colheita a cada ${intervaloDias} dia(s); ${obsData}`,
           recorrencia: 'personalizado',
           intervaloDiasPersonalizado: intervaloDias,
           repeticoes: nLotes,
@@ -309,8 +336,10 @@ export default function PlanejamentoColheitaContinua() {
           </CardTitle>
           <CardDescription>
             Informe quantas plantas você quer <strong>prontas para colheita</strong> a cada {intervaloDias} dias, a{' '}
-            <strong>data da primeira colheita</strong> (todas as variedades do mix batem nesse dia no 1.º lote) e distribua
-            as variedades em %. Os prazos por fase vêm da <strong>receita</strong> de cada variedade. O sistema aplica
+            <strong>data de referência do 1.º lote</strong> (primeira colheita alvo ou primeiro plantio — conforme o modo)
+            e distribua as variedades em %. Com colheita alvo, todas as variedades do mix colhem no mesmo dia no 1.º lote;
+            com primeiro plantio, a germinação é a mesma data e a colheita prevista varia por receita. Os prazos por fase
+            vêm da <strong>receita</strong> de cada variedade. O sistema aplica
             desperdício: germinação {DESPERDICIO.germinacao * 100}%, mudas→veg {DESPERDICIO.mudasParaVegetativa * 100}%,
             veg→mat {DESPERDICIO.vegetativaParaMaturacao * 100}% (germinação na receita: dias até ir para mudas).             Taxa
             combinada até a colheita: {(taxa * 100).toFixed(1)}% das sementes. Torres com grelha 12 perfis × 6 furos contam só para baby leaf (manjericão, baby leaf beterraba/acelga); as demais variedades usam apenas torres padrão.
@@ -327,11 +356,19 @@ export default function PlanejamentoColheitaContinua() {
                 placeholder="Ex: 120"
               />
             </div>
-            <div>
-              <Label>Primeira colheita (data alvo)</Label>
-              <Input type="date" value={dataPrimeiraColheita} onChange={(e) => setDataPrimeiraColheita(e.target.value)} />
+            <div className="space-y-2">
+              <PlantioModoDataSelector
+                value={modoDataInicio}
+                onChange={setModoDataInicio}
+                fase="maturacao"
+                projetoTipo={fazenda?.projetoTipo}
+              />
+              <Label>{labelCampoDataPlantio(modoDataInicio, 'maturacao', fazenda?.projetoTipo)}</Label>
+              <Input type="date" value={dataReferencia} onChange={(e) => setDataReferencia(e.target.value)} />
               <p className="text-[10px] text-muted-foreground mt-1">
-                A germinação de cada variedade é calculada automaticamente para essa data de colheita.
+                {modoDataInicio === 'colheita_alvo'
+                  ? 'A germinação de cada variedade é calculada automaticamente para essa data de colheita no 1.º lote.'
+                  : 'A colheita prevista de cada variedade é calculada a partir desta data de germinação e da receita.'}
               </p>
             </div>
             <div>
@@ -537,7 +574,11 @@ export default function PlanejamentoColheitaContinua() {
 
             <div className="overflow-x-auto">
               <p className="text-xs font-medium mb-2">
-                Início da germinação por lote (calculado a partir da primeira colheita + receita; quantidade a plantar)
+                Início da germinação por lote
+                {modoDataInicio === 'colheita_alvo'
+                  ? ' (calculado a partir da primeira colheita + receita)'
+                  : ' (a partir do primeiro plantio informado)'}
+                ; quantidade a plantar por lote abaixo.
               </p>
               <Table>
                 <TableHeader>
@@ -555,14 +596,21 @@ export default function PlanejamentoColheitaContinua() {
                     <TableRow key={i}>
                       <TableCell className="text-xs whitespace-nowrap text-muted-foreground">{i + 1}</TableCell>
                       {resultado.rows.map((r) => {
-                        const g0 = germ0PorVariedade.get(r.variedadeId);
-                        const d = g0 ? addDays(g0, i * intervaloDias) : null;
+                        const m0 = marcos0PorVariedade.get(r.variedadeId);
+                        const dGerm = m0 ? addDays(m0.germinacao, i * intervaloDias) : null;
+                        const dColheita =
+                          m0 && i === 0 && modoDataInicio === 'plantio' ? m0.colheita : null;
                         return (
                           <TableCell key={r.variedadeId} className="text-right text-xs">
-                            {d ? (
+                            {dGerm ? (
                               <>
-                                <span className="whitespace-nowrap">{formatDateBr(d)}</span>
+                                <span className="whitespace-nowrap">{formatDateBr(dGerm)}</span>
                                 <span className="block text-muted-foreground">({r.sementesPorLote} sementes)</span>
+                                {dColheita && (
+                                  <span className="block text-emerald-700 dark:text-emerald-300">
+                                    colheita {formatDateBr(dColheita)}
+                                  </span>
+                                )}
                               </>
                             ) : (
                               '—'
@@ -594,7 +642,10 @@ export default function PlanejamentoColheitaContinua() {
             )}
             <p className="text-[10px] text-muted-foreground">
               Cria uma série por variedade (intervalo {intervaloDias} dia(s) entre inícios de germinação), quantidade =
-              sementes calculadas e primeira colheita na data alvo.
+              sementes calculadas
+              {modoDataInicio === 'colheita_alvo'
+                ? ' e primeira colheita na data alvo informada.'
+                : ' a partir do primeiro plantio informado.'}
             </p>
           </CardContent>
         </Card>
