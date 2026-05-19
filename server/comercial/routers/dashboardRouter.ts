@@ -3,6 +3,7 @@ import { StatusRelacionamento, type TipoCliente } from "../generated/prisma/inde
 import {
   composicaoFromTotalApenas,
   liquidoPedido,
+  pedidoComposicaoProvavelmenteIncompleta,
   somarTotais,
   totaisVazios,
   type ComposicaoValorPedido,
@@ -76,6 +77,7 @@ export const dashboardRouter = router({
       const composicaoVendasPorTipo = totaisPorTipo();
       const composicaoOrcamentosPorTipo = totaisPorTipo();
       const pedidosVenda: typeof pedidos = [];
+      let vendasComposicaoIncompleta = 0;
 
       for (const p of pedidos) {
         const comp = composicaoDoPedido(p);
@@ -84,6 +86,7 @@ export const dashboardRouter = router({
           somarTotais(composicaoVendas, comp);
           somarTotais(composicaoVendasPorTipo[p.cliente.tipo], comp);
           pedidosVenda.push(p);
+          if (pedidoComposicaoProvavelmenteIncompleta(p)) vendasComposicaoIncompleta++;
         } else if (cls === "orcamento") {
           somarTotais(composicaoOrcamentos, comp);
           somarTotais(composicaoOrcamentosPorTipo[p.cliente.tipo], comp);
@@ -169,6 +172,7 @@ export const dashboardRouter = router({
           composicaoOrcamentos,
           composicaoVendasPorTipo,
           composicaoOrcamentosPorTipo,
+          vendasComposicaoIncompleta,
           taxaSucessoApis,
         },
         oportunidadesPorTipo: oportunidadesPorTipo.map((o) => ({

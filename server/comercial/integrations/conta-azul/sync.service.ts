@@ -20,6 +20,7 @@ import {
   composicaoFromVendaBuscaItem,
   composicaoFromVendaDetalhe,
   normalizarComposicao,
+  pedidoComposicaoProvavelmenteIncompleta,
   precisaDetalheComposicao,
   type ComposicaoValorPedido,
 } from "../../lib/composicao-valor.js";
@@ -139,8 +140,80 @@ function detailBudgetInicial(mode: ContaAzulSyncMode): number {
     const cronMax = Number(process.env.CONTA_AZUL_CRON_DETAIL_MAX ?? 0);
     return Number.isFinite(cronMax) && cronMax >= 0 ? cronMax : 0;
   }
-  const manualMax = Number(process.env.CONTA_AZUL_SYNC_DETAIL_MAX ?? 150);
-  return Number.isFinite(manualMax) && manualMax >= 0 ? manualMax : 150;
+  const manualMax = Number(process.env.CONTA_AZUL_SYNC_DETAIL_MAX ?? 0);
+  if (!Number.isFinite(manualMax) || manualMax < 0) return Number.MAX_SAFE_INTEGER;
+  if (manualMax === 0) return Number.MAX_SAFE_INTEGER;
+  return manualMax;
+}
+
+async function fetchComposicaoDetalheVenda(
+  http: AxiosInstance,
+  vendaId: string,
+  totalFallback: number,
+  ctx: ResolveComposicaoCtx,
+): Promise<ComposicaoValorPedido | null> {
+  if (ctx.detailBudget.remaining <= 0) return null;
+  ctx.detailBudget.remaining--;
+  try {
+    const detail = await contaAzulGet<unknown>(http, `/v1/venda/${encodeURIComponent(vendaId)}`);
+    return normalizarComposicao(composicaoFromVendaDetalhe(detail), totalFallback);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    logger.warn({ vendaId, err: msg }, "Conta Azul: detalhe da venda indisponível");
+    if (/\(429\)/.test(msg)) ctx.detailBudget.remaining = 0;
+    return null;
+  }
+}
+
+/** Segunda passagem: pedidos já gravos só com total (sem frete/desconto no banco). */
+async function enriquecerComposicaoPedidosPendentes(
+  prisma: PrismaClient,
+  http: AxiosInstance,
+  ctx: ResolveComposicaoCtx,
+): Promise<number> {
+  if (ctx.detailBudget.remaining <= 0) return 0;
+
+  const candidatos = await prisma.pedido.findMany({
+    where: {
+      externalId: { not: null },
+      origemPedido: "CONTA_AZUL",
+      valorFrete: 0,
+      valorDesconto: 0,
+    },
+    select: {
+      id: true,
+      externalId: true,
+      valorTotal: true,
+      valorBruto: true,
+      valorFrete: true,
+      valorDesconto: true,
+      valorLiquido: true,
+    },
+    orderBy: { dataPedido: "desc" },
+    take: Math.min(ctx.detailBudget.remaining, 5_000),
+  });
+
+  let enriquecidos = 0;
+  for (const p of candidatos) {
+    if (ctx.detailBudget.remaining <= 0) break;
+    if (!pedidoComposicaoProvavelmenteIncompleta(p)) continue;
+    const totalFallback = Number(p.valorLiquido ?? p.valorTotal ?? 0);
+    const fromDetail = await fetchComposicaoDetalheVenda(http, p.externalId!, totalFallback, ctx);
+    if (!fromDetail) continue;
+
+    await prisma.pedido.update({
+      where: { id: p.id },
+      data: {
+        valorTotal: fromDetail.valorLiquido,
+        valorBruto: fromDetail.valorBruto,
+        valorFrete: fromDetail.valorFrete,
+        valorDesconto: fromDetail.valorDesconto,
+        valorLiquido: fromDetail.valorLiquido,
+      },
+    });
+    enriquecidos++;
+  }
+  return enriquecidos;
 }
 
 async function resolveComposicaoVenda(
@@ -368,6 +441,8 @@ async function executarContaAzulSync(
       pedidosGravados++;
     }
 
+    const composicaoEnriquecidos = await enriquecerComposicaoPedidosPendentes(prisma, http, composicaoCtx);
+
     const intel = await runInteligenciaComercial(prisma);
 
     await prisma.syncState.update({
@@ -389,6 +464,7 @@ async function executarContaAzulSync(
           cursor: nextCursor,
           syncMode: mode,
           detalhesVendaRestantes: composicaoCtx.detailBudget.remaining,
+          composicaoEnriquecidos,
         },
         duracaoMs: Date.now() - started,
       },

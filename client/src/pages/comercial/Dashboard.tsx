@@ -675,6 +675,12 @@ export function Dashboard() {
                   Fechar
                 </button>
               </div>
+              {(kpis?.vendasComposicaoIncompleta ?? 0) > 0 ? (
+                <p className="mt-3 rounded-lg border border-amber-300/80 bg-amber-50 px-3 py-2 text-xs text-amber-950 dark:border-amber-500/40 dark:bg-amber-950/30 dark:text-amber-100">
+                  {kpis?.vendasComposicaoIncompleta} venda(s) ainda sem frete/desconto detalhados — rode{" "}
+                  <strong>Sync Conta Azul</strong> para alinhar ao relatório da Conta Azul.
+                </p>
+              ) : null}
               <div className="mt-4 space-y-2 rounded-xl border border-emerald-400/25 bg-emerald-50/80 p-4 dark:border-emerald-500/30 dark:bg-emerald-950/20">
                 {(
                   [

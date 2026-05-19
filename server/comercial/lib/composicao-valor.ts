@@ -23,15 +23,36 @@ function composicaoTemValor(c: ComposicaoValorPedido): boolean {
   return c.valorLiquido > 0 || c.valorBruto > 0;
 }
 
-/** Evita GET /v1/venda/{id} quando a busca já trouxe composição utilizável. */
+/** Composição confiável vinda da API (frete/desconto ou bruto ≠ líquido). */
+export function composicaoCompletaDaBusca(c: ComposicaoValorPedido): boolean {
+  if (c.valorFrete > 0 || c.valorDesconto > 0) return true;
+  return Math.abs(c.valorBruto - c.valorLiquido) > 0.009;
+}
+
+/** Pedido gravado só com total (bruto = líquido, sem frete/desconto) — falta detalhe Conta Azul. */
+export function pedidoComposicaoProvavelmenteIncompleta(p: {
+  valorBruto?: unknown;
+  valorFrete?: unknown;
+  valorDesconto?: unknown;
+  valorLiquido?: unknown;
+}): boolean {
+  const frete = asNumber(p.valorFrete) ?? 0;
+  const desconto = asNumber(p.valorDesconto) ?? 0;
+  if (frete > 0 || desconto > 0) return false;
+  const bruto = asNumber(p.valorBruto);
+  const liquido = asNumber(p.valorLiquido);
+  if (liquido == null || liquido <= 0) return false;
+  if (bruto == null) return true;
+  return Math.abs(bruto - liquido) < 0.01;
+}
+
+/** Evita GET /v1/venda/{id} só quando a busca já trouxe frete, desconto ou bruto ≠ líquido. */
 export function precisaDetalheComposicao(
   fromBusca: ComposicaoValorPedido | null,
   totalFallback: number,
 ): boolean {
   if (process.env.CONTA_AZUL_SYNC_SKIP_DETAIL === "1") return false;
-  if (!fromBusca) return totalFallback > 0;
-  if (fromBusca.valorFrete > 0 || fromBusca.valorDesconto > 0) return false;
-  if (fromBusca.valorLiquido > 0) return false;
+  if (fromBusca && composicaoCompletaDaBusca(fromBusca)) return false;
   return totalFallback > 0;
 }
 

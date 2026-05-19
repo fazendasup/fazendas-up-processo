@@ -16,10 +16,19 @@ describe("composicao-valor", () => {
     ).toBe(500);
   });
 
-  it("precisaDetalheComposicao é false quando busca já tem líquido", () => {
+  it("precisaDetalheComposicao é true quando busca só tem líquido sem frete/desconto", () => {
     expect(
       precisaDetalheComposicao(
         { valorBruto: 100, valorFrete: 0, valorDesconto: 0, valorLiquido: 100 },
+        100,
+      ),
+    ).toBe(true);
+  });
+
+  it("precisaDetalheComposicao é false quando busca tem frete ou desconto", () => {
+    expect(
+      precisaDetalheComposicao(
+        { valorBruto: 90, valorFrete: 10, valorDesconto: 0, valorLiquido: 100 },
         100,
       ),
     ).toBe(false);
