@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ESTRUTURA_OVERRIDE_FV_12x6 } from '@shared/types';
 import {
   capacidadePorFaseInstalacaoComFiltro,
+  sementesParaColheitaEsperada,
   torreReservadaGrelhaBabyLeaf,
   type TorreCapInput,
 } from './planejamentoContinuo';
@@ -57,5 +58,23 @@ describe('capacidadePorFaseInstalacaoComFiltro', () => {
     expect(onlyBaby.maturacao + noBaby.maturacao).toBe(all.maturacao);
     expect(onlyBaby.maturacao).toBeGreaterThan(0);
     expect(noBaby.maturacao).toBeGreaterThan(0);
+  });
+
+  it('torre 12×6 conta 2 plantas por furo em maturação', () => {
+    const onlyBaby = capacidadePorFaseInstalacaoComFiltro(
+      [{ fase: 'maturacao', numAndares: 1, ativa: true, estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6 }],
+      projeto,
+      'apenas_baby_leaf',
+    );
+    expect(onlyBaby.maturacao).toBe(144);
+  });
+});
+
+describe('sementesParaColheitaEsperada', () => {
+  it('dobra sementes para baby leaf (2 células/furo)', () => {
+    const base = sementesParaColheitaEsperada(100);
+    const baby = sementesParaColheitaEsperada(100, { multiplicadorPlantio: 2 });
+    expect(baby).toBeGreaterThanOrEqual(base * 2 - 1);
+    expect(baby).toBeLessThanOrEqual(base * 2 + 1);
   });
 });

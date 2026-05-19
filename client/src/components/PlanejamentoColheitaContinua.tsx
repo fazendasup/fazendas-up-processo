@@ -35,6 +35,7 @@ import {
   sementesParaColheitaEsperada,
   taxaSobrevivenciaAcumulada,
 } from '@/lib/planejamentoContinuo';
+import { multiplicadorPlantioBabyLeafFV } from '@shared/plantasPorPerfil';
 import { variedadeEhBabyLeafFV, variedadePulaVegetativa } from '@shared/variedadesFase';
 import {
   marcosCicloDesdeColheita,
@@ -178,7 +179,9 @@ export default function PlanejamentoColheitaContinua() {
       const dv = pulaVeg ? 0 : (rec?.diasVegetativa ?? v.diasVegetativa);
       const dmat = rec?.diasMaturacao ?? v.diasMaturacao;
       const colheitaCadaCiclo = meta > 0 && pctSum > 0 ? (meta * pct) / pctSum : 0;
-      const sementes = sementesParaColheitaEsperada(Math.ceil(colheitaCadaCiclo));
+      const sementes = sementesParaColheitaEsperada(Math.ceil(colheitaCadaCiclo), {
+        multiplicadorPlantio: multiplicadorPlantioBabyLeafFV(babyLeaf),
+      });
       const dg = rec?.diasGerminacao ?? 5;
       const diasCicloFim =
         dg + dm + (pulaVeg ? 0 : dv) + dmat;
@@ -342,7 +345,7 @@ export default function PlanejamentoColheitaContinua() {
             vêm da <strong>receita</strong> de cada variedade. O sistema aplica
             desperdício: germinação {DESPERDICIO.germinacao * 100}%, mudas→veg {DESPERDICIO.mudasParaVegetativa * 100}%,
             veg→mat {DESPERDICIO.vegetativaParaMaturacao * 100}% (germinação na receita: dias até ir para mudas).             Taxa
-            combinada até a colheita: {(taxa * 100).toFixed(1)}% das sementes. Torres com grelha 12 perfis × 6 furos contam só para baby leaf (manjericão, baby leaf beterraba/acelga); as demais variedades usam apenas torres padrão.
+            combinada até a colheita: {(taxa * 100).toFixed(1)}% das sementes. Torres 12×6 (baby leaf): 2 células por furo em veg/mat — sementes e capacidade em dobro; manjericão, baby leaf beterraba/acelga. Demais variedades usam torres padrão (1 planta por furo na maturação).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -391,7 +394,7 @@ export default function PlanejamentoColheitaContinua() {
                 </p>
               </div>
               <div>
-                <p className="font-medium text-foreground">Baby leaf (torres 12×6)</p>
+                <p className="font-medium text-foreground">Baby leaf (torres 12×6, 2 células/furo)</p>
                 <p className="text-muted-foreground">
                   Manjericão, baby leaf beterraba/acelga — mudas {capBaby.mudas.toLocaleString('pt-BR')} · veg{' '}
                   {capBaby.vegetativa.toLocaleString('pt-BR')} · mat {capBaby.maturacao.toLocaleString('pt-BR')} plantas

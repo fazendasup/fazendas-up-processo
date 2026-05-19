@@ -9,6 +9,21 @@ export const PLANTAS_POR_PERFIL_FV = {
   maturacao: 6,
 } as const;
 
+/** Torres 12×6 (baby leaf): 2 células por furo em vegetativa e maturação. */
+export const CELULAS_POR_FURO_BABY_LEAF_FV = 2;
+
+export function multiplicadorPlantioBabyLeafFV(ehBabyLeaf: boolean): number {
+  return ehBabyLeaf ? CELULAS_POR_FURO_BABY_LEAF_FV : 1;
+}
+
+/** Plantas por andar quando a ocupação é por furos (veg/mat). */
+export function plantasPorAndarFvComFuros(
+  est: { perfis: number; furosPorPerfil: number },
+  celulasPorFuro: number,
+): number {
+  return est.perfis * Math.max(1, est.furosPorPerfil) * Math.max(1, celulasPorFuro);
+}
+
 export function plantasPorPerfilMudas(densidadeReceita?: number | null): number {
   if (densidadeReceita != null && densidadeReceita > 0) return densidadeReceita;
   return PLANTAS_POR_PERFIL_FV.mudas;

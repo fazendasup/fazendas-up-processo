@@ -4,7 +4,11 @@
  */
 
 import type { Fase } from '@/lib/types';
-import { PLANTAS_POR_PERFIL_FV } from '@shared/plantasPorPerfil';
+import {
+  CELULAS_POR_FURO_BABY_LEAF_FV,
+  PLANTAS_POR_PERFIL_FV,
+  plantasPorAndarFvComFuros,
+} from '@shared/plantasPorPerfil';
 import {
   ESTRUTURA_OVERRIDE_FV_12x6,
   estruturaFaseParaProjeto,
@@ -40,10 +44,15 @@ export function taxaSobrevivenciaAcumulada(): number {
 }
 
 /** Quantidade mínima de sementes/mudas a plantar na germinação para esperar `plantasNaColheita` na maturação. */
-export function sementesParaColheitaEsperada(plantasNaColheita: number): number {
+export function sementesParaColheitaEsperada(
+  plantasNaColheita: number,
+  opts?: { multiplicadorPlantio?: number },
+): number {
   const t = taxaSobrevivenciaAcumulada();
-  if (plantasNaColheita <= 0) return 0;
-  return Math.ceil(plantasNaColheita / t);
+  const m = opts?.multiplicadorPlantio ?? 1;
+  const alvo = plantasNaColheita * m;
+  if (alvo <= 0) return 0;
+  return Math.ceil(alvo / t);
 }
 
 export function diasCicloTotal(diasMudas: number, diasVegetativa: number, diasMaturacao: number): number {
@@ -74,17 +83,22 @@ export function capacidadePorFaseInstalacao(
     const n = Math.max(0, t.numAndares | 0);
     const f = t.fase;
     const e = estruturaFaseParaProjeto(projetoTipo, f, t.estruturaOverride ?? null);
+    const torreBaby12x6 = !mv && torreReservadaGrelhaBabyLeaf(t);
     let porAndar: number;
     if (f === 'mudas') {
       porAndar = e.perfis * PLANTAS_POR_PERFIL.mudas;
     } else if (f === 'vegetativa') {
       porAndar = mv
         ? e.perfis * Math.max(1, e.furosPorPerfil)
-        : e.perfis * PLANTAS_POR_PERFIL.vegetativa;
+        : torreBaby12x6
+          ? plantasPorAndarFvComFuros(e, CELULAS_POR_FURO_BABY_LEAF_FV)
+          : e.perfis * PLANTAS_POR_PERFIL.vegetativa;
     } else {
       porAndar = mv
         ? e.perfis * Math.max(1, e.furosPorPerfil)
-        : e.perfis * e.furosPorPerfil;
+        : torreBaby12x6
+          ? plantasPorAndarFvComFuros(e, CELULAS_POR_FURO_BABY_LEAF_FV)
+          : e.perfis * e.furosPorPerfil;
     }
     cap[f] += porAndar * n;
   }
