@@ -48,11 +48,21 @@ export function createContaAzulHttp(env: Env, accessToken: string): AxiosInstanc
   });
 }
 
+/** Detalhe por id é o que estoura rate limit; /v1/venda/busca e /v1/pessoas não entram na fila. */
+function contaAzulPathPrecisaThrottle(path: string): boolean {
+  const p = (path.split("?")[0] ?? path).toLowerCase();
+  if (!p.includes("/v1/venda/")) return false;
+  if (p.endsWith("/v1/venda/busca")) return false;
+  return true;
+}
+
 export async function contaAzulGet<T>(client: AxiosInstance, path: string): Promise<T> {
   try {
     return await withRetry(
       async () => {
-        await contaAzulThrottle();
+        if (contaAzulPathPrecisaThrottle(path)) {
+          await contaAzulThrottle();
+        }
         const { data } = await client.get<T>(path);
         return data;
       },

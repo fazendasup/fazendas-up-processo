@@ -25,6 +25,7 @@ import {
   type ComposicaoValorPedido,
 } from "../../lib/composicao-valor.js";
 import type { AxiosInstance } from "axios";
+import { contaAzulSyncDetailBudget, type ContaAzulSyncMode } from "./conta-azul-sync-detail-budget";
 
 export async function ensureValidAccessToken(prisma: PrismaClient, env: Env) {
   const cred = await prisma.integrationCredential.findUnique({ where: { provider: "CONTA_AZUL" } });
@@ -132,19 +133,7 @@ type ResolveComposicaoCtx = {
   detailBudget: { remaining: number };
 };
 
-export type ContaAzulSyncMode = "manual" | "cron";
-
-function detailBudgetInicial(mode: ContaAzulSyncMode): number {
-  if (process.env.CONTA_AZUL_SYNC_SKIP_DETAIL === "1") return 0;
-  if (mode === "cron") {
-    const cronMax = Number(process.env.CONTA_AZUL_CRON_DETAIL_MAX ?? 0);
-    return Number.isFinite(cronMax) && cronMax >= 0 ? cronMax : 0;
-  }
-  const manualMax = Number(process.env.CONTA_AZUL_SYNC_DETAIL_MAX ?? 0);
-  if (!Number.isFinite(manualMax) || manualMax < 0) return Number.MAX_SAFE_INTEGER;
-  if (manualMax === 0) return Number.MAX_SAFE_INTEGER;
-  return manualMax;
-}
+export type { ContaAzulSyncMode } from "./conta-azul-sync-detail-budget";
 
 async function fetchComposicaoDetalheVenda(
   http: AxiosInstance,
@@ -336,7 +325,7 @@ async function executarContaAzulSync(
 ): Promise<ContaAzulSyncResult> {
   const started = Date.now();
   const composicaoCtx: ResolveComposicaoCtx = {
-    detailBudget: { remaining: detailBudgetInicial(mode) },
+    detailBudget: { remaining: contaAzulSyncDetailBudget(mode) },
   };
   const cred = await ensureValidAccessToken(prisma, env);
   if (!cred?.accessToken) {

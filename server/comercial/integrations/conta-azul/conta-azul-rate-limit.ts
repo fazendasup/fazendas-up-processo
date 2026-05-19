@@ -1,6 +1,6 @@
 /** Intervalo mínimo entre chamadas HTTP à API Conta Azul (evita 429). */
 export function contaAzulMinIntervalMs(): number {
-  const n = Number(process.env.CONTA_AZUL_API_MIN_INTERVAL_MS ?? 350);
+  const n = Number(process.env.CONTA_AZUL_API_MIN_INTERVAL_MS ?? 200);
   return Number.isFinite(n) && n >= 0 ? n : 350;
 }
 

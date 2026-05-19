@@ -35,7 +35,7 @@ export function useSyncContaAzul(callbacks?: SyncContaAzulCallbacks) {
     onSuccess: () => {
       syncStartedAtRef.current = Date.now();
       setAguardando(true);
-      toast.info("Sincronização Conta Azul iniciada. Pode levar vários minutos — você pode continuar navegando.");
+      toast.info("Sincronização Conta Azul iniciada. Em geral termina em poucos segundos.");
     },
     onError: (e) => {
       const msg = e.message ?? "";
@@ -87,7 +87,8 @@ export function useSyncContaAzul(callbacks?: SyncContaAzulCallbacks) {
         toast.error(status.data!.lastError ?? "Sync Conta Azul falhou");
       }
     })();
-  }, [aguardando, status.data, callbacks]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- callbacks opcionais do pai
+  }, [aguardando, status.data]);
 
   const busy = sync.isPending || aguardando || Boolean(status.data?.running);
 
