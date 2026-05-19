@@ -57,6 +57,7 @@ export const transplantarDistribuidoParamsSchema = z.object({
     .min(1),
   observacoes: z.string().max(2000).optional(),
   faseDestino: z.enum(["vegetativa", "maturacao"]).optional(),
+  perfilIndicesOrigem: z.array(z.number().int().min(0)).min(1).optional(),
 });
 
 export const concluirTarefasParamsSchema = z.object({

@@ -14,6 +14,8 @@ export type TransplantarDistribuidoInput = {
   destinos: { andarDestinoId: number; quantidade: number }[];
   observacoes?: string;
   faseDestino?: FaseDestinoTransplantioFv;
+  /** Se informado, só esses perfis/bandejas entram na origem (índice 0-based). */
+  perfilIndicesOrigem?: number[];
 };
 
 export type TransplantarDistribuidoCtx = {
@@ -64,11 +66,27 @@ export async function runTransplantarDistribuido(
   const totalSolicitado = input.destinos.reduce((s, d) => s + d.quantidade, 0);
   const origemPerfis = await db.getPerfisByAndarId(pid, input.andarOrigemId);
   const origemFuros = await db.getFurosByAndarId(pid, input.andarOrigemId);
+  const perfilIndicesOrigem = input.perfilIndicesOrigem?.length
+    ? input.perfilIndicesOrigem
+        .filter((v, i, arr) => arr.indexOf(v) === i)
+        .sort((a, b) => a - b)
+    : null;
 
-  const origemVariedadeId =
-    origemPerfis.find((p) => p.ativo && p.variedadeId)?.variedadeId ??
-    origemPerfis.find((p) => p.variedadeId)?.variedadeId ??
-    null;
+  const origemVariedadeId = (() => {
+    if (perfilIndicesOrigem?.length) {
+      const nosSelecionados = origemPerfis.filter((p) => perfilIndicesOrigem.includes(p.perfilIndex));
+      return (
+        nosSelecionados.find((p) => p.ativo && p.variedadeId)?.variedadeId ??
+        nosSelecionados.find((p) => p.variedadeId)?.variedadeId ??
+        null
+      );
+    }
+    return (
+      origemPerfis.find((p) => p.ativo && p.variedadeId)?.variedadeId ??
+      origemPerfis.find((p) => p.variedadeId)?.variedadeId ??
+      null
+    );
+  })();
   if (!origemVariedadeId) {
     throw new TRPCError({
       code: "BAD_REQUEST",
@@ -81,6 +99,8 @@ export async function runTransplantarDistribuido(
   }
 
   const projeto = await db.getProjetoRow(pid);
+  const isMicroverdes = projeto?.tipo === "microverdes";
+
   const pulaVeg = variedadePulaVegetativa(vRow.slug, vRow.nome);
   if (faseOrigem === "vegetativa" && input.faseDestino && input.faseDestino !== "maturacao") {
     throw new TRPCError({
@@ -98,11 +118,47 @@ export async function runTransplantarDistribuido(
     faseOrigem === "mudas"
       ? await plantasPorPerfilMudasDoAndar(pid, origemVariedadeId, origemPerfis)
       : 0;
+  const plantasPorPerfilMudasEfetivo =
+    faseOrigem === "mudas" && isMicroverdes ? 1 : plantasPorPerfilMudasVal;
+
+  const perfisOrigemMudas = (() => {
+    const ativos = origemPerfis.filter((p) => p.ativo);
+    if (!perfilIndicesOrigem?.length) return ativos;
+    return ativos.filter((p) => perfilIndicesOrigem.includes(p.perfilIndex));
+  })();
+
+  if (perfilIndicesOrigem?.length) {
+    if (faseOrigem === "mudas") {
+      const inativos = perfilIndicesOrigem.filter(
+        (idx) => !origemPerfis.some((p) => p.perfilIndex === idx && p.ativo),
+      );
+      if (inativos.length > 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Perfil(is) de origem inativo(s) ou inexistente(s): ${inativos.map((i) => i + 1).join(", ")}.`,
+        });
+      }
+    } else {
+      const semPlanta = perfilIndicesOrigem.filter(
+        (idx) => !origemFuros.some((f) => f.perfilIndex === idx && f.status === "plantado"),
+      );
+      if (semPlanta.length > 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Perfil(is) sem plantas na origem: ${semPlanta.map((i) => i + 1).join(", ")}.`,
+        });
+      }
+    }
+  }
 
   const origemDisponivel =
     faseOrigem === "mudas"
-      ? contarPlantasMudasFv(origemPerfis.filter((p) => p.ativo).length, plantasPorPerfilMudasVal)
-      : origemFuros.filter((f) => f.status === "plantado").length;
+      ? contarPlantasMudasFv(perfisOrigemMudas.length, plantasPorPerfilMudasEfetivo)
+      : perfilIndicesOrigem?.length
+        ? origemFuros.filter(
+            (f) => f.status === "plantado" && perfilIndicesOrigem.includes(f.perfilIndex),
+          ).length
+        : origemFuros.filter((f) => f.status === "plantado").length;
 
   if (totalSolicitado > origemDisponivel) {
     throw new TRPCError({
@@ -191,11 +247,18 @@ export async function runTransplantarDistribuido(
   }
 
   if (faseOrigem === "mudas") {
-    const nPerfisLiberar = perfisMudasParaLiberar(totalSolicitado, plantasPorPerfilMudasVal);
-    const ativos = origemPerfis
-      .filter((p) => p.ativo)
-      .sort((a, b) => a.perfilIndex - b.perfilIndex)
-      .slice(0, nPerfisLiberar);
+    const pool = perfilIndicesOrigem?.length
+      ? perfisOrigemMudas.sort((a, b) => a.perfilIndex - b.perfilIndex)
+      : origemPerfis.filter((p) => p.ativo).sort((a, b) => a.perfilIndex - b.perfilIndex);
+    const nPerfisLiberar = perfisMudasParaLiberar(totalSolicitado, plantasPorPerfilMudasEfetivo);
+    const ativos = pool.slice(0, nPerfisLiberar);
+    const esperado = contarPlantasMudasFv(ativos.length, plantasPorPerfilMudasEfetivo);
+    if (perfilIndicesOrigem?.length && totalSolicitado !== esperado) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `Para os perfis selecionados, distribua exatamente ${esperado} (você informou ${totalSolicitado}).`,
+      });
+    }
     await db.batchUpdatePerfis(
       pid,
       input.andarOrigemId,
@@ -208,7 +271,11 @@ export async function runTransplantarDistribuido(
     );
   } else {
     const plantados = origemFuros
-      .filter((f) => f.status === "plantado")
+      .filter(
+        (f) =>
+          f.status === "plantado" &&
+          (!perfilIndicesOrigem?.length || perfilIndicesOrigem.includes(f.perfilIndex)),
+      )
       .sort((a, b) => (b.perfilIndex - a.perfilIndex) || (b.furoIndex - a.furoIndex))
       .slice(0, totalSolicitado);
     await db.batchUpdateFuros(

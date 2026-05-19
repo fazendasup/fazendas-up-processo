@@ -9,13 +9,14 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import type { Andar, Torre, Fase, VariedadeConfig } from "@/lib/types";
-import { capacidadeAndar, contarPlantasAndar, contarVaziosAndar, andarDentroDoModeloDaTorre } from "@/lib/utils-farm";
+import { capacidadeAndar, contarVaziosAndar, andarDentroDoModeloDaTorre } from "@/lib/utils-farm";
+import { labelPosicaoProducao } from "@/lib/microverdesPhases";
 import { torreReservadaGrelhaBabyLeaf } from "@/lib/planejamentoContinuo";
 import {
   resolverFaseDestinoTransplantio,
   type FaseDestinoTransplantioFv,
 } from "@shared/transplantioDestino";
-import { PLANTAS_POR_PERFIL_FV } from "@shared/plantasPorPerfil";
+import { contarPlantasMudasFv, PLANTAS_POR_PERFIL_FV } from "@shared/plantasPorPerfil";
 import { variedadePulaVegetativa } from "@shared/variedadesFase";
 
 function rotuloTorreDestino(torre: Torre): string {
@@ -45,6 +46,7 @@ export function TransplantioDistribuidoModal({
   resolver,
   projetoTipo,
   variedades,
+  initialPerfilIndices,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -59,6 +61,8 @@ export function TransplantioDistribuidoModal({
   /** Alinha capacidade e fase destino ao modelo microverdes (mudas → iluminação). */
   projetoTipo?: string | null;
   variedades?: VariedadeConfig[];
+  /** Pré-seleção (ex.: perfis marcados no grid antes de abrir o modal). */
+  initialPerfilIndices?: number[];
 }) {
   const utils = trpc.useUtils();
   const transplantar = trpc.andares.transplantarDistribuido.useMutation();
@@ -91,33 +95,60 @@ export function TransplantioDistribuidoModal({
     }
     return null;
   }, [origemTorre, pulaVegetativa, podeEscolherFaseDestino, destinoFase, projetoTipo]);
-  const origemPerfisAtivos = useMemo(
-    () => (origemAndar?.perfis || []).filter((p) => p.ativo).length,
-    [origemAndar],
-  );
+  const perfisDisponiveisOrigem = useMemo(() => {
+    if (!origemAndar || !origemTorre) return [] as number[];
+    if (origemTorre.fase === "mudas") {
+      return (origemAndar.perfis || [])
+        .filter((p) => p.ativo)
+        .map((p) => p.perfilIndex)
+        .sort((a, b) => a - b);
+    }
+    const indices = new Set<number>();
+    for (const f of origemAndar.furos || []) {
+      if (f.status === "plantado") indices.add(f.perfilIndex);
+    }
+    return Array.from(indices).sort((a, b) => a - b);
+  }, [origemAndar, origemTorre]);
 
-  const origemQtd = useMemo(() => {
-    if (!origemAndar || !origemTorre) return 0;
-    return contarPlantasAndar(origemAndar, origemTorre.fase as Fase, projetoTipo);
-  }, [origemAndar, origemTorre, projetoTipo]);
+  const plantasPorPerfilMudasUi =
+    origemTorre?.fase === "mudas" && projetoTipo !== "microverdes"
+      ? PLANTAS_POR_PERFIL_FV.mudas
+      : 1;
 
+  const [perfisSelecionados, setPerfisSelecionados] = useState<number[]>([]);
   const [destinos, setDestinos] = useState<Destino[]>([]);
   const [obs, setObs] = useState("");
+
+  const origemQtd = useMemo(() => {
+    if (!origemAndar || !origemTorre || perfisSelecionados.length === 0) return 0;
+    if (origemTorre.fase === "mudas") {
+      if (projetoTipo === "microverdes") return perfisSelecionados.length;
+      return contarPlantasMudasFv(perfisSelecionados.length, plantasPorPerfilMudasUi);
+    }
+    return (origemAndar.furos || []).filter(
+      (f) => f.status === "plantado" && perfisSelecionados.includes(f.perfilIndex),
+    ).length;
+  }, [origemAndar, origemTorre, perfisSelecionados, projetoTipo, plantasPorPerfilMudasUi]);
 
   useEffect(() => {
     if (!open) {
       setDestinos([]);
       setObs("");
+      setPerfisSelecionados([]);
       return;
     }
     if (podeEscolherFaseDestino) {
       setDestinoFase(pulaVegetativa ? "maturacao" : "vegetativa");
     }
-  }, [open, podeEscolherFaseDestino, pulaVegetativa]);
+    const base = initialPerfilIndices?.length
+      ? initialPerfilIndices.filter((i) => perfisDisponiveisOrigem.includes(i))
+      : [];
+    setPerfisSelecionados(base);
+  }, [open, podeEscolherFaseDestino, pulaVegetativa, initialPerfilIndices, perfisDisponiveisOrigem]);
 
   useEffect(() => {
     setDestinos([]);
-  }, [faseDestino]);
+  }, [faseDestino, perfisSelecionados]);
 
   const destinosDisponiveis = useMemo(() => {
     if (!faseDestino) return [];
@@ -198,8 +229,22 @@ export function TransplantioDistribuidoModal({
   const confirmar = async () => {
     if (!origemAndar || !origemTorre || !faseDestino) return;
     if (!origemAndarDbId) return;
+    if (perfisSelecionados.length === 0) {
+      toast.error(
+        origemTorre.fase === "mudas"
+          ? projetoTipo === "microverdes"
+            ? "Selecione ao menos uma bandeja de origem."
+            : "Selecione ao menos um perfil de origem."
+          : "Selecione ao menos um perfil com plantas na origem.",
+      );
+      return;
+    }
     if (destinos.length === 0) {
       toast.error("Selecione pelo menos um destino.");
+      return;
+    }
+    if (origemQtd === 0) {
+      toast.error("Nada para transplantar na seleção de origem.");
       return;
     }
     if (totalDistribuido !== origemQtd) {
@@ -215,6 +260,7 @@ export function TransplantioDistribuidoModal({
     try {
       await transplantar.mutateAsync({
         andarOrigemId: origemAndarDbId,
+        perfilIndicesOrigem: perfisSelecionados,
         destinos: destinos.map((d) => ({ andarDestinoId: d.andarIdDb, quantidade: d.quantidade })),
         observacoes: obs.trim() || undefined,
         ...(origemTorre.fase === "mudas" ? { faseDestino: faseDestino as FaseDestinoTransplantioFv } : {}),
@@ -259,13 +305,26 @@ export function TransplantioDistribuidoModal({
                 <p>
                   <strong>Quantidade:</strong> {origemQtd} {unidadeLabel}
                 </p>
-                {origemTorre.fase === "mudas" && projetoTipo !== "microverdes" && origemPerfisAtivos > 0 && (
+                {origemTorre.fase === "mudas" && projetoTipo !== "microverdes" && perfisDisponiveisOrigem.length > 0 && (
                   <p className="col-span-2 text-xs text-muted-foreground">
-                    {origemPerfisAtivos} perfil(is) ativo(s) × {PLANTAS_POR_PERFIL_FV.mudas} plantas por perfil
+                    Até {perfisDisponiveisOrigem.length} perfil(is) × {PLANTAS_POR_PERFIL_FV.mudas} plantas por perfil
                   </p>
                 )}
               </div>
             </Card>
+
+            <SelecaoPerfisOrigem
+              origemTorre={origemTorre}
+              origemAndar={origemAndar}
+              projetoTipo={projetoTipo}
+              perfisDisponiveisOrigem={perfisDisponiveisOrigem}
+              perfisSelecionados={perfisSelecionados}
+              setPerfisSelecionados={setPerfisSelecionados}
+              plantasPorPerfilMudasUi={plantasPorPerfilMudasUi}
+              variedades={variedades}
+              unidadeLabel={unidadeLabel}
+              origemQtd={origemQtd}
+            />
 
             {podeEscolherFaseDestino && (
               <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
@@ -321,7 +380,7 @@ export function TransplantioDistribuidoModal({
               <Button
                 className="flex-1"
                 onClick={confirmar}
-                disabled={faltam !== 0 || transplantar.isPending}
+                disabled={faltam !== 0 || transplantar.isPending || perfisSelecionados.length === 0 || origemQtd === 0}
               >
                 {transplantar.isPending ? "Transferindo..." : "✓ Confirmar"}
               </Button>
@@ -422,6 +481,114 @@ export function TransplantioDistribuidoModal({
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function SelecaoPerfisOrigem({
+  origemTorre,
+  origemAndar,
+  projetoTipo,
+  perfisDisponiveisOrigem,
+  perfisSelecionados,
+  setPerfisSelecionados,
+  plantasPorPerfilMudasUi,
+  variedades,
+  unidadeLabel,
+  origemQtd,
+}: {
+  origemTorre: Torre;
+  origemAndar: Andar;
+  projetoTipo?: string | null;
+  perfisDisponiveisOrigem: number[];
+  perfisSelecionados: number[];
+  setPerfisSelecionados: React.Dispatch<React.SetStateAction<number[]>>;
+  plantasPorPerfilMudasUi: number;
+  variedades?: VariedadeConfig[];
+  unidadeLabel: string;
+  origemQtd: number;
+}) {
+  return (
+    <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
+      <p className="text-sm font-semibold">
+        {origemTorre.fase === "mudas"
+          ? projetoTipo === "microverdes"
+            ? "Bandejas de origem"
+            : "Perfis de origem"
+          : "Perfis de origem (vegetativa)"}
+      </p>
+      {perfisDisponiveisOrigem.length === 0 ? (
+        <p className="text-xs text-amber-700">
+          {origemTorre.fase === "mudas"
+            ? "Nenhum perfil/bandeja ativo neste andar."
+            : "Nenhum perfil com plantas neste andar."}
+        </p>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {perfisDisponiveisOrigem.map((idx) => {
+            const marcado = perfisSelecionados.includes(idx);
+            const perfil = origemAndar.perfis?.find((p) => p.perfilIndex === idx);
+            const varNome = perfil?.variedadeId
+              ? variedades?.find((v) => v.id === perfil.variedadeId)?.nome
+              : null;
+            const qtdPerfil =
+              origemTorre.fase === "mudas"
+                ? projetoTipo === "microverdes"
+                  ? 1
+                  : plantasPorPerfilMudasUi
+                : (origemAndar.furos || []).filter(
+                    (f) => f.perfilIndex === idx && f.status === "plantado",
+                  ).length;
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  setPerfisSelecionados((prev) =>
+                    marcado ? prev.filter((i) => i !== idx) : [...prev, idx].sort((a, b) => a - b),
+                  );
+                }}
+                className={`rounded-lg border px-3 py-2 text-left text-xs transition ${
+                  marcado
+                    ? "border-emerald-500 bg-emerald-50 text-emerald-900 ring-1 ring-emerald-300"
+                    : "border-border bg-card text-muted-foreground hover:bg-accent/50"
+                }`}
+              >
+                <span className="font-semibold">{labelPosicaoProducao(projetoTipo, idx)}</span>
+                {varNome && <span className="ml-1 text-muted-foreground">· {varNome}</span>}
+                <span className="mt-0.5 block text-[10px]">
+                  {qtdPerfil} {unidadeLabel}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="text-xs"
+          disabled={perfisDisponiveisOrigem.length === 0}
+          onClick={() => setPerfisSelecionados([...perfisDisponiveisOrigem])}
+        >
+          Selecionar todos
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="text-xs"
+          onClick={() => setPerfisSelecionados([])}
+        >
+          Limpar seleção
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Selecionados: <strong>{perfisSelecionados.length}</strong> · Quantidade a distribuir:{" "}
+        <strong>{origemQtd}</strong> {unidadeLabel}
+      </p>
+    </div>
   );
 }
 
