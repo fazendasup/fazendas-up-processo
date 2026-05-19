@@ -104,9 +104,16 @@ export function mapVendaBuscaItem(raw: unknown): {
   const o = raw as Record<string, unknown>;
   const id = typeof o.id === "string" ? o.id : null;
   if (!id) return null;
-  const totalRaw = o.total;
-  const total =
-    typeof totalRaw === "number" ? totalRaw : typeof totalRaw === "string" ? Number(totalRaw) : NaN;
+  const totalCandidates = [o.total, o.valor_total, o.valorTotal, o.valor_liquido, o.valorLiquido];
+  let total = NaN;
+  for (const raw of totalCandidates) {
+    const n =
+      typeof raw === "number" ? raw : typeof raw === "string" && raw.trim() ? Number(raw) : NaN;
+    if (Number.isFinite(n) && n > 0) {
+      total = n;
+      break;
+    }
+  }
   const data = typeof o.data === "string" ? o.data : undefined;
   const cliente = o.cliente;
   let clienteExternalId: string | null = null;

@@ -19,6 +19,7 @@ import {
   composicaoFromTotalApenas,
   composicaoFromVendaBuscaItem,
   composicaoFromVendaDetalhe,
+  normalizarComposicao,
   type ComposicaoValorPedido,
 } from "../../lib/composicao-valor.js";
 import type { AxiosInstance } from "axios";
@@ -131,7 +132,7 @@ async function resolveComposicaoVenda(
   totalFallback: number,
   vendaId: string,
 ): Promise<ComposicaoValorPedido> {
-  const fromBusca = composicaoFromVendaBuscaItem(raw);
+  const fromBusca = normalizarComposicao(composicaoFromVendaBuscaItem(raw), totalFallback);
   if (fromBusca && (fromBusca.valorFrete > 0 || fromBusca.valorDesconto > 0)) {
     return fromBusca;
   }
@@ -139,7 +140,7 @@ async function resolveComposicaoVenda(
   if (process.env.CONTA_AZUL_SYNC_SKIP_DETAIL !== "1") {
     try {
       const detail = await contaAzulGet<unknown>(http, `/v1/venda/${encodeURIComponent(vendaId)}`);
-      const fromDetail = composicaoFromVendaDetalhe(detail);
+      const fromDetail = normalizarComposicao(composicaoFromVendaDetalhe(detail), totalFallback);
       if (fromDetail) return fromDetail;
     } catch (e) {
       logger.warn(

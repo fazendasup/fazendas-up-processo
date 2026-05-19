@@ -5,13 +5,32 @@ export type ComposicaoValorPedido = {
   valorLiquido: number;
 };
 
-function asNumber(v: unknown): number | null {
+/** Aceita number, string e Prisma.Decimal (decimal.js). */
+export function asNumber(v: unknown): number | null {
   if (typeof v === "number" && Number.isFinite(v)) return v;
   if (typeof v === "string" && v.trim()) {
     const n = Number(v);
     return Number.isFinite(n) ? n : null;
   }
+  if (v != null && typeof v === "object") {
+    const n = Number(v);
+    if (Number.isFinite(n)) return n;
+  }
   return null;
+}
+
+function composicaoTemValor(c: ComposicaoValorPedido): boolean {
+  return c.valorLiquido > 0 || c.valorBruto > 0;
+}
+
+/** Ignora composição vazia da API (evita zerar pedidos que têm total na busca). */
+export function normalizarComposicao(
+  candidata: ComposicaoValorPedido | null | undefined,
+  totalFallback: number,
+): ComposicaoValorPedido | null {
+  if (!candidata) return null;
+  if (composicaoTemValor(candidata)) return candidata;
+  return totalFallback > 0 ? null : candidata;
 }
 
 /** Extrai composição do item bruto de GET /v1/venda/busca (quando a API envia). */
@@ -31,7 +50,7 @@ export function composicaoFromVendaBuscaItem(raw: unknown): ComposicaoValorPedid
   const desconto = asNumber(c.desconto) ?? 0;
   const liquido = asNumber(c.valor_liquido ?? c.valorLiquido);
 
-  if (liquido != null) {
+  if (liquido != null && liquido > 0) {
     return {
       valorBruto: bruto ?? Math.max(0, liquido - frete + desconto),
       valorFrete: frete,
@@ -80,13 +99,15 @@ export function liquidoPedido(p: {
   valorDesconto?: unknown;
   valorTotal?: unknown;
 }): number {
+  const total = asNumber(p.valorTotal);
   const liquido = asNumber(p.valorLiquido);
-  if (liquido != null) return liquido;
+  if (liquido != null && liquido > 0) return liquido;
+  if (liquido === 0 && total != null && total > 0) return total;
   const bruto = asNumber(p.valorBruto);
   const frete = asNumber(p.valorFrete) ?? 0;
   const desconto = asNumber(p.valorDesconto) ?? 0;
-  if (bruto != null) return Math.max(0, bruto + frete - desconto);
-  return asNumber(p.valorTotal) ?? 0;
+  if (bruto != null && bruto > 0) return Math.max(0, bruto + frete - desconto);
+  return total ?? liquido ?? 0;
 }
 
 export type TotaisComposicao = {
