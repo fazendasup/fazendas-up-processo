@@ -59,6 +59,7 @@ import {
   Camera,
   Brain,
   Sparkles,
+  Briefcase,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/_core/hooks/useAuth';
@@ -89,6 +90,7 @@ const ANALISE_ADMIN_PREFIX: NavItem[] = [
   { href: '/capacidade', label: 'Capacidade', icon: LayoutGrid, requiredRole: 'admin' },
   { href: '/analytics', label: 'Analytics', icon: BarChart3, requiredRole: 'admin' },
   { href: '/custos-producao', label: 'Custos de produção', icon: Coins, requiredRole: 'admin' },
+  { href: '/comercial', label: 'Comercial', icon: Briefcase, requiredRole: 'admin' },
 ];
 
 const ANALISE_TODOS: NavItem = { href: '/inteligencia', label: 'Inteligência', icon: Brain };

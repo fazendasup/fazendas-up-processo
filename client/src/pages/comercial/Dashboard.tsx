@@ -1,0 +1,666 @@
+import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  AlertTriangle,
+  ArrowRight,
+  LayoutGrid,
+  Bell,
+  DollarSign,
+  MessageSquareWarning,
+  PieChart as PieChartIcon,
+  RefreshCw,
+  Search,
+  Sparkles,
+  Target,
+  TrendingUp,
+  Users,
+} from "lucide-react";
+import { Link, useLocation } from "wouter";
+import {
+  Area,
+  CartesianGrid,
+  Cell,
+  ComposedChart,
+  Line,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { toast } from "sonner";
+import {
+  CHART,
+  ChartAreaUnderLineDefs,
+  ComparisonTreemap,
+  buildChartTheme,
+  chartAnimation,
+  pieLegendDotColor,
+  pieSliceSolidFill,
+} from "@/components/comercial/charts";
+import { useDashboardTour } from "@/components/comercial/dashboard/DashboardTour";
+import { Spinner } from "@/components/comercial/ui/Spinner";
+import { TooltipInfo } from "@/components/comercial/ui/TooltipInfo";
+import {
+  fuEyebrow,
+  fuGlass,
+  fuGlassHover,
+  fuGlassSm,
+  fuStat,
+  fuTextMuted,
+  fuTextStrong,
+  fuTitleGradient,
+  fuToolbar,
+} from "@/lib/comercial/fuBrand";
+import { useTheme } from "@/contexts/ThemeContext";
+import { intervaloDoPreset, labelPreset, type PeriodoPreset } from "@/lib/comercial/periodo";
+import { trpc } from "@/lib/trpc";
+
+const ORDEM_TIPO_OPORTUNIDADE = ["UPSELL", "CROSS_SELL", "REATIVACAO", "NOVO_PRODUTO"] as const;
+
+function labelTipoOportunidade(tipo: string): string {
+  const map: Record<string, string> = {
+    UPSELL: "Upsell",
+    CROSS_SELL: "Cross-sell",
+    REATIVACAO: "Reativação",
+    NOVO_PRODUTO: "Novo produto",
+  };
+  return map[tipo] ?? tipo.replace(/_/g, " ");
+}
+
+export function Dashboard() {
+  const [, navigate] = useLocation();
+  const { theme } = useTheme();
+  const chart = useMemo(() => buildChartTheme(theme), [theme]);
+  const {
+    chartGridProps,
+    chartAxisXProps,
+    chartAxisYProps,
+    chartTooltipProps,
+    chartTooltipCursorLine,
+  } = chart;
+  const pieStroke = theme === "dark" ? "#0f172a" : "#f1f5f9";
+  const lineActiveStroke = theme === "dark" ? "#030712" : "#f8fafc";
+
+  const [preset, setPreset] = useState<PeriodoPreset>("mes");
+  const [busca, setBusca] = useState("");
+  const { inicio, fim } = useMemo(() => intervaloDoPreset(preset), [preset]);
+  const { Tour, startTour } = useDashboardTour();
+
+  const utils = trpc.useUtils();
+
+  const resumo = trpc.comercial.dashboard.resumo.useQuery(
+    { inicio, fim },
+    { refetchInterval: 60_000, staleTime: 30_000 },
+  );
+  const serie = trpc.comercial.dashboard.serieFaturamento.useQuery({ inicio, fim, bucket: "day" }, { staleTime: 30_000 });
+
+  const sync = trpc.comercial.integracoes.sincronizarContaAzul.useMutation({
+    onSuccess: async (data) => {
+      await Promise.all([
+        utils.comercial.dashboard.resumo.invalidate(),
+        utils.comercial.dashboard.serieFaturamento.invalidate(),
+        utils.comercial.kpis.resumoCalculado.invalidate(),
+        utils.comercial.kpis.snapshots.invalidate(),
+        utils.comercial.clientes.listar.invalidate(),
+        utils.comercial.clientes.listarCarteira.invalidate(),
+        utils.comercial.oportunidades.listar.invalidate(),
+        utils.comercial.execucoes.resumo.invalidate(),
+        utils.comercial.execucoes.listar.invalidate(),
+      ]);
+      toast.success(
+        `Sync: ${data.pedidosGravados} pedidos importados; inteligência: ${data.inteligenciaOportunidades} oportunidades (upsell/cross/reativação) e riscos atualizados no período do dashboard.`,
+      );
+    },
+    onError: (e) => {
+      const msg = e.message ?? "";
+      if (msg === "Não autenticado") {
+        toast.error(
+          "Sua sessão neste site expirou. Saia, entre de novo e teste o sync.",
+        );
+        return;
+      }
+      toast.error(msg || "Falha no sync");
+    },
+  });
+
+  const dadosBarras = useMemo(() => {
+    const k = resumo.data?.kpis.faturamentoPorTipo;
+    if (!k) return [];
+    return [
+      { nome: "Restaurantes", valor: k.RESTAURANTE },
+      { nome: "Mercados", valor: k.MERCADO },
+    ];
+  }, [resumo.data?.kpis.faturamentoPorTipo]);
+
+  /** Mix por tipo de oportunidade (abertas / em contato) — ordenado e com rótulos legíveis */
+  const dadosPizzaMix = useMemo(() => {
+    const rows = resumo.data?.oportunidadesPorTipo ?? [];
+    const mapped = rows
+      .filter((r) => r.total > 0)
+      .map((r) => ({
+        name: labelTipoOportunidade(r.tipo),
+        value: r.total,
+        tipo: r.tipo,
+      }));
+    mapped.sort((a, b) => {
+      const ia = ORDEM_TIPO_OPORTUNIDADE.indexOf(a.tipo as (typeof ORDEM_TIPO_OPORTUNIDADE)[number]);
+      const ib = ORDEM_TIPO_OPORTUNIDADE.indexOf(b.tipo as (typeof ORDEM_TIPO_OPORTUNIDADE)[number]);
+      if (ia !== -1 || ib !== -1) {
+        if (ia === -1) return 1;
+        if (ib === -1) return -1;
+        return ia - ib;
+      }
+      return a.name.localeCompare(b.name, "pt-BR");
+    });
+    return mapped;
+  }, [resumo.data?.oportunidadesPorTipo]);
+
+  const [modalFat, setModalFat] = useState(false);
+
+  const fmtMoney = (n: number) =>
+    n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+
+  const onBusca = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = busca.trim();
+    if (q) navigate(`/comercial/clientes?busca=${encodeURIComponent(q)}`);
+    else toast.message("Digite um nome ou CNPJ para buscar na carteira.");
+  };
+
+  const kpis = resumo.data?.kpis;
+
+  return (
+    <div className="relative z-10">
+      {Tour}
+
+      {/* Toolbar fixa */}
+      <div data-tour="dash-toolbar" className={fuToolbar}>
+        <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-4 py-5 md:flex-row md:items-center md:justify-between md:px-8">
+          <div>
+            <p className={fuEyebrow}>Inteligência comercial</p>
+            <h1 className={`mt-1 text-3xl font-bold tracking-tight md:text-4xl ${fuTitleGradient}`}>Dashboard executivo</h1>
+            <p className={`mt-2 text-sm ${fuTextMuted}`}>
+              Período: <span className="font-semibold text-slate-900 dark:text-slate-300">{labelPreset(preset)}</span>
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 md:justify-end">
+            <button
+              type="button"
+              onClick={() => startTour()}
+              className="rounded-xl border border-slate-200/90 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-500/35 hover:bg-white dark:border-white/15 dark:bg-white/5 dark:text-slate-200 dark:hover:border-cyan-400/40 dark:hover:bg-white/10"
+            >
+              Tour guiado
+            </button>
+
+            <div className="flex rounded-xl border border-slate-200/90 bg-slate-100/80 p-1 dark:border-white/10 dark:bg-black/20">
+              {(
+                [
+                  ["hoje", "Hoje"],
+                  ["semana", "Semana"],
+                  ["mes", "Mês"],
+                ] as const
+              ).map(([k, label]) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setPreset(k)}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition duration-200 ${
+                    preset === k
+                      ? "bg-gradient-to-r from-cyan-600/25 to-emerald-500/20 text-slate-900 shadow-sm dark:from-cyan-500/30 dark:to-emerald-500/20 dark:text-white dark:shadow-[0_0_20px_-4px_rgba(34,211,238,0.4)]"
+                      : "text-slate-600 hover:text-slate-900 dark:text-slate-500 dark:hover:text-slate-200"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <form onSubmit={onBusca} className="flex min-w-[220px] flex-1 md:max-w-md">
+              <div className="relative flex w-full">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 dark:text-cyan-500/50" />
+                <input
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  placeholder="Buscar cliente, CNPJ…"
+                  className="w-full rounded-xl border border-slate-200/90 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 placeholder:text-slate-500 outline-none ring-cyan-500/20 transition focus:border-cyan-500/50 focus:ring-2 dark:border-white/10 dark:bg-black/30 dark:text-slate-100 dark:placeholder:text-slate-600 dark:focus:border-cyan-400/40"
+                  aria-label="Busca global na carteira"
+                />
+              </div>
+            </form>
+
+            <button
+              type="button"
+              disabled={sync.isPending}
+              onClick={() => sync.mutate()}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-600 px-4 py-2.5 text-sm font-bold text-white shadow-[0_0_24px_-4px_rgba(16,185,129,0.5)] transition hover:brightness-110 disabled:opacity-60"
+            >
+              {sync.isPending ? <Spinner /> : <RefreshCw className="h-4 w-4" />}
+              Sync Conta Azul
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-[1600px] space-y-6 px-4 py-6 md:px-6">
+        {/* Linha principal: 3 colunas */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          {/* Card 1 — KPIs principais (verde) */}
+          <motion.section
+            data-tour="dash-kpis"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className={`${fuGlass} ${fuGlassHover} border-emerald-400/15 p-6`}
+          >
+            <div className="mb-5 flex items-start justify-between gap-2">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/30 bg-gradient-to-br from-emerald-500/20 to-cyan-500/10 shadow-[0_0_24px_-8px_rgba(16,185,129,0.5)]">
+                  <Sparkles className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
+                </div>
+                <div>
+                  <h2 className={`text-lg font-bold ${fuTitleGradient}`}>KPIs principais</h2>
+                  <p className={`text-sm ${fuTextMuted}`}>Receita e eficiência da carteira</p>
+                </div>
+              </div>
+              <TooltipInfo text="Faturamento e ticket médio calculados a partir dos pedidos sincronizados da Conta Azul (API)." />
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              <button
+                type="button"
+                onClick={() => setModalFat(true)}
+                className={`group ${fuGlassSm} ${fuGlassHover} border-emerald-400/20 p-4 text-left`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-800 dark:text-emerald-400/80">
+                    Faturamento
+                  </span>
+                  <DollarSign className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
+                </div>
+                <div className={`mt-2 text-2xl font-bold ${fuTextStrong} ${fuStat}`}>{fmtMoney(kpis?.faturamento ?? 0)}</div>
+                <div className={`mt-1 text-xs ${fuTextMuted}`}>Clique para ver por tipo de cliente</div>
+              </button>
+
+              <div className={`${fuGlassSm} border-sky-400/20 p-4`}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-sky-800 dark:text-sky-400/80">
+                    Ticket médio (pedido)
+                  </span>
+                  <TooltipInfo text="Valor médio por pedido no período. Útil para comparar com metas comerciais." />
+                </div>
+                <div className="mt-2 flex items-end justify-between gap-2">
+                  <div className={`text-2xl font-bold ${fuTextStrong} ${fuStat}`}>{fmtMoney(kpis?.ticketMedio ?? 0)}</div>
+                  <TrendingUp className="h-5 w-5 text-sky-700 dark:text-sky-400" />
+                </div>
+                <div className={`mt-1 text-xs ${fuTextMuted}`}>
+                  Por cliente (média):{" "}
+                  <span className={`font-semibold text-slate-700 dark:text-slate-300 ${fuStat}`}>{fmtMoney(kpis?.ticketMedioPorCliente ?? 0)}</span>
+                </div>
+              </div>
+
+              <div className={`${fuGlassSm} border-cyan-400/20 p-4`}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-800 dark:text-cyan-400/80">
+                    Clientes ativos
+                  </span>
+                  <Users className="h-4 w-4 text-cyan-700 dark:text-cyan-400" />
+                </div>
+                <div className={`mt-2 text-2xl font-bold ${fuTextStrong} ${fuStat}`}>{kpis?.clientesAtivos ?? 0}</div>
+                <div className={`mt-1 text-xs ${fuTextMuted}`}>
+                  Com pedido no período:{" "}
+                  <span className={`font-semibold text-slate-700 dark:text-slate-300 ${fuStat}`}>{kpis?.clientesComPedido ?? 0}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">Faturamento por tipo</span>
+                  <p className={`text-xs ${fuTextMuted}`}>Proporção por área</p>
+                </div>
+                <LayoutGrid className="h-4 w-4 shrink-0 text-cyan-700 dark:text-cyan-400/70" />
+              </div>
+              {/* Altura só no gráfico: evita ResponsiveContainer “vazar” e cobrir os botões abaixo */}
+              <div className="relative h-52 w-full min-h-[12rem] overflow-hidden rounded-xl sm:h-56">
+                <ComparisonTreemap
+                  data={dadosBarras.map((d) => ({ name: d.nome, value: d.valor }))}
+                  formatValue={fmtMoney}
+                  aspectRatio={1.35}
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-2 border-t border-slate-200/80 pt-5 dark:border-white/10">
+              <Link
+                href="/kpis"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2.5 text-sm font-bold text-white shadow-[0_0_24px_-4px_rgba(59,130,246,0.5)] transition hover:brightness-110"
+              >
+                Ver relatórios <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/clientes"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 shadow-sm transition hover:border-cyan-500/35 dark:border-white/15 dark:bg-white/5 dark:text-slate-200 dark:hover:border-cyan-400/40 dark:hover:bg-white/10"
+              >
+                Abrir carteira
+              </Link>
+            </div>
+          </motion.section>
+
+          {/* Card 2 — Oportunidades (azul) */}
+          <motion.section
+            data-tour="dash-oportunidades"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: 0.05 }}
+            className={`${fuGlass} ${fuGlassHover} border-sky-400/15 p-6`}
+          >
+            <div className="mb-5 flex items-start justify-between gap-2">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/30 bg-gradient-to-br from-sky-500/20 to-blue-600/10">
+                  <Target className="h-5 w-5 text-sky-700 dark:text-sky-300" />
+                </div>
+                <div>
+                  <h2 className={`text-lg font-bold ${fuTitleGradient}`}>Oportunidades</h2>
+                  <p className={`text-sm ${fuTextMuted}`}>Priorize upsell, cross-sell e reativação</p>
+                </div>
+              </div>
+              <TooltipInfo text="Contagem e potencial somam oportunidades abertas ou em contato, com base nas regras e dados da Conta Azul." />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className={`${fuGlassSm} border-blue-400/25 p-4`}>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-sky-800 dark:text-sky-400/80">Abertas</div>
+                <div className={`mt-1 text-3xl font-bold ${fuTextStrong} ${fuStat}`}>{kpis?.oportunidadesAbertas ?? 0}</div>
+                <div className={`mt-1 text-xs ${fuTextMuted}`}>Potencial estimado</div>
+                <div className={`text-lg font-bold text-sky-900 dark:text-sky-200 ${fuStat}`}>{fmtMoney(kpis?.potencialOportunidades ?? 0)}</div>
+              </div>
+              <div className={`${fuGlassSm} min-w-0 p-4`}>
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  <PieChartIcon className="h-4 w-4 shrink-0 text-sky-700 dark:text-sky-400" />
+                  Upsell / Cross-sell
+                </div>
+                <p className={`mt-0.5 text-[11px] leading-snug ${fuTextMuted}`}>
+                  Distribuição das oportunidades abertas por tipo
+                </p>
+                {dadosPizzaMix.length === 0 ? (
+                  <div
+                    className={`mt-3 flex min-h-[9rem] items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 px-2 text-center text-xs dark:border-white/15 dark:bg-white/5 ${fuTextMuted}`}
+                  >
+                    Nenhuma oportunidade aberta para montar o gráfico.
+                  </div>
+                ) : (
+                  <>
+                    <div className="mt-2 h-40 w-full min-h-0 sm:h-44">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
+                          <Pie
+                            data={dadosPizzaMix}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={40}
+                            outerRadius={68}
+                            paddingAngle={dadosPizzaMix.length > 1 ? 2 : 0}
+                            stroke={pieStroke}
+                            strokeWidth={1.5}
+                            isAnimationActive
+                          >
+                            {dadosPizzaMix.map((row, i) => (
+                              <Cell key={`${row.tipo}-${i}`} fill={pieSliceSolidFill(i)} />
+                            ))}
+                          </Pie>
+                          <RechartsTooltip
+                            {...chartTooltipProps}
+                            formatter={(value: number, name: string) => [
+                              `${value} oportunidade${value === 1 ? "" : "s"}`,
+                              name,
+                            ]}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5 border-t border-slate-200/80 pt-2 text-[11px] font-semibold dark:border-white/10">
+                      {dadosPizzaMix.map((row, i) => (
+                        <li key={row.tipo} className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200">
+                          <span
+                            className="h-2.5 w-2.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: pieLegendDotColor(i) }}
+                            aria-hidden
+                          />
+                          <span>
+                            {row.name}: {row.value}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-2">
+              <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">Top oportunidades</div>
+              <ul className="space-y-2">
+                {(resumo.data?.topOportunidades ?? []).slice(0, 5).map((o) => (
+                  <li
+                    key={o.id}
+                    className="flex items-start justify-between gap-3 rounded-xl border border-slate-200/80 bg-slate-50/90 p-3 backdrop-blur-sm dark:border-white/10 dark:bg-black/20"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{o.cliente.nome}</div>
+                      <div className={`truncate text-xs ${fuTextMuted}`}>{o.descricao}</div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="text-xs font-semibold text-emerald-800 dark:text-emerald-400">{o.prioridade}</div>
+                      <div className={`text-xs font-bold ${fuTextStrong} ${fuStat}`}>
+                        {o.valorEstimado != null ? fmtMoney(o.valorEstimado) : "—"}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+                {(resumo.data?.topOportunidades?.length ?? 0) === 0 ? (
+                  <li className={`rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm dark:border-white/15 dark:bg-white/5 ${fuTextMuted}`}>
+                    Sem oportunidades abertas ainda. Sincronize dados e rode regras no backend.
+                  </li>
+                ) : null}
+              </ul>
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link
+                href="/oportunidades"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2.5 text-sm font-bold text-white shadow-[0_0_24px_-4px_rgba(16,185,129,0.45)] transition hover:brightness-110"
+              >
+                Ver lista completa <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/oportunidades"
+                className="inline-flex items-center gap-2 rounded-xl border border-emerald-600/35 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-900 transition hover:bg-emerald-100 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+              >
+                Gerar ação
+              </Link>
+            </div>
+          </motion.section>
+
+          {/* Card 3 — Riscos & alertas (laranja) */}
+          <motion.section
+            data-tour="dash-alertas"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: 0.1 }}
+            className={`${fuGlass} ${fuGlassHover} border-amber-400/20 p-6`}
+          >
+            <div className="mb-5 flex items-start justify-between gap-2">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-500/20 to-rose-600/10">
+                  <Bell className="h-5 w-5 text-amber-700 dark:text-amber-300" />
+                </div>
+                <div>
+                  <h2 className={`text-lg font-bold ${fuTitleGradient}`}>Riscos e alertas</h2>
+                  <p className={`text-sm ${fuTextMuted}`}>O que precisa de atenção hoje</p>
+                </div>
+              </div>
+              <TooltipInfo text="Clientes em risco usam o status sincronizado/calculado. Mensagens pendentes exigem aprovação antes do envio via ManyChat." />
+            </div>
+
+            <div className="space-y-3">
+              <div
+                className={`${fuGlassSm} border-rose-200 bg-rose-50 p-4 dark:border-rose-500/30 dark:bg-rose-950/20`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="mt-0.5 h-5 w-5 text-rose-600 dark:text-rose-400" />
+                    <div>
+                      <div className="text-sm font-bold text-slate-900 dark:text-slate-100">Clientes em risco</div>
+                      <div className={`text-sm text-slate-700 dark:text-slate-400`}>
+                        <span className={`text-2xl font-bold text-rose-700 dark:text-rose-300 ${fuStat}`}>{kpis?.clientesEmRisco ?? 0}</span>{" "}
+                        — Aja agora para reter receita.
+                      </div>
+                    </div>
+                  </div>
+                  <Link
+                    href="/clientes?filtro=risco"
+                    className="shrink-0 rounded-xl border border-rose-300 bg-white px-3 py-2 text-xs font-bold text-rose-900 shadow-sm transition hover:bg-rose-100 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:bg-rose-500/20"
+                  >
+                    Priorizar
+                  </Link>
+                </div>
+              </div>
+
+              <div
+                className={`${fuGlassSm} border-amber-200 bg-amber-50 p-4 dark:border-amber-400/25 dark:bg-amber-950/15`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2">
+                    <MessageSquareWarning className="mt-0.5 h-5 w-5 text-amber-700 dark:text-amber-400" />
+                    <div>
+                      <div className="text-sm font-bold text-slate-900 dark:text-slate-100">Mensagens pendentes</div>
+                      <div className={`text-sm text-slate-700 dark:text-slate-400`}>
+                        <span className={`text-2xl font-bold text-amber-800 dark:text-amber-300 ${fuStat}`}>{kpis?.mensagensPendentes ?? 0}</span>{" "}
+                        aguardando aprovação
+                      </div>
+                    </div>
+                  </div>
+                  <Link
+                    href="/mensagens"
+                    className="shrink-0 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-600 px-3 py-2 text-xs font-bold text-white shadow-lg transition hover:brightness-110"
+                  >
+                    Aprovar agora
+                  </Link>
+                </div>
+              </div>
+
+            </div>
+          </motion.section>
+        </div>
+
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, delay: 0.12 }}
+          className={`${fuGlass} ${fuGlassHover} border-emerald-400/15 p-6`}
+        >
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <div>
+              <div className={`text-lg font-bold ${fuTitleGradient}`}>Evolução de faturamento</div>
+              <div className={`text-sm ${fuTextMuted}`}>Série diária no período selecionado</div>
+            </div>
+            <TooltipInfo text="Soma dos pedidos por dia. Passe o mouse para ver o valor exato." />
+          </div>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={serie.data ?? []} margin={{ top: 12, right: 12, left: 0, bottom: 4 }}>
+                <ChartAreaUnderLineDefs prefix="dash-evo" colorMid={CHART.green.mid} />
+                <CartesianGrid {...chartGridProps} />
+                <XAxis dataKey="periodo" interval="preserveStartEnd" minTickGap={24} {...chartAxisXProps} />
+                <YAxis {...chartAxisYProps} tickFormatter={(v) => (v >= 1e6 ? `${(v / 1e6).toFixed(1)}M` : v >= 1e3 ? `${(v / 1e3).toFixed(0)}k` : String(v))} />
+                <RechartsTooltip {...chartTooltipProps} cursor={chartTooltipCursorLine} formatter={(v: number) => [fmtMoney(v), "Faturamento"]} />
+                <Area
+                  type="monotone"
+                  dataKey="valor"
+                  fill="url(#dash-evo-area)"
+                  stroke="none"
+                  isAnimationActive
+                  animationDuration={500}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="valor"
+                  stroke={CHART.green.mid}
+                  strokeWidth={2.5}
+                  dot={false}
+                  activeDot={{ r: 6, strokeWidth: 2, stroke: lineActiveStroke, fill: CHART.green.mid }}
+                  {...chartAnimation}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.section>
+      </div>
+
+      {/* Modal drill-down faturamento por tipo */}
+      <AnimatePresence>
+        {modalFat ? (
+          <motion.div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm dark:bg-black/70"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setModalFat(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              transition={{ duration: 0.2 }}
+              className={`w-full max-w-lg ${fuGlass} border-cyan-400/20 p-6`}
+              onClick={(ev) => ev.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Detalhe de faturamento por tipo"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className={`text-xl font-bold ${fuTitleGradient}`}>Faturamento por tipo</div>
+                  <div className={`mt-1 text-sm ${fuTextMuted}`}>Base: pedidos no período filtrado</div>
+                </div>
+                <button
+                  type="button"
+                  className="rounded-lg px-2 py-1 text-sm font-bold text-slate-700 hover:bg-slate-200/80 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
+                  onClick={() => setModalFat(false)}
+                >
+                  Fechar
+                </button>
+              </div>
+              <div className="mt-4 space-y-3">
+                {dadosBarras.map((row) => (
+                  <div
+                    key={row.nome}
+                    className="flex items-center justify-between rounded-xl border border-slate-200/90 bg-slate-50 dark:border-white/10 dark:bg-black/30"
+                  >
+                    <div className="font-semibold text-slate-800 dark:text-slate-200">{row.nome}</div>
+                    <div className={`text-lg font-bold text-emerald-800 dark:text-emerald-400 ${fuStat}`}>{fmtMoney(row.valor)}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-5 flex justify-end">
+                <Link
+                  href="/clientes"
+                  className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2 text-sm font-bold text-white shadow-lg transition hover:brightness-110"
+                  onClick={() => setModalFat(false)}
+                >
+                  Ir para carteira
+                </Link>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </div>
+  );
+}

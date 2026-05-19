@@ -38,6 +38,7 @@ const EstoquePage = lazy(() => import(/* @vite-ignore */"./pages/EstoquePage"));
 const ProjetosPage = lazy(() => import(/* @vite-ignore */"./pages/ProjetosPage"));
 const AutomacaoPage = lazy(() => import(/* @vite-ignore */"./pages/AutomacaoPage"));
 const ModulosPlataformaPage = lazy(() => import(/* @vite-ignore */"./pages/ModulosPlataformaPage"));
+const ComercialRoutes = lazy(() => import(/* @vite-ignore */"./pages/ComercialRoutes"));
 const NotFound = lazy(() => import(/* @vite-ignore */"./pages/NotFound"));
 
 function Router() {
@@ -142,6 +143,11 @@ function Router() {
               <ModuloProjetoRouteGuard modulo="custos_producao">
                 <CustosProducaoPage />
               </ModuloProjetoRouteGuard>
+            </ProtectedRoute>
+          </Route>
+          <Route path="/comercial/:rest*">
+            <ProtectedRoute requiredRole="admin">
+              <ComercialRoutes />
             </ProtectedRoute>
           </Route>
           <Route path="/receitas">

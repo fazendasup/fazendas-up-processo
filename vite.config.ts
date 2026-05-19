@@ -135,6 +135,7 @@ export default defineConfig(({ command }) => ({
     host: true,
     /** true = celular/outro PC pelo IP na mesma rede (evita "host not allowed" do Vite). */
     allowedHosts: true,
+    proxy: {},
     fs: {
       strict: true,
       deny: ["**/.*"],

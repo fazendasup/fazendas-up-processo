@@ -208,6 +208,17 @@ async function startServer() {
     "[Server] Rotas /api/trpc registradas (sessão anônima funciona durante a inicialização da BD)."
   );
 
+  try {
+    const { registerComercialOAuthRoutes } = await import("../comercial/oauth-routes");
+    registerComercialOAuthRoutes(app);
+    console.log("[Server] Rotas OAuth Conta Azul (módulo comercial) registradas.");
+  } catch (e) {
+    console.warn(
+      "[Server] Módulo comercial OAuth não carregado:",
+      e instanceof Error ? e.message : e
+    );
+  }
+
   /** Site (HTML/JS/CSS) já disponível durante a inicialização da BD — evita página em branco / 404. */
   if (process.env.NODE_ENV !== "development") {
     serveStatic(app);
@@ -325,6 +336,11 @@ async function startServer() {
   await ensureBootstrapAdmin();
   await runFupPilotoBootstrapIfNeeded();
   console.log("[Server] Banco OK.");
+
+  const { tryStartComercialIntegrationJobs } = await import(
+    "../comercial/start-integration-jobs"
+  );
+  tryStartComercialIntegrationJobs();
 
   if (process.env.NODE_ENV === "development") {
     const { setupVite } = await import("./vite-dev.js");

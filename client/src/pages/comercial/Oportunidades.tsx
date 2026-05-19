@@ -1,0 +1,260 @@
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { ArrowRight, ChevronDown, ChevronUp, GripVertical, Sparkles, Target } from "lucide-react";
+import { Link } from "wouter";
+import { toast } from "sonner";
+import { PageHeader } from "@/components/comercial/ui/PageHeader";
+import { TooltipInfo } from "@/components/comercial/ui/TooltipInfo";
+import { trpc } from "@/lib/trpc";
+
+const LS_FILTERS = "fu_oportunidades_filtros_v1";
+
+type FiltroLocal = {
+  prioridade: "" | "ALTA" | "MEDIA" | "BAIXA";
+  tipo: "" | "UPSELL" | "CROSS_SELL" | "REATIVACAO" | "NOVO_PRODUTO";
+};
+
+function loadFiltros(): FiltroLocal {
+  try {
+    const raw = localStorage.getItem(LS_FILTERS);
+    if (!raw) return { prioridade: "", tipo: "" };
+    return { ...{ prioridade: "", tipo: "" }, ...JSON.parse(raw) };
+  } catch {
+    return { prioridade: "", tipo: "" };
+  }
+}
+
+function prioridadeCor(p: string) {
+  if (p === "ALTA") return "bg-[#FEF3C7] text-[#B45309] ring-1 ring-[#F59E0B]/40";
+  if (p === "MEDIA") return "bg-[#EFF6FF] text-[#1E40AF] ring-1 ring-[#1E40AF]/20";
+  return "bg-[#F3F4F6] text-[#374151] ring-1 ring-[#E5E7EB]";
+}
+
+export function Oportunidades() {
+  const [filtro, setFiltro] = useState<FiltroLocal>(loadFiltros);
+  useEffect(() => {
+    localStorage.setItem(LS_FILTERS, JSON.stringify(filtro));
+  }, [filtro]);
+
+  const q = trpc.comercial.oportunidades.listar.useQuery({
+    prioridade: filtro.prioridade || undefined,
+    status: "ABERTA",
+  });
+
+  const gerar = trpc.comercial.oportunidades.criarRascunhoMensagem.useMutation({
+    onSuccess: (d) => {
+      toast.success(`Rascunho criado — abra Mensagens (${d.mensagemId.slice(0, 8)}…)`);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const listaBase = q.data ?? [];
+  const lista = useMemo(() => {
+    let rows = [...listaBase];
+    if (filtro.tipo) rows = rows.filter((o) => o.tipoOportunidade === filtro.tipo);
+    return rows.sort((a, b) => {
+      const pa = a.prioridade === "ALTA" ? 3 : a.prioridade === "MEDIA" ? 2 : 1;
+      const pb = b.prioridade === "ALTA" ? 3 : b.prioridade === "MEDIA" ? 2 : 1;
+      return pb - pa;
+    });
+  }, [listaBase, filtro.tipo]);
+
+  const [order, setOrder] = useState<string[]>([]);
+  useEffect(() => {
+    setOrder((prev) => {
+      const ids = lista.map((o) => o.id);
+      if (prev.length === 0) return ids;
+      const merged = [...prev.filter((id) => ids.includes(id)), ...ids.filter((id) => !prev.includes(id))];
+      return merged;
+    });
+  }, [lista]);
+
+  const orderedList = useMemo(() => {
+    const map = new Map(lista.map((o) => [o.id, o]));
+    const out = order.map((id) => map.get(id)).filter(Boolean) as typeof lista;
+    return out.length ? out : lista;
+  }, [lista, order]);
+
+  const potencialTotal = useMemo(
+    () => orderedList.reduce((acc, o) => acc + Number(o.valorEstimado ?? 0), 0),
+    [orderedList],
+  );
+
+  const move = (id: string, dir: -1 | 1) => {
+    setOrder((prev) => {
+      const base = prev.length ? [...prev] : lista.map((o) => o.id);
+      const i = base.indexOf(id);
+      if (i < 0) return base;
+      const j = i + dir;
+      if (j < 0 || j >= base.length) return base;
+      const next = [...base];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+  };
+
+  return (
+    <div className="space-y-6 p-4 lg:p-6">
+      <PageHeader
+        title="Oportunidades"
+        subtitle={
+          <>
+            Priorize upsell e cross-sell com base na Conta Azul. Arraste a ordem localmente para o time alinhar o dia.
+            <TooltipInfo text="A ordem por arraste é salva só neste navegador; o backend continua com a prioridade cadastrada." />
+          </>
+        }
+      />
+
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="text-xs font-semibold uppercase tracking-wide text-[#6B7280]">Prioridade</label>
+          <select
+            value={filtro.prioridade}
+            onChange={(e) => setFiltro((f) => ({ ...f, prioridade: e.target.value as FiltroLocal["prioridade"] }))}
+            className="rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-sm font-medium text-[#111827] outline-none transition duration-200 focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/25"
+          >
+            <option value="">Todas</option>
+            <option value="ALTA">Alta</option>
+            <option value="MEDIA">Média</option>
+            <option value="BAIXA">Baixa</option>
+          </select>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="text-xs font-semibold uppercase tracking-wide text-[#6B7280]">Tipo</label>
+          <select
+            value={filtro.tipo}
+            onChange={(e) => setFiltro((f) => ({ ...f, tipo: e.target.value as FiltroLocal["tipo"] }))}
+            className="rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-sm font-medium text-[#111827] outline-none transition duration-200 focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/25"
+          >
+            <option value="">Todos</option>
+            <option value="UPSELL">Upsell</option>
+            <option value="CROSS_SELL">Cross-sell</option>
+            <option value="REATIVACAO">Reativação</option>
+            <option value="NOVO_PRODUTO">Novo produto</option>
+          </select>
+        </div>
+        <Link
+          href="/mensagens"
+          className="ml-auto inline-flex items-center gap-2 rounded-lg bg-[#1E40AF] px-4 py-2 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-[#1D4ED8] hover:shadow-[0_4px_12px_#00000020]"
+        >
+          Ir para mensagens
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-lg border border-[#D1FAE5] bg-gradient-to-br from-[#ECFDF5] to-white p-4 shadow-[0_1px_3px_#00000014]">
+          <div className="text-xs font-semibold uppercase tracking-wide text-[#047857]">Total abertas</div>
+          <div className="mt-1 text-3xl font-bold text-[#10B981]">{orderedList.length}</div>
+        </div>
+        <div className="rounded-lg border border-[#DBEAFE] bg-gradient-to-br from-[#EFF6FF] to-white p-4 shadow-[0_1px_3px_#00000014]">
+          <div className="text-xs font-semibold uppercase tracking-wide text-[#1E40AF]">Potencial estimado</div>
+          <div className="mt-1 text-2xl font-bold text-[#1E40AF]">
+            {potencialTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+          </div>
+        </div>
+        <div className="rounded-lg border border-[#FEF3C7] bg-gradient-to-br from-[#FFFBEB] to-white p-4 shadow-[0_1px_3px_#00000014]">
+          <div className="text-xs font-semibold uppercase tracking-wide text-[#B45309]">Alta prioridade</div>
+          <div className="mt-1 text-3xl font-bold text-[#F59E0B]">
+            {orderedList.filter((o) => o.prioridade === "ALTA").length}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        {orderedList.map((op, idx) => (
+          <motion.article
+            key={op.id}
+            layout
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, delay: Math.min(idx * 0.03, 0.3) }}
+            className="flex flex-col rounded-lg border border-[#E5E7EB] bg-white p-4 shadow-[0_1px_3px_#00000014]"
+          >
+            <div className="flex items-start gap-2">
+              <div className="flex flex-col gap-0.5 pt-0.5 text-[#9CA3AF]">
+                <button
+                  type="button"
+                  className="rounded p-1 hover:bg-[#F3F4F6] hover:text-[#1E40AF]"
+                  aria-label="Subir na lista"
+                  onClick={() => move(op.id, -1)}
+                >
+                  <ChevronUp className="h-5 w-5" />
+                </button>
+                <GripVertical className="mx-auto h-4 w-4 opacity-50" aria-hidden />
+                <button
+                  type="button"
+                  className="rounded p-1 hover:bg-[#F3F4F6] hover:text-[#1E40AF]"
+                  aria-label="Descer na lista"
+                  onClick={() => move(op.id, 1)}
+                >
+                  <ChevronDown className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-bold ${prioridadeCor(op.prioridade)}`}>
+                    {op.prioridade}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#F3F4F6] px-2 py-0.5 text-xs font-semibold text-[#374151]">
+                    <Target className="h-3.5 w-3.5 text-[#10B981]" />
+                    {op.tipoOportunidade.replace(/_/g, " ")}
+                  </span>
+                </div>
+                <h2 className="mt-2 text-lg font-bold text-[#111827]">
+                  <Link className="hover:text-[#1E40AF]" href={`/comercial/clientes/${op.cliente.id}`}>
+                    {op.cliente.nome}
+                  </Link>
+                </h2>
+                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[#4B5563]">{op.descricao}</p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <div className="text-xs font-medium text-[#6B7280]">Valor estimado</div>
+                <div className="text-lg font-bold text-[#10B981]">
+                  {op.valorEstimado != null
+                    ? Number(op.valorEstimado).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+                    : "—"}
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center gap-1 text-xs font-medium text-[#6B7280]">
+                  Probabilidade
+                  <TooltipInfo text="Estimativa interna para priorização; ajuste no CRM quando houver histórico suficiente." />
+                </div>
+                <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-[#E5E7EB]">
+                  <div
+                    className="h-full rounded-full bg-[#1E40AF] transition-all duration-300"
+                    style={{ width: `${Math.min(100, Number(op.probabilidadeConversao ?? 0))}%` }}
+                  />
+                </div>
+                <div className="mt-0.5 text-xs text-[#6B7280]">{Number(op.probabilidadeConversao ?? 0).toFixed(0)}%</div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-[#F3F4F6] pt-4">
+              <button
+                type="button"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#10B981] px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-[#059669] hover:shadow-[0_4px_12px_#00000020] disabled:opacity-50"
+                disabled={gerar.isPending}
+                onClick={() => gerar.mutate({ oportunidadeId: op.id })}
+              >
+                <Sparkles className="h-4 w-4" />
+                Gerar mensagem (ManyChat)
+              </button>
+            </div>
+          </motion.article>
+        ))}
+      </div>
+
+      {orderedList.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-[#E5E7EB] bg-[#F9FAFB] p-12 text-center">
+          <p className="text-[#6B7280]">Nenhuma oportunidade aberta com esses filtros.</p>
+          <p className="mt-2 text-sm text-[#9CA3AF]">Sincronize pedidos e clientes ou ajuste as regras no backend.</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}

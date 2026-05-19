@@ -1,0 +1,22 @@
+import type { User } from "../../drizzle/schema";
+import { isOperationalAdminRole } from "@shared/const";
+import { prisma } from "./db";
+
+export async function resolveComercialUsuario(erpUser: User) {
+  const email = erpUser.email?.trim().toLowerCase();
+  if (email) {
+    const byEmail = await prisma.usuario.findFirst({
+      where: { email, status: "ATIVO" },
+    });
+    if (byEmail) return byEmail;
+  }
+
+  if (isOperationalAdminRole(erpUser.role)) {
+    return prisma.usuario.findFirst({
+      where: { status: "ATIVO", perfil: "ADMIN" },
+      orderBy: { dataCadastro: "asc" },
+    });
+  }
+
+  return null;
+}

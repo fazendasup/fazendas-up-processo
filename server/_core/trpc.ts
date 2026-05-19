@@ -17,6 +17,10 @@ import { parse } from "cookie";
 import superjson from "superjson";
 import * as db from "../db";
 import type { User } from "../../drizzle/schema";
+import type { PerfilUsuario } from "../comercial/generated/prisma";
+import { getComercialEnv } from "../comercial/env";
+import { prisma as comercialPrisma } from "../comercial/db";
+import { resolveComercialUsuario } from "../comercial/resolve-usuario";
 import type { TrpcContext } from "./context";
 import type { ProjetoTipo } from "./context";
 
@@ -207,3 +211,50 @@ export const adminHidroponiaProcedure = hidroponiaProcedure.use(requireGlobalAdm
 
 /** Admin global + projeto fazenda vertical (torres, estrutura). */
 export const adminFazendaVerticalProcedure = fazendaVerticalProcedure.use(requireGlobalAdmin);
+
+const requireComercialModule = t.middleware(async ({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
+  }
+  if (!isOperationalAdminRole(ctx.user.role)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
+  }
+  const comercialUsuario = await resolveComercialUsuario(ctx.user);
+  if (!comercialUsuario) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message:
+        "Nenhum usuário comercial ativo vinculado. Cadastre o mesmo e-mail no módulo ou um perfil ADMIN comercial.",
+    });
+  }
+  let comercialEnv;
+  try {
+    comercialEnv = getComercialEnv();
+  } catch (e) {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: e instanceof Error ? e.message : "Módulo comercial não configurado",
+    });
+  }
+  return next({
+    ctx: {
+      ...ctx,
+      prisma: comercialPrisma,
+      comercialUsuario,
+      comercialEnv,
+    },
+  });
+});
+
+/** ERP admin + sessão do banco comercial (Prisma). */
+export const comercialProcedure = adminProcedure.use(requireComercialModule);
+
+export function comercialRequirePerfis(...perfis: PerfilUsuario[]) {
+  return t.middleware(({ ctx, next }) => {
+    const u = ctx.comercialUsuario;
+    if (!u || !perfis.includes(u.perfil)) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Permissão insuficiente" });
+    }
+    return next({ ctx });
+  });
+}

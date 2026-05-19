@@ -38,6 +38,7 @@ import { aplicacoesBancadaRouter } from "./aplicacoesBancada";
 import { caixasBancadaRouter } from "./caixasBancada";
 import { chatRouter } from "./chat";
 import { custosProducaoRouter } from "./custosProducao";
+import { comercialRouter } from "./comercial";
 
 export const appRouter = router({
   system: systemRouter,
@@ -75,6 +76,7 @@ export const appRouter = router({
   automacao: automacaoRouter,
   chat: chatRouter,
   custosProducao: custosProducaoRouter,
+  comercial: comercialRouter,
 });
 
 export type AppRouter = typeof appRouter;

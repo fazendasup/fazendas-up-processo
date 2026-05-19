@@ -1,0 +1,20 @@
+const ACCESS = "fu_access_token";
+const REFRESH = "fu_refresh_token";
+
+export function getAccessToken() {
+  return localStorage.getItem(ACCESS);
+}
+
+export function setTokens(access: string, refresh: string) {
+  localStorage.setItem(ACCESS, access);
+  localStorage.setItem(REFRESH, refresh);
+}
+
+export function clearTokens() {
+  localStorage.removeItem(ACCESS);
+  localStorage.removeItem(REFRESH);
+}
+
+export function getRefreshToken() {
+  return localStorage.getItem(REFRESH);
+}
