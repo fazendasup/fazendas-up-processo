@@ -46,6 +46,31 @@ export type ComercialEnv = z.infer<typeof envSchema> & {
 
 let cached: ComercialEnv | null = null;
 
+/** URL MySQL do módulo comercial (Prisma). Aceita fallback para `DATABASE_URL` do supervisório. */
+export function resolveComercialDatabaseUrl(): string {
+  const url =
+    process.env.COMERCIAL_DATABASE_URL?.trim() ||
+    process.env.DATABASE_URL?.trim() ||
+    "";
+  if (!url) {
+    throw new Error(
+      "Defina COMERCIAL_DATABASE_URL (MySQL do módulo comercial) ou DATABASE_URL no painel do host",
+    );
+  }
+  return url;
+}
+
+/**
+ * Garante `COMERCIAL_DATABASE_URL` no processo — o client gerado valida esse nome no schema Prisma.
+ */
+export function ensureComercialDatabaseUrlEnv(): string {
+  const url = resolveComercialDatabaseUrl();
+  if (!process.env.COMERCIAL_DATABASE_URL?.trim()) {
+    process.env.COMERCIAL_DATABASE_URL = url;
+  }
+  return url;
+}
+
 export function getComercialEnv(): ComercialEnv {
   if (cached) return cached;
 
@@ -55,15 +80,8 @@ export function getComercialEnv(): ComercialEnv {
     throw new Error("Variáveis de ambiente do módulo comercial inválidas");
   }
 
-  const dbUrl =
-    parsed.data.COMERCIAL_DATABASE_URL?.trim() ||
-    process.env.DATABASE_URL?.trim() ||
-    "";
-  if (!dbUrl) {
-    throw new Error(
-      "Defina COMERCIAL_DATABASE_URL (MySQL do módulo comercial) no .env"
-    );
-  }
+  const dbUrl = resolveComercialDatabaseUrl();
+  ensureComercialDatabaseUrlEnv();
 
   const port = Number(process.env.PORT ?? 3456);
   const publicApp =
