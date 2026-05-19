@@ -1,6 +1,6 @@
 import type { Express, Request } from "express";
 import { getComercialEnv } from "./env";
-import { prisma } from "./db";
+import { getComercialPrisma } from "./db";
 import { logger } from "./lib/logger";
 import {
   buildAuthorizationUrl,
@@ -78,7 +78,7 @@ export function registerComercialOAuthRoutes(app: Express) {
       const tokens = await exchangeCodeForTokens(env, code);
       const expiresAt = tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null;
 
-      await prisma.integrationCredential.upsert({
+      await getComercialPrisma().integrationCredential.upsert({
         where: { provider: "CONTA_AZUL" },
         create: {
           provider: "CONTA_AZUL",

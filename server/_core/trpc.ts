@@ -19,7 +19,7 @@ import * as db from "../db";
 import type { User } from "../../drizzle/schema";
 import type { PerfilUsuario } from "../comercial/generated/prisma";
 import { getComercialEnv } from "../comercial/env";
-import { prisma as comercialPrisma } from "../comercial/db";
+import { getComercialPrisma } from "../comercial/db";
 import { resolveComercialUsuario } from "../comercial/resolve-usuario";
 import type { TrpcContext } from "./context";
 import type { ProjetoTipo } from "./context";
@@ -240,7 +240,7 @@ const requireComercialModule = t.middleware(async ({ ctx, next }) => {
   return next({
     ctx: {
       ...ctx,
-      prisma: comercialPrisma,
+      prisma: getComercialPrisma(),
       comercialUsuario,
       comercialEnv,
     },

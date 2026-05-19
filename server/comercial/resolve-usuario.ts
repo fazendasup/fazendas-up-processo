@@ -1,8 +1,9 @@
 import type { User } from "../../drizzle/schema";
 import { isOperationalAdminRole } from "@shared/const";
-import { prisma } from "./db";
+import { getComercialPrisma } from "./db";
 
 export async function resolveComercialUsuario(erpUser: User) {
+  const prisma = getComercialPrisma();
   const email = erpUser.email?.trim().toLowerCase();
   if (email) {
     const byEmail = await prisma.usuario.findFirst({
