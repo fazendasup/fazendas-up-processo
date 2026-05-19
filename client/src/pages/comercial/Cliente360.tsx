@@ -8,6 +8,7 @@ import { CHART, ChartAreaUnderLineDefs, buildChartTheme, chartAnimation } from "
 import { PageHeader } from "@/components/comercial/ui/PageHeader";
 import { TooltipInfo } from "@/components/comercial/ui/TooltipInfo";
 import { fuTextMuted } from "@/lib/comercial/fuBrand";
+import { comercialPath } from "@/lib/comercial/routes";
 import { trpc } from "@/lib/trpc";
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -202,7 +203,7 @@ export function Cliente360() {
             </div>
             <div className="mt-4 flex flex-col gap-2">
               <Link
-                href="/mensagens"
+                href={comercialPath("/mensagens")}
                 className="flex items-center justify-center gap-2 rounded-lg bg-[#10B981] px-3 py-2.5 text-center text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-[#059669] hover:shadow-[0_4px_12px_#00000020]"
               >
                 <MessageCircle className="h-4 w-4" />
@@ -228,7 +229,7 @@ export function Cliente360() {
               <>
                 <span className="font-semibold text-slate-900 dark:text-slate-100">{cliente.nome}</span> —{" "}
                 {cliente.statusRelacionamento.replace(/_/g, " ")} ·{" "}
-                <Link className="font-semibold text-emerald-600 hover:underline dark:text-emerald-400" href="/clientes">
+                <Link className="font-semibold text-emerald-600 hover:underline dark:text-emerald-400" href={comercialPath("/clientes")}>
                   Voltar à carteira
                 </Link>
               </>

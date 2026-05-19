@@ -21,6 +21,7 @@ import {
   CartesianGrid,
   Cell,
   ComposedChart,
+  Legend,
   Line,
   Pie,
   PieChart,
@@ -40,6 +41,7 @@ import {
   pieSliceSolidFill,
 } from "@/components/comercial/charts";
 import { useDashboardTour } from "@/components/comercial/dashboard/DashboardTour";
+import { PeriodoFiltro } from "@/components/comercial/ui/PeriodoFiltro";
 import { Spinner } from "@/components/comercial/ui/Spinner";
 import { TooltipInfo } from "@/components/comercial/ui/TooltipInfo";
 import {
@@ -54,7 +56,8 @@ import {
   fuToolbar,
 } from "@/lib/comercial/fuBrand";
 import { useTheme } from "@/contexts/ThemeContext";
-import { intervaloDoPreset, labelPreset, type PeriodoPreset } from "@/lib/comercial/periodo";
+import { comercialPath } from "@/lib/comercial/routes";
+import { hojeIsoLocal, intervaloDoPreset, type PeriodoPreset } from "@/lib/comercial/periodo";
 import { trpc } from "@/lib/trpc";
 
 const ORDEM_TIPO_OPORTUNIDADE = ["UPSELL", "CROSS_SELL", "REATIVACAO", "NOVO_PRODUTO"] as const;
@@ -83,9 +86,22 @@ export function Dashboard() {
   const pieStroke = theme === "dark" ? "#0f172a" : "#f1f5f9";
   const lineActiveStroke = theme === "dark" ? "#030712" : "#f8fafc";
 
-  const [preset, setPreset] = useState<PeriodoPreset>("mes");
+  const [preset, setPreset] = useState<PeriodoPreset>("mes_atual");
+  const [customInicio, setCustomInicio] = useState(() => {
+    const d = new Date();
+    d.setDate(1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [customFim, setCustomFim] = useState(hojeIsoLocal);
   const [busca, setBusca] = useState("");
-  const { inicio, fim } = useMemo(() => intervaloDoPreset(preset), [preset]);
+  const { inicio, fim } = useMemo(
+    () =>
+      intervaloDoPreset(preset, {
+        inicio: customInicio,
+        fim: customFim,
+      }),
+    [preset, customInicio, customFim],
+  );
   const { Tour, startTour } = useDashboardTour();
 
   const utils = trpc.useUtils();
@@ -165,7 +181,7 @@ export function Dashboard() {
   const onBusca = (e: React.FormEvent) => {
     e.preventDefault();
     const q = busca.trim();
-    if (q) navigate(`/comercial/clientes?busca=${encodeURIComponent(q)}`);
+    if (q) navigate(comercialPath("/clientes", { busca: q }));
     else toast.message("Digite um nome ou CNPJ para buscar na carteira.");
   };
 
@@ -176,17 +192,24 @@ export function Dashboard() {
       {Tour}
 
       {/* Toolbar fixa */}
-      <div data-tour="dash-toolbar" className={fuToolbar}>
-        <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-4 py-5 md:flex-row md:items-center md:justify-between md:px-8">
-          <div>
-            <p className={fuEyebrow}>Inteligência comercial</p>
-            <h1 className={`mt-1 text-3xl font-bold tracking-tight md:text-4xl ${fuTitleGradient}`}>Dashboard executivo</h1>
-            <p className={`mt-2 text-sm ${fuTextMuted}`}>
-              Período: <span className="font-semibold text-slate-900 dark:text-slate-300">{labelPreset(preset)}</span>
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 md:justify-end">
+      <motion.div data-tour="dash-toolbar" className={fuToolbar}>
+        <motion.div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-4 py-5 md:px-8">
+          <motion.div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <motion.div>
+              <p className={fuEyebrow}>Inteligência comercial</p>
+              <h1 className={`mt-1 text-3xl font-bold tracking-tight md:text-4xl ${fuTitleGradient}`}>Dashboard executivo</h1>
+            </motion.div>
+            <PeriodoFiltro
+              preset={preset}
+              onPresetChange={setPreset}
+              customInicio={customInicio}
+              customFim={customFim}
+              onCustomInicio={setCustomInicio}
+              onCustomFim={setCustomFim}
+              className="lg:max-w-3xl"
+            />
+          </motion.div>
+          <motion.div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => startTour()}
@@ -194,32 +217,8 @@ export function Dashboard() {
             >
               Tour guiado
             </button>
-
-            <div className="flex rounded-xl border border-slate-200/90 bg-slate-100/80 p-1 dark:border-white/10 dark:bg-black/20">
-              {(
-                [
-                  ["hoje", "Hoje"],
-                  ["semana", "Semana"],
-                  ["mes", "Mês"],
-                ] as const
-              ).map(([k, label]) => (
-                <button
-                  key={k}
-                  type="button"
-                  onClick={() => setPreset(k)}
-                  className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition duration-200 ${
-                    preset === k
-                      ? "bg-gradient-to-r from-cyan-600/25 to-emerald-500/20 text-slate-900 shadow-sm dark:from-cyan-500/30 dark:to-emerald-500/20 dark:text-white dark:shadow-[0_0_20px_-4px_rgba(34,211,238,0.4)]"
-                      : "text-slate-600 hover:text-slate-900 dark:text-slate-500 dark:hover:text-slate-200"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
             <form onSubmit={onBusca} className="flex min-w-[220px] flex-1 md:max-w-md">
-              <div className="relative flex w-full">
+              <motion.div className="relative flex w-full">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 dark:text-cyan-500/50" />
                 <input
                   value={busca}
@@ -228,9 +227,8 @@ export function Dashboard() {
                   className="w-full rounded-xl border border-slate-200/90 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 placeholder:text-slate-500 outline-none ring-cyan-500/20 transition focus:border-cyan-500/50 focus:ring-2 dark:border-white/10 dark:bg-black/30 dark:text-slate-100 dark:placeholder:text-slate-600 dark:focus:border-cyan-400/40"
                   aria-label="Busca global na carteira"
                 />
-              </div>
+              </motion.div>
             </form>
-
             <button
               type="button"
               disabled={sync.isPending}
@@ -240,9 +238,9 @@ export function Dashboard() {
               {sync.isPending ? <Spinner /> : <RefreshCw className="h-4 w-4" />}
               Sync Conta Azul
             </button>
-          </div>
-        </div>
-      </div>
+          </motion.div>
+        </motion.div>
+      </motion.div>
 
       <div className="mx-auto max-w-[1600px] space-y-6 px-4 py-6 md:px-6">
         {/* Linha principal: 3 colunas */}
@@ -265,10 +263,10 @@ export function Dashboard() {
                   <p className={`text-sm ${fuTextMuted}`}>Receita e eficiência da carteira</p>
                 </div>
               </div>
-              <TooltipInfo text="Faturamento e ticket médio calculados a partir dos pedidos sincronizados da Conta Azul (API)." />
+              <TooltipInfo text="Vendas realizadas (faturadas/aprovadas) separadas de orçamentos em aberto, conforme status na Conta Azul." />
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
               <button
                 type="button"
                 onClick={() => setModalFat(true)}
@@ -276,13 +274,26 @@ export function Dashboard() {
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-800 dark:text-emerald-400/80">
-                    Faturamento
+                    Vendas realizadas
                   </span>
                   <DollarSign className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
                 </div>
-                <div className={`mt-2 text-2xl font-bold ${fuTextStrong} ${fuStat}`}>{fmtMoney(kpis?.faturamento ?? 0)}</div>
-                <div className={`mt-1 text-xs ${fuTextMuted}`}>Clique para ver por tipo de cliente</div>
+                <div className={`mt-2 text-2xl font-bold ${fuTextStrong} ${fuStat}`}>{fmtMoney(kpis?.vendasRealizadas ?? kpis?.faturamento ?? 0)}</div>
+                <div className={`mt-1 text-xs ${fuTextMuted}`}>Pedidos faturados/aprovados · clique para detalhar</div>
               </button>
+
+              <div className={`${fuGlassSm} border-amber-400/25 p-4`}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-800 dark:text-amber-400/80">
+                    Orçamentos
+                  </span>
+                  <DollarSign className="h-4 w-4 text-amber-700 dark:text-amber-400" />
+                </div>
+                <div className={`mt-2 text-2xl font-bold ${fuTextStrong} ${fuStat}`}>{fmtMoney(kpis?.orcamentos ?? 0)}</div>
+                <div className={`mt-1 text-xs ${fuTextMuted}`}>
+                  {kpis?.pedidosOrcamento ?? 0} orçamento(s) no período
+                </div>
+              </div>
 
               <div className={`${fuGlassSm} border-sky-400/20 p-4`}>
                 <div className="flex items-center justify-between gap-2">
@@ -336,13 +347,13 @@ export function Dashboard() {
 
             <div className="mt-6 flex flex-wrap gap-2 border-t border-slate-200/80 pt-5 dark:border-white/10">
               <Link
-                href="/kpis"
+                href={comercialPath("/kpis")}
                 className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2.5 text-sm font-bold text-white shadow-[0_0_24px_-4px_rgba(59,130,246,0.5)] transition hover:brightness-110"
               >
                 Ver relatórios <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
-                href="/clientes"
+                href={comercialPath("/clientes")}
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 shadow-sm transition hover:border-cyan-500/35 dark:border-white/15 dark:bg-white/5 dark:text-slate-200 dark:hover:border-cyan-400/40 dark:hover:bg-white/10"
               >
                 Abrir carteira
@@ -473,13 +484,13 @@ export function Dashboard() {
 
             <div className="mt-5 flex flex-wrap gap-2">
               <Link
-                href="/oportunidades"
+                href={comercialPath("/oportunidades")}
                 className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2.5 text-sm font-bold text-white shadow-[0_0_24px_-4px_rgba(16,185,129,0.45)] transition hover:brightness-110"
               >
                 Ver lista completa <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
-                href="/oportunidades"
+                href={comercialPath("/oportunidades")}
                 className="inline-flex items-center gap-2 rounded-xl border border-emerald-600/35 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-900 transition hover:bg-emerald-100 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
               >
                 Gerar ação
@@ -524,7 +535,7 @@ export function Dashboard() {
                     </div>
                   </div>
                   <Link
-                    href="/clientes?filtro=risco"
+                    href={comercialPath("/clientes", { filtro: "risco" })}
                     className="shrink-0 rounded-xl border border-rose-300 bg-white px-3 py-2 text-xs font-bold text-rose-900 shadow-sm transition hover:bg-rose-100 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:bg-rose-500/20"
                   >
                     Priorizar
@@ -547,7 +558,7 @@ export function Dashboard() {
                     </div>
                   </div>
                   <Link
-                    href="/mensagens"
+                    href={comercialPath("/mensagens")}
                     className="shrink-0 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-600 px-3 py-2 text-xs font-bold text-white shadow-lg transition hover:brightness-110"
                   >
                     Aprovar agora
@@ -567,8 +578,8 @@ export function Dashboard() {
         >
           <div className="mb-4 flex items-center justify-between gap-2">
             <div>
-              <div className={`text-lg font-bold ${fuTitleGradient}`}>Evolução de faturamento</div>
-              <div className={`text-sm ${fuTextMuted}`}>Série diária no período selecionado</div>
+              <div className={`text-lg font-bold ${fuTitleGradient}`}>Evolução de vendas e orçamentos</div>
+              <div className={`text-sm ${fuTextMuted}`}>Série diária — vendas realizadas vs orçamentos</div>
             </div>
             <TooltipInfo text="Soma dos pedidos por dia. Passe o mouse para ver o valor exato." />
           </div>
@@ -579,7 +590,15 @@ export function Dashboard() {
                 <CartesianGrid {...chartGridProps} />
                 <XAxis dataKey="periodo" interval="preserveStartEnd" minTickGap={24} {...chartAxisXProps} />
                 <YAxis {...chartAxisYProps} tickFormatter={(v) => (v >= 1e6 ? `${(v / 1e6).toFixed(1)}M` : v >= 1e3 ? `${(v / 1e3).toFixed(0)}k` : String(v))} />
-                <RechartsTooltip {...chartTooltipProps} cursor={chartTooltipCursorLine} formatter={(v: number) => [fmtMoney(v), "Faturamento"]} />
+                <RechartsTooltip
+                  {...chartTooltipProps}
+                  cursor={chartTooltipCursorLine}
+                  formatter={(v: number, name: string) => [
+                    fmtMoney(v),
+                    name === "orcamentos" ? "Orçamentos" : "Vendas realizadas",
+                  ]}
+                />
+                <Legend />
                 <Area
                   type="monotone"
                   dataKey="valor"
@@ -591,10 +610,21 @@ export function Dashboard() {
                 <Line
                   type="monotone"
                   dataKey="valor"
+                  name="vendas"
                   stroke={CHART.green.mid}
                   strokeWidth={2.5}
                   dot={false}
                   activeDot={{ r: 6, strokeWidth: 2, stroke: lineActiveStroke, fill: CHART.green.mid }}
+                  {...chartAnimation}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="orcamentos"
+                  name="orcamentos"
+                  stroke="#f59e0b"
+                  strokeWidth={2}
+                  strokeDasharray="6 4"
+                  dot={false}
                   {...chartAnimation}
                 />
               </ComposedChart>
@@ -650,7 +680,7 @@ export function Dashboard() {
               </div>
               <div className="mt-5 flex justify-end">
                 <Link
-                  href="/clientes"
+                  href={comercialPath("/clientes")}
                   className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2 text-sm font-bold text-white shadow-lg transition hover:brightness-110"
                   onClick={() => setModalFat(false)}
                 >

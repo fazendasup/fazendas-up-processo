@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { StatusRelacionamento } from "../generated/prisma/index.js";
+import {
+  classificarStatusPedido,
+  pedidoContaOrcamento,
+  pedidoContaVendaRealizada,
+} from "../lib/pedido-status.js";
 import { router, comercialProcedure } from "../../_core/trpc";
 
 function diaCalendarioAmericaSp(d: Date): string {
@@ -9,6 +14,37 @@ function diaCalendarioAmericaSp(d: Date): string {
     month: "2-digit",
     day: "2-digit",
   }).format(d);
+}
+
+type PedidoValor = {
+  valorTotal: unknown;
+  statusPedido: string;
+  clienteId: string;
+};
+
+function somarPorClassificacao(pedidos: PedidoValor[]) {
+  let vendasRealizadas = 0;
+  let orcamentos = 0;
+  let cancelados = 0;
+  let outros = 0;
+  const pedidosVenda: typeof pedidos = [];
+
+  for (const p of pedidos) {
+    const valor = Number(p.valorTotal);
+    const cls = classificarStatusPedido(p.statusPedido);
+    if (cls === "venda") {
+      vendasRealizadas += valor;
+      pedidosVenda.push(p);
+    } else if (cls === "orcamento") {
+      orcamentos += valor;
+    } else if (cls === "cancelado") {
+      cancelados += valor;
+    } else {
+      outros += valor;
+    }
+  }
+
+  return { vendasRealizadas, orcamentos, cancelados, outros, pedidosVenda };
 }
 
 export const dashboardRouter = router({
@@ -27,21 +63,31 @@ export const dashboardRouter = router({
           clienteId: true,
           valorTotal: true,
           dataPedido: true,
+          statusPedido: true,
           cliente: { select: { tipo: true, id: true } },
         },
       });
 
-      const faturamento = pedidos.reduce((s, p) => s + Number(p.valorTotal), 0);
-      const ticketMedio = pedidos.length ? faturamento / pedidos.length : 0;
-      const clientesDistintos = new Set(pedidos.map((p) => p.clienteId)).size;
+      const { vendasRealizadas, orcamentos, cancelados, outros, pedidosVenda } =
+        somarPorClassificacao(pedidos);
+
+      const faturamento = vendasRealizadas;
+      const ticketMedio = pedidosVenda.length ? vendasRealizadas / pedidosVenda.length : 0;
+      const clientesDistintos = new Set(pedidosVenda.map((p) => p.clienteId)).size;
 
       const faturamentoPorTipo = { RESTAURANTE: 0 as number, MERCADO: 0 as number };
+      const orcamentoPorTipo = { RESTAURANTE: 0 as number, MERCADO: 0 as number };
       for (const p of pedidos) {
-        faturamentoPorTipo[p.cliente.tipo] += Number(p.valorTotal);
+        const valor = Number(p.valorTotal);
+        if (pedidoContaVendaRealizada(p.statusPedido)) {
+          faturamentoPorTipo[p.cliente.tipo] += valor;
+        } else if (pedidoContaOrcamento(p.statusPedido)) {
+          orcamentoPorTipo[p.cliente.tipo] += valor;
+        }
       }
 
       const ticketPorCliente = new Map<string, { total: number; qtd: number }>();
-      for (const p of pedidos) {
+      for (const p of pedidosVenda) {
         const acc = ticketPorCliente.get(p.clienteId) ?? { total: 0, qtd: 0 };
         acc.total += Number(p.valorTotal);
         acc.qtd += 1;
@@ -98,9 +144,14 @@ export const dashboardRouter = router({
         periodo: { inicio: input.inicio, fim: input.fim },
         kpis: {
           faturamento,
+          vendasRealizadas,
+          orcamentos,
+          cancelados,
+          outros,
           ticketMedio,
           ticketMedioPorCliente,
-          pedidos: pedidos.length,
+          pedidos: pedidosVenda.length,
+          pedidosOrcamento: pedidos.filter((p) => pedidoContaOrcamento(p.statusPedido)).length,
           clientesComPedido: clientesDistintos,
           clientesAtivos,
           clientesEmRisco,
@@ -108,6 +159,7 @@ export const dashboardRouter = router({
           potencialOportunidades: Number(potencialOportunidades._sum.valorEstimado ?? 0),
           mensagensPendentes,
           faturamentoPorTipo,
+          orcamentoPorTipo,
           taxaSucessoApis,
         },
         oportunidadesPorTipo: oportunidadesPorTipo.map((o) => ({
@@ -131,21 +183,31 @@ export const dashboardRouter = router({
     .query(async ({ ctx, input }) => {
       const pedidos = await ctx.prisma!.pedido.findMany({
         where: { dataPedido: { gte: input.inicio, lte: input.fim } },
-        select: { dataPedido: true, valorTotal: true },
+        select: { dataPedido: true, valorTotal: true, statusPedido: true },
       });
 
-      const map = new Map<string, number>();
+      const map = new Map<string, { vendas: number; orcamentos: number }>();
       for (const p of pedidos) {
         const d = new Date(p.dataPedido);
         const key =
           input.bucket === "week"
             ? `${d.getFullYear()}-W${Math.ceil((d.getDate() + new Date(d.getFullYear(), d.getMonth(), 1).getDay()) / 7)}`
             : diaCalendarioAmericaSp(d);
-        map.set(key, (map.get(key) ?? 0) + Number(p.valorTotal));
+        const acc = map.get(key) ?? { vendas: 0, orcamentos: 0 };
+        const valor = Number(p.valorTotal);
+        const cls = classificarStatusPedido(p.statusPedido);
+        if (cls === "venda") acc.vendas += valor;
+        else if (cls === "orcamento") acc.orcamentos += valor;
+        map.set(key, acc);
       }
 
       return Array.from(map.entries())
         .sort(([a], [b]) => (a < b ? -1 : 1))
-        .map(([periodo, valor]) => ({ periodo, valor }));
+        .map(([periodo, v]) => ({
+          periodo,
+          valor: v.vendas,
+          vendas: v.vendas,
+          orcamentos: v.orcamentos,
+        }));
     }),
 });

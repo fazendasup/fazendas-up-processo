@@ -17,6 +17,7 @@ import { Link, useLocation } from "wouter"; import { useSearchParams } from "@/h
 import { toast } from "sonner";
 import { PageHeader } from "@/components/comercial/ui/PageHeader";
 import { TooltipInfo } from "@/components/comercial/ui/TooltipInfo";
+import { comercialPath } from "@/lib/comercial/routes";
 import { trpc } from "@/lib/trpc";
 
 function badgeStatus(s: string) {
@@ -139,7 +140,7 @@ export function Clientes() {
       {filtroRisco ? (
         <div className="rounded-lg border border-[#F59E0B]/40 bg-[#FFFBEB] px-4 py-3 text-sm font-semibold text-[#B45309]">
           Filtro ativo: clientes em risco (via dashboard).{" "}
-          <Link className="text-[#1E40AF] underline" href="/clientes">
+          <Link className="text-[#1E40AF] underline" href={comercialPath("/clientes")}>
             Limpar
           </Link>
         </div>
@@ -148,11 +149,11 @@ export function Clientes() {
       {!filtroRisco ? (
         <div className="rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-sm text-[#1E3A8A]">
           <span className="font-semibold">10 clientes de teste</span> (histórico ~3 meses, compras semanais) — busque{" "}
-          <Link className="font-bold text-[#10B981] underline" href="/clientes?busca=carteira">
+          <Link className="font-bold text-[#10B981] underline" href={comercialPath("/clientes", { busca: "carteira" })}>
             carteira
           </Link>
           ,{" "}
-          <Link className="font-bold text-[#10B981] underline" href="/clientes?busca=teste">
+          <Link className="font-bold text-[#10B981] underline" href={comercialPath("/clientes", { busca: "teste" })}>
             teste
           </Link>{" "}
           ou{" "}
@@ -226,7 +227,7 @@ export function Clientes() {
           </p>
           <p className="mt-2 text-sm">
             Depois abra{" "}
-            <Link className="font-semibold text-[#1E40AF] underline" href="/clientes?busca=teste">
+            <Link className="font-semibold text-[#1E40AF] underline" href={comercialPath("/clientes", { busca: "teste" })}>
               /clientes?busca=teste
             </Link>
             .
@@ -461,7 +462,7 @@ export function Clientes() {
                       <ArrowRight className="h-4 w-4" />
                     </Link>
                     <Link
-                      href="/oportunidades"
+                      href={comercialPath("/oportunidades")}
                       className="inline-flex items-center justify-center rounded-lg border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm font-semibold text-[#1E40AF] transition duration-200 hover:bg-[#EFF6FF]"
                     >
                       Oportunidades

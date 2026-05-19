@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { PeriodoKpi } from "../generated/prisma/index.js";
+import { pedidoContaVendaRealizada } from "../lib/pedido-status.js";
 import { router, comercialProcedure } from "../../_core/trpc";
 
 export const kpisRouter = router({
@@ -46,11 +47,13 @@ export const kpisRouter = router({
     .query(async ({ ctx, input }) => {
       const pedidos = await ctx.prisma!.pedido.findMany({
         where: { dataPedido: { gte: input.inicio, lte: input.fim } },
-        select: { clienteId: true, valorTotal: true, dataPedido: true },
+        select: { clienteId: true, valorTotal: true, dataPedido: true, statusPedido: true },
       });
 
+      const pedidosVenda = pedidos.filter((p) => pedidoContaVendaRealizada(p.statusPedido));
+
       const porCliente = new Map<string, { total: number; qtd: number; ultima: Date }>();
-      for (const p of pedidos) {
+      for (const p of pedidosVenda) {
         const acc = porCliente.get(p.clienteId) ?? { total: 0, qtd: 0, ultima: p.dataPedido };
         acc.total += Number(p.valorTotal);
         acc.qtd += 1;

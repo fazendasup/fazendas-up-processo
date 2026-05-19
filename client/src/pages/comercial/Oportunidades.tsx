@@ -5,6 +5,7 @@ import { Link } from "wouter";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/comercial/ui/PageHeader";
 import { TooltipInfo } from "@/components/comercial/ui/TooltipInfo";
+import { comercialPath } from "@/lib/comercial/routes";
 import { trpc } from "@/lib/trpc";
 
 const LS_FILTERS = "fu_oportunidades_filtros_v1";
@@ -134,7 +135,7 @@ export function Oportunidades() {
           </select>
         </div>
         <Link
-          href="/mensagens"
+          href={comercialPath("/mensagens")}
           className="ml-auto inline-flex items-center gap-2 rounded-lg bg-[#1E40AF] px-4 py-2 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-[#1D4ED8] hover:shadow-[0_4px_12px_#00000020]"
         >
           Ir para mensagens

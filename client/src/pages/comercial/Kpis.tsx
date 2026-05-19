@@ -27,15 +27,16 @@ import { PageHeader } from "@/components/comercial/ui/PageHeader";
 import { TooltipInfo } from "@/components/comercial/ui/TooltipInfo";
 import { fuGlass, fuGlassHover, fuGlassSm, fuStat, fuTextMuted, fuTextStrong, fuTitleGradient } from "@/lib/comercial/fuBrand";
 import { useTheme } from "@/contexts/ThemeContext";
-import { intervaloDoPreset, labelPreset, type PeriodoPreset } from "@/lib/comercial/periodo";
+import { PeriodoFiltro } from "@/components/comercial/ui/PeriodoFiltro";
+import { hojeIsoLocal, intervaloDoPreset, labelPreset, type PeriodoPreset } from "@/lib/comercial/periodo";
 import { trpc } from "@/lib/trpc";
 
 const GREEN = CHART.green.mid;
 
 function periodoFromPreset(p: PeriodoPreset): "DIARIO" | "SEMANAL" | "MENSAL" {
-  if (p === "hoje") return "DIARIO";
-  if (p === "semana") return "SEMANAL";
-  return "MENSAL";
+  if (p === "semana_atual") return "SEMANAL";
+  if (p === "mes_atual" || p === "ultimos_12_meses" || p === "todo_periodo") return "MENSAL";
+  return "DIARIO";
 }
 
 function exportSnapshotsCsv(
@@ -75,8 +76,17 @@ export function Kpis() {
   const legendMuted = theme === "dark" ? "#94a3b8" : "#64748b";
   const lineActiveStroke = theme === "dark" ? "#030712" : "#f8fafc";
 
-  const [preset, setPreset] = useState<PeriodoPreset>("mes");
-  const { inicio, fim } = useMemo(() => intervaloDoPreset(preset), [preset]);
+  const [preset, setPreset] = useState<PeriodoPreset>("mes_atual");
+  const [customInicio, setCustomInicio] = useState(() => {
+    const d = new Date();
+    d.setDate(1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [customFim, setCustomFim] = useState(hojeIsoLocal);
+  const { inicio, fim } = useMemo(
+    () => intervaloDoPreset(preset, { inicio: customInicio, fim: customFim }),
+    [preset, customInicio, customFim],
+  );
   const periodoKpi = periodoFromPreset(preset);
 
   const resumo = trpc.comercial.kpis.resumoCalculado.useQuery({ inicio, fim }, { staleTime: 30_000 });
@@ -139,17 +149,15 @@ export function Kpis() {
           </>
         }
         actions={
-          <div className="flex flex-wrap gap-2">
-            <select
-              value={preset}
-              onChange={(e) => setPreset(e.target.value as PeriodoPreset)}
-              className="rounded-xl border border-slate-200/90 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none transition focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-black/40 dark:text-slate-200 dark:focus:border-cyan-400/40"
-              aria-label="Período"
-            >
-              <option value="hoje">Hoje</option>
-              <option value="semana">Últimos 7 dias</option>
-              <option value="mes">Mês atual</option>
-            </select>
+          <div className="flex flex-wrap items-end gap-3">
+            <PeriodoFiltro
+              preset={preset}
+              onPresetChange={setPreset}
+              customInicio={customInicio}
+              customFim={customFim}
+              onCustomInicio={setCustomInicio}
+              onCustomFim={setCustomFim}
+            />
             <button
               type="button"
               className="inline-flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white px-4 py-2 text-sm font-semibold text-cyan-800 transition hover:border-cyan-500/40 hover:bg-cyan-50 disabled:opacity-50 dark:border-white/15 dark:bg-white/5 dark:text-cyan-300 dark:hover:border-cyan-400/40 dark:hover:bg-white/10"
@@ -164,7 +172,11 @@ export function Kpis() {
       />
 
       <p className={`text-sm ${fuTextMuted}`}>
-        Período ativo: <span className="font-semibold text-slate-900 dark:text-slate-200">{labelPreset(preset)}</span> · granularidade:{" "}
+        Período ativo:{" "}
+        <span className="font-semibold text-slate-900 dark:text-slate-200">
+          {labelPreset(preset, { inicio: customInicio, fim: customFim })}
+        </span>{" "}
+        · granularidade:{" "}
         <span className="font-mono text-cyan-700 dark:text-cyan-400/90">{periodoKpi}</span>
       </p>
 
