@@ -48,6 +48,8 @@ npm run comercial:migrate
 npm run comercial:seed
 ```
 
+Em **produção (Railway/Docker)**, `prisma migrate deploy` do comercial corre automaticamente no arranque do servidor (como o Drizzle do ERP). Defina `COMERCIAL_DATABASE_URL` apontando para a base MySQL do módulo (ex.: `fazendas_comercial`). Se a tabela `usuarios` estiver vazia, o servidor cria um ADMIN com o mesmo e-mail de `BOOTSTRAP_ADMIN_EMAIL`.
+
 Vincule o e-mail do admin do ERP a um usuário em `usuarios` do banco comercial, ou use o seed `admin@fazendasup.local`.
 
 ## API

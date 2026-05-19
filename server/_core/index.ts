@@ -16,6 +16,7 @@ import { getStaticDeployReadiness, serveStatic } from "./static";
 import { ensureBootstrapAdmin } from "../bootstrap-admin";
 import * as db from "../db";
 import { runDrizzleMigrateFromEnv } from "../run-drizzle-migrate";
+import { runComercialPrismaMigrateFromEnv } from "../run-comercial-prisma-migrate";
 import { initMqttFromEnv, shutdownMqtt } from "./mqtt";
 import { APP_VERSION } from "./release-meta";
 
@@ -297,6 +298,18 @@ async function startServer() {
     }
   }
 
+  try {
+    await runComercialPrismaMigrateFromEnv();
+  } catch (e) {
+    console.error(
+      "[Server] Migrações Prisma (comercial) falharam — sync Conta Azul e /comercial podem falhar:",
+      e
+    );
+    if (process.env.EXIT_ON_MIGRATE_FAILURE === "1") {
+      process.exit(1);
+    }
+  }
+
   await db.ensureUsersRoleVarchar();
   await db.ensureCiclosDosagemColumn();
   await db.ensurePlanosPlantioGerminacaoColumns();
@@ -336,6 +349,18 @@ async function startServer() {
   await ensureBootstrapAdmin();
   await runFupPilotoBootstrapIfNeeded();
   console.log("[Server] Banco OK.");
+
+  try {
+    const { ensureComercialBootstrapUsuario } = await import(
+      "../comercial/bootstrap-comercial-admin"
+    );
+    await ensureComercialBootstrapUsuario();
+  } catch (e) {
+    console.warn(
+      "[Server] Bootstrap usuário comercial ignorado:",
+      e instanceof Error ? e.message : e
+    );
+  }
 
   const { tryStartComercialIntegrationJobs } = await import(
     "../comercial/start-integration-jobs"

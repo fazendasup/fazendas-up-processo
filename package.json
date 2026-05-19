@@ -33,6 +33,7 @@
   "dependencies": {
     "@headlessui/react": "^2.2.0",
     "@prisma/client": "^6.16.0",
+    "prisma": "^6.16.0",
     "@aws-sdk/client-s3": "^3.693.0",
     "@aws-sdk/s3-request-presigner": "^3.693.0",
     "@hookform/resolvers": "^5.2.2",
@@ -111,7 +112,6 @@
   "devDependencies": {
     "@builder.io/vite-plugin-jsx-loc": "^0.1.1",
     "@ngrok/ngrok": "^1.7.0",
-    "prisma": "^6.16.0",
     "@playwright/test": "^1.58.2",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/nodemailer": "^7.0.1",

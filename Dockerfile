@@ -19,6 +19,7 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/server/comercial/generated ./server/comercial/generated
 COPY --from=build /app/drizzle ./drizzle
 COPY --from=build /app/drizzle.config.ts ./drizzle.config.ts
+COPY --from=build /app/prisma-comercial ./prisma-comercial
 COPY --from=build /app/server/seed-fup-piloto.mjs ./server/seed-fup-piloto.mjs
 COPY --from=build /app/scripts/start.mjs ./scripts/start.mjs
 EXPOSE 3456
