@@ -163,6 +163,10 @@ exports.Prisma.PedidoScalarFieldEnum = {
   clienteId: 'clienteId',
   dataPedido: 'dataPedido',
   valorTotal: 'valorTotal',
+  valorBruto: 'valorBruto',
+  valorFrete: 'valorFrete',
+  valorDesconto: 'valorDesconto',
+  valorLiquido: 'valorLiquido',
   statusPedido: 'statusPedido',
   origemPedido: 'origemPedido'
 };

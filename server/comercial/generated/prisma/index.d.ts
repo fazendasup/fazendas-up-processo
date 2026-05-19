@@ -5464,10 +5464,18 @@ export namespace Prisma {
 
   export type PedidoAvgAggregateOutputType = {
     valorTotal: Decimal | null
+    valorBruto: Decimal | null
+    valorFrete: Decimal | null
+    valorDesconto: Decimal | null
+    valorLiquido: Decimal | null
   }
 
   export type PedidoSumAggregateOutputType = {
     valorTotal: Decimal | null
+    valorBruto: Decimal | null
+    valorFrete: Decimal | null
+    valorDesconto: Decimal | null
+    valorLiquido: Decimal | null
   }
 
   export type PedidoMinAggregateOutputType = {
@@ -5476,6 +5484,10 @@ export namespace Prisma {
     clienteId: string | null
     dataPedido: Date | null
     valorTotal: Decimal | null
+    valorBruto: Decimal | null
+    valorFrete: Decimal | null
+    valorDesconto: Decimal | null
+    valorLiquido: Decimal | null
     statusPedido: string | null
     origemPedido: $Enums.OrigemPedido | null
   }
@@ -5486,6 +5498,10 @@ export namespace Prisma {
     clienteId: string | null
     dataPedido: Date | null
     valorTotal: Decimal | null
+    valorBruto: Decimal | null
+    valorFrete: Decimal | null
+    valorDesconto: Decimal | null
+    valorLiquido: Decimal | null
     statusPedido: string | null
     origemPedido: $Enums.OrigemPedido | null
   }
@@ -5496,6 +5512,10 @@ export namespace Prisma {
     clienteId: number
     dataPedido: number
     valorTotal: number
+    valorBruto: number
+    valorFrete: number
+    valorDesconto: number
+    valorLiquido: number
     statusPedido: number
     origemPedido: number
     _all: number
@@ -5504,10 +5524,18 @@ export namespace Prisma {
 
   export type PedidoAvgAggregateInputType = {
     valorTotal?: true
+    valorBruto?: true
+    valorFrete?: true
+    valorDesconto?: true
+    valorLiquido?: true
   }
 
   export type PedidoSumAggregateInputType = {
     valorTotal?: true
+    valorBruto?: true
+    valorFrete?: true
+    valorDesconto?: true
+    valorLiquido?: true
   }
 
   export type PedidoMinAggregateInputType = {
@@ -5516,6 +5544,10 @@ export namespace Prisma {
     clienteId?: true
     dataPedido?: true
     valorTotal?: true
+    valorBruto?: true
+    valorFrete?: true
+    valorDesconto?: true
+    valorLiquido?: true
     statusPedido?: true
     origemPedido?: true
   }
@@ -5526,6 +5558,10 @@ export namespace Prisma {
     clienteId?: true
     dataPedido?: true
     valorTotal?: true
+    valorBruto?: true
+    valorFrete?: true
+    valorDesconto?: true
+    valorLiquido?: true
     statusPedido?: true
     origemPedido?: true
   }
@@ -5536,6 +5572,10 @@ export namespace Prisma {
     clienteId?: true
     dataPedido?: true
     valorTotal?: true
+    valorBruto?: true
+    valorFrete?: true
+    valorDesconto?: true
+    valorLiquido?: true
     statusPedido?: true
     origemPedido?: true
     _all?: true
@@ -5633,6 +5673,10 @@ export namespace Prisma {
     clienteId: string
     dataPedido: Date
     valorTotal: Decimal
+    valorBruto: Decimal | null
+    valorFrete: Decimal
+    valorDesconto: Decimal
+    valorLiquido: Decimal | null
     statusPedido: string
     origemPedido: $Enums.OrigemPedido
     _count: PedidoCountAggregateOutputType | null
@@ -5662,6 +5706,10 @@ export namespace Prisma {
     clienteId?: boolean
     dataPedido?: boolean
     valorTotal?: boolean
+    valorBruto?: boolean
+    valorFrete?: boolean
+    valorDesconto?: boolean
+    valorLiquido?: boolean
     statusPedido?: boolean
     origemPedido?: boolean
     cliente?: boolean | ClienteDefaultArgs<ExtArgs>
@@ -5677,11 +5725,15 @@ export namespace Prisma {
     clienteId?: boolean
     dataPedido?: boolean
     valorTotal?: boolean
+    valorBruto?: boolean
+    valorFrete?: boolean
+    valorDesconto?: boolean
+    valorLiquido?: boolean
     statusPedido?: boolean
     origemPedido?: boolean
   }
 
-  export type PedidoOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "externalId" | "clienteId" | "dataPedido" | "valorTotal" | "statusPedido" | "origemPedido", ExtArgs["result"]["pedido"]>
+  export type PedidoOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "externalId" | "clienteId" | "dataPedido" | "valorTotal" | "valorBruto" | "valorFrete" | "valorDesconto" | "valorLiquido" | "statusPedido" | "origemPedido", ExtArgs["result"]["pedido"]>
   export type PedidoInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     cliente?: boolean | ClienteDefaultArgs<ExtArgs>
     itens?: boolean | Pedido$itensArgs<ExtArgs>
@@ -5700,6 +5752,10 @@ export namespace Prisma {
       clienteId: string
       dataPedido: Date
       valorTotal: Prisma.Decimal
+      valorBruto: Prisma.Decimal | null
+      valorFrete: Prisma.Decimal
+      valorDesconto: Prisma.Decimal
+      valorLiquido: Prisma.Decimal | null
       statusPedido: string
       origemPedido: $Enums.OrigemPedido
     }, ExtArgs["result"]["pedido"]>
@@ -6078,6 +6134,10 @@ export namespace Prisma {
     readonly clienteId: FieldRef<"Pedido", 'String'>
     readonly dataPedido: FieldRef<"Pedido", 'DateTime'>
     readonly valorTotal: FieldRef<"Pedido", 'Decimal'>
+    readonly valorBruto: FieldRef<"Pedido", 'Decimal'>
+    readonly valorFrete: FieldRef<"Pedido", 'Decimal'>
+    readonly valorDesconto: FieldRef<"Pedido", 'Decimal'>
+    readonly valorLiquido: FieldRef<"Pedido", 'Decimal'>
     readonly statusPedido: FieldRef<"Pedido", 'String'>
     readonly origemPedido: FieldRef<"Pedido", 'OrigemPedido'>
   }
@@ -16110,6 +16170,10 @@ export namespace Prisma {
     clienteId: 'clienteId',
     dataPedido: 'dataPedido',
     valorTotal: 'valorTotal',
+    valorBruto: 'valorBruto',
+    valorFrete: 'valorFrete',
+    valorDesconto: 'valorDesconto',
+    valorLiquido: 'valorLiquido',
     statusPedido: 'statusPedido',
     origemPedido: 'origemPedido'
   };
@@ -16868,6 +16932,10 @@ export namespace Prisma {
     clienteId?: StringFilter<"Pedido"> | string
     dataPedido?: DateTimeFilter<"Pedido"> | Date | string
     valorTotal?: DecimalFilter<"Pedido"> | Decimal | DecimalJsLike | number | string
+    valorBruto?: DecimalNullableFilter<"Pedido"> | Decimal | DecimalJsLike | number | string | null
+    valorFrete?: DecimalFilter<"Pedido"> | Decimal | DecimalJsLike | number | string
+    valorDesconto?: DecimalFilter<"Pedido"> | Decimal | DecimalJsLike | number | string
+    valorLiquido?: DecimalNullableFilter<"Pedido"> | Decimal | DecimalJsLike | number | string | null
     statusPedido?: StringFilter<"Pedido"> | string
     origemPedido?: EnumOrigemPedidoFilter<"Pedido"> | $Enums.OrigemPedido
     cliente?: XOR<ClienteScalarRelationFilter, ClienteWhereInput>
@@ -16880,6 +16948,10 @@ export namespace Prisma {
     clienteId?: SortOrder
     dataPedido?: SortOrder
     valorTotal?: SortOrder
+    valorBruto?: SortOrderInput | SortOrder
+    valorFrete?: SortOrder
+    valorDesconto?: SortOrder
+    valorLiquido?: SortOrderInput | SortOrder
     statusPedido?: SortOrder
     origemPedido?: SortOrder
     cliente?: ClienteOrderByWithRelationInput
@@ -16896,6 +16968,10 @@ export namespace Prisma {
     clienteId?: StringFilter<"Pedido"> | string
     dataPedido?: DateTimeFilter<"Pedido"> | Date | string
     valorTotal?: DecimalFilter<"Pedido"> | Decimal | DecimalJsLike | number | string
+    valorBruto?: DecimalNullableFilter<"Pedido"> | Decimal | DecimalJsLike | number | string | null
+    valorFrete?: DecimalFilter<"Pedido"> | Decimal | DecimalJsLike | number | string
+    valorDesconto?: DecimalFilter<"Pedido"> | Decimal | DecimalJsLike | number | string
+    valorLiquido?: DecimalNullableFilter<"Pedido"> | Decimal | DecimalJsLike | number | string | null
     statusPedido?: StringFilter<"Pedido"> | string
     origemPedido?: EnumOrigemPedidoFilter<"Pedido"> | $Enums.OrigemPedido
     cliente?: XOR<ClienteScalarRelationFilter, ClienteWhereInput>
@@ -16908,6 +16984,10 @@ export namespace Prisma {
     clienteId?: SortOrder
     dataPedido?: SortOrder
     valorTotal?: SortOrder
+    valorBruto?: SortOrderInput | SortOrder
+    valorFrete?: SortOrder
+    valorDesconto?: SortOrder
+    valorLiquido?: SortOrderInput | SortOrder
     statusPedido?: SortOrder
     origemPedido?: SortOrder
     _count?: PedidoCountOrderByAggregateInput
@@ -16926,6 +17006,10 @@ export namespace Prisma {
     clienteId?: StringWithAggregatesFilter<"Pedido"> | string
     dataPedido?: DateTimeWithAggregatesFilter<"Pedido"> | Date | string
     valorTotal?: DecimalWithAggregatesFilter<"Pedido"> | Decimal | DecimalJsLike | number | string
+    valorBruto?: DecimalNullableWithAggregatesFilter<"Pedido"> | Decimal | DecimalJsLike | number | string | null
+    valorFrete?: DecimalWithAggregatesFilter<"Pedido"> | Decimal | DecimalJsLike | number | string
+    valorDesconto?: DecimalWithAggregatesFilter<"Pedido"> | Decimal | DecimalJsLike | number | string
+    valorLiquido?: DecimalNullableWithAggregatesFilter<"Pedido"> | Decimal | DecimalJsLike | number | string | null
     statusPedido?: StringWithAggregatesFilter<"Pedido"> | string
     origemPedido?: EnumOrigemPedidoWithAggregatesFilter<"Pedido"> | $Enums.OrigemPedido
   }
@@ -17922,6 +18006,10 @@ export namespace Prisma {
     externalId?: string | null
     dataPedido: Date | string
     valorTotal: Decimal | DecimalJsLike | number | string
+    valorBruto?: Decimal | DecimalJsLike | number | string | null
+    valorFrete?: Decimal | DecimalJsLike | number | string
+    valorDesconto?: Decimal | DecimalJsLike | number | string
+    valorLiquido?: Decimal | DecimalJsLike | number | string | null
     statusPedido: string
     origemPedido: $Enums.OrigemPedido
     cliente: ClienteCreateNestedOneWithoutPedidosInput
@@ -17934,6 +18022,10 @@ export namespace Prisma {
     clienteId: string
     dataPedido: Date | string
     valorTotal: Decimal | DecimalJsLike | number | string
+    valorBruto?: Decimal | DecimalJsLike | number | string | null
+    valorFrete?: Decimal | DecimalJsLike | number | string
+    valorDesconto?: Decimal | DecimalJsLike | number | string
+    valorLiquido?: Decimal | DecimalJsLike | number | string | null
     statusPedido: string
     origemPedido: $Enums.OrigemPedido
     itens?: ItemPedidoUncheckedCreateNestedManyWithoutPedidoInput
@@ -17944,6 +18036,10 @@ export namespace Prisma {
     externalId?: NullableStringFieldUpdateOperationsInput | string | null
     dataPedido?: DateTimeFieldUpdateOperationsInput | Date | string
     valorTotal?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorBruto?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    valorFrete?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorDesconto?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorLiquido?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     statusPedido?: StringFieldUpdateOperationsInput | string
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
     cliente?: ClienteUpdateOneRequiredWithoutPedidosNestedInput
@@ -17956,6 +18052,10 @@ export namespace Prisma {
     clienteId?: StringFieldUpdateOperationsInput | string
     dataPedido?: DateTimeFieldUpdateOperationsInput | Date | string
     valorTotal?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorBruto?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    valorFrete?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorDesconto?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorLiquido?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     statusPedido?: StringFieldUpdateOperationsInput | string
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
     itens?: ItemPedidoUncheckedUpdateManyWithoutPedidoNestedInput
@@ -17967,6 +18067,10 @@ export namespace Prisma {
     clienteId: string
     dataPedido: Date | string
     valorTotal: Decimal | DecimalJsLike | number | string
+    valorBruto?: Decimal | DecimalJsLike | number | string | null
+    valorFrete?: Decimal | DecimalJsLike | number | string
+    valorDesconto?: Decimal | DecimalJsLike | number | string
+    valorLiquido?: Decimal | DecimalJsLike | number | string | null
     statusPedido: string
     origemPedido: $Enums.OrigemPedido
   }
@@ -17976,6 +18080,10 @@ export namespace Prisma {
     externalId?: NullableStringFieldUpdateOperationsInput | string | null
     dataPedido?: DateTimeFieldUpdateOperationsInput | Date | string
     valorTotal?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorBruto?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    valorFrete?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorDesconto?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorLiquido?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     statusPedido?: StringFieldUpdateOperationsInput | string
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
   }
@@ -17986,6 +18094,10 @@ export namespace Prisma {
     clienteId?: StringFieldUpdateOperationsInput | string
     dataPedido?: DateTimeFieldUpdateOperationsInput | Date | string
     valorTotal?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorBruto?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    valorFrete?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorDesconto?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorLiquido?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     statusPedido?: StringFieldUpdateOperationsInput | string
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
   }
@@ -19242,12 +19354,20 @@ export namespace Prisma {
     clienteId?: SortOrder
     dataPedido?: SortOrder
     valorTotal?: SortOrder
+    valorBruto?: SortOrder
+    valorFrete?: SortOrder
+    valorDesconto?: SortOrder
+    valorLiquido?: SortOrder
     statusPedido?: SortOrder
     origemPedido?: SortOrder
   }
 
   export type PedidoAvgOrderByAggregateInput = {
     valorTotal?: SortOrder
+    valorBruto?: SortOrder
+    valorFrete?: SortOrder
+    valorDesconto?: SortOrder
+    valorLiquido?: SortOrder
   }
 
   export type PedidoMaxOrderByAggregateInput = {
@@ -19256,6 +19376,10 @@ export namespace Prisma {
     clienteId?: SortOrder
     dataPedido?: SortOrder
     valorTotal?: SortOrder
+    valorBruto?: SortOrder
+    valorFrete?: SortOrder
+    valorDesconto?: SortOrder
+    valorLiquido?: SortOrder
     statusPedido?: SortOrder
     origemPedido?: SortOrder
   }
@@ -19266,12 +19390,20 @@ export namespace Prisma {
     clienteId?: SortOrder
     dataPedido?: SortOrder
     valorTotal?: SortOrder
+    valorBruto?: SortOrder
+    valorFrete?: SortOrder
+    valorDesconto?: SortOrder
+    valorLiquido?: SortOrder
     statusPedido?: SortOrder
     origemPedido?: SortOrder
   }
 
   export type PedidoSumOrderByAggregateInput = {
     valorTotal?: SortOrder
+    valorBruto?: SortOrder
+    valorFrete?: SortOrder
+    valorDesconto?: SortOrder
+    valorLiquido?: SortOrder
   }
 
   export type DecimalWithAggregatesFilter<$PrismaModel = never> = {
@@ -21373,6 +21505,10 @@ export namespace Prisma {
     externalId?: string | null
     dataPedido: Date | string
     valorTotal: Decimal | DecimalJsLike | number | string
+    valorBruto?: Decimal | DecimalJsLike | number | string | null
+    valorFrete?: Decimal | DecimalJsLike | number | string
+    valorDesconto?: Decimal | DecimalJsLike | number | string
+    valorLiquido?: Decimal | DecimalJsLike | number | string | null
     statusPedido: string
     origemPedido: $Enums.OrigemPedido
     itens?: ItemPedidoCreateNestedManyWithoutPedidoInput
@@ -21383,6 +21519,10 @@ export namespace Prisma {
     externalId?: string | null
     dataPedido: Date | string
     valorTotal: Decimal | DecimalJsLike | number | string
+    valorBruto?: Decimal | DecimalJsLike | number | string | null
+    valorFrete?: Decimal | DecimalJsLike | number | string
+    valorDesconto?: Decimal | DecimalJsLike | number | string
+    valorLiquido?: Decimal | DecimalJsLike | number | string | null
     statusPedido: string
     origemPedido: $Enums.OrigemPedido
     itens?: ItemPedidoUncheckedCreateNestedManyWithoutPedidoInput
@@ -21563,6 +21703,10 @@ export namespace Prisma {
     clienteId?: StringFilter<"Pedido"> | string
     dataPedido?: DateTimeFilter<"Pedido"> | Date | string
     valorTotal?: DecimalFilter<"Pedido"> | Decimal | DecimalJsLike | number | string
+    valorBruto?: DecimalNullableFilter<"Pedido"> | Decimal | DecimalJsLike | number | string | null
+    valorFrete?: DecimalFilter<"Pedido"> | Decimal | DecimalJsLike | number | string
+    valorDesconto?: DecimalFilter<"Pedido"> | Decimal | DecimalJsLike | number | string
+    valorLiquido?: DecimalNullableFilter<"Pedido"> | Decimal | DecimalJsLike | number | string | null
     statusPedido?: StringFilter<"Pedido"> | string
     origemPedido?: EnumOrigemPedidoFilter<"Pedido"> | $Enums.OrigemPedido
   }
@@ -21830,6 +21974,10 @@ export namespace Prisma {
     externalId?: string | null
     dataPedido: Date | string
     valorTotal: Decimal | DecimalJsLike | number | string
+    valorBruto?: Decimal | DecimalJsLike | number | string | null
+    valorFrete?: Decimal | DecimalJsLike | number | string
+    valorDesconto?: Decimal | DecimalJsLike | number | string
+    valorLiquido?: Decimal | DecimalJsLike | number | string | null
     statusPedido: string
     origemPedido: $Enums.OrigemPedido
     cliente: ClienteCreateNestedOneWithoutPedidosInput
@@ -21841,6 +21989,10 @@ export namespace Prisma {
     clienteId: string
     dataPedido: Date | string
     valorTotal: Decimal | DecimalJsLike | number | string
+    valorBruto?: Decimal | DecimalJsLike | number | string | null
+    valorFrete?: Decimal | DecimalJsLike | number | string
+    valorDesconto?: Decimal | DecimalJsLike | number | string
+    valorLiquido?: Decimal | DecimalJsLike | number | string | null
     statusPedido: string
     origemPedido: $Enums.OrigemPedido
   }
@@ -21866,6 +22018,10 @@ export namespace Prisma {
     externalId?: NullableStringFieldUpdateOperationsInput | string | null
     dataPedido?: DateTimeFieldUpdateOperationsInput | Date | string
     valorTotal?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorBruto?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    valorFrete?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorDesconto?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorLiquido?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     statusPedido?: StringFieldUpdateOperationsInput | string
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
     cliente?: ClienteUpdateOneRequiredWithoutPedidosNestedInput
@@ -21877,6 +22033,10 @@ export namespace Prisma {
     clienteId?: StringFieldUpdateOperationsInput | string
     dataPedido?: DateTimeFieldUpdateOperationsInput | Date | string
     valorTotal?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorBruto?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    valorFrete?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorDesconto?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorLiquido?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     statusPedido?: StringFieldUpdateOperationsInput | string
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
   }
@@ -22590,6 +22750,10 @@ export namespace Prisma {
     externalId?: string | null
     dataPedido: Date | string
     valorTotal: Decimal | DecimalJsLike | number | string
+    valorBruto?: Decimal | DecimalJsLike | number | string | null
+    valorFrete?: Decimal | DecimalJsLike | number | string
+    valorDesconto?: Decimal | DecimalJsLike | number | string
+    valorLiquido?: Decimal | DecimalJsLike | number | string | null
     statusPedido: string
     origemPedido: $Enums.OrigemPedido
   }
@@ -22649,6 +22813,10 @@ export namespace Prisma {
     externalId?: NullableStringFieldUpdateOperationsInput | string | null
     dataPedido?: DateTimeFieldUpdateOperationsInput | Date | string
     valorTotal?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorBruto?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    valorFrete?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorDesconto?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorLiquido?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     statusPedido?: StringFieldUpdateOperationsInput | string
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
     itens?: ItemPedidoUpdateManyWithoutPedidoNestedInput
@@ -22659,6 +22827,10 @@ export namespace Prisma {
     externalId?: NullableStringFieldUpdateOperationsInput | string | null
     dataPedido?: DateTimeFieldUpdateOperationsInput | Date | string
     valorTotal?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorBruto?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    valorFrete?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorDesconto?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorLiquido?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     statusPedido?: StringFieldUpdateOperationsInput | string
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
     itens?: ItemPedidoUncheckedUpdateManyWithoutPedidoNestedInput
@@ -22669,6 +22841,10 @@ export namespace Prisma {
     externalId?: NullableStringFieldUpdateOperationsInput | string | null
     dataPedido?: DateTimeFieldUpdateOperationsInput | Date | string
     valorTotal?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorBruto?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    valorFrete?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorDesconto?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    valorLiquido?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     statusPedido?: StringFieldUpdateOperationsInput | string
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
   }

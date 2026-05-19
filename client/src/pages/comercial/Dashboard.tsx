@@ -141,14 +141,21 @@ export function Dashboard() {
     },
   });
 
+  type TotaisComp = { bruto: number; frete: number; desconto: number; liquido: number };
+
+  const kpis = resumo.data?.kpis;
+  const composicaoVendas = kpis?.composicaoVendas as TotaisComp | undefined;
+  const composicaoPorTipo = kpis?.composicaoVendasPorTipo as
+    | { RESTAURANTE: TotaisComp; MERCADO: TotaisComp }
+    | undefined;
+
   const dadosBarras = useMemo(() => {
-    const k = resumo.data?.kpis.faturamentoPorTipo;
-    if (!k) return [];
+    if (!composicaoPorTipo) return [];
     return [
-      { nome: "Restaurantes", valor: k.RESTAURANTE },
-      { nome: "Mercados", valor: k.MERCADO },
+      { nome: "Restaurantes", valor: composicaoPorTipo.RESTAURANTE.liquido },
+      { nome: "Mercados", valor: composicaoPorTipo.MERCADO.liquido },
     ];
-  }, [resumo.data?.kpis.faturamentoPorTipo]);
+  }, [composicaoPorTipo]);
 
   /** Mix por tipo de oportunidade (abertas / em contato) — ordenado e com rótulos legíveis */
   const dadosPizzaMix = useMemo(() => {
@@ -178,14 +185,15 @@ export function Dashboard() {
   const fmtMoney = (n: number) =>
     n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
+  const fmtMoneyDetalhe = (n: number) =>
+    n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
   const onBusca = (e: React.FormEvent) => {
     e.preventDefault();
     const q = busca.trim();
     if (q) navigate(comercialPath("/clientes", { busca: q }));
     else toast.message("Digite um nome ou CNPJ para buscar na carteira.");
   };
-
-  const kpis = resumo.data?.kpis;
 
   return (
     <div className="relative z-10">
@@ -263,7 +271,7 @@ export function Dashboard() {
                   <p className={`text-sm ${fuTextMuted}`}>Receita e eficiência da carteira</p>
                 </div>
               </div>
-              <TooltipInfo text="Vendas realizadas (faturadas/aprovadas) separadas de orçamentos em aberto, conforme status na Conta Azul." />
+              <TooltipInfo text="Valor líquido das vendas (bruto + frete − desconto), alinhado ao relatório da Conta Azul. Clique no card para ver a composição." />
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
@@ -274,12 +282,12 @@ export function Dashboard() {
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-800 dark:text-emerald-400/80">
-                    Vendas realizadas
+                    Valor líquido
                   </span>
                   <DollarSign className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
                 </div>
-                <div className={`mt-2 text-2xl font-bold ${fuTextStrong} ${fuStat}`}>{fmtMoney(kpis?.vendasRealizadas ?? kpis?.faturamento ?? 0)}</div>
-                <div className={`mt-1 text-xs ${fuTextMuted}`}>Pedidos faturados/aprovados · clique para detalhar</div>
+                <div className={`mt-2 text-2xl font-bold ${fuTextStrong} ${fuStat}`}>{fmtMoney(composicaoVendas?.liquido ?? kpis?.vendasRealizadas ?? kpis?.faturamento ?? 0)}</div>
+                <div className={`mt-1 text-xs ${fuTextMuted}`}>Vendas realizadas · clique para bruto, frete e desconto</div>
               </button>
 
               <div className={`${fuGlassSm} border-amber-400/25 p-4`}>
@@ -330,8 +338,8 @@ export function Dashboard() {
             <div className="mt-5 space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">Faturamento por tipo</span>
-                  <p className={`text-xs ${fuTextMuted}`}>Proporção por área</p>
+                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">Líquido por tipo</span>
+                  <p className={`text-xs ${fuTextMuted}`}>Restaurantes vs mercados</p>
                 </div>
                 <LayoutGrid className="h-4 w-4 shrink-0 text-cyan-700 dark:text-cyan-400/70" />
               </div>
@@ -652,12 +660,12 @@ export function Dashboard() {
               onClick={(ev) => ev.stopPropagation()}
               role="dialog"
               aria-modal="true"
-              aria-label="Detalhe de faturamento por tipo"
+              aria-label="Composição do valor líquido"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className={`text-xl font-bold ${fuTitleGradient}`}>Faturamento por tipo</div>
-                  <div className={`mt-1 text-sm ${fuTextMuted}`}>Base: pedidos no período filtrado</div>
+                  <div className={`text-xl font-bold ${fuTitleGradient}`}>Composição das vendas</div>
+                  <div className={`mt-1 text-sm ${fuTextMuted}`}>Bruto + frete − desconto (Conta Azul)</div>
                 </div>
                 <button
                   type="button"
@@ -667,16 +675,69 @@ export function Dashboard() {
                   Fechar
                 </button>
               </div>
-              <div className="mt-4 space-y-3">
-                {dadosBarras.map((row) => (
-                  <div
-                    key={row.nome}
-                    className="flex items-center justify-between rounded-xl border border-slate-200/90 bg-slate-50 dark:border-white/10 dark:bg-black/30"
-                  >
-                    <div className="font-semibold text-slate-800 dark:text-slate-200">{row.nome}</div>
-                    <div className={`text-lg font-bold text-emerald-800 dark:text-emerald-400 ${fuStat}`}>{fmtMoney(row.valor)}</div>
+              <div className="mt-4 space-y-2 rounded-xl border border-emerald-400/25 bg-emerald-50/80 p-4 dark:border-emerald-500/30 dark:bg-emerald-950/20">
+                {(
+                  [
+                    ["Valor bruto", composicaoVendas?.bruto ?? 0],
+                    ["Frete", composicaoVendas?.frete ?? 0],
+                    ["Desconto", -(composicaoVendas?.desconto ?? 0)],
+                  ] as const
+                ).map(([label, valor]) => (
+                  <div key={label} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-700 dark:text-slate-300">{label}</span>
+                    <span
+                      className={`font-semibold tabular-nums ${fuStat} ${valor < 0 ? "text-rose-700 dark:text-rose-400" : "text-slate-900 dark:text-slate-100"}`}
+                    >
+                      {valor < 0 ? `− ${fmtMoneyDetalhe(Math.abs(valor))}` : fmtMoneyDetalhe(valor)}
+                    </span>
                   </div>
                 ))}
+                <div className="flex items-center justify-between gap-3 border-t border-emerald-400/30 pt-2">
+                  <span className="font-bold text-emerald-900 dark:text-emerald-200">Valor líquido</span>
+                  <span className={`text-lg font-bold text-emerald-800 dark:text-emerald-400 ${fuStat}`}>
+                    {fmtMoneyDetalhe(composicaoVendas?.liquido ?? kpis?.vendasRealizadas ?? 0)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-5">
+                <div className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-200">Por tipo de cliente (líquido)</div>
+                <div className="space-y-3">
+                  {(
+                    [
+                      { nome: "Restaurantes", comp: composicaoPorTipo?.RESTAURANTE },
+                      { nome: "Mercados", comp: composicaoPorTipo?.MERCADO },
+                    ] as const
+                  ).map(({ nome, comp }) => (
+                    <div
+                      key={nome}
+                      className="rounded-xl border border-slate-200/90 bg-slate-50 p-3 dark:border-white/10 dark:bg-black/30"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">{nome}</span>
+                        <span className={`text-lg font-bold text-emerald-800 dark:text-emerald-400 ${fuStat}`}>
+                          {fmtMoneyDetalhe(comp?.liquido ?? 0)}
+                        </span>
+                      </div>
+                      {comp ? (
+                        <div className={`mt-2 grid grid-cols-3 gap-2 text-[11px] ${fuTextMuted}`}>
+                          <div>
+                            <div>Bruto</div>
+                            <div className={`font-semibold text-slate-700 dark:text-slate-300 ${fuStat}`}>{fmtMoneyDetalhe(comp.bruto)}</div>
+                          </div>
+                          <div>
+                            <div>Frete</div>
+                            <div className={`font-semibold text-slate-700 dark:text-slate-300 ${fuStat}`}>{fmtMoneyDetalhe(comp.frete)}</div>
+                          </div>
+                          <div>
+                            <div>Desconto</div>
+                            <div className={`font-semibold text-slate-700 dark:text-slate-300 ${fuStat}`}>{fmtMoneyDetalhe(comp.desconto)}</div>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
               </div>
               <div className="mt-5 flex justify-end">
                 <Link

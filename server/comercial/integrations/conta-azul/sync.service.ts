@@ -2,7 +2,6 @@ import { AcaoApi, StatusExecucaoApi } from "../../generated/prisma/index.js";
 import type { PrismaClient } from "../../generated/prisma/index.js";
 import type { Env } from "../../env";
 import { logger } from "../../lib/logger";
-import type { AxiosInstance } from "axios";
 import { createContaAzulHttp, contaAzulGet } from "./conta-azul.client";
 import {
   mapClienteUpsert,
@@ -16,6 +15,13 @@ import {
 } from "./mappers";
 import { refreshAccessToken } from "./oauth.service";
 import { runInteligenciaComercial } from "../../services/inteligencia-comercial";
+import {
+  composicaoFromTotalApenas,
+  composicaoFromVendaBuscaItem,
+  composicaoFromVendaDetalhe,
+  type ComposicaoValorPedido,
+} from "../../lib/composicao-valor.js";
+import type { AxiosInstance } from "axios";
 
 export async function ensureValidAccessToken(prisma: PrismaClient, env: Env) {
   const cred = await prisma.integrationCredential.findUnique({ where: { provider: "CONTA_AZUL" } });
@@ -117,6 +123,33 @@ function buildVendasBuscaPath(pagina: number, dias: number, tamanhoPagina: numbe
     data_fim: formatDataCalendarioSp(end),
   });
   return `/v1/venda/busca?${qs.toString()}`;
+}
+
+async function resolveComposicaoVenda(
+  http: AxiosInstance,
+  raw: unknown,
+  totalFallback: number,
+  vendaId: string,
+): Promise<ComposicaoValorPedido> {
+  const fromBusca = composicaoFromVendaBuscaItem(raw);
+  if (fromBusca && (fromBusca.valorFrete > 0 || fromBusca.valorDesconto > 0)) {
+    return fromBusca;
+  }
+
+  if (process.env.CONTA_AZUL_SYNC_SKIP_DETAIL !== "1") {
+    try {
+      const detail = await contaAzulGet<unknown>(http, `/v1/venda/${encodeURIComponent(vendaId)}`);
+      const fromDetail = composicaoFromVendaDetalhe(detail);
+      if (fromDetail) return fromDetail;
+    } catch (e) {
+      logger.warn(
+        { vendaId, err: e instanceof Error ? e.message : e },
+        "Conta Azul: detalhe da venda indisponível — usando total da busca",
+      );
+    }
+  }
+
+  return fromBusca ?? composicaoFromTotalApenas(totalFallback);
 }
 
 /** Busca todas as páginas de vendas no período (histórico), até limite de segurança. */
@@ -260,12 +293,17 @@ export async function runContaAzulSync(prisma: PrismaClient, env: Env): Promise<
         continue;
       }
       const dataPedido = parseDataVendaContaAzul(payload.data);
+      const composicao = await resolveComposicaoVenda(http, raw, payload.total ?? 0, payload.id);
       await prisma.pedido.upsert({
         where: { externalId: payload.id },
-        create: mapPedidoCreate(cli.id, payload),
+        create: mapPedidoCreate(cli.id, payload, composicao),
         update: {
           dataPedido,
-          valorTotal: payload.total ?? 0,
+          valorTotal: composicao.valorLiquido,
+          valorBruto: composicao.valorBruto,
+          valorFrete: composicao.valorFrete,
+          valorDesconto: composicao.valorDesconto,
+          valorLiquido: composicao.valorLiquido,
           statusPedido: payload.status ?? "SYNC",
         },
       });

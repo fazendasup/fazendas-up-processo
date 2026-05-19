@@ -156,13 +156,17 @@ model Cliente {
 }
 
 model Pedido {
-  id           String       @id @default(cuid())
-  externalId   String?      @unique @map("external_id")
-  clienteId    String       @map("cliente_id")
-  dataPedido   DateTime     @map("data_pedido")
-  valorTotal   Decimal      @map("valor_total") @db.Decimal(14, 2)
-  statusPedido String       @map("status_pedido")
-  origemPedido OrigemPedido @map("origem_pedido")
+  id            String       @id @default(cuid())
+  externalId    String?      @unique @map("external_id")
+  clienteId     String       @map("cliente_id")
+  dataPedido    DateTime     @map("data_pedido")
+  valorTotal    Decimal      @map("valor_total") @db.Decimal(14, 2)
+  valorBruto    Decimal?     @map("valor_bruto") @db.Decimal(14, 2)
+  valorFrete    Decimal      @default(0) @map("valor_frete") @db.Decimal(14, 2)
+  valorDesconto Decimal      @default(0) @map("valor_desconto") @db.Decimal(14, 2)
+  valorLiquido  Decimal?     @map("valor_liquido") @db.Decimal(14, 2)
+  statusPedido  String       @map("status_pedido")
+  origemPedido  OrigemPedido @map("origem_pedido")
   cliente      Cliente      @relation(fields: [clienteId], references: [id], onDelete: Cascade)
   itens        ItemPedido[]
 

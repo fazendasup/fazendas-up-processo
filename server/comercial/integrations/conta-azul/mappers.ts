@@ -1,5 +1,6 @@
 import type { Prisma } from "../../generated/prisma/index.js";
 import { OrigemPedido, StatusRelacionamento, TipoCliente } from "../../generated/prisma/index.js";
+import type { ComposicaoValorPedido } from "../../lib/composicao-valor.js";
 
 export type ContaAzulPessoaPayload = {
   id?: string;
@@ -162,11 +163,16 @@ export function mapPessoaFromVendaClienteEmbutido(rawVenda: unknown): ContaAzulP
 export function mapPedidoCreate(
   clienteId: string,
   payload: ContaAzulPedidoPayload,
+  composicao: ComposicaoValorPedido,
 ): Prisma.PedidoCreateInput {
   return {
     externalId: payload.id ?? undefined,
     dataPedido: parseDataVendaContaAzul(payload.data),
-    valorTotal: payload.total ?? 0,
+    valorTotal: composicao.valorLiquido,
+    valorBruto: composicao.valorBruto,
+    valorFrete: composicao.valorFrete,
+    valorDesconto: composicao.valorDesconto,
+    valorLiquido: composicao.valorLiquido,
     statusPedido: payload.status ?? "SYNC",
     origemPedido: OrigemPedido.CONTA_AZUL,
     cliente: { connect: { id: clienteId } },

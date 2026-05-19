@@ -1,10 +1,14 @@
 import { z } from "zod";
-import { StatusRelacionamento } from "../generated/prisma/index.js";
+import { StatusRelacionamento, type TipoCliente } from "../generated/prisma/index.js";
 import {
-  classificarStatusPedido,
-  pedidoContaOrcamento,
-  pedidoContaVendaRealizada,
-} from "../lib/pedido-status.js";
+  composicaoFromTotalApenas,
+  liquidoPedido,
+  somarTotais,
+  totaisVazios,
+  type ComposicaoValorPedido,
+  type TotaisComposicao,
+} from "../lib/composicao-valor.js";
+import { classificarStatusPedido, pedidoContaOrcamento } from "../lib/pedido-status.js";
 import { router, comercialProcedure } from "../../_core/trpc";
 
 function diaCalendarioAmericaSp(d: Date): string {
@@ -16,35 +20,30 @@ function diaCalendarioAmericaSp(d: Date): string {
   }).format(d);
 }
 
-type PedidoValor = {
+function composicaoDoPedido(p: {
+  valorBruto: unknown;
+  valorFrete: unknown;
+  valorDesconto: unknown;
+  valorLiquido: unknown;
   valorTotal: unknown;
-  statusPedido: string;
-  clienteId: string;
-};
-
-function somarPorClassificacao(pedidos: PedidoValor[]) {
-  let vendasRealizadas = 0;
-  let orcamentos = 0;
-  let cancelados = 0;
-  let outros = 0;
-  const pedidosVenda: typeof pedidos = [];
-
-  for (const p of pedidos) {
-    const valor = Number(p.valorTotal);
-    const cls = classificarStatusPedido(p.statusPedido);
-    if (cls === "venda") {
-      vendasRealizadas += valor;
-      pedidosVenda.push(p);
-    } else if (cls === "orcamento") {
-      orcamentos += valor;
-    } else if (cls === "cancelado") {
-      cancelados += valor;
-    } else {
-      outros += valor;
-    }
+}): ComposicaoValorPedido {
+  const liquido = liquidoPedido(p);
+  const brutoRaw = p.valorBruto != null ? Number(p.valorBruto) : NaN;
+  const frete = Number(p.valorFrete ?? 0);
+  const desconto = Number(p.valorDesconto ?? 0);
+  if (Number.isFinite(brutoRaw)) {
+    return {
+      valorBruto: brutoRaw,
+      valorFrete: frete,
+      valorDesconto: desconto,
+      valorLiquido: liquido,
+    };
   }
+  return composicaoFromTotalApenas(liquido);
+}
 
-  return { vendasRealizadas, orcamentos, cancelados, outros, pedidosVenda };
+function totaisPorTipo(): Record<TipoCliente, TotaisComposicao> {
+  return { RESTAURANTE: totaisVazios(), MERCADO: totaisVazios() };
 }
 
 export const dashboardRouter = router({
@@ -62,34 +61,44 @@ export const dashboardRouter = router({
           id: true,
           clienteId: true,
           valorTotal: true,
+          valorBruto: true,
+          valorFrete: true,
+          valorDesconto: true,
+          valorLiquido: true,
           dataPedido: true,
           statusPedido: true,
           cliente: { select: { tipo: true, id: true } },
         },
       });
 
-      const { vendasRealizadas, orcamentos, cancelados, outros, pedidosVenda } =
-        somarPorClassificacao(pedidos);
+      const composicaoVendas = totaisVazios();
+      const composicaoOrcamentos = totaisVazios();
+      const composicaoVendasPorTipo = totaisPorTipo();
+      const composicaoOrcamentosPorTipo = totaisPorTipo();
+      const pedidosVenda: typeof pedidos = [];
 
-      const faturamento = vendasRealizadas;
-      const ticketMedio = pedidosVenda.length ? vendasRealizadas / pedidosVenda.length : 0;
-      const clientesDistintos = new Set(pedidosVenda.map((p) => p.clienteId)).size;
-
-      const faturamentoPorTipo = { RESTAURANTE: 0 as number, MERCADO: 0 as number };
-      const orcamentoPorTipo = { RESTAURANTE: 0 as number, MERCADO: 0 as number };
       for (const p of pedidos) {
-        const valor = Number(p.valorTotal);
-        if (pedidoContaVendaRealizada(p.statusPedido)) {
-          faturamentoPorTipo[p.cliente.tipo] += valor;
-        } else if (pedidoContaOrcamento(p.statusPedido)) {
-          orcamentoPorTipo[p.cliente.tipo] += valor;
+        const comp = composicaoDoPedido(p);
+        const cls = classificarStatusPedido(p.statusPedido);
+        if (cls === "venda") {
+          somarTotais(composicaoVendas, comp);
+          somarTotais(composicaoVendasPorTipo[p.cliente.tipo], comp);
+          pedidosVenda.push(p);
+        } else if (cls === "orcamento") {
+          somarTotais(composicaoOrcamentos, comp);
+          somarTotais(composicaoOrcamentosPorTipo[p.cliente.tipo], comp);
         }
       }
+
+      const vendasRealizadas = composicaoVendas.liquido;
+      const orcamentos = composicaoOrcamentos.liquido;
+      const ticketMedio = pedidosVenda.length ? vendasRealizadas / pedidosVenda.length : 0;
+      const clientesDistintos = new Set(pedidosVenda.map((p) => p.clienteId)).size;
 
       const ticketPorCliente = new Map<string, { total: number; qtd: number }>();
       for (const p of pedidosVenda) {
         const acc = ticketPorCliente.get(p.clienteId) ?? { total: 0, qtd: 0 };
-        acc.total += Number(p.valorTotal);
+        acc.total += liquidoPedido(p);
         acc.qtd += 1;
         ticketPorCliente.set(p.clienteId, acc);
       }
@@ -143,11 +152,9 @@ export const dashboardRouter = router({
       return {
         periodo: { inicio: input.inicio, fim: input.fim },
         kpis: {
-          faturamento,
+          faturamento: vendasRealizadas,
           vendasRealizadas,
           orcamentos,
-          cancelados,
-          outros,
           ticketMedio,
           ticketMedioPorCliente,
           pedidos: pedidosVenda.length,
@@ -158,8 +165,10 @@ export const dashboardRouter = router({
           oportunidadesAbertas,
           potencialOportunidades: Number(potencialOportunidades._sum.valorEstimado ?? 0),
           mensagensPendentes,
-          faturamentoPorTipo,
-          orcamentoPorTipo,
+          composicaoVendas,
+          composicaoOrcamentos,
+          composicaoVendasPorTipo,
+          composicaoOrcamentosPorTipo,
           taxaSucessoApis,
         },
         oportunidadesPorTipo: oportunidadesPorTipo.map((o) => ({
@@ -183,7 +192,15 @@ export const dashboardRouter = router({
     .query(async ({ ctx, input }) => {
       const pedidos = await ctx.prisma!.pedido.findMany({
         where: { dataPedido: { gte: input.inicio, lte: input.fim } },
-        select: { dataPedido: true, valorTotal: true, statusPedido: true },
+        select: {
+          dataPedido: true,
+          valorTotal: true,
+          valorBruto: true,
+          valorFrete: true,
+          valorDesconto: true,
+          valorLiquido: true,
+          statusPedido: true,
+        },
       });
 
       const map = new Map<string, { vendas: number; orcamentos: number }>();
@@ -194,10 +211,10 @@ export const dashboardRouter = router({
             ? `${d.getFullYear()}-W${Math.ceil((d.getDate() + new Date(d.getFullYear(), d.getMonth(), 1).getDay()) / 7)}`
             : diaCalendarioAmericaSp(d);
         const acc = map.get(key) ?? { vendas: 0, orcamentos: 0 };
-        const valor = Number(p.valorTotal);
+        const liquido = liquidoPedido(p);
         const cls = classificarStatusPedido(p.statusPedido);
-        if (cls === "venda") acc.vendas += valor;
-        else if (cls === "orcamento") acc.orcamentos += valor;
+        if (cls === "venda") acc.vendas += liquido;
+        else if (cls === "orcamento") acc.orcamentos += liquido;
         map.set(key, acc);
       }
 
