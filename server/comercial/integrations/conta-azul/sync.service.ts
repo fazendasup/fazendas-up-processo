@@ -20,6 +20,7 @@ import {
   composicaoFromVendaBuscaItem,
   composicaoFromVendaDetalhe,
   normalizarComposicao,
+  precisaDetalheComposicao,
   type ComposicaoValorPedido,
 } from "../../lib/composicao-valor.js";
 import type { AxiosInstance } from "axios";
@@ -126,28 +127,48 @@ function buildVendasBuscaPath(pagina: number, dias: number, tamanhoPagina: numbe
   return `/v1/venda/busca?${qs.toString()}`;
 }
 
+type ResolveComposicaoCtx = {
+  detailBudget: { remaining: number };
+};
+
+export type ContaAzulSyncMode = "manual" | "cron";
+
+function detailBudgetInicial(mode: ContaAzulSyncMode): number {
+  if (process.env.CONTA_AZUL_SYNC_SKIP_DETAIL === "1") return 0;
+  if (mode === "cron") {
+    const cronMax = Number(process.env.CONTA_AZUL_CRON_DETAIL_MAX ?? 0);
+    return Number.isFinite(cronMax) && cronMax >= 0 ? cronMax : 0;
+  }
+  const manualMax = Number(process.env.CONTA_AZUL_SYNC_DETAIL_MAX ?? 150);
+  return Number.isFinite(manualMax) && manualMax >= 0 ? manualMax : 150;
+}
+
 async function resolveComposicaoVenda(
   http: AxiosInstance,
   raw: unknown,
   totalFallback: number,
   vendaId: string,
+  ctx: ResolveComposicaoCtx,
 ): Promise<ComposicaoValorPedido> {
   const fromBusca = normalizarComposicao(composicaoFromVendaBuscaItem(raw), totalFallback);
-  if (fromBusca && (fromBusca.valorFrete > 0 || fromBusca.valorDesconto > 0)) {
-    return fromBusca;
+
+  if (!precisaDetalheComposicao(fromBusca, totalFallback)) {
+    return fromBusca ?? composicaoFromTotalApenas(totalFallback);
   }
 
-  if (process.env.CONTA_AZUL_SYNC_SKIP_DETAIL !== "1") {
-    try {
-      const detail = await contaAzulGet<unknown>(http, `/v1/venda/${encodeURIComponent(vendaId)}`);
-      const fromDetail = normalizarComposicao(composicaoFromVendaDetalhe(detail), totalFallback);
-      if (fromDetail) return fromDetail;
-    } catch (e) {
-      logger.warn(
-        { vendaId, err: e instanceof Error ? e.message : e },
-        "Conta Azul: detalhe da venda indisponível — usando total da busca",
-      );
-    }
+  if (ctx.detailBudget.remaining <= 0) {
+    return fromBusca ?? composicaoFromTotalApenas(totalFallback);
+  }
+
+  ctx.detailBudget.remaining--;
+  try {
+    const detail = await contaAzulGet<unknown>(http, `/v1/venda/${encodeURIComponent(vendaId)}`);
+    const fromDetail = normalizarComposicao(composicaoFromVendaDetalhe(detail), totalFallback);
+    if (fromDetail) return fromDetail;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    logger.warn({ vendaId, err: msg }, "Conta Azul: detalhe da venda indisponível — usando total da busca");
+    if (/\(429\)/.test(msg)) ctx.detailBudget.remaining = 0;
   }
 
   return fromBusca ?? composicaoFromTotalApenas(totalFallback);
@@ -179,11 +200,41 @@ export type ContaAzulSyncResult = {
   inteligenciaOportunidades: number;
 };
 
+let syncEmAndamento: Promise<ContaAzulSyncResult> | null = null;
+
 /**
  * Sincronização: GET /v1/pessoas e GET /v1/venda/busca (janela CONTA_AZUL_VENDAS_SYNC_DIAS, páginas completas) — grava clientes e pedidos.
  */
-export async function runContaAzulSync(prisma: PrismaClient, env: Env): Promise<ContaAzulSyncResult> {
+export async function runContaAzulSync(
+  prisma: PrismaClient,
+  env: Env,
+  options?: { mode?: ContaAzulSyncMode },
+): Promise<ContaAzulSyncResult> {
+  if (syncEmAndamento) {
+    throw new Error(
+      "Já existe uma sincronização Conta Azul em andamento. Aguarde terminar (pode levar vários minutos) antes de clicar de novo.",
+    );
+  }
+
+  const mode = options?.mode ?? "manual";
+  const execucao = executarContaAzulSync(prisma, env, mode);
+  syncEmAndamento = execucao;
+  try {
+    return await execucao;
+  } finally {
+    if (syncEmAndamento === execucao) syncEmAndamento = null;
+  }
+}
+
+async function executarContaAzulSync(
+  prisma: PrismaClient,
+  env: Env,
+  mode: ContaAzulSyncMode,
+): Promise<ContaAzulSyncResult> {
   const started = Date.now();
+  const composicaoCtx: ResolveComposicaoCtx = {
+    detailBudget: { remaining: detailBudgetInicial(mode) },
+  };
   const cred = await ensureValidAccessToken(prisma, env);
   if (!cred?.accessToken) {
     await prisma.execucaoApi.create({
@@ -294,7 +345,13 @@ export async function runContaAzulSync(prisma: PrismaClient, env: Env): Promise<
         continue;
       }
       const dataPedido = parseDataVendaContaAzul(payload.data);
-      const composicao = await resolveComposicaoVenda(http, raw, payload.total ?? 0, payload.id);
+      const composicao = await resolveComposicaoVenda(
+        http,
+        raw,
+        payload.total ?? 0,
+        payload.id,
+        composicaoCtx,
+      );
       await prisma.pedido.upsert({
         where: { externalId: payload.id },
         create: mapPedidoCreate(cli.id, payload, composicao),
@@ -330,6 +387,8 @@ export async function runContaAzulSync(prisma: PrismaClient, env: Env): Promise<
           inteligenciaOportunidades: intel.oportunidadesCriadas,
           inteligenciaClientes: intel.clientesAtualizados,
           cursor: nextCursor,
+          syncMode: mode,
+          detalhesVendaRestantes: composicaoCtx.detailBudget.remaining,
         },
         duracaoMs: Date.now() - started,
       },

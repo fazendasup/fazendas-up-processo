@@ -4,6 +4,8 @@ export type RetryOptions = {
   fator?: number;
   /** Se definido e retornar false, o erro é propagado sem novas tentativas (ex.: HTTP 4xx). */
   isRetryable?: (error: unknown) => boolean;
+  /** Ajusta espera antes de cada retry (ex.: Retry-After em 429). */
+  delayForError?: (error: unknown, attempt: number, delayMs: number) => number;
 };
 
 function sleep(ms: number) {
@@ -23,8 +25,9 @@ export async function withRetry<T>(fn: () => Promise<T>, opts: RetryOptions): Pr
       ultimoErro = e;
       if (!isRetryable(e)) throw e;
       if (i === opts.tentativas - 1) break;
+      const baseWait = opts.delayForError?.(e, i, delay) ?? delay;
       const jitter = Math.floor(Math.random() * 150);
-      await sleep(delay + jitter);
+      await sleep(baseWait + jitter);
       delay *= fator;
     }
   }

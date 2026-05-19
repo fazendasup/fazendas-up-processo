@@ -22,7 +22,7 @@ export function isComercialIntegrationCronEnabled(): boolean {
 
 async function runScheduledSync(prisma: PrismaClient, env: Env, label: string) {
   try {
-    const result = await runContaAzulSync(prisma, env);
+    const result = await runContaAzulSync(prisma, env, { mode: "cron" });
     logger.info(
       { label, pedidosGravados: result.pedidosGravados, clientes: result.clientesProcessados },
       "Conta Azul: sync automático OK"
@@ -41,7 +41,7 @@ export function startComercialIntegrationJobs(prisma: PrismaClient, env: Env) {
   if (env.NODE_ENV === "test") return;
   if (!isComercialIntegrationCronEnabled()) return;
 
-  const schedule = process.env.COMERCIAL_CONTA_AZUL_CRON?.trim() || "*/10 * * * *";
+  const schedule = process.env.COMERCIAL_CONTA_AZUL_CRON?.trim() || "0 */1 * * *";
   if (!cron.validate(schedule)) {
     logger.error({ schedule }, "COMERCIAL_CONTA_AZUL_CRON inválido — cron não iniciado");
     return;

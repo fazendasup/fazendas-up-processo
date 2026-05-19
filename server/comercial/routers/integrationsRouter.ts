@@ -34,7 +34,7 @@ export const integrationsRouter = router({
 
   sincronizarContaAzul: comercialProcedure.use(syncCA).mutation(async ({ ctx }) => {
     try {
-      const r = await runContaAzulSync(ctx.prisma!, ctx.comercialEnv!);
+      const r = await runContaAzulSync(ctx.prisma!, ctx.comercialEnv!, { mode: "manual" });
       return { ok: true as const, ...r };
     } catch (e) {
       throw new TRPCError({

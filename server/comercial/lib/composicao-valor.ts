@@ -23,6 +23,18 @@ function composicaoTemValor(c: ComposicaoValorPedido): boolean {
   return c.valorLiquido > 0 || c.valorBruto > 0;
 }
 
+/** Evita GET /v1/venda/{id} quando a busca já trouxe composição utilizável. */
+export function precisaDetalheComposicao(
+  fromBusca: ComposicaoValorPedido | null,
+  totalFallback: number,
+): boolean {
+  if (process.env.CONTA_AZUL_SYNC_SKIP_DETAIL === "1") return false;
+  if (!fromBusca) return totalFallback > 0;
+  if (fromBusca.valorFrete > 0 || fromBusca.valorDesconto > 0) return false;
+  if (fromBusca.valorLiquido > 0) return false;
+  return totalFallback > 0;
+}
+
 /** Ignora composição vazia da API (evita zerar pedidos que têm total na busca). */
 export function normalizarComposicao(
   candidata: ComposicaoValorPedido | null | undefined,

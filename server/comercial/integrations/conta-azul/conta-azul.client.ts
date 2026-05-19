@@ -1,6 +1,7 @@
 import axios, { type AxiosInstance } from "axios";
 import type { Env } from "../../env";
 import { withRetry } from "../../lib/retry";
+import { contaAzulThrottle, retryAfterMsFromAxios } from "./conta-azul-rate-limit";
 
 function contaAzulErroAmigavel(e: unknown): Error {
   if (!axios.isAxiosError(e)) return e instanceof Error ? e : new Error(String(e));
@@ -12,8 +13,27 @@ function contaAzulErroAmigavel(e: unknown): Error {
   } else if (typeof raw === "string") {
     detalhe = raw;
   }
-  const base = detalhe ?? e.message;
+  let base = detalhe ?? e.message;
+  if (status === 429) {
+    base =
+      "Muitas requisições à API (limite excedido). Aguarde 1–2 minutos e tente o sync de novo. O sync automático usa menos chamadas; use o botão manual com calma.";
+  }
   return new Error(`Conta Azul${status != null ? ` (${status})` : ""}: ${base}`);
+}
+
+function isContaAzulRetryable(err: unknown): boolean {
+  if (!axios.isAxiosError(err)) return true;
+  const s = err.response?.status;
+  return s == null || s >= 500 || s === 429 || s === 408;
+}
+
+function delayForContaAzulRetry(err: unknown, attempt: number, baseDelayMs: number): number {
+  if (axios.isAxiosError(err)) {
+    const fromHeader = retryAfterMsFromAxios(err.response?.headers as Record<string, unknown> | undefined);
+    if (fromHeader != null) return fromHeader;
+    if (err.response?.status === 429) return Math.max(baseDelayMs, 4_000 * (attempt + 1));
+  }
+  return baseDelayMs;
 }
 
 export function createContaAzulHttp(env: Env, accessToken: string): AxiosInstance {
@@ -32,17 +52,16 @@ export async function contaAzulGet<T>(client: AxiosInstance, path: string): Prom
   try {
     return await withRetry(
       async () => {
+        await contaAzulThrottle();
         const { data } = await client.get<T>(path);
         return data;
       },
       {
-        tentativas: 3,
-        delayMs: 350,
-        isRetryable: (err) => {
-          if (!axios.isAxiosError(err)) return true;
-          const s = err.response?.status;
-          return s == null || s >= 500;
-        },
+        tentativas: 6,
+        delayMs: 800,
+        fator: 2,
+        isRetryable: isContaAzulRetryable,
+        delayForError: delayForContaAzulRetry,
       },
     );
   } catch (e) {
