@@ -79,6 +79,17 @@ describe('capacidadePorFaseInstalacaoComFiltro', () => {
     expect(cap.vegetativa).toBe(0);
   });
 
+  it('8 torres mat padrão 6×6 com 9 andares = 2592 em maturação', () => {
+    const torres: TorreCapInput[] = Array.from({ length: 8 }, (_, i) => ({
+      fase: 'maturacao' as const,
+      numAndares: 9,
+      ativa: true,
+      estruturaOverride: null,
+    }));
+    const cap = capacidadePorFaseInstalacaoComFiltro(torres, projeto, 'exceto_baby_leaf');
+    expect(cap.maturacao).toBe(2592);
+  });
+
   it('3 torres veg 12×6 com 12 andares = 5184 só em vegetativa', () => {
     const torres: TorreCapInput[] = [
       { fase: 'vegetativa', numAndares: 12, ativa: true, estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6 },

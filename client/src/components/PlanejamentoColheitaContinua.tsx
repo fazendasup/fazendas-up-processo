@@ -35,6 +35,7 @@ import {
   linhasCapacidadeInstalacao,
   sementesParaColheitaEsperada,
   taxaSobrevivenciaAcumulada,
+  type LinhaCapacidadeTorre,
   type TorreCapInput,
 } from '@/lib/planejamentoContinuo';
 import { multiplicadorPlantioBabyLeafFV } from '@shared/plantasPorPerfil';
@@ -79,6 +80,15 @@ function pickReceita(receitas: ReceitaRow[], variedadeId: number): ReceitaRow | 
 }
 
 const INTERVALO_PRESETS = [1, 2, 3, 7, 14] as const;
+
+function textoDetalheCapacidadeMat(linhas: LinhaCapacidadeTorre[]): string {
+  return linhas
+    .map(
+      (l) =>
+        `${l.nome ?? 'Torre'}: ${l.numAndares} and. × ${l.plantasPorAndar.toLocaleString('pt-BR')} = ${l.subtotal.toLocaleString('pt-BR')}`,
+    )
+    .join(' · ');
+}
 
 function clampIntervaloDias(n: number): number {
   if (!Number.isFinite(n)) return 2;
@@ -154,6 +164,12 @@ export default function PlanejamentoColheitaContinua() {
     () => capacidadePorFaseInstalacaoComFiltro(torresCap, fazenda?.projetoTipo ?? null, 'apenas_baby_leaf'),
     [torresCap, fazenda?.projetoTipo],
   );
+
+  const detalhePadraoMat = useMemo(() => {
+    return linhasCapacidadeInstalacao(torresCap, fazenda?.projetoTipo ?? null, 'exceto_baby_leaf').filter(
+      (l) => l.fase === 'maturacao' && l.subtotal > 0,
+    );
+  }, [torresCap, fazenda?.projetoTipo]);
 
   const detalheBabyMat = useMemo(() => {
     return linhasCapacidadeInstalacao(torresCap, fazenda?.projetoTipo ?? null, 'apenas_baby_leaf').filter(
@@ -405,6 +421,11 @@ export default function PlanejamentoColheitaContinua() {
                   Sem torres 12 perfis × 6 furos — mudas {capPadrao.mudas.toLocaleString('pt-BR')} · veg{' '}
                   {capPadrao.vegetativa.toLocaleString('pt-BR')} · mat {capPadrao.maturacao.toLocaleString('pt-BR')} plantas
                 </p>
+                {detalhePadraoMat.length > 0 && (
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Mat. (6×6): {textoDetalheCapacidadeMat(detalhePadraoMat)}
+                  </p>
+                )}
               </div>
               <div>
                 <p className="font-medium text-foreground">Baby leaf (torres 12×6, 2 células/furo)</p>
@@ -414,13 +435,7 @@ export default function PlanejamentoColheitaContinua() {
                 </p>
                 {detalheBabyMat.length > 0 && (
                   <p className="text-[10px] text-muted-foreground mt-1">
-                    Mat. (12×6):{' '}
-                    {detalheBabyMat
-                      .map(
-                        (l) =>
-                          `${l.nome ?? 'Torre'}: ${l.numAndares} and. × ${l.plantasPorAndar.toLocaleString('pt-BR')} = ${l.subtotal.toLocaleString('pt-BR')}`,
-                      )
-                      .join(' · ')}
+                    Mat. (12×6): {textoDetalheCapacidadeMat(detalheBabyMat)}
                   </p>
                 )}
               </div>
