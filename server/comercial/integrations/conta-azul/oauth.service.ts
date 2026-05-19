@@ -3,13 +3,33 @@ import type { Env } from "../../env";
 import { logger } from "../../lib/logger";
 import { withRetry } from "../../lib/retry";
 
-/** Permite redirecionar o usuário de volta para a mesma origem do Vite (ex.: :5174). Só localhost / 127.0.0.1. */
+function trustedOAuthOrigins(): Set<string> {
+  const origins = new Set<string>();
+  for (const key of ["PUBLIC_APP_URL", "COMERCIAL_WEB_URL", "COMERCIAL_API_URL"]) {
+    const raw = process.env[key]?.trim();
+    if (!raw) continue;
+    try {
+      origins.add(new URL(raw).origin);
+    } catch {
+      /* ignore */
+    }
+  }
+  const railway = process.env.RAILWAY_PUBLIC_DOMAIN?.trim();
+  if (railway) {
+    const host = railway.replace(/^https?:\/\//, "");
+    origins.add(`https://${host}`);
+  }
+  return origins;
+}
+
+/** Origem segura para voltar do OAuth (dev local ou URL pública configurada no host). */
 export function safeReturnUrlForOAuth(url: string): string | null {
   try {
     const u = new URL(url);
-    if (u.hostname !== "localhost" && u.hostname !== "127.0.0.1") return null;
     if (u.protocol !== "http:" && u.protocol !== "https:") return null;
-    return u.origin;
+    if (u.hostname === "localhost" || u.hostname === "127.0.0.1") return u.origin;
+    if (trustedOAuthOrigins().has(u.origin)) return u.origin;
+    return null;
   } catch {
     return null;
   }

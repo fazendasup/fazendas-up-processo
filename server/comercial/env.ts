@@ -66,20 +66,33 @@ export function getComercialEnv(): ComercialEnv {
   }
 
   const port = Number(process.env.PORT ?? 3456);
+  const publicApp =
+    process.env.PUBLIC_APP_URL?.trim() ||
+    (process.env.RAILWAY_PUBLIC_DOMAIN?.trim()
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN.replace(/^https?:\/\//, "")}`
+      : "");
   const web =
     parsed.data.COMERCIAL_WEB_URL?.trim() ||
+    publicApp ||
     (process.env.NODE_ENV === "development"
       ? `http://localhost:${port}`
       : "");
   const api =
     parsed.data.COMERCIAL_API_URL?.trim() ||
+    publicApp ||
     (process.env.NODE_ENV === "development"
       ? `http://localhost:${port}`
       : "");
 
   if (!web || !api) {
-    throw new Error("Defina COMERCIAL_WEB_URL e COMERCIAL_API_URL em produção");
+    throw new Error(
+      "Defina COMERCIAL_WEB_URL e COMERCIAL_API_URL (ou PUBLIC_APP_URL / RAILWAY_PUBLIC_DOMAIN) em produção",
+    );
   }
+
+  const redirectUri =
+    parsed.data.CONTA_AZUL_REDIRECT_URI?.trim() ||
+    `${web.replace(/\/$/, "")}/integrations/conta-azul/callback`;
 
   const jwtAccess =
     parsed.data.JWT_ACCESS_SECRET?.trim() ||
@@ -95,6 +108,7 @@ export function getComercialEnv(): ComercialEnv {
     DATABASE_URL: dbUrl,
     API_URL: api.replace(/\/$/, ""),
     WEB_URL: web.replace(/\/$/, ""),
+    CONTA_AZUL_REDIRECT_URI: redirectUri,
     JWT_ACCESS_SECRET: jwtAccess,
     JWT_REFRESH_SECRET: jwtRefresh,
   };

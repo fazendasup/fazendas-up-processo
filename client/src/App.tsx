@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Route, Switch } from "wouter";
+import { Redirect, Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { ProjetoProvider } from "./contexts/ProjetoContext";
@@ -145,7 +145,21 @@ function Router() {
               </ModuloProjetoRouteGuard>
             </ProtectedRoute>
           </Route>
-          <Route path="/comercial/:rest*">
+          <Route path="/comercial">
+            <ProtectedRoute requiredRole="admin">
+              <ModuloProjetoRouteGuard modulo="comercial">
+                <Redirect to="/comercial/dashboard" />
+              </ModuloProjetoRouteGuard>
+            </ProtectedRoute>
+          </Route>
+          <Route path="/comercial/">
+            <ProtectedRoute requiredRole="admin">
+              <ModuloProjetoRouteGuard modulo="comercial">
+                <Redirect to="/comercial/dashboard" />
+              </ModuloProjetoRouteGuard>
+            </ProtectedRoute>
+          </Route>
+          <Route path="/comercial/:rest+">
             <ProtectedRoute requiredRole="admin">
               <ModuloProjetoRouteGuard modulo="comercial">
                 <ComercialRoutes />

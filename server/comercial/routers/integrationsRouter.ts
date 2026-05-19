@@ -20,7 +20,8 @@ export const integrationsRouter = router({
       if (!safe) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "URL de retorno inválida. Use o site em http://localhost:PORTA ou http://127.0.0.1:PORTA",
+          message:
+            "URL de retorno inválida. Use a mesma origem do painel (ex.: https://app.fazendasup.com.br) ou localhost em desenvolvimento.",
         });
       }
       const state = encodeOAuthState({
