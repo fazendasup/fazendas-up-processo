@@ -68,6 +68,27 @@ describe('capacidadePorFaseInstalacaoComFiltro', () => {
     );
     expect(onlyBaby.maturacao).toBe(144);
   });
+
+  it('2 torres mat 12×6 com 9 andares = 2592 plantas em maturação', () => {
+    const torres: TorreCapInput[] = [
+      { fase: 'maturacao', numAndares: 9, ativa: true, estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6 },
+      { fase: 'maturacao', numAndares: 9, ativa: true, estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6 },
+    ];
+    const cap = capacidadePorFaseInstalacaoComFiltro(torres, projeto, 'apenas_baby_leaf');
+    expect(cap.maturacao).toBe(2592);
+    expect(cap.vegetativa).toBe(0);
+  });
+
+  it('3 torres veg 12×6 com 12 andares = 5184 só em vegetativa', () => {
+    const torres: TorreCapInput[] = [
+      { fase: 'vegetativa', numAndares: 12, ativa: true, estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6 },
+      { fase: 'vegetativa', numAndares: 12, ativa: true, estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6 },
+      { fase: 'vegetativa', numAndares: 12, ativa: true, estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6 },
+    ];
+    const cap = capacidadePorFaseInstalacaoComFiltro(torres, projeto, 'apenas_baby_leaf');
+    expect(cap.vegetativa).toBe(5184);
+    expect(cap.maturacao).toBe(0);
+  });
 });
 
 describe('sementesParaColheitaEsperada', () => {

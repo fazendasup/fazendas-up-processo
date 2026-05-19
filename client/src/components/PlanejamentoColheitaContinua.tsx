@@ -32,8 +32,10 @@ import {
   DESPERDICIO,
   capacidadePorFaseInstalacaoComFiltro,
   estimativaPlantasEmMaturacao,
+  linhasCapacidadeInstalacao,
   sementesParaColheitaEsperada,
   taxaSobrevivenciaAcumulada,
+  type TorreCapInput,
 } from '@/lib/planejamentoContinuo';
 import { multiplicadorPlantioBabyLeafFV } from '@shared/plantasPorPerfil';
 import { variedadeEhBabyLeafFV, variedadePulaVegetativa } from '@shared/variedadesFase';
@@ -128,25 +130,36 @@ export default function PlanejamentoColheitaContinua() {
 
   const taxa = taxaSobrevivenciaAcumulada();
 
-  const capPadrao = useMemo(() => {
-    const torres = (fazenda?.torres || []).map((t) => ({
-      fase: t.fase as Fase,
-      numAndares: t.numAndares ?? t.andares ?? 0,
-      ativa: t.ativa,
-      estruturaOverride: t.estruturaOverride ?? null,
-    }));
-    return capacidadePorFaseInstalacaoComFiltro(torres, fazenda?.projetoTipo ?? null, 'exceto_baby_leaf');
-  }, [fazenda?.torres, fazenda?.projetoTipo]);
+  const torresCap = useMemo((): TorreCapInput[] => {
+    const andares = fazenda?.andares ?? [];
+    return (fazenda?.torres || []).map((t) => {
+      const andaresReais = andares.filter((a) => a.torreId === t.id).length;
+      const declarado = t.numAndares ?? t.andares ?? 0;
+      return {
+        nome: t.nome,
+        fase: t.fase as Fase,
+        numAndares: andaresReais > 0 ? andaresReais : declarado,
+        ativa: t.ativa,
+        estruturaOverride: t.estruturaOverride ?? null,
+      };
+    });
+  }, [fazenda?.torres, fazenda?.andares]);
 
-  const capBaby = useMemo(() => {
-    const torres = (fazenda?.torres || []).map((t) => ({
-      fase: t.fase as Fase,
-      numAndares: t.numAndares ?? t.andares ?? 0,
-      ativa: t.ativa,
-      estruturaOverride: t.estruturaOverride ?? null,
-    }));
-    return capacidadePorFaseInstalacaoComFiltro(torres, fazenda?.projetoTipo ?? null, 'apenas_baby_leaf');
-  }, [fazenda?.torres, fazenda?.projetoTipo]);
+  const capPadrao = useMemo(
+    () => capacidadePorFaseInstalacaoComFiltro(torresCap, fazenda?.projetoTipo ?? null, 'exceto_baby_leaf'),
+    [torresCap, fazenda?.projetoTipo],
+  );
+
+  const capBaby = useMemo(
+    () => capacidadePorFaseInstalacaoComFiltro(torresCap, fazenda?.projetoTipo ?? null, 'apenas_baby_leaf'),
+    [torresCap, fazenda?.projetoTipo],
+  );
+
+  const detalheBabyMat = useMemo(() => {
+    return linhasCapacidadeInstalacao(torresCap, fazenda?.projetoTipo ?? null, 'apenas_baby_leaf').filter(
+      (l) => l.fase === 'maturacao' && l.subtotal > 0,
+    );
+  }, [torresCap, fazenda?.projetoTipo]);
 
   const resultado = useMemo(() => {
     const meta = Math.max(0, parseFloat(metaColheita.replace(',', '.')) || 0);
@@ -399,6 +412,17 @@ export default function PlanejamentoColheitaContinua() {
                   Manjericão, baby leaf beterraba/acelga — mudas {capBaby.mudas.toLocaleString('pt-BR')} · veg{' '}
                   {capBaby.vegetativa.toLocaleString('pt-BR')} · mat {capBaby.maturacao.toLocaleString('pt-BR')} plantas
                 </p>
+                {detalheBabyMat.length > 0 && (
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Mat. (12×6):{' '}
+                    {detalheBabyMat
+                      .map(
+                        (l) =>
+                          `${l.nome ?? 'Torre'}: ${l.numAndares} and. × ${l.plantasPorAndar.toLocaleString('pt-BR')} = ${l.subtotal.toLocaleString('pt-BR')}`,
+                      )
+                      .join(' · ')}
+                  </p>
+                )}
               </div>
             </div>
           </div>

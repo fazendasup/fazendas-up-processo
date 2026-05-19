@@ -69,6 +69,66 @@ export interface TorreCapInput {
   numAndares: number;
   ativa?: boolean;
   estruturaOverride?: TorreEstruturaOverride | null;
+  nome?: string;
+}
+
+export interface LinhaCapacidadeTorre {
+  nome?: string;
+  fase: Fase;
+  numAndares: number;
+  plantasPorAndar: number;
+  subtotal: number;
+}
+
+/** Plantas por andar de uma torre (densidade da fase + override 12×6 baby leaf). */
+export function plantasPorAndarTorre(t: TorreCapInput, projetoTipo?: string | null): number {
+  const mv = projetoTipo === 'microverdes';
+  const f = t.fase;
+  const e = estruturaFaseParaProjeto(projetoTipo, f, t.estruturaOverride ?? null);
+  const torreBaby12x6 = !mv && torreReservadaGrelhaBabyLeaf(t);
+  if (f === 'mudas') {
+    return e.perfis * PLANTAS_POR_PERFIL.mudas;
+  }
+  if (f === 'vegetativa') {
+    return mv
+      ? e.perfis * Math.max(1, e.furosPorPerfil)
+      : torreBaby12x6
+        ? plantasPorAndarFvComFuros(e, CELULAS_POR_FURO_BABY_LEAF_FV)
+        : e.perfis * PLANTAS_POR_PERFIL.vegetativa;
+  }
+  return mv
+    ? e.perfis * Math.max(1, e.furosPorPerfil)
+    : torreBaby12x6
+      ? plantasPorAndarFvComFuros(e, CELULAS_POR_FURO_BABY_LEAF_FV)
+      : e.perfis * e.furosPorPerfil;
+}
+
+function filtrarTorresCapacidade(torres: TorreCapInput[], filtro: FiltroTorresBabyLeafFv): TorreCapInput[] {
+  if (filtro === 'todas') return torres;
+  if (filtro === 'apenas_baby_leaf') return torres.filter(torreReservadaGrelhaBabyLeaf);
+  return torres.filter((t) => !torreReservadaGrelhaBabyLeaf(t));
+}
+
+/** Detalhe por torre (para exibir de onde vem a capacidade instalada). */
+export function linhasCapacidadeInstalacao(
+  torres: TorreCapInput[],
+  projetoTipo?: string | null,
+  filtro: FiltroTorresBabyLeafFv = 'todas',
+): LinhaCapacidadeTorre[] {
+  const linhas: LinhaCapacidadeTorre[] = [];
+  for (const t of filtrarTorresCapacidade(torres, filtro)) {
+    if (t.ativa === false) continue;
+    const n = Math.max(0, t.numAndares | 0);
+    const porAndar = plantasPorAndarTorre(t, projetoTipo);
+    linhas.push({
+      nome: t.nome,
+      fase: t.fase,
+      numAndares: n,
+      plantasPorAndar: porAndar,
+      subtotal: porAndar * n,
+    });
+  }
+  return linhas;
 }
 
 /** Capacidade máxima de plantas por fase (torres ativas × andares × perfis × densidade). */
@@ -77,30 +137,11 @@ export function capacidadePorFaseInstalacao(
   projetoTipo?: string | null,
 ): Record<Fase, number> {
   const cap: Record<Fase, number> = { mudas: 0, vegetativa: 0, maturacao: 0 };
-  const mv = projetoTipo === 'microverdes';
   for (const t of torres) {
     if (t.ativa === false) continue;
     const n = Math.max(0, t.numAndares | 0);
-    const f = t.fase;
-    const e = estruturaFaseParaProjeto(projetoTipo, f, t.estruturaOverride ?? null);
-    const torreBaby12x6 = !mv && torreReservadaGrelhaBabyLeaf(t);
-    let porAndar: number;
-    if (f === 'mudas') {
-      porAndar = e.perfis * PLANTAS_POR_PERFIL.mudas;
-    } else if (f === 'vegetativa') {
-      porAndar = mv
-        ? e.perfis * Math.max(1, e.furosPorPerfil)
-        : torreBaby12x6
-          ? plantasPorAndarFvComFuros(e, CELULAS_POR_FURO_BABY_LEAF_FV)
-          : e.perfis * PLANTAS_POR_PERFIL.vegetativa;
-    } else {
-      porAndar = mv
-        ? e.perfis * Math.max(1, e.furosPorPerfil)
-        : torreBaby12x6
-          ? plantasPorAndarFvComFuros(e, CELULAS_POR_FURO_BABY_LEAF_FV)
-          : e.perfis * e.furosPorPerfil;
-    }
-    cap[f] += porAndar * n;
+    const porAndar = plantasPorAndarTorre(t, projetoTipo);
+    cap[t.fase] += porAndar * n;
   }
   return cap;
 }
@@ -124,13 +165,7 @@ export function capacidadePorFaseInstalacaoComFiltro(
   projetoTipo: string | null | undefined,
   filtro: FiltroTorresBabyLeafFv,
 ): Record<Fase, number> {
-  const list =
-    filtro === 'todas'
-      ? torres
-      : filtro === 'apenas_baby_leaf'
-        ? torres.filter(torreReservadaGrelhaBabyLeaf)
-        : torres.filter((t) => !torreReservadaGrelhaBabyLeaf(t));
-  return capacidadePorFaseInstalacao(list, projetoTipo);
+  return capacidadePorFaseInstalacao(filtrarTorresCapacidade(torres, filtro), projetoTipo);
 }
 
 /**
