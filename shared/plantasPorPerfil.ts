@@ -24,6 +24,14 @@ export function plantasPorAndarFvComFuros(
   return est.perfis * Math.max(1, est.furosPorPerfil) * Math.max(1, celulasPorFuro);
 }
 
+/** Posições de colheita por andar (1 célula/furo — planejamento de ocupação em mat). */
+export function posicoesColheitaPorAndarBabyLeafFv(est: {
+  perfis: number;
+  furosPorPerfil: number;
+}): number {
+  return plantasPorAndarFvComFuros(est, 1);
+}
+
 export function plantasPorPerfilMudas(densidadeReceita?: number | null): number {
   if (densidadeReceita != null && densidadeReceita > 0) return densidadeReceita;
   return PLANTAS_POR_PERFIL_FV.mudas;

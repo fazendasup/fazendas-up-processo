@@ -8,6 +8,7 @@ import {
   CELULAS_POR_FURO_BABY_LEAF_FV,
   PLANTAS_POR_PERFIL_FV,
   plantasPorAndarFvComFuros,
+  posicoesColheitaPorAndarBabyLeafFv,
 } from '@shared/plantasPorPerfil';
 import {
   ESTRUTURA_OVERRIDE_FV_12x6,
@@ -72,16 +73,36 @@ export interface TorreCapInput {
   nome?: string;
 }
 
+/**
+ * - colheita: ocupação / meta de colheita (baby leaf mat = 1 posição por furo).
+ * - plantio: capacidade física de células (baby leaf veg/mat = 2 por furo).
+ */
+export type PropositoCapacidadeFv = 'colheita' | 'plantio';
+
 export interface LinhaCapacidadeTorre {
   nome?: string;
   fase: Fase;
   numAndares: number;
+  perfis: number;
+  furosPorPerfil: number;
+  celulasPorFuro: number;
   plantasPorAndar: number;
   subtotal: number;
+  modelo: 'padrao' | 'baby_leaf_12x6';
 }
 
-/** Plantas por andar de uma torre (densidade da fase + override 12×6 baby leaf). */
-export function plantasPorAndarTorre(t: TorreCapInput, projetoTipo?: string | null): number {
+function celulasPorFuroBabyLeaf(fase: Fase, proposito: PropositoCapacidadeFv): number {
+  if (proposito === 'plantio') return CELULAS_POR_FURO_BABY_LEAF_FV;
+  if (fase === 'maturacao') return 1;
+  return CELULAS_POR_FURO_BABY_LEAF_FV;
+}
+
+/** Plantas (ou posições de colheita) por andar de uma torre. */
+export function plantasPorAndarTorre(
+  t: TorreCapInput,
+  projetoTipo?: string | null,
+  proposito: PropositoCapacidadeFv = 'colheita',
+): number {
   const mv = projetoTipo === 'microverdes';
   const f = t.fase;
   const e = estruturaFaseParaProjeto(projetoTipo, f, t.estruturaOverride ?? null);
@@ -93,14 +114,47 @@ export function plantasPorAndarTorre(t: TorreCapInput, projetoTipo?: string | nu
     return mv
       ? e.perfis * Math.max(1, e.furosPorPerfil)
       : torreBaby12x6
-        ? plantasPorAndarFvComFuros(e, CELULAS_POR_FURO_BABY_LEAF_FV)
+        ? plantasPorAndarFvComFuros(e, celulasPorFuroBabyLeaf(f, proposito))
         : e.perfis * PLANTAS_POR_PERFIL.vegetativa;
+  }
+  if (torreBaby12x6) {
+    if (proposito === 'colheita') return posicoesColheitaPorAndarBabyLeafFv(e);
+    return plantasPorAndarFvComFuros(e, celulasPorFuroBabyLeaf(f, proposito));
   }
   return mv
     ? e.perfis * Math.max(1, e.furosPorPerfil)
-    : torreBaby12x6
-      ? plantasPorAndarFvComFuros(e, CELULAS_POR_FURO_BABY_LEAF_FV)
-      : e.perfis * e.furosPorPerfil;
+    : e.perfis * e.furosPorPerfil;
+}
+
+export function linhaCapacidadeTorre(
+  t: TorreCapInput,
+  projetoTipo?: string | null,
+  proposito: PropositoCapacidadeFv = 'colheita',
+): LinhaCapacidadeTorre | null {
+  if (t.ativa === false) return null;
+  const n = Math.max(0, t.numAndares | 0);
+  if (n <= 0) return null;
+  const f = t.fase;
+  const e = estruturaFaseParaProjeto(projetoTipo, f, t.estruturaOverride ?? null);
+  const baby = torreReservadaGrelhaBabyLeaf(t);
+  const porAndar = plantasPorAndarTorre(t, projetoTipo, proposito);
+  const celulas =
+    baby && f !== 'mudas'
+      ? celulasPorFuroBabyLeaf(f, proposito)
+      : f === 'mudas'
+        ? 0
+        : 1;
+  return {
+    nome: t.nome,
+    fase: f,
+    numAndares: n,
+    perfis: e.perfis,
+    furosPorPerfil: e.furosPorPerfil,
+    celulasPorFuro: celulas,
+    plantasPorAndar: porAndar,
+    subtotal: porAndar * n,
+    modelo: baby ? 'baby_leaf_12x6' : 'padrao',
+  };
 }
 
 function filtrarTorresCapacidade(torres: TorreCapInput[], filtro: FiltroTorresBabyLeafFv): TorreCapInput[] {
@@ -114,19 +168,12 @@ export function linhasCapacidadeInstalacao(
   torres: TorreCapInput[],
   projetoTipo?: string | null,
   filtro: FiltroTorresBabyLeafFv = 'todas',
+  proposito: PropositoCapacidadeFv = 'colheita',
 ): LinhaCapacidadeTorre[] {
   const linhas: LinhaCapacidadeTorre[] = [];
   for (const t of filtrarTorresCapacidade(torres, filtro)) {
-    if (t.ativa === false) continue;
-    const n = Math.max(0, t.numAndares | 0);
-    const porAndar = plantasPorAndarTorre(t, projetoTipo);
-    linhas.push({
-      nome: t.nome,
-      fase: t.fase,
-      numAndares: n,
-      plantasPorAndar: porAndar,
-      subtotal: porAndar * n,
-    });
+    const linha = linhaCapacidadeTorre(t, projetoTipo, proposito);
+    if (linha) linhas.push(linha);
   }
   return linhas;
 }
@@ -135,12 +182,13 @@ export function linhasCapacidadeInstalacao(
 export function capacidadePorFaseInstalacao(
   torres: TorreCapInput[],
   projetoTipo?: string | null,
+  proposito: PropositoCapacidadeFv = 'colheita',
 ): Record<Fase, number> {
   const cap: Record<Fase, number> = { mudas: 0, vegetativa: 0, maturacao: 0 };
   for (const t of torres) {
     if (t.ativa === false) continue;
     const n = Math.max(0, t.numAndares | 0);
-    const porAndar = plantasPorAndarTorre(t, projetoTipo);
+    const porAndar = plantasPorAndarTorre(t, projetoTipo, proposito);
     cap[t.fase] += porAndar * n;
   }
   return cap;
@@ -164,8 +212,61 @@ export function capacidadePorFaseInstalacaoComFiltro(
   torres: TorreCapInput[],
   projetoTipo: string | null | undefined,
   filtro: FiltroTorresBabyLeafFv,
+  proposito: PropositoCapacidadeFv = 'colheita',
 ): Record<Fase, number> {
-  return capacidadePorFaseInstalacao(filtrarTorresCapacidade(torres, filtro), projetoTipo);
+  return capacidadePorFaseInstalacao(filtrarTorresCapacidade(torres, filtro), projetoTipo, proposito);
+}
+
+export interface ResumoGrupoMaturacao {
+  quantidadeTorres: number;
+  totalAndares: number;
+  capacidadeColheita: number;
+  linhas: LinhaCapacidadeTorre[];
+}
+
+export interface ResumoInstalacaoFv {
+  torresAtivas: number;
+  torresPorFase: Record<Fase, number>;
+  torresBabyLeaf12x6: number;
+  maturacaoPadrao: ResumoGrupoMaturacao;
+  maturacaoBabyLeaf: ResumoGrupoMaturacao;
+  maturacaoTotalColheita: number;
+}
+
+/** Inventário e capacidade de colheita em maturação (auditável). */
+export function resumoInstalacaoCapacidadeFv(
+  torres: TorreCapInput[],
+  projetoTipo?: string | null,
+): ResumoInstalacaoFv {
+  const ativas = torres.filter((t) => t.ativa !== false);
+  const torresPorFase: Record<Fase, number> = { mudas: 0, vegetativa: 0, maturacao: 0 };
+  for (const t of ativas) torresPorFase[t.fase] += 1;
+
+  const linhasMatPadrao = linhasCapacidadeInstalacao(torres, projetoTipo, 'exceto_baby_leaf', 'colheita').filter(
+    (l) => l.fase === 'maturacao',
+  );
+  const linhasMatBaby = linhasCapacidadeInstalacao(torres, projetoTipo, 'apenas_baby_leaf', 'colheita').filter(
+    (l) => l.fase === 'maturacao',
+  );
+
+  const grupo = (linhas: LinhaCapacidadeTorre[]): ResumoGrupoMaturacao => ({
+    quantidadeTorres: linhas.length,
+    totalAndares: linhas.reduce((s, l) => s + l.numAndares, 0),
+    capacidadeColheita: linhas.reduce((s, l) => s + l.subtotal, 0),
+    linhas,
+  });
+
+  const maturacaoPadrao = grupo(linhasMatPadrao);
+  const maturacaoBabyLeaf = grupo(linhasMatBaby);
+
+  return {
+    torresAtivas: ativas.length,
+    torresPorFase,
+    torresBabyLeaf12x6: ativas.filter(torreReservadaGrelhaBabyLeaf).length,
+    maturacaoPadrao,
+    maturacaoBabyLeaf,
+    maturacaoTotalColheita: maturacaoPadrao.capacidadeColheita + maturacaoBabyLeaf.capacidadeColheita,
+  };
 }
 
 /**
@@ -175,7 +276,7 @@ export function capacidadePorFaseInstalacaoComFiltro(
 export function estimativaPlantasEmMaturacao(
   plantasPorColheita: number,
   diasMaturacao: number,
-  intervaloDias: number
+  intervaloDias: number,
 ): number {
   if (intervaloDias <= 0 || plantasPorColheita <= 0) return 0;
   const lotes = diasMaturacao / intervaloDias;

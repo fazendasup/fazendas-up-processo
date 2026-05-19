@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { ESTRUTURA_OVERRIDE_FV_12x6 } from '@shared/types';
 import {
   capacidadePorFaseInstalacaoComFiltro,
+  plantasPorAndarTorre,
+  resumoInstalacaoCapacidadeFv,
   sementesParaColheitaEsperada,
   torreReservadaGrelhaBabyLeaf,
   type TorreCapInput,
@@ -60,27 +62,31 @@ describe('capacidadePorFaseInstalacaoComFiltro', () => {
     expect(noBaby.maturacao).toBeGreaterThan(0);
   });
 
-  it('torre 12×6 conta 2 plantas por furo em maturação', () => {
-    const onlyBaby = capacidadePorFaseInstalacaoComFiltro(
-      [{ fase: 'maturacao', numAndares: 1, ativa: true, estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6 }],
-      projeto,
-      'apenas_baby_leaf',
-    );
-    expect(onlyBaby.maturacao).toBe(144);
+  it('baby leaf mat colheita = 1 posição por furo (72/and.)', () => {
+    const t: TorreCapInput = {
+      fase: 'maturacao',
+      numAndares: 1,
+      ativa: true,
+      estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6,
+    };
+    expect(plantasPorAndarTorre(t, projeto, 'colheita')).toBe(72);
+    expect(plantasPorAndarTorre(t, projeto, 'plantio')).toBe(144);
+    const cap = capacidadePorFaseInstalacaoComFiltro([t], projeto, 'apenas_baby_leaf', 'colheita');
+    expect(cap.maturacao).toBe(72);
   });
 
-  it('2 torres mat 12×6 com 9 andares = 2592 plantas em maturação', () => {
+  it('2 torres mat 12×6 com 9 andares = 1296 posições de colheita', () => {
     const torres: TorreCapInput[] = [
       { fase: 'maturacao', numAndares: 9, ativa: true, estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6 },
       { fase: 'maturacao', numAndares: 9, ativa: true, estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6 },
     ];
-    const cap = capacidadePorFaseInstalacaoComFiltro(torres, projeto, 'apenas_baby_leaf');
-    expect(cap.maturacao).toBe(2592);
+    const cap = capacidadePorFaseInstalacaoComFiltro(torres, projeto, 'apenas_baby_leaf', 'colheita');
+    expect(cap.maturacao).toBe(1296);
     expect(cap.vegetativa).toBe(0);
   });
 
   it('8 torres mat padrão 6×6 com 9 andares = 2592 em maturação', () => {
-    const torres: TorreCapInput[] = Array.from({ length: 8 }, (_, i) => ({
+    const torres: TorreCapInput[] = Array.from({ length: 8 }, () => ({
       fase: 'maturacao' as const,
       numAndares: 9,
       ativa: true,
@@ -90,13 +96,34 @@ describe('capacidadePorFaseInstalacaoComFiltro', () => {
     expect(cap.maturacao).toBe(2592);
   });
 
-  it('3 torres veg 12×6 com 12 andares = 5184 só em vegetativa', () => {
+  it('18 padrão + 2 baby mat = 5832 + 1296 colheita', () => {
+    const padrao = Array.from({ length: 18 }, () => ({
+      fase: 'maturacao' as const,
+      numAndares: 9,
+      ativa: true,
+      estruturaOverride: null,
+    }));
+    const baby = Array.from({ length: 2 }, () => ({
+      fase: 'maturacao' as const,
+      numAndares: 9,
+      ativa: true,
+      estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6,
+    }));
+    const resumo = resumoInstalacaoCapacidadeFv([...padrao, ...baby], projeto);
+    expect(resumo.maturacaoPadrao.quantidadeTorres).toBe(18);
+    expect(resumo.maturacaoPadrao.capacidadeColheita).toBe(5832);
+    expect(resumo.maturacaoBabyLeaf.quantidadeTorres).toBe(2);
+    expect(resumo.maturacaoBabyLeaf.capacidadeColheita).toBe(1296);
+    expect(resumo.maturacaoTotalColheita).toBe(7128);
+  });
+
+  it('3 torres veg 12×6 com 12 andares = 5184 só em vegetativa (plantio)', () => {
     const torres: TorreCapInput[] = [
       { fase: 'vegetativa', numAndares: 12, ativa: true, estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6 },
       { fase: 'vegetativa', numAndares: 12, ativa: true, estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6 },
       { fase: 'vegetativa', numAndares: 12, ativa: true, estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6 },
     ];
-    const cap = capacidadePorFaseInstalacaoComFiltro(torres, projeto, 'apenas_baby_leaf');
+    const cap = capacidadePorFaseInstalacaoComFiltro(torres, projeto, 'apenas_baby_leaf', 'plantio');
     expect(cap.vegetativa).toBe(5184);
     expect(cap.maturacao).toBe(0);
   });

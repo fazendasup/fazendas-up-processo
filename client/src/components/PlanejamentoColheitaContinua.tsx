@@ -30,9 +30,8 @@ import { useMemo, useState } from 'react';
 import { addDays } from 'date-fns';
 import {
   DESPERDICIO,
-  capacidadePorFaseInstalacaoComFiltro,
   estimativaPlantasEmMaturacao,
-  linhasCapacidadeInstalacao,
+  resumoInstalacaoCapacidadeFv,
   sementesParaColheitaEsperada,
   taxaSobrevivenciaAcumulada,
   type LinhaCapacidadeTorre,
@@ -81,12 +80,18 @@ function pickReceita(receitas: ReceitaRow[], variedadeId: number): ReceitaRow | 
 
 const INTERVALO_PRESETS = [1, 2, 3, 7, 14] as const;
 
+function rotuloGrelha(l: LinhaCapacidadeTorre): string {
+  if (l.modelo === 'baby_leaf_12x6') return `${l.perfis}×${l.furosPorPerfil}`;
+  if (l.fase === 'maturacao') return `${l.perfis}×${l.furosPorPerfil}`;
+  return `${l.perfis} perfis`;
+}
+
 function textoDetalheCapacidadeMat(linhas: LinhaCapacidadeTorre[]): string {
   return linhas
-    .map(
-      (l) =>
-        `${l.nome ?? 'Torre'}: ${l.numAndares} and. × ${l.plantasPorAndar.toLocaleString('pt-BR')} = ${l.subtotal.toLocaleString('pt-BR')}`,
-    )
+    .map((l) => {
+      const grelha = rotuloGrelha(l);
+      return `${l.nome ?? 'Torre'}: ${l.numAndares} and. · ${grelha} · ${l.plantasPorAndar.toLocaleString('pt-BR')} pos./and. = ${l.subtotal.toLocaleString('pt-BR')}`;
+    })
     .join(' · ');
 }
 
@@ -155,27 +160,15 @@ export default function PlanejamentoColheitaContinua() {
     });
   }, [fazenda?.torres, fazenda?.andares]);
 
-  const capPadrao = useMemo(
-    () => capacidadePorFaseInstalacaoComFiltro(torresCap, fazenda?.projetoTipo ?? null, 'exceto_baby_leaf'),
+  const resumoInstalacao = useMemo(
+    () => resumoInstalacaoCapacidadeFv(torresCap, fazenda?.projetoTipo ?? null),
     [torresCap, fazenda?.projetoTipo],
   );
 
-  const capBaby = useMemo(
-    () => capacidadePorFaseInstalacaoComFiltro(torresCap, fazenda?.projetoTipo ?? null, 'apenas_baby_leaf'),
-    [torresCap, fazenda?.projetoTipo],
-  );
-
-  const detalhePadraoMat = useMemo(() => {
-    return linhasCapacidadeInstalacao(torresCap, fazenda?.projetoTipo ?? null, 'exceto_baby_leaf').filter(
-      (l) => l.fase === 'maturacao' && l.subtotal > 0,
-    );
-  }, [torresCap, fazenda?.projetoTipo]);
-
-  const detalheBabyMat = useMemo(() => {
-    return linhasCapacidadeInstalacao(torresCap, fazenda?.projetoTipo ?? null, 'apenas_baby_leaf').filter(
-      (l) => l.fase === 'maturacao' && l.subtotal > 0,
-    );
-  }, [torresCap, fazenda?.projetoTipo]);
+  const capPadraoMat = resumoInstalacao.maturacaoPadrao.capacidadeColheita;
+  const capBabyMat = resumoInstalacao.maturacaoBabyLeaf.capacidadeColheita;
+  const detalhePadraoMat = resumoInstalacao.maturacaoPadrao.linhas;
+  const detalheBabyMat = resumoInstalacao.maturacaoBabyLeaf.linhas;
 
   const resultado = useMemo(() => {
     const meta = Math.max(0, parseFloat(metaColheita.replace(',', '.')) || 0);
@@ -250,20 +243,20 @@ export default function PlanejamentoColheitaContinua() {
     }
 
     const linhas: string[] = [];
-    if (estBaby > capBaby.maturacao + 0.5) {
+    if (estBaby > capBabyMat + 0.5) {
       linhas.push(
-        `Baby leaf (torres 12×6): estimativa ~${Math.ceil(estBaby)} plantas em maturação (lote a cada ${intervaloDias} dia(s)); capacidade instalada nessas torres: ${capBaby.maturacao}.`,
+        `Baby leaf (${resumoInstalacao.maturacaoBabyLeaf.quantidadeTorres} torre(s) 12×6): estimativa ~${Math.ceil(estBaby)} posições em maturação (lote a cada ${intervaloDias} dia(s)); capacidade: ${capBabyMat.toLocaleString('pt-BR')}.`,
       );
     }
-    if (estPadrao > capPadrao.maturacao + 0.5) {
+    if (estPadrao > capPadraoMat + 0.5) {
       linhas.push(
-        `Demais variedades (torres padrão): estimativa ~${Math.ceil(estPadrao)} plantas em maturação; capacidade sem torres 12×6: ${capPadrao.maturacao}.`,
+        `Demais variedades (${resumoInstalacao.maturacaoPadrao.quantidadeTorres} torre(s) 6×6): estimativa ~${Math.ceil(estPadrao)} posições em maturação; capacidade: ${capPadraoMat.toLocaleString('pt-BR')}.`,
       );
     }
 
     if (linhas.length === 0) return null;
     return { msgs: linhas };
-  }, [resultado, capBaby.maturacao, capPadrao.maturacao, intervaloDias]);
+  }, [resultado, capBabyMat, capPadraoMat, intervaloDias, resumoInstalacao]);
 
   const lotes = Math.max(1, Math.min(52, parseInt(numLotes, 10) || 1));
 
@@ -374,13 +367,13 @@ export default function PlanejamentoColheitaContinua() {
             vêm da <strong>receita</strong> de cada variedade. O sistema aplica
             desperdício: germinação {DESPERDICIO.germinacao * 100}%, mudas→veg {DESPERDICIO.mudasParaVegetativa * 100}%,
             veg→mat {DESPERDICIO.vegetativaParaMaturacao * 100}% (germinação na receita: dias até ir para mudas).             Taxa
-            combinada até a colheita: {(taxa * 100).toFixed(1)}% das sementes. Torres 12×6 (baby leaf): 2 células por furo em veg/mat — sementes e capacidade em dobro; manjericão, baby leaf beterraba/acelga. Demais variedades usam torres padrão (1 planta por furo na maturação).
+            combinada até a colheita: {(taxa * 100).toFixed(1)}% das sementes. Baby leaf (12×6): capacidade de colheita conta 1 posição/furo na maturação; sementes dobradas (2 células/furo). Torres padrão: 6×6, 1 planta/furo.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <Label>Plantas na colheita a cada {intervaloDias} dias (total)</Label>
+              <Label>Posições na colheita a cada {intervaloDias} dias (total)</Label>
               <Input
                 inputMode="decimal"
                 value={metaColheita}
@@ -414,31 +407,46 @@ export default function PlanejamentoColheitaContinua() {
               />
               <p className="text-[10px] text-muted-foreground mt-1">Um lote a cada {intervaloDias} dias por variedade.</p>
             </div>
-            <div className="rounded-lg border bg-muted/40 p-3 text-xs space-y-2">
+            <div className="rounded-lg border bg-muted/40 p-3 text-xs space-y-3 sm:col-span-2">
               <div>
-                <p className="font-medium text-foreground">Torres padrão (ex.: alface)</p>
+                <p className="font-medium text-foreground">Inventário de torres (cadastro atual)</p>
+                <p className="text-muted-foreground mt-1">
+                  {resumoInstalacao.torresAtivas} torre(s) ativa(s): mudas {resumoInstalacao.torresPorFase.mudas} ·
+                  vegetativa {resumoInstalacao.torresPorFase.vegetativa} · maturação{' '}
+                  {resumoInstalacao.torresPorFase.maturacao} ({resumoInstalacao.torresBabyLeaf12x6} com modelo 12×6
+                  baby leaf).
+                </p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">
+                  Maturação padrão (6×6) — {resumoInstalacao.maturacaoPadrao.quantidadeTorres} torre(s),{' '}
+                  {resumoInstalacao.maturacaoPadrao.totalAndares} andares
+                </p>
                 <p className="text-muted-foreground">
-                  Sem torres 12 perfis × 6 furos — mudas {capPadrao.mudas.toLocaleString('pt-BR')} · veg{' '}
-                  {capPadrao.vegetativa.toLocaleString('pt-BR')} · mat {capPadrao.maturacao.toLocaleString('pt-BR')} plantas
+                  Capacidade de colheita:{' '}
+                  <strong>{capPadraoMat.toLocaleString('pt-BR')}</strong> posições (1 planta/furo)
                 </p>
                 {detalhePadraoMat.length > 0 && (
-                  <p className="text-[10px] text-muted-foreground mt-1">
-                    Mat. (6×6): {textoDetalheCapacidadeMat(detalhePadraoMat)}
-                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-1">{textoDetalheCapacidadeMat(detalhePadraoMat)}</p>
                 )}
               </div>
               <div>
-                <p className="font-medium text-foreground">Baby leaf (torres 12×6, 2 células/furo)</p>
+                <p className="font-medium text-foreground">
+                  Maturação baby leaf (12×6) — {resumoInstalacao.maturacaoBabyLeaf.quantidadeTorres} torre(s),{' '}
+                  {resumoInstalacao.maturacaoBabyLeaf.totalAndares} andares
+                </p>
                 <p className="text-muted-foreground">
-                  Manjericão, baby leaf beterraba/acelga — mudas {capBaby.mudas.toLocaleString('pt-BR')} · veg{' '}
-                  {capBaby.vegetativa.toLocaleString('pt-BR')} · mat {capBaby.maturacao.toLocaleString('pt-BR')} plantas
+                  Capacidade de colheita: <strong>{capBabyMat.toLocaleString('pt-BR')}</strong> posições (1
+                  posição/furo; plantio usa 2 células/furo nas sementes abaixo)
                 </p>
                 {detalheBabyMat.length > 0 && (
-                  <p className="text-[10px] text-muted-foreground mt-1">
-                    Mat. (12×6): {textoDetalheCapacidadeMat(detalheBabyMat)}
-                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-1">{textoDetalheCapacidadeMat(detalheBabyMat)}</p>
                 )}
               </div>
+              <p className="text-muted-foreground border-t pt-2">
+                Total maturação (colheita):{' '}
+                <strong>{resumoInstalacao.maturacaoTotalColheita.toLocaleString('pt-BR')}</strong> posições
+              </p>
             </div>
           </div>
 
