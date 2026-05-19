@@ -147,7 +147,9 @@ function Router() {
           </Route>
           <Route path="/comercial/:rest*">
             <ProtectedRoute requiredRole="admin">
-              <ComercialRoutes />
+              <ModuloProjetoRouteGuard modulo="comercial">
+                <ComercialRoutes />
+              </ModuloProjetoRouteGuard>
             </ProtectedRoute>
           </Route>
           <Route path="/receitas">

@@ -140,6 +140,7 @@ export const automacaoModuleProcedure = projectProcedureComModulo("automacao");
 export const inteligenciaModuleProcedure = projectProcedureComModulo("inteligencia");
 export const visaoCultivoModuleProcedure = projectProcedureComModulo("visao_cultivo");
 export const custosProducaoModuleProcedure = projectProcedureComModulo("custos_producao");
+export const comercialModuleProcedure = projectProcedureComModulo("comercial");
 
 const requireGlobalAdmin = t.middleware(async (opts) => {
   const { ctx, next } = opts;
@@ -246,8 +247,10 @@ const requireComercialModule = t.middleware(async ({ ctx, next }) => {
   });
 });
 
-/** ERP admin + sessão do banco comercial (Prisma). */
-export const comercialProcedure = adminProcedure.use(requireComercialModule);
+/** Projeto com módulo comercial + admin ERP + sessão Prisma do Comercia. */
+export const comercialProcedure = comercialModuleProcedure
+  .use(requireGlobalAdmin)
+  .use(requireComercialModule);
 
 export function comercialRequirePerfis(...perfis: PerfilUsuario[]) {
   return t.middleware(({ ctx, next }) => {

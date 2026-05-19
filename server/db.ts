@@ -876,6 +876,7 @@ export async function getProjetoModulosMap(projetoId: number): Promise<Record<Mo
     inteligencia: false,
     visao_cultivo: false,
     custos_producao: false,
+    comercial: false,
   });
   const dbConn = await getDb();
   const out = base();
@@ -1114,6 +1115,13 @@ SELECT \`p\`.\`id\`, 'custos_producao', 0
 FROM \`projetos\` \`p\``));
   } catch (err: unknown) {
     console.warn("[Database] ensureProjetoModulosTable custos_producao seed:", err);
+  }
+  try {
+    await dbConn.execute(sql.raw(`INSERT IGNORE INTO \`projeto_modulos\` (\`projetoId\`, \`modulo\`, \`habilitado\`)
+SELECT \`p\`.\`id\`, 'comercial', 0
+FROM \`projetos\` \`p\``));
+  } catch (err: unknown) {
+    console.warn("[Database] ensureProjetoModulosTable comercial seed:", err);
   }
 }
 
