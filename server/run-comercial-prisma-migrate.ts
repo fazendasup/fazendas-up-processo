@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { ensureComercialDatabaseUrlEnv, resolveComercialDatabaseUrl } from "./comercial/env";
+import { ensureComercialDatabaseExists } from "./ensure-comercial-database";
 
 function prismaCliPath(): string {
   const candidate = path.join(process.cwd(), "node_modules", "prisma", "build", "index.js");
@@ -37,6 +38,19 @@ export async function runComercialPrismaMigrateFromEnv(): Promise<void> {
   }
 
   const databaseUrl = ensureComercialDatabaseUrlEnv();
+
+  try {
+    await ensureComercialDatabaseExists(databaseUrl);
+  } catch (e) {
+    console.error(
+      "[Server] Não foi possível criar/verificar a base comercial:",
+      e instanceof Error ? e.message : e,
+    );
+    if (process.env.EXIT_ON_MIGRATE_FAILURE === "1") {
+      throw e;
+    }
+  }
+
   const cli = prismaCliPath();
 
   await new Promise<void>((resolve, reject) => {

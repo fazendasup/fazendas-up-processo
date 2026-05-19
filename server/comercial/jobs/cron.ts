@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import type { PrismaClient } from "../generated/prisma/index.js";
 import type { Env } from "../env";
+import { resolveComercialDatabaseUrl } from "../env";
 import { logger } from "../lib/logger";
 import { runContaAzulSync } from "../integrations/conta-azul/sync.service";
 
@@ -11,7 +12,12 @@ export function isComercialIntegrationCronEnabled(): boolean {
     process.env.ENABLE_INTEGRATION_CRON;
   if (raw === "false" || raw === "0") return false;
   if (raw === "true" || raw === "1") return true;
-  return Boolean(process.env.COMERCIAL_DATABASE_URL?.trim());
+  try {
+    resolveComercialDatabaseUrl();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function runScheduledSync(prisma: PrismaClient, env: Env, label: string) {

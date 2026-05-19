@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  DEFAULT_COMERCIAL_DATABASE_NAME,
+  swapMysqlDatabaseInUrl,
+} from "./mysql-url";
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -46,18 +50,36 @@ export type ComercialEnv = z.infer<typeof envSchema> & {
 
 let cached: ComercialEnv | null = null;
 
-/** URL MySQL do módulo comercial (Prisma). Aceita fallback para `DATABASE_URL` do supervisório. */
+/**
+ * URL MySQL do módulo comercial (Prisma).
+ *
+ * - `COMERCIAL_DATABASE_URL` definida → usa essa URL (manual).
+ * - Senão, com `DATABASE_URL` do ERP → Opção B automática: mesma conexão, base `fazendas_comercial`
+ *   (ou `COMERCIAL_DATABASE_NAME`).
+ * - `COMERCIAL_USE_ERP_DATABASE=1` → mesma base do ERP (Opção A).
+ */
 export function resolveComercialDatabaseUrl(): string {
-  const url =
-    process.env.COMERCIAL_DATABASE_URL?.trim() ||
-    process.env.DATABASE_URL?.trim() ||
-    "";
-  if (!url) {
+  const explicit = process.env.COMERCIAL_DATABASE_URL?.trim();
+  if (explicit) return explicit;
+
+  const erpUrl = process.env.DATABASE_URL?.trim() ?? "";
+  if (!erpUrl) {
     throw new Error(
       "Defina COMERCIAL_DATABASE_URL (MySQL do módulo comercial) ou DATABASE_URL no painel do host",
     );
   }
-  return url;
+
+  if (process.env.COMERCIAL_USE_ERP_DATABASE === "1") {
+    return erpUrl;
+  }
+
+  const dbName =
+    process.env.COMERCIAL_DATABASE_NAME?.trim() || DEFAULT_COMERCIAL_DATABASE_NAME;
+  if (!dbName) {
+    return erpUrl;
+  }
+
+  return swapMysqlDatabaseInUrl(erpUrl, dbName);
 }
 
 /**
