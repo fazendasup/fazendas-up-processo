@@ -76,7 +76,7 @@ export function buildAuthorizationUrl(env: Env, state: string) {
       !redirect && "CONTA_AZUL_REDIRECT_URI",
     ].filter(Boolean);
     throw new Error(
-      `Conta Azul: preencha no arquivo apps/api/.env: ${faltando.join(", ")} (copie do Portal do desenvolvedor).`,
+      `Conta Azul: defina no .env (raiz do projeto) ou nas Variáveis do Railway: ${faltando.join(", ")}.`,
     );
   }
   const u = new URL(authUrl);
@@ -97,7 +97,7 @@ export async function exchangeCodeForTokens(env: Env, code: string): Promise<Con
   const redirect = env.CONTA_AZUL_REDIRECT_URI?.trim();
   if (!clientId || !clientSecret || !redirect) {
     throw new Error(
-      "Conta Azul: preencha CONTA_AZUL_CLIENT_ID, CONTA_AZUL_CLIENT_SECRET e CONTA_AZUL_REDIRECT_URI em apps/api/.env",
+      "Conta Azul: defina CONTA_AZUL_CLIENT_ID, CONTA_AZUL_CLIENT_SECRET e CONTA_AZUL_REDIRECT_URI no .env ou no Railway",
     );
   }
 
@@ -141,7 +141,9 @@ export async function refreshAccessToken(env: Env, refreshToken: string): Promis
   const clientId = env.CONTA_AZUL_CLIENT_ID?.trim();
   const clientSecret = env.CONTA_AZUL_CLIENT_SECRET?.trim();
   if (!clientId || !clientSecret) {
-    throw new Error("Conta Azul: preencha CONTA_AZUL_CLIENT_ID e CONTA_AZUL_CLIENT_SECRET em apps/api/.env");
+    throw new Error(
+      "Conta Azul: defina CONTA_AZUL_CLIENT_ID e CONTA_AZUL_CLIENT_SECRET no .env ou no Railway",
+    );
   }
 
   return withRetry(

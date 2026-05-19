@@ -160,7 +160,7 @@ export function Clientes() {
             Mercado
           </Link>
           . Rode o seed se a lista vier vazia:{" "}
-          <code className="rounded bg-white px-1.5 py-0.5 text-xs text-[#111827]">cd apps/api && npm run db:seed</code>
+          <code className="rounded bg-white px-1.5 py-0.5 text-xs text-[#111827]">pnpm comercial:seed</code>
         </div>
       ) : null}
 
