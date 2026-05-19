@@ -175,7 +175,7 @@ export default function PlanejamentoColheitaContinua() {
       const rec = pickReceita(receitas, l.variedadeId);
       const dm = rec?.diasMudas ?? v.diasMudas;
       const pulaVeg = variedadePulaVegetativa(v.slug, v.nome);
-      const babyLeaf = variedadeEhBabyLeafFV(v.slug, v.nome);
+      const babyLeaf = variedadeEhBabyLeafFV(v.slug, v.nome, v.babyLeaf);
       const dv = pulaVeg ? 0 : (rec?.diasVegetativa ?? v.diasVegetativa);
       const dmat = rec?.diasMaturacao ?? v.diasMaturacao;
       const colheitaCadaCiclo = meta > 0 && pctSum > 0 ? (meta * pct) / pctSum : 0;

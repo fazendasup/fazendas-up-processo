@@ -1,13 +1,14 @@
-// ============================================================
+﻿// ============================================================
 // ConfigPage — Migrado para tRPC mutations
 // ============================================================
 
 import Header from '@/components/Header';
 import HidroponiaConfigBancadas from '@/components/HidroponiaConfigBancadas';
+import { VariedadesCadastroTable } from '@/components/VariedadesCadastroTable';
 import { useProjeto } from '@/contexts/ProjetoContext';
 import { useFazenda } from '@/contexts/FazendaContext';
 import { useAgendaModal } from '@/contexts/AgendaModalContext';
-import { FASES_CONFIG, VARIEDADES_PADRAO, torreEstaAtivaNoDashboard, type Fase } from '@/lib/types';
+import { FASES_CONFIG, torreEstaAtivaNoDashboard, type Fase } from '@/lib/types';
 import { useFazendaMutations } from '@/hooks/useFazendaMutations';
 import { useDbIdResolver } from '@/hooks/useDbIdResolver';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -45,7 +46,6 @@ export default function ConfigPage() {
   const mutations = useFazendaMutations();
   const resolver = useDbIdResolver();
   const [configVersion, setConfigVersion] = useState(0);
-  const [showAddVar, setShowAddVar] = useState(false);
   const [showNewTorre, setShowNewTorre] = useState(false);
   /** Se false, esconde caixas do seed admin (Mudas 1, Veg 1–3, Mat 1–5) na lista de reutilização. */
   const [mostrarCaixasSeedNovaTorre, setMostrarCaixasSeedNovaTorre] = useState(false);
@@ -326,39 +326,6 @@ export default function ConfigPage() {
     fase === 'mudas' ? 'badge-mudas' : fase === 'vegetativa' ? 'badge-vegetativa' : 'badge-maturacao';
   const cardClass = (fase: Fase) =>
     fase === 'mudas' ? 'card-mudas' : fase === 'vegetativa' ? 'card-vegetativa' : 'card-maturacao';
-
-  const handleAddVariedade = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const nome = (fd.get('nome') as string)?.trim();
-    if (!nome) {
-      toast.error('Informe o nome da variedade');
-      return;
-    }
-    mutations.createVariedade.mutate({ nome });
-    setShowAddVar(false);
-    toast.success(`Variedade "${nome}" adicionada!`);
-  };
-
-  const handleDeleteVariedade = (varId: string) => {
-    if (!window.confirm('Excluir esta variedade?')) return;
-    const dbId = resolver.varSlugToId.get(varId);
-    if (!dbId) return;
-    mutations.deleteVariedade.mutate({ id: dbId });
-    toast.success('Variedade excluída!');
-  };
-
-  const handleResetVariedades = () => {
-    if (!window.confirm('Restaurar variedades padrão? Variedades personalizadas serão removidas.')) return;
-    data.variedades.forEach((v) => {
-      const dbId = resolver.varSlugToId.get(v.id);
-      if (dbId) mutations.deleteVariedade.mutate({ id: dbId });
-    });
-    VARIEDADES_PADRAO.forEach((v) => {
-      mutations.createVariedade.mutate({ nome: v.nome });
-    });
-    toast.success('Variedades restauradas!');
-  };
 
   const salvarRegras = () => {
     localStorage.setItem('cfg.desperdicioMax', String(regraDesperdicioMax));
@@ -916,76 +883,16 @@ export default function ConfigPage() {
 
         {/* Cadastros-base do domínio */}
         <section className="mb-8">
-          <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
-            <div>
-              <h2 className="font-display font-bold text-lg flex items-center gap-2">
-                <Database className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                Cadastros-base do domínio
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                Entidades que sustentam a operação (ex.: variedades, tipos e motivos).
-              </p>
-            </div>
-            <div className="flex gap-2 shrink-0">
-              <Button variant="outline" size="sm" className="text-xs" onClick={handleResetVariedades}>
-                <RotateCcw className="w-3 h-3 mr-1" />
-                Restaurar
-              </Button>
-              <Dialog open={showAddVar} onOpenChange={setShowAddVar}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="gap-1.5 text-xs">
-                    <Plus className="w-3.5 h-3.5" />
-                    Nova Variedade
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-sm">
-                  <DialogHeader>
-                    <DialogTitle>Nova Variedade</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleAddVariedade} className="space-y-4">
-                    <div>
-                      <Label className="text-xs">Nome</Label>
-                      <Input name="nome" className="h-9 text-sm" required />
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      Prazos por fase: cadastre na página <strong>Receitas</strong> (receita ligada a esta variedade).
-                    </p>
-                    <DialogFooter><Button type="submit" className="w-full">Adicionar</Button></DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-          {isMicroverdes && (
-            <p className="text-[11px] text-sky-900/85 dark:text-sky-100/85 rounded-lg border border-sky-500/25 bg-sky-500/10 px-3 py-2 mb-4">
-              <strong>Torres microverdes:</strong> germinação e iluminação. Duração de cada etapa e colheita ficam na{' '}
-              <strong>receita</strong> (aba Receitas), não nesta tabela de variedades.
-            </p>
-          )}
-          <div className="bg-card rounded-xl border overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left p-3 font-semibold">Variedade</th>
-                    <th className="text-left p-3 font-semibold text-muted-foreground">Prazos</th>
-                    <th className="p-3 w-10"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.variedades.map((v) => (
-                    <tr key={v.id} className="border-b last:border-b-0 hover:bg-muted/30">
-                      <td className="p-3 font-medium">{v.nome}</td>
-                      <td className="p-3 text-xs text-muted-foreground">
-                        Por receita (Receitas e cadastros). Sem receita, o sistema usa valores padrão.
-                      </td>
-                      <td className="p-3"><button onClick={() => handleDeleteVariedade(v.id)} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="w-3 h-3" /></button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <VariedadesCadastroTable
+            notaTopo={
+              isMicroverdes ? (
+                <p className="text-[11px] text-sky-900/85 dark:text-sky-100/85 rounded-lg border border-sky-500/25 bg-sky-500/10 px-3 py-2">
+                  <strong>Torres microverdes:</strong> germinação e iluminação. Duração de cada etapa e colheita ficam na{' '}
+                  <strong>receita</strong> (aba Receitas), não nesta tabela de variedades.
+                </p>
+              ) : undefined
+            }
+          />
         </section>
 
         {/* Regras / Preferências / Integrações */}

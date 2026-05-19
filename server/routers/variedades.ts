@@ -15,6 +15,7 @@ export const variedadesRouter = router({
         diasMudas: z.number().optional(),
         diasVegetativa: z.number().optional(),
         diasMaturacao: z.number().optional(),
+        babyLeaf: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -28,6 +29,7 @@ export const variedadesRouter = router({
         diasMudas: input.diasMudas ?? 14,
         diasVegetativa: input.diasVegetativa ?? 21,
         diasMaturacao: input.diasMaturacao ?? 28,
+        babyLeaf: input.babyLeaf ?? false,
       });
     }),
   update: adminProjectProcedure
@@ -39,6 +41,7 @@ export const variedadesRouter = router({
         diasMudas: z.number().optional(),
         diasVegetativa: z.number().optional(),
         diasMaturacao: z.number().optional(),
+        babyLeaf: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

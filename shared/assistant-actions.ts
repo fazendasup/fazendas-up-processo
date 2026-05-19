@@ -263,6 +263,7 @@ export const criarVariedadeParamsSchema = z.object({
   diasMudas: z.number().int().positive().optional(),
   diasVegetativa: z.number().int().positive().optional(),
   diasMaturacao: z.number().int().positive().optional(),
+  babyLeaf: z.boolean().optional(),
 });
 
 export const atualizarVariedadeParamsSchema = z.object({
@@ -271,6 +272,7 @@ export const atualizarVariedadeParamsSchema = z.object({
   diasMudas: z.number().int().positive().optional(),
   diasVegetativa: z.number().int().positive().optional(),
   diasMaturacao: z.number().int().positive().optional(),
+  babyLeaf: z.boolean().optional(),
 });
 
 export const criarReceitaParamsSchema = z.object({

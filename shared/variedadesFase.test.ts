@@ -14,4 +14,9 @@ describe('variedadeEhBabyLeafFV', () => {
     expect(variedadeEhBabyLeafFV(null, 'Manjericão')).toBe(true);
     expect(variedadeEhBabyLeafFV(null, 'Alface Crespa')).toBe(false);
   });
+
+  it('cadastro explícito prevalece sobre heurística', () => {
+    expect(variedadeEhBabyLeafFV('alface-crespa', 'Alface Crespa', true)).toBe(true);
+    expect(variedadeEhBabyLeafFV('manjericao', null, false)).toBe(false);
+  });
 });

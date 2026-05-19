@@ -60,6 +60,7 @@ export function transformFazendaLoadAllResponse(raw: unknown): FazendaData {
     diasMudas: v.diasMudas,
     diasVegetativa: v.diasVegetativa,
     diasMaturacao: v.diasMaturacao,
+    babyLeaf: Boolean(v.babyLeaf),
     variedadeDbId: typeof v.id === "number" ? v.id : Number(v.id) || undefined,
   }));
 

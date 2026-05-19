@@ -60,6 +60,8 @@ export interface VariedadeConfig {
   diasMudas: number;
   diasVegetativa: number;
   diasMaturacao: number;
+  /** Torres 12×6: 2 células/furo em veg/mat. */
+  babyLeaf?: boolean;
   /** Id numérico no BD (para escolher receita base em `data.receitas`). */
   variedadeDbId?: number;
 }
@@ -72,8 +74,15 @@ export const VARIEDADES_PADRAO: VariedadeConfig[] = [
   { id: 'agriao', nome: 'Agrião', diasMudas: 12, diasVegetativa: 18, diasMaturacao: 25 },
   { id: 'espinafre', nome: 'Espinafre', diasMudas: 14, diasVegetativa: 21, diasMaturacao: 30 },
   { id: 'couve', nome: 'Couve', diasMudas: 18, diasVegetativa: 28, diasMaturacao: 35 },
-  { id: 'manjericao', nome: 'Manjericão', diasMudas: 14, diasVegetativa: 21, diasMaturacao: 28 },
-  { id: 'baby-leaf-beterraba', nome: 'Baby Leaf / Beterraba', diasMudas: 14, diasVegetativa: 21, diasMaturacao: 28 },
+  { id: 'manjericao', nome: 'Manjericão', diasMudas: 14, diasVegetativa: 21, diasMaturacao: 28, babyLeaf: true },
+  {
+    id: 'baby-leaf-beterraba',
+    nome: 'Baby Leaf / Beterraba',
+    diasMudas: 14,
+    diasVegetativa: 21,
+    diasMaturacao: 28,
+    babyLeaf: true,
+  },
   { id: 'salsa', nome: 'Salsa', diasMudas: 18, diasVegetativa: 25, diasMaturacao: 30 },
   { id: 'cebolinha', nome: 'Cebolinha', diasMudas: 21, diasVegetativa: 28, diasMaturacao: 35 },
   { id: 'hortela', nome: 'Hortelã', diasMudas: 14, diasVegetativa: 21, diasMaturacao: 28 },

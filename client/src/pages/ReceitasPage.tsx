@@ -1,6 +1,6 @@
-// ============================================================
-// ReceitasPage — Biblioteca de Receitas de Crescimento (Admin)
-// Cada receita define parâmetros ideais por fase para uma variedade
+﻿// ============================================================
+// ReceitasPage â€” Biblioteca de Receitas de Crescimento (Admin)
+// Cada receita define parÃ¢metros ideais por fase para uma variedade
 // ============================================================
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -8,10 +8,7 @@ import { useLocation } from 'wouter';
 import Header from '@/components/Header';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useFazenda } from '@/contexts/FazendaContext';
-import { VARIEDADES_PADRAO } from '@/lib/types';
-import { useFazendaMutations } from '@/hooks/useFazendaMutations';
-import { useDbIdResolver } from '@/hooks/useDbIdResolver';
+import { VariedadesCadastroTable } from '@/components/VariedadesCadastroTable';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,7 +45,7 @@ type ReceitaForm = {
   ecMudas: number | null;
   ecVegetativa: number | null;
   ecMaturacao: number | null;
-  /** pH único para todas as fases */
+  /** pH Ãºnico para todas as fases */
   ph: number | null;
   temperaturaMedia: number | null;
   umidadeMedia: number | null;
@@ -72,13 +69,13 @@ function phFromLegacyPh(phPorFase: Record<string, unknown> | null | undefined): 
   return n(phPorFase.mudas) ?? n(phPorFase.vegetativa) ?? n(phPorFase.maturacao);
 }
 
-/** Rótulo pt-BR para o valor persistido em `metodoColheita`. */
+/** RÃ³tulo pt-BR para o valor persistido em `metodoColheita`. */
 function labelMetodoColheita(v: string): string {
   switch (v) {
     case "corte":
       return "Corte";
     case "arranque":
-      return "Arrancão";
+      return "ArrancÃ£o";
     case "colheita_parcial":
       return "Colheita Parcial";
     default:
@@ -86,7 +83,7 @@ function labelMetodoColheita(v: string): string {
   }
 }
 
-/** Resumo curto para o cabeçalho do card (faixa ou valor único). */
+/** Resumo curto para o cabeÃ§alho do card (faixa ou valor Ãºnico). */
 function resumoHorasLuzHeader(receita: { horasLuzPorFase?: unknown; horasLuz?: number | null }): string | null {
   const h = receita.horasLuzPorFase as Record<string, number> | null | undefined;
   const leg = receita.horasLuz ?? undefined;
@@ -97,7 +94,7 @@ function resumoHorasLuzHeader(receita: { horasLuzPorFase?: unknown; horasLuz?: n
   const min = Math.min(...vals);
   const max = Math.max(...vals);
   if (min === max) return `${min}h/dia`;
-  return `${min}–${max}h`;
+  return `${min}â€“${max}h`;
 }
 
 const emptyForm: ReceitaForm = {
@@ -141,129 +138,6 @@ function DebouncedNumberInput({
   return <Input type="number" min={min} value={localVal} onChange={handleChange} className={className} />;
 }
 
-function VariedadesTabContent() {
-  const { data } = useFazenda();
-  const mutations = useFazendaMutations();
-  const resolver = useDbIdResolver();
-  const [showAddVar, setShowAddVar] = useState(false);
-
-  const handleAddVariedade = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const nome = (fd.get('nome') as string)?.trim();
-    if (!nome) {
-      toast.error('Informe o nome da variedade');
-      return;
-    }
-    mutations.createVariedade.mutate({ nome });
-    setShowAddVar(false);
-    toast.success(`Variedade "${nome}" adicionada!`);
-  };
-
-  const handleDeleteVariedade = (varId: string) => {
-    if (!window.confirm('Excluir esta variedade?')) return;
-    const dbId = resolver.varSlugToId.get(varId);
-    if (!dbId) return;
-    mutations.deleteVariedade.mutate({ id: dbId });
-    toast.success('Variedade excluída!');
-  };
-
-  const handleResetVariedades = () => {
-    if (!window.confirm('Restaurar variedades padrão? Variedades personalizadas serão removidas.')) return;
-    data.variedades.forEach((v) => {
-      const dbId = resolver.varSlugToId.get(v.id);
-      if (dbId) mutations.deleteVariedade.mutate({ id: dbId });
-    });
-    VARIEDADES_PADRAO.forEach((v) => {
-      mutations.createVariedade.mutate({ nome: v.nome });
-    });
-    toast.success('Variedades restauradas!');
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h2 className="font-display text-lg font-bold flex items-center gap-2">
-            <Leaf className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-            Variedades
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Cadastro da espécie/cultivar. Prazos por fase (germinação, mudas, vegetativa, maturação) ficam na{' '}
-            <strong>receita</strong> associada a esta variedade.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="text-xs" onClick={handleResetVariedades}>
-            <RotateCcw className="w-3 h-3 mr-1" />
-            Restaurar
-          </Button>
-          <Dialog open={showAddVar} onOpenChange={setShowAddVar}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="gap-1.5 text-xs">
-                <Plus className="w-3.5 h-3.5" />
-                Nova variedade
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-sm">
-              <DialogHeader>
-                <DialogTitle className="font-display">Nova variedade</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleAddVariedade} className="space-y-4">
-                <div>
-                  <Label className="text-xs">Nome</Label>
-                  <Input name="nome" placeholder="Ex: Alface Mimosa" className="h-9 text-sm" required />
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  Depois crie ou edite uma <strong>receita</strong> ligada a esta variedade para definir dias por fase,
-                  EC, pH e demais parâmetros.
-                </p>
-                <DialogFooter>
-                  <Button type="submit" className="w-full">
-                    Adicionar
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      <div className="bg-card rounded-xl border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="text-left p-3 font-semibold">Variedade</th>
-                <th className="text-left p-3 font-semibold text-muted-foreground">Prazos no app</th>
-                <th className="p-3 w-10" />
-              </tr>
-            </thead>
-            <tbody>
-              {data.variedades.map((v) => (
-                <tr key={v.id} className="border-b last:border-b-0 hover:bg-muted/30">
-                  <td className="p-3 font-medium">{v.nome}</td>
-                  <td className="p-3 text-xs text-muted-foreground">
-                    Definidos na receita (aba Receitas). Sem receita ativa, usam-se valores padrão até cadastrar.
-                  </td>
-                  <td className="p-3">
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteVariedade(v.id)}
-                      className="text-muted-foreground hover:text-destructive p-1"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function ReceitasPage() {
   const [location, setLocation] = useLocation();
@@ -284,7 +158,7 @@ export default function ReceitasPage() {
               Receitas e cadastros
             </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-              Receitas de crescimento (incluindo dias por fase, EC, pH, luz) e cadastro de variedades — num só sítio.
+              Receitas de crescimento (incluindo dias por fase, EC, pH, luz) e cadastro de variedades â€” num sÃ³ sÃ­tio.
             </p>
           </div>
 
@@ -311,7 +185,7 @@ export default function ReceitasPage() {
               <ReceitasTabContent />
             </TabsContent>
             <TabsContent value="variedades" className="mt-6">
-              <VariedadesTabContent />
+              <VariedadesCadastroTable />
             </TabsContent>
           </Tabs>
         </main>
@@ -322,7 +196,7 @@ export default function ReceitasPage() {
 
 function ReceitasTabContent() {
   const utils = trpc.useUtils();
-  // Buscar variedades diretamente do DB (id numérico)
+  // Buscar variedades diretamente do DB (id numÃ©rico)
   const { data: variedadesDb } = trpc.variedades.list.useQuery();
   const { data: receitas, isLoading, isError, error, refetch } = trpc.receitas.list.useQuery();
   const afterReceitaMutation = async () => {
@@ -354,7 +228,7 @@ function ReceitasTabContent() {
   const deleteReceita = trpc.receitas.delete.useMutation({
     onSuccess: async () => {
       await afterReceitaMutation();
-      toast.success('Receita excluída!');
+      toast.success('Receita excluÃ­da!');
     },
     onError: (err: any) => {
       toast.error(`Erro: ${err.message}`);
@@ -428,7 +302,7 @@ function ReceitasTabContent() {
     setShowDialog(true);
   };
 
-  /** Novo cadastro com os mesmos dados da receita (ex.: trocar só a variedade). */
+  /** Novo cadastro com os mesmos dados da receita (ex.: trocar sÃ³ a variedade). */
   const openDuplicateFrom = (receita: any) => {
     setEditingId(null);
     const ecPorFase = receita.ecPorFase as any || {};
@@ -436,7 +310,7 @@ function ReceitasTabContent() {
     const hlp = (receita.horasLuzPorFase as any) || {};
     const horasLeg = receita.horasLuz ?? null;
     setForm({
-      nome: `${receita.nome} (cópia)`,
+      nome: `${receita.nome} (cÃ³pia)`,
       variedadeId: receita.variedadeId,
       metodoColheita: receita.metodoColheita || 'corte',
       diasGerminacao: receita.diasGerminacao,
@@ -471,10 +345,10 @@ function ReceitasTabContent() {
 
   const handleSave = () => {
     setFormError('');
-    if (!form.nome.trim()) { setFormError('Nome da receita é obrigatório'); return; }
+    if (!form.nome.trim()) { setFormError('Nome da receita Ã© obrigatÃ³rio'); return; }
     if (!form.variedadeId) { setFormError('Selecione uma variedade'); return; }
 
-    /** Só campos novos + obrigatórios — não envia null em legado (phPorFase, min/máx, horasLuz, densidade) para não apagar dados antigos. */
+    /** SÃ³ campos novos + obrigatÃ³rios â€” nÃ£o envia null em legado (phPorFase, min/mÃ¡x, horasLuz, densidade) para nÃ£o apagar dados antigos. */
     const payload = {
       nome: form.nome.trim(),
       variedadeId: form.variedadeId!,
@@ -512,7 +386,7 @@ function ReceitasTabContent() {
   };
 
   const handleDelete = (id: number, nome: string) => {
-    if (!window.confirm(`Excluir a receita "${nome}"? Esta ação não pode ser desfeita.`)) return;
+    if (!window.confirm(`Excluir a receita "${nome}"? Esta aÃ§Ã£o nÃ£o pode ser desfeita.`)) return;
     deleteReceita.mutate({ id });
   };
 
@@ -543,7 +417,7 @@ function ReceitasTabContent() {
               Receitas de crescimento
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              EC por fase; pH, temperatura e umidade médios; horas de luz em mudas, vegetativa e maturação (germinação no
+              EC por fase; pH, temperatura e umidade mÃ©dios; horas de luz em mudas, vegetativa e maturaÃ§Ã£o (germinaÃ§Ã£o no
               escuro)
             </p>
           </div>
@@ -571,10 +445,10 @@ function ReceitasTabContent() {
 
         {isError && (
           <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive mb-4">
-            <p className="font-medium">Não foi possível carregar as receitas.</p>
+            <p className="font-medium">NÃ£o foi possÃ­vel carregar as receitas.</p>
             <p className="text-xs mt-1 opacity-90">
-              {error?.message || 'Erro desconhecido'} — reinicie o servidor após atualizar o banco. Se as colunas novas
-              ainda não existiam, o servidor tenta criá-las ao subir.
+              {error?.message || 'Erro desconhecido'} â€” reinicie o servidor apÃ³s atualizar o banco. Se as colunas novas
+              ainda nÃ£o existiam, o servidor tenta criÃ¡-las ao subir.
             </p>
             <Button variant="outline" size="sm" className="mt-2" onClick={() => refetch()}>
               Tentar de novo
@@ -623,7 +497,7 @@ function ReceitasTabContent() {
                           <p className="font-semibold text-sm truncate">{receita.nome}</p>
                           <p className="text-xs text-muted-foreground">
                             {varNome}
-                            {receita.metodoColheita && ` · ${labelMetodoColheita(receita.metodoColheita)}`}
+                            {receita.metodoColheita && ` Â· ${labelMetodoColheita(receita.metodoColheita)}`}
                           </p>
                         </div>
                       </div>
@@ -689,10 +563,10 @@ function ReceitasTabContent() {
                             <div>
                               <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Dias por Fase</p>
                               <div className="grid grid-cols-4 gap-2">
-                                <PhaseChip label="Germinação" value={receita.diasGerminacao} unit="d" color="emerald" />
+                                <PhaseChip label="GerminaÃ§Ã£o" value={receita.diasGerminacao} unit="d" color="emerald" />
                                 <PhaseChip label="Mudas" value={receita.diasMudas} unit="d" color="emerald" />
                                 <PhaseChip label="Vegetativa" value={receita.diasVegetativa} unit="d" color="emerald" />
-                                <PhaseChip label="Maturação" value={receita.diasMaturacao} unit="d" color="emerald" />
+                                <PhaseChip label="MaturaÃ§Ã£o" value={receita.diasMaturacao} unit="d" color="emerald" />
                               </div>
                             </div>
 
@@ -703,17 +577,17 @@ function ReceitasTabContent() {
                                 <div className="grid grid-cols-3 gap-2">
                                   <PhaseChip label="Mudas" value={ecPorFase.mudas} unit="mS/cm" color="emerald" />
                                   <PhaseChip label="Vegetativa" value={ecPorFase.vegetativa} unit="mS/cm" color="emerald" />
-                                  <PhaseChip label="Maturação" value={ecPorFase.maturacao} unit="mS/cm" color="emerald" />
+                                  <PhaseChip label="MaturaÃ§Ã£o" value={ecPorFase.maturacao} unit="mS/cm" color="emerald" />
                                 </div>
                               </div>
                               <div>
                                 <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">pH (todas as fases)</p>
                                 <div className="rounded-lg p-3 bg-emerald-50/90 dark:bg-emerald-950/25 text-emerald-900 dark:text-emerald-100 text-center">
-                                  <p className="text-[10px] text-muted-foreground">Valor único</p>
+                                  <p className="text-[10px] text-muted-foreground">Valor Ãºnico</p>
                                   <p className="font-bold text-lg">
                                     {receita.ph != null
                                       ? receita.ph
-                                      : phFromLegacyPh(phPorFase as any) ?? '—'}
+                                      : phFromLegacyPh(phPorFase as any) ?? 'â€”'}
                                   </p>
                                 </div>
                               </div>
@@ -721,18 +595,18 @@ function ReceitasTabContent() {
 
                             {/* Ambiente */}
                             <div>
-                              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Condições Ambientais</p>
+                              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">CondiÃ§Ãµes Ambientais</p>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <EnvChip icon={<Thermometer className="w-3 h-3" />} label="Temp. média" value={
+                                <EnvChip icon={<Thermometer className="w-3 h-3" />} label="Temp. mÃ©dia" value={
                                   (() => {
                                     const m =
                                       receita.temperaturaMedia != null
                                         ? receita.temperaturaMedia
                                         : mediaFromMinMax(receita.temperaturaMin, receita.temperaturaMax);
-                                    return m != null ? `${m}°C` : null;
+                                    return m != null ? `${m}Â°C` : null;
                                   })()
                                 } />
-                                <EnvChip icon={<Droplets className="w-3 h-3" />} label="Umidade média" value={
+                                <EnvChip icon={<Droplets className="w-3 h-3" />} label="Umidade mÃ©dia" value={
                                   (() => {
                                     const m =
                                       receita.umidadeMedia != null
@@ -749,7 +623,7 @@ function ReceitasTabContent() {
                                 <Sun className="w-3 h-3" />
                                 Horas de luz por fase
                               </p>
-                              <p className="text-[10px] text-muted-foreground mb-2">Germinação no escuro — sem luz artificial.</p>
+                              <p className="text-[10px] text-muted-foreground mb-2">GerminaÃ§Ã£o no escuro â€” sem luz artificial.</p>
                               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                 {(() => {
                                   const h = (receita.horasLuzPorFase as Record<string, number> | null) || {};
@@ -758,14 +632,14 @@ function ReceitasTabContent() {
                                     <>
                                       <PhaseChip label="Mudas" value={h.mudas ?? leg ?? null} unit="h" color="emerald" />
                                       <PhaseChip label="Vegetativa" value={h.vegetativa ?? leg ?? null} unit="h" color="emerald" />
-                                      <PhaseChip label="Maturação" value={h.maturacao ?? leg ?? null} unit="h" color="emerald" />
+                                      <PhaseChip label="MaturaÃ§Ã£o" value={h.maturacao ?? leg ?? null} unit="h" color="emerald" />
                                     </>
                                   );
                                 })()}
                               </div>
                             </div>
 
-                            {/* Yield e observações */}
+                            {/* Yield e observaÃ§Ãµes */}
                             <div className="flex flex-wrap items-center gap-4 text-xs">
                               {receita.yieldEsperadoGramas != null && (
                                 <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:text-emerald-300 font-medium">
@@ -799,17 +673,17 @@ function ReceitasTabContent() {
           <DialogHeader>
             <DialogTitle>{editingId ? 'Editar Receita' : 'Nova Receita de Crescimento'}</DialogTitle>
             <DialogDescription>
-              pH e clima como médias globais; iluminação pode variar por fase.
+              pH e clima como mÃ©dias globais; iluminaÃ§Ã£o pode variar por fase.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6 py-2">
-            {/* Básico */}
+            {/* BÃ¡sico */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label>Nome da Receita *</Label>
                 <Input
-                  placeholder="Ex: Alface Crespa - Padrão"
+                  placeholder="Ex: Alface Crespa - PadrÃ£o"
                   value={form.nome}
                   onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
                   disabled={isPending}
@@ -836,7 +710,7 @@ function ReceitasTabContent() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label>Método de Colheita</Label>
+                <Label>MÃ©todo de Colheita</Label>
                 <Select
                   value={form.metodoColheita}
                   onValueChange={(v) => setForm((f) => ({ ...f, metodoColheita: v }))}
@@ -847,7 +721,7 @@ function ReceitasTabContent() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="corte">Corte</SelectItem>
-                    <SelectItem value="arranque">Arrancão</SelectItem>
+                    <SelectItem value="arranque">ArrancÃ£o</SelectItem>
                     <SelectItem value="colheita_parcial">Colheita Parcial</SelectItem>
                   </SelectContent>
                 </Select>
@@ -859,10 +733,10 @@ function ReceitasTabContent() {
             <div>
               <p className="text-sm font-semibold mb-2">Dias por Fase</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {numField('Germinação', form.diasGerminacao, 'diasGerminacao', 'dias', '1')}
+                {numField('GerminaÃ§Ã£o', form.diasGerminacao, 'diasGerminacao', 'dias', '1')}
                 {numField('Mudas', form.diasMudas, 'diasMudas', 'dias', '1')}
                 {numField('Vegetativa', form.diasVegetativa, 'diasVegetativa', 'dias', '1')}
-                {numField('Maturação', form.diasMaturacao, 'diasMaturacao', 'dias', '1')}
+                {numField('MaturaÃ§Ã£o', form.diasMaturacao, 'diasMaturacao', 'dias', '1')}
               </div>
             </div>
 
@@ -872,39 +746,39 @@ function ReceitasTabContent() {
               <div className="grid grid-cols-3 gap-3">
                 {numField('Mudas', form.ecMudas, 'ecMudas')}
                 {numField('Vegetativa', form.ecVegetativa, 'ecVegetativa')}
-                {numField('Maturação', form.ecMaturacao, 'ecMaturacao')}
+                {numField('MaturaÃ§Ã£o', form.ecMaturacao, 'ecMaturacao')}
               </div>
             </div>
 
-            {/* pH único */}
+            {/* pH Ãºnico */}
             <div>
               <p className="text-sm font-semibold mb-2">pH (mesmo valor para todas as fases)</p>
               <div className="max-w-[200px]">{numField('pH', form.ph, 'ph')}</div>
             </div>
 
-            {/* Ambiente: médias */}
+            {/* Ambiente: mÃ©dias */}
             <div>
-              <p className="text-sm font-semibold mb-2">Condições ambientais (médias)</p>
+              <p className="text-sm font-semibold mb-2">CondiÃ§Ãµes ambientais (mÃ©dias)</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {numField('Temperatura média', form.temperaturaMedia, 'temperaturaMedia', '°C')}
-                {numField('Umidade média', form.umidadeMedia, 'umidadeMedia', '%', '1')}
+                {numField('Temperatura mÃ©dia', form.temperaturaMedia, 'temperaturaMedia', 'Â°C')}
+                {numField('Umidade mÃ©dia', form.umidadeMedia, 'umidadeMedia', '%', '1')}
               </div>
             </div>
 
-            {/* Luz por fase (sem germinação — escuro) */}
+            {/* Luz por fase (sem germinaÃ§Ã£o â€” escuro) */}
             <div>
               <p className="text-sm font-semibold mb-1">Horas de luz por fase</p>
-              <p className="text-xs text-muted-foreground mb-2">Germinação permanece no escuro; informe só mudas, vegetativa e maturação.</p>
+              <p className="text-xs text-muted-foreground mb-2">GerminaÃ§Ã£o permanece no escuro; informe sÃ³ mudas, vegetativa e maturaÃ§Ã£o.</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {numField('Mudas', form.horasLuzMudas, 'horasLuzMudas', 'h/dia', '1')}
                 {numField('Vegetativa', form.horasLuzVegetativa, 'horasLuzVegetativa', 'h/dia', '1')}
-                {numField('Maturação', form.horasLuzMaturacao, 'horasLuzMaturacao', 'h/dia', '1')}
+                {numField('MaturaÃ§Ã£o', form.horasLuzMaturacao, 'horasLuzMaturacao', 'h/dia', '1')}
               </div>
             </div>
 
-            {/* Observações */}
+            {/* ObservaÃ§Ãµes */}
             <div className="space-y-1">
-              <Label>Observações</Label>
+              <Label>ObservaÃ§Ãµes</Label>
               <Textarea
                 placeholder="Notas adicionais sobre esta receita..."
                 value={form.observacoes}
@@ -929,7 +803,7 @@ function ReceitasTabContent() {
             <Button onClick={handleSave} disabled={isPending} className="bg-emerald-600 hover:bg-emerald-700">
               {isPending ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Salvando...</>
-              ) : editingId ? 'Salvar Alterações' : 'Criar Receita'}
+              ) : editingId ? 'Salvar AlteraÃ§Ãµes' : 'Criar Receita'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -948,7 +822,7 @@ function PhaseChip({ label, value, unit, color }: { label: string; value: number
   return (
     <div className={`rounded-lg p-2 text-center ${bgMap[color] || 'bg-muted'}`}>
       <p className="text-[10px] text-muted-foreground">{label}</p>
-      <p className="font-bold text-sm">{value != null ? `${value}${unit || ''}` : '—'}</p>
+      <p className="font-bold text-sm">{value != null ? `${value}${unit || ''}` : 'â€”'}</p>
     </div>
   );
 }
@@ -959,7 +833,7 @@ function EnvChip({ icon, label, value }: { icon: React.ReactNode; label: string;
       {icon}
       <div>
         <p className="text-[10px] text-muted-foreground">{label}</p>
-        <p className="text-xs font-medium">{value || '—'}</p>
+        <p className="text-xs font-medium">{value || 'â€”'}</p>
       </div>
     </div>
   );

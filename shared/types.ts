@@ -32,6 +32,7 @@ export interface VariedadeData {
   diasMudas: number;
   diasVegetativa: number;
   diasMaturacao: number;
+  babyLeaf: boolean;
 }
 
 export interface TorreData {

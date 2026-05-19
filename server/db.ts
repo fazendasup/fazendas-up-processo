@@ -3214,6 +3214,35 @@ export async function ensurePerfisReceitaIdColumn(): Promise<void> {
   }
 }
 
+/** Garante coluna `babyLeaf` em `variedades` (migração 0031). */
+export async function ensureVariedadesBabyLeafColumn(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.execute(
+      sql.raw("ALTER TABLE `variedades` ADD COLUMN `babyLeaf` boolean NOT NULL DEFAULT false"),
+    );
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!isMysqlDuplicateColumnError(err)) {
+      if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
+      console.error("[Database] ensureVariedadesBabyLeafColumn:", err);
+      return;
+    }
+  }
+  try {
+    await db.execute(
+      sql.raw(
+        "UPDATE `variedades` SET `babyLeaf` = true WHERE `slug` IN ('manjericao', 'baby-leaf-beterraba', 'baby-leaf-acelga') AND `babyLeaf` = false",
+      ),
+    );
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
+    console.warn("[Database] ensureVariedadesBabyLeafColumn backfill:", msg.slice(0, 120));
+  }
+}
+
 /** Garante tabela `estoque_itens` (migração 0013) — bases locais sem `db:migrate`. */
 export async function ensureEstoqueItensTable(): Promise<void> {
   const db = await getDb();

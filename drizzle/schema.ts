@@ -182,6 +182,8 @@ export const variedades = mysqlTable(
     diasMudas: int("diasMudas").notNull().default(14),
     diasVegetativa: int("diasVegetativa").notNull().default(21),
     diasMaturacao: int("diasMaturacao").notNull().default(28),
+    /** Torres 12×6: 2 células/furo em veg/mat; dobra sementes no planejamento contínuo. */
+    babyLeaf: boolean("babyLeaf").notNull().default(false),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },

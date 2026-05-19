@@ -45,11 +45,16 @@ export function variedadePulaVegetativa(
 /**
  * Variedades que ocupam apenas torres com grelha 12×6 (baby leaf), não alface nas torres padrão.
  * Combinar com `torreReservadaGrelhaBabyLeaf` (client `planejamentoContinuo`) para capacidade por torre.
+ * Se `babyLeafCadastro` estiver definido no cadastro, ele prevalece sobre slug/nome.
  */
 export function variedadeEhBabyLeafFV(
   slug: string | null | undefined,
   nome: string | null | undefined,
+  babyLeafCadastro?: boolean | null,
 ): boolean {
+  if (babyLeafCadastro === true) return true;
+  if (babyLeafCadastro === false) return false;
+
   const s = (slug || "").trim().toLowerCase();
   if (s && VARIEDADE_SLUGS_BABY_LEAF_FV.has(s)) return true;
 
