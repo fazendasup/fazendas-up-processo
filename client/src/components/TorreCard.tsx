@@ -89,6 +89,14 @@ export default function TorreCard({ torre }: TorreCardProps) {
   /** Torre física em pé: topo do desenho = andar de número maior (como na TorreDetail). */
   const andares = andaresDaTorreDeclarados(data.andares, torre).sort((a, b) => b.numero - a.numero);
   const caixa = data.caixasAgua.find((c) => c.id === torre.caixaAguaId);
+  const torresDaCaixa = useMemo(() => {
+    if (!caixa) return [];
+    return data.torres
+      .filter((t) => t.caixaAguaId === caixa.id)
+      .sort((a, b) => (a.numeroTorre ?? 0) - (b.numeroTorre ?? 0));
+  }, [caixa, data.torres]);
+  const nomesTorresDaCaixa = torresDaCaixa.map((t) => tituloTorreCardCompacto(t.nome)).join(', ');
+  const caixaCompartilhadaLabel = torresDaCaixa.length > 1 ? `${torresDaCaixa.length} torres` : null;
   const alertas = contarAlertasTorre(
     torre,
     andares,
@@ -98,6 +106,15 @@ export default function TorreCard({ torre }: TorreCardProps) {
     cicloPrazoOptsFromFazenda(data),
   );
   const andaresOcupados = andares.filter((a) => andarOcupado(a, torre.fase, data.projetoTipo)).length;
+  const caixaTitle = caixa
+    ? [
+        `${andaresOcupados}/${torre.numAndares ?? torre.andares ?? andares.length}`,
+        caixa.nome,
+        caixaCompartilhadaLabel ? `atende ${caixaCompartilhadaLabel}: ${nomesTorresDaCaixa}` : null,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : undefined;
 
   const exibirColhidas =
     isMicroverdes ? faseTorreMicroverdesIluminacao(torre.fase) : torre.fase === 'maturacao';
@@ -284,7 +301,7 @@ export default function TorreCard({ torre }: TorreCardProps) {
           <div className="flex w-full items-start justify-between gap-1 border-t border-border/40 pt-1.5 text-[10px] text-muted-foreground">
             <div
               className="flex min-w-0 flex-1 flex-col gap-0.5 leading-snug"
-              title={caixa ? `${andaresOcupados}/${torre.numAndares ?? torre.andares ?? andares.length} · ${caixa.nome}` : undefined}
+              title={caixaTitle}
             >
               <p>
                 <strong className="text-card-foreground">{andaresOcupados}</strong>/{torre.numAndares ?? torre.andares ?? andares.length}
@@ -293,7 +310,12 @@ export default function TorreCard({ torre }: TorreCardProps) {
               {caixa && (
                 <p className="inline-flex max-w-full items-start gap-0.5 break-words">
                   <Droplets className="mt-0.5 h-2.5 w-2.5 shrink-0" />
-                  <span>{caixa.nome}</span>
+                  <span>
+                    {caixa.nome}
+                    {caixaCompartilhadaLabel && (
+                      <span className="text-card-foreground"> · atende {caixaCompartilhadaLabel}</span>
+                    )}
+                  </span>
                 </p>
               )}
             </div>
