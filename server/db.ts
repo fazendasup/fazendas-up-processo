@@ -2475,7 +2475,14 @@ export async function resetPerfisByAndarId(projetoId: number, andarId: number) {
   if (!db) throw new Error("Database not available");
   await db
     .update(perfis)
-    .set({ ativo: false, variedadeId: null, receitaId: null, dataEntrada: null, cultivoStatus: null })
+    .set({
+      ativo: false,
+      variedadeId: null,
+      receitaId: null,
+      dataEntrada: null,
+      quantidadePlantas: null,
+      cultivoStatus: null,
+    })
     .where(and(eq(perfis.projetoId, projetoId), eq(perfis.andarId, andarId)));
 }
 
@@ -2551,6 +2558,7 @@ export async function batchUpdatePerfis(
     variedadeId?: number | null;
     ativo?: boolean;
     dataEntrada?: Date | null;
+    quantidadePlantas?: number | null;
     cultivoStatus?: string | null;
   }>,
 ) {
@@ -2571,6 +2579,7 @@ export async function batchUpdatePerfis(
       }
       if (u.ativo !== undefined) data.ativo = u.ativo;
       if (u.dataEntrada !== undefined) data.dataEntrada = u.dataEntrada;
+      if (u.quantidadePlantas !== undefined) data.quantidadePlantas = u.quantidadePlantas;
       if (u.cultivoStatus !== undefined) data.cultivoStatus = u.cultivoStatus;
       return db.update(perfis).set(data).where(
         and(eq(perfis.projetoId, projetoId), eq(perfis.andarId, andarId), eq(perfis.perfilIndex, u.perfilIndex)),
@@ -2597,7 +2606,13 @@ export async function setAllFurosOfAndar(
 export async function setAllPerfisOfAndar(
   projetoId: number,
   andarId: number,
-  data: { variedadeId?: number | null; ativo?: boolean; dataEntrada?: Date | null; cultivoStatus?: string | null },
+  data: {
+    variedadeId?: number | null;
+    ativo?: boolean;
+    dataEntrada?: Date | null;
+    quantidadePlantas?: number | null;
+    cultivoStatus?: string | null;
+  },
 ) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -2613,6 +2628,7 @@ export async function setAllPerfisOfAndar(
   }
   if (data.ativo !== undefined) setData.ativo = data.ativo;
   if (data.dataEntrada !== undefined) setData.dataEntrada = data.dataEntrada;
+  if (data.quantidadePlantas !== undefined) setData.quantidadePlantas = data.quantidadePlantas;
   if (data.cultivoStatus !== undefined) setData.cultivoStatus = data.cultivoStatus;
   await db.update(perfis).set(setData).where(and(eq(perfis.projetoId, projetoId), eq(perfis.andarId, andarId)));
 }
@@ -2949,6 +2965,7 @@ export async function loadFullFazendaData(projetoId: number) {
   await ensureVisionCultivoTables();
   await ensurePerfisCultivoStatusColumn();
   await ensurePerfisReceitaIdColumn();
+  await ensurePerfisQuantidadePlantasColumn();
 
   const projetoMeta = await getProjetoRow(projetoId);
   const omitCaixaAguaModulo =
@@ -3211,6 +3228,20 @@ export async function ensurePerfisReceitaIdColumn(): Promise<void> {
     if (isMysqlDuplicateColumnError(err)) return;
     if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
     console.error("[Database] ensurePerfisReceitaIdColumn:", err);
+  }
+}
+
+/** Garante coluna `quantidadePlantas` em `perfis` — FV mudas com quantidade real por perfil. */
+export async function ensurePerfisQuantidadePlantasColumn(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.execute(sql.raw("ALTER TABLE `perfis` ADD COLUMN `quantidadePlantas` int NULL"));
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (isMysqlDuplicateColumnError(err)) return;
+    if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
+    console.error("[Database] ensurePerfisQuantidadePlantasColumn:", err);
   }
 }
 

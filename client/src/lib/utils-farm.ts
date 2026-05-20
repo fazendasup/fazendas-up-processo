@@ -20,7 +20,6 @@ import type {
 } from './types';
 import { FASES_CONFIG } from './types';
 import {
-  contarPlantasMudasFv,
   plantasPorPerfilMudas,
   PLANTAS_POR_PERFIL_FV,
 } from '@shared/plantasPorPerfil';
@@ -44,6 +43,14 @@ export function cultivoBandejaEfetivo(
   if (furosDoPerfil.some((f) => f.status === 'colhido')) return 'colhido';
   if (furosDoPerfil.some((f) => f.status === 'plantado')) return 'plantado';
   return 'vazio';
+}
+
+export function quantidadePlantasPerfilMudas(
+  perfil: Pick<PerfilData, 'quantidadePlantas'> | undefined,
+  fallback: number = PLANTAS_POR_PERFIL_FV.mudas,
+): number {
+  const qtd = Number(perfil?.quantidadePlantas);
+  return Number.isFinite(qtd) && qtd > 0 ? Math.floor(qtd) : fallback;
 }
 
 /** Andares da torre com `numero` em 1..N conforme `numAndares`/`andares` (ignora linhas órfãs no BD). */
@@ -467,8 +474,10 @@ export function contarPlantasAndar(
     if (projetoTipo === 'microverdes') {
       return (andar.perfis || []).filter((p) => p.ativo).length;
     }
-    const nPerfis = (andar.perfis || []).filter((p) => p.ativo).length;
-    return contarPlantasMudasFv(nPerfis, plantasPorPerfilMudas(plantasPorPerfilMudasOverride));
+    const fallback = plantasPorPerfilMudas(plantasPorPerfilMudasOverride);
+    return (andar.perfis || [])
+      .filter((p) => p.ativo)
+      .reduce((sum, p) => sum + quantidadePlantasPerfilMudas(p, fallback), 0);
   }
   if (projetoTipo === 'microverdes' && fase) {
     const furos = andar.furos || [];

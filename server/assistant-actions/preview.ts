@@ -1,4 +1,4 @@
-import { contarPlantasMudasFv, plantasPorPerfilMudas } from "@shared/plantasPorPerfil";
+import { plantasPorPerfilMudas } from "@shared/plantasPorPerfil";
 import type { PendingAssistantAction } from "@shared/assistant-actions";
 import { resolverFaseDestinoTransplantio, type FaseDestinoTransplantioFv } from "@shared/transplantioDestino";
 import { variedadePulaVegetativa } from "@shared/variedadesFase";
@@ -48,6 +48,11 @@ function contarVaziosDestino(
 ): number {
   if (destFuros.length > 0) return destFuros.filter((f) => f.status === "vazio").length;
   return destPerfis.filter((p) => !p.ativo).length;
+}
+
+function quantidadePerfilMudas(perfil: { quantidadePlantas?: number | null }, fallback: number): number {
+  const qtd = Number(perfil.quantidadePlantas);
+  return Number.isFinite(qtd) && qtd > 0 ? Math.floor(qtd) : Math.max(1, fallback);
 }
 
 export async function previewTransplantio(
@@ -117,7 +122,9 @@ export async function previewTransplantio(
     faseOrigem === "mudas" ? await plantasPorPerfilMudasDoAndar(pid, origemVariedadeId, origemPerfis) : 0;
   const origemDisponivel =
     faseOrigem === "mudas"
-      ? contarPlantasMudasFv(origemPerfis.filter((p) => p.ativo).length, plantasPorPerfil)
+      ? origemPerfis
+          .filter((p) => p.ativo)
+          .reduce((sum, p) => sum + quantidadePerfilMudas(p, plantasPorPerfil), 0)
       : origemFuros.filter((f) => f.status === "plantado").length;
 
   if (origemDisponivel <= 0) {

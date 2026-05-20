@@ -324,6 +324,7 @@ async function startServer() {
   await db.ensureBancadasSchemaColumns();
   await db.ensurePerfisCultivoStatusColumn();
   await db.ensurePerfisReceitaIdColumn();
+  await db.ensurePerfisQuantidadePlantasColumn();
   await db.ensureVariedadesBabyLeafColumn();
   await db.ensureProjetoMembershipsBootstrap();
   const schemaEns = await db.ensureIncompleteMultiProjetoSchema();

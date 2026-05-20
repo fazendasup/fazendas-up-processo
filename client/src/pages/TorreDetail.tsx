@@ -25,6 +25,7 @@ import {
   andarPrecisaLavagem, variedadePrincipalAndar, andaresDaTorreDeclarados,
   TIPOS_APLICACAO_CAIXA, TIPOS_APLICACAO_ANDAR,
   cultivoBandejaEfetivo,
+  quantidadePlantasPerfilMudas,
   resolverDataPlantioCampo,
   valorCampoDataPlantio,
   type ModoDataPlantio,
@@ -92,7 +93,13 @@ export default function TorreDetail() {
   const [modoDataPlantio, setModoDataPlantio] = useState<ModoDataPlantio>('plantio');
   const [undoPayload, setUndoPayload] = useState<null | {
     andarDbId: number;
-    perfis: Array<{ perfilIndex: number; ativo?: boolean; variedadeId?: number | null; dataEntrada?: Date | null }>;
+    perfis: Array<{
+      perfilIndex: number;
+      ativo?: boolean;
+      variedadeId?: number | null;
+      dataEntrada?: Date | null;
+      quantidadePlantas?: number | null;
+    }>;
     furos: Array<{ perfilIndex: number; furoIndex: number; status?: string; variedadeId?: number | null }>;
     label: string;
   }>(null);
@@ -113,6 +120,7 @@ export default function TorreDetail() {
     onSuccess: () => { refetchColheita(); toast.success('Colheita registrada!'); },
     onError: (err: any) => { toast.error(`Erro: ${err.message}`); },
   });
+  const planosPlantioQuery = trpc.planosPlantio.list.useQuery();
 
   const torre = data.torres.find((t) => t.id === id);
 
@@ -184,6 +192,47 @@ export default function TorreDetail() {
 
   const isMudas = torre.fase === 'mudas';
   const isMaturacao = torre.fase === 'maturacao';
+
+  const quantidadePlanejadaMudasPorVariedade = (variedadeSlug?: string | null): number | null => {
+    if (!variedadeSlug) return null;
+    const variedadeDbId = resolver.varSlugToId.get(variedadeSlug);
+    if (!variedadeDbId) return null;
+    const planos = ((planosPlantioQuery.data || []) as any[])
+      .filter((p) => {
+        const status = String(p.status || '');
+        return (
+          Number(p.variedadeId) === variedadeDbId &&
+          status !== 'colhido' &&
+          status !== 'cancelado'
+        );
+      })
+      .sort((a, b) => {
+        const aPronto = a.germinacaoFase === 'pronto_mudas' ? 0 : 1;
+        const bPronto = b.germinacaoFase === 'pronto_mudas' ? 0 : 1;
+        const ad = new Date(a.dataTransplantioMudas || a.dataInicioGerminacao || 0).getTime();
+        const bd = new Date(b.dataTransplantioMudas || b.dataInicioGerminacao || 0).getTime();
+        return aPronto - bPronto || ad - bd || Number(a.id) - Number(b.id);
+      });
+    const plano = planos[0];
+    if (!plano) return null;
+    const base = Number(plano.germinadas) > 0 ? Number(plano.germinadas) : Number(plano.quantidadePlantas);
+    const restante = Math.max(0, Math.floor(base - Number(plano.transplantadasGerminacao || 0)));
+    return restante > 0 ? restante : null;
+  };
+
+  const quantidadeInicialPerfilMudas = (variedadeSlug?: string | null, atual?: number | null): number => {
+    const atualNum = Number(atual);
+    if (Number.isFinite(atualNum) && atualNum > 0) return Math.floor(atualNum);
+    return quantidadePlanejadaMudasPorVariedade(variedadeSlug) ?? quantidadePlantasPerfilMudas(undefined);
+  };
+
+  const distribuirQuantidadeMudas = (total: number, n: number): number[] => {
+    const qtd = Math.max(0, Math.floor(total));
+    const count = Math.max(1, n);
+    const base = Math.floor(qtd / count);
+    const resto = qtd % count;
+    return Array.from({ length: count }, (_, i) => base + (i < resto ? 1 : 0));
+  };
   /** Microverdes: colheita nas torres de iluminação (`vegetativa` ou legado `maturacao`). FV: só `maturacao`. */
   const torreComModoColheita = isMicroverdes
     ? faseTorreMicroverdesIluminacao(torre.fase)
@@ -320,6 +369,23 @@ export default function TorreDetail() {
     );
   };
 
+  const handleUpdatePerfilQuantidadeMudas = (perfilIndex: number, quantidadeRaw: string) => {
+    if (!andarSelecionado || !isMudas || isMicroverdes) return;
+    const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
+    if (!andarDbId) return;
+    const quantidade = Math.max(0, Math.floor(Number(quantidadeRaw || 0)));
+    if (!Number.isFinite(quantidade)) {
+      toast.error('Quantidade inválida.');
+      return;
+    }
+    mutations.updatePerfil.mutate({
+      andarId: andarDbId,
+      perfilIndex,
+      quantidadePlantas: quantidade > 0 ? quantidade : null,
+    });
+    toast.success(`Quantidade do Perfil ${perfilIndex + 1} atualizada!`);
+  };
+
   // ---- Furos handlers ----
 
   const handleFuroToggle = (perfilIndex: number, furoIndex: number, variedadeId?: string) => {
@@ -360,10 +426,18 @@ export default function TorreDetail() {
 
     if (isMudas) {
       const currentPerfil = (andarSelecionado.perfis || []).find((p) => p.perfilIndex === perfilIndex);
+      const nextAtivo = !(currentPerfil?.ativo ?? false);
       mutations.updatePerfil.mutate({
         andarId: andarDbId,
         perfilIndex,
-        ativo: !(currentPerfil?.ativo ?? false),
+        ativo: nextAtivo,
+        ...(projetoTipo !== 'microverdes'
+          ? {
+              quantidadePlantas: nextAtivo
+                ? quantidadeInicialPerfilMudas(currentPerfil?.variedadeId ?? variedadeId, currentPerfil?.quantidadePlantas)
+                : null,
+            }
+          : {}),
       });
       return;
     }
@@ -462,6 +536,7 @@ export default function TorreDetail() {
       perfilIndex,
       variedadeId: varDbId,
       ...(varDbId ? { ativo: true } : {}),
+      ...(isMudas && varDbId ? { quantidadePlantas: quantidadeInicialPerfilMudas(variedadeId) } : {}),
     });
 
     // Em vegetativa/maturação: definir variedade individual planta automaticamente todos os furos do perfil.
@@ -502,6 +577,26 @@ export default function TorreDetail() {
       } as any);
       const variedade = data.variedades.find((v) => v.id === variedadeId);
       toast.success(`Todas as ${unidOperacao.plural} com ${variedade?.nome || variedadeId} (em cultivo).`);
+      return;
+    }
+
+    if (isMudas && !isMicroverdes && varDbId) {
+      const perfis = [...(andarSelecionado.perfis || [])].sort((a, b) => a.perfilIndex - b.perfilIndex);
+      const totalPlanejado = quantidadePlanejadaMudasPorVariedade(variedadeId);
+      const quantidades = totalPlanejado != null
+        ? distribuirQuantidadeMudas(totalPlanejado, perfis.length)
+        : perfis.map(() => quantidadeInicialPerfilMudas(variedadeId));
+      mutations.batchUpdatePerfis.mutate({
+        andarId: andarDbId,
+        updates: perfis.map((p, i) => ({
+          perfilIndex: p.perfilIndex,
+          variedadeId: varDbId,
+          ativo: true,
+          quantidadePlantas: quantidades[i] ?? quantidadeInicialPerfilMudas(variedadeId),
+        })),
+      } as any);
+      const variedade = data.variedades.find((v) => v.id === variedadeId);
+      toast.success(`Todos os perfis definidos como ${variedade?.nome || variedadeId} com quantidade do planejamento.`);
       return;
     }
 
@@ -700,6 +795,7 @@ export default function TorreDetail() {
         ativo: p.ativo,
         variedadeId: p.variedadeId ? (resolver.varSlugToId.get(p.variedadeId) ?? null) : null,
         dataEntrada: p.dataEntrada ? new Date(p.dataEntrada) : null,
+        quantidadePlantas: p.quantidadePlantas ?? null,
         cultivoStatus: p.cultivoStatus ?? null,
       }));
     const prevFuros = (andarFront.furos || [])
@@ -764,7 +860,7 @@ export default function TorreDetail() {
   };
 
   const applyBulkToSelection = async (
-    patch: { ativo?: boolean; variedadeId?: number | null; dataEntrada?: Date | null },
+    patch: { ativo?: boolean; variedadeId?: number | null; dataEntrada?: Date | null; quantidadePlantas?: number | null },
     label: string
   ) => {
     if (!andarSelecionado) return;
@@ -807,7 +903,7 @@ export default function TorreDetail() {
       updates: indices.map((perfilIndex) =>
         isMicroverdes && !isMudas
           ? { perfilIndex, ativo: false, variedadeId: null, dataEntrada: null, cultivoStatus: 'vazio' as const }
-          : { perfilIndex, ativo: false, variedadeId: null, dataEntrada: null },
+          : { perfilIndex, ativo: false, variedadeId: null, dataEntrada: null, quantidadePlantas: null },
       ),
     } as any);
 
@@ -845,6 +941,7 @@ export default function TorreDetail() {
       ativo: p.ativo,
       variedadeId: p.variedadeId ? (resolver.varSlugToId.get(p.variedadeId) ?? null) : null,
       dataEntrada: p.dataEntrada ? new Date(p.dataEntrada) : null,
+      quantidadePlantas: p.quantidadePlantas ?? null,
       ...(isMicroverdes && !isMudas && p.cultivoStatus
         ? { cultivoStatus: p.cultivoStatus as 'vazio' | 'plantado' | 'colhido' }
         : {}),
@@ -1496,6 +1593,19 @@ export default function TorreDetail() {
                                           }
                                         }}
                                       />
+                                      {isMudas && !isMicroverdes && (
+                                        <div className="mt-1">
+                                          <Label className="text-[10px] text-muted-foreground">Qtd. mudas</Label>
+                                          <Input
+                                            type="number"
+                                            min={0}
+                                            className="mt-0.5 h-7 text-[11px]"
+                                            defaultValue={quantidadePlantasPerfilMudas(perfil)}
+                                            key={`${andarSelecionado.id}-p${ps.perfilIndex}-qtd-${perfil?.quantidadePlantas ?? 'legacy'}`}
+                                            onBlur={(e) => handleUpdatePerfilQuantidadeMudas(ps.perfilIndex, e.target.value)}
+                                          />
+                                        </div>
+                                      )}
                                     </div>
                                   );
                                 })}
@@ -1621,6 +1731,36 @@ export default function TorreDetail() {
                                       )
                                     : null;
                                   if (bulkDataEntrada && !dt) return;
+                                  if (isMudas && !isMicroverdes && bulkVariedade && varDbId != null) {
+                                    const indices = getSelectedIndices();
+                                    if (indices.length === 0) {
+                                      toast.error('Selecione perfis primeiro');
+                                      return;
+                                    }
+                                    const valid = validarBulkAntes({
+                                      vaiAtivar: true,
+                                      variedadeIdDb: varDbId,
+                                      dataEntrada: dt,
+                                    });
+                                    if (!valid.ok) { toast.error(valid.reason); return; }
+                                    const totalPlanejado = quantidadePlanejadaMudasPorVariedade(bulkVariedade);
+                                    const quantidades = totalPlanejado != null
+                                      ? distribuirQuantidadeMudas(totalPlanejado, indices.length)
+                                      : indices.map(() => quantidadeInicialPerfilMudas(bulkVariedade));
+                                    snapshotUndoForPerfis(andarSelecionado!, indices, 'Perfis ativados');
+                                    await mutations.batchUpdatePerfis.mutateAsync({
+                                      andarId: resolver.andarFrontIdToDbId.get(andarSelecionado!.id)!,
+                                      updates: indices.map((perfilIndex, i) => ({
+                                        perfilIndex,
+                                        ativo: true,
+                                        variedadeId: varDbId,
+                                        dataEntrada: dt,
+                                        quantidadePlantas: quantidades[i] ?? quantidadeInicialPerfilMudas(bulkVariedade),
+                                      })),
+                                    } as any);
+                                    toast.success('Perfis ativados com quantidade do planejamento');
+                                    return;
+                                  }
                                   await applyBulkToSelection({ ativo: true, variedadeId: varDbId, dataEntrada: dt }, 'Perfis ativados');
                                 }}
                               >

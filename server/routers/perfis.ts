@@ -29,6 +29,7 @@ export const perfisRouter = router({
         variedadeId: z.number().nullable().optional(),
         ativo: z.boolean().optional(),
         dataEntrada: z.date().nullable().optional(),
+        quantidadePlantas: z.number().int().min(0).nullable().optional(),
         cultivoStatus: z.enum(["vazio", "plantado", "colhido"]).nullable().optional(),
       }),
     )
@@ -66,6 +67,7 @@ export const perfisRouter = router({
             variedadeId: z.number().nullable().optional(),
             ativo: z.boolean().optional(),
             dataEntrada: z.date().nullable().optional(),
+            quantidadePlantas: z.number().int().min(0).nullable().optional(),
             cultivoStatus: z.enum(["vazio", "plantado", "colhido"]).nullable().optional(),
           }),
         ),
@@ -83,6 +85,7 @@ export const perfisRouter = router({
         variedadeId: z.number().nullable().optional(),
         ativo: z.boolean().optional(),
         dataEntrada: z.date().nullable().optional(),
+        quantidadePlantas: z.number().int().min(0).nullable().optional(),
         cultivoStatus: z.enum(["vazio", "plantado", "colhido"]).nullable().optional(),
       }),
     )

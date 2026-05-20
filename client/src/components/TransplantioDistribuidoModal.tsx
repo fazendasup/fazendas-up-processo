@@ -9,14 +9,19 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import type { Andar, Torre, Fase, VariedadeConfig } from "@/lib/types";
-import { capacidadeAndar, contarVaziosAndar, andarDentroDoModeloDaTorre } from "@/lib/utils-farm";
+import {
+  capacidadeAndar,
+  contarVaziosAndar,
+  andarDentroDoModeloDaTorre,
+  quantidadePlantasPerfilMudas,
+} from "@/lib/utils-farm";
 import { labelPosicaoProducao } from "@/lib/microverdesPhases";
 import { torreReservadaGrelhaBabyLeaf } from "@/lib/planejamentoContinuo";
 import {
   resolverFaseDestinoTransplantio,
   type FaseDestinoTransplantioFv,
 } from "@shared/transplantioDestino";
-import { contarPlantasMudasFv, PLANTAS_POR_PERFIL_FV } from "@shared/plantasPorPerfil";
+import { PLANTAS_POR_PERFIL_FV } from "@shared/plantasPorPerfil";
 import { variedadePulaVegetativa } from "@shared/variedadesFase";
 
 function rotuloTorreDestino(torre: Torre): string {
@@ -125,7 +130,9 @@ export function TransplantioDistribuidoModal({
     if (!origemAndar || !origemTorre || perfisSelecionados.length === 0) return 0;
     if (origemTorre.fase === "mudas") {
       if (projetoTipo === "microverdes") return perfisSelecionados.length;
-      return contarPlantasMudasFv(perfisSelecionados.length, plantasPorPerfilMudasUi);
+      return (origemAndar.perfis || [])
+        .filter((p) => p.ativo && perfisSelecionados.includes(p.perfilIndex))
+        .reduce((sum, p) => sum + quantidadePlantasPerfilMudas(p, plantasPorPerfilMudasUi), 0);
     }
     return (origemAndar.furos || []).filter(
       (f) => f.status === "plantado" && perfisSelecionados.includes(f.perfilIndex),
@@ -320,7 +327,7 @@ export function TransplantioDistribuidoModal({
                 </p>
                 {origemTorre.fase === "mudas" && projetoTipo !== "microverdes" && perfisDisponiveisOrigem.length > 0 && (
                   <p className="col-span-2 text-xs text-muted-foreground">
-                    Até {perfisDisponiveisOrigem.length} perfil(is) × {PLANTAS_POR_PERFIL_FV.mudas} plantas por perfil
+                    Quantidade por perfil vem do plantio registrado; perfis antigos sem quantidade usam {PLANTAS_POR_PERFIL_FV.mudas}.
                   </p>
                 )}
               </div>
@@ -593,7 +600,7 @@ function SelecaoPerfisOrigem({
               origemTorre.fase === "mudas"
                 ? projetoTipo === "microverdes"
                   ? 1
-                  : plantasPorPerfilMudasUi
+                  : quantidadePlantasPerfilMudas(perfil, plantasPorPerfilMudasUi)
                 : (origemAndar.furos || []).filter(
                     (f) => f.perfilIndex === idx && f.status === "plantado",
                   ).length;

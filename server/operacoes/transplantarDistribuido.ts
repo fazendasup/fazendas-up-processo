@@ -1,8 +1,4 @@
-import {
-  contarPlantasMudasFv,
-  perfisMudasParaLiberar,
-  plantasPorPerfilMudas,
-} from "@shared/plantasPorPerfil";
+import { plantasPorPerfilMudas } from "@shared/plantasPorPerfil";
 import { resolverFaseDestinoTransplantio, type FaseDestinoTransplantioFv } from "@shared/transplantioDestino";
 import { variedadePulaVegetativa } from "@shared/variedadesFase";
 import { TRPCError } from "@trpc/server";
@@ -44,6 +40,14 @@ async function plantasPorPerfilMudasDoAndar(
     return ativa.densidadePorPerfil;
   }
   return plantasPorPerfilMudas(null);
+}
+
+function quantidadePerfilMudas(
+  perfil: { quantidadePlantas?: number | null },
+  fallback: number,
+): number {
+  const qtd = Number(perfil.quantidadePlantas);
+  return Number.isFinite(qtd) && qtd > 0 ? Math.floor(qtd) : Math.max(1, fallback);
 }
 
 /** Transplantio distribuído — mesma regra do router `andares.transplantarDistribuido`. */
@@ -157,7 +161,10 @@ export async function runTransplantarDistribuido(
 
   const origemDisponivel =
     faseOrigem === "mudas"
-      ? contarPlantasMudasFv(perfisOrigemMudas.length, plantasPorPerfilMudasEfetivo)
+      ? perfisOrigemMudas.reduce(
+          (sum, p) => sum + quantidadePerfilMudas(p, plantasPorPerfilMudasEfetivo),
+          0,
+        )
       : perfilIndicesOrigem?.length
         ? origemFuros.filter(
             (f) => f.status === "plantado" && perfilIndicesOrigem.includes(f.perfilIndex),
@@ -281,25 +288,44 @@ export async function runTransplantarDistribuido(
     const pool = perfilIndicesOrigem?.length
       ? perfisOrigemMudas.sort((a, b) => a.perfilIndex - b.perfilIndex)
       : origemPerfis.filter((p) => p.ativo).sort((a, b) => a.perfilIndex - b.perfilIndex);
-    const nPerfisLiberar = perfisMudasParaLiberar(totalProcessado, plantasPorPerfilMudasEfetivo);
-    const ativos = pool.slice(0, nPerfisLiberar);
-    const esperado = contarPlantasMudasFv(ativos.length, plantasPorPerfilMudasEfetivo);
-    if (perfilIndicesOrigem?.length && totalProcessado !== esperado) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: `Para os perfis selecionados, distribua e/ou descarte exatamente ${esperado} (você informou ${totalProcessado}).`,
-      });
+    let restante = totalProcessado;
+    const updates: Array<{
+      perfilIndex: number;
+      ativo: boolean;
+      variedadeId: number | null;
+      dataEntrada: Date | null;
+      quantidadePlantas: number | null;
+    }> = [];
+
+    for (const p of pool) {
+      if (restante <= 0) break;
+      const qtdAtual = quantidadePerfilMudas(p, plantasPorPerfilMudasEfetivo);
+      const consumido = Math.min(qtdAtual, restante);
+      const sobra = qtdAtual - consumido;
+      restante -= consumido;
+
+      updates.push(
+        sobra > 0
+          ? {
+              perfilIndex: p.perfilIndex,
+              ativo: true,
+              variedadeId: p.variedadeId ?? origemVariedadeId,
+              dataEntrada: p.dataEntrada ? new Date(p.dataEntrada) : null,
+              quantidadePlantas: sobra,
+            }
+          : {
+              perfilIndex: p.perfilIndex,
+              ativo: false,
+              variedadeId: null,
+              dataEntrada: null,
+              quantidadePlantas: null,
+            },
+      );
     }
-    await db.batchUpdatePerfis(
-      pid,
-      input.andarOrigemId,
-      ativos.map((p) => ({
-        perfilIndex: p.perfilIndex,
-        ativo: false,
-        variedadeId: null,
-        dataEntrada: null,
-      })),
-    );
+
+    if (updates.length > 0) {
+      await db.batchUpdatePerfis(pid, input.andarOrigemId, updates);
+    }
   } else {
     const plantados = origemFuros
       .filter(

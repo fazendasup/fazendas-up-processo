@@ -114,6 +114,8 @@ export interface PerfilData {
   variedadeId?: string;
   ativo: boolean; // se o perfil está em uso
   dataEntrada?: string | null; // data de entrada individual do perfil
+  /** FV mudas: quantidade real colocada neste perfil. Sem valor = fallback operacional legado. */
+  quantidadePlantas?: number | null;
   /** Espelho no BD da receita priorizada da variedade (sincronizado ao salvar receita / mudar variedade). */
   receitaId?: number | null;
   /** Microverdes iluminação: cultivo por bandeja (sem furos). */

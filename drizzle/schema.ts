@@ -328,6 +328,8 @@ export const perfis = mysqlTable("perfis", {
   receitaId: int("receitaId"),
   ativo: boolean("ativo").notNull().default(false),
   dataEntrada: timestamp("dataEntrada"),
+  /** FV mudas: quantidade real colocada neste perfil. NULL = legado/fallback operacional. */
+  quantidadePlantas: int("quantidadePlantas"),
   /** Microverdes iluminação: vazio | plantado | colhido (sem furos por bandeja). */
   cultivoStatus: varchar("cultivoStatus", { length: 16 }),
 });

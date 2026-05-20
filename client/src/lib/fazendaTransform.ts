@@ -163,6 +163,10 @@ export function transformFazendaLoadAllResponse(raw: unknown): FazendaData {
         variedadeId: p.variedadeId ? varSlugMap.get(p.variedadeId) || undefined : undefined,
         ativo: p.ativo,
         dataEntrada: toDateStr(p.dataEntrada),
+        quantidadePlantas:
+          p.quantidadePlantas != null && Number.isFinite(Number(p.quantidadePlantas))
+            ? Number(p.quantidadePlantas)
+            : undefined,
         receitaId: p.receitaId != null && Number.isFinite(Number(p.receitaId)) ? Number(p.receitaId) : undefined,
       };
       if (!isMvIluminacao) {
