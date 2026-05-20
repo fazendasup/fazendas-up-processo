@@ -12,7 +12,7 @@ Na maioria dos casos **você não precisa mexer nisso**.
 
 ## Passo 1 — Confirmar que o deploy está atualizado
 
-No GitHub, o código novo precisa estar na branch que a Railway usa (geralmente `main`). Depois, na Railway, abra o **último deploy** e espere ficar verde (sucesso).
+No GitHub, o código novo precisa estar na branch que a Railway usa (geralmente `main`). Cada **push em `main`** deve disparar um deploy automático se o serviço estiver ligado ao repositório. Depois, na Railway, abra o **último deploy** e espere ficar verde (sucesso).
 
 ---
 
