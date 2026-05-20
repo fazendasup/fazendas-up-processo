@@ -131,7 +131,6 @@ export function linhaCapacidadeTorre(
   projetoTipo?: string | null,
   proposito: PropositoCapacidadeFv = 'colheita',
 ): LinhaCapacidadeTorre | null {
-  if (t.ativa === false) return null;
   const n = Math.max(0, t.numAndares | 0);
   if (n <= 0) return null;
   const f = t.fase;
@@ -186,7 +185,6 @@ export function capacidadePorFaseInstalacao(
 ): Record<Fase, number> {
   const cap: Record<Fase, number> = { mudas: 0, vegetativa: 0, maturacao: 0 };
   for (const t of torres) {
-    if (t.ativa === false) continue;
     const n = Math.max(0, t.numAndares | 0);
     const porAndar = plantasPorAndarTorre(t, projetoTipo, proposito);
     cap[t.fase] += porAndar * n;
@@ -225,7 +223,7 @@ export interface ResumoGrupoMaturacao {
 }
 
 export interface ResumoInstalacaoFv {
-  torresAtivas: number;
+  torresCadastradas: number;
   torresPorFase: Record<Fase, number>;
   torresBabyLeaf12x6: number;
   maturacaoPadrao: ResumoGrupoMaturacao;
@@ -238,9 +236,8 @@ export function resumoInstalacaoCapacidadeFv(
   torres: TorreCapInput[],
   projetoTipo?: string | null,
 ): ResumoInstalacaoFv {
-  const ativas = torres.filter((t) => t.ativa !== false);
   const torresPorFase: Record<Fase, number> = { mudas: 0, vegetativa: 0, maturacao: 0 };
-  for (const t of ativas) torresPorFase[t.fase] += 1;
+  for (const t of torres) torresPorFase[t.fase] += 1;
 
   const linhasMatPadrao = linhasCapacidadeInstalacao(torres, projetoTipo, 'exceto_baby_leaf', 'colheita').filter(
     (l) => l.fase === 'maturacao',
@@ -260,9 +257,9 @@ export function resumoInstalacaoCapacidadeFv(
   const maturacaoBabyLeaf = grupo(linhasMatBaby);
 
   return {
-    torresAtivas: ativas.length,
+    torresCadastradas: torres.length,
     torresPorFase,
-    torresBabyLeaf12x6: ativas.filter(torreReservadaGrelhaBabyLeaf).length,
+    torresBabyLeaf12x6: torres.filter(torreReservadaGrelhaBabyLeaf).length,
     maturacaoPadrao,
     maturacaoBabyLeaf,
     maturacaoTotalColheita: maturacaoPadrao.capacidadeColheita + maturacaoBabyLeaf.capacidadeColheita,

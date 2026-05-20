@@ -96,8 +96,8 @@ describe('capacidadePorFaseInstalacaoComFiltro', () => {
     expect(cap.maturacao).toBe(2592);
   });
 
-  it('18 padrão + 2 baby mat = 5832 + 1296 colheita', () => {
-    const padrao = Array.from({ length: 18 }, () => ({
+  it('20 padrão + 2 baby mat = 6480 + 1296 colheita', () => {
+    const padrao = Array.from({ length: 20 }, () => ({
       fase: 'maturacao' as const,
       numAndares: 9,
       ativa: true,
@@ -110,11 +110,23 @@ describe('capacidadePorFaseInstalacaoComFiltro', () => {
       estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6,
     }));
     const resumo = resumoInstalacaoCapacidadeFv([...padrao, ...baby], projeto);
-    expect(resumo.maturacaoPadrao.quantidadeTorres).toBe(18);
-    expect(resumo.maturacaoPadrao.capacidadeColheita).toBe(5832);
+    expect(resumo.torresPorFase.maturacao).toBe(22);
+    expect(resumo.maturacaoPadrao.quantidadeTorres).toBe(20);
+    expect(resumo.maturacaoPadrao.capacidadeColheita).toBe(6480);
     expect(resumo.maturacaoBabyLeaf.quantidadeTorres).toBe(2);
     expect(resumo.maturacaoBabyLeaf.capacidadeColheita).toBe(1296);
-    expect(resumo.maturacaoTotalColheita).toBe(7128);
+    expect(resumo.maturacaoTotalColheita).toBe(7776);
+  });
+
+  it('considera torres cadastradas mesmo quando marcadas como inativas', () => {
+    const torres: TorreCapInput[] = [
+      { fase: 'maturacao', numAndares: 9, ativa: false, estruturaOverride: null },
+      { fase: 'maturacao', numAndares: 9, ativa: false, estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6 },
+    ];
+    const resumo = resumoInstalacaoCapacidadeFv(torres, projeto);
+    expect(resumo.torresCadastradas).toBe(2);
+    expect(resumo.maturacaoPadrao.capacidadeColheita).toBe(324);
+    expect(resumo.maturacaoBabyLeaf.capacidadeColheita).toBe(648);
   });
 
   it('3 torres veg 12×6 com 12 andares = 5184 só em vegetativa (plantio)', () => {

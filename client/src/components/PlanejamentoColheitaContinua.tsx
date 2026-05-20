@@ -411,7 +411,7 @@ export default function PlanejamentoColheitaContinua() {
               <div>
                 <p className="font-medium text-foreground">Inventário de torres (cadastro atual)</p>
                 <p className="text-muted-foreground mt-1">
-                  {resumoInstalacao.torresAtivas} torre(s) ativa(s): mudas {resumoInstalacao.torresPorFase.mudas} ·
+                  {resumoInstalacao.torresCadastradas} torre(s) cadastrada(s): mudas {resumoInstalacao.torresPorFase.mudas} ·
                   vegetativa {resumoInstalacao.torresPorFase.vegetativa} · maturação{' '}
                   {resumoInstalacao.torresPorFase.maturacao} ({resumoInstalacao.torresBabyLeaf12x6} com modelo 12×6
                   baby leaf).
