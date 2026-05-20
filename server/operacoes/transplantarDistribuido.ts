@@ -13,6 +13,8 @@ export type TransplantarDistribuidoInput = {
   andarOrigemId: number;
   destinos: { andarDestinoId: number; quantidade: number }[];
   observacoes?: string;
+  quantidadeDesperdicio?: number;
+  motivoDesperdicio?: string;
   faseDestino?: FaseDestinoTransplantioFv;
   /** Se informado, só esses perfis/bandejas entram na origem (índice 0-based). */
   perfilIndicesOrigem?: number[];
@@ -64,6 +66,8 @@ export async function runTransplantarDistribuido(
   }
 
   const totalSolicitado = input.destinos.reduce((s, d) => s + d.quantidade, 0);
+  const quantidadeDesperdicio = Math.max(0, Math.floor(input.quantidadeDesperdicio ?? 0));
+  const totalProcessado = totalSolicitado + quantidadeDesperdicio;
   const origemPerfis = await db.getPerfisByAndarId(pid, input.andarOrigemId);
   const origemFuros = await db.getFurosByAndarId(pid, input.andarOrigemId);
   const perfilIndicesOrigem = input.perfilIndicesOrigem?.length
@@ -160,10 +164,16 @@ export async function runTransplantarDistribuido(
           ).length
         : origemFuros.filter((f) => f.status === "plantado").length;
 
-  if (totalSolicitado > origemDisponivel) {
+  if (totalProcessado > origemDisponivel) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: `Quantidade solicitada (${totalSolicitado}) maior que disponível na origem (${origemDisponivel}).`,
+      message: `Quantidade processada (${totalProcessado}) maior que disponível na origem (${origemDisponivel}).`,
+    });
+  }
+  if (totalProcessado <= 0) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Informe ao menos uma quantidade para transplantar ou descartar.",
     });
   }
 
@@ -246,17 +256,38 @@ export async function runTransplantarDistribuido(
     });
   }
 
+  if (quantidadeDesperdicio > 0) {
+    await db.createTransplantio({
+      projetoId: pid,
+      dataHora: new Date(),
+      torreOrigemId: origemTorre.id,
+      andarOrigemId: origemAndar.id,
+      faseOrigem,
+      faseDestino,
+      variedadeId: origemVariedadeId,
+      variedadeNome,
+      quantidadeTransplantada: 0,
+      quantidadeDesperdicio,
+      motivoDesperdicio: input.motivoDesperdicio?.trim() || "descarte_no_transplantio",
+      torreDestinoId: null,
+      andarDestinoId: null,
+      observacoes: input.observacoes ?? null,
+      executadoPorId: ctx.userId,
+      executadoPorNome: ctx.userName,
+    });
+  }
+
   if (faseOrigem === "mudas") {
     const pool = perfilIndicesOrigem?.length
       ? perfisOrigemMudas.sort((a, b) => a.perfilIndex - b.perfilIndex)
       : origemPerfis.filter((p) => p.ativo).sort((a, b) => a.perfilIndex - b.perfilIndex);
-    const nPerfisLiberar = perfisMudasParaLiberar(totalSolicitado, plantasPorPerfilMudasEfetivo);
+    const nPerfisLiberar = perfisMudasParaLiberar(totalProcessado, plantasPorPerfilMudasEfetivo);
     const ativos = pool.slice(0, nPerfisLiberar);
     const esperado = contarPlantasMudasFv(ativos.length, plantasPorPerfilMudasEfetivo);
-    if (perfilIndicesOrigem?.length && totalSolicitado !== esperado) {
+    if (perfilIndicesOrigem?.length && totalProcessado !== esperado) {
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: `Para os perfis selecionados, distribua exatamente ${esperado} (você informou ${totalSolicitado}).`,
+        message: `Para os perfis selecionados, distribua e/ou descarte exatamente ${esperado} (você informou ${totalProcessado}).`,
       });
     }
     await db.batchUpdatePerfis(
@@ -277,7 +308,7 @@ export async function runTransplantarDistribuido(
           (!perfilIndicesOrigem?.length || perfilIndicesOrigem.includes(f.perfilIndex)),
       )
       .sort((a, b) => (b.perfilIndex - a.perfilIndex) || (b.furoIndex - a.furoIndex))
-      .slice(0, totalSolicitado);
+      .slice(0, totalProcessado);
     await db.batchUpdateFuros(
       pid,
       input.andarOrigemId,
@@ -308,7 +339,9 @@ export async function runTransplantarDistribuido(
     }
   }
 
-  await syncPlanoFromTransplantio(pid, origemVariedadeId, faseOrigem, faseDestino, totalSolicitado);
+  if (totalSolicitado > 0) {
+    await syncPlanoFromTransplantio(pid, origemVariedadeId, faseOrigem, faseDestino, totalSolicitado);
+  }
 
-  return { success: true as const, total: totalSolicitado, faseOrigem, faseDestino };
+  return { success: true as const, total: totalSolicitado, desperdicio: quantidadeDesperdicio, faseOrigem, faseDestino };
 }

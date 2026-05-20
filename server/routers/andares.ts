@@ -119,8 +119,10 @@ export const andaresRouter = router({
               quantidade: z.number().int().min(1),
             }),
           )
-          .min(1),
+          .default([]),
         observacoes: z.string().optional(),
+        quantidadeDesperdicio: z.number().int().min(0).optional(),
+        motivoDesperdicio: z.string().optional(),
         /** Só para origem em mudas: permite ir direto para maturação (ex.: baby leaf) ou forçar vegetativa. */
         faseDestino: z.enum(["vegetativa", "maturacao"]).optional(),
         /** Perfis/bandejas de origem (0-based). Se omitido, usa todo o andar como antes. */

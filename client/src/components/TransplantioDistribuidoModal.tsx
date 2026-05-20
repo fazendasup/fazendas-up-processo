@@ -117,6 +117,8 @@ export function TransplantioDistribuidoModal({
 
   const [perfisSelecionados, setPerfisSelecionados] = useState<number[]>([]);
   const [destinos, setDestinos] = useState<Destino[]>([]);
+  const [quantidadeDescarte, setQuantidadeDescarte] = useState("0");
+  const [motivoDescarte, setMotivoDescarte] = useState("");
   const [obs, setObs] = useState("");
 
   const origemQtd = useMemo(() => {
@@ -134,6 +136,8 @@ export function TransplantioDistribuidoModal({
     if (!open) {
       setDestinos([]);
       setObs("");
+      setQuantidadeDescarte("0");
+      setMotivoDescarte("");
       setPerfisSelecionados([]);
       return;
     }
@@ -148,6 +152,8 @@ export function TransplantioDistribuidoModal({
 
   useEffect(() => {
     setDestinos([]);
+    setQuantidadeDescarte("0");
+    setMotivoDescarte("");
   }, [faseDestino, perfisSelecionados]);
 
   const destinosDisponiveis = useMemo(() => {
@@ -178,7 +184,11 @@ export function TransplantioDistribuidoModal({
   }, [faseDestino, torres, andares, projetoTipo]);
 
   const totalDistribuido = destinos.reduce((s, d) => s + d.quantidade, 0);
-  const faltam = origemQtd - totalDistribuido;
+  const descarteQtd = Math.max(0, Math.floor(Number(quantidadeDescarte || 0)));
+  const totalProcessado = totalDistribuido + descarteQtd;
+  const faltam = origemQtd - totalProcessado;
+  const excedente = Math.max(0, totalProcessado - origemQtd);
+  const destinosComQuantidade = destinos.filter((d) => d.quantidade > 0);
 
   const addDestino = (andarFrontId: string) => {
     const item = destinosDisponiveis.find((d) => d.andar.id === andarFrontId);
@@ -224,6 +234,7 @@ export function TransplantioDistribuidoModal({
       restantes -= q;
     }
     setDestinos(novo);
+    setQuantidadeDescarte("0");
   };
 
   const confirmar = async () => {
@@ -239,16 +250,16 @@ export function TransplantioDistribuidoModal({
       );
       return;
     }
-    if (destinos.length === 0) {
-      toast.error("Selecione pelo menos um destino.");
+    if (destinosComQuantidade.length === 0 && descarteQtd === 0) {
+      toast.error("Selecione pelo menos um destino ou informe descarte.");
       return;
     }
     if (origemQtd === 0) {
       toast.error("Nada para transplantar na seleção de origem.");
       return;
     }
-    if (totalDistribuido !== origemQtd) {
-      toast.error(`Distribua exatamente ${origemQtd}. Você distribuiu ${totalDistribuido}.`);
+    if (totalProcessado !== origemQtd) {
+      toast.error(`Distribua e/ou descarte exatamente ${origemQtd}. Processado: ${totalProcessado}.`);
       return;
     }
     const overflow = destinos.find((d) => d.quantidade > d.capacidadeDisponivel);
@@ -261,7 +272,9 @@ export function TransplantioDistribuidoModal({
       await transplantar.mutateAsync({
         andarOrigemId: origemAndarDbId,
         perfilIndicesOrigem: perfisSelecionados,
-        destinos: destinos.map((d) => ({ andarDestinoId: d.andarIdDb, quantidade: d.quantidade })),
+        destinos: destinosComQuantidade.map((d) => ({ andarDestinoId: d.andarIdDb, quantidade: d.quantidade })),
+        quantidadeDesperdicio: descarteQtd,
+        motivoDesperdicio: descarteQtd > 0 ? motivoDescarte.trim() || "descarte_no_transplantio" : undefined,
         observacoes: obs.trim() || undefined,
         ...(origemTorre.fase === "mudas" ? { faseDestino: faseDestino as FaseDestinoTransplantioFv } : {}),
       });
@@ -365,13 +378,59 @@ export function TransplantioDistribuidoModal({
               <AlertDescription>
                 Distribua <strong>{origemQtd}</strong> {unidadeLabel} para <strong>{faseDestino}</strong>.{" "}
                 Já distribuído: <strong>{totalDistribuido}</strong>.{" "}
+                Descarte: <strong>{descarteQtd}</strong>.{" "}
                 {faltam === 0 ? (
                   <span className="text-emerald-600 dark:text-emerald-400 font-semibold">✓ OK</span>
+                ) : excedente > 0 ? (
+                  <span className="text-red-600 font-semibold">Excedente: {excedente}</span>
                 ) : (
                   <span className="text-red-600 font-semibold">Faltam: {faltam}</span>
                 )}
               </AlertDescription>
             </Alert>
+
+            <div className="space-y-2 rounded-lg border bg-amber-50/60 p-3 dark:bg-amber-950/20">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold">Descarte no transplantio</p>
+                  <p className="text-xs text-muted-foreground">
+                    Use quando parte das mudas/plantas não será aproveitada. O descarte limpa a origem e entra no histórico.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={origemQtd <= totalDistribuido}
+                  onClick={() => setQuantidadeDescarte(String(Math.max(0, origemQtd - totalDistribuido)))}
+                >
+                  Descartar faltantes
+                </Button>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-[8rem_1fr]">
+                <div>
+                  <Label className="text-xs">Quantidade</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={Math.max(0, origemQtd - totalDistribuido)}
+                    value={quantidadeDescarte}
+                    onChange={(e) => setQuantidadeDescarte(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Motivo</Label>
+                  <Input
+                    value={motivoDescarte}
+                    onChange={(e) => setMotivoDescarte(e.target.value)}
+                    placeholder="Ex.: mudas fracas, raízes ruins, descarte operacional..."
+                    className="h-9"
+                    disabled={descarteQtd === 0}
+                  />
+                </div>
+              </div>
+            </div>
 
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={autoDistribuir}>
@@ -380,14 +439,14 @@ export function TransplantioDistribuidoModal({
               <Button
                 className="flex-1"
                 onClick={confirmar}
-                disabled={faltam !== 0 || transplantar.isPending || perfisSelecionados.length === 0 || origemQtd === 0}
+                disabled={faltam !== 0 || excedente > 0 || transplantar.isPending || perfisSelecionados.length === 0 || origemQtd === 0}
               >
                 {transplantar.isPending ? "Transferindo..." : "✓ Confirmar"}
               </Button>
             </div>
             {faltam !== 0 && (
               <p className="text-xs text-amber-700">
-                A confirmação só libera quando a distribuição fecha exatamente a quantidade de origem.
+                A confirmação libera quando a soma de destino + descarte fecha exatamente a quantidade de origem.
               </p>
             )}
 
