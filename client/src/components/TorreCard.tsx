@@ -96,7 +96,12 @@ export default function TorreCard({ torre }: TorreCardProps) {
       .sort((a, b) => (a.numeroTorre ?? 0) - (b.numeroTorre ?? 0));
   }, [caixa, data.torres]);
   const nomesTorresDaCaixa = torresDaCaixa.map((t) => tituloTorreCardCompacto(t.nome)).join(', ');
+  const outrasTorresDaCaixa = torresDaCaixa.filter((t) => t.id !== torre.id);
+  const nomesOutrasTorresDaCaixa = outrasTorresDaCaixa.map((t) => tituloTorreCardCompacto(t.nome)).join(', ');
   const caixaCompartilhadaLabel = torresDaCaixa.length > 1 ? `${torresDaCaixa.length} torres` : null;
+  const caixaCompartilhadaResumo = caixaCompartilhadaLabel
+    ? `Caixa compartilhada: ${nomesTorresDaCaixa}`
+    : null;
   const alertas = contarAlertasTorre(
     torre,
     andares,
@@ -110,7 +115,7 @@ export default function TorreCard({ torre }: TorreCardProps) {
     ? [
         `${andaresOcupados}/${torre.numAndares ?? torre.andares ?? andares.length}`,
         caixa.nome,
-        caixaCompartilhadaLabel ? `atende ${caixaCompartilhadaLabel}: ${nomesTorresDaCaixa}` : null,
+        caixaCompartilhadaResumo,
       ]
         .filter(Boolean)
         .join(' · ')
@@ -229,7 +234,21 @@ export default function TorreCard({ torre }: TorreCardProps) {
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 p-2.5">
           <div className="flex min-w-0 items-start justify-between gap-2">
-            <h3 className="font-display min-w-0 flex-1 text-sm font-semibold leading-snug text-card-foreground">{nomeExib}</h3>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-display min-w-0 text-sm font-semibold leading-snug text-card-foreground">{nomeExib}</h3>
+              {caixaCompartilhadaResumo && (
+                <span
+                  className="mt-1 inline-flex max-w-full items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-[9px] font-semibold leading-none text-sky-700 dark:border-sky-900/70 dark:bg-sky-950/40 dark:text-sky-300"
+                  title={caixaCompartilhadaResumo}
+                >
+                  <Droplets className="h-2.5 w-2.5 shrink-0" />
+                  <span className="truncate">
+                    Compartilhada
+                    {nomesOutrasTorresDaCaixa ? ` com ${nomesOutrasTorresDaCaixa}` : ''}
+                  </span>
+                </span>
+              )}
+            </div>
             {alertas > 0 ? (
               <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-semibold text-destructive-foreground animate-pulse">
                 <AlertTriangle className="h-2.5 w-2.5 shrink-0" />
@@ -313,7 +332,7 @@ export default function TorreCard({ torre }: TorreCardProps) {
                   <span>
                     {caixa.nome}
                     {caixaCompartilhadaLabel && (
-                      <span className="text-card-foreground"> · atende {caixaCompartilhadaLabel}</span>
+                      <span className="font-medium text-sky-700 dark:text-sky-300"> · {caixaCompartilhadaLabel}</span>
                     )}
                   </span>
                 </p>
