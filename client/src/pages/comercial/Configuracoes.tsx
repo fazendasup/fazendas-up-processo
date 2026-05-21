@@ -87,7 +87,7 @@ export function Configuracoes() {
         <h2 className="mt-1 text-lg font-bold text-[#1E40AF]">Conta Azul</h2>
         <p className="mt-1 text-sm text-[#6B7280]">
           Conecte via OAuth. Com o servidor no ar, a sincronização roda sozinha a cada{" "}
-          <strong>10 minutos</strong> (e uma vez ~1 min após reiniciar). Use o botão abaixo só para forçar agora.
+          <strong>5 minutos</strong> (e uma vez ~1 min após reiniciar). Use o botão abaixo só para forçar agora.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <button

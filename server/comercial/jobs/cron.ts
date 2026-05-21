@@ -41,7 +41,7 @@ export function startComercialIntegrationJobs(prisma: PrismaClient, env: Env) {
   if (env.NODE_ENV === "test") return;
   if (!isComercialIntegrationCronEnabled()) return;
 
-  const schedule = process.env.COMERCIAL_CONTA_AZUL_CRON?.trim() || "0 */1 * * *";
+  const schedule = process.env.COMERCIAL_CONTA_AZUL_CRON?.trim() || "*/5 * * * *";
   if (!cron.validate(schedule)) {
     logger.error({ schedule }, "COMERCIAL_CONTA_AZUL_CRON inválido — cron não iniciado");
     return;

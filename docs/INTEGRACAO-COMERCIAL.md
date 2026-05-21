@@ -48,7 +48,7 @@ CONTA_AZUL_CLIENT_ID=...
 CONTA_AZUL_CLIENT_SECRET=...
 CONTA_AZUL_REDIRECT_URI=http://localhost:3456/integrations/conta-azul/callback
 ENABLE_COMERCIAL_INTEGRATION_CRON=true   # opcional; padrão = ligado se COMERCIAL_DATABASE_URL existir
-COMERCIAL_CONTA_AZUL_CRON=*/10 * * * *   # opcional; padrão a cada 10 minutos
+COMERCIAL_CONTA_AZUL_CRON=*/5 * * * *    # opcional; padrão a cada 5 minutos
 ```
 
 ## Setup
