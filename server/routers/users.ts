@@ -111,6 +111,16 @@ export const usersRouter = router({
         if (ctx.user.id === input.id) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Não é possível excluir seu próprio usuário' });
         }
+        const target = await db.getUserById(input.id);
+        if (!target) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Usuário não encontrado" });
+        }
+        if (target.role === "platform_admin") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Usuários da Equipe FUP não podem ser excluídos",
+          });
+        }
         await assertPodeGerenciarUsuario(ctx.user, input.id);
         await db.deleteUser(input.id);
         return { success: true };

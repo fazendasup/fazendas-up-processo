@@ -194,4 +194,29 @@ describe("Permissões: users.list (admin only)", () => {
     const result = await caller.users.list();
     expect(Array.isArray(result)).toBe(true);
   });
+
+  it("bloqueia exclusão de usuário da Equipe FUP mesmo por outro FUP", async () => {
+    vi.spyOn(db, "getUserById").mockResolvedValue({
+      id: 10,
+      openId: "fup-target",
+      email: "fup-target@test.com",
+      name: "FUP Target",
+      passwordHash: null,
+      loginMethod: "password",
+      role: "platform_admin",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastSignedIn: new Date(),
+    });
+    const deleteSpy = vi.spyOn(db, "deleteUser").mockResolvedValue(undefined);
+
+    const ctx = createContext("platform_admin");
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(caller.users.delete({ id: 10 })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "Usuários da Equipe FUP não podem ser excluídos",
+    });
+    expect(deleteSpy).not.toHaveBeenCalled();
+  });
 });
