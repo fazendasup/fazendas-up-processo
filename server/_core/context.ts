@@ -13,6 +13,7 @@ export type TrpcContext = {
   user: User | null;
   projetoId: number | null;
   projetoTipo: ProjetoTipo | null;
+  projetoUsuarioRole?: "admin" | "operador" | "visualizador" | null;
   /** Preenchido após `requireProjetoMiddleware` quando o projeto está ativo. */
   projetoModulos: Record<ModuloContratavel, boolean> | null;
   /** Módulo Central Comercial (após `comercialProcedure`). */
@@ -39,6 +40,7 @@ export async function createContext(
     user,
     projetoId: null,
     projetoTipo: null,
+    projetoUsuarioRole: null,
     projetoModulos: null,
   };
 }

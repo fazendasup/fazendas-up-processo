@@ -48,7 +48,7 @@ import {
   type CustoProducaoItemRow,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
-import { MODULOS_CONTRATAVEIS, NOME_PROJETO_FAZENDA_LEGADO, type ModuloContratavel } from "../shared/const";
+import { MODULOS_CONTRATAVEIS, NOME_PROJETO_FAZENDA_LEGADO, type AppUserRole, type ModuloContratavel } from "../shared/const";
 import type { OperationalResetClusters } from "../shared/operationalReset";
 import {
   ESTRUTURA_OVERRIDE_FV_12x6,
@@ -270,6 +270,20 @@ export async function listProjetosForUser(userId: number, opts?: ListProjetosFor
     .from(projetoUsuarios)
     .innerJoin(projetos, eq(projetos.id, projetoUsuarios.projetoId))
     .where(whereClause);
+}
+
+export async function listProjetosForPlatform(opts?: ListProjetosForUserOpts) {
+  const dbConn = await getDb();
+  if (!dbConn) return [];
+  await ensureProjetosTables();
+  const whereClause = opts?.includeInactive === true ? undefined : eq(projetos.status, "ativo");
+  const q = dbConn
+    .select({
+      projeto: projetos,
+      role: sql<"admin">`'admin'`,
+    })
+    .from(projetos);
+  return whereClause ? q.where(whereClause) : q;
 }
 
 /** Contagens por projeto para diagnosticar dados “presos” noutro ID (multi-projeto). */
@@ -805,6 +819,17 @@ export async function resolveProjetoForUser(userId: number, projetoId: number) {
   return rows[0];
 }
 
+export async function getProjetoMembership(userId: number, projetoId: number) {
+  const dbConn = await getDb();
+  if (!dbConn) return undefined;
+  const rows = await dbConn
+    .select({ role: projetoUsuarios.role })
+    .from(projetoUsuarios)
+    .where(and(eq(projetoUsuarios.userId, userId), eq(projetoUsuarios.projetoId, projetoId)))
+    .limit(1);
+  return rows[0];
+}
+
 export async function userHasProjetoAccess(userId: number, projetoId: number): Promise<boolean> {
   const row = await getProjetoByIdForUser(userId, projetoId);
   return row != null;
@@ -966,7 +991,10 @@ export async function reactivateProjeto(projetoId: number) {
 export async function addProjetoUser(projetoId: number, userId: number, role: InsertProjetoUsuario["role"]) {
   const dbConn = await getDb();
   if (!dbConn) throw new Error("Database not available");
-  await dbConn.insert(projetoUsuarios).values({ projetoId, userId, role });
+  await dbConn
+    .insert(projetoUsuarios)
+    .values({ projetoId, userId, role })
+    .onDuplicateKeyUpdate({ set: { role } });
 }
 
 export async function removeProjetoUser(projetoId: number, userId: number) {
@@ -3862,7 +3890,7 @@ export async function createUserWithPassword(data: {
   name: string;
   email: string;
   passwordHash: string;
-  role: "user" | "admin" | "platform_admin";
+  role: AppUserRole;
 }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -3898,10 +3926,37 @@ export async function deleteUser(id: number) {
   await db.delete(users).where(eq(users.id, id));
 }
 
+export type UserListRow = Awaited<ReturnType<typeof getAllUsers>>[number];
+
+async function appendProjetoAccessToUsers<T extends { id: number }>(rows: T[]) {
+  const dbConn = await getDb();
+  if (!dbConn || rows.length === 0) {
+    return rows.map((u) => ({ ...u, projetos: [] as { id: number; nome: string; role: string }[] }));
+  }
+  const ids = rows.map((u) => u.id);
+  const memberships = await dbConn
+    .select({
+      userId: projetoUsuarios.userId,
+      id: projetos.id,
+      nome: projetos.nome,
+      role: projetoUsuarios.role,
+    })
+    .from(projetoUsuarios)
+    .innerJoin(projetos, eq(projetos.id, projetoUsuarios.projetoId))
+    .where(inArray(projetoUsuarios.userId, ids));
+  const byUser = new Map<number, { id: number; nome: string; role: string }[]>();
+  for (const m of memberships) {
+    const arr = byUser.get(m.userId) ?? [];
+    arr.push({ id: m.id, nome: m.nome, role: m.role });
+    byUser.set(m.userId, arr);
+  }
+  return rows.map((u) => ({ ...u, projetos: byUser.get(u.id) ?? [] }));
+}
+
 export async function getAllUsers() {
   const db = await getDb();
   if (!db) return [];
-  return db.select({
+  const rows = await db.select({
     id: users.id,
     openId: users.openId,
     name: users.name,
@@ -3910,9 +3965,30 @@ export async function getAllUsers() {
     createdAt: users.createdAt,
     lastSignedIn: users.lastSignedIn,
   }).from(users);
+  return appendProjetoAccessToUsers(rows);
 }
 
-export async function updateUserRole(id: number, role: "user" | "admin" | "platform_admin") {
+export async function getUsersForProjetos(projetoIds: number[]) {
+  const dbConn = await getDb();
+  if (!dbConn || projetoIds.length === 0) return [];
+  const rows = await dbConn
+    .select({
+      id: users.id,
+      openId: users.openId,
+      name: users.name,
+      email: users.email,
+      role: users.role,
+      createdAt: users.createdAt,
+      lastSignedIn: users.lastSignedIn,
+    })
+    .from(users)
+    .innerJoin(projetoUsuarios, eq(projetoUsuarios.userId, users.id))
+    .where(inArray(projetoUsuarios.projetoId, projetoIds))
+    .groupBy(users.id, users.openId, users.name, users.email, users.role, users.createdAt, users.lastSignedIn);
+  return appendProjetoAccessToUsers(rows);
+}
+
+export async function updateUserRole(id: number, role: AppUserRole) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(users).set({ role }).where(eq(users.id, id));

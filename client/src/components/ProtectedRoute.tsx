@@ -6,12 +6,12 @@ import { useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Loader2, ShieldAlert } from "lucide-react";
-import { isOperationalAdminRole, isPlatformCommercialRole } from "@shared/const";
+import { isCommercialAccessRole, isOperationalAdminRole, isPlatformCommercialRole, isProcessAccessRole } from "@shared/const";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  /** `admin` = administrador operacional ou equipa da plataforma. `platform_admin` = só contratação de módulos. */
-  requiredRole?: "user" | "admin" | "platform_admin";
+  /** `processo` bloqueia usuários somente-comerciais; `comercial` permite comercial/admin/plataforma. */
+  requiredRole?: "user" | "processo" | "admin" | "platform_admin" | "comercial";
   fallback?: React.ReactNode;
 }
 
@@ -49,6 +49,22 @@ export default function ProtectedRoute({ children, requiredRole = "user", fallba
     );
   }
 
+  if (requiredRole === "processo" && !isProcessAccessRole(user.role)) {
+    if (fallback) return <>{fallback}</>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center max-w-sm">
+          <ShieldAlert className="w-12 h-12 text-destructive/40 mx-auto mb-4" />
+          <h2 className="font-display text-xl font-bold mb-2">Acesso restrito</h2>
+          <p className="text-sm text-muted-foreground mb-4">Esta conta tem acesso somente às áreas liberadas para seu perfil.</p>
+          <Button variant="outline" asChild>
+            <a href="/projetos">Projetos</a>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (requiredRole === "admin" && !isOperationalAdminRole(user.role)) {
     if (fallback) return <>{fallback}</>;
     return (
@@ -77,6 +93,22 @@ export default function ProtectedRoute({ children, requiredRole = "user", fallba
           </p>
           <Button variant="outline" asChild>
             <a href="/">Início</a>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (requiredRole === "comercial" && !isCommercialAccessRole(user.role)) {
+    if (fallback) return <>{fallback}</>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center max-w-sm">
+          <ShieldAlert className="w-12 h-12 text-destructive/40 mx-auto mb-4" />
+          <h2 className="font-display text-xl font-bold mb-2">Acesso restrito</h2>
+          <p className="text-sm text-muted-foreground mb-4">Esta área é exclusiva para usuários comerciais e administradores.</p>
+          <Button variant="outline" asChild>
+            <a href="/projetos">Projetos</a>
           </Button>
         </div>
       </div>

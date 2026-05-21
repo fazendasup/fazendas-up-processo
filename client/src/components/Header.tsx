@@ -74,7 +74,7 @@ type NavItem = {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  requiredRole?: 'admin';
+  requiredRole?: 'admin' | 'comercial';
   projetoTipo?: 'fazenda_vertical' | 'hidroponia';
 };
 
@@ -83,14 +83,14 @@ const OPERACAO_ITEMS: NavItem[] = [
   { href: '/planejamento', label: 'Plantio', icon: CalendarIcon },
   { href: '/automacao', label: 'Automação', icon: Cpu },
   { href: '/manutencao', label: 'Manutenção', icon: Wrench },
-  { href: '/estoque', label: 'Estoque', icon: Package },
+  { href: '/estoque', label: 'Estoque', icon: Package, requiredRole: 'admin' },
 ];
 
 const ANALISE_ADMIN_PREFIX: NavItem[] = [
   { href: '/capacidade', label: 'Capacidade', icon: LayoutGrid, requiredRole: 'admin' },
   { href: '/analytics', label: 'Analytics', icon: BarChart3, requiredRole: 'admin' },
   { href: '/custos-producao', label: 'Custos de produção', icon: Coins, requiredRole: 'admin' },
-  { href: '/comercial/dashboard', label: 'Comercial', icon: Briefcase, requiredRole: 'admin' },
+  { href: '/comercial/dashboard', label: 'Comercial', icon: Briefcase, requiredRole: 'comercial' },
 ];
 
 const ANALISE_TODOS: NavItem = { href: '/inteligencia', label: 'Inteligência', icon: Brain };
@@ -156,7 +156,7 @@ export default function Header() {
   const [location] = useLocation();
   const { exportCSV, backupJSON } = useFazenda();
   const mutations = useFazendaMutations();
-  const { isAdmin, isLoggedIn } = useRole();
+  const { isAdmin, isComercial, canAccessComercial, isLoggedIn } = useRole();
   const { user, logout } = useAuth();
   const { projetos, activeProjetoId, activeProjeto, switchProjeto, isSwitching, modulosAtivos } = useProjeto();
   const { data: alertResumo } = trpc.inteligencia.resumo.useQuery(undefined, {
@@ -168,26 +168,33 @@ export default function Header() {
     if (!isLoggedIn || activeProjetoId == null) return [] as NavItem[];
     return OPERACAO_ITEMS.filter((item) => {
       if (item.requiredRole === "admin" && !isAdmin) return false;
+      if (item.requiredRole === "comercial" && !canAccessComercial) return false;
       if (item.projetoTipo != null) {
         if (!activeProjeto || activeProjeto.tipo !== item.projetoTipo) return false;
       }
       if (!navPermitidoPorModulo(item.href, modulosAtivos)) return false;
       return true;
     });
-  }, [isAdmin, isLoggedIn, activeProjeto?.tipo, activeProjetoId, modulosAtivos]);
+  }, [canAccessComercial, isAdmin, isLoggedIn, activeProjeto?.tipo, activeProjetoId, modulosAtivos]);
 
   const analiseItems = useMemo(() => {
     if (!isLoggedIn || activeProjetoId == null) return [] as NavItem[];
     const list: NavItem[] = [];
     if (isAdmin) list.push(...ANALISE_ADMIN_PREFIX);
-    list.push(ANALISE_TODOS);
-    list.push(ANALISE_VISAO);
+    if (!isComercial) {
+      list.push(ANALISE_TODOS);
+      list.push(ANALISE_VISAO);
+    }
+    if (isComercial && !isAdmin) {
+      list.push({ href: '/comercial/dashboard', label: 'Comercial', icon: Briefcase, requiredRole: 'comercial' });
+    }
     return list.filter((item) => {
       if (item.requiredRole === "admin" && !isAdmin) return false;
+      if (item.requiredRole === "comercial" && !canAccessComercial) return false;
       if (!navPermitidoPorModulo(item.href, modulosAtivos)) return false;
       return true;
     });
-  }, [isAdmin, isLoggedIn, activeProjetoId, modulosAtivos]);
+  }, [canAccessComercial, isAdmin, isComercial, isLoggedIn, activeProjetoId, modulosAtivos]);
 
   const sistemaItems = useMemo(() => {
     if (!isLoggedIn) return [] as NavItem[];
@@ -229,7 +236,13 @@ export default function Header() {
     window.location.href = "/login";
   };
 
-  const roleLabel = isAdmin ? 'Administrador' : 'Operador';
+  const roleLabel = user?.role === 'platform_admin'
+    ? 'Equipe FUP'
+    : isAdmin
+      ? 'Administrador'
+      : isComercial
+        ? 'Comercial'
+        : 'Operador';
   const displayName = user?.name?.trim() || 'Usuário';
   /** Evita "Administrador" em cima e "ADMINISTRADOR" embaixo quando o nome já é o papel */
   const showRoleLine =

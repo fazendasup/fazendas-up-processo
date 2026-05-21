@@ -3,7 +3,7 @@
 // Cadastro, alteração de role, reset de senha, exclusão
 // ============================================================
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Header from '@/components/Header';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { trpc } from '@/lib/trpc';
@@ -18,13 +18,13 @@ import {
   DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Users, ShieldCheck, User, Loader2, Clock, Plus, KeyRound, Trash2, AlertCircle, Layers,
+  Users, ShieldCheck, User, Loader2, Clock, Plus, KeyRound, Trash2, AlertCircle, Layers, Briefcase,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { useRole } from '@/hooks/useRole';
 
-type GlobalAppRole = 'user' | 'admin' | 'platform_admin';
+type GlobalAppRole = 'user' | 'admin' | 'platform_admin' | 'comercial';
 
 export default function UsersPage() {
   return (
@@ -37,6 +37,7 @@ export default function UsersPage() {
 function UsersContent() {
   const { isPlatformAdmin } = useRole();
   const { data: users, isLoading, refetch } = trpc.users.list.useQuery();
+  const { data: projetosRows } = trpc.projetos.list.useQuery();
   const updateRole = trpc.users.updateRole.useMutation({
     onSuccess: () => { refetch(); toast.success('Permissão atualizada!'); },
     onError: (err) => { toast.error(`Erro: ${err.message}`); },
@@ -60,7 +61,13 @@ function UsersContent() {
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newRole, setNewRole] = useState<GlobalAppRole>('user');
+  const [newProjetoIds, setNewProjetoIds] = useState<number[]>([]);
   const [createError, setCreateError] = useState('');
+
+  const projetosDisponiveis = useMemo(
+    () => (projetosRows ?? []).map((row) => row.projeto).filter((p) => p.status === 'ativo'),
+    [projetosRows],
+  );
 
   // Estado do dialog de reset de senha
   const [resetUserId, setResetUserId] = useState<number | null>(null);
@@ -74,6 +81,8 @@ function UsersContent() {
         'Promover a Equipa da plataforma? Esta conta poderá gerir módulos contratados (estoque, automação, etc.) para todos os projetos.';
     } else if (next === 'admin') {
       msg = 'Promover este usuário a Administrador operacional? Terá acesso a configurações e gestão de usuários.';
+    } else if (next === 'comercial') {
+      msg = 'Alterar para Comercial? Terá acesso apenas às áreas comerciais dos projetos vinculados.';
     } else {
       msg = 'Rebaixar a Operador? Perderá acesso às áreas administrativas.';
     }
@@ -86,12 +95,16 @@ function UsersContent() {
     if (!newName.trim()) { setCreateError('Nome é obrigatório'); return; }
     if (!newEmail.trim()) { setCreateError('Email é obrigatório'); return; }
     if (!newPassword || newPassword.length < 6) { setCreateError('Senha deve ter no mínimo 6 caracteres'); return; }
+    if (newRole !== 'platform_admin' && newProjetoIds.length === 0) {
+      setCreateError('Selecione ao menos um projeto para este usuário');
+      return;
+    }
     createUser.mutate(
-      { name: newName.trim(), email: newEmail.trim(), password: newPassword, role: newRole },
+      { name: newName.trim(), email: newEmail.trim(), password: newPassword, role: newRole, projetoIds: newProjetoIds },
       {
         onSuccess: () => {
           setShowCreateDialog(false);
-          setNewName(''); setNewEmail(''); setNewPassword(''); setNewRole('user');
+          setNewName(''); setNewEmail(''); setNewPassword(''); setNewRole('user'); setNewProjetoIds([]);
         },
       }
     );
@@ -127,6 +140,12 @@ function UsersContent() {
       day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit',
     });
+  };
+
+  const toggleNewProjeto = (projetoId: number) => {
+    setNewProjetoIds((prev) =>
+      prev.includes(projetoId) ? prev.filter((id) => id !== projetoId) : [...prev, projetoId],
+    );
   };
 
   return (
@@ -206,12 +225,43 @@ function UsersContent() {
                     <SelectContent>
                       <SelectItem value="user">Operador</SelectItem>
                       <SelectItem value="admin">Administrador operacional</SelectItem>
+                      <SelectItem value="comercial">Comercial</SelectItem>
                       {isPlatformAdmin && (
                         <SelectItem value="platform_admin">Equipa da plataforma</SelectItem>
                       )}
                     </SelectContent>
                   </Select>
                 </div>
+                {newRole !== 'platform_admin' && (
+                  <div className="space-y-2">
+                    <Label>Projetos com acesso</Label>
+                    <div className="max-h-40 overflow-auto rounded-lg border p-2 space-y-1">
+                      {projetosDisponiveis.length === 0 ? (
+                        <p className="text-xs text-muted-foreground px-1 py-2">Nenhum projeto disponível para vincular.</p>
+                      ) : (
+                        projetosDisponiveis.map((projeto) => (
+                          <label
+                            key={projeto.id}
+                            className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                          >
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4"
+                              checked={newProjetoIds.includes(projeto.id)}
+                              onChange={() => toggleNewProjeto(projeto.id)}
+                              disabled={createUser.isPending}
+                            />
+                            <span className="min-w-0 flex-1 truncate">{projeto.nome}</span>
+                            <span className="text-[10px] uppercase text-muted-foreground">{projeto.tipo}</span>
+                          </label>
+                        ))
+                      )}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      O perfil define o que ele pode ver; os projetos definem onde esse acesso vale.
+                    </p>
+                  </div>
+                )}
                 {createError && (
                   <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
                     <AlertCircle className="w-4 h-4 shrink-0" />
@@ -249,6 +299,13 @@ function UsersContent() {
             <div>
               <p className="text-xs font-semibold">Operador</p>
               <p className="text-[10px] text-muted-foreground">Dashboard + operações (medições, plantio, colheita, etc.)</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Briefcase className="w-4 h-4 text-emerald-600" />
+            <div>
+              <p className="text-xs font-semibold">Comercial</p>
+              <p className="text-[10px] text-muted-foreground">Clientes, pedidos, oportunidades e mensagens comerciais</p>
             </div>
           </div>
           {isPlatformAdmin && (
@@ -289,13 +346,17 @@ function UsersContent() {
                         ? 'bg-violet-100 text-violet-800 dark:bg-violet-950/50 dark:text-violet-300'
                         : u.role === 'admin'
                           ? 'bg-amber-100 text-amber-700'
-                          : 'bg-blue-100 text-blue-700'
+                          : u.role === 'comercial'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-blue-100 text-blue-700'
                     }`}
                   >
                     {u.role === 'platform_admin' ? (
                       <Layers className="w-5 h-5" />
                     ) : u.role === 'admin' ? (
                       <ShieldCheck className="w-5 h-5" />
+                    ) : u.role === 'comercial' ? (
+                      <Briefcase className="w-5 h-5" />
                     ) : (
                       <User className="w-5 h-5" />
                     )}
@@ -307,6 +368,11 @@ function UsersContent() {
                       <Clock className="w-3 h-3" />
                       <span>Último acesso: {formatDate(u.lastSignedIn)}</span>
                     </div>
+                    {Array.isArray((u as { projetos?: { nome: string }[] }).projetos) && (u as { projetos?: { nome: string }[] }).projetos!.length > 0 && (
+                      <p className="mt-1 text-[10px] text-muted-foreground truncate">
+                        Projetos: {(u as { projetos: { nome: string }[] }).projetos.map((p) => p.nome).join(', ')}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -328,6 +394,7 @@ function UsersContent() {
                       <SelectContent>
                         <SelectItem value="user">Operador</SelectItem>
                         <SelectItem value="admin">Administrador operacional</SelectItem>
+                        <SelectItem value="comercial">Comercial</SelectItem>
                         {isPlatformAdmin && (
                           <SelectItem value="platform_admin">Equipa da plataforma</SelectItem>
                         )}

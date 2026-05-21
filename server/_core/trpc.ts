@@ -2,7 +2,9 @@ import {
   MODULO_NAO_CONTRATADO_MSG,
   NOT_ADMIN_ERR_MSG,
   NOT_PLATFORM_ADMIN_MSG,
+  isCommercialAccessRole,
   isOperationalAdminRole,
+  isPlatformCommercialRole,
   PROJETO_ATIVO_COOKIE,
   PROJETO_FORBIDDEN_ERR_MSG,
   PROJETO_HEADER,
@@ -84,7 +86,9 @@ const requireProjetoMiddleware = t.middleware(async (opts) => {
     throw new TRPCError({ code: "BAD_REQUEST", message: PROJETO_REQUIRED_ERR_MSG });
   }
 
-  const row = await db.resolveProjetoForUser(ctx.user.id, pid);
+  const row = isPlatformCommercialRole(ctx.user.role)
+    ? await db.getProjetoById(pid)
+    : await db.resolveProjetoForUser(ctx.user.id, pid);
   if (!row) {
     const exists = await db.getProjetoByIdForUser(ctx.user.id, pid);
     if (exists && exists.status !== "ativo") {
@@ -93,8 +97,15 @@ const requireProjetoMiddleware = t.middleware(async (opts) => {
     throw new TRPCError({ code: "FORBIDDEN", message: PROJETO_FORBIDDEN_ERR_MSG });
   }
 
+  if (row.status !== "ativo") {
+    throw new TRPCError({ code: "FORBIDDEN", message: PROJETO_INATIVO_ERR_MSG });
+  }
+
   const projetoTipo = row.tipo as ProjetoTipo;
   const projetoModulos = await db.getProjetoModulosMap(pid);
+  const membership = isPlatformCommercialRole(ctx.user.role)
+    ? ({ role: "admin" } as const)
+    : await db.getProjetoMembership(ctx.user.id, pid);
 
   return next({
     ctx: {
@@ -102,6 +113,7 @@ const requireProjetoMiddleware = t.middleware(async (opts) => {
       user: ctx.user,
       projetoId: pid,
       projetoTipo,
+      projetoUsuarioRole: membership?.role ?? null,
       projetoModulos,
     },
   });
@@ -217,7 +229,7 @@ const requireComercialModule = t.middleware(async ({ ctx, next }) => {
   if (!ctx.user) {
     throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
   }
-  if (!isOperationalAdminRole(ctx.user.role)) {
+  if (!isCommercialAccessRole(ctx.user.role)) {
     throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
   }
   const comercialUsuario = await resolveComercialUsuario(ctx.user);
@@ -247,10 +259,8 @@ const requireComercialModule = t.middleware(async ({ ctx, next }) => {
   });
 });
 
-/** Projeto com módulo comercial + admin ERP + sessão Prisma do Comercia. */
-export const comercialProcedure = comercialModuleProcedure
-  .use(requireGlobalAdmin)
-  .use(requireComercialModule);
+/** Projeto com módulo comercial + usuário comercial/admin + sessão Prisma do Comercia. */
+export const comercialProcedure = comercialModuleProcedure.use(requireComercialModule);
 
 export function comercialRequirePerfis(...perfis: PerfilUsuario[]) {
   return t.middleware(({ ctx, next }) => {

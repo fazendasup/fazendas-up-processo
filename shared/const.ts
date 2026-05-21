@@ -12,7 +12,7 @@ export const NOT_PLATFORM_ADMIN_MSG =
   "Apenas a equipa da plataforma pode gerir módulos contratados (10007)";
 
 /** Papel global na tabela `users` (auth). */
-export type AppUserRole = "user" | "admin" | "platform_admin";
+export type AppUserRole = "user" | "admin" | "platform_admin" | "comercial";
 
 export function isOperationalAdminRole(role: string | null | undefined): boolean {
   return role === "admin" || role === "platform_admin";
@@ -20,6 +20,14 @@ export function isOperationalAdminRole(role: string | null | undefined): boolean
 
 export function isPlatformCommercialRole(role: string | null | undefined): boolean {
   return role === "platform_admin";
+}
+
+export function isCommercialAccessRole(role: string | null | undefined): boolean {
+  return role === "comercial" || isOperationalAdminRole(role);
+}
+
+export function isProcessAccessRole(role: string | null | undefined): boolean {
+  return role === "user" || isOperationalAdminRole(role);
 }
 export const PROJETO_REQUIRED_ERR_MSG = 'Projeto não selecionado (10003)';
 export const PROJETO_FORBIDDEN_ERR_MSG = 'Sem acesso a este projeto (10004)';

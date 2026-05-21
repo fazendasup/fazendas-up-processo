@@ -54,14 +54,14 @@ function Router() {
 
           <Route path="/">
             {() => (
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="processo">
                 <Home />
               </ProtectedRoute>
             )}
           </Route>
 
           <Route path="/hoje">
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole="processo">
               <HojePage />
             </ProtectedRoute>
           </Route>
@@ -74,7 +74,7 @@ function Router() {
 
           <Route path="/torre/:id">
             {() => (
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="processo">
                 <TipoProjetoRouteGuard tiposTorre>
                   <TorreDetail />
                 </TipoProjetoRouteGuard>
@@ -83,7 +83,7 @@ function Router() {
           </Route>
           <Route path="/bancada/:id">
             {() => (
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="processo">
                 <TipoProjetoRouteGuard tipo="hidroponia">
                   <BancadaDetail />
                 </TipoProjetoRouteGuard>
@@ -91,17 +91,17 @@ function Router() {
             )}
           </Route>
           <Route path="/germinacao">
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole="processo">
               <GerminacaoPage />
             </ProtectedRoute>
           </Route>
           <Route path="/manutencao">
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole="processo">
               <ManutencaoPage />
             </ProtectedRoute>
           </Route>
           <Route path="/estoque">
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole="admin">
               <ModuloProjetoRouteGuard modulo="estoque">
                 <EstoquePage />
               </ModuloProjetoRouteGuard>
@@ -129,7 +129,7 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/planejamento">
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole="processo">
               <PlanejamentoPage />
             </ProtectedRoute>
           </Route>
@@ -146,21 +146,21 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/comercial">
-            <ProtectedRoute requiredRole="admin">
+            <ProtectedRoute requiredRole="comercial">
               <ModuloProjetoRouteGuard modulo="comercial">
                 <Redirect to="/comercial/dashboard" />
               </ModuloProjetoRouteGuard>
             </ProtectedRoute>
           </Route>
           <Route path="/comercial/">
-            <ProtectedRoute requiredRole="admin">
+            <ProtectedRoute requiredRole="comercial">
               <ModuloProjetoRouteGuard modulo="comercial">
                 <Redirect to="/comercial/dashboard" />
               </ModuloProjetoRouteGuard>
             </ProtectedRoute>
           </Route>
           <Route path="/comercial/:rest+">
-            <ProtectedRoute requiredRole="admin">
+            <ProtectedRoute requiredRole="comercial">
               <ModuloProjetoRouteGuard modulo="comercial">
                 <ComercialRoutes />
               </ModuloProjetoRouteGuard>
@@ -177,26 +177,26 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/tarefas">
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole="processo">
               <TarefasPage />
             </ProtectedRoute>
           </Route>
           <Route path="/inteligencia">
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole="processo">
               <ModuloProjetoRouteGuard modulo="inteligencia">
                 <Inteligencia />
               </ModuloProjetoRouteGuard>
             </ProtectedRoute>
           </Route>
           <Route path="/visao">
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole="processo">
               <ModuloProjetoRouteGuard modulo="visao_cultivo">
                 <VisaoPage />
               </ModuloProjetoRouteGuard>
             </ProtectedRoute>
           </Route>
           <Route path="/automacao">
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole="processo">
               <ModuloProjetoRouteGuard modulo="automacao">
                 <AutomacaoPage />
               </ModuloProjetoRouteGuard>

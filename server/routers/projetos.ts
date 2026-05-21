@@ -5,6 +5,7 @@ import {
   PROJETO_FORBIDDEN_ERR_MSG,
   PROJETO_INATIVO_ERR_MSG,
   isOperationalAdminRole,
+  isPlatformCommercialRole,
 } from "@shared/const";
 import { getSessionCookieOptions } from "../_core/cookies";
 import {
@@ -19,6 +20,14 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "../db";
 
+async function assertPodeGerenciarProjeto(user: { id: number; role: string }, projetoId: number) {
+  if (isPlatformCommercialRole(user.role)) return;
+  const row = await db.getProjetoMembership(user.id, projetoId);
+  if (!row) {
+    throw new TRPCError({ code: "FORBIDDEN", message: PROJETO_FORBIDDEN_ERR_MSG });
+  }
+}
+
 export const projetosRouter = router({
   /**
    * Reexecuta a mesma lógica do arranque do servidor (projeto padrão + linhas em projeto_usuarios).
@@ -31,6 +40,9 @@ export const projetosRouter = router({
   /** Lista de projetos do usuário — sem agregar contagens (evita falhar a lista inteira se uma tabela ainda não existir). */
   list: protectedProcedure.query(async ({ ctx }) => {
     const includeInactive = isOperationalAdminRole(ctx.user.role);
+    if (isPlatformCommercialRole(ctx.user.role)) {
+      return db.listProjetosForPlatform({ includeInactive: true });
+    }
     return db.listProjetosForUser(ctx.user.id, { includeInactive });
   }),
 
@@ -40,7 +52,10 @@ export const projetosRouter = router({
     .query(async ({ ctx, input }) => {
       const includeInactive = isOperationalAdminRole(ctx.user.role);
       const allowed = new Set(
-        (await db.listProjetosForUser(ctx.user.id, { includeInactive })).map((r) => r.projeto.id),
+        (isPlatformCommercialRole(ctx.user.role)
+          ? await db.listProjetosForPlatform({ includeInactive: true })
+          : await db.listProjetosForUser(ctx.user.id, { includeInactive })
+        ).map((r) => r.projeto.id),
       );
       const ids = input.projetoIds.filter((id) => allowed.has(id));
       return db.getOperationalCountsForProjetos(ids);
@@ -166,7 +181,8 @@ export const projetosRouter = router({
         role: z.enum(["admin", "operador", "visualizador"]),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await assertPodeGerenciarProjeto(ctx.user, input.projetoId);
       const u = await db.getUserById(input.userId);
       if (!u) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Usuário não encontrado" });
@@ -177,7 +193,8 @@ export const projetosRouter = router({
 
   removeUser: adminProcedure
     .input(z.object({ projetoId: z.number(), userId: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await assertPodeGerenciarProjeto(ctx.user, input.projetoId);
       await db.removeProjetoUser(input.projetoId, input.userId);
       return { success: true };
     }),
@@ -190,19 +207,23 @@ export const projetosRouter = router({
         role: z.enum(["admin", "operador", "visualizador"]),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await assertPodeGerenciarProjeto(ctx.user, input.projetoId);
       await db.updateProjetoUserRole(input.projetoId, input.userId, input.role);
       return { success: true };
     }),
 
-  listUsers: adminProcedure.input(z.object({ projetoId: z.number() })).query(async ({ input }) => {
+  listUsers: adminProcedure.input(z.object({ projetoId: z.number() })).query(async ({ ctx, input }) => {
+    await assertPodeGerenciarProjeto(ctx.user, input.projetoId);
     return db.listProjetoUsers(input.projetoId);
   }),
 
   switchActive: protectedProcedure
     .input(z.object({ projetoId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const projeto = await db.getProjetoByIdForUser(ctx.user.id, input.projetoId);
+      const projeto = isPlatformCommercialRole(ctx.user.role)
+        ? await db.getProjetoById(input.projetoId)
+        : await db.getProjetoByIdForUser(ctx.user.id, input.projetoId);
       if (!projeto) {
         throw new TRPCError({ code: "FORBIDDEN", message: PROJETO_FORBIDDEN_ERR_MSG });
       }
