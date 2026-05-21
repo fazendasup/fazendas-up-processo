@@ -3,6 +3,32 @@ import type * as db from "./db";
 
 export type FullFazendaData = Awaited<ReturnType<typeof db.loadFullFazendaData>>;
 export type BancadaRow = Awaited<ReturnType<typeof db.getAllBancadas>>[number];
+export type EstoqueAssistantItem = {
+  nome: string;
+  categoria: string;
+  quantidadeTotal: number;
+  unidadeTipo: string;
+  status?: string | null;
+  diasAteEsgotar?: number | null;
+  fornecedor?: string | null;
+};
+export type ComercialAssistantResumo =
+  | {
+      disponivel: true;
+      clientesTotal: number;
+      clientesPorTipo: Record<string, number>;
+      pedidosMes: number;
+      vendasMesLiquido: number;
+      vendasMesBruto: number;
+      vendasMesFrete: number;
+      vendasMesDesconto: number;
+      pedidosMesPorStatus: Record<string, number>;
+      oportunidadesAbertas: number;
+      mensagensPendentes: number;
+      ultimaSyncContaAzul: string | null;
+      statusUltimaSyncContaAzul: string | null;
+    }
+  | { disponivel: false; motivo: string };
 
 const MAX_SNAPSHOT_CHARS = 14_500;
 
@@ -27,7 +53,13 @@ function ts(v: Date | null | undefined): string {
  */
 export function buildCompactFazendaSnapshotMarkdown(
   data: FullFazendaData,
-  opts: { projetoNome: string; projetoId: number; bancadas: BancadaRow[] },
+  opts: {
+    projetoNome: string;
+    projetoId: number;
+    bancadas: BancadaRow[];
+    estoqueItens?: EstoqueAssistantItem[] | null;
+    comercial?: ComercialAssistantResumo | null;
+  },
 ): string {
   const varById = new Map(data.variedades.map((v) => [v.id, v.nome]));
   const torreNome = (id: number | null | undefined) =>
@@ -45,6 +77,54 @@ export function buildCompactFazendaSnapshotMarkdown(
   lines.push(`- **Id interno:** ${opts.projetoId}`);
   lines.push(`- **Tipo:** ${data.projetoTipo ?? "desconhecido"}`);
   lines.push("");
+
+  lines.push("## Módulos contratados / dados disponíveis");
+  lines.push(`- **Estoque:** ${opts.estoqueItens ? "disponível neste resumo" : "não incluído ou módulo inativo"}`);
+  lines.push(
+    `- **Comercial:** ${
+      opts.comercial?.disponivel
+        ? "disponível neste resumo"
+        : opts.comercial
+          ? `não disponível (${opts.comercial.motivo})`
+          : "não incluído ou módulo inativo"
+    }`,
+  );
+  lines.push("");
+
+  if (opts.comercial?.disponivel) {
+    const c = opts.comercial;
+    lines.push("## Comercial (Conta Azul / carteira)");
+    lines.push(`- Clientes: ${c.clientesTotal}; por tipo: ${JSON.stringify(c.clientesPorTipo)}`);
+    lines.push(
+      `- Mês atual: ${c.pedidosMes} pedido(s); líquido R$ ${c.vendasMesLiquido.toFixed(2)}; bruto R$ ${c.vendasMesBruto.toFixed(2)}; frete R$ ${c.vendasMesFrete.toFixed(2)}; desconto R$ ${c.vendasMesDesconto.toFixed(2)}`,
+    );
+    lines.push(`- Pedidos por status no mês: ${JSON.stringify(c.pedidosMesPorStatus)}`);
+    lines.push(`- Oportunidades abertas/em contato: ${c.oportunidadesAbertas}; mensagens pendentes: ${c.mensagensPendentes}`);
+    lines.push(
+      `- Última sync Conta Azul: ${c.ultimaSyncContaAzul ?? "—"}; status: ${c.statusUltimaSyncContaAzul ?? "—"}`,
+    );
+    lines.push("");
+  }
+
+  if (opts.estoqueItens) {
+    const criticos = opts.estoqueItens.filter((i) => i.status === "critico").length;
+    const atencao = opts.estoqueItens.filter((i) => i.status === "atencao").length;
+    const porCategoria = new Map<string, number>();
+    for (const item of opts.estoqueItens) {
+      porCategoria.set(item.categoria, (porCategoria.get(item.categoria) ?? 0) + 1);
+    }
+    lines.push("## Estoque");
+    lines.push(
+      `- Itens: ${opts.estoqueItens.length}; críticos: ${criticos}; atenção: ${atencao}; por categoria: ${JSON.stringify(Object.fromEntries(porCategoria))}`,
+    );
+    for (const item of opts.estoqueItens.slice(0, 25)) {
+      lines.push(
+        `- **${item.nome}** — ${item.quantidadeTotal} ${item.unidadeTipo}, categoria ${item.categoria}, status ${item.status ?? "—"}, dias até esgotar ${item.diasAteEsgotar ?? "—"}${item.fornecedor ? `, fornecedor ${item.fornecedor}` : ""}`,
+      );
+    }
+    if (opts.estoqueItens.length > 25) lines.push(`- … +${opts.estoqueItens.length - 25} outros itens`);
+    lines.push("");
+  }
 
   lines.push("## Torres");
   if (data.torres.length === 0) {
