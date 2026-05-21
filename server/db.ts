@@ -3923,7 +3923,10 @@ export async function updateUserEmail(id: number, email: string) {
 export async function deleteUser(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.delete(users).where(eq(users.id, id));
+  await db.transaction(async (tx) => {
+    await tx.delete(projetoUsuarios).where(eq(projetoUsuarios.userId, id));
+    await tx.delete(users).where(eq(users.id, id));
+  });
 }
 
 export type UserListRow = Awaited<ReturnType<typeof getAllUsers>>[number];
