@@ -27,6 +27,7 @@ function composicaoDoPedido(p: {
   valorDesconto: unknown;
   valorLiquido: unknown;
   valorTotal: unknown;
+  composicaoDetalhada?: unknown;
 }): ComposicaoValorPedido {
   const liquido = liquidoPedido(p);
   const brutoRaw = p.valorBruto != null ? Number(p.valorBruto) : NaN;
@@ -66,6 +67,7 @@ export const dashboardRouter = router({
           valorFrete: true,
           valorDesconto: true,
           valorLiquido: true,
+          composicaoDetalhada: true,
           dataPedido: true,
           statusPedido: true,
           cliente: { select: { tipo: true, id: true } },

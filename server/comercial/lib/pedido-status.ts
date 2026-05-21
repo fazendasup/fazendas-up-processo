@@ -17,6 +17,7 @@ export function classificarStatusPedido(status: string | null | undefined): Clas
   if (!s || s === "sync") return "outro";
 
   if (/\bcancel|cancelad|estorn|recusad|rejeitad/.test(s)) return "cancelado";
+  if (/\bem andamento\b/.test(s)) return "outro";
 
   if (
     /orcament|orcamento|budget|cotac|proposta|em elaboracao|em elaboração|aguardando aprovacao|aguardando aprovação/.test(
@@ -27,7 +28,7 @@ export function classificarStatusPedido(status: string | null | undefined): Clas
   }
 
   if (
-    /faturad|aprovad|venda realizada|venda efetivad|conclu|finaliz|entreg|pago|baixad|efetivad|confirmad|em andamento/.test(
+    /faturad|aprovad|venda realizada|venda efetivad|conclu|finaliz|entreg|pago|baixad|efetivad|confirmad/.test(
       s,
     )
   ) {

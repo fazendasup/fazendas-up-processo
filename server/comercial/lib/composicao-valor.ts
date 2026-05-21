@@ -35,7 +35,9 @@ export function pedidoComposicaoProvavelmenteIncompleta(p: {
   valorFrete?: unknown;
   valorDesconto?: unknown;
   valorLiquido?: unknown;
+  composicaoDetalhada?: unknown;
 }): boolean {
+  if (p.composicaoDetalhada === true) return false;
   const frete = asNumber(p.valorFrete) ?? 0;
   const desconto = asNumber(p.valorDesconto) ?? 0;
   if (frete > 0 || desconto > 0) return false;

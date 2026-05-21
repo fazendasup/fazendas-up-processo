@@ -165,6 +165,7 @@ model Pedido {
   valorFrete    Decimal      @default(0) @map("valor_frete") @db.Decimal(14, 2)
   valorDesconto Decimal      @default(0) @map("valor_desconto") @db.Decimal(14, 2)
   valorLiquido  Decimal?     @map("valor_liquido") @db.Decimal(14, 2)
+  composicaoDetalhada Boolean @default(false) @map("composicao_detalhada")
   statusPedido  String       @map("status_pedido")
   origemPedido  OrigemPedido @map("origem_pedido")
   cliente      Cliente      @relation(fields: [clienteId], references: [id], onDelete: Cascade)

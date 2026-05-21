@@ -5488,6 +5488,7 @@ export namespace Prisma {
     valorFrete: Decimal | null
     valorDesconto: Decimal | null
     valorLiquido: Decimal | null
+    composicaoDetalhada: boolean | null
     statusPedido: string | null
     origemPedido: $Enums.OrigemPedido | null
   }
@@ -5502,6 +5503,7 @@ export namespace Prisma {
     valorFrete: Decimal | null
     valorDesconto: Decimal | null
     valorLiquido: Decimal | null
+    composicaoDetalhada: boolean | null
     statusPedido: string | null
     origemPedido: $Enums.OrigemPedido | null
   }
@@ -5516,6 +5518,7 @@ export namespace Prisma {
     valorFrete: number
     valorDesconto: number
     valorLiquido: number
+    composicaoDetalhada: number
     statusPedido: number
     origemPedido: number
     _all: number
@@ -5548,6 +5551,7 @@ export namespace Prisma {
     valorFrete?: true
     valorDesconto?: true
     valorLiquido?: true
+    composicaoDetalhada?: true
     statusPedido?: true
     origemPedido?: true
   }
@@ -5562,6 +5566,7 @@ export namespace Prisma {
     valorFrete?: true
     valorDesconto?: true
     valorLiquido?: true
+    composicaoDetalhada?: true
     statusPedido?: true
     origemPedido?: true
   }
@@ -5576,6 +5581,7 @@ export namespace Prisma {
     valorFrete?: true
     valorDesconto?: true
     valorLiquido?: true
+    composicaoDetalhada?: true
     statusPedido?: true
     origemPedido?: true
     _all?: true
@@ -5677,6 +5683,7 @@ export namespace Prisma {
     valorFrete: Decimal
     valorDesconto: Decimal
     valorLiquido: Decimal | null
+    composicaoDetalhada: boolean
     statusPedido: string
     origemPedido: $Enums.OrigemPedido
     _count: PedidoCountAggregateOutputType | null
@@ -5710,6 +5717,7 @@ export namespace Prisma {
     valorFrete?: boolean
     valorDesconto?: boolean
     valorLiquido?: boolean
+    composicaoDetalhada?: boolean
     statusPedido?: boolean
     origemPedido?: boolean
     cliente?: boolean | ClienteDefaultArgs<ExtArgs>
@@ -5729,11 +5737,12 @@ export namespace Prisma {
     valorFrete?: boolean
     valorDesconto?: boolean
     valorLiquido?: boolean
+    composicaoDetalhada?: boolean
     statusPedido?: boolean
     origemPedido?: boolean
   }
 
-  export type PedidoOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "externalId" | "clienteId" | "dataPedido" | "valorTotal" | "valorBruto" | "valorFrete" | "valorDesconto" | "valorLiquido" | "statusPedido" | "origemPedido", ExtArgs["result"]["pedido"]>
+  export type PedidoOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "externalId" | "clienteId" | "dataPedido" | "valorTotal" | "valorBruto" | "valorFrete" | "valorDesconto" | "valorLiquido" | "composicaoDetalhada" | "statusPedido" | "origemPedido", ExtArgs["result"]["pedido"]>
   export type PedidoInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     cliente?: boolean | ClienteDefaultArgs<ExtArgs>
     itens?: boolean | Pedido$itensArgs<ExtArgs>
@@ -5756,6 +5765,7 @@ export namespace Prisma {
       valorFrete: Prisma.Decimal
       valorDesconto: Prisma.Decimal
       valorLiquido: Prisma.Decimal | null
+      composicaoDetalhada: boolean
       statusPedido: string
       origemPedido: $Enums.OrigemPedido
     }, ExtArgs["result"]["pedido"]>
@@ -6138,6 +6148,7 @@ export namespace Prisma {
     readonly valorFrete: FieldRef<"Pedido", 'Decimal'>
     readonly valorDesconto: FieldRef<"Pedido", 'Decimal'>
     readonly valorLiquido: FieldRef<"Pedido", 'Decimal'>
+    readonly composicaoDetalhada: FieldRef<"Pedido", 'Boolean'>
     readonly statusPedido: FieldRef<"Pedido", 'String'>
     readonly origemPedido: FieldRef<"Pedido", 'OrigemPedido'>
   }
@@ -16174,6 +16185,7 @@ export namespace Prisma {
     valorFrete: 'valorFrete',
     valorDesconto: 'valorDesconto',
     valorLiquido: 'valorLiquido',
+    composicaoDetalhada: 'composicaoDetalhada',
     statusPedido: 'statusPedido',
     origemPedido: 'origemPedido'
   };
@@ -16577,6 +16589,13 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'Boolean'
+   */
+  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+  /**
    * Reference to a field of type 'OrigemPedido'
    */
   export type EnumOrigemPedidoFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrigemPedido'>
@@ -16587,13 +16606,6 @@ export namespace Prisma {
    * Reference to a field of type 'TipoInteracao'
    */
   export type EnumTipoInteracaoFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TipoInteracao'>
-    
-
-
-  /**
-   * Reference to a field of type 'Boolean'
-   */
-  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
@@ -16936,6 +16948,7 @@ export namespace Prisma {
     valorFrete?: DecimalFilter<"Pedido"> | Decimal | DecimalJsLike | number | string
     valorDesconto?: DecimalFilter<"Pedido"> | Decimal | DecimalJsLike | number | string
     valorLiquido?: DecimalNullableFilter<"Pedido"> | Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: BoolFilter<"Pedido"> | boolean
     statusPedido?: StringFilter<"Pedido"> | string
     origemPedido?: EnumOrigemPedidoFilter<"Pedido"> | $Enums.OrigemPedido
     cliente?: XOR<ClienteScalarRelationFilter, ClienteWhereInput>
@@ -16952,6 +16965,7 @@ export namespace Prisma {
     valorFrete?: SortOrder
     valorDesconto?: SortOrder
     valorLiquido?: SortOrderInput | SortOrder
+    composicaoDetalhada?: SortOrder
     statusPedido?: SortOrder
     origemPedido?: SortOrder
     cliente?: ClienteOrderByWithRelationInput
@@ -16972,6 +16986,7 @@ export namespace Prisma {
     valorFrete?: DecimalFilter<"Pedido"> | Decimal | DecimalJsLike | number | string
     valorDesconto?: DecimalFilter<"Pedido"> | Decimal | DecimalJsLike | number | string
     valorLiquido?: DecimalNullableFilter<"Pedido"> | Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: BoolFilter<"Pedido"> | boolean
     statusPedido?: StringFilter<"Pedido"> | string
     origemPedido?: EnumOrigemPedidoFilter<"Pedido"> | $Enums.OrigemPedido
     cliente?: XOR<ClienteScalarRelationFilter, ClienteWhereInput>
@@ -16988,6 +17003,7 @@ export namespace Prisma {
     valorFrete?: SortOrder
     valorDesconto?: SortOrder
     valorLiquido?: SortOrderInput | SortOrder
+    composicaoDetalhada?: SortOrder
     statusPedido?: SortOrder
     origemPedido?: SortOrder
     _count?: PedidoCountOrderByAggregateInput
@@ -17010,6 +17026,7 @@ export namespace Prisma {
     valorFrete?: DecimalWithAggregatesFilter<"Pedido"> | Decimal | DecimalJsLike | number | string
     valorDesconto?: DecimalWithAggregatesFilter<"Pedido"> | Decimal | DecimalJsLike | number | string
     valorLiquido?: DecimalNullableWithAggregatesFilter<"Pedido"> | Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: BoolWithAggregatesFilter<"Pedido"> | boolean
     statusPedido?: StringWithAggregatesFilter<"Pedido"> | string
     origemPedido?: EnumOrigemPedidoWithAggregatesFilter<"Pedido"> | $Enums.OrigemPedido
   }
@@ -18010,6 +18027,7 @@ export namespace Prisma {
     valorFrete?: Decimal | DecimalJsLike | number | string
     valorDesconto?: Decimal | DecimalJsLike | number | string
     valorLiquido?: Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: boolean
     statusPedido: string
     origemPedido: $Enums.OrigemPedido
     cliente: ClienteCreateNestedOneWithoutPedidosInput
@@ -18026,6 +18044,7 @@ export namespace Prisma {
     valorFrete?: Decimal | DecimalJsLike | number | string
     valorDesconto?: Decimal | DecimalJsLike | number | string
     valorLiquido?: Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: boolean
     statusPedido: string
     origemPedido: $Enums.OrigemPedido
     itens?: ItemPedidoUncheckedCreateNestedManyWithoutPedidoInput
@@ -18040,6 +18059,7 @@ export namespace Prisma {
     valorFrete?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     valorDesconto?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     valorLiquido?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: BoolFieldUpdateOperationsInput | boolean
     statusPedido?: StringFieldUpdateOperationsInput | string
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
     cliente?: ClienteUpdateOneRequiredWithoutPedidosNestedInput
@@ -18056,6 +18076,7 @@ export namespace Prisma {
     valorFrete?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     valorDesconto?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     valorLiquido?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: BoolFieldUpdateOperationsInput | boolean
     statusPedido?: StringFieldUpdateOperationsInput | string
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
     itens?: ItemPedidoUncheckedUpdateManyWithoutPedidoNestedInput
@@ -18071,6 +18092,7 @@ export namespace Prisma {
     valorFrete?: Decimal | DecimalJsLike | number | string
     valorDesconto?: Decimal | DecimalJsLike | number | string
     valorLiquido?: Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: boolean
     statusPedido: string
     origemPedido: $Enums.OrigemPedido
   }
@@ -18084,6 +18106,7 @@ export namespace Prisma {
     valorFrete?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     valorDesconto?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     valorLiquido?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: BoolFieldUpdateOperationsInput | boolean
     statusPedido?: StringFieldUpdateOperationsInput | string
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
   }
@@ -18098,6 +18121,7 @@ export namespace Prisma {
     valorFrete?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     valorDesconto?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     valorLiquido?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: BoolFieldUpdateOperationsInput | boolean
     statusPedido?: StringFieldUpdateOperationsInput | string
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
   }
@@ -19320,6 +19344,11 @@ export namespace Prisma {
     not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
   }
 
+  export type BoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
   export type EnumOrigemPedidoFilter<$PrismaModel = never> = {
     equals?: $Enums.OrigemPedido | EnumOrigemPedidoFieldRefInput<$PrismaModel>
     in?: $Enums.OrigemPedido[]
@@ -19358,6 +19387,7 @@ export namespace Prisma {
     valorFrete?: SortOrder
     valorDesconto?: SortOrder
     valorLiquido?: SortOrder
+    composicaoDetalhada?: SortOrder
     statusPedido?: SortOrder
     origemPedido?: SortOrder
   }
@@ -19380,6 +19410,7 @@ export namespace Prisma {
     valorFrete?: SortOrder
     valorDesconto?: SortOrder
     valorLiquido?: SortOrder
+    composicaoDetalhada?: SortOrder
     statusPedido?: SortOrder
     origemPedido?: SortOrder
   }
@@ -19394,6 +19425,7 @@ export namespace Prisma {
     valorFrete?: SortOrder
     valorDesconto?: SortOrder
     valorLiquido?: SortOrder
+    composicaoDetalhada?: SortOrder
     statusPedido?: SortOrder
     origemPedido?: SortOrder
   }
@@ -19420,6 +19452,14 @@ export namespace Prisma {
     _sum?: NestedDecimalFilter<$PrismaModel>
     _min?: NestedDecimalFilter<$PrismaModel>
     _max?: NestedDecimalFilter<$PrismaModel>
+  }
+
+  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type EnumOrigemPedidoWithAggregatesFilter<$PrismaModel = never> = {
@@ -19490,11 +19530,6 @@ export namespace Prisma {
     not?: NestedEnumTipoInteracaoFilter<$PrismaModel> | $Enums.TipoInteracao
   }
 
-  export type BoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
-  }
-
   export type InteracaoOrderByRelevanceInput = {
     fields: InteracaoOrderByRelevanceFieldEnum | InteracaoOrderByRelevanceFieldEnum[]
     sort: SortOrder
@@ -19553,14 +19588,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumTipoInteracaoFilter<$PrismaModel>
     _max?: NestedEnumTipoInteracaoFilter<$PrismaModel>
-  }
-
-  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type EnumTipoOportunidadeFilter<$PrismaModel = never> = {
@@ -20530,6 +20557,10 @@ export namespace Prisma {
     divide?: Decimal | DecimalJsLike | number | string
   }
 
+  export type BoolFieldUpdateOperationsInput = {
+    set?: boolean
+  }
+
   export type EnumOrigemPedidoFieldUpdateOperationsInput = {
     set?: $Enums.OrigemPedido
   }
@@ -20592,10 +20623,6 @@ export namespace Prisma {
 
   export type EnumTipoInteracaoFieldUpdateOperationsInput = {
     set?: $Enums.TipoInteracao
-  }
-
-  export type BoolFieldUpdateOperationsInput = {
-    set?: boolean
   }
 
   export type ClienteUpdateOneRequiredWithoutInteracoesNestedInput = {
@@ -20989,6 +21016,11 @@ export namespace Prisma {
     not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
   }
 
+  export type NestedBoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
   export type NestedEnumOrigemPedidoFilter<$PrismaModel = never> = {
     equals?: $Enums.OrigemPedido | EnumOrigemPedidoFieldRefInput<$PrismaModel>
     in?: $Enums.OrigemPedido[]
@@ -21012,6 +21044,14 @@ export namespace Prisma {
     _max?: NestedDecimalFilter<$PrismaModel>
   }
 
+  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
   export type NestedEnumOrigemPedidoWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.OrigemPedido | EnumOrigemPedidoFieldRefInput<$PrismaModel>
     in?: $Enums.OrigemPedido[]
@@ -21029,11 +21069,6 @@ export namespace Prisma {
     not?: NestedEnumTipoInteracaoFilter<$PrismaModel> | $Enums.TipoInteracao
   }
 
-  export type NestedBoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
-  }
-
   export type NestedEnumTipoInteracaoWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.TipoInteracao | EnumTipoInteracaoFieldRefInput<$PrismaModel>
     in?: $Enums.TipoInteracao[]
@@ -21042,14 +21077,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumTipoInteracaoFilter<$PrismaModel>
     _max?: NestedEnumTipoInteracaoFilter<$PrismaModel>
-  }
-
-  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type NestedEnumTipoOportunidadeFilter<$PrismaModel = never> = {
@@ -21509,6 +21536,7 @@ export namespace Prisma {
     valorFrete?: Decimal | DecimalJsLike | number | string
     valorDesconto?: Decimal | DecimalJsLike | number | string
     valorLiquido?: Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: boolean
     statusPedido: string
     origemPedido: $Enums.OrigemPedido
     itens?: ItemPedidoCreateNestedManyWithoutPedidoInput
@@ -21523,6 +21551,7 @@ export namespace Prisma {
     valorFrete?: Decimal | DecimalJsLike | number | string
     valorDesconto?: Decimal | DecimalJsLike | number | string
     valorLiquido?: Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: boolean
     statusPedido: string
     origemPedido: $Enums.OrigemPedido
     itens?: ItemPedidoUncheckedCreateNestedManyWithoutPedidoInput
@@ -21707,6 +21736,7 @@ export namespace Prisma {
     valorFrete?: DecimalFilter<"Pedido"> | Decimal | DecimalJsLike | number | string
     valorDesconto?: DecimalFilter<"Pedido"> | Decimal | DecimalJsLike | number | string
     valorLiquido?: DecimalNullableFilter<"Pedido"> | Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: BoolFilter<"Pedido"> | boolean
     statusPedido?: StringFilter<"Pedido"> | string
     origemPedido?: EnumOrigemPedidoFilter<"Pedido"> | $Enums.OrigemPedido
   }
@@ -21978,6 +22008,7 @@ export namespace Prisma {
     valorFrete?: Decimal | DecimalJsLike | number | string
     valorDesconto?: Decimal | DecimalJsLike | number | string
     valorLiquido?: Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: boolean
     statusPedido: string
     origemPedido: $Enums.OrigemPedido
     cliente: ClienteCreateNestedOneWithoutPedidosInput
@@ -21993,6 +22024,7 @@ export namespace Prisma {
     valorFrete?: Decimal | DecimalJsLike | number | string
     valorDesconto?: Decimal | DecimalJsLike | number | string
     valorLiquido?: Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: boolean
     statusPedido: string
     origemPedido: $Enums.OrigemPedido
   }
@@ -22022,6 +22054,7 @@ export namespace Prisma {
     valorFrete?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     valorDesconto?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     valorLiquido?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: BoolFieldUpdateOperationsInput | boolean
     statusPedido?: StringFieldUpdateOperationsInput | string
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
     cliente?: ClienteUpdateOneRequiredWithoutPedidosNestedInput
@@ -22037,6 +22070,7 @@ export namespace Prisma {
     valorFrete?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     valorDesconto?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     valorLiquido?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: BoolFieldUpdateOperationsInput | boolean
     statusPedido?: StringFieldUpdateOperationsInput | string
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
   }
@@ -22754,6 +22788,7 @@ export namespace Prisma {
     valorFrete?: Decimal | DecimalJsLike | number | string
     valorDesconto?: Decimal | DecimalJsLike | number | string
     valorLiquido?: Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: boolean
     statusPedido: string
     origemPedido: $Enums.OrigemPedido
   }
@@ -22817,6 +22852,7 @@ export namespace Prisma {
     valorFrete?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     valorDesconto?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     valorLiquido?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: BoolFieldUpdateOperationsInput | boolean
     statusPedido?: StringFieldUpdateOperationsInput | string
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
     itens?: ItemPedidoUpdateManyWithoutPedidoNestedInput
@@ -22831,6 +22867,7 @@ export namespace Prisma {
     valorFrete?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     valorDesconto?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     valorLiquido?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: BoolFieldUpdateOperationsInput | boolean
     statusPedido?: StringFieldUpdateOperationsInput | string
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
     itens?: ItemPedidoUncheckedUpdateManyWithoutPedidoNestedInput
@@ -22845,6 +22882,7 @@ export namespace Prisma {
     valorFrete?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     valorDesconto?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     valorLiquido?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    composicaoDetalhada?: BoolFieldUpdateOperationsInput | boolean
     statusPedido?: StringFieldUpdateOperationsInput | string
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
   }

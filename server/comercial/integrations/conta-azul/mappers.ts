@@ -171,6 +171,7 @@ export function mapPedidoCreate(
   clienteId: string,
   payload: ContaAzulPedidoPayload,
   composicao: ComposicaoValorPedido,
+  composicaoDetalhada = false,
 ): Prisma.PedidoCreateInput {
   return {
     externalId: payload.id ?? undefined,
@@ -180,6 +181,7 @@ export function mapPedidoCreate(
     valorFrete: composicao.valorFrete,
     valorDesconto: composicao.valorDesconto,
     valorLiquido: composicao.valorLiquido,
+    composicaoDetalhada,
     statusPedido: payload.status ?? "SYNC",
     origemPedido: OrigemPedido.CONTA_AZUL,
     cliente: { connect: { id: clienteId } },

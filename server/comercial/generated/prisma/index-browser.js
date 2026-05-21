@@ -167,6 +167,7 @@ exports.Prisma.PedidoScalarFieldEnum = {
   valorFrete: 'valorFrete',
   valorDesconto: 'valorDesconto',
   valorLiquido: 'valorLiquido',
+  composicaoDetalhada: 'composicaoDetalhada',
   statusPedido: 'statusPedido',
   origemPedido: 'origemPedido'
 };
