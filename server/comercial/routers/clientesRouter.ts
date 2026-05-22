@@ -44,6 +44,10 @@ function buscaCarteiraWhere(busca: string | undefined): Prisma.ClienteWhereInput
   };
 }
 
+function mesCarteiraKey(d: Date): string {
+  return d.toISOString().slice(0, 7);
+}
+
 export const clientesRouter = router({
   listar: comercialProcedure
     .input(
@@ -94,7 +98,7 @@ export const clientesRouter = router({
         busca: z.string().optional(),
         tipo: z.nativeEnum(TipoCliente).optional(),
         statusRelacionamento: z.nativeEnum(StatusRelacionamento).optional(),
-        limite: z.number().min(1).max(60).default(40),
+        limite: z.number().min(1).max(240).default(40),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -115,13 +119,17 @@ export const clientesRouter = router({
 
       const ids = clientes.map((c) => c.id);
 
-      const [aggPedidos, opCounts, opsRaw, pedidosRaw, interacoes] = await Promise.all([
+      const [aggPedidos, pedidosMensalRaw, opCounts, opsRaw, pedidosRaw, interacoes] = await Promise.all([
         ctx.prisma!.pedido.groupBy({
           by: ["clienteId"],
           where: { clienteId: { in: ids } },
           _sum: { valorTotal: true },
           _count: { id: true },
           _max: { dataPedido: true },
+        }),
+        ctx.prisma!.pedido.findMany({
+          where: { clienteId: { in: ids } },
+          select: { clienteId: true, dataPedido: true, valorTotal: true },
         }),
         ctx.prisma!.oportunidade.groupBy({
           by: ["clienteId"],
@@ -173,14 +181,22 @@ export const clientesRouter = router({
 
       const aggMap = new Map(aggPedidos.map((a) => [a.clienteId, a]));
       const opCountMap = new Map(opCounts.map((o) => [o.clienteId, o._count.id]));
+      const ticketMensalMap = new Map<string, { total: number; meses: Set<string> }>();
+      for (const p of pedidosMensalRaw) {
+        const acc = ticketMensalMap.get(p.clienteId) ?? { total: 0, meses: new Set<string>() };
+        acc.total += Number(p.valorTotal);
+        acc.meses.add(mesCarteiraKey(p.dataPedido));
+        ticketMensalMap.set(p.clienteId, acc);
+      }
 
       let totalValorCarteira = 0;
-      let totalPedidosCarteira = 0;
+      let totalMesesClienteCarteira = 0;
       for (const a of aggPedidos) {
-        totalValorCarteira += Number(a._sum.valorTotal ?? 0);
-        totalPedidosCarteira += a._count.id;
+        const mensal = ticketMensalMap.get(a.clienteId);
+        totalValorCarteira += mensal?.total ?? Number(a._sum.valorTotal ?? 0);
+        totalMesesClienteCarteira += mensal?.meses.size ?? 0;
       }
-      const ticketMedioGlobal = totalPedidosCarteira > 0 ? totalValorCarteira / totalPedidosCarteira : 0;
+      const ticketMedioGlobal = totalMesesClienteCarteira > 0 ? totalValorCarteira / totalMesesClienteCarteira : 0;
 
       const opsSorted = [...opsRaw].sort(
         (a, b) => rankPrioridade(b.prioridade) - rankPrioridade(a.prioridade) || +b.dataCriacao - +a.dataCriacao,
@@ -212,9 +228,11 @@ export const clientesRouter = router({
 
       return clientes.map((c) => {
         const agg = aggMap.get(c.id);
+        const mensal = ticketMensalMap.get(c.id);
         const nPed = agg?._count.id ?? 0;
         const totalValor = agg?._sum.valorTotal != null ? Number(agg._sum.valorTotal) : 0;
-        const ticketMedio = nPed > 0 ? totalValor / nPed : null;
+        const mesesComCompra = mensal?.meses.size ?? 0;
+        const ticketMedio = mesesComCompra > 0 ? (mensal?.total ?? totalValor) / mesesComCompra : null;
         const ultimaCompra = agg?._max.dataPedido ?? null;
         const dias =
           ultimaCompra != null ? Math.round((agora - ultimaCompra.getTime()) / 86_400_000) : null;
@@ -276,6 +294,7 @@ export const clientesRouter = router({
             totalPedidos: nPed,
             valorTotal: totalValor,
             ticketMedio,
+            mesesComCompra,
             ultimaCompra,
             diasDesdeUltimaCompra: dias,
           },

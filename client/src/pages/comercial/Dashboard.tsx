@@ -132,6 +132,7 @@ export function Dashboard() {
     total: number;
     pedidos: number;
     clientes: number;
+    mesesCliente?: number;
     ticketMedio: number;
     ticketMedioPorCliente: number;
   }>;
@@ -299,16 +300,16 @@ export function Dashboard() {
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-sky-800 dark:text-sky-400/80">
-                    Ticket médio (pedido)
+                    Ticket médio mensal
                   </span>
-                  <span className={`text-[11px] font-semibold normal-case tracking-normal ${fuTextMuted}`}>Clique para detalhar</span>
+                  <span className={`text-[11px] font-semibold normal-case tracking-normal ${fuTextMuted}`}>Por cliente/mês</span>
                 </div>
                 <div className="mt-2 flex items-end justify-between gap-2">
                   <div className={`text-2xl font-bold ${fuTextStrong} ${fuStat}`}>{fmtMoney(kpis?.ticketMedio ?? 0)}</div>
                   <TrendingUp className="h-5 w-5 text-sky-700 dark:text-sky-400" />
                 </div>
                 <div className={`mt-1 text-xs ${fuTextMuted}`}>
-                  Por cliente (média):{" "}
+                  Base mensal por cliente:{" "}
                   <span className={`font-semibold text-slate-700 dark:text-slate-300 ${fuStat}`}>{fmtMoney(kpis?.ticketMedioPorCliente ?? 0)}</span>
                 </div>
               </button>
@@ -658,7 +659,7 @@ export function Dashboard() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className={`text-xl font-bold ${fuTitleGradient}`}>Ticket médio por categoria</div>
-                  <div className={`mt-1 text-sm ${fuTextMuted}`}>Média por pedido e por cliente no período filtrado</div>
+                  <div className={`mt-1 text-sm ${fuTextMuted}`}>Média mensal por cliente ativo no período filtrado</div>
                 </div>
                 <button
                   type="button"
@@ -681,7 +682,7 @@ export function Dashboard() {
                         <div>
                           <div className="font-semibold text-slate-900 dark:text-slate-100">{tipo.label}</div>
                           <div className={`mt-0.5 text-xs ${fuTextMuted}`}>
-                            {row?.pedidos ?? 0} pedido(s) · {row?.clientes ?? 0} cliente(s)
+                            {row?.pedidos ?? 0} pedido(s) · {row?.clientes ?? 0} cliente(s) · {row?.mesesCliente ?? 0} cliente-mês
                           </div>
                         </div>
                         <div className={`text-right text-lg font-bold text-sky-800 dark:text-sky-300 ${fuStat}`}>
@@ -696,7 +697,7 @@ export function Dashboard() {
                           </div>
                         </div>
                         <div>
-                          <div>Média por cliente</div>
+                          <div>Média mensal/cliente</div>
                           <div className={`font-semibold text-slate-800 dark:text-slate-200 ${fuStat}`}>
                             {fmtMoneyDetalhe(row?.ticketMedioPorCliente ?? 0)}
                           </div>

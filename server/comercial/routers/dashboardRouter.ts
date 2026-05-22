@@ -21,6 +21,10 @@ function diaCalendarioAmericaSp(d: Date): string {
   }).format(d);
 }
 
+function mesCalendarioAmericaSp(d: Date): string {
+  return diaCalendarioAmericaSp(d).slice(0, 7);
+}
+
 function composicaoDoPedido(p: {
   valorBruto: unknown;
   valorFrete: unknown;
@@ -87,11 +91,12 @@ export const dashboardRouter = router({
       const pedidosVenda: typeof pedidos = [];
       const ticketPorTipo = Object.values(TipoCliente).reduce(
         (acc, tipo) => {
-          acc[tipo] = { total: 0, pedidos: 0, clientes: new Set<string>() };
+          acc[tipo] = { total: 0, pedidos: 0, clientes: new Set<string>(), clienteMeses: new Set<string>() };
           return acc;
         },
-        {} as Record<TipoCliente, { total: number; pedidos: number; clientes: Set<string> }>,
+        {} as Record<TipoCliente, { total: number; pedidos: number; clientes: Set<string>; clienteMeses: Set<string> }>,
       );
+      const ticketMensalPorCliente = new Map<string, number>();
       let vendasComposicaoIncompleta = 0;
 
       for (const p of pedidos) {
@@ -103,6 +108,9 @@ export const dashboardRouter = router({
           ticketPorTipo[p.cliente.tipo].total += comp.valorLiquido;
           ticketPorTipo[p.cliente.tipo].pedidos += 1;
           ticketPorTipo[p.cliente.tipo].clientes.add(p.clienteId);
+          const clienteMesKey = `${p.clienteId}|${mesCalendarioAmericaSp(p.dataPedido)}`;
+          ticketPorTipo[p.cliente.tipo].clienteMeses.add(clienteMesKey);
+          ticketMensalPorCliente.set(clienteMesKey, (ticketMensalPorCliente.get(clienteMesKey) ?? 0) + comp.valorLiquido);
           pedidosVenda.push(p);
           if (pedidoComposicaoProvavelmenteIncompleta(p)) vendasComposicaoIncompleta++;
         } else if (cls === "orcamento") {
@@ -113,19 +121,10 @@ export const dashboardRouter = router({
 
       const vendasRealizadas = composicaoVendas.liquido;
       const orcamentos = composicaoOrcamentos.liquido;
-      const ticketMedio = pedidosVenda.length ? vendasRealizadas / pedidosVenda.length : 0;
       const clientesDistintos = new Set(pedidosVenda.map((p) => p.clienteId)).size;
-
-      const ticketPorCliente = new Map<string, { total: number; qtd: number }>();
-      for (const p of pedidosVenda) {
-        const acc = ticketPorCliente.get(p.clienteId) ?? { total: 0, qtd: 0 };
-        acc.total += liquidoPedido(p);
-        acc.qtd += 1;
-        ticketPorCliente.set(p.clienteId, acc);
-      }
-      const tickets = Array.from(ticketPorCliente.values()).map((v) => (v.qtd ? v.total / v.qtd : 0));
-      const ticketMedioPorCliente =
-        tickets.length > 0 ? tickets.reduce((a, b) => a + b, 0) / tickets.length : 0;
+      const ticketsMensais = Array.from(ticketMensalPorCliente.values());
+      const ticketMedio = ticketsMensais.length > 0 ? ticketsMensais.reduce((a, b) => a + b, 0) / ticketsMensais.length : 0;
+      const ticketMedioPorCliente = ticketMedio;
 
       const clientesEmRisco = await ctx.prisma!.cliente.count({
         where: { statusRelacionamento: StatusRelacionamento.EM_RISCO },
@@ -197,8 +196,9 @@ export const dashboardRouter = router({
               total: row.total,
               pedidos: row.pedidos,
               clientes: row.clientes.size,
-              ticketMedio: row.pedidos > 0 ? row.total / row.pedidos : 0,
-              ticketMedioPorCliente: row.clientes.size > 0 ? row.total / row.clientes.size : 0,
+              mesesCliente: row.clienteMeses.size,
+              ticketMedio: row.clienteMeses.size > 0 ? row.total / row.clienteMeses.size : 0,
+              ticketMedioPorCliente: row.clienteMeses.size > 0 ? row.total / row.clienteMeses.size : 0,
             };
           }),
           vendasComposicaoIncompleta,

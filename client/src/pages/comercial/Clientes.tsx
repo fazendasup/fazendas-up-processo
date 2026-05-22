@@ -46,6 +46,8 @@ const TIPOS_CLIENTE = [
   { value: "AVULSO", label: "Avulso" },
   { value: "OUTROS", label: "Outros" },
 ] as const;
+const CLIENTES_PAGE_SIZE = 40;
+const CLIENTES_MAX_LIMIT = 240;
 
 type TipoClienteComercial = (typeof TIPOS_CLIENTE)[number]["value"];
 
@@ -74,6 +76,7 @@ export function Clientes() {
   const [busca, setBusca] = useState(buscaInicial);
   const [tipo, setTipo] = useState<"" | TipoClienteComercial>("");
   const [status, setStatus] = useState<"" | "ATIVO" | "INATIVO" | "EM_RISCO" | "ESTRATEGICO">("");
+  const [limite, setLimite] = useState(CLIENTES_PAGE_SIZE);
   const [modalNovo, setModalNovo] = useState(false);
   const [novo, setNovo] = useState(() => freshNovoCliente());
 
@@ -109,11 +112,15 @@ export function Clientes() {
     return () => window.clearTimeout(t);
   }, [busca]);
 
+  useEffect(() => {
+    setLimite(CLIENTES_PAGE_SIZE);
+  }, [debouncedBusca, tipo, status, filtroRisco]);
+
   const q = trpc.comercial.clientes.listarCarteira.useQuery({
     busca: debouncedBusca.trim() || undefined,
     tipo: tipo || undefined,
     statusRelacionamento: filtroRisco ? "EM_RISCO" : status || undefined,
-    limite: 40,
+    limite,
   });
 
   const linhas = useMemo(() => q.data ?? [], [q.data]);
@@ -345,7 +352,7 @@ export function Clientes() {
 
                   <div className="grid grid-cols-2 gap-3 border-b border-[#F3F4F6] px-5 py-4 sm:grid-cols-4">
                     <div>
-                      <div className="text-[10px] font-bold uppercase tracking-wide text-[#9CA3AF]">Ticket médio</div>
+                      <div className="text-[10px] font-bold uppercase tracking-wide text-[#9CA3AF]">Ticket mensal</div>
                       <div className="mt-0.5 text-sm font-bold text-[#10B981]">
                         {c.resumo.ticketMedio != null
                           ? c.resumo.ticketMedio.toLocaleString("pt-BR", {
@@ -518,6 +525,18 @@ export function Clientes() {
             })
           : null}
       </div>
+
+      {!q.isLoading && linhas.length > 0 && linhas.length >= limite && limite < CLIENTES_MAX_LIMIT ? (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={() => setLimite((prev) => Math.min(CLIENTES_MAX_LIMIT, prev + CLIENTES_PAGE_SIZE))}
+            className="rounded-lg border border-[#BFDBFE] bg-white px-5 py-2.5 text-sm font-bold text-[#1E40AF] shadow-sm transition hover:border-[#10B981]/60 hover:bg-[#ECFDF5] hover:text-[#047857]"
+          >
+            Mais clientes
+          </button>
+        </div>
+      ) : null}
 
       {!q.isLoading && linhas.length > 0 ? (
         <p className="text-sm text-[#6B7280]">
