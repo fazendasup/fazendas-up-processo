@@ -150,10 +150,10 @@ async function fetchComposicaoDetalheVenda(
   ctx.detailBudget.remaining--;
   try {
     const detail = await contaAzulGet<unknown>(http, `/v1/venda/${encodeURIComponent(vendaId)}`);
+    const fromDetail = normalizarComposicao(composicaoFromVendaDetalhe(detail), totalFallback);
     return {
-      composicao: normalizarComposicao(composicaoFromVendaDetalhe(detail), totalFallback) ??
-        composicaoFromTotalApenas(totalFallback),
-      composicaoDetalhada: true,
+      composicao: fromDetail ?? composicaoFromTotalApenas(totalFallback),
+      composicaoDetalhada: Boolean(fromDetail),
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -243,7 +243,7 @@ async function resolveComposicaoVenda(
     const fromDetail = normalizarComposicao(composicaoFromVendaDetalhe(detail), totalFallback);
     return {
       composicao: fromDetail ?? composicaoFromTotalApenas(totalFallback),
-      composicaoDetalhada: true,
+      composicaoDetalhada: Boolean(fromDetail),
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

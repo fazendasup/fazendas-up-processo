@@ -75,13 +75,13 @@ export function pedidoComposicaoProvavelmenteIncompleta(p: {
   return Math.abs(bruto - liquido) < 0.01;
 }
 
-/** Evita GET /v1/venda/{id} só quando a busca já trouxe frete, desconto ou bruto ≠ líquido. */
+/** Prefere GET /v1/venda/{id}; a busca pode trazer composição parcial e divergir do relatório. */
 export function precisaDetalheComposicao(
   fromBusca: ComposicaoValorPedido | null,
   totalFallback: number,
 ): boolean {
   if (process.env.CONTA_AZUL_SYNC_SKIP_DETAIL === "1") return false;
-  if (fromBusca && composicaoCompletaDaBusca(fromBusca)) return false;
+  void fromBusca;
   return totalFallback > 0;
 }
 

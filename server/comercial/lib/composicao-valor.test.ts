@@ -34,13 +34,13 @@ describe("composicao-valor", () => {
     ).toBe(true);
   });
 
-  it("precisaDetalheComposicao é false quando busca tem frete ou desconto", () => {
+  it("precisaDetalheComposicao continua true quando busca tem frete ou desconto", () => {
     expect(
       precisaDetalheComposicao(
         { valorBruto: 90, valorFrete: 10, valorDesconto: 0, valorLiquido: 100 },
         100,
       ),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it("liquidoPedido prioriza valorLiquido positivo", () => {
