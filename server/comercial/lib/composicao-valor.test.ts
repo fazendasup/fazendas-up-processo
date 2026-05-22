@@ -2,9 +2,15 @@ import { describe, expect, it } from "vitest";
 import { Decimal } from "../generated/prisma/runtime/library.js";
 import {
   asNumber,
+  composicaoDoPedidoParaDashboard,
+  composicaoFromComposicaoValorCa,
   composicaoFromVendaDetalhe,
   liquidoPedido,
+  pedidoComposicaoProvavelmenteIncompleta,
+  pedidoPrecisaEnriquecerComposicao,
   precisaDetalheComposicao,
+  vendaDetalheDeveSerIgnorada,
+  extrairMetadadosVendaDetalhe,
 } from "./composicao-valor.js";
 
 describe("composicao-valor", () => {
@@ -50,6 +56,63 @@ describe("composicao-valor", () => {
         valorTotal: new Decimal(500),
       }),
     ).toBe(480);
+  });
+
+  it("composicaoFromComposicaoValorCa lê números da API sem recalcular líquido", () => {
+    expect(
+      composicaoFromComposicaoValorCa({
+        valor_bruto: 52797.35,
+        frete: 1972,
+        desconto: { valor: 307.04 },
+        valor_liquido: 54462.31,
+      }),
+    ).toEqual({
+      valorBruto: 52797.35,
+      valorFrete: 1972,
+      valorDesconto: 307.04,
+      valorLiquido: 54462.31,
+    });
+  });
+
+  it("pedidoPrecisaEnriquecer mesmo com composicaoDetalhada true se valores parecem só total", () => {
+    const p = {
+      composicaoDetalhada: true,
+      valorBruto: 54838.41,
+      valorFrete: 0,
+      valorDesconto: 0,
+      valorLiquido: 54838.41,
+    };
+    expect(pedidoPrecisaEnriquecerComposicao(p)).toBe(true);
+    expect(pedidoComposicaoProvavelmenteIncompleta(p)).toBe(true);
+  });
+
+  it("composicaoDoPedidoParaDashboard usa valores gravados quando composicaoDetalhada", () => {
+    expect(
+      composicaoDoPedidoParaDashboard({
+        composicaoDetalhada: true,
+        valorBruto: 52797.35,
+        valorFrete: 1972,
+        valorDesconto: 307.04,
+        valorLiquido: 54462.31,
+        valorTotal: 54462.31,
+      }),
+    ).toEqual({
+      valorBruto: 52797.35,
+      valorFrete: 1972,
+      valorDesconto: 307.04,
+      valorLiquido: 54462.31,
+    });
+  });
+
+  it("ignora venda COMPRA e CANCELADO no detalhe", () => {
+    expect(
+      vendaDetalheDeveSerIgnorada(extrairMetadadosVendaDetalhe({ venda: { tipo_negociacao: "COMPRA" } })),
+    ).toBe(true);
+    expect(
+      vendaDetalheDeveSerIgnorada(
+        extrairMetadadosVendaDetalhe({ venda: { situacao: { nome: "CANCELADO" } } }),
+      ),
+    ).toBe(true);
   });
 
   it("extrai composição do detalhe com campos alternativos", () => {

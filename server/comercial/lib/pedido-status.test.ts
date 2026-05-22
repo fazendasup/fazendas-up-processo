@@ -9,5 +9,7 @@ describe("classificarStatusPedido", () => {
   it("conta status finalizados como venda", () => {
     expect(classificarStatusPedido("Faturado")).toBe("venda");
     expect(classificarStatusPedido("Venda realizada")).toBe("venda");
+    expect(classificarStatusPedido("VENDA")).toBe("venda");
+    expect(classificarStatusPedido("APROVADO")).toBe("venda");
   });
 });

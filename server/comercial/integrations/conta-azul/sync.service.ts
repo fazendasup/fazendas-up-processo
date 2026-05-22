@@ -19,9 +19,11 @@ import {
   composicaoFromTotalApenas,
   composicaoFromVendaBuscaItem,
   composicaoFromVendaDetalhe,
+  extrairMetadadosVendaDetalhe,
   normalizarComposicao,
-  pedidoComposicaoProvavelmenteIncompleta,
+  pedidoPrecisaEnriquecerComposicao,
   precisaDetalheComposicao,
+  vendaDetalheDeveSerIgnorada,
   type ComposicaoValorPedido,
 } from "../../lib/composicao-valor.js";
 import type { AxiosInstance } from "axios";
@@ -136,6 +138,8 @@ type ResolveComposicaoCtx = {
 type ResolveComposicaoResult = {
   composicao: ComposicaoValorPedido;
   composicaoDetalhada: boolean;
+  ignorar?: boolean;
+  statusPedido?: string;
 };
 
 export type { ContaAzulSyncMode } from "./conta-azul-sync-detail-budget";
@@ -150,10 +154,15 @@ async function fetchComposicaoDetalheVenda(
   ctx.detailBudget.remaining--;
   try {
     const detail = await contaAzulGet<unknown>(http, `/v1/venda/${encodeURIComponent(vendaId)}`);
-    const fromDetail = normalizarComposicao(composicaoFromVendaDetalhe(detail), totalFallback);
+    const meta = extrairMetadadosVendaDetalhe(detail);
+    if (vendaDetalheDeveSerIgnorada(meta)) {
+      return { composicao: composicaoFromTotalApenas(0), composicaoDetalhada: true, ignorar: true };
+    }
+    const fromDetail = meta.composicao ?? normalizarComposicao(composicaoFromVendaDetalhe(detail), totalFallback);
     return {
       composicao: fromDetail ?? composicaoFromTotalApenas(totalFallback),
       composicaoDetalhada: Boolean(fromDetail),
+      statusPedido: meta.situacaoNome ?? undefined,
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -175,9 +184,6 @@ async function enriquecerComposicaoPedidosPendentes(
     where: {
       externalId: { not: null },
       origemPedido: "CONTA_AZUL",
-      valorFrete: 0,
-      valorDesconto: 0,
-      composicaoDetalhada: false,
     },
     select: {
       id: true,
@@ -196,10 +202,14 @@ async function enriquecerComposicaoPedidosPendentes(
   let enriquecidos = 0;
   for (const p of candidatos) {
     if (ctx.detailBudget.remaining <= 0) break;
-    if (!pedidoComposicaoProvavelmenteIncompleta(p)) continue;
+    if (!pedidoPrecisaEnriquecerComposicao(p)) continue;
     const totalFallback = Number(p.valorLiquido ?? p.valorTotal ?? 0);
     const detailResult = await fetchComposicaoDetalheVenda(http, p.externalId!, totalFallback, ctx);
     if (!detailResult) continue;
+    if (detailResult.ignorar) {
+      await prisma.pedido.delete({ where: { id: p.id } });
+      continue;
+    }
 
     await prisma.pedido.update({
       where: { id: p.id },
@@ -210,6 +220,7 @@ async function enriquecerComposicaoPedidosPendentes(
         valorDesconto: detailResult.composicao.valorDesconto,
         valorLiquido: detailResult.composicao.valorLiquido,
         composicaoDetalhada: detailResult.composicaoDetalhada,
+        statusPedido: detailResult.statusPedido ?? undefined,
       },
     });
     enriquecidos++;
@@ -240,10 +251,19 @@ async function resolveComposicaoVenda(
   ctx.detailBudget.remaining--;
   try {
     const detail = await contaAzulGet<unknown>(http, `/v1/venda/${encodeURIComponent(vendaId)}`);
-    const fromDetail = normalizarComposicao(composicaoFromVendaDetalhe(detail), totalFallback);
+    const meta = extrairMetadadosVendaDetalhe(detail);
+    if (vendaDetalheDeveSerIgnorada(meta)) {
+      return {
+        composicao: composicaoFromTotalApenas(totalFallback),
+        composicaoDetalhada: false,
+        ignorar: true,
+      };
+    }
+    const fromDetail = meta.composicao ?? normalizarComposicao(composicaoFromVendaDetalhe(detail), totalFallback);
     return {
       composicao: fromDetail ?? composicaoFromTotalApenas(totalFallback),
       composicaoDetalhada: Boolean(fromDetail),
+      statusPedido: meta.situacaoNome ?? undefined,
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -455,16 +475,21 @@ async function executarContaAzulSync(
         continue;
       }
       const dataPedido = parseDataVendaContaAzul(payload.data);
-      const { composicao, composicaoDetalhada } = await resolveComposicaoVenda(
+      const resolved = await resolveComposicaoVenda(
         http,
         raw,
         payload.total ?? 0,
         payload.id,
         composicaoCtx,
       );
+      if (resolved.ignorar) {
+        await prisma.pedido.deleteMany({ where: { externalId: payload.id } });
+        continue;
+      }
+      const { composicao, composicaoDetalhada, statusPedido } = resolved;
       await prisma.pedido.upsert({
         where: { externalId: payload.id },
-        create: mapPedidoCreate(cli.id, payload, composicao, composicaoDetalhada),
+        create: mapPedidoCreate(cli.id, payload, composicao, composicaoDetalhada, statusPedido),
         update: {
           dataPedido,
           valorTotal: composicao.valorLiquido,
@@ -473,7 +498,7 @@ async function executarContaAzulSync(
           valorDesconto: composicao.valorDesconto,
           valorLiquido: composicao.valorLiquido,
           composicaoDetalhada,
-          statusPedido: payload.status ?? "SYNC",
+          statusPedido: statusPedido ?? payload.status ?? "SYNC",
         },
       });
       pedidosGravados++;

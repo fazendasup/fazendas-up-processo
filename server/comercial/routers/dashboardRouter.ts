@@ -1,51 +1,22 @@
 import { z } from "zod";
 import { OrigemPedido, StatusRelacionamento, TipoCliente } from "../generated/prisma/index.js";
 import {
-  composicaoFromTotalApenas,
-  liquidoPedido,
+  composicaoDoPedidoParaDashboard,
   pedidoComposicaoProvavelmenteIncompleta,
   somarTotais,
   totaisVazios,
-  type ComposicaoValorPedido,
   type TotaisComposicao,
 } from "../lib/composicao-valor.js";
 import { classificarStatusPedido, pedidoContaOrcamento } from "../lib/pedido-status.js";
+import { diaIsoAmericaSp, mesIsoAmericaSp } from "@shared/comercial/periodo-america-sp";
 import { router, comercialProcedure } from "../../_core/trpc";
 
-function diaCalendarioAmericaSp(d: Date): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Sao_Paulo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(d);
-}
-
-function mesCalendarioAmericaSp(d: Date): string {
-  return diaCalendarioAmericaSp(d).slice(0, 7);
-}
-
-function composicaoDoPedido(p: {
-  valorBruto: unknown;
-  valorFrete: unknown;
-  valorDesconto: unknown;
-  valorLiquido: unknown;
-  valorTotal: unknown;
-  composicaoDetalhada?: unknown;
-}): ComposicaoValorPedido {
-  const liquido = liquidoPedido(p);
-  const brutoRaw = p.valorBruto != null ? Number(p.valorBruto) : NaN;
-  const frete = Number(p.valorFrete ?? 0);
-  const desconto = Number(p.valorDesconto ?? 0);
-  if (Number.isFinite(brutoRaw)) {
-    return {
-      valorBruto: brutoRaw,
-      valorFrete: frete,
-      valorDesconto: desconto,
-      valorLiquido: liquido,
-    };
-  }
-  return composicaoFromTotalApenas(liquido);
+function pedidoNoMesCalendarioSp(dataPedido: Date, inicio: Date, fim: Date): boolean {
+  const mesRef = mesIsoAmericaSp(dataPedido);
+  const mesInicio = mesIsoAmericaSp(inicio);
+  const mesFim = mesIsoAmericaSp(fim);
+  if (mesInicio === mesFim) return mesRef === mesInicio;
+  return mesRef >= mesInicio && mesRef <= mesFim;
 }
 
 function totaisPorTipo(): Record<TipoCliente, TotaisComposicao> {
@@ -103,7 +74,8 @@ export const dashboardRouter = router({
       let vendasComposicaoIncompleta = 0;
 
       for (const p of pedidos) {
-        const comp = composicaoDoPedido(p);
+        if (!pedidoNoMesCalendarioSp(p.dataPedido, input.inicio, input.fim)) continue;
+        const comp = composicaoDoPedidoParaDashboard(p);
         const cls = classificarStatusPedido(p.statusPedido);
         if (cls === "venda") {
           somarTotais(composicaoVendas, comp);
@@ -111,7 +83,7 @@ export const dashboardRouter = router({
           ticketPorTipo[p.cliente.tipo].total += comp.valorLiquido;
           ticketPorTipo[p.cliente.tipo].pedidos += 1;
           ticketPorTipo[p.cliente.tipo].clientes.add(p.clienteId);
-          const clienteMesKey = `${p.clienteId}|${mesCalendarioAmericaSp(p.dataPedido)}`;
+          const clienteMesKey = `${p.clienteId}|${mesIsoAmericaSp(p.dataPedido)}`;
           ticketPorTipo[p.cliente.tipo].clienteMeses.add(clienteMesKey);
           ticketMensalPorCliente.set(clienteMesKey, (ticketMensalPorCliente.get(clienteMesKey) ?? 0) + comp.valorLiquido);
           pedidosVenda.push(p);
@@ -238,19 +210,21 @@ export const dashboardRouter = router({
           valorFrete: true,
           valorDesconto: true,
           valorLiquido: true,
+          composicaoDetalhada: true,
           statusPedido: true,
         },
       });
 
       const map = new Map<string, { vendas: number; orcamentos: number }>();
       for (const p of pedidos) {
+        if (!pedidoNoMesCalendarioSp(p.dataPedido, input.inicio, input.fim)) continue;
         const d = new Date(p.dataPedido);
         const key =
           input.bucket === "week"
             ? `${d.getFullYear()}-W${Math.ceil((d.getDate() + new Date(d.getFullYear(), d.getMonth(), 1).getDay()) / 7)}`
-            : diaCalendarioAmericaSp(d);
+            : diaIsoAmericaSp(d);
         const acc = map.get(key) ?? { vendas: 0, orcamentos: 0 };
-        const liquido = liquidoPedido(p);
+        const liquido = composicaoDoPedidoParaDashboard(p).valorLiquido;
         const cls = classificarStatusPedido(p.statusPedido);
         if (cls === "venda") acc.vendas += liquido;
         else if (cls === "orcamento") acc.orcamentos += liquido;

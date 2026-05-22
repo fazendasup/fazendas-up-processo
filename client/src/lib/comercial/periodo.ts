@@ -5,29 +5,26 @@ export type PeriodoPreset =
   | "ultimos_12_meses"
   | "personalizado";
 
+import {
+  diaIsoAmericaSp,
+  fimDiaAmericaSp,
+  fimMesAteHojeAmericaSp,
+  inicioDiaAmericaSp,
+  inicioMesAmericaSp,
+} from "@shared/comercial/periodo-america-sp";
+
 export type IntervaloPeriodo = { inicio: Date; fim: Date };
 
 const INICIO_HISTORICO = new Date("2000-01-01T00:00:00-03:00");
 
-function fimDoDia(d: Date): Date {
-  const f = new Date(d);
-  f.setHours(23, 59, 59, 999);
-  return f;
-}
-
-function inicioDoDia(d: Date): Date {
-  const i = new Date(d);
-  i.setHours(0, 0, 0, 0);
-  return i;
-}
-
-/** Segunda-feira da semana civil corrente (horário local). */
-function inicioSemanaAtual(ref: Date): Date {
-  const d = inicioDoDia(ref);
+/** Segunda-feira da semana civil corrente (calendário America/Sao_Paulo). */
+function inicioSemanaAtualSp(ref: Date): Date {
+  const hoje = diaIsoAmericaSp(ref);
+  const d = new Date(`${hoje}T12:00:00-03:00`);
   const dow = d.getDay();
   const diff = dow === 0 ? 6 : dow - 1;
   d.setDate(d.getDate() - diff);
-  return d;
+  return inicioDiaAmericaSp(diaIsoAmericaSp(d));
 }
 
 export function intervaloDoPreset(
@@ -35,11 +32,11 @@ export function intervaloDoPreset(
   custom?: { inicio: string; fim: string },
 ): IntervaloPeriodo {
   const agora = new Date();
-  const fim = fimDoDia(agora);
+  const fim = fimMesAteHojeAmericaSp(agora);
 
   if (preset === "personalizado" && custom?.inicio && custom?.fim) {
-    const inicio = inicioDoDia(new Date(`${custom.inicio}T12:00:00`));
-    const fimCustom = fimDoDia(new Date(`${custom.fim}T12:00:00`));
+    const inicio = inicioDiaAmericaSp(custom.inicio);
+    const fimCustom = fimDiaAmericaSp(custom.fim);
     if (inicio.getTime() > fimCustom.getTime()) {
       return { inicio: fimCustom, fim: inicio };
     }
@@ -51,18 +48,22 @@ export function intervaloDoPreset(
   }
 
   if (preset === "ultimos_12_meses") {
-    const inicio = new Date(fim);
-    inicio.setMonth(inicio.getMonth() - 12);
-    return { inicio: inicioDoDia(inicio), fim };
+    const fimDia = diaIsoAmericaSp(agora);
+    const [y, m] = fimDia.split("-").map(Number);
+    let mesInicio = m - 11;
+    let anoInicio = y;
+    while (mesInicio <= 0) {
+      mesInicio += 12;
+      anoInicio -= 1;
+    }
+    return { inicio: inicioDiaAmericaSp(`${anoInicio}-${String(mesInicio).padStart(2, "0")}-01`), fim };
   }
 
   if (preset === "semana_atual") {
-    return { inicio: inicioSemanaAtual(agora), fim };
+    return { inicio: inicioSemanaAtualSp(agora), fim };
   }
 
-  const inicio = new Date(fim);
-  inicio.setDate(1);
-  return { inicio: inicioDoDia(inicio), fim };
+  return { inicio: inicioMesAmericaSp(agora), fim };
 }
 
 export function labelPreset(p: PeriodoPreset, custom?: { inicio: string; fim: string }): string {

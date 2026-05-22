@@ -16,7 +16,7 @@ export function classificarStatusPedido(status: string | null | undefined): Clas
   const s = normalizarStatus(status ?? "");
   if (!s || s === "sync") return "outro";
 
-  if (/\bcancel|cancelad|estorn|recusad|rejeitad/.test(s)) return "cancelado";
+  if (/\bcancel|cancelad|estorn|recusad|rejeitad|devolv/.test(s)) return "cancelado";
   if (/\bem andamento\b/.test(s)) return "outro";
 
   if (
@@ -26,6 +26,8 @@ export function classificarStatusPedido(status: string | null | undefined): Clas
   ) {
     return "orcamento";
   }
+
+  if (s === "venda" || s === "aprovado" || s === "faturado") return "venda";
 
   if (
     /faturad|aprovad|venda realizada|venda efetivad|conclu|finaliz|entreg|pago|baixad|efetivad|confirmad/.test(

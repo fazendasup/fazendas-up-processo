@@ -56,15 +56,90 @@ export function composicaoCompletaDaBusca(c: ComposicaoValorPedido): boolean {
   return Math.abs(c.valorBruto - c.valorLiquido) > 0.009;
 }
 
-/** Pedido gravado só com total (bruto = líquido, sem frete/desconto) — falta detalhe Conta Azul. */
-export function pedidoComposicaoProvavelmenteIncompleta(p: {
+function extrairDescontoValor(c: Record<string, unknown>): number {
+  const d = c.desconto ?? c.valor_desconto ?? c.valorDesconto;
+  if (d && typeof d === "object") {
+    return firstNumber((d as Record<string, unknown>).valor, (d as Record<string, unknown>).value) ?? 0;
+  }
+  return firstNumber(d) ?? 0;
+}
+
+/** Lê `venda.composicao_valor` exatamente como o relatório da Conta Azul (números da API). */
+export function composicaoFromComposicaoValorCa(c: Record<string, unknown>): ComposicaoValorPedido | null {
+  const bruto = asNumber(c.valor_bruto ?? c.valorBruto);
+  const frete = asNumber(c.frete) ?? 0;
+  const desconto = extrairDescontoValor(c);
+  const liquido = asNumber(c.valor_liquido ?? c.valorLiquido);
+
+  if (liquido != null && liquido >= 0 && bruto != null) {
+    return {
+      valorBruto: bruto,
+      valorFrete: frete,
+      valorDesconto: desconto,
+      valorLiquido: liquido,
+    };
+  }
+  if (liquido != null && liquido > 0) {
+    return {
+      valorBruto: bruto ?? Math.max(0, liquido - frete + desconto),
+      valorFrete: frete,
+      valorDesconto: desconto,
+      valorLiquido: liquido,
+    };
+  }
+  return composicaoFromObjeto(c);
+}
+
+export type MetadadosVendaDetalheCa = {
+  tipoNegociacao: string | null;
+  situacaoNome: string | null;
+  composicao: ComposicaoValorPedido | null;
+};
+
+export function extrairMetadadosVendaDetalhe(raw: unknown): MetadadosVendaDetalheCa {
+  if (!raw || typeof raw !== "object") {
+    return { tipoNegociacao: null, situacaoNome: null, composicao: null };
+  }
+  const root = raw as Record<string, unknown>;
+  const venda =
+    root.venda && typeof root.venda === "object" ? (root.venda as Record<string, unknown>) : root;
+
+  const compRaw = venda.composicao_valor ?? venda.composicaoValor ?? root.composicao_valor;
+  let composicao: ComposicaoValorPedido | null = null;
+  if (compRaw && typeof compRaw === "object") {
+    composicao = composicaoFromComposicaoValorCa(compRaw as Record<string, unknown>);
+  }
+  if (!composicao) composicao = composicaoFromVendaDetalhe(raw);
+
+  const situacao = venda.situacao;
+  const situacaoNome =
+    situacao && typeof situacao === "object"
+      ? String((situacao as Record<string, unknown>).nome ?? "").trim() || null
+      : null;
+  const tipoNegociacao =
+    typeof venda.tipo_negociacao === "string"
+      ? venda.tipo_negociacao
+      : typeof venda.tipoNegociacao === "string"
+        ? venda.tipoNegociacao
+        : null;
+
+  return { tipoNegociacao, situacaoNome, composicao };
+}
+
+export function vendaDetalheDeveSerIgnorada(meta: MetadadosVendaDetalheCa): boolean {
+  const tipo = (meta.tipoNegociacao ?? "").toUpperCase().trim();
+  if (tipo === "COMPRA") return true;
+  const situacao = (meta.situacaoNome ?? "").toUpperCase().trim();
+  if (situacao === "CANCELADO") return true;
+  return false;
+}
+
+function pedidoValoresParecemSoTotal(p: {
   valorBruto?: unknown;
   valorFrete?: unknown;
   valorDesconto?: unknown;
   valorLiquido?: unknown;
-  composicaoDetalhada?: unknown;
 }): boolean {
-  if (p.composicaoDetalhada === true) return false;
   const frete = asNumber(p.valorFrete) ?? 0;
   const desconto = asNumber(p.valorDesconto) ?? 0;
   if (frete > 0 || desconto > 0) return false;
@@ -73,6 +148,82 @@ export function pedidoComposicaoProvavelmenteIncompleta(p: {
   if (liquido == null || liquido <= 0) return false;
   if (bruto == null) return true;
   return Math.abs(bruto - liquido) < 0.01;
+}
+
+/** Pedido gravado só com total (bruto = líquido, sem frete/desconto) — falta detalhe Conta Azul. */
+export function pedidoComposicaoProvavelmenteIncompleta(p: {
+  valorBruto?: unknown;
+  valorFrete?: unknown;
+  valorDesconto?: unknown;
+  valorLiquido?: unknown;
+  composicaoDetalhada?: unknown;
+}): boolean {
+  return pedidoValoresParecemSoTotal(p);
+}
+
+export function pedidoPrecisaEnriquecerComposicao(p: {
+  composicaoDetalhada?: unknown;
+  valorBruto?: unknown;
+  valorFrete?: unknown;
+  valorDesconto?: unknown;
+  valorLiquido?: unknown;
+}): boolean {
+  return pedidoValoresParecemSoTotal(p);
+}
+
+/** Agregação do dashboard: prioriza valores gravados da Conta Azul sem recalcular o líquido. */
+export function composicaoDoPedidoParaDashboard(p: {
+  valorBruto: unknown;
+  valorFrete: unknown;
+  valorDesconto: unknown;
+  valorLiquido: unknown;
+  valorTotal: unknown;
+  composicaoDetalhada?: unknown;
+}): ComposicaoValorPedido {
+  const frete = asNumber(p.valorFrete) ?? 0;
+  const desconto = asNumber(p.valorDesconto) ?? 0;
+  const bruto = asNumber(p.valorBruto);
+  const liquido = asNumber(p.valorLiquido);
+  const total = asNumber(p.valorTotal);
+
+  if (
+    p.composicaoDetalhada === true &&
+    bruto != null &&
+    liquido != null &&
+    liquido >= 0 &&
+    !pedidoValoresParecemSoTotal(p)
+  ) {
+    return {
+      valorBruto: bruto,
+      valorFrete: frete,
+      valorDesconto: desconto,
+      valorLiquido: liquido,
+    };
+  }
+
+  return composicaoDoPedidoLegado(p);
+}
+
+function composicaoDoPedidoLegado(p: {
+  valorBruto: unknown;
+  valorFrete: unknown;
+  valorDesconto: unknown;
+  valorLiquido: unknown;
+  valorTotal: unknown;
+}): ComposicaoValorPedido {
+  const liquido = liquidoPedido(p);
+  const brutoRaw = p.valorBruto != null ? Number(p.valorBruto) : NaN;
+  const frete = Number(p.valorFrete ?? 0);
+  const desconto = Number(p.valorDesconto ?? 0);
+  if (Number.isFinite(brutoRaw)) {
+    return {
+      valorBruto: brutoRaw,
+      valorFrete: frete,
+      valorDesconto: desconto,
+      valorLiquido: liquido,
+    };
+  }
+  return composicaoFromTotalApenas(liquido);
 }
 
 /** Prefere GET /v1/venda/{id}; a busca pode trazer composição parcial e divergir do relatório. */
@@ -121,15 +272,7 @@ function composicaoFromObjeto(o: Record<string, unknown>): ComposicaoValorPedido
     o.valorProdutos,
   );
   const frete = firstNumber(o.frete, o.valor_frete, o.valorFrete, o.total_frete, o.totalFrete) ?? 0;
-  const desconto = firstNumber(
-    o.desconto,
-    o.valor_desconto,
-    o.valorDesconto,
-    o.total_desconto,
-    o.totalDesconto,
-    o.desconto_valor,
-    o.descontoValor,
-  ) ?? 0;
+  const desconto = extrairDescontoValor(o);
   const liquido = firstNumber(
     o.valor_liquido,
     o.valorLiquido,
@@ -164,12 +307,15 @@ function composicaoFromObjeto(o: Record<string, unknown>): ComposicaoValorPedido
 export function composicaoFromVendaDetalhe(raw: unknown): ComposicaoValorPedido | null {
   if (!raw || typeof raw !== "object") return null;
   const root = raw as Record<string, unknown>;
-  const venda = root.venda;
-  if (venda && typeof venda === "object") {
-    const fromVenda = composicaoFromVendaBuscaItem(venda) ?? composicaoFromObjeto(venda as Record<string, unknown>);
-    if (fromVenda) return fromVenda;
+  const venda =
+    root.venda && typeof root.venda === "object" ? (root.venda as Record<string, unknown>) : root;
+
+  const compRaw = venda.composicao_valor ?? venda.composicaoValor ?? root.composicao_valor;
+  if (compRaw && typeof compRaw === "object") {
+    const fromCa = composicaoFromComposicaoValorCa(compRaw as Record<string, unknown>);
+    if (fromCa) return fromCa;
   }
-  return composicaoFromVendaBuscaItem(raw) ?? composicaoFromObjeto(root);
+  return composicaoFromVendaBuscaItem(venda) ?? composicaoFromObjeto(venda) ?? composicaoFromObjeto(root);
 }
 
 /** Fallback quando a API só retorna `total`. */
