@@ -1,10 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { Decimal } from "../generated/prisma/runtime/library.js";
-import { asNumber, liquidoPedido, precisaDetalheComposicao } from "./composicao-valor.js";
+import {
+  asNumber,
+  composicaoFromVendaDetalhe,
+  liquidoPedido,
+  precisaDetalheComposicao,
+} from "./composicao-valor.js";
 
 describe("composicao-valor", () => {
   it("asNumber converte Prisma.Decimal", () => {
     expect(asNumber(new Decimal("1234.56"))).toBe(1234.56);
+  });
+
+  it("asNumber converte formato monetário pt-BR", () => {
+    expect(asNumber("1.987,00")).toBe(1987);
   });
 
   it("liquidoPedido usa valorTotal quando valorLiquido é zero no banco", () => {
@@ -41,5 +50,21 @@ describe("composicao-valor", () => {
         valorTotal: new Decimal(500),
       }),
     ).toBe(480);
+  });
+
+  it("extrai composição do detalhe com campos alternativos", () => {
+    expect(
+      composicaoFromVendaDetalhe({
+        valor_bruto: "52.797,35",
+        valor_frete: { valor: "1.972,00" },
+        desconto: { valor: "307,04" },
+        valor_liquido: "54.462,31",
+      }),
+    ).toEqual({
+      valorBruto: 52797.35,
+      valorFrete: 1972,
+      valorDesconto: 307.04,
+      valorLiquido: 54462.31,
+    });
   });
 });

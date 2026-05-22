@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { StatusRelacionamento, TipoCliente } from "../generated/prisma/index.js";
+import { OrigemPedido, StatusRelacionamento, TipoCliente } from "../generated/prisma/index.js";
 import {
   composicaoFromTotalApenas,
   liquidoPedido,
@@ -68,7 +68,10 @@ export const dashboardRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const pedidos = await ctx.prisma!.pedido.findMany({
-        where: { dataPedido: { gte: input.inicio, lte: input.fim } },
+        where: {
+          origemPedido: OrigemPedido.CONTA_AZUL,
+          dataPedido: { gte: input.inicio, lte: input.fim },
+        },
         select: {
           id: true,
           clienteId: true,
@@ -224,7 +227,10 @@ export const dashboardRouter = router({
     .input(z.object({ inicio: z.coerce.date(), fim: z.coerce.date(), bucket: z.enum(["day", "week"]).default("day") }))
     .query(async ({ ctx, input }) => {
       const pedidos = await ctx.prisma!.pedido.findMany({
-        where: { dataPedido: { gte: input.inicio, lte: input.fim } },
+        where: {
+          origemPedido: OrigemPedido.CONTA_AZUL,
+          dataPedido: { gte: input.inicio, lte: input.fim },
+        },
         select: {
           dataPedido: true,
           valorTotal: true,

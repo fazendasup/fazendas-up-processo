@@ -9,12 +9,39 @@ export type ComposicaoValorPedido = {
 export function asNumber(v: unknown): number | null {
   if (typeof v === "number" && Number.isFinite(v)) return v;
   if (typeof v === "string" && v.trim()) {
-    const n = Number(v);
+    const normalized = v.includes(",") ? v.replace(/\./g, "").replace(",", ".") : v;
+    const n = Number(normalized);
     return Number.isFinite(n) ? n : null;
   }
   if (v != null && typeof v === "object") {
     const n = Number(v);
     if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+function valorNumericoEmObjeto(v: unknown): number | null {
+  const direto = asNumber(v);
+  if (direto != null) return direto;
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  return firstNumber(
+    o.valor,
+    o.value,
+    o.total,
+    o.totalValue,
+    o.valor_total,
+    o.valorTotal,
+    o.valor_liquido,
+    o.valorLiquido,
+    o.amount,
+  );
+}
+
+function firstNumber(...values: unknown[]): number | null {
+  for (const value of values) {
+    const n = valorNumericoEmObjeto(value);
+    if (n != null) return n;
   }
   return null;
 }
@@ -79,11 +106,40 @@ export function composicaoFromVendaBuscaItem(raw: unknown): ComposicaoValorPedid
     o.composicaoDeValor;
   if (!comp || typeof comp !== "object") return null;
 
-  const c = comp as Record<string, unknown>;
-  const bruto = asNumber(c.valor_bruto ?? c.valorBruto);
-  const frete = asNumber(c.frete) ?? 0;
-  const desconto = asNumber(c.desconto) ?? 0;
-  const liquido = asNumber(c.valor_liquido ?? c.valorLiquido);
+  return composicaoFromObjeto(comp as Record<string, unknown>);
+}
+
+function composicaoFromObjeto(o: Record<string, unknown>): ComposicaoValorPedido | null {
+  const bruto = firstNumber(
+    o.valor_bruto,
+    o.valorBruto,
+    o.bruto,
+    o.total_bruto,
+    o.totalBruto,
+    o.subtotal,
+    o.valor_produtos,
+    o.valorProdutos,
+  );
+  const frete = firstNumber(o.frete, o.valor_frete, o.valorFrete, o.total_frete, o.totalFrete) ?? 0;
+  const desconto = firstNumber(
+    o.desconto,
+    o.valor_desconto,
+    o.valorDesconto,
+    o.total_desconto,
+    o.totalDesconto,
+    o.desconto_valor,
+    o.descontoValor,
+  ) ?? 0;
+  const liquido = firstNumber(
+    o.valor_liquido,
+    o.valorLiquido,
+    o.liquido,
+    o.total_liquido,
+    o.totalLiquido,
+    o.total,
+    o.valor_total,
+    o.valorTotal,
+  );
 
   if (liquido != null && liquido > 0) {
     return {
@@ -110,10 +166,10 @@ export function composicaoFromVendaDetalhe(raw: unknown): ComposicaoValorPedido 
   const root = raw as Record<string, unknown>;
   const venda = root.venda;
   if (venda && typeof venda === "object") {
-    const fromVenda = composicaoFromVendaBuscaItem(venda);
+    const fromVenda = composicaoFromVendaBuscaItem(venda) ?? composicaoFromObjeto(venda as Record<string, unknown>);
     if (fromVenda) return fromVenda;
   }
-  return composicaoFromVendaBuscaItem(raw);
+  return composicaoFromVendaBuscaItem(raw) ?? composicaoFromObjeto(root);
 }
 
 /** Fallback quando a API só retorna `total`. */
