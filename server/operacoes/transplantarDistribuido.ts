@@ -50,6 +50,47 @@ function quantidadePerfilMudas(
   return Number.isFinite(qtd) && qtd > 0 ? Math.floor(qtd) : Math.max(1, fallback);
 }
 
+type LoteQueueItem = { loteId: number | null; quantidade: number };
+
+async function criarLoteLegadoSePreciso(ctx: TransplantarDistribuidoCtx, variedadeId: number, variedadeNome: string, quantidade: number) {
+  const lote = await db.createLoteProducao({
+    projetoId: ctx.projetoId,
+    variedadeId,
+    variedadeNome,
+    dataInicio: new Date(),
+    status: "ativo",
+    quantidadeInicial: quantidade,
+    quantidadeAtual: quantidade,
+  });
+  await db.createLoteEvento({
+    projetoId: ctx.projetoId,
+    loteId: lote.id,
+    tipo: "plantio",
+    dataHora: new Date(),
+    quantidade,
+    faseDestino: "mudas",
+    observacoes: "Lote criado para rastrear cultivo já existente.",
+    executadoPorId: ctx.userId,
+    executadoPorNome: ctx.userName,
+  });
+  return lote.id;
+}
+
+function consumirLotes(queue: LoteQueueItem[], quantidade: number): Array<{ loteId: number | null; quantidade: number }> {
+  const partes: Array<{ loteId: number | null; quantidade: number }> = [];
+  let restante = quantidade;
+  while (restante > 0 && queue.length > 0) {
+    const atual = queue[0];
+    const q = Math.min(restante, atual.quantidade);
+    partes.push({ loteId: atual.loteId, quantidade: q });
+    atual.quantidade -= q;
+    restante -= q;
+    if (atual.quantidade <= 0) queue.shift();
+  }
+  if (restante > 0) partes.push({ loteId: null, quantidade: restante });
+  return partes;
+}
+
 /** Transplantio distribuído — mesma regra do router `andares.transplantarDistribuido`. */
 export async function runTransplantarDistribuido(
   ctx: TransplantarDistribuidoCtx,
@@ -210,6 +251,25 @@ export async function runTransplantarDistribuido(
   }
 
   const variedadeNome = vRow.nome || String(origemVariedadeId);
+  const loteQueue: LoteQueueItem[] =
+    faseOrigem === "mudas"
+      ? await Promise.all(
+          perfisOrigemMudas
+            .sort((a, b) => a.perfilIndex - b.perfilIndex)
+            .map(async (p) => {
+              const quantidade = quantidadePerfilMudas(p, plantasPorPerfilMudasEfetivo);
+              const loteId = p.loteId ?? await criarLoteLegadoSePreciso(ctx, origemVariedadeId, variedadeNome, quantidade);
+              return { loteId, quantidade };
+            }),
+        )
+      : await (async () => {
+          const porLote = new Map<number | null, number>();
+          for (const f of origemFuros.filter((f) => f.status === "plantado" && (!perfilIndicesOrigem?.length || perfilIndicesOrigem.includes(f.perfilIndex)))) {
+            const loteId = f.loteId ?? null;
+            porLote.set(loteId, (porLote.get(loteId) ?? 0) + 1);
+          }
+          return Array.from(porLote.entries()).map(([loteId, quantidade]) => ({ loteId, quantidade }));
+        })();
 
   for (const d of input.destinos) {
     const destAndar = await db.getAndarById(pid, d.andarDestinoId);
@@ -218,6 +278,15 @@ export async function runTransplantarDistribuido(
 
     const destFuros = await db.getFurosByAndarId(pid, d.andarDestinoId);
     const vazios = destFuros.filter((f) => f.status === "vazio").slice(0, d.quantidade);
+    const partesLote = consumirLotes(loteQueue, d.quantidade);
+    const lotePorFuro = new Map<string, number | null>();
+    let cursor = 0;
+    for (const parte of partesLote) {
+      for (let i = 0; i < parte.quantidade && cursor < vazios.length; i++, cursor++) {
+        const f = vazios[cursor];
+        lotePorFuro.set(`${f.perfilIndex}:${f.furoIndex}`, parte.loteId);
+      }
+    }
     await db.batchUpdateFuros(
       pid,
       d.andarDestinoId,
@@ -226,6 +295,7 @@ export async function runTransplantarDistribuido(
         furoIndex: f.furoIndex,
         status: "plantado",
         variedadeId: origemVariedadeId,
+        loteId: lotePorFuro.get(`${f.perfilIndex}:${f.furoIndex}`) ?? null,
       })),
     );
 
@@ -237,8 +307,27 @@ export async function runTransplantarDistribuido(
         perfilIndex,
         ativo: true,
         variedadeId: origemVariedadeId,
+        loteId: lotePorFuro.get(`${perfilIndex}:${vazios.find((f) => f.perfilIndex === perfilIndex)?.furoIndex ?? 0}`) ?? null,
       })),
     );
+
+    for (const parte of partesLote) {
+      if (!parte.loteId) continue;
+      await db.createLoteEvento({
+        projetoId: pid,
+        loteId: parte.loteId,
+        tipo: "transplantio",
+        dataHora: new Date(),
+        quantidade: parte.quantidade,
+        faseOrigem,
+        faseDestino,
+        origem: `${origemTorre.nome} · Andar ${origemAndar.numero}`,
+        destino: `${destTorre.nome} · Andar ${destAndar.numero}`,
+        observacoes: input.observacoes ?? null,
+        executadoPorId: ctx.userId,
+        executadoPorNome: ctx.userName,
+      });
+    }
 
     if (!destAndar.dataEntrada) {
       await db.updateAndar(pid, d.andarDestinoId, { dataEntrada: new Date() });
@@ -295,6 +384,7 @@ export async function runTransplantarDistribuido(
       variedadeId: number | null;
       dataEntrada: Date | null;
       quantidadePlantas: number | null;
+      loteId: number | null;
     }> = [];
 
     for (const p of pool) {
@@ -312,6 +402,7 @@ export async function runTransplantarDistribuido(
               variedadeId: p.variedadeId ?? origemVariedadeId,
               dataEntrada: p.dataEntrada ? new Date(p.dataEntrada) : null,
               quantidadePlantas: sobra,
+              loteId: p.loteId ?? null,
             }
           : {
               perfilIndex: p.perfilIndex,
@@ -319,6 +410,7 @@ export async function runTransplantarDistribuido(
               variedadeId: null,
               dataEntrada: null,
               quantidadePlantas: null,
+              loteId: null,
             },
       );
     }
@@ -343,6 +435,7 @@ export async function runTransplantarDistribuido(
         furoIndex: f.furoIndex,
         status: "vazio",
         variedadeId: null,
+        loteId: null,
       })),
     );
 
@@ -356,6 +449,7 @@ export async function runTransplantarDistribuido(
         ativo: false,
         variedadeId: null,
         dataEntrada: null,
+        loteId: null,
       }));
     if (perfisParaLimpar.length > 0) {
       await db.batchUpdatePerfis(pid, input.andarOrigemId, perfisParaLimpar);

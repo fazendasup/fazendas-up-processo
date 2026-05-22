@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { History, Leaf, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { FileDown, History, Leaf, Plus, RotateCcw, Trash2 } from 'lucide-react';
 
 type Props = {
   /** Texto extra sob o título (ex.: nota microverdes em Config). */
@@ -33,10 +33,55 @@ export function VariedadesCadastroTable({ notaTopo }: Props) {
   const [showAddVar, setShowAddVar] = useState(false);
   const [novaBabyLeaf, setNovaBabyLeaf] = useState(false);
   const [historicoVariedade, setHistoricoVariedade] = useState<{ id: number; nome: string } | null>(null);
-  const historicoQuery = trpc.variedades.historico.useQuery(
-    { variedadeId: historicoVariedade?.id ?? 0 },
-    { enabled: historicoVariedade != null },
-  );
+  const historicoQuery = trpc.lotes.relatorio.useQuery(undefined, { enabled: historicoVariedade != null });
+  const relatorioLotes = trpc.lotes.relatorio.useQuery(undefined, { enabled: false });
+
+  const exportarRelatorioLotes = async () => {
+    const { data: linhas } = await relatorioLotes.refetch();
+    const rows = (linhas ?? []).flatMap(({ lote, eventos }) =>
+      eventos.length > 0
+        ? eventos.map((ev) => ({
+            lote: lote.codigo,
+            variedade: lote.variedadeNome,
+            status: lote.status,
+            saldo: lote.quantidadeAtual,
+            quantidadeInicial: lote.quantidadeInicial,
+            evento: ev.tipo,
+            data: new Date(ev.dataHora).toLocaleString('pt-BR'),
+            quantidade: ev.quantidade,
+            origem: ev.origem ?? '',
+            destino: ev.destino ?? '',
+            observacoes: ev.observacoes ?? '',
+          }))
+        : [{
+            lote: lote.codigo,
+            variedade: lote.variedadeNome,
+            status: lote.status,
+            saldo: lote.quantidadeAtual,
+            quantidadeInicial: lote.quantidadeInicial,
+            evento: '',
+            data: '',
+            quantidade: 0,
+            origem: '',
+            destino: '',
+            observacoes: '',
+          }],
+    );
+    if (rows.length === 0) {
+      toast.info('Ainda não há lotes para exportar.');
+      return;
+    }
+    const headers = Object.keys(rows[0] ?? {});
+    const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const csv = [headers.join(';'), ...rows.map((r) => headers.map((h) => esc((r as any)[h])).join(';'))].join('\n');
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `relatorio-lotes-fazenda-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handleAddVariedade = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -93,6 +138,10 @@ export function VariedadesCadastroTable({ notaTopo }: Props) {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="text-xs" onClick={exportarRelatorioLotes}>
+            <FileDown className="w-3 h-3 mr-1" />
+            Exportar lotes
+          </Button>
           <Button variant="outline" size="sm" className="text-xs" onClick={handleResetVariedades}>
             <RotateCcw className="w-3 h-3 mr-1" />
             Restaurar
@@ -220,36 +269,31 @@ export function VariedadesCadastroTable({ notaTopo }: Props) {
           </div>
           {historicoQuery.isLoading ? (
             <p className="text-sm text-muted-foreground">Carregando histórico...</p>
-          ) : (historicoQuery.data?.length ?? 0) === 0 ? (
+          ) : ((historicoQuery.data ?? []).filter((x) => x.lote.variedadeId === historicoVariedade?.id).length ?? 0) === 0 ? (
             <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
               Ainda não há eventos operacionais registrados para esta variedade.
             </p>
           ) : (
             <div className="space-y-2">
-              {historicoQuery.data?.map((ev) => (
-                <div key={ev.id} className="rounded-lg border bg-card p-3 text-sm">
+              {(historicoQuery.data ?? []).filter((x) => x.lote.variedadeId === historicoVariedade?.id).map(({ lote, eventos }) => (
+                <div key={lote.id} className="rounded-lg border bg-card p-3 text-sm">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                      <p className="font-semibold capitalize">
-                        {ev.tipo.replace(/_/g, ' ')}
-                        {ev.faseOrigem || ev.faseDestino ? (
-                          <span className="ml-1 text-xs font-normal text-muted-foreground">
-                            {ev.faseOrigem ?? 'início'} → {ev.faseDestino ?? 'fim'}
-                          </span>
-                        ) : null}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(ev.data).toLocaleString('pt-BR')} · qtd. {ev.quantidade}
-                        {ev.executadoPorNome ? ` · ${ev.executadoPorNome}` : ''}
-                      </p>
+                      <p className="font-semibold">{lote.codigo}</p>
+                      <p className="text-xs text-muted-foreground">{lote.status} · saldo {lote.quantidadeAtual}/{lote.quantidadeInicial}</p>
                     </div>
                     <code className="rounded bg-muted px-2 py-1 text-[11px] font-semibold text-foreground">
-                      {ev.loteReferencia}
+                      {lote.variedadeNome}
                     </code>
                   </div>
-                  {ev.observacoes ? (
-                    <p className="mt-2 text-xs text-muted-foreground">{ev.observacoes}</p>
-                  ) : null}
+                  <div className="mt-2 space-y-1">
+                    {eventos.map((ev) => (
+                      <p key={ev.id} className="text-xs text-muted-foreground">
+                        {new Date(ev.dataHora).toLocaleString('pt-BR')} · {ev.tipo} · qtd. {ev.quantidade}
+                        {ev.origem || ev.destino ? ` · ${ev.origem ?? 'início'} → ${ev.destino ?? 'fim'}` : ''}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>

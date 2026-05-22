@@ -21,6 +21,8 @@ import {
   andares, InsertAndar,
   perfis, InsertPerfil,
   furos, InsertFuro,
+  lotesProducao, InsertLoteProducao,
+  loteEventos, InsertLoteEvento,
   aplicacoesAndar, InsertAplicacaoAndar,
   germinacao, InsertGerminacao,
   transplantios, InsertTransplantio,
@@ -2507,6 +2509,7 @@ export async function resetPerfisByAndarId(projetoId: number, andarId: number) {
       ativo: false,
       variedadeId: null,
       receitaId: null,
+      loteId: null,
       dataEntrada: null,
       quantidadePlantas: null,
       cultivoStatus: null,
@@ -2548,7 +2551,7 @@ export async function resetFurosByAndarId(projetoId: number, andarId: number) {
   if (!db) throw new Error("Database not available");
   await db
     .update(furos)
-    .set({ status: "vazio", variedadeId: null })
+    .set({ status: "vazio", variedadeId: null, loteId: null })
     .where(and(eq(furos.projetoId, projetoId), eq(furos.andarId, andarId)));
 }
 
@@ -2556,7 +2559,7 @@ export async function resetFurosByAndarId(projetoId: number, andarId: number) {
 export async function batchUpdateFuros(
   projetoId: number,
   andarId: number,
-  updates: Array<{ perfilIndex: number; furoIndex: number; status?: string; variedadeId?: number | null }>,
+  updates: Array<{ perfilIndex: number; furoIndex: number; status?: string; variedadeId?: number | null; loteId?: number | null }>,
 ) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -2565,6 +2568,7 @@ export async function batchUpdateFuros(
       const data: Partial<InsertFuro> = {};
       if (u.status !== undefined) data.status = u.status;
       if (u.variedadeId !== undefined) data.variedadeId = u.variedadeId;
+      if (u.loteId !== undefined) data.loteId = u.loteId;
       return db.update(furos).set(data).where(
         and(
           eq(furos.projetoId, projetoId),
@@ -2583,6 +2587,7 @@ export async function batchUpdatePerfis(
   andarId: number,
   updates: Array<{
     perfilIndex: number;
+    loteId?: number | null;
     variedadeId?: number | null;
     ativo?: boolean;
     dataEntrada?: Date | null;
@@ -2605,6 +2610,7 @@ export async function batchUpdatePerfis(
           data.receitaId = receitaCicloPrioritariaParaVariedade(receitasCache, u.variedadeId)?.id ?? null;
         }
       }
+      if (u.loteId !== undefined) data.loteId = u.loteId;
       if (u.ativo !== undefined) data.ativo = u.ativo;
       if (u.dataEntrada !== undefined) data.dataEntrada = u.dataEntrada;
       if (u.quantidadePlantas !== undefined) data.quantidadePlantas = u.quantidadePlantas;
@@ -2620,13 +2626,14 @@ export async function batchUpdatePerfis(
 export async function setAllFurosOfAndar(
   projetoId: number,
   andarId: number,
-  data: { status?: string; variedadeId?: number | null },
+  data: { status?: string; variedadeId?: number | null; loteId?: number | null },
 ) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   const setData: Partial<InsertFuro> = {};
   if (data.status !== undefined) setData.status = data.status;
   if (data.variedadeId !== undefined) setData.variedadeId = data.variedadeId;
+  if (data.loteId !== undefined) setData.loteId = data.loteId;
   await db.update(furos).set(setData).where(and(eq(furos.projetoId, projetoId), eq(furos.andarId, andarId)));
 }
 
@@ -2636,6 +2643,7 @@ export async function setAllPerfisOfAndar(
   andarId: number,
   data: {
     variedadeId?: number | null;
+    loteId?: number | null;
     ativo?: boolean;
     dataEntrada?: Date | null;
     quantidadePlantas?: number | null;
@@ -2654,6 +2662,7 @@ export async function setAllPerfisOfAndar(
       setData.receitaId = receitaCicloPrioritariaParaVariedade(rs, data.variedadeId)?.id ?? null;
     }
   }
+  if (data.loteId !== undefined) setData.loteId = data.loteId;
   if (data.ativo !== undefined) setData.ativo = data.ativo;
   if (data.dataEntrada !== undefined) setData.dataEntrada = data.dataEntrada;
   if (data.quantidadePlantas !== undefined) setData.quantidadePlantas = data.quantidadePlantas;
@@ -2869,6 +2878,88 @@ export async function deleteAplicacaoAndar(projetoId: number, id: number) {
 // Germinação
 // ============================================================
 
+function loteCodigoBase(variedadeNome: string, data: Date): string {
+  const prefix = variedadeNome
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .slice(0, 3)
+    .toUpperCase()
+    .padEnd(3, "X");
+  return `${prefix}-${data.toISOString().slice(0, 10).replace(/-/g, "")}`;
+}
+
+async function nextLoteCodigo(projetoId: number, variedadeNome: string, data: Date): Promise<string> {
+  const db = await getDb();
+  if (!db) return `${loteCodigoBase(variedadeNome, data)}-001`;
+  const base = loteCodigoBase(variedadeNome, data);
+  const rows = await db
+    .select({ codigo: lotesProducao.codigo })
+    .from(lotesProducao)
+    .where(and(eq(lotesProducao.projetoId, projetoId), sql`${lotesProducao.codigo} LIKE ${`${base}-%`}`));
+  const seq = rows
+    .map((r) => Number(String(r.codigo).split("-").at(-1)))
+    .filter((n) => Number.isFinite(n))
+    .reduce((max, n) => Math.max(max, n), 0) + 1;
+  return `${base}-${String(seq).padStart(3, "0")}`;
+}
+
+export async function createLoteProducao(data: Omit<InsertLoteProducao, "codigo"> & { codigo?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await ensureLotesProducaoSchema();
+  const codigo = data.codigo ?? await nextLoteCodigo(data.projetoId, data.variedadeNome, data.dataInicio);
+  const result = await db.insert(lotesProducao).values({ ...data, codigo });
+  const id = result[0].insertId;
+  return { id, codigo };
+}
+
+export async function createLoteEvento(data: InsertLoteEvento) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await ensureLotesProducaoSchema();
+  const result = await db.insert(loteEventos).values(data);
+  return { id: result[0].insertId };
+}
+
+export async function getLoteById(projetoId: number, loteId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  await ensureLotesProducaoSchema();
+  const rows = await db.select().from(lotesProducao).where(and(eq(lotesProducao.projetoId, projetoId), eq(lotesProducao.id, loteId)));
+  return rows[0] ?? null;
+}
+
+export async function getEventosByLoteId(projetoId: number, loteId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  await ensureLotesProducaoSchema();
+  return db.select().from(loteEventos).where(and(eq(loteEventos.projetoId, projetoId), eq(loteEventos.loteId, loteId))).orderBy(asc(loteEventos.dataHora));
+}
+
+export async function getAllLotesProducao(projetoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  await ensureLotesProducaoSchema();
+  return db.select().from(lotesProducao).where(eq(lotesProducao.projetoId, projetoId)).orderBy(desc(lotesProducao.dataInicio));
+}
+
+export async function getAllLoteEventos(projetoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  await ensureLotesProducaoSchema();
+  return db.select().from(loteEventos).where(eq(loteEventos.projetoId, projetoId)).orderBy(desc(loteEventos.dataHora));
+}
+
+export async function updateLoteQuantidadeAtual(projetoId: number, loteId: number, delta: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(lotesProducao)
+    .set({ quantidadeAtual: sql`GREATEST(0, ${lotesProducao.quantidadeAtual} + ${delta})` })
+    .where(and(eq(lotesProducao.projetoId, projetoId), eq(lotesProducao.id, loteId)));
+}
+
 export async function getAllGerminacao(projetoId: number) {
   const db = await getDb();
   if (!db) return [];
@@ -2994,6 +3085,7 @@ export async function loadFullFazendaData(projetoId: number) {
   await ensurePerfisCultivoStatusColumn();
   await ensurePerfisReceitaIdColumn();
   await ensurePerfisQuantidadePlantasColumn();
+  await ensureLotesProducaoSchema();
 
   const projetoMeta = await getProjetoRow(projetoId);
   const omitCaixaAguaModulo =
@@ -3270,6 +3362,65 @@ export async function ensurePerfisQuantidadePlantasColumn(): Promise<void> {
     if (isMysqlDuplicateColumnError(err)) return;
     if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
     console.error("[Database] ensurePerfisQuantidadePlantasColumn:", err);
+  }
+}
+
+export async function ensureLotesProducaoSchema(): Promise<void> {
+  const dbConn = await getDb();
+  if (!dbConn) return;
+  const ignore = (err: unknown) => {
+    const msg = err instanceof Error ? err.message : String(err);
+    return isMysqlDuplicateColumnError(err) || /Duplicate key name|already exists|ER_DUP_KEYNAME/i.test(msg);
+  };
+  const run = async (stmt: string) => {
+    try {
+      await dbConn.execute(sql.raw(stmt));
+    } catch (err: unknown) {
+      if (ignore(err)) return;
+      const msg = err instanceof Error ? err.message : String(err);
+      if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
+      console.error("[Database] ensureLotesProducaoSchema:", err);
+    }
+  };
+
+  await run(`CREATE TABLE IF NOT EXISTS \`lotes_producao\` (
+    \`id\` int NOT NULL AUTO_INCREMENT,
+    \`projetoId\` int NOT NULL,
+    \`codigo\` varchar(64) NOT NULL,
+    \`variedadeId\` int NOT NULL,
+    \`variedadeNome\` varchar(128) NOT NULL,
+    \`dataInicio\` timestamp NOT NULL,
+    \`status\` varchar(32) NOT NULL DEFAULT 'ativo',
+    \`quantidadeInicial\` int NOT NULL DEFAULT 0,
+    \`quantidadeAtual\` int NOT NULL DEFAULT 0,
+    \`createdAt\` timestamp NOT NULL DEFAULT (now()),
+    \`updatedAt\` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (\`id\`),
+    UNIQUE KEY \`lotes_producao_projeto_codigo\` (\`projetoId\`,\`codigo\`)
+  )`);
+  await run(`CREATE TABLE IF NOT EXISTS \`lote_eventos\` (
+    \`id\` int NOT NULL AUTO_INCREMENT,
+    \`projetoId\` int NOT NULL,
+    \`loteId\` int NOT NULL,
+    \`tipo\` varchar(32) NOT NULL,
+    \`dataHora\` timestamp NOT NULL,
+    \`quantidade\` int NOT NULL DEFAULT 0,
+    \`faseOrigem\` varchar(32),
+    \`faseDestino\` varchar(32),
+    \`origem\` varchar(128),
+    \`destino\` varchar(128),
+    \`observacoes\` text,
+    \`executadoPorId\` int,
+    \`executadoPorNome\` varchar(128),
+    \`createdAt\` timestamp NOT NULL DEFAULT (now()),
+    PRIMARY KEY (\`id\`),
+    KEY \`lote_eventos_lote_idx\` (\`loteId\`)
+  )`);
+  if (!(await columnExists(dbConn, "perfis", "loteId"))) {
+    await run("ALTER TABLE `perfis` ADD COLUMN `loteId` int NULL");
+  }
+  if (!(await columnExists(dbConn, "furos", "loteId"))) {
+    await run("ALTER TABLE `furos` ADD COLUMN `loteId` int NULL");
   }
 }
 

@@ -73,6 +73,7 @@ export default function TorreDetail() {
   const [modoFuros, setModoFuros] = useState<'visualizacao' | 'transplantio' | 'colheita'>('visualizacao');
   const [showTransplantioSmart, setShowTransplantioSmart] = useState(false);
   const [showColheita, setShowColheita] = useState(false);
+  const [perfilHistoricoIndex, setPerfilHistoricoIndex] = useState<number | null>(null);
   const [colheitaPeso, setColheitaPeso] = useState<string>('');
   const [colheitaQualidade, setColheitaQualidade] = useState<string>('A');
   const [colheitaDestino, setColheitaDestino] = useState<string>('');
@@ -115,6 +116,10 @@ export default function TorreDetail() {
   const { data: registrosColheita, refetch: refetchColheita } = trpc.registrosColheita.listByAndar.useQuery(
     { andarId: colheitaAndarDbId! },
     { enabled: !!colheitaAndarDbId }
+  );
+  const historicoPerfil = trpc.lotes.perfilHistorico.useQuery(
+    { andarId: colheitaAndarDbId!, perfilIndex: perfilHistoricoIndex ?? 0 },
+    { enabled: !!colheitaAndarDbId && perfilHistoricoIndex != null },
   );
   const createColheita = trpc.registrosColheita.create.useMutation({
     onSuccess: () => { refetchColheita(); toast.success('Colheita registrada!'); },
@@ -436,6 +441,7 @@ export default function TorreDetail() {
               quantidadePlantas: nextAtivo
                 ? quantidadeInicialPerfilMudas(currentPerfil?.variedadeId ?? variedadeId, currentPerfil?.quantidadePlantas)
                 : null,
+              loteId: nextAtivo ? undefined : null,
             }
           : {}),
       });
@@ -487,6 +493,7 @@ export default function TorreDetail() {
         ativo: next !== 'vazio',
         variedadeId: vId,
         dataEntrada: dataPl,
+        loteId: next === 'vazio' ? null : undefined,
       } as any);
       return;
     }
@@ -503,6 +510,7 @@ export default function TorreDetail() {
       furoIndex: f.furoIndex,
       status: allTarget ? 'vazio' : newStatus,
       variedadeId: allTarget ? null : (varDbId || (f.variedadeId ? (resolver.varSlugToId.get(f.variedadeId) || null) : null)),
+      loteId: allTarget ? null : undefined,
     }));
 
     mutations.batchUpdateFuros.mutate({ andarId: andarDbId, updates });
@@ -728,7 +736,7 @@ export default function TorreDetail() {
 
     if (allTarget) {
       // Reset all to vazio
-      mutations.setAllFuros.mutate({ andarId: andarDbId, status: 'vazio', variedadeId: null });
+      mutations.setAllFuros.mutate({ andarId: andarDbId, status: 'vazio', variedadeId: null, loteId: null });
     } else {
       // Set all to target status, preserving variedade from perfil
       const updates = allFuros.map((f) => {
@@ -902,8 +910,8 @@ export default function TorreDetail() {
       andarId: andarDbId,
       updates: indices.map((perfilIndex) =>
         isMicroverdes && !isMudas
-          ? { perfilIndex, ativo: false, variedadeId: null, dataEntrada: null, cultivoStatus: 'vazio' as const }
-          : { perfilIndex, ativo: false, variedadeId: null, dataEntrada: null, quantidadePlantas: null },
+          ? { perfilIndex, ativo: false, variedadeId: null, dataEntrada: null, cultivoStatus: 'vazio' as const, loteId: null }
+          : { perfilIndex, ativo: false, variedadeId: null, dataEntrada: null, quantidadePlantas: null, loteId: null },
       ),
     } as any);
 
@@ -911,7 +919,7 @@ export default function TorreDetail() {
       const updates: any[] = [];
       for (const f of andarSelecionado.furos || []) {
         if (!indices.includes(f.perfilIndex)) continue;
-        updates.push({ perfilIndex: f.perfilIndex, furoIndex: f.furoIndex, status: 'vazio', variedadeId: null });
+        updates.push({ perfilIndex: f.perfilIndex, furoIndex: f.furoIndex, status: 'vazio', variedadeId: null, loteId: null });
       }
       if (updates.length > 0) await mutations.batchUpdateFuros.mutateAsync({ andarId: andarDbId, updates } as any);
     }
@@ -1883,6 +1891,7 @@ export default function TorreDetail() {
                     onSelectPerfil={handleSelectPerfil}
                     onFuroToggle={handleFuroToggle}
                     onPerfilToggle={handlePerfilToggle}
+                    onPerfilInspect={(perfilIndex) => setPerfilHistoricoIndex(perfilIndex)}
                     onPerfilVariedadeChange={handlePerfilVariedadeChange}
                     onPerfilDataChange={handleUpdatePerfilData}
                     onAndarTodo={handleAndarTodo}
@@ -1894,6 +1903,60 @@ export default function TorreDetail() {
                 </div>
               </motion.div>
             )}
+
+            {/* Colheita dialog */}
+            <Dialog open={perfilHistoricoIndex != null} onOpenChange={(open) => !open && setPerfilHistoricoIndex(null)}>
+              <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="font-display">
+                    Histórico do {termoUnidadeProducao(projetoTipo).singular} {perfilHistoricoIndex != null ? perfilHistoricoIndex + 1 : ''}
+                  </DialogTitle>
+                </DialogHeader>
+                {historicoPerfil.isLoading ? (
+                  <p className="text-sm text-muted-foreground">Carregando histórico do lote...</p>
+                ) : (historicoPerfil.data?.length ?? 0) === 0 ? (
+                  <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                    Esta posição está vazia ou ainda não possui lote rastreável.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {historicoPerfil.data?.map(({ lote, eventos }) => (
+                      <div key={lote.id} className="rounded-xl border bg-card p-4">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-bold">{lote.codigo}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {lote.variedadeNome} · {lote.status} · saldo {lote.quantidadeAtual}/{lote.quantidadeInicial}
+                            </p>
+                          </div>
+                          <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
+                            Lote de produção
+                          </span>
+                        </div>
+                        <div className="mt-3 space-y-2">
+                          {eventos.map((ev) => (
+                            <div key={ev.id} className="rounded-lg bg-muted/40 p-2 text-xs">
+                              <div className="flex flex-wrap justify-between gap-2">
+                                <span className="font-semibold capitalize">{ev.tipo}</span>
+                                <span className="text-muted-foreground">{new Date(ev.dataHora).toLocaleString('pt-BR')}</span>
+                              </div>
+                              <p className="mt-0.5 text-muted-foreground">
+                                qtd. {ev.quantidade}
+                                {ev.faseOrigem || ev.faseDestino ? ` · ${ev.faseOrigem ?? 'início'} → ${ev.faseDestino ?? 'fim'}` : ''}
+                              </p>
+                              {(ev.origem || ev.destino) && (
+                                <p className="text-muted-foreground">{ev.origem ?? 'Origem'} → {ev.destino ?? 'Destino'}</p>
+                              )}
+                              {ev.observacoes && <p className="mt-1">{ev.observacoes}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
 
             {/* Colheita dialog */}
             <Dialog open={showColheita} onOpenChange={setShowColheita}>

@@ -16,6 +16,7 @@ import { fazendaRouter } from "./fazenda";
 import { furosRouter } from "./furos";
 import { germinacaoRouter } from "./germinacao";
 import { inteligenciaRouter } from "./inteligencia";
+import { lotesRouter } from "./lotes";
 import { manutencoesRouter } from "./manutencoes";
 import { medicoesCaixaRouter } from "./medicoesCaixa";
 import { perfisRouter } from "./perfis";
@@ -69,6 +70,7 @@ export const appRouter = router({
   registrosColheita: registrosColheitaRouter,
   planosPlantio: planosPlantioRouter,
   inteligencia: inteligenciaRouter,
+  lotes: lotesRouter,
   visao: visaoRouter,
   regras: regrasRouter,
   admin: adminRouter,

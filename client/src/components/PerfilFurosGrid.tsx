@@ -44,6 +44,7 @@ interface Props {
   onSelectPerfil?: (perfilIndex: number, e: React.MouseEvent) => void;
   onFuroToggle?: (perfilIndex: number, furoIndex: number, variedadeId?: string) => void;
   onPerfilToggle?: (perfilIndex: number, variedadeId?: string) => void;
+  onPerfilInspect?: (perfilIndex: number) => void;
   onPerfilVariedadeChange?: (perfilIndex: number, variedadeId: string) => void;
   onPerfilDataChange?: (perfilIndex: number, dataEntrada: string) => void;
   onAndarTodo?: () => void;
@@ -105,7 +106,7 @@ function perfilStatus(
 export default function PerfilFurosGrid({
   furos, perfis, fase, projetoTipo, estruturaOverride, modo, variedades, cicloOpts, andarDataEntrada,
   selectionMode, selectedPerfis, onSelectPerfil,
-  onFuroToggle, onPerfilToggle, onPerfilVariedadeChange,
+  onFuroToggle, onPerfilToggle, onPerfilInspect, onPerfilVariedadeChange,
   onPerfilDataChange,
   onAndarTodo, onAndarVariedadeTodos,
   modoDataPlantio = 'plantio',
@@ -192,10 +193,14 @@ export default function PerfilFurosGrid({
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    disabled={!isInteractive && !selectionMode}
+                    disabled={!isInteractive && !selectionMode && !onPerfilInspect}
                     onClick={(e) => {
                       if (selectionMode) {
                         onSelectPerfil?.(i, e);
+                        return;
+                      }
+                      if (!isInteractive) {
+                        onPerfilInspect?.(i);
                         return;
                       }
                       onPerfilToggle?.(i, perfil?.variedadeId);
@@ -215,7 +220,7 @@ export default function PerfilFurosGrid({
                     } ${
                       selectionMode
                         ? `cursor-pointer hover:shadow-md ${isSelected ? 'ring-2 ring-blue-400 border-blue-400' : ''}`
-                        : isInteractive
+                        : isInteractive || onPerfilInspect
                           ? 'hover:shadow-md active:scale-95 cursor-pointer'
                           : ''
                     }`}
@@ -396,10 +401,14 @@ export default function PerfilFurosGrid({
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    disabled={!isInteractive && !selectionMode}
+                    disabled={!isInteractive && !selectionMode && !onPerfilInspect}
                     onClick={(e) => {
                       if (selectionMode) {
                         onSelectPerfil?.(i, e);
+                        return;
+                      }
+                      if (!isInteractive) {
+                        onPerfilInspect?.(i);
                         return;
                       }
                       onPerfilToggle?.(i, perfil?.variedadeId);
@@ -417,7 +426,7 @@ export default function PerfilFurosGrid({
                     } ${
                       selectionMode
                         ? `cursor-pointer hover:shadow-md ${isSelected ? 'ring-2 ring-blue-400 border-blue-400' : ''}`
-                        : isInteractive
+                        : isInteractive || onPerfilInspect
                           ? 'hover:shadow-md active:scale-95 cursor-pointer'
                           : ''
                     }`}
@@ -610,11 +619,16 @@ export default function PerfilFurosGrid({
               } ${
                 selectionMode
                   ? `${isSelected ? 'ring-2 ring-blue-400 border-blue-400' : 'hover:shadow-sm cursor-pointer'}`
-                  : ''
+                  : !isInteractive && onPerfilInspect
+                    ? 'hover:shadow-sm cursor-pointer'
+                    : ''
               }`}
               onClick={(e) => {
-                if (!selectionMode) return;
-                onSelectPerfil?.(pIndex, e);
+                if (selectionMode) {
+                  onSelectPerfil?.(pIndex, e);
+                  return;
+                }
+                if (!isInteractive) onPerfilInspect?.(pIndex);
               }}
             >
               {/* Header do perfil */}

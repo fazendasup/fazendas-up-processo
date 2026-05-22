@@ -154,12 +154,14 @@ export function transformFazendaLoadAllResponse(raw: unknown): FazendaData {
       perfilIndex: f.perfilIndex,
       furoIndex: f.furoIndex,
       status: f.status as Furo["status"],
+      loteId: f.loteId != null && Number.isFinite(Number(f.loteId)) ? Number(f.loteId) : null,
       variedadeId: f.variedadeId ? varSlugMap.get(f.variedadeId) || undefined : undefined,
     }));
 
     const perfis: PerfilData[] = andarPerfis.map((p: any) => {
       const base: PerfilData = {
         perfilIndex: p.perfilIndex,
+        loteId: p.loteId != null && Number.isFinite(Number(p.loteId)) ? Number(p.loteId) : null,
         variedadeId: p.variedadeId ? varSlugMap.get(p.variedadeId) || undefined : undefined,
         ativo: p.ativo,
         dataEntrada: toDateStr(p.dataEntrada),

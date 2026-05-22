@@ -323,6 +323,7 @@ export const perfis = mysqlTable("perfis", {
   projetoId: int("projetoId").notNull(),
   andarId: int("andarId").notNull(),
   perfilIndex: int("perfilIndex").notNull(),
+  loteId: int("loteId"),
   variedadeId: int("variedadeId"),
   /** Receita de crescimento usada nos prazos deste perfil (desempate com várias receitas por variedade). */
   receitaId: int("receitaId"),
@@ -345,11 +346,49 @@ export const furos = mysqlTable("furos", {
   perfilIndex: int("perfilIndex").notNull(),
   furoIndex: int("furoIndex").notNull(),
   status: varchar("status", { length: 16 }).notNull().default("vazio"),
+  loteId: int("loteId"),
   variedadeId: int("variedadeId"),
 });
 
 export type FuroRow = typeof furos.$inferSelect;
 export type InsertFuro = typeof furos.$inferInsert;
+
+// ---- Lotes de Produção ----
+export const lotesProducao = mysqlTable("lotes_producao", {
+  id: int("id").autoincrement().primaryKey(),
+  projetoId: int("projetoId").notNull(),
+  codigo: varchar("codigo", { length: 64 }).notNull(),
+  variedadeId: int("variedadeId").notNull(),
+  variedadeNome: varchar("variedadeNome", { length: 128 }).notNull(),
+  dataInicio: timestamp("dataInicio").notNull(),
+  status: varchar("status", { length: 32 }).notNull().default("ativo"),
+  quantidadeInicial: int("quantidadeInicial").notNull().default(0),
+  quantidadeAtual: int("quantidadeAtual").notNull().default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const loteEventos = mysqlTable("lote_eventos", {
+  id: int("id").autoincrement().primaryKey(),
+  projetoId: int("projetoId").notNull(),
+  loteId: int("loteId").notNull(),
+  tipo: varchar("tipo", { length: 32 }).notNull(),
+  dataHora: timestamp("dataHora").notNull(),
+  quantidade: int("quantidade").notNull().default(0),
+  faseOrigem: varchar("faseOrigem", { length: 32 }),
+  faseDestino: varchar("faseDestino", { length: 32 }),
+  origem: varchar("origem", { length: 128 }),
+  destino: varchar("destino", { length: 128 }),
+  observacoes: text("observacoes"),
+  executadoPorId: int("executadoPorId"),
+  executadoPorNome: varchar("executadoPorNome", { length: 128 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type LoteProducao = typeof lotesProducao.$inferSelect;
+export type InsertLoteProducao = typeof lotesProducao.$inferInsert;
+export type LoteEvento = typeof loteEventos.$inferSelect;
+export type InsertLoteEvento = typeof loteEventos.$inferInsert;
 
 // ---- Aplicações em Andar ----
 export const aplicacoesAndar = mysqlTable("aplicacoes_andar", {

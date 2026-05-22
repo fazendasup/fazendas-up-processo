@@ -27,6 +27,7 @@ export const furosRouter = router({
         furoIndex: z.number(),
         status: z.string().optional(),
         variedadeId: z.number().nullable().optional(),
+        loteId: z.number().int().positive().nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -52,6 +53,7 @@ export const furosRouter = router({
             furoIndex: z.number(),
             status: z.string().optional(),
             variedadeId: z.number().nullable().optional(),
+            loteId: z.number().int().positive().nullable().optional(),
           }),
         ),
       }),
@@ -67,6 +69,7 @@ export const furosRouter = router({
         andarId: z.number(),
         status: z.string().optional(),
         variedadeId: z.number().nullable().optional(),
+        loteId: z.number().int().positive().nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
