@@ -325,6 +325,17 @@ async function startServer() {
   await db.ensurePerfisCultivoStatusColumn();
   await db.ensurePerfisReceitaIdColumn();
   await db.ensurePerfisQuantidadePlantasColumn();
+  await db.ensureLotesProducaoSchema();
+  try {
+    const bf = await db.backfillLotesProducaoLegado();
+    if (bf.lotesCriados > 0 || bf.perfisVinculados > 0 || bf.furosVinculados > 0 || bf.eventosHistoricosImportados > 0) {
+      console.log(
+        `[Server] Backfill lotes produção: projetos=${bf.projetosProcessados} lotes=${bf.lotesCriados} perfis=${bf.perfisVinculados} furos=${bf.furosVinculados} eventosHist=${bf.eventosHistoricosImportados}`,
+      );
+    }
+  } catch (e) {
+    console.error("[Server] backfillLotesProducaoLegado falhou:", e);
+  }
   await db.ensureVariedadesBabyLeafColumn();
   await db.ensureProjetoMembershipsBootstrap();
   const schemaEns = await db.ensureIncompleteMultiProjetoSchema();

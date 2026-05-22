@@ -3424,6 +3424,318 @@ export async function ensureLotesProducaoSchema(): Promise<void> {
   }
 }
 
+export type BackfillLotesProducaoResult = {
+  projetosProcessados: number;
+  lotesCriados: number;
+  perfisVinculados: number;
+  furosVinculados: number;
+  eventosHistoricosImportados: number;
+};
+
+const BACKFILL_HIST_MARKER = "Importado do histórico (migração).";
+
+function perfilComCultivo(p: { ativo: boolean; variedadeId: number | null; cultivoStatus: string | null }): boolean {
+  if (!p.variedadeId) return false;
+  if (p.ativo) return true;
+  return p.cultivoStatus === "plantado";
+}
+
+function posicaoLabel(
+  torre: { nome: string; fase?: string | null } | null | undefined,
+  andar: { numero: number } | null | undefined,
+  perfilIndex: number,
+): string {
+  return `${torre?.nome ?? "Torre"} · Andar ${andar?.numero ?? "?"} · Perfil ${perfilIndex + 1}`;
+}
+
+function eventoHistoricoJaExiste(
+  existentes: Array<{ tipo: string; dataHora: Date | string; quantidade: number }>,
+  tipo: string,
+  dataHora: Date,
+  quantidade: number,
+): boolean {
+  const alvo = new Date(dataHora).getTime();
+  return existentes.some((e) => {
+    if (e.tipo !== tipo) return false;
+    const et = new Date(e.dataHora).getTime();
+    return Math.abs(et - alvo) < 60_000 && e.quantidade === quantidade;
+  });
+}
+
+async function importarEventosHistoricosParaLote(params: {
+  projetoId: number;
+  loteId: number;
+  variedadeId: number;
+  andarId: number;
+  perfilIndex: number;
+  dataInicio: Date;
+  transplantios: Awaited<ReturnType<typeof getAllTransplantios>>;
+  colheitas: Awaited<ReturnType<typeof getAllRegistrosColheita>>;
+  germinacoes: Awaited<ReturnType<typeof getAllGerminacao>>;
+  andarMap: Map<number, { id: number; numero: number; torreId: number }>;
+  torreMap: Map<number, { id: number; nome: string; fase: string | null }>;
+}): Promise<number> {
+  const existentesRows = await getEventosByLoteId(params.projetoId, params.loteId);
+  const existentes = existentesRows.map((e) => ({
+    tipo: e.tipo,
+    dataHora: e.dataHora,
+    quantidade: e.quantidade,
+  }));
+  let added = 0;
+  const andar = params.andarMap.get(params.andarId);
+  const torre = andar ? params.torreMap.get(andar.torreId) : null;
+  const inicioMs = new Date(params.dataInicio).getTime();
+
+  const germCandidatos = params.germinacoes
+    .filter((g) => g.variedadeId === params.variedadeId)
+    .map((g) => ({ g, t: new Date(g.dataPlantio ?? g.dataHora).getTime() }))
+    .filter(({ t }) => t <= inicioMs + 86_400_000)
+    .sort((a, b) => b.t - a.t);
+  const germ = germCandidatos[0]?.g;
+  if (germ) {
+    const dh = new Date(germ.dataPlantio ?? germ.dataHora);
+    const qtd = Math.max(1, germ.quantidade ?? 1);
+    if (!eventoHistoricoJaExiste(existentes, "germinacao", dh, qtd)) {
+      await createLoteEvento({
+        projetoId: params.projetoId,
+        loteId: params.loteId,
+        tipo: "germinacao",
+        dataHora: dh,
+        quantidade: qtd,
+        faseDestino: "germinacao",
+        destino: "Germinação",
+        observacoes: BACKFILL_HIST_MARKER,
+        executadoPorId: germ.executadoPorId ?? undefined,
+        executadoPorNome: germ.executadoPorNome ?? undefined,
+      });
+      existentes.push({ tipo: "germinacao", dataHora: dh, quantidade: qtd });
+      added++;
+    }
+  }
+
+  for (const t of params.transplantios) {
+    if (t.variedadeId !== params.variedadeId) continue;
+    if (t.andarOrigemId !== params.andarId && t.andarDestinoId !== params.andarId) continue;
+    const dh = new Date(t.dataHora);
+    const qtd = Math.max(1, t.quantidadeTransplantada ?? 1);
+    if (eventoHistoricoJaExiste(existentes, "transplantio", dh, qtd)) continue;
+    const origemAndar = t.andarOrigemId ? params.andarMap.get(t.andarOrigemId) : null;
+    const destAndar = t.andarDestinoId ? params.andarMap.get(t.andarDestinoId) : null;
+    const origemTorre = origemAndar ? params.torreMap.get(origemAndar.torreId) : null;
+    const destTorre = destAndar ? params.torreMap.get(destAndar.torreId) : null;
+    await createLoteEvento({
+      projetoId: params.projetoId,
+      loteId: params.loteId,
+      tipo: "transplantio",
+      dataHora: dh,
+      quantidade: qtd,
+      faseOrigem: t.faseOrigem ?? undefined,
+      faseDestino: t.faseDestino ?? undefined,
+      origem: origemTorre ? `${origemTorre.nome} · Andar ${origemAndar?.numero ?? "?"}` : undefined,
+      destino: destTorre ? `${destTorre.nome} · Andar ${destAndar?.numero ?? "?"}` : undefined,
+      observacoes: BACKFILL_HIST_MARKER,
+      executadoPorId: t.executadoPorId ?? undefined,
+      executadoPorNome: t.executadoPorNome ?? undefined,
+    });
+    existentes.push({ tipo: "transplantio", dataHora: dh, quantidade: qtd });
+    added++;
+  }
+
+  for (const c of params.colheitas) {
+    if (c.andarId !== params.andarId) continue;
+    if (c.variedadeId != null && c.variedadeId !== params.variedadeId) continue;
+    const dh = new Date(c.dataColheita);
+    const qtd = Math.max(1, c.quantidadePlantas ?? 1);
+    if (eventoHistoricoJaExiste(existentes, "colheita", dh, qtd)) continue;
+    await createLoteEvento({
+      projetoId: params.projetoId,
+      loteId: params.loteId,
+      tipo: "colheita",
+      dataHora: dh,
+      quantidade: qtd,
+      faseOrigem: torre?.fase ?? "maturacao",
+      origem: posicaoLabel(torre, andar, params.perfilIndex),
+      observacoes: BACKFILL_HIST_MARKER,
+      executadoPorId: c.executadoPorId ?? undefined,
+      executadoPorNome: c.executadoPorNome ?? undefined,
+    });
+    existentes.push({ tipo: "colheita", dataHora: dh, quantidade: qtd });
+    added++;
+  }
+
+  return added;
+}
+
+/**
+ * Vincula lotes de produção a perfis/furos já ocupados antes do modelo de lote único.
+ * Idempotente: só processa registros com `loteId` nulo.
+ */
+export async function backfillLotesProducaoLegado(): Promise<BackfillLotesProducaoResult> {
+  const result: BackfillLotesProducaoResult = {
+    projetosProcessados: 0,
+    lotesCriados: 0,
+    perfisVinculados: 0,
+    furosVinculados: 0,
+    eventosHistoricosImportados: 0,
+  };
+  const dbConn = await getDb();
+  if (!dbConn) return result;
+  await ensureLotesProducaoSchema();
+
+  const projetosList = await listAllProjetosBasico();
+  for (const projeto of projetosList) {
+    const pid = projeto.id;
+    result.projetosProcessados++;
+
+    const [allPerfis, allFuros, allAndares, allTorres, variedadesList, transplantiosList, colheitasList, germinacoesList] =
+      await Promise.all([
+        dbConn.select().from(perfis).where(eq(perfis.projetoId, pid)),
+        dbConn.select().from(furos).where(eq(furos.projetoId, pid)),
+        getAllAndares(pid),
+        getAllTorres(pid),
+        getAllVariedades(pid),
+        getAllTransplantios(pid),
+        getAllRegistrosColheita(pid),
+        getAllGerminacao(pid),
+      ]);
+
+    const varMap = new Map(variedadesList.map((v) => [v.id, v]));
+    const andarMap = new Map(allAndares.map((a) => [a.id, a]));
+    const torreMap = new Map(allTorres.map((t) => [t.id, t]));
+
+    const lotePorPosicao = new Map<string, number>();
+
+    const criarLoteParaPosicao = async (opts: {
+      andarId: number;
+      perfilIndex: number;
+      variedadeId: number;
+      quantidade: number;
+      dataInicio: Date;
+      faseDestino: string;
+      observacoesPlantio: string;
+    }): Promise<number | null> => {
+      const variedade = varMap.get(opts.variedadeId);
+      if (!variedade) return null;
+      const andar = andarMap.get(opts.andarId);
+      const torre = andar ? torreMap.get(andar.torreId) : null;
+      const lote = await createLoteProducao({
+        projetoId: pid,
+        variedadeId: opts.variedadeId,
+        variedadeNome: variedade.nome,
+        dataInicio: opts.dataInicio,
+        status: "ativo",
+        quantidadeInicial: opts.quantidade,
+        quantidadeAtual: opts.quantidade,
+      });
+      result.lotesCriados++;
+      await createLoteEvento({
+        projetoId: pid,
+        loteId: lote.id,
+        tipo: "plantio",
+        dataHora: opts.dataInicio,
+        quantidade: opts.quantidade,
+        faseDestino: opts.faseDestino,
+        destino: posicaoLabel(torre, andar, opts.perfilIndex),
+        observacoes: opts.observacoesPlantio,
+      });
+      result.eventosHistoricosImportados += await importarEventosHistoricosParaLote({
+        projetoId: pid,
+        loteId: lote.id,
+        variedadeId: opts.variedadeId,
+        andarId: opts.andarId,
+        perfilIndex: opts.perfilIndex,
+        dataInicio: opts.dataInicio,
+        transplantios: transplantiosList,
+        colheitas: colheitasList,
+        germinacoes: germinacoesList,
+        andarMap,
+        torreMap,
+      });
+      return lote.id;
+    };
+
+    for (const p of allPerfis.filter((p) => perfilComCultivo(p) && !p.loteId)) {
+      const variedadeId = p.variedadeId!;
+      const andar = andarMap.get(p.andarId);
+      const torre = andar ? torreMap.get(andar.torreId) : null;
+      const quantidade = Math.max(1, p.quantidadePlantas ?? 1);
+      const dataInicio = p.dataEntrada ? new Date(p.dataEntrada) : new Date();
+      const faseDestino = torre?.fase ?? (p.ativo ? "mudas" : "iluminacao");
+      const loteId = await criarLoteParaPosicao({
+        andarId: p.andarId,
+        perfilIndex: p.perfilIndex,
+        variedadeId,
+        quantidade,
+        dataInicio,
+        faseDestino,
+        observacoesPlantio: "Lote criado por migração de cultivo existente (perfil).",
+      });
+      if (!loteId) continue;
+      lotePorPosicao.set(`${p.andarId}:${p.perfilIndex}`, loteId);
+      await dbConn.update(perfis).set({ loteId }).where(
+        and(eq(perfis.projetoId, pid), eq(perfis.andarId, p.andarId), eq(perfis.perfilIndex, p.perfilIndex)),
+      );
+      result.perfisVinculados++;
+    }
+
+    const gruposFuros = new Map<string, typeof allFuros>();
+    for (const f of allFuros.filter((f) => f.status === "plantado" && !f.loteId && f.variedadeId)) {
+      const key = `${f.andarId}:${f.perfilIndex}`;
+      const arr = gruposFuros.get(key) ?? [];
+      arr.push(f);
+      gruposFuros.set(key, arr);
+    }
+
+    for (const [key, furosGrupo] of Array.from(gruposFuros.entries())) {
+      const [andarIdStr, perfilIndexStr] = key.split(":");
+      const andarId = Number(andarIdStr);
+      const perfilIndex = Number(perfilIndexStr);
+      const perfil = allPerfis.find((p) => p.andarId === andarId && p.perfilIndex === perfilIndex);
+      let loteId = perfil?.loteId ?? lotePorPosicao.get(key) ?? null;
+
+      if (!loteId) {
+        const variedadeId = furosGrupo[0]?.variedadeId ?? perfil?.variedadeId;
+        if (!variedadeId) continue;
+        const andar = andarMap.get(andarId);
+        const torre = andar ? torreMap.get(andar.torreId) : null;
+        const quantidade = furosGrupo.length;
+        const dataInicio = perfil?.dataEntrada ? new Date(perfil.dataEntrada) : new Date();
+        loteId = await criarLoteParaPosicao({
+          andarId,
+          perfilIndex,
+          variedadeId,
+          quantidade,
+          dataInicio,
+          faseDestino: torre?.fase ?? "vegetativa",
+          observacoesPlantio: "Lote criado por migração de cultivo existente (furos).",
+        });
+        if (!loteId) continue;
+        lotePorPosicao.set(key, loteId);
+        if (perfil && !perfil.loteId) {
+          await dbConn.update(perfis).set({ loteId }).where(
+            and(eq(perfis.projetoId, pid), eq(perfis.andarId, andarId), eq(perfis.perfilIndex, perfilIndex)),
+          );
+          result.perfisVinculados++;
+        }
+      }
+
+      for (const f of furosGrupo) {
+        await dbConn.update(furos).set({ loteId }).where(
+          and(
+            eq(furos.projetoId, pid),
+            eq(furos.andarId, f.andarId),
+            eq(furos.perfilIndex, f.perfilIndex),
+            eq(furos.furoIndex, f.furoIndex),
+          ),
+        );
+        result.furosVinculados++;
+      }
+    }
+  }
+
+  return result;
+}
+
 /** Garante coluna `babyLeaf` em `variedades` (migração 0031). */
 export async function ensureVariedadesBabyLeafColumn(): Promise<void> {
   const db = await getDb();
