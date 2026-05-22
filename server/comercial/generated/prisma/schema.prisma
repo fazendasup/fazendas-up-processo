@@ -23,7 +23,10 @@ enum StatusUsuario {
 
 enum TipoCliente {
   RESTAURANTE
-  MERCADO
+  PLANO_ASSINATURA
+  SUPERMERCADO
+  AVULSO
+  OUTROS
 }
 
 enum StatusRelacionamento {

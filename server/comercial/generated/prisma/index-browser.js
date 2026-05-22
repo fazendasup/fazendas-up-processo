@@ -422,7 +422,10 @@ exports.StatusUsuario = exports.$Enums.StatusUsuario = {
 
 exports.TipoCliente = exports.$Enums.TipoCliente = {
   RESTAURANTE: 'RESTAURANTE',
-  MERCADO: 'MERCADO'
+  PLANO_ASSINATURA: 'PLANO_ASSINATURA',
+  SUPERMERCADO: 'SUPERMERCADO',
+  AVULSO: 'AVULSO',
+  OUTROS: 'OUTROS'
 };
 
 exports.StatusRelacionamento = exports.$Enums.StatusRelacionamento = {

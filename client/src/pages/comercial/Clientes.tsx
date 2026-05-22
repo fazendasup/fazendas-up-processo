@@ -39,10 +39,24 @@ function parseTags(tags: unknown): string[] {
   return [];
 }
 
+const TIPOS_CLIENTE = [
+  { value: "RESTAURANTE", label: "Restaurante" },
+  { value: "PLANO_ASSINATURA", label: "Plano de assinatura" },
+  { value: "SUPERMERCADO", label: "Supermercado" },
+  { value: "AVULSO", label: "Avulso" },
+  { value: "OUTROS", label: "Outros" },
+] as const;
+
+type TipoClienteComercial = (typeof TIPOS_CLIENTE)[number]["value"];
+
+function labelTipoCliente(tipo: string): string {
+  return TIPOS_CLIENTE.find((t) => t.value === tipo)?.label ?? tipo.replace(/_/g, " ");
+}
+
 function freshNovoCliente() {
   return {
     nome: "",
-    tipo: "RESTAURANTE" as "RESTAURANTE" | "MERCADO",
+    tipo: "RESTAURANTE" as TipoClienteComercial,
     cnpjCpf: "",
     telefoneWhatsapp: "",
     emailPrincipal: "",
@@ -58,7 +72,7 @@ export function Clientes() {
   const filtroRisco = searchParams.get("filtro") === "risco";
 
   const [busca, setBusca] = useState(buscaInicial);
-  const [tipo, setTipo] = useState<"" | "RESTAURANTE" | "MERCADO">("");
+  const [tipo, setTipo] = useState<"" | TipoClienteComercial>("");
   const [status, setStatus] = useState<"" | "ATIVO" | "INATIVO" | "EM_RISCO" | "ESTRATEGICO">("");
   const [modalNovo, setModalNovo] = useState(false);
   const [novo, setNovo] = useState(() => freshNovoCliente());
@@ -73,6 +87,16 @@ export function Clientes() {
       navigate(`/comercial/clientes/${data.id}`);
     },
     onError: (e) => toast.error(e.message ?? "Não foi possível criar o cliente."),
+  });
+
+  const atualizarTipo = trpc.comercial.clientes.atualizarTipo.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Categoria de "${data.nome}" atualizada para ${labelTipoCliente(data.tipo)}.`);
+      void utils.comercial.clientes.listarCarteira.invalidate();
+      void utils.comercial.clientes.listar.invalidate();
+      void utils.comercial.dashboard.resumo.invalidate();
+    },
+    onError: (e) => toast.error(e.message ?? "Não foi possível atualizar a categoria."),
   });
 
   useEffect(() => {
@@ -185,8 +209,11 @@ export function Clientes() {
             aria-label="Tipo de cliente"
           >
             <option value="">Tipo: todos</option>
-            <option value="RESTAURANTE">Restaurante</option>
-            <option value="MERCADO">Mercado</option>
+            {TIPOS_CLIENTE.map((row) => (
+              <option key={row.value} value={row.value}>
+                {row.label}
+              </option>
+            ))}
           </select>
           <select
             value={filtroRisco ? "EM_RISCO" : status}
@@ -261,9 +288,27 @@ export function Clientes() {
                           {c.nome}
                         </Link>
                         <div className="mt-2 flex flex-wrap gap-2">
-                          <span className="rounded-full bg-[#F3F4F6] px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-[#4B5563]">
-                            {c.tipo === "RESTAURANTE" ? "Restaurante" : "Mercado"}
-                          </span>
+                          <label className="inline-flex items-center gap-1 rounded-full bg-[#F3F4F6] px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-[#4B5563]">
+                            <span className="sr-only">Classificação comercial</span>
+                            <select
+                              value={c.tipo}
+                              onChange={(e) =>
+                                atualizarTipo.mutate({
+                                  clienteId: c.id,
+                                  tipo: e.target.value as TipoClienteComercial,
+                                })
+                              }
+                              disabled={atualizarTipo.isPending}
+                              className="max-w-[10rem] bg-transparent text-xs font-semibold uppercase tracking-wide outline-none"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {TIPOS_CLIENTE.map((row) => (
+                                <option key={row.value} value={row.value}>
+                                  {row.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
                           <span
                             className={`rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ${badgeStatus(c.statusRelacionamento)}`}
                           >
@@ -534,8 +579,11 @@ export function Clientes() {
                   onChange={(e) => setNovo((s) => ({ ...s, tipo: e.target.value as typeof novo.tipo }))}
                   className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/25"
                 >
-                  <option value="RESTAURANTE">Restaurante</option>
-                  <option value="MERCADO">Mercado</option>
+                  {TIPOS_CLIENTE.map((row) => (
+                    <option key={row.value} value={row.value}>
+                      {row.label}
+                    </option>
+                  ))}
                 </select>
               </label>
               <div className="grid gap-4 sm:grid-cols-2">

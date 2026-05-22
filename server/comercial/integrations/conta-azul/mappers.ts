@@ -66,7 +66,9 @@ export function mapPessoaApiItem(item: NonNullable<ContaAzulPessoasListResponse[
 
 export function mapTipoCliente(payload: ContaAzulPessoaPayload, fallback: TipoCliente = "RESTAURANTE"): TipoCliente {
   const n = (payload.nome ?? "").toLowerCase();
-  if (n.includes("mercado") || n.includes("super")) return "MERCADO";
+  if (n.includes("assinatura") || n.includes("plano")) return "PLANO_ASSINATURA";
+  if (n.includes("mercado") || n.includes("super")) return "SUPERMERCADO";
+  if (n.includes("avulso")) return "AVULSO";
   return fallback;
 }
 

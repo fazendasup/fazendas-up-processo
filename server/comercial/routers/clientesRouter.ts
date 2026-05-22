@@ -340,6 +340,17 @@ export const clientesRouter = router({
       return created;
     }),
 
+  atualizarTipo: comercialProcedure
+    .input(z.object({ clienteId: z.string(), tipo: z.nativeEnum(TipoCliente) }))
+    .mutation(async ({ ctx, input }) => {
+      const cliente = await ctx.prisma!.cliente.update({
+        where: { id: input.clienteId },
+        data: { tipo: input.tipo },
+        select: { id: true, nome: true, tipo: true },
+      });
+      return cliente;
+    }),
+
   recalcularScore: comercialProcedure.input(z.object({ clienteId: z.string() })).mutation(async ({ ctx, input }) => {
     const pedidos = await ctx.prisma!.pedido.findMany({ where: { clienteId: input.clienteId } });
     const cliente = await ctx.prisma!.cliente.findUnique({ where: { id: input.clienteId } });

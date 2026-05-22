@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { StatusRelacionamento, type TipoCliente } from "../generated/prisma/index.js";
+import { StatusRelacionamento, TipoCliente } from "../generated/prisma/index.js";
 import {
   composicaoFromTotalApenas,
   liquidoPedido,
@@ -45,7 +45,13 @@ function composicaoDoPedido(p: {
 }
 
 function totaisPorTipo(): Record<TipoCliente, TotaisComposicao> {
-  return { RESTAURANTE: totaisVazios(), MERCADO: totaisVazios() };
+  return Object.values(TipoCliente).reduce(
+    (acc, tipo) => {
+      acc[tipo] = totaisVazios();
+      return acc;
+    },
+    {} as Record<TipoCliente, TotaisComposicao>,
+  );
 }
 
 export const dashboardRouter = router({
@@ -79,6 +85,13 @@ export const dashboardRouter = router({
       const composicaoVendasPorTipo = totaisPorTipo();
       const composicaoOrcamentosPorTipo = totaisPorTipo();
       const pedidosVenda: typeof pedidos = [];
+      const ticketPorTipo = Object.values(TipoCliente).reduce(
+        (acc, tipo) => {
+          acc[tipo] = { total: 0, pedidos: 0, clientes: new Set<string>() };
+          return acc;
+        },
+        {} as Record<TipoCliente, { total: number; pedidos: number; clientes: Set<string> }>,
+      );
       let vendasComposicaoIncompleta = 0;
 
       for (const p of pedidos) {
@@ -87,6 +100,9 @@ export const dashboardRouter = router({
         if (cls === "venda") {
           somarTotais(composicaoVendas, comp);
           somarTotais(composicaoVendasPorTipo[p.cliente.tipo], comp);
+          ticketPorTipo[p.cliente.tipo].total += comp.valorLiquido;
+          ticketPorTipo[p.cliente.tipo].pedidos += 1;
+          ticketPorTipo[p.cliente.tipo].clientes.add(p.clienteId);
           pedidosVenda.push(p);
           if (pedidoComposicaoProvavelmenteIncompleta(p)) vendasComposicaoIncompleta++;
         } else if (cls === "orcamento") {
@@ -174,6 +190,17 @@ export const dashboardRouter = router({
           composicaoOrcamentos,
           composicaoVendasPorTipo,
           composicaoOrcamentosPorTipo,
+          ticketMedioPorTipo: Object.values(TipoCliente).map((tipo) => {
+            const row = ticketPorTipo[tipo];
+            return {
+              tipo,
+              total: row.total,
+              pedidos: row.pedidos,
+              clientes: row.clientes.size,
+              ticketMedio: row.pedidos > 0 ? row.total / row.pedidos : 0,
+              ticketMedioPorCliente: row.clientes.size > 0 ? row.total / row.clientes.size : 0,
+            };
+          }),
           vendasComposicaoIncompleta,
           taxaSucessoApis,
         },

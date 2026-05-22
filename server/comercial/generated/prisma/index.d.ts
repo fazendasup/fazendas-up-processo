@@ -108,7 +108,10 @@ export type StatusUsuario = (typeof StatusUsuario)[keyof typeof StatusUsuario]
 
 export const TipoCliente: {
   RESTAURANTE: 'RESTAURANTE',
-  MERCADO: 'MERCADO'
+  PLANO_ASSINATURA: 'PLANO_ASSINATURA',
+  SUPERMERCADO: 'SUPERMERCADO',
+  AVULSO: 'AVULSO',
+  OUTROS: 'OUTROS'
 };
 
 export type TipoCliente = (typeof TipoCliente)[keyof typeof TipoCliente]
