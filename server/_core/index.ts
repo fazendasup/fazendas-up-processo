@@ -328,9 +328,15 @@ async function startServer() {
   await db.ensureLotesProducaoSchema();
   try {
     const bf = await db.backfillLotesProducaoLegado();
-    if (bf.lotesCriados > 0 || bf.perfisVinculados > 0 || bf.furosVinculados > 0 || bf.eventosHistoricosImportados > 0) {
+    if (
+      bf.lotesCriados > 0 ||
+      bf.perfisVinculados > 0 ||
+      bf.furosVinculados > 0 ||
+      bf.eventosHistoricosImportados > 0 ||
+      bf.eventosHistoricosRemovidos > 0
+    ) {
       console.log(
-        `[Server] Backfill lotes produção: projetos=${bf.projetosProcessados} lotes=${bf.lotesCriados} perfis=${bf.perfisVinculados} furos=${bf.furosVinculados} eventosHist=${bf.eventosHistoricosImportados}`,
+        `[Server] Backfill lotes produção: projetos=${bf.projetosProcessados} lotes=${bf.lotesCriados} perfis=${bf.perfisVinculados} furos=${bf.furosVinculados} eventosHist=${bf.eventosHistoricosImportados} eventosRemovidos=${bf.eventosHistoricosRemovidos}`,
       );
     }
   } catch (e) {

@@ -3430,6 +3430,7 @@ export type BackfillLotesProducaoResult = {
   perfisVinculados: number;
   furosVinculados: number;
   eventosHistoricosImportados: number;
+  eventosHistoricosRemovidos: number;
 };
 
 const BACKFILL_HIST_MARKER = "Importado do histórico (migração).";
@@ -3469,8 +3470,8 @@ async function importarEventosHistoricosParaLote(params: {
   andarId: number;
   perfilIndex: number;
   dataInicio: Date;
+  faseAtual: string | null;
   transplantios: Awaited<ReturnType<typeof getAllTransplantios>>;
-  colheitas: Awaited<ReturnType<typeof getAllRegistrosColheita>>;
   germinacoes: Awaited<ReturnType<typeof getAllGerminacao>>;
   andarMap: Map<number, { id: number; numero: number; torreId: number }>;
   torreMap: Map<number, { id: number; nome: string; fase: string | null }>;
@@ -3515,7 +3516,8 @@ async function importarEventosHistoricosParaLote(params: {
 
   for (const t of params.transplantios) {
     if (t.variedadeId !== params.variedadeId) continue;
-    if (t.andarOrigemId !== params.andarId && t.andarDestinoId !== params.andarId) continue;
+    if (t.andarDestinoId !== params.andarId) continue;
+    if (params.faseAtual && t.faseDestino !== params.faseAtual) continue;
     const dh = new Date(t.dataHora);
     const qtd = Math.max(1, t.quantidadeTransplantada ?? 1);
     if (eventoHistoricoJaExiste(existentes, "transplantio", dh, qtd)) continue;
@@ -3541,29 +3543,69 @@ async function importarEventosHistoricosParaLote(params: {
     added++;
   }
 
-  for (const c of params.colheitas) {
-    if (c.andarId !== params.andarId) continue;
-    if (c.variedadeId != null && c.variedadeId !== params.variedadeId) continue;
-    const dh = new Date(c.dataColheita);
-    const qtd = Math.max(1, c.quantidadePlantas ?? 1);
-    if (eventoHistoricoJaExiste(existentes, "colheita", dh, qtd)) continue;
-    await createLoteEvento({
-      projetoId: params.projetoId,
-      loteId: params.loteId,
-      tipo: "colheita",
-      dataHora: dh,
-      quantidade: qtd,
-      faseOrigem: torre?.fase ?? "maturacao",
-      origem: posicaoLabel(torre, andar, params.perfilIndex),
-      observacoes: BACKFILL_HIST_MARKER,
-      executadoPorId: c.executadoPorId ?? undefined,
-      executadoPorNome: c.executadoPorNome ?? undefined,
-    });
-    existentes.push({ tipo: "colheita", dataHora: dh, quantidade: qtd });
-    added++;
+  return added;
+}
+
+export async function cleanupLoteEventosBackfillIncompativeis(): Promise<{ eventosRemovidos: number }> {
+  const dbConn = await getDb();
+  if (!dbConn) return { eventosRemovidos: 0 };
+  await ensureLotesProducaoSchema();
+
+  let eventosRemovidos = 0;
+  const projetosList = await listAllProjetosBasico();
+  for (const projeto of projetosList) {
+    const pid = projeto.id;
+    const [eventos, allPerfis, allFuros, allAndares, allTorres] = await Promise.all([
+      dbConn
+        .select()
+        .from(loteEventos)
+        .where(and(eq(loteEventos.projetoId, pid), eq(loteEventos.observacoes, BACKFILL_HIST_MARKER))),
+      dbConn.select().from(perfis).where(eq(perfis.projetoId, pid)),
+      dbConn.select().from(furos).where(eq(furos.projetoId, pid)),
+      getAllAndares(pid),
+      getAllTorres(pid),
+    ]);
+
+    const andarMap = new Map(allAndares.map((a) => [a.id, a]));
+    const torreMap = new Map(allTorres.map((t) => [t.id, t]));
+    const fasesAtuaisPorLote = new Map<number, Set<string>>();
+    const addFaseAtual = (loteId: number | null | undefined, andarId: number) => {
+      if (!loteId) return;
+      const andar = andarMap.get(andarId);
+      const torre = andar ? torreMap.get(andar.torreId) : null;
+      const fase = torre?.fase ?? null;
+      if (!fase) return;
+      const fases = fasesAtuaisPorLote.get(loteId) ?? new Set<string>();
+      fases.add(fase);
+      fasesAtuaisPorLote.set(loteId, fases);
+    };
+
+    for (const p of allPerfis) {
+      if (perfilComCultivo(p)) addFaseAtual(p.loteId, p.andarId);
+    }
+    for (const f of allFuros) {
+      if (f.status === "plantado") addFaseAtual(f.loteId, f.andarId);
+    }
+
+    const idsParaRemover = eventos
+      .filter((ev) => {
+        const fasesAtuais = fasesAtuaisPorLote.get(ev.loteId);
+        if (!fasesAtuais || fasesAtuais.size === 0) return false;
+        if (ev.tipo === "colheita") return true;
+        if (ev.tipo !== "transplantio") return false;
+        return !ev.faseDestino || !fasesAtuais.has(ev.faseDestino);
+      })
+      .map((ev) => ev.id);
+
+    if (idsParaRemover.length > 0) {
+      await dbConn
+        .delete(loteEventos)
+        .where(and(eq(loteEventos.projetoId, pid), inArray(loteEventos.id, idsParaRemover)));
+      eventosRemovidos += idsParaRemover.length;
+    }
   }
 
-  return added;
+  return { eventosRemovidos };
 }
 
 /**
@@ -3577,6 +3619,7 @@ export async function backfillLotesProducaoLegado(): Promise<BackfillLotesProduc
     perfisVinculados: 0,
     furosVinculados: 0,
     eventosHistoricosImportados: 0,
+    eventosHistoricosRemovidos: 0,
   };
   const dbConn = await getDb();
   if (!dbConn) return result;
@@ -3587,7 +3630,7 @@ export async function backfillLotesProducaoLegado(): Promise<BackfillLotesProduc
     const pid = projeto.id;
     result.projetosProcessados++;
 
-    const [allPerfis, allFuros, allAndares, allTorres, variedadesList, transplantiosList, colheitasList, germinacoesList] =
+    const [allPerfis, allFuros, allAndares, allTorres, variedadesList, transplantiosList, germinacoesList] =
       await Promise.all([
         dbConn.select().from(perfis).where(eq(perfis.projetoId, pid)),
         dbConn.select().from(furos).where(eq(furos.projetoId, pid)),
@@ -3595,7 +3638,6 @@ export async function backfillLotesProducaoLegado(): Promise<BackfillLotesProduc
         getAllTorres(pid),
         getAllVariedades(pid),
         getAllTransplantios(pid),
-        getAllRegistrosColheita(pid),
         getAllGerminacao(pid),
       ]);
 
@@ -3645,8 +3687,8 @@ export async function backfillLotesProducaoLegado(): Promise<BackfillLotesProduc
         andarId: opts.andarId,
         perfilIndex: opts.perfilIndex,
         dataInicio: opts.dataInicio,
+        faseAtual: torre?.fase ?? null,
         transplantios: transplantiosList,
-        colheitas: colheitasList,
         germinacoes: germinacoesList,
         andarMap,
         torreMap,
@@ -3732,6 +3774,9 @@ export async function backfillLotesProducaoLegado(): Promise<BackfillLotesProduc
       }
     }
   }
+
+  const cleanup = await cleanupLoteEventosBackfillIncompativeis();
+  result.eventosHistoricosRemovidos = cleanup.eventosRemovidos;
 
   return result;
 }
