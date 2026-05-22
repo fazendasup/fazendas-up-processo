@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { useFazenda } from '@/contexts/FazendaContext';
 import { useFazendaMutations } from '@/hooks/useFazendaMutations';
 import { useDbIdResolver } from '@/hooks/useDbIdResolver';
+import { trpc } from '@/lib/trpc';
 import { VARIEDADES_PADRAO } from '@/lib/types';
 import { variedadeEhBabyLeafFV } from '@shared/variedadesFase';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Leaf, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { History, Leaf, Plus, RotateCcw, Trash2 } from 'lucide-react';
 
 type Props = {
   /** Texto extra sob o título (ex.: nota microverdes em Config). */
@@ -31,6 +32,11 @@ export function VariedadesCadastroTable({ notaTopo }: Props) {
   const resolver = useDbIdResolver();
   const [showAddVar, setShowAddVar] = useState(false);
   const [novaBabyLeaf, setNovaBabyLeaf] = useState(false);
+  const [historicoVariedade, setHistoricoVariedade] = useState<{ id: number; nome: string } | null>(null);
+  const historicoQuery = trpc.variedades.historico.useQuery(
+    { variedadeId: historicoVariedade?.id ?? 0 },
+    { enabled: historicoVariedade != null },
+  );
 
   const handleAddVariedade = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -145,7 +151,7 @@ export function VariedadesCadastroTable({ notaTopo }: Props) {
                 <th className="text-left p-3 font-semibold">Variedade</th>
                 <th className="text-left p-3 font-semibold">Baby leaf</th>
                 <th className="text-left p-3 font-semibold text-muted-foreground">Prazos no app</th>
-                <th className="p-3 w-10" />
+                <th className="p-3 w-24" />
               </tr>
             </thead>
             <tbody>
@@ -172,13 +178,27 @@ export function VariedadesCadastroTable({ notaTopo }: Props) {
                       Definidos na receita (aba Receitas). Sem receita ativa, usam-se valores padrão.
                     </td>
                     <td className="p-3">
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteVariedade(v.id)}
-                        className="text-muted-foreground hover:text-destructive p-1"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+                      <div className="flex justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const dbId = resolver.varSlugToId.get(v.id);
+                            if (dbId) setHistoricoVariedade({ id: dbId, nome: v.nome });
+                          }}
+                          className="text-muted-foreground hover:text-primary p-1"
+                          title="Histórico e lotes"
+                          aria-label={`Histórico de ${v.nome}`}
+                        >
+                          <History className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteVariedade(v.id)}
+                          className="text-muted-foreground hover:text-destructive p-1"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -187,6 +207,55 @@ export function VariedadesCadastroTable({ notaTopo }: Props) {
           </table>
         </div>
       </div>
+      <Dialog open={historicoVariedade != null} onOpenChange={(open) => !open && setHistoricoVariedade(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Rastreabilidade da variedade</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold">{historicoVariedade?.nome}</p>
+            <p className="text-xs text-muted-foreground">
+              Linha do tempo operacional com referência de lote para plantio, transplantios, descartes e colheitas.
+            </p>
+          </div>
+          {historicoQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">Carregando histórico...</p>
+          ) : (historicoQuery.data?.length ?? 0) === 0 ? (
+            <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+              Ainda não há eventos operacionais registrados para esta variedade.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {historicoQuery.data?.map((ev) => (
+                <div key={ev.id} className="rounded-lg border bg-card p-3 text-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="font-semibold capitalize">
+                        {ev.tipo.replace(/_/g, ' ')}
+                        {ev.faseOrigem || ev.faseDestino ? (
+                          <span className="ml-1 text-xs font-normal text-muted-foreground">
+                            {ev.faseOrigem ?? 'início'} → {ev.faseDestino ?? 'fim'}
+                          </span>
+                        ) : null}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(ev.data).toLocaleString('pt-BR')} · qtd. {ev.quantidade}
+                        {ev.executadoPorNome ? ` · ${ev.executadoPorNome}` : ''}
+                      </p>
+                    </div>
+                    <code className="rounded bg-muted px-2 py-1 text-[11px] font-semibold text-foreground">
+                      {ev.loteReferencia}
+                    </code>
+                  </div>
+                  {ev.observacoes ? (
+                    <p className="mt-2 text-xs text-muted-foreground">{ev.observacoes}</p>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

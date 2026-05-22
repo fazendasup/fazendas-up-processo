@@ -187,7 +187,12 @@ export function TransplantioDistribuidoModal({
           capDisp: disp,
         };
       })
-      .sort((x, y) => y.capDisp - x.capDisp);
+      .sort((x, y) => {
+        const xParcial = x.capUsada > 0 && x.capDisp > 0 ? 1 : 0;
+        const yParcial = y.capUsada > 0 && y.capDisp > 0 ? 1 : 0;
+        if (xParcial !== yParcial) return yParcial - xParcial;
+        return y.capDisp - x.capDisp;
+      });
   }, [faseDestino, torres, andares, projetoTipo]);
 
   const totalDistribuido = destinos.reduce((s, d) => s + d.quantidade, 0);
@@ -522,6 +527,9 @@ export function TransplantioDistribuidoModal({
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {x.capUsada}/{x.capTotal} (disp {x.capDisp})
+                            {x.capUsada > 0 && x.capDisp > 0 ? (
+                              <span className="ml-1 font-semibold text-emerald-700 dark:text-emerald-300">· parcial com espaço</span>
+                            ) : null}
                           </p>
                         </div>
                         <Button
