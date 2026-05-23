@@ -2,6 +2,7 @@ import type { PerfilUsuario } from "./generated/prisma/index";
 import { TRPCError } from "@trpc/server";
 
 const ordem: Record<PerfilUsuario, number> = {
+  VENDEDOR: 1,
   OPERACOES: 1,
   COMERCIAL: 2,
   GERENTE_COMERCIAL: 3,

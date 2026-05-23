@@ -19,6 +19,8 @@ const Mensagens = lazy(() =>
   import("./comercial/Mensagens").then(m => ({ default: m.Mensagens }))
 );
 const Kpis = lazy(() => import("./comercial/Kpis").then(m => ({ default: m.Kpis })));
+const Pedidos = lazy(() => import("./comercial/Pedidos").then(m => ({ default: m.Pedidos })));
+const PedidosHistorico = lazy(() => import("./comercial/PedidosHistorico").then(m => ({ default: m.PedidosHistorico })));
 const Execucoes = lazy(() =>
   import("./comercial/Execucoes").then(m => ({ default: m.Execucoes }))
 );
@@ -37,10 +39,12 @@ export default function ComercialRoutes() {
           <Route path="/comercial/oportunidades" component={Oportunidades} />
           <Route path="/comercial/mensagens" component={Mensagens} />
           <Route path="/comercial/kpis" component={Kpis} />
+          <Route path="/comercial/pedidos-historico" component={PedidosHistorico} />
+          <Route path="/comercial/pedidos" component={Pedidos} />
           <Route path="/comercial/execucoes" component={Execucoes} />
           <Route path="/comercial/configuracoes" component={Configuracoes} />
           <Route path="/comercial">
-            <Redirect to="/comercial/dashboard" />
+            <Redirect to="/comercial/pedidos" />
           </Route>
         </Switch>
       </Suspense>

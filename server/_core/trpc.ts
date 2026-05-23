@@ -225,7 +225,7 @@ export const adminHidroponiaProcedure = hidroponiaProcedure.use(requireGlobalAdm
 /** Admin global + projeto fazenda vertical (torres, estrutura). */
 export const adminFazendaVerticalProcedure = fazendaVerticalProcedure.use(requireGlobalAdmin);
 
-const requireComercialModule = t.middleware(async ({ ctx, next }) => {
+const requireComercialModule = t.middleware(async ({ ctx, next, path }) => {
   if (!ctx.user) {
     throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
   }
@@ -239,6 +239,9 @@ const requireComercialModule = t.middleware(async ({ ctx, next }) => {
       message:
         "Nenhum usuário comercial ativo vinculado. Cadastre o mesmo e-mail no módulo ou um perfil ADMIN comercial.",
     });
+  }
+  if (comercialUsuario.perfil === "VENDEDOR" && !path.startsWith("comercial.pedidos")) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Vendedores acessam somente a página de Pedidos." });
   }
   let comercialEnv;
   try {

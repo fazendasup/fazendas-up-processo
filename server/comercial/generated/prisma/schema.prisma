@@ -10,6 +10,7 @@ datasource db {
 }
 
 enum PerfilUsuario {
+  VENDEDOR
   GERENTE_COMERCIAL
   COMERCIAL
   OPERACOES
@@ -102,17 +103,45 @@ enum PeriodoKpi {
   MENSAL
 }
 
+enum PedidoOperacionalStatus {
+  PENDENTE
+  PRONTO
+  ENTREGUE
+  CANCELADO
+}
+
+enum TipoVendaPedido {
+  RECORRENTE_SEMANAL
+  RECORRENTE_QUINZENAL
+  PLANO
+  AVULSO
+}
+
+enum PeriodoEntregaCliente {
+  MANHA
+  TARDE
+}
+
+enum ModoCompraProduto {
+  UNIDADE
+  KG
+}
+
 model Usuario {
-  id            String         @id @default(cuid())
-  nome          String
-  email         String         @unique
-  senhaHash     String         @map("senha_hash")
-  perfil        PerfilUsuario
-  status        StatusUsuario  @default(ATIVO)
-  dataCadastro  DateTime       @default(now()) @map("data_cadastro")
-  mensagens     Mensagem[]     @relation("MensagemAprovador")
-  refreshTokens RefreshToken[]
-  oportunidades Oportunidade[]
+  id               String                       @id @default(cuid())
+  nome             String
+  email            String                       @unique
+  senhaHash        String                       @map("senha_hash")
+  perfil           PerfilUsuario
+  status           StatusUsuario                @default(ATIVO)
+  dataCadastro     DateTime                     @default(now()) @map("data_cadastro")
+  mensagens        Mensagem[]                   @relation("MensagemAprovador")
+  refreshTokens    RefreshToken[]
+  oportunidades    Oportunidade[]
+  pedidosCriados   PedidoOperacional[]          @relation("PedidoCriadoPor")
+  pedidosEditados  PedidoOperacional[]          @relation("PedidoEditadoPor")
+  avariasCriadas   PedidoOperacionalAvaria[]    @relation("AvariaCriadaPor")
+  auditoriasPedido PedidoOperacionalAuditoria[]
 
   @@map("usuarios")
 }
@@ -147,15 +176,202 @@ model Cliente {
   dataCadastro          DateTime             @default(now()) @map("data_cadastro")
   dataUltimaAtualizacao DateTime             @updatedAt @map("data_ultima_atualizacao")
 
-  pedidos       Pedido[]
-  interacoes    Interacao[]
-  oportunidades Oportunidade[]
-  mensagens     Mensagem[]
-  execucoes     ExecucaoApi[]
+  pedidos              Pedido[]
+  interacoes           Interacao[]
+  oportunidades        Oportunidade[]
+  mensagens            Mensagem[]
+  execucoes            ExecucaoApi[]
+  regraComercial       RegraComercialCliente?
+  pedidosOperacionais  PedidoOperacional[]
+  avariasOperacionais  PedidoOperacionalAvaria[]
+  linksLegadoContaAzul ClienteLegadoContaAzulLink[]
 
   @@index([tipo, statusRelacionamento])
   @@index([nome])
   @@map("clientes")
+}
+
+/// Configuração global do mix folha leve (referência + variedades).
+model EstoqueVivoConfig {
+  id                String   @id @default("default")
+  mixReferenciaNome String   @map("mix_referencia_nome")
+  mixVariedades     Json     @map("mix_variedades")
+  atualizadoEm      DateTime @updatedAt @map("atualizado_em")
+
+  @@map("estoque_vivo_config")
+}
+
+model ProdutoComercial {
+  id                     String            @id @default(cuid())
+  nome                   String            @unique
+  precoBase              Decimal?          @map("preco_base") @db.Decimal(14, 2)
+  categoria              String?
+  ativo                  Boolean           @default(true)
+  modoCompra             ModoCompraProduto @default(UNIDADE) @map("modo_compra")
+  fatorCompraUnidade     Decimal?          @map("fator_compra_unidade") @db.Decimal(14, 4)
+  rendimentoPorKg        Decimal?          @map("rendimento_por_kg") @db.Decimal(14, 4)
+  ocultoListaCompra      Boolean           @default(false) @map("oculto_lista_compra")
+  mixAtivo               Boolean           @default(false) @map("mix_ativo")
+  mixFolhaLeve           Boolean           @default(false) @map("mix_folha_leve")
+  mixProdutoReferenciaId String?           @map("mix_produto_referencia_id")
+  mixVariedades          Json?             @map("mix_variedades")
+  criadoEm               DateTime          @default(now()) @map("criado_em")
+  atualizadoEm           DateTime          @updatedAt @map("atualizado_em")
+
+  precosEspeciais      PrecoEspecialCliente[]
+  itensPedido          PedidoOperacionalItem[]
+  avariasPedido        PedidoOperacionalAvaria[]
+  mixProdutoReferencia ProdutoComercial?         @relation("ProdutoMixReferencia", fields: [mixProdutoReferenciaId], references: [id], onDelete: SetNull)
+  mixReferenciadoPor   ProdutoComercial[]        @relation("ProdutoMixReferencia")
+
+  @@index([nome])
+  @@index([categoria])
+  @@map("produtos_comerciais")
+}
+
+model RegraComercialCliente {
+  id                     String                 @id @default(cuid())
+  contaAzulCustomerId    String                 @unique @map("conta_azul_customer_id")
+  observacoesGerais      String?                @map("observacoes_gerais") @db.Text
+  periodoEntrega         PeriodoEntregaCliente? @map("periodo_entrega")
+  horarioMaximoEntrega   String?                @map("horario_maximo_entrega")
+  cobraTaxaEntrega       Boolean                @default(false) @map("cobra_taxa_entrega")
+  prazoBoletoDias        Int?                   @map("prazo_boleto_dias")
+  acumulaPedidos         Boolean                @default(false) @map("acumula_pedidos")
+  diasAcumulo            Int?                   @map("dias_acumulo")
+  prazoBoletoAcumuloDias Int?                   @map("prazo_boleto_acumulo_dias")
+  criadoEm               DateTime               @default(now()) @map("criado_em")
+  atualizadoEm           DateTime               @updatedAt @map("atualizado_em")
+
+  cliente         Cliente?               @relation(fields: [contaAzulCustomerId], references: [externalId], onDelete: Cascade)
+  precosEspeciais PrecoEspecialCliente[]
+
+  @@map("regras_comerciais_cliente")
+}
+
+model ClienteLegadoContaAzulLink {
+  id                  String   @id @default(cuid())
+  legacyClientId      String   @unique @map("legacy_client_id")
+  legacyClientName    String   @map("legacy_client_name")
+  contaAzulCustomerId String   @map("conta_azul_customer_id")
+  clienteId           String?  @map("cliente_id")
+  metodo              String
+  confianca           Decimal  @db.Decimal(5, 2)
+  revisado            Boolean  @default(false)
+  criadoEm            DateTime @default(now()) @map("criado_em")
+  atualizadoEm        DateTime @updatedAt @map("atualizado_em")
+
+  cliente Cliente? @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+
+  @@index([contaAzulCustomerId])
+  @@index([clienteId])
+  @@map("clientes_legado_conta_azul_links")
+}
+
+model PrecoEspecialCliente {
+  id           String   @id @default(cuid())
+  regraId      String   @map("regra_id")
+  produtoId    String   @map("produto_id")
+  preco        Decimal  @db.Decimal(14, 2)
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  regra   RegraComercialCliente @relation(fields: [regraId], references: [id], onDelete: Cascade)
+  produto ProdutoComercial      @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+
+  @@unique([regraId, produtoId])
+  @@index([produtoId])
+  @@map("precos_especiais_cliente")
+}
+
+model PedidoOperacional {
+  id                  String                  @id @default(cuid())
+  clienteId           String?                 @map("cliente_id")
+  contaAzulCustomerId String                  @map("conta_azul_customer_id")
+  dataEntrega         DateTime                @map("data_entrega")
+  diaSemana           Int                     @map("dia_semana")
+  tipoVenda           TipoVendaPedido         @map("tipo_venda")
+  status              PedidoOperacionalStatus @default(PENDENTE)
+  observacoes         String?                 @db.Text
+  prioridadeEntrega   Int?                    @map("prioridade_entrega")
+  criadoPorId         String?                 @map("criado_por_id")
+  editadoPorId        String?                 @map("editado_por_id")
+  criadoEm            DateTime                @default(now()) @map("criado_em")
+  atualizadoEm        DateTime                @updatedAt @map("atualizado_em")
+
+  cliente    Cliente?                     @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  criadoPor  Usuario?                     @relation("PedidoCriadoPor", fields: [criadoPorId], references: [id], onDelete: SetNull)
+  editadoPor Usuario?                     @relation("PedidoEditadoPor", fields: [editadoPorId], references: [id], onDelete: SetNull)
+  itens      PedidoOperacionalItem[]
+  avarias    PedidoOperacionalAvaria[]
+  auditoria  PedidoOperacionalAuditoria[]
+
+  @@index([contaAzulCustomerId, dataEntrega])
+  @@index([clienteId, dataEntrega])
+  @@index([dataEntrega, status])
+  @@map("pedidos_operacionais")
+}
+
+model PedidoOperacionalItem {
+  id            String   @id @default(cuid())
+  pedidoId      String   @map("pedido_id")
+  produtoId     String   @map("produto_id")
+  produtoNome   String   @map("produto_nome")
+  categoria     String?
+  quantidade    Decimal  @db.Decimal(12, 3)
+  precoUnit     Decimal? @map("preco_unit") @db.Decimal(14, 2)
+  precoEspecial Boolean  @default(false) @map("preco_especial")
+  observacoes   String?  @db.Text
+
+  pedido  PedidoOperacional @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  produto ProdutoComercial  @relation(fields: [produtoId], references: [id])
+
+  @@index([pedidoId])
+  @@index([produtoId])
+  @@map("pedidos_operacionais_itens")
+}
+
+model PedidoOperacionalAvaria {
+  id                  String   @id @default(cuid())
+  pedidoId            String   @map("pedido_id")
+  clienteId           String?  @map("cliente_id")
+  contaAzulCustomerId String   @map("conta_azul_customer_id")
+  dataEntrega         DateTime @map("data_entrega")
+  produtoId           String   @map("produto_id")
+  produtoNome         String   @map("produto_nome")
+  categoria           String?
+  quantidade          Decimal  @db.Decimal(12, 3)
+  observacoes         String?  @db.Text
+  criadoPorId         String?  @map("criado_por_id")
+  criadoEm            DateTime @default(now()) @map("criado_em")
+
+  pedido    PedidoOperacional @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  cliente   Cliente?          @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  produto   ProdutoComercial  @relation(fields: [produtoId], references: [id])
+  criadoPor Usuario?          @relation("AvariaCriadaPor", fields: [criadoPorId], references: [id], onDelete: SetNull)
+
+  @@index([pedidoId], map: "avarias_pedido_idx")
+  @@index([contaAzulCustomerId, dataEntrega], map: "avarias_conta_data_idx")
+  @@index([clienteId, dataEntrega], map: "avarias_cliente_data_idx")
+  @@index([produtoId, dataEntrega], map: "avarias_produto_data_idx")
+  @@map("pedidos_operacionais_avarias")
+}
+
+model PedidoOperacionalAuditoria {
+  id          String   @id @default(cuid())
+  pedidoId    String   @map("pedido_id")
+  usuarioId   String?  @map("usuario_id")
+  usuarioNome String?  @map("usuario_nome")
+  acao        String
+  antes       Json?
+  depois      Json?
+  criadoEm    DateTime @default(now()) @map("criado_em")
+
+  pedido  PedidoOperacional @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  usuario Usuario?          @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  @@index([pedidoId, criadoEm])
+  @@map("pedidos_operacionais_auditoria")
 }
 
 model Pedido {
