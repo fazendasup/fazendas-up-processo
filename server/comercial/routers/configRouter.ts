@@ -60,7 +60,7 @@ export const configRouter = router({
       z.object({
         nome: z.string().min(2),
         email: z.string().email(),
-        perfil: z.enum(["VENDEDOR", "GERENTE_COMERCIAL", "COMERCIAL", "OPERACOES", "ADMIN"]),
+        perfil: z.enum(["GERENTE_COMERCIAL", "COMERCIAL", "OPERACOES", "ADMIN"]),
         senhaTemporaria: z.string().min(8),
       }),
     )

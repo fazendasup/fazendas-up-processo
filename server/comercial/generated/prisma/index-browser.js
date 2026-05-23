@@ -157,122 +157,6 @@ exports.Prisma.ClienteScalarFieldEnum = {
   dataUltimaAtualizacao: 'dataUltimaAtualizacao'
 };
 
-exports.Prisma.EstoqueVivoConfigScalarFieldEnum = {
-  id: 'id',
-  mixReferenciaNome: 'mixReferenciaNome',
-  mixVariedades: 'mixVariedades',
-  atualizadoEm: 'atualizadoEm'
-};
-
-exports.Prisma.ProdutoComercialScalarFieldEnum = {
-  id: 'id',
-  nome: 'nome',
-  precoBase: 'precoBase',
-  categoria: 'categoria',
-  ativo: 'ativo',
-  modoCompra: 'modoCompra',
-  fatorCompraUnidade: 'fatorCompraUnidade',
-  rendimentoPorKg: 'rendimentoPorKg',
-  ocultoListaCompra: 'ocultoListaCompra',
-  mixAtivo: 'mixAtivo',
-  mixFolhaLeve: 'mixFolhaLeve',
-  mixProdutoReferenciaId: 'mixProdutoReferenciaId',
-  mixVariedades: 'mixVariedades',
-  criadoEm: 'criadoEm',
-  atualizadoEm: 'atualizadoEm'
-};
-
-exports.Prisma.RegraComercialClienteScalarFieldEnum = {
-  id: 'id',
-  contaAzulCustomerId: 'contaAzulCustomerId',
-  observacoesGerais: 'observacoesGerais',
-  periodoEntrega: 'periodoEntrega',
-  horarioMaximoEntrega: 'horarioMaximoEntrega',
-  cobraTaxaEntrega: 'cobraTaxaEntrega',
-  prazoBoletoDias: 'prazoBoletoDias',
-  acumulaPedidos: 'acumulaPedidos',
-  diasAcumulo: 'diasAcumulo',
-  prazoBoletoAcumuloDias: 'prazoBoletoAcumuloDias',
-  criadoEm: 'criadoEm',
-  atualizadoEm: 'atualizadoEm'
-};
-
-exports.Prisma.ClienteLegadoContaAzulLinkScalarFieldEnum = {
-  id: 'id',
-  legacyClientId: 'legacyClientId',
-  legacyClientName: 'legacyClientName',
-  contaAzulCustomerId: 'contaAzulCustomerId',
-  clienteId: 'clienteId',
-  metodo: 'metodo',
-  confianca: 'confianca',
-  revisado: 'revisado',
-  criadoEm: 'criadoEm',
-  atualizadoEm: 'atualizadoEm'
-};
-
-exports.Prisma.PrecoEspecialClienteScalarFieldEnum = {
-  id: 'id',
-  regraId: 'regraId',
-  produtoId: 'produtoId',
-  preco: 'preco',
-  criadoEm: 'criadoEm',
-  atualizadoEm: 'atualizadoEm'
-};
-
-exports.Prisma.PedidoOperacionalScalarFieldEnum = {
-  id: 'id',
-  clienteId: 'clienteId',
-  contaAzulCustomerId: 'contaAzulCustomerId',
-  dataEntrega: 'dataEntrega',
-  diaSemana: 'diaSemana',
-  tipoVenda: 'tipoVenda',
-  status: 'status',
-  observacoes: 'observacoes',
-  prioridadeEntrega: 'prioridadeEntrega',
-  criadoPorId: 'criadoPorId',
-  editadoPorId: 'editadoPorId',
-  criadoEm: 'criadoEm',
-  atualizadoEm: 'atualizadoEm'
-};
-
-exports.Prisma.PedidoOperacionalItemScalarFieldEnum = {
-  id: 'id',
-  pedidoId: 'pedidoId',
-  produtoId: 'produtoId',
-  produtoNome: 'produtoNome',
-  categoria: 'categoria',
-  quantidade: 'quantidade',
-  precoUnit: 'precoUnit',
-  precoEspecial: 'precoEspecial',
-  observacoes: 'observacoes'
-};
-
-exports.Prisma.PedidoOperacionalAvariaScalarFieldEnum = {
-  id: 'id',
-  pedidoId: 'pedidoId',
-  clienteId: 'clienteId',
-  contaAzulCustomerId: 'contaAzulCustomerId',
-  dataEntrega: 'dataEntrega',
-  produtoId: 'produtoId',
-  produtoNome: 'produtoNome',
-  categoria: 'categoria',
-  quantidade: 'quantidade',
-  observacoes: 'observacoes',
-  criadoPorId: 'criadoPorId',
-  criadoEm: 'criadoEm'
-};
-
-exports.Prisma.PedidoOperacionalAuditoriaScalarFieldEnum = {
-  id: 'id',
-  pedidoId: 'pedidoId',
-  usuarioId: 'usuarioId',
-  usuarioNome: 'usuarioNome',
-  acao: 'acao',
-  antes: 'antes',
-  depois: 'depois',
-  criadoEm: 'criadoEm'
-};
-
 exports.Prisma.PedidoScalarFieldEnum = {
   id: 'id',
   externalId: 'externalId',
@@ -451,78 +335,6 @@ exports.Prisma.ClienteOrderByRelevanceFieldEnum = {
   urlSite: 'urlSite'
 };
 
-exports.Prisma.EstoqueVivoConfigOrderByRelevanceFieldEnum = {
-  id: 'id',
-  mixReferenciaNome: 'mixReferenciaNome'
-};
-
-exports.Prisma.ProdutoComercialOrderByRelevanceFieldEnum = {
-  id: 'id',
-  nome: 'nome',
-  categoria: 'categoria',
-  mixProdutoReferenciaId: 'mixProdutoReferenciaId'
-};
-
-exports.Prisma.RegraComercialClienteOrderByRelevanceFieldEnum = {
-  id: 'id',
-  contaAzulCustomerId: 'contaAzulCustomerId',
-  observacoesGerais: 'observacoesGerais',
-  horarioMaximoEntrega: 'horarioMaximoEntrega'
-};
-
-exports.Prisma.ClienteLegadoContaAzulLinkOrderByRelevanceFieldEnum = {
-  id: 'id',
-  legacyClientId: 'legacyClientId',
-  legacyClientName: 'legacyClientName',
-  contaAzulCustomerId: 'contaAzulCustomerId',
-  clienteId: 'clienteId',
-  metodo: 'metodo'
-};
-
-exports.Prisma.PrecoEspecialClienteOrderByRelevanceFieldEnum = {
-  id: 'id',
-  regraId: 'regraId',
-  produtoId: 'produtoId'
-};
-
-exports.Prisma.PedidoOperacionalOrderByRelevanceFieldEnum = {
-  id: 'id',
-  clienteId: 'clienteId',
-  contaAzulCustomerId: 'contaAzulCustomerId',
-  observacoes: 'observacoes',
-  criadoPorId: 'criadoPorId',
-  editadoPorId: 'editadoPorId'
-};
-
-exports.Prisma.PedidoOperacionalItemOrderByRelevanceFieldEnum = {
-  id: 'id',
-  pedidoId: 'pedidoId',
-  produtoId: 'produtoId',
-  produtoNome: 'produtoNome',
-  categoria: 'categoria',
-  observacoes: 'observacoes'
-};
-
-exports.Prisma.PedidoOperacionalAvariaOrderByRelevanceFieldEnum = {
-  id: 'id',
-  pedidoId: 'pedidoId',
-  clienteId: 'clienteId',
-  contaAzulCustomerId: 'contaAzulCustomerId',
-  produtoId: 'produtoId',
-  produtoNome: 'produtoNome',
-  categoria: 'categoria',
-  observacoes: 'observacoes',
-  criadoPorId: 'criadoPorId'
-};
-
-exports.Prisma.PedidoOperacionalAuditoriaOrderByRelevanceFieldEnum = {
-  id: 'id',
-  pedidoId: 'pedidoId',
-  usuarioId: 'usuarioId',
-  usuarioNome: 'usuarioNome',
-  acao: 'acao'
-};
-
 exports.Prisma.PedidoOrderByRelevanceFieldEnum = {
   id: 'id',
   externalId: 'externalId',
@@ -597,7 +409,6 @@ exports.Prisma.TemplateMensagemOrderByRelevanceFieldEnum = {
   corpo: 'corpo'
 };
 exports.PerfilUsuario = exports.$Enums.PerfilUsuario = {
-  VENDEDOR: 'VENDEDOR',
   GERENTE_COMERCIAL: 'GERENTE_COMERCIAL',
   COMERCIAL: 'COMERCIAL',
   OPERACOES: 'OPERACOES',
@@ -622,30 +433,6 @@ exports.StatusRelacionamento = exports.$Enums.StatusRelacionamento = {
   INATIVO: 'INATIVO',
   EM_RISCO: 'EM_RISCO',
   ESTRATEGICO: 'ESTRATEGICO'
-};
-
-exports.ModoCompraProduto = exports.$Enums.ModoCompraProduto = {
-  UNIDADE: 'UNIDADE',
-  KG: 'KG'
-};
-
-exports.PeriodoEntregaCliente = exports.$Enums.PeriodoEntregaCliente = {
-  MANHA: 'MANHA',
-  TARDE: 'TARDE'
-};
-
-exports.TipoVendaPedido = exports.$Enums.TipoVendaPedido = {
-  RECORRENTE_SEMANAL: 'RECORRENTE_SEMANAL',
-  RECORRENTE_QUINZENAL: 'RECORRENTE_QUINZENAL',
-  PLANO: 'PLANO',
-  AVULSO: 'AVULSO'
-};
-
-exports.PedidoOperacionalStatus = exports.$Enums.PedidoOperacionalStatus = {
-  PENDENTE: 'PENDENTE',
-  PRONTO: 'PRONTO',
-  ENTREGUE: 'ENTREGUE',
-  CANCELADO: 'CANCELADO'
 };
 
 exports.OrigemPedido = exports.$Enums.OrigemPedido = {
@@ -718,15 +505,6 @@ exports.Prisma.ModelName = {
   Usuario: 'Usuario',
   RefreshToken: 'RefreshToken',
   Cliente: 'Cliente',
-  EstoqueVivoConfig: 'EstoqueVivoConfig',
-  ProdutoComercial: 'ProdutoComercial',
-  RegraComercialCliente: 'RegraComercialCliente',
-  ClienteLegadoContaAzulLink: 'ClienteLegadoContaAzulLink',
-  PrecoEspecialCliente: 'PrecoEspecialCliente',
-  PedidoOperacional: 'PedidoOperacional',
-  PedidoOperacionalItem: 'PedidoOperacionalItem',
-  PedidoOperacionalAvaria: 'PedidoOperacionalAvaria',
-  PedidoOperacionalAuditoria: 'PedidoOperacionalAuditoria',
   Pedido: 'Pedido',
   ItemPedido: 'ItemPedido',
   Interacao: 'Interacao',

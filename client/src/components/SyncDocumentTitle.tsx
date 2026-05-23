@@ -20,8 +20,6 @@ const STATIC: Record<string, string> = {
   "/capacidade": "Capacidade",
   "/custos-producao": "Custos de produção",
   "/comercial": "Comercial",
-  "/comercial/pedidos": "Comercial — Pedidos",
-  "/comercial/pedidos-historico": "Comercial — Histórico de pedidos",
   "/comercial/dashboard": "Comercial — Painel",
   "/comercial/clientes": "Comercial — Carteira",
   "/comercial/oportunidades": "Comercial — Oportunidades",

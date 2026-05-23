@@ -148,14 +148,14 @@ function Router() {
           <Route path="/comercial">
             <ProtectedRoute requiredRole="comercial">
               <ModuloProjetoRouteGuard modulo="comercial">
-                <Redirect to="/comercial/pedidos" />
+                <Redirect to="/comercial/dashboard" />
               </ModuloProjetoRouteGuard>
             </ProtectedRoute>
           </Route>
           <Route path="/comercial/">
             <ProtectedRoute requiredRole="comercial">
               <ModuloProjetoRouteGuard modulo="comercial">
-                <Redirect to="/comercial/pedidos" />
+                <Redirect to="/comercial/dashboard" />
               </ModuloProjetoRouteGuard>
             </ProtectedRoute>
           </Route>

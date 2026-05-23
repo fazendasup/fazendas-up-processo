@@ -3,14 +3,8 @@ import { Link, useLocation } from "wouter";
 import type { ReactNode } from "react";
 import { LogOut } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { trpc } from "@/lib/trpc";
 
-const PEDIDOS_NAV = [
-  { href: "/comercial/pedidos", label: "Pedidos" },
-  { href: "/comercial/pedidos-historico", label: "Histórico" },
-] as const;
-
-const CENTRAL_NAV = [
+const NAV = [
   { href: "/comercial/dashboard", label: "Painel", end: true },
   { href: "/comercial/clientes", label: "Carteira" },
   { href: "/comercial/oportunidades", label: "Oportunidades" },
@@ -31,22 +25,17 @@ function navClass(active: boolean) {
 export function ComercialLayout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { logout } = useAuth();
-  const me = trpc.comercial.pedidos.me.useQuery(undefined, { staleTime: 60_000 });
-  const isPedidosArea = location === "/comercial/pedidos" || location.startsWith("/comercial/pedidos-");
-  const nav = me.data?.perfil === "VENDEDOR" ? PEDIDOS_NAV : isPedidosArea ? PEDIDOS_NAV : CENTRAL_NAV;
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <Header />
       <div className="border-b border-border/60 bg-background/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-[100rem] flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-5">
-          <nav className="flex flex-wrap items-center gap-0.5" aria-label={isPedidosArea ? "Pedidos comerciais" : "Central comercial"}>
-            {nav.map(item => {
+          <nav className="flex flex-wrap items-center gap-0.5" aria-label="Central Comercial">
+            {NAV.map(item => {
               const active =
                 location === item.href ||
-                (item.href !== "/comercial/dashboard" &&
-                  item.href !== "/comercial/pedidos" &&
-                  location.startsWith(item.href));
+                (item.href !== "/comercial/dashboard" && location.startsWith(item.href));
               return (
                 <Link key={item.href} href={item.href} className={navClass(active)}>
                   {item.label}

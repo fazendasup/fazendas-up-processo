@@ -25,7 +25,6 @@
     "db:seed-fup-piloto": "node server/seed-fup-piloto.mjs",
     "comercial:generate": "prisma generate --schema=prisma-comercial/schema.prisma",
     "comercial:migrate": "prisma migrate deploy --schema=prisma-comercial/schema.prisma",
-    "comercial:migrate:pedidos-legado": "node scripts/migrar-pedidos-legado.mjs",
     "comercial:seed": "tsx prisma-comercial/seed.ts",
     "db:cleanup-test-users": "node scripts/cleanup-dev-test-users.mjs",
     "autostart:install": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-windows-autostart.ps1",
