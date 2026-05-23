@@ -132,7 +132,7 @@ export default function PlantioCalendarioOperacional({
   calendarMonth,
   onMonthChange,
 }: Props) {
-  const eventsByDate = useMemo(() => eventosPorDia(planos), [planos]);
+  const eventsByDate = useMemo(() => eventosPorDia(planos, { mostrarCronogramaCompleto: true }), [planos]);
 
   const hoje = useMemo(() => {
     const t = new Date();

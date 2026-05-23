@@ -1,5 +1,5 @@
 // ============================================================
-// Eventos do calendário de plantio (mesma lógica no calendário e no dashboard)
+// Eventos do calendário de plantio (calendário completo + filtros operacionais)
 // ============================================================
 
 export type PlanoRow = {
@@ -24,6 +24,11 @@ export type DiaEvento = {
   variedade: string;
   quantidade?: number;
   planoId: number;
+};
+
+type EventosPorDiaOptions = {
+  /** No calendário mensal, mostrar todos os marcos do cronograma mesmo que a ação operacional já tenha avançado. */
+  mostrarCronogramaCompleto?: boolean;
 };
 
 export function dateKeyLocal(d: Date): string {
@@ -89,7 +94,7 @@ function aplicarFiltroOperacionalNoDia(evs: DiaEvento[], planoPorId: Map<number,
   return out.sort((a, b) => (ORD_FASE[a.tipo] ?? 9) - (ORD_FASE[b.tipo] ?? 9) || a.variedade.localeCompare(b.variedade));
 }
 
-export function eventosPorDia(planos: PlanoRow[]): Map<string, DiaEvento[]> {
+export function eventosPorDia(planos: PlanoRow[], options: EventosPorDiaOptions = {}): Map<string, DiaEvento[]> {
   const map = new Map<string, DiaEvento[]>();
   for (const p of planos) {
     if (p.status === 'cancelado') continue;
@@ -142,10 +147,12 @@ export function eventosPorDia(planos: PlanoRow[]): Map<string, DiaEvento[]> {
     });
   });
 
-  const planoPorId = new Map(planos.map((p) => [p.id, p]));
-  map.forEach((arr, key) => {
-    map.set(key, aplicarFiltroOperacionalNoDia(arr, planoPorId));
-  });
+  if (!options.mostrarCronogramaCompleto) {
+    const planoPorId = new Map(planos.map((p) => [p.id, p]));
+    map.forEach((arr, key) => {
+      map.set(key, aplicarFiltroOperacionalNoDia(arr, planoPorId));
+    });
+  }
   return map;
 }
 
