@@ -58,6 +58,10 @@ import { motion } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+function datetimeLocalValue(d: Date): string {
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
 export default function TorreDetail() {
   const { id } = useParams<{ id: string }>();
   const { data } = useFazenda();
@@ -84,6 +88,7 @@ export default function TorreDetail() {
   const [moverDestinoTorre, setMoverDestinoTorre] = useState<string>('');
   const [moverDestinoAndar, setMoverDestinoAndar] = useState<string>('');
   const [moverDestinoPerfilIndex, setMoverDestinoPerfilIndex] = useState<string>('');
+  const [eventoDataEdicao, setEventoDataEdicao] = useState<{ eventoId: number; value: string } | null>(null);
 
   // ---- Bulk edit (seleção múltipla) ----
   const [selectionMode, setSelectionMode] = useState(false);
@@ -121,6 +126,14 @@ export default function TorreDetail() {
     { andarId: colheitaAndarDbId!, perfilIndex: perfilHistoricoIndex ?? 0 },
     { enabled: !!colheitaAndarDbId && perfilHistoricoIndex != null },
   );
+  const updateEventoDataHora = trpc.lotes.updateEventoDataHora.useMutation({
+    onSuccess: async () => {
+      setEventoDataEdicao(null);
+      await historicoPerfil.refetch();
+      toast.success('Data do transplantio atualizada no histórico.');
+    },
+    onError: (err: any) => toast.error(err?.message || 'Não foi possível atualizar a data do transplantio.'),
+  });
   const createColheita = trpc.registrosColheita.create.useMutation({
     onSuccess: () => { refetchColheita(); toast.success('Colheita registrada!'); },
     onError: (err: any) => { toast.error(`Erro: ${err.message}`); },
@@ -1905,7 +1918,15 @@ export default function TorreDetail() {
             )}
 
             {/* Colheita dialog */}
-            <Dialog open={perfilHistoricoIndex != null} onOpenChange={(open) => !open && setPerfilHistoricoIndex(null)}>
+            <Dialog
+              open={perfilHistoricoIndex != null}
+              onOpenChange={(open) => {
+                if (!open) {
+                  setEventoDataEdicao(null);
+                  setPerfilHistoricoIndex(null);
+                }
+              }}
+            >
               <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="font-display">
@@ -1934,22 +1955,83 @@ export default function TorreDetail() {
                           </span>
                         </div>
                         <div className="mt-3 space-y-2">
-                          {eventos.map((ev) => (
-                            <div key={ev.id} className="rounded-lg bg-muted/40 p-2 text-xs">
-                              <div className="flex flex-wrap justify-between gap-2">
-                                <span className="font-semibold capitalize">{ev.tipo}</span>
-                                <span className="text-muted-foreground">{new Date(ev.dataHora).toLocaleString('pt-BR')}</span>
+                          {eventos.map((ev) => {
+                            const editando = eventoDataEdicao?.eventoId === ev.id;
+                            return (
+                              <div key={ev.id} className="rounded-lg bg-muted/40 p-2 text-xs">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <span className="font-semibold capitalize">{ev.tipo}</span>
+                                  <div className="flex flex-wrap items-center justify-end gap-2">
+                                    <span className="text-muted-foreground">{new Date(ev.dataHora).toLocaleString('pt-BR')}</span>
+                                    {ev.tipo === 'transplantio' && (
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-6 px-2 text-[10px]"
+                                        onClick={() =>
+                                          setEventoDataEdicao({
+                                            eventoId: ev.id,
+                                            value: datetimeLocalValue(new Date(ev.dataHora)),
+                                          })
+                                        }
+                                      >
+                                        Editar data
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                                {editando && (
+                                  <div className="mt-2 flex flex-wrap items-end gap-2 rounded-md border bg-background p-2">
+                                    <div className="min-w-[190px] flex-1">
+                                      <Label className="text-[10px]">Nova data/hora real</Label>
+                                      <Input
+                                        type="datetime-local"
+                                        className="h-8 text-xs"
+                                        value={eventoDataEdicao.value}
+                                        onChange={(e) =>
+                                          setEventoDataEdicao({ eventoId: ev.id, value: e.target.value })
+                                        }
+                                      />
+                                    </div>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      className="h-8"
+                                      disabled={updateEventoDataHora.isPending}
+                                      onClick={() => {
+                                        const novaData = new Date(eventoDataEdicao.value);
+                                        if (Number.isNaN(novaData.getTime())) {
+                                          toast.error('Data inválida.');
+                                          return;
+                                        }
+                                        updateEventoDataHora.mutate({ eventoId: ev.id, dataHora: novaData });
+                                      }}
+                                    >
+                                      Salvar
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-8"
+                                      onClick={() => setEventoDataEdicao(null)}
+                                    >
+                                      Cancelar
+                                    </Button>
+                                  </div>
+                                )}
+                                <p className="mt-0.5 text-muted-foreground">
+                                  qtd. {ev.quantidade}
+                                  {ev.faseOrigem || ev.faseDestino ? ` · ${ev.faseOrigem ?? 'início'} → ${ev.faseDestino ?? 'fim'}` : ''}
+                                </p>
+                                {(ev.origem || ev.destino) && (
+                                  <p className="text-muted-foreground">{ev.origem ?? 'Origem'} → {ev.destino ?? 'Destino'}</p>
+                                )}
+                                {ev.observacoes && <p className="mt-1">{ev.observacoes}</p>}
                               </div>
-                              <p className="mt-0.5 text-muted-foreground">
-                                qtd. {ev.quantidade}
-                                {ev.faseOrigem || ev.faseDestino ? ` · ${ev.faseOrigem ?? 'início'} → ${ev.faseDestino ?? 'fim'}` : ''}
-                              </p>
-                              {(ev.origem || ev.destino) && (
-                                <p className="text-muted-foreground">{ev.origem ?? 'Origem'} → {ev.destino ?? 'Destino'}</p>
-                              )}
-                              {ev.observacoes && <p className="mt-1">{ev.observacoes}</p>}
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     ))}

@@ -112,6 +112,7 @@ export const andaresRouter = router({
     .input(
       z.object({
         andarOrigemId: z.number(),
+        dataHora: z.date().optional(),
         destinos: z
           .array(
             z.object({

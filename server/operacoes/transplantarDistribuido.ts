@@ -8,6 +8,7 @@ import { syncPlanoFromTransplantio } from "../planoOperacaoSync";
 export type TransplantarDistribuidoInput = {
   andarOrigemId: number;
   destinos: { andarDestinoId: number; quantidade: number }[];
+  dataHora?: Date;
   observacoes?: string;
   quantidadeDesperdicio?: number;
   motivoDesperdicio?: string;
@@ -224,6 +225,7 @@ export async function runTransplantarDistribuido(
       message: "Informe ao menos uma quantidade para transplantar ou descartar.",
     });
   }
+  const dataHoraTransplantio = input.dataHora ?? new Date();
 
   for (const d of input.destinos) {
     const destAndar = await db.getAndarById(pid, d.andarDestinoId);
@@ -307,6 +309,7 @@ export async function runTransplantarDistribuido(
         perfilIndex,
         ativo: true,
         variedadeId: origemVariedadeId,
+        dataEntrada: dataHoraTransplantio,
         loteId: lotePorFuro.get(`${perfilIndex}:${vazios.find((f) => f.perfilIndex === perfilIndex)?.furoIndex ?? 0}`) ?? null,
       })),
     );
@@ -317,7 +320,7 @@ export async function runTransplantarDistribuido(
         projetoId: pid,
         loteId: parte.loteId,
         tipo: "transplantio",
-        dataHora: new Date(),
+        dataHora: dataHoraTransplantio,
         quantidade: parte.quantidade,
         faseOrigem,
         faseDestino,
@@ -329,13 +332,11 @@ export async function runTransplantarDistribuido(
       });
     }
 
-    if (!destAndar.dataEntrada) {
-      await db.updateAndar(pid, d.andarDestinoId, { dataEntrada: new Date() });
-    }
+    await db.updateAndar(pid, d.andarDestinoId, { dataEntrada: dataHoraTransplantio });
 
     await db.createTransplantio({
       projetoId: pid,
-      dataHora: new Date(),
+      dataHora: dataHoraTransplantio,
       torreOrigemId: origemTorre.id,
       andarOrigemId: origemAndar.id,
       faseOrigem,
@@ -355,7 +356,7 @@ export async function runTransplantarDistribuido(
   if (quantidadeDesperdicio > 0) {
     await db.createTransplantio({
       projetoId: pid,
-      dataHora: new Date(),
+      dataHora: dataHoraTransplantio,
       torreOrigemId: origemTorre.id,
       andarOrigemId: origemAndar.id,
       faseOrigem,

@@ -2922,6 +2922,27 @@ export async function createLoteEvento(data: InsertLoteEvento) {
   return { id: result[0].insertId };
 }
 
+export async function getLoteEventoById(projetoId: number, id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  await ensureLotesProducaoSchema();
+  const rows = await db
+    .select()
+    .from(loteEventos)
+    .where(and(eq(loteEventos.projetoId, projetoId), eq(loteEventos.id, id)));
+  return rows[0] ?? null;
+}
+
+export async function updateLoteEvento(projetoId: number, id: number, data: Partial<InsertLoteEvento>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await ensureLotesProducaoSchema();
+  await db
+    .update(loteEventos)
+    .set(data)
+    .where(and(eq(loteEventos.projetoId, projetoId), eq(loteEventos.id, id)));
+}
+
 export async function getLoteById(projetoId: number, loteId: number) {
   const db = await getDb();
   if (!db) return null;

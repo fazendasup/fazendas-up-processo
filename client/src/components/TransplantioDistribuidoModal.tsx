@@ -24,6 +24,10 @@ import {
 import { PLANTAS_POR_PERFIL_FV } from "@shared/plantasPorPerfil";
 import { variedadePulaVegetativa } from "@shared/variedadesFase";
 
+function datetimeLocalValue(d: Date = new Date()): string {
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
 function rotuloTorreDestino(torre: Torre): string {
   const baby = torreReservadaGrelhaBabyLeaf(torre as Parameters<typeof torreReservadaGrelhaBabyLeaf>[0]);
   return baby ? `${torre.nome} · 12×6 baby leaf` : torre.nome;
@@ -124,6 +128,7 @@ export function TransplantioDistribuidoModal({
   const [destinos, setDestinos] = useState<Destino[]>([]);
   const [quantidadeDescarte, setQuantidadeDescarte] = useState("0");
   const [motivoDescarte, setMotivoDescarte] = useState("");
+  const [dataHora, setDataHora] = useState(datetimeLocalValue);
   const [obs, setObs] = useState("");
 
   const origemQtd = useMemo(() => {
@@ -145,6 +150,7 @@ export function TransplantioDistribuidoModal({
       setObs("");
       setQuantidadeDescarte("0");
       setMotivoDescarte("");
+      setDataHora(datetimeLocalValue());
       setPerfisSelecionados([]);
       return;
     }
@@ -270,6 +276,11 @@ export function TransplantioDistribuidoModal({
       toast.error("Nada para transplantar na seleção de origem.");
       return;
     }
+    const dataHoraReal = new Date(dataHora);
+    if (!dataHora || Number.isNaN(dataHoraReal.getTime())) {
+      toast.error("Informe uma data/hora real de transplantio válida.");
+      return;
+    }
     if (totalProcessado !== origemQtd) {
       toast.error(`Distribua e/ou descarte exatamente ${origemQtd}. Processado: ${totalProcessado}.`);
       return;
@@ -284,6 +295,7 @@ export function TransplantioDistribuidoModal({
       await transplantar.mutateAsync({
         andarOrigemId: origemAndarDbId,
         perfilIndicesOrigem: perfisSelecionados,
+        dataHora: dataHoraReal,
         destinos: destinosComQuantidade.map((d) => ({ andarDestinoId: d.andarIdDb, quantidade: d.quantidade })),
         quantidadeDesperdicio: descarteQtd,
         motivoDesperdicio: descarteQtd > 0 ? motivoDescarte.trim() || "descarte_no_transplantio" : undefined,
@@ -400,6 +412,19 @@ export function TransplantioDistribuidoModal({
                 )}
               </AlertDescription>
             </Alert>
+
+            <div className="space-y-1.5 rounded-lg border bg-muted/20 p-3">
+              <Label className="text-xs">Data/hora real do transplantio</Label>
+              <Input
+                type="datetime-local"
+                value={dataHora}
+                onChange={(e) => setDataHora(e.target.value)}
+                className="h-9"
+              />
+              <p className="text-xs text-muted-foreground">
+                Use a data em que o transplantio realmente aconteceu, mesmo se estiver registrando depois.
+              </p>
+            </div>
 
             <div className="space-y-2 rounded-lg border bg-amber-50/60 p-3 dark:bg-amber-950/20">
               <div className="flex items-start justify-between gap-3">

@@ -45,4 +45,32 @@ export const lotesRouter = router({
       ),
     }));
   }),
+  updateEventoDataHora: projectProcedure
+    .input(z.object({ eventoId: z.number().int().positive(), dataHora: z.date() }))
+    .mutation(async ({ ctx, input }) => {
+      const pid = projetoIdFromCtx(ctx);
+      const evento = await db.getLoteEventoById(pid, input.eventoId);
+      if (!evento) throw new Error("Evento de lote não encontrado");
+      if (evento.tipo !== "transplantio") {
+        throw new Error("Somente eventos de transplantio podem ter a data ajustada por aqui");
+      }
+
+      const dataAnterior = new Date(evento.dataHora);
+      await db.updateLoteEvento(pid, evento.id, { dataHora: input.dataHora });
+      await db.createLoteEvento({
+        projetoId: pid,
+        loteId: evento.loteId,
+        tipo: "ajuste_data",
+        dataHora: new Date(),
+        quantidade: 0,
+        faseOrigem: evento.faseOrigem,
+        faseDestino: evento.faseDestino,
+        origem: evento.origem,
+        destino: evento.destino,
+        observacoes: `Data do transplantio ajustada de ${dataAnterior.toLocaleString("pt-BR")} para ${input.dataHora.toLocaleString("pt-BR")}.`,
+        executadoPorId: ctx.user.id,
+        executadoPorNome: ctx.user.name || "Usuário",
+      });
+      return { success: true };
+    }),
 });
