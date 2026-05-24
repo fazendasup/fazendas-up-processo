@@ -37,8 +37,23 @@ const TIPOS = [
 ] as const;
 const CATEGORIAS = ["Buque", "Desfolhado", "Pote"];
 
+function isoLocal(date: Date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 function hojeIso() {
-  return new Date().toISOString().slice(0, 10);
+  return isoLocal(new Date());
+}
+
+function diaOperacionalInicial() {
+  const date = new Date();
+  if (date.getDay() === 0) {
+    date.setDate(date.getDate() + 1);
+  }
+  return isoLocal(date);
 }
 
 function fmtMoney(v: unknown) {
@@ -83,9 +98,11 @@ function statusBarClass(status: string) {
 type ProdutoLinha = { produtoId: string; quantidade: string; observacoes: string };
 type AvariaLinha = { produtoId: string; quantidade: string; observacoes: string };
 
-export function Pedidos() {
+type PedidosTab = "operacional" | "agenda" | "regras" | "produtos" | "compras";
+
+export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTab } = {}) {
   const utils = trpc.useUtils();
-  const [dia, setDia] = useState(hojeIso());
+  const [dia, setDia] = useState(diaOperacionalInicial);
   const [busca, setBusca] = useState("");
   const [clienteBusca, setClienteBusca] = useState("");
   const [clienteId, setClienteId] = useState("");
@@ -122,7 +139,7 @@ export function Pedidos() {
     { enabled: Boolean(pedidoAuditoriaId) },
   );
   const dashboard = trpc.comercial.pedidos.dashboard.useQuery({ dia: diaDate });
-  const compras = trpc.comercial.pedidos.compras.useQuery({ dia: diaDate, incluirOcultos: true });
+  const compras = trpc.comercial.pedidos.compras.useQuery({ dia: diaDate, incluirOcultos: false });
 
   const salvarPedido = trpc.comercial.pedidos.salvarPedido.useMutation({
     onSuccess: async () => {
@@ -350,7 +367,7 @@ export function Pedidos() {
         </div>
       </div>
 
-      <Tabs defaultValue="operacional" className="space-y-4">
+      <Tabs defaultValue={abaInicial} className="space-y-4">
         <TabsList className="flex h-auto flex-wrap">
           <TabsTrigger value="operacional">Dashboard operacional</TabsTrigger>
           <TabsTrigger value="agenda">Emissão / Agenda</TabsTrigger>
@@ -1197,12 +1214,12 @@ function ComprasArea({ estoque, produtos, isLoading, isAdmin, onUpdate, onSalvar
               <thead>
                 <tr className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-3 py-2">Produto</th>
-                  <th className="px-3 py-2">Pedido</th>
-                  <th className="px-3 py-2">Modo</th>
-                  <th className="px-3 py-2">Fator</th>
-                  <th className="px-3 py-2">Rend./kg</th>
+                  <th className="px-3 py-2">Nec.</th>
+                  <th className="px-3 py-2">U/K</th>
+                  <th className="px-3 py-2" title="Modo unidade">Fat.</th>
+                  <th className="px-3 py-2" title="Produtos por 1 kg">Rend.</th>
                   <th className="px-3 py-2">Mix</th>
-                  <th className="px-3 py-2">Comprar</th>
+                  <th className="px-3 py-2">Total</th>
                   {isAdmin ? <th className="px-3 py-2" /> : null}
                 </tr>
               </thead>

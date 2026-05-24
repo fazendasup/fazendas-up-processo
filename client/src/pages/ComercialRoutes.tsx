@@ -40,7 +40,12 @@ export default function ComercialRoutes() {
           <Route path="/comercial/mensagens" component={Mensagens} />
           <Route path="/comercial/kpis" component={Kpis} />
           <Route path="/comercial/pedidos-historico" component={PedidosHistorico} />
-          <Route path="/comercial/pedidos" component={Pedidos} />
+          <Route path="/comercial/estoque-vivo">
+            <Pedidos abaInicial="compras" />
+          </Route>
+          <Route path="/comercial/pedidos">
+            <Pedidos />
+          </Route>
           <Route path="/comercial/execucoes" component={Execucoes} />
           <Route path="/comercial/configuracoes" component={Configuracoes} />
           <Route path="/comercial">

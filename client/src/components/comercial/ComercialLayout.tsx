@@ -7,6 +7,7 @@ import { trpc } from "@/lib/trpc";
 
 const PEDIDOS_NAV = [
   { href: "/comercial/pedidos", label: "Pedidos" },
+  { href: "/comercial/estoque-vivo", label: "Estoque vivo" },
   { href: "/comercial/pedidos-historico", label: "Histórico" },
 ] as const;
 
@@ -32,7 +33,10 @@ export function ComercialLayout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { logout } = useAuth();
   const me = trpc.comercial.pedidos.me.useQuery(undefined, { staleTime: 60_000 });
-  const isPedidosArea = location === "/comercial/pedidos" || location.startsWith("/comercial/pedidos-");
+  const isPedidosArea =
+    location === "/comercial/pedidos" ||
+    location === "/comercial/estoque-vivo" ||
+    location.startsWith("/comercial/pedidos-");
   const nav = me.data?.perfil === "VENDEDOR" ? PEDIDOS_NAV : isPedidosArea ? PEDIDOS_NAV : CENTRAL_NAV;
 
   return (

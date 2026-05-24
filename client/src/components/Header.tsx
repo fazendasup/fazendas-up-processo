@@ -60,6 +60,7 @@ import {
   Brain,
   Sparkles,
   Briefcase,
+  ShoppingBasket,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/_core/hooks/useAuth';
@@ -97,6 +98,7 @@ const ANALISE_VISAO: NavItem = { href: '/visao', label: 'Visão do cultivo', ico
 
 const COMERCIAL_ITEMS: NavItem[] = [
   { href: '/comercial/pedidos', label: 'Pedidos', icon: CalendarClock, requiredRole: 'comercial' },
+  { href: '/comercial/estoque-vivo', label: 'Estoque vivo', icon: ShoppingBasket, requiredRole: 'comercial' },
   { href: '/comercial/dashboard', label: 'Painel comercial', icon: Briefcase, requiredRole: 'comercial' },
 ];
 
