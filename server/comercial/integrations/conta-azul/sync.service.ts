@@ -10,7 +10,10 @@ import {
   mapPessoaFromVendaClienteEmbutido,
   pessoaItemTemPerfilCliente,
   mapVendaBuscaItem,
+  mapVendaItensResponse,
   parseDataVendaContaAzul,
+  type ContaAzulPedidoItemPayload,
+  type ContaAzulProdutoCategoriaLookup,
   type ContaAzulPessoasListResponse,
 } from "./mappers";
 import { refreshAccessToken } from "./oauth.service";
@@ -27,16 +30,24 @@ import {
   type ComposicaoValorPedido,
 } from "../../lib/composicao-valor.js";
 import type { AxiosInstance } from "axios";
-import { contaAzulSyncDetailBudget, type ContaAzulSyncMode } from "./conta-azul-sync-detail-budget";
+import {
+  contaAzulSyncDetailBudget,
+  type ContaAzulSyncMode,
+} from "./conta-azul-sync-detail-budget";
 
 export async function ensureValidAccessToken(prisma: PrismaClient, env: Env) {
-  const cred = await prisma.integrationCredential.findUnique({ where: { provider: "CONTA_AZUL" } });
+  const cred = await prisma.integrationCredential.findUnique({
+    where: { provider: "CONTA_AZUL" },
+  });
   if (!cred?.accessToken) return null;
-  if (!cred.expiresAt || cred.expiresAt.getTime() > Date.now() + 60_000) return cred;
+  if (!cred.expiresAt || cred.expiresAt.getTime() > Date.now() + 60_000)
+    return cred;
   if (!cred.refreshToken) return cred;
 
   const refreshed = await refreshAccessToken(env, cred.refreshToken);
-  const expiresAt = refreshed.expires_in ? new Date(Date.now() + refreshed.expires_in * 1000) : null;
+  const expiresAt = refreshed.expires_in
+    ? new Date(Date.now() + refreshed.expires_in * 1000)
+    : null;
 
   return prisma.integrationCredential.update({
     where: { provider: "CONTA_AZUL" },
@@ -45,7 +56,9 @@ export async function ensureValidAccessToken(prisma: PrismaClient, env: Env) {
       refreshToken: refreshed.refresh_token ?? cred.refreshToken,
       expiresAt,
       metadata: {
-        ...(typeof cred.metadata === "object" && cred.metadata ? (cred.metadata as Record<string, unknown>) : {}),
+        ...(typeof cred.metadata === "object" && cred.metadata
+          ? (cred.metadata as Record<string, unknown>)
+          : {}),
         tokenType: refreshed.token_type ?? "Bearer",
       },
     },
@@ -67,7 +80,8 @@ function formatContaAzulDataAlteracao(d: Date): string {
     second: "2-digit",
     hour12: false,
   }).formatToParts(d);
-  const get = (t: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === t)?.value ?? "00";
+  const get = (t: Intl.DateTimeFormatPartTypes) =>
+    parts.find(p => p.type === t)?.value ?? "00";
   const y = get("year");
   const mo = get("month").padStart(2, "0");
   const day = get("day").padStart(2, "0");
@@ -124,7 +138,11 @@ function vendasBuscaRange(dias: number): { start: Date; end: Date } {
   return { start, end };
 }
 
-function buildVendasBuscaPath(pagina: number, dias: number, tamanhoPagina: number): string {
+function buildVendasBuscaPath(
+  pagina: number,
+  dias: number,
+  tamanhoPagina: number
+): string {
   const { start, end } = vendasBuscaRange(dias);
   const qs = new URLSearchParams({
     pagina: String(pagina),
@@ -145,6 +163,7 @@ type ResolveComposicaoResult = {
   composicaoDetalhada: boolean;
   ignorar?: boolean;
   statusPedido?: string;
+  itens?: ContaAzulPedidoItemPayload[];
 };
 
 export type { ContaAzulSyncMode } from "./conta-azul-sync-detail-budget";
@@ -153,17 +172,26 @@ async function fetchComposicaoDetalheVenda(
   http: AxiosInstance,
   vendaId: string,
   totalFallback: number,
-  ctx: ResolveComposicaoCtx,
+  ctx: ResolveComposicaoCtx
 ): Promise<ResolveComposicaoResult | null> {
   if (ctx.detailBudget.remaining <= 0) return null;
   ctx.detailBudget.remaining--;
   try {
-    const detail = await contaAzulGet<unknown>(http, `/v1/venda/${encodeURIComponent(vendaId)}`);
+    const detail = await contaAzulGet<unknown>(
+      http,
+      `/v1/venda/${encodeURIComponent(vendaId)}`
+    );
     const meta = extrairMetadadosVendaDetalhe(detail);
     if (vendaDetalheDeveSerIgnorada(meta)) {
-      return { composicao: composicaoFromTotalApenas(0), composicaoDetalhada: true, ignorar: true };
+      return {
+        composicao: composicaoFromTotalApenas(0),
+        composicaoDetalhada: true,
+        ignorar: true,
+      };
     }
-    const fromDetail = meta.composicao ?? normalizarComposicao(composicaoFromVendaDetalhe(detail), totalFallback);
+    const fromDetail =
+      meta.composicao ??
+      normalizarComposicao(composicaoFromVendaDetalhe(detail), totalFallback);
     return {
       composicao: fromDetail ?? composicaoFromTotalApenas(totalFallback),
       composicaoDetalhada: Boolean(fromDetail),
@@ -171,7 +199,35 @@ async function fetchComposicaoDetalheVenda(
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    logger.warn({ vendaId, err: msg }, "Conta Azul: detalhe da venda indisponível");
+    logger.warn(
+      { vendaId, err: msg },
+      "Conta Azul: detalhe da venda indisponível"
+    );
+    if (/\(429\)/.test(msg)) ctx.detailBudget.remaining = 0;
+    return null;
+  }
+}
+
+async function fetchItensVenda(
+  http: AxiosInstance,
+  vendaId: string,
+  ctx: ResolveComposicaoCtx,
+  catalogoProdutos: ContaAzulProdutoCategoriaLookup[]
+): Promise<ContaAzulPedidoItemPayload[] | null> {
+  if (ctx.detailBudget.remaining <= 0) return null;
+  ctx.detailBudget.remaining--;
+  try {
+    const raw = await contaAzulGet<unknown>(
+      http,
+      `/v1/venda/${encodeURIComponent(vendaId)}/itens`
+    );
+    return mapVendaItensResponse(raw, catalogoProdutos);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    logger.warn(
+      { vendaId, err: msg },
+      "Conta Azul: itens da venda indisponíveis"
+    );
     if (/\(429\)/.test(msg)) ctx.detailBudget.remaining = 0;
     return null;
   }
@@ -182,6 +238,7 @@ async function enriquecerComposicaoPedidosPendentes(
   prisma: PrismaClient,
   http: AxiosInstance,
   ctx: ResolveComposicaoCtx,
+  catalogoProdutos: ContaAzulProdutoCategoriaLookup[]
 ): Promise<number> {
   if (ctx.detailBudget.remaining <= 0) return 0;
 
@@ -199,6 +256,7 @@ async function enriquecerComposicaoPedidosPendentes(
       valorDesconto: true,
       valorLiquido: true,
       composicaoDetalhada: true,
+      _count: { select: { itens: true } },
     },
     orderBy: { dataPedido: "desc" },
     take: Math.min(ctx.detailBudget.remaining, 5_000),
@@ -207,25 +265,52 @@ async function enriquecerComposicaoPedidosPendentes(
   let enriquecidos = 0;
   for (const p of candidatos) {
     if (ctx.detailBudget.remaining <= 0) break;
-    if (!pedidoPrecisaEnriquecerComposicao(p)) continue;
+    const precisaComposicao = pedidoPrecisaEnriquecerComposicao(p);
+    const precisaItens = p._count.itens === 0;
+    if (!precisaComposicao && !precisaItens) continue;
     const totalFallback = Number(p.valorLiquido ?? p.valorTotal ?? 0);
-    const detailResult = await fetchComposicaoDetalheVenda(http, p.externalId!, totalFallback, ctx);
-    if (!detailResult) continue;
-    if (detailResult.ignorar) {
+    const [detailResult, itens] = await Promise.all([
+      precisaComposicao
+        ? fetchComposicaoDetalheVenda(http, p.externalId!, totalFallback, ctx)
+        : Promise.resolve(null),
+      precisaItens
+        ? fetchItensVenda(http, p.externalId!, ctx, catalogoProdutos)
+        : Promise.resolve(null),
+    ]);
+    if (detailResult?.ignorar) {
       await prisma.pedido.delete({ where: { id: p.id } });
       continue;
     }
+    if (!detailResult && !itens?.length) continue;
 
     await prisma.pedido.update({
       where: { id: p.id },
       data: {
-        valorTotal: detailResult.composicao.valorLiquido,
-        valorBruto: detailResult.composicao.valorBruto,
-        valorFrete: detailResult.composicao.valorFrete,
-        valorDesconto: detailResult.composicao.valorDesconto,
-        valorLiquido: detailResult.composicao.valorLiquido,
-        composicaoDetalhada: detailResult.composicaoDetalhada,
-        statusPedido: detailResult.statusPedido ?? undefined,
+        ...(detailResult
+          ? {
+              valorTotal: detailResult.composicao.valorLiquido,
+              valorBruto: detailResult.composicao.valorBruto,
+              valorFrete: detailResult.composicao.valorFrete,
+              valorDesconto: detailResult.composicao.valorDesconto,
+              valorLiquido: detailResult.composicao.valorLiquido,
+              composicaoDetalhada: detailResult.composicaoDetalhada,
+              statusPedido: detailResult.statusPedido ?? undefined,
+            }
+          : {}),
+        ...(itens?.length
+          ? {
+              itens: {
+                deleteMany: {},
+                create: itens.map(i => ({
+                  sku: i.sku ?? null,
+                  produto: i.nome,
+                  categoria: i.categoria ?? null,
+                  quantidade: i.qtd ?? 1,
+                  precoUnit: i.preco ?? 0,
+                })),
+              },
+            }
+          : {}),
       },
     });
     enriquecidos++;
@@ -239,23 +324,36 @@ async function resolveComposicaoVenda(
   totalFallback: number,
   vendaId: string,
   ctx: ResolveComposicaoCtx,
+  catalogoProdutos: ContaAzulProdutoCategoriaLookup[]
 ): Promise<ResolveComposicaoResult> {
-  const fromBusca = normalizarComposicao(composicaoFromVendaBuscaItem(raw), totalFallback);
+  const fromBusca = normalizarComposicao(
+    composicaoFromVendaBuscaItem(raw),
+    totalFallback
+  );
+  const itensPromise = fetchItensVenda(http, vendaId, ctx, catalogoProdutos);
 
   if (!precisaDetalheComposicao(fromBusca, totalFallback)) {
     return {
       composicao: fromBusca ?? composicaoFromTotalApenas(totalFallback),
       composicaoDetalhada: Boolean(fromBusca),
+      itens: (await itensPromise) ?? undefined,
     };
   }
 
   if (ctx.detailBudget.remaining <= 0) {
-    return { composicao: fromBusca ?? composicaoFromTotalApenas(totalFallback), composicaoDetalhada: false };
+    return {
+      composicao: fromBusca ?? composicaoFromTotalApenas(totalFallback),
+      composicaoDetalhada: false,
+      itens: (await itensPromise) ?? undefined,
+    };
   }
 
   ctx.detailBudget.remaining--;
   try {
-    const detail = await contaAzulGet<unknown>(http, `/v1/venda/${encodeURIComponent(vendaId)}`);
+    const detail = await contaAzulGet<unknown>(
+      http,
+      `/v1/venda/${encodeURIComponent(vendaId)}`
+    );
     const meta = extrairMetadadosVendaDetalhe(detail);
     if (vendaDetalheDeveSerIgnorada(meta)) {
       return {
@@ -264,23 +362,36 @@ async function resolveComposicaoVenda(
         ignorar: true,
       };
     }
-    const fromDetail = meta.composicao ?? normalizarComposicao(composicaoFromVendaDetalhe(detail), totalFallback);
+    const fromDetail =
+      meta.composicao ??
+      normalizarComposicao(composicaoFromVendaDetalhe(detail), totalFallback);
     return {
       composicao: fromDetail ?? composicaoFromTotalApenas(totalFallback),
       composicaoDetalhada: Boolean(fromDetail),
       statusPedido: meta.situacaoNome ?? undefined,
+      itens: (await itensPromise) ?? undefined,
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    logger.warn({ vendaId, err: msg }, "Conta Azul: detalhe da venda indisponível — usando total da busca");
+    logger.warn(
+      { vendaId, err: msg },
+      "Conta Azul: detalhe da venda indisponível — usando total da busca"
+    );
     if (/\(429\)/.test(msg)) ctx.detailBudget.remaining = 0;
   }
 
-  return { composicao: fromBusca ?? composicaoFromTotalApenas(totalFallback), composicaoDetalhada: false };
+  return {
+    composicao: fromBusca ?? composicaoFromTotalApenas(totalFallback),
+    composicaoDetalhada: false,
+    itens: (await itensPromise) ?? undefined,
+  };
 }
 
 /** Busca todas as páginas de vendas no período (histórico), até limite de segurança. */
-async function fetchTodasVendasBusca(http: AxiosInstance, env: Env): Promise<unknown[]> {
+async function fetchTodasVendasBusca(
+  http: AxiosInstance,
+  env: Env
+): Promise<unknown[]> {
   const dias = env.CONTA_AZUL_VENDAS_SYNC_DIAS;
   const tamanho = 200;
   const todas: unknown[] = [];
@@ -293,7 +404,8 @@ async function fetchTodasVendasBusca(http: AxiosInstance, env: Env): Promise<unk
     todas.push(...batch);
     if (batch.length === 0) break;
     if (batch.length < tamanho) break;
-    if (typeof res.total_itens === "number" && todas.length >= res.total_itens) break;
+    if (typeof res.total_itens === "number" && todas.length >= res.total_itens)
+      break;
   }
   return todas;
 }
@@ -301,7 +413,7 @@ async function fetchTodasVendasBusca(http: AxiosInstance, env: Env): Promise<unk
 async function removerVendasForaDaBuscaAtual(
   prisma: PrismaClient,
   env: Env,
-  vendaIdsAtuais: Set<string>,
+  vendaIdsAtuais: Set<string>
 ): Promise<number> {
   if (vendaIdsAtuais.size === 0) return 0;
   const { start, end } = vendasBuscaRange(env.CONTA_AZUL_VENDAS_SYNC_DIAS);
@@ -334,13 +446,15 @@ export function isContaAzulSyncEmAndamento(): boolean {
   return syncEmAndamento != null;
 }
 
-export type IniciarSyncContaAzulResult = { status: "started" } | { status: "already_running" };
+export type IniciarSyncContaAzulResult =
+  | { status: "started" }
+  | { status: "already_running" };
 
 /** Dispara sync sem bloquear a requisição HTTP (evita timeout do navegador/proxy). */
 export function iniciarSyncContaAzulEmBackground(
   prisma: PrismaClient,
   env: Env,
-  mode: ContaAzulSyncMode = "manual",
+  mode: ContaAzulSyncMode = "manual"
 ): IniciarSyncContaAzulResult {
   if (syncEmAndamento) return { status: "already_running" };
   const execucao = executarContaAzulSync(prisma, env, mode);
@@ -354,11 +468,13 @@ export function iniciarSyncContaAzulEmBackground(
 export async function runContaAzulSync(
   prisma: PrismaClient,
   env: Env,
-  options?: { mode?: ContaAzulSyncMode; skipIfBusy?: boolean },
+  options?: { mode?: ContaAzulSyncMode; skipIfBusy?: boolean }
 ): Promise<ContaAzulSyncResult> {
   if (syncEmAndamento) {
     if (options?.skipIfBusy) {
-      logger.info("Conta Azul: sync ignorado — outra sincronização já está em andamento");
+      logger.info(
+        "Conta Azul: sync ignorado — outra sincronização já está em andamento"
+      );
       return {
         clientesProcessados: 0,
         vendasRecebidas: 0,
@@ -367,7 +483,7 @@ export async function runContaAzulSync(
       };
     }
     throw new Error(
-      "Já existe uma sincronização Conta Azul em andamento. Aguarde terminar (pode levar vários minutos) antes de clicar de novo.",
+      "Já existe uma sincronização Conta Azul em andamento. Aguarde terminar (pode levar vários minutos) antes de clicar de novo."
     );
   }
 
@@ -384,7 +500,7 @@ export async function runContaAzulSync(
 async function executarContaAzulSync(
   prisma: PrismaClient,
   env: Env,
-  mode: ContaAzulSyncMode,
+  mode: ContaAzulSyncMode
 ): Promise<ContaAzulSyncResult> {
   const started = Date.now();
   const composicaoCtx: ResolveComposicaoCtx = {
@@ -396,11 +512,16 @@ async function executarContaAzulSync(
       data: {
         acaoApi: AcaoApi.SYNC_CA,
         statusExecucao: StatusExecucaoApi.FALHA,
-        detalhesExecucao: { step: "token", message: "Sem access token configurado" },
+        detalhesExecucao: {
+          step: "token",
+          message: "Sem access token configurado",
+        },
         duracaoMs: Date.now() - started,
       },
     });
-    throw new Error("Conta Azul: sem token — conclua OAuth em /integrations/conta-azul/auth");
+    throw new Error(
+      "Conta Azul: sem token — conclua OAuth em /integrations/conta-azul/auth"
+    );
   }
 
   try {
@@ -416,7 +537,10 @@ async function executarContaAzulSync(
     const pathPessoas = buildPessoasPath(cursor);
     let pessoasRes: ContaAzulPessoasListResponse;
     try {
-      pessoasRes = await contaAzulGet<ContaAzulPessoasListResponse>(http, pathPessoas);
+      pessoasRes = await contaAzulGet<ContaAzulPessoasListResponse>(
+        http,
+        pathPessoas
+      );
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       const podeTentarSemFiltro =
@@ -425,9 +549,12 @@ async function executarContaAzulSync(
       if (podeTentarSemFiltro) {
         logger.warn(
           { err: e },
-          "Conta Azul GET /v1/pessoas com filtro de data falhou; repetindo sem data_alteracao_*",
+          "Conta Azul GET /v1/pessoas com filtro de data falhou; repetindo sem data_alteracao_*"
         );
-        pessoasRes = await contaAzulGet<ContaAzulPessoasListResponse>(http, buildPessoasPath(null));
+        pessoasRes = await contaAzulGet<ContaAzulPessoasListResponse>(
+          http,
+          buildPessoasPath(null)
+        );
       } else {
         throw e;
       }
@@ -439,7 +566,10 @@ async function executarContaAzulSync(
 
     for (const raw of rawItems) {
       if (!pessoaItemTemPerfilCliente(raw)) {
-        logger.debug({ id: raw.id, nome: raw.nome, perfis: raw.perfis }, "Pessoa ignorada (sem perfil Cliente)");
+        logger.debug(
+          { id: raw.id, nome: raw.nome, perfis: raw.perfis },
+          "Pessoa ignorada (sem perfil Cliente)"
+        );
         continue;
       }
       const p = mapPessoaApiItem(raw);
@@ -459,7 +589,8 @@ async function executarContaAzulSync(
       });
 
       if (raw.data_alteracao) {
-        if (!maxAlteracao || raw.data_alteracao > maxAlteracao) maxAlteracao = raw.data_alteracao;
+        if (!maxAlteracao || raw.data_alteracao > maxAlteracao)
+          maxAlteracao = raw.data_alteracao;
       }
     }
 
@@ -467,6 +598,10 @@ async function executarContaAzulSync(
 
     const vendasItens = await fetchTodasVendasBusca(http, env);
     const vendaIdsAtuais = new Set<string>();
+    const catalogoProdutos = await prisma.produtoComercial.findMany({
+      where: { ativo: true },
+      select: { nome: true, categoria: true },
+    });
 
     let pedidosGravados = 0;
     for (const raw of vendasItens) {
@@ -475,7 +610,9 @@ async function executarContaAzulSync(
       const { clienteExternalId, payload } = mapped;
       if (!payload.id) continue;
       vendaIdsAtuais.add(payload.id);
-      let cli = await prisma.cliente.findUnique({ where: { externalId: clienteExternalId } });
+      let cli = await prisma.cliente.findUnique({
+        where: { externalId: clienteExternalId },
+      });
       if (!cli) {
         const pessoaVenda = mapPessoaFromVendaClienteEmbutido(raw);
         if (pessoaVenda?.id) {
@@ -497,7 +634,7 @@ async function executarContaAzulSync(
       if (!cli) {
         logger.warn(
           { clienteExternalId, vendaId: payload.id },
-          "Venda Conta Azul sem cliente local e sem dados de cliente na venda.",
+          "Venda Conta Azul sem cliente local e sem dados de cliente na venda."
         );
         continue;
       }
@@ -508,15 +645,26 @@ async function executarContaAzulSync(
         payload.total ?? 0,
         payload.id,
         composicaoCtx,
+        catalogoProdutos
       );
       if (resolved.ignorar) {
         await prisma.pedido.deleteMany({ where: { externalId: payload.id } });
         continue;
       }
       const { composicao, composicaoDetalhada, statusPedido } = resolved;
+      const payloadComItens = {
+        ...payload,
+        itens: resolved.itens?.length ? resolved.itens : payload.itens,
+      };
       await prisma.pedido.upsert({
         where: { externalId: payload.id },
-        create: mapPedidoCreate(cli.id, payload, composicao, composicaoDetalhada, statusPedido),
+        create: mapPedidoCreate(
+          cli.id,
+          payloadComItens,
+          composicao,
+          composicaoDetalhada,
+          statusPedido
+        ),
         update: {
           dataPedido,
           valorTotal: composicao.valorLiquido,
@@ -526,13 +674,36 @@ async function executarContaAzulSync(
           valorLiquido: composicao.valorLiquido,
           composicaoDetalhada,
           statusPedido: statusPedido ?? payload.status ?? "SYNC",
+          ...(payloadComItens.itens?.length
+            ? {
+                itens: {
+                  deleteMany: {},
+                  create: payloadComItens.itens.map(i => ({
+                    sku: i.sku ?? null,
+                    produto: i.nome,
+                    categoria: i.categoria ?? null,
+                    quantidade: i.qtd ?? 1,
+                    precoUnit: i.preco ?? 0,
+                  })),
+                },
+              }
+            : {}),
         },
       });
       pedidosGravados++;
     }
 
-    const pedidosRemovidosForaDaBusca = await removerVendasForaDaBuscaAtual(prisma, env, vendaIdsAtuais);
-    const composicaoEnriquecidos = await enriquecerComposicaoPedidosPendentes(prisma, http, composicaoCtx);
+    const pedidosRemovidosForaDaBusca = await removerVendasForaDaBuscaAtual(
+      prisma,
+      env,
+      vendaIdsAtuais
+    );
+    const composicaoEnriquecidos = await enriquecerComposicaoPedidosPendentes(
+      prisma,
+      http,
+      composicaoCtx,
+      catalogoProdutos
+    );
 
     const intel = await runInteligenciaComercial(prisma);
 
@@ -569,7 +740,7 @@ async function executarContaAzulSync(
         pedidosGravados,
         intelOportunidades: intel.oportunidadesCriadas,
       },
-      "Sync Conta Azul concluído",
+      "Sync Conta Azul concluído"
     );
 
     return {

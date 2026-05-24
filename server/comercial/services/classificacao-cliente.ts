@@ -18,6 +18,21 @@ export type SinaisVenda = {
   produtoPrincipal: string | null;
   diversidadeCategorias: number;
   mesesAtivos: number;
+  categoriasDetalhe: Array<{
+    nome: string;
+    valor: number;
+    quantidade: number;
+    pedidos: number;
+    participacaoValor: number;
+  }>;
+  produtosDetalhe: Array<{
+    nome: string;
+    categoria: string | null;
+    valor: number;
+    quantidade: number;
+    pedidos: number;
+    participacaoValor: number;
+  }>;
 };
 
 type PedidoComItens = Pedido & {
@@ -25,6 +40,7 @@ type PedidoComItens = Pedido & {
     produto: string;
     categoria?: string | null;
     quantidade?: unknown;
+    precoUnit?: unknown;
   }>;
 };
 
@@ -44,6 +60,8 @@ function sinalVazio(): SinaisVenda {
     produtoPrincipal: null,
     diversidadeCategorias: 0,
     mesesAtivos: 0,
+    categoriasDetalhe: [],
+    produtosDetalhe: [],
   };
 }
 
@@ -63,6 +81,45 @@ function topKey(map: Map<string, number>): string | null {
       (a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-BR")
     )[0]?.[0] ?? null
   );
+}
+
+type ItemStats = { valor: number; quantidade: number; pedidos: Set<string> };
+
+function addStats(
+  map: Map<string, ItemStats>,
+  key: string | null | undefined,
+  valor: number,
+  quantidade: number,
+  pedidoId: string
+) {
+  const k = String(key ?? "").trim();
+  if (!k) return;
+  const acc = map.get(k) ?? {
+    valor: 0,
+    quantidade: 0,
+    pedidos: new Set<string>(),
+  };
+  acc.valor += valor;
+  acc.quantidade += quantidade;
+  acc.pedidos.add(pedidoId);
+  map.set(k, acc);
+}
+
+function detalhesOrdenados(map: Map<string, ItemStats>, total: number) {
+  return Array.from(map.entries())
+    .map(([nome, s]) => ({
+      nome,
+      valor: s.valor,
+      quantidade: s.quantidade,
+      pedidos: s.pedidos.size,
+      participacaoValor: total > 0 ? s.valor / total : 0,
+    }))
+    .sort(
+      (a, b) =>
+        b.valor - a.valor ||
+        b.quantidade - a.quantidade ||
+        a.nome.localeCompare(b.nome, "pt-BR")
+    );
 }
 
 export function extrairSinaisDePedidos(
@@ -105,6 +162,9 @@ export function extrairSinaisDePedidos(
   const meses = new Set<string>();
   const categoriasCount = new Map<string, number>();
   const produtosCount = new Map<string, number>();
+  const categoriasStats = new Map<string, ItemStats>();
+  const produtosStats = new Map<string, ItemStats>();
+  const produtoCategoria = new Map<string, string | null>();
 
   for (const p of vendas) {
     const valor = valorPedido(p);
@@ -116,16 +176,16 @@ export function extrairSinaisDePedidos(
     );
     for (const item of p.itens ?? []) {
       const qtd = Number(item.quantidade ?? 1);
-      addCount(
-        categoriasCount,
-        item.categoria,
-        Number.isFinite(qtd) && qtd > 0 ? qtd : 1
-      );
-      addCount(
-        produtosCount,
-        item.produto,
-        Number.isFinite(qtd) && qtd > 0 ? qtd : 1
-      );
+      const preco = Number(item.precoUnit ?? 0);
+      const quantidade = Number.isFinite(qtd) && qtd > 0 ? qtd : 1;
+      const valorItem =
+        Number.isFinite(preco) && preco > 0 ? quantidade * preco : 0;
+      addCount(categoriasCount, item.categoria, quantidade);
+      addCount(produtosCount, item.produto, quantidade);
+      addStats(categoriasStats, item.categoria, valorItem, quantidade, p.id);
+      addStats(produtosStats, item.produto, valorItem, quantidade, p.id);
+      if (item.produto?.trim())
+        produtoCategoria.set(item.produto, item.categoria ?? null);
     }
   }
 
@@ -135,6 +195,18 @@ export function extrairSinaisDePedidos(
       : valorUltimos30 > 0
         ? 1
         : null;
+
+  const categoriasDetalhe = detalhesOrdenados(
+    categoriasStats,
+    valorTotalPeriodo
+  );
+  const produtosDetalhe = detalhesOrdenados(
+    produtosStats,
+    valorTotalPeriodo
+  ).map(p => ({
+    ...p,
+    categoria: produtoCategoria.get(p.nome) ?? null,
+  }));
 
   return {
     diasSemCompra,
@@ -155,6 +227,8 @@ export function extrairSinaisDePedidos(
     produtoPrincipal: topKey(produtosCount),
     diversidadeCategorias: categoriasCount.size,
     mesesAtivos: meses.size,
+    categoriasDetalhe,
+    produtosDetalhe,
   };
 }
 

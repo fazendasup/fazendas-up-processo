@@ -29,7 +29,17 @@ type AnaliseCarteira = {
   ticketP50: number;
   ticketP75: number;
   valorP75: number;
-  categoriasMaisVendidas: string[];
+  categoriasMaisVendidas: Array<{
+    nome: string;
+    valorMedioCliente: number;
+    clientes: number;
+  }>;
+  produtosMaisVendidos: Array<{
+    nome: string;
+    categoria: string | null;
+    valorMedioCliente: number;
+    clientes: number;
+  }>;
 };
 
 function nomeCurto(nome: string): string {
@@ -115,6 +125,13 @@ function arredondarPotencial(valor: number): number {
   return Math.round(valor / 100) * 100;
 }
 
+function listarNomes(items: string[], max = 3): string {
+  const visiveis = items.filter(Boolean).slice(0, max);
+  if (visiveis.length === 0) return "sem item identificado";
+  if (visiveis.length === 1) return visiveis[0]!;
+  return `${visiveis.slice(0, -1).join(", ")} e ${visiveis[visiveis.length - 1]}`;
+}
+
 function prioridadeAnalitica(
   op: OportunidadeGerada,
   sinais: SinaisVenda,
@@ -165,11 +182,32 @@ export function gerarOportunidadesSugeridas(
   const vol = sinais.valorTotalPeriodo;
   const nPed = sinais.totalPedidos;
   const receitaMensal = sinais.mesesAtivos > 0 ? vol / sinais.mesesAtivos : vol;
-  const categoriaRef = sinais.categoriaPrincipal ?? "perfil atual";
-  const produtoRef = sinais.produtoPrincipal ?? "base histórica";
+  const categoriasAtuais = sinais.categoriasDetalhe.map(c => c.nome);
+  const produtosAtuais = sinais.produtosDetalhe.map(p => p.nome);
+  const categoriaRef =
+    sinais.categoriasDetalhe[0]?.nome ?? sinais.categoriaPrincipal;
+  const produtoRef = sinais.produtosDetalhe[0]?.nome ?? sinais.produtoPrincipal;
   const categoriaGap = carteira.categoriasMaisVendidas.find(
-    cat => !sinais.categorias.includes(cat)
+    cat => !sinais.categorias.includes(cat.nome)
   );
+  const produtoGap =
+    carteira.produtosMaisVendidos.find(
+      p =>
+        (!categoriaGap || p.categoria === categoriaGap.nome) &&
+        !sinais.produtos.some(
+          comprado =>
+            comprado.localeCompare(p.nome, "pt-BR", { sensitivity: "base" }) ===
+            0
+        )
+    ) ??
+    carteira.produtosMaisVendidos.find(
+      p =>
+        !sinais.produtos.some(
+          comprado =>
+            comprado.localeCompare(p.nome, "pt-BR", { sensitivity: "base" }) ===
+            0
+        )
+    );
   const ticketRelativo =
     carteira.ticketP75 > 0 ? sinais.ticketMedio / carteira.ticketP75 : 1;
   const volumeRelativo = carteira.valorP75 > 0 ? vol / carteira.valorP75 : 1;
@@ -180,7 +218,7 @@ export function gerarOportunidadesSugeridas(
     const valorEst = arredondarPotencial(Math.max(250, base));
     out.push({
       tipo: "REATIVACAO",
-      texto: `${nm}: reativação por recência/tendência — ${dias} dias sem compra, variação 30d ${pct(sinais.tendenciaReceitaPct)}, histórico ${nPed} venda(s), ticket médio ${fmtBrl(sinais.ticketMedio)}.`,
+      texto: `${nm}: reativação orientada pelo histórico — ${dias} dias sem compra e variação 30d ${pct(sinais.tendenciaReceitaPct)}. Retomar com os itens que já provaram aderência (${listarNomes(produtosAtuais)}) antes de ofertar novos produtos; ticket médio ${fmtBrl(sinais.ticketMedio)} em ${nPed} venda(s).`,
       valorEstimado: valorEst,
       probabilidade: probabilidadeDerivada(sinais, "REATIVACAO", emRisco),
     });
@@ -201,7 +239,7 @@ export function gerarOportunidadesSugeridas(
     );
     out.push({
       tipo: "UPSELL",
-      texto: `${nm}: upsell por cliente acima da curva — ticket ${fmtBrl(sinais.ticketMedio)} (${Math.round(ticketRelativo * 100)}% do P75), ${sinais.frequenciaPorSemana.toFixed(1)} compra(s)/semana, categoria forte: ${categoriaRef}.`,
+      texto: `${nm}: upsell por aumento de volume — compra ${listarNomes(produtosAtuais)} em ${sinais.frequenciaPorSemana.toFixed(1)} venda(s)/semana; ticket ${fmtBrl(sinais.ticketMedio)} (${Math.round(ticketRelativo * 100)}% do P75). Ação: negociar recorrência/volume nos itens líderes da categoria ${categoriaRef ?? "principal"}.`,
       valorEstimado: valorEst,
       probabilidade: probabilidadeDerivada(sinais, "UPSELL", emRisco),
     });
@@ -209,6 +247,7 @@ export function gerarOportunidadesSugeridas(
 
   if (
     categoriaGap &&
+    produtoGap &&
     sinais.totalPedidos >= 2 &&
     sinais.diversidadeCategorias <= 2
   ) {
@@ -216,14 +255,14 @@ export function gerarOportunidadesSugeridas(
       Math.max(
         300,
         Math.min(
-          receitaMensal * 0.32,
+          receitaMensal * 0.32 + categoriaGap.valorMedioCliente * 0.18,
           sinais.ticketMedio * (1.6 + sinais.diversidadeCategorias * 0.25)
         )
       )
     );
     out.push({
       tipo: "CROSS_SELL",
-      texto: `${nm}: cross-sell por mix concentrado — compra ${categoriaRef || produtoRef}, mas ainda não compra ${categoriaGap}; ${sinais.diversidadeCategorias} categoria(s) em ${nPed} venda(s).`,
+      texto: `${nm}: cross-sell por lacuna real de mix — hoje compra ${listarNomes(categoriasAtuais)} (${listarNomes(produtosAtuais)}), mas não compra ${categoriaGap.nome}. Ação: ofertar ${produtoGap.nome}, produto forte em clientes semelhantes; mix atual tem ${sinais.diversidadeCategorias} categoria(s) em ${nPed} venda(s).`,
       valorEstimado: valorEst,
       probabilidade: probabilidadeDerivada(sinais, "CROSS_SELL", emRisco),
     });
@@ -233,12 +272,12 @@ export function gerarOportunidadesSugeridas(
     const valorEst = arredondarPotencial(
       Math.max(250, Math.min(900, sinais.ticketMedio * (1.1 + nPed * 0.05)))
     );
-    const baseHistorica = sinais.produtoPrincipal
-      ? `base em ${sinais.produtoPrincipal}`
-      : "base histórica sem itens detalhados";
+    const baseHistorica = produtoRef
+      ? `base em ${produtoRef}`
+      : "base histórica ainda sem itens detalhados";
     out.push({
       tipo: "NOVO_PRODUTO",
-      texto: `${nm}: teste controlado — ${nPed} venda(s), ticket ${fmtBrl(sinais.ticketMedio)}, ${baseHistorica}; validar 1 nova linha de baixo risco comercial.`,
+      texto: `${nm}: teste controlado de novo produto — ${nPed} venda(s), ticket ${fmtBrl(sinais.ticketMedio)}, ${baseHistorica}. Ação: testar ${produtoGap?.nome ?? "uma linha complementar"} com meta pequena e medir recompra antes de escalar.`,
       valorEstimado: valorEst,
       probabilidade: probabilidadeDerivada(sinais, "NOVO_PRODUTO", emRisco),
     });
@@ -285,13 +324,37 @@ export async function runInteligenciaComercial(
   }
 
   const sinaisPorCliente = new Map<string, SinaisVenda>();
-  const categoriasCount = new Map<string, number>();
+  const categoriasCarteira = new Map<
+    string,
+    { valor: number; clientes: Set<string> }
+  >();
+  const produtosCarteira = new Map<
+    string,
+    { categoria: string | null; valor: number; clientes: Set<string> }
+  >();
 
   for (const c of clientes) {
     const sinais = extrairSinaisDePedidos(porCliente.get(c.id) ?? []);
     sinaisPorCliente.set(c.id, sinais);
-    for (const cat of sinais.categorias) {
-      categoriasCount.set(cat, (categoriasCount.get(cat) ?? 0) + 1);
+    for (const cat of sinais.categoriasDetalhe) {
+      const acc = categoriasCarteira.get(cat.nome) ?? {
+        valor: 0,
+        clientes: new Set<string>(),
+      };
+      acc.valor += cat.valor;
+      acc.clientes.add(c.id);
+      categoriasCarteira.set(cat.nome, acc);
+    }
+    for (const prod of sinais.produtosDetalhe) {
+      const acc = produtosCarteira.get(prod.nome) ?? {
+        categoria: prod.categoria,
+        valor: 0,
+        clientes: new Set<string>(),
+      };
+      acc.valor += prod.valor;
+      acc.clientes.add(c.id);
+      if (!acc.categoria && prod.categoria) acc.categoria = prod.categoria;
+      produtosCarteira.set(prod.nome, acc);
     }
   }
 
@@ -311,10 +374,30 @@ export async function runInteligenciaComercial(
       sinaisValidos.map(s => s.valorTotalPeriodo),
       0.75
     ),
-    categoriasMaisVendidas: Array.from(categoriasCount.entries())
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-BR"))
+    categoriasMaisVendidas: Array.from(categoriasCarteira.entries())
+      .map(([nome, s]) => ({
+        nome,
+        valorMedioCliente: s.clientes.size > 0 ? s.valor / s.clientes.size : 0,
+        clientes: s.clientes.size,
+      }))
+      .sort(
+        (a, b) =>
+          b.valorMedioCliente - a.valorMedioCliente || b.clientes - a.clientes
+      )
       .slice(0, 5)
-      .map(([cat]) => cat),
+      .map(c => c),
+    produtosMaisVendidos: Array.from(produtosCarteira.entries())
+      .map(([nome, s]) => ({
+        nome,
+        categoria: s.categoria,
+        valorMedioCliente: s.clientes.size > 0 ? s.valor / s.clientes.size : 0,
+        clientes: s.clientes.size,
+      }))
+      .sort(
+        (a, b) =>
+          b.valorMedioCliente - a.valorMedioCliente || b.clientes - a.clientes
+      )
+      .slice(0, 12),
   };
 
   let oportunidadesCriadas = 0;
