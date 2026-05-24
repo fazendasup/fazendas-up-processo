@@ -117,10 +117,15 @@ function formatDataCalendarioSp(d: Date): string {
   }).format(d);
 }
 
-function buildVendasBuscaPath(pagina: number, dias: number, tamanhoPagina: number): string {
+function vendasBuscaRange(dias: number): { start: Date; end: Date } {
   const end = new Date();
   const start = new Date();
   start.setDate(start.getDate() - dias);
+  return { start, end };
+}
+
+function buildVendasBuscaPath(pagina: number, dias: number, tamanhoPagina: number): string {
+  const { start, end } = vendasBuscaRange(dias);
   const qs = new URLSearchParams({
     pagina: String(pagina),
     tamanho_pagina: String(tamanhoPagina),
@@ -293,6 +298,26 @@ async function fetchTodasVendasBusca(http: AxiosInstance, env: Env): Promise<unk
   return todas;
 }
 
+async function removerVendasForaDaBuscaAtual(
+  prisma: PrismaClient,
+  env: Env,
+  vendaIdsAtuais: Set<string>,
+): Promise<number> {
+  if (vendaIdsAtuais.size === 0) return 0;
+  const { start, end } = vendasBuscaRange(env.CONTA_AZUL_VENDAS_SYNC_DIAS);
+  const result = await prisma.pedido.deleteMany({
+    where: {
+      origemPedido: "CONTA_AZUL",
+      externalId: { not: null, notIn: Array.from(vendaIdsAtuais) },
+      dataPedido: {
+        gte: parseDataVendaContaAzul(formatDataCalendarioSp(start)),
+        lte: new Date(`${formatDataCalendarioSp(end)}T23:59:59.999-03:00`),
+      },
+    },
+  });
+  return result.count;
+}
+
 export type ContaAzulSyncResult = {
   clientesProcessados: number;
   vendasRecebidas: number;
@@ -441,6 +466,7 @@ async function executarContaAzulSync(
     if (maxAlteracao) nextCursor = maxAlteracao;
 
     const vendasItens = await fetchTodasVendasBusca(http, env);
+    const vendaIdsAtuais = new Set<string>();
 
     let pedidosGravados = 0;
     for (const raw of vendasItens) {
@@ -448,6 +474,7 @@ async function executarContaAzulSync(
       if (!mapped) continue;
       const { clienteExternalId, payload } = mapped;
       if (!payload.id) continue;
+      vendaIdsAtuais.add(payload.id);
       let cli = await prisma.cliente.findUnique({ where: { externalId: clienteExternalId } });
       if (!cli) {
         const pessoaVenda = mapPessoaFromVendaClienteEmbutido(raw);
@@ -504,6 +531,7 @@ async function executarContaAzulSync(
       pedidosGravados++;
     }
 
+    const pedidosRemovidosForaDaBusca = await removerVendasForaDaBuscaAtual(prisma, env, vendaIdsAtuais);
     const composicaoEnriquecidos = await enriquecerComposicaoPedidosPendentes(prisma, http, composicaoCtx);
 
     const intel = await runInteligenciaComercial(prisma);
@@ -528,6 +556,7 @@ async function executarContaAzulSync(
           syncMode: mode,
           detalhesVendaRestantes: composicaoCtx.detailBudget.remaining,
           composicaoEnriquecidos,
+          pedidosRemovidosForaDaBusca,
         },
         duracaoMs: Date.now() - started,
       },
