@@ -90,11 +90,15 @@ const ANALISE_ADMIN_PREFIX: NavItem[] = [
   { href: '/capacidade', label: 'Capacidade', icon: LayoutGrid, requiredRole: 'admin' },
   { href: '/analytics', label: 'Analytics', icon: BarChart3, requiredRole: 'admin' },
   { href: '/custos-producao', label: 'Custos de produção', icon: Coins, requiredRole: 'admin' },
-  { href: '/comercial/dashboard', label: 'Comercial', icon: Briefcase, requiredRole: 'comercial' },
 ];
 
 const ANALISE_TODOS: NavItem = { href: '/inteligencia', label: 'Inteligência', icon: Brain };
 const ANALISE_VISAO: NavItem = { href: '/visao', label: 'Visão do cultivo', icon: Camera };
+
+const COMERCIAL_ITEMS: NavItem[] = [
+  { href: '/comercial/pedidos', label: 'Pedidos', icon: CalendarClock, requiredRole: 'comercial' },
+  { href: '/comercial/dashboard', label: 'Painel comercial', icon: Briefcase, requiredRole: 'comercial' },
+];
 
 const SISTEMA_EXTRAS_ADMIN: NavItem[] = [
   { href: '/receitas', label: 'Receitas e cadastros', icon: BookOpen, requiredRole: 'admin' },
@@ -185,9 +189,6 @@ export default function Header() {
       list.push(ANALISE_TODOS);
       list.push(ANALISE_VISAO);
     }
-    if (isComercial && !isAdmin) {
-      list.push({ href: '/comercial/dashboard', label: 'Comercial', icon: Briefcase, requiredRole: 'comercial' });
-    }
     return list.filter((item) => {
       if (item.requiredRole === "admin" && !isAdmin) return false;
       if (item.requiredRole === "comercial" && !canAccessComercial) return false;
@@ -195,6 +196,11 @@ export default function Header() {
       return true;
     });
   }, [canAccessComercial, isAdmin, isComercial, isLoggedIn, activeProjetoId, modulosAtivos]);
+
+  const comercialItems = useMemo(() => {
+    if (!isLoggedIn || activeProjetoId == null || !canAccessComercial) return [] as NavItem[];
+    return COMERCIAL_ITEMS.filter((item) => navPermitidoPorModulo(item.href, modulosAtivos));
+  }, [activeProjetoId, canAccessComercial, isLoggedIn, modulosAtivos]);
 
   const sistemaItems = useMemo(() => {
     if (!isLoggedIn) return [] as NavItem[];
@@ -213,6 +219,10 @@ export default function Header() {
   const analiseGroupActive = useMemo(
     () => analiseItems.some((item) => pathMatchesNav(location, item.href)),
     [location, analiseItems],
+  );
+  const comercialGroupActive = useMemo(
+    () => comercialItems.some((item) => pathMatchesNav(location, item.href)),
+    [location, comercialItems],
   );
   const sistemaGroupActive = useMemo(
     () => sistemaItems.some((item) => pathMatchesNav(location, item.href)),
@@ -316,6 +326,43 @@ export default function Header() {
               </Link>
             );
           })}
+
+          {comercialItems.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    'app-nav-pill',
+                    comercialGroupActive
+                      ? 'app-nav-pill-active'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/80',
+                  )}
+                  aria-haspopup="menu"
+                >
+                  <Briefcase className="w-3 h-3" />
+                  <span className="hidden 2xl:inline">Comercial</span>
+                  <ChevronDown className="w-2.5 h-2.5 hidden 2xl:inline opacity-60" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                {comercialItems.map((item) => {
+                  const sub = pathMatchesNav(location, item.href);
+                  return (
+                    <DropdownMenuItem key={item.href} asChild>
+                      <Link
+                        href={item.href}
+                        className={cn('flex w-full items-center gap-2 cursor-pointer', sub && 'bg-accent/40')}
+                      >
+                        <item.icon className="w-4 h-4 shrink-0" />
+                        <span className="flex-1">{item.label}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           {analiseItems.length > 0 &&
             (analiseItems.length > 1 ? (
@@ -574,6 +621,27 @@ export default function Header() {
                         </DropdownMenuItem>
                       );
                     })}
+                    {comercialItems.length > 0 && (
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="py-2.5">
+                          <Briefcase className="w-4 h-4" />
+                          <span>Comercial</span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent>
+                          {comercialItems.map((item) => {
+                            const CIcon = item.icon;
+                            return (
+                              <DropdownMenuItem key={item.href} asChild>
+                                <Link href={item.href} className="flex w-full items-center gap-2 text-sm">
+                                  <CIcon className="w-4 h-4 shrink-0" />
+                                  <span className="flex-1">{item.label}</span>
+                                </Link>
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+                    )}
                     {analiseItems.length > 1 && (
                       <DropdownMenuSub>
                         <DropdownMenuSubTrigger className="py-2.5">

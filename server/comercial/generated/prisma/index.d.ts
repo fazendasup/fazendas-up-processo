@@ -29,6 +29,51 @@ export type RefreshToken = $Result.DefaultSelection<Prisma.$RefreshTokenPayload>
  */
 export type Cliente = $Result.DefaultSelection<Prisma.$ClientePayload>
 /**
+ * Model EstoqueVivoConfig
+ * Configuração global do mix folha leve (referência + variedades).
+ */
+export type EstoqueVivoConfig = $Result.DefaultSelection<Prisma.$EstoqueVivoConfigPayload>
+/**
+ * Model ProdutoComercial
+ * 
+ */
+export type ProdutoComercial = $Result.DefaultSelection<Prisma.$ProdutoComercialPayload>
+/**
+ * Model RegraComercialCliente
+ * 
+ */
+export type RegraComercialCliente = $Result.DefaultSelection<Prisma.$RegraComercialClientePayload>
+/**
+ * Model ClienteLegadoContaAzulLink
+ * 
+ */
+export type ClienteLegadoContaAzulLink = $Result.DefaultSelection<Prisma.$ClienteLegadoContaAzulLinkPayload>
+/**
+ * Model PrecoEspecialCliente
+ * 
+ */
+export type PrecoEspecialCliente = $Result.DefaultSelection<Prisma.$PrecoEspecialClientePayload>
+/**
+ * Model PedidoOperacional
+ * 
+ */
+export type PedidoOperacional = $Result.DefaultSelection<Prisma.$PedidoOperacionalPayload>
+/**
+ * Model PedidoOperacionalItem
+ * 
+ */
+export type PedidoOperacionalItem = $Result.DefaultSelection<Prisma.$PedidoOperacionalItemPayload>
+/**
+ * Model PedidoOperacionalAvaria
+ * 
+ */
+export type PedidoOperacionalAvaria = $Result.DefaultSelection<Prisma.$PedidoOperacionalAvariaPayload>
+/**
+ * Model PedidoOperacionalAuditoria
+ * 
+ */
+export type PedidoOperacionalAuditoria = $Result.DefaultSelection<Prisma.$PedidoOperacionalAuditoriaPayload>
+/**
  * Model Pedido
  * 
  */
@@ -89,6 +134,7 @@ export type TemplateMensagem = $Result.DefaultSelection<Prisma.$TemplateMensagem
  */
 export namespace $Enums {
   export const PerfilUsuario: {
+  VENDEDOR: 'VENDEDOR',
   GERENTE_COMERCIAL: 'GERENTE_COMERCIAL',
   COMERCIAL: 'COMERCIAL',
   OPERACOES: 'OPERACOES',
@@ -222,6 +268,42 @@ export const PeriodoKpi: {
 
 export type PeriodoKpi = (typeof PeriodoKpi)[keyof typeof PeriodoKpi]
 
+
+export const PedidoOperacionalStatus: {
+  PENDENTE: 'PENDENTE',
+  PRONTO: 'PRONTO',
+  ENTREGUE: 'ENTREGUE',
+  CANCELADO: 'CANCELADO'
+};
+
+export type PedidoOperacionalStatus = (typeof PedidoOperacionalStatus)[keyof typeof PedidoOperacionalStatus]
+
+
+export const TipoVendaPedido: {
+  RECORRENTE_SEMANAL: 'RECORRENTE_SEMANAL',
+  RECORRENTE_QUINZENAL: 'RECORRENTE_QUINZENAL',
+  PLANO: 'PLANO',
+  AVULSO: 'AVULSO'
+};
+
+export type TipoVendaPedido = (typeof TipoVendaPedido)[keyof typeof TipoVendaPedido]
+
+
+export const PeriodoEntregaCliente: {
+  MANHA: 'MANHA',
+  TARDE: 'TARDE'
+};
+
+export type PeriodoEntregaCliente = (typeof PeriodoEntregaCliente)[keyof typeof PeriodoEntregaCliente]
+
+
+export const ModoCompraProduto: {
+  UNIDADE: 'UNIDADE',
+  KG: 'KG'
+};
+
+export type ModoCompraProduto = (typeof ModoCompraProduto)[keyof typeof ModoCompraProduto]
+
 }
 
 export type PerfilUsuario = $Enums.PerfilUsuario
@@ -279,6 +361,22 @@ export const StatusExecucaoApi: typeof $Enums.StatusExecucaoApi
 export type PeriodoKpi = $Enums.PeriodoKpi
 
 export const PeriodoKpi: typeof $Enums.PeriodoKpi
+
+export type PedidoOperacionalStatus = $Enums.PedidoOperacionalStatus
+
+export const PedidoOperacionalStatus: typeof $Enums.PedidoOperacionalStatus
+
+export type TipoVendaPedido = $Enums.TipoVendaPedido
+
+export const TipoVendaPedido: typeof $Enums.TipoVendaPedido
+
+export type PeriodoEntregaCliente = $Enums.PeriodoEntregaCliente
+
+export const PeriodoEntregaCliente: typeof $Enums.PeriodoEntregaCliente
+
+export type ModoCompraProduto = $Enums.ModoCompraProduto
+
+export const ModoCompraProduto: typeof $Enums.ModoCompraProduto
 
 /**
  * ##  Prisma Client ʲˢ
@@ -427,6 +525,96 @@ export class PrismaClient<
     * ```
     */
   get cliente(): Prisma.ClienteDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.estoqueVivoConfig`: Exposes CRUD operations for the **EstoqueVivoConfig** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more EstoqueVivoConfigs
+    * const estoqueVivoConfigs = await prisma.estoqueVivoConfig.findMany()
+    * ```
+    */
+  get estoqueVivoConfig(): Prisma.EstoqueVivoConfigDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.produtoComercial`: Exposes CRUD operations for the **ProdutoComercial** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ProdutoComercials
+    * const produtoComercials = await prisma.produtoComercial.findMany()
+    * ```
+    */
+  get produtoComercial(): Prisma.ProdutoComercialDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.regraComercialCliente`: Exposes CRUD operations for the **RegraComercialCliente** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more RegraComercialClientes
+    * const regraComercialClientes = await prisma.regraComercialCliente.findMany()
+    * ```
+    */
+  get regraComercialCliente(): Prisma.RegraComercialClienteDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.clienteLegadoContaAzulLink`: Exposes CRUD operations for the **ClienteLegadoContaAzulLink** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ClienteLegadoContaAzulLinks
+    * const clienteLegadoContaAzulLinks = await prisma.clienteLegadoContaAzulLink.findMany()
+    * ```
+    */
+  get clienteLegadoContaAzulLink(): Prisma.ClienteLegadoContaAzulLinkDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.precoEspecialCliente`: Exposes CRUD operations for the **PrecoEspecialCliente** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PrecoEspecialClientes
+    * const precoEspecialClientes = await prisma.precoEspecialCliente.findMany()
+    * ```
+    */
+  get precoEspecialCliente(): Prisma.PrecoEspecialClienteDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.pedidoOperacional`: Exposes CRUD operations for the **PedidoOperacional** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PedidoOperacionals
+    * const pedidoOperacionals = await prisma.pedidoOperacional.findMany()
+    * ```
+    */
+  get pedidoOperacional(): Prisma.PedidoOperacionalDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.pedidoOperacionalItem`: Exposes CRUD operations for the **PedidoOperacionalItem** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PedidoOperacionalItems
+    * const pedidoOperacionalItems = await prisma.pedidoOperacionalItem.findMany()
+    * ```
+    */
+  get pedidoOperacionalItem(): Prisma.PedidoOperacionalItemDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.pedidoOperacionalAvaria`: Exposes CRUD operations for the **PedidoOperacionalAvaria** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PedidoOperacionalAvarias
+    * const pedidoOperacionalAvarias = await prisma.pedidoOperacionalAvaria.findMany()
+    * ```
+    */
+  get pedidoOperacionalAvaria(): Prisma.PedidoOperacionalAvariaDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.pedidoOperacionalAuditoria`: Exposes CRUD operations for the **PedidoOperacionalAuditoria** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PedidoOperacionalAuditorias
+    * const pedidoOperacionalAuditorias = await prisma.pedidoOperacionalAuditoria.findMany()
+    * ```
+    */
+  get pedidoOperacionalAuditoria(): Prisma.PedidoOperacionalAuditoriaDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.pedido`: Exposes CRUD operations for the **Pedido** model.
@@ -980,6 +1168,15 @@ export namespace Prisma {
     Usuario: 'Usuario',
     RefreshToken: 'RefreshToken',
     Cliente: 'Cliente',
+    EstoqueVivoConfig: 'EstoqueVivoConfig',
+    ProdutoComercial: 'ProdutoComercial',
+    RegraComercialCliente: 'RegraComercialCliente',
+    ClienteLegadoContaAzulLink: 'ClienteLegadoContaAzulLink',
+    PrecoEspecialCliente: 'PrecoEspecialCliente',
+    PedidoOperacional: 'PedidoOperacional',
+    PedidoOperacionalItem: 'PedidoOperacionalItem',
+    PedidoOperacionalAvaria: 'PedidoOperacionalAvaria',
+    PedidoOperacionalAuditoria: 'PedidoOperacionalAuditoria',
     Pedido: 'Pedido',
     ItemPedido: 'ItemPedido',
     Interacao: 'Interacao',
@@ -1009,7 +1206,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "usuario" | "refreshToken" | "cliente" | "pedido" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "syncState" | "regraClassificacao" | "templateMensagem"
+      modelProps: "usuario" | "refreshToken" | "cliente" | "estoqueVivoConfig" | "produtoComercial" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "pedido" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "syncState" | "regraClassificacao" | "templateMensagem"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1208,6 +1405,600 @@ export namespace Prisma {
           count: {
             args: Prisma.ClienteCountArgs<ExtArgs>
             result: $Utils.Optional<ClienteCountAggregateOutputType> | number
+          }
+        }
+      }
+      EstoqueVivoConfig: {
+        payload: Prisma.$EstoqueVivoConfigPayload<ExtArgs>
+        fields: Prisma.EstoqueVivoConfigFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.EstoqueVivoConfigFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoConfigPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.EstoqueVivoConfigFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoConfigPayload>
+          }
+          findFirst: {
+            args: Prisma.EstoqueVivoConfigFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoConfigPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.EstoqueVivoConfigFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoConfigPayload>
+          }
+          findMany: {
+            args: Prisma.EstoqueVivoConfigFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoConfigPayload>[]
+          }
+          create: {
+            args: Prisma.EstoqueVivoConfigCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoConfigPayload>
+          }
+          createMany: {
+            args: Prisma.EstoqueVivoConfigCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.EstoqueVivoConfigDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoConfigPayload>
+          }
+          update: {
+            args: Prisma.EstoqueVivoConfigUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoConfigPayload>
+          }
+          deleteMany: {
+            args: Prisma.EstoqueVivoConfigDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.EstoqueVivoConfigUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.EstoqueVivoConfigUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoConfigPayload>
+          }
+          aggregate: {
+            args: Prisma.EstoqueVivoConfigAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateEstoqueVivoConfig>
+          }
+          groupBy: {
+            args: Prisma.EstoqueVivoConfigGroupByArgs<ExtArgs>
+            result: $Utils.Optional<EstoqueVivoConfigGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.EstoqueVivoConfigCountArgs<ExtArgs>
+            result: $Utils.Optional<EstoqueVivoConfigCountAggregateOutputType> | number
+          }
+        }
+      }
+      ProdutoComercial: {
+        payload: Prisma.$ProdutoComercialPayload<ExtArgs>
+        fields: Prisma.ProdutoComercialFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ProdutoComercialFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProdutoComercialPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ProdutoComercialFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProdutoComercialPayload>
+          }
+          findFirst: {
+            args: Prisma.ProdutoComercialFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProdutoComercialPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ProdutoComercialFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProdutoComercialPayload>
+          }
+          findMany: {
+            args: Prisma.ProdutoComercialFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProdutoComercialPayload>[]
+          }
+          create: {
+            args: Prisma.ProdutoComercialCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProdutoComercialPayload>
+          }
+          createMany: {
+            args: Prisma.ProdutoComercialCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.ProdutoComercialDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProdutoComercialPayload>
+          }
+          update: {
+            args: Prisma.ProdutoComercialUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProdutoComercialPayload>
+          }
+          deleteMany: {
+            args: Prisma.ProdutoComercialDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ProdutoComercialUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.ProdutoComercialUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProdutoComercialPayload>
+          }
+          aggregate: {
+            args: Prisma.ProdutoComercialAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateProdutoComercial>
+          }
+          groupBy: {
+            args: Prisma.ProdutoComercialGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ProdutoComercialGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ProdutoComercialCountArgs<ExtArgs>
+            result: $Utils.Optional<ProdutoComercialCountAggregateOutputType> | number
+          }
+        }
+      }
+      RegraComercialCliente: {
+        payload: Prisma.$RegraComercialClientePayload<ExtArgs>
+        fields: Prisma.RegraComercialClienteFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.RegraComercialClienteFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RegraComercialClientePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.RegraComercialClienteFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RegraComercialClientePayload>
+          }
+          findFirst: {
+            args: Prisma.RegraComercialClienteFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RegraComercialClientePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.RegraComercialClienteFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RegraComercialClientePayload>
+          }
+          findMany: {
+            args: Prisma.RegraComercialClienteFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RegraComercialClientePayload>[]
+          }
+          create: {
+            args: Prisma.RegraComercialClienteCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RegraComercialClientePayload>
+          }
+          createMany: {
+            args: Prisma.RegraComercialClienteCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.RegraComercialClienteDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RegraComercialClientePayload>
+          }
+          update: {
+            args: Prisma.RegraComercialClienteUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RegraComercialClientePayload>
+          }
+          deleteMany: {
+            args: Prisma.RegraComercialClienteDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.RegraComercialClienteUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.RegraComercialClienteUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RegraComercialClientePayload>
+          }
+          aggregate: {
+            args: Prisma.RegraComercialClienteAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateRegraComercialCliente>
+          }
+          groupBy: {
+            args: Prisma.RegraComercialClienteGroupByArgs<ExtArgs>
+            result: $Utils.Optional<RegraComercialClienteGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.RegraComercialClienteCountArgs<ExtArgs>
+            result: $Utils.Optional<RegraComercialClienteCountAggregateOutputType> | number
+          }
+        }
+      }
+      ClienteLegadoContaAzulLink: {
+        payload: Prisma.$ClienteLegadoContaAzulLinkPayload<ExtArgs>
+        fields: Prisma.ClienteLegadoContaAzulLinkFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ClienteLegadoContaAzulLinkFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ClienteLegadoContaAzulLinkPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ClienteLegadoContaAzulLinkFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ClienteLegadoContaAzulLinkPayload>
+          }
+          findFirst: {
+            args: Prisma.ClienteLegadoContaAzulLinkFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ClienteLegadoContaAzulLinkPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ClienteLegadoContaAzulLinkFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ClienteLegadoContaAzulLinkPayload>
+          }
+          findMany: {
+            args: Prisma.ClienteLegadoContaAzulLinkFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ClienteLegadoContaAzulLinkPayload>[]
+          }
+          create: {
+            args: Prisma.ClienteLegadoContaAzulLinkCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ClienteLegadoContaAzulLinkPayload>
+          }
+          createMany: {
+            args: Prisma.ClienteLegadoContaAzulLinkCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.ClienteLegadoContaAzulLinkDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ClienteLegadoContaAzulLinkPayload>
+          }
+          update: {
+            args: Prisma.ClienteLegadoContaAzulLinkUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ClienteLegadoContaAzulLinkPayload>
+          }
+          deleteMany: {
+            args: Prisma.ClienteLegadoContaAzulLinkDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ClienteLegadoContaAzulLinkUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.ClienteLegadoContaAzulLinkUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ClienteLegadoContaAzulLinkPayload>
+          }
+          aggregate: {
+            args: Prisma.ClienteLegadoContaAzulLinkAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateClienteLegadoContaAzulLink>
+          }
+          groupBy: {
+            args: Prisma.ClienteLegadoContaAzulLinkGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ClienteLegadoContaAzulLinkGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ClienteLegadoContaAzulLinkCountArgs<ExtArgs>
+            result: $Utils.Optional<ClienteLegadoContaAzulLinkCountAggregateOutputType> | number
+          }
+        }
+      }
+      PrecoEspecialCliente: {
+        payload: Prisma.$PrecoEspecialClientePayload<ExtArgs>
+        fields: Prisma.PrecoEspecialClienteFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PrecoEspecialClienteFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PrecoEspecialClientePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PrecoEspecialClienteFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PrecoEspecialClientePayload>
+          }
+          findFirst: {
+            args: Prisma.PrecoEspecialClienteFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PrecoEspecialClientePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PrecoEspecialClienteFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PrecoEspecialClientePayload>
+          }
+          findMany: {
+            args: Prisma.PrecoEspecialClienteFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PrecoEspecialClientePayload>[]
+          }
+          create: {
+            args: Prisma.PrecoEspecialClienteCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PrecoEspecialClientePayload>
+          }
+          createMany: {
+            args: Prisma.PrecoEspecialClienteCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.PrecoEspecialClienteDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PrecoEspecialClientePayload>
+          }
+          update: {
+            args: Prisma.PrecoEspecialClienteUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PrecoEspecialClientePayload>
+          }
+          deleteMany: {
+            args: Prisma.PrecoEspecialClienteDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PrecoEspecialClienteUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.PrecoEspecialClienteUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PrecoEspecialClientePayload>
+          }
+          aggregate: {
+            args: Prisma.PrecoEspecialClienteAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePrecoEspecialCliente>
+          }
+          groupBy: {
+            args: Prisma.PrecoEspecialClienteGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PrecoEspecialClienteGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PrecoEspecialClienteCountArgs<ExtArgs>
+            result: $Utils.Optional<PrecoEspecialClienteCountAggregateOutputType> | number
+          }
+        }
+      }
+      PedidoOperacional: {
+        payload: Prisma.$PedidoOperacionalPayload<ExtArgs>
+        fields: Prisma.PedidoOperacionalFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PedidoOperacionalFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PedidoOperacionalFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalPayload>
+          }
+          findFirst: {
+            args: Prisma.PedidoOperacionalFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PedidoOperacionalFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalPayload>
+          }
+          findMany: {
+            args: Prisma.PedidoOperacionalFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalPayload>[]
+          }
+          create: {
+            args: Prisma.PedidoOperacionalCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalPayload>
+          }
+          createMany: {
+            args: Prisma.PedidoOperacionalCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.PedidoOperacionalDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalPayload>
+          }
+          update: {
+            args: Prisma.PedidoOperacionalUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalPayload>
+          }
+          deleteMany: {
+            args: Prisma.PedidoOperacionalDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PedidoOperacionalUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.PedidoOperacionalUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalPayload>
+          }
+          aggregate: {
+            args: Prisma.PedidoOperacionalAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePedidoOperacional>
+          }
+          groupBy: {
+            args: Prisma.PedidoOperacionalGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PedidoOperacionalGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PedidoOperacionalCountArgs<ExtArgs>
+            result: $Utils.Optional<PedidoOperacionalCountAggregateOutputType> | number
+          }
+        }
+      }
+      PedidoOperacionalItem: {
+        payload: Prisma.$PedidoOperacionalItemPayload<ExtArgs>
+        fields: Prisma.PedidoOperacionalItemFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PedidoOperacionalItemFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalItemPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PedidoOperacionalItemFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalItemPayload>
+          }
+          findFirst: {
+            args: Prisma.PedidoOperacionalItemFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalItemPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PedidoOperacionalItemFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalItemPayload>
+          }
+          findMany: {
+            args: Prisma.PedidoOperacionalItemFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalItemPayload>[]
+          }
+          create: {
+            args: Prisma.PedidoOperacionalItemCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalItemPayload>
+          }
+          createMany: {
+            args: Prisma.PedidoOperacionalItemCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.PedidoOperacionalItemDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalItemPayload>
+          }
+          update: {
+            args: Prisma.PedidoOperacionalItemUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalItemPayload>
+          }
+          deleteMany: {
+            args: Prisma.PedidoOperacionalItemDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PedidoOperacionalItemUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.PedidoOperacionalItemUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalItemPayload>
+          }
+          aggregate: {
+            args: Prisma.PedidoOperacionalItemAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePedidoOperacionalItem>
+          }
+          groupBy: {
+            args: Prisma.PedidoOperacionalItemGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PedidoOperacionalItemGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PedidoOperacionalItemCountArgs<ExtArgs>
+            result: $Utils.Optional<PedidoOperacionalItemCountAggregateOutputType> | number
+          }
+        }
+      }
+      PedidoOperacionalAvaria: {
+        payload: Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>
+        fields: Prisma.PedidoOperacionalAvariaFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PedidoOperacionalAvariaFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalAvariaPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PedidoOperacionalAvariaFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalAvariaPayload>
+          }
+          findFirst: {
+            args: Prisma.PedidoOperacionalAvariaFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalAvariaPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PedidoOperacionalAvariaFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalAvariaPayload>
+          }
+          findMany: {
+            args: Prisma.PedidoOperacionalAvariaFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalAvariaPayload>[]
+          }
+          create: {
+            args: Prisma.PedidoOperacionalAvariaCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalAvariaPayload>
+          }
+          createMany: {
+            args: Prisma.PedidoOperacionalAvariaCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.PedidoOperacionalAvariaDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalAvariaPayload>
+          }
+          update: {
+            args: Prisma.PedidoOperacionalAvariaUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalAvariaPayload>
+          }
+          deleteMany: {
+            args: Prisma.PedidoOperacionalAvariaDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PedidoOperacionalAvariaUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.PedidoOperacionalAvariaUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalAvariaPayload>
+          }
+          aggregate: {
+            args: Prisma.PedidoOperacionalAvariaAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePedidoOperacionalAvaria>
+          }
+          groupBy: {
+            args: Prisma.PedidoOperacionalAvariaGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PedidoOperacionalAvariaGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PedidoOperacionalAvariaCountArgs<ExtArgs>
+            result: $Utils.Optional<PedidoOperacionalAvariaCountAggregateOutputType> | number
+          }
+        }
+      }
+      PedidoOperacionalAuditoria: {
+        payload: Prisma.$PedidoOperacionalAuditoriaPayload<ExtArgs>
+        fields: Prisma.PedidoOperacionalAuditoriaFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PedidoOperacionalAuditoriaFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalAuditoriaPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PedidoOperacionalAuditoriaFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalAuditoriaPayload>
+          }
+          findFirst: {
+            args: Prisma.PedidoOperacionalAuditoriaFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalAuditoriaPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PedidoOperacionalAuditoriaFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalAuditoriaPayload>
+          }
+          findMany: {
+            args: Prisma.PedidoOperacionalAuditoriaFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalAuditoriaPayload>[]
+          }
+          create: {
+            args: Prisma.PedidoOperacionalAuditoriaCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalAuditoriaPayload>
+          }
+          createMany: {
+            args: Prisma.PedidoOperacionalAuditoriaCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.PedidoOperacionalAuditoriaDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalAuditoriaPayload>
+          }
+          update: {
+            args: Prisma.PedidoOperacionalAuditoriaUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalAuditoriaPayload>
+          }
+          deleteMany: {
+            args: Prisma.PedidoOperacionalAuditoriaDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PedidoOperacionalAuditoriaUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.PedidoOperacionalAuditoriaUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PedidoOperacionalAuditoriaPayload>
+          }
+          aggregate: {
+            args: Prisma.PedidoOperacionalAuditoriaAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePedidoOperacionalAuditoria>
+          }
+          groupBy: {
+            args: Prisma.PedidoOperacionalAuditoriaGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PedidoOperacionalAuditoriaGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PedidoOperacionalAuditoriaCountArgs<ExtArgs>
+            result: $Utils.Optional<PedidoOperacionalAuditoriaCountAggregateOutputType> | number
           }
         }
       }
@@ -2036,6 +2827,15 @@ export namespace Prisma {
     usuario?: UsuarioOmit
     refreshToken?: RefreshTokenOmit
     cliente?: ClienteOmit
+    estoqueVivoConfig?: EstoqueVivoConfigOmit
+    produtoComercial?: ProdutoComercialOmit
+    regraComercialCliente?: RegraComercialClienteOmit
+    clienteLegadoContaAzulLink?: ClienteLegadoContaAzulLinkOmit
+    precoEspecialCliente?: PrecoEspecialClienteOmit
+    pedidoOperacional?: PedidoOperacionalOmit
+    pedidoOperacionalItem?: PedidoOperacionalItemOmit
+    pedidoOperacionalAvaria?: PedidoOperacionalAvariaOmit
+    pedidoOperacionalAuditoria?: PedidoOperacionalAuditoriaOmit
     pedido?: PedidoOmit
     itemPedido?: ItemPedidoOmit
     interacao?: InteracaoOmit
@@ -2130,12 +2930,20 @@ export namespace Prisma {
     mensagens: number
     refreshTokens: number
     oportunidades: number
+    pedidosCriados: number
+    pedidosEditados: number
+    avariasCriadas: number
+    auditoriasPedido: number
   }
 
   export type UsuarioCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     mensagens?: boolean | UsuarioCountOutputTypeCountMensagensArgs
     refreshTokens?: boolean | UsuarioCountOutputTypeCountRefreshTokensArgs
     oportunidades?: boolean | UsuarioCountOutputTypeCountOportunidadesArgs
+    pedidosCriados?: boolean | UsuarioCountOutputTypeCountPedidosCriadosArgs
+    pedidosEditados?: boolean | UsuarioCountOutputTypeCountPedidosEditadosArgs
+    avariasCriadas?: boolean | UsuarioCountOutputTypeCountAvariasCriadasArgs
+    auditoriasPedido?: boolean | UsuarioCountOutputTypeCountAuditoriasPedidoArgs
   }
 
   // Custom InputTypes
@@ -2170,6 +2978,34 @@ export namespace Prisma {
     where?: OportunidadeWhereInput
   }
 
+  /**
+   * UsuarioCountOutputType without action
+   */
+  export type UsuarioCountOutputTypeCountPedidosCriadosArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PedidoOperacionalWhereInput
+  }
+
+  /**
+   * UsuarioCountOutputType without action
+   */
+  export type UsuarioCountOutputTypeCountPedidosEditadosArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PedidoOperacionalWhereInput
+  }
+
+  /**
+   * UsuarioCountOutputType without action
+   */
+  export type UsuarioCountOutputTypeCountAvariasCriadasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PedidoOperacionalAvariaWhereInput
+  }
+
+  /**
+   * UsuarioCountOutputType without action
+   */
+  export type UsuarioCountOutputTypeCountAuditoriasPedidoArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PedidoOperacionalAuditoriaWhereInput
+  }
+
 
   /**
    * Count Type ClienteCountOutputType
@@ -2181,6 +3017,9 @@ export namespace Prisma {
     oportunidades: number
     mensagens: number
     execucoes: number
+    pedidosOperacionais: number
+    avariasOperacionais: number
+    linksLegadoContaAzul: number
   }
 
   export type ClienteCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -2189,6 +3028,9 @@ export namespace Prisma {
     oportunidades?: boolean | ClienteCountOutputTypeCountOportunidadesArgs
     mensagens?: boolean | ClienteCountOutputTypeCountMensagensArgs
     execucoes?: boolean | ClienteCountOutputTypeCountExecucoesArgs
+    pedidosOperacionais?: boolean | ClienteCountOutputTypeCountPedidosOperacionaisArgs
+    avariasOperacionais?: boolean | ClienteCountOutputTypeCountAvariasOperacionaisArgs
+    linksLegadoContaAzul?: boolean | ClienteCountOutputTypeCountLinksLegadoContaAzulArgs
   }
 
   // Custom InputTypes
@@ -2235,6 +3077,165 @@ export namespace Prisma {
    */
   export type ClienteCountOutputTypeCountExecucoesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: ExecucaoApiWhereInput
+  }
+
+  /**
+   * ClienteCountOutputType without action
+   */
+  export type ClienteCountOutputTypeCountPedidosOperacionaisArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PedidoOperacionalWhereInput
+  }
+
+  /**
+   * ClienteCountOutputType without action
+   */
+  export type ClienteCountOutputTypeCountAvariasOperacionaisArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PedidoOperacionalAvariaWhereInput
+  }
+
+  /**
+   * ClienteCountOutputType without action
+   */
+  export type ClienteCountOutputTypeCountLinksLegadoContaAzulArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ClienteLegadoContaAzulLinkWhereInput
+  }
+
+
+  /**
+   * Count Type ProdutoComercialCountOutputType
+   */
+
+  export type ProdutoComercialCountOutputType = {
+    precosEspeciais: number
+    itensPedido: number
+    avariasPedido: number
+    mixReferenciadoPor: number
+  }
+
+  export type ProdutoComercialCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    precosEspeciais?: boolean | ProdutoComercialCountOutputTypeCountPrecosEspeciaisArgs
+    itensPedido?: boolean | ProdutoComercialCountOutputTypeCountItensPedidoArgs
+    avariasPedido?: boolean | ProdutoComercialCountOutputTypeCountAvariasPedidoArgs
+    mixReferenciadoPor?: boolean | ProdutoComercialCountOutputTypeCountMixReferenciadoPorArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * ProdutoComercialCountOutputType without action
+   */
+  export type ProdutoComercialCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProdutoComercialCountOutputType
+     */
+    select?: ProdutoComercialCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * ProdutoComercialCountOutputType without action
+   */
+  export type ProdutoComercialCountOutputTypeCountPrecosEspeciaisArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PrecoEspecialClienteWhereInput
+  }
+
+  /**
+   * ProdutoComercialCountOutputType without action
+   */
+  export type ProdutoComercialCountOutputTypeCountItensPedidoArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PedidoOperacionalItemWhereInput
+  }
+
+  /**
+   * ProdutoComercialCountOutputType without action
+   */
+  export type ProdutoComercialCountOutputTypeCountAvariasPedidoArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PedidoOperacionalAvariaWhereInput
+  }
+
+  /**
+   * ProdutoComercialCountOutputType without action
+   */
+  export type ProdutoComercialCountOutputTypeCountMixReferenciadoPorArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ProdutoComercialWhereInput
+  }
+
+
+  /**
+   * Count Type RegraComercialClienteCountOutputType
+   */
+
+  export type RegraComercialClienteCountOutputType = {
+    precosEspeciais: number
+  }
+
+  export type RegraComercialClienteCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    precosEspeciais?: boolean | RegraComercialClienteCountOutputTypeCountPrecosEspeciaisArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * RegraComercialClienteCountOutputType without action
+   */
+  export type RegraComercialClienteCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RegraComercialClienteCountOutputType
+     */
+    select?: RegraComercialClienteCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * RegraComercialClienteCountOutputType without action
+   */
+  export type RegraComercialClienteCountOutputTypeCountPrecosEspeciaisArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PrecoEspecialClienteWhereInput
+  }
+
+
+  /**
+   * Count Type PedidoOperacionalCountOutputType
+   */
+
+  export type PedidoOperacionalCountOutputType = {
+    itens: number
+    avarias: number
+    auditoria: number
+  }
+
+  export type PedidoOperacionalCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    itens?: boolean | PedidoOperacionalCountOutputTypeCountItensArgs
+    avarias?: boolean | PedidoOperacionalCountOutputTypeCountAvariasArgs
+    auditoria?: boolean | PedidoOperacionalCountOutputTypeCountAuditoriaArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * PedidoOperacionalCountOutputType without action
+   */
+  export type PedidoOperacionalCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalCountOutputType
+     */
+    select?: PedidoOperacionalCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * PedidoOperacionalCountOutputType without action
+   */
+  export type PedidoOperacionalCountOutputTypeCountItensArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PedidoOperacionalItemWhereInput
+  }
+
+  /**
+   * PedidoOperacionalCountOutputType without action
+   */
+  export type PedidoOperacionalCountOutputTypeCountAvariasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PedidoOperacionalAvariaWhereInput
+  }
+
+  /**
+   * PedidoOperacionalCountOutputType without action
+   */
+  export type PedidoOperacionalCountOutputTypeCountAuditoriaArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PedidoOperacionalAuditoriaWhereInput
   }
 
 
@@ -2456,6 +3457,10 @@ export namespace Prisma {
     mensagens?: boolean | Usuario$mensagensArgs<ExtArgs>
     refreshTokens?: boolean | Usuario$refreshTokensArgs<ExtArgs>
     oportunidades?: boolean | Usuario$oportunidadesArgs<ExtArgs>
+    pedidosCriados?: boolean | Usuario$pedidosCriadosArgs<ExtArgs>
+    pedidosEditados?: boolean | Usuario$pedidosEditadosArgs<ExtArgs>
+    avariasCriadas?: boolean | Usuario$avariasCriadasArgs<ExtArgs>
+    auditoriasPedido?: boolean | Usuario$auditoriasPedidoArgs<ExtArgs>
     _count?: boolean | UsuarioCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["usuario"]>
 
@@ -2476,6 +3481,10 @@ export namespace Prisma {
     mensagens?: boolean | Usuario$mensagensArgs<ExtArgs>
     refreshTokens?: boolean | Usuario$refreshTokensArgs<ExtArgs>
     oportunidades?: boolean | Usuario$oportunidadesArgs<ExtArgs>
+    pedidosCriados?: boolean | Usuario$pedidosCriadosArgs<ExtArgs>
+    pedidosEditados?: boolean | Usuario$pedidosEditadosArgs<ExtArgs>
+    avariasCriadas?: boolean | Usuario$avariasCriadasArgs<ExtArgs>
+    auditoriasPedido?: boolean | Usuario$auditoriasPedidoArgs<ExtArgs>
     _count?: boolean | UsuarioCountOutputTypeDefaultArgs<ExtArgs>
   }
 
@@ -2485,6 +3494,10 @@ export namespace Prisma {
       mensagens: Prisma.$MensagemPayload<ExtArgs>[]
       refreshTokens: Prisma.$RefreshTokenPayload<ExtArgs>[]
       oportunidades: Prisma.$OportunidadePayload<ExtArgs>[]
+      pedidosCriados: Prisma.$PedidoOperacionalPayload<ExtArgs>[]
+      pedidosEditados: Prisma.$PedidoOperacionalPayload<ExtArgs>[]
+      avariasCriadas: Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>[]
+      auditoriasPedido: Prisma.$PedidoOperacionalAuditoriaPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -2837,6 +3850,10 @@ export namespace Prisma {
     mensagens<T extends Usuario$mensagensArgs<ExtArgs> = {}>(args?: Subset<T, Usuario$mensagensArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MensagemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     refreshTokens<T extends Usuario$refreshTokensArgs<ExtArgs> = {}>(args?: Subset<T, Usuario$refreshTokensArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RefreshTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     oportunidades<T extends Usuario$oportunidadesArgs<ExtArgs> = {}>(args?: Subset<T, Usuario$oportunidadesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OportunidadePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    pedidosCriados<T extends Usuario$pedidosCriadosArgs<ExtArgs> = {}>(args?: Subset<T, Usuario$pedidosCriadosArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    pedidosEditados<T extends Usuario$pedidosEditadosArgs<ExtArgs> = {}>(args?: Subset<T, Usuario$pedidosEditadosArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    avariasCriadas<T extends Usuario$avariasCriadasArgs<ExtArgs> = {}>(args?: Subset<T, Usuario$avariasCriadasArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    auditoriasPedido<T extends Usuario$auditoriasPedidoArgs<ExtArgs> = {}>(args?: Subset<T, Usuario$auditoriasPedidoArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalAuditoriaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3285,6 +4302,102 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: OportunidadeScalarFieldEnum | OportunidadeScalarFieldEnum[]
+  }
+
+  /**
+   * Usuario.pedidosCriados
+   */
+  export type Usuario$pedidosCriadosArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacional
+     */
+    select?: PedidoOperacionalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacional
+     */
+    omit?: PedidoOperacionalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalInclude<ExtArgs> | null
+    where?: PedidoOperacionalWhereInput
+    orderBy?: PedidoOperacionalOrderByWithRelationInput | PedidoOperacionalOrderByWithRelationInput[]
+    cursor?: PedidoOperacionalWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PedidoOperacionalScalarFieldEnum | PedidoOperacionalScalarFieldEnum[]
+  }
+
+  /**
+   * Usuario.pedidosEditados
+   */
+  export type Usuario$pedidosEditadosArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacional
+     */
+    select?: PedidoOperacionalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacional
+     */
+    omit?: PedidoOperacionalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalInclude<ExtArgs> | null
+    where?: PedidoOperacionalWhereInput
+    orderBy?: PedidoOperacionalOrderByWithRelationInput | PedidoOperacionalOrderByWithRelationInput[]
+    cursor?: PedidoOperacionalWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PedidoOperacionalScalarFieldEnum | PedidoOperacionalScalarFieldEnum[]
+  }
+
+  /**
+   * Usuario.avariasCriadas
+   */
+  export type Usuario$avariasCriadasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAvaria
+     */
+    select?: PedidoOperacionalAvariaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAvaria
+     */
+    omit?: PedidoOperacionalAvariaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAvariaInclude<ExtArgs> | null
+    where?: PedidoOperacionalAvariaWhereInput
+    orderBy?: PedidoOperacionalAvariaOrderByWithRelationInput | PedidoOperacionalAvariaOrderByWithRelationInput[]
+    cursor?: PedidoOperacionalAvariaWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PedidoOperacionalAvariaScalarFieldEnum | PedidoOperacionalAvariaScalarFieldEnum[]
+  }
+
+  /**
+   * Usuario.auditoriasPedido
+   */
+  export type Usuario$auditoriasPedidoArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAuditoria
+     */
+    select?: PedidoOperacionalAuditoriaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAuditoria
+     */
+    omit?: PedidoOperacionalAuditoriaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAuditoriaInclude<ExtArgs> | null
+    where?: PedidoOperacionalAuditoriaWhereInput
+    orderBy?: PedidoOperacionalAuditoriaOrderByWithRelationInput | PedidoOperacionalAuditoriaOrderByWithRelationInput[]
+    cursor?: PedidoOperacionalAuditoriaWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PedidoOperacionalAuditoriaScalarFieldEnum | PedidoOperacionalAuditoriaScalarFieldEnum[]
   }
 
   /**
@@ -4522,6 +5635,10 @@ export namespace Prisma {
     oportunidades?: boolean | Cliente$oportunidadesArgs<ExtArgs>
     mensagens?: boolean | Cliente$mensagensArgs<ExtArgs>
     execucoes?: boolean | Cliente$execucoesArgs<ExtArgs>
+    regraComercial?: boolean | Cliente$regraComercialArgs<ExtArgs>
+    pedidosOperacionais?: boolean | Cliente$pedidosOperacionaisArgs<ExtArgs>
+    avariasOperacionais?: boolean | Cliente$avariasOperacionaisArgs<ExtArgs>
+    linksLegadoContaAzul?: boolean | Cliente$linksLegadoContaAzulArgs<ExtArgs>
     _count?: boolean | ClienteCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["cliente"]>
 
@@ -4553,6 +5670,10 @@ export namespace Prisma {
     oportunidades?: boolean | Cliente$oportunidadesArgs<ExtArgs>
     mensagens?: boolean | Cliente$mensagensArgs<ExtArgs>
     execucoes?: boolean | Cliente$execucoesArgs<ExtArgs>
+    regraComercial?: boolean | Cliente$regraComercialArgs<ExtArgs>
+    pedidosOperacionais?: boolean | Cliente$pedidosOperacionaisArgs<ExtArgs>
+    avariasOperacionais?: boolean | Cliente$avariasOperacionaisArgs<ExtArgs>
+    linksLegadoContaAzul?: boolean | Cliente$linksLegadoContaAzulArgs<ExtArgs>
     _count?: boolean | ClienteCountOutputTypeDefaultArgs<ExtArgs>
   }
 
@@ -4564,6 +5685,10 @@ export namespace Prisma {
       oportunidades: Prisma.$OportunidadePayload<ExtArgs>[]
       mensagens: Prisma.$MensagemPayload<ExtArgs>[]
       execucoes: Prisma.$ExecucaoApiPayload<ExtArgs>[]
+      regraComercial: Prisma.$RegraComercialClientePayload<ExtArgs> | null
+      pedidosOperacionais: Prisma.$PedidoOperacionalPayload<ExtArgs>[]
+      avariasOperacionais: Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>[]
+      linksLegadoContaAzul: Prisma.$ClienteLegadoContaAzulLinkPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -4927,6 +6052,10 @@ export namespace Prisma {
     oportunidades<T extends Cliente$oportunidadesArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$oportunidadesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OportunidadePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     mensagens<T extends Cliente$mensagensArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$mensagensArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MensagemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     execucoes<T extends Cliente$execucoesArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$execucoesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ExecucaoApiPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    regraComercial<T extends Cliente$regraComercialArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$regraComercialArgs<ExtArgs>>): Prisma__RegraComercialClienteClient<$Result.GetResult<Prisma.$RegraComercialClientePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    pedidosOperacionais<T extends Cliente$pedidosOperacionaisArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$pedidosOperacionaisArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    avariasOperacionais<T extends Cliente$avariasOperacionaisArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$avariasOperacionaisArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    linksLegadoContaAzul<T extends Cliente$linksLegadoContaAzulArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$linksLegadoContaAzulArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ClienteLegadoContaAzulLinkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -5435,6 +6564,97 @@ export namespace Prisma {
   }
 
   /**
+   * Cliente.regraComercial
+   */
+  export type Cliente$regraComercialArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RegraComercialCliente
+     */
+    select?: RegraComercialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RegraComercialCliente
+     */
+    omit?: RegraComercialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RegraComercialClienteInclude<ExtArgs> | null
+    where?: RegraComercialClienteWhereInput
+  }
+
+  /**
+   * Cliente.pedidosOperacionais
+   */
+  export type Cliente$pedidosOperacionaisArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacional
+     */
+    select?: PedidoOperacionalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacional
+     */
+    omit?: PedidoOperacionalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalInclude<ExtArgs> | null
+    where?: PedidoOperacionalWhereInput
+    orderBy?: PedidoOperacionalOrderByWithRelationInput | PedidoOperacionalOrderByWithRelationInput[]
+    cursor?: PedidoOperacionalWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PedidoOperacionalScalarFieldEnum | PedidoOperacionalScalarFieldEnum[]
+  }
+
+  /**
+   * Cliente.avariasOperacionais
+   */
+  export type Cliente$avariasOperacionaisArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAvaria
+     */
+    select?: PedidoOperacionalAvariaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAvaria
+     */
+    omit?: PedidoOperacionalAvariaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAvariaInclude<ExtArgs> | null
+    where?: PedidoOperacionalAvariaWhereInput
+    orderBy?: PedidoOperacionalAvariaOrderByWithRelationInput | PedidoOperacionalAvariaOrderByWithRelationInput[]
+    cursor?: PedidoOperacionalAvariaWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PedidoOperacionalAvariaScalarFieldEnum | PedidoOperacionalAvariaScalarFieldEnum[]
+  }
+
+  /**
+   * Cliente.linksLegadoContaAzul
+   */
+  export type Cliente$linksLegadoContaAzulArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ClienteLegadoContaAzulLink
+     */
+    select?: ClienteLegadoContaAzulLinkSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ClienteLegadoContaAzulLink
+     */
+    omit?: ClienteLegadoContaAzulLinkOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ClienteLegadoContaAzulLinkInclude<ExtArgs> | null
+    where?: ClienteLegadoContaAzulLinkWhereInput
+    orderBy?: ClienteLegadoContaAzulLinkOrderByWithRelationInput | ClienteLegadoContaAzulLinkOrderByWithRelationInput[]
+    cursor?: ClienteLegadoContaAzulLinkWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ClienteLegadoContaAzulLinkScalarFieldEnum | ClienteLegadoContaAzulLinkScalarFieldEnum[]
+  }
+
+  /**
    * Cliente without action
    */
   export type ClienteDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -5450,6 +6670,9483 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: ClienteInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model EstoqueVivoConfig
+   */
+
+  export type AggregateEstoqueVivoConfig = {
+    _count: EstoqueVivoConfigCountAggregateOutputType | null
+    _min: EstoqueVivoConfigMinAggregateOutputType | null
+    _max: EstoqueVivoConfigMaxAggregateOutputType | null
+  }
+
+  export type EstoqueVivoConfigMinAggregateOutputType = {
+    id: string | null
+    mixReferenciaNome: string | null
+    atualizadoEm: Date | null
+  }
+
+  export type EstoqueVivoConfigMaxAggregateOutputType = {
+    id: string | null
+    mixReferenciaNome: string | null
+    atualizadoEm: Date | null
+  }
+
+  export type EstoqueVivoConfigCountAggregateOutputType = {
+    id: number
+    mixReferenciaNome: number
+    mixVariedades: number
+    atualizadoEm: number
+    _all: number
+  }
+
+
+  export type EstoqueVivoConfigMinAggregateInputType = {
+    id?: true
+    mixReferenciaNome?: true
+    atualizadoEm?: true
+  }
+
+  export type EstoqueVivoConfigMaxAggregateInputType = {
+    id?: true
+    mixReferenciaNome?: true
+    atualizadoEm?: true
+  }
+
+  export type EstoqueVivoConfigCountAggregateInputType = {
+    id?: true
+    mixReferenciaNome?: true
+    mixVariedades?: true
+    atualizadoEm?: true
+    _all?: true
+  }
+
+  export type EstoqueVivoConfigAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which EstoqueVivoConfig to aggregate.
+     */
+    where?: EstoqueVivoConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EstoqueVivoConfigs to fetch.
+     */
+    orderBy?: EstoqueVivoConfigOrderByWithRelationInput | EstoqueVivoConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: EstoqueVivoConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EstoqueVivoConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EstoqueVivoConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned EstoqueVivoConfigs
+    **/
+    _count?: true | EstoqueVivoConfigCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: EstoqueVivoConfigMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: EstoqueVivoConfigMaxAggregateInputType
+  }
+
+  export type GetEstoqueVivoConfigAggregateType<T extends EstoqueVivoConfigAggregateArgs> = {
+        [P in keyof T & keyof AggregateEstoqueVivoConfig]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateEstoqueVivoConfig[P]>
+      : GetScalarType<T[P], AggregateEstoqueVivoConfig[P]>
+  }
+
+
+
+
+  export type EstoqueVivoConfigGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EstoqueVivoConfigWhereInput
+    orderBy?: EstoqueVivoConfigOrderByWithAggregationInput | EstoqueVivoConfigOrderByWithAggregationInput[]
+    by: EstoqueVivoConfigScalarFieldEnum[] | EstoqueVivoConfigScalarFieldEnum
+    having?: EstoqueVivoConfigScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: EstoqueVivoConfigCountAggregateInputType | true
+    _min?: EstoqueVivoConfigMinAggregateInputType
+    _max?: EstoqueVivoConfigMaxAggregateInputType
+  }
+
+  export type EstoqueVivoConfigGroupByOutputType = {
+    id: string
+    mixReferenciaNome: string
+    mixVariedades: JsonValue
+    atualizadoEm: Date
+    _count: EstoqueVivoConfigCountAggregateOutputType | null
+    _min: EstoqueVivoConfigMinAggregateOutputType | null
+    _max: EstoqueVivoConfigMaxAggregateOutputType | null
+  }
+
+  type GetEstoqueVivoConfigGroupByPayload<T extends EstoqueVivoConfigGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<EstoqueVivoConfigGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof EstoqueVivoConfigGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], EstoqueVivoConfigGroupByOutputType[P]>
+            : GetScalarType<T[P], EstoqueVivoConfigGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type EstoqueVivoConfigSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    mixReferenciaNome?: boolean
+    mixVariedades?: boolean
+    atualizadoEm?: boolean
+  }, ExtArgs["result"]["estoqueVivoConfig"]>
+
+
+
+  export type EstoqueVivoConfigSelectScalar = {
+    id?: boolean
+    mixReferenciaNome?: boolean
+    mixVariedades?: boolean
+    atualizadoEm?: boolean
+  }
+
+  export type EstoqueVivoConfigOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "mixReferenciaNome" | "mixVariedades" | "atualizadoEm", ExtArgs["result"]["estoqueVivoConfig"]>
+
+  export type $EstoqueVivoConfigPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "EstoqueVivoConfig"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      mixReferenciaNome: string
+      mixVariedades: Prisma.JsonValue
+      atualizadoEm: Date
+    }, ExtArgs["result"]["estoqueVivoConfig"]>
+    composites: {}
+  }
+
+  type EstoqueVivoConfigGetPayload<S extends boolean | null | undefined | EstoqueVivoConfigDefaultArgs> = $Result.GetResult<Prisma.$EstoqueVivoConfigPayload, S>
+
+  type EstoqueVivoConfigCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<EstoqueVivoConfigFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: EstoqueVivoConfigCountAggregateInputType | true
+    }
+
+  export interface EstoqueVivoConfigDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['EstoqueVivoConfig'], meta: { name: 'EstoqueVivoConfig' } }
+    /**
+     * Find zero or one EstoqueVivoConfig that matches the filter.
+     * @param {EstoqueVivoConfigFindUniqueArgs} args - Arguments to find a EstoqueVivoConfig
+     * @example
+     * // Get one EstoqueVivoConfig
+     * const estoqueVivoConfig = await prisma.estoqueVivoConfig.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends EstoqueVivoConfigFindUniqueArgs>(args: SelectSubset<T, EstoqueVivoConfigFindUniqueArgs<ExtArgs>>): Prisma__EstoqueVivoConfigClient<$Result.GetResult<Prisma.$EstoqueVivoConfigPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one EstoqueVivoConfig that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {EstoqueVivoConfigFindUniqueOrThrowArgs} args - Arguments to find a EstoqueVivoConfig
+     * @example
+     * // Get one EstoqueVivoConfig
+     * const estoqueVivoConfig = await prisma.estoqueVivoConfig.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends EstoqueVivoConfigFindUniqueOrThrowArgs>(args: SelectSubset<T, EstoqueVivoConfigFindUniqueOrThrowArgs<ExtArgs>>): Prisma__EstoqueVivoConfigClient<$Result.GetResult<Prisma.$EstoqueVivoConfigPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first EstoqueVivoConfig that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoConfigFindFirstArgs} args - Arguments to find a EstoqueVivoConfig
+     * @example
+     * // Get one EstoqueVivoConfig
+     * const estoqueVivoConfig = await prisma.estoqueVivoConfig.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends EstoqueVivoConfigFindFirstArgs>(args?: SelectSubset<T, EstoqueVivoConfigFindFirstArgs<ExtArgs>>): Prisma__EstoqueVivoConfigClient<$Result.GetResult<Prisma.$EstoqueVivoConfigPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first EstoqueVivoConfig that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoConfigFindFirstOrThrowArgs} args - Arguments to find a EstoqueVivoConfig
+     * @example
+     * // Get one EstoqueVivoConfig
+     * const estoqueVivoConfig = await prisma.estoqueVivoConfig.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends EstoqueVivoConfigFindFirstOrThrowArgs>(args?: SelectSubset<T, EstoqueVivoConfigFindFirstOrThrowArgs<ExtArgs>>): Prisma__EstoqueVivoConfigClient<$Result.GetResult<Prisma.$EstoqueVivoConfigPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more EstoqueVivoConfigs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoConfigFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all EstoqueVivoConfigs
+     * const estoqueVivoConfigs = await prisma.estoqueVivoConfig.findMany()
+     * 
+     * // Get first 10 EstoqueVivoConfigs
+     * const estoqueVivoConfigs = await prisma.estoqueVivoConfig.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const estoqueVivoConfigWithIdOnly = await prisma.estoqueVivoConfig.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends EstoqueVivoConfigFindManyArgs>(args?: SelectSubset<T, EstoqueVivoConfigFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EstoqueVivoConfigPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a EstoqueVivoConfig.
+     * @param {EstoqueVivoConfigCreateArgs} args - Arguments to create a EstoqueVivoConfig.
+     * @example
+     * // Create one EstoqueVivoConfig
+     * const EstoqueVivoConfig = await prisma.estoqueVivoConfig.create({
+     *   data: {
+     *     // ... data to create a EstoqueVivoConfig
+     *   }
+     * })
+     * 
+     */
+    create<T extends EstoqueVivoConfigCreateArgs>(args: SelectSubset<T, EstoqueVivoConfigCreateArgs<ExtArgs>>): Prisma__EstoqueVivoConfigClient<$Result.GetResult<Prisma.$EstoqueVivoConfigPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many EstoqueVivoConfigs.
+     * @param {EstoqueVivoConfigCreateManyArgs} args - Arguments to create many EstoqueVivoConfigs.
+     * @example
+     * // Create many EstoqueVivoConfigs
+     * const estoqueVivoConfig = await prisma.estoqueVivoConfig.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends EstoqueVivoConfigCreateManyArgs>(args?: SelectSubset<T, EstoqueVivoConfigCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a EstoqueVivoConfig.
+     * @param {EstoqueVivoConfigDeleteArgs} args - Arguments to delete one EstoqueVivoConfig.
+     * @example
+     * // Delete one EstoqueVivoConfig
+     * const EstoqueVivoConfig = await prisma.estoqueVivoConfig.delete({
+     *   where: {
+     *     // ... filter to delete one EstoqueVivoConfig
+     *   }
+     * })
+     * 
+     */
+    delete<T extends EstoqueVivoConfigDeleteArgs>(args: SelectSubset<T, EstoqueVivoConfigDeleteArgs<ExtArgs>>): Prisma__EstoqueVivoConfigClient<$Result.GetResult<Prisma.$EstoqueVivoConfigPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one EstoqueVivoConfig.
+     * @param {EstoqueVivoConfigUpdateArgs} args - Arguments to update one EstoqueVivoConfig.
+     * @example
+     * // Update one EstoqueVivoConfig
+     * const estoqueVivoConfig = await prisma.estoqueVivoConfig.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends EstoqueVivoConfigUpdateArgs>(args: SelectSubset<T, EstoqueVivoConfigUpdateArgs<ExtArgs>>): Prisma__EstoqueVivoConfigClient<$Result.GetResult<Prisma.$EstoqueVivoConfigPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more EstoqueVivoConfigs.
+     * @param {EstoqueVivoConfigDeleteManyArgs} args - Arguments to filter EstoqueVivoConfigs to delete.
+     * @example
+     * // Delete a few EstoqueVivoConfigs
+     * const { count } = await prisma.estoqueVivoConfig.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends EstoqueVivoConfigDeleteManyArgs>(args?: SelectSubset<T, EstoqueVivoConfigDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more EstoqueVivoConfigs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoConfigUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many EstoqueVivoConfigs
+     * const estoqueVivoConfig = await prisma.estoqueVivoConfig.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends EstoqueVivoConfigUpdateManyArgs>(args: SelectSubset<T, EstoqueVivoConfigUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one EstoqueVivoConfig.
+     * @param {EstoqueVivoConfigUpsertArgs} args - Arguments to update or create a EstoqueVivoConfig.
+     * @example
+     * // Update or create a EstoqueVivoConfig
+     * const estoqueVivoConfig = await prisma.estoqueVivoConfig.upsert({
+     *   create: {
+     *     // ... data to create a EstoqueVivoConfig
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the EstoqueVivoConfig we want to update
+     *   }
+     * })
+     */
+    upsert<T extends EstoqueVivoConfigUpsertArgs>(args: SelectSubset<T, EstoqueVivoConfigUpsertArgs<ExtArgs>>): Prisma__EstoqueVivoConfigClient<$Result.GetResult<Prisma.$EstoqueVivoConfigPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of EstoqueVivoConfigs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoConfigCountArgs} args - Arguments to filter EstoqueVivoConfigs to count.
+     * @example
+     * // Count the number of EstoqueVivoConfigs
+     * const count = await prisma.estoqueVivoConfig.count({
+     *   where: {
+     *     // ... the filter for the EstoqueVivoConfigs we want to count
+     *   }
+     * })
+    **/
+    count<T extends EstoqueVivoConfigCountArgs>(
+      args?: Subset<T, EstoqueVivoConfigCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], EstoqueVivoConfigCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a EstoqueVivoConfig.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoConfigAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends EstoqueVivoConfigAggregateArgs>(args: Subset<T, EstoqueVivoConfigAggregateArgs>): Prisma.PrismaPromise<GetEstoqueVivoConfigAggregateType<T>>
+
+    /**
+     * Group by EstoqueVivoConfig.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoConfigGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends EstoqueVivoConfigGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: EstoqueVivoConfigGroupByArgs['orderBy'] }
+        : { orderBy?: EstoqueVivoConfigGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, EstoqueVivoConfigGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetEstoqueVivoConfigGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the EstoqueVivoConfig model
+   */
+  readonly fields: EstoqueVivoConfigFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for EstoqueVivoConfig.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__EstoqueVivoConfigClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the EstoqueVivoConfig model
+   */
+  interface EstoqueVivoConfigFieldRefs {
+    readonly id: FieldRef<"EstoqueVivoConfig", 'String'>
+    readonly mixReferenciaNome: FieldRef<"EstoqueVivoConfig", 'String'>
+    readonly mixVariedades: FieldRef<"EstoqueVivoConfig", 'Json'>
+    readonly atualizadoEm: FieldRef<"EstoqueVivoConfig", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * EstoqueVivoConfig findUnique
+   */
+  export type EstoqueVivoConfigFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoConfig
+     */
+    select?: EstoqueVivoConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoConfig
+     */
+    omit?: EstoqueVivoConfigOmit<ExtArgs> | null
+    /**
+     * Filter, which EstoqueVivoConfig to fetch.
+     */
+    where: EstoqueVivoConfigWhereUniqueInput
+  }
+
+  /**
+   * EstoqueVivoConfig findUniqueOrThrow
+   */
+  export type EstoqueVivoConfigFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoConfig
+     */
+    select?: EstoqueVivoConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoConfig
+     */
+    omit?: EstoqueVivoConfigOmit<ExtArgs> | null
+    /**
+     * Filter, which EstoqueVivoConfig to fetch.
+     */
+    where: EstoqueVivoConfigWhereUniqueInput
+  }
+
+  /**
+   * EstoqueVivoConfig findFirst
+   */
+  export type EstoqueVivoConfigFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoConfig
+     */
+    select?: EstoqueVivoConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoConfig
+     */
+    omit?: EstoqueVivoConfigOmit<ExtArgs> | null
+    /**
+     * Filter, which EstoqueVivoConfig to fetch.
+     */
+    where?: EstoqueVivoConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EstoqueVivoConfigs to fetch.
+     */
+    orderBy?: EstoqueVivoConfigOrderByWithRelationInput | EstoqueVivoConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for EstoqueVivoConfigs.
+     */
+    cursor?: EstoqueVivoConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EstoqueVivoConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EstoqueVivoConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EstoqueVivoConfigs.
+     */
+    distinct?: EstoqueVivoConfigScalarFieldEnum | EstoqueVivoConfigScalarFieldEnum[]
+  }
+
+  /**
+   * EstoqueVivoConfig findFirstOrThrow
+   */
+  export type EstoqueVivoConfigFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoConfig
+     */
+    select?: EstoqueVivoConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoConfig
+     */
+    omit?: EstoqueVivoConfigOmit<ExtArgs> | null
+    /**
+     * Filter, which EstoqueVivoConfig to fetch.
+     */
+    where?: EstoqueVivoConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EstoqueVivoConfigs to fetch.
+     */
+    orderBy?: EstoqueVivoConfigOrderByWithRelationInput | EstoqueVivoConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for EstoqueVivoConfigs.
+     */
+    cursor?: EstoqueVivoConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EstoqueVivoConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EstoqueVivoConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EstoqueVivoConfigs.
+     */
+    distinct?: EstoqueVivoConfigScalarFieldEnum | EstoqueVivoConfigScalarFieldEnum[]
+  }
+
+  /**
+   * EstoqueVivoConfig findMany
+   */
+  export type EstoqueVivoConfigFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoConfig
+     */
+    select?: EstoqueVivoConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoConfig
+     */
+    omit?: EstoqueVivoConfigOmit<ExtArgs> | null
+    /**
+     * Filter, which EstoqueVivoConfigs to fetch.
+     */
+    where?: EstoqueVivoConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EstoqueVivoConfigs to fetch.
+     */
+    orderBy?: EstoqueVivoConfigOrderByWithRelationInput | EstoqueVivoConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing EstoqueVivoConfigs.
+     */
+    cursor?: EstoqueVivoConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EstoqueVivoConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EstoqueVivoConfigs.
+     */
+    skip?: number
+    distinct?: EstoqueVivoConfigScalarFieldEnum | EstoqueVivoConfigScalarFieldEnum[]
+  }
+
+  /**
+   * EstoqueVivoConfig create
+   */
+  export type EstoqueVivoConfigCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoConfig
+     */
+    select?: EstoqueVivoConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoConfig
+     */
+    omit?: EstoqueVivoConfigOmit<ExtArgs> | null
+    /**
+     * The data needed to create a EstoqueVivoConfig.
+     */
+    data: XOR<EstoqueVivoConfigCreateInput, EstoqueVivoConfigUncheckedCreateInput>
+  }
+
+  /**
+   * EstoqueVivoConfig createMany
+   */
+  export type EstoqueVivoConfigCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many EstoqueVivoConfigs.
+     */
+    data: EstoqueVivoConfigCreateManyInput | EstoqueVivoConfigCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * EstoqueVivoConfig update
+   */
+  export type EstoqueVivoConfigUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoConfig
+     */
+    select?: EstoqueVivoConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoConfig
+     */
+    omit?: EstoqueVivoConfigOmit<ExtArgs> | null
+    /**
+     * The data needed to update a EstoqueVivoConfig.
+     */
+    data: XOR<EstoqueVivoConfigUpdateInput, EstoqueVivoConfigUncheckedUpdateInput>
+    /**
+     * Choose, which EstoqueVivoConfig to update.
+     */
+    where: EstoqueVivoConfigWhereUniqueInput
+  }
+
+  /**
+   * EstoqueVivoConfig updateMany
+   */
+  export type EstoqueVivoConfigUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update EstoqueVivoConfigs.
+     */
+    data: XOR<EstoqueVivoConfigUpdateManyMutationInput, EstoqueVivoConfigUncheckedUpdateManyInput>
+    /**
+     * Filter which EstoqueVivoConfigs to update
+     */
+    where?: EstoqueVivoConfigWhereInput
+    /**
+     * Limit how many EstoqueVivoConfigs to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * EstoqueVivoConfig upsert
+   */
+  export type EstoqueVivoConfigUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoConfig
+     */
+    select?: EstoqueVivoConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoConfig
+     */
+    omit?: EstoqueVivoConfigOmit<ExtArgs> | null
+    /**
+     * The filter to search for the EstoqueVivoConfig to update in case it exists.
+     */
+    where: EstoqueVivoConfigWhereUniqueInput
+    /**
+     * In case the EstoqueVivoConfig found by the `where` argument doesn't exist, create a new EstoqueVivoConfig with this data.
+     */
+    create: XOR<EstoqueVivoConfigCreateInput, EstoqueVivoConfigUncheckedCreateInput>
+    /**
+     * In case the EstoqueVivoConfig was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<EstoqueVivoConfigUpdateInput, EstoqueVivoConfigUncheckedUpdateInput>
+  }
+
+  /**
+   * EstoqueVivoConfig delete
+   */
+  export type EstoqueVivoConfigDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoConfig
+     */
+    select?: EstoqueVivoConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoConfig
+     */
+    omit?: EstoqueVivoConfigOmit<ExtArgs> | null
+    /**
+     * Filter which EstoqueVivoConfig to delete.
+     */
+    where: EstoqueVivoConfigWhereUniqueInput
+  }
+
+  /**
+   * EstoqueVivoConfig deleteMany
+   */
+  export type EstoqueVivoConfigDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which EstoqueVivoConfigs to delete
+     */
+    where?: EstoqueVivoConfigWhereInput
+    /**
+     * Limit how many EstoqueVivoConfigs to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * EstoqueVivoConfig without action
+   */
+  export type EstoqueVivoConfigDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoConfig
+     */
+    select?: EstoqueVivoConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoConfig
+     */
+    omit?: EstoqueVivoConfigOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model ProdutoComercial
+   */
+
+  export type AggregateProdutoComercial = {
+    _count: ProdutoComercialCountAggregateOutputType | null
+    _avg: ProdutoComercialAvgAggregateOutputType | null
+    _sum: ProdutoComercialSumAggregateOutputType | null
+    _min: ProdutoComercialMinAggregateOutputType | null
+    _max: ProdutoComercialMaxAggregateOutputType | null
+  }
+
+  export type ProdutoComercialAvgAggregateOutputType = {
+    precoBase: Decimal | null
+    fatorCompraUnidade: Decimal | null
+    rendimentoPorKg: Decimal | null
+  }
+
+  export type ProdutoComercialSumAggregateOutputType = {
+    precoBase: Decimal | null
+    fatorCompraUnidade: Decimal | null
+    rendimentoPorKg: Decimal | null
+  }
+
+  export type ProdutoComercialMinAggregateOutputType = {
+    id: string | null
+    nome: string | null
+    precoBase: Decimal | null
+    categoria: string | null
+    ativo: boolean | null
+    modoCompra: $Enums.ModoCompraProduto | null
+    fatorCompraUnidade: Decimal | null
+    rendimentoPorKg: Decimal | null
+    ocultoListaCompra: boolean | null
+    mixAtivo: boolean | null
+    mixFolhaLeve: boolean | null
+    mixProdutoReferenciaId: string | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type ProdutoComercialMaxAggregateOutputType = {
+    id: string | null
+    nome: string | null
+    precoBase: Decimal | null
+    categoria: string | null
+    ativo: boolean | null
+    modoCompra: $Enums.ModoCompraProduto | null
+    fatorCompraUnidade: Decimal | null
+    rendimentoPorKg: Decimal | null
+    ocultoListaCompra: boolean | null
+    mixAtivo: boolean | null
+    mixFolhaLeve: boolean | null
+    mixProdutoReferenciaId: string | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type ProdutoComercialCountAggregateOutputType = {
+    id: number
+    nome: number
+    precoBase: number
+    categoria: number
+    ativo: number
+    modoCompra: number
+    fatorCompraUnidade: number
+    rendimentoPorKg: number
+    ocultoListaCompra: number
+    mixAtivo: number
+    mixFolhaLeve: number
+    mixProdutoReferenciaId: number
+    mixVariedades: number
+    criadoEm: number
+    atualizadoEm: number
+    _all: number
+  }
+
+
+  export type ProdutoComercialAvgAggregateInputType = {
+    precoBase?: true
+    fatorCompraUnidade?: true
+    rendimentoPorKg?: true
+  }
+
+  export type ProdutoComercialSumAggregateInputType = {
+    precoBase?: true
+    fatorCompraUnidade?: true
+    rendimentoPorKg?: true
+  }
+
+  export type ProdutoComercialMinAggregateInputType = {
+    id?: true
+    nome?: true
+    precoBase?: true
+    categoria?: true
+    ativo?: true
+    modoCompra?: true
+    fatorCompraUnidade?: true
+    rendimentoPorKg?: true
+    ocultoListaCompra?: true
+    mixAtivo?: true
+    mixFolhaLeve?: true
+    mixProdutoReferenciaId?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type ProdutoComercialMaxAggregateInputType = {
+    id?: true
+    nome?: true
+    precoBase?: true
+    categoria?: true
+    ativo?: true
+    modoCompra?: true
+    fatorCompraUnidade?: true
+    rendimentoPorKg?: true
+    ocultoListaCompra?: true
+    mixAtivo?: true
+    mixFolhaLeve?: true
+    mixProdutoReferenciaId?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type ProdutoComercialCountAggregateInputType = {
+    id?: true
+    nome?: true
+    precoBase?: true
+    categoria?: true
+    ativo?: true
+    modoCompra?: true
+    fatorCompraUnidade?: true
+    rendimentoPorKg?: true
+    ocultoListaCompra?: true
+    mixAtivo?: true
+    mixFolhaLeve?: true
+    mixProdutoReferenciaId?: true
+    mixVariedades?: true
+    criadoEm?: true
+    atualizadoEm?: true
+    _all?: true
+  }
+
+  export type ProdutoComercialAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ProdutoComercial to aggregate.
+     */
+    where?: ProdutoComercialWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ProdutoComercials to fetch.
+     */
+    orderBy?: ProdutoComercialOrderByWithRelationInput | ProdutoComercialOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ProdutoComercialWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ProdutoComercials from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ProdutoComercials.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ProdutoComercials
+    **/
+    _count?: true | ProdutoComercialCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: ProdutoComercialAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: ProdutoComercialSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ProdutoComercialMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ProdutoComercialMaxAggregateInputType
+  }
+
+  export type GetProdutoComercialAggregateType<T extends ProdutoComercialAggregateArgs> = {
+        [P in keyof T & keyof AggregateProdutoComercial]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateProdutoComercial[P]>
+      : GetScalarType<T[P], AggregateProdutoComercial[P]>
+  }
+
+
+
+
+  export type ProdutoComercialGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ProdutoComercialWhereInput
+    orderBy?: ProdutoComercialOrderByWithAggregationInput | ProdutoComercialOrderByWithAggregationInput[]
+    by: ProdutoComercialScalarFieldEnum[] | ProdutoComercialScalarFieldEnum
+    having?: ProdutoComercialScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ProdutoComercialCountAggregateInputType | true
+    _avg?: ProdutoComercialAvgAggregateInputType
+    _sum?: ProdutoComercialSumAggregateInputType
+    _min?: ProdutoComercialMinAggregateInputType
+    _max?: ProdutoComercialMaxAggregateInputType
+  }
+
+  export type ProdutoComercialGroupByOutputType = {
+    id: string
+    nome: string
+    precoBase: Decimal | null
+    categoria: string | null
+    ativo: boolean
+    modoCompra: $Enums.ModoCompraProduto
+    fatorCompraUnidade: Decimal | null
+    rendimentoPorKg: Decimal | null
+    ocultoListaCompra: boolean
+    mixAtivo: boolean
+    mixFolhaLeve: boolean
+    mixProdutoReferenciaId: string | null
+    mixVariedades: JsonValue | null
+    criadoEm: Date
+    atualizadoEm: Date
+    _count: ProdutoComercialCountAggregateOutputType | null
+    _avg: ProdutoComercialAvgAggregateOutputType | null
+    _sum: ProdutoComercialSumAggregateOutputType | null
+    _min: ProdutoComercialMinAggregateOutputType | null
+    _max: ProdutoComercialMaxAggregateOutputType | null
+  }
+
+  type GetProdutoComercialGroupByPayload<T extends ProdutoComercialGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ProdutoComercialGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ProdutoComercialGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ProdutoComercialGroupByOutputType[P]>
+            : GetScalarType<T[P], ProdutoComercialGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ProdutoComercialSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nome?: boolean
+    precoBase?: boolean
+    categoria?: boolean
+    ativo?: boolean
+    modoCompra?: boolean
+    fatorCompraUnidade?: boolean
+    rendimentoPorKg?: boolean
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixProdutoReferenciaId?: boolean
+    mixVariedades?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+    precosEspeciais?: boolean | ProdutoComercial$precosEspeciaisArgs<ExtArgs>
+    itensPedido?: boolean | ProdutoComercial$itensPedidoArgs<ExtArgs>
+    avariasPedido?: boolean | ProdutoComercial$avariasPedidoArgs<ExtArgs>
+    mixProdutoReferencia?: boolean | ProdutoComercial$mixProdutoReferenciaArgs<ExtArgs>
+    mixReferenciadoPor?: boolean | ProdutoComercial$mixReferenciadoPorArgs<ExtArgs>
+    _count?: boolean | ProdutoComercialCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["produtoComercial"]>
+
+
+
+  export type ProdutoComercialSelectScalar = {
+    id?: boolean
+    nome?: boolean
+    precoBase?: boolean
+    categoria?: boolean
+    ativo?: boolean
+    modoCompra?: boolean
+    fatorCompraUnidade?: boolean
+    rendimentoPorKg?: boolean
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixProdutoReferenciaId?: boolean
+    mixVariedades?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+  }
+
+  export type ProdutoComercialOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "precoBase" | "categoria" | "ativo" | "modoCompra" | "fatorCompraUnidade" | "rendimentoPorKg" | "ocultoListaCompra" | "mixAtivo" | "mixFolhaLeve" | "mixProdutoReferenciaId" | "mixVariedades" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["produtoComercial"]>
+  export type ProdutoComercialInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    precosEspeciais?: boolean | ProdutoComercial$precosEspeciaisArgs<ExtArgs>
+    itensPedido?: boolean | ProdutoComercial$itensPedidoArgs<ExtArgs>
+    avariasPedido?: boolean | ProdutoComercial$avariasPedidoArgs<ExtArgs>
+    mixProdutoReferencia?: boolean | ProdutoComercial$mixProdutoReferenciaArgs<ExtArgs>
+    mixReferenciadoPor?: boolean | ProdutoComercial$mixReferenciadoPorArgs<ExtArgs>
+    _count?: boolean | ProdutoComercialCountOutputTypeDefaultArgs<ExtArgs>
+  }
+
+  export type $ProdutoComercialPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ProdutoComercial"
+    objects: {
+      precosEspeciais: Prisma.$PrecoEspecialClientePayload<ExtArgs>[]
+      itensPedido: Prisma.$PedidoOperacionalItemPayload<ExtArgs>[]
+      avariasPedido: Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>[]
+      mixProdutoReferencia: Prisma.$ProdutoComercialPayload<ExtArgs> | null
+      mixReferenciadoPor: Prisma.$ProdutoComercialPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      nome: string
+      precoBase: Prisma.Decimal | null
+      categoria: string | null
+      ativo: boolean
+      modoCompra: $Enums.ModoCompraProduto
+      fatorCompraUnidade: Prisma.Decimal | null
+      rendimentoPorKg: Prisma.Decimal | null
+      ocultoListaCompra: boolean
+      mixAtivo: boolean
+      mixFolhaLeve: boolean
+      mixProdutoReferenciaId: string | null
+      mixVariedades: Prisma.JsonValue | null
+      criadoEm: Date
+      atualizadoEm: Date
+    }, ExtArgs["result"]["produtoComercial"]>
+    composites: {}
+  }
+
+  type ProdutoComercialGetPayload<S extends boolean | null | undefined | ProdutoComercialDefaultArgs> = $Result.GetResult<Prisma.$ProdutoComercialPayload, S>
+
+  type ProdutoComercialCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ProdutoComercialFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ProdutoComercialCountAggregateInputType | true
+    }
+
+  export interface ProdutoComercialDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ProdutoComercial'], meta: { name: 'ProdutoComercial' } }
+    /**
+     * Find zero or one ProdutoComercial that matches the filter.
+     * @param {ProdutoComercialFindUniqueArgs} args - Arguments to find a ProdutoComercial
+     * @example
+     * // Get one ProdutoComercial
+     * const produtoComercial = await prisma.produtoComercial.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ProdutoComercialFindUniqueArgs>(args: SelectSubset<T, ProdutoComercialFindUniqueArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one ProdutoComercial that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ProdutoComercialFindUniqueOrThrowArgs} args - Arguments to find a ProdutoComercial
+     * @example
+     * // Get one ProdutoComercial
+     * const produtoComercial = await prisma.produtoComercial.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ProdutoComercialFindUniqueOrThrowArgs>(args: SelectSubset<T, ProdutoComercialFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ProdutoComercial that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProdutoComercialFindFirstArgs} args - Arguments to find a ProdutoComercial
+     * @example
+     * // Get one ProdutoComercial
+     * const produtoComercial = await prisma.produtoComercial.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ProdutoComercialFindFirstArgs>(args?: SelectSubset<T, ProdutoComercialFindFirstArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ProdutoComercial that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProdutoComercialFindFirstOrThrowArgs} args - Arguments to find a ProdutoComercial
+     * @example
+     * // Get one ProdutoComercial
+     * const produtoComercial = await prisma.produtoComercial.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ProdutoComercialFindFirstOrThrowArgs>(args?: SelectSubset<T, ProdutoComercialFindFirstOrThrowArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more ProdutoComercials that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProdutoComercialFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ProdutoComercials
+     * const produtoComercials = await prisma.produtoComercial.findMany()
+     * 
+     * // Get first 10 ProdutoComercials
+     * const produtoComercials = await prisma.produtoComercial.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const produtoComercialWithIdOnly = await prisma.produtoComercial.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ProdutoComercialFindManyArgs>(args?: SelectSubset<T, ProdutoComercialFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a ProdutoComercial.
+     * @param {ProdutoComercialCreateArgs} args - Arguments to create a ProdutoComercial.
+     * @example
+     * // Create one ProdutoComercial
+     * const ProdutoComercial = await prisma.produtoComercial.create({
+     *   data: {
+     *     // ... data to create a ProdutoComercial
+     *   }
+     * })
+     * 
+     */
+    create<T extends ProdutoComercialCreateArgs>(args: SelectSubset<T, ProdutoComercialCreateArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many ProdutoComercials.
+     * @param {ProdutoComercialCreateManyArgs} args - Arguments to create many ProdutoComercials.
+     * @example
+     * // Create many ProdutoComercials
+     * const produtoComercial = await prisma.produtoComercial.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ProdutoComercialCreateManyArgs>(args?: SelectSubset<T, ProdutoComercialCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a ProdutoComercial.
+     * @param {ProdutoComercialDeleteArgs} args - Arguments to delete one ProdutoComercial.
+     * @example
+     * // Delete one ProdutoComercial
+     * const ProdutoComercial = await prisma.produtoComercial.delete({
+     *   where: {
+     *     // ... filter to delete one ProdutoComercial
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ProdutoComercialDeleteArgs>(args: SelectSubset<T, ProdutoComercialDeleteArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one ProdutoComercial.
+     * @param {ProdutoComercialUpdateArgs} args - Arguments to update one ProdutoComercial.
+     * @example
+     * // Update one ProdutoComercial
+     * const produtoComercial = await prisma.produtoComercial.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ProdutoComercialUpdateArgs>(args: SelectSubset<T, ProdutoComercialUpdateArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more ProdutoComercials.
+     * @param {ProdutoComercialDeleteManyArgs} args - Arguments to filter ProdutoComercials to delete.
+     * @example
+     * // Delete a few ProdutoComercials
+     * const { count } = await prisma.produtoComercial.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ProdutoComercialDeleteManyArgs>(args?: SelectSubset<T, ProdutoComercialDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ProdutoComercials.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProdutoComercialUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ProdutoComercials
+     * const produtoComercial = await prisma.produtoComercial.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ProdutoComercialUpdateManyArgs>(args: SelectSubset<T, ProdutoComercialUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one ProdutoComercial.
+     * @param {ProdutoComercialUpsertArgs} args - Arguments to update or create a ProdutoComercial.
+     * @example
+     * // Update or create a ProdutoComercial
+     * const produtoComercial = await prisma.produtoComercial.upsert({
+     *   create: {
+     *     // ... data to create a ProdutoComercial
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ProdutoComercial we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ProdutoComercialUpsertArgs>(args: SelectSubset<T, ProdutoComercialUpsertArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of ProdutoComercials.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProdutoComercialCountArgs} args - Arguments to filter ProdutoComercials to count.
+     * @example
+     * // Count the number of ProdutoComercials
+     * const count = await prisma.produtoComercial.count({
+     *   where: {
+     *     // ... the filter for the ProdutoComercials we want to count
+     *   }
+     * })
+    **/
+    count<T extends ProdutoComercialCountArgs>(
+      args?: Subset<T, ProdutoComercialCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ProdutoComercialCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ProdutoComercial.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProdutoComercialAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ProdutoComercialAggregateArgs>(args: Subset<T, ProdutoComercialAggregateArgs>): Prisma.PrismaPromise<GetProdutoComercialAggregateType<T>>
+
+    /**
+     * Group by ProdutoComercial.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProdutoComercialGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ProdutoComercialGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ProdutoComercialGroupByArgs['orderBy'] }
+        : { orderBy?: ProdutoComercialGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ProdutoComercialGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetProdutoComercialGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ProdutoComercial model
+   */
+  readonly fields: ProdutoComercialFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ProdutoComercial.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ProdutoComercialClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    precosEspeciais<T extends ProdutoComercial$precosEspeciaisArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$precosEspeciaisArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PrecoEspecialClientePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    itensPedido<T extends ProdutoComercial$itensPedidoArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$itensPedidoArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    avariasPedido<T extends ProdutoComercial$avariasPedidoArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$avariasPedidoArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    mixProdutoReferencia<T extends ProdutoComercial$mixProdutoReferenciaArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$mixProdutoReferenciaArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    mixReferenciadoPor<T extends ProdutoComercial$mixReferenciadoPorArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$mixReferenciadoPorArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ProdutoComercial model
+   */
+  interface ProdutoComercialFieldRefs {
+    readonly id: FieldRef<"ProdutoComercial", 'String'>
+    readonly nome: FieldRef<"ProdutoComercial", 'String'>
+    readonly precoBase: FieldRef<"ProdutoComercial", 'Decimal'>
+    readonly categoria: FieldRef<"ProdutoComercial", 'String'>
+    readonly ativo: FieldRef<"ProdutoComercial", 'Boolean'>
+    readonly modoCompra: FieldRef<"ProdutoComercial", 'ModoCompraProduto'>
+    readonly fatorCompraUnidade: FieldRef<"ProdutoComercial", 'Decimal'>
+    readonly rendimentoPorKg: FieldRef<"ProdutoComercial", 'Decimal'>
+    readonly ocultoListaCompra: FieldRef<"ProdutoComercial", 'Boolean'>
+    readonly mixAtivo: FieldRef<"ProdutoComercial", 'Boolean'>
+    readonly mixFolhaLeve: FieldRef<"ProdutoComercial", 'Boolean'>
+    readonly mixProdutoReferenciaId: FieldRef<"ProdutoComercial", 'String'>
+    readonly mixVariedades: FieldRef<"ProdutoComercial", 'Json'>
+    readonly criadoEm: FieldRef<"ProdutoComercial", 'DateTime'>
+    readonly atualizadoEm: FieldRef<"ProdutoComercial", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ProdutoComercial findUnique
+   */
+  export type ProdutoComercialFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProdutoComercial
+     */
+    select?: ProdutoComercialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProdutoComercial
+     */
+    omit?: ProdutoComercialOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProdutoComercialInclude<ExtArgs> | null
+    /**
+     * Filter, which ProdutoComercial to fetch.
+     */
+    where: ProdutoComercialWhereUniqueInput
+  }
+
+  /**
+   * ProdutoComercial findUniqueOrThrow
+   */
+  export type ProdutoComercialFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProdutoComercial
+     */
+    select?: ProdutoComercialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProdutoComercial
+     */
+    omit?: ProdutoComercialOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProdutoComercialInclude<ExtArgs> | null
+    /**
+     * Filter, which ProdutoComercial to fetch.
+     */
+    where: ProdutoComercialWhereUniqueInput
+  }
+
+  /**
+   * ProdutoComercial findFirst
+   */
+  export type ProdutoComercialFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProdutoComercial
+     */
+    select?: ProdutoComercialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProdutoComercial
+     */
+    omit?: ProdutoComercialOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProdutoComercialInclude<ExtArgs> | null
+    /**
+     * Filter, which ProdutoComercial to fetch.
+     */
+    where?: ProdutoComercialWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ProdutoComercials to fetch.
+     */
+    orderBy?: ProdutoComercialOrderByWithRelationInput | ProdutoComercialOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ProdutoComercials.
+     */
+    cursor?: ProdutoComercialWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ProdutoComercials from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ProdutoComercials.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ProdutoComercials.
+     */
+    distinct?: ProdutoComercialScalarFieldEnum | ProdutoComercialScalarFieldEnum[]
+  }
+
+  /**
+   * ProdutoComercial findFirstOrThrow
+   */
+  export type ProdutoComercialFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProdutoComercial
+     */
+    select?: ProdutoComercialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProdutoComercial
+     */
+    omit?: ProdutoComercialOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProdutoComercialInclude<ExtArgs> | null
+    /**
+     * Filter, which ProdutoComercial to fetch.
+     */
+    where?: ProdutoComercialWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ProdutoComercials to fetch.
+     */
+    orderBy?: ProdutoComercialOrderByWithRelationInput | ProdutoComercialOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ProdutoComercials.
+     */
+    cursor?: ProdutoComercialWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ProdutoComercials from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ProdutoComercials.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ProdutoComercials.
+     */
+    distinct?: ProdutoComercialScalarFieldEnum | ProdutoComercialScalarFieldEnum[]
+  }
+
+  /**
+   * ProdutoComercial findMany
+   */
+  export type ProdutoComercialFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProdutoComercial
+     */
+    select?: ProdutoComercialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProdutoComercial
+     */
+    omit?: ProdutoComercialOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProdutoComercialInclude<ExtArgs> | null
+    /**
+     * Filter, which ProdutoComercials to fetch.
+     */
+    where?: ProdutoComercialWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ProdutoComercials to fetch.
+     */
+    orderBy?: ProdutoComercialOrderByWithRelationInput | ProdutoComercialOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ProdutoComercials.
+     */
+    cursor?: ProdutoComercialWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ProdutoComercials from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ProdutoComercials.
+     */
+    skip?: number
+    distinct?: ProdutoComercialScalarFieldEnum | ProdutoComercialScalarFieldEnum[]
+  }
+
+  /**
+   * ProdutoComercial create
+   */
+  export type ProdutoComercialCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProdutoComercial
+     */
+    select?: ProdutoComercialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProdutoComercial
+     */
+    omit?: ProdutoComercialOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProdutoComercialInclude<ExtArgs> | null
+    /**
+     * The data needed to create a ProdutoComercial.
+     */
+    data: XOR<ProdutoComercialCreateInput, ProdutoComercialUncheckedCreateInput>
+  }
+
+  /**
+   * ProdutoComercial createMany
+   */
+  export type ProdutoComercialCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ProdutoComercials.
+     */
+    data: ProdutoComercialCreateManyInput | ProdutoComercialCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ProdutoComercial update
+   */
+  export type ProdutoComercialUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProdutoComercial
+     */
+    select?: ProdutoComercialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProdutoComercial
+     */
+    omit?: ProdutoComercialOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProdutoComercialInclude<ExtArgs> | null
+    /**
+     * The data needed to update a ProdutoComercial.
+     */
+    data: XOR<ProdutoComercialUpdateInput, ProdutoComercialUncheckedUpdateInput>
+    /**
+     * Choose, which ProdutoComercial to update.
+     */
+    where: ProdutoComercialWhereUniqueInput
+  }
+
+  /**
+   * ProdutoComercial updateMany
+   */
+  export type ProdutoComercialUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ProdutoComercials.
+     */
+    data: XOR<ProdutoComercialUpdateManyMutationInput, ProdutoComercialUncheckedUpdateManyInput>
+    /**
+     * Filter which ProdutoComercials to update
+     */
+    where?: ProdutoComercialWhereInput
+    /**
+     * Limit how many ProdutoComercials to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ProdutoComercial upsert
+   */
+  export type ProdutoComercialUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProdutoComercial
+     */
+    select?: ProdutoComercialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProdutoComercial
+     */
+    omit?: ProdutoComercialOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProdutoComercialInclude<ExtArgs> | null
+    /**
+     * The filter to search for the ProdutoComercial to update in case it exists.
+     */
+    where: ProdutoComercialWhereUniqueInput
+    /**
+     * In case the ProdutoComercial found by the `where` argument doesn't exist, create a new ProdutoComercial with this data.
+     */
+    create: XOR<ProdutoComercialCreateInput, ProdutoComercialUncheckedCreateInput>
+    /**
+     * In case the ProdutoComercial was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ProdutoComercialUpdateInput, ProdutoComercialUncheckedUpdateInput>
+  }
+
+  /**
+   * ProdutoComercial delete
+   */
+  export type ProdutoComercialDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProdutoComercial
+     */
+    select?: ProdutoComercialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProdutoComercial
+     */
+    omit?: ProdutoComercialOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProdutoComercialInclude<ExtArgs> | null
+    /**
+     * Filter which ProdutoComercial to delete.
+     */
+    where: ProdutoComercialWhereUniqueInput
+  }
+
+  /**
+   * ProdutoComercial deleteMany
+   */
+  export type ProdutoComercialDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ProdutoComercials to delete
+     */
+    where?: ProdutoComercialWhereInput
+    /**
+     * Limit how many ProdutoComercials to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * ProdutoComercial.precosEspeciais
+   */
+  export type ProdutoComercial$precosEspeciaisArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PrecoEspecialCliente
+     */
+    select?: PrecoEspecialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PrecoEspecialCliente
+     */
+    omit?: PrecoEspecialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PrecoEspecialClienteInclude<ExtArgs> | null
+    where?: PrecoEspecialClienteWhereInput
+    orderBy?: PrecoEspecialClienteOrderByWithRelationInput | PrecoEspecialClienteOrderByWithRelationInput[]
+    cursor?: PrecoEspecialClienteWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PrecoEspecialClienteScalarFieldEnum | PrecoEspecialClienteScalarFieldEnum[]
+  }
+
+  /**
+   * ProdutoComercial.itensPedido
+   */
+  export type ProdutoComercial$itensPedidoArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalItem
+     */
+    select?: PedidoOperacionalItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalItem
+     */
+    omit?: PedidoOperacionalItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalItemInclude<ExtArgs> | null
+    where?: PedidoOperacionalItemWhereInput
+    orderBy?: PedidoOperacionalItemOrderByWithRelationInput | PedidoOperacionalItemOrderByWithRelationInput[]
+    cursor?: PedidoOperacionalItemWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PedidoOperacionalItemScalarFieldEnum | PedidoOperacionalItemScalarFieldEnum[]
+  }
+
+  /**
+   * ProdutoComercial.avariasPedido
+   */
+  export type ProdutoComercial$avariasPedidoArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAvaria
+     */
+    select?: PedidoOperacionalAvariaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAvaria
+     */
+    omit?: PedidoOperacionalAvariaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAvariaInclude<ExtArgs> | null
+    where?: PedidoOperacionalAvariaWhereInput
+    orderBy?: PedidoOperacionalAvariaOrderByWithRelationInput | PedidoOperacionalAvariaOrderByWithRelationInput[]
+    cursor?: PedidoOperacionalAvariaWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PedidoOperacionalAvariaScalarFieldEnum | PedidoOperacionalAvariaScalarFieldEnum[]
+  }
+
+  /**
+   * ProdutoComercial.mixProdutoReferencia
+   */
+  export type ProdutoComercial$mixProdutoReferenciaArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProdutoComercial
+     */
+    select?: ProdutoComercialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProdutoComercial
+     */
+    omit?: ProdutoComercialOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProdutoComercialInclude<ExtArgs> | null
+    where?: ProdutoComercialWhereInput
+  }
+
+  /**
+   * ProdutoComercial.mixReferenciadoPor
+   */
+  export type ProdutoComercial$mixReferenciadoPorArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProdutoComercial
+     */
+    select?: ProdutoComercialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProdutoComercial
+     */
+    omit?: ProdutoComercialOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProdutoComercialInclude<ExtArgs> | null
+    where?: ProdutoComercialWhereInput
+    orderBy?: ProdutoComercialOrderByWithRelationInput | ProdutoComercialOrderByWithRelationInput[]
+    cursor?: ProdutoComercialWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ProdutoComercialScalarFieldEnum | ProdutoComercialScalarFieldEnum[]
+  }
+
+  /**
+   * ProdutoComercial without action
+   */
+  export type ProdutoComercialDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProdutoComercial
+     */
+    select?: ProdutoComercialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProdutoComercial
+     */
+    omit?: ProdutoComercialOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProdutoComercialInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model RegraComercialCliente
+   */
+
+  export type AggregateRegraComercialCliente = {
+    _count: RegraComercialClienteCountAggregateOutputType | null
+    _avg: RegraComercialClienteAvgAggregateOutputType | null
+    _sum: RegraComercialClienteSumAggregateOutputType | null
+    _min: RegraComercialClienteMinAggregateOutputType | null
+    _max: RegraComercialClienteMaxAggregateOutputType | null
+  }
+
+  export type RegraComercialClienteAvgAggregateOutputType = {
+    prazoBoletoDias: number | null
+    diasAcumulo: number | null
+    prazoBoletoAcumuloDias: number | null
+  }
+
+  export type RegraComercialClienteSumAggregateOutputType = {
+    prazoBoletoDias: number | null
+    diasAcumulo: number | null
+    prazoBoletoAcumuloDias: number | null
+  }
+
+  export type RegraComercialClienteMinAggregateOutputType = {
+    id: string | null
+    contaAzulCustomerId: string | null
+    observacoesGerais: string | null
+    periodoEntrega: $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega: string | null
+    cobraTaxaEntrega: boolean | null
+    prazoBoletoDias: number | null
+    acumulaPedidos: boolean | null
+    diasAcumulo: number | null
+    prazoBoletoAcumuloDias: number | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type RegraComercialClienteMaxAggregateOutputType = {
+    id: string | null
+    contaAzulCustomerId: string | null
+    observacoesGerais: string | null
+    periodoEntrega: $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega: string | null
+    cobraTaxaEntrega: boolean | null
+    prazoBoletoDias: number | null
+    acumulaPedidos: boolean | null
+    diasAcumulo: number | null
+    prazoBoletoAcumuloDias: number | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type RegraComercialClienteCountAggregateOutputType = {
+    id: number
+    contaAzulCustomerId: number
+    observacoesGerais: number
+    periodoEntrega: number
+    horarioMaximoEntrega: number
+    cobraTaxaEntrega: number
+    prazoBoletoDias: number
+    acumulaPedidos: number
+    diasAcumulo: number
+    prazoBoletoAcumuloDias: number
+    criadoEm: number
+    atualizadoEm: number
+    _all: number
+  }
+
+
+  export type RegraComercialClienteAvgAggregateInputType = {
+    prazoBoletoDias?: true
+    diasAcumulo?: true
+    prazoBoletoAcumuloDias?: true
+  }
+
+  export type RegraComercialClienteSumAggregateInputType = {
+    prazoBoletoDias?: true
+    diasAcumulo?: true
+    prazoBoletoAcumuloDias?: true
+  }
+
+  export type RegraComercialClienteMinAggregateInputType = {
+    id?: true
+    contaAzulCustomerId?: true
+    observacoesGerais?: true
+    periodoEntrega?: true
+    horarioMaximoEntrega?: true
+    cobraTaxaEntrega?: true
+    prazoBoletoDias?: true
+    acumulaPedidos?: true
+    diasAcumulo?: true
+    prazoBoletoAcumuloDias?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type RegraComercialClienteMaxAggregateInputType = {
+    id?: true
+    contaAzulCustomerId?: true
+    observacoesGerais?: true
+    periodoEntrega?: true
+    horarioMaximoEntrega?: true
+    cobraTaxaEntrega?: true
+    prazoBoletoDias?: true
+    acumulaPedidos?: true
+    diasAcumulo?: true
+    prazoBoletoAcumuloDias?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type RegraComercialClienteCountAggregateInputType = {
+    id?: true
+    contaAzulCustomerId?: true
+    observacoesGerais?: true
+    periodoEntrega?: true
+    horarioMaximoEntrega?: true
+    cobraTaxaEntrega?: true
+    prazoBoletoDias?: true
+    acumulaPedidos?: true
+    diasAcumulo?: true
+    prazoBoletoAcumuloDias?: true
+    criadoEm?: true
+    atualizadoEm?: true
+    _all?: true
+  }
+
+  export type RegraComercialClienteAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which RegraComercialCliente to aggregate.
+     */
+    where?: RegraComercialClienteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RegraComercialClientes to fetch.
+     */
+    orderBy?: RegraComercialClienteOrderByWithRelationInput | RegraComercialClienteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: RegraComercialClienteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RegraComercialClientes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RegraComercialClientes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned RegraComercialClientes
+    **/
+    _count?: true | RegraComercialClienteCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: RegraComercialClienteAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: RegraComercialClienteSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: RegraComercialClienteMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: RegraComercialClienteMaxAggregateInputType
+  }
+
+  export type GetRegraComercialClienteAggregateType<T extends RegraComercialClienteAggregateArgs> = {
+        [P in keyof T & keyof AggregateRegraComercialCliente]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateRegraComercialCliente[P]>
+      : GetScalarType<T[P], AggregateRegraComercialCliente[P]>
+  }
+
+
+
+
+  export type RegraComercialClienteGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RegraComercialClienteWhereInput
+    orderBy?: RegraComercialClienteOrderByWithAggregationInput | RegraComercialClienteOrderByWithAggregationInput[]
+    by: RegraComercialClienteScalarFieldEnum[] | RegraComercialClienteScalarFieldEnum
+    having?: RegraComercialClienteScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: RegraComercialClienteCountAggregateInputType | true
+    _avg?: RegraComercialClienteAvgAggregateInputType
+    _sum?: RegraComercialClienteSumAggregateInputType
+    _min?: RegraComercialClienteMinAggregateInputType
+    _max?: RegraComercialClienteMaxAggregateInputType
+  }
+
+  export type RegraComercialClienteGroupByOutputType = {
+    id: string
+    contaAzulCustomerId: string
+    observacoesGerais: string | null
+    periodoEntrega: $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega: string | null
+    cobraTaxaEntrega: boolean
+    prazoBoletoDias: number | null
+    acumulaPedidos: boolean
+    diasAcumulo: number | null
+    prazoBoletoAcumuloDias: number | null
+    criadoEm: Date
+    atualizadoEm: Date
+    _count: RegraComercialClienteCountAggregateOutputType | null
+    _avg: RegraComercialClienteAvgAggregateOutputType | null
+    _sum: RegraComercialClienteSumAggregateOutputType | null
+    _min: RegraComercialClienteMinAggregateOutputType | null
+    _max: RegraComercialClienteMaxAggregateOutputType | null
+  }
+
+  type GetRegraComercialClienteGroupByPayload<T extends RegraComercialClienteGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<RegraComercialClienteGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof RegraComercialClienteGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], RegraComercialClienteGroupByOutputType[P]>
+            : GetScalarType<T[P], RegraComercialClienteGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type RegraComercialClienteSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    contaAzulCustomerId?: boolean
+    observacoesGerais?: boolean
+    periodoEntrega?: boolean
+    horarioMaximoEntrega?: boolean
+    cobraTaxaEntrega?: boolean
+    prazoBoletoDias?: boolean
+    acumulaPedidos?: boolean
+    diasAcumulo?: boolean
+    prazoBoletoAcumuloDias?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+    cliente?: boolean | RegraComercialCliente$clienteArgs<ExtArgs>
+    precosEspeciais?: boolean | RegraComercialCliente$precosEspeciaisArgs<ExtArgs>
+    _count?: boolean | RegraComercialClienteCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["regraComercialCliente"]>
+
+
+
+  export type RegraComercialClienteSelectScalar = {
+    id?: boolean
+    contaAzulCustomerId?: boolean
+    observacoesGerais?: boolean
+    periodoEntrega?: boolean
+    horarioMaximoEntrega?: boolean
+    cobraTaxaEntrega?: boolean
+    prazoBoletoDias?: boolean
+    acumulaPedidos?: boolean
+    diasAcumulo?: boolean
+    prazoBoletoAcumuloDias?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+  }
+
+  export type RegraComercialClienteOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "contaAzulCustomerId" | "observacoesGerais" | "periodoEntrega" | "horarioMaximoEntrega" | "cobraTaxaEntrega" | "prazoBoletoDias" | "acumulaPedidos" | "diasAcumulo" | "prazoBoletoAcumuloDias" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["regraComercialCliente"]>
+  export type RegraComercialClienteInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    cliente?: boolean | RegraComercialCliente$clienteArgs<ExtArgs>
+    precosEspeciais?: boolean | RegraComercialCliente$precosEspeciaisArgs<ExtArgs>
+    _count?: boolean | RegraComercialClienteCountOutputTypeDefaultArgs<ExtArgs>
+  }
+
+  export type $RegraComercialClientePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "RegraComercialCliente"
+    objects: {
+      cliente: Prisma.$ClientePayload<ExtArgs> | null
+      precosEspeciais: Prisma.$PrecoEspecialClientePayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      contaAzulCustomerId: string
+      observacoesGerais: string | null
+      periodoEntrega: $Enums.PeriodoEntregaCliente | null
+      horarioMaximoEntrega: string | null
+      cobraTaxaEntrega: boolean
+      prazoBoletoDias: number | null
+      acumulaPedidos: boolean
+      diasAcumulo: number | null
+      prazoBoletoAcumuloDias: number | null
+      criadoEm: Date
+      atualizadoEm: Date
+    }, ExtArgs["result"]["regraComercialCliente"]>
+    composites: {}
+  }
+
+  type RegraComercialClienteGetPayload<S extends boolean | null | undefined | RegraComercialClienteDefaultArgs> = $Result.GetResult<Prisma.$RegraComercialClientePayload, S>
+
+  type RegraComercialClienteCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<RegraComercialClienteFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: RegraComercialClienteCountAggregateInputType | true
+    }
+
+  export interface RegraComercialClienteDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['RegraComercialCliente'], meta: { name: 'RegraComercialCliente' } }
+    /**
+     * Find zero or one RegraComercialCliente that matches the filter.
+     * @param {RegraComercialClienteFindUniqueArgs} args - Arguments to find a RegraComercialCliente
+     * @example
+     * // Get one RegraComercialCliente
+     * const regraComercialCliente = await prisma.regraComercialCliente.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends RegraComercialClienteFindUniqueArgs>(args: SelectSubset<T, RegraComercialClienteFindUniqueArgs<ExtArgs>>): Prisma__RegraComercialClienteClient<$Result.GetResult<Prisma.$RegraComercialClientePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one RegraComercialCliente that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {RegraComercialClienteFindUniqueOrThrowArgs} args - Arguments to find a RegraComercialCliente
+     * @example
+     * // Get one RegraComercialCliente
+     * const regraComercialCliente = await prisma.regraComercialCliente.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends RegraComercialClienteFindUniqueOrThrowArgs>(args: SelectSubset<T, RegraComercialClienteFindUniqueOrThrowArgs<ExtArgs>>): Prisma__RegraComercialClienteClient<$Result.GetResult<Prisma.$RegraComercialClientePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first RegraComercialCliente that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RegraComercialClienteFindFirstArgs} args - Arguments to find a RegraComercialCliente
+     * @example
+     * // Get one RegraComercialCliente
+     * const regraComercialCliente = await prisma.regraComercialCliente.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends RegraComercialClienteFindFirstArgs>(args?: SelectSubset<T, RegraComercialClienteFindFirstArgs<ExtArgs>>): Prisma__RegraComercialClienteClient<$Result.GetResult<Prisma.$RegraComercialClientePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first RegraComercialCliente that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RegraComercialClienteFindFirstOrThrowArgs} args - Arguments to find a RegraComercialCliente
+     * @example
+     * // Get one RegraComercialCliente
+     * const regraComercialCliente = await prisma.regraComercialCliente.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends RegraComercialClienteFindFirstOrThrowArgs>(args?: SelectSubset<T, RegraComercialClienteFindFirstOrThrowArgs<ExtArgs>>): Prisma__RegraComercialClienteClient<$Result.GetResult<Prisma.$RegraComercialClientePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more RegraComercialClientes that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RegraComercialClienteFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all RegraComercialClientes
+     * const regraComercialClientes = await prisma.regraComercialCliente.findMany()
+     * 
+     * // Get first 10 RegraComercialClientes
+     * const regraComercialClientes = await prisma.regraComercialCliente.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const regraComercialClienteWithIdOnly = await prisma.regraComercialCliente.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends RegraComercialClienteFindManyArgs>(args?: SelectSubset<T, RegraComercialClienteFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RegraComercialClientePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a RegraComercialCliente.
+     * @param {RegraComercialClienteCreateArgs} args - Arguments to create a RegraComercialCliente.
+     * @example
+     * // Create one RegraComercialCliente
+     * const RegraComercialCliente = await prisma.regraComercialCliente.create({
+     *   data: {
+     *     // ... data to create a RegraComercialCliente
+     *   }
+     * })
+     * 
+     */
+    create<T extends RegraComercialClienteCreateArgs>(args: SelectSubset<T, RegraComercialClienteCreateArgs<ExtArgs>>): Prisma__RegraComercialClienteClient<$Result.GetResult<Prisma.$RegraComercialClientePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many RegraComercialClientes.
+     * @param {RegraComercialClienteCreateManyArgs} args - Arguments to create many RegraComercialClientes.
+     * @example
+     * // Create many RegraComercialClientes
+     * const regraComercialCliente = await prisma.regraComercialCliente.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends RegraComercialClienteCreateManyArgs>(args?: SelectSubset<T, RegraComercialClienteCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a RegraComercialCliente.
+     * @param {RegraComercialClienteDeleteArgs} args - Arguments to delete one RegraComercialCliente.
+     * @example
+     * // Delete one RegraComercialCliente
+     * const RegraComercialCliente = await prisma.regraComercialCliente.delete({
+     *   where: {
+     *     // ... filter to delete one RegraComercialCliente
+     *   }
+     * })
+     * 
+     */
+    delete<T extends RegraComercialClienteDeleteArgs>(args: SelectSubset<T, RegraComercialClienteDeleteArgs<ExtArgs>>): Prisma__RegraComercialClienteClient<$Result.GetResult<Prisma.$RegraComercialClientePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one RegraComercialCliente.
+     * @param {RegraComercialClienteUpdateArgs} args - Arguments to update one RegraComercialCliente.
+     * @example
+     * // Update one RegraComercialCliente
+     * const regraComercialCliente = await prisma.regraComercialCliente.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends RegraComercialClienteUpdateArgs>(args: SelectSubset<T, RegraComercialClienteUpdateArgs<ExtArgs>>): Prisma__RegraComercialClienteClient<$Result.GetResult<Prisma.$RegraComercialClientePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more RegraComercialClientes.
+     * @param {RegraComercialClienteDeleteManyArgs} args - Arguments to filter RegraComercialClientes to delete.
+     * @example
+     * // Delete a few RegraComercialClientes
+     * const { count } = await prisma.regraComercialCliente.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends RegraComercialClienteDeleteManyArgs>(args?: SelectSubset<T, RegraComercialClienteDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more RegraComercialClientes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RegraComercialClienteUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many RegraComercialClientes
+     * const regraComercialCliente = await prisma.regraComercialCliente.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends RegraComercialClienteUpdateManyArgs>(args: SelectSubset<T, RegraComercialClienteUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one RegraComercialCliente.
+     * @param {RegraComercialClienteUpsertArgs} args - Arguments to update or create a RegraComercialCliente.
+     * @example
+     * // Update or create a RegraComercialCliente
+     * const regraComercialCliente = await prisma.regraComercialCliente.upsert({
+     *   create: {
+     *     // ... data to create a RegraComercialCliente
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the RegraComercialCliente we want to update
+     *   }
+     * })
+     */
+    upsert<T extends RegraComercialClienteUpsertArgs>(args: SelectSubset<T, RegraComercialClienteUpsertArgs<ExtArgs>>): Prisma__RegraComercialClienteClient<$Result.GetResult<Prisma.$RegraComercialClientePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of RegraComercialClientes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RegraComercialClienteCountArgs} args - Arguments to filter RegraComercialClientes to count.
+     * @example
+     * // Count the number of RegraComercialClientes
+     * const count = await prisma.regraComercialCliente.count({
+     *   where: {
+     *     // ... the filter for the RegraComercialClientes we want to count
+     *   }
+     * })
+    **/
+    count<T extends RegraComercialClienteCountArgs>(
+      args?: Subset<T, RegraComercialClienteCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], RegraComercialClienteCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a RegraComercialCliente.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RegraComercialClienteAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends RegraComercialClienteAggregateArgs>(args: Subset<T, RegraComercialClienteAggregateArgs>): Prisma.PrismaPromise<GetRegraComercialClienteAggregateType<T>>
+
+    /**
+     * Group by RegraComercialCliente.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RegraComercialClienteGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends RegraComercialClienteGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: RegraComercialClienteGroupByArgs['orderBy'] }
+        : { orderBy?: RegraComercialClienteGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, RegraComercialClienteGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetRegraComercialClienteGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the RegraComercialCliente model
+   */
+  readonly fields: RegraComercialClienteFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for RegraComercialCliente.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__RegraComercialClienteClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    cliente<T extends RegraComercialCliente$clienteArgs<ExtArgs> = {}>(args?: Subset<T, RegraComercialCliente$clienteArgs<ExtArgs>>): Prisma__ClienteClient<$Result.GetResult<Prisma.$ClientePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    precosEspeciais<T extends RegraComercialCliente$precosEspeciaisArgs<ExtArgs> = {}>(args?: Subset<T, RegraComercialCliente$precosEspeciaisArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PrecoEspecialClientePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the RegraComercialCliente model
+   */
+  interface RegraComercialClienteFieldRefs {
+    readonly id: FieldRef<"RegraComercialCliente", 'String'>
+    readonly contaAzulCustomerId: FieldRef<"RegraComercialCliente", 'String'>
+    readonly observacoesGerais: FieldRef<"RegraComercialCliente", 'String'>
+    readonly periodoEntrega: FieldRef<"RegraComercialCliente", 'PeriodoEntregaCliente'>
+    readonly horarioMaximoEntrega: FieldRef<"RegraComercialCliente", 'String'>
+    readonly cobraTaxaEntrega: FieldRef<"RegraComercialCliente", 'Boolean'>
+    readonly prazoBoletoDias: FieldRef<"RegraComercialCliente", 'Int'>
+    readonly acumulaPedidos: FieldRef<"RegraComercialCliente", 'Boolean'>
+    readonly diasAcumulo: FieldRef<"RegraComercialCliente", 'Int'>
+    readonly prazoBoletoAcumuloDias: FieldRef<"RegraComercialCliente", 'Int'>
+    readonly criadoEm: FieldRef<"RegraComercialCliente", 'DateTime'>
+    readonly atualizadoEm: FieldRef<"RegraComercialCliente", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * RegraComercialCliente findUnique
+   */
+  export type RegraComercialClienteFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RegraComercialCliente
+     */
+    select?: RegraComercialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RegraComercialCliente
+     */
+    omit?: RegraComercialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RegraComercialClienteInclude<ExtArgs> | null
+    /**
+     * Filter, which RegraComercialCliente to fetch.
+     */
+    where: RegraComercialClienteWhereUniqueInput
+  }
+
+  /**
+   * RegraComercialCliente findUniqueOrThrow
+   */
+  export type RegraComercialClienteFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RegraComercialCliente
+     */
+    select?: RegraComercialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RegraComercialCliente
+     */
+    omit?: RegraComercialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RegraComercialClienteInclude<ExtArgs> | null
+    /**
+     * Filter, which RegraComercialCliente to fetch.
+     */
+    where: RegraComercialClienteWhereUniqueInput
+  }
+
+  /**
+   * RegraComercialCliente findFirst
+   */
+  export type RegraComercialClienteFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RegraComercialCliente
+     */
+    select?: RegraComercialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RegraComercialCliente
+     */
+    omit?: RegraComercialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RegraComercialClienteInclude<ExtArgs> | null
+    /**
+     * Filter, which RegraComercialCliente to fetch.
+     */
+    where?: RegraComercialClienteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RegraComercialClientes to fetch.
+     */
+    orderBy?: RegraComercialClienteOrderByWithRelationInput | RegraComercialClienteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for RegraComercialClientes.
+     */
+    cursor?: RegraComercialClienteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RegraComercialClientes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RegraComercialClientes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of RegraComercialClientes.
+     */
+    distinct?: RegraComercialClienteScalarFieldEnum | RegraComercialClienteScalarFieldEnum[]
+  }
+
+  /**
+   * RegraComercialCliente findFirstOrThrow
+   */
+  export type RegraComercialClienteFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RegraComercialCliente
+     */
+    select?: RegraComercialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RegraComercialCliente
+     */
+    omit?: RegraComercialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RegraComercialClienteInclude<ExtArgs> | null
+    /**
+     * Filter, which RegraComercialCliente to fetch.
+     */
+    where?: RegraComercialClienteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RegraComercialClientes to fetch.
+     */
+    orderBy?: RegraComercialClienteOrderByWithRelationInput | RegraComercialClienteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for RegraComercialClientes.
+     */
+    cursor?: RegraComercialClienteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RegraComercialClientes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RegraComercialClientes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of RegraComercialClientes.
+     */
+    distinct?: RegraComercialClienteScalarFieldEnum | RegraComercialClienteScalarFieldEnum[]
+  }
+
+  /**
+   * RegraComercialCliente findMany
+   */
+  export type RegraComercialClienteFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RegraComercialCliente
+     */
+    select?: RegraComercialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RegraComercialCliente
+     */
+    omit?: RegraComercialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RegraComercialClienteInclude<ExtArgs> | null
+    /**
+     * Filter, which RegraComercialClientes to fetch.
+     */
+    where?: RegraComercialClienteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RegraComercialClientes to fetch.
+     */
+    orderBy?: RegraComercialClienteOrderByWithRelationInput | RegraComercialClienteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing RegraComercialClientes.
+     */
+    cursor?: RegraComercialClienteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RegraComercialClientes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RegraComercialClientes.
+     */
+    skip?: number
+    distinct?: RegraComercialClienteScalarFieldEnum | RegraComercialClienteScalarFieldEnum[]
+  }
+
+  /**
+   * RegraComercialCliente create
+   */
+  export type RegraComercialClienteCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RegraComercialCliente
+     */
+    select?: RegraComercialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RegraComercialCliente
+     */
+    omit?: RegraComercialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RegraComercialClienteInclude<ExtArgs> | null
+    /**
+     * The data needed to create a RegraComercialCliente.
+     */
+    data: XOR<RegraComercialClienteCreateInput, RegraComercialClienteUncheckedCreateInput>
+  }
+
+  /**
+   * RegraComercialCliente createMany
+   */
+  export type RegraComercialClienteCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many RegraComercialClientes.
+     */
+    data: RegraComercialClienteCreateManyInput | RegraComercialClienteCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * RegraComercialCliente update
+   */
+  export type RegraComercialClienteUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RegraComercialCliente
+     */
+    select?: RegraComercialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RegraComercialCliente
+     */
+    omit?: RegraComercialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RegraComercialClienteInclude<ExtArgs> | null
+    /**
+     * The data needed to update a RegraComercialCliente.
+     */
+    data: XOR<RegraComercialClienteUpdateInput, RegraComercialClienteUncheckedUpdateInput>
+    /**
+     * Choose, which RegraComercialCliente to update.
+     */
+    where: RegraComercialClienteWhereUniqueInput
+  }
+
+  /**
+   * RegraComercialCliente updateMany
+   */
+  export type RegraComercialClienteUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update RegraComercialClientes.
+     */
+    data: XOR<RegraComercialClienteUpdateManyMutationInput, RegraComercialClienteUncheckedUpdateManyInput>
+    /**
+     * Filter which RegraComercialClientes to update
+     */
+    where?: RegraComercialClienteWhereInput
+    /**
+     * Limit how many RegraComercialClientes to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * RegraComercialCliente upsert
+   */
+  export type RegraComercialClienteUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RegraComercialCliente
+     */
+    select?: RegraComercialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RegraComercialCliente
+     */
+    omit?: RegraComercialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RegraComercialClienteInclude<ExtArgs> | null
+    /**
+     * The filter to search for the RegraComercialCliente to update in case it exists.
+     */
+    where: RegraComercialClienteWhereUniqueInput
+    /**
+     * In case the RegraComercialCliente found by the `where` argument doesn't exist, create a new RegraComercialCliente with this data.
+     */
+    create: XOR<RegraComercialClienteCreateInput, RegraComercialClienteUncheckedCreateInput>
+    /**
+     * In case the RegraComercialCliente was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<RegraComercialClienteUpdateInput, RegraComercialClienteUncheckedUpdateInput>
+  }
+
+  /**
+   * RegraComercialCliente delete
+   */
+  export type RegraComercialClienteDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RegraComercialCliente
+     */
+    select?: RegraComercialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RegraComercialCliente
+     */
+    omit?: RegraComercialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RegraComercialClienteInclude<ExtArgs> | null
+    /**
+     * Filter which RegraComercialCliente to delete.
+     */
+    where: RegraComercialClienteWhereUniqueInput
+  }
+
+  /**
+   * RegraComercialCliente deleteMany
+   */
+  export type RegraComercialClienteDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which RegraComercialClientes to delete
+     */
+    where?: RegraComercialClienteWhereInput
+    /**
+     * Limit how many RegraComercialClientes to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * RegraComercialCliente.cliente
+   */
+  export type RegraComercialCliente$clienteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Cliente
+     */
+    select?: ClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Cliente
+     */
+    omit?: ClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ClienteInclude<ExtArgs> | null
+    where?: ClienteWhereInput
+  }
+
+  /**
+   * RegraComercialCliente.precosEspeciais
+   */
+  export type RegraComercialCliente$precosEspeciaisArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PrecoEspecialCliente
+     */
+    select?: PrecoEspecialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PrecoEspecialCliente
+     */
+    omit?: PrecoEspecialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PrecoEspecialClienteInclude<ExtArgs> | null
+    where?: PrecoEspecialClienteWhereInput
+    orderBy?: PrecoEspecialClienteOrderByWithRelationInput | PrecoEspecialClienteOrderByWithRelationInput[]
+    cursor?: PrecoEspecialClienteWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PrecoEspecialClienteScalarFieldEnum | PrecoEspecialClienteScalarFieldEnum[]
+  }
+
+  /**
+   * RegraComercialCliente without action
+   */
+  export type RegraComercialClienteDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RegraComercialCliente
+     */
+    select?: RegraComercialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RegraComercialCliente
+     */
+    omit?: RegraComercialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RegraComercialClienteInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model ClienteLegadoContaAzulLink
+   */
+
+  export type AggregateClienteLegadoContaAzulLink = {
+    _count: ClienteLegadoContaAzulLinkCountAggregateOutputType | null
+    _avg: ClienteLegadoContaAzulLinkAvgAggregateOutputType | null
+    _sum: ClienteLegadoContaAzulLinkSumAggregateOutputType | null
+    _min: ClienteLegadoContaAzulLinkMinAggregateOutputType | null
+    _max: ClienteLegadoContaAzulLinkMaxAggregateOutputType | null
+  }
+
+  export type ClienteLegadoContaAzulLinkAvgAggregateOutputType = {
+    confianca: Decimal | null
+  }
+
+  export type ClienteLegadoContaAzulLinkSumAggregateOutputType = {
+    confianca: Decimal | null
+  }
+
+  export type ClienteLegadoContaAzulLinkMinAggregateOutputType = {
+    id: string | null
+    legacyClientId: string | null
+    legacyClientName: string | null
+    contaAzulCustomerId: string | null
+    clienteId: string | null
+    metodo: string | null
+    confianca: Decimal | null
+    revisado: boolean | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type ClienteLegadoContaAzulLinkMaxAggregateOutputType = {
+    id: string | null
+    legacyClientId: string | null
+    legacyClientName: string | null
+    contaAzulCustomerId: string | null
+    clienteId: string | null
+    metodo: string | null
+    confianca: Decimal | null
+    revisado: boolean | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type ClienteLegadoContaAzulLinkCountAggregateOutputType = {
+    id: number
+    legacyClientId: number
+    legacyClientName: number
+    contaAzulCustomerId: number
+    clienteId: number
+    metodo: number
+    confianca: number
+    revisado: number
+    criadoEm: number
+    atualizadoEm: number
+    _all: number
+  }
+
+
+  export type ClienteLegadoContaAzulLinkAvgAggregateInputType = {
+    confianca?: true
+  }
+
+  export type ClienteLegadoContaAzulLinkSumAggregateInputType = {
+    confianca?: true
+  }
+
+  export type ClienteLegadoContaAzulLinkMinAggregateInputType = {
+    id?: true
+    legacyClientId?: true
+    legacyClientName?: true
+    contaAzulCustomerId?: true
+    clienteId?: true
+    metodo?: true
+    confianca?: true
+    revisado?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type ClienteLegadoContaAzulLinkMaxAggregateInputType = {
+    id?: true
+    legacyClientId?: true
+    legacyClientName?: true
+    contaAzulCustomerId?: true
+    clienteId?: true
+    metodo?: true
+    confianca?: true
+    revisado?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type ClienteLegadoContaAzulLinkCountAggregateInputType = {
+    id?: true
+    legacyClientId?: true
+    legacyClientName?: true
+    contaAzulCustomerId?: true
+    clienteId?: true
+    metodo?: true
+    confianca?: true
+    revisado?: true
+    criadoEm?: true
+    atualizadoEm?: true
+    _all?: true
+  }
+
+  export type ClienteLegadoContaAzulLinkAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ClienteLegadoContaAzulLink to aggregate.
+     */
+    where?: ClienteLegadoContaAzulLinkWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ClienteLegadoContaAzulLinks to fetch.
+     */
+    orderBy?: ClienteLegadoContaAzulLinkOrderByWithRelationInput | ClienteLegadoContaAzulLinkOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ClienteLegadoContaAzulLinkWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ClienteLegadoContaAzulLinks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ClienteLegadoContaAzulLinks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ClienteLegadoContaAzulLinks
+    **/
+    _count?: true | ClienteLegadoContaAzulLinkCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: ClienteLegadoContaAzulLinkAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: ClienteLegadoContaAzulLinkSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ClienteLegadoContaAzulLinkMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ClienteLegadoContaAzulLinkMaxAggregateInputType
+  }
+
+  export type GetClienteLegadoContaAzulLinkAggregateType<T extends ClienteLegadoContaAzulLinkAggregateArgs> = {
+        [P in keyof T & keyof AggregateClienteLegadoContaAzulLink]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateClienteLegadoContaAzulLink[P]>
+      : GetScalarType<T[P], AggregateClienteLegadoContaAzulLink[P]>
+  }
+
+
+
+
+  export type ClienteLegadoContaAzulLinkGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ClienteLegadoContaAzulLinkWhereInput
+    orderBy?: ClienteLegadoContaAzulLinkOrderByWithAggregationInput | ClienteLegadoContaAzulLinkOrderByWithAggregationInput[]
+    by: ClienteLegadoContaAzulLinkScalarFieldEnum[] | ClienteLegadoContaAzulLinkScalarFieldEnum
+    having?: ClienteLegadoContaAzulLinkScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ClienteLegadoContaAzulLinkCountAggregateInputType | true
+    _avg?: ClienteLegadoContaAzulLinkAvgAggregateInputType
+    _sum?: ClienteLegadoContaAzulLinkSumAggregateInputType
+    _min?: ClienteLegadoContaAzulLinkMinAggregateInputType
+    _max?: ClienteLegadoContaAzulLinkMaxAggregateInputType
+  }
+
+  export type ClienteLegadoContaAzulLinkGroupByOutputType = {
+    id: string
+    legacyClientId: string
+    legacyClientName: string
+    contaAzulCustomerId: string
+    clienteId: string | null
+    metodo: string
+    confianca: Decimal
+    revisado: boolean
+    criadoEm: Date
+    atualizadoEm: Date
+    _count: ClienteLegadoContaAzulLinkCountAggregateOutputType | null
+    _avg: ClienteLegadoContaAzulLinkAvgAggregateOutputType | null
+    _sum: ClienteLegadoContaAzulLinkSumAggregateOutputType | null
+    _min: ClienteLegadoContaAzulLinkMinAggregateOutputType | null
+    _max: ClienteLegadoContaAzulLinkMaxAggregateOutputType | null
+  }
+
+  type GetClienteLegadoContaAzulLinkGroupByPayload<T extends ClienteLegadoContaAzulLinkGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ClienteLegadoContaAzulLinkGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ClienteLegadoContaAzulLinkGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ClienteLegadoContaAzulLinkGroupByOutputType[P]>
+            : GetScalarType<T[P], ClienteLegadoContaAzulLinkGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ClienteLegadoContaAzulLinkSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    legacyClientId?: boolean
+    legacyClientName?: boolean
+    contaAzulCustomerId?: boolean
+    clienteId?: boolean
+    metodo?: boolean
+    confianca?: boolean
+    revisado?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+    cliente?: boolean | ClienteLegadoContaAzulLink$clienteArgs<ExtArgs>
+  }, ExtArgs["result"]["clienteLegadoContaAzulLink"]>
+
+
+
+  export type ClienteLegadoContaAzulLinkSelectScalar = {
+    id?: boolean
+    legacyClientId?: boolean
+    legacyClientName?: boolean
+    contaAzulCustomerId?: boolean
+    clienteId?: boolean
+    metodo?: boolean
+    confianca?: boolean
+    revisado?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+  }
+
+  export type ClienteLegadoContaAzulLinkOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "legacyClientId" | "legacyClientName" | "contaAzulCustomerId" | "clienteId" | "metodo" | "confianca" | "revisado" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["clienteLegadoContaAzulLink"]>
+  export type ClienteLegadoContaAzulLinkInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    cliente?: boolean | ClienteLegadoContaAzulLink$clienteArgs<ExtArgs>
+  }
+
+  export type $ClienteLegadoContaAzulLinkPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ClienteLegadoContaAzulLink"
+    objects: {
+      cliente: Prisma.$ClientePayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      legacyClientId: string
+      legacyClientName: string
+      contaAzulCustomerId: string
+      clienteId: string | null
+      metodo: string
+      confianca: Prisma.Decimal
+      revisado: boolean
+      criadoEm: Date
+      atualizadoEm: Date
+    }, ExtArgs["result"]["clienteLegadoContaAzulLink"]>
+    composites: {}
+  }
+
+  type ClienteLegadoContaAzulLinkGetPayload<S extends boolean | null | undefined | ClienteLegadoContaAzulLinkDefaultArgs> = $Result.GetResult<Prisma.$ClienteLegadoContaAzulLinkPayload, S>
+
+  type ClienteLegadoContaAzulLinkCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ClienteLegadoContaAzulLinkFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ClienteLegadoContaAzulLinkCountAggregateInputType | true
+    }
+
+  export interface ClienteLegadoContaAzulLinkDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ClienteLegadoContaAzulLink'], meta: { name: 'ClienteLegadoContaAzulLink' } }
+    /**
+     * Find zero or one ClienteLegadoContaAzulLink that matches the filter.
+     * @param {ClienteLegadoContaAzulLinkFindUniqueArgs} args - Arguments to find a ClienteLegadoContaAzulLink
+     * @example
+     * // Get one ClienteLegadoContaAzulLink
+     * const clienteLegadoContaAzulLink = await prisma.clienteLegadoContaAzulLink.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ClienteLegadoContaAzulLinkFindUniqueArgs>(args: SelectSubset<T, ClienteLegadoContaAzulLinkFindUniqueArgs<ExtArgs>>): Prisma__ClienteLegadoContaAzulLinkClient<$Result.GetResult<Prisma.$ClienteLegadoContaAzulLinkPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one ClienteLegadoContaAzulLink that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ClienteLegadoContaAzulLinkFindUniqueOrThrowArgs} args - Arguments to find a ClienteLegadoContaAzulLink
+     * @example
+     * // Get one ClienteLegadoContaAzulLink
+     * const clienteLegadoContaAzulLink = await prisma.clienteLegadoContaAzulLink.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ClienteLegadoContaAzulLinkFindUniqueOrThrowArgs>(args: SelectSubset<T, ClienteLegadoContaAzulLinkFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ClienteLegadoContaAzulLinkClient<$Result.GetResult<Prisma.$ClienteLegadoContaAzulLinkPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ClienteLegadoContaAzulLink that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ClienteLegadoContaAzulLinkFindFirstArgs} args - Arguments to find a ClienteLegadoContaAzulLink
+     * @example
+     * // Get one ClienteLegadoContaAzulLink
+     * const clienteLegadoContaAzulLink = await prisma.clienteLegadoContaAzulLink.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ClienteLegadoContaAzulLinkFindFirstArgs>(args?: SelectSubset<T, ClienteLegadoContaAzulLinkFindFirstArgs<ExtArgs>>): Prisma__ClienteLegadoContaAzulLinkClient<$Result.GetResult<Prisma.$ClienteLegadoContaAzulLinkPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ClienteLegadoContaAzulLink that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ClienteLegadoContaAzulLinkFindFirstOrThrowArgs} args - Arguments to find a ClienteLegadoContaAzulLink
+     * @example
+     * // Get one ClienteLegadoContaAzulLink
+     * const clienteLegadoContaAzulLink = await prisma.clienteLegadoContaAzulLink.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ClienteLegadoContaAzulLinkFindFirstOrThrowArgs>(args?: SelectSubset<T, ClienteLegadoContaAzulLinkFindFirstOrThrowArgs<ExtArgs>>): Prisma__ClienteLegadoContaAzulLinkClient<$Result.GetResult<Prisma.$ClienteLegadoContaAzulLinkPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more ClienteLegadoContaAzulLinks that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ClienteLegadoContaAzulLinkFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ClienteLegadoContaAzulLinks
+     * const clienteLegadoContaAzulLinks = await prisma.clienteLegadoContaAzulLink.findMany()
+     * 
+     * // Get first 10 ClienteLegadoContaAzulLinks
+     * const clienteLegadoContaAzulLinks = await prisma.clienteLegadoContaAzulLink.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const clienteLegadoContaAzulLinkWithIdOnly = await prisma.clienteLegadoContaAzulLink.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ClienteLegadoContaAzulLinkFindManyArgs>(args?: SelectSubset<T, ClienteLegadoContaAzulLinkFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ClienteLegadoContaAzulLinkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a ClienteLegadoContaAzulLink.
+     * @param {ClienteLegadoContaAzulLinkCreateArgs} args - Arguments to create a ClienteLegadoContaAzulLink.
+     * @example
+     * // Create one ClienteLegadoContaAzulLink
+     * const ClienteLegadoContaAzulLink = await prisma.clienteLegadoContaAzulLink.create({
+     *   data: {
+     *     // ... data to create a ClienteLegadoContaAzulLink
+     *   }
+     * })
+     * 
+     */
+    create<T extends ClienteLegadoContaAzulLinkCreateArgs>(args: SelectSubset<T, ClienteLegadoContaAzulLinkCreateArgs<ExtArgs>>): Prisma__ClienteLegadoContaAzulLinkClient<$Result.GetResult<Prisma.$ClienteLegadoContaAzulLinkPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many ClienteLegadoContaAzulLinks.
+     * @param {ClienteLegadoContaAzulLinkCreateManyArgs} args - Arguments to create many ClienteLegadoContaAzulLinks.
+     * @example
+     * // Create many ClienteLegadoContaAzulLinks
+     * const clienteLegadoContaAzulLink = await prisma.clienteLegadoContaAzulLink.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ClienteLegadoContaAzulLinkCreateManyArgs>(args?: SelectSubset<T, ClienteLegadoContaAzulLinkCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a ClienteLegadoContaAzulLink.
+     * @param {ClienteLegadoContaAzulLinkDeleteArgs} args - Arguments to delete one ClienteLegadoContaAzulLink.
+     * @example
+     * // Delete one ClienteLegadoContaAzulLink
+     * const ClienteLegadoContaAzulLink = await prisma.clienteLegadoContaAzulLink.delete({
+     *   where: {
+     *     // ... filter to delete one ClienteLegadoContaAzulLink
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ClienteLegadoContaAzulLinkDeleteArgs>(args: SelectSubset<T, ClienteLegadoContaAzulLinkDeleteArgs<ExtArgs>>): Prisma__ClienteLegadoContaAzulLinkClient<$Result.GetResult<Prisma.$ClienteLegadoContaAzulLinkPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one ClienteLegadoContaAzulLink.
+     * @param {ClienteLegadoContaAzulLinkUpdateArgs} args - Arguments to update one ClienteLegadoContaAzulLink.
+     * @example
+     * // Update one ClienteLegadoContaAzulLink
+     * const clienteLegadoContaAzulLink = await prisma.clienteLegadoContaAzulLink.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ClienteLegadoContaAzulLinkUpdateArgs>(args: SelectSubset<T, ClienteLegadoContaAzulLinkUpdateArgs<ExtArgs>>): Prisma__ClienteLegadoContaAzulLinkClient<$Result.GetResult<Prisma.$ClienteLegadoContaAzulLinkPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more ClienteLegadoContaAzulLinks.
+     * @param {ClienteLegadoContaAzulLinkDeleteManyArgs} args - Arguments to filter ClienteLegadoContaAzulLinks to delete.
+     * @example
+     * // Delete a few ClienteLegadoContaAzulLinks
+     * const { count } = await prisma.clienteLegadoContaAzulLink.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ClienteLegadoContaAzulLinkDeleteManyArgs>(args?: SelectSubset<T, ClienteLegadoContaAzulLinkDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ClienteLegadoContaAzulLinks.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ClienteLegadoContaAzulLinkUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ClienteLegadoContaAzulLinks
+     * const clienteLegadoContaAzulLink = await prisma.clienteLegadoContaAzulLink.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ClienteLegadoContaAzulLinkUpdateManyArgs>(args: SelectSubset<T, ClienteLegadoContaAzulLinkUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one ClienteLegadoContaAzulLink.
+     * @param {ClienteLegadoContaAzulLinkUpsertArgs} args - Arguments to update or create a ClienteLegadoContaAzulLink.
+     * @example
+     * // Update or create a ClienteLegadoContaAzulLink
+     * const clienteLegadoContaAzulLink = await prisma.clienteLegadoContaAzulLink.upsert({
+     *   create: {
+     *     // ... data to create a ClienteLegadoContaAzulLink
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ClienteLegadoContaAzulLink we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ClienteLegadoContaAzulLinkUpsertArgs>(args: SelectSubset<T, ClienteLegadoContaAzulLinkUpsertArgs<ExtArgs>>): Prisma__ClienteLegadoContaAzulLinkClient<$Result.GetResult<Prisma.$ClienteLegadoContaAzulLinkPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of ClienteLegadoContaAzulLinks.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ClienteLegadoContaAzulLinkCountArgs} args - Arguments to filter ClienteLegadoContaAzulLinks to count.
+     * @example
+     * // Count the number of ClienteLegadoContaAzulLinks
+     * const count = await prisma.clienteLegadoContaAzulLink.count({
+     *   where: {
+     *     // ... the filter for the ClienteLegadoContaAzulLinks we want to count
+     *   }
+     * })
+    **/
+    count<T extends ClienteLegadoContaAzulLinkCountArgs>(
+      args?: Subset<T, ClienteLegadoContaAzulLinkCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ClienteLegadoContaAzulLinkCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ClienteLegadoContaAzulLink.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ClienteLegadoContaAzulLinkAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ClienteLegadoContaAzulLinkAggregateArgs>(args: Subset<T, ClienteLegadoContaAzulLinkAggregateArgs>): Prisma.PrismaPromise<GetClienteLegadoContaAzulLinkAggregateType<T>>
+
+    /**
+     * Group by ClienteLegadoContaAzulLink.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ClienteLegadoContaAzulLinkGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ClienteLegadoContaAzulLinkGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ClienteLegadoContaAzulLinkGroupByArgs['orderBy'] }
+        : { orderBy?: ClienteLegadoContaAzulLinkGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ClienteLegadoContaAzulLinkGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetClienteLegadoContaAzulLinkGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ClienteLegadoContaAzulLink model
+   */
+  readonly fields: ClienteLegadoContaAzulLinkFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ClienteLegadoContaAzulLink.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ClienteLegadoContaAzulLinkClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    cliente<T extends ClienteLegadoContaAzulLink$clienteArgs<ExtArgs> = {}>(args?: Subset<T, ClienteLegadoContaAzulLink$clienteArgs<ExtArgs>>): Prisma__ClienteClient<$Result.GetResult<Prisma.$ClientePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ClienteLegadoContaAzulLink model
+   */
+  interface ClienteLegadoContaAzulLinkFieldRefs {
+    readonly id: FieldRef<"ClienteLegadoContaAzulLink", 'String'>
+    readonly legacyClientId: FieldRef<"ClienteLegadoContaAzulLink", 'String'>
+    readonly legacyClientName: FieldRef<"ClienteLegadoContaAzulLink", 'String'>
+    readonly contaAzulCustomerId: FieldRef<"ClienteLegadoContaAzulLink", 'String'>
+    readonly clienteId: FieldRef<"ClienteLegadoContaAzulLink", 'String'>
+    readonly metodo: FieldRef<"ClienteLegadoContaAzulLink", 'String'>
+    readonly confianca: FieldRef<"ClienteLegadoContaAzulLink", 'Decimal'>
+    readonly revisado: FieldRef<"ClienteLegadoContaAzulLink", 'Boolean'>
+    readonly criadoEm: FieldRef<"ClienteLegadoContaAzulLink", 'DateTime'>
+    readonly atualizadoEm: FieldRef<"ClienteLegadoContaAzulLink", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ClienteLegadoContaAzulLink findUnique
+   */
+  export type ClienteLegadoContaAzulLinkFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ClienteLegadoContaAzulLink
+     */
+    select?: ClienteLegadoContaAzulLinkSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ClienteLegadoContaAzulLink
+     */
+    omit?: ClienteLegadoContaAzulLinkOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ClienteLegadoContaAzulLinkInclude<ExtArgs> | null
+    /**
+     * Filter, which ClienteLegadoContaAzulLink to fetch.
+     */
+    where: ClienteLegadoContaAzulLinkWhereUniqueInput
+  }
+
+  /**
+   * ClienteLegadoContaAzulLink findUniqueOrThrow
+   */
+  export type ClienteLegadoContaAzulLinkFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ClienteLegadoContaAzulLink
+     */
+    select?: ClienteLegadoContaAzulLinkSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ClienteLegadoContaAzulLink
+     */
+    omit?: ClienteLegadoContaAzulLinkOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ClienteLegadoContaAzulLinkInclude<ExtArgs> | null
+    /**
+     * Filter, which ClienteLegadoContaAzulLink to fetch.
+     */
+    where: ClienteLegadoContaAzulLinkWhereUniqueInput
+  }
+
+  /**
+   * ClienteLegadoContaAzulLink findFirst
+   */
+  export type ClienteLegadoContaAzulLinkFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ClienteLegadoContaAzulLink
+     */
+    select?: ClienteLegadoContaAzulLinkSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ClienteLegadoContaAzulLink
+     */
+    omit?: ClienteLegadoContaAzulLinkOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ClienteLegadoContaAzulLinkInclude<ExtArgs> | null
+    /**
+     * Filter, which ClienteLegadoContaAzulLink to fetch.
+     */
+    where?: ClienteLegadoContaAzulLinkWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ClienteLegadoContaAzulLinks to fetch.
+     */
+    orderBy?: ClienteLegadoContaAzulLinkOrderByWithRelationInput | ClienteLegadoContaAzulLinkOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ClienteLegadoContaAzulLinks.
+     */
+    cursor?: ClienteLegadoContaAzulLinkWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ClienteLegadoContaAzulLinks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ClienteLegadoContaAzulLinks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ClienteLegadoContaAzulLinks.
+     */
+    distinct?: ClienteLegadoContaAzulLinkScalarFieldEnum | ClienteLegadoContaAzulLinkScalarFieldEnum[]
+  }
+
+  /**
+   * ClienteLegadoContaAzulLink findFirstOrThrow
+   */
+  export type ClienteLegadoContaAzulLinkFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ClienteLegadoContaAzulLink
+     */
+    select?: ClienteLegadoContaAzulLinkSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ClienteLegadoContaAzulLink
+     */
+    omit?: ClienteLegadoContaAzulLinkOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ClienteLegadoContaAzulLinkInclude<ExtArgs> | null
+    /**
+     * Filter, which ClienteLegadoContaAzulLink to fetch.
+     */
+    where?: ClienteLegadoContaAzulLinkWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ClienteLegadoContaAzulLinks to fetch.
+     */
+    orderBy?: ClienteLegadoContaAzulLinkOrderByWithRelationInput | ClienteLegadoContaAzulLinkOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ClienteLegadoContaAzulLinks.
+     */
+    cursor?: ClienteLegadoContaAzulLinkWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ClienteLegadoContaAzulLinks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ClienteLegadoContaAzulLinks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ClienteLegadoContaAzulLinks.
+     */
+    distinct?: ClienteLegadoContaAzulLinkScalarFieldEnum | ClienteLegadoContaAzulLinkScalarFieldEnum[]
+  }
+
+  /**
+   * ClienteLegadoContaAzulLink findMany
+   */
+  export type ClienteLegadoContaAzulLinkFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ClienteLegadoContaAzulLink
+     */
+    select?: ClienteLegadoContaAzulLinkSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ClienteLegadoContaAzulLink
+     */
+    omit?: ClienteLegadoContaAzulLinkOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ClienteLegadoContaAzulLinkInclude<ExtArgs> | null
+    /**
+     * Filter, which ClienteLegadoContaAzulLinks to fetch.
+     */
+    where?: ClienteLegadoContaAzulLinkWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ClienteLegadoContaAzulLinks to fetch.
+     */
+    orderBy?: ClienteLegadoContaAzulLinkOrderByWithRelationInput | ClienteLegadoContaAzulLinkOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ClienteLegadoContaAzulLinks.
+     */
+    cursor?: ClienteLegadoContaAzulLinkWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ClienteLegadoContaAzulLinks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ClienteLegadoContaAzulLinks.
+     */
+    skip?: number
+    distinct?: ClienteLegadoContaAzulLinkScalarFieldEnum | ClienteLegadoContaAzulLinkScalarFieldEnum[]
+  }
+
+  /**
+   * ClienteLegadoContaAzulLink create
+   */
+  export type ClienteLegadoContaAzulLinkCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ClienteLegadoContaAzulLink
+     */
+    select?: ClienteLegadoContaAzulLinkSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ClienteLegadoContaAzulLink
+     */
+    omit?: ClienteLegadoContaAzulLinkOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ClienteLegadoContaAzulLinkInclude<ExtArgs> | null
+    /**
+     * The data needed to create a ClienteLegadoContaAzulLink.
+     */
+    data: XOR<ClienteLegadoContaAzulLinkCreateInput, ClienteLegadoContaAzulLinkUncheckedCreateInput>
+  }
+
+  /**
+   * ClienteLegadoContaAzulLink createMany
+   */
+  export type ClienteLegadoContaAzulLinkCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ClienteLegadoContaAzulLinks.
+     */
+    data: ClienteLegadoContaAzulLinkCreateManyInput | ClienteLegadoContaAzulLinkCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ClienteLegadoContaAzulLink update
+   */
+  export type ClienteLegadoContaAzulLinkUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ClienteLegadoContaAzulLink
+     */
+    select?: ClienteLegadoContaAzulLinkSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ClienteLegadoContaAzulLink
+     */
+    omit?: ClienteLegadoContaAzulLinkOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ClienteLegadoContaAzulLinkInclude<ExtArgs> | null
+    /**
+     * The data needed to update a ClienteLegadoContaAzulLink.
+     */
+    data: XOR<ClienteLegadoContaAzulLinkUpdateInput, ClienteLegadoContaAzulLinkUncheckedUpdateInput>
+    /**
+     * Choose, which ClienteLegadoContaAzulLink to update.
+     */
+    where: ClienteLegadoContaAzulLinkWhereUniqueInput
+  }
+
+  /**
+   * ClienteLegadoContaAzulLink updateMany
+   */
+  export type ClienteLegadoContaAzulLinkUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ClienteLegadoContaAzulLinks.
+     */
+    data: XOR<ClienteLegadoContaAzulLinkUpdateManyMutationInput, ClienteLegadoContaAzulLinkUncheckedUpdateManyInput>
+    /**
+     * Filter which ClienteLegadoContaAzulLinks to update
+     */
+    where?: ClienteLegadoContaAzulLinkWhereInput
+    /**
+     * Limit how many ClienteLegadoContaAzulLinks to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ClienteLegadoContaAzulLink upsert
+   */
+  export type ClienteLegadoContaAzulLinkUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ClienteLegadoContaAzulLink
+     */
+    select?: ClienteLegadoContaAzulLinkSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ClienteLegadoContaAzulLink
+     */
+    omit?: ClienteLegadoContaAzulLinkOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ClienteLegadoContaAzulLinkInclude<ExtArgs> | null
+    /**
+     * The filter to search for the ClienteLegadoContaAzulLink to update in case it exists.
+     */
+    where: ClienteLegadoContaAzulLinkWhereUniqueInput
+    /**
+     * In case the ClienteLegadoContaAzulLink found by the `where` argument doesn't exist, create a new ClienteLegadoContaAzulLink with this data.
+     */
+    create: XOR<ClienteLegadoContaAzulLinkCreateInput, ClienteLegadoContaAzulLinkUncheckedCreateInput>
+    /**
+     * In case the ClienteLegadoContaAzulLink was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ClienteLegadoContaAzulLinkUpdateInput, ClienteLegadoContaAzulLinkUncheckedUpdateInput>
+  }
+
+  /**
+   * ClienteLegadoContaAzulLink delete
+   */
+  export type ClienteLegadoContaAzulLinkDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ClienteLegadoContaAzulLink
+     */
+    select?: ClienteLegadoContaAzulLinkSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ClienteLegadoContaAzulLink
+     */
+    omit?: ClienteLegadoContaAzulLinkOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ClienteLegadoContaAzulLinkInclude<ExtArgs> | null
+    /**
+     * Filter which ClienteLegadoContaAzulLink to delete.
+     */
+    where: ClienteLegadoContaAzulLinkWhereUniqueInput
+  }
+
+  /**
+   * ClienteLegadoContaAzulLink deleteMany
+   */
+  export type ClienteLegadoContaAzulLinkDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ClienteLegadoContaAzulLinks to delete
+     */
+    where?: ClienteLegadoContaAzulLinkWhereInput
+    /**
+     * Limit how many ClienteLegadoContaAzulLinks to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * ClienteLegadoContaAzulLink.cliente
+   */
+  export type ClienteLegadoContaAzulLink$clienteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Cliente
+     */
+    select?: ClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Cliente
+     */
+    omit?: ClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ClienteInclude<ExtArgs> | null
+    where?: ClienteWhereInput
+  }
+
+  /**
+   * ClienteLegadoContaAzulLink without action
+   */
+  export type ClienteLegadoContaAzulLinkDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ClienteLegadoContaAzulLink
+     */
+    select?: ClienteLegadoContaAzulLinkSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ClienteLegadoContaAzulLink
+     */
+    omit?: ClienteLegadoContaAzulLinkOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ClienteLegadoContaAzulLinkInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PrecoEspecialCliente
+   */
+
+  export type AggregatePrecoEspecialCliente = {
+    _count: PrecoEspecialClienteCountAggregateOutputType | null
+    _avg: PrecoEspecialClienteAvgAggregateOutputType | null
+    _sum: PrecoEspecialClienteSumAggregateOutputType | null
+    _min: PrecoEspecialClienteMinAggregateOutputType | null
+    _max: PrecoEspecialClienteMaxAggregateOutputType | null
+  }
+
+  export type PrecoEspecialClienteAvgAggregateOutputType = {
+    preco: Decimal | null
+  }
+
+  export type PrecoEspecialClienteSumAggregateOutputType = {
+    preco: Decimal | null
+  }
+
+  export type PrecoEspecialClienteMinAggregateOutputType = {
+    id: string | null
+    regraId: string | null
+    produtoId: string | null
+    preco: Decimal | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type PrecoEspecialClienteMaxAggregateOutputType = {
+    id: string | null
+    regraId: string | null
+    produtoId: string | null
+    preco: Decimal | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type PrecoEspecialClienteCountAggregateOutputType = {
+    id: number
+    regraId: number
+    produtoId: number
+    preco: number
+    criadoEm: number
+    atualizadoEm: number
+    _all: number
+  }
+
+
+  export type PrecoEspecialClienteAvgAggregateInputType = {
+    preco?: true
+  }
+
+  export type PrecoEspecialClienteSumAggregateInputType = {
+    preco?: true
+  }
+
+  export type PrecoEspecialClienteMinAggregateInputType = {
+    id?: true
+    regraId?: true
+    produtoId?: true
+    preco?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type PrecoEspecialClienteMaxAggregateInputType = {
+    id?: true
+    regraId?: true
+    produtoId?: true
+    preco?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type PrecoEspecialClienteCountAggregateInputType = {
+    id?: true
+    regraId?: true
+    produtoId?: true
+    preco?: true
+    criadoEm?: true
+    atualizadoEm?: true
+    _all?: true
+  }
+
+  export type PrecoEspecialClienteAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PrecoEspecialCliente to aggregate.
+     */
+    where?: PrecoEspecialClienteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PrecoEspecialClientes to fetch.
+     */
+    orderBy?: PrecoEspecialClienteOrderByWithRelationInput | PrecoEspecialClienteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PrecoEspecialClienteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PrecoEspecialClientes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PrecoEspecialClientes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PrecoEspecialClientes
+    **/
+    _count?: true | PrecoEspecialClienteCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: PrecoEspecialClienteAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PrecoEspecialClienteSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PrecoEspecialClienteMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PrecoEspecialClienteMaxAggregateInputType
+  }
+
+  export type GetPrecoEspecialClienteAggregateType<T extends PrecoEspecialClienteAggregateArgs> = {
+        [P in keyof T & keyof AggregatePrecoEspecialCliente]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePrecoEspecialCliente[P]>
+      : GetScalarType<T[P], AggregatePrecoEspecialCliente[P]>
+  }
+
+
+
+
+  export type PrecoEspecialClienteGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PrecoEspecialClienteWhereInput
+    orderBy?: PrecoEspecialClienteOrderByWithAggregationInput | PrecoEspecialClienteOrderByWithAggregationInput[]
+    by: PrecoEspecialClienteScalarFieldEnum[] | PrecoEspecialClienteScalarFieldEnum
+    having?: PrecoEspecialClienteScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PrecoEspecialClienteCountAggregateInputType | true
+    _avg?: PrecoEspecialClienteAvgAggregateInputType
+    _sum?: PrecoEspecialClienteSumAggregateInputType
+    _min?: PrecoEspecialClienteMinAggregateInputType
+    _max?: PrecoEspecialClienteMaxAggregateInputType
+  }
+
+  export type PrecoEspecialClienteGroupByOutputType = {
+    id: string
+    regraId: string
+    produtoId: string
+    preco: Decimal
+    criadoEm: Date
+    atualizadoEm: Date
+    _count: PrecoEspecialClienteCountAggregateOutputType | null
+    _avg: PrecoEspecialClienteAvgAggregateOutputType | null
+    _sum: PrecoEspecialClienteSumAggregateOutputType | null
+    _min: PrecoEspecialClienteMinAggregateOutputType | null
+    _max: PrecoEspecialClienteMaxAggregateOutputType | null
+  }
+
+  type GetPrecoEspecialClienteGroupByPayload<T extends PrecoEspecialClienteGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PrecoEspecialClienteGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PrecoEspecialClienteGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PrecoEspecialClienteGroupByOutputType[P]>
+            : GetScalarType<T[P], PrecoEspecialClienteGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PrecoEspecialClienteSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    regraId?: boolean
+    produtoId?: boolean
+    preco?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+    regra?: boolean | RegraComercialClienteDefaultArgs<ExtArgs>
+    produto?: boolean | ProdutoComercialDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["precoEspecialCliente"]>
+
+
+
+  export type PrecoEspecialClienteSelectScalar = {
+    id?: boolean
+    regraId?: boolean
+    produtoId?: boolean
+    preco?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+  }
+
+  export type PrecoEspecialClienteOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "regraId" | "produtoId" | "preco" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["precoEspecialCliente"]>
+  export type PrecoEspecialClienteInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    regra?: boolean | RegraComercialClienteDefaultArgs<ExtArgs>
+    produto?: boolean | ProdutoComercialDefaultArgs<ExtArgs>
+  }
+
+  export type $PrecoEspecialClientePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PrecoEspecialCliente"
+    objects: {
+      regra: Prisma.$RegraComercialClientePayload<ExtArgs>
+      produto: Prisma.$ProdutoComercialPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      regraId: string
+      produtoId: string
+      preco: Prisma.Decimal
+      criadoEm: Date
+      atualizadoEm: Date
+    }, ExtArgs["result"]["precoEspecialCliente"]>
+    composites: {}
+  }
+
+  type PrecoEspecialClienteGetPayload<S extends boolean | null | undefined | PrecoEspecialClienteDefaultArgs> = $Result.GetResult<Prisma.$PrecoEspecialClientePayload, S>
+
+  type PrecoEspecialClienteCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PrecoEspecialClienteFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PrecoEspecialClienteCountAggregateInputType | true
+    }
+
+  export interface PrecoEspecialClienteDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PrecoEspecialCliente'], meta: { name: 'PrecoEspecialCliente' } }
+    /**
+     * Find zero or one PrecoEspecialCliente that matches the filter.
+     * @param {PrecoEspecialClienteFindUniqueArgs} args - Arguments to find a PrecoEspecialCliente
+     * @example
+     * // Get one PrecoEspecialCliente
+     * const precoEspecialCliente = await prisma.precoEspecialCliente.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PrecoEspecialClienteFindUniqueArgs>(args: SelectSubset<T, PrecoEspecialClienteFindUniqueArgs<ExtArgs>>): Prisma__PrecoEspecialClienteClient<$Result.GetResult<Prisma.$PrecoEspecialClientePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PrecoEspecialCliente that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PrecoEspecialClienteFindUniqueOrThrowArgs} args - Arguments to find a PrecoEspecialCliente
+     * @example
+     * // Get one PrecoEspecialCliente
+     * const precoEspecialCliente = await prisma.precoEspecialCliente.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PrecoEspecialClienteFindUniqueOrThrowArgs>(args: SelectSubset<T, PrecoEspecialClienteFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PrecoEspecialClienteClient<$Result.GetResult<Prisma.$PrecoEspecialClientePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PrecoEspecialCliente that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PrecoEspecialClienteFindFirstArgs} args - Arguments to find a PrecoEspecialCliente
+     * @example
+     * // Get one PrecoEspecialCliente
+     * const precoEspecialCliente = await prisma.precoEspecialCliente.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PrecoEspecialClienteFindFirstArgs>(args?: SelectSubset<T, PrecoEspecialClienteFindFirstArgs<ExtArgs>>): Prisma__PrecoEspecialClienteClient<$Result.GetResult<Prisma.$PrecoEspecialClientePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PrecoEspecialCliente that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PrecoEspecialClienteFindFirstOrThrowArgs} args - Arguments to find a PrecoEspecialCliente
+     * @example
+     * // Get one PrecoEspecialCliente
+     * const precoEspecialCliente = await prisma.precoEspecialCliente.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PrecoEspecialClienteFindFirstOrThrowArgs>(args?: SelectSubset<T, PrecoEspecialClienteFindFirstOrThrowArgs<ExtArgs>>): Prisma__PrecoEspecialClienteClient<$Result.GetResult<Prisma.$PrecoEspecialClientePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PrecoEspecialClientes that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PrecoEspecialClienteFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PrecoEspecialClientes
+     * const precoEspecialClientes = await prisma.precoEspecialCliente.findMany()
+     * 
+     * // Get first 10 PrecoEspecialClientes
+     * const precoEspecialClientes = await prisma.precoEspecialCliente.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const precoEspecialClienteWithIdOnly = await prisma.precoEspecialCliente.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PrecoEspecialClienteFindManyArgs>(args?: SelectSubset<T, PrecoEspecialClienteFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PrecoEspecialClientePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PrecoEspecialCliente.
+     * @param {PrecoEspecialClienteCreateArgs} args - Arguments to create a PrecoEspecialCliente.
+     * @example
+     * // Create one PrecoEspecialCliente
+     * const PrecoEspecialCliente = await prisma.precoEspecialCliente.create({
+     *   data: {
+     *     // ... data to create a PrecoEspecialCliente
+     *   }
+     * })
+     * 
+     */
+    create<T extends PrecoEspecialClienteCreateArgs>(args: SelectSubset<T, PrecoEspecialClienteCreateArgs<ExtArgs>>): Prisma__PrecoEspecialClienteClient<$Result.GetResult<Prisma.$PrecoEspecialClientePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PrecoEspecialClientes.
+     * @param {PrecoEspecialClienteCreateManyArgs} args - Arguments to create many PrecoEspecialClientes.
+     * @example
+     * // Create many PrecoEspecialClientes
+     * const precoEspecialCliente = await prisma.precoEspecialCliente.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PrecoEspecialClienteCreateManyArgs>(args?: SelectSubset<T, PrecoEspecialClienteCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a PrecoEspecialCliente.
+     * @param {PrecoEspecialClienteDeleteArgs} args - Arguments to delete one PrecoEspecialCliente.
+     * @example
+     * // Delete one PrecoEspecialCliente
+     * const PrecoEspecialCliente = await prisma.precoEspecialCliente.delete({
+     *   where: {
+     *     // ... filter to delete one PrecoEspecialCliente
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PrecoEspecialClienteDeleteArgs>(args: SelectSubset<T, PrecoEspecialClienteDeleteArgs<ExtArgs>>): Prisma__PrecoEspecialClienteClient<$Result.GetResult<Prisma.$PrecoEspecialClientePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PrecoEspecialCliente.
+     * @param {PrecoEspecialClienteUpdateArgs} args - Arguments to update one PrecoEspecialCliente.
+     * @example
+     * // Update one PrecoEspecialCliente
+     * const precoEspecialCliente = await prisma.precoEspecialCliente.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PrecoEspecialClienteUpdateArgs>(args: SelectSubset<T, PrecoEspecialClienteUpdateArgs<ExtArgs>>): Prisma__PrecoEspecialClienteClient<$Result.GetResult<Prisma.$PrecoEspecialClientePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PrecoEspecialClientes.
+     * @param {PrecoEspecialClienteDeleteManyArgs} args - Arguments to filter PrecoEspecialClientes to delete.
+     * @example
+     * // Delete a few PrecoEspecialClientes
+     * const { count } = await prisma.precoEspecialCliente.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PrecoEspecialClienteDeleteManyArgs>(args?: SelectSubset<T, PrecoEspecialClienteDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PrecoEspecialClientes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PrecoEspecialClienteUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PrecoEspecialClientes
+     * const precoEspecialCliente = await prisma.precoEspecialCliente.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PrecoEspecialClienteUpdateManyArgs>(args: SelectSubset<T, PrecoEspecialClienteUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one PrecoEspecialCliente.
+     * @param {PrecoEspecialClienteUpsertArgs} args - Arguments to update or create a PrecoEspecialCliente.
+     * @example
+     * // Update or create a PrecoEspecialCliente
+     * const precoEspecialCliente = await prisma.precoEspecialCliente.upsert({
+     *   create: {
+     *     // ... data to create a PrecoEspecialCliente
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PrecoEspecialCliente we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PrecoEspecialClienteUpsertArgs>(args: SelectSubset<T, PrecoEspecialClienteUpsertArgs<ExtArgs>>): Prisma__PrecoEspecialClienteClient<$Result.GetResult<Prisma.$PrecoEspecialClientePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PrecoEspecialClientes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PrecoEspecialClienteCountArgs} args - Arguments to filter PrecoEspecialClientes to count.
+     * @example
+     * // Count the number of PrecoEspecialClientes
+     * const count = await prisma.precoEspecialCliente.count({
+     *   where: {
+     *     // ... the filter for the PrecoEspecialClientes we want to count
+     *   }
+     * })
+    **/
+    count<T extends PrecoEspecialClienteCountArgs>(
+      args?: Subset<T, PrecoEspecialClienteCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PrecoEspecialClienteCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PrecoEspecialCliente.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PrecoEspecialClienteAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PrecoEspecialClienteAggregateArgs>(args: Subset<T, PrecoEspecialClienteAggregateArgs>): Prisma.PrismaPromise<GetPrecoEspecialClienteAggregateType<T>>
+
+    /**
+     * Group by PrecoEspecialCliente.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PrecoEspecialClienteGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PrecoEspecialClienteGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PrecoEspecialClienteGroupByArgs['orderBy'] }
+        : { orderBy?: PrecoEspecialClienteGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PrecoEspecialClienteGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPrecoEspecialClienteGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PrecoEspecialCliente model
+   */
+  readonly fields: PrecoEspecialClienteFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PrecoEspecialCliente.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PrecoEspecialClienteClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    regra<T extends RegraComercialClienteDefaultArgs<ExtArgs> = {}>(args?: Subset<T, RegraComercialClienteDefaultArgs<ExtArgs>>): Prisma__RegraComercialClienteClient<$Result.GetResult<Prisma.$RegraComercialClientePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    produto<T extends ProdutoComercialDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercialDefaultArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PrecoEspecialCliente model
+   */
+  interface PrecoEspecialClienteFieldRefs {
+    readonly id: FieldRef<"PrecoEspecialCliente", 'String'>
+    readonly regraId: FieldRef<"PrecoEspecialCliente", 'String'>
+    readonly produtoId: FieldRef<"PrecoEspecialCliente", 'String'>
+    readonly preco: FieldRef<"PrecoEspecialCliente", 'Decimal'>
+    readonly criadoEm: FieldRef<"PrecoEspecialCliente", 'DateTime'>
+    readonly atualizadoEm: FieldRef<"PrecoEspecialCliente", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PrecoEspecialCliente findUnique
+   */
+  export type PrecoEspecialClienteFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PrecoEspecialCliente
+     */
+    select?: PrecoEspecialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PrecoEspecialCliente
+     */
+    omit?: PrecoEspecialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PrecoEspecialClienteInclude<ExtArgs> | null
+    /**
+     * Filter, which PrecoEspecialCliente to fetch.
+     */
+    where: PrecoEspecialClienteWhereUniqueInput
+  }
+
+  /**
+   * PrecoEspecialCliente findUniqueOrThrow
+   */
+  export type PrecoEspecialClienteFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PrecoEspecialCliente
+     */
+    select?: PrecoEspecialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PrecoEspecialCliente
+     */
+    omit?: PrecoEspecialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PrecoEspecialClienteInclude<ExtArgs> | null
+    /**
+     * Filter, which PrecoEspecialCliente to fetch.
+     */
+    where: PrecoEspecialClienteWhereUniqueInput
+  }
+
+  /**
+   * PrecoEspecialCliente findFirst
+   */
+  export type PrecoEspecialClienteFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PrecoEspecialCliente
+     */
+    select?: PrecoEspecialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PrecoEspecialCliente
+     */
+    omit?: PrecoEspecialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PrecoEspecialClienteInclude<ExtArgs> | null
+    /**
+     * Filter, which PrecoEspecialCliente to fetch.
+     */
+    where?: PrecoEspecialClienteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PrecoEspecialClientes to fetch.
+     */
+    orderBy?: PrecoEspecialClienteOrderByWithRelationInput | PrecoEspecialClienteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PrecoEspecialClientes.
+     */
+    cursor?: PrecoEspecialClienteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PrecoEspecialClientes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PrecoEspecialClientes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PrecoEspecialClientes.
+     */
+    distinct?: PrecoEspecialClienteScalarFieldEnum | PrecoEspecialClienteScalarFieldEnum[]
+  }
+
+  /**
+   * PrecoEspecialCliente findFirstOrThrow
+   */
+  export type PrecoEspecialClienteFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PrecoEspecialCliente
+     */
+    select?: PrecoEspecialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PrecoEspecialCliente
+     */
+    omit?: PrecoEspecialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PrecoEspecialClienteInclude<ExtArgs> | null
+    /**
+     * Filter, which PrecoEspecialCliente to fetch.
+     */
+    where?: PrecoEspecialClienteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PrecoEspecialClientes to fetch.
+     */
+    orderBy?: PrecoEspecialClienteOrderByWithRelationInput | PrecoEspecialClienteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PrecoEspecialClientes.
+     */
+    cursor?: PrecoEspecialClienteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PrecoEspecialClientes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PrecoEspecialClientes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PrecoEspecialClientes.
+     */
+    distinct?: PrecoEspecialClienteScalarFieldEnum | PrecoEspecialClienteScalarFieldEnum[]
+  }
+
+  /**
+   * PrecoEspecialCliente findMany
+   */
+  export type PrecoEspecialClienteFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PrecoEspecialCliente
+     */
+    select?: PrecoEspecialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PrecoEspecialCliente
+     */
+    omit?: PrecoEspecialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PrecoEspecialClienteInclude<ExtArgs> | null
+    /**
+     * Filter, which PrecoEspecialClientes to fetch.
+     */
+    where?: PrecoEspecialClienteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PrecoEspecialClientes to fetch.
+     */
+    orderBy?: PrecoEspecialClienteOrderByWithRelationInput | PrecoEspecialClienteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PrecoEspecialClientes.
+     */
+    cursor?: PrecoEspecialClienteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PrecoEspecialClientes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PrecoEspecialClientes.
+     */
+    skip?: number
+    distinct?: PrecoEspecialClienteScalarFieldEnum | PrecoEspecialClienteScalarFieldEnum[]
+  }
+
+  /**
+   * PrecoEspecialCliente create
+   */
+  export type PrecoEspecialClienteCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PrecoEspecialCliente
+     */
+    select?: PrecoEspecialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PrecoEspecialCliente
+     */
+    omit?: PrecoEspecialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PrecoEspecialClienteInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PrecoEspecialCliente.
+     */
+    data: XOR<PrecoEspecialClienteCreateInput, PrecoEspecialClienteUncheckedCreateInput>
+  }
+
+  /**
+   * PrecoEspecialCliente createMany
+   */
+  export type PrecoEspecialClienteCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PrecoEspecialClientes.
+     */
+    data: PrecoEspecialClienteCreateManyInput | PrecoEspecialClienteCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PrecoEspecialCliente update
+   */
+  export type PrecoEspecialClienteUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PrecoEspecialCliente
+     */
+    select?: PrecoEspecialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PrecoEspecialCliente
+     */
+    omit?: PrecoEspecialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PrecoEspecialClienteInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PrecoEspecialCliente.
+     */
+    data: XOR<PrecoEspecialClienteUpdateInput, PrecoEspecialClienteUncheckedUpdateInput>
+    /**
+     * Choose, which PrecoEspecialCliente to update.
+     */
+    where: PrecoEspecialClienteWhereUniqueInput
+  }
+
+  /**
+   * PrecoEspecialCliente updateMany
+   */
+  export type PrecoEspecialClienteUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PrecoEspecialClientes.
+     */
+    data: XOR<PrecoEspecialClienteUpdateManyMutationInput, PrecoEspecialClienteUncheckedUpdateManyInput>
+    /**
+     * Filter which PrecoEspecialClientes to update
+     */
+    where?: PrecoEspecialClienteWhereInput
+    /**
+     * Limit how many PrecoEspecialClientes to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PrecoEspecialCliente upsert
+   */
+  export type PrecoEspecialClienteUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PrecoEspecialCliente
+     */
+    select?: PrecoEspecialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PrecoEspecialCliente
+     */
+    omit?: PrecoEspecialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PrecoEspecialClienteInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PrecoEspecialCliente to update in case it exists.
+     */
+    where: PrecoEspecialClienteWhereUniqueInput
+    /**
+     * In case the PrecoEspecialCliente found by the `where` argument doesn't exist, create a new PrecoEspecialCliente with this data.
+     */
+    create: XOR<PrecoEspecialClienteCreateInput, PrecoEspecialClienteUncheckedCreateInput>
+    /**
+     * In case the PrecoEspecialCliente was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PrecoEspecialClienteUpdateInput, PrecoEspecialClienteUncheckedUpdateInput>
+  }
+
+  /**
+   * PrecoEspecialCliente delete
+   */
+  export type PrecoEspecialClienteDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PrecoEspecialCliente
+     */
+    select?: PrecoEspecialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PrecoEspecialCliente
+     */
+    omit?: PrecoEspecialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PrecoEspecialClienteInclude<ExtArgs> | null
+    /**
+     * Filter which PrecoEspecialCliente to delete.
+     */
+    where: PrecoEspecialClienteWhereUniqueInput
+  }
+
+  /**
+   * PrecoEspecialCliente deleteMany
+   */
+  export type PrecoEspecialClienteDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PrecoEspecialClientes to delete
+     */
+    where?: PrecoEspecialClienteWhereInput
+    /**
+     * Limit how many PrecoEspecialClientes to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PrecoEspecialCliente without action
+   */
+  export type PrecoEspecialClienteDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PrecoEspecialCliente
+     */
+    select?: PrecoEspecialClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PrecoEspecialCliente
+     */
+    omit?: PrecoEspecialClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PrecoEspecialClienteInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PedidoOperacional
+   */
+
+  export type AggregatePedidoOperacional = {
+    _count: PedidoOperacionalCountAggregateOutputType | null
+    _avg: PedidoOperacionalAvgAggregateOutputType | null
+    _sum: PedidoOperacionalSumAggregateOutputType | null
+    _min: PedidoOperacionalMinAggregateOutputType | null
+    _max: PedidoOperacionalMaxAggregateOutputType | null
+  }
+
+  export type PedidoOperacionalAvgAggregateOutputType = {
+    diaSemana: number | null
+    prioridadeEntrega: number | null
+  }
+
+  export type PedidoOperacionalSumAggregateOutputType = {
+    diaSemana: number | null
+    prioridadeEntrega: number | null
+  }
+
+  export type PedidoOperacionalMinAggregateOutputType = {
+    id: string | null
+    clienteId: string | null
+    contaAzulCustomerId: string | null
+    dataEntrega: Date | null
+    diaSemana: number | null
+    tipoVenda: $Enums.TipoVendaPedido | null
+    status: $Enums.PedidoOperacionalStatus | null
+    observacoes: string | null
+    prioridadeEntrega: number | null
+    criadoPorId: string | null
+    editadoPorId: string | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type PedidoOperacionalMaxAggregateOutputType = {
+    id: string | null
+    clienteId: string | null
+    contaAzulCustomerId: string | null
+    dataEntrega: Date | null
+    diaSemana: number | null
+    tipoVenda: $Enums.TipoVendaPedido | null
+    status: $Enums.PedidoOperacionalStatus | null
+    observacoes: string | null
+    prioridadeEntrega: number | null
+    criadoPorId: string | null
+    editadoPorId: string | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type PedidoOperacionalCountAggregateOutputType = {
+    id: number
+    clienteId: number
+    contaAzulCustomerId: number
+    dataEntrega: number
+    diaSemana: number
+    tipoVenda: number
+    status: number
+    observacoes: number
+    prioridadeEntrega: number
+    criadoPorId: number
+    editadoPorId: number
+    criadoEm: number
+    atualizadoEm: number
+    _all: number
+  }
+
+
+  export type PedidoOperacionalAvgAggregateInputType = {
+    diaSemana?: true
+    prioridadeEntrega?: true
+  }
+
+  export type PedidoOperacionalSumAggregateInputType = {
+    diaSemana?: true
+    prioridadeEntrega?: true
+  }
+
+  export type PedidoOperacionalMinAggregateInputType = {
+    id?: true
+    clienteId?: true
+    contaAzulCustomerId?: true
+    dataEntrega?: true
+    diaSemana?: true
+    tipoVenda?: true
+    status?: true
+    observacoes?: true
+    prioridadeEntrega?: true
+    criadoPorId?: true
+    editadoPorId?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type PedidoOperacionalMaxAggregateInputType = {
+    id?: true
+    clienteId?: true
+    contaAzulCustomerId?: true
+    dataEntrega?: true
+    diaSemana?: true
+    tipoVenda?: true
+    status?: true
+    observacoes?: true
+    prioridadeEntrega?: true
+    criadoPorId?: true
+    editadoPorId?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type PedidoOperacionalCountAggregateInputType = {
+    id?: true
+    clienteId?: true
+    contaAzulCustomerId?: true
+    dataEntrega?: true
+    diaSemana?: true
+    tipoVenda?: true
+    status?: true
+    observacoes?: true
+    prioridadeEntrega?: true
+    criadoPorId?: true
+    editadoPorId?: true
+    criadoEm?: true
+    atualizadoEm?: true
+    _all?: true
+  }
+
+  export type PedidoOperacionalAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PedidoOperacional to aggregate.
+     */
+    where?: PedidoOperacionalWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PedidoOperacionals to fetch.
+     */
+    orderBy?: PedidoOperacionalOrderByWithRelationInput | PedidoOperacionalOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PedidoOperacionalWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PedidoOperacionals from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PedidoOperacionals.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PedidoOperacionals
+    **/
+    _count?: true | PedidoOperacionalCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: PedidoOperacionalAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PedidoOperacionalSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PedidoOperacionalMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PedidoOperacionalMaxAggregateInputType
+  }
+
+  export type GetPedidoOperacionalAggregateType<T extends PedidoOperacionalAggregateArgs> = {
+        [P in keyof T & keyof AggregatePedidoOperacional]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePedidoOperacional[P]>
+      : GetScalarType<T[P], AggregatePedidoOperacional[P]>
+  }
+
+
+
+
+  export type PedidoOperacionalGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PedidoOperacionalWhereInput
+    orderBy?: PedidoOperacionalOrderByWithAggregationInput | PedidoOperacionalOrderByWithAggregationInput[]
+    by: PedidoOperacionalScalarFieldEnum[] | PedidoOperacionalScalarFieldEnum
+    having?: PedidoOperacionalScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PedidoOperacionalCountAggregateInputType | true
+    _avg?: PedidoOperacionalAvgAggregateInputType
+    _sum?: PedidoOperacionalSumAggregateInputType
+    _min?: PedidoOperacionalMinAggregateInputType
+    _max?: PedidoOperacionalMaxAggregateInputType
+  }
+
+  export type PedidoOperacionalGroupByOutputType = {
+    id: string
+    clienteId: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status: $Enums.PedidoOperacionalStatus
+    observacoes: string | null
+    prioridadeEntrega: number | null
+    criadoPorId: string | null
+    editadoPorId: string | null
+    criadoEm: Date
+    atualizadoEm: Date
+    _count: PedidoOperacionalCountAggregateOutputType | null
+    _avg: PedidoOperacionalAvgAggregateOutputType | null
+    _sum: PedidoOperacionalSumAggregateOutputType | null
+    _min: PedidoOperacionalMinAggregateOutputType | null
+    _max: PedidoOperacionalMaxAggregateOutputType | null
+  }
+
+  type GetPedidoOperacionalGroupByPayload<T extends PedidoOperacionalGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PedidoOperacionalGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PedidoOperacionalGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PedidoOperacionalGroupByOutputType[P]>
+            : GetScalarType<T[P], PedidoOperacionalGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PedidoOperacionalSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    clienteId?: boolean
+    contaAzulCustomerId?: boolean
+    dataEntrega?: boolean
+    diaSemana?: boolean
+    tipoVenda?: boolean
+    status?: boolean
+    observacoes?: boolean
+    prioridadeEntrega?: boolean
+    criadoPorId?: boolean
+    editadoPorId?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+    cliente?: boolean | PedidoOperacional$clienteArgs<ExtArgs>
+    criadoPor?: boolean | PedidoOperacional$criadoPorArgs<ExtArgs>
+    editadoPor?: boolean | PedidoOperacional$editadoPorArgs<ExtArgs>
+    itens?: boolean | PedidoOperacional$itensArgs<ExtArgs>
+    avarias?: boolean | PedidoOperacional$avariasArgs<ExtArgs>
+    auditoria?: boolean | PedidoOperacional$auditoriaArgs<ExtArgs>
+    _count?: boolean | PedidoOperacionalCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["pedidoOperacional"]>
+
+
+
+  export type PedidoOperacionalSelectScalar = {
+    id?: boolean
+    clienteId?: boolean
+    contaAzulCustomerId?: boolean
+    dataEntrega?: boolean
+    diaSemana?: boolean
+    tipoVenda?: boolean
+    status?: boolean
+    observacoes?: boolean
+    prioridadeEntrega?: boolean
+    criadoPorId?: boolean
+    editadoPorId?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+  }
+
+  export type PedidoOperacionalOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "clienteId" | "contaAzulCustomerId" | "dataEntrega" | "diaSemana" | "tipoVenda" | "status" | "observacoes" | "prioridadeEntrega" | "criadoPorId" | "editadoPorId" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["pedidoOperacional"]>
+  export type PedidoOperacionalInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    cliente?: boolean | PedidoOperacional$clienteArgs<ExtArgs>
+    criadoPor?: boolean | PedidoOperacional$criadoPorArgs<ExtArgs>
+    editadoPor?: boolean | PedidoOperacional$editadoPorArgs<ExtArgs>
+    itens?: boolean | PedidoOperacional$itensArgs<ExtArgs>
+    avarias?: boolean | PedidoOperacional$avariasArgs<ExtArgs>
+    auditoria?: boolean | PedidoOperacional$auditoriaArgs<ExtArgs>
+    _count?: boolean | PedidoOperacionalCountOutputTypeDefaultArgs<ExtArgs>
+  }
+
+  export type $PedidoOperacionalPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PedidoOperacional"
+    objects: {
+      cliente: Prisma.$ClientePayload<ExtArgs> | null
+      criadoPor: Prisma.$UsuarioPayload<ExtArgs> | null
+      editadoPor: Prisma.$UsuarioPayload<ExtArgs> | null
+      itens: Prisma.$PedidoOperacionalItemPayload<ExtArgs>[]
+      avarias: Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>[]
+      auditoria: Prisma.$PedidoOperacionalAuditoriaPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      clienteId: string | null
+      contaAzulCustomerId: string
+      dataEntrega: Date
+      diaSemana: number
+      tipoVenda: $Enums.TipoVendaPedido
+      status: $Enums.PedidoOperacionalStatus
+      observacoes: string | null
+      prioridadeEntrega: number | null
+      criadoPorId: string | null
+      editadoPorId: string | null
+      criadoEm: Date
+      atualizadoEm: Date
+    }, ExtArgs["result"]["pedidoOperacional"]>
+    composites: {}
+  }
+
+  type PedidoOperacionalGetPayload<S extends boolean | null | undefined | PedidoOperacionalDefaultArgs> = $Result.GetResult<Prisma.$PedidoOperacionalPayload, S>
+
+  type PedidoOperacionalCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PedidoOperacionalFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PedidoOperacionalCountAggregateInputType | true
+    }
+
+  export interface PedidoOperacionalDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PedidoOperacional'], meta: { name: 'PedidoOperacional' } }
+    /**
+     * Find zero or one PedidoOperacional that matches the filter.
+     * @param {PedidoOperacionalFindUniqueArgs} args - Arguments to find a PedidoOperacional
+     * @example
+     * // Get one PedidoOperacional
+     * const pedidoOperacional = await prisma.pedidoOperacional.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PedidoOperacionalFindUniqueArgs>(args: SelectSubset<T, PedidoOperacionalFindUniqueArgs<ExtArgs>>): Prisma__PedidoOperacionalClient<$Result.GetResult<Prisma.$PedidoOperacionalPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PedidoOperacional that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PedidoOperacionalFindUniqueOrThrowArgs} args - Arguments to find a PedidoOperacional
+     * @example
+     * // Get one PedidoOperacional
+     * const pedidoOperacional = await prisma.pedidoOperacional.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PedidoOperacionalFindUniqueOrThrowArgs>(args: SelectSubset<T, PedidoOperacionalFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PedidoOperacionalClient<$Result.GetResult<Prisma.$PedidoOperacionalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PedidoOperacional that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalFindFirstArgs} args - Arguments to find a PedidoOperacional
+     * @example
+     * // Get one PedidoOperacional
+     * const pedidoOperacional = await prisma.pedidoOperacional.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PedidoOperacionalFindFirstArgs>(args?: SelectSubset<T, PedidoOperacionalFindFirstArgs<ExtArgs>>): Prisma__PedidoOperacionalClient<$Result.GetResult<Prisma.$PedidoOperacionalPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PedidoOperacional that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalFindFirstOrThrowArgs} args - Arguments to find a PedidoOperacional
+     * @example
+     * // Get one PedidoOperacional
+     * const pedidoOperacional = await prisma.pedidoOperacional.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PedidoOperacionalFindFirstOrThrowArgs>(args?: SelectSubset<T, PedidoOperacionalFindFirstOrThrowArgs<ExtArgs>>): Prisma__PedidoOperacionalClient<$Result.GetResult<Prisma.$PedidoOperacionalPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PedidoOperacionals that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PedidoOperacionals
+     * const pedidoOperacionals = await prisma.pedidoOperacional.findMany()
+     * 
+     * // Get first 10 PedidoOperacionals
+     * const pedidoOperacionals = await prisma.pedidoOperacional.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const pedidoOperacionalWithIdOnly = await prisma.pedidoOperacional.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PedidoOperacionalFindManyArgs>(args?: SelectSubset<T, PedidoOperacionalFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PedidoOperacional.
+     * @param {PedidoOperacionalCreateArgs} args - Arguments to create a PedidoOperacional.
+     * @example
+     * // Create one PedidoOperacional
+     * const PedidoOperacional = await prisma.pedidoOperacional.create({
+     *   data: {
+     *     // ... data to create a PedidoOperacional
+     *   }
+     * })
+     * 
+     */
+    create<T extends PedidoOperacionalCreateArgs>(args: SelectSubset<T, PedidoOperacionalCreateArgs<ExtArgs>>): Prisma__PedidoOperacionalClient<$Result.GetResult<Prisma.$PedidoOperacionalPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PedidoOperacionals.
+     * @param {PedidoOperacionalCreateManyArgs} args - Arguments to create many PedidoOperacionals.
+     * @example
+     * // Create many PedidoOperacionals
+     * const pedidoOperacional = await prisma.pedidoOperacional.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PedidoOperacionalCreateManyArgs>(args?: SelectSubset<T, PedidoOperacionalCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a PedidoOperacional.
+     * @param {PedidoOperacionalDeleteArgs} args - Arguments to delete one PedidoOperacional.
+     * @example
+     * // Delete one PedidoOperacional
+     * const PedidoOperacional = await prisma.pedidoOperacional.delete({
+     *   where: {
+     *     // ... filter to delete one PedidoOperacional
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PedidoOperacionalDeleteArgs>(args: SelectSubset<T, PedidoOperacionalDeleteArgs<ExtArgs>>): Prisma__PedidoOperacionalClient<$Result.GetResult<Prisma.$PedidoOperacionalPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PedidoOperacional.
+     * @param {PedidoOperacionalUpdateArgs} args - Arguments to update one PedidoOperacional.
+     * @example
+     * // Update one PedidoOperacional
+     * const pedidoOperacional = await prisma.pedidoOperacional.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PedidoOperacionalUpdateArgs>(args: SelectSubset<T, PedidoOperacionalUpdateArgs<ExtArgs>>): Prisma__PedidoOperacionalClient<$Result.GetResult<Prisma.$PedidoOperacionalPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PedidoOperacionals.
+     * @param {PedidoOperacionalDeleteManyArgs} args - Arguments to filter PedidoOperacionals to delete.
+     * @example
+     * // Delete a few PedidoOperacionals
+     * const { count } = await prisma.pedidoOperacional.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PedidoOperacionalDeleteManyArgs>(args?: SelectSubset<T, PedidoOperacionalDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PedidoOperacionals.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PedidoOperacionals
+     * const pedidoOperacional = await prisma.pedidoOperacional.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PedidoOperacionalUpdateManyArgs>(args: SelectSubset<T, PedidoOperacionalUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one PedidoOperacional.
+     * @param {PedidoOperacionalUpsertArgs} args - Arguments to update or create a PedidoOperacional.
+     * @example
+     * // Update or create a PedidoOperacional
+     * const pedidoOperacional = await prisma.pedidoOperacional.upsert({
+     *   create: {
+     *     // ... data to create a PedidoOperacional
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PedidoOperacional we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PedidoOperacionalUpsertArgs>(args: SelectSubset<T, PedidoOperacionalUpsertArgs<ExtArgs>>): Prisma__PedidoOperacionalClient<$Result.GetResult<Prisma.$PedidoOperacionalPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PedidoOperacionals.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalCountArgs} args - Arguments to filter PedidoOperacionals to count.
+     * @example
+     * // Count the number of PedidoOperacionals
+     * const count = await prisma.pedidoOperacional.count({
+     *   where: {
+     *     // ... the filter for the PedidoOperacionals we want to count
+     *   }
+     * })
+    **/
+    count<T extends PedidoOperacionalCountArgs>(
+      args?: Subset<T, PedidoOperacionalCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PedidoOperacionalCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PedidoOperacional.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PedidoOperacionalAggregateArgs>(args: Subset<T, PedidoOperacionalAggregateArgs>): Prisma.PrismaPromise<GetPedidoOperacionalAggregateType<T>>
+
+    /**
+     * Group by PedidoOperacional.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PedidoOperacionalGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PedidoOperacionalGroupByArgs['orderBy'] }
+        : { orderBy?: PedidoOperacionalGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PedidoOperacionalGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPedidoOperacionalGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PedidoOperacional model
+   */
+  readonly fields: PedidoOperacionalFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PedidoOperacional.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PedidoOperacionalClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    cliente<T extends PedidoOperacional$clienteArgs<ExtArgs> = {}>(args?: Subset<T, PedidoOperacional$clienteArgs<ExtArgs>>): Prisma__ClienteClient<$Result.GetResult<Prisma.$ClientePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    criadoPor<T extends PedidoOperacional$criadoPorArgs<ExtArgs> = {}>(args?: Subset<T, PedidoOperacional$criadoPorArgs<ExtArgs>>): Prisma__UsuarioClient<$Result.GetResult<Prisma.$UsuarioPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    editadoPor<T extends PedidoOperacional$editadoPorArgs<ExtArgs> = {}>(args?: Subset<T, PedidoOperacional$editadoPorArgs<ExtArgs>>): Prisma__UsuarioClient<$Result.GetResult<Prisma.$UsuarioPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    itens<T extends PedidoOperacional$itensArgs<ExtArgs> = {}>(args?: Subset<T, PedidoOperacional$itensArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    avarias<T extends PedidoOperacional$avariasArgs<ExtArgs> = {}>(args?: Subset<T, PedidoOperacional$avariasArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    auditoria<T extends PedidoOperacional$auditoriaArgs<ExtArgs> = {}>(args?: Subset<T, PedidoOperacional$auditoriaArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalAuditoriaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PedidoOperacional model
+   */
+  interface PedidoOperacionalFieldRefs {
+    readonly id: FieldRef<"PedidoOperacional", 'String'>
+    readonly clienteId: FieldRef<"PedidoOperacional", 'String'>
+    readonly contaAzulCustomerId: FieldRef<"PedidoOperacional", 'String'>
+    readonly dataEntrega: FieldRef<"PedidoOperacional", 'DateTime'>
+    readonly diaSemana: FieldRef<"PedidoOperacional", 'Int'>
+    readonly tipoVenda: FieldRef<"PedidoOperacional", 'TipoVendaPedido'>
+    readonly status: FieldRef<"PedidoOperacional", 'PedidoOperacionalStatus'>
+    readonly observacoes: FieldRef<"PedidoOperacional", 'String'>
+    readonly prioridadeEntrega: FieldRef<"PedidoOperacional", 'Int'>
+    readonly criadoPorId: FieldRef<"PedidoOperacional", 'String'>
+    readonly editadoPorId: FieldRef<"PedidoOperacional", 'String'>
+    readonly criadoEm: FieldRef<"PedidoOperacional", 'DateTime'>
+    readonly atualizadoEm: FieldRef<"PedidoOperacional", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PedidoOperacional findUnique
+   */
+  export type PedidoOperacionalFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacional
+     */
+    select?: PedidoOperacionalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacional
+     */
+    omit?: PedidoOperacionalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalInclude<ExtArgs> | null
+    /**
+     * Filter, which PedidoOperacional to fetch.
+     */
+    where: PedidoOperacionalWhereUniqueInput
+  }
+
+  /**
+   * PedidoOperacional findUniqueOrThrow
+   */
+  export type PedidoOperacionalFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacional
+     */
+    select?: PedidoOperacionalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacional
+     */
+    omit?: PedidoOperacionalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalInclude<ExtArgs> | null
+    /**
+     * Filter, which PedidoOperacional to fetch.
+     */
+    where: PedidoOperacionalWhereUniqueInput
+  }
+
+  /**
+   * PedidoOperacional findFirst
+   */
+  export type PedidoOperacionalFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacional
+     */
+    select?: PedidoOperacionalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacional
+     */
+    omit?: PedidoOperacionalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalInclude<ExtArgs> | null
+    /**
+     * Filter, which PedidoOperacional to fetch.
+     */
+    where?: PedidoOperacionalWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PedidoOperacionals to fetch.
+     */
+    orderBy?: PedidoOperacionalOrderByWithRelationInput | PedidoOperacionalOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PedidoOperacionals.
+     */
+    cursor?: PedidoOperacionalWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PedidoOperacionals from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PedidoOperacionals.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PedidoOperacionals.
+     */
+    distinct?: PedidoOperacionalScalarFieldEnum | PedidoOperacionalScalarFieldEnum[]
+  }
+
+  /**
+   * PedidoOperacional findFirstOrThrow
+   */
+  export type PedidoOperacionalFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacional
+     */
+    select?: PedidoOperacionalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacional
+     */
+    omit?: PedidoOperacionalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalInclude<ExtArgs> | null
+    /**
+     * Filter, which PedidoOperacional to fetch.
+     */
+    where?: PedidoOperacionalWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PedidoOperacionals to fetch.
+     */
+    orderBy?: PedidoOperacionalOrderByWithRelationInput | PedidoOperacionalOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PedidoOperacionals.
+     */
+    cursor?: PedidoOperacionalWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PedidoOperacionals from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PedidoOperacionals.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PedidoOperacionals.
+     */
+    distinct?: PedidoOperacionalScalarFieldEnum | PedidoOperacionalScalarFieldEnum[]
+  }
+
+  /**
+   * PedidoOperacional findMany
+   */
+  export type PedidoOperacionalFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacional
+     */
+    select?: PedidoOperacionalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacional
+     */
+    omit?: PedidoOperacionalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalInclude<ExtArgs> | null
+    /**
+     * Filter, which PedidoOperacionals to fetch.
+     */
+    where?: PedidoOperacionalWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PedidoOperacionals to fetch.
+     */
+    orderBy?: PedidoOperacionalOrderByWithRelationInput | PedidoOperacionalOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PedidoOperacionals.
+     */
+    cursor?: PedidoOperacionalWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PedidoOperacionals from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PedidoOperacionals.
+     */
+    skip?: number
+    distinct?: PedidoOperacionalScalarFieldEnum | PedidoOperacionalScalarFieldEnum[]
+  }
+
+  /**
+   * PedidoOperacional create
+   */
+  export type PedidoOperacionalCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacional
+     */
+    select?: PedidoOperacionalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacional
+     */
+    omit?: PedidoOperacionalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PedidoOperacional.
+     */
+    data: XOR<PedidoOperacionalCreateInput, PedidoOperacionalUncheckedCreateInput>
+  }
+
+  /**
+   * PedidoOperacional createMany
+   */
+  export type PedidoOperacionalCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PedidoOperacionals.
+     */
+    data: PedidoOperacionalCreateManyInput | PedidoOperacionalCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PedidoOperacional update
+   */
+  export type PedidoOperacionalUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacional
+     */
+    select?: PedidoOperacionalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacional
+     */
+    omit?: PedidoOperacionalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PedidoOperacional.
+     */
+    data: XOR<PedidoOperacionalUpdateInput, PedidoOperacionalUncheckedUpdateInput>
+    /**
+     * Choose, which PedidoOperacional to update.
+     */
+    where: PedidoOperacionalWhereUniqueInput
+  }
+
+  /**
+   * PedidoOperacional updateMany
+   */
+  export type PedidoOperacionalUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PedidoOperacionals.
+     */
+    data: XOR<PedidoOperacionalUpdateManyMutationInput, PedidoOperacionalUncheckedUpdateManyInput>
+    /**
+     * Filter which PedidoOperacionals to update
+     */
+    where?: PedidoOperacionalWhereInput
+    /**
+     * Limit how many PedidoOperacionals to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PedidoOperacional upsert
+   */
+  export type PedidoOperacionalUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacional
+     */
+    select?: PedidoOperacionalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacional
+     */
+    omit?: PedidoOperacionalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PedidoOperacional to update in case it exists.
+     */
+    where: PedidoOperacionalWhereUniqueInput
+    /**
+     * In case the PedidoOperacional found by the `where` argument doesn't exist, create a new PedidoOperacional with this data.
+     */
+    create: XOR<PedidoOperacionalCreateInput, PedidoOperacionalUncheckedCreateInput>
+    /**
+     * In case the PedidoOperacional was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PedidoOperacionalUpdateInput, PedidoOperacionalUncheckedUpdateInput>
+  }
+
+  /**
+   * PedidoOperacional delete
+   */
+  export type PedidoOperacionalDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacional
+     */
+    select?: PedidoOperacionalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacional
+     */
+    omit?: PedidoOperacionalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalInclude<ExtArgs> | null
+    /**
+     * Filter which PedidoOperacional to delete.
+     */
+    where: PedidoOperacionalWhereUniqueInput
+  }
+
+  /**
+   * PedidoOperacional deleteMany
+   */
+  export type PedidoOperacionalDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PedidoOperacionals to delete
+     */
+    where?: PedidoOperacionalWhereInput
+    /**
+     * Limit how many PedidoOperacionals to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PedidoOperacional.cliente
+   */
+  export type PedidoOperacional$clienteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Cliente
+     */
+    select?: ClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Cliente
+     */
+    omit?: ClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ClienteInclude<ExtArgs> | null
+    where?: ClienteWhereInput
+  }
+
+  /**
+   * PedidoOperacional.criadoPor
+   */
+  export type PedidoOperacional$criadoPorArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Usuario
+     */
+    select?: UsuarioSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Usuario
+     */
+    omit?: UsuarioOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UsuarioInclude<ExtArgs> | null
+    where?: UsuarioWhereInput
+  }
+
+  /**
+   * PedidoOperacional.editadoPor
+   */
+  export type PedidoOperacional$editadoPorArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Usuario
+     */
+    select?: UsuarioSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Usuario
+     */
+    omit?: UsuarioOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UsuarioInclude<ExtArgs> | null
+    where?: UsuarioWhereInput
+  }
+
+  /**
+   * PedidoOperacional.itens
+   */
+  export type PedidoOperacional$itensArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalItem
+     */
+    select?: PedidoOperacionalItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalItem
+     */
+    omit?: PedidoOperacionalItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalItemInclude<ExtArgs> | null
+    where?: PedidoOperacionalItemWhereInput
+    orderBy?: PedidoOperacionalItemOrderByWithRelationInput | PedidoOperacionalItemOrderByWithRelationInput[]
+    cursor?: PedidoOperacionalItemWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PedidoOperacionalItemScalarFieldEnum | PedidoOperacionalItemScalarFieldEnum[]
+  }
+
+  /**
+   * PedidoOperacional.avarias
+   */
+  export type PedidoOperacional$avariasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAvaria
+     */
+    select?: PedidoOperacionalAvariaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAvaria
+     */
+    omit?: PedidoOperacionalAvariaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAvariaInclude<ExtArgs> | null
+    where?: PedidoOperacionalAvariaWhereInput
+    orderBy?: PedidoOperacionalAvariaOrderByWithRelationInput | PedidoOperacionalAvariaOrderByWithRelationInput[]
+    cursor?: PedidoOperacionalAvariaWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PedidoOperacionalAvariaScalarFieldEnum | PedidoOperacionalAvariaScalarFieldEnum[]
+  }
+
+  /**
+   * PedidoOperacional.auditoria
+   */
+  export type PedidoOperacional$auditoriaArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAuditoria
+     */
+    select?: PedidoOperacionalAuditoriaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAuditoria
+     */
+    omit?: PedidoOperacionalAuditoriaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAuditoriaInclude<ExtArgs> | null
+    where?: PedidoOperacionalAuditoriaWhereInput
+    orderBy?: PedidoOperacionalAuditoriaOrderByWithRelationInput | PedidoOperacionalAuditoriaOrderByWithRelationInput[]
+    cursor?: PedidoOperacionalAuditoriaWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PedidoOperacionalAuditoriaScalarFieldEnum | PedidoOperacionalAuditoriaScalarFieldEnum[]
+  }
+
+  /**
+   * PedidoOperacional without action
+   */
+  export type PedidoOperacionalDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacional
+     */
+    select?: PedidoOperacionalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacional
+     */
+    omit?: PedidoOperacionalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PedidoOperacionalItem
+   */
+
+  export type AggregatePedidoOperacionalItem = {
+    _count: PedidoOperacionalItemCountAggregateOutputType | null
+    _avg: PedidoOperacionalItemAvgAggregateOutputType | null
+    _sum: PedidoOperacionalItemSumAggregateOutputType | null
+    _min: PedidoOperacionalItemMinAggregateOutputType | null
+    _max: PedidoOperacionalItemMaxAggregateOutputType | null
+  }
+
+  export type PedidoOperacionalItemAvgAggregateOutputType = {
+    quantidade: Decimal | null
+    precoUnit: Decimal | null
+  }
+
+  export type PedidoOperacionalItemSumAggregateOutputType = {
+    quantidade: Decimal | null
+    precoUnit: Decimal | null
+  }
+
+  export type PedidoOperacionalItemMinAggregateOutputType = {
+    id: string | null
+    pedidoId: string | null
+    produtoId: string | null
+    produtoNome: string | null
+    categoria: string | null
+    quantidade: Decimal | null
+    precoUnit: Decimal | null
+    precoEspecial: boolean | null
+    observacoes: string | null
+  }
+
+  export type PedidoOperacionalItemMaxAggregateOutputType = {
+    id: string | null
+    pedidoId: string | null
+    produtoId: string | null
+    produtoNome: string | null
+    categoria: string | null
+    quantidade: Decimal | null
+    precoUnit: Decimal | null
+    precoEspecial: boolean | null
+    observacoes: string | null
+  }
+
+  export type PedidoOperacionalItemCountAggregateOutputType = {
+    id: number
+    pedidoId: number
+    produtoId: number
+    produtoNome: number
+    categoria: number
+    quantidade: number
+    precoUnit: number
+    precoEspecial: number
+    observacoes: number
+    _all: number
+  }
+
+
+  export type PedidoOperacionalItemAvgAggregateInputType = {
+    quantidade?: true
+    precoUnit?: true
+  }
+
+  export type PedidoOperacionalItemSumAggregateInputType = {
+    quantidade?: true
+    precoUnit?: true
+  }
+
+  export type PedidoOperacionalItemMinAggregateInputType = {
+    id?: true
+    pedidoId?: true
+    produtoId?: true
+    produtoNome?: true
+    categoria?: true
+    quantidade?: true
+    precoUnit?: true
+    precoEspecial?: true
+    observacoes?: true
+  }
+
+  export type PedidoOperacionalItemMaxAggregateInputType = {
+    id?: true
+    pedidoId?: true
+    produtoId?: true
+    produtoNome?: true
+    categoria?: true
+    quantidade?: true
+    precoUnit?: true
+    precoEspecial?: true
+    observacoes?: true
+  }
+
+  export type PedidoOperacionalItemCountAggregateInputType = {
+    id?: true
+    pedidoId?: true
+    produtoId?: true
+    produtoNome?: true
+    categoria?: true
+    quantidade?: true
+    precoUnit?: true
+    precoEspecial?: true
+    observacoes?: true
+    _all?: true
+  }
+
+  export type PedidoOperacionalItemAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PedidoOperacionalItem to aggregate.
+     */
+    where?: PedidoOperacionalItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PedidoOperacionalItems to fetch.
+     */
+    orderBy?: PedidoOperacionalItemOrderByWithRelationInput | PedidoOperacionalItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PedidoOperacionalItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PedidoOperacionalItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PedidoOperacionalItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PedidoOperacionalItems
+    **/
+    _count?: true | PedidoOperacionalItemCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: PedidoOperacionalItemAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PedidoOperacionalItemSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PedidoOperacionalItemMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PedidoOperacionalItemMaxAggregateInputType
+  }
+
+  export type GetPedidoOperacionalItemAggregateType<T extends PedidoOperacionalItemAggregateArgs> = {
+        [P in keyof T & keyof AggregatePedidoOperacionalItem]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePedidoOperacionalItem[P]>
+      : GetScalarType<T[P], AggregatePedidoOperacionalItem[P]>
+  }
+
+
+
+
+  export type PedidoOperacionalItemGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PedidoOperacionalItemWhereInput
+    orderBy?: PedidoOperacionalItemOrderByWithAggregationInput | PedidoOperacionalItemOrderByWithAggregationInput[]
+    by: PedidoOperacionalItemScalarFieldEnum[] | PedidoOperacionalItemScalarFieldEnum
+    having?: PedidoOperacionalItemScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PedidoOperacionalItemCountAggregateInputType | true
+    _avg?: PedidoOperacionalItemAvgAggregateInputType
+    _sum?: PedidoOperacionalItemSumAggregateInputType
+    _min?: PedidoOperacionalItemMinAggregateInputType
+    _max?: PedidoOperacionalItemMaxAggregateInputType
+  }
+
+  export type PedidoOperacionalItemGroupByOutputType = {
+    id: string
+    pedidoId: string
+    produtoId: string
+    produtoNome: string
+    categoria: string | null
+    quantidade: Decimal
+    precoUnit: Decimal | null
+    precoEspecial: boolean
+    observacoes: string | null
+    _count: PedidoOperacionalItemCountAggregateOutputType | null
+    _avg: PedidoOperacionalItemAvgAggregateOutputType | null
+    _sum: PedidoOperacionalItemSumAggregateOutputType | null
+    _min: PedidoOperacionalItemMinAggregateOutputType | null
+    _max: PedidoOperacionalItemMaxAggregateOutputType | null
+  }
+
+  type GetPedidoOperacionalItemGroupByPayload<T extends PedidoOperacionalItemGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PedidoOperacionalItemGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PedidoOperacionalItemGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PedidoOperacionalItemGroupByOutputType[P]>
+            : GetScalarType<T[P], PedidoOperacionalItemGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PedidoOperacionalItemSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    pedidoId?: boolean
+    produtoId?: boolean
+    produtoNome?: boolean
+    categoria?: boolean
+    quantidade?: boolean
+    precoUnit?: boolean
+    precoEspecial?: boolean
+    observacoes?: boolean
+    pedido?: boolean | PedidoOperacionalDefaultArgs<ExtArgs>
+    produto?: boolean | ProdutoComercialDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["pedidoOperacionalItem"]>
+
+
+
+  export type PedidoOperacionalItemSelectScalar = {
+    id?: boolean
+    pedidoId?: boolean
+    produtoId?: boolean
+    produtoNome?: boolean
+    categoria?: boolean
+    quantidade?: boolean
+    precoUnit?: boolean
+    precoEspecial?: boolean
+    observacoes?: boolean
+  }
+
+  export type PedidoOperacionalItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "pedidoId" | "produtoId" | "produtoNome" | "categoria" | "quantidade" | "precoUnit" | "precoEspecial" | "observacoes", ExtArgs["result"]["pedidoOperacionalItem"]>
+  export type PedidoOperacionalItemInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    pedido?: boolean | PedidoOperacionalDefaultArgs<ExtArgs>
+    produto?: boolean | ProdutoComercialDefaultArgs<ExtArgs>
+  }
+
+  export type $PedidoOperacionalItemPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PedidoOperacionalItem"
+    objects: {
+      pedido: Prisma.$PedidoOperacionalPayload<ExtArgs>
+      produto: Prisma.$ProdutoComercialPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      pedidoId: string
+      produtoId: string
+      produtoNome: string
+      categoria: string | null
+      quantidade: Prisma.Decimal
+      precoUnit: Prisma.Decimal | null
+      precoEspecial: boolean
+      observacoes: string | null
+    }, ExtArgs["result"]["pedidoOperacionalItem"]>
+    composites: {}
+  }
+
+  type PedidoOperacionalItemGetPayload<S extends boolean | null | undefined | PedidoOperacionalItemDefaultArgs> = $Result.GetResult<Prisma.$PedidoOperacionalItemPayload, S>
+
+  type PedidoOperacionalItemCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PedidoOperacionalItemFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PedidoOperacionalItemCountAggregateInputType | true
+    }
+
+  export interface PedidoOperacionalItemDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PedidoOperacionalItem'], meta: { name: 'PedidoOperacionalItem' } }
+    /**
+     * Find zero or one PedidoOperacionalItem that matches the filter.
+     * @param {PedidoOperacionalItemFindUniqueArgs} args - Arguments to find a PedidoOperacionalItem
+     * @example
+     * // Get one PedidoOperacionalItem
+     * const pedidoOperacionalItem = await prisma.pedidoOperacionalItem.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PedidoOperacionalItemFindUniqueArgs>(args: SelectSubset<T, PedidoOperacionalItemFindUniqueArgs<ExtArgs>>): Prisma__PedidoOperacionalItemClient<$Result.GetResult<Prisma.$PedidoOperacionalItemPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PedidoOperacionalItem that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PedidoOperacionalItemFindUniqueOrThrowArgs} args - Arguments to find a PedidoOperacionalItem
+     * @example
+     * // Get one PedidoOperacionalItem
+     * const pedidoOperacionalItem = await prisma.pedidoOperacionalItem.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PedidoOperacionalItemFindUniqueOrThrowArgs>(args: SelectSubset<T, PedidoOperacionalItemFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PedidoOperacionalItemClient<$Result.GetResult<Prisma.$PedidoOperacionalItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PedidoOperacionalItem that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalItemFindFirstArgs} args - Arguments to find a PedidoOperacionalItem
+     * @example
+     * // Get one PedidoOperacionalItem
+     * const pedidoOperacionalItem = await prisma.pedidoOperacionalItem.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PedidoOperacionalItemFindFirstArgs>(args?: SelectSubset<T, PedidoOperacionalItemFindFirstArgs<ExtArgs>>): Prisma__PedidoOperacionalItemClient<$Result.GetResult<Prisma.$PedidoOperacionalItemPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PedidoOperacionalItem that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalItemFindFirstOrThrowArgs} args - Arguments to find a PedidoOperacionalItem
+     * @example
+     * // Get one PedidoOperacionalItem
+     * const pedidoOperacionalItem = await prisma.pedidoOperacionalItem.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PedidoOperacionalItemFindFirstOrThrowArgs>(args?: SelectSubset<T, PedidoOperacionalItemFindFirstOrThrowArgs<ExtArgs>>): Prisma__PedidoOperacionalItemClient<$Result.GetResult<Prisma.$PedidoOperacionalItemPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PedidoOperacionalItems that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalItemFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PedidoOperacionalItems
+     * const pedidoOperacionalItems = await prisma.pedidoOperacionalItem.findMany()
+     * 
+     * // Get first 10 PedidoOperacionalItems
+     * const pedidoOperacionalItems = await prisma.pedidoOperacionalItem.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const pedidoOperacionalItemWithIdOnly = await prisma.pedidoOperacionalItem.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PedidoOperacionalItemFindManyArgs>(args?: SelectSubset<T, PedidoOperacionalItemFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PedidoOperacionalItem.
+     * @param {PedidoOperacionalItemCreateArgs} args - Arguments to create a PedidoOperacionalItem.
+     * @example
+     * // Create one PedidoOperacionalItem
+     * const PedidoOperacionalItem = await prisma.pedidoOperacionalItem.create({
+     *   data: {
+     *     // ... data to create a PedidoOperacionalItem
+     *   }
+     * })
+     * 
+     */
+    create<T extends PedidoOperacionalItemCreateArgs>(args: SelectSubset<T, PedidoOperacionalItemCreateArgs<ExtArgs>>): Prisma__PedidoOperacionalItemClient<$Result.GetResult<Prisma.$PedidoOperacionalItemPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PedidoOperacionalItems.
+     * @param {PedidoOperacionalItemCreateManyArgs} args - Arguments to create many PedidoOperacionalItems.
+     * @example
+     * // Create many PedidoOperacionalItems
+     * const pedidoOperacionalItem = await prisma.pedidoOperacionalItem.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PedidoOperacionalItemCreateManyArgs>(args?: SelectSubset<T, PedidoOperacionalItemCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a PedidoOperacionalItem.
+     * @param {PedidoOperacionalItemDeleteArgs} args - Arguments to delete one PedidoOperacionalItem.
+     * @example
+     * // Delete one PedidoOperacionalItem
+     * const PedidoOperacionalItem = await prisma.pedidoOperacionalItem.delete({
+     *   where: {
+     *     // ... filter to delete one PedidoOperacionalItem
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PedidoOperacionalItemDeleteArgs>(args: SelectSubset<T, PedidoOperacionalItemDeleteArgs<ExtArgs>>): Prisma__PedidoOperacionalItemClient<$Result.GetResult<Prisma.$PedidoOperacionalItemPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PedidoOperacionalItem.
+     * @param {PedidoOperacionalItemUpdateArgs} args - Arguments to update one PedidoOperacionalItem.
+     * @example
+     * // Update one PedidoOperacionalItem
+     * const pedidoOperacionalItem = await prisma.pedidoOperacionalItem.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PedidoOperacionalItemUpdateArgs>(args: SelectSubset<T, PedidoOperacionalItemUpdateArgs<ExtArgs>>): Prisma__PedidoOperacionalItemClient<$Result.GetResult<Prisma.$PedidoOperacionalItemPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PedidoOperacionalItems.
+     * @param {PedidoOperacionalItemDeleteManyArgs} args - Arguments to filter PedidoOperacionalItems to delete.
+     * @example
+     * // Delete a few PedidoOperacionalItems
+     * const { count } = await prisma.pedidoOperacionalItem.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PedidoOperacionalItemDeleteManyArgs>(args?: SelectSubset<T, PedidoOperacionalItemDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PedidoOperacionalItems.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalItemUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PedidoOperacionalItems
+     * const pedidoOperacionalItem = await prisma.pedidoOperacionalItem.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PedidoOperacionalItemUpdateManyArgs>(args: SelectSubset<T, PedidoOperacionalItemUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one PedidoOperacionalItem.
+     * @param {PedidoOperacionalItemUpsertArgs} args - Arguments to update or create a PedidoOperacionalItem.
+     * @example
+     * // Update or create a PedidoOperacionalItem
+     * const pedidoOperacionalItem = await prisma.pedidoOperacionalItem.upsert({
+     *   create: {
+     *     // ... data to create a PedidoOperacionalItem
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PedidoOperacionalItem we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PedidoOperacionalItemUpsertArgs>(args: SelectSubset<T, PedidoOperacionalItemUpsertArgs<ExtArgs>>): Prisma__PedidoOperacionalItemClient<$Result.GetResult<Prisma.$PedidoOperacionalItemPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PedidoOperacionalItems.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalItemCountArgs} args - Arguments to filter PedidoOperacionalItems to count.
+     * @example
+     * // Count the number of PedidoOperacionalItems
+     * const count = await prisma.pedidoOperacionalItem.count({
+     *   where: {
+     *     // ... the filter for the PedidoOperacionalItems we want to count
+     *   }
+     * })
+    **/
+    count<T extends PedidoOperacionalItemCountArgs>(
+      args?: Subset<T, PedidoOperacionalItemCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PedidoOperacionalItemCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PedidoOperacionalItem.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalItemAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PedidoOperacionalItemAggregateArgs>(args: Subset<T, PedidoOperacionalItemAggregateArgs>): Prisma.PrismaPromise<GetPedidoOperacionalItemAggregateType<T>>
+
+    /**
+     * Group by PedidoOperacionalItem.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalItemGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PedidoOperacionalItemGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PedidoOperacionalItemGroupByArgs['orderBy'] }
+        : { orderBy?: PedidoOperacionalItemGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PedidoOperacionalItemGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPedidoOperacionalItemGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PedidoOperacionalItem model
+   */
+  readonly fields: PedidoOperacionalItemFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PedidoOperacionalItem.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PedidoOperacionalItemClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    pedido<T extends PedidoOperacionalDefaultArgs<ExtArgs> = {}>(args?: Subset<T, PedidoOperacionalDefaultArgs<ExtArgs>>): Prisma__PedidoOperacionalClient<$Result.GetResult<Prisma.$PedidoOperacionalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    produto<T extends ProdutoComercialDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercialDefaultArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PedidoOperacionalItem model
+   */
+  interface PedidoOperacionalItemFieldRefs {
+    readonly id: FieldRef<"PedidoOperacionalItem", 'String'>
+    readonly pedidoId: FieldRef<"PedidoOperacionalItem", 'String'>
+    readonly produtoId: FieldRef<"PedidoOperacionalItem", 'String'>
+    readonly produtoNome: FieldRef<"PedidoOperacionalItem", 'String'>
+    readonly categoria: FieldRef<"PedidoOperacionalItem", 'String'>
+    readonly quantidade: FieldRef<"PedidoOperacionalItem", 'Decimal'>
+    readonly precoUnit: FieldRef<"PedidoOperacionalItem", 'Decimal'>
+    readonly precoEspecial: FieldRef<"PedidoOperacionalItem", 'Boolean'>
+    readonly observacoes: FieldRef<"PedidoOperacionalItem", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PedidoOperacionalItem findUnique
+   */
+  export type PedidoOperacionalItemFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalItem
+     */
+    select?: PedidoOperacionalItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalItem
+     */
+    omit?: PedidoOperacionalItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalItemInclude<ExtArgs> | null
+    /**
+     * Filter, which PedidoOperacionalItem to fetch.
+     */
+    where: PedidoOperacionalItemWhereUniqueInput
+  }
+
+  /**
+   * PedidoOperacionalItem findUniqueOrThrow
+   */
+  export type PedidoOperacionalItemFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalItem
+     */
+    select?: PedidoOperacionalItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalItem
+     */
+    omit?: PedidoOperacionalItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalItemInclude<ExtArgs> | null
+    /**
+     * Filter, which PedidoOperacionalItem to fetch.
+     */
+    where: PedidoOperacionalItemWhereUniqueInput
+  }
+
+  /**
+   * PedidoOperacionalItem findFirst
+   */
+  export type PedidoOperacionalItemFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalItem
+     */
+    select?: PedidoOperacionalItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalItem
+     */
+    omit?: PedidoOperacionalItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalItemInclude<ExtArgs> | null
+    /**
+     * Filter, which PedidoOperacionalItem to fetch.
+     */
+    where?: PedidoOperacionalItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PedidoOperacionalItems to fetch.
+     */
+    orderBy?: PedidoOperacionalItemOrderByWithRelationInput | PedidoOperacionalItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PedidoOperacionalItems.
+     */
+    cursor?: PedidoOperacionalItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PedidoOperacionalItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PedidoOperacionalItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PedidoOperacionalItems.
+     */
+    distinct?: PedidoOperacionalItemScalarFieldEnum | PedidoOperacionalItemScalarFieldEnum[]
+  }
+
+  /**
+   * PedidoOperacionalItem findFirstOrThrow
+   */
+  export type PedidoOperacionalItemFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalItem
+     */
+    select?: PedidoOperacionalItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalItem
+     */
+    omit?: PedidoOperacionalItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalItemInclude<ExtArgs> | null
+    /**
+     * Filter, which PedidoOperacionalItem to fetch.
+     */
+    where?: PedidoOperacionalItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PedidoOperacionalItems to fetch.
+     */
+    orderBy?: PedidoOperacionalItemOrderByWithRelationInput | PedidoOperacionalItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PedidoOperacionalItems.
+     */
+    cursor?: PedidoOperacionalItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PedidoOperacionalItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PedidoOperacionalItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PedidoOperacionalItems.
+     */
+    distinct?: PedidoOperacionalItemScalarFieldEnum | PedidoOperacionalItemScalarFieldEnum[]
+  }
+
+  /**
+   * PedidoOperacionalItem findMany
+   */
+  export type PedidoOperacionalItemFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalItem
+     */
+    select?: PedidoOperacionalItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalItem
+     */
+    omit?: PedidoOperacionalItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalItemInclude<ExtArgs> | null
+    /**
+     * Filter, which PedidoOperacionalItems to fetch.
+     */
+    where?: PedidoOperacionalItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PedidoOperacionalItems to fetch.
+     */
+    orderBy?: PedidoOperacionalItemOrderByWithRelationInput | PedidoOperacionalItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PedidoOperacionalItems.
+     */
+    cursor?: PedidoOperacionalItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PedidoOperacionalItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PedidoOperacionalItems.
+     */
+    skip?: number
+    distinct?: PedidoOperacionalItemScalarFieldEnum | PedidoOperacionalItemScalarFieldEnum[]
+  }
+
+  /**
+   * PedidoOperacionalItem create
+   */
+  export type PedidoOperacionalItemCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalItem
+     */
+    select?: PedidoOperacionalItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalItem
+     */
+    omit?: PedidoOperacionalItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalItemInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PedidoOperacionalItem.
+     */
+    data: XOR<PedidoOperacionalItemCreateInput, PedidoOperacionalItemUncheckedCreateInput>
+  }
+
+  /**
+   * PedidoOperacionalItem createMany
+   */
+  export type PedidoOperacionalItemCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PedidoOperacionalItems.
+     */
+    data: PedidoOperacionalItemCreateManyInput | PedidoOperacionalItemCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PedidoOperacionalItem update
+   */
+  export type PedidoOperacionalItemUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalItem
+     */
+    select?: PedidoOperacionalItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalItem
+     */
+    omit?: PedidoOperacionalItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalItemInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PedidoOperacionalItem.
+     */
+    data: XOR<PedidoOperacionalItemUpdateInput, PedidoOperacionalItemUncheckedUpdateInput>
+    /**
+     * Choose, which PedidoOperacionalItem to update.
+     */
+    where: PedidoOperacionalItemWhereUniqueInput
+  }
+
+  /**
+   * PedidoOperacionalItem updateMany
+   */
+  export type PedidoOperacionalItemUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PedidoOperacionalItems.
+     */
+    data: XOR<PedidoOperacionalItemUpdateManyMutationInput, PedidoOperacionalItemUncheckedUpdateManyInput>
+    /**
+     * Filter which PedidoOperacionalItems to update
+     */
+    where?: PedidoOperacionalItemWhereInput
+    /**
+     * Limit how many PedidoOperacionalItems to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PedidoOperacionalItem upsert
+   */
+  export type PedidoOperacionalItemUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalItem
+     */
+    select?: PedidoOperacionalItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalItem
+     */
+    omit?: PedidoOperacionalItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalItemInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PedidoOperacionalItem to update in case it exists.
+     */
+    where: PedidoOperacionalItemWhereUniqueInput
+    /**
+     * In case the PedidoOperacionalItem found by the `where` argument doesn't exist, create a new PedidoOperacionalItem with this data.
+     */
+    create: XOR<PedidoOperacionalItemCreateInput, PedidoOperacionalItemUncheckedCreateInput>
+    /**
+     * In case the PedidoOperacionalItem was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PedidoOperacionalItemUpdateInput, PedidoOperacionalItemUncheckedUpdateInput>
+  }
+
+  /**
+   * PedidoOperacionalItem delete
+   */
+  export type PedidoOperacionalItemDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalItem
+     */
+    select?: PedidoOperacionalItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalItem
+     */
+    omit?: PedidoOperacionalItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalItemInclude<ExtArgs> | null
+    /**
+     * Filter which PedidoOperacionalItem to delete.
+     */
+    where: PedidoOperacionalItemWhereUniqueInput
+  }
+
+  /**
+   * PedidoOperacionalItem deleteMany
+   */
+  export type PedidoOperacionalItemDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PedidoOperacionalItems to delete
+     */
+    where?: PedidoOperacionalItemWhereInput
+    /**
+     * Limit how many PedidoOperacionalItems to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PedidoOperacionalItem without action
+   */
+  export type PedidoOperacionalItemDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalItem
+     */
+    select?: PedidoOperacionalItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalItem
+     */
+    omit?: PedidoOperacionalItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalItemInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PedidoOperacionalAvaria
+   */
+
+  export type AggregatePedidoOperacionalAvaria = {
+    _count: PedidoOperacionalAvariaCountAggregateOutputType | null
+    _avg: PedidoOperacionalAvariaAvgAggregateOutputType | null
+    _sum: PedidoOperacionalAvariaSumAggregateOutputType | null
+    _min: PedidoOperacionalAvariaMinAggregateOutputType | null
+    _max: PedidoOperacionalAvariaMaxAggregateOutputType | null
+  }
+
+  export type PedidoOperacionalAvariaAvgAggregateOutputType = {
+    quantidade: Decimal | null
+  }
+
+  export type PedidoOperacionalAvariaSumAggregateOutputType = {
+    quantidade: Decimal | null
+  }
+
+  export type PedidoOperacionalAvariaMinAggregateOutputType = {
+    id: string | null
+    pedidoId: string | null
+    clienteId: string | null
+    contaAzulCustomerId: string | null
+    dataEntrega: Date | null
+    produtoId: string | null
+    produtoNome: string | null
+    categoria: string | null
+    quantidade: Decimal | null
+    observacoes: string | null
+    criadoPorId: string | null
+    criadoEm: Date | null
+  }
+
+  export type PedidoOperacionalAvariaMaxAggregateOutputType = {
+    id: string | null
+    pedidoId: string | null
+    clienteId: string | null
+    contaAzulCustomerId: string | null
+    dataEntrega: Date | null
+    produtoId: string | null
+    produtoNome: string | null
+    categoria: string | null
+    quantidade: Decimal | null
+    observacoes: string | null
+    criadoPorId: string | null
+    criadoEm: Date | null
+  }
+
+  export type PedidoOperacionalAvariaCountAggregateOutputType = {
+    id: number
+    pedidoId: number
+    clienteId: number
+    contaAzulCustomerId: number
+    dataEntrega: number
+    produtoId: number
+    produtoNome: number
+    categoria: number
+    quantidade: number
+    observacoes: number
+    criadoPorId: number
+    criadoEm: number
+    _all: number
+  }
+
+
+  export type PedidoOperacionalAvariaAvgAggregateInputType = {
+    quantidade?: true
+  }
+
+  export type PedidoOperacionalAvariaSumAggregateInputType = {
+    quantidade?: true
+  }
+
+  export type PedidoOperacionalAvariaMinAggregateInputType = {
+    id?: true
+    pedidoId?: true
+    clienteId?: true
+    contaAzulCustomerId?: true
+    dataEntrega?: true
+    produtoId?: true
+    produtoNome?: true
+    categoria?: true
+    quantidade?: true
+    observacoes?: true
+    criadoPorId?: true
+    criadoEm?: true
+  }
+
+  export type PedidoOperacionalAvariaMaxAggregateInputType = {
+    id?: true
+    pedidoId?: true
+    clienteId?: true
+    contaAzulCustomerId?: true
+    dataEntrega?: true
+    produtoId?: true
+    produtoNome?: true
+    categoria?: true
+    quantidade?: true
+    observacoes?: true
+    criadoPorId?: true
+    criadoEm?: true
+  }
+
+  export type PedidoOperacionalAvariaCountAggregateInputType = {
+    id?: true
+    pedidoId?: true
+    clienteId?: true
+    contaAzulCustomerId?: true
+    dataEntrega?: true
+    produtoId?: true
+    produtoNome?: true
+    categoria?: true
+    quantidade?: true
+    observacoes?: true
+    criadoPorId?: true
+    criadoEm?: true
+    _all?: true
+  }
+
+  export type PedidoOperacionalAvariaAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PedidoOperacionalAvaria to aggregate.
+     */
+    where?: PedidoOperacionalAvariaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PedidoOperacionalAvarias to fetch.
+     */
+    orderBy?: PedidoOperacionalAvariaOrderByWithRelationInput | PedidoOperacionalAvariaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PedidoOperacionalAvariaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PedidoOperacionalAvarias from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PedidoOperacionalAvarias.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PedidoOperacionalAvarias
+    **/
+    _count?: true | PedidoOperacionalAvariaCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: PedidoOperacionalAvariaAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PedidoOperacionalAvariaSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PedidoOperacionalAvariaMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PedidoOperacionalAvariaMaxAggregateInputType
+  }
+
+  export type GetPedidoOperacionalAvariaAggregateType<T extends PedidoOperacionalAvariaAggregateArgs> = {
+        [P in keyof T & keyof AggregatePedidoOperacionalAvaria]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePedidoOperacionalAvaria[P]>
+      : GetScalarType<T[P], AggregatePedidoOperacionalAvaria[P]>
+  }
+
+
+
+
+  export type PedidoOperacionalAvariaGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PedidoOperacionalAvariaWhereInput
+    orderBy?: PedidoOperacionalAvariaOrderByWithAggregationInput | PedidoOperacionalAvariaOrderByWithAggregationInput[]
+    by: PedidoOperacionalAvariaScalarFieldEnum[] | PedidoOperacionalAvariaScalarFieldEnum
+    having?: PedidoOperacionalAvariaScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PedidoOperacionalAvariaCountAggregateInputType | true
+    _avg?: PedidoOperacionalAvariaAvgAggregateInputType
+    _sum?: PedidoOperacionalAvariaSumAggregateInputType
+    _min?: PedidoOperacionalAvariaMinAggregateInputType
+    _max?: PedidoOperacionalAvariaMaxAggregateInputType
+  }
+
+  export type PedidoOperacionalAvariaGroupByOutputType = {
+    id: string
+    pedidoId: string
+    clienteId: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date
+    produtoId: string
+    produtoNome: string
+    categoria: string | null
+    quantidade: Decimal
+    observacoes: string | null
+    criadoPorId: string | null
+    criadoEm: Date
+    _count: PedidoOperacionalAvariaCountAggregateOutputType | null
+    _avg: PedidoOperacionalAvariaAvgAggregateOutputType | null
+    _sum: PedidoOperacionalAvariaSumAggregateOutputType | null
+    _min: PedidoOperacionalAvariaMinAggregateOutputType | null
+    _max: PedidoOperacionalAvariaMaxAggregateOutputType | null
+  }
+
+  type GetPedidoOperacionalAvariaGroupByPayload<T extends PedidoOperacionalAvariaGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PedidoOperacionalAvariaGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PedidoOperacionalAvariaGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PedidoOperacionalAvariaGroupByOutputType[P]>
+            : GetScalarType<T[P], PedidoOperacionalAvariaGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PedidoOperacionalAvariaSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    pedidoId?: boolean
+    clienteId?: boolean
+    contaAzulCustomerId?: boolean
+    dataEntrega?: boolean
+    produtoId?: boolean
+    produtoNome?: boolean
+    categoria?: boolean
+    quantidade?: boolean
+    observacoes?: boolean
+    criadoPorId?: boolean
+    criadoEm?: boolean
+    pedido?: boolean | PedidoOperacionalDefaultArgs<ExtArgs>
+    cliente?: boolean | PedidoOperacionalAvaria$clienteArgs<ExtArgs>
+    produto?: boolean | ProdutoComercialDefaultArgs<ExtArgs>
+    criadoPor?: boolean | PedidoOperacionalAvaria$criadoPorArgs<ExtArgs>
+  }, ExtArgs["result"]["pedidoOperacionalAvaria"]>
+
+
+
+  export type PedidoOperacionalAvariaSelectScalar = {
+    id?: boolean
+    pedidoId?: boolean
+    clienteId?: boolean
+    contaAzulCustomerId?: boolean
+    dataEntrega?: boolean
+    produtoId?: boolean
+    produtoNome?: boolean
+    categoria?: boolean
+    quantidade?: boolean
+    observacoes?: boolean
+    criadoPorId?: boolean
+    criadoEm?: boolean
+  }
+
+  export type PedidoOperacionalAvariaOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "pedidoId" | "clienteId" | "contaAzulCustomerId" | "dataEntrega" | "produtoId" | "produtoNome" | "categoria" | "quantidade" | "observacoes" | "criadoPorId" | "criadoEm", ExtArgs["result"]["pedidoOperacionalAvaria"]>
+  export type PedidoOperacionalAvariaInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    pedido?: boolean | PedidoOperacionalDefaultArgs<ExtArgs>
+    cliente?: boolean | PedidoOperacionalAvaria$clienteArgs<ExtArgs>
+    produto?: boolean | ProdutoComercialDefaultArgs<ExtArgs>
+    criadoPor?: boolean | PedidoOperacionalAvaria$criadoPorArgs<ExtArgs>
+  }
+
+  export type $PedidoOperacionalAvariaPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PedidoOperacionalAvaria"
+    objects: {
+      pedido: Prisma.$PedidoOperacionalPayload<ExtArgs>
+      cliente: Prisma.$ClientePayload<ExtArgs> | null
+      produto: Prisma.$ProdutoComercialPayload<ExtArgs>
+      criadoPor: Prisma.$UsuarioPayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      pedidoId: string
+      clienteId: string | null
+      contaAzulCustomerId: string
+      dataEntrega: Date
+      produtoId: string
+      produtoNome: string
+      categoria: string | null
+      quantidade: Prisma.Decimal
+      observacoes: string | null
+      criadoPorId: string | null
+      criadoEm: Date
+    }, ExtArgs["result"]["pedidoOperacionalAvaria"]>
+    composites: {}
+  }
+
+  type PedidoOperacionalAvariaGetPayload<S extends boolean | null | undefined | PedidoOperacionalAvariaDefaultArgs> = $Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload, S>
+
+  type PedidoOperacionalAvariaCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PedidoOperacionalAvariaFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PedidoOperacionalAvariaCountAggregateInputType | true
+    }
+
+  export interface PedidoOperacionalAvariaDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PedidoOperacionalAvaria'], meta: { name: 'PedidoOperacionalAvaria' } }
+    /**
+     * Find zero or one PedidoOperacionalAvaria that matches the filter.
+     * @param {PedidoOperacionalAvariaFindUniqueArgs} args - Arguments to find a PedidoOperacionalAvaria
+     * @example
+     * // Get one PedidoOperacionalAvaria
+     * const pedidoOperacionalAvaria = await prisma.pedidoOperacionalAvaria.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PedidoOperacionalAvariaFindUniqueArgs>(args: SelectSubset<T, PedidoOperacionalAvariaFindUniqueArgs<ExtArgs>>): Prisma__PedidoOperacionalAvariaClient<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PedidoOperacionalAvaria that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PedidoOperacionalAvariaFindUniqueOrThrowArgs} args - Arguments to find a PedidoOperacionalAvaria
+     * @example
+     * // Get one PedidoOperacionalAvaria
+     * const pedidoOperacionalAvaria = await prisma.pedidoOperacionalAvaria.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PedidoOperacionalAvariaFindUniqueOrThrowArgs>(args: SelectSubset<T, PedidoOperacionalAvariaFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PedidoOperacionalAvariaClient<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PedidoOperacionalAvaria that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalAvariaFindFirstArgs} args - Arguments to find a PedidoOperacionalAvaria
+     * @example
+     * // Get one PedidoOperacionalAvaria
+     * const pedidoOperacionalAvaria = await prisma.pedidoOperacionalAvaria.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PedidoOperacionalAvariaFindFirstArgs>(args?: SelectSubset<T, PedidoOperacionalAvariaFindFirstArgs<ExtArgs>>): Prisma__PedidoOperacionalAvariaClient<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PedidoOperacionalAvaria that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalAvariaFindFirstOrThrowArgs} args - Arguments to find a PedidoOperacionalAvaria
+     * @example
+     * // Get one PedidoOperacionalAvaria
+     * const pedidoOperacionalAvaria = await prisma.pedidoOperacionalAvaria.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PedidoOperacionalAvariaFindFirstOrThrowArgs>(args?: SelectSubset<T, PedidoOperacionalAvariaFindFirstOrThrowArgs<ExtArgs>>): Prisma__PedidoOperacionalAvariaClient<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PedidoOperacionalAvarias that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalAvariaFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PedidoOperacionalAvarias
+     * const pedidoOperacionalAvarias = await prisma.pedidoOperacionalAvaria.findMany()
+     * 
+     * // Get first 10 PedidoOperacionalAvarias
+     * const pedidoOperacionalAvarias = await prisma.pedidoOperacionalAvaria.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const pedidoOperacionalAvariaWithIdOnly = await prisma.pedidoOperacionalAvaria.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PedidoOperacionalAvariaFindManyArgs>(args?: SelectSubset<T, PedidoOperacionalAvariaFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PedidoOperacionalAvaria.
+     * @param {PedidoOperacionalAvariaCreateArgs} args - Arguments to create a PedidoOperacionalAvaria.
+     * @example
+     * // Create one PedidoOperacionalAvaria
+     * const PedidoOperacionalAvaria = await prisma.pedidoOperacionalAvaria.create({
+     *   data: {
+     *     // ... data to create a PedidoOperacionalAvaria
+     *   }
+     * })
+     * 
+     */
+    create<T extends PedidoOperacionalAvariaCreateArgs>(args: SelectSubset<T, PedidoOperacionalAvariaCreateArgs<ExtArgs>>): Prisma__PedidoOperacionalAvariaClient<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PedidoOperacionalAvarias.
+     * @param {PedidoOperacionalAvariaCreateManyArgs} args - Arguments to create many PedidoOperacionalAvarias.
+     * @example
+     * // Create many PedidoOperacionalAvarias
+     * const pedidoOperacionalAvaria = await prisma.pedidoOperacionalAvaria.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PedidoOperacionalAvariaCreateManyArgs>(args?: SelectSubset<T, PedidoOperacionalAvariaCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a PedidoOperacionalAvaria.
+     * @param {PedidoOperacionalAvariaDeleteArgs} args - Arguments to delete one PedidoOperacionalAvaria.
+     * @example
+     * // Delete one PedidoOperacionalAvaria
+     * const PedidoOperacionalAvaria = await prisma.pedidoOperacionalAvaria.delete({
+     *   where: {
+     *     // ... filter to delete one PedidoOperacionalAvaria
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PedidoOperacionalAvariaDeleteArgs>(args: SelectSubset<T, PedidoOperacionalAvariaDeleteArgs<ExtArgs>>): Prisma__PedidoOperacionalAvariaClient<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PedidoOperacionalAvaria.
+     * @param {PedidoOperacionalAvariaUpdateArgs} args - Arguments to update one PedidoOperacionalAvaria.
+     * @example
+     * // Update one PedidoOperacionalAvaria
+     * const pedidoOperacionalAvaria = await prisma.pedidoOperacionalAvaria.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PedidoOperacionalAvariaUpdateArgs>(args: SelectSubset<T, PedidoOperacionalAvariaUpdateArgs<ExtArgs>>): Prisma__PedidoOperacionalAvariaClient<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PedidoOperacionalAvarias.
+     * @param {PedidoOperacionalAvariaDeleteManyArgs} args - Arguments to filter PedidoOperacionalAvarias to delete.
+     * @example
+     * // Delete a few PedidoOperacionalAvarias
+     * const { count } = await prisma.pedidoOperacionalAvaria.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PedidoOperacionalAvariaDeleteManyArgs>(args?: SelectSubset<T, PedidoOperacionalAvariaDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PedidoOperacionalAvarias.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalAvariaUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PedidoOperacionalAvarias
+     * const pedidoOperacionalAvaria = await prisma.pedidoOperacionalAvaria.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PedidoOperacionalAvariaUpdateManyArgs>(args: SelectSubset<T, PedidoOperacionalAvariaUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one PedidoOperacionalAvaria.
+     * @param {PedidoOperacionalAvariaUpsertArgs} args - Arguments to update or create a PedidoOperacionalAvaria.
+     * @example
+     * // Update or create a PedidoOperacionalAvaria
+     * const pedidoOperacionalAvaria = await prisma.pedidoOperacionalAvaria.upsert({
+     *   create: {
+     *     // ... data to create a PedidoOperacionalAvaria
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PedidoOperacionalAvaria we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PedidoOperacionalAvariaUpsertArgs>(args: SelectSubset<T, PedidoOperacionalAvariaUpsertArgs<ExtArgs>>): Prisma__PedidoOperacionalAvariaClient<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PedidoOperacionalAvarias.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalAvariaCountArgs} args - Arguments to filter PedidoOperacionalAvarias to count.
+     * @example
+     * // Count the number of PedidoOperacionalAvarias
+     * const count = await prisma.pedidoOperacionalAvaria.count({
+     *   where: {
+     *     // ... the filter for the PedidoOperacionalAvarias we want to count
+     *   }
+     * })
+    **/
+    count<T extends PedidoOperacionalAvariaCountArgs>(
+      args?: Subset<T, PedidoOperacionalAvariaCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PedidoOperacionalAvariaCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PedidoOperacionalAvaria.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalAvariaAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PedidoOperacionalAvariaAggregateArgs>(args: Subset<T, PedidoOperacionalAvariaAggregateArgs>): Prisma.PrismaPromise<GetPedidoOperacionalAvariaAggregateType<T>>
+
+    /**
+     * Group by PedidoOperacionalAvaria.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalAvariaGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PedidoOperacionalAvariaGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PedidoOperacionalAvariaGroupByArgs['orderBy'] }
+        : { orderBy?: PedidoOperacionalAvariaGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PedidoOperacionalAvariaGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPedidoOperacionalAvariaGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PedidoOperacionalAvaria model
+   */
+  readonly fields: PedidoOperacionalAvariaFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PedidoOperacionalAvaria.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PedidoOperacionalAvariaClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    pedido<T extends PedidoOperacionalDefaultArgs<ExtArgs> = {}>(args?: Subset<T, PedidoOperacionalDefaultArgs<ExtArgs>>): Prisma__PedidoOperacionalClient<$Result.GetResult<Prisma.$PedidoOperacionalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    cliente<T extends PedidoOperacionalAvaria$clienteArgs<ExtArgs> = {}>(args?: Subset<T, PedidoOperacionalAvaria$clienteArgs<ExtArgs>>): Prisma__ClienteClient<$Result.GetResult<Prisma.$ClientePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    produto<T extends ProdutoComercialDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercialDefaultArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    criadoPor<T extends PedidoOperacionalAvaria$criadoPorArgs<ExtArgs> = {}>(args?: Subset<T, PedidoOperacionalAvaria$criadoPorArgs<ExtArgs>>): Prisma__UsuarioClient<$Result.GetResult<Prisma.$UsuarioPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PedidoOperacionalAvaria model
+   */
+  interface PedidoOperacionalAvariaFieldRefs {
+    readonly id: FieldRef<"PedidoOperacionalAvaria", 'String'>
+    readonly pedidoId: FieldRef<"PedidoOperacionalAvaria", 'String'>
+    readonly clienteId: FieldRef<"PedidoOperacionalAvaria", 'String'>
+    readonly contaAzulCustomerId: FieldRef<"PedidoOperacionalAvaria", 'String'>
+    readonly dataEntrega: FieldRef<"PedidoOperacionalAvaria", 'DateTime'>
+    readonly produtoId: FieldRef<"PedidoOperacionalAvaria", 'String'>
+    readonly produtoNome: FieldRef<"PedidoOperacionalAvaria", 'String'>
+    readonly categoria: FieldRef<"PedidoOperacionalAvaria", 'String'>
+    readonly quantidade: FieldRef<"PedidoOperacionalAvaria", 'Decimal'>
+    readonly observacoes: FieldRef<"PedidoOperacionalAvaria", 'String'>
+    readonly criadoPorId: FieldRef<"PedidoOperacionalAvaria", 'String'>
+    readonly criadoEm: FieldRef<"PedidoOperacionalAvaria", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PedidoOperacionalAvaria findUnique
+   */
+  export type PedidoOperacionalAvariaFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAvaria
+     */
+    select?: PedidoOperacionalAvariaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAvaria
+     */
+    omit?: PedidoOperacionalAvariaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAvariaInclude<ExtArgs> | null
+    /**
+     * Filter, which PedidoOperacionalAvaria to fetch.
+     */
+    where: PedidoOperacionalAvariaWhereUniqueInput
+  }
+
+  /**
+   * PedidoOperacionalAvaria findUniqueOrThrow
+   */
+  export type PedidoOperacionalAvariaFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAvaria
+     */
+    select?: PedidoOperacionalAvariaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAvaria
+     */
+    omit?: PedidoOperacionalAvariaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAvariaInclude<ExtArgs> | null
+    /**
+     * Filter, which PedidoOperacionalAvaria to fetch.
+     */
+    where: PedidoOperacionalAvariaWhereUniqueInput
+  }
+
+  /**
+   * PedidoOperacionalAvaria findFirst
+   */
+  export type PedidoOperacionalAvariaFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAvaria
+     */
+    select?: PedidoOperacionalAvariaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAvaria
+     */
+    omit?: PedidoOperacionalAvariaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAvariaInclude<ExtArgs> | null
+    /**
+     * Filter, which PedidoOperacionalAvaria to fetch.
+     */
+    where?: PedidoOperacionalAvariaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PedidoOperacionalAvarias to fetch.
+     */
+    orderBy?: PedidoOperacionalAvariaOrderByWithRelationInput | PedidoOperacionalAvariaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PedidoOperacionalAvarias.
+     */
+    cursor?: PedidoOperacionalAvariaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PedidoOperacionalAvarias from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PedidoOperacionalAvarias.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PedidoOperacionalAvarias.
+     */
+    distinct?: PedidoOperacionalAvariaScalarFieldEnum | PedidoOperacionalAvariaScalarFieldEnum[]
+  }
+
+  /**
+   * PedidoOperacionalAvaria findFirstOrThrow
+   */
+  export type PedidoOperacionalAvariaFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAvaria
+     */
+    select?: PedidoOperacionalAvariaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAvaria
+     */
+    omit?: PedidoOperacionalAvariaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAvariaInclude<ExtArgs> | null
+    /**
+     * Filter, which PedidoOperacionalAvaria to fetch.
+     */
+    where?: PedidoOperacionalAvariaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PedidoOperacionalAvarias to fetch.
+     */
+    orderBy?: PedidoOperacionalAvariaOrderByWithRelationInput | PedidoOperacionalAvariaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PedidoOperacionalAvarias.
+     */
+    cursor?: PedidoOperacionalAvariaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PedidoOperacionalAvarias from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PedidoOperacionalAvarias.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PedidoOperacionalAvarias.
+     */
+    distinct?: PedidoOperacionalAvariaScalarFieldEnum | PedidoOperacionalAvariaScalarFieldEnum[]
+  }
+
+  /**
+   * PedidoOperacionalAvaria findMany
+   */
+  export type PedidoOperacionalAvariaFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAvaria
+     */
+    select?: PedidoOperacionalAvariaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAvaria
+     */
+    omit?: PedidoOperacionalAvariaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAvariaInclude<ExtArgs> | null
+    /**
+     * Filter, which PedidoOperacionalAvarias to fetch.
+     */
+    where?: PedidoOperacionalAvariaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PedidoOperacionalAvarias to fetch.
+     */
+    orderBy?: PedidoOperacionalAvariaOrderByWithRelationInput | PedidoOperacionalAvariaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PedidoOperacionalAvarias.
+     */
+    cursor?: PedidoOperacionalAvariaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PedidoOperacionalAvarias from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PedidoOperacionalAvarias.
+     */
+    skip?: number
+    distinct?: PedidoOperacionalAvariaScalarFieldEnum | PedidoOperacionalAvariaScalarFieldEnum[]
+  }
+
+  /**
+   * PedidoOperacionalAvaria create
+   */
+  export type PedidoOperacionalAvariaCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAvaria
+     */
+    select?: PedidoOperacionalAvariaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAvaria
+     */
+    omit?: PedidoOperacionalAvariaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAvariaInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PedidoOperacionalAvaria.
+     */
+    data: XOR<PedidoOperacionalAvariaCreateInput, PedidoOperacionalAvariaUncheckedCreateInput>
+  }
+
+  /**
+   * PedidoOperacionalAvaria createMany
+   */
+  export type PedidoOperacionalAvariaCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PedidoOperacionalAvarias.
+     */
+    data: PedidoOperacionalAvariaCreateManyInput | PedidoOperacionalAvariaCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PedidoOperacionalAvaria update
+   */
+  export type PedidoOperacionalAvariaUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAvaria
+     */
+    select?: PedidoOperacionalAvariaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAvaria
+     */
+    omit?: PedidoOperacionalAvariaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAvariaInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PedidoOperacionalAvaria.
+     */
+    data: XOR<PedidoOperacionalAvariaUpdateInput, PedidoOperacionalAvariaUncheckedUpdateInput>
+    /**
+     * Choose, which PedidoOperacionalAvaria to update.
+     */
+    where: PedidoOperacionalAvariaWhereUniqueInput
+  }
+
+  /**
+   * PedidoOperacionalAvaria updateMany
+   */
+  export type PedidoOperacionalAvariaUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PedidoOperacionalAvarias.
+     */
+    data: XOR<PedidoOperacionalAvariaUpdateManyMutationInput, PedidoOperacionalAvariaUncheckedUpdateManyInput>
+    /**
+     * Filter which PedidoOperacionalAvarias to update
+     */
+    where?: PedidoOperacionalAvariaWhereInput
+    /**
+     * Limit how many PedidoOperacionalAvarias to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PedidoOperacionalAvaria upsert
+   */
+  export type PedidoOperacionalAvariaUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAvaria
+     */
+    select?: PedidoOperacionalAvariaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAvaria
+     */
+    omit?: PedidoOperacionalAvariaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAvariaInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PedidoOperacionalAvaria to update in case it exists.
+     */
+    where: PedidoOperacionalAvariaWhereUniqueInput
+    /**
+     * In case the PedidoOperacionalAvaria found by the `where` argument doesn't exist, create a new PedidoOperacionalAvaria with this data.
+     */
+    create: XOR<PedidoOperacionalAvariaCreateInput, PedidoOperacionalAvariaUncheckedCreateInput>
+    /**
+     * In case the PedidoOperacionalAvaria was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PedidoOperacionalAvariaUpdateInput, PedidoOperacionalAvariaUncheckedUpdateInput>
+  }
+
+  /**
+   * PedidoOperacionalAvaria delete
+   */
+  export type PedidoOperacionalAvariaDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAvaria
+     */
+    select?: PedidoOperacionalAvariaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAvaria
+     */
+    omit?: PedidoOperacionalAvariaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAvariaInclude<ExtArgs> | null
+    /**
+     * Filter which PedidoOperacionalAvaria to delete.
+     */
+    where: PedidoOperacionalAvariaWhereUniqueInput
+  }
+
+  /**
+   * PedidoOperacionalAvaria deleteMany
+   */
+  export type PedidoOperacionalAvariaDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PedidoOperacionalAvarias to delete
+     */
+    where?: PedidoOperacionalAvariaWhereInput
+    /**
+     * Limit how many PedidoOperacionalAvarias to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PedidoOperacionalAvaria.cliente
+   */
+  export type PedidoOperacionalAvaria$clienteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Cliente
+     */
+    select?: ClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Cliente
+     */
+    omit?: ClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ClienteInclude<ExtArgs> | null
+    where?: ClienteWhereInput
+  }
+
+  /**
+   * PedidoOperacionalAvaria.criadoPor
+   */
+  export type PedidoOperacionalAvaria$criadoPorArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Usuario
+     */
+    select?: UsuarioSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Usuario
+     */
+    omit?: UsuarioOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UsuarioInclude<ExtArgs> | null
+    where?: UsuarioWhereInput
+  }
+
+  /**
+   * PedidoOperacionalAvaria without action
+   */
+  export type PedidoOperacionalAvariaDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAvaria
+     */
+    select?: PedidoOperacionalAvariaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAvaria
+     */
+    omit?: PedidoOperacionalAvariaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAvariaInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PedidoOperacionalAuditoria
+   */
+
+  export type AggregatePedidoOperacionalAuditoria = {
+    _count: PedidoOperacionalAuditoriaCountAggregateOutputType | null
+    _min: PedidoOperacionalAuditoriaMinAggregateOutputType | null
+    _max: PedidoOperacionalAuditoriaMaxAggregateOutputType | null
+  }
+
+  export type PedidoOperacionalAuditoriaMinAggregateOutputType = {
+    id: string | null
+    pedidoId: string | null
+    usuarioId: string | null
+    usuarioNome: string | null
+    acao: string | null
+    criadoEm: Date | null
+  }
+
+  export type PedidoOperacionalAuditoriaMaxAggregateOutputType = {
+    id: string | null
+    pedidoId: string | null
+    usuarioId: string | null
+    usuarioNome: string | null
+    acao: string | null
+    criadoEm: Date | null
+  }
+
+  export type PedidoOperacionalAuditoriaCountAggregateOutputType = {
+    id: number
+    pedidoId: number
+    usuarioId: number
+    usuarioNome: number
+    acao: number
+    antes: number
+    depois: number
+    criadoEm: number
+    _all: number
+  }
+
+
+  export type PedidoOperacionalAuditoriaMinAggregateInputType = {
+    id?: true
+    pedidoId?: true
+    usuarioId?: true
+    usuarioNome?: true
+    acao?: true
+    criadoEm?: true
+  }
+
+  export type PedidoOperacionalAuditoriaMaxAggregateInputType = {
+    id?: true
+    pedidoId?: true
+    usuarioId?: true
+    usuarioNome?: true
+    acao?: true
+    criadoEm?: true
+  }
+
+  export type PedidoOperacionalAuditoriaCountAggregateInputType = {
+    id?: true
+    pedidoId?: true
+    usuarioId?: true
+    usuarioNome?: true
+    acao?: true
+    antes?: true
+    depois?: true
+    criadoEm?: true
+    _all?: true
+  }
+
+  export type PedidoOperacionalAuditoriaAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PedidoOperacionalAuditoria to aggregate.
+     */
+    where?: PedidoOperacionalAuditoriaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PedidoOperacionalAuditorias to fetch.
+     */
+    orderBy?: PedidoOperacionalAuditoriaOrderByWithRelationInput | PedidoOperacionalAuditoriaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PedidoOperacionalAuditoriaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PedidoOperacionalAuditorias from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PedidoOperacionalAuditorias.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PedidoOperacionalAuditorias
+    **/
+    _count?: true | PedidoOperacionalAuditoriaCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PedidoOperacionalAuditoriaMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PedidoOperacionalAuditoriaMaxAggregateInputType
+  }
+
+  export type GetPedidoOperacionalAuditoriaAggregateType<T extends PedidoOperacionalAuditoriaAggregateArgs> = {
+        [P in keyof T & keyof AggregatePedidoOperacionalAuditoria]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePedidoOperacionalAuditoria[P]>
+      : GetScalarType<T[P], AggregatePedidoOperacionalAuditoria[P]>
+  }
+
+
+
+
+  export type PedidoOperacionalAuditoriaGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PedidoOperacionalAuditoriaWhereInput
+    orderBy?: PedidoOperacionalAuditoriaOrderByWithAggregationInput | PedidoOperacionalAuditoriaOrderByWithAggregationInput[]
+    by: PedidoOperacionalAuditoriaScalarFieldEnum[] | PedidoOperacionalAuditoriaScalarFieldEnum
+    having?: PedidoOperacionalAuditoriaScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PedidoOperacionalAuditoriaCountAggregateInputType | true
+    _min?: PedidoOperacionalAuditoriaMinAggregateInputType
+    _max?: PedidoOperacionalAuditoriaMaxAggregateInputType
+  }
+
+  export type PedidoOperacionalAuditoriaGroupByOutputType = {
+    id: string
+    pedidoId: string
+    usuarioId: string | null
+    usuarioNome: string | null
+    acao: string
+    antes: JsonValue | null
+    depois: JsonValue | null
+    criadoEm: Date
+    _count: PedidoOperacionalAuditoriaCountAggregateOutputType | null
+    _min: PedidoOperacionalAuditoriaMinAggregateOutputType | null
+    _max: PedidoOperacionalAuditoriaMaxAggregateOutputType | null
+  }
+
+  type GetPedidoOperacionalAuditoriaGroupByPayload<T extends PedidoOperacionalAuditoriaGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PedidoOperacionalAuditoriaGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PedidoOperacionalAuditoriaGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PedidoOperacionalAuditoriaGroupByOutputType[P]>
+            : GetScalarType<T[P], PedidoOperacionalAuditoriaGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PedidoOperacionalAuditoriaSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    pedidoId?: boolean
+    usuarioId?: boolean
+    usuarioNome?: boolean
+    acao?: boolean
+    antes?: boolean
+    depois?: boolean
+    criadoEm?: boolean
+    pedido?: boolean | PedidoOperacionalDefaultArgs<ExtArgs>
+    usuario?: boolean | PedidoOperacionalAuditoria$usuarioArgs<ExtArgs>
+  }, ExtArgs["result"]["pedidoOperacionalAuditoria"]>
+
+
+
+  export type PedidoOperacionalAuditoriaSelectScalar = {
+    id?: boolean
+    pedidoId?: boolean
+    usuarioId?: boolean
+    usuarioNome?: boolean
+    acao?: boolean
+    antes?: boolean
+    depois?: boolean
+    criadoEm?: boolean
+  }
+
+  export type PedidoOperacionalAuditoriaOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "pedidoId" | "usuarioId" | "usuarioNome" | "acao" | "antes" | "depois" | "criadoEm", ExtArgs["result"]["pedidoOperacionalAuditoria"]>
+  export type PedidoOperacionalAuditoriaInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    pedido?: boolean | PedidoOperacionalDefaultArgs<ExtArgs>
+    usuario?: boolean | PedidoOperacionalAuditoria$usuarioArgs<ExtArgs>
+  }
+
+  export type $PedidoOperacionalAuditoriaPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PedidoOperacionalAuditoria"
+    objects: {
+      pedido: Prisma.$PedidoOperacionalPayload<ExtArgs>
+      usuario: Prisma.$UsuarioPayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      pedidoId: string
+      usuarioId: string | null
+      usuarioNome: string | null
+      acao: string
+      antes: Prisma.JsonValue | null
+      depois: Prisma.JsonValue | null
+      criadoEm: Date
+    }, ExtArgs["result"]["pedidoOperacionalAuditoria"]>
+    composites: {}
+  }
+
+  type PedidoOperacionalAuditoriaGetPayload<S extends boolean | null | undefined | PedidoOperacionalAuditoriaDefaultArgs> = $Result.GetResult<Prisma.$PedidoOperacionalAuditoriaPayload, S>
+
+  type PedidoOperacionalAuditoriaCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PedidoOperacionalAuditoriaFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PedidoOperacionalAuditoriaCountAggregateInputType | true
+    }
+
+  export interface PedidoOperacionalAuditoriaDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PedidoOperacionalAuditoria'], meta: { name: 'PedidoOperacionalAuditoria' } }
+    /**
+     * Find zero or one PedidoOperacionalAuditoria that matches the filter.
+     * @param {PedidoOperacionalAuditoriaFindUniqueArgs} args - Arguments to find a PedidoOperacionalAuditoria
+     * @example
+     * // Get one PedidoOperacionalAuditoria
+     * const pedidoOperacionalAuditoria = await prisma.pedidoOperacionalAuditoria.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PedidoOperacionalAuditoriaFindUniqueArgs>(args: SelectSubset<T, PedidoOperacionalAuditoriaFindUniqueArgs<ExtArgs>>): Prisma__PedidoOperacionalAuditoriaClient<$Result.GetResult<Prisma.$PedidoOperacionalAuditoriaPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PedidoOperacionalAuditoria that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PedidoOperacionalAuditoriaFindUniqueOrThrowArgs} args - Arguments to find a PedidoOperacionalAuditoria
+     * @example
+     * // Get one PedidoOperacionalAuditoria
+     * const pedidoOperacionalAuditoria = await prisma.pedidoOperacionalAuditoria.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PedidoOperacionalAuditoriaFindUniqueOrThrowArgs>(args: SelectSubset<T, PedidoOperacionalAuditoriaFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PedidoOperacionalAuditoriaClient<$Result.GetResult<Prisma.$PedidoOperacionalAuditoriaPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PedidoOperacionalAuditoria that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalAuditoriaFindFirstArgs} args - Arguments to find a PedidoOperacionalAuditoria
+     * @example
+     * // Get one PedidoOperacionalAuditoria
+     * const pedidoOperacionalAuditoria = await prisma.pedidoOperacionalAuditoria.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PedidoOperacionalAuditoriaFindFirstArgs>(args?: SelectSubset<T, PedidoOperacionalAuditoriaFindFirstArgs<ExtArgs>>): Prisma__PedidoOperacionalAuditoriaClient<$Result.GetResult<Prisma.$PedidoOperacionalAuditoriaPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PedidoOperacionalAuditoria that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalAuditoriaFindFirstOrThrowArgs} args - Arguments to find a PedidoOperacionalAuditoria
+     * @example
+     * // Get one PedidoOperacionalAuditoria
+     * const pedidoOperacionalAuditoria = await prisma.pedidoOperacionalAuditoria.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PedidoOperacionalAuditoriaFindFirstOrThrowArgs>(args?: SelectSubset<T, PedidoOperacionalAuditoriaFindFirstOrThrowArgs<ExtArgs>>): Prisma__PedidoOperacionalAuditoriaClient<$Result.GetResult<Prisma.$PedidoOperacionalAuditoriaPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PedidoOperacionalAuditorias that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalAuditoriaFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PedidoOperacionalAuditorias
+     * const pedidoOperacionalAuditorias = await prisma.pedidoOperacionalAuditoria.findMany()
+     * 
+     * // Get first 10 PedidoOperacionalAuditorias
+     * const pedidoOperacionalAuditorias = await prisma.pedidoOperacionalAuditoria.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const pedidoOperacionalAuditoriaWithIdOnly = await prisma.pedidoOperacionalAuditoria.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PedidoOperacionalAuditoriaFindManyArgs>(args?: SelectSubset<T, PedidoOperacionalAuditoriaFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalAuditoriaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PedidoOperacionalAuditoria.
+     * @param {PedidoOperacionalAuditoriaCreateArgs} args - Arguments to create a PedidoOperacionalAuditoria.
+     * @example
+     * // Create one PedidoOperacionalAuditoria
+     * const PedidoOperacionalAuditoria = await prisma.pedidoOperacionalAuditoria.create({
+     *   data: {
+     *     // ... data to create a PedidoOperacionalAuditoria
+     *   }
+     * })
+     * 
+     */
+    create<T extends PedidoOperacionalAuditoriaCreateArgs>(args: SelectSubset<T, PedidoOperacionalAuditoriaCreateArgs<ExtArgs>>): Prisma__PedidoOperacionalAuditoriaClient<$Result.GetResult<Prisma.$PedidoOperacionalAuditoriaPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PedidoOperacionalAuditorias.
+     * @param {PedidoOperacionalAuditoriaCreateManyArgs} args - Arguments to create many PedidoOperacionalAuditorias.
+     * @example
+     * // Create many PedidoOperacionalAuditorias
+     * const pedidoOperacionalAuditoria = await prisma.pedidoOperacionalAuditoria.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PedidoOperacionalAuditoriaCreateManyArgs>(args?: SelectSubset<T, PedidoOperacionalAuditoriaCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a PedidoOperacionalAuditoria.
+     * @param {PedidoOperacionalAuditoriaDeleteArgs} args - Arguments to delete one PedidoOperacionalAuditoria.
+     * @example
+     * // Delete one PedidoOperacionalAuditoria
+     * const PedidoOperacionalAuditoria = await prisma.pedidoOperacionalAuditoria.delete({
+     *   where: {
+     *     // ... filter to delete one PedidoOperacionalAuditoria
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PedidoOperacionalAuditoriaDeleteArgs>(args: SelectSubset<T, PedidoOperacionalAuditoriaDeleteArgs<ExtArgs>>): Prisma__PedidoOperacionalAuditoriaClient<$Result.GetResult<Prisma.$PedidoOperacionalAuditoriaPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PedidoOperacionalAuditoria.
+     * @param {PedidoOperacionalAuditoriaUpdateArgs} args - Arguments to update one PedidoOperacionalAuditoria.
+     * @example
+     * // Update one PedidoOperacionalAuditoria
+     * const pedidoOperacionalAuditoria = await prisma.pedidoOperacionalAuditoria.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PedidoOperacionalAuditoriaUpdateArgs>(args: SelectSubset<T, PedidoOperacionalAuditoriaUpdateArgs<ExtArgs>>): Prisma__PedidoOperacionalAuditoriaClient<$Result.GetResult<Prisma.$PedidoOperacionalAuditoriaPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PedidoOperacionalAuditorias.
+     * @param {PedidoOperacionalAuditoriaDeleteManyArgs} args - Arguments to filter PedidoOperacionalAuditorias to delete.
+     * @example
+     * // Delete a few PedidoOperacionalAuditorias
+     * const { count } = await prisma.pedidoOperacionalAuditoria.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PedidoOperacionalAuditoriaDeleteManyArgs>(args?: SelectSubset<T, PedidoOperacionalAuditoriaDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PedidoOperacionalAuditorias.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalAuditoriaUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PedidoOperacionalAuditorias
+     * const pedidoOperacionalAuditoria = await prisma.pedidoOperacionalAuditoria.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PedidoOperacionalAuditoriaUpdateManyArgs>(args: SelectSubset<T, PedidoOperacionalAuditoriaUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one PedidoOperacionalAuditoria.
+     * @param {PedidoOperacionalAuditoriaUpsertArgs} args - Arguments to update or create a PedidoOperacionalAuditoria.
+     * @example
+     * // Update or create a PedidoOperacionalAuditoria
+     * const pedidoOperacionalAuditoria = await prisma.pedidoOperacionalAuditoria.upsert({
+     *   create: {
+     *     // ... data to create a PedidoOperacionalAuditoria
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PedidoOperacionalAuditoria we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PedidoOperacionalAuditoriaUpsertArgs>(args: SelectSubset<T, PedidoOperacionalAuditoriaUpsertArgs<ExtArgs>>): Prisma__PedidoOperacionalAuditoriaClient<$Result.GetResult<Prisma.$PedidoOperacionalAuditoriaPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PedidoOperacionalAuditorias.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalAuditoriaCountArgs} args - Arguments to filter PedidoOperacionalAuditorias to count.
+     * @example
+     * // Count the number of PedidoOperacionalAuditorias
+     * const count = await prisma.pedidoOperacionalAuditoria.count({
+     *   where: {
+     *     // ... the filter for the PedidoOperacionalAuditorias we want to count
+     *   }
+     * })
+    **/
+    count<T extends PedidoOperacionalAuditoriaCountArgs>(
+      args?: Subset<T, PedidoOperacionalAuditoriaCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PedidoOperacionalAuditoriaCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PedidoOperacionalAuditoria.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalAuditoriaAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PedidoOperacionalAuditoriaAggregateArgs>(args: Subset<T, PedidoOperacionalAuditoriaAggregateArgs>): Prisma.PrismaPromise<GetPedidoOperacionalAuditoriaAggregateType<T>>
+
+    /**
+     * Group by PedidoOperacionalAuditoria.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PedidoOperacionalAuditoriaGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PedidoOperacionalAuditoriaGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PedidoOperacionalAuditoriaGroupByArgs['orderBy'] }
+        : { orderBy?: PedidoOperacionalAuditoriaGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PedidoOperacionalAuditoriaGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPedidoOperacionalAuditoriaGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PedidoOperacionalAuditoria model
+   */
+  readonly fields: PedidoOperacionalAuditoriaFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PedidoOperacionalAuditoria.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PedidoOperacionalAuditoriaClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    pedido<T extends PedidoOperacionalDefaultArgs<ExtArgs> = {}>(args?: Subset<T, PedidoOperacionalDefaultArgs<ExtArgs>>): Prisma__PedidoOperacionalClient<$Result.GetResult<Prisma.$PedidoOperacionalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    usuario<T extends PedidoOperacionalAuditoria$usuarioArgs<ExtArgs> = {}>(args?: Subset<T, PedidoOperacionalAuditoria$usuarioArgs<ExtArgs>>): Prisma__UsuarioClient<$Result.GetResult<Prisma.$UsuarioPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PedidoOperacionalAuditoria model
+   */
+  interface PedidoOperacionalAuditoriaFieldRefs {
+    readonly id: FieldRef<"PedidoOperacionalAuditoria", 'String'>
+    readonly pedidoId: FieldRef<"PedidoOperacionalAuditoria", 'String'>
+    readonly usuarioId: FieldRef<"PedidoOperacionalAuditoria", 'String'>
+    readonly usuarioNome: FieldRef<"PedidoOperacionalAuditoria", 'String'>
+    readonly acao: FieldRef<"PedidoOperacionalAuditoria", 'String'>
+    readonly antes: FieldRef<"PedidoOperacionalAuditoria", 'Json'>
+    readonly depois: FieldRef<"PedidoOperacionalAuditoria", 'Json'>
+    readonly criadoEm: FieldRef<"PedidoOperacionalAuditoria", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PedidoOperacionalAuditoria findUnique
+   */
+  export type PedidoOperacionalAuditoriaFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAuditoria
+     */
+    select?: PedidoOperacionalAuditoriaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAuditoria
+     */
+    omit?: PedidoOperacionalAuditoriaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAuditoriaInclude<ExtArgs> | null
+    /**
+     * Filter, which PedidoOperacionalAuditoria to fetch.
+     */
+    where: PedidoOperacionalAuditoriaWhereUniqueInput
+  }
+
+  /**
+   * PedidoOperacionalAuditoria findUniqueOrThrow
+   */
+  export type PedidoOperacionalAuditoriaFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAuditoria
+     */
+    select?: PedidoOperacionalAuditoriaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAuditoria
+     */
+    omit?: PedidoOperacionalAuditoriaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAuditoriaInclude<ExtArgs> | null
+    /**
+     * Filter, which PedidoOperacionalAuditoria to fetch.
+     */
+    where: PedidoOperacionalAuditoriaWhereUniqueInput
+  }
+
+  /**
+   * PedidoOperacionalAuditoria findFirst
+   */
+  export type PedidoOperacionalAuditoriaFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAuditoria
+     */
+    select?: PedidoOperacionalAuditoriaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAuditoria
+     */
+    omit?: PedidoOperacionalAuditoriaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAuditoriaInclude<ExtArgs> | null
+    /**
+     * Filter, which PedidoOperacionalAuditoria to fetch.
+     */
+    where?: PedidoOperacionalAuditoriaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PedidoOperacionalAuditorias to fetch.
+     */
+    orderBy?: PedidoOperacionalAuditoriaOrderByWithRelationInput | PedidoOperacionalAuditoriaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PedidoOperacionalAuditorias.
+     */
+    cursor?: PedidoOperacionalAuditoriaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PedidoOperacionalAuditorias from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PedidoOperacionalAuditorias.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PedidoOperacionalAuditorias.
+     */
+    distinct?: PedidoOperacionalAuditoriaScalarFieldEnum | PedidoOperacionalAuditoriaScalarFieldEnum[]
+  }
+
+  /**
+   * PedidoOperacionalAuditoria findFirstOrThrow
+   */
+  export type PedidoOperacionalAuditoriaFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAuditoria
+     */
+    select?: PedidoOperacionalAuditoriaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAuditoria
+     */
+    omit?: PedidoOperacionalAuditoriaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAuditoriaInclude<ExtArgs> | null
+    /**
+     * Filter, which PedidoOperacionalAuditoria to fetch.
+     */
+    where?: PedidoOperacionalAuditoriaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PedidoOperacionalAuditorias to fetch.
+     */
+    orderBy?: PedidoOperacionalAuditoriaOrderByWithRelationInput | PedidoOperacionalAuditoriaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PedidoOperacionalAuditorias.
+     */
+    cursor?: PedidoOperacionalAuditoriaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PedidoOperacionalAuditorias from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PedidoOperacionalAuditorias.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PedidoOperacionalAuditorias.
+     */
+    distinct?: PedidoOperacionalAuditoriaScalarFieldEnum | PedidoOperacionalAuditoriaScalarFieldEnum[]
+  }
+
+  /**
+   * PedidoOperacionalAuditoria findMany
+   */
+  export type PedidoOperacionalAuditoriaFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAuditoria
+     */
+    select?: PedidoOperacionalAuditoriaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAuditoria
+     */
+    omit?: PedidoOperacionalAuditoriaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAuditoriaInclude<ExtArgs> | null
+    /**
+     * Filter, which PedidoOperacionalAuditorias to fetch.
+     */
+    where?: PedidoOperacionalAuditoriaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PedidoOperacionalAuditorias to fetch.
+     */
+    orderBy?: PedidoOperacionalAuditoriaOrderByWithRelationInput | PedidoOperacionalAuditoriaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PedidoOperacionalAuditorias.
+     */
+    cursor?: PedidoOperacionalAuditoriaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PedidoOperacionalAuditorias from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PedidoOperacionalAuditorias.
+     */
+    skip?: number
+    distinct?: PedidoOperacionalAuditoriaScalarFieldEnum | PedidoOperacionalAuditoriaScalarFieldEnum[]
+  }
+
+  /**
+   * PedidoOperacionalAuditoria create
+   */
+  export type PedidoOperacionalAuditoriaCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAuditoria
+     */
+    select?: PedidoOperacionalAuditoriaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAuditoria
+     */
+    omit?: PedidoOperacionalAuditoriaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAuditoriaInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PedidoOperacionalAuditoria.
+     */
+    data: XOR<PedidoOperacionalAuditoriaCreateInput, PedidoOperacionalAuditoriaUncheckedCreateInput>
+  }
+
+  /**
+   * PedidoOperacionalAuditoria createMany
+   */
+  export type PedidoOperacionalAuditoriaCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PedidoOperacionalAuditorias.
+     */
+    data: PedidoOperacionalAuditoriaCreateManyInput | PedidoOperacionalAuditoriaCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PedidoOperacionalAuditoria update
+   */
+  export type PedidoOperacionalAuditoriaUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAuditoria
+     */
+    select?: PedidoOperacionalAuditoriaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAuditoria
+     */
+    omit?: PedidoOperacionalAuditoriaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAuditoriaInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PedidoOperacionalAuditoria.
+     */
+    data: XOR<PedidoOperacionalAuditoriaUpdateInput, PedidoOperacionalAuditoriaUncheckedUpdateInput>
+    /**
+     * Choose, which PedidoOperacionalAuditoria to update.
+     */
+    where: PedidoOperacionalAuditoriaWhereUniqueInput
+  }
+
+  /**
+   * PedidoOperacionalAuditoria updateMany
+   */
+  export type PedidoOperacionalAuditoriaUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PedidoOperacionalAuditorias.
+     */
+    data: XOR<PedidoOperacionalAuditoriaUpdateManyMutationInput, PedidoOperacionalAuditoriaUncheckedUpdateManyInput>
+    /**
+     * Filter which PedidoOperacionalAuditorias to update
+     */
+    where?: PedidoOperacionalAuditoriaWhereInput
+    /**
+     * Limit how many PedidoOperacionalAuditorias to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PedidoOperacionalAuditoria upsert
+   */
+  export type PedidoOperacionalAuditoriaUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAuditoria
+     */
+    select?: PedidoOperacionalAuditoriaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAuditoria
+     */
+    omit?: PedidoOperacionalAuditoriaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAuditoriaInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PedidoOperacionalAuditoria to update in case it exists.
+     */
+    where: PedidoOperacionalAuditoriaWhereUniqueInput
+    /**
+     * In case the PedidoOperacionalAuditoria found by the `where` argument doesn't exist, create a new PedidoOperacionalAuditoria with this data.
+     */
+    create: XOR<PedidoOperacionalAuditoriaCreateInput, PedidoOperacionalAuditoriaUncheckedCreateInput>
+    /**
+     * In case the PedidoOperacionalAuditoria was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PedidoOperacionalAuditoriaUpdateInput, PedidoOperacionalAuditoriaUncheckedUpdateInput>
+  }
+
+  /**
+   * PedidoOperacionalAuditoria delete
+   */
+  export type PedidoOperacionalAuditoriaDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAuditoria
+     */
+    select?: PedidoOperacionalAuditoriaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAuditoria
+     */
+    omit?: PedidoOperacionalAuditoriaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAuditoriaInclude<ExtArgs> | null
+    /**
+     * Filter which PedidoOperacionalAuditoria to delete.
+     */
+    where: PedidoOperacionalAuditoriaWhereUniqueInput
+  }
+
+  /**
+   * PedidoOperacionalAuditoria deleteMany
+   */
+  export type PedidoOperacionalAuditoriaDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PedidoOperacionalAuditorias to delete
+     */
+    where?: PedidoOperacionalAuditoriaWhereInput
+    /**
+     * Limit how many PedidoOperacionalAuditorias to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PedidoOperacionalAuditoria.usuario
+   */
+  export type PedidoOperacionalAuditoria$usuarioArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Usuario
+     */
+    select?: UsuarioSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Usuario
+     */
+    omit?: UsuarioOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UsuarioInclude<ExtArgs> | null
+    where?: UsuarioWhereInput
+  }
+
+  /**
+   * PedidoOperacionalAuditoria without action
+   */
+  export type PedidoOperacionalAuditoriaDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PedidoOperacionalAuditoria
+     */
+    select?: PedidoOperacionalAuditoriaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PedidoOperacionalAuditoria
+     */
+    omit?: PedidoOperacionalAuditoriaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PedidoOperacionalAuditoriaInclude<ExtArgs> | null
   }
 
 
@@ -16178,6 +26875,149 @@ export namespace Prisma {
   export type ClienteScalarFieldEnum = (typeof ClienteScalarFieldEnum)[keyof typeof ClienteScalarFieldEnum]
 
 
+  export const EstoqueVivoConfigScalarFieldEnum: {
+    id: 'id',
+    mixReferenciaNome: 'mixReferenciaNome',
+    mixVariedades: 'mixVariedades',
+    atualizadoEm: 'atualizadoEm'
+  };
+
+  export type EstoqueVivoConfigScalarFieldEnum = (typeof EstoqueVivoConfigScalarFieldEnum)[keyof typeof EstoqueVivoConfigScalarFieldEnum]
+
+
+  export const ProdutoComercialScalarFieldEnum: {
+    id: 'id',
+    nome: 'nome',
+    precoBase: 'precoBase',
+    categoria: 'categoria',
+    ativo: 'ativo',
+    modoCompra: 'modoCompra',
+    fatorCompraUnidade: 'fatorCompraUnidade',
+    rendimentoPorKg: 'rendimentoPorKg',
+    ocultoListaCompra: 'ocultoListaCompra',
+    mixAtivo: 'mixAtivo',
+    mixFolhaLeve: 'mixFolhaLeve',
+    mixProdutoReferenciaId: 'mixProdutoReferenciaId',
+    mixVariedades: 'mixVariedades',
+    criadoEm: 'criadoEm',
+    atualizadoEm: 'atualizadoEm'
+  };
+
+  export type ProdutoComercialScalarFieldEnum = (typeof ProdutoComercialScalarFieldEnum)[keyof typeof ProdutoComercialScalarFieldEnum]
+
+
+  export const RegraComercialClienteScalarFieldEnum: {
+    id: 'id',
+    contaAzulCustomerId: 'contaAzulCustomerId',
+    observacoesGerais: 'observacoesGerais',
+    periodoEntrega: 'periodoEntrega',
+    horarioMaximoEntrega: 'horarioMaximoEntrega',
+    cobraTaxaEntrega: 'cobraTaxaEntrega',
+    prazoBoletoDias: 'prazoBoletoDias',
+    acumulaPedidos: 'acumulaPedidos',
+    diasAcumulo: 'diasAcumulo',
+    prazoBoletoAcumuloDias: 'prazoBoletoAcumuloDias',
+    criadoEm: 'criadoEm',
+    atualizadoEm: 'atualizadoEm'
+  };
+
+  export type RegraComercialClienteScalarFieldEnum = (typeof RegraComercialClienteScalarFieldEnum)[keyof typeof RegraComercialClienteScalarFieldEnum]
+
+
+  export const ClienteLegadoContaAzulLinkScalarFieldEnum: {
+    id: 'id',
+    legacyClientId: 'legacyClientId',
+    legacyClientName: 'legacyClientName',
+    contaAzulCustomerId: 'contaAzulCustomerId',
+    clienteId: 'clienteId',
+    metodo: 'metodo',
+    confianca: 'confianca',
+    revisado: 'revisado',
+    criadoEm: 'criadoEm',
+    atualizadoEm: 'atualizadoEm'
+  };
+
+  export type ClienteLegadoContaAzulLinkScalarFieldEnum = (typeof ClienteLegadoContaAzulLinkScalarFieldEnum)[keyof typeof ClienteLegadoContaAzulLinkScalarFieldEnum]
+
+
+  export const PrecoEspecialClienteScalarFieldEnum: {
+    id: 'id',
+    regraId: 'regraId',
+    produtoId: 'produtoId',
+    preco: 'preco',
+    criadoEm: 'criadoEm',
+    atualizadoEm: 'atualizadoEm'
+  };
+
+  export type PrecoEspecialClienteScalarFieldEnum = (typeof PrecoEspecialClienteScalarFieldEnum)[keyof typeof PrecoEspecialClienteScalarFieldEnum]
+
+
+  export const PedidoOperacionalScalarFieldEnum: {
+    id: 'id',
+    clienteId: 'clienteId',
+    contaAzulCustomerId: 'contaAzulCustomerId',
+    dataEntrega: 'dataEntrega',
+    diaSemana: 'diaSemana',
+    tipoVenda: 'tipoVenda',
+    status: 'status',
+    observacoes: 'observacoes',
+    prioridadeEntrega: 'prioridadeEntrega',
+    criadoPorId: 'criadoPorId',
+    editadoPorId: 'editadoPorId',
+    criadoEm: 'criadoEm',
+    atualizadoEm: 'atualizadoEm'
+  };
+
+  export type PedidoOperacionalScalarFieldEnum = (typeof PedidoOperacionalScalarFieldEnum)[keyof typeof PedidoOperacionalScalarFieldEnum]
+
+
+  export const PedidoOperacionalItemScalarFieldEnum: {
+    id: 'id',
+    pedidoId: 'pedidoId',
+    produtoId: 'produtoId',
+    produtoNome: 'produtoNome',
+    categoria: 'categoria',
+    quantidade: 'quantidade',
+    precoUnit: 'precoUnit',
+    precoEspecial: 'precoEspecial',
+    observacoes: 'observacoes'
+  };
+
+  export type PedidoOperacionalItemScalarFieldEnum = (typeof PedidoOperacionalItemScalarFieldEnum)[keyof typeof PedidoOperacionalItemScalarFieldEnum]
+
+
+  export const PedidoOperacionalAvariaScalarFieldEnum: {
+    id: 'id',
+    pedidoId: 'pedidoId',
+    clienteId: 'clienteId',
+    contaAzulCustomerId: 'contaAzulCustomerId',
+    dataEntrega: 'dataEntrega',
+    produtoId: 'produtoId',
+    produtoNome: 'produtoNome',
+    categoria: 'categoria',
+    quantidade: 'quantidade',
+    observacoes: 'observacoes',
+    criadoPorId: 'criadoPorId',
+    criadoEm: 'criadoEm'
+  };
+
+  export type PedidoOperacionalAvariaScalarFieldEnum = (typeof PedidoOperacionalAvariaScalarFieldEnum)[keyof typeof PedidoOperacionalAvariaScalarFieldEnum]
+
+
+  export const PedidoOperacionalAuditoriaScalarFieldEnum: {
+    id: 'id',
+    pedidoId: 'pedidoId',
+    usuarioId: 'usuarioId',
+    usuarioNome: 'usuarioNome',
+    acao: 'acao',
+    antes: 'antes',
+    depois: 'depois',
+    criadoEm: 'criadoEm'
+  };
+
+  export type PedidoOperacionalAuditoriaScalarFieldEnum = (typeof PedidoOperacionalAuditoriaScalarFieldEnum)[keyof typeof PedidoOperacionalAuditoriaScalarFieldEnum]
+
+
   export const PedidoScalarFieldEnum: {
     id: 'id',
     externalId: 'externalId',
@@ -16416,6 +27256,105 @@ export namespace Prisma {
   export type ClienteOrderByRelevanceFieldEnum = (typeof ClienteOrderByRelevanceFieldEnum)[keyof typeof ClienteOrderByRelevanceFieldEnum]
 
 
+  export const EstoqueVivoConfigOrderByRelevanceFieldEnum: {
+    id: 'id',
+    mixReferenciaNome: 'mixReferenciaNome'
+  };
+
+  export type EstoqueVivoConfigOrderByRelevanceFieldEnum = (typeof EstoqueVivoConfigOrderByRelevanceFieldEnum)[keyof typeof EstoqueVivoConfigOrderByRelevanceFieldEnum]
+
+
+  export const ProdutoComercialOrderByRelevanceFieldEnum: {
+    id: 'id',
+    nome: 'nome',
+    categoria: 'categoria',
+    mixProdutoReferenciaId: 'mixProdutoReferenciaId'
+  };
+
+  export type ProdutoComercialOrderByRelevanceFieldEnum = (typeof ProdutoComercialOrderByRelevanceFieldEnum)[keyof typeof ProdutoComercialOrderByRelevanceFieldEnum]
+
+
+  export const RegraComercialClienteOrderByRelevanceFieldEnum: {
+    id: 'id',
+    contaAzulCustomerId: 'contaAzulCustomerId',
+    observacoesGerais: 'observacoesGerais',
+    horarioMaximoEntrega: 'horarioMaximoEntrega'
+  };
+
+  export type RegraComercialClienteOrderByRelevanceFieldEnum = (typeof RegraComercialClienteOrderByRelevanceFieldEnum)[keyof typeof RegraComercialClienteOrderByRelevanceFieldEnum]
+
+
+  export const ClienteLegadoContaAzulLinkOrderByRelevanceFieldEnum: {
+    id: 'id',
+    legacyClientId: 'legacyClientId',
+    legacyClientName: 'legacyClientName',
+    contaAzulCustomerId: 'contaAzulCustomerId',
+    clienteId: 'clienteId',
+    metodo: 'metodo'
+  };
+
+  export type ClienteLegadoContaAzulLinkOrderByRelevanceFieldEnum = (typeof ClienteLegadoContaAzulLinkOrderByRelevanceFieldEnum)[keyof typeof ClienteLegadoContaAzulLinkOrderByRelevanceFieldEnum]
+
+
+  export const PrecoEspecialClienteOrderByRelevanceFieldEnum: {
+    id: 'id',
+    regraId: 'regraId',
+    produtoId: 'produtoId'
+  };
+
+  export type PrecoEspecialClienteOrderByRelevanceFieldEnum = (typeof PrecoEspecialClienteOrderByRelevanceFieldEnum)[keyof typeof PrecoEspecialClienteOrderByRelevanceFieldEnum]
+
+
+  export const PedidoOperacionalOrderByRelevanceFieldEnum: {
+    id: 'id',
+    clienteId: 'clienteId',
+    contaAzulCustomerId: 'contaAzulCustomerId',
+    observacoes: 'observacoes',
+    criadoPorId: 'criadoPorId',
+    editadoPorId: 'editadoPorId'
+  };
+
+  export type PedidoOperacionalOrderByRelevanceFieldEnum = (typeof PedidoOperacionalOrderByRelevanceFieldEnum)[keyof typeof PedidoOperacionalOrderByRelevanceFieldEnum]
+
+
+  export const PedidoOperacionalItemOrderByRelevanceFieldEnum: {
+    id: 'id',
+    pedidoId: 'pedidoId',
+    produtoId: 'produtoId',
+    produtoNome: 'produtoNome',
+    categoria: 'categoria',
+    observacoes: 'observacoes'
+  };
+
+  export type PedidoOperacionalItemOrderByRelevanceFieldEnum = (typeof PedidoOperacionalItemOrderByRelevanceFieldEnum)[keyof typeof PedidoOperacionalItemOrderByRelevanceFieldEnum]
+
+
+  export const PedidoOperacionalAvariaOrderByRelevanceFieldEnum: {
+    id: 'id',
+    pedidoId: 'pedidoId',
+    clienteId: 'clienteId',
+    contaAzulCustomerId: 'contaAzulCustomerId',
+    produtoId: 'produtoId',
+    produtoNome: 'produtoNome',
+    categoria: 'categoria',
+    observacoes: 'observacoes',
+    criadoPorId: 'criadoPorId'
+  };
+
+  export type PedidoOperacionalAvariaOrderByRelevanceFieldEnum = (typeof PedidoOperacionalAvariaOrderByRelevanceFieldEnum)[keyof typeof PedidoOperacionalAvariaOrderByRelevanceFieldEnum]
+
+
+  export const PedidoOperacionalAuditoriaOrderByRelevanceFieldEnum: {
+    id: 'id',
+    pedidoId: 'pedidoId',
+    usuarioId: 'usuarioId',
+    usuarioNome: 'usuarioNome',
+    acao: 'acao'
+  };
+
+  export type PedidoOperacionalAuditoriaOrderByRelevanceFieldEnum = (typeof PedidoOperacionalAuditoriaOrderByRelevanceFieldEnum)[keyof typeof PedidoOperacionalAuditoriaOrderByRelevanceFieldEnum]
+
+
   export const PedidoOrderByRelevanceFieldEnum: {
     id: 'id',
     externalId: 'externalId',
@@ -16599,6 +27538,41 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'ModoCompraProduto'
+   */
+  export type EnumModoCompraProdutoFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ModoCompraProduto'>
+    
+
+
+  /**
+   * Reference to a field of type 'PeriodoEntregaCliente'
+   */
+  export type EnumPeriodoEntregaClienteFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PeriodoEntregaCliente'>
+    
+
+
+  /**
+   * Reference to a field of type 'Int'
+   */
+  export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
+    
+
+
+  /**
+   * Reference to a field of type 'TipoVendaPedido'
+   */
+  export type EnumTipoVendaPedidoFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TipoVendaPedido'>
+    
+
+
+  /**
+   * Reference to a field of type 'PedidoOperacionalStatus'
+   */
+  export type EnumPedidoOperacionalStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PedidoOperacionalStatus'>
+    
+
+
+  /**
    * Reference to a field of type 'OrigemPedido'
    */
   export type EnumOrigemPedidoFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrigemPedido'>
@@ -16662,13 +27636,6 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'Int'
-   */
-  export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
-    
-
-
-  /**
    * Reference to a field of type 'PeriodoKpi'
    */
   export type EnumPeriodoKpiFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PeriodoKpi'>
@@ -16699,6 +27666,10 @@ export namespace Prisma {
     mensagens?: MensagemListRelationFilter
     refreshTokens?: RefreshTokenListRelationFilter
     oportunidades?: OportunidadeListRelationFilter
+    pedidosCriados?: PedidoOperacionalListRelationFilter
+    pedidosEditados?: PedidoOperacionalListRelationFilter
+    avariasCriadas?: PedidoOperacionalAvariaListRelationFilter
+    auditoriasPedido?: PedidoOperacionalAuditoriaListRelationFilter
   }
 
   export type UsuarioOrderByWithRelationInput = {
@@ -16712,6 +27683,10 @@ export namespace Prisma {
     mensagens?: MensagemOrderByRelationAggregateInput
     refreshTokens?: RefreshTokenOrderByRelationAggregateInput
     oportunidades?: OportunidadeOrderByRelationAggregateInput
+    pedidosCriados?: PedidoOperacionalOrderByRelationAggregateInput
+    pedidosEditados?: PedidoOperacionalOrderByRelationAggregateInput
+    avariasCriadas?: PedidoOperacionalAvariaOrderByRelationAggregateInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaOrderByRelationAggregateInput
     _relevance?: UsuarioOrderByRelevanceInput
   }
 
@@ -16729,6 +27704,10 @@ export namespace Prisma {
     mensagens?: MensagemListRelationFilter
     refreshTokens?: RefreshTokenListRelationFilter
     oportunidades?: OportunidadeListRelationFilter
+    pedidosCriados?: PedidoOperacionalListRelationFilter
+    pedidosEditados?: PedidoOperacionalListRelationFilter
+    avariasCriadas?: PedidoOperacionalAvariaListRelationFilter
+    auditoriasPedido?: PedidoOperacionalAuditoriaListRelationFilter
   }, "id" | "email">
 
   export type UsuarioOrderByWithAggregationInput = {
@@ -16838,6 +27817,10 @@ export namespace Prisma {
     oportunidades?: OportunidadeListRelationFilter
     mensagens?: MensagemListRelationFilter
     execucoes?: ExecucaoApiListRelationFilter
+    regraComercial?: XOR<RegraComercialClienteNullableScalarRelationFilter, RegraComercialClienteWhereInput> | null
+    pedidosOperacionais?: PedidoOperacionalListRelationFilter
+    avariasOperacionais?: PedidoOperacionalAvariaListRelationFilter
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkListRelationFilter
   }
 
   export type ClienteOrderByWithRelationInput = {
@@ -16862,6 +27845,10 @@ export namespace Prisma {
     oportunidades?: OportunidadeOrderByRelationAggregateInput
     mensagens?: MensagemOrderByRelationAggregateInput
     execucoes?: ExecucaoApiOrderByRelationAggregateInput
+    regraComercial?: RegraComercialClienteOrderByWithRelationInput
+    pedidosOperacionais?: PedidoOperacionalOrderByRelationAggregateInput
+    avariasOperacionais?: PedidoOperacionalAvariaOrderByRelationAggregateInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkOrderByRelationAggregateInput
     _relevance?: ClienteOrderByRelevanceInput
   }
 
@@ -16890,6 +27877,10 @@ export namespace Prisma {
     oportunidades?: OportunidadeListRelationFilter
     mensagens?: MensagemListRelationFilter
     execucoes?: ExecucaoApiListRelationFilter
+    regraComercial?: XOR<RegraComercialClienteNullableScalarRelationFilter, RegraComercialClienteWhereInput> | null
+    pedidosOperacionais?: PedidoOperacionalListRelationFilter
+    avariasOperacionais?: PedidoOperacionalAvariaListRelationFilter
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkListRelationFilter
   }, "id" | "externalId">
 
   export type ClienteOrderByWithAggregationInput = {
@@ -16936,6 +27927,790 @@ export namespace Prisma {
     urlSite?: StringNullableWithAggregatesFilter<"Cliente"> | string | null
     dataCadastro?: DateTimeWithAggregatesFilter<"Cliente"> | Date | string
     dataUltimaAtualizacao?: DateTimeWithAggregatesFilter<"Cliente"> | Date | string
+  }
+
+  export type EstoqueVivoConfigWhereInput = {
+    AND?: EstoqueVivoConfigWhereInput | EstoqueVivoConfigWhereInput[]
+    OR?: EstoqueVivoConfigWhereInput[]
+    NOT?: EstoqueVivoConfigWhereInput | EstoqueVivoConfigWhereInput[]
+    id?: StringFilter<"EstoqueVivoConfig"> | string
+    mixReferenciaNome?: StringFilter<"EstoqueVivoConfig"> | string
+    mixVariedades?: JsonFilter<"EstoqueVivoConfig">
+    atualizadoEm?: DateTimeFilter<"EstoqueVivoConfig"> | Date | string
+  }
+
+  export type EstoqueVivoConfigOrderByWithRelationInput = {
+    id?: SortOrder
+    mixReferenciaNome?: SortOrder
+    mixVariedades?: SortOrder
+    atualizadoEm?: SortOrder
+    _relevance?: EstoqueVivoConfigOrderByRelevanceInput
+  }
+
+  export type EstoqueVivoConfigWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: EstoqueVivoConfigWhereInput | EstoqueVivoConfigWhereInput[]
+    OR?: EstoqueVivoConfigWhereInput[]
+    NOT?: EstoqueVivoConfigWhereInput | EstoqueVivoConfigWhereInput[]
+    mixReferenciaNome?: StringFilter<"EstoqueVivoConfig"> | string
+    mixVariedades?: JsonFilter<"EstoqueVivoConfig">
+    atualizadoEm?: DateTimeFilter<"EstoqueVivoConfig"> | Date | string
+  }, "id">
+
+  export type EstoqueVivoConfigOrderByWithAggregationInput = {
+    id?: SortOrder
+    mixReferenciaNome?: SortOrder
+    mixVariedades?: SortOrder
+    atualizadoEm?: SortOrder
+    _count?: EstoqueVivoConfigCountOrderByAggregateInput
+    _max?: EstoqueVivoConfigMaxOrderByAggregateInput
+    _min?: EstoqueVivoConfigMinOrderByAggregateInput
+  }
+
+  export type EstoqueVivoConfigScalarWhereWithAggregatesInput = {
+    AND?: EstoqueVivoConfigScalarWhereWithAggregatesInput | EstoqueVivoConfigScalarWhereWithAggregatesInput[]
+    OR?: EstoqueVivoConfigScalarWhereWithAggregatesInput[]
+    NOT?: EstoqueVivoConfigScalarWhereWithAggregatesInput | EstoqueVivoConfigScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"EstoqueVivoConfig"> | string
+    mixReferenciaNome?: StringWithAggregatesFilter<"EstoqueVivoConfig"> | string
+    mixVariedades?: JsonWithAggregatesFilter<"EstoqueVivoConfig">
+    atualizadoEm?: DateTimeWithAggregatesFilter<"EstoqueVivoConfig"> | Date | string
+  }
+
+  export type ProdutoComercialWhereInput = {
+    AND?: ProdutoComercialWhereInput | ProdutoComercialWhereInput[]
+    OR?: ProdutoComercialWhereInput[]
+    NOT?: ProdutoComercialWhereInput | ProdutoComercialWhereInput[]
+    id?: StringFilter<"ProdutoComercial"> | string
+    nome?: StringFilter<"ProdutoComercial"> | string
+    precoBase?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
+    categoria?: StringNullableFilter<"ProdutoComercial"> | string | null
+    ativo?: BoolFilter<"ProdutoComercial"> | boolean
+    modoCompra?: EnumModoCompraProdutoFilter<"ProdutoComercial"> | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFilter<"ProdutoComercial"> | boolean
+    mixAtivo?: BoolFilter<"ProdutoComercial"> | boolean
+    mixFolhaLeve?: BoolFilter<"ProdutoComercial"> | boolean
+    mixProdutoReferenciaId?: StringNullableFilter<"ProdutoComercial"> | string | null
+    mixVariedades?: JsonNullableFilter<"ProdutoComercial">
+    criadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
+    atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
+    precosEspeciais?: PrecoEspecialClienteListRelationFilter
+    itensPedido?: PedidoOperacionalItemListRelationFilter
+    avariasPedido?: PedidoOperacionalAvariaListRelationFilter
+    mixProdutoReferencia?: XOR<ProdutoComercialNullableScalarRelationFilter, ProdutoComercialWhereInput> | null
+    mixReferenciadoPor?: ProdutoComercialListRelationFilter
+  }
+
+  export type ProdutoComercialOrderByWithRelationInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    precoBase?: SortOrderInput | SortOrder
+    categoria?: SortOrderInput | SortOrder
+    ativo?: SortOrder
+    modoCompra?: SortOrder
+    fatorCompraUnidade?: SortOrderInput | SortOrder
+    rendimentoPorKg?: SortOrderInput | SortOrder
+    ocultoListaCompra?: SortOrder
+    mixAtivo?: SortOrder
+    mixFolhaLeve?: SortOrder
+    mixProdutoReferenciaId?: SortOrderInput | SortOrder
+    mixVariedades?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    precosEspeciais?: PrecoEspecialClienteOrderByRelationAggregateInput
+    itensPedido?: PedidoOperacionalItemOrderByRelationAggregateInput
+    avariasPedido?: PedidoOperacionalAvariaOrderByRelationAggregateInput
+    mixProdutoReferencia?: ProdutoComercialOrderByWithRelationInput
+    mixReferenciadoPor?: ProdutoComercialOrderByRelationAggregateInput
+    _relevance?: ProdutoComercialOrderByRelevanceInput
+  }
+
+  export type ProdutoComercialWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    nome?: string
+    AND?: ProdutoComercialWhereInput | ProdutoComercialWhereInput[]
+    OR?: ProdutoComercialWhereInput[]
+    NOT?: ProdutoComercialWhereInput | ProdutoComercialWhereInput[]
+    precoBase?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
+    categoria?: StringNullableFilter<"ProdutoComercial"> | string | null
+    ativo?: BoolFilter<"ProdutoComercial"> | boolean
+    modoCompra?: EnumModoCompraProdutoFilter<"ProdutoComercial"> | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFilter<"ProdutoComercial"> | boolean
+    mixAtivo?: BoolFilter<"ProdutoComercial"> | boolean
+    mixFolhaLeve?: BoolFilter<"ProdutoComercial"> | boolean
+    mixProdutoReferenciaId?: StringNullableFilter<"ProdutoComercial"> | string | null
+    mixVariedades?: JsonNullableFilter<"ProdutoComercial">
+    criadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
+    atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
+    precosEspeciais?: PrecoEspecialClienteListRelationFilter
+    itensPedido?: PedidoOperacionalItemListRelationFilter
+    avariasPedido?: PedidoOperacionalAvariaListRelationFilter
+    mixProdutoReferencia?: XOR<ProdutoComercialNullableScalarRelationFilter, ProdutoComercialWhereInput> | null
+    mixReferenciadoPor?: ProdutoComercialListRelationFilter
+  }, "id" | "nome">
+
+  export type ProdutoComercialOrderByWithAggregationInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    precoBase?: SortOrderInput | SortOrder
+    categoria?: SortOrderInput | SortOrder
+    ativo?: SortOrder
+    modoCompra?: SortOrder
+    fatorCompraUnidade?: SortOrderInput | SortOrder
+    rendimentoPorKg?: SortOrderInput | SortOrder
+    ocultoListaCompra?: SortOrder
+    mixAtivo?: SortOrder
+    mixFolhaLeve?: SortOrder
+    mixProdutoReferenciaId?: SortOrderInput | SortOrder
+    mixVariedades?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    _count?: ProdutoComercialCountOrderByAggregateInput
+    _avg?: ProdutoComercialAvgOrderByAggregateInput
+    _max?: ProdutoComercialMaxOrderByAggregateInput
+    _min?: ProdutoComercialMinOrderByAggregateInput
+    _sum?: ProdutoComercialSumOrderByAggregateInput
+  }
+
+  export type ProdutoComercialScalarWhereWithAggregatesInput = {
+    AND?: ProdutoComercialScalarWhereWithAggregatesInput | ProdutoComercialScalarWhereWithAggregatesInput[]
+    OR?: ProdutoComercialScalarWhereWithAggregatesInput[]
+    NOT?: ProdutoComercialScalarWhereWithAggregatesInput | ProdutoComercialScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"ProdutoComercial"> | string
+    nome?: StringWithAggregatesFilter<"ProdutoComercial"> | string
+    precoBase?: DecimalNullableWithAggregatesFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
+    categoria?: StringNullableWithAggregatesFilter<"ProdutoComercial"> | string | null
+    ativo?: BoolWithAggregatesFilter<"ProdutoComercial"> | boolean
+    modoCompra?: EnumModoCompraProdutoWithAggregatesFilter<"ProdutoComercial"> | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: DecimalNullableWithAggregatesFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: DecimalNullableWithAggregatesFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolWithAggregatesFilter<"ProdutoComercial"> | boolean
+    mixAtivo?: BoolWithAggregatesFilter<"ProdutoComercial"> | boolean
+    mixFolhaLeve?: BoolWithAggregatesFilter<"ProdutoComercial"> | boolean
+    mixProdutoReferenciaId?: StringNullableWithAggregatesFilter<"ProdutoComercial"> | string | null
+    mixVariedades?: JsonNullableWithAggregatesFilter<"ProdutoComercial">
+    criadoEm?: DateTimeWithAggregatesFilter<"ProdutoComercial"> | Date | string
+    atualizadoEm?: DateTimeWithAggregatesFilter<"ProdutoComercial"> | Date | string
+  }
+
+  export type RegraComercialClienteWhereInput = {
+    AND?: RegraComercialClienteWhereInput | RegraComercialClienteWhereInput[]
+    OR?: RegraComercialClienteWhereInput[]
+    NOT?: RegraComercialClienteWhereInput | RegraComercialClienteWhereInput[]
+    id?: StringFilter<"RegraComercialCliente"> | string
+    contaAzulCustomerId?: StringFilter<"RegraComercialCliente"> | string
+    observacoesGerais?: StringNullableFilter<"RegraComercialCliente"> | string | null
+    periodoEntrega?: EnumPeriodoEntregaClienteNullableFilter<"RegraComercialCliente"> | $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega?: StringNullableFilter<"RegraComercialCliente"> | string | null
+    cobraTaxaEntrega?: BoolFilter<"RegraComercialCliente"> | boolean
+    prazoBoletoDias?: IntNullableFilter<"RegraComercialCliente"> | number | null
+    acumulaPedidos?: BoolFilter<"RegraComercialCliente"> | boolean
+    diasAcumulo?: IntNullableFilter<"RegraComercialCliente"> | number | null
+    prazoBoletoAcumuloDias?: IntNullableFilter<"RegraComercialCliente"> | number | null
+    criadoEm?: DateTimeFilter<"RegraComercialCliente"> | Date | string
+    atualizadoEm?: DateTimeFilter<"RegraComercialCliente"> | Date | string
+    cliente?: XOR<ClienteNullableScalarRelationFilter, ClienteWhereInput> | null
+    precosEspeciais?: PrecoEspecialClienteListRelationFilter
+  }
+
+  export type RegraComercialClienteOrderByWithRelationInput = {
+    id?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    observacoesGerais?: SortOrderInput | SortOrder
+    periodoEntrega?: SortOrderInput | SortOrder
+    horarioMaximoEntrega?: SortOrderInput | SortOrder
+    cobraTaxaEntrega?: SortOrder
+    prazoBoletoDias?: SortOrderInput | SortOrder
+    acumulaPedidos?: SortOrder
+    diasAcumulo?: SortOrderInput | SortOrder
+    prazoBoletoAcumuloDias?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    cliente?: ClienteOrderByWithRelationInput
+    precosEspeciais?: PrecoEspecialClienteOrderByRelationAggregateInput
+    _relevance?: RegraComercialClienteOrderByRelevanceInput
+  }
+
+  export type RegraComercialClienteWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    contaAzulCustomerId?: string
+    AND?: RegraComercialClienteWhereInput | RegraComercialClienteWhereInput[]
+    OR?: RegraComercialClienteWhereInput[]
+    NOT?: RegraComercialClienteWhereInput | RegraComercialClienteWhereInput[]
+    observacoesGerais?: StringNullableFilter<"RegraComercialCliente"> | string | null
+    periodoEntrega?: EnumPeriodoEntregaClienteNullableFilter<"RegraComercialCliente"> | $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega?: StringNullableFilter<"RegraComercialCliente"> | string | null
+    cobraTaxaEntrega?: BoolFilter<"RegraComercialCliente"> | boolean
+    prazoBoletoDias?: IntNullableFilter<"RegraComercialCliente"> | number | null
+    acumulaPedidos?: BoolFilter<"RegraComercialCliente"> | boolean
+    diasAcumulo?: IntNullableFilter<"RegraComercialCliente"> | number | null
+    prazoBoletoAcumuloDias?: IntNullableFilter<"RegraComercialCliente"> | number | null
+    criadoEm?: DateTimeFilter<"RegraComercialCliente"> | Date | string
+    atualizadoEm?: DateTimeFilter<"RegraComercialCliente"> | Date | string
+    cliente?: XOR<ClienteNullableScalarRelationFilter, ClienteWhereInput> | null
+    precosEspeciais?: PrecoEspecialClienteListRelationFilter
+  }, "id" | "contaAzulCustomerId">
+
+  export type RegraComercialClienteOrderByWithAggregationInput = {
+    id?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    observacoesGerais?: SortOrderInput | SortOrder
+    periodoEntrega?: SortOrderInput | SortOrder
+    horarioMaximoEntrega?: SortOrderInput | SortOrder
+    cobraTaxaEntrega?: SortOrder
+    prazoBoletoDias?: SortOrderInput | SortOrder
+    acumulaPedidos?: SortOrder
+    diasAcumulo?: SortOrderInput | SortOrder
+    prazoBoletoAcumuloDias?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    _count?: RegraComercialClienteCountOrderByAggregateInput
+    _avg?: RegraComercialClienteAvgOrderByAggregateInput
+    _max?: RegraComercialClienteMaxOrderByAggregateInput
+    _min?: RegraComercialClienteMinOrderByAggregateInput
+    _sum?: RegraComercialClienteSumOrderByAggregateInput
+  }
+
+  export type RegraComercialClienteScalarWhereWithAggregatesInput = {
+    AND?: RegraComercialClienteScalarWhereWithAggregatesInput | RegraComercialClienteScalarWhereWithAggregatesInput[]
+    OR?: RegraComercialClienteScalarWhereWithAggregatesInput[]
+    NOT?: RegraComercialClienteScalarWhereWithAggregatesInput | RegraComercialClienteScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"RegraComercialCliente"> | string
+    contaAzulCustomerId?: StringWithAggregatesFilter<"RegraComercialCliente"> | string
+    observacoesGerais?: StringNullableWithAggregatesFilter<"RegraComercialCliente"> | string | null
+    periodoEntrega?: EnumPeriodoEntregaClienteNullableWithAggregatesFilter<"RegraComercialCliente"> | $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega?: StringNullableWithAggregatesFilter<"RegraComercialCliente"> | string | null
+    cobraTaxaEntrega?: BoolWithAggregatesFilter<"RegraComercialCliente"> | boolean
+    prazoBoletoDias?: IntNullableWithAggregatesFilter<"RegraComercialCliente"> | number | null
+    acumulaPedidos?: BoolWithAggregatesFilter<"RegraComercialCliente"> | boolean
+    diasAcumulo?: IntNullableWithAggregatesFilter<"RegraComercialCliente"> | number | null
+    prazoBoletoAcumuloDias?: IntNullableWithAggregatesFilter<"RegraComercialCliente"> | number | null
+    criadoEm?: DateTimeWithAggregatesFilter<"RegraComercialCliente"> | Date | string
+    atualizadoEm?: DateTimeWithAggregatesFilter<"RegraComercialCliente"> | Date | string
+  }
+
+  export type ClienteLegadoContaAzulLinkWhereInput = {
+    AND?: ClienteLegadoContaAzulLinkWhereInput | ClienteLegadoContaAzulLinkWhereInput[]
+    OR?: ClienteLegadoContaAzulLinkWhereInput[]
+    NOT?: ClienteLegadoContaAzulLinkWhereInput | ClienteLegadoContaAzulLinkWhereInput[]
+    id?: StringFilter<"ClienteLegadoContaAzulLink"> | string
+    legacyClientId?: StringFilter<"ClienteLegadoContaAzulLink"> | string
+    legacyClientName?: StringFilter<"ClienteLegadoContaAzulLink"> | string
+    contaAzulCustomerId?: StringFilter<"ClienteLegadoContaAzulLink"> | string
+    clienteId?: StringNullableFilter<"ClienteLegadoContaAzulLink"> | string | null
+    metodo?: StringFilter<"ClienteLegadoContaAzulLink"> | string
+    confianca?: DecimalFilter<"ClienteLegadoContaAzulLink"> | Decimal | DecimalJsLike | number | string
+    revisado?: BoolFilter<"ClienteLegadoContaAzulLink"> | boolean
+    criadoEm?: DateTimeFilter<"ClienteLegadoContaAzulLink"> | Date | string
+    atualizadoEm?: DateTimeFilter<"ClienteLegadoContaAzulLink"> | Date | string
+    cliente?: XOR<ClienteNullableScalarRelationFilter, ClienteWhereInput> | null
+  }
+
+  export type ClienteLegadoContaAzulLinkOrderByWithRelationInput = {
+    id?: SortOrder
+    legacyClientId?: SortOrder
+    legacyClientName?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    clienteId?: SortOrderInput | SortOrder
+    metodo?: SortOrder
+    confianca?: SortOrder
+    revisado?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    cliente?: ClienteOrderByWithRelationInput
+    _relevance?: ClienteLegadoContaAzulLinkOrderByRelevanceInput
+  }
+
+  export type ClienteLegadoContaAzulLinkWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    legacyClientId?: string
+    AND?: ClienteLegadoContaAzulLinkWhereInput | ClienteLegadoContaAzulLinkWhereInput[]
+    OR?: ClienteLegadoContaAzulLinkWhereInput[]
+    NOT?: ClienteLegadoContaAzulLinkWhereInput | ClienteLegadoContaAzulLinkWhereInput[]
+    legacyClientName?: StringFilter<"ClienteLegadoContaAzulLink"> | string
+    contaAzulCustomerId?: StringFilter<"ClienteLegadoContaAzulLink"> | string
+    clienteId?: StringNullableFilter<"ClienteLegadoContaAzulLink"> | string | null
+    metodo?: StringFilter<"ClienteLegadoContaAzulLink"> | string
+    confianca?: DecimalFilter<"ClienteLegadoContaAzulLink"> | Decimal | DecimalJsLike | number | string
+    revisado?: BoolFilter<"ClienteLegadoContaAzulLink"> | boolean
+    criadoEm?: DateTimeFilter<"ClienteLegadoContaAzulLink"> | Date | string
+    atualizadoEm?: DateTimeFilter<"ClienteLegadoContaAzulLink"> | Date | string
+    cliente?: XOR<ClienteNullableScalarRelationFilter, ClienteWhereInput> | null
+  }, "id" | "legacyClientId">
+
+  export type ClienteLegadoContaAzulLinkOrderByWithAggregationInput = {
+    id?: SortOrder
+    legacyClientId?: SortOrder
+    legacyClientName?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    clienteId?: SortOrderInput | SortOrder
+    metodo?: SortOrder
+    confianca?: SortOrder
+    revisado?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    _count?: ClienteLegadoContaAzulLinkCountOrderByAggregateInput
+    _avg?: ClienteLegadoContaAzulLinkAvgOrderByAggregateInput
+    _max?: ClienteLegadoContaAzulLinkMaxOrderByAggregateInput
+    _min?: ClienteLegadoContaAzulLinkMinOrderByAggregateInput
+    _sum?: ClienteLegadoContaAzulLinkSumOrderByAggregateInput
+  }
+
+  export type ClienteLegadoContaAzulLinkScalarWhereWithAggregatesInput = {
+    AND?: ClienteLegadoContaAzulLinkScalarWhereWithAggregatesInput | ClienteLegadoContaAzulLinkScalarWhereWithAggregatesInput[]
+    OR?: ClienteLegadoContaAzulLinkScalarWhereWithAggregatesInput[]
+    NOT?: ClienteLegadoContaAzulLinkScalarWhereWithAggregatesInput | ClienteLegadoContaAzulLinkScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"ClienteLegadoContaAzulLink"> | string
+    legacyClientId?: StringWithAggregatesFilter<"ClienteLegadoContaAzulLink"> | string
+    legacyClientName?: StringWithAggregatesFilter<"ClienteLegadoContaAzulLink"> | string
+    contaAzulCustomerId?: StringWithAggregatesFilter<"ClienteLegadoContaAzulLink"> | string
+    clienteId?: StringNullableWithAggregatesFilter<"ClienteLegadoContaAzulLink"> | string | null
+    metodo?: StringWithAggregatesFilter<"ClienteLegadoContaAzulLink"> | string
+    confianca?: DecimalWithAggregatesFilter<"ClienteLegadoContaAzulLink"> | Decimal | DecimalJsLike | number | string
+    revisado?: BoolWithAggregatesFilter<"ClienteLegadoContaAzulLink"> | boolean
+    criadoEm?: DateTimeWithAggregatesFilter<"ClienteLegadoContaAzulLink"> | Date | string
+    atualizadoEm?: DateTimeWithAggregatesFilter<"ClienteLegadoContaAzulLink"> | Date | string
+  }
+
+  export type PrecoEspecialClienteWhereInput = {
+    AND?: PrecoEspecialClienteWhereInput | PrecoEspecialClienteWhereInput[]
+    OR?: PrecoEspecialClienteWhereInput[]
+    NOT?: PrecoEspecialClienteWhereInput | PrecoEspecialClienteWhereInput[]
+    id?: StringFilter<"PrecoEspecialCliente"> | string
+    regraId?: StringFilter<"PrecoEspecialCliente"> | string
+    produtoId?: StringFilter<"PrecoEspecialCliente"> | string
+    preco?: DecimalFilter<"PrecoEspecialCliente"> | Decimal | DecimalJsLike | number | string
+    criadoEm?: DateTimeFilter<"PrecoEspecialCliente"> | Date | string
+    atualizadoEm?: DateTimeFilter<"PrecoEspecialCliente"> | Date | string
+    regra?: XOR<RegraComercialClienteScalarRelationFilter, RegraComercialClienteWhereInput>
+    produto?: XOR<ProdutoComercialScalarRelationFilter, ProdutoComercialWhereInput>
+  }
+
+  export type PrecoEspecialClienteOrderByWithRelationInput = {
+    id?: SortOrder
+    regraId?: SortOrder
+    produtoId?: SortOrder
+    preco?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    regra?: RegraComercialClienteOrderByWithRelationInput
+    produto?: ProdutoComercialOrderByWithRelationInput
+    _relevance?: PrecoEspecialClienteOrderByRelevanceInput
+  }
+
+  export type PrecoEspecialClienteWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    regraId_produtoId?: PrecoEspecialClienteRegraIdProdutoIdCompoundUniqueInput
+    AND?: PrecoEspecialClienteWhereInput | PrecoEspecialClienteWhereInput[]
+    OR?: PrecoEspecialClienteWhereInput[]
+    NOT?: PrecoEspecialClienteWhereInput | PrecoEspecialClienteWhereInput[]
+    regraId?: StringFilter<"PrecoEspecialCliente"> | string
+    produtoId?: StringFilter<"PrecoEspecialCliente"> | string
+    preco?: DecimalFilter<"PrecoEspecialCliente"> | Decimal | DecimalJsLike | number | string
+    criadoEm?: DateTimeFilter<"PrecoEspecialCliente"> | Date | string
+    atualizadoEm?: DateTimeFilter<"PrecoEspecialCliente"> | Date | string
+    regra?: XOR<RegraComercialClienteScalarRelationFilter, RegraComercialClienteWhereInput>
+    produto?: XOR<ProdutoComercialScalarRelationFilter, ProdutoComercialWhereInput>
+  }, "id" | "regraId_produtoId">
+
+  export type PrecoEspecialClienteOrderByWithAggregationInput = {
+    id?: SortOrder
+    regraId?: SortOrder
+    produtoId?: SortOrder
+    preco?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    _count?: PrecoEspecialClienteCountOrderByAggregateInput
+    _avg?: PrecoEspecialClienteAvgOrderByAggregateInput
+    _max?: PrecoEspecialClienteMaxOrderByAggregateInput
+    _min?: PrecoEspecialClienteMinOrderByAggregateInput
+    _sum?: PrecoEspecialClienteSumOrderByAggregateInput
+  }
+
+  export type PrecoEspecialClienteScalarWhereWithAggregatesInput = {
+    AND?: PrecoEspecialClienteScalarWhereWithAggregatesInput | PrecoEspecialClienteScalarWhereWithAggregatesInput[]
+    OR?: PrecoEspecialClienteScalarWhereWithAggregatesInput[]
+    NOT?: PrecoEspecialClienteScalarWhereWithAggregatesInput | PrecoEspecialClienteScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PrecoEspecialCliente"> | string
+    regraId?: StringWithAggregatesFilter<"PrecoEspecialCliente"> | string
+    produtoId?: StringWithAggregatesFilter<"PrecoEspecialCliente"> | string
+    preco?: DecimalWithAggregatesFilter<"PrecoEspecialCliente"> | Decimal | DecimalJsLike | number | string
+    criadoEm?: DateTimeWithAggregatesFilter<"PrecoEspecialCliente"> | Date | string
+    atualizadoEm?: DateTimeWithAggregatesFilter<"PrecoEspecialCliente"> | Date | string
+  }
+
+  export type PedidoOperacionalWhereInput = {
+    AND?: PedidoOperacionalWhereInput | PedidoOperacionalWhereInput[]
+    OR?: PedidoOperacionalWhereInput[]
+    NOT?: PedidoOperacionalWhereInput | PedidoOperacionalWhereInput[]
+    id?: StringFilter<"PedidoOperacional"> | string
+    clienteId?: StringNullableFilter<"PedidoOperacional"> | string | null
+    contaAzulCustomerId?: StringFilter<"PedidoOperacional"> | string
+    dataEntrega?: DateTimeFilter<"PedidoOperacional"> | Date | string
+    diaSemana?: IntFilter<"PedidoOperacional"> | number
+    tipoVenda?: EnumTipoVendaPedidoFilter<"PedidoOperacional"> | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFilter<"PedidoOperacional"> | $Enums.PedidoOperacionalStatus
+    observacoes?: StringNullableFilter<"PedidoOperacional"> | string | null
+    prioridadeEntrega?: IntNullableFilter<"PedidoOperacional"> | number | null
+    criadoPorId?: StringNullableFilter<"PedidoOperacional"> | string | null
+    editadoPorId?: StringNullableFilter<"PedidoOperacional"> | string | null
+    criadoEm?: DateTimeFilter<"PedidoOperacional"> | Date | string
+    atualizadoEm?: DateTimeFilter<"PedidoOperacional"> | Date | string
+    cliente?: XOR<ClienteNullableScalarRelationFilter, ClienteWhereInput> | null
+    criadoPor?: XOR<UsuarioNullableScalarRelationFilter, UsuarioWhereInput> | null
+    editadoPor?: XOR<UsuarioNullableScalarRelationFilter, UsuarioWhereInput> | null
+    itens?: PedidoOperacionalItemListRelationFilter
+    avarias?: PedidoOperacionalAvariaListRelationFilter
+    auditoria?: PedidoOperacionalAuditoriaListRelationFilter
+  }
+
+  export type PedidoOperacionalOrderByWithRelationInput = {
+    id?: SortOrder
+    clienteId?: SortOrderInput | SortOrder
+    contaAzulCustomerId?: SortOrder
+    dataEntrega?: SortOrder
+    diaSemana?: SortOrder
+    tipoVenda?: SortOrder
+    status?: SortOrder
+    observacoes?: SortOrderInput | SortOrder
+    prioridadeEntrega?: SortOrderInput | SortOrder
+    criadoPorId?: SortOrderInput | SortOrder
+    editadoPorId?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    cliente?: ClienteOrderByWithRelationInput
+    criadoPor?: UsuarioOrderByWithRelationInput
+    editadoPor?: UsuarioOrderByWithRelationInput
+    itens?: PedidoOperacionalItemOrderByRelationAggregateInput
+    avarias?: PedidoOperacionalAvariaOrderByRelationAggregateInput
+    auditoria?: PedidoOperacionalAuditoriaOrderByRelationAggregateInput
+    _relevance?: PedidoOperacionalOrderByRelevanceInput
+  }
+
+  export type PedidoOperacionalWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: PedidoOperacionalWhereInput | PedidoOperacionalWhereInput[]
+    OR?: PedidoOperacionalWhereInput[]
+    NOT?: PedidoOperacionalWhereInput | PedidoOperacionalWhereInput[]
+    clienteId?: StringNullableFilter<"PedidoOperacional"> | string | null
+    contaAzulCustomerId?: StringFilter<"PedidoOperacional"> | string
+    dataEntrega?: DateTimeFilter<"PedidoOperacional"> | Date | string
+    diaSemana?: IntFilter<"PedidoOperacional"> | number
+    tipoVenda?: EnumTipoVendaPedidoFilter<"PedidoOperacional"> | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFilter<"PedidoOperacional"> | $Enums.PedidoOperacionalStatus
+    observacoes?: StringNullableFilter<"PedidoOperacional"> | string | null
+    prioridadeEntrega?: IntNullableFilter<"PedidoOperacional"> | number | null
+    criadoPorId?: StringNullableFilter<"PedidoOperacional"> | string | null
+    editadoPorId?: StringNullableFilter<"PedidoOperacional"> | string | null
+    criadoEm?: DateTimeFilter<"PedidoOperacional"> | Date | string
+    atualizadoEm?: DateTimeFilter<"PedidoOperacional"> | Date | string
+    cliente?: XOR<ClienteNullableScalarRelationFilter, ClienteWhereInput> | null
+    criadoPor?: XOR<UsuarioNullableScalarRelationFilter, UsuarioWhereInput> | null
+    editadoPor?: XOR<UsuarioNullableScalarRelationFilter, UsuarioWhereInput> | null
+    itens?: PedidoOperacionalItemListRelationFilter
+    avarias?: PedidoOperacionalAvariaListRelationFilter
+    auditoria?: PedidoOperacionalAuditoriaListRelationFilter
+  }, "id">
+
+  export type PedidoOperacionalOrderByWithAggregationInput = {
+    id?: SortOrder
+    clienteId?: SortOrderInput | SortOrder
+    contaAzulCustomerId?: SortOrder
+    dataEntrega?: SortOrder
+    diaSemana?: SortOrder
+    tipoVenda?: SortOrder
+    status?: SortOrder
+    observacoes?: SortOrderInput | SortOrder
+    prioridadeEntrega?: SortOrderInput | SortOrder
+    criadoPorId?: SortOrderInput | SortOrder
+    editadoPorId?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    _count?: PedidoOperacionalCountOrderByAggregateInput
+    _avg?: PedidoOperacionalAvgOrderByAggregateInput
+    _max?: PedidoOperacionalMaxOrderByAggregateInput
+    _min?: PedidoOperacionalMinOrderByAggregateInput
+    _sum?: PedidoOperacionalSumOrderByAggregateInput
+  }
+
+  export type PedidoOperacionalScalarWhereWithAggregatesInput = {
+    AND?: PedidoOperacionalScalarWhereWithAggregatesInput | PedidoOperacionalScalarWhereWithAggregatesInput[]
+    OR?: PedidoOperacionalScalarWhereWithAggregatesInput[]
+    NOT?: PedidoOperacionalScalarWhereWithAggregatesInput | PedidoOperacionalScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PedidoOperacional"> | string
+    clienteId?: StringNullableWithAggregatesFilter<"PedidoOperacional"> | string | null
+    contaAzulCustomerId?: StringWithAggregatesFilter<"PedidoOperacional"> | string
+    dataEntrega?: DateTimeWithAggregatesFilter<"PedidoOperacional"> | Date | string
+    diaSemana?: IntWithAggregatesFilter<"PedidoOperacional"> | number
+    tipoVenda?: EnumTipoVendaPedidoWithAggregatesFilter<"PedidoOperacional"> | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusWithAggregatesFilter<"PedidoOperacional"> | $Enums.PedidoOperacionalStatus
+    observacoes?: StringNullableWithAggregatesFilter<"PedidoOperacional"> | string | null
+    prioridadeEntrega?: IntNullableWithAggregatesFilter<"PedidoOperacional"> | number | null
+    criadoPorId?: StringNullableWithAggregatesFilter<"PedidoOperacional"> | string | null
+    editadoPorId?: StringNullableWithAggregatesFilter<"PedidoOperacional"> | string | null
+    criadoEm?: DateTimeWithAggregatesFilter<"PedidoOperacional"> | Date | string
+    atualizadoEm?: DateTimeWithAggregatesFilter<"PedidoOperacional"> | Date | string
+  }
+
+  export type PedidoOperacionalItemWhereInput = {
+    AND?: PedidoOperacionalItemWhereInput | PedidoOperacionalItemWhereInput[]
+    OR?: PedidoOperacionalItemWhereInput[]
+    NOT?: PedidoOperacionalItemWhereInput | PedidoOperacionalItemWhereInput[]
+    id?: StringFilter<"PedidoOperacionalItem"> | string
+    pedidoId?: StringFilter<"PedidoOperacionalItem"> | string
+    produtoId?: StringFilter<"PedidoOperacionalItem"> | string
+    produtoNome?: StringFilter<"PedidoOperacionalItem"> | string
+    categoria?: StringNullableFilter<"PedidoOperacionalItem"> | string | null
+    quantidade?: DecimalFilter<"PedidoOperacionalItem"> | Decimal | DecimalJsLike | number | string
+    precoUnit?: DecimalNullableFilter<"PedidoOperacionalItem"> | Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: BoolFilter<"PedidoOperacionalItem"> | boolean
+    observacoes?: StringNullableFilter<"PedidoOperacionalItem"> | string | null
+    pedido?: XOR<PedidoOperacionalScalarRelationFilter, PedidoOperacionalWhereInput>
+    produto?: XOR<ProdutoComercialScalarRelationFilter, ProdutoComercialWhereInput>
+  }
+
+  export type PedidoOperacionalItemOrderByWithRelationInput = {
+    id?: SortOrder
+    pedidoId?: SortOrder
+    produtoId?: SortOrder
+    produtoNome?: SortOrder
+    categoria?: SortOrderInput | SortOrder
+    quantidade?: SortOrder
+    precoUnit?: SortOrderInput | SortOrder
+    precoEspecial?: SortOrder
+    observacoes?: SortOrderInput | SortOrder
+    pedido?: PedidoOperacionalOrderByWithRelationInput
+    produto?: ProdutoComercialOrderByWithRelationInput
+    _relevance?: PedidoOperacionalItemOrderByRelevanceInput
+  }
+
+  export type PedidoOperacionalItemWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: PedidoOperacionalItemWhereInput | PedidoOperacionalItemWhereInput[]
+    OR?: PedidoOperacionalItemWhereInput[]
+    NOT?: PedidoOperacionalItemWhereInput | PedidoOperacionalItemWhereInput[]
+    pedidoId?: StringFilter<"PedidoOperacionalItem"> | string
+    produtoId?: StringFilter<"PedidoOperacionalItem"> | string
+    produtoNome?: StringFilter<"PedidoOperacionalItem"> | string
+    categoria?: StringNullableFilter<"PedidoOperacionalItem"> | string | null
+    quantidade?: DecimalFilter<"PedidoOperacionalItem"> | Decimal | DecimalJsLike | number | string
+    precoUnit?: DecimalNullableFilter<"PedidoOperacionalItem"> | Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: BoolFilter<"PedidoOperacionalItem"> | boolean
+    observacoes?: StringNullableFilter<"PedidoOperacionalItem"> | string | null
+    pedido?: XOR<PedidoOperacionalScalarRelationFilter, PedidoOperacionalWhereInput>
+    produto?: XOR<ProdutoComercialScalarRelationFilter, ProdutoComercialWhereInput>
+  }, "id">
+
+  export type PedidoOperacionalItemOrderByWithAggregationInput = {
+    id?: SortOrder
+    pedidoId?: SortOrder
+    produtoId?: SortOrder
+    produtoNome?: SortOrder
+    categoria?: SortOrderInput | SortOrder
+    quantidade?: SortOrder
+    precoUnit?: SortOrderInput | SortOrder
+    precoEspecial?: SortOrder
+    observacoes?: SortOrderInput | SortOrder
+    _count?: PedidoOperacionalItemCountOrderByAggregateInput
+    _avg?: PedidoOperacionalItemAvgOrderByAggregateInput
+    _max?: PedidoOperacionalItemMaxOrderByAggregateInput
+    _min?: PedidoOperacionalItemMinOrderByAggregateInput
+    _sum?: PedidoOperacionalItemSumOrderByAggregateInput
+  }
+
+  export type PedidoOperacionalItemScalarWhereWithAggregatesInput = {
+    AND?: PedidoOperacionalItemScalarWhereWithAggregatesInput | PedidoOperacionalItemScalarWhereWithAggregatesInput[]
+    OR?: PedidoOperacionalItemScalarWhereWithAggregatesInput[]
+    NOT?: PedidoOperacionalItemScalarWhereWithAggregatesInput | PedidoOperacionalItemScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PedidoOperacionalItem"> | string
+    pedidoId?: StringWithAggregatesFilter<"PedidoOperacionalItem"> | string
+    produtoId?: StringWithAggregatesFilter<"PedidoOperacionalItem"> | string
+    produtoNome?: StringWithAggregatesFilter<"PedidoOperacionalItem"> | string
+    categoria?: StringNullableWithAggregatesFilter<"PedidoOperacionalItem"> | string | null
+    quantidade?: DecimalWithAggregatesFilter<"PedidoOperacionalItem"> | Decimal | DecimalJsLike | number | string
+    precoUnit?: DecimalNullableWithAggregatesFilter<"PedidoOperacionalItem"> | Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: BoolWithAggregatesFilter<"PedidoOperacionalItem"> | boolean
+    observacoes?: StringNullableWithAggregatesFilter<"PedidoOperacionalItem"> | string | null
+  }
+
+  export type PedidoOperacionalAvariaWhereInput = {
+    AND?: PedidoOperacionalAvariaWhereInput | PedidoOperacionalAvariaWhereInput[]
+    OR?: PedidoOperacionalAvariaWhereInput[]
+    NOT?: PedidoOperacionalAvariaWhereInput | PedidoOperacionalAvariaWhereInput[]
+    id?: StringFilter<"PedidoOperacionalAvaria"> | string
+    pedidoId?: StringFilter<"PedidoOperacionalAvaria"> | string
+    clienteId?: StringNullableFilter<"PedidoOperacionalAvaria"> | string | null
+    contaAzulCustomerId?: StringFilter<"PedidoOperacionalAvaria"> | string
+    dataEntrega?: DateTimeFilter<"PedidoOperacionalAvaria"> | Date | string
+    produtoId?: StringFilter<"PedidoOperacionalAvaria"> | string
+    produtoNome?: StringFilter<"PedidoOperacionalAvaria"> | string
+    categoria?: StringNullableFilter<"PedidoOperacionalAvaria"> | string | null
+    quantidade?: DecimalFilter<"PedidoOperacionalAvaria"> | Decimal | DecimalJsLike | number | string
+    observacoes?: StringNullableFilter<"PedidoOperacionalAvaria"> | string | null
+    criadoPorId?: StringNullableFilter<"PedidoOperacionalAvaria"> | string | null
+    criadoEm?: DateTimeFilter<"PedidoOperacionalAvaria"> | Date | string
+    pedido?: XOR<PedidoOperacionalScalarRelationFilter, PedidoOperacionalWhereInput>
+    cliente?: XOR<ClienteNullableScalarRelationFilter, ClienteWhereInput> | null
+    produto?: XOR<ProdutoComercialScalarRelationFilter, ProdutoComercialWhereInput>
+    criadoPor?: XOR<UsuarioNullableScalarRelationFilter, UsuarioWhereInput> | null
+  }
+
+  export type PedidoOperacionalAvariaOrderByWithRelationInput = {
+    id?: SortOrder
+    pedidoId?: SortOrder
+    clienteId?: SortOrderInput | SortOrder
+    contaAzulCustomerId?: SortOrder
+    dataEntrega?: SortOrder
+    produtoId?: SortOrder
+    produtoNome?: SortOrder
+    categoria?: SortOrderInput | SortOrder
+    quantidade?: SortOrder
+    observacoes?: SortOrderInput | SortOrder
+    criadoPorId?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    pedido?: PedidoOperacionalOrderByWithRelationInput
+    cliente?: ClienteOrderByWithRelationInput
+    produto?: ProdutoComercialOrderByWithRelationInput
+    criadoPor?: UsuarioOrderByWithRelationInput
+    _relevance?: PedidoOperacionalAvariaOrderByRelevanceInput
+  }
+
+  export type PedidoOperacionalAvariaWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: PedidoOperacionalAvariaWhereInput | PedidoOperacionalAvariaWhereInput[]
+    OR?: PedidoOperacionalAvariaWhereInput[]
+    NOT?: PedidoOperacionalAvariaWhereInput | PedidoOperacionalAvariaWhereInput[]
+    pedidoId?: StringFilter<"PedidoOperacionalAvaria"> | string
+    clienteId?: StringNullableFilter<"PedidoOperacionalAvaria"> | string | null
+    contaAzulCustomerId?: StringFilter<"PedidoOperacionalAvaria"> | string
+    dataEntrega?: DateTimeFilter<"PedidoOperacionalAvaria"> | Date | string
+    produtoId?: StringFilter<"PedidoOperacionalAvaria"> | string
+    produtoNome?: StringFilter<"PedidoOperacionalAvaria"> | string
+    categoria?: StringNullableFilter<"PedidoOperacionalAvaria"> | string | null
+    quantidade?: DecimalFilter<"PedidoOperacionalAvaria"> | Decimal | DecimalJsLike | number | string
+    observacoes?: StringNullableFilter<"PedidoOperacionalAvaria"> | string | null
+    criadoPorId?: StringNullableFilter<"PedidoOperacionalAvaria"> | string | null
+    criadoEm?: DateTimeFilter<"PedidoOperacionalAvaria"> | Date | string
+    pedido?: XOR<PedidoOperacionalScalarRelationFilter, PedidoOperacionalWhereInput>
+    cliente?: XOR<ClienteNullableScalarRelationFilter, ClienteWhereInput> | null
+    produto?: XOR<ProdutoComercialScalarRelationFilter, ProdutoComercialWhereInput>
+    criadoPor?: XOR<UsuarioNullableScalarRelationFilter, UsuarioWhereInput> | null
+  }, "id">
+
+  export type PedidoOperacionalAvariaOrderByWithAggregationInput = {
+    id?: SortOrder
+    pedidoId?: SortOrder
+    clienteId?: SortOrderInput | SortOrder
+    contaAzulCustomerId?: SortOrder
+    dataEntrega?: SortOrder
+    produtoId?: SortOrder
+    produtoNome?: SortOrder
+    categoria?: SortOrderInput | SortOrder
+    quantidade?: SortOrder
+    observacoes?: SortOrderInput | SortOrder
+    criadoPorId?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    _count?: PedidoOperacionalAvariaCountOrderByAggregateInput
+    _avg?: PedidoOperacionalAvariaAvgOrderByAggregateInput
+    _max?: PedidoOperacionalAvariaMaxOrderByAggregateInput
+    _min?: PedidoOperacionalAvariaMinOrderByAggregateInput
+    _sum?: PedidoOperacionalAvariaSumOrderByAggregateInput
+  }
+
+  export type PedidoOperacionalAvariaScalarWhereWithAggregatesInput = {
+    AND?: PedidoOperacionalAvariaScalarWhereWithAggregatesInput | PedidoOperacionalAvariaScalarWhereWithAggregatesInput[]
+    OR?: PedidoOperacionalAvariaScalarWhereWithAggregatesInput[]
+    NOT?: PedidoOperacionalAvariaScalarWhereWithAggregatesInput | PedidoOperacionalAvariaScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PedidoOperacionalAvaria"> | string
+    pedidoId?: StringWithAggregatesFilter<"PedidoOperacionalAvaria"> | string
+    clienteId?: StringNullableWithAggregatesFilter<"PedidoOperacionalAvaria"> | string | null
+    contaAzulCustomerId?: StringWithAggregatesFilter<"PedidoOperacionalAvaria"> | string
+    dataEntrega?: DateTimeWithAggregatesFilter<"PedidoOperacionalAvaria"> | Date | string
+    produtoId?: StringWithAggregatesFilter<"PedidoOperacionalAvaria"> | string
+    produtoNome?: StringWithAggregatesFilter<"PedidoOperacionalAvaria"> | string
+    categoria?: StringNullableWithAggregatesFilter<"PedidoOperacionalAvaria"> | string | null
+    quantidade?: DecimalWithAggregatesFilter<"PedidoOperacionalAvaria"> | Decimal | DecimalJsLike | number | string
+    observacoes?: StringNullableWithAggregatesFilter<"PedidoOperacionalAvaria"> | string | null
+    criadoPorId?: StringNullableWithAggregatesFilter<"PedidoOperacionalAvaria"> | string | null
+    criadoEm?: DateTimeWithAggregatesFilter<"PedidoOperacionalAvaria"> | Date | string
+  }
+
+  export type PedidoOperacionalAuditoriaWhereInput = {
+    AND?: PedidoOperacionalAuditoriaWhereInput | PedidoOperacionalAuditoriaWhereInput[]
+    OR?: PedidoOperacionalAuditoriaWhereInput[]
+    NOT?: PedidoOperacionalAuditoriaWhereInput | PedidoOperacionalAuditoriaWhereInput[]
+    id?: StringFilter<"PedidoOperacionalAuditoria"> | string
+    pedidoId?: StringFilter<"PedidoOperacionalAuditoria"> | string
+    usuarioId?: StringNullableFilter<"PedidoOperacionalAuditoria"> | string | null
+    usuarioNome?: StringNullableFilter<"PedidoOperacionalAuditoria"> | string | null
+    acao?: StringFilter<"PedidoOperacionalAuditoria"> | string
+    antes?: JsonNullableFilter<"PedidoOperacionalAuditoria">
+    depois?: JsonNullableFilter<"PedidoOperacionalAuditoria">
+    criadoEm?: DateTimeFilter<"PedidoOperacionalAuditoria"> | Date | string
+    pedido?: XOR<PedidoOperacionalScalarRelationFilter, PedidoOperacionalWhereInput>
+    usuario?: XOR<UsuarioNullableScalarRelationFilter, UsuarioWhereInput> | null
+  }
+
+  export type PedidoOperacionalAuditoriaOrderByWithRelationInput = {
+    id?: SortOrder
+    pedidoId?: SortOrder
+    usuarioId?: SortOrderInput | SortOrder
+    usuarioNome?: SortOrderInput | SortOrder
+    acao?: SortOrder
+    antes?: SortOrderInput | SortOrder
+    depois?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    pedido?: PedidoOperacionalOrderByWithRelationInput
+    usuario?: UsuarioOrderByWithRelationInput
+    _relevance?: PedidoOperacionalAuditoriaOrderByRelevanceInput
+  }
+
+  export type PedidoOperacionalAuditoriaWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: PedidoOperacionalAuditoriaWhereInput | PedidoOperacionalAuditoriaWhereInput[]
+    OR?: PedidoOperacionalAuditoriaWhereInput[]
+    NOT?: PedidoOperacionalAuditoriaWhereInput | PedidoOperacionalAuditoriaWhereInput[]
+    pedidoId?: StringFilter<"PedidoOperacionalAuditoria"> | string
+    usuarioId?: StringNullableFilter<"PedidoOperacionalAuditoria"> | string | null
+    usuarioNome?: StringNullableFilter<"PedidoOperacionalAuditoria"> | string | null
+    acao?: StringFilter<"PedidoOperacionalAuditoria"> | string
+    antes?: JsonNullableFilter<"PedidoOperacionalAuditoria">
+    depois?: JsonNullableFilter<"PedidoOperacionalAuditoria">
+    criadoEm?: DateTimeFilter<"PedidoOperacionalAuditoria"> | Date | string
+    pedido?: XOR<PedidoOperacionalScalarRelationFilter, PedidoOperacionalWhereInput>
+    usuario?: XOR<UsuarioNullableScalarRelationFilter, UsuarioWhereInput> | null
+  }, "id">
+
+  export type PedidoOperacionalAuditoriaOrderByWithAggregationInput = {
+    id?: SortOrder
+    pedidoId?: SortOrder
+    usuarioId?: SortOrderInput | SortOrder
+    usuarioNome?: SortOrderInput | SortOrder
+    acao?: SortOrder
+    antes?: SortOrderInput | SortOrder
+    depois?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    _count?: PedidoOperacionalAuditoriaCountOrderByAggregateInput
+    _max?: PedidoOperacionalAuditoriaMaxOrderByAggregateInput
+    _min?: PedidoOperacionalAuditoriaMinOrderByAggregateInput
+  }
+
+  export type PedidoOperacionalAuditoriaScalarWhereWithAggregatesInput = {
+    AND?: PedidoOperacionalAuditoriaScalarWhereWithAggregatesInput | PedidoOperacionalAuditoriaScalarWhereWithAggregatesInput[]
+    OR?: PedidoOperacionalAuditoriaScalarWhereWithAggregatesInput[]
+    NOT?: PedidoOperacionalAuditoriaScalarWhereWithAggregatesInput | PedidoOperacionalAuditoriaScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PedidoOperacionalAuditoria"> | string
+    pedidoId?: StringWithAggregatesFilter<"PedidoOperacionalAuditoria"> | string
+    usuarioId?: StringNullableWithAggregatesFilter<"PedidoOperacionalAuditoria"> | string | null
+    usuarioNome?: StringNullableWithAggregatesFilter<"PedidoOperacionalAuditoria"> | string | null
+    acao?: StringWithAggregatesFilter<"PedidoOperacionalAuditoria"> | string
+    antes?: JsonNullableWithAggregatesFilter<"PedidoOperacionalAuditoria">
+    depois?: JsonNullableWithAggregatesFilter<"PedidoOperacionalAuditoria">
+    criadoEm?: DateTimeWithAggregatesFilter<"PedidoOperacionalAuditoria"> | Date | string
   }
 
   export type PedidoWhereInput = {
@@ -17742,6 +29517,10 @@ export namespace Prisma {
     mensagens?: MensagemCreateNestedManyWithoutAprovadorInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUsuarioInput
     oportunidades?: OportunidadeCreateNestedManyWithoutResponsavelInput
+    pedidosCriados?: PedidoOperacionalCreateNestedManyWithoutCriadoPorInput
+    pedidosEditados?: PedidoOperacionalCreateNestedManyWithoutEditadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaCreateNestedManyWithoutCriadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
   }
 
   export type UsuarioUncheckedCreateInput = {
@@ -17755,6 +29534,10 @@ export namespace Prisma {
     mensagens?: MensagemUncheckedCreateNestedManyWithoutAprovadorInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUsuarioInput
     oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutResponsavelInput
+    pedidosCriados?: PedidoOperacionalUncheckedCreateNestedManyWithoutCriadoPorInput
+    pedidosEditados?: PedidoOperacionalUncheckedCreateNestedManyWithoutEditadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutCriadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
   }
 
   export type UsuarioUpdateInput = {
@@ -17768,6 +29551,10 @@ export namespace Prisma {
     mensagens?: MensagemUpdateManyWithoutAprovadorNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUsuarioNestedInput
     oportunidades?: OportunidadeUpdateManyWithoutResponsavelNestedInput
+    pedidosCriados?: PedidoOperacionalUpdateManyWithoutCriadoPorNestedInput
+    pedidosEditados?: PedidoOperacionalUpdateManyWithoutEditadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUpdateManyWithoutCriadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
   }
 
   export type UsuarioUncheckedUpdateInput = {
@@ -17781,6 +29568,10 @@ export namespace Prisma {
     mensagens?: MensagemUncheckedUpdateManyWithoutAprovadorNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUsuarioNestedInput
     oportunidades?: OportunidadeUncheckedUpdateManyWithoutResponsavelNestedInput
+    pedidosCriados?: PedidoOperacionalUncheckedUpdateManyWithoutCriadoPorNestedInput
+    pedidosEditados?: PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
   }
 
   export type UsuarioCreateManyInput = {
@@ -17890,6 +29681,10 @@ export namespace Prisma {
     oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
     mensagens?: MensagemCreateNestedManyWithoutClienteInput
     execucoes?: ExecucaoApiCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateInput = {
@@ -17914,6 +29709,10 @@ export namespace Prisma {
     oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutClienteInput
     mensagens?: MensagemUncheckedCreateNestedManyWithoutClienteInput
     execucoes?: ExecucaoApiUncheckedCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteUncheckedCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteUpdateInput = {
@@ -17938,6 +29737,10 @@ export namespace Prisma {
     oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
     mensagens?: MensagemUpdateManyWithoutClienteNestedInput
     execucoes?: ExecucaoApiUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateInput = {
@@ -17962,6 +29765,10 @@ export namespace Prisma {
     oportunidades?: OportunidadeUncheckedUpdateManyWithoutClienteNestedInput
     mensagens?: MensagemUncheckedUpdateManyWithoutClienteNestedInput
     execucoes?: ExecucaoApiUncheckedUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUncheckedUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteCreateManyInput = {
@@ -18019,6 +29826,834 @@ export namespace Prisma {
     urlSite?: NullableStringFieldUpdateOperationsInput | string | null
     dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
     dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EstoqueVivoConfigCreateInput = {
+    id?: string
+    mixReferenciaNome: string
+    mixVariedades: JsonNullValueInput | InputJsonValue
+    atualizadoEm?: Date | string
+  }
+
+  export type EstoqueVivoConfigUncheckedCreateInput = {
+    id?: string
+    mixReferenciaNome: string
+    mixVariedades: JsonNullValueInput | InputJsonValue
+    atualizadoEm?: Date | string
+  }
+
+  export type EstoqueVivoConfigUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    mixReferenciaNome?: StringFieldUpdateOperationsInput | string
+    mixVariedades?: JsonNullValueInput | InputJsonValue
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EstoqueVivoConfigUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    mixReferenciaNome?: StringFieldUpdateOperationsInput | string
+    mixVariedades?: JsonNullValueInput | InputJsonValue
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EstoqueVivoConfigCreateManyInput = {
+    id?: string
+    mixReferenciaNome: string
+    mixVariedades: JsonNullValueInput | InputJsonValue
+    atualizadoEm?: Date | string
+  }
+
+  export type EstoqueVivoConfigUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    mixReferenciaNome?: StringFieldUpdateOperationsInput | string
+    mixVariedades?: JsonNullValueInput | InputJsonValue
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EstoqueVivoConfigUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    mixReferenciaNome?: StringFieldUpdateOperationsInput | string
+    mixVariedades?: JsonNullValueInput | InputJsonValue
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ProdutoComercialCreateInput = {
+    id?: string
+    nome: string
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
+    itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
+    avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
+    mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
+    mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
+  }
+
+  export type ProdutoComercialUncheckedCreateInput = {
+    id?: string
+    nome: string
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixProdutoReferenciaId?: string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
+    itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
+    avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
+    mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
+  }
+
+  export type ProdutoComercialUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
+    itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
+    avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
+    mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
+    mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
+  }
+
+  export type ProdutoComercialUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixProdutoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
+    itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
+    avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
+    mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
+  }
+
+  export type ProdutoComercialCreateManyInput = {
+    id?: string
+    nome: string
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixProdutoReferenciaId?: string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type ProdutoComercialUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ProdutoComercialUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixProdutoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RegraComercialClienteCreateInput = {
+    id?: string
+    observacoesGerais?: string | null
+    periodoEntrega?: $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega?: string | null
+    cobraTaxaEntrega?: boolean
+    prazoBoletoDias?: number | null
+    acumulaPedidos?: boolean
+    diasAcumulo?: number | null
+    prazoBoletoAcumuloDias?: number | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    cliente?: ClienteCreateNestedOneWithoutRegraComercialInput
+    precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutRegraInput
+  }
+
+  export type RegraComercialClienteUncheckedCreateInput = {
+    id?: string
+    contaAzulCustomerId: string
+    observacoesGerais?: string | null
+    periodoEntrega?: $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega?: string | null
+    cobraTaxaEntrega?: boolean
+    prazoBoletoDias?: number | null
+    acumulaPedidos?: boolean
+    diasAcumulo?: number | null
+    prazoBoletoAcumuloDias?: number | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutRegraInput
+  }
+
+  export type RegraComercialClienteUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
+    periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
+    cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
+    prazoBoletoDias?: NullableIntFieldUpdateOperationsInput | number | null
+    acumulaPedidos?: BoolFieldUpdateOperationsInput | boolean
+    diasAcumulo?: NullableIntFieldUpdateOperationsInput | number | null
+    prazoBoletoAcumuloDias?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneWithoutRegraComercialNestedInput
+    precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutRegraNestedInput
+  }
+
+  export type RegraComercialClienteUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
+    periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
+    cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
+    prazoBoletoDias?: NullableIntFieldUpdateOperationsInput | number | null
+    acumulaPedidos?: BoolFieldUpdateOperationsInput | boolean
+    diasAcumulo?: NullableIntFieldUpdateOperationsInput | number | null
+    prazoBoletoAcumuloDias?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutRegraNestedInput
+  }
+
+  export type RegraComercialClienteCreateManyInput = {
+    id?: string
+    contaAzulCustomerId: string
+    observacoesGerais?: string | null
+    periodoEntrega?: $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega?: string | null
+    cobraTaxaEntrega?: boolean
+    prazoBoletoDias?: number | null
+    acumulaPedidos?: boolean
+    diasAcumulo?: number | null
+    prazoBoletoAcumuloDias?: number | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type RegraComercialClienteUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
+    periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
+    cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
+    prazoBoletoDias?: NullableIntFieldUpdateOperationsInput | number | null
+    acumulaPedidos?: BoolFieldUpdateOperationsInput | boolean
+    diasAcumulo?: NullableIntFieldUpdateOperationsInput | number | null
+    prazoBoletoAcumuloDias?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RegraComercialClienteUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
+    periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
+    cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
+    prazoBoletoDias?: NullableIntFieldUpdateOperationsInput | number | null
+    acumulaPedidos?: BoolFieldUpdateOperationsInput | boolean
+    diasAcumulo?: NullableIntFieldUpdateOperationsInput | number | null
+    prazoBoletoAcumuloDias?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ClienteLegadoContaAzulLinkCreateInput = {
+    id?: string
+    legacyClientId: string
+    legacyClientName: string
+    contaAzulCustomerId: string
+    metodo: string
+    confianca: Decimal | DecimalJsLike | number | string
+    revisado?: boolean
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    cliente?: ClienteCreateNestedOneWithoutLinksLegadoContaAzulInput
+  }
+
+  export type ClienteLegadoContaAzulLinkUncheckedCreateInput = {
+    id?: string
+    legacyClientId: string
+    legacyClientName: string
+    contaAzulCustomerId: string
+    clienteId?: string | null
+    metodo: string
+    confianca: Decimal | DecimalJsLike | number | string
+    revisado?: boolean
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type ClienteLegadoContaAzulLinkUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    legacyClientId?: StringFieldUpdateOperationsInput | string
+    legacyClientName?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    metodo?: StringFieldUpdateOperationsInput | string
+    confianca?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    revisado?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneWithoutLinksLegadoContaAzulNestedInput
+  }
+
+  export type ClienteLegadoContaAzulLinkUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    legacyClientId?: StringFieldUpdateOperationsInput | string
+    legacyClientName?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    metodo?: StringFieldUpdateOperationsInput | string
+    confianca?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    revisado?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ClienteLegadoContaAzulLinkCreateManyInput = {
+    id?: string
+    legacyClientId: string
+    legacyClientName: string
+    contaAzulCustomerId: string
+    clienteId?: string | null
+    metodo: string
+    confianca: Decimal | DecimalJsLike | number | string
+    revisado?: boolean
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type ClienteLegadoContaAzulLinkUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    legacyClientId?: StringFieldUpdateOperationsInput | string
+    legacyClientName?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    metodo?: StringFieldUpdateOperationsInput | string
+    confianca?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    revisado?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ClienteLegadoContaAzulLinkUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    legacyClientId?: StringFieldUpdateOperationsInput | string
+    legacyClientName?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    metodo?: StringFieldUpdateOperationsInput | string
+    confianca?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    revisado?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PrecoEspecialClienteCreateInput = {
+    id?: string
+    preco: Decimal | DecimalJsLike | number | string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    regra: RegraComercialClienteCreateNestedOneWithoutPrecosEspeciaisInput
+    produto: ProdutoComercialCreateNestedOneWithoutPrecosEspeciaisInput
+  }
+
+  export type PrecoEspecialClienteUncheckedCreateInput = {
+    id?: string
+    regraId: string
+    produtoId: string
+    preco: Decimal | DecimalJsLike | number | string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PrecoEspecialClienteUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    preco?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    regra?: RegraComercialClienteUpdateOneRequiredWithoutPrecosEspeciaisNestedInput
+    produto?: ProdutoComercialUpdateOneRequiredWithoutPrecosEspeciaisNestedInput
+  }
+
+  export type PrecoEspecialClienteUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    regraId?: StringFieldUpdateOperationsInput | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    preco?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PrecoEspecialClienteCreateManyInput = {
+    id?: string
+    regraId: string
+    produtoId: string
+    preco: Decimal | DecimalJsLike | number | string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PrecoEspecialClienteUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    preco?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PrecoEspecialClienteUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    regraId?: StringFieldUpdateOperationsInput | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    preco?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalCreateInput = {
+    id?: string
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    observacoes?: string | null
+    prioridadeEntrega?: number | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
+    criadoPor?: UsuarioCreateNestedOneWithoutPedidosCriadosInput
+    editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
+    itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
+    avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
+    auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
+  }
+
+  export type PedidoOperacionalUncheckedCreateInput = {
+    id?: string
+    clienteId?: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    observacoes?: string | null
+    prioridadeEntrega?: number | null
+    criadoPorId?: string | null
+    editadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    itens?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutPedidoInput
+    avarias?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutPedidoInput
+    auditoria?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutPedidoInput
+  }
+
+  export type PedidoOperacionalUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
+    criadoPor?: UsuarioUpdateOneWithoutPedidosCriadosNestedInput
+    editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
+    itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
+    avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
+    auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
+  }
+
+  export type PedidoOperacionalUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    itens?: PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoNestedInput
+    avarias?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoNestedInput
+    auditoria?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutPedidoNestedInput
+  }
+
+  export type PedidoOperacionalCreateManyInput = {
+    id?: string
+    clienteId?: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    observacoes?: string | null
+    prioridadeEntrega?: number | null
+    criadoPorId?: string | null
+    editadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PedidoOperacionalUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalItemCreateInput = {
+    id?: string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    precoUnit?: Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: boolean
+    observacoes?: string | null
+    pedido: PedidoOperacionalCreateNestedOneWithoutItensInput
+    produto: ProdutoComercialCreateNestedOneWithoutItensPedidoInput
+  }
+
+  export type PedidoOperacionalItemUncheckedCreateInput = {
+    id?: string
+    pedidoId: string
+    produtoId: string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    precoUnit?: Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: boolean
+    observacoes?: string | null
+  }
+
+  export type PedidoOperacionalItemUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    precoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: BoolFieldUpdateOperationsInput | boolean
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    pedido?: PedidoOperacionalUpdateOneRequiredWithoutItensNestedInput
+    produto?: ProdutoComercialUpdateOneRequiredWithoutItensPedidoNestedInput
+  }
+
+  export type PedidoOperacionalItemUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    precoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: BoolFieldUpdateOperationsInput | boolean
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type PedidoOperacionalItemCreateManyInput = {
+    id?: string
+    pedidoId: string
+    produtoId: string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    precoUnit?: Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: boolean
+    observacoes?: string | null
+  }
+
+  export type PedidoOperacionalItemUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    precoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: BoolFieldUpdateOperationsInput | boolean
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type PedidoOperacionalItemUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    precoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: BoolFieldUpdateOperationsInput | boolean
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type PedidoOperacionalAvariaCreateInput = {
+    id?: string
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    observacoes?: string | null
+    criadoEm?: Date | string
+    pedido: PedidoOperacionalCreateNestedOneWithoutAvariasInput
+    cliente?: ClienteCreateNestedOneWithoutAvariasOperacionaisInput
+    produto: ProdutoComercialCreateNestedOneWithoutAvariasPedidoInput
+    criadoPor?: UsuarioCreateNestedOneWithoutAvariasCriadasInput
+  }
+
+  export type PedidoOperacionalAvariaUncheckedCreateInput = {
+    id?: string
+    pedidoId: string
+    clienteId?: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    produtoId: string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    observacoes?: string | null
+    criadoPorId?: string | null
+    criadoEm?: Date | string
+  }
+
+  export type PedidoOperacionalAvariaUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedido?: PedidoOperacionalUpdateOneRequiredWithoutAvariasNestedInput
+    cliente?: ClienteUpdateOneWithoutAvariasOperacionaisNestedInput
+    produto?: ProdutoComercialUpdateOneRequiredWithoutAvariasPedidoNestedInput
+    criadoPor?: UsuarioUpdateOneWithoutAvariasCriadasNestedInput
+  }
+
+  export type PedidoOperacionalAvariaUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalAvariaCreateManyInput = {
+    id?: string
+    pedidoId: string
+    clienteId?: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    produtoId: string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    observacoes?: string | null
+    criadoPorId?: string | null
+    criadoEm?: Date | string
+  }
+
+  export type PedidoOperacionalAvariaUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalAvariaUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalAuditoriaCreateInput = {
+    id?: string
+    usuarioNome?: string | null
+    acao: string
+    antes?: NullableJsonNullValueInput | InputJsonValue
+    depois?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    pedido: PedidoOperacionalCreateNestedOneWithoutAuditoriaInput
+    usuario?: UsuarioCreateNestedOneWithoutAuditoriasPedidoInput
+  }
+
+  export type PedidoOperacionalAuditoriaUncheckedCreateInput = {
+    id?: string
+    pedidoId: string
+    usuarioId?: string | null
+    usuarioNome?: string | null
+    acao: string
+    antes?: NullableJsonNullValueInput | InputJsonValue
+    depois?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+  }
+
+  export type PedidoOperacionalAuditoriaUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    usuarioNome?: NullableStringFieldUpdateOperationsInput | string | null
+    acao?: StringFieldUpdateOperationsInput | string
+    antes?: NullableJsonNullValueInput | InputJsonValue
+    depois?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedido?: PedidoOperacionalUpdateOneRequiredWithoutAuditoriaNestedInput
+    usuario?: UsuarioUpdateOneWithoutAuditoriasPedidoNestedInput
+  }
+
+  export type PedidoOperacionalAuditoriaUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+    usuarioId?: NullableStringFieldUpdateOperationsInput | string | null
+    usuarioNome?: NullableStringFieldUpdateOperationsInput | string | null
+    acao?: StringFieldUpdateOperationsInput | string
+    antes?: NullableJsonNullValueInput | InputJsonValue
+    depois?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalAuditoriaCreateManyInput = {
+    id?: string
+    pedidoId: string
+    usuarioId?: string | null
+    usuarioNome?: string | null
+    acao: string
+    antes?: NullableJsonNullValueInput | InputJsonValue
+    depois?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+  }
+
+  export type PedidoOperacionalAuditoriaUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    usuarioNome?: NullableStringFieldUpdateOperationsInput | string | null
+    acao?: StringFieldUpdateOperationsInput | string
+    antes?: NullableJsonNullValueInput | InputJsonValue
+    depois?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalAuditoriaUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+    usuarioId?: NullableStringFieldUpdateOperationsInput | string | null
+    usuarioNome?: NullableStringFieldUpdateOperationsInput | string | null
+    acao?: StringFieldUpdateOperationsInput | string
+    antes?: NullableJsonNullValueInput | InputJsonValue
+    depois?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type PedidoCreateInput = {
@@ -18929,6 +31564,24 @@ export namespace Prisma {
     none?: OportunidadeWhereInput
   }
 
+  export type PedidoOperacionalListRelationFilter = {
+    every?: PedidoOperacionalWhereInput
+    some?: PedidoOperacionalWhereInput
+    none?: PedidoOperacionalWhereInput
+  }
+
+  export type PedidoOperacionalAvariaListRelationFilter = {
+    every?: PedidoOperacionalAvariaWhereInput
+    some?: PedidoOperacionalAvariaWhereInput
+    none?: PedidoOperacionalAvariaWhereInput
+  }
+
+  export type PedidoOperacionalAuditoriaListRelationFilter = {
+    every?: PedidoOperacionalAuditoriaWhereInput
+    some?: PedidoOperacionalAuditoriaWhereInput
+    none?: PedidoOperacionalAuditoriaWhereInput
+  }
+
   export type MensagemOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -18938,6 +31591,18 @@ export namespace Prisma {
   }
 
   export type OportunidadeOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type PedidoOperacionalOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type PedidoOperacionalAvariaOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type PedidoOperacionalAuditoriaOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -19175,6 +31840,17 @@ export namespace Prisma {
     none?: ExecucaoApiWhereInput
   }
 
+  export type RegraComercialClienteNullableScalarRelationFilter = {
+    is?: RegraComercialClienteWhereInput | null
+    isNot?: RegraComercialClienteWhereInput | null
+  }
+
+  export type ClienteLegadoContaAzulLinkListRelationFilter = {
+    every?: ClienteLegadoContaAzulLinkWhereInput
+    some?: ClienteLegadoContaAzulLinkWhereInput
+    none?: ClienteLegadoContaAzulLinkWhereInput
+  }
+
   export type PedidoOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -19184,6 +31860,10 @@ export namespace Prisma {
   }
 
   export type ExecucaoApiOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type ClienteLegadoContaAzulLinkOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -19336,6 +32016,327 @@ export namespace Prisma {
     _max?: NestedJsonFilter<$PrismaModel>
   }
 
+  export type EstoqueVivoConfigOrderByRelevanceInput = {
+    fields: EstoqueVivoConfigOrderByRelevanceFieldEnum | EstoqueVivoConfigOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type EstoqueVivoConfigCountOrderByAggregateInput = {
+    id?: SortOrder
+    mixReferenciaNome?: SortOrder
+    mixVariedades?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type EstoqueVivoConfigMaxOrderByAggregateInput = {
+    id?: SortOrder
+    mixReferenciaNome?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type EstoqueVivoConfigMinOrderByAggregateInput = {
+    id?: SortOrder
+    mixReferenciaNome?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type BoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
+  export type EnumModoCompraProdutoFilter<$PrismaModel = never> = {
+    equals?: $Enums.ModoCompraProduto | EnumModoCompraProdutoFieldRefInput<$PrismaModel>
+    in?: $Enums.ModoCompraProduto[]
+    notIn?: $Enums.ModoCompraProduto[]
+    not?: NestedEnumModoCompraProdutoFilter<$PrismaModel> | $Enums.ModoCompraProduto
+  }
+  export type JsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue
+    lte?: InputJsonValue
+    gt?: InputJsonValue
+    gte?: InputJsonValue
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type PrecoEspecialClienteListRelationFilter = {
+    every?: PrecoEspecialClienteWhereInput
+    some?: PrecoEspecialClienteWhereInput
+    none?: PrecoEspecialClienteWhereInput
+  }
+
+  export type PedidoOperacionalItemListRelationFilter = {
+    every?: PedidoOperacionalItemWhereInput
+    some?: PedidoOperacionalItemWhereInput
+    none?: PedidoOperacionalItemWhereInput
+  }
+
+  export type ProdutoComercialNullableScalarRelationFilter = {
+    is?: ProdutoComercialWhereInput | null
+    isNot?: ProdutoComercialWhereInput | null
+  }
+
+  export type ProdutoComercialListRelationFilter = {
+    every?: ProdutoComercialWhereInput
+    some?: ProdutoComercialWhereInput
+    none?: ProdutoComercialWhereInput
+  }
+
+  export type PrecoEspecialClienteOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type PedidoOperacionalItemOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type ProdutoComercialOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type ProdutoComercialOrderByRelevanceInput = {
+    fields: ProdutoComercialOrderByRelevanceFieldEnum | ProdutoComercialOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type ProdutoComercialCountOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    precoBase?: SortOrder
+    categoria?: SortOrder
+    ativo?: SortOrder
+    modoCompra?: SortOrder
+    fatorCompraUnidade?: SortOrder
+    rendimentoPorKg?: SortOrder
+    ocultoListaCompra?: SortOrder
+    mixAtivo?: SortOrder
+    mixFolhaLeve?: SortOrder
+    mixProdutoReferenciaId?: SortOrder
+    mixVariedades?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type ProdutoComercialAvgOrderByAggregateInput = {
+    precoBase?: SortOrder
+    fatorCompraUnidade?: SortOrder
+    rendimentoPorKg?: SortOrder
+  }
+
+  export type ProdutoComercialMaxOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    precoBase?: SortOrder
+    categoria?: SortOrder
+    ativo?: SortOrder
+    modoCompra?: SortOrder
+    fatorCompraUnidade?: SortOrder
+    rendimentoPorKg?: SortOrder
+    ocultoListaCompra?: SortOrder
+    mixAtivo?: SortOrder
+    mixFolhaLeve?: SortOrder
+    mixProdutoReferenciaId?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type ProdutoComercialMinOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    precoBase?: SortOrder
+    categoria?: SortOrder
+    ativo?: SortOrder
+    modoCompra?: SortOrder
+    fatorCompraUnidade?: SortOrder
+    rendimentoPorKg?: SortOrder
+    ocultoListaCompra?: SortOrder
+    mixAtivo?: SortOrder
+    mixFolhaLeve?: SortOrder
+    mixProdutoReferenciaId?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type ProdutoComercialSumOrderByAggregateInput = {
+    precoBase?: SortOrder
+    fatorCompraUnidade?: SortOrder
+    rendimentoPorKg?: SortOrder
+  }
+
+  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
+  export type EnumModoCompraProdutoWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ModoCompraProduto | EnumModoCompraProdutoFieldRefInput<$PrismaModel>
+    in?: $Enums.ModoCompraProduto[]
+    notIn?: $Enums.ModoCompraProduto[]
+    not?: NestedEnumModoCompraProdutoWithAggregatesFilter<$PrismaModel> | $Enums.ModoCompraProduto
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumModoCompraProdutoFilter<$PrismaModel>
+    _max?: NestedEnumModoCompraProdutoFilter<$PrismaModel>
+  }
+  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue
+    lte?: InputJsonValue
+    gt?: InputJsonValue
+    gte?: InputJsonValue
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedJsonNullableFilter<$PrismaModel>
+    _max?: NestedJsonNullableFilter<$PrismaModel>
+  }
+
+  export type EnumPeriodoEntregaClienteNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.PeriodoEntregaCliente | EnumPeriodoEntregaClienteFieldRefInput<$PrismaModel> | null
+    in?: $Enums.PeriodoEntregaCliente[] | null
+    notIn?: $Enums.PeriodoEntregaCliente[] | null
+    not?: NestedEnumPeriodoEntregaClienteNullableFilter<$PrismaModel> | $Enums.PeriodoEntregaCliente | null
+  }
+
+  export type IntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | null
+    notIn?: number[] | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
+  export type ClienteNullableScalarRelationFilter = {
+    is?: ClienteWhereInput | null
+    isNot?: ClienteWhereInput | null
+  }
+
+  export type RegraComercialClienteOrderByRelevanceInput = {
+    fields: RegraComercialClienteOrderByRelevanceFieldEnum | RegraComercialClienteOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type RegraComercialClienteCountOrderByAggregateInput = {
+    id?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    observacoesGerais?: SortOrder
+    periodoEntrega?: SortOrder
+    horarioMaximoEntrega?: SortOrder
+    cobraTaxaEntrega?: SortOrder
+    prazoBoletoDias?: SortOrder
+    acumulaPedidos?: SortOrder
+    diasAcumulo?: SortOrder
+    prazoBoletoAcumuloDias?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type RegraComercialClienteAvgOrderByAggregateInput = {
+    prazoBoletoDias?: SortOrder
+    diasAcumulo?: SortOrder
+    prazoBoletoAcumuloDias?: SortOrder
+  }
+
+  export type RegraComercialClienteMaxOrderByAggregateInput = {
+    id?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    observacoesGerais?: SortOrder
+    periodoEntrega?: SortOrder
+    horarioMaximoEntrega?: SortOrder
+    cobraTaxaEntrega?: SortOrder
+    prazoBoletoDias?: SortOrder
+    acumulaPedidos?: SortOrder
+    diasAcumulo?: SortOrder
+    prazoBoletoAcumuloDias?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type RegraComercialClienteMinOrderByAggregateInput = {
+    id?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    observacoesGerais?: SortOrder
+    periodoEntrega?: SortOrder
+    horarioMaximoEntrega?: SortOrder
+    cobraTaxaEntrega?: SortOrder
+    prazoBoletoDias?: SortOrder
+    acumulaPedidos?: SortOrder
+    diasAcumulo?: SortOrder
+    prazoBoletoAcumuloDias?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type RegraComercialClienteSumOrderByAggregateInput = {
+    prazoBoletoDias?: SortOrder
+    diasAcumulo?: SortOrder
+    prazoBoletoAcumuloDias?: SortOrder
+  }
+
+  export type EnumPeriodoEntregaClienteNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.PeriodoEntregaCliente | EnumPeriodoEntregaClienteFieldRefInput<$PrismaModel> | null
+    in?: $Enums.PeriodoEntregaCliente[] | null
+    notIn?: $Enums.PeriodoEntregaCliente[] | null
+    not?: NestedEnumPeriodoEntregaClienteNullableWithAggregatesFilter<$PrismaModel> | $Enums.PeriodoEntregaCliente | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumPeriodoEntregaClienteNullableFilter<$PrismaModel>
+    _max?: NestedEnumPeriodoEntregaClienteNullableFilter<$PrismaModel>
+  }
+
+  export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | null
+    notIn?: number[] | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
+  }
+
   export type DecimalFilter<$PrismaModel = never> = {
     equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     in?: Decimal[] | DecimalJsLike[] | number[] | string[]
@@ -19347,9 +32348,410 @@ export namespace Prisma {
     not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
   }
 
-  export type BoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
+  export type ClienteLegadoContaAzulLinkOrderByRelevanceInput = {
+    fields: ClienteLegadoContaAzulLinkOrderByRelevanceFieldEnum | ClienteLegadoContaAzulLinkOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type ClienteLegadoContaAzulLinkCountOrderByAggregateInput = {
+    id?: SortOrder
+    legacyClientId?: SortOrder
+    legacyClientName?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    clienteId?: SortOrder
+    metodo?: SortOrder
+    confianca?: SortOrder
+    revisado?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type ClienteLegadoContaAzulLinkAvgOrderByAggregateInput = {
+    confianca?: SortOrder
+  }
+
+  export type ClienteLegadoContaAzulLinkMaxOrderByAggregateInput = {
+    id?: SortOrder
+    legacyClientId?: SortOrder
+    legacyClientName?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    clienteId?: SortOrder
+    metodo?: SortOrder
+    confianca?: SortOrder
+    revisado?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type ClienteLegadoContaAzulLinkMinOrderByAggregateInput = {
+    id?: SortOrder
+    legacyClientId?: SortOrder
+    legacyClientName?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    clienteId?: SortOrder
+    metodo?: SortOrder
+    confianca?: SortOrder
+    revisado?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type ClienteLegadoContaAzulLinkSumOrderByAggregateInput = {
+    confianca?: SortOrder
+  }
+
+  export type DecimalWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[]
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[]
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedDecimalFilter<$PrismaModel>
+    _sum?: NestedDecimalFilter<$PrismaModel>
+    _min?: NestedDecimalFilter<$PrismaModel>
+    _max?: NestedDecimalFilter<$PrismaModel>
+  }
+
+  export type RegraComercialClienteScalarRelationFilter = {
+    is?: RegraComercialClienteWhereInput
+    isNot?: RegraComercialClienteWhereInput
+  }
+
+  export type ProdutoComercialScalarRelationFilter = {
+    is?: ProdutoComercialWhereInput
+    isNot?: ProdutoComercialWhereInput
+  }
+
+  export type PrecoEspecialClienteOrderByRelevanceInput = {
+    fields: PrecoEspecialClienteOrderByRelevanceFieldEnum | PrecoEspecialClienteOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type PrecoEspecialClienteRegraIdProdutoIdCompoundUniqueInput = {
+    regraId: string
+    produtoId: string
+  }
+
+  export type PrecoEspecialClienteCountOrderByAggregateInput = {
+    id?: SortOrder
+    regraId?: SortOrder
+    produtoId?: SortOrder
+    preco?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PrecoEspecialClienteAvgOrderByAggregateInput = {
+    preco?: SortOrder
+  }
+
+  export type PrecoEspecialClienteMaxOrderByAggregateInput = {
+    id?: SortOrder
+    regraId?: SortOrder
+    produtoId?: SortOrder
+    preco?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PrecoEspecialClienteMinOrderByAggregateInput = {
+    id?: SortOrder
+    regraId?: SortOrder
+    produtoId?: SortOrder
+    preco?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PrecoEspecialClienteSumOrderByAggregateInput = {
+    preco?: SortOrder
+  }
+
+  export type IntFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntFilter<$PrismaModel> | number
+  }
+
+  export type EnumTipoVendaPedidoFilter<$PrismaModel = never> = {
+    equals?: $Enums.TipoVendaPedido | EnumTipoVendaPedidoFieldRefInput<$PrismaModel>
+    in?: $Enums.TipoVendaPedido[]
+    notIn?: $Enums.TipoVendaPedido[]
+    not?: NestedEnumTipoVendaPedidoFilter<$PrismaModel> | $Enums.TipoVendaPedido
+  }
+
+  export type EnumPedidoOperacionalStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.PedidoOperacionalStatus | EnumPedidoOperacionalStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.PedidoOperacionalStatus[]
+    notIn?: $Enums.PedidoOperacionalStatus[]
+    not?: NestedEnumPedidoOperacionalStatusFilter<$PrismaModel> | $Enums.PedidoOperacionalStatus
+  }
+
+  export type UsuarioNullableScalarRelationFilter = {
+    is?: UsuarioWhereInput | null
+    isNot?: UsuarioWhereInput | null
+  }
+
+  export type PedidoOperacionalOrderByRelevanceInput = {
+    fields: PedidoOperacionalOrderByRelevanceFieldEnum | PedidoOperacionalOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type PedidoOperacionalCountOrderByAggregateInput = {
+    id?: SortOrder
+    clienteId?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    dataEntrega?: SortOrder
+    diaSemana?: SortOrder
+    tipoVenda?: SortOrder
+    status?: SortOrder
+    observacoes?: SortOrder
+    prioridadeEntrega?: SortOrder
+    criadoPorId?: SortOrder
+    editadoPorId?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PedidoOperacionalAvgOrderByAggregateInput = {
+    diaSemana?: SortOrder
+    prioridadeEntrega?: SortOrder
+  }
+
+  export type PedidoOperacionalMaxOrderByAggregateInput = {
+    id?: SortOrder
+    clienteId?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    dataEntrega?: SortOrder
+    diaSemana?: SortOrder
+    tipoVenda?: SortOrder
+    status?: SortOrder
+    observacoes?: SortOrder
+    prioridadeEntrega?: SortOrder
+    criadoPorId?: SortOrder
+    editadoPorId?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PedidoOperacionalMinOrderByAggregateInput = {
+    id?: SortOrder
+    clienteId?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    dataEntrega?: SortOrder
+    diaSemana?: SortOrder
+    tipoVenda?: SortOrder
+    status?: SortOrder
+    observacoes?: SortOrder
+    prioridadeEntrega?: SortOrder
+    criadoPorId?: SortOrder
+    editadoPorId?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PedidoOperacionalSumOrderByAggregateInput = {
+    diaSemana?: SortOrder
+    prioridadeEntrega?: SortOrder
+  }
+
+  export type IntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
+  }
+
+  export type EnumTipoVendaPedidoWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.TipoVendaPedido | EnumTipoVendaPedidoFieldRefInput<$PrismaModel>
+    in?: $Enums.TipoVendaPedido[]
+    notIn?: $Enums.TipoVendaPedido[]
+    not?: NestedEnumTipoVendaPedidoWithAggregatesFilter<$PrismaModel> | $Enums.TipoVendaPedido
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumTipoVendaPedidoFilter<$PrismaModel>
+    _max?: NestedEnumTipoVendaPedidoFilter<$PrismaModel>
+  }
+
+  export type EnumPedidoOperacionalStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.PedidoOperacionalStatus | EnumPedidoOperacionalStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.PedidoOperacionalStatus[]
+    notIn?: $Enums.PedidoOperacionalStatus[]
+    not?: NestedEnumPedidoOperacionalStatusWithAggregatesFilter<$PrismaModel> | $Enums.PedidoOperacionalStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumPedidoOperacionalStatusFilter<$PrismaModel>
+    _max?: NestedEnumPedidoOperacionalStatusFilter<$PrismaModel>
+  }
+
+  export type PedidoOperacionalScalarRelationFilter = {
+    is?: PedidoOperacionalWhereInput
+    isNot?: PedidoOperacionalWhereInput
+  }
+
+  export type PedidoOperacionalItemOrderByRelevanceInput = {
+    fields: PedidoOperacionalItemOrderByRelevanceFieldEnum | PedidoOperacionalItemOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type PedidoOperacionalItemCountOrderByAggregateInput = {
+    id?: SortOrder
+    pedidoId?: SortOrder
+    produtoId?: SortOrder
+    produtoNome?: SortOrder
+    categoria?: SortOrder
+    quantidade?: SortOrder
+    precoUnit?: SortOrder
+    precoEspecial?: SortOrder
+    observacoes?: SortOrder
+  }
+
+  export type PedidoOperacionalItemAvgOrderByAggregateInput = {
+    quantidade?: SortOrder
+    precoUnit?: SortOrder
+  }
+
+  export type PedidoOperacionalItemMaxOrderByAggregateInput = {
+    id?: SortOrder
+    pedidoId?: SortOrder
+    produtoId?: SortOrder
+    produtoNome?: SortOrder
+    categoria?: SortOrder
+    quantidade?: SortOrder
+    precoUnit?: SortOrder
+    precoEspecial?: SortOrder
+    observacoes?: SortOrder
+  }
+
+  export type PedidoOperacionalItemMinOrderByAggregateInput = {
+    id?: SortOrder
+    pedidoId?: SortOrder
+    produtoId?: SortOrder
+    produtoNome?: SortOrder
+    categoria?: SortOrder
+    quantidade?: SortOrder
+    precoUnit?: SortOrder
+    precoEspecial?: SortOrder
+    observacoes?: SortOrder
+  }
+
+  export type PedidoOperacionalItemSumOrderByAggregateInput = {
+    quantidade?: SortOrder
+    precoUnit?: SortOrder
+  }
+
+  export type PedidoOperacionalAvariaOrderByRelevanceInput = {
+    fields: PedidoOperacionalAvariaOrderByRelevanceFieldEnum | PedidoOperacionalAvariaOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type PedidoOperacionalAvariaCountOrderByAggregateInput = {
+    id?: SortOrder
+    pedidoId?: SortOrder
+    clienteId?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    dataEntrega?: SortOrder
+    produtoId?: SortOrder
+    produtoNome?: SortOrder
+    categoria?: SortOrder
+    quantidade?: SortOrder
+    observacoes?: SortOrder
+    criadoPorId?: SortOrder
+    criadoEm?: SortOrder
+  }
+
+  export type PedidoOperacionalAvariaAvgOrderByAggregateInput = {
+    quantidade?: SortOrder
+  }
+
+  export type PedidoOperacionalAvariaMaxOrderByAggregateInput = {
+    id?: SortOrder
+    pedidoId?: SortOrder
+    clienteId?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    dataEntrega?: SortOrder
+    produtoId?: SortOrder
+    produtoNome?: SortOrder
+    categoria?: SortOrder
+    quantidade?: SortOrder
+    observacoes?: SortOrder
+    criadoPorId?: SortOrder
+    criadoEm?: SortOrder
+  }
+
+  export type PedidoOperacionalAvariaMinOrderByAggregateInput = {
+    id?: SortOrder
+    pedidoId?: SortOrder
+    clienteId?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    dataEntrega?: SortOrder
+    produtoId?: SortOrder
+    produtoNome?: SortOrder
+    categoria?: SortOrder
+    quantidade?: SortOrder
+    observacoes?: SortOrder
+    criadoPorId?: SortOrder
+    criadoEm?: SortOrder
+  }
+
+  export type PedidoOperacionalAvariaSumOrderByAggregateInput = {
+    quantidade?: SortOrder
+  }
+
+  export type PedidoOperacionalAuditoriaOrderByRelevanceInput = {
+    fields: PedidoOperacionalAuditoriaOrderByRelevanceFieldEnum | PedidoOperacionalAuditoriaOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type PedidoOperacionalAuditoriaCountOrderByAggregateInput = {
+    id?: SortOrder
+    pedidoId?: SortOrder
+    usuarioId?: SortOrder
+    usuarioNome?: SortOrder
+    acao?: SortOrder
+    antes?: SortOrder
+    depois?: SortOrder
+    criadoEm?: SortOrder
+  }
+
+  export type PedidoOperacionalAuditoriaMaxOrderByAggregateInput = {
+    id?: SortOrder
+    pedidoId?: SortOrder
+    usuarioId?: SortOrder
+    usuarioNome?: SortOrder
+    acao?: SortOrder
+    criadoEm?: SortOrder
+  }
+
+  export type PedidoOperacionalAuditoriaMinOrderByAggregateInput = {
+    id?: SortOrder
+    pedidoId?: SortOrder
+    usuarioId?: SortOrder
+    usuarioNome?: SortOrder
+    acao?: SortOrder
+    criadoEm?: SortOrder
   }
 
   export type EnumOrigemPedidoFilter<$PrismaModel = never> = {
@@ -19439,30 +32841,6 @@ export namespace Prisma {
     valorFrete?: SortOrder
     valorDesconto?: SortOrder
     valorLiquido?: SortOrder
-  }
-
-  export type DecimalWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[]
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[]
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
-    _count?: NestedIntFilter<$PrismaModel>
-    _avg?: NestedDecimalFilter<$PrismaModel>
-    _sum?: NestedDecimalFilter<$PrismaModel>
-    _min?: NestedDecimalFilter<$PrismaModel>
-    _max?: NestedDecimalFilter<$PrismaModel>
-  }
-
-  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type EnumOrigemPedidoWithAggregatesFilter<$PrismaModel = never> = {
@@ -19612,11 +32990,6 @@ export namespace Prisma {
     in?: $Enums.StatusOportunidade[]
     notIn?: $Enums.StatusOportunidade[]
     not?: NestedEnumStatusOportunidadeFilter<$PrismaModel> | $Enums.StatusOportunidade
-  }
-
-  export type UsuarioNullableScalarRelationFilter = {
-    is?: UsuarioWhereInput | null
-    isNot?: UsuarioWhereInput | null
   }
 
   export type OportunidadeOrderByRelevanceInput = {
@@ -19812,22 +33185,6 @@ export namespace Prisma {
     not?: NestedEnumStatusExecucaoApiFilter<$PrismaModel> | $Enums.StatusExecucaoApi
   }
 
-  export type IntNullableFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel> | null
-    in?: number[] | null
-    notIn?: number[] | null
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntNullableFilter<$PrismaModel> | number | null
-  }
-
-  export type ClienteNullableScalarRelationFilter = {
-    is?: ClienteWhereInput | null
-    isNot?: ClienteWhereInput | null
-  }
-
   export type ExecucaoApiOrderByRelevanceInput = {
     fields: ExecucaoApiOrderByRelevanceFieldEnum | ExecucaoApiOrderByRelevanceFieldEnum[]
     sort: SortOrder
@@ -19893,50 +33250,11 @@ export namespace Prisma {
     _max?: NestedEnumStatusExecucaoApiFilter<$PrismaModel>
   }
 
-  export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel> | null
-    in?: number[] | null
-    notIn?: number[] | null
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedFloatNullableFilter<$PrismaModel>
-    _sum?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedIntNullableFilter<$PrismaModel>
-    _max?: NestedIntNullableFilter<$PrismaModel>
-  }
-
   export type EnumPeriodoKpiFilter<$PrismaModel = never> = {
     equals?: $Enums.PeriodoKpi | EnumPeriodoKpiFieldRefInput<$PrismaModel>
     in?: $Enums.PeriodoKpi[]
     notIn?: $Enums.PeriodoKpi[]
     not?: NestedEnumPeriodoKpiFilter<$PrismaModel> | $Enums.PeriodoKpi
-  }
-  export type JsonNullableFilter<$PrismaModel = never> =
-    | PatchUndefined<
-        Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
-        Required<JsonNullableFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>
-
-  export type JsonNullableFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string
-    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue
-    lte?: InputJsonValue
-    gt?: InputJsonValue
-    gte?: InputJsonValue
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
   export type KpiSnapshotOrderByRelevanceInput = {
@@ -19992,32 +33310,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumPeriodoKpiFilter<$PrismaModel>
     _max?: NestedEnumPeriodoKpiFilter<$PrismaModel>
-  }
-  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
-    | PatchUndefined<
-        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
-        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
-
-  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string
-    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue
-    lte?: InputJsonValue
-    gt?: InputJsonValue
-    gte?: InputJsonValue
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedJsonNullableFilter<$PrismaModel>
-    _max?: NestedJsonNullableFilter<$PrismaModel>
   }
 
   export type IntegrationCredentialOrderByRelevanceInput = {
@@ -20163,6 +33455,34 @@ export namespace Prisma {
     connect?: OportunidadeWhereUniqueInput | OportunidadeWhereUniqueInput[]
   }
 
+  export type PedidoOperacionalCreateNestedManyWithoutCriadoPorInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutCriadoPorInput, PedidoOperacionalUncheckedCreateWithoutCriadoPorInput> | PedidoOperacionalCreateWithoutCriadoPorInput[] | PedidoOperacionalUncheckedCreateWithoutCriadoPorInput[]
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutCriadoPorInput | PedidoOperacionalCreateOrConnectWithoutCriadoPorInput[]
+    createMany?: PedidoOperacionalCreateManyCriadoPorInputEnvelope
+    connect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+  }
+
+  export type PedidoOperacionalCreateNestedManyWithoutEditadoPorInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutEditadoPorInput, PedidoOperacionalUncheckedCreateWithoutEditadoPorInput> | PedidoOperacionalCreateWithoutEditadoPorInput[] | PedidoOperacionalUncheckedCreateWithoutEditadoPorInput[]
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutEditadoPorInput | PedidoOperacionalCreateOrConnectWithoutEditadoPorInput[]
+    createMany?: PedidoOperacionalCreateManyEditadoPorInputEnvelope
+    connect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+  }
+
+  export type PedidoOperacionalAvariaCreateNestedManyWithoutCriadoPorInput = {
+    create?: XOR<PedidoOperacionalAvariaCreateWithoutCriadoPorInput, PedidoOperacionalAvariaUncheckedCreateWithoutCriadoPorInput> | PedidoOperacionalAvariaCreateWithoutCriadoPorInput[] | PedidoOperacionalAvariaUncheckedCreateWithoutCriadoPorInput[]
+    connectOrCreate?: PedidoOperacionalAvariaCreateOrConnectWithoutCriadoPorInput | PedidoOperacionalAvariaCreateOrConnectWithoutCriadoPorInput[]
+    createMany?: PedidoOperacionalAvariaCreateManyCriadoPorInputEnvelope
+    connect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+  }
+
+  export type PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput = {
+    create?: XOR<PedidoOperacionalAuditoriaCreateWithoutUsuarioInput, PedidoOperacionalAuditoriaUncheckedCreateWithoutUsuarioInput> | PedidoOperacionalAuditoriaCreateWithoutUsuarioInput[] | PedidoOperacionalAuditoriaUncheckedCreateWithoutUsuarioInput[]
+    connectOrCreate?: PedidoOperacionalAuditoriaCreateOrConnectWithoutUsuarioInput | PedidoOperacionalAuditoriaCreateOrConnectWithoutUsuarioInput[]
+    createMany?: PedidoOperacionalAuditoriaCreateManyUsuarioInputEnvelope
+    connect?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
+  }
+
   export type MensagemUncheckedCreateNestedManyWithoutAprovadorInput = {
     create?: XOR<MensagemCreateWithoutAprovadorInput, MensagemUncheckedCreateWithoutAprovadorInput> | MensagemCreateWithoutAprovadorInput[] | MensagemUncheckedCreateWithoutAprovadorInput[]
     connectOrCreate?: MensagemCreateOrConnectWithoutAprovadorInput | MensagemCreateOrConnectWithoutAprovadorInput[]
@@ -20182,6 +33502,34 @@ export namespace Prisma {
     connectOrCreate?: OportunidadeCreateOrConnectWithoutResponsavelInput | OportunidadeCreateOrConnectWithoutResponsavelInput[]
     createMany?: OportunidadeCreateManyResponsavelInputEnvelope
     connect?: OportunidadeWhereUniqueInput | OportunidadeWhereUniqueInput[]
+  }
+
+  export type PedidoOperacionalUncheckedCreateNestedManyWithoutCriadoPorInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutCriadoPorInput, PedidoOperacionalUncheckedCreateWithoutCriadoPorInput> | PedidoOperacionalCreateWithoutCriadoPorInput[] | PedidoOperacionalUncheckedCreateWithoutCriadoPorInput[]
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutCriadoPorInput | PedidoOperacionalCreateOrConnectWithoutCriadoPorInput[]
+    createMany?: PedidoOperacionalCreateManyCriadoPorInputEnvelope
+    connect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+  }
+
+  export type PedidoOperacionalUncheckedCreateNestedManyWithoutEditadoPorInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutEditadoPorInput, PedidoOperacionalUncheckedCreateWithoutEditadoPorInput> | PedidoOperacionalCreateWithoutEditadoPorInput[] | PedidoOperacionalUncheckedCreateWithoutEditadoPorInput[]
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutEditadoPorInput | PedidoOperacionalCreateOrConnectWithoutEditadoPorInput[]
+    createMany?: PedidoOperacionalCreateManyEditadoPorInputEnvelope
+    connect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+  }
+
+  export type PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutCriadoPorInput = {
+    create?: XOR<PedidoOperacionalAvariaCreateWithoutCriadoPorInput, PedidoOperacionalAvariaUncheckedCreateWithoutCriadoPorInput> | PedidoOperacionalAvariaCreateWithoutCriadoPorInput[] | PedidoOperacionalAvariaUncheckedCreateWithoutCriadoPorInput[]
+    connectOrCreate?: PedidoOperacionalAvariaCreateOrConnectWithoutCriadoPorInput | PedidoOperacionalAvariaCreateOrConnectWithoutCriadoPorInput[]
+    createMany?: PedidoOperacionalAvariaCreateManyCriadoPorInputEnvelope
+    connect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+  }
+
+  export type PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput = {
+    create?: XOR<PedidoOperacionalAuditoriaCreateWithoutUsuarioInput, PedidoOperacionalAuditoriaUncheckedCreateWithoutUsuarioInput> | PedidoOperacionalAuditoriaCreateWithoutUsuarioInput[] | PedidoOperacionalAuditoriaUncheckedCreateWithoutUsuarioInput[]
+    connectOrCreate?: PedidoOperacionalAuditoriaCreateOrConnectWithoutUsuarioInput | PedidoOperacionalAuditoriaCreateOrConnectWithoutUsuarioInput[]
+    createMany?: PedidoOperacionalAuditoriaCreateManyUsuarioInputEnvelope
+    connect?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
   }
 
   export type StringFieldUpdateOperationsInput = {
@@ -20242,6 +33590,62 @@ export namespace Prisma {
     deleteMany?: OportunidadeScalarWhereInput | OportunidadeScalarWhereInput[]
   }
 
+  export type PedidoOperacionalUpdateManyWithoutCriadoPorNestedInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutCriadoPorInput, PedidoOperacionalUncheckedCreateWithoutCriadoPorInput> | PedidoOperacionalCreateWithoutCriadoPorInput[] | PedidoOperacionalUncheckedCreateWithoutCriadoPorInput[]
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutCriadoPorInput | PedidoOperacionalCreateOrConnectWithoutCriadoPorInput[]
+    upsert?: PedidoOperacionalUpsertWithWhereUniqueWithoutCriadoPorInput | PedidoOperacionalUpsertWithWhereUniqueWithoutCriadoPorInput[]
+    createMany?: PedidoOperacionalCreateManyCriadoPorInputEnvelope
+    set?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    disconnect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    delete?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    connect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    update?: PedidoOperacionalUpdateWithWhereUniqueWithoutCriadoPorInput | PedidoOperacionalUpdateWithWhereUniqueWithoutCriadoPorInput[]
+    updateMany?: PedidoOperacionalUpdateManyWithWhereWithoutCriadoPorInput | PedidoOperacionalUpdateManyWithWhereWithoutCriadoPorInput[]
+    deleteMany?: PedidoOperacionalScalarWhereInput | PedidoOperacionalScalarWhereInput[]
+  }
+
+  export type PedidoOperacionalUpdateManyWithoutEditadoPorNestedInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutEditadoPorInput, PedidoOperacionalUncheckedCreateWithoutEditadoPorInput> | PedidoOperacionalCreateWithoutEditadoPorInput[] | PedidoOperacionalUncheckedCreateWithoutEditadoPorInput[]
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutEditadoPorInput | PedidoOperacionalCreateOrConnectWithoutEditadoPorInput[]
+    upsert?: PedidoOperacionalUpsertWithWhereUniqueWithoutEditadoPorInput | PedidoOperacionalUpsertWithWhereUniqueWithoutEditadoPorInput[]
+    createMany?: PedidoOperacionalCreateManyEditadoPorInputEnvelope
+    set?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    disconnect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    delete?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    connect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    update?: PedidoOperacionalUpdateWithWhereUniqueWithoutEditadoPorInput | PedidoOperacionalUpdateWithWhereUniqueWithoutEditadoPorInput[]
+    updateMany?: PedidoOperacionalUpdateManyWithWhereWithoutEditadoPorInput | PedidoOperacionalUpdateManyWithWhereWithoutEditadoPorInput[]
+    deleteMany?: PedidoOperacionalScalarWhereInput | PedidoOperacionalScalarWhereInput[]
+  }
+
+  export type PedidoOperacionalAvariaUpdateManyWithoutCriadoPorNestedInput = {
+    create?: XOR<PedidoOperacionalAvariaCreateWithoutCriadoPorInput, PedidoOperacionalAvariaUncheckedCreateWithoutCriadoPorInput> | PedidoOperacionalAvariaCreateWithoutCriadoPorInput[] | PedidoOperacionalAvariaUncheckedCreateWithoutCriadoPorInput[]
+    connectOrCreate?: PedidoOperacionalAvariaCreateOrConnectWithoutCriadoPorInput | PedidoOperacionalAvariaCreateOrConnectWithoutCriadoPorInput[]
+    upsert?: PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutCriadoPorInput | PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutCriadoPorInput[]
+    createMany?: PedidoOperacionalAvariaCreateManyCriadoPorInputEnvelope
+    set?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    disconnect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    delete?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    connect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    update?: PedidoOperacionalAvariaUpdateWithWhereUniqueWithoutCriadoPorInput | PedidoOperacionalAvariaUpdateWithWhereUniqueWithoutCriadoPorInput[]
+    updateMany?: PedidoOperacionalAvariaUpdateManyWithWhereWithoutCriadoPorInput | PedidoOperacionalAvariaUpdateManyWithWhereWithoutCriadoPorInput[]
+    deleteMany?: PedidoOperacionalAvariaScalarWhereInput | PedidoOperacionalAvariaScalarWhereInput[]
+  }
+
+  export type PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput = {
+    create?: XOR<PedidoOperacionalAuditoriaCreateWithoutUsuarioInput, PedidoOperacionalAuditoriaUncheckedCreateWithoutUsuarioInput> | PedidoOperacionalAuditoriaCreateWithoutUsuarioInput[] | PedidoOperacionalAuditoriaUncheckedCreateWithoutUsuarioInput[]
+    connectOrCreate?: PedidoOperacionalAuditoriaCreateOrConnectWithoutUsuarioInput | PedidoOperacionalAuditoriaCreateOrConnectWithoutUsuarioInput[]
+    upsert?: PedidoOperacionalAuditoriaUpsertWithWhereUniqueWithoutUsuarioInput | PedidoOperacionalAuditoriaUpsertWithWhereUniqueWithoutUsuarioInput[]
+    createMany?: PedidoOperacionalAuditoriaCreateManyUsuarioInputEnvelope
+    set?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
+    disconnect?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
+    delete?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
+    connect?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
+    update?: PedidoOperacionalAuditoriaUpdateWithWhereUniqueWithoutUsuarioInput | PedidoOperacionalAuditoriaUpdateWithWhereUniqueWithoutUsuarioInput[]
+    updateMany?: PedidoOperacionalAuditoriaUpdateManyWithWhereWithoutUsuarioInput | PedidoOperacionalAuditoriaUpdateManyWithWhereWithoutUsuarioInput[]
+    deleteMany?: PedidoOperacionalAuditoriaScalarWhereInput | PedidoOperacionalAuditoriaScalarWhereInput[]
+  }
+
   export type MensagemUncheckedUpdateManyWithoutAprovadorNestedInput = {
     create?: XOR<MensagemCreateWithoutAprovadorInput, MensagemUncheckedCreateWithoutAprovadorInput> | MensagemCreateWithoutAprovadorInput[] | MensagemUncheckedCreateWithoutAprovadorInput[]
     connectOrCreate?: MensagemCreateOrConnectWithoutAprovadorInput | MensagemCreateOrConnectWithoutAprovadorInput[]
@@ -20282,6 +33686,62 @@ export namespace Prisma {
     update?: OportunidadeUpdateWithWhereUniqueWithoutResponsavelInput | OportunidadeUpdateWithWhereUniqueWithoutResponsavelInput[]
     updateMany?: OportunidadeUpdateManyWithWhereWithoutResponsavelInput | OportunidadeUpdateManyWithWhereWithoutResponsavelInput[]
     deleteMany?: OportunidadeScalarWhereInput | OportunidadeScalarWhereInput[]
+  }
+
+  export type PedidoOperacionalUncheckedUpdateManyWithoutCriadoPorNestedInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutCriadoPorInput, PedidoOperacionalUncheckedCreateWithoutCriadoPorInput> | PedidoOperacionalCreateWithoutCriadoPorInput[] | PedidoOperacionalUncheckedCreateWithoutCriadoPorInput[]
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutCriadoPorInput | PedidoOperacionalCreateOrConnectWithoutCriadoPorInput[]
+    upsert?: PedidoOperacionalUpsertWithWhereUniqueWithoutCriadoPorInput | PedidoOperacionalUpsertWithWhereUniqueWithoutCriadoPorInput[]
+    createMany?: PedidoOperacionalCreateManyCriadoPorInputEnvelope
+    set?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    disconnect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    delete?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    connect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    update?: PedidoOperacionalUpdateWithWhereUniqueWithoutCriadoPorInput | PedidoOperacionalUpdateWithWhereUniqueWithoutCriadoPorInput[]
+    updateMany?: PedidoOperacionalUpdateManyWithWhereWithoutCriadoPorInput | PedidoOperacionalUpdateManyWithWhereWithoutCriadoPorInput[]
+    deleteMany?: PedidoOperacionalScalarWhereInput | PedidoOperacionalScalarWhereInput[]
+  }
+
+  export type PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorNestedInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutEditadoPorInput, PedidoOperacionalUncheckedCreateWithoutEditadoPorInput> | PedidoOperacionalCreateWithoutEditadoPorInput[] | PedidoOperacionalUncheckedCreateWithoutEditadoPorInput[]
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutEditadoPorInput | PedidoOperacionalCreateOrConnectWithoutEditadoPorInput[]
+    upsert?: PedidoOperacionalUpsertWithWhereUniqueWithoutEditadoPorInput | PedidoOperacionalUpsertWithWhereUniqueWithoutEditadoPorInput[]
+    createMany?: PedidoOperacionalCreateManyEditadoPorInputEnvelope
+    set?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    disconnect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    delete?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    connect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    update?: PedidoOperacionalUpdateWithWhereUniqueWithoutEditadoPorInput | PedidoOperacionalUpdateWithWhereUniqueWithoutEditadoPorInput[]
+    updateMany?: PedidoOperacionalUpdateManyWithWhereWithoutEditadoPorInput | PedidoOperacionalUpdateManyWithWhereWithoutEditadoPorInput[]
+    deleteMany?: PedidoOperacionalScalarWhereInput | PedidoOperacionalScalarWhereInput[]
+  }
+
+  export type PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorNestedInput = {
+    create?: XOR<PedidoOperacionalAvariaCreateWithoutCriadoPorInput, PedidoOperacionalAvariaUncheckedCreateWithoutCriadoPorInput> | PedidoOperacionalAvariaCreateWithoutCriadoPorInput[] | PedidoOperacionalAvariaUncheckedCreateWithoutCriadoPorInput[]
+    connectOrCreate?: PedidoOperacionalAvariaCreateOrConnectWithoutCriadoPorInput | PedidoOperacionalAvariaCreateOrConnectWithoutCriadoPorInput[]
+    upsert?: PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutCriadoPorInput | PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutCriadoPorInput[]
+    createMany?: PedidoOperacionalAvariaCreateManyCriadoPorInputEnvelope
+    set?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    disconnect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    delete?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    connect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    update?: PedidoOperacionalAvariaUpdateWithWhereUniqueWithoutCriadoPorInput | PedidoOperacionalAvariaUpdateWithWhereUniqueWithoutCriadoPorInput[]
+    updateMany?: PedidoOperacionalAvariaUpdateManyWithWhereWithoutCriadoPorInput | PedidoOperacionalAvariaUpdateManyWithWhereWithoutCriadoPorInput[]
+    deleteMany?: PedidoOperacionalAvariaScalarWhereInput | PedidoOperacionalAvariaScalarWhereInput[]
+  }
+
+  export type PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput = {
+    create?: XOR<PedidoOperacionalAuditoriaCreateWithoutUsuarioInput, PedidoOperacionalAuditoriaUncheckedCreateWithoutUsuarioInput> | PedidoOperacionalAuditoriaCreateWithoutUsuarioInput[] | PedidoOperacionalAuditoriaUncheckedCreateWithoutUsuarioInput[]
+    connectOrCreate?: PedidoOperacionalAuditoriaCreateOrConnectWithoutUsuarioInput | PedidoOperacionalAuditoriaCreateOrConnectWithoutUsuarioInput[]
+    upsert?: PedidoOperacionalAuditoriaUpsertWithWhereUniqueWithoutUsuarioInput | PedidoOperacionalAuditoriaUpsertWithWhereUniqueWithoutUsuarioInput[]
+    createMany?: PedidoOperacionalAuditoriaCreateManyUsuarioInputEnvelope
+    set?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
+    disconnect?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
+    delete?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
+    connect?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
+    update?: PedidoOperacionalAuditoriaUpdateWithWhereUniqueWithoutUsuarioInput | PedidoOperacionalAuditoriaUpdateWithWhereUniqueWithoutUsuarioInput[]
+    updateMany?: PedidoOperacionalAuditoriaUpdateManyWithWhereWithoutUsuarioInput | PedidoOperacionalAuditoriaUpdateManyWithWhereWithoutUsuarioInput[]
+    deleteMany?: PedidoOperacionalAuditoriaScalarWhereInput | PedidoOperacionalAuditoriaScalarWhereInput[]
   }
 
   export type UsuarioCreateNestedOneWithoutRefreshTokensInput = {
@@ -20337,6 +33797,33 @@ export namespace Prisma {
     connect?: ExecucaoApiWhereUniqueInput | ExecucaoApiWhereUniqueInput[]
   }
 
+  export type RegraComercialClienteCreateNestedOneWithoutClienteInput = {
+    create?: XOR<RegraComercialClienteCreateWithoutClienteInput, RegraComercialClienteUncheckedCreateWithoutClienteInput>
+    connectOrCreate?: RegraComercialClienteCreateOrConnectWithoutClienteInput
+    connect?: RegraComercialClienteWhereUniqueInput
+  }
+
+  export type PedidoOperacionalCreateNestedManyWithoutClienteInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutClienteInput, PedidoOperacionalUncheckedCreateWithoutClienteInput> | PedidoOperacionalCreateWithoutClienteInput[] | PedidoOperacionalUncheckedCreateWithoutClienteInput[]
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutClienteInput | PedidoOperacionalCreateOrConnectWithoutClienteInput[]
+    createMany?: PedidoOperacionalCreateManyClienteInputEnvelope
+    connect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+  }
+
+  export type PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput = {
+    create?: XOR<PedidoOperacionalAvariaCreateWithoutClienteInput, PedidoOperacionalAvariaUncheckedCreateWithoutClienteInput> | PedidoOperacionalAvariaCreateWithoutClienteInput[] | PedidoOperacionalAvariaUncheckedCreateWithoutClienteInput[]
+    connectOrCreate?: PedidoOperacionalAvariaCreateOrConnectWithoutClienteInput | PedidoOperacionalAvariaCreateOrConnectWithoutClienteInput[]
+    createMany?: PedidoOperacionalAvariaCreateManyClienteInputEnvelope
+    connect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+  }
+
+  export type ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput = {
+    create?: XOR<ClienteLegadoContaAzulLinkCreateWithoutClienteInput, ClienteLegadoContaAzulLinkUncheckedCreateWithoutClienteInput> | ClienteLegadoContaAzulLinkCreateWithoutClienteInput[] | ClienteLegadoContaAzulLinkUncheckedCreateWithoutClienteInput[]
+    connectOrCreate?: ClienteLegadoContaAzulLinkCreateOrConnectWithoutClienteInput | ClienteLegadoContaAzulLinkCreateOrConnectWithoutClienteInput[]
+    createMany?: ClienteLegadoContaAzulLinkCreateManyClienteInputEnvelope
+    connect?: ClienteLegadoContaAzulLinkWhereUniqueInput | ClienteLegadoContaAzulLinkWhereUniqueInput[]
+  }
+
   export type PedidoUncheckedCreateNestedManyWithoutClienteInput = {
     create?: XOR<PedidoCreateWithoutClienteInput, PedidoUncheckedCreateWithoutClienteInput> | PedidoCreateWithoutClienteInput[] | PedidoUncheckedCreateWithoutClienteInput[]
     connectOrCreate?: PedidoCreateOrConnectWithoutClienteInput | PedidoCreateOrConnectWithoutClienteInput[]
@@ -20370,6 +33857,33 @@ export namespace Prisma {
     connectOrCreate?: ExecucaoApiCreateOrConnectWithoutClienteInput | ExecucaoApiCreateOrConnectWithoutClienteInput[]
     createMany?: ExecucaoApiCreateManyClienteInputEnvelope
     connect?: ExecucaoApiWhereUniqueInput | ExecucaoApiWhereUniqueInput[]
+  }
+
+  export type RegraComercialClienteUncheckedCreateNestedOneWithoutClienteInput = {
+    create?: XOR<RegraComercialClienteCreateWithoutClienteInput, RegraComercialClienteUncheckedCreateWithoutClienteInput>
+    connectOrCreate?: RegraComercialClienteCreateOrConnectWithoutClienteInput
+    connect?: RegraComercialClienteWhereUniqueInput
+  }
+
+  export type PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutClienteInput, PedidoOperacionalUncheckedCreateWithoutClienteInput> | PedidoOperacionalCreateWithoutClienteInput[] | PedidoOperacionalUncheckedCreateWithoutClienteInput[]
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutClienteInput | PedidoOperacionalCreateOrConnectWithoutClienteInput[]
+    createMany?: PedidoOperacionalCreateManyClienteInputEnvelope
+    connect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+  }
+
+  export type PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput = {
+    create?: XOR<PedidoOperacionalAvariaCreateWithoutClienteInput, PedidoOperacionalAvariaUncheckedCreateWithoutClienteInput> | PedidoOperacionalAvariaCreateWithoutClienteInput[] | PedidoOperacionalAvariaUncheckedCreateWithoutClienteInput[]
+    connectOrCreate?: PedidoOperacionalAvariaCreateOrConnectWithoutClienteInput | PedidoOperacionalAvariaCreateOrConnectWithoutClienteInput[]
+    createMany?: PedidoOperacionalAvariaCreateManyClienteInputEnvelope
+    connect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+  }
+
+  export type ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput = {
+    create?: XOR<ClienteLegadoContaAzulLinkCreateWithoutClienteInput, ClienteLegadoContaAzulLinkUncheckedCreateWithoutClienteInput> | ClienteLegadoContaAzulLinkCreateWithoutClienteInput[] | ClienteLegadoContaAzulLinkUncheckedCreateWithoutClienteInput[]
+    connectOrCreate?: ClienteLegadoContaAzulLinkCreateOrConnectWithoutClienteInput | ClienteLegadoContaAzulLinkCreateOrConnectWithoutClienteInput[]
+    createMany?: ClienteLegadoContaAzulLinkCreateManyClienteInputEnvelope
+    connect?: ClienteLegadoContaAzulLinkWhereUniqueInput | ClienteLegadoContaAzulLinkWhereUniqueInput[]
   }
 
   export type NullableStringFieldUpdateOperationsInput = {
@@ -20462,6 +33976,58 @@ export namespace Prisma {
     deleteMany?: ExecucaoApiScalarWhereInput | ExecucaoApiScalarWhereInput[]
   }
 
+  export type RegraComercialClienteUpdateOneWithoutClienteNestedInput = {
+    create?: XOR<RegraComercialClienteCreateWithoutClienteInput, RegraComercialClienteUncheckedCreateWithoutClienteInput>
+    connectOrCreate?: RegraComercialClienteCreateOrConnectWithoutClienteInput
+    upsert?: RegraComercialClienteUpsertWithoutClienteInput
+    disconnect?: RegraComercialClienteWhereInput | boolean
+    delete?: RegraComercialClienteWhereInput | boolean
+    connect?: RegraComercialClienteWhereUniqueInput
+    update?: XOR<XOR<RegraComercialClienteUpdateToOneWithWhereWithoutClienteInput, RegraComercialClienteUpdateWithoutClienteInput>, RegraComercialClienteUncheckedUpdateWithoutClienteInput>
+  }
+
+  export type PedidoOperacionalUpdateManyWithoutClienteNestedInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutClienteInput, PedidoOperacionalUncheckedCreateWithoutClienteInput> | PedidoOperacionalCreateWithoutClienteInput[] | PedidoOperacionalUncheckedCreateWithoutClienteInput[]
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutClienteInput | PedidoOperacionalCreateOrConnectWithoutClienteInput[]
+    upsert?: PedidoOperacionalUpsertWithWhereUniqueWithoutClienteInput | PedidoOperacionalUpsertWithWhereUniqueWithoutClienteInput[]
+    createMany?: PedidoOperacionalCreateManyClienteInputEnvelope
+    set?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    disconnect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    delete?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    connect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    update?: PedidoOperacionalUpdateWithWhereUniqueWithoutClienteInput | PedidoOperacionalUpdateWithWhereUniqueWithoutClienteInput[]
+    updateMany?: PedidoOperacionalUpdateManyWithWhereWithoutClienteInput | PedidoOperacionalUpdateManyWithWhereWithoutClienteInput[]
+    deleteMany?: PedidoOperacionalScalarWhereInput | PedidoOperacionalScalarWhereInput[]
+  }
+
+  export type PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput = {
+    create?: XOR<PedidoOperacionalAvariaCreateWithoutClienteInput, PedidoOperacionalAvariaUncheckedCreateWithoutClienteInput> | PedidoOperacionalAvariaCreateWithoutClienteInput[] | PedidoOperacionalAvariaUncheckedCreateWithoutClienteInput[]
+    connectOrCreate?: PedidoOperacionalAvariaCreateOrConnectWithoutClienteInput | PedidoOperacionalAvariaCreateOrConnectWithoutClienteInput[]
+    upsert?: PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutClienteInput | PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutClienteInput[]
+    createMany?: PedidoOperacionalAvariaCreateManyClienteInputEnvelope
+    set?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    disconnect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    delete?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    connect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    update?: PedidoOperacionalAvariaUpdateWithWhereUniqueWithoutClienteInput | PedidoOperacionalAvariaUpdateWithWhereUniqueWithoutClienteInput[]
+    updateMany?: PedidoOperacionalAvariaUpdateManyWithWhereWithoutClienteInput | PedidoOperacionalAvariaUpdateManyWithWhereWithoutClienteInput[]
+    deleteMany?: PedidoOperacionalAvariaScalarWhereInput | PedidoOperacionalAvariaScalarWhereInput[]
+  }
+
+  export type ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput = {
+    create?: XOR<ClienteLegadoContaAzulLinkCreateWithoutClienteInput, ClienteLegadoContaAzulLinkUncheckedCreateWithoutClienteInput> | ClienteLegadoContaAzulLinkCreateWithoutClienteInput[] | ClienteLegadoContaAzulLinkUncheckedCreateWithoutClienteInput[]
+    connectOrCreate?: ClienteLegadoContaAzulLinkCreateOrConnectWithoutClienteInput | ClienteLegadoContaAzulLinkCreateOrConnectWithoutClienteInput[]
+    upsert?: ClienteLegadoContaAzulLinkUpsertWithWhereUniqueWithoutClienteInput | ClienteLegadoContaAzulLinkUpsertWithWhereUniqueWithoutClienteInput[]
+    createMany?: ClienteLegadoContaAzulLinkCreateManyClienteInputEnvelope
+    set?: ClienteLegadoContaAzulLinkWhereUniqueInput | ClienteLegadoContaAzulLinkWhereUniqueInput[]
+    disconnect?: ClienteLegadoContaAzulLinkWhereUniqueInput | ClienteLegadoContaAzulLinkWhereUniqueInput[]
+    delete?: ClienteLegadoContaAzulLinkWhereUniqueInput | ClienteLegadoContaAzulLinkWhereUniqueInput[]
+    connect?: ClienteLegadoContaAzulLinkWhereUniqueInput | ClienteLegadoContaAzulLinkWhereUniqueInput[]
+    update?: ClienteLegadoContaAzulLinkUpdateWithWhereUniqueWithoutClienteInput | ClienteLegadoContaAzulLinkUpdateWithWhereUniqueWithoutClienteInput[]
+    updateMany?: ClienteLegadoContaAzulLinkUpdateManyWithWhereWithoutClienteInput | ClienteLegadoContaAzulLinkUpdateManyWithWhereWithoutClienteInput[]
+    deleteMany?: ClienteLegadoContaAzulLinkScalarWhereInput | ClienteLegadoContaAzulLinkScalarWhereInput[]
+  }
+
   export type PedidoUncheckedUpdateManyWithoutClienteNestedInput = {
     create?: XOR<PedidoCreateWithoutClienteInput, PedidoUncheckedCreateWithoutClienteInput> | PedidoCreateWithoutClienteInput[] | PedidoUncheckedCreateWithoutClienteInput[]
     connectOrCreate?: PedidoCreateOrConnectWithoutClienteInput | PedidoCreateOrConnectWithoutClienteInput[]
@@ -20532,6 +34098,680 @@ export namespace Prisma {
     deleteMany?: ExecucaoApiScalarWhereInput | ExecucaoApiScalarWhereInput[]
   }
 
+  export type RegraComercialClienteUncheckedUpdateOneWithoutClienteNestedInput = {
+    create?: XOR<RegraComercialClienteCreateWithoutClienteInput, RegraComercialClienteUncheckedCreateWithoutClienteInput>
+    connectOrCreate?: RegraComercialClienteCreateOrConnectWithoutClienteInput
+    upsert?: RegraComercialClienteUpsertWithoutClienteInput
+    disconnect?: RegraComercialClienteWhereInput | boolean
+    delete?: RegraComercialClienteWhereInput | boolean
+    connect?: RegraComercialClienteWhereUniqueInput
+    update?: XOR<XOR<RegraComercialClienteUpdateToOneWithWhereWithoutClienteInput, RegraComercialClienteUpdateWithoutClienteInput>, RegraComercialClienteUncheckedUpdateWithoutClienteInput>
+  }
+
+  export type PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutClienteInput, PedidoOperacionalUncheckedCreateWithoutClienteInput> | PedidoOperacionalCreateWithoutClienteInput[] | PedidoOperacionalUncheckedCreateWithoutClienteInput[]
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutClienteInput | PedidoOperacionalCreateOrConnectWithoutClienteInput[]
+    upsert?: PedidoOperacionalUpsertWithWhereUniqueWithoutClienteInput | PedidoOperacionalUpsertWithWhereUniqueWithoutClienteInput[]
+    createMany?: PedidoOperacionalCreateManyClienteInputEnvelope
+    set?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    disconnect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    delete?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    connect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    update?: PedidoOperacionalUpdateWithWhereUniqueWithoutClienteInput | PedidoOperacionalUpdateWithWhereUniqueWithoutClienteInput[]
+    updateMany?: PedidoOperacionalUpdateManyWithWhereWithoutClienteInput | PedidoOperacionalUpdateManyWithWhereWithoutClienteInput[]
+    deleteMany?: PedidoOperacionalScalarWhereInput | PedidoOperacionalScalarWhereInput[]
+  }
+
+  export type PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput = {
+    create?: XOR<PedidoOperacionalAvariaCreateWithoutClienteInput, PedidoOperacionalAvariaUncheckedCreateWithoutClienteInput> | PedidoOperacionalAvariaCreateWithoutClienteInput[] | PedidoOperacionalAvariaUncheckedCreateWithoutClienteInput[]
+    connectOrCreate?: PedidoOperacionalAvariaCreateOrConnectWithoutClienteInput | PedidoOperacionalAvariaCreateOrConnectWithoutClienteInput[]
+    upsert?: PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutClienteInput | PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutClienteInput[]
+    createMany?: PedidoOperacionalAvariaCreateManyClienteInputEnvelope
+    set?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    disconnect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    delete?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    connect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    update?: PedidoOperacionalAvariaUpdateWithWhereUniqueWithoutClienteInput | PedidoOperacionalAvariaUpdateWithWhereUniqueWithoutClienteInput[]
+    updateMany?: PedidoOperacionalAvariaUpdateManyWithWhereWithoutClienteInput | PedidoOperacionalAvariaUpdateManyWithWhereWithoutClienteInput[]
+    deleteMany?: PedidoOperacionalAvariaScalarWhereInput | PedidoOperacionalAvariaScalarWhereInput[]
+  }
+
+  export type ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput = {
+    create?: XOR<ClienteLegadoContaAzulLinkCreateWithoutClienteInput, ClienteLegadoContaAzulLinkUncheckedCreateWithoutClienteInput> | ClienteLegadoContaAzulLinkCreateWithoutClienteInput[] | ClienteLegadoContaAzulLinkUncheckedCreateWithoutClienteInput[]
+    connectOrCreate?: ClienteLegadoContaAzulLinkCreateOrConnectWithoutClienteInput | ClienteLegadoContaAzulLinkCreateOrConnectWithoutClienteInput[]
+    upsert?: ClienteLegadoContaAzulLinkUpsertWithWhereUniqueWithoutClienteInput | ClienteLegadoContaAzulLinkUpsertWithWhereUniqueWithoutClienteInput[]
+    createMany?: ClienteLegadoContaAzulLinkCreateManyClienteInputEnvelope
+    set?: ClienteLegadoContaAzulLinkWhereUniqueInput | ClienteLegadoContaAzulLinkWhereUniqueInput[]
+    disconnect?: ClienteLegadoContaAzulLinkWhereUniqueInput | ClienteLegadoContaAzulLinkWhereUniqueInput[]
+    delete?: ClienteLegadoContaAzulLinkWhereUniqueInput | ClienteLegadoContaAzulLinkWhereUniqueInput[]
+    connect?: ClienteLegadoContaAzulLinkWhereUniqueInput | ClienteLegadoContaAzulLinkWhereUniqueInput[]
+    update?: ClienteLegadoContaAzulLinkUpdateWithWhereUniqueWithoutClienteInput | ClienteLegadoContaAzulLinkUpdateWithWhereUniqueWithoutClienteInput[]
+    updateMany?: ClienteLegadoContaAzulLinkUpdateManyWithWhereWithoutClienteInput | ClienteLegadoContaAzulLinkUpdateManyWithWhereWithoutClienteInput[]
+    deleteMany?: ClienteLegadoContaAzulLinkScalarWhereInput | ClienteLegadoContaAzulLinkScalarWhereInput[]
+  }
+
+  export type PrecoEspecialClienteCreateNestedManyWithoutProdutoInput = {
+    create?: XOR<PrecoEspecialClienteCreateWithoutProdutoInput, PrecoEspecialClienteUncheckedCreateWithoutProdutoInput> | PrecoEspecialClienteCreateWithoutProdutoInput[] | PrecoEspecialClienteUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: PrecoEspecialClienteCreateOrConnectWithoutProdutoInput | PrecoEspecialClienteCreateOrConnectWithoutProdutoInput[]
+    createMany?: PrecoEspecialClienteCreateManyProdutoInputEnvelope
+    connect?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
+  }
+
+  export type PedidoOperacionalItemCreateNestedManyWithoutProdutoInput = {
+    create?: XOR<PedidoOperacionalItemCreateWithoutProdutoInput, PedidoOperacionalItemUncheckedCreateWithoutProdutoInput> | PedidoOperacionalItemCreateWithoutProdutoInput[] | PedidoOperacionalItemUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: PedidoOperacionalItemCreateOrConnectWithoutProdutoInput | PedidoOperacionalItemCreateOrConnectWithoutProdutoInput[]
+    createMany?: PedidoOperacionalItemCreateManyProdutoInputEnvelope
+    connect?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
+  }
+
+  export type PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput = {
+    create?: XOR<PedidoOperacionalAvariaCreateWithoutProdutoInput, PedidoOperacionalAvariaUncheckedCreateWithoutProdutoInput> | PedidoOperacionalAvariaCreateWithoutProdutoInput[] | PedidoOperacionalAvariaUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: PedidoOperacionalAvariaCreateOrConnectWithoutProdutoInput | PedidoOperacionalAvariaCreateOrConnectWithoutProdutoInput[]
+    createMany?: PedidoOperacionalAvariaCreateManyProdutoInputEnvelope
+    connect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+  }
+
+  export type ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput = {
+    create?: XOR<ProdutoComercialCreateWithoutMixReferenciadoPorInput, ProdutoComercialUncheckedCreateWithoutMixReferenciadoPorInput>
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutMixReferenciadoPorInput
+    connect?: ProdutoComercialWhereUniqueInput
+  }
+
+  export type ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput = {
+    create?: XOR<ProdutoComercialCreateWithoutMixProdutoReferenciaInput, ProdutoComercialUncheckedCreateWithoutMixProdutoReferenciaInput> | ProdutoComercialCreateWithoutMixProdutoReferenciaInput[] | ProdutoComercialUncheckedCreateWithoutMixProdutoReferenciaInput[]
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutMixProdutoReferenciaInput | ProdutoComercialCreateOrConnectWithoutMixProdutoReferenciaInput[]
+    createMany?: ProdutoComercialCreateManyMixProdutoReferenciaInputEnvelope
+    connect?: ProdutoComercialWhereUniqueInput | ProdutoComercialWhereUniqueInput[]
+  }
+
+  export type PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput = {
+    create?: XOR<PrecoEspecialClienteCreateWithoutProdutoInput, PrecoEspecialClienteUncheckedCreateWithoutProdutoInput> | PrecoEspecialClienteCreateWithoutProdutoInput[] | PrecoEspecialClienteUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: PrecoEspecialClienteCreateOrConnectWithoutProdutoInput | PrecoEspecialClienteCreateOrConnectWithoutProdutoInput[]
+    createMany?: PrecoEspecialClienteCreateManyProdutoInputEnvelope
+    connect?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
+  }
+
+  export type PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput = {
+    create?: XOR<PedidoOperacionalItemCreateWithoutProdutoInput, PedidoOperacionalItemUncheckedCreateWithoutProdutoInput> | PedidoOperacionalItemCreateWithoutProdutoInput[] | PedidoOperacionalItemUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: PedidoOperacionalItemCreateOrConnectWithoutProdutoInput | PedidoOperacionalItemCreateOrConnectWithoutProdutoInput[]
+    createMany?: PedidoOperacionalItemCreateManyProdutoInputEnvelope
+    connect?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
+  }
+
+  export type PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput = {
+    create?: XOR<PedidoOperacionalAvariaCreateWithoutProdutoInput, PedidoOperacionalAvariaUncheckedCreateWithoutProdutoInput> | PedidoOperacionalAvariaCreateWithoutProdutoInput[] | PedidoOperacionalAvariaUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: PedidoOperacionalAvariaCreateOrConnectWithoutProdutoInput | PedidoOperacionalAvariaCreateOrConnectWithoutProdutoInput[]
+    createMany?: PedidoOperacionalAvariaCreateManyProdutoInputEnvelope
+    connect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+  }
+
+  export type ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput = {
+    create?: XOR<ProdutoComercialCreateWithoutMixProdutoReferenciaInput, ProdutoComercialUncheckedCreateWithoutMixProdutoReferenciaInput> | ProdutoComercialCreateWithoutMixProdutoReferenciaInput[] | ProdutoComercialUncheckedCreateWithoutMixProdutoReferenciaInput[]
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutMixProdutoReferenciaInput | ProdutoComercialCreateOrConnectWithoutMixProdutoReferenciaInput[]
+    createMany?: ProdutoComercialCreateManyMixProdutoReferenciaInputEnvelope
+    connect?: ProdutoComercialWhereUniqueInput | ProdutoComercialWhereUniqueInput[]
+  }
+
+  export type BoolFieldUpdateOperationsInput = {
+    set?: boolean
+  }
+
+  export type EnumModoCompraProdutoFieldUpdateOperationsInput = {
+    set?: $Enums.ModoCompraProduto
+  }
+
+  export type PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput = {
+    create?: XOR<PrecoEspecialClienteCreateWithoutProdutoInput, PrecoEspecialClienteUncheckedCreateWithoutProdutoInput> | PrecoEspecialClienteCreateWithoutProdutoInput[] | PrecoEspecialClienteUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: PrecoEspecialClienteCreateOrConnectWithoutProdutoInput | PrecoEspecialClienteCreateOrConnectWithoutProdutoInput[]
+    upsert?: PrecoEspecialClienteUpsertWithWhereUniqueWithoutProdutoInput | PrecoEspecialClienteUpsertWithWhereUniqueWithoutProdutoInput[]
+    createMany?: PrecoEspecialClienteCreateManyProdutoInputEnvelope
+    set?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
+    disconnect?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
+    delete?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
+    connect?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
+    update?: PrecoEspecialClienteUpdateWithWhereUniqueWithoutProdutoInput | PrecoEspecialClienteUpdateWithWhereUniqueWithoutProdutoInput[]
+    updateMany?: PrecoEspecialClienteUpdateManyWithWhereWithoutProdutoInput | PrecoEspecialClienteUpdateManyWithWhereWithoutProdutoInput[]
+    deleteMany?: PrecoEspecialClienteScalarWhereInput | PrecoEspecialClienteScalarWhereInput[]
+  }
+
+  export type PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput = {
+    create?: XOR<PedidoOperacionalItemCreateWithoutProdutoInput, PedidoOperacionalItemUncheckedCreateWithoutProdutoInput> | PedidoOperacionalItemCreateWithoutProdutoInput[] | PedidoOperacionalItemUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: PedidoOperacionalItemCreateOrConnectWithoutProdutoInput | PedidoOperacionalItemCreateOrConnectWithoutProdutoInput[]
+    upsert?: PedidoOperacionalItemUpsertWithWhereUniqueWithoutProdutoInput | PedidoOperacionalItemUpsertWithWhereUniqueWithoutProdutoInput[]
+    createMany?: PedidoOperacionalItemCreateManyProdutoInputEnvelope
+    set?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
+    disconnect?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
+    delete?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
+    connect?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
+    update?: PedidoOperacionalItemUpdateWithWhereUniqueWithoutProdutoInput | PedidoOperacionalItemUpdateWithWhereUniqueWithoutProdutoInput[]
+    updateMany?: PedidoOperacionalItemUpdateManyWithWhereWithoutProdutoInput | PedidoOperacionalItemUpdateManyWithWhereWithoutProdutoInput[]
+    deleteMany?: PedidoOperacionalItemScalarWhereInput | PedidoOperacionalItemScalarWhereInput[]
+  }
+
+  export type PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput = {
+    create?: XOR<PedidoOperacionalAvariaCreateWithoutProdutoInput, PedidoOperacionalAvariaUncheckedCreateWithoutProdutoInput> | PedidoOperacionalAvariaCreateWithoutProdutoInput[] | PedidoOperacionalAvariaUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: PedidoOperacionalAvariaCreateOrConnectWithoutProdutoInput | PedidoOperacionalAvariaCreateOrConnectWithoutProdutoInput[]
+    upsert?: PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutProdutoInput | PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutProdutoInput[]
+    createMany?: PedidoOperacionalAvariaCreateManyProdutoInputEnvelope
+    set?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    disconnect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    delete?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    connect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    update?: PedidoOperacionalAvariaUpdateWithWhereUniqueWithoutProdutoInput | PedidoOperacionalAvariaUpdateWithWhereUniqueWithoutProdutoInput[]
+    updateMany?: PedidoOperacionalAvariaUpdateManyWithWhereWithoutProdutoInput | PedidoOperacionalAvariaUpdateManyWithWhereWithoutProdutoInput[]
+    deleteMany?: PedidoOperacionalAvariaScalarWhereInput | PedidoOperacionalAvariaScalarWhereInput[]
+  }
+
+  export type ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput = {
+    create?: XOR<ProdutoComercialCreateWithoutMixReferenciadoPorInput, ProdutoComercialUncheckedCreateWithoutMixReferenciadoPorInput>
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutMixReferenciadoPorInput
+    upsert?: ProdutoComercialUpsertWithoutMixReferenciadoPorInput
+    disconnect?: ProdutoComercialWhereInput | boolean
+    delete?: ProdutoComercialWhereInput | boolean
+    connect?: ProdutoComercialWhereUniqueInput
+    update?: XOR<XOR<ProdutoComercialUpdateToOneWithWhereWithoutMixReferenciadoPorInput, ProdutoComercialUpdateWithoutMixReferenciadoPorInput>, ProdutoComercialUncheckedUpdateWithoutMixReferenciadoPorInput>
+  }
+
+  export type ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput = {
+    create?: XOR<ProdutoComercialCreateWithoutMixProdutoReferenciaInput, ProdutoComercialUncheckedCreateWithoutMixProdutoReferenciaInput> | ProdutoComercialCreateWithoutMixProdutoReferenciaInput[] | ProdutoComercialUncheckedCreateWithoutMixProdutoReferenciaInput[]
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutMixProdutoReferenciaInput | ProdutoComercialCreateOrConnectWithoutMixProdutoReferenciaInput[]
+    upsert?: ProdutoComercialUpsertWithWhereUniqueWithoutMixProdutoReferenciaInput | ProdutoComercialUpsertWithWhereUniqueWithoutMixProdutoReferenciaInput[]
+    createMany?: ProdutoComercialCreateManyMixProdutoReferenciaInputEnvelope
+    set?: ProdutoComercialWhereUniqueInput | ProdutoComercialWhereUniqueInput[]
+    disconnect?: ProdutoComercialWhereUniqueInput | ProdutoComercialWhereUniqueInput[]
+    delete?: ProdutoComercialWhereUniqueInput | ProdutoComercialWhereUniqueInput[]
+    connect?: ProdutoComercialWhereUniqueInput | ProdutoComercialWhereUniqueInput[]
+    update?: ProdutoComercialUpdateWithWhereUniqueWithoutMixProdutoReferenciaInput | ProdutoComercialUpdateWithWhereUniqueWithoutMixProdutoReferenciaInput[]
+    updateMany?: ProdutoComercialUpdateManyWithWhereWithoutMixProdutoReferenciaInput | ProdutoComercialUpdateManyWithWhereWithoutMixProdutoReferenciaInput[]
+    deleteMany?: ProdutoComercialScalarWhereInput | ProdutoComercialScalarWhereInput[]
+  }
+
+  export type PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput = {
+    create?: XOR<PrecoEspecialClienteCreateWithoutProdutoInput, PrecoEspecialClienteUncheckedCreateWithoutProdutoInput> | PrecoEspecialClienteCreateWithoutProdutoInput[] | PrecoEspecialClienteUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: PrecoEspecialClienteCreateOrConnectWithoutProdutoInput | PrecoEspecialClienteCreateOrConnectWithoutProdutoInput[]
+    upsert?: PrecoEspecialClienteUpsertWithWhereUniqueWithoutProdutoInput | PrecoEspecialClienteUpsertWithWhereUniqueWithoutProdutoInput[]
+    createMany?: PrecoEspecialClienteCreateManyProdutoInputEnvelope
+    set?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
+    disconnect?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
+    delete?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
+    connect?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
+    update?: PrecoEspecialClienteUpdateWithWhereUniqueWithoutProdutoInput | PrecoEspecialClienteUpdateWithWhereUniqueWithoutProdutoInput[]
+    updateMany?: PrecoEspecialClienteUpdateManyWithWhereWithoutProdutoInput | PrecoEspecialClienteUpdateManyWithWhereWithoutProdutoInput[]
+    deleteMany?: PrecoEspecialClienteScalarWhereInput | PrecoEspecialClienteScalarWhereInput[]
+  }
+
+  export type PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput = {
+    create?: XOR<PedidoOperacionalItemCreateWithoutProdutoInput, PedidoOperacionalItemUncheckedCreateWithoutProdutoInput> | PedidoOperacionalItemCreateWithoutProdutoInput[] | PedidoOperacionalItemUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: PedidoOperacionalItemCreateOrConnectWithoutProdutoInput | PedidoOperacionalItemCreateOrConnectWithoutProdutoInput[]
+    upsert?: PedidoOperacionalItemUpsertWithWhereUniqueWithoutProdutoInput | PedidoOperacionalItemUpsertWithWhereUniqueWithoutProdutoInput[]
+    createMany?: PedidoOperacionalItemCreateManyProdutoInputEnvelope
+    set?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
+    disconnect?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
+    delete?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
+    connect?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
+    update?: PedidoOperacionalItemUpdateWithWhereUniqueWithoutProdutoInput | PedidoOperacionalItemUpdateWithWhereUniqueWithoutProdutoInput[]
+    updateMany?: PedidoOperacionalItemUpdateManyWithWhereWithoutProdutoInput | PedidoOperacionalItemUpdateManyWithWhereWithoutProdutoInput[]
+    deleteMany?: PedidoOperacionalItemScalarWhereInput | PedidoOperacionalItemScalarWhereInput[]
+  }
+
+  export type PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput = {
+    create?: XOR<PedidoOperacionalAvariaCreateWithoutProdutoInput, PedidoOperacionalAvariaUncheckedCreateWithoutProdutoInput> | PedidoOperacionalAvariaCreateWithoutProdutoInput[] | PedidoOperacionalAvariaUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: PedidoOperacionalAvariaCreateOrConnectWithoutProdutoInput | PedidoOperacionalAvariaCreateOrConnectWithoutProdutoInput[]
+    upsert?: PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutProdutoInput | PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutProdutoInput[]
+    createMany?: PedidoOperacionalAvariaCreateManyProdutoInputEnvelope
+    set?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    disconnect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    delete?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    connect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    update?: PedidoOperacionalAvariaUpdateWithWhereUniqueWithoutProdutoInput | PedidoOperacionalAvariaUpdateWithWhereUniqueWithoutProdutoInput[]
+    updateMany?: PedidoOperacionalAvariaUpdateManyWithWhereWithoutProdutoInput | PedidoOperacionalAvariaUpdateManyWithWhereWithoutProdutoInput[]
+    deleteMany?: PedidoOperacionalAvariaScalarWhereInput | PedidoOperacionalAvariaScalarWhereInput[]
+  }
+
+  export type ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput = {
+    create?: XOR<ProdutoComercialCreateWithoutMixProdutoReferenciaInput, ProdutoComercialUncheckedCreateWithoutMixProdutoReferenciaInput> | ProdutoComercialCreateWithoutMixProdutoReferenciaInput[] | ProdutoComercialUncheckedCreateWithoutMixProdutoReferenciaInput[]
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutMixProdutoReferenciaInput | ProdutoComercialCreateOrConnectWithoutMixProdutoReferenciaInput[]
+    upsert?: ProdutoComercialUpsertWithWhereUniqueWithoutMixProdutoReferenciaInput | ProdutoComercialUpsertWithWhereUniqueWithoutMixProdutoReferenciaInput[]
+    createMany?: ProdutoComercialCreateManyMixProdutoReferenciaInputEnvelope
+    set?: ProdutoComercialWhereUniqueInput | ProdutoComercialWhereUniqueInput[]
+    disconnect?: ProdutoComercialWhereUniqueInput | ProdutoComercialWhereUniqueInput[]
+    delete?: ProdutoComercialWhereUniqueInput | ProdutoComercialWhereUniqueInput[]
+    connect?: ProdutoComercialWhereUniqueInput | ProdutoComercialWhereUniqueInput[]
+    update?: ProdutoComercialUpdateWithWhereUniqueWithoutMixProdutoReferenciaInput | ProdutoComercialUpdateWithWhereUniqueWithoutMixProdutoReferenciaInput[]
+    updateMany?: ProdutoComercialUpdateManyWithWhereWithoutMixProdutoReferenciaInput | ProdutoComercialUpdateManyWithWhereWithoutMixProdutoReferenciaInput[]
+    deleteMany?: ProdutoComercialScalarWhereInput | ProdutoComercialScalarWhereInput[]
+  }
+
+  export type ClienteCreateNestedOneWithoutRegraComercialInput = {
+    create?: XOR<ClienteCreateWithoutRegraComercialInput, ClienteUncheckedCreateWithoutRegraComercialInput>
+    connectOrCreate?: ClienteCreateOrConnectWithoutRegraComercialInput
+    connect?: ClienteWhereUniqueInput
+  }
+
+  export type PrecoEspecialClienteCreateNestedManyWithoutRegraInput = {
+    create?: XOR<PrecoEspecialClienteCreateWithoutRegraInput, PrecoEspecialClienteUncheckedCreateWithoutRegraInput> | PrecoEspecialClienteCreateWithoutRegraInput[] | PrecoEspecialClienteUncheckedCreateWithoutRegraInput[]
+    connectOrCreate?: PrecoEspecialClienteCreateOrConnectWithoutRegraInput | PrecoEspecialClienteCreateOrConnectWithoutRegraInput[]
+    createMany?: PrecoEspecialClienteCreateManyRegraInputEnvelope
+    connect?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
+  }
+
+  export type PrecoEspecialClienteUncheckedCreateNestedManyWithoutRegraInput = {
+    create?: XOR<PrecoEspecialClienteCreateWithoutRegraInput, PrecoEspecialClienteUncheckedCreateWithoutRegraInput> | PrecoEspecialClienteCreateWithoutRegraInput[] | PrecoEspecialClienteUncheckedCreateWithoutRegraInput[]
+    connectOrCreate?: PrecoEspecialClienteCreateOrConnectWithoutRegraInput | PrecoEspecialClienteCreateOrConnectWithoutRegraInput[]
+    createMany?: PrecoEspecialClienteCreateManyRegraInputEnvelope
+    connect?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
+  }
+
+  export type NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput = {
+    set?: $Enums.PeriodoEntregaCliente | null
+  }
+
+  export type NullableIntFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type ClienteUpdateOneWithoutRegraComercialNestedInput = {
+    create?: XOR<ClienteCreateWithoutRegraComercialInput, ClienteUncheckedCreateWithoutRegraComercialInput>
+    connectOrCreate?: ClienteCreateOrConnectWithoutRegraComercialInput
+    upsert?: ClienteUpsertWithoutRegraComercialInput
+    disconnect?: ClienteWhereInput | boolean
+    delete?: ClienteWhereInput | boolean
+    connect?: ClienteWhereUniqueInput
+    update?: XOR<XOR<ClienteUpdateToOneWithWhereWithoutRegraComercialInput, ClienteUpdateWithoutRegraComercialInput>, ClienteUncheckedUpdateWithoutRegraComercialInput>
+  }
+
+  export type PrecoEspecialClienteUpdateManyWithoutRegraNestedInput = {
+    create?: XOR<PrecoEspecialClienteCreateWithoutRegraInput, PrecoEspecialClienteUncheckedCreateWithoutRegraInput> | PrecoEspecialClienteCreateWithoutRegraInput[] | PrecoEspecialClienteUncheckedCreateWithoutRegraInput[]
+    connectOrCreate?: PrecoEspecialClienteCreateOrConnectWithoutRegraInput | PrecoEspecialClienteCreateOrConnectWithoutRegraInput[]
+    upsert?: PrecoEspecialClienteUpsertWithWhereUniqueWithoutRegraInput | PrecoEspecialClienteUpsertWithWhereUniqueWithoutRegraInput[]
+    createMany?: PrecoEspecialClienteCreateManyRegraInputEnvelope
+    set?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
+    disconnect?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
+    delete?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
+    connect?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
+    update?: PrecoEspecialClienteUpdateWithWhereUniqueWithoutRegraInput | PrecoEspecialClienteUpdateWithWhereUniqueWithoutRegraInput[]
+    updateMany?: PrecoEspecialClienteUpdateManyWithWhereWithoutRegraInput | PrecoEspecialClienteUpdateManyWithWhereWithoutRegraInput[]
+    deleteMany?: PrecoEspecialClienteScalarWhereInput | PrecoEspecialClienteScalarWhereInput[]
+  }
+
+  export type PrecoEspecialClienteUncheckedUpdateManyWithoutRegraNestedInput = {
+    create?: XOR<PrecoEspecialClienteCreateWithoutRegraInput, PrecoEspecialClienteUncheckedCreateWithoutRegraInput> | PrecoEspecialClienteCreateWithoutRegraInput[] | PrecoEspecialClienteUncheckedCreateWithoutRegraInput[]
+    connectOrCreate?: PrecoEspecialClienteCreateOrConnectWithoutRegraInput | PrecoEspecialClienteCreateOrConnectWithoutRegraInput[]
+    upsert?: PrecoEspecialClienteUpsertWithWhereUniqueWithoutRegraInput | PrecoEspecialClienteUpsertWithWhereUniqueWithoutRegraInput[]
+    createMany?: PrecoEspecialClienteCreateManyRegraInputEnvelope
+    set?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
+    disconnect?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
+    delete?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
+    connect?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
+    update?: PrecoEspecialClienteUpdateWithWhereUniqueWithoutRegraInput | PrecoEspecialClienteUpdateWithWhereUniqueWithoutRegraInput[]
+    updateMany?: PrecoEspecialClienteUpdateManyWithWhereWithoutRegraInput | PrecoEspecialClienteUpdateManyWithWhereWithoutRegraInput[]
+    deleteMany?: PrecoEspecialClienteScalarWhereInput | PrecoEspecialClienteScalarWhereInput[]
+  }
+
+  export type ClienteCreateNestedOneWithoutLinksLegadoContaAzulInput = {
+    create?: XOR<ClienteCreateWithoutLinksLegadoContaAzulInput, ClienteUncheckedCreateWithoutLinksLegadoContaAzulInput>
+    connectOrCreate?: ClienteCreateOrConnectWithoutLinksLegadoContaAzulInput
+    connect?: ClienteWhereUniqueInput
+  }
+
+  export type DecimalFieldUpdateOperationsInput = {
+    set?: Decimal | DecimalJsLike | number | string
+    increment?: Decimal | DecimalJsLike | number | string
+    decrement?: Decimal | DecimalJsLike | number | string
+    multiply?: Decimal | DecimalJsLike | number | string
+    divide?: Decimal | DecimalJsLike | number | string
+  }
+
+  export type ClienteUpdateOneWithoutLinksLegadoContaAzulNestedInput = {
+    create?: XOR<ClienteCreateWithoutLinksLegadoContaAzulInput, ClienteUncheckedCreateWithoutLinksLegadoContaAzulInput>
+    connectOrCreate?: ClienteCreateOrConnectWithoutLinksLegadoContaAzulInput
+    upsert?: ClienteUpsertWithoutLinksLegadoContaAzulInput
+    disconnect?: ClienteWhereInput | boolean
+    delete?: ClienteWhereInput | boolean
+    connect?: ClienteWhereUniqueInput
+    update?: XOR<XOR<ClienteUpdateToOneWithWhereWithoutLinksLegadoContaAzulInput, ClienteUpdateWithoutLinksLegadoContaAzulInput>, ClienteUncheckedUpdateWithoutLinksLegadoContaAzulInput>
+  }
+
+  export type RegraComercialClienteCreateNestedOneWithoutPrecosEspeciaisInput = {
+    create?: XOR<RegraComercialClienteCreateWithoutPrecosEspeciaisInput, RegraComercialClienteUncheckedCreateWithoutPrecosEspeciaisInput>
+    connectOrCreate?: RegraComercialClienteCreateOrConnectWithoutPrecosEspeciaisInput
+    connect?: RegraComercialClienteWhereUniqueInput
+  }
+
+  export type ProdutoComercialCreateNestedOneWithoutPrecosEspeciaisInput = {
+    create?: XOR<ProdutoComercialCreateWithoutPrecosEspeciaisInput, ProdutoComercialUncheckedCreateWithoutPrecosEspeciaisInput>
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutPrecosEspeciaisInput
+    connect?: ProdutoComercialWhereUniqueInput
+  }
+
+  export type RegraComercialClienteUpdateOneRequiredWithoutPrecosEspeciaisNestedInput = {
+    create?: XOR<RegraComercialClienteCreateWithoutPrecosEspeciaisInput, RegraComercialClienteUncheckedCreateWithoutPrecosEspeciaisInput>
+    connectOrCreate?: RegraComercialClienteCreateOrConnectWithoutPrecosEspeciaisInput
+    upsert?: RegraComercialClienteUpsertWithoutPrecosEspeciaisInput
+    connect?: RegraComercialClienteWhereUniqueInput
+    update?: XOR<XOR<RegraComercialClienteUpdateToOneWithWhereWithoutPrecosEspeciaisInput, RegraComercialClienteUpdateWithoutPrecosEspeciaisInput>, RegraComercialClienteUncheckedUpdateWithoutPrecosEspeciaisInput>
+  }
+
+  export type ProdutoComercialUpdateOneRequiredWithoutPrecosEspeciaisNestedInput = {
+    create?: XOR<ProdutoComercialCreateWithoutPrecosEspeciaisInput, ProdutoComercialUncheckedCreateWithoutPrecosEspeciaisInput>
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutPrecosEspeciaisInput
+    upsert?: ProdutoComercialUpsertWithoutPrecosEspeciaisInput
+    connect?: ProdutoComercialWhereUniqueInput
+    update?: XOR<XOR<ProdutoComercialUpdateToOneWithWhereWithoutPrecosEspeciaisInput, ProdutoComercialUpdateWithoutPrecosEspeciaisInput>, ProdutoComercialUncheckedUpdateWithoutPrecosEspeciaisInput>
+  }
+
+  export type ClienteCreateNestedOneWithoutPedidosOperacionaisInput = {
+    create?: XOR<ClienteCreateWithoutPedidosOperacionaisInput, ClienteUncheckedCreateWithoutPedidosOperacionaisInput>
+    connectOrCreate?: ClienteCreateOrConnectWithoutPedidosOperacionaisInput
+    connect?: ClienteWhereUniqueInput
+  }
+
+  export type UsuarioCreateNestedOneWithoutPedidosCriadosInput = {
+    create?: XOR<UsuarioCreateWithoutPedidosCriadosInput, UsuarioUncheckedCreateWithoutPedidosCriadosInput>
+    connectOrCreate?: UsuarioCreateOrConnectWithoutPedidosCriadosInput
+    connect?: UsuarioWhereUniqueInput
+  }
+
+  export type UsuarioCreateNestedOneWithoutPedidosEditadosInput = {
+    create?: XOR<UsuarioCreateWithoutPedidosEditadosInput, UsuarioUncheckedCreateWithoutPedidosEditadosInput>
+    connectOrCreate?: UsuarioCreateOrConnectWithoutPedidosEditadosInput
+    connect?: UsuarioWhereUniqueInput
+  }
+
+  export type PedidoOperacionalItemCreateNestedManyWithoutPedidoInput = {
+    create?: XOR<PedidoOperacionalItemCreateWithoutPedidoInput, PedidoOperacionalItemUncheckedCreateWithoutPedidoInput> | PedidoOperacionalItemCreateWithoutPedidoInput[] | PedidoOperacionalItemUncheckedCreateWithoutPedidoInput[]
+    connectOrCreate?: PedidoOperacionalItemCreateOrConnectWithoutPedidoInput | PedidoOperacionalItemCreateOrConnectWithoutPedidoInput[]
+    createMany?: PedidoOperacionalItemCreateManyPedidoInputEnvelope
+    connect?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
+  }
+
+  export type PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput = {
+    create?: XOR<PedidoOperacionalAvariaCreateWithoutPedidoInput, PedidoOperacionalAvariaUncheckedCreateWithoutPedidoInput> | PedidoOperacionalAvariaCreateWithoutPedidoInput[] | PedidoOperacionalAvariaUncheckedCreateWithoutPedidoInput[]
+    connectOrCreate?: PedidoOperacionalAvariaCreateOrConnectWithoutPedidoInput | PedidoOperacionalAvariaCreateOrConnectWithoutPedidoInput[]
+    createMany?: PedidoOperacionalAvariaCreateManyPedidoInputEnvelope
+    connect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+  }
+
+  export type PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput = {
+    create?: XOR<PedidoOperacionalAuditoriaCreateWithoutPedidoInput, PedidoOperacionalAuditoriaUncheckedCreateWithoutPedidoInput> | PedidoOperacionalAuditoriaCreateWithoutPedidoInput[] | PedidoOperacionalAuditoriaUncheckedCreateWithoutPedidoInput[]
+    connectOrCreate?: PedidoOperacionalAuditoriaCreateOrConnectWithoutPedidoInput | PedidoOperacionalAuditoriaCreateOrConnectWithoutPedidoInput[]
+    createMany?: PedidoOperacionalAuditoriaCreateManyPedidoInputEnvelope
+    connect?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
+  }
+
+  export type PedidoOperacionalItemUncheckedCreateNestedManyWithoutPedidoInput = {
+    create?: XOR<PedidoOperacionalItemCreateWithoutPedidoInput, PedidoOperacionalItemUncheckedCreateWithoutPedidoInput> | PedidoOperacionalItemCreateWithoutPedidoInput[] | PedidoOperacionalItemUncheckedCreateWithoutPedidoInput[]
+    connectOrCreate?: PedidoOperacionalItemCreateOrConnectWithoutPedidoInput | PedidoOperacionalItemCreateOrConnectWithoutPedidoInput[]
+    createMany?: PedidoOperacionalItemCreateManyPedidoInputEnvelope
+    connect?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
+  }
+
+  export type PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutPedidoInput = {
+    create?: XOR<PedidoOperacionalAvariaCreateWithoutPedidoInput, PedidoOperacionalAvariaUncheckedCreateWithoutPedidoInput> | PedidoOperacionalAvariaCreateWithoutPedidoInput[] | PedidoOperacionalAvariaUncheckedCreateWithoutPedidoInput[]
+    connectOrCreate?: PedidoOperacionalAvariaCreateOrConnectWithoutPedidoInput | PedidoOperacionalAvariaCreateOrConnectWithoutPedidoInput[]
+    createMany?: PedidoOperacionalAvariaCreateManyPedidoInputEnvelope
+    connect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+  }
+
+  export type PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutPedidoInput = {
+    create?: XOR<PedidoOperacionalAuditoriaCreateWithoutPedidoInput, PedidoOperacionalAuditoriaUncheckedCreateWithoutPedidoInput> | PedidoOperacionalAuditoriaCreateWithoutPedidoInput[] | PedidoOperacionalAuditoriaUncheckedCreateWithoutPedidoInput[]
+    connectOrCreate?: PedidoOperacionalAuditoriaCreateOrConnectWithoutPedidoInput | PedidoOperacionalAuditoriaCreateOrConnectWithoutPedidoInput[]
+    createMany?: PedidoOperacionalAuditoriaCreateManyPedidoInputEnvelope
+    connect?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
+  }
+
+  export type IntFieldUpdateOperationsInput = {
+    set?: number
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type EnumTipoVendaPedidoFieldUpdateOperationsInput = {
+    set?: $Enums.TipoVendaPedido
+  }
+
+  export type EnumPedidoOperacionalStatusFieldUpdateOperationsInput = {
+    set?: $Enums.PedidoOperacionalStatus
+  }
+
+  export type ClienteUpdateOneWithoutPedidosOperacionaisNestedInput = {
+    create?: XOR<ClienteCreateWithoutPedidosOperacionaisInput, ClienteUncheckedCreateWithoutPedidosOperacionaisInput>
+    connectOrCreate?: ClienteCreateOrConnectWithoutPedidosOperacionaisInput
+    upsert?: ClienteUpsertWithoutPedidosOperacionaisInput
+    disconnect?: ClienteWhereInput | boolean
+    delete?: ClienteWhereInput | boolean
+    connect?: ClienteWhereUniqueInput
+    update?: XOR<XOR<ClienteUpdateToOneWithWhereWithoutPedidosOperacionaisInput, ClienteUpdateWithoutPedidosOperacionaisInput>, ClienteUncheckedUpdateWithoutPedidosOperacionaisInput>
+  }
+
+  export type UsuarioUpdateOneWithoutPedidosCriadosNestedInput = {
+    create?: XOR<UsuarioCreateWithoutPedidosCriadosInput, UsuarioUncheckedCreateWithoutPedidosCriadosInput>
+    connectOrCreate?: UsuarioCreateOrConnectWithoutPedidosCriadosInput
+    upsert?: UsuarioUpsertWithoutPedidosCriadosInput
+    disconnect?: UsuarioWhereInput | boolean
+    delete?: UsuarioWhereInput | boolean
+    connect?: UsuarioWhereUniqueInput
+    update?: XOR<XOR<UsuarioUpdateToOneWithWhereWithoutPedidosCriadosInput, UsuarioUpdateWithoutPedidosCriadosInput>, UsuarioUncheckedUpdateWithoutPedidosCriadosInput>
+  }
+
+  export type UsuarioUpdateOneWithoutPedidosEditadosNestedInput = {
+    create?: XOR<UsuarioCreateWithoutPedidosEditadosInput, UsuarioUncheckedCreateWithoutPedidosEditadosInput>
+    connectOrCreate?: UsuarioCreateOrConnectWithoutPedidosEditadosInput
+    upsert?: UsuarioUpsertWithoutPedidosEditadosInput
+    disconnect?: UsuarioWhereInput | boolean
+    delete?: UsuarioWhereInput | boolean
+    connect?: UsuarioWhereUniqueInput
+    update?: XOR<XOR<UsuarioUpdateToOneWithWhereWithoutPedidosEditadosInput, UsuarioUpdateWithoutPedidosEditadosInput>, UsuarioUncheckedUpdateWithoutPedidosEditadosInput>
+  }
+
+  export type PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput = {
+    create?: XOR<PedidoOperacionalItemCreateWithoutPedidoInput, PedidoOperacionalItemUncheckedCreateWithoutPedidoInput> | PedidoOperacionalItemCreateWithoutPedidoInput[] | PedidoOperacionalItemUncheckedCreateWithoutPedidoInput[]
+    connectOrCreate?: PedidoOperacionalItemCreateOrConnectWithoutPedidoInput | PedidoOperacionalItemCreateOrConnectWithoutPedidoInput[]
+    upsert?: PedidoOperacionalItemUpsertWithWhereUniqueWithoutPedidoInput | PedidoOperacionalItemUpsertWithWhereUniqueWithoutPedidoInput[]
+    createMany?: PedidoOperacionalItemCreateManyPedidoInputEnvelope
+    set?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
+    disconnect?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
+    delete?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
+    connect?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
+    update?: PedidoOperacionalItemUpdateWithWhereUniqueWithoutPedidoInput | PedidoOperacionalItemUpdateWithWhereUniqueWithoutPedidoInput[]
+    updateMany?: PedidoOperacionalItemUpdateManyWithWhereWithoutPedidoInput | PedidoOperacionalItemUpdateManyWithWhereWithoutPedidoInput[]
+    deleteMany?: PedidoOperacionalItemScalarWhereInput | PedidoOperacionalItemScalarWhereInput[]
+  }
+
+  export type PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput = {
+    create?: XOR<PedidoOperacionalAvariaCreateWithoutPedidoInput, PedidoOperacionalAvariaUncheckedCreateWithoutPedidoInput> | PedidoOperacionalAvariaCreateWithoutPedidoInput[] | PedidoOperacionalAvariaUncheckedCreateWithoutPedidoInput[]
+    connectOrCreate?: PedidoOperacionalAvariaCreateOrConnectWithoutPedidoInput | PedidoOperacionalAvariaCreateOrConnectWithoutPedidoInput[]
+    upsert?: PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutPedidoInput | PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutPedidoInput[]
+    createMany?: PedidoOperacionalAvariaCreateManyPedidoInputEnvelope
+    set?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    disconnect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    delete?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    connect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    update?: PedidoOperacionalAvariaUpdateWithWhereUniqueWithoutPedidoInput | PedidoOperacionalAvariaUpdateWithWhereUniqueWithoutPedidoInput[]
+    updateMany?: PedidoOperacionalAvariaUpdateManyWithWhereWithoutPedidoInput | PedidoOperacionalAvariaUpdateManyWithWhereWithoutPedidoInput[]
+    deleteMany?: PedidoOperacionalAvariaScalarWhereInput | PedidoOperacionalAvariaScalarWhereInput[]
+  }
+
+  export type PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput = {
+    create?: XOR<PedidoOperacionalAuditoriaCreateWithoutPedidoInput, PedidoOperacionalAuditoriaUncheckedCreateWithoutPedidoInput> | PedidoOperacionalAuditoriaCreateWithoutPedidoInput[] | PedidoOperacionalAuditoriaUncheckedCreateWithoutPedidoInput[]
+    connectOrCreate?: PedidoOperacionalAuditoriaCreateOrConnectWithoutPedidoInput | PedidoOperacionalAuditoriaCreateOrConnectWithoutPedidoInput[]
+    upsert?: PedidoOperacionalAuditoriaUpsertWithWhereUniqueWithoutPedidoInput | PedidoOperacionalAuditoriaUpsertWithWhereUniqueWithoutPedidoInput[]
+    createMany?: PedidoOperacionalAuditoriaCreateManyPedidoInputEnvelope
+    set?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
+    disconnect?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
+    delete?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
+    connect?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
+    update?: PedidoOperacionalAuditoriaUpdateWithWhereUniqueWithoutPedidoInput | PedidoOperacionalAuditoriaUpdateWithWhereUniqueWithoutPedidoInput[]
+    updateMany?: PedidoOperacionalAuditoriaUpdateManyWithWhereWithoutPedidoInput | PedidoOperacionalAuditoriaUpdateManyWithWhereWithoutPedidoInput[]
+    deleteMany?: PedidoOperacionalAuditoriaScalarWhereInput | PedidoOperacionalAuditoriaScalarWhereInput[]
+  }
+
+  export type PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoNestedInput = {
+    create?: XOR<PedidoOperacionalItemCreateWithoutPedidoInput, PedidoOperacionalItemUncheckedCreateWithoutPedidoInput> | PedidoOperacionalItemCreateWithoutPedidoInput[] | PedidoOperacionalItemUncheckedCreateWithoutPedidoInput[]
+    connectOrCreate?: PedidoOperacionalItemCreateOrConnectWithoutPedidoInput | PedidoOperacionalItemCreateOrConnectWithoutPedidoInput[]
+    upsert?: PedidoOperacionalItemUpsertWithWhereUniqueWithoutPedidoInput | PedidoOperacionalItemUpsertWithWhereUniqueWithoutPedidoInput[]
+    createMany?: PedidoOperacionalItemCreateManyPedidoInputEnvelope
+    set?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
+    disconnect?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
+    delete?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
+    connect?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
+    update?: PedidoOperacionalItemUpdateWithWhereUniqueWithoutPedidoInput | PedidoOperacionalItemUpdateWithWhereUniqueWithoutPedidoInput[]
+    updateMany?: PedidoOperacionalItemUpdateManyWithWhereWithoutPedidoInput | PedidoOperacionalItemUpdateManyWithWhereWithoutPedidoInput[]
+    deleteMany?: PedidoOperacionalItemScalarWhereInput | PedidoOperacionalItemScalarWhereInput[]
+  }
+
+  export type PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoNestedInput = {
+    create?: XOR<PedidoOperacionalAvariaCreateWithoutPedidoInput, PedidoOperacionalAvariaUncheckedCreateWithoutPedidoInput> | PedidoOperacionalAvariaCreateWithoutPedidoInput[] | PedidoOperacionalAvariaUncheckedCreateWithoutPedidoInput[]
+    connectOrCreate?: PedidoOperacionalAvariaCreateOrConnectWithoutPedidoInput | PedidoOperacionalAvariaCreateOrConnectWithoutPedidoInput[]
+    upsert?: PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutPedidoInput | PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutPedidoInput[]
+    createMany?: PedidoOperacionalAvariaCreateManyPedidoInputEnvelope
+    set?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    disconnect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    delete?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    connect?: PedidoOperacionalAvariaWhereUniqueInput | PedidoOperacionalAvariaWhereUniqueInput[]
+    update?: PedidoOperacionalAvariaUpdateWithWhereUniqueWithoutPedidoInput | PedidoOperacionalAvariaUpdateWithWhereUniqueWithoutPedidoInput[]
+    updateMany?: PedidoOperacionalAvariaUpdateManyWithWhereWithoutPedidoInput | PedidoOperacionalAvariaUpdateManyWithWhereWithoutPedidoInput[]
+    deleteMany?: PedidoOperacionalAvariaScalarWhereInput | PedidoOperacionalAvariaScalarWhereInput[]
+  }
+
+  export type PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutPedidoNestedInput = {
+    create?: XOR<PedidoOperacionalAuditoriaCreateWithoutPedidoInput, PedidoOperacionalAuditoriaUncheckedCreateWithoutPedidoInput> | PedidoOperacionalAuditoriaCreateWithoutPedidoInput[] | PedidoOperacionalAuditoriaUncheckedCreateWithoutPedidoInput[]
+    connectOrCreate?: PedidoOperacionalAuditoriaCreateOrConnectWithoutPedidoInput | PedidoOperacionalAuditoriaCreateOrConnectWithoutPedidoInput[]
+    upsert?: PedidoOperacionalAuditoriaUpsertWithWhereUniqueWithoutPedidoInput | PedidoOperacionalAuditoriaUpsertWithWhereUniqueWithoutPedidoInput[]
+    createMany?: PedidoOperacionalAuditoriaCreateManyPedidoInputEnvelope
+    set?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
+    disconnect?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
+    delete?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
+    connect?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
+    update?: PedidoOperacionalAuditoriaUpdateWithWhereUniqueWithoutPedidoInput | PedidoOperacionalAuditoriaUpdateWithWhereUniqueWithoutPedidoInput[]
+    updateMany?: PedidoOperacionalAuditoriaUpdateManyWithWhereWithoutPedidoInput | PedidoOperacionalAuditoriaUpdateManyWithWhereWithoutPedidoInput[]
+    deleteMany?: PedidoOperacionalAuditoriaScalarWhereInput | PedidoOperacionalAuditoriaScalarWhereInput[]
+  }
+
+  export type PedidoOperacionalCreateNestedOneWithoutItensInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutItensInput, PedidoOperacionalUncheckedCreateWithoutItensInput>
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutItensInput
+    connect?: PedidoOperacionalWhereUniqueInput
+  }
+
+  export type ProdutoComercialCreateNestedOneWithoutItensPedidoInput = {
+    create?: XOR<ProdutoComercialCreateWithoutItensPedidoInput, ProdutoComercialUncheckedCreateWithoutItensPedidoInput>
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutItensPedidoInput
+    connect?: ProdutoComercialWhereUniqueInput
+  }
+
+  export type PedidoOperacionalUpdateOneRequiredWithoutItensNestedInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutItensInput, PedidoOperacionalUncheckedCreateWithoutItensInput>
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutItensInput
+    upsert?: PedidoOperacionalUpsertWithoutItensInput
+    connect?: PedidoOperacionalWhereUniqueInput
+    update?: XOR<XOR<PedidoOperacionalUpdateToOneWithWhereWithoutItensInput, PedidoOperacionalUpdateWithoutItensInput>, PedidoOperacionalUncheckedUpdateWithoutItensInput>
+  }
+
+  export type ProdutoComercialUpdateOneRequiredWithoutItensPedidoNestedInput = {
+    create?: XOR<ProdutoComercialCreateWithoutItensPedidoInput, ProdutoComercialUncheckedCreateWithoutItensPedidoInput>
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutItensPedidoInput
+    upsert?: ProdutoComercialUpsertWithoutItensPedidoInput
+    connect?: ProdutoComercialWhereUniqueInput
+    update?: XOR<XOR<ProdutoComercialUpdateToOneWithWhereWithoutItensPedidoInput, ProdutoComercialUpdateWithoutItensPedidoInput>, ProdutoComercialUncheckedUpdateWithoutItensPedidoInput>
+  }
+
+  export type PedidoOperacionalCreateNestedOneWithoutAvariasInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutAvariasInput, PedidoOperacionalUncheckedCreateWithoutAvariasInput>
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutAvariasInput
+    connect?: PedidoOperacionalWhereUniqueInput
+  }
+
+  export type ClienteCreateNestedOneWithoutAvariasOperacionaisInput = {
+    create?: XOR<ClienteCreateWithoutAvariasOperacionaisInput, ClienteUncheckedCreateWithoutAvariasOperacionaisInput>
+    connectOrCreate?: ClienteCreateOrConnectWithoutAvariasOperacionaisInput
+    connect?: ClienteWhereUniqueInput
+  }
+
+  export type ProdutoComercialCreateNestedOneWithoutAvariasPedidoInput = {
+    create?: XOR<ProdutoComercialCreateWithoutAvariasPedidoInput, ProdutoComercialUncheckedCreateWithoutAvariasPedidoInput>
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutAvariasPedidoInput
+    connect?: ProdutoComercialWhereUniqueInput
+  }
+
+  export type UsuarioCreateNestedOneWithoutAvariasCriadasInput = {
+    create?: XOR<UsuarioCreateWithoutAvariasCriadasInput, UsuarioUncheckedCreateWithoutAvariasCriadasInput>
+    connectOrCreate?: UsuarioCreateOrConnectWithoutAvariasCriadasInput
+    connect?: UsuarioWhereUniqueInput
+  }
+
+  export type PedidoOperacionalUpdateOneRequiredWithoutAvariasNestedInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutAvariasInput, PedidoOperacionalUncheckedCreateWithoutAvariasInput>
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutAvariasInput
+    upsert?: PedidoOperacionalUpsertWithoutAvariasInput
+    connect?: PedidoOperacionalWhereUniqueInput
+    update?: XOR<XOR<PedidoOperacionalUpdateToOneWithWhereWithoutAvariasInput, PedidoOperacionalUpdateWithoutAvariasInput>, PedidoOperacionalUncheckedUpdateWithoutAvariasInput>
+  }
+
+  export type ClienteUpdateOneWithoutAvariasOperacionaisNestedInput = {
+    create?: XOR<ClienteCreateWithoutAvariasOperacionaisInput, ClienteUncheckedCreateWithoutAvariasOperacionaisInput>
+    connectOrCreate?: ClienteCreateOrConnectWithoutAvariasOperacionaisInput
+    upsert?: ClienteUpsertWithoutAvariasOperacionaisInput
+    disconnect?: ClienteWhereInput | boolean
+    delete?: ClienteWhereInput | boolean
+    connect?: ClienteWhereUniqueInput
+    update?: XOR<XOR<ClienteUpdateToOneWithWhereWithoutAvariasOperacionaisInput, ClienteUpdateWithoutAvariasOperacionaisInput>, ClienteUncheckedUpdateWithoutAvariasOperacionaisInput>
+  }
+
+  export type ProdutoComercialUpdateOneRequiredWithoutAvariasPedidoNestedInput = {
+    create?: XOR<ProdutoComercialCreateWithoutAvariasPedidoInput, ProdutoComercialUncheckedCreateWithoutAvariasPedidoInput>
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutAvariasPedidoInput
+    upsert?: ProdutoComercialUpsertWithoutAvariasPedidoInput
+    connect?: ProdutoComercialWhereUniqueInput
+    update?: XOR<XOR<ProdutoComercialUpdateToOneWithWhereWithoutAvariasPedidoInput, ProdutoComercialUpdateWithoutAvariasPedidoInput>, ProdutoComercialUncheckedUpdateWithoutAvariasPedidoInput>
+  }
+
+  export type UsuarioUpdateOneWithoutAvariasCriadasNestedInput = {
+    create?: XOR<UsuarioCreateWithoutAvariasCriadasInput, UsuarioUncheckedCreateWithoutAvariasCriadasInput>
+    connectOrCreate?: UsuarioCreateOrConnectWithoutAvariasCriadasInput
+    upsert?: UsuarioUpsertWithoutAvariasCriadasInput
+    disconnect?: UsuarioWhereInput | boolean
+    delete?: UsuarioWhereInput | boolean
+    connect?: UsuarioWhereUniqueInput
+    update?: XOR<XOR<UsuarioUpdateToOneWithWhereWithoutAvariasCriadasInput, UsuarioUpdateWithoutAvariasCriadasInput>, UsuarioUncheckedUpdateWithoutAvariasCriadasInput>
+  }
+
+  export type PedidoOperacionalCreateNestedOneWithoutAuditoriaInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutAuditoriaInput, PedidoOperacionalUncheckedCreateWithoutAuditoriaInput>
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutAuditoriaInput
+    connect?: PedidoOperacionalWhereUniqueInput
+  }
+
+  export type UsuarioCreateNestedOneWithoutAuditoriasPedidoInput = {
+    create?: XOR<UsuarioCreateWithoutAuditoriasPedidoInput, UsuarioUncheckedCreateWithoutAuditoriasPedidoInput>
+    connectOrCreate?: UsuarioCreateOrConnectWithoutAuditoriasPedidoInput
+    connect?: UsuarioWhereUniqueInput
+  }
+
+  export type PedidoOperacionalUpdateOneRequiredWithoutAuditoriaNestedInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutAuditoriaInput, PedidoOperacionalUncheckedCreateWithoutAuditoriaInput>
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutAuditoriaInput
+    upsert?: PedidoOperacionalUpsertWithoutAuditoriaInput
+    connect?: PedidoOperacionalWhereUniqueInput
+    update?: XOR<XOR<PedidoOperacionalUpdateToOneWithWhereWithoutAuditoriaInput, PedidoOperacionalUpdateWithoutAuditoriaInput>, PedidoOperacionalUncheckedUpdateWithoutAuditoriaInput>
+  }
+
+  export type UsuarioUpdateOneWithoutAuditoriasPedidoNestedInput = {
+    create?: XOR<UsuarioCreateWithoutAuditoriasPedidoInput, UsuarioUncheckedCreateWithoutAuditoriasPedidoInput>
+    connectOrCreate?: UsuarioCreateOrConnectWithoutAuditoriasPedidoInput
+    upsert?: UsuarioUpsertWithoutAuditoriasPedidoInput
+    disconnect?: UsuarioWhereInput | boolean
+    delete?: UsuarioWhereInput | boolean
+    connect?: UsuarioWhereUniqueInput
+    update?: XOR<XOR<UsuarioUpdateToOneWithWhereWithoutAuditoriasPedidoInput, UsuarioUpdateWithoutAuditoriasPedidoInput>, UsuarioUncheckedUpdateWithoutAuditoriasPedidoInput>
+  }
+
   export type ClienteCreateNestedOneWithoutPedidosInput = {
     create?: XOR<ClienteCreateWithoutPedidosInput, ClienteUncheckedCreateWithoutPedidosInput>
     connectOrCreate?: ClienteCreateOrConnectWithoutPedidosInput
@@ -20550,18 +34790,6 @@ export namespace Prisma {
     connectOrCreate?: ItemPedidoCreateOrConnectWithoutPedidoInput | ItemPedidoCreateOrConnectWithoutPedidoInput[]
     createMany?: ItemPedidoCreateManyPedidoInputEnvelope
     connect?: ItemPedidoWhereUniqueInput | ItemPedidoWhereUniqueInput[]
-  }
-
-  export type DecimalFieldUpdateOperationsInput = {
-    set?: Decimal | DecimalJsLike | number | string
-    increment?: Decimal | DecimalJsLike | number | string
-    decrement?: Decimal | DecimalJsLike | number | string
-    multiply?: Decimal | DecimalJsLike | number | string
-    divide?: Decimal | DecimalJsLike | number | string
-  }
-
-  export type BoolFieldUpdateOperationsInput = {
-    set?: boolean
   }
 
   export type EnumOrigemPedidoFieldUpdateOperationsInput = {
@@ -20728,14 +34956,6 @@ export namespace Prisma {
 
   export type EnumStatusExecucaoApiFieldUpdateOperationsInput = {
     set?: $Enums.StatusExecucaoApi
-  }
-
-  export type NullableIntFieldUpdateOperationsInput = {
-    set?: number | null
-    increment?: number
-    decrement?: number
-    multiply?: number
-    divide?: number
   }
 
   export type ClienteUpdateOneWithoutExecucoesNestedInput = {
@@ -21008,6 +35228,103 @@ export namespace Prisma {
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
+  export type NestedBoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
+  export type NestedEnumModoCompraProdutoFilter<$PrismaModel = never> = {
+    equals?: $Enums.ModoCompraProduto | EnumModoCompraProdutoFieldRefInput<$PrismaModel>
+    in?: $Enums.ModoCompraProduto[]
+    notIn?: $Enums.ModoCompraProduto[]
+    not?: NestedEnumModoCompraProdutoFilter<$PrismaModel> | $Enums.ModoCompraProduto
+  }
+
+  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
+  export type NestedEnumModoCompraProdutoWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ModoCompraProduto | EnumModoCompraProdutoFieldRefInput<$PrismaModel>
+    in?: $Enums.ModoCompraProduto[]
+    notIn?: $Enums.ModoCompraProduto[]
+    not?: NestedEnumModoCompraProdutoWithAggregatesFilter<$PrismaModel> | $Enums.ModoCompraProduto
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumModoCompraProdutoFilter<$PrismaModel>
+    _max?: NestedEnumModoCompraProdutoFilter<$PrismaModel>
+  }
+  export type NestedJsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<NestedJsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue
+    lte?: InputJsonValue
+    gt?: InputJsonValue
+    gte?: InputJsonValue
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type NestedEnumPeriodoEntregaClienteNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.PeriodoEntregaCliente | EnumPeriodoEntregaClienteFieldRefInput<$PrismaModel> | null
+    in?: $Enums.PeriodoEntregaCliente[] | null
+    notIn?: $Enums.PeriodoEntregaCliente[] | null
+    not?: NestedEnumPeriodoEntregaClienteNullableFilter<$PrismaModel> | $Enums.PeriodoEntregaCliente | null
+  }
+
+  export type NestedEnumPeriodoEntregaClienteNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.PeriodoEntregaCliente | EnumPeriodoEntregaClienteFieldRefInput<$PrismaModel> | null
+    in?: $Enums.PeriodoEntregaCliente[] | null
+    notIn?: $Enums.PeriodoEntregaCliente[] | null
+    not?: NestedEnumPeriodoEntregaClienteNullableWithAggregatesFilter<$PrismaModel> | $Enums.PeriodoEntregaCliente | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumPeriodoEntregaClienteNullableFilter<$PrismaModel>
+    _max?: NestedEnumPeriodoEntregaClienteNullableFilter<$PrismaModel>
+  }
+
+  export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | null
+    notIn?: number[] | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
+  }
+
+  export type NestedFloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | null
+    notIn?: number[] | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  }
+
   export type NestedDecimalFilter<$PrismaModel = never> = {
     equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     in?: Decimal[] | DecimalJsLike[] | number[] | string[]
@@ -21017,18 +35334,6 @@ export namespace Prisma {
     gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
-  }
-
-  export type NestedBoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
-  }
-
-  export type NestedEnumOrigemPedidoFilter<$PrismaModel = never> = {
-    equals?: $Enums.OrigemPedido | EnumOrigemPedidoFieldRefInput<$PrismaModel>
-    in?: $Enums.OrigemPedido[]
-    notIn?: $Enums.OrigemPedido[]
-    not?: NestedEnumOrigemPedidoFilter<$PrismaModel> | $Enums.OrigemPedido
   }
 
   export type NestedDecimalWithAggregatesFilter<$PrismaModel = never> = {
@@ -21047,12 +35352,72 @@ export namespace Prisma {
     _max?: NestedDecimalFilter<$PrismaModel>
   }
 
-  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+  export type NestedEnumTipoVendaPedidoFilter<$PrismaModel = never> = {
+    equals?: $Enums.TipoVendaPedido | EnumTipoVendaPedidoFieldRefInput<$PrismaModel>
+    in?: $Enums.TipoVendaPedido[]
+    notIn?: $Enums.TipoVendaPedido[]
+    not?: NestedEnumTipoVendaPedidoFilter<$PrismaModel> | $Enums.TipoVendaPedido
+  }
+
+  export type NestedEnumPedidoOperacionalStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.PedidoOperacionalStatus | EnumPedidoOperacionalStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.PedidoOperacionalStatus[]
+    notIn?: $Enums.PedidoOperacionalStatus[]
+    not?: NestedEnumPedidoOperacionalStatusFilter<$PrismaModel> | $Enums.PedidoOperacionalStatus
+  }
+
+  export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
     _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
+  }
+
+  export type NestedFloatFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatFilter<$PrismaModel> | number
+  }
+
+  export type NestedEnumTipoVendaPedidoWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.TipoVendaPedido | EnumTipoVendaPedidoFieldRefInput<$PrismaModel>
+    in?: $Enums.TipoVendaPedido[]
+    notIn?: $Enums.TipoVendaPedido[]
+    not?: NestedEnumTipoVendaPedidoWithAggregatesFilter<$PrismaModel> | $Enums.TipoVendaPedido
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumTipoVendaPedidoFilter<$PrismaModel>
+    _max?: NestedEnumTipoVendaPedidoFilter<$PrismaModel>
+  }
+
+  export type NestedEnumPedidoOperacionalStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.PedidoOperacionalStatus | EnumPedidoOperacionalStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.PedidoOperacionalStatus[]
+    notIn?: $Enums.PedidoOperacionalStatus[]
+    not?: NestedEnumPedidoOperacionalStatusWithAggregatesFilter<$PrismaModel> | $Enums.PedidoOperacionalStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumPedidoOperacionalStatusFilter<$PrismaModel>
+    _max?: NestedEnumPedidoOperacionalStatusFilter<$PrismaModel>
+  }
+
+  export type NestedEnumOrigemPedidoFilter<$PrismaModel = never> = {
+    equals?: $Enums.OrigemPedido | EnumOrigemPedidoFieldRefInput<$PrismaModel>
+    in?: $Enums.OrigemPedido[]
+    notIn?: $Enums.OrigemPedido[]
+    not?: NestedEnumOrigemPedidoFilter<$PrismaModel> | $Enums.OrigemPedido
   }
 
   export type NestedEnumOrigemPedidoWithAggregatesFilter<$PrismaModel = never> = {
@@ -21201,33 +35566,6 @@ export namespace Prisma {
     _max?: NestedEnumStatusExecucaoApiFilter<$PrismaModel>
   }
 
-  export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel> | null
-    in?: number[] | null
-    notIn?: number[] | null
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedFloatNullableFilter<$PrismaModel>
-    _sum?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedIntNullableFilter<$PrismaModel>
-    _max?: NestedIntNullableFilter<$PrismaModel>
-  }
-
-  export type NestedFloatNullableFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel> | null
-    in?: number[] | null
-    notIn?: number[] | null
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
-  }
-
   export type NestedEnumPeriodoKpiFilter<$PrismaModel = never> = {
     equals?: $Enums.PeriodoKpi | EnumPeriodoKpiFieldRefInput<$PrismaModel>
     in?: $Enums.PeriodoKpi[]
@@ -21243,29 +35581,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumPeriodoKpiFilter<$PrismaModel>
     _max?: NestedEnumPeriodoKpiFilter<$PrismaModel>
-  }
-  export type NestedJsonNullableFilter<$PrismaModel = never> =
-    | PatchUndefined<
-        Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
-        Required<NestedJsonNullableFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>
-
-  export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string
-    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue
-    lte?: InputJsonValue
-    gt?: InputJsonValue
-    gte?: InputJsonValue
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
   export type MensagemCreateWithoutAprovadorInput = {
@@ -21370,6 +35685,166 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type PedidoOperacionalCreateWithoutCriadoPorInput = {
+    id?: string
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    observacoes?: string | null
+    prioridadeEntrega?: number | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
+    editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
+    itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
+    avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
+    auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
+  }
+
+  export type PedidoOperacionalUncheckedCreateWithoutCriadoPorInput = {
+    id?: string
+    clienteId?: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    observacoes?: string | null
+    prioridadeEntrega?: number | null
+    editadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    itens?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutPedidoInput
+    avarias?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutPedidoInput
+    auditoria?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutPedidoInput
+  }
+
+  export type PedidoOperacionalCreateOrConnectWithoutCriadoPorInput = {
+    where: PedidoOperacionalWhereUniqueInput
+    create: XOR<PedidoOperacionalCreateWithoutCriadoPorInput, PedidoOperacionalUncheckedCreateWithoutCriadoPorInput>
+  }
+
+  export type PedidoOperacionalCreateManyCriadoPorInputEnvelope = {
+    data: PedidoOperacionalCreateManyCriadoPorInput | PedidoOperacionalCreateManyCriadoPorInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type PedidoOperacionalCreateWithoutEditadoPorInput = {
+    id?: string
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    observacoes?: string | null
+    prioridadeEntrega?: number | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
+    criadoPor?: UsuarioCreateNestedOneWithoutPedidosCriadosInput
+    itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
+    avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
+    auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
+  }
+
+  export type PedidoOperacionalUncheckedCreateWithoutEditadoPorInput = {
+    id?: string
+    clienteId?: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    observacoes?: string | null
+    prioridadeEntrega?: number | null
+    criadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    itens?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutPedidoInput
+    avarias?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutPedidoInput
+    auditoria?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutPedidoInput
+  }
+
+  export type PedidoOperacionalCreateOrConnectWithoutEditadoPorInput = {
+    where: PedidoOperacionalWhereUniqueInput
+    create: XOR<PedidoOperacionalCreateWithoutEditadoPorInput, PedidoOperacionalUncheckedCreateWithoutEditadoPorInput>
+  }
+
+  export type PedidoOperacionalCreateManyEditadoPorInputEnvelope = {
+    data: PedidoOperacionalCreateManyEditadoPorInput | PedidoOperacionalCreateManyEditadoPorInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type PedidoOperacionalAvariaCreateWithoutCriadoPorInput = {
+    id?: string
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    observacoes?: string | null
+    criadoEm?: Date | string
+    pedido: PedidoOperacionalCreateNestedOneWithoutAvariasInput
+    cliente?: ClienteCreateNestedOneWithoutAvariasOperacionaisInput
+    produto: ProdutoComercialCreateNestedOneWithoutAvariasPedidoInput
+  }
+
+  export type PedidoOperacionalAvariaUncheckedCreateWithoutCriadoPorInput = {
+    id?: string
+    pedidoId: string
+    clienteId?: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    produtoId: string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    observacoes?: string | null
+    criadoEm?: Date | string
+  }
+
+  export type PedidoOperacionalAvariaCreateOrConnectWithoutCriadoPorInput = {
+    where: PedidoOperacionalAvariaWhereUniqueInput
+    create: XOR<PedidoOperacionalAvariaCreateWithoutCriadoPorInput, PedidoOperacionalAvariaUncheckedCreateWithoutCriadoPorInput>
+  }
+
+  export type PedidoOperacionalAvariaCreateManyCriadoPorInputEnvelope = {
+    data: PedidoOperacionalAvariaCreateManyCriadoPorInput | PedidoOperacionalAvariaCreateManyCriadoPorInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type PedidoOperacionalAuditoriaCreateWithoutUsuarioInput = {
+    id?: string
+    usuarioNome?: string | null
+    acao: string
+    antes?: NullableJsonNullValueInput | InputJsonValue
+    depois?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    pedido: PedidoOperacionalCreateNestedOneWithoutAuditoriaInput
+  }
+
+  export type PedidoOperacionalAuditoriaUncheckedCreateWithoutUsuarioInput = {
+    id?: string
+    pedidoId: string
+    usuarioNome?: string | null
+    acao: string
+    antes?: NullableJsonNullValueInput | InputJsonValue
+    depois?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+  }
+
+  export type PedidoOperacionalAuditoriaCreateOrConnectWithoutUsuarioInput = {
+    where: PedidoOperacionalAuditoriaWhereUniqueInput
+    create: XOR<PedidoOperacionalAuditoriaCreateWithoutUsuarioInput, PedidoOperacionalAuditoriaUncheckedCreateWithoutUsuarioInput>
+  }
+
+  export type PedidoOperacionalAuditoriaCreateManyUsuarioInputEnvelope = {
+    data: PedidoOperacionalAuditoriaCreateManyUsuarioInput | PedidoOperacionalAuditoriaCreateManyUsuarioInput[]
+    skipDuplicates?: boolean
+  }
+
   export type MensagemUpsertWithWhereUniqueWithoutAprovadorInput = {
     where: MensagemWhereUniqueInput
     update: XOR<MensagemUpdateWithoutAprovadorInput, MensagemUncheckedUpdateWithoutAprovadorInput>
@@ -21466,6 +35941,121 @@ export namespace Prisma {
     responsavelId?: StringNullableFilter<"Oportunidade"> | string | null
   }
 
+  export type PedidoOperacionalUpsertWithWhereUniqueWithoutCriadoPorInput = {
+    where: PedidoOperacionalWhereUniqueInput
+    update: XOR<PedidoOperacionalUpdateWithoutCriadoPorInput, PedidoOperacionalUncheckedUpdateWithoutCriadoPorInput>
+    create: XOR<PedidoOperacionalCreateWithoutCriadoPorInput, PedidoOperacionalUncheckedCreateWithoutCriadoPorInput>
+  }
+
+  export type PedidoOperacionalUpdateWithWhereUniqueWithoutCriadoPorInput = {
+    where: PedidoOperacionalWhereUniqueInput
+    data: XOR<PedidoOperacionalUpdateWithoutCriadoPorInput, PedidoOperacionalUncheckedUpdateWithoutCriadoPorInput>
+  }
+
+  export type PedidoOperacionalUpdateManyWithWhereWithoutCriadoPorInput = {
+    where: PedidoOperacionalScalarWhereInput
+    data: XOR<PedidoOperacionalUpdateManyMutationInput, PedidoOperacionalUncheckedUpdateManyWithoutCriadoPorInput>
+  }
+
+  export type PedidoOperacionalScalarWhereInput = {
+    AND?: PedidoOperacionalScalarWhereInput | PedidoOperacionalScalarWhereInput[]
+    OR?: PedidoOperacionalScalarWhereInput[]
+    NOT?: PedidoOperacionalScalarWhereInput | PedidoOperacionalScalarWhereInput[]
+    id?: StringFilter<"PedidoOperacional"> | string
+    clienteId?: StringNullableFilter<"PedidoOperacional"> | string | null
+    contaAzulCustomerId?: StringFilter<"PedidoOperacional"> | string
+    dataEntrega?: DateTimeFilter<"PedidoOperacional"> | Date | string
+    diaSemana?: IntFilter<"PedidoOperacional"> | number
+    tipoVenda?: EnumTipoVendaPedidoFilter<"PedidoOperacional"> | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFilter<"PedidoOperacional"> | $Enums.PedidoOperacionalStatus
+    observacoes?: StringNullableFilter<"PedidoOperacional"> | string | null
+    prioridadeEntrega?: IntNullableFilter<"PedidoOperacional"> | number | null
+    criadoPorId?: StringNullableFilter<"PedidoOperacional"> | string | null
+    editadoPorId?: StringNullableFilter<"PedidoOperacional"> | string | null
+    criadoEm?: DateTimeFilter<"PedidoOperacional"> | Date | string
+    atualizadoEm?: DateTimeFilter<"PedidoOperacional"> | Date | string
+  }
+
+  export type PedidoOperacionalUpsertWithWhereUniqueWithoutEditadoPorInput = {
+    where: PedidoOperacionalWhereUniqueInput
+    update: XOR<PedidoOperacionalUpdateWithoutEditadoPorInput, PedidoOperacionalUncheckedUpdateWithoutEditadoPorInput>
+    create: XOR<PedidoOperacionalCreateWithoutEditadoPorInput, PedidoOperacionalUncheckedCreateWithoutEditadoPorInput>
+  }
+
+  export type PedidoOperacionalUpdateWithWhereUniqueWithoutEditadoPorInput = {
+    where: PedidoOperacionalWhereUniqueInput
+    data: XOR<PedidoOperacionalUpdateWithoutEditadoPorInput, PedidoOperacionalUncheckedUpdateWithoutEditadoPorInput>
+  }
+
+  export type PedidoOperacionalUpdateManyWithWhereWithoutEditadoPorInput = {
+    where: PedidoOperacionalScalarWhereInput
+    data: XOR<PedidoOperacionalUpdateManyMutationInput, PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorInput>
+  }
+
+  export type PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutCriadoPorInput = {
+    where: PedidoOperacionalAvariaWhereUniqueInput
+    update: XOR<PedidoOperacionalAvariaUpdateWithoutCriadoPorInput, PedidoOperacionalAvariaUncheckedUpdateWithoutCriadoPorInput>
+    create: XOR<PedidoOperacionalAvariaCreateWithoutCriadoPorInput, PedidoOperacionalAvariaUncheckedCreateWithoutCriadoPorInput>
+  }
+
+  export type PedidoOperacionalAvariaUpdateWithWhereUniqueWithoutCriadoPorInput = {
+    where: PedidoOperacionalAvariaWhereUniqueInput
+    data: XOR<PedidoOperacionalAvariaUpdateWithoutCriadoPorInput, PedidoOperacionalAvariaUncheckedUpdateWithoutCriadoPorInput>
+  }
+
+  export type PedidoOperacionalAvariaUpdateManyWithWhereWithoutCriadoPorInput = {
+    where: PedidoOperacionalAvariaScalarWhereInput
+    data: XOR<PedidoOperacionalAvariaUpdateManyMutationInput, PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorInput>
+  }
+
+  export type PedidoOperacionalAvariaScalarWhereInput = {
+    AND?: PedidoOperacionalAvariaScalarWhereInput | PedidoOperacionalAvariaScalarWhereInput[]
+    OR?: PedidoOperacionalAvariaScalarWhereInput[]
+    NOT?: PedidoOperacionalAvariaScalarWhereInput | PedidoOperacionalAvariaScalarWhereInput[]
+    id?: StringFilter<"PedidoOperacionalAvaria"> | string
+    pedidoId?: StringFilter<"PedidoOperacionalAvaria"> | string
+    clienteId?: StringNullableFilter<"PedidoOperacionalAvaria"> | string | null
+    contaAzulCustomerId?: StringFilter<"PedidoOperacionalAvaria"> | string
+    dataEntrega?: DateTimeFilter<"PedidoOperacionalAvaria"> | Date | string
+    produtoId?: StringFilter<"PedidoOperacionalAvaria"> | string
+    produtoNome?: StringFilter<"PedidoOperacionalAvaria"> | string
+    categoria?: StringNullableFilter<"PedidoOperacionalAvaria"> | string | null
+    quantidade?: DecimalFilter<"PedidoOperacionalAvaria"> | Decimal | DecimalJsLike | number | string
+    observacoes?: StringNullableFilter<"PedidoOperacionalAvaria"> | string | null
+    criadoPorId?: StringNullableFilter<"PedidoOperacionalAvaria"> | string | null
+    criadoEm?: DateTimeFilter<"PedidoOperacionalAvaria"> | Date | string
+  }
+
+  export type PedidoOperacionalAuditoriaUpsertWithWhereUniqueWithoutUsuarioInput = {
+    where: PedidoOperacionalAuditoriaWhereUniqueInput
+    update: XOR<PedidoOperacionalAuditoriaUpdateWithoutUsuarioInput, PedidoOperacionalAuditoriaUncheckedUpdateWithoutUsuarioInput>
+    create: XOR<PedidoOperacionalAuditoriaCreateWithoutUsuarioInput, PedidoOperacionalAuditoriaUncheckedCreateWithoutUsuarioInput>
+  }
+
+  export type PedidoOperacionalAuditoriaUpdateWithWhereUniqueWithoutUsuarioInput = {
+    where: PedidoOperacionalAuditoriaWhereUniqueInput
+    data: XOR<PedidoOperacionalAuditoriaUpdateWithoutUsuarioInput, PedidoOperacionalAuditoriaUncheckedUpdateWithoutUsuarioInput>
+  }
+
+  export type PedidoOperacionalAuditoriaUpdateManyWithWhereWithoutUsuarioInput = {
+    where: PedidoOperacionalAuditoriaScalarWhereInput
+    data: XOR<PedidoOperacionalAuditoriaUpdateManyMutationInput, PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioInput>
+  }
+
+  export type PedidoOperacionalAuditoriaScalarWhereInput = {
+    AND?: PedidoOperacionalAuditoriaScalarWhereInput | PedidoOperacionalAuditoriaScalarWhereInput[]
+    OR?: PedidoOperacionalAuditoriaScalarWhereInput[]
+    NOT?: PedidoOperacionalAuditoriaScalarWhereInput | PedidoOperacionalAuditoriaScalarWhereInput[]
+    id?: StringFilter<"PedidoOperacionalAuditoria"> | string
+    pedidoId?: StringFilter<"PedidoOperacionalAuditoria"> | string
+    usuarioId?: StringNullableFilter<"PedidoOperacionalAuditoria"> | string | null
+    usuarioNome?: StringNullableFilter<"PedidoOperacionalAuditoria"> | string | null
+    acao?: StringFilter<"PedidoOperacionalAuditoria"> | string
+    antes?: JsonNullableFilter<"PedidoOperacionalAuditoria">
+    depois?: JsonNullableFilter<"PedidoOperacionalAuditoria">
+    criadoEm?: DateTimeFilter<"PedidoOperacionalAuditoria"> | Date | string
+  }
+
   export type UsuarioCreateWithoutRefreshTokensInput = {
     id?: string
     nome: string
@@ -21476,6 +36066,10 @@ export namespace Prisma {
     dataCadastro?: Date | string
     mensagens?: MensagemCreateNestedManyWithoutAprovadorInput
     oportunidades?: OportunidadeCreateNestedManyWithoutResponsavelInput
+    pedidosCriados?: PedidoOperacionalCreateNestedManyWithoutCriadoPorInput
+    pedidosEditados?: PedidoOperacionalCreateNestedManyWithoutEditadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaCreateNestedManyWithoutCriadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
   }
 
   export type UsuarioUncheckedCreateWithoutRefreshTokensInput = {
@@ -21488,6 +36082,10 @@ export namespace Prisma {
     dataCadastro?: Date | string
     mensagens?: MensagemUncheckedCreateNestedManyWithoutAprovadorInput
     oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutResponsavelInput
+    pedidosCriados?: PedidoOperacionalUncheckedCreateNestedManyWithoutCriadoPorInput
+    pedidosEditados?: PedidoOperacionalUncheckedCreateNestedManyWithoutEditadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutCriadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
   }
 
   export type UsuarioCreateOrConnectWithoutRefreshTokensInput = {
@@ -21516,6 +36114,10 @@ export namespace Prisma {
     dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
     mensagens?: MensagemUpdateManyWithoutAprovadorNestedInput
     oportunidades?: OportunidadeUpdateManyWithoutResponsavelNestedInput
+    pedidosCriados?: PedidoOperacionalUpdateManyWithoutCriadoPorNestedInput
+    pedidosEditados?: PedidoOperacionalUpdateManyWithoutEditadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUpdateManyWithoutCriadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
   }
 
   export type UsuarioUncheckedUpdateWithoutRefreshTokensInput = {
@@ -21528,6 +36130,10 @@ export namespace Prisma {
     dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
     mensagens?: MensagemUncheckedUpdateManyWithoutAprovadorNestedInput
     oportunidades?: OportunidadeUncheckedUpdateManyWithoutResponsavelNestedInput
+    pedidosCriados?: PedidoOperacionalUncheckedUpdateManyWithoutCriadoPorNestedInput
+    pedidosEditados?: PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
   }
 
   export type PedidoCreateWithoutClienteInput = {
@@ -21710,6 +36316,159 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type RegraComercialClienteCreateWithoutClienteInput = {
+    id?: string
+    observacoesGerais?: string | null
+    periodoEntrega?: $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega?: string | null
+    cobraTaxaEntrega?: boolean
+    prazoBoletoDias?: number | null
+    acumulaPedidos?: boolean
+    diasAcumulo?: number | null
+    prazoBoletoAcumuloDias?: number | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutRegraInput
+  }
+
+  export type RegraComercialClienteUncheckedCreateWithoutClienteInput = {
+    id?: string
+    observacoesGerais?: string | null
+    periodoEntrega?: $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega?: string | null
+    cobraTaxaEntrega?: boolean
+    prazoBoletoDias?: number | null
+    acumulaPedidos?: boolean
+    diasAcumulo?: number | null
+    prazoBoletoAcumuloDias?: number | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutRegraInput
+  }
+
+  export type RegraComercialClienteCreateOrConnectWithoutClienteInput = {
+    where: RegraComercialClienteWhereUniqueInput
+    create: XOR<RegraComercialClienteCreateWithoutClienteInput, RegraComercialClienteUncheckedCreateWithoutClienteInput>
+  }
+
+  export type PedidoOperacionalCreateWithoutClienteInput = {
+    id?: string
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    observacoes?: string | null
+    prioridadeEntrega?: number | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    criadoPor?: UsuarioCreateNestedOneWithoutPedidosCriadosInput
+    editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
+    itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
+    avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
+    auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
+  }
+
+  export type PedidoOperacionalUncheckedCreateWithoutClienteInput = {
+    id?: string
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    observacoes?: string | null
+    prioridadeEntrega?: number | null
+    criadoPorId?: string | null
+    editadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    itens?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutPedidoInput
+    avarias?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutPedidoInput
+    auditoria?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutPedidoInput
+  }
+
+  export type PedidoOperacionalCreateOrConnectWithoutClienteInput = {
+    where: PedidoOperacionalWhereUniqueInput
+    create: XOR<PedidoOperacionalCreateWithoutClienteInput, PedidoOperacionalUncheckedCreateWithoutClienteInput>
+  }
+
+  export type PedidoOperacionalCreateManyClienteInputEnvelope = {
+    data: PedidoOperacionalCreateManyClienteInput | PedidoOperacionalCreateManyClienteInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type PedidoOperacionalAvariaCreateWithoutClienteInput = {
+    id?: string
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    observacoes?: string | null
+    criadoEm?: Date | string
+    pedido: PedidoOperacionalCreateNestedOneWithoutAvariasInput
+    produto: ProdutoComercialCreateNestedOneWithoutAvariasPedidoInput
+    criadoPor?: UsuarioCreateNestedOneWithoutAvariasCriadasInput
+  }
+
+  export type PedidoOperacionalAvariaUncheckedCreateWithoutClienteInput = {
+    id?: string
+    pedidoId: string
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    produtoId: string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    observacoes?: string | null
+    criadoPorId?: string | null
+    criadoEm?: Date | string
+  }
+
+  export type PedidoOperacionalAvariaCreateOrConnectWithoutClienteInput = {
+    where: PedidoOperacionalAvariaWhereUniqueInput
+    create: XOR<PedidoOperacionalAvariaCreateWithoutClienteInput, PedidoOperacionalAvariaUncheckedCreateWithoutClienteInput>
+  }
+
+  export type PedidoOperacionalAvariaCreateManyClienteInputEnvelope = {
+    data: PedidoOperacionalAvariaCreateManyClienteInput | PedidoOperacionalAvariaCreateManyClienteInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ClienteLegadoContaAzulLinkCreateWithoutClienteInput = {
+    id?: string
+    legacyClientId: string
+    legacyClientName: string
+    contaAzulCustomerId: string
+    metodo: string
+    confianca: Decimal | DecimalJsLike | number | string
+    revisado?: boolean
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type ClienteLegadoContaAzulLinkUncheckedCreateWithoutClienteInput = {
+    id?: string
+    legacyClientId: string
+    legacyClientName: string
+    contaAzulCustomerId: string
+    metodo: string
+    confianca: Decimal | DecimalJsLike | number | string
+    revisado?: boolean
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type ClienteLegadoContaAzulLinkCreateOrConnectWithoutClienteInput = {
+    where: ClienteLegadoContaAzulLinkWhereUniqueInput
+    create: XOR<ClienteLegadoContaAzulLinkCreateWithoutClienteInput, ClienteLegadoContaAzulLinkUncheckedCreateWithoutClienteInput>
+  }
+
+  export type ClienteLegadoContaAzulLinkCreateManyClienteInputEnvelope = {
+    data: ClienteLegadoContaAzulLinkCreateManyClienteInput | ClienteLegadoContaAzulLinkCreateManyClienteInput[]
+    skipDuplicates?: boolean
+  }
+
   export type PedidoUpsertWithWhereUniqueWithoutClienteInput = {
     where: PedidoWhereUniqueInput
     update: XOR<PedidoUpdateWithoutClienteInput, PedidoUncheckedUpdateWithoutClienteInput>
@@ -21837,6 +36596,2117 @@ export namespace Prisma {
     duracaoMs?: IntNullableFilter<"ExecucaoApi"> | number | null
   }
 
+  export type RegraComercialClienteUpsertWithoutClienteInput = {
+    update: XOR<RegraComercialClienteUpdateWithoutClienteInput, RegraComercialClienteUncheckedUpdateWithoutClienteInput>
+    create: XOR<RegraComercialClienteCreateWithoutClienteInput, RegraComercialClienteUncheckedCreateWithoutClienteInput>
+    where?: RegraComercialClienteWhereInput
+  }
+
+  export type RegraComercialClienteUpdateToOneWithWhereWithoutClienteInput = {
+    where?: RegraComercialClienteWhereInput
+    data: XOR<RegraComercialClienteUpdateWithoutClienteInput, RegraComercialClienteUncheckedUpdateWithoutClienteInput>
+  }
+
+  export type RegraComercialClienteUpdateWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
+    periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
+    cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
+    prazoBoletoDias?: NullableIntFieldUpdateOperationsInput | number | null
+    acumulaPedidos?: BoolFieldUpdateOperationsInput | boolean
+    diasAcumulo?: NullableIntFieldUpdateOperationsInput | number | null
+    prazoBoletoAcumuloDias?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutRegraNestedInput
+  }
+
+  export type RegraComercialClienteUncheckedUpdateWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
+    periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
+    cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
+    prazoBoletoDias?: NullableIntFieldUpdateOperationsInput | number | null
+    acumulaPedidos?: BoolFieldUpdateOperationsInput | boolean
+    diasAcumulo?: NullableIntFieldUpdateOperationsInput | number | null
+    prazoBoletoAcumuloDias?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutRegraNestedInput
+  }
+
+  export type PedidoOperacionalUpsertWithWhereUniqueWithoutClienteInput = {
+    where: PedidoOperacionalWhereUniqueInput
+    update: XOR<PedidoOperacionalUpdateWithoutClienteInput, PedidoOperacionalUncheckedUpdateWithoutClienteInput>
+    create: XOR<PedidoOperacionalCreateWithoutClienteInput, PedidoOperacionalUncheckedCreateWithoutClienteInput>
+  }
+
+  export type PedidoOperacionalUpdateWithWhereUniqueWithoutClienteInput = {
+    where: PedidoOperacionalWhereUniqueInput
+    data: XOR<PedidoOperacionalUpdateWithoutClienteInput, PedidoOperacionalUncheckedUpdateWithoutClienteInput>
+  }
+
+  export type PedidoOperacionalUpdateManyWithWhereWithoutClienteInput = {
+    where: PedidoOperacionalScalarWhereInput
+    data: XOR<PedidoOperacionalUpdateManyMutationInput, PedidoOperacionalUncheckedUpdateManyWithoutClienteInput>
+  }
+
+  export type PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutClienteInput = {
+    where: PedidoOperacionalAvariaWhereUniqueInput
+    update: XOR<PedidoOperacionalAvariaUpdateWithoutClienteInput, PedidoOperacionalAvariaUncheckedUpdateWithoutClienteInput>
+    create: XOR<PedidoOperacionalAvariaCreateWithoutClienteInput, PedidoOperacionalAvariaUncheckedCreateWithoutClienteInput>
+  }
+
+  export type PedidoOperacionalAvariaUpdateWithWhereUniqueWithoutClienteInput = {
+    where: PedidoOperacionalAvariaWhereUniqueInput
+    data: XOR<PedidoOperacionalAvariaUpdateWithoutClienteInput, PedidoOperacionalAvariaUncheckedUpdateWithoutClienteInput>
+  }
+
+  export type PedidoOperacionalAvariaUpdateManyWithWhereWithoutClienteInput = {
+    where: PedidoOperacionalAvariaScalarWhereInput
+    data: XOR<PedidoOperacionalAvariaUpdateManyMutationInput, PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteInput>
+  }
+
+  export type ClienteLegadoContaAzulLinkUpsertWithWhereUniqueWithoutClienteInput = {
+    where: ClienteLegadoContaAzulLinkWhereUniqueInput
+    update: XOR<ClienteLegadoContaAzulLinkUpdateWithoutClienteInput, ClienteLegadoContaAzulLinkUncheckedUpdateWithoutClienteInput>
+    create: XOR<ClienteLegadoContaAzulLinkCreateWithoutClienteInput, ClienteLegadoContaAzulLinkUncheckedCreateWithoutClienteInput>
+  }
+
+  export type ClienteLegadoContaAzulLinkUpdateWithWhereUniqueWithoutClienteInput = {
+    where: ClienteLegadoContaAzulLinkWhereUniqueInput
+    data: XOR<ClienteLegadoContaAzulLinkUpdateWithoutClienteInput, ClienteLegadoContaAzulLinkUncheckedUpdateWithoutClienteInput>
+  }
+
+  export type ClienteLegadoContaAzulLinkUpdateManyWithWhereWithoutClienteInput = {
+    where: ClienteLegadoContaAzulLinkScalarWhereInput
+    data: XOR<ClienteLegadoContaAzulLinkUpdateManyMutationInput, ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteInput>
+  }
+
+  export type ClienteLegadoContaAzulLinkScalarWhereInput = {
+    AND?: ClienteLegadoContaAzulLinkScalarWhereInput | ClienteLegadoContaAzulLinkScalarWhereInput[]
+    OR?: ClienteLegadoContaAzulLinkScalarWhereInput[]
+    NOT?: ClienteLegadoContaAzulLinkScalarWhereInput | ClienteLegadoContaAzulLinkScalarWhereInput[]
+    id?: StringFilter<"ClienteLegadoContaAzulLink"> | string
+    legacyClientId?: StringFilter<"ClienteLegadoContaAzulLink"> | string
+    legacyClientName?: StringFilter<"ClienteLegadoContaAzulLink"> | string
+    contaAzulCustomerId?: StringFilter<"ClienteLegadoContaAzulLink"> | string
+    clienteId?: StringNullableFilter<"ClienteLegadoContaAzulLink"> | string | null
+    metodo?: StringFilter<"ClienteLegadoContaAzulLink"> | string
+    confianca?: DecimalFilter<"ClienteLegadoContaAzulLink"> | Decimal | DecimalJsLike | number | string
+    revisado?: BoolFilter<"ClienteLegadoContaAzulLink"> | boolean
+    criadoEm?: DateTimeFilter<"ClienteLegadoContaAzulLink"> | Date | string
+    atualizadoEm?: DateTimeFilter<"ClienteLegadoContaAzulLink"> | Date | string
+  }
+
+  export type PrecoEspecialClienteCreateWithoutProdutoInput = {
+    id?: string
+    preco: Decimal | DecimalJsLike | number | string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    regra: RegraComercialClienteCreateNestedOneWithoutPrecosEspeciaisInput
+  }
+
+  export type PrecoEspecialClienteUncheckedCreateWithoutProdutoInput = {
+    id?: string
+    regraId: string
+    preco: Decimal | DecimalJsLike | number | string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PrecoEspecialClienteCreateOrConnectWithoutProdutoInput = {
+    where: PrecoEspecialClienteWhereUniqueInput
+    create: XOR<PrecoEspecialClienteCreateWithoutProdutoInput, PrecoEspecialClienteUncheckedCreateWithoutProdutoInput>
+  }
+
+  export type PrecoEspecialClienteCreateManyProdutoInputEnvelope = {
+    data: PrecoEspecialClienteCreateManyProdutoInput | PrecoEspecialClienteCreateManyProdutoInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type PedidoOperacionalItemCreateWithoutProdutoInput = {
+    id?: string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    precoUnit?: Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: boolean
+    observacoes?: string | null
+    pedido: PedidoOperacionalCreateNestedOneWithoutItensInput
+  }
+
+  export type PedidoOperacionalItemUncheckedCreateWithoutProdutoInput = {
+    id?: string
+    pedidoId: string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    precoUnit?: Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: boolean
+    observacoes?: string | null
+  }
+
+  export type PedidoOperacionalItemCreateOrConnectWithoutProdutoInput = {
+    where: PedidoOperacionalItemWhereUniqueInput
+    create: XOR<PedidoOperacionalItemCreateWithoutProdutoInput, PedidoOperacionalItemUncheckedCreateWithoutProdutoInput>
+  }
+
+  export type PedidoOperacionalItemCreateManyProdutoInputEnvelope = {
+    data: PedidoOperacionalItemCreateManyProdutoInput | PedidoOperacionalItemCreateManyProdutoInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type PedidoOperacionalAvariaCreateWithoutProdutoInput = {
+    id?: string
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    observacoes?: string | null
+    criadoEm?: Date | string
+    pedido: PedidoOperacionalCreateNestedOneWithoutAvariasInput
+    cliente?: ClienteCreateNestedOneWithoutAvariasOperacionaisInput
+    criadoPor?: UsuarioCreateNestedOneWithoutAvariasCriadasInput
+  }
+
+  export type PedidoOperacionalAvariaUncheckedCreateWithoutProdutoInput = {
+    id?: string
+    pedidoId: string
+    clienteId?: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    observacoes?: string | null
+    criadoPorId?: string | null
+    criadoEm?: Date | string
+  }
+
+  export type PedidoOperacionalAvariaCreateOrConnectWithoutProdutoInput = {
+    where: PedidoOperacionalAvariaWhereUniqueInput
+    create: XOR<PedidoOperacionalAvariaCreateWithoutProdutoInput, PedidoOperacionalAvariaUncheckedCreateWithoutProdutoInput>
+  }
+
+  export type PedidoOperacionalAvariaCreateManyProdutoInputEnvelope = {
+    data: PedidoOperacionalAvariaCreateManyProdutoInput | PedidoOperacionalAvariaCreateManyProdutoInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ProdutoComercialCreateWithoutMixReferenciadoPorInput = {
+    id?: string
+    nome: string
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
+    itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
+    avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
+    mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
+  }
+
+  export type ProdutoComercialUncheckedCreateWithoutMixReferenciadoPorInput = {
+    id?: string
+    nome: string
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixProdutoReferenciaId?: string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
+    itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
+    avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
+  }
+
+  export type ProdutoComercialCreateOrConnectWithoutMixReferenciadoPorInput = {
+    where: ProdutoComercialWhereUniqueInput
+    create: XOR<ProdutoComercialCreateWithoutMixReferenciadoPorInput, ProdutoComercialUncheckedCreateWithoutMixReferenciadoPorInput>
+  }
+
+  export type ProdutoComercialCreateWithoutMixProdutoReferenciaInput = {
+    id?: string
+    nome: string
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
+    itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
+    avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
+    mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
+  }
+
+  export type ProdutoComercialUncheckedCreateWithoutMixProdutoReferenciaInput = {
+    id?: string
+    nome: string
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
+    itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
+    avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
+    mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
+  }
+
+  export type ProdutoComercialCreateOrConnectWithoutMixProdutoReferenciaInput = {
+    where: ProdutoComercialWhereUniqueInput
+    create: XOR<ProdutoComercialCreateWithoutMixProdutoReferenciaInput, ProdutoComercialUncheckedCreateWithoutMixProdutoReferenciaInput>
+  }
+
+  export type ProdutoComercialCreateManyMixProdutoReferenciaInputEnvelope = {
+    data: ProdutoComercialCreateManyMixProdutoReferenciaInput | ProdutoComercialCreateManyMixProdutoReferenciaInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type PrecoEspecialClienteUpsertWithWhereUniqueWithoutProdutoInput = {
+    where: PrecoEspecialClienteWhereUniqueInput
+    update: XOR<PrecoEspecialClienteUpdateWithoutProdutoInput, PrecoEspecialClienteUncheckedUpdateWithoutProdutoInput>
+    create: XOR<PrecoEspecialClienteCreateWithoutProdutoInput, PrecoEspecialClienteUncheckedCreateWithoutProdutoInput>
+  }
+
+  export type PrecoEspecialClienteUpdateWithWhereUniqueWithoutProdutoInput = {
+    where: PrecoEspecialClienteWhereUniqueInput
+    data: XOR<PrecoEspecialClienteUpdateWithoutProdutoInput, PrecoEspecialClienteUncheckedUpdateWithoutProdutoInput>
+  }
+
+  export type PrecoEspecialClienteUpdateManyWithWhereWithoutProdutoInput = {
+    where: PrecoEspecialClienteScalarWhereInput
+    data: XOR<PrecoEspecialClienteUpdateManyMutationInput, PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoInput>
+  }
+
+  export type PrecoEspecialClienteScalarWhereInput = {
+    AND?: PrecoEspecialClienteScalarWhereInput | PrecoEspecialClienteScalarWhereInput[]
+    OR?: PrecoEspecialClienteScalarWhereInput[]
+    NOT?: PrecoEspecialClienteScalarWhereInput | PrecoEspecialClienteScalarWhereInput[]
+    id?: StringFilter<"PrecoEspecialCliente"> | string
+    regraId?: StringFilter<"PrecoEspecialCliente"> | string
+    produtoId?: StringFilter<"PrecoEspecialCliente"> | string
+    preco?: DecimalFilter<"PrecoEspecialCliente"> | Decimal | DecimalJsLike | number | string
+    criadoEm?: DateTimeFilter<"PrecoEspecialCliente"> | Date | string
+    atualizadoEm?: DateTimeFilter<"PrecoEspecialCliente"> | Date | string
+  }
+
+  export type PedidoOperacionalItemUpsertWithWhereUniqueWithoutProdutoInput = {
+    where: PedidoOperacionalItemWhereUniqueInput
+    update: XOR<PedidoOperacionalItemUpdateWithoutProdutoInput, PedidoOperacionalItemUncheckedUpdateWithoutProdutoInput>
+    create: XOR<PedidoOperacionalItemCreateWithoutProdutoInput, PedidoOperacionalItemUncheckedCreateWithoutProdutoInput>
+  }
+
+  export type PedidoOperacionalItemUpdateWithWhereUniqueWithoutProdutoInput = {
+    where: PedidoOperacionalItemWhereUniqueInput
+    data: XOR<PedidoOperacionalItemUpdateWithoutProdutoInput, PedidoOperacionalItemUncheckedUpdateWithoutProdutoInput>
+  }
+
+  export type PedidoOperacionalItemUpdateManyWithWhereWithoutProdutoInput = {
+    where: PedidoOperacionalItemScalarWhereInput
+    data: XOR<PedidoOperacionalItemUpdateManyMutationInput, PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoInput>
+  }
+
+  export type PedidoOperacionalItemScalarWhereInput = {
+    AND?: PedidoOperacionalItemScalarWhereInput | PedidoOperacionalItemScalarWhereInput[]
+    OR?: PedidoOperacionalItemScalarWhereInput[]
+    NOT?: PedidoOperacionalItemScalarWhereInput | PedidoOperacionalItemScalarWhereInput[]
+    id?: StringFilter<"PedidoOperacionalItem"> | string
+    pedidoId?: StringFilter<"PedidoOperacionalItem"> | string
+    produtoId?: StringFilter<"PedidoOperacionalItem"> | string
+    produtoNome?: StringFilter<"PedidoOperacionalItem"> | string
+    categoria?: StringNullableFilter<"PedidoOperacionalItem"> | string | null
+    quantidade?: DecimalFilter<"PedidoOperacionalItem"> | Decimal | DecimalJsLike | number | string
+    precoUnit?: DecimalNullableFilter<"PedidoOperacionalItem"> | Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: BoolFilter<"PedidoOperacionalItem"> | boolean
+    observacoes?: StringNullableFilter<"PedidoOperacionalItem"> | string | null
+  }
+
+  export type PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutProdutoInput = {
+    where: PedidoOperacionalAvariaWhereUniqueInput
+    update: XOR<PedidoOperacionalAvariaUpdateWithoutProdutoInput, PedidoOperacionalAvariaUncheckedUpdateWithoutProdutoInput>
+    create: XOR<PedidoOperacionalAvariaCreateWithoutProdutoInput, PedidoOperacionalAvariaUncheckedCreateWithoutProdutoInput>
+  }
+
+  export type PedidoOperacionalAvariaUpdateWithWhereUniqueWithoutProdutoInput = {
+    where: PedidoOperacionalAvariaWhereUniqueInput
+    data: XOR<PedidoOperacionalAvariaUpdateWithoutProdutoInput, PedidoOperacionalAvariaUncheckedUpdateWithoutProdutoInput>
+  }
+
+  export type PedidoOperacionalAvariaUpdateManyWithWhereWithoutProdutoInput = {
+    where: PedidoOperacionalAvariaScalarWhereInput
+    data: XOR<PedidoOperacionalAvariaUpdateManyMutationInput, PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoInput>
+  }
+
+  export type ProdutoComercialUpsertWithoutMixReferenciadoPorInput = {
+    update: XOR<ProdutoComercialUpdateWithoutMixReferenciadoPorInput, ProdutoComercialUncheckedUpdateWithoutMixReferenciadoPorInput>
+    create: XOR<ProdutoComercialCreateWithoutMixReferenciadoPorInput, ProdutoComercialUncheckedCreateWithoutMixReferenciadoPorInput>
+    where?: ProdutoComercialWhereInput
+  }
+
+  export type ProdutoComercialUpdateToOneWithWhereWithoutMixReferenciadoPorInput = {
+    where?: ProdutoComercialWhereInput
+    data: XOR<ProdutoComercialUpdateWithoutMixReferenciadoPorInput, ProdutoComercialUncheckedUpdateWithoutMixReferenciadoPorInput>
+  }
+
+  export type ProdutoComercialUpdateWithoutMixReferenciadoPorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
+    itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
+    avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
+    mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
+  }
+
+  export type ProdutoComercialUncheckedUpdateWithoutMixReferenciadoPorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixProdutoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
+    itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
+    avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
+  }
+
+  export type ProdutoComercialUpsertWithWhereUniqueWithoutMixProdutoReferenciaInput = {
+    where: ProdutoComercialWhereUniqueInput
+    update: XOR<ProdutoComercialUpdateWithoutMixProdutoReferenciaInput, ProdutoComercialUncheckedUpdateWithoutMixProdutoReferenciaInput>
+    create: XOR<ProdutoComercialCreateWithoutMixProdutoReferenciaInput, ProdutoComercialUncheckedCreateWithoutMixProdutoReferenciaInput>
+  }
+
+  export type ProdutoComercialUpdateWithWhereUniqueWithoutMixProdutoReferenciaInput = {
+    where: ProdutoComercialWhereUniqueInput
+    data: XOR<ProdutoComercialUpdateWithoutMixProdutoReferenciaInput, ProdutoComercialUncheckedUpdateWithoutMixProdutoReferenciaInput>
+  }
+
+  export type ProdutoComercialUpdateManyWithWhereWithoutMixProdutoReferenciaInput = {
+    where: ProdutoComercialScalarWhereInput
+    data: XOR<ProdutoComercialUpdateManyMutationInput, ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaInput>
+  }
+
+  export type ProdutoComercialScalarWhereInput = {
+    AND?: ProdutoComercialScalarWhereInput | ProdutoComercialScalarWhereInput[]
+    OR?: ProdutoComercialScalarWhereInput[]
+    NOT?: ProdutoComercialScalarWhereInput | ProdutoComercialScalarWhereInput[]
+    id?: StringFilter<"ProdutoComercial"> | string
+    nome?: StringFilter<"ProdutoComercial"> | string
+    precoBase?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
+    categoria?: StringNullableFilter<"ProdutoComercial"> | string | null
+    ativo?: BoolFilter<"ProdutoComercial"> | boolean
+    modoCompra?: EnumModoCompraProdutoFilter<"ProdutoComercial"> | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFilter<"ProdutoComercial"> | boolean
+    mixAtivo?: BoolFilter<"ProdutoComercial"> | boolean
+    mixFolhaLeve?: BoolFilter<"ProdutoComercial"> | boolean
+    mixProdutoReferenciaId?: StringNullableFilter<"ProdutoComercial"> | string | null
+    mixVariedades?: JsonNullableFilter<"ProdutoComercial">
+    criadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
+    atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
+  }
+
+  export type ClienteCreateWithoutRegraComercialInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+    pedidos?: PedidoCreateNestedManyWithoutClienteInput
+    interacoes?: InteracaoCreateNestedManyWithoutClienteInput
+    oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
+    mensagens?: MensagemCreateNestedManyWithoutClienteInput
+    execucoes?: ExecucaoApiCreateNestedManyWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
+  }
+
+  export type ClienteUncheckedCreateWithoutRegraComercialInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+    pedidos?: PedidoUncheckedCreateNestedManyWithoutClienteInput
+    interacoes?: InteracaoUncheckedCreateNestedManyWithoutClienteInput
+    oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutClienteInput
+    mensagens?: MensagemUncheckedCreateNestedManyWithoutClienteInput
+    execucoes?: ExecucaoApiUncheckedCreateNestedManyWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
+  }
+
+  export type ClienteCreateOrConnectWithoutRegraComercialInput = {
+    where: ClienteWhereUniqueInput
+    create: XOR<ClienteCreateWithoutRegraComercialInput, ClienteUncheckedCreateWithoutRegraComercialInput>
+  }
+
+  export type PrecoEspecialClienteCreateWithoutRegraInput = {
+    id?: string
+    preco: Decimal | DecimalJsLike | number | string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    produto: ProdutoComercialCreateNestedOneWithoutPrecosEspeciaisInput
+  }
+
+  export type PrecoEspecialClienteUncheckedCreateWithoutRegraInput = {
+    id?: string
+    produtoId: string
+    preco: Decimal | DecimalJsLike | number | string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PrecoEspecialClienteCreateOrConnectWithoutRegraInput = {
+    where: PrecoEspecialClienteWhereUniqueInput
+    create: XOR<PrecoEspecialClienteCreateWithoutRegraInput, PrecoEspecialClienteUncheckedCreateWithoutRegraInput>
+  }
+
+  export type PrecoEspecialClienteCreateManyRegraInputEnvelope = {
+    data: PrecoEspecialClienteCreateManyRegraInput | PrecoEspecialClienteCreateManyRegraInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ClienteUpsertWithoutRegraComercialInput = {
+    update: XOR<ClienteUpdateWithoutRegraComercialInput, ClienteUncheckedUpdateWithoutRegraComercialInput>
+    create: XOR<ClienteCreateWithoutRegraComercialInput, ClienteUncheckedCreateWithoutRegraComercialInput>
+    where?: ClienteWhereInput
+  }
+
+  export type ClienteUpdateToOneWithWhereWithoutRegraComercialInput = {
+    where?: ClienteWhereInput
+    data: XOR<ClienteUpdateWithoutRegraComercialInput, ClienteUncheckedUpdateWithoutRegraComercialInput>
+  }
+
+  export type ClienteUpdateWithoutRegraComercialInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedidos?: PedidoUpdateManyWithoutClienteNestedInput
+    interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
+    oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
+    mensagens?: MensagemUpdateManyWithoutClienteNestedInput
+    execucoes?: ExecucaoApiUpdateManyWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
+  }
+
+  export type ClienteUncheckedUpdateWithoutRegraComercialInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedidos?: PedidoUncheckedUpdateManyWithoutClienteNestedInput
+    interacoes?: InteracaoUncheckedUpdateManyWithoutClienteNestedInput
+    oportunidades?: OportunidadeUncheckedUpdateManyWithoutClienteNestedInput
+    mensagens?: MensagemUncheckedUpdateManyWithoutClienteNestedInput
+    execucoes?: ExecucaoApiUncheckedUpdateManyWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
+  }
+
+  export type PrecoEspecialClienteUpsertWithWhereUniqueWithoutRegraInput = {
+    where: PrecoEspecialClienteWhereUniqueInput
+    update: XOR<PrecoEspecialClienteUpdateWithoutRegraInput, PrecoEspecialClienteUncheckedUpdateWithoutRegraInput>
+    create: XOR<PrecoEspecialClienteCreateWithoutRegraInput, PrecoEspecialClienteUncheckedCreateWithoutRegraInput>
+  }
+
+  export type PrecoEspecialClienteUpdateWithWhereUniqueWithoutRegraInput = {
+    where: PrecoEspecialClienteWhereUniqueInput
+    data: XOR<PrecoEspecialClienteUpdateWithoutRegraInput, PrecoEspecialClienteUncheckedUpdateWithoutRegraInput>
+  }
+
+  export type PrecoEspecialClienteUpdateManyWithWhereWithoutRegraInput = {
+    where: PrecoEspecialClienteScalarWhereInput
+    data: XOR<PrecoEspecialClienteUpdateManyMutationInput, PrecoEspecialClienteUncheckedUpdateManyWithoutRegraInput>
+  }
+
+  export type ClienteCreateWithoutLinksLegadoContaAzulInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+    pedidos?: PedidoCreateNestedManyWithoutClienteInput
+    interacoes?: InteracaoCreateNestedManyWithoutClienteInput
+    oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
+    mensagens?: MensagemCreateNestedManyWithoutClienteInput
+    execucoes?: ExecucaoApiCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
+  }
+
+  export type ClienteUncheckedCreateWithoutLinksLegadoContaAzulInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+    pedidos?: PedidoUncheckedCreateNestedManyWithoutClienteInput
+    interacoes?: InteracaoUncheckedCreateNestedManyWithoutClienteInput
+    oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutClienteInput
+    mensagens?: MensagemUncheckedCreateNestedManyWithoutClienteInput
+    execucoes?: ExecucaoApiUncheckedCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteUncheckedCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
+  }
+
+  export type ClienteCreateOrConnectWithoutLinksLegadoContaAzulInput = {
+    where: ClienteWhereUniqueInput
+    create: XOR<ClienteCreateWithoutLinksLegadoContaAzulInput, ClienteUncheckedCreateWithoutLinksLegadoContaAzulInput>
+  }
+
+  export type ClienteUpsertWithoutLinksLegadoContaAzulInput = {
+    update: XOR<ClienteUpdateWithoutLinksLegadoContaAzulInput, ClienteUncheckedUpdateWithoutLinksLegadoContaAzulInput>
+    create: XOR<ClienteCreateWithoutLinksLegadoContaAzulInput, ClienteUncheckedCreateWithoutLinksLegadoContaAzulInput>
+    where?: ClienteWhereInput
+  }
+
+  export type ClienteUpdateToOneWithWhereWithoutLinksLegadoContaAzulInput = {
+    where?: ClienteWhereInput
+    data: XOR<ClienteUpdateWithoutLinksLegadoContaAzulInput, ClienteUncheckedUpdateWithoutLinksLegadoContaAzulInput>
+  }
+
+  export type ClienteUpdateWithoutLinksLegadoContaAzulInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedidos?: PedidoUpdateManyWithoutClienteNestedInput
+    interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
+    oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
+    mensagens?: MensagemUpdateManyWithoutClienteNestedInput
+    execucoes?: ExecucaoApiUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
+  }
+
+  export type ClienteUncheckedUpdateWithoutLinksLegadoContaAzulInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedidos?: PedidoUncheckedUpdateManyWithoutClienteNestedInput
+    interacoes?: InteracaoUncheckedUpdateManyWithoutClienteNestedInput
+    oportunidades?: OportunidadeUncheckedUpdateManyWithoutClienteNestedInput
+    mensagens?: MensagemUncheckedUpdateManyWithoutClienteNestedInput
+    execucoes?: ExecucaoApiUncheckedUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUncheckedUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
+  }
+
+  export type RegraComercialClienteCreateWithoutPrecosEspeciaisInput = {
+    id?: string
+    observacoesGerais?: string | null
+    periodoEntrega?: $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega?: string | null
+    cobraTaxaEntrega?: boolean
+    prazoBoletoDias?: number | null
+    acumulaPedidos?: boolean
+    diasAcumulo?: number | null
+    prazoBoletoAcumuloDias?: number | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    cliente?: ClienteCreateNestedOneWithoutRegraComercialInput
+  }
+
+  export type RegraComercialClienteUncheckedCreateWithoutPrecosEspeciaisInput = {
+    id?: string
+    contaAzulCustomerId: string
+    observacoesGerais?: string | null
+    periodoEntrega?: $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega?: string | null
+    cobraTaxaEntrega?: boolean
+    prazoBoletoDias?: number | null
+    acumulaPedidos?: boolean
+    diasAcumulo?: number | null
+    prazoBoletoAcumuloDias?: number | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type RegraComercialClienteCreateOrConnectWithoutPrecosEspeciaisInput = {
+    where: RegraComercialClienteWhereUniqueInput
+    create: XOR<RegraComercialClienteCreateWithoutPrecosEspeciaisInput, RegraComercialClienteUncheckedCreateWithoutPrecosEspeciaisInput>
+  }
+
+  export type ProdutoComercialCreateWithoutPrecosEspeciaisInput = {
+    id?: string
+    nome: string
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
+    avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
+    mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
+    mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
+  }
+
+  export type ProdutoComercialUncheckedCreateWithoutPrecosEspeciaisInput = {
+    id?: string
+    nome: string
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixProdutoReferenciaId?: string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
+    avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
+    mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
+  }
+
+  export type ProdutoComercialCreateOrConnectWithoutPrecosEspeciaisInput = {
+    where: ProdutoComercialWhereUniqueInput
+    create: XOR<ProdutoComercialCreateWithoutPrecosEspeciaisInput, ProdutoComercialUncheckedCreateWithoutPrecosEspeciaisInput>
+  }
+
+  export type RegraComercialClienteUpsertWithoutPrecosEspeciaisInput = {
+    update: XOR<RegraComercialClienteUpdateWithoutPrecosEspeciaisInput, RegraComercialClienteUncheckedUpdateWithoutPrecosEspeciaisInput>
+    create: XOR<RegraComercialClienteCreateWithoutPrecosEspeciaisInput, RegraComercialClienteUncheckedCreateWithoutPrecosEspeciaisInput>
+    where?: RegraComercialClienteWhereInput
+  }
+
+  export type RegraComercialClienteUpdateToOneWithWhereWithoutPrecosEspeciaisInput = {
+    where?: RegraComercialClienteWhereInput
+    data: XOR<RegraComercialClienteUpdateWithoutPrecosEspeciaisInput, RegraComercialClienteUncheckedUpdateWithoutPrecosEspeciaisInput>
+  }
+
+  export type RegraComercialClienteUpdateWithoutPrecosEspeciaisInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
+    periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
+    cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
+    prazoBoletoDias?: NullableIntFieldUpdateOperationsInput | number | null
+    acumulaPedidos?: BoolFieldUpdateOperationsInput | boolean
+    diasAcumulo?: NullableIntFieldUpdateOperationsInput | number | null
+    prazoBoletoAcumuloDias?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneWithoutRegraComercialNestedInput
+  }
+
+  export type RegraComercialClienteUncheckedUpdateWithoutPrecosEspeciaisInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
+    periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
+    horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
+    cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
+    prazoBoletoDias?: NullableIntFieldUpdateOperationsInput | number | null
+    acumulaPedidos?: BoolFieldUpdateOperationsInput | boolean
+    diasAcumulo?: NullableIntFieldUpdateOperationsInput | number | null
+    prazoBoletoAcumuloDias?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ProdutoComercialUpsertWithoutPrecosEspeciaisInput = {
+    update: XOR<ProdutoComercialUpdateWithoutPrecosEspeciaisInput, ProdutoComercialUncheckedUpdateWithoutPrecosEspeciaisInput>
+    create: XOR<ProdutoComercialCreateWithoutPrecosEspeciaisInput, ProdutoComercialUncheckedCreateWithoutPrecosEspeciaisInput>
+    where?: ProdutoComercialWhereInput
+  }
+
+  export type ProdutoComercialUpdateToOneWithWhereWithoutPrecosEspeciaisInput = {
+    where?: ProdutoComercialWhereInput
+    data: XOR<ProdutoComercialUpdateWithoutPrecosEspeciaisInput, ProdutoComercialUncheckedUpdateWithoutPrecosEspeciaisInput>
+  }
+
+  export type ProdutoComercialUpdateWithoutPrecosEspeciaisInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
+    avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
+    mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
+    mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
+  }
+
+  export type ProdutoComercialUncheckedUpdateWithoutPrecosEspeciaisInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixProdutoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
+    avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
+    mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
+  }
+
+  export type ClienteCreateWithoutPedidosOperacionaisInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+    pedidos?: PedidoCreateNestedManyWithoutClienteInput
+    interacoes?: InteracaoCreateNestedManyWithoutClienteInput
+    oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
+    mensagens?: MensagemCreateNestedManyWithoutClienteInput
+    execucoes?: ExecucaoApiCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteCreateNestedOneWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
+  }
+
+  export type ClienteUncheckedCreateWithoutPedidosOperacionaisInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+    pedidos?: PedidoUncheckedCreateNestedManyWithoutClienteInput
+    interacoes?: InteracaoUncheckedCreateNestedManyWithoutClienteInput
+    oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutClienteInput
+    mensagens?: MensagemUncheckedCreateNestedManyWithoutClienteInput
+    execucoes?: ExecucaoApiUncheckedCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteUncheckedCreateNestedOneWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
+  }
+
+  export type ClienteCreateOrConnectWithoutPedidosOperacionaisInput = {
+    where: ClienteWhereUniqueInput
+    create: XOR<ClienteCreateWithoutPedidosOperacionaisInput, ClienteUncheckedCreateWithoutPedidosOperacionaisInput>
+  }
+
+  export type UsuarioCreateWithoutPedidosCriadosInput = {
+    id?: string
+    nome: string
+    email: string
+    senhaHash: string
+    perfil: $Enums.PerfilUsuario
+    status?: $Enums.StatusUsuario
+    dataCadastro?: Date | string
+    mensagens?: MensagemCreateNestedManyWithoutAprovadorInput
+    refreshTokens?: RefreshTokenCreateNestedManyWithoutUsuarioInput
+    oportunidades?: OportunidadeCreateNestedManyWithoutResponsavelInput
+    pedidosEditados?: PedidoOperacionalCreateNestedManyWithoutEditadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaCreateNestedManyWithoutCriadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
+  }
+
+  export type UsuarioUncheckedCreateWithoutPedidosCriadosInput = {
+    id?: string
+    nome: string
+    email: string
+    senhaHash: string
+    perfil: $Enums.PerfilUsuario
+    status?: $Enums.StatusUsuario
+    dataCadastro?: Date | string
+    mensagens?: MensagemUncheckedCreateNestedManyWithoutAprovadorInput
+    refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUsuarioInput
+    oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutResponsavelInput
+    pedidosEditados?: PedidoOperacionalUncheckedCreateNestedManyWithoutEditadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutCriadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
+  }
+
+  export type UsuarioCreateOrConnectWithoutPedidosCriadosInput = {
+    where: UsuarioWhereUniqueInput
+    create: XOR<UsuarioCreateWithoutPedidosCriadosInput, UsuarioUncheckedCreateWithoutPedidosCriadosInput>
+  }
+
+  export type UsuarioCreateWithoutPedidosEditadosInput = {
+    id?: string
+    nome: string
+    email: string
+    senhaHash: string
+    perfil: $Enums.PerfilUsuario
+    status?: $Enums.StatusUsuario
+    dataCadastro?: Date | string
+    mensagens?: MensagemCreateNestedManyWithoutAprovadorInput
+    refreshTokens?: RefreshTokenCreateNestedManyWithoutUsuarioInput
+    oportunidades?: OportunidadeCreateNestedManyWithoutResponsavelInput
+    pedidosCriados?: PedidoOperacionalCreateNestedManyWithoutCriadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaCreateNestedManyWithoutCriadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
+  }
+
+  export type UsuarioUncheckedCreateWithoutPedidosEditadosInput = {
+    id?: string
+    nome: string
+    email: string
+    senhaHash: string
+    perfil: $Enums.PerfilUsuario
+    status?: $Enums.StatusUsuario
+    dataCadastro?: Date | string
+    mensagens?: MensagemUncheckedCreateNestedManyWithoutAprovadorInput
+    refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUsuarioInput
+    oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutResponsavelInput
+    pedidosCriados?: PedidoOperacionalUncheckedCreateNestedManyWithoutCriadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutCriadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
+  }
+
+  export type UsuarioCreateOrConnectWithoutPedidosEditadosInput = {
+    where: UsuarioWhereUniqueInput
+    create: XOR<UsuarioCreateWithoutPedidosEditadosInput, UsuarioUncheckedCreateWithoutPedidosEditadosInput>
+  }
+
+  export type PedidoOperacionalItemCreateWithoutPedidoInput = {
+    id?: string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    precoUnit?: Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: boolean
+    observacoes?: string | null
+    produto: ProdutoComercialCreateNestedOneWithoutItensPedidoInput
+  }
+
+  export type PedidoOperacionalItemUncheckedCreateWithoutPedidoInput = {
+    id?: string
+    produtoId: string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    precoUnit?: Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: boolean
+    observacoes?: string | null
+  }
+
+  export type PedidoOperacionalItemCreateOrConnectWithoutPedidoInput = {
+    where: PedidoOperacionalItemWhereUniqueInput
+    create: XOR<PedidoOperacionalItemCreateWithoutPedidoInput, PedidoOperacionalItemUncheckedCreateWithoutPedidoInput>
+  }
+
+  export type PedidoOperacionalItemCreateManyPedidoInputEnvelope = {
+    data: PedidoOperacionalItemCreateManyPedidoInput | PedidoOperacionalItemCreateManyPedidoInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type PedidoOperacionalAvariaCreateWithoutPedidoInput = {
+    id?: string
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    observacoes?: string | null
+    criadoEm?: Date | string
+    cliente?: ClienteCreateNestedOneWithoutAvariasOperacionaisInput
+    produto: ProdutoComercialCreateNestedOneWithoutAvariasPedidoInput
+    criadoPor?: UsuarioCreateNestedOneWithoutAvariasCriadasInput
+  }
+
+  export type PedidoOperacionalAvariaUncheckedCreateWithoutPedidoInput = {
+    id?: string
+    clienteId?: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    produtoId: string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    observacoes?: string | null
+    criadoPorId?: string | null
+    criadoEm?: Date | string
+  }
+
+  export type PedidoOperacionalAvariaCreateOrConnectWithoutPedidoInput = {
+    where: PedidoOperacionalAvariaWhereUniqueInput
+    create: XOR<PedidoOperacionalAvariaCreateWithoutPedidoInput, PedidoOperacionalAvariaUncheckedCreateWithoutPedidoInput>
+  }
+
+  export type PedidoOperacionalAvariaCreateManyPedidoInputEnvelope = {
+    data: PedidoOperacionalAvariaCreateManyPedidoInput | PedidoOperacionalAvariaCreateManyPedidoInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type PedidoOperacionalAuditoriaCreateWithoutPedidoInput = {
+    id?: string
+    usuarioNome?: string | null
+    acao: string
+    antes?: NullableJsonNullValueInput | InputJsonValue
+    depois?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    usuario?: UsuarioCreateNestedOneWithoutAuditoriasPedidoInput
+  }
+
+  export type PedidoOperacionalAuditoriaUncheckedCreateWithoutPedidoInput = {
+    id?: string
+    usuarioId?: string | null
+    usuarioNome?: string | null
+    acao: string
+    antes?: NullableJsonNullValueInput | InputJsonValue
+    depois?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+  }
+
+  export type PedidoOperacionalAuditoriaCreateOrConnectWithoutPedidoInput = {
+    where: PedidoOperacionalAuditoriaWhereUniqueInput
+    create: XOR<PedidoOperacionalAuditoriaCreateWithoutPedidoInput, PedidoOperacionalAuditoriaUncheckedCreateWithoutPedidoInput>
+  }
+
+  export type PedidoOperacionalAuditoriaCreateManyPedidoInputEnvelope = {
+    data: PedidoOperacionalAuditoriaCreateManyPedidoInput | PedidoOperacionalAuditoriaCreateManyPedidoInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ClienteUpsertWithoutPedidosOperacionaisInput = {
+    update: XOR<ClienteUpdateWithoutPedidosOperacionaisInput, ClienteUncheckedUpdateWithoutPedidosOperacionaisInput>
+    create: XOR<ClienteCreateWithoutPedidosOperacionaisInput, ClienteUncheckedCreateWithoutPedidosOperacionaisInput>
+    where?: ClienteWhereInput
+  }
+
+  export type ClienteUpdateToOneWithWhereWithoutPedidosOperacionaisInput = {
+    where?: ClienteWhereInput
+    data: XOR<ClienteUpdateWithoutPedidosOperacionaisInput, ClienteUncheckedUpdateWithoutPedidosOperacionaisInput>
+  }
+
+  export type ClienteUpdateWithoutPedidosOperacionaisInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedidos?: PedidoUpdateManyWithoutClienteNestedInput
+    interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
+    oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
+    mensagens?: MensagemUpdateManyWithoutClienteNestedInput
+    execucoes?: ExecucaoApiUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUpdateOneWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
+  }
+
+  export type ClienteUncheckedUpdateWithoutPedidosOperacionaisInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedidos?: PedidoUncheckedUpdateManyWithoutClienteNestedInput
+    interacoes?: InteracaoUncheckedUpdateManyWithoutClienteNestedInput
+    oportunidades?: OportunidadeUncheckedUpdateManyWithoutClienteNestedInput
+    mensagens?: MensagemUncheckedUpdateManyWithoutClienteNestedInput
+    execucoes?: ExecucaoApiUncheckedUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUncheckedUpdateOneWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
+  }
+
+  export type UsuarioUpsertWithoutPedidosCriadosInput = {
+    update: XOR<UsuarioUpdateWithoutPedidosCriadosInput, UsuarioUncheckedUpdateWithoutPedidosCriadosInput>
+    create: XOR<UsuarioCreateWithoutPedidosCriadosInput, UsuarioUncheckedCreateWithoutPedidosCriadosInput>
+    where?: UsuarioWhereInput
+  }
+
+  export type UsuarioUpdateToOneWithWhereWithoutPedidosCriadosInput = {
+    where?: UsuarioWhereInput
+    data: XOR<UsuarioUpdateWithoutPedidosCriadosInput, UsuarioUncheckedUpdateWithoutPedidosCriadosInput>
+  }
+
+  export type UsuarioUpdateWithoutPedidosCriadosInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: StringFieldUpdateOperationsInput | string
+    perfil?: EnumPerfilUsuarioFieldUpdateOperationsInput | $Enums.PerfilUsuario
+    status?: EnumStatusUsuarioFieldUpdateOperationsInput | $Enums.StatusUsuario
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    mensagens?: MensagemUpdateManyWithoutAprovadorNestedInput
+    refreshTokens?: RefreshTokenUpdateManyWithoutUsuarioNestedInput
+    oportunidades?: OportunidadeUpdateManyWithoutResponsavelNestedInput
+    pedidosEditados?: PedidoOperacionalUpdateManyWithoutEditadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUpdateManyWithoutCriadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
+  }
+
+  export type UsuarioUncheckedUpdateWithoutPedidosCriadosInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: StringFieldUpdateOperationsInput | string
+    perfil?: EnumPerfilUsuarioFieldUpdateOperationsInput | $Enums.PerfilUsuario
+    status?: EnumStatusUsuarioFieldUpdateOperationsInput | $Enums.StatusUsuario
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    mensagens?: MensagemUncheckedUpdateManyWithoutAprovadorNestedInput
+    refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUsuarioNestedInput
+    oportunidades?: OportunidadeUncheckedUpdateManyWithoutResponsavelNestedInput
+    pedidosEditados?: PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
+  }
+
+  export type UsuarioUpsertWithoutPedidosEditadosInput = {
+    update: XOR<UsuarioUpdateWithoutPedidosEditadosInput, UsuarioUncheckedUpdateWithoutPedidosEditadosInput>
+    create: XOR<UsuarioCreateWithoutPedidosEditadosInput, UsuarioUncheckedCreateWithoutPedidosEditadosInput>
+    where?: UsuarioWhereInput
+  }
+
+  export type UsuarioUpdateToOneWithWhereWithoutPedidosEditadosInput = {
+    where?: UsuarioWhereInput
+    data: XOR<UsuarioUpdateWithoutPedidosEditadosInput, UsuarioUncheckedUpdateWithoutPedidosEditadosInput>
+  }
+
+  export type UsuarioUpdateWithoutPedidosEditadosInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: StringFieldUpdateOperationsInput | string
+    perfil?: EnumPerfilUsuarioFieldUpdateOperationsInput | $Enums.PerfilUsuario
+    status?: EnumStatusUsuarioFieldUpdateOperationsInput | $Enums.StatusUsuario
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    mensagens?: MensagemUpdateManyWithoutAprovadorNestedInput
+    refreshTokens?: RefreshTokenUpdateManyWithoutUsuarioNestedInput
+    oportunidades?: OportunidadeUpdateManyWithoutResponsavelNestedInput
+    pedidosCriados?: PedidoOperacionalUpdateManyWithoutCriadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUpdateManyWithoutCriadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
+  }
+
+  export type UsuarioUncheckedUpdateWithoutPedidosEditadosInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: StringFieldUpdateOperationsInput | string
+    perfil?: EnumPerfilUsuarioFieldUpdateOperationsInput | $Enums.PerfilUsuario
+    status?: EnumStatusUsuarioFieldUpdateOperationsInput | $Enums.StatusUsuario
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    mensagens?: MensagemUncheckedUpdateManyWithoutAprovadorNestedInput
+    refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUsuarioNestedInput
+    oportunidades?: OportunidadeUncheckedUpdateManyWithoutResponsavelNestedInput
+    pedidosCriados?: PedidoOperacionalUncheckedUpdateManyWithoutCriadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
+  }
+
+  export type PedidoOperacionalItemUpsertWithWhereUniqueWithoutPedidoInput = {
+    where: PedidoOperacionalItemWhereUniqueInput
+    update: XOR<PedidoOperacionalItemUpdateWithoutPedidoInput, PedidoOperacionalItemUncheckedUpdateWithoutPedidoInput>
+    create: XOR<PedidoOperacionalItemCreateWithoutPedidoInput, PedidoOperacionalItemUncheckedCreateWithoutPedidoInput>
+  }
+
+  export type PedidoOperacionalItemUpdateWithWhereUniqueWithoutPedidoInput = {
+    where: PedidoOperacionalItemWhereUniqueInput
+    data: XOR<PedidoOperacionalItemUpdateWithoutPedidoInput, PedidoOperacionalItemUncheckedUpdateWithoutPedidoInput>
+  }
+
+  export type PedidoOperacionalItemUpdateManyWithWhereWithoutPedidoInput = {
+    where: PedidoOperacionalItemScalarWhereInput
+    data: XOR<PedidoOperacionalItemUpdateManyMutationInput, PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoInput>
+  }
+
+  export type PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutPedidoInput = {
+    where: PedidoOperacionalAvariaWhereUniqueInput
+    update: XOR<PedidoOperacionalAvariaUpdateWithoutPedidoInput, PedidoOperacionalAvariaUncheckedUpdateWithoutPedidoInput>
+    create: XOR<PedidoOperacionalAvariaCreateWithoutPedidoInput, PedidoOperacionalAvariaUncheckedCreateWithoutPedidoInput>
+  }
+
+  export type PedidoOperacionalAvariaUpdateWithWhereUniqueWithoutPedidoInput = {
+    where: PedidoOperacionalAvariaWhereUniqueInput
+    data: XOR<PedidoOperacionalAvariaUpdateWithoutPedidoInput, PedidoOperacionalAvariaUncheckedUpdateWithoutPedidoInput>
+  }
+
+  export type PedidoOperacionalAvariaUpdateManyWithWhereWithoutPedidoInput = {
+    where: PedidoOperacionalAvariaScalarWhereInput
+    data: XOR<PedidoOperacionalAvariaUpdateManyMutationInput, PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoInput>
+  }
+
+  export type PedidoOperacionalAuditoriaUpsertWithWhereUniqueWithoutPedidoInput = {
+    where: PedidoOperacionalAuditoriaWhereUniqueInput
+    update: XOR<PedidoOperacionalAuditoriaUpdateWithoutPedidoInput, PedidoOperacionalAuditoriaUncheckedUpdateWithoutPedidoInput>
+    create: XOR<PedidoOperacionalAuditoriaCreateWithoutPedidoInput, PedidoOperacionalAuditoriaUncheckedCreateWithoutPedidoInput>
+  }
+
+  export type PedidoOperacionalAuditoriaUpdateWithWhereUniqueWithoutPedidoInput = {
+    where: PedidoOperacionalAuditoriaWhereUniqueInput
+    data: XOR<PedidoOperacionalAuditoriaUpdateWithoutPedidoInput, PedidoOperacionalAuditoriaUncheckedUpdateWithoutPedidoInput>
+  }
+
+  export type PedidoOperacionalAuditoriaUpdateManyWithWhereWithoutPedidoInput = {
+    where: PedidoOperacionalAuditoriaScalarWhereInput
+    data: XOR<PedidoOperacionalAuditoriaUpdateManyMutationInput, PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutPedidoInput>
+  }
+
+  export type PedidoOperacionalCreateWithoutItensInput = {
+    id?: string
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    observacoes?: string | null
+    prioridadeEntrega?: number | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
+    criadoPor?: UsuarioCreateNestedOneWithoutPedidosCriadosInput
+    editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
+    avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
+    auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
+  }
+
+  export type PedidoOperacionalUncheckedCreateWithoutItensInput = {
+    id?: string
+    clienteId?: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    observacoes?: string | null
+    prioridadeEntrega?: number | null
+    criadoPorId?: string | null
+    editadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    avarias?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutPedidoInput
+    auditoria?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutPedidoInput
+  }
+
+  export type PedidoOperacionalCreateOrConnectWithoutItensInput = {
+    where: PedidoOperacionalWhereUniqueInput
+    create: XOR<PedidoOperacionalCreateWithoutItensInput, PedidoOperacionalUncheckedCreateWithoutItensInput>
+  }
+
+  export type ProdutoComercialCreateWithoutItensPedidoInput = {
+    id?: string
+    nome: string
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
+    avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
+    mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
+    mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
+  }
+
+  export type ProdutoComercialUncheckedCreateWithoutItensPedidoInput = {
+    id?: string
+    nome: string
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixProdutoReferenciaId?: string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
+    avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
+    mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
+  }
+
+  export type ProdutoComercialCreateOrConnectWithoutItensPedidoInput = {
+    where: ProdutoComercialWhereUniqueInput
+    create: XOR<ProdutoComercialCreateWithoutItensPedidoInput, ProdutoComercialUncheckedCreateWithoutItensPedidoInput>
+  }
+
+  export type PedidoOperacionalUpsertWithoutItensInput = {
+    update: XOR<PedidoOperacionalUpdateWithoutItensInput, PedidoOperacionalUncheckedUpdateWithoutItensInput>
+    create: XOR<PedidoOperacionalCreateWithoutItensInput, PedidoOperacionalUncheckedCreateWithoutItensInput>
+    where?: PedidoOperacionalWhereInput
+  }
+
+  export type PedidoOperacionalUpdateToOneWithWhereWithoutItensInput = {
+    where?: PedidoOperacionalWhereInput
+    data: XOR<PedidoOperacionalUpdateWithoutItensInput, PedidoOperacionalUncheckedUpdateWithoutItensInput>
+  }
+
+  export type PedidoOperacionalUpdateWithoutItensInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
+    criadoPor?: UsuarioUpdateOneWithoutPedidosCriadosNestedInput
+    editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
+    avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
+    auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
+  }
+
+  export type PedidoOperacionalUncheckedUpdateWithoutItensInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    avarias?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoNestedInput
+    auditoria?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutPedidoNestedInput
+  }
+
+  export type ProdutoComercialUpsertWithoutItensPedidoInput = {
+    update: XOR<ProdutoComercialUpdateWithoutItensPedidoInput, ProdutoComercialUncheckedUpdateWithoutItensPedidoInput>
+    create: XOR<ProdutoComercialCreateWithoutItensPedidoInput, ProdutoComercialUncheckedCreateWithoutItensPedidoInput>
+    where?: ProdutoComercialWhereInput
+  }
+
+  export type ProdutoComercialUpdateToOneWithWhereWithoutItensPedidoInput = {
+    where?: ProdutoComercialWhereInput
+    data: XOR<ProdutoComercialUpdateWithoutItensPedidoInput, ProdutoComercialUncheckedUpdateWithoutItensPedidoInput>
+  }
+
+  export type ProdutoComercialUpdateWithoutItensPedidoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
+    avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
+    mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
+    mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
+  }
+
+  export type ProdutoComercialUncheckedUpdateWithoutItensPedidoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixProdutoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
+    avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
+    mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
+  }
+
+  export type PedidoOperacionalCreateWithoutAvariasInput = {
+    id?: string
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    observacoes?: string | null
+    prioridadeEntrega?: number | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
+    criadoPor?: UsuarioCreateNestedOneWithoutPedidosCriadosInput
+    editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
+    itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
+    auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
+  }
+
+  export type PedidoOperacionalUncheckedCreateWithoutAvariasInput = {
+    id?: string
+    clienteId?: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    observacoes?: string | null
+    prioridadeEntrega?: number | null
+    criadoPorId?: string | null
+    editadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    itens?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutPedidoInput
+    auditoria?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutPedidoInput
+  }
+
+  export type PedidoOperacionalCreateOrConnectWithoutAvariasInput = {
+    where: PedidoOperacionalWhereUniqueInput
+    create: XOR<PedidoOperacionalCreateWithoutAvariasInput, PedidoOperacionalUncheckedCreateWithoutAvariasInput>
+  }
+
+  export type ClienteCreateWithoutAvariasOperacionaisInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+    pedidos?: PedidoCreateNestedManyWithoutClienteInput
+    interacoes?: InteracaoCreateNestedManyWithoutClienteInput
+    oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
+    mensagens?: MensagemCreateNestedManyWithoutClienteInput
+    execucoes?: ExecucaoApiCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
+  }
+
+  export type ClienteUncheckedCreateWithoutAvariasOperacionaisInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+    pedidos?: PedidoUncheckedCreateNestedManyWithoutClienteInput
+    interacoes?: InteracaoUncheckedCreateNestedManyWithoutClienteInput
+    oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutClienteInput
+    mensagens?: MensagemUncheckedCreateNestedManyWithoutClienteInput
+    execucoes?: ExecucaoApiUncheckedCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteUncheckedCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
+  }
+
+  export type ClienteCreateOrConnectWithoutAvariasOperacionaisInput = {
+    where: ClienteWhereUniqueInput
+    create: XOR<ClienteCreateWithoutAvariasOperacionaisInput, ClienteUncheckedCreateWithoutAvariasOperacionaisInput>
+  }
+
+  export type ProdutoComercialCreateWithoutAvariasPedidoInput = {
+    id?: string
+    nome: string
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
+    itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
+    mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
+    mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
+  }
+
+  export type ProdutoComercialUncheckedCreateWithoutAvariasPedidoInput = {
+    id?: string
+    nome: string
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixProdutoReferenciaId?: string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
+    itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
+    mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
+  }
+
+  export type ProdutoComercialCreateOrConnectWithoutAvariasPedidoInput = {
+    where: ProdutoComercialWhereUniqueInput
+    create: XOR<ProdutoComercialCreateWithoutAvariasPedidoInput, ProdutoComercialUncheckedCreateWithoutAvariasPedidoInput>
+  }
+
+  export type UsuarioCreateWithoutAvariasCriadasInput = {
+    id?: string
+    nome: string
+    email: string
+    senhaHash: string
+    perfil: $Enums.PerfilUsuario
+    status?: $Enums.StatusUsuario
+    dataCadastro?: Date | string
+    mensagens?: MensagemCreateNestedManyWithoutAprovadorInput
+    refreshTokens?: RefreshTokenCreateNestedManyWithoutUsuarioInput
+    oportunidades?: OportunidadeCreateNestedManyWithoutResponsavelInput
+    pedidosCriados?: PedidoOperacionalCreateNestedManyWithoutCriadoPorInput
+    pedidosEditados?: PedidoOperacionalCreateNestedManyWithoutEditadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
+  }
+
+  export type UsuarioUncheckedCreateWithoutAvariasCriadasInput = {
+    id?: string
+    nome: string
+    email: string
+    senhaHash: string
+    perfil: $Enums.PerfilUsuario
+    status?: $Enums.StatusUsuario
+    dataCadastro?: Date | string
+    mensagens?: MensagemUncheckedCreateNestedManyWithoutAprovadorInput
+    refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUsuarioInput
+    oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutResponsavelInput
+    pedidosCriados?: PedidoOperacionalUncheckedCreateNestedManyWithoutCriadoPorInput
+    pedidosEditados?: PedidoOperacionalUncheckedCreateNestedManyWithoutEditadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
+  }
+
+  export type UsuarioCreateOrConnectWithoutAvariasCriadasInput = {
+    where: UsuarioWhereUniqueInput
+    create: XOR<UsuarioCreateWithoutAvariasCriadasInput, UsuarioUncheckedCreateWithoutAvariasCriadasInput>
+  }
+
+  export type PedidoOperacionalUpsertWithoutAvariasInput = {
+    update: XOR<PedidoOperacionalUpdateWithoutAvariasInput, PedidoOperacionalUncheckedUpdateWithoutAvariasInput>
+    create: XOR<PedidoOperacionalCreateWithoutAvariasInput, PedidoOperacionalUncheckedCreateWithoutAvariasInput>
+    where?: PedidoOperacionalWhereInput
+  }
+
+  export type PedidoOperacionalUpdateToOneWithWhereWithoutAvariasInput = {
+    where?: PedidoOperacionalWhereInput
+    data: XOR<PedidoOperacionalUpdateWithoutAvariasInput, PedidoOperacionalUncheckedUpdateWithoutAvariasInput>
+  }
+
+  export type PedidoOperacionalUpdateWithoutAvariasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
+    criadoPor?: UsuarioUpdateOneWithoutPedidosCriadosNestedInput
+    editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
+    itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
+    auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
+  }
+
+  export type PedidoOperacionalUncheckedUpdateWithoutAvariasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    itens?: PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoNestedInput
+    auditoria?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutPedidoNestedInput
+  }
+
+  export type ClienteUpsertWithoutAvariasOperacionaisInput = {
+    update: XOR<ClienteUpdateWithoutAvariasOperacionaisInput, ClienteUncheckedUpdateWithoutAvariasOperacionaisInput>
+    create: XOR<ClienteCreateWithoutAvariasOperacionaisInput, ClienteUncheckedCreateWithoutAvariasOperacionaisInput>
+    where?: ClienteWhereInput
+  }
+
+  export type ClienteUpdateToOneWithWhereWithoutAvariasOperacionaisInput = {
+    where?: ClienteWhereInput
+    data: XOR<ClienteUpdateWithoutAvariasOperacionaisInput, ClienteUncheckedUpdateWithoutAvariasOperacionaisInput>
+  }
+
+  export type ClienteUpdateWithoutAvariasOperacionaisInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedidos?: PedidoUpdateManyWithoutClienteNestedInput
+    interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
+    oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
+    mensagens?: MensagemUpdateManyWithoutClienteNestedInput
+    execucoes?: ExecucaoApiUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
+  }
+
+  export type ClienteUncheckedUpdateWithoutAvariasOperacionaisInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedidos?: PedidoUncheckedUpdateManyWithoutClienteNestedInput
+    interacoes?: InteracaoUncheckedUpdateManyWithoutClienteNestedInput
+    oportunidades?: OportunidadeUncheckedUpdateManyWithoutClienteNestedInput
+    mensagens?: MensagemUncheckedUpdateManyWithoutClienteNestedInput
+    execucoes?: ExecucaoApiUncheckedUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUncheckedUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
+  }
+
+  export type ProdutoComercialUpsertWithoutAvariasPedidoInput = {
+    update: XOR<ProdutoComercialUpdateWithoutAvariasPedidoInput, ProdutoComercialUncheckedUpdateWithoutAvariasPedidoInput>
+    create: XOR<ProdutoComercialCreateWithoutAvariasPedidoInput, ProdutoComercialUncheckedCreateWithoutAvariasPedidoInput>
+    where?: ProdutoComercialWhereInput
+  }
+
+  export type ProdutoComercialUpdateToOneWithWhereWithoutAvariasPedidoInput = {
+    where?: ProdutoComercialWhereInput
+    data: XOR<ProdutoComercialUpdateWithoutAvariasPedidoInput, ProdutoComercialUncheckedUpdateWithoutAvariasPedidoInput>
+  }
+
+  export type ProdutoComercialUpdateWithoutAvariasPedidoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
+    itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
+    mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
+    mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
+  }
+
+  export type ProdutoComercialUncheckedUpdateWithoutAvariasPedidoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixProdutoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
+    itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
+    mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
+  }
+
+  export type UsuarioUpsertWithoutAvariasCriadasInput = {
+    update: XOR<UsuarioUpdateWithoutAvariasCriadasInput, UsuarioUncheckedUpdateWithoutAvariasCriadasInput>
+    create: XOR<UsuarioCreateWithoutAvariasCriadasInput, UsuarioUncheckedCreateWithoutAvariasCriadasInput>
+    where?: UsuarioWhereInput
+  }
+
+  export type UsuarioUpdateToOneWithWhereWithoutAvariasCriadasInput = {
+    where?: UsuarioWhereInput
+    data: XOR<UsuarioUpdateWithoutAvariasCriadasInput, UsuarioUncheckedUpdateWithoutAvariasCriadasInput>
+  }
+
+  export type UsuarioUpdateWithoutAvariasCriadasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: StringFieldUpdateOperationsInput | string
+    perfil?: EnumPerfilUsuarioFieldUpdateOperationsInput | $Enums.PerfilUsuario
+    status?: EnumStatusUsuarioFieldUpdateOperationsInput | $Enums.StatusUsuario
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    mensagens?: MensagemUpdateManyWithoutAprovadorNestedInput
+    refreshTokens?: RefreshTokenUpdateManyWithoutUsuarioNestedInput
+    oportunidades?: OportunidadeUpdateManyWithoutResponsavelNestedInput
+    pedidosCriados?: PedidoOperacionalUpdateManyWithoutCriadoPorNestedInput
+    pedidosEditados?: PedidoOperacionalUpdateManyWithoutEditadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
+  }
+
+  export type UsuarioUncheckedUpdateWithoutAvariasCriadasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: StringFieldUpdateOperationsInput | string
+    perfil?: EnumPerfilUsuarioFieldUpdateOperationsInput | $Enums.PerfilUsuario
+    status?: EnumStatusUsuarioFieldUpdateOperationsInput | $Enums.StatusUsuario
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    mensagens?: MensagemUncheckedUpdateManyWithoutAprovadorNestedInput
+    refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUsuarioNestedInput
+    oportunidades?: OportunidadeUncheckedUpdateManyWithoutResponsavelNestedInput
+    pedidosCriados?: PedidoOperacionalUncheckedUpdateManyWithoutCriadoPorNestedInput
+    pedidosEditados?: PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
+  }
+
+  export type PedidoOperacionalCreateWithoutAuditoriaInput = {
+    id?: string
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    observacoes?: string | null
+    prioridadeEntrega?: number | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
+    criadoPor?: UsuarioCreateNestedOneWithoutPedidosCriadosInput
+    editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
+    itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
+    avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
+  }
+
+  export type PedidoOperacionalUncheckedCreateWithoutAuditoriaInput = {
+    id?: string
+    clienteId?: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    observacoes?: string | null
+    prioridadeEntrega?: number | null
+    criadoPorId?: string | null
+    editadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    itens?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutPedidoInput
+    avarias?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutPedidoInput
+  }
+
+  export type PedidoOperacionalCreateOrConnectWithoutAuditoriaInput = {
+    where: PedidoOperacionalWhereUniqueInput
+    create: XOR<PedidoOperacionalCreateWithoutAuditoriaInput, PedidoOperacionalUncheckedCreateWithoutAuditoriaInput>
+  }
+
+  export type UsuarioCreateWithoutAuditoriasPedidoInput = {
+    id?: string
+    nome: string
+    email: string
+    senhaHash: string
+    perfil: $Enums.PerfilUsuario
+    status?: $Enums.StatusUsuario
+    dataCadastro?: Date | string
+    mensagens?: MensagemCreateNestedManyWithoutAprovadorInput
+    refreshTokens?: RefreshTokenCreateNestedManyWithoutUsuarioInput
+    oportunidades?: OportunidadeCreateNestedManyWithoutResponsavelInput
+    pedidosCriados?: PedidoOperacionalCreateNestedManyWithoutCriadoPorInput
+    pedidosEditados?: PedidoOperacionalCreateNestedManyWithoutEditadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaCreateNestedManyWithoutCriadoPorInput
+  }
+
+  export type UsuarioUncheckedCreateWithoutAuditoriasPedidoInput = {
+    id?: string
+    nome: string
+    email: string
+    senhaHash: string
+    perfil: $Enums.PerfilUsuario
+    status?: $Enums.StatusUsuario
+    dataCadastro?: Date | string
+    mensagens?: MensagemUncheckedCreateNestedManyWithoutAprovadorInput
+    refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUsuarioInput
+    oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutResponsavelInput
+    pedidosCriados?: PedidoOperacionalUncheckedCreateNestedManyWithoutCriadoPorInput
+    pedidosEditados?: PedidoOperacionalUncheckedCreateNestedManyWithoutEditadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutCriadoPorInput
+  }
+
+  export type UsuarioCreateOrConnectWithoutAuditoriasPedidoInput = {
+    where: UsuarioWhereUniqueInput
+    create: XOR<UsuarioCreateWithoutAuditoriasPedidoInput, UsuarioUncheckedCreateWithoutAuditoriasPedidoInput>
+  }
+
+  export type PedidoOperacionalUpsertWithoutAuditoriaInput = {
+    update: XOR<PedidoOperacionalUpdateWithoutAuditoriaInput, PedidoOperacionalUncheckedUpdateWithoutAuditoriaInput>
+    create: XOR<PedidoOperacionalCreateWithoutAuditoriaInput, PedidoOperacionalUncheckedCreateWithoutAuditoriaInput>
+    where?: PedidoOperacionalWhereInput
+  }
+
+  export type PedidoOperacionalUpdateToOneWithWhereWithoutAuditoriaInput = {
+    where?: PedidoOperacionalWhereInput
+    data: XOR<PedidoOperacionalUpdateWithoutAuditoriaInput, PedidoOperacionalUncheckedUpdateWithoutAuditoriaInput>
+  }
+
+  export type PedidoOperacionalUpdateWithoutAuditoriaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
+    criadoPor?: UsuarioUpdateOneWithoutPedidosCriadosNestedInput
+    editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
+    itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
+    avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
+  }
+
+  export type PedidoOperacionalUncheckedUpdateWithoutAuditoriaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    itens?: PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoNestedInput
+    avarias?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoNestedInput
+  }
+
+  export type UsuarioUpsertWithoutAuditoriasPedidoInput = {
+    update: XOR<UsuarioUpdateWithoutAuditoriasPedidoInput, UsuarioUncheckedUpdateWithoutAuditoriasPedidoInput>
+    create: XOR<UsuarioCreateWithoutAuditoriasPedidoInput, UsuarioUncheckedCreateWithoutAuditoriasPedidoInput>
+    where?: UsuarioWhereInput
+  }
+
+  export type UsuarioUpdateToOneWithWhereWithoutAuditoriasPedidoInput = {
+    where?: UsuarioWhereInput
+    data: XOR<UsuarioUpdateWithoutAuditoriasPedidoInput, UsuarioUncheckedUpdateWithoutAuditoriasPedidoInput>
+  }
+
+  export type UsuarioUpdateWithoutAuditoriasPedidoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: StringFieldUpdateOperationsInput | string
+    perfil?: EnumPerfilUsuarioFieldUpdateOperationsInput | $Enums.PerfilUsuario
+    status?: EnumStatusUsuarioFieldUpdateOperationsInput | $Enums.StatusUsuario
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    mensagens?: MensagemUpdateManyWithoutAprovadorNestedInput
+    refreshTokens?: RefreshTokenUpdateManyWithoutUsuarioNestedInput
+    oportunidades?: OportunidadeUpdateManyWithoutResponsavelNestedInput
+    pedidosCriados?: PedidoOperacionalUpdateManyWithoutCriadoPorNestedInput
+    pedidosEditados?: PedidoOperacionalUpdateManyWithoutEditadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUpdateManyWithoutCriadoPorNestedInput
+  }
+
+  export type UsuarioUncheckedUpdateWithoutAuditoriasPedidoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: StringFieldUpdateOperationsInput | string
+    perfil?: EnumPerfilUsuarioFieldUpdateOperationsInput | $Enums.PerfilUsuario
+    status?: EnumStatusUsuarioFieldUpdateOperationsInput | $Enums.StatusUsuario
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    mensagens?: MensagemUncheckedUpdateManyWithoutAprovadorNestedInput
+    refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUsuarioNestedInput
+    oportunidades?: OportunidadeUncheckedUpdateManyWithoutResponsavelNestedInput
+    pedidosCriados?: PedidoOperacionalUncheckedUpdateManyWithoutCriadoPorNestedInput
+    pedidosEditados?: PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorNestedInput
+  }
+
   export type ClienteCreateWithoutPedidosInput = {
     id?: string
     externalId?: string | null
@@ -21858,6 +38728,10 @@ export namespace Prisma {
     oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
     mensagens?: MensagemCreateNestedManyWithoutClienteInput
     execucoes?: ExecucaoApiCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutPedidosInput = {
@@ -21881,6 +38755,10 @@ export namespace Prisma {
     oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutClienteInput
     mensagens?: MensagemUncheckedCreateNestedManyWithoutClienteInput
     execucoes?: ExecucaoApiUncheckedCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteUncheckedCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutPedidosInput = {
@@ -21948,6 +38826,10 @@ export namespace Prisma {
     oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
     mensagens?: MensagemUpdateManyWithoutClienteNestedInput
     execucoes?: ExecucaoApiUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutPedidosInput = {
@@ -21971,6 +38853,10 @@ export namespace Prisma {
     oportunidades?: OportunidadeUncheckedUpdateManyWithoutClienteNestedInput
     mensagens?: MensagemUncheckedUpdateManyWithoutClienteNestedInput
     execucoes?: ExecucaoApiUncheckedUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUncheckedUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
   }
 
   export type ItemPedidoUpsertWithWhereUniqueWithoutPedidoInput = {
@@ -22099,6 +38985,10 @@ export namespace Prisma {
     oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
     mensagens?: MensagemCreateNestedManyWithoutClienteInput
     execucoes?: ExecucaoApiCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutInteracoesInput = {
@@ -22122,6 +39012,10 @@ export namespace Prisma {
     oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutClienteInput
     mensagens?: MensagemUncheckedCreateNestedManyWithoutClienteInput
     execucoes?: ExecucaoApiUncheckedCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteUncheckedCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutInteracoesInput = {
@@ -22161,6 +39055,10 @@ export namespace Prisma {
     oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
     mensagens?: MensagemUpdateManyWithoutClienteNestedInput
     execucoes?: ExecucaoApiUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutInteracoesInput = {
@@ -22184,6 +39082,10 @@ export namespace Prisma {
     oportunidades?: OportunidadeUncheckedUpdateManyWithoutClienteNestedInput
     mensagens?: MensagemUncheckedUpdateManyWithoutClienteNestedInput
     execucoes?: ExecucaoApiUncheckedUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUncheckedUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteCreateWithoutOportunidadesInput = {
@@ -22207,6 +39109,10 @@ export namespace Prisma {
     interacoes?: InteracaoCreateNestedManyWithoutClienteInput
     mensagens?: MensagemCreateNestedManyWithoutClienteInput
     execucoes?: ExecucaoApiCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutOportunidadesInput = {
@@ -22230,6 +39136,10 @@ export namespace Prisma {
     interacoes?: InteracaoUncheckedCreateNestedManyWithoutClienteInput
     mensagens?: MensagemUncheckedCreateNestedManyWithoutClienteInput
     execucoes?: ExecucaoApiUncheckedCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteUncheckedCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutOportunidadesInput = {
@@ -22247,6 +39157,10 @@ export namespace Prisma {
     dataCadastro?: Date | string
     mensagens?: MensagemCreateNestedManyWithoutAprovadorInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUsuarioInput
+    pedidosCriados?: PedidoOperacionalCreateNestedManyWithoutCriadoPorInput
+    pedidosEditados?: PedidoOperacionalCreateNestedManyWithoutEditadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaCreateNestedManyWithoutCriadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
   }
 
   export type UsuarioUncheckedCreateWithoutOportunidadesInput = {
@@ -22259,6 +39173,10 @@ export namespace Prisma {
     dataCadastro?: Date | string
     mensagens?: MensagemUncheckedCreateNestedManyWithoutAprovadorInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUsuarioInput
+    pedidosCriados?: PedidoOperacionalUncheckedCreateNestedManyWithoutCriadoPorInput
+    pedidosEditados?: PedidoOperacionalUncheckedCreateNestedManyWithoutEditadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutCriadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
   }
 
   export type UsuarioCreateOrConnectWithoutOportunidadesInput = {
@@ -22298,6 +39216,10 @@ export namespace Prisma {
     interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
     mensagens?: MensagemUpdateManyWithoutClienteNestedInput
     execucoes?: ExecucaoApiUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutOportunidadesInput = {
@@ -22321,6 +39243,10 @@ export namespace Prisma {
     interacoes?: InteracaoUncheckedUpdateManyWithoutClienteNestedInput
     mensagens?: MensagemUncheckedUpdateManyWithoutClienteNestedInput
     execucoes?: ExecucaoApiUncheckedUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUncheckedUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
   }
 
   export type UsuarioUpsertWithoutOportunidadesInput = {
@@ -22344,6 +39270,10 @@ export namespace Prisma {
     dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
     mensagens?: MensagemUpdateManyWithoutAprovadorNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUsuarioNestedInput
+    pedidosCriados?: PedidoOperacionalUpdateManyWithoutCriadoPorNestedInput
+    pedidosEditados?: PedidoOperacionalUpdateManyWithoutEditadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUpdateManyWithoutCriadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
   }
 
   export type UsuarioUncheckedUpdateWithoutOportunidadesInput = {
@@ -22356,6 +39286,10 @@ export namespace Prisma {
     dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
     mensagens?: MensagemUncheckedUpdateManyWithoutAprovadorNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUsuarioNestedInput
+    pedidosCriados?: PedidoOperacionalUncheckedUpdateManyWithoutCriadoPorNestedInput
+    pedidosEditados?: PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
   }
 
   export type ClienteCreateWithoutMensagensInput = {
@@ -22379,6 +39313,10 @@ export namespace Prisma {
     interacoes?: InteracaoCreateNestedManyWithoutClienteInput
     oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
     execucoes?: ExecucaoApiCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutMensagensInput = {
@@ -22402,6 +39340,10 @@ export namespace Prisma {
     interacoes?: InteracaoUncheckedCreateNestedManyWithoutClienteInput
     oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutClienteInput
     execucoes?: ExecucaoApiUncheckedCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteUncheckedCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutMensagensInput = {
@@ -22419,6 +39361,10 @@ export namespace Prisma {
     dataCadastro?: Date | string
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUsuarioInput
     oportunidades?: OportunidadeCreateNestedManyWithoutResponsavelInput
+    pedidosCriados?: PedidoOperacionalCreateNestedManyWithoutCriadoPorInput
+    pedidosEditados?: PedidoOperacionalCreateNestedManyWithoutEditadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaCreateNestedManyWithoutCriadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
   }
 
   export type UsuarioUncheckedCreateWithoutMensagensInput = {
@@ -22431,6 +39377,10 @@ export namespace Prisma {
     dataCadastro?: Date | string
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUsuarioInput
     oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutResponsavelInput
+    pedidosCriados?: PedidoOperacionalUncheckedCreateNestedManyWithoutCriadoPorInput
+    pedidosEditados?: PedidoOperacionalUncheckedCreateNestedManyWithoutEditadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutCriadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
   }
 
   export type UsuarioCreateOrConnectWithoutMensagensInput = {
@@ -22470,6 +39420,10 @@ export namespace Prisma {
     interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
     oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
     execucoes?: ExecucaoApiUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutMensagensInput = {
@@ -22493,6 +39447,10 @@ export namespace Prisma {
     interacoes?: InteracaoUncheckedUpdateManyWithoutClienteNestedInput
     oportunidades?: OportunidadeUncheckedUpdateManyWithoutClienteNestedInput
     execucoes?: ExecucaoApiUncheckedUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUncheckedUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
   }
 
   export type UsuarioUpsertWithoutMensagensInput = {
@@ -22516,6 +39474,10 @@ export namespace Prisma {
     dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
     refreshTokens?: RefreshTokenUpdateManyWithoutUsuarioNestedInput
     oportunidades?: OportunidadeUpdateManyWithoutResponsavelNestedInput
+    pedidosCriados?: PedidoOperacionalUpdateManyWithoutCriadoPorNestedInput
+    pedidosEditados?: PedidoOperacionalUpdateManyWithoutEditadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUpdateManyWithoutCriadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
   }
 
   export type UsuarioUncheckedUpdateWithoutMensagensInput = {
@@ -22528,6 +39490,10 @@ export namespace Prisma {
     dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUsuarioNestedInput
     oportunidades?: OportunidadeUncheckedUpdateManyWithoutResponsavelNestedInput
+    pedidosCriados?: PedidoOperacionalUncheckedUpdateManyWithoutCriadoPorNestedInput
+    pedidosEditados?: PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
   }
 
   export type ClienteCreateWithoutExecucoesInput = {
@@ -22551,6 +39517,10 @@ export namespace Prisma {
     interacoes?: InteracaoCreateNestedManyWithoutClienteInput
     oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
     mensagens?: MensagemCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutExecucoesInput = {
@@ -22574,6 +39544,10 @@ export namespace Prisma {
     interacoes?: InteracaoUncheckedCreateNestedManyWithoutClienteInput
     oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutClienteInput
     mensagens?: MensagemUncheckedCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteUncheckedCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutExecucoesInput = {
@@ -22613,6 +39587,10 @@ export namespace Prisma {
     interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
     oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
     mensagens?: MensagemUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutExecucoesInput = {
@@ -22636,6 +39614,10 @@ export namespace Prisma {
     interacoes?: InteracaoUncheckedUpdateManyWithoutClienteNestedInput
     oportunidades?: OportunidadeUncheckedUpdateManyWithoutClienteNestedInput
     mensagens?: MensagemUncheckedUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUncheckedUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
   }
 
   export type MensagemCreateManyAprovadorInput = {
@@ -22672,6 +39654,60 @@ export namespace Prisma {
     statusOportunidade: $Enums.StatusOportunidade
     dataCriacao?: Date | string
     dataFechamento?: Date | string | null
+  }
+
+  export type PedidoOperacionalCreateManyCriadoPorInput = {
+    id?: string
+    clienteId?: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    observacoes?: string | null
+    prioridadeEntrega?: number | null
+    editadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PedidoOperacionalCreateManyEditadoPorInput = {
+    id?: string
+    clienteId?: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    observacoes?: string | null
+    prioridadeEntrega?: number | null
+    criadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PedidoOperacionalAvariaCreateManyCriadoPorInput = {
+    id?: string
+    pedidoId: string
+    clienteId?: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    produtoId: string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    observacoes?: string | null
+    criadoEm?: Date | string
+  }
+
+  export type PedidoOperacionalAuditoriaCreateManyUsuarioInput = {
+    id?: string
+    pedidoId: string
+    usuarioNome?: string | null
+    acao: string
+    antes?: NullableJsonNullValueInput | InputJsonValue
+    depois?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
   }
 
   export type MensagemUpdateWithoutAprovadorInput = {
@@ -22782,6 +39818,180 @@ export namespace Prisma {
     dataFechamento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
+  export type PedidoOperacionalUpdateWithoutCriadoPorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
+    editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
+    itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
+    avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
+    auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
+  }
+
+  export type PedidoOperacionalUncheckedUpdateWithoutCriadoPorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    itens?: PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoNestedInput
+    avarias?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoNestedInput
+    auditoria?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutPedidoNestedInput
+  }
+
+  export type PedidoOperacionalUncheckedUpdateManyWithoutCriadoPorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalUpdateWithoutEditadoPorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
+    criadoPor?: UsuarioUpdateOneWithoutPedidosCriadosNestedInput
+    itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
+    avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
+    auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
+  }
+
+  export type PedidoOperacionalUncheckedUpdateWithoutEditadoPorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    itens?: PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoNestedInput
+    avarias?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoNestedInput
+    auditoria?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutPedidoNestedInput
+  }
+
+  export type PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalAvariaUpdateWithoutCriadoPorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedido?: PedidoOperacionalUpdateOneRequiredWithoutAvariasNestedInput
+    cliente?: ClienteUpdateOneWithoutAvariasOperacionaisNestedInput
+    produto?: ProdutoComercialUpdateOneRequiredWithoutAvariasPedidoNestedInput
+  }
+
+  export type PedidoOperacionalAvariaUncheckedUpdateWithoutCriadoPorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalAuditoriaUpdateWithoutUsuarioInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    usuarioNome?: NullableStringFieldUpdateOperationsInput | string | null
+    acao?: StringFieldUpdateOperationsInput | string
+    antes?: NullableJsonNullValueInput | InputJsonValue
+    depois?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedido?: PedidoOperacionalUpdateOneRequiredWithoutAuditoriaNestedInput
+  }
+
+  export type PedidoOperacionalAuditoriaUncheckedUpdateWithoutUsuarioInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+    usuarioNome?: NullableStringFieldUpdateOperationsInput | string | null
+    acao?: StringFieldUpdateOperationsInput | string
+    antes?: NullableJsonNullValueInput | InputJsonValue
+    depois?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+    usuarioNome?: NullableStringFieldUpdateOperationsInput | string | null
+    acao?: StringFieldUpdateOperationsInput | string
+    antes?: NullableJsonNullValueInput | InputJsonValue
+    depois?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type PedidoCreateManyClienteInput = {
     id?: string
     externalId?: string | null
@@ -22844,6 +40054,47 @@ export namespace Prisma {
     detalhesExecucao: JsonNullValueInput | InputJsonValue
     mensagemErro?: string | null
     duracaoMs?: number | null
+  }
+
+  export type PedidoOperacionalCreateManyClienteInput = {
+    id?: string
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    observacoes?: string | null
+    prioridadeEntrega?: number | null
+    criadoPorId?: string | null
+    editadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PedidoOperacionalAvariaCreateManyClienteInput = {
+    id?: string
+    pedidoId: string
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    produtoId: string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    observacoes?: string | null
+    criadoPorId?: string | null
+    criadoEm?: Date | string
+  }
+
+  export type ClienteLegadoContaAzulLinkCreateManyClienteInput = {
+    id?: string
+    legacyClientId: string
+    legacyClientName: string
+    contaAzulCustomerId: string
+    metodo: string
+    confianca: Decimal | DecimalJsLike | number | string
+    revisado?: boolean
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
   }
 
   export type PedidoUpdateWithoutClienteInput = {
@@ -23038,6 +40289,515 @@ export namespace Prisma {
     detalhesExecucao?: JsonNullValueInput | InputJsonValue
     mensagemErro?: NullableStringFieldUpdateOperationsInput | string | null
     duracaoMs?: NullableIntFieldUpdateOperationsInput | number | null
+  }
+
+  export type PedidoOperacionalUpdateWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    criadoPor?: UsuarioUpdateOneWithoutPedidosCriadosNestedInput
+    editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
+    itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
+    avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
+    auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
+  }
+
+  export type PedidoOperacionalUncheckedUpdateWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    itens?: PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoNestedInput
+    avarias?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoNestedInput
+    auditoria?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutPedidoNestedInput
+  }
+
+  export type PedidoOperacionalUncheckedUpdateManyWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalAvariaUpdateWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedido?: PedidoOperacionalUpdateOneRequiredWithoutAvariasNestedInput
+    produto?: ProdutoComercialUpdateOneRequiredWithoutAvariasPedidoNestedInput
+    criadoPor?: UsuarioUpdateOneWithoutAvariasCriadasNestedInput
+  }
+
+  export type PedidoOperacionalAvariaUncheckedUpdateWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ClienteLegadoContaAzulLinkUpdateWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    legacyClientId?: StringFieldUpdateOperationsInput | string
+    legacyClientName?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    metodo?: StringFieldUpdateOperationsInput | string
+    confianca?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    revisado?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ClienteLegadoContaAzulLinkUncheckedUpdateWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    legacyClientId?: StringFieldUpdateOperationsInput | string
+    legacyClientName?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    metodo?: StringFieldUpdateOperationsInput | string
+    confianca?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    revisado?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    legacyClientId?: StringFieldUpdateOperationsInput | string
+    legacyClientName?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    metodo?: StringFieldUpdateOperationsInput | string
+    confianca?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    revisado?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PrecoEspecialClienteCreateManyProdutoInput = {
+    id?: string
+    regraId: string
+    preco: Decimal | DecimalJsLike | number | string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PedidoOperacionalItemCreateManyProdutoInput = {
+    id?: string
+    pedidoId: string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    precoUnit?: Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: boolean
+    observacoes?: string | null
+  }
+
+  export type PedidoOperacionalAvariaCreateManyProdutoInput = {
+    id?: string
+    pedidoId: string
+    clienteId?: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    observacoes?: string | null
+    criadoPorId?: string | null
+    criadoEm?: Date | string
+  }
+
+  export type ProdutoComercialCreateManyMixProdutoReferenciaInput = {
+    id?: string
+    nome: string
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PrecoEspecialClienteUpdateWithoutProdutoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    preco?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    regra?: RegraComercialClienteUpdateOneRequiredWithoutPrecosEspeciaisNestedInput
+  }
+
+  export type PrecoEspecialClienteUncheckedUpdateWithoutProdutoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    regraId?: StringFieldUpdateOperationsInput | string
+    preco?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    regraId?: StringFieldUpdateOperationsInput | string
+    preco?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalItemUpdateWithoutProdutoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    precoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: BoolFieldUpdateOperationsInput | boolean
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    pedido?: PedidoOperacionalUpdateOneRequiredWithoutItensNestedInput
+  }
+
+  export type PedidoOperacionalItemUncheckedUpdateWithoutProdutoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    precoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: BoolFieldUpdateOperationsInput | boolean
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    precoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: BoolFieldUpdateOperationsInput | boolean
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type PedidoOperacionalAvariaUpdateWithoutProdutoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedido?: PedidoOperacionalUpdateOneRequiredWithoutAvariasNestedInput
+    cliente?: ClienteUpdateOneWithoutAvariasOperacionaisNestedInput
+    criadoPor?: UsuarioUpdateOneWithoutAvariasCriadasNestedInput
+  }
+
+  export type PedidoOperacionalAvariaUncheckedUpdateWithoutProdutoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ProdutoComercialUpdateWithoutMixProdutoReferenciaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
+    itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
+    avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
+    mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
+  }
+
+  export type ProdutoComercialUncheckedUpdateWithoutMixProdutoReferenciaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
+    itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
+    avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
+    mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
+  }
+
+  export type ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PrecoEspecialClienteCreateManyRegraInput = {
+    id?: string
+    produtoId: string
+    preco: Decimal | DecimalJsLike | number | string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PrecoEspecialClienteUpdateWithoutRegraInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    preco?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    produto?: ProdutoComercialUpdateOneRequiredWithoutPrecosEspeciaisNestedInput
+  }
+
+  export type PrecoEspecialClienteUncheckedUpdateWithoutRegraInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    preco?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PrecoEspecialClienteUncheckedUpdateManyWithoutRegraInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    preco?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalItemCreateManyPedidoInput = {
+    id?: string
+    produtoId: string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    precoUnit?: Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: boolean
+    observacoes?: string | null
+  }
+
+  export type PedidoOperacionalAvariaCreateManyPedidoInput = {
+    id?: string
+    clienteId?: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    produtoId: string
+    produtoNome: string
+    categoria?: string | null
+    quantidade: Decimal | DecimalJsLike | number | string
+    observacoes?: string | null
+    criadoPorId?: string | null
+    criadoEm?: Date | string
+  }
+
+  export type PedidoOperacionalAuditoriaCreateManyPedidoInput = {
+    id?: string
+    usuarioId?: string | null
+    usuarioNome?: string | null
+    acao: string
+    antes?: NullableJsonNullValueInput | InputJsonValue
+    depois?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+  }
+
+  export type PedidoOperacionalItemUpdateWithoutPedidoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    precoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: BoolFieldUpdateOperationsInput | boolean
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    produto?: ProdutoComercialUpdateOneRequiredWithoutItensPedidoNestedInput
+  }
+
+  export type PedidoOperacionalItemUncheckedUpdateWithoutPedidoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    precoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: BoolFieldUpdateOperationsInput | boolean
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    precoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    precoEspecial?: BoolFieldUpdateOperationsInput | boolean
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type PedidoOperacionalAvariaUpdateWithoutPedidoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneWithoutAvariasOperacionaisNestedInput
+    produto?: ProdutoComercialUpdateOneRequiredWithoutAvariasPedidoNestedInput
+    criadoPor?: UsuarioUpdateOneWithoutAvariasCriadasNestedInput
+  }
+
+  export type PedidoOperacionalAvariaUncheckedUpdateWithoutPedidoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    produtoNome?: StringFieldUpdateOperationsInput | string
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalAuditoriaUpdateWithoutPedidoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    usuarioNome?: NullableStringFieldUpdateOperationsInput | string | null
+    acao?: StringFieldUpdateOperationsInput | string
+    antes?: NullableJsonNullValueInput | InputJsonValue
+    depois?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    usuario?: UsuarioUpdateOneWithoutAuditoriasPedidoNestedInput
+  }
+
+  export type PedidoOperacionalAuditoriaUncheckedUpdateWithoutPedidoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    usuarioId?: NullableStringFieldUpdateOperationsInput | string | null
+    usuarioNome?: NullableStringFieldUpdateOperationsInput | string | null
+    acao?: StringFieldUpdateOperationsInput | string
+    antes?: NullableJsonNullValueInput | InputJsonValue
+    depois?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutPedidoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    usuarioId?: NullableStringFieldUpdateOperationsInput | string | null
+    usuarioNome?: NullableStringFieldUpdateOperationsInput | string | null
+    acao?: StringFieldUpdateOperationsInput | string
+    antes?: NullableJsonNullValueInput | InputJsonValue
+    depois?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ItemPedidoCreateManyPedidoInput = {
