@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Download, TrendingDown, TrendingUp, Users } from "lucide-react";
 import {
@@ -33,31 +33,55 @@ import { trpc } from "@/lib/trpc";
 
 const GREEN = CHART.green.mid;
 
+const KPI_SERIE_OPTIONS = [
+  { id: "valor_liquido", label: "Valor líquido", kind: "money" },
+  { id: "valor_bruto", label: "Valor bruto", kind: "money" },
+  { id: "frete", label: "Frete", kind: "money" },
+  { id: "desconto", label: "Desconto", kind: "money" },
+  { id: "orcamentos", label: "Orçamentos", kind: "money" },
+  { id: "pedidos", label: "Pedidos", kind: "number" },
+  { id: "clientes", label: "Clientes", kind: "number" },
+  { id: "ticket_medio", label: "Ticket médio", kind: "money" },
+] as const;
+
 function periodoFromPreset(p: PeriodoPreset): "DIARIO" | "SEMANAL" | "MENSAL" {
   if (p === "semana_atual") return "SEMANAL";
   if (p === "mes_atual" || p === "ultimos_12_meses" || p === "todo_periodo") return "MENSAL";
   return "DIARIO";
 }
 
-function exportSnapshotsCsv(
-  rows: { nomeKpi: string; dataReferencia: Date; valor: { toString(): string } | number; periodo: string }[],
-) {
-  const header = "nome_kpi,data_referencia,valor,periodo\n";
-  const body = rows
-    .map((r) => {
-      const d = new Date(r.dataReferencia).toISOString().slice(0, 10);
-      const v = String(typeof r.valor === "object" && r.valor != null && "toString" in r.valor ? r.valor.toString() : r.valor).replace(
-        /"/g,
-        '""',
-      );
-      return `"${r.nomeKpi}","${d}","${v}","${r.periodo}"`;
-    })
+function fmtMoney(n: number | null | undefined, maximumFractionDigits = 0) {
+  return Number(n ?? 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits,
+  });
+}
+
+function exportKpisCsv(resumo: any) {
+  const header = "periodo,valor_liquido,valor_bruto,frete,desconto,orcamentos,pedidos,clientes,ticket_medio\n";
+  const body = (resumo?.serie ?? [])
+    .map((r: any) =>
+      [
+        r.periodo,
+        r.valor_liquido,
+        r.valor_bruto,
+        r.frete,
+        r.desconto,
+        r.orcamentos,
+        r.pedidos,
+        r.clientes,
+        r.ticket_medio,
+      ]
+        .map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`)
+        .join(","),
+    )
     .join("\n");
   const blob = new Blob([header + body], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `kpi_snapshots_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `kpis_conta_azul_${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -90,45 +114,28 @@ export function Kpis() {
   const periodoKpi = periodoFromPreset(preset);
 
   const resumo = trpc.comercial.kpis.resumoCalculado.useQuery({ inicio, fim }, { staleTime: 30_000 });
-  const snap = trpc.comercial.kpis.snapshots.useQuery({ periodo: periodoKpi, limite: 120 }, { staleTime: 30_000 });
-
-  const nomesKpi = useMemo(() => {
-    const s = new Set<string>();
-    for (const r of snap.data ?? []) s.add(r.nomeKpi);
-    return Array.from(s).sort();
-  }, [snap.data]);
-
-  const [kpiLinha, setKpiLinha] = useState<string>("ticket_medio");
-  useEffect(() => {
-    if (nomesKpi.length && !nomesKpi.includes(kpiLinha)) setKpiLinha(nomesKpi[0]!);
-  }, [nomesKpi, kpiLinha]);
+  const [kpiLinha, setKpiLinha] = useState<(typeof KPI_SERIE_OPTIONS)[number]["id"]>("valor_liquido");
 
   const serieLinha = useMemo(() => {
-    const rows = (snap.data ?? []).filter((r) => r.nomeKpi === kpiLinha);
-    return [...rows]
-      .sort((a, b) => new Date(a.dataReferencia).getTime() - new Date(b.dataReferencia).getTime())
-      .map((r) => ({
-        data: new Date(r.dataReferencia).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }),
-        valor: Number(r.valor),
-      }));
-  }, [snap.data, kpiLinha]);
+    return (resumo.data?.serie ?? []).map((r: any) => ({
+      data: new Date(`${r.periodo}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }),
+      valor: Number(r[kpiLinha] ?? 0),
+    }));
+  }, [resumo.data?.serie, kpiLinha]);
 
   const dadosPizzaNome = useMemo(() => {
-    const best = new Map<string, { t: number; v: number }>();
-    for (const r of snap.data ?? []) {
-      const t = new Date(r.dataReferencia).getTime();
-      const cur = best.get(r.nomeKpi);
-      const v = Number(r.valor);
-      if (!cur || t > cur.t) best.set(r.nomeKpi, { t, v });
-    }
-    return Array.from(best.entries()).map(([name, { v }]) => ({ name, value: Math.abs(v) }));
-  }, [snap.data]);
+    const kpis = resumo.data;
+    if (!kpis) return [];
+    return [
+      { name: "Valor líquido", value: Math.abs(Number(kpis.valorLiquido ?? 0)) },
+      { name: "Orçamentos", value: Math.abs(Number(kpis.valorOrcamentos ?? 0)) },
+      { name: "Frete", value: Math.abs(Number(kpis.valorFrete ?? 0)) },
+      { name: "Desconto", value: Math.abs(Number(kpis.valorDesconto ?? 0)) },
+    ].filter((x) => x.value > 0);
+  }, [resumo.data]);
 
-  const ticketMedioGeral = useMemo(() => {
-    const arr = resumo.data?.ticketsMediosPorCliente ?? [];
-    if (!arr.length) return null;
-    return arr.reduce((a, b) => a + b, 0) / arr.length;
-  }, [resumo.data?.ticketsMediosPorCliente]);
+  const selectedKpi = KPI_SERIE_OPTIONS.find((x) => x.id === kpiLinha) ?? KPI_SERIE_OPTIONS[0];
+  const ticketMedioGeral = resumo.data?.ticketMedioPorClienteMes ?? null;
 
   const churnPct = useMemo(() => {
     const ativos = resumo.data?.clientesAtivosComprando ?? 0;
@@ -144,8 +151,8 @@ export function Kpis() {
         title="KPIs e relatórios"
         subtitle={
           <>
-            Período, tendência e exportação — dados calculados a partir dos pedidos e snapshots agendados.
-            <TooltipInfo text="Snapshots são gravados pelo job de KPIs; se estiver vazio, use o período com dados no banco." />
+            Período, tendência e exportação — dados calculados diretamente das vendas sincronizadas da Conta Azul.
+            <TooltipInfo text="Os totais usam a mesma composição validada contra o relatório da Conta Azul: bruto + frete - desconto = líquido." />
           </>
         }
         actions={
@@ -161,8 +168,8 @@ export function Kpis() {
             <button
               type="button"
               className="inline-flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white px-4 py-2 text-sm font-semibold text-cyan-800 transition hover:border-cyan-500/40 hover:bg-cyan-50 disabled:opacity-50 dark:border-white/15 dark:bg-white/5 dark:text-cyan-300 dark:hover:border-cyan-400/40 dark:hover:bg-white/10"
-              disabled={!snap.data?.length}
-              onClick={() => snap.data && exportSnapshotsCsv(snap.data)}
+              disabled={!resumo.data?.serie?.length}
+              onClick={() => resumo.data && exportKpisCsv(resumo.data)}
             >
               <Download className="h-4 w-4" />
               Exportar CSV
@@ -187,11 +194,16 @@ export function Kpis() {
           className={`${fuGlassSm} ${fuGlassHover} border-emerald-400/25 p-5`}
         >
           <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-800 dark:text-emerald-400/80">
-            <Users className="h-4 w-4" />
-            Clientes ativos
-            <TooltipInfo text="Clientes com pelo menos um pedido no intervalo selecionado." />
+            <TrendingUp className="h-4 w-4" />
+            Valor líquido
+            <TooltipInfo text="Total líquido das vendas Conta Azul no período: bruto + frete - desconto." />
           </div>
-          <div className={`mt-3 text-3xl font-bold ${fuTextStrong} ${fuStat}`}>{resumo.data?.clientesAtivosComprando ?? "—"}</div>
+          <div className={`mt-3 text-3xl font-bold ${fuTextStrong} ${fuStat}`}>
+            {resumo.data ? fmtMoney(resumo.data.valorLiquido, 2) : "—"}
+          </div>
+          <p className={`mt-1 text-xs ${fuTextMuted}`}>
+            Bruto {fmtMoney(resumo.data?.valorBruto, 2)} · Frete {fmtMoney(resumo.data?.valorFrete, 2)}
+          </p>
         </motion.div>
 
         <motion.div
@@ -201,22 +213,38 @@ export function Kpis() {
           className={`${fuGlassSm} ${fuGlassHover} border-cyan-400/25 p-5`}
         >
           <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-800 dark:text-cyan-400/80">
-            <TrendingUp className="h-4 w-4" />
-            Ticket médio (média)
-            <TooltipInfo text="Média dos tickets por cliente no período; útil para comparar com meta comercial." />
+            <Users className="h-4 w-4" />
+            Vendas realizadas
+            <TooltipInfo text="Quantidade de vendas classificadas como realizadas na Conta Azul." />
           </div>
-          <div className={`mt-3 text-2xl font-bold text-cyan-800 dark:text-cyan-200 ${fuStat}`}>
-            {ticketMedioGeral != null
-              ? ticketMedioGeral.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })
-              : "—"}
+          <div className={`mt-3 text-3xl font-bold text-cyan-800 dark:text-cyan-200 ${fuStat}`}>
+            {resumo.data?.pedidosVenda ?? "—"}
           </div>
+          <p className={`mt-1 text-xs ${fuTextMuted}`}>Orçamentos: {fmtMoney(resumo.data?.valorOrcamentos, 2)}</p>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className={`${fuGlassSm} ${fuGlassHover} border p-5 ${
+          className={`${fuGlassSm} ${fuGlassHover} border-sky-400/25 p-5`}
+        >
+          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-sky-800 dark:text-sky-400/80">
+            <TrendingUp className="h-4 w-4" />
+            Ticket médio
+            <TooltipInfo text="Ticket médio por pedido e média mensal por cliente, calculados sobre vendas Conta Azul." />
+          </div>
+          <div className={`mt-3 text-3xl font-bold text-sky-800 dark:text-sky-200 ${fuStat}`}>
+            {resumo.data ? fmtMoney(resumo.data.ticketMedioPedido, 0) : "—"}
+          </div>
+          <p className={`mt-1 text-xs ${fuTextMuted}`}>Por cliente/mês: {ticketMedioGeral != null ? fmtMoney(ticketMedioGeral, 0) : "—"}</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className={`${fuGlassSm} border p-5 ${
             (churnPct ?? 0) > 15
               ? "border-rose-300/80 bg-rose-50 dark:border-rose-500/35 dark:bg-rose-950/20"
               : "border-amber-200/90 bg-amber-50/90 dark:border-amber-400/25 dark:bg-amber-950/10"
@@ -224,25 +252,15 @@ export function Kpis() {
         >
           <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-900 dark:text-amber-400/80">
             <TrendingDown className="h-4 w-4" />
-            Sinal de churn
-            <TooltipInfo text="Clientes sem compra recente (heurística &gt;45 dias até a data final do período)." />
+            Clientes / churn
+            <TooltipInfo text="Clientes com compra no período e clientes sem compra recente até o fim do período." />
           </div>
           <div className={`mt-3 text-3xl font-bold ${(churnPct ?? 0) > 15 ? "text-rose-600 dark:text-rose-300" : "text-amber-700 dark:text-amber-300"} ${fuStat}`}>
-            {resumo.data?.sinalChurnClientes ?? "—"}{" "}
-            <span className={`text-lg font-semibold ${fuTextMuted}`}>
-              {churnPct != null ? `(${churnPct.toFixed(1)}%)` : ""}
-            </span>
+            {resumo.data?.clientesAtivosComprando ?? "—"}
           </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className={`${fuGlassSm} p-5`}
-        >
-          <div className={`text-[10px] font-semibold uppercase tracking-[0.2em] ${fuTextMuted}`}>Pontos no gráfico</div>
-          <div className={`mt-3 text-3xl font-bold ${fuTextStrong} ${fuStat}`}>{serieLinha.length}</div>
+          <p className={`mt-1 text-xs ${fuTextMuted}`}>
+            Churn: {resumo.data?.sinalChurnClientes ?? "—"} {churnPct != null ? `(${churnPct.toFixed(1)}%)` : ""}
+          </p>
         </motion.div>
       </div>
 
@@ -251,22 +269,18 @@ export function Kpis() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className={`text-lg font-bold ${fuTitleGradient}`}>Tendência</h2>
-              <p className={`text-sm ${fuTextMuted}`}>Escolha o KPI salvo nos snapshots</p>
+              <p className={`text-sm ${fuTextMuted}`}>Evolução diária calculada das vendas Conta Azul</p>
             </div>
             <select
-              value={nomesKpi.includes(kpiLinha) ? kpiLinha : nomesKpi[0] ?? "ticket_medio"}
-              onChange={(e) => setKpiLinha(e.target.value)}
+              value={kpiLinha}
+              onChange={(e) => setKpiLinha(e.target.value as (typeof KPI_SERIE_OPTIONS)[number]["id"])}
               className="rounded-xl border border-slate-200/90 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-black/40 dark:text-slate-200 dark:focus:border-cyan-400/40"
             >
-              {nomesKpi.length ? (
-                nomesKpi.map((n) => (
-                  <option key={n} value={n}>
-                    {n.replace(/_/g, " ")}
-                  </option>
-                ))
-              ) : (
-                <option value="ticket_medio">ticket medio (sem dados)</option>
-              )}
+              {KPI_SERIE_OPTIONS.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
           <div className="mt-4 h-80">
@@ -274,7 +288,7 @@ export function Kpis() {
               <div
                 className={`flex h-full items-center justify-center rounded-xl border border-dashed border-slate-200/90 bg-slate-50 text-sm dark:border-white/10 dark:bg-white/5 ${fuTextMuted}`}
               >
-                Sem snapshots para este KPI/período. Gere dados ou ajuste o agregador.
+                Sem vendas Conta Azul no período selecionado.
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
@@ -283,7 +297,14 @@ export function Kpis() {
                   <CartesianGrid {...chartGridProps} />
                   <XAxis dataKey="data" {...chartAxisXProps} />
                   <YAxis {...chartAxisYProps} />
-                  <RTooltip {...chartTooltipProps} cursor={chartTooltipCursorLine} />
+                  <RTooltip
+                    {...chartTooltipProps}
+                    cursor={chartTooltipCursorLine}
+                    formatter={(v: number) => [
+                      selectedKpi.kind === "money" ? fmtMoney(v, 2) : Number(v).toLocaleString("pt-BR"),
+                      selectedKpi.label,
+                    ]}
+                  />
                   <Area
                     type="monotone"
                     dataKey="valor"
@@ -308,12 +329,12 @@ export function Kpis() {
         </section>
 
         <section className={`${fuGlass} ${fuGlassHover} p-6`}>
-          <h2 className={`text-lg font-bold ${fuTitleGradient}`}>Mix por KPI</h2>
-          <p className={`text-sm ${fuTextMuted}`}>Último valor conhecido por nome (snapshot)</p>
+          <h2 className={`text-lg font-bold ${fuTitleGradient}`}>Composição Conta Azul</h2>
+          <p className={`text-sm ${fuTextMuted}`}>Líquido, orçamentos, frete e desconto do período</p>
           <div className="mt-4 h-64">
             {dadosPizzaNome.length === 0 ? (
               <div className={`flex h-full items-center justify-center text-center text-sm ${fuTextMuted}`}>
-                Sem dados para pizza
+                Sem vendas no período
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
@@ -350,7 +371,7 @@ export function Kpis() {
       <section className={`${fuGlass} ${fuGlassHover} p-6`}>
         <h2 className={`text-lg font-bold ${fuTitleGradient}`}>Mapa proporcional — comparativo rápido</h2>
         <p className={`text-sm ${fuTextMuted}`}>
-          Mesmos dados da pizza: cada retângulo reflete a participação do KPI no total.
+          Cada retângulo reflete a participação dos indicadores financeiros no período.
         </p>
         <div className="mt-4 h-64">
           {dadosPizzaNome.length === 0 ? (
