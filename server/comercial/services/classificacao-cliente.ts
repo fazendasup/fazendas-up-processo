@@ -1,5 +1,7 @@
 import type { Cliente, Pedido } from "../generated/prisma/index.js";
 import { StatusRelacionamento } from "../generated/prisma/index.js";
+import { composicaoDoPedidoParaDashboard } from "../lib/composicao-valor.js";
+import { classificarStatusPedido } from "../lib/pedido-status.js";
 
 export type SinaisVenda = {
   diasSemCompra: number | null;
@@ -7,37 +9,152 @@ export type SinaisVenda = {
   frequenciaPorSemana: number;
   totalPedidos: number;
   valorTotalPeriodo: number;
+  valorUltimos30: number;
+  valor30Anterior: number;
+  tendenciaReceitaPct: number | null;
+  categorias: string[];
+  produtos: string[];
+  categoriaPrincipal: string | null;
+  produtoPrincipal: string | null;
+  diversidadeCategorias: number;
+  mesesAtivos: number;
 };
 
-export function extrairSinaisDePedidos(pedidos: Pedido[], agora = new Date()): SinaisVenda {
-  if (pedidos.length === 0) {
-    return {
-      diasSemCompra: null,
-      ticketMedio: 0,
-      frequenciaPorSemana: 0,
-      totalPedidos: 0,
-      valorTotalPeriodo: 0,
-    };
+type PedidoComItens = Pedido & {
+  itens?: Array<{
+    produto: string;
+    categoria?: string | null;
+    quantidade?: unknown;
+  }>;
+};
+
+function sinalVazio(): SinaisVenda {
+  return {
+    diasSemCompra: null,
+    ticketMedio: 0,
+    frequenciaPorSemana: 0,
+    totalPedidos: 0,
+    valorTotalPeriodo: 0,
+    valorUltimos30: 0,
+    valor30Anterior: 0,
+    tendenciaReceitaPct: null,
+    categorias: [],
+    produtos: [],
+    categoriaPrincipal: null,
+    produtoPrincipal: null,
+    diversidadeCategorias: 0,
+    mesesAtivos: 0,
+  };
+}
+
+function addCount(
+  map: Map<string, number>,
+  key: string | null | undefined,
+  qtd = 1
+) {
+  const k = String(key ?? "").trim();
+  if (!k) return;
+  map.set(k, (map.get(k) ?? 0) + qtd);
+}
+
+function topKey(map: Map<string, number>): string | null {
+  return (
+    Array.from(map.entries()).sort(
+      (a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-BR")
+    )[0]?.[0] ?? null
+  );
+}
+
+export function extrairSinaisDePedidos(
+  pedidos: PedidoComItens[],
+  agora = new Date()
+): SinaisVenda {
+  const vendas = pedidos.filter(
+    p => classificarStatusPedido(p.statusPedido) === "venda"
+  );
+  if (vendas.length === 0) {
+    return sinalVazio();
   }
 
-  const ordenados = [...pedidos].sort((a, b) => a.dataPedido.getTime() - b.dataPedido.getTime());
+  const ordenados = [...vendas].sort(
+    (a, b) => a.dataPedido.getTime() - b.dataPedido.getTime()
+  );
   const ultima = ordenados[ordenados.length - 1]!;
-  const diasSemCompra = Math.floor((agora.getTime() - ultima.dataPedido.getTime()) / (1000 * 60 * 60 * 24));
+  const diasSemCompra = Math.max(
+    0,
+    Math.floor((agora.getTime() - ultima.dataPedido.getTime()) / 86_400_000)
+  );
 
-  const valorTotalPeriodo = pedidos.reduce((s, p) => s + Number(p.valorTotal), 0);
-  const ticketMedio = valorTotalPeriodo / pedidos.length;
+  const valorPedido = (p: PedidoComItens) =>
+    composicaoDoPedidoParaDashboard(p).valorLiquido;
+  const valorTotalPeriodo = vendas.reduce((s, p) => s + valorPedido(p), 0);
+  const ticketMedio = valorTotalPeriodo / vendas.length;
 
   const primeira = ordenados[0]!;
-  const diasJanela = Math.max(1, (ultima.dataPedido.getTime() - primeira.dataPedido.getTime()) / (1000 * 60 * 60 * 24));
+  const diasJanela = Math.max(
+    7,
+    (ultima.dataPedido.getTime() - primeira.dataPedido.getTime()) / 86_400_000
+  );
   const semanas = diasJanela / 7;
-  const frequenciaPorSemana = semanas > 0 ? pedidos.length / semanas : pedidos.length;
+  const frequenciaPorSemana = vendas.length / semanas;
+
+  const t30 = agora.getTime() - 30 * 86_400_000;
+  const t60 = agora.getTime() - 60 * 86_400_000;
+  let valorUltimos30 = 0;
+  let valor30Anterior = 0;
+  const meses = new Set<string>();
+  const categoriasCount = new Map<string, number>();
+  const produtosCount = new Map<string, number>();
+
+  for (const p of vendas) {
+    const valor = valorPedido(p);
+    const t = p.dataPedido.getTime();
+    if (t >= t30) valorUltimos30 += valor;
+    else if (t >= t60) valor30Anterior += valor;
+    meses.add(
+      `${p.dataPedido.getFullYear()}-${String(p.dataPedido.getMonth() + 1).padStart(2, "0")}`
+    );
+    for (const item of p.itens ?? []) {
+      const qtd = Number(item.quantidade ?? 1);
+      addCount(
+        categoriasCount,
+        item.categoria,
+        Number.isFinite(qtd) && qtd > 0 ? qtd : 1
+      );
+      addCount(
+        produtosCount,
+        item.produto,
+        Number.isFinite(qtd) && qtd > 0 ? qtd : 1
+      );
+    }
+  }
+
+  const tendenciaReceitaPct =
+    valor30Anterior > 0
+      ? (valorUltimos30 - valor30Anterior) / valor30Anterior
+      : valorUltimos30 > 0
+        ? 1
+        : null;
 
   return {
     diasSemCompra,
     ticketMedio,
     frequenciaPorSemana,
-    totalPedidos: pedidos.length,
+    totalPedidos: vendas.length,
     valorTotalPeriodo,
+    valorUltimos30,
+    valor30Anterior,
+    tendenciaReceitaPct,
+    categorias: Array.from(categoriasCount.keys()).sort((a, b) =>
+      a.localeCompare(b, "pt-BR")
+    ),
+    produtos: Array.from(produtosCount.keys()).sort((a, b) =>
+      a.localeCompare(b, "pt-BR")
+    ),
+    categoriaPrincipal: topKey(categoriasCount),
+    produtoPrincipal: topKey(produtosCount),
+    diversidadeCategorias: categoriasCount.size,
+    mesesAtivos: meses.size,
   };
 }
 
@@ -46,43 +163,92 @@ export function extrairSinaisDePedidos(pedidos: Pedido[], agora = new Date()): S
  * Manus entra só como refinamento qualitativo em outro endpoint.
  */
 export function calcularScoreComercialBase(sinais: SinaisVenda): number {
-  if (sinais.totalPedidos === 0) return 10;
-
-  let score = 40;
-
-  if (sinais.ticketMedio >= 800) score += 20;
-  else if (sinais.ticketMedio >= 400) score += 12;
-  else if (sinais.ticketMedio >= 200) score += 6;
-
-  if (sinais.frequenciaPorSemana >= 2) score += 20;
-  else if (sinais.frequenciaPorSemana >= 1) score += 12;
-  else if (sinais.frequenciaPorSemana >= 0.5) score += 6;
+  if (sinais.totalPedidos === 0) return 5;
 
   const dias = sinais.diasSemCompra ?? 999;
-  if (dias <= 7) score += 15;
-  else if (dias <= 21) score += 8;
-  else if (dias <= 45) score += 0;
-  else score -= 20;
+  const recencia =
+    dias <= 7
+      ? 24
+      : dias <= 15
+        ? 20
+        : dias <= 30
+          ? 13
+          : dias <= 45
+            ? 7
+            : dias <= 75
+              ? 2
+              : -8;
+  const frequencia = Math.min(
+    22,
+    Math.log1p(sinais.frequenciaPorSemana * 3.2) * 12
+  );
+  const valor = Math.min(
+    22,
+    Math.log10(Math.max(1, sinais.valorTotalPeriodo)) * 5.4
+  );
+  const ticket = Math.min(
+    17,
+    Math.log10(Math.max(1, sinais.ticketMedio)) * 6.2
+  );
+  const diversidade = Math.min(7, sinais.diversidadeCategorias * 1.7);
+  const recorrencia = Math.min(6, sinais.mesesAtivos * 1.5);
+  const tendencia =
+    sinais.tendenciaReceitaPct == null
+      ? 0
+      : sinais.tendenciaReceitaPct >= 0.4
+        ? 6
+        : sinais.tendenciaReceitaPct >= 0.1
+          ? 3
+          : sinais.tendenciaReceitaPct <= -0.45
+            ? -9
+            : sinais.tendenciaReceitaPct <= -0.2
+              ? -5
+              : 0;
 
-  if (sinais.valorTotalPeriodo >= 50_000) score += 5;
-
+  const score =
+    8 +
+    recencia +
+    frequencia +
+    valor +
+    ticket +
+    diversidade +
+    recorrencia +
+    tendencia;
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
-export function inferirStatusRelacionamento(sinais: SinaisVenda): StatusRelacionamento {
+export function inferirStatusRelacionamento(
+  sinais: SinaisVenda
+): StatusRelacionamento {
   const dias = sinais.diasSemCompra ?? 999;
   if (sinais.totalPedidos === 0) return StatusRelacionamento.INATIVO;
-  if (dias > 60) return StatusRelacionamento.INATIVO;
-  if (dias > 35 || sinais.frequenciaPorSemana < 0.25) return StatusRelacionamento.EM_RISCO;
-  if (sinais.ticketMedio >= 700 && sinais.frequenciaPorSemana >= 1.5) return StatusRelacionamento.ESTRATEGICO;
+  if (dias > 75) return StatusRelacionamento.INATIVO;
+  if (
+    dias > 35 ||
+    sinais.frequenciaPorSemana < 0.2 ||
+    (sinais.tendenciaReceitaPct ?? 0) <= -0.55
+  ) {
+    return StatusRelacionamento.EM_RISCO;
+  }
+  if (
+    sinais.valorTotalPeriodo >= 8_000 &&
+    sinais.ticketMedio >= 350 &&
+    sinais.frequenciaPorSemana >= 0.8 &&
+    dias <= 21
+  ) {
+    return StatusRelacionamento.ESTRATEGICO;
+  }
   return StatusRelacionamento.ATIVO;
 }
 
 export function sugerirTags(_cliente: Cliente, sinais: SinaisVenda): string[] {
   const tags: string[] = [];
   if (sinais.ticketMedio >= 700) tags.push("Premium");
-  if (sinais.valorTotalPeriodo >= 40_000) tags.push("Volume");
+  if (sinais.valorTotalPeriodo >= 8_000) tags.push("Volume");
   if ((sinais.diasSemCompra ?? 0) > 35) tags.push("Reativacao");
   if (sinais.frequenciaPorSemana >= 2) tags.push("Alta_Frequencia");
+  if ((sinais.tendenciaReceitaPct ?? 0) <= -0.3) tags.push("Queda_Recente");
+  if (sinais.diversidadeCategorias <= 1 && sinais.totalPedidos >= 3)
+    tags.push("Mix_Concentrado");
   return tags;
 }

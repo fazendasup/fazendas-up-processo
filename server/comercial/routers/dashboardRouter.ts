@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { OrigemPedido, StatusRelacionamento, TipoCliente } from "../generated/prisma/index.js";
+import {
+  OrigemPedido,
+  StatusRelacionamento,
+  TipoCliente,
+} from "../generated/prisma/index.js";
 import {
   composicaoDoPedidoParaDashboard,
   pedidoComposicaoProvavelmenteIncompleta,
@@ -7,11 +11,21 @@ import {
   totaisVazios,
   type TotaisComposicao,
 } from "../lib/composicao-valor.js";
-import { classificarStatusPedido, pedidoContaOrcamento } from "../lib/pedido-status.js";
-import { diaIsoAmericaSp, mesIsoAmericaSp } from "@shared/comercial/periodo-america-sp";
+import {
+  classificarStatusPedido,
+  pedidoContaOrcamento,
+} from "../lib/pedido-status.js";
+import {
+  diaIsoAmericaSp,
+  mesIsoAmericaSp,
+} from "@shared/comercial/periodo-america-sp";
 import { router, comercialProcedure } from "../../_core/trpc";
 
-function pedidoNoMesCalendarioSp(dataPedido: Date, inicio: Date, fim: Date): boolean {
+function pedidoNoMesCalendarioSp(
+  dataPedido: Date,
+  inicio: Date,
+  fim: Date
+): boolean {
   const mesRef = mesIsoAmericaSp(dataPedido);
   const mesInicio = mesIsoAmericaSp(inicio);
   const mesFim = mesIsoAmericaSp(fim);
@@ -25,7 +39,7 @@ function totaisPorTipo(): Record<TipoCliente, TotaisComposicao> {
       acc[tipo] = totaisVazios();
       return acc;
     },
-    {} as Record<TipoCliente, TotaisComposicao>,
+    {} as Record<TipoCliente, TotaisComposicao>
   );
 }
 
@@ -35,7 +49,7 @@ export const dashboardRouter = router({
       z.object({
         inicio: z.coerce.date(),
         fim: z.coerce.date(),
-      }),
+      })
     )
     .query(async ({ ctx, input }) => {
       const pedidos = await ctx.prisma!.pedido.findMany({
@@ -65,16 +79,30 @@ export const dashboardRouter = router({
       const pedidosVenda: typeof pedidos = [];
       const ticketPorTipo = Object.values(TipoCliente).reduce(
         (acc, tipo) => {
-          acc[tipo] = { total: 0, pedidos: 0, clientes: new Set<string>(), clienteMeses: new Set<string>() };
+          acc[tipo] = {
+            total: 0,
+            pedidos: 0,
+            clientes: new Set<string>(),
+            clienteMeses: new Set<string>(),
+          };
           return acc;
         },
-        {} as Record<TipoCliente, { total: number; pedidos: number; clientes: Set<string>; clienteMeses: Set<string> }>,
+        {} as Record<
+          TipoCliente,
+          {
+            total: number;
+            pedidos: number;
+            clientes: Set<string>;
+            clienteMeses: Set<string>;
+          }
+        >
       );
       const ticketMensalPorCliente = new Map<string, number>();
       let vendasComposicaoIncompleta = 0;
 
       for (const p of pedidos) {
-        if (!pedidoNoMesCalendarioSp(p.dataPedido, input.inicio, input.fim)) continue;
+        if (!pedidoNoMesCalendarioSp(p.dataPedido, input.inicio, input.fim))
+          continue;
         const comp = composicaoDoPedidoParaDashboard(p);
         const cls = classificarStatusPedido(p.statusPedido);
         if (cls === "venda") {
@@ -85,9 +113,13 @@ export const dashboardRouter = router({
           ticketPorTipo[p.cliente.tipo].clientes.add(p.clienteId);
           const clienteMesKey = `${p.clienteId}|${mesIsoAmericaSp(p.dataPedido)}`;
           ticketPorTipo[p.cliente.tipo].clienteMeses.add(clienteMesKey);
-          ticketMensalPorCliente.set(clienteMesKey, (ticketMensalPorCliente.get(clienteMesKey) ?? 0) + comp.valorLiquido);
+          ticketMensalPorCliente.set(
+            clienteMesKey,
+            (ticketMensalPorCliente.get(clienteMesKey) ?? 0) + comp.valorLiquido
+          );
           pedidosVenda.push(p);
-          if (pedidoComposicaoProvavelmenteIncompleta(p)) vendasComposicaoIncompleta++;
+          if (pedidoComposicaoProvavelmenteIncompleta(p))
+            vendasComposicaoIncompleta++;
         } else if (cls === "orcamento") {
           somarTotais(composicaoOrcamentos, comp);
           somarTotais(composicaoOrcamentosPorTipo[p.cliente.tipo], comp);
@@ -96,9 +128,13 @@ export const dashboardRouter = router({
 
       const vendasRealizadas = composicaoVendas.liquido;
       const orcamentos = composicaoOrcamentos.liquido;
-      const clientesDistintos = new Set(pedidosVenda.map((p) => p.clienteId)).size;
+      const clientesDistintos = new Set(pedidosVenda.map(p => p.clienteId))
+        .size;
       const ticketsMensais = Array.from(ticketMensalPorCliente.values());
-      const ticketMedio = ticketsMensais.length > 0 ? ticketsMensais.reduce((a, b) => a + b, 0) / ticketsMensais.length : 0;
+      const ticketMedio =
+        ticketsMensais.length > 0
+          ? ticketsMensais.reduce((a, b) => a + b, 0) / ticketsMensais.length
+          : 0;
       const ticketMedioPorCliente = ticketMedio;
 
       const clientesEmRisco = await ctx.prisma!.cliente.count({
@@ -119,12 +155,26 @@ export const dashboardRouter = router({
         _count: { id: true },
       });
 
-      const topOportunidades = await ctx.prisma!.oportunidade.findMany({
+      const oportunidadesParaRanking = await ctx.prisma!.oportunidade.findMany({
         where: { statusOportunidade: { in: ["ABERTA", "EM_CONTATO"] } },
-        orderBy: [{ prioridade: "desc" }, { dataCriacao: "desc" }],
-        take: 5,
+        orderBy: { dataCriacao: "desc" },
+        take: 100,
         include: { cliente: { select: { id: true, nome: true, tipo: true } } },
       });
+      const prioridadePeso = { ALTA: 3, MEDIA: 2, BAIXA: 1 } as const;
+      const topOportunidades = oportunidadesParaRanking
+        .sort((a, b) => {
+          const sa =
+            prioridadePeso[a.prioridade] * 1_000_000 +
+            Number(a.valorEstimado ?? 0) *
+              (Number(a.probabilidadeConversao ?? 0) / 100);
+          const sb =
+            prioridadePeso[b.prioridade] * 1_000_000 +
+            Number(b.valorEstimado ?? 0) *
+              (Number(b.probabilidadeConversao ?? 0) / 100);
+          return sb - sa || b.dataCriacao.getTime() - a.dataCriacao.getTime();
+        })
+        .slice(0, 5);
 
       const potencialOportunidades = await ctx.prisma!.oportunidade.aggregate({
         where: { statusOportunidade: { in: ["ABERTA", "EM_CONTATO"] } },
@@ -141,8 +191,11 @@ export const dashboardRouter = router({
       });
 
       const totalExecucoes = await ctx.prisma!.execucaoApi.count();
-      const execucoesSucesso = await ctx.prisma!.execucaoApi.count({ where: { statusExecucao: "SUCESSO" } });
-      const taxaSucessoApis = totalExecucoes > 0 ? execucoesSucesso / totalExecucoes : 1;
+      const execucoesSucesso = await ctx.prisma!.execucaoApi.count({
+        where: { statusExecucao: "SUCESSO" },
+      });
+      const taxaSucessoApis =
+        totalExecucoes > 0 ? execucoesSucesso / totalExecucoes : 1;
 
       return {
         periodo: { inicio: input.inicio, fim: input.fim },
@@ -153,18 +206,22 @@ export const dashboardRouter = router({
           ticketMedio,
           ticketMedioPorCliente,
           pedidos: pedidosVenda.length,
-          pedidosOrcamento: pedidos.filter((p) => pedidoContaOrcamento(p.statusPedido)).length,
+          pedidosOrcamento: pedidos.filter(p =>
+            pedidoContaOrcamento(p.statusPedido)
+          ).length,
           clientesComPedido: clientesDistintos,
           clientesAtivos,
           clientesEmRisco,
           oportunidadesAbertas,
-          potencialOportunidades: Number(potencialOportunidades._sum.valorEstimado ?? 0),
+          potencialOportunidades: Number(
+            potencialOportunidades._sum.valorEstimado ?? 0
+          ),
           mensagensPendentes,
           composicaoVendas,
           composicaoOrcamentos,
           composicaoVendasPorTipo,
           composicaoOrcamentosPorTipo,
-          ticketMedioPorTipo: Object.values(TipoCliente).map((tipo) => {
+          ticketMedioPorTipo: Object.values(TipoCliente).map(tipo => {
             const row = ticketPorTipo[tipo];
             return {
               tipo,
@@ -172,18 +229,24 @@ export const dashboardRouter = router({
               pedidos: row.pedidos,
               clientes: row.clientes.size,
               mesesCliente: row.clienteMeses.size,
-              ticketMedio: row.clienteMeses.size > 0 ? row.total / row.clienteMeses.size : 0,
-              ticketMedioPorCliente: row.clienteMeses.size > 0 ? row.total / row.clienteMeses.size : 0,
+              ticketMedio:
+                row.clienteMeses.size > 0
+                  ? row.total / row.clienteMeses.size
+                  : 0,
+              ticketMedioPorCliente:
+                row.clienteMeses.size > 0
+                  ? row.total / row.clienteMeses.size
+                  : 0,
             };
           }),
           vendasComposicaoIncompleta,
           taxaSucessoApis,
         },
-        oportunidadesPorTipo: oportunidadesPorTipo.map((o) => ({
+        oportunidadesPorTipo: oportunidadesPorTipo.map(o => ({
           tipo: o.tipoOportunidade,
           total: o._count.id,
         })),
-        topOportunidades: topOportunidades.map((o) => ({
+        topOportunidades: topOportunidades.map(o => ({
           id: o.id,
           tipo: o.tipoOportunidade,
           descricao: o.descricao,
@@ -196,7 +259,13 @@ export const dashboardRouter = router({
     }),
 
   serieFaturamento: comercialProcedure
-    .input(z.object({ inicio: z.coerce.date(), fim: z.coerce.date(), bucket: z.enum(["day", "week"]).default("day") }))
+    .input(
+      z.object({
+        inicio: z.coerce.date(),
+        fim: z.coerce.date(),
+        bucket: z.enum(["day", "week"]).default("day"),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const pedidos = await ctx.prisma!.pedido.findMany({
         where: {
@@ -217,7 +286,8 @@ export const dashboardRouter = router({
 
       const map = new Map<string, { vendas: number; orcamentos: number }>();
       for (const p of pedidos) {
-        if (!pedidoNoMesCalendarioSp(p.dataPedido, input.inicio, input.fim)) continue;
+        if (!pedidoNoMesCalendarioSp(p.dataPedido, input.inicio, input.fim))
+          continue;
         const d = new Date(p.dataPedido);
         const key =
           input.bucket === "week"

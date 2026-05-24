@@ -1,8 +1,21 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { PrioridadeOportunidade, StatusOportunidade } from "../generated/prisma/index.js";
+import {
+  PrioridadeOportunidade,
+  StatusOportunidade,
+} from "../generated/prisma/index.js";
 import { router, comercialProcedure } from "../../_core/trpc";
 import { prioridadeOrdenacao } from "../services/priorizacao";
+
+function scoreOportunidade(o: {
+  prioridade: PrioridadeOportunidade;
+  valorEstimado: unknown;
+  probabilidadeConversao: unknown;
+}) {
+  const valor = Number(o.valorEstimado ?? 0);
+  const prob = Number(o.probabilidadeConversao ?? 0);
+  return prioridadeOrdenacao(o.prioridade) * 1_000_000 + valor * (prob / 100);
+}
 
 export const oportunidadesRouter = router({
   listar: comercialProcedure
@@ -10,7 +23,7 @@ export const oportunidadesRouter = router({
       z.object({
         status: z.nativeEnum(StatusOportunidade).optional(),
         prioridade: z.nativeEnum(PrioridadeOportunidade).optional(),
-      }),
+      })
     )
     .query(async ({ ctx, input }) => {
       const lista = await ctx.prisma!.oportunidade.findMany({
@@ -18,13 +31,24 @@ export const oportunidadesRouter = router({
           statusOportunidade: input.status,
           prioridade: input.prioridade,
         },
-        include: { cliente: { select: { id: true, nome: true, tipo: true, statusRelacionamento: true } } },
+        include: {
+          cliente: {
+            select: {
+              id: true,
+              nome: true,
+              tipo: true,
+              statusRelacionamento: true,
+            },
+          },
+        },
         orderBy: { dataCriacao: "desc" },
         take: 100,
       });
 
       return lista.sort(
-        (a, b) => prioridadeOrdenacao(b.prioridade) - prioridadeOrdenacao(a.prioridade),
+        (a, b) =>
+          scoreOportunidade(b) - scoreOportunidade(a) ||
+          b.dataCriacao.getTime() - a.dataCriacao.getTime()
       );
     }),
 
@@ -35,7 +59,11 @@ export const oportunidadesRouter = router({
         where: { id: input.oportunidadeId },
         include: { cliente: true },
       });
-      if (!op) throw new TRPCError({ code: "NOT_FOUND", message: "Oportunidade não encontrada" });
+      if (!op)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Oportunidade não encontrada",
+        });
 
       const sugerido = `Olá ${op.cliente.nome}, temos uma oportunidade alinhada ao seu histórico: ${op.descricao}`;
 
