@@ -184,6 +184,7 @@ function ColumnHeaderFilter({
   onSort,
   onToggleValue,
   onSelectAll,
+  onClearAll,
   align = "left",
 }: {
   label: string;
@@ -195,6 +196,7 @@ function ColumnHeaderFilter({
   onSort: (direction: "asc" | "desc") => void;
   onToggleValue: (value: string) => void;
   onSelectAll: () => void;
+  onClearAll: () => void;
   align?: "left" | "right" | "center";
 }) {
   const [search, setSearch] = useState("");
@@ -273,6 +275,13 @@ function ColumnHeaderFilter({
               className="text-xs font-bold text-emerald-700 hover:underline dark:text-emerald-300"
             >
               Selecionar todos
+            </button>
+            <button
+              type="button"
+              onClick={onClearAll}
+              className="text-xs font-bold text-red-700 hover:underline dark:text-red-300"
+            >
+              Limpar todos
             </button>
             <span className="text-xs font-semibold text-slate-500">
               {hasSelection ? `${selectedSet.size}/${options.length}` : `Todos (${options.length})`}
@@ -634,6 +643,15 @@ export function Relatorios() {
       return { ...current, [id]: nextReport };
     });
   };
+  const clearAllColumnValues = (id: string, key: string) => {
+    setColumnFilters(current => ({
+      ...current,
+      [id]: {
+        ...(current[id] ?? {}),
+        [key]: { selected: [] },
+      },
+    }));
+  };
   const setColumnSort = (
     id: string,
     key: string,
@@ -673,6 +691,7 @@ export function Relatorios() {
       onSort={direction => setColumnSort(id, key, direction)}
       onToggleValue={value => toggleColumnValue(id, key, value)}
       onSelectAll={() => selectAllColumnValues(id, key)}
+      onClearAll={() => clearAllColumnValues(id, key)}
     />
   );
   const filterRows = <T,>(id: string, rows: T[]): T[] => {
