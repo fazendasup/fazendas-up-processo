@@ -150,6 +150,41 @@ function TableFilter({
   );
 }
 
+function ColumnHeaderFilter({
+  label,
+  value,
+  onChange,
+  align = "left",
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  align?: "left" | "right" | "center";
+}) {
+  return (
+    <div
+      className={[
+        "min-w-28 space-y-1",
+        align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left",
+      ].join(" ")}
+    >
+      <div>{label}</div>
+      <input
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        onClick={e => e.stopPropagation()}
+        placeholder="Filtrar"
+        className={[
+          "w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-normal text-slate-900 outline-none",
+          "placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20",
+          "dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-100",
+          align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left",
+        ].join(" ")}
+      />
+    </div>
+  );
+}
+
 type ColumnFilterDef<T> = {
   key: string;
   label: string;
@@ -162,57 +197,6 @@ type TotalDef<T> = {
   value: (row: T) => number | null | undefined;
   format?: (value: number) => string;
 };
-
-function ColumnFiltersBar<T>({
-  reportId,
-  filters,
-  columns,
-  onChange,
-  onClear,
-}: {
-  reportId: string;
-  filters: Record<string, Record<string, string>>;
-  columns: ColumnFilterDef<T>[];
-  onChange: (reportId: string, column: string, value: string) => void;
-  onClear: (reportId: string) => void;
-}) {
-  const current = filters[reportId] ?? {};
-  const hasAny = Object.values(current).some(value => value.trim());
-
-  if (!columns.length) return null;
-
-  return (
-    <div className="mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-300">
-          Filtros por coluna
-        </span>
-        {hasAny ? (
-          <button
-            type="button"
-            onClick={() => onClear(reportId)}
-            className="text-xs font-bold text-emerald-700 hover:underline dark:text-emerald-400"
-          >
-            Limpar filtros das colunas
-          </button>
-        ) : null}
-      </div>
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        {columns.map(column => (
-          <label key={column.key} className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-            {column.label}
-            <input
-              value={current[column.key] ?? ""}
-              onChange={e => onChange(reportId, column.key, e.target.value)}
-              placeholder={`Filtrar ${column.label.toLowerCase()}`}
-              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm font-normal text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20 dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-100"
-            />
-          </label>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function TotalsBar<T>({
   rows,
@@ -458,6 +442,21 @@ export function Relatorios() {
   const clearColumnFilters = (id: string) => {
     setColumnFilters(current => ({ ...current, [id]: {} }));
   };
+  const hasColumnFilters = (id: string) =>
+    Object.values(columnFilters[id] ?? {}).some(value => value.trim());
+  const columnHeader = (
+    id: string,
+    key: string,
+    label: string,
+    align: "left" | "right" | "center" = "left"
+  ) => (
+    <ColumnHeaderFilter
+      label={label}
+      align={align}
+      value={columnFilters[id]?.[key] ?? ""}
+      onChange={value => setColumnFilter(id, key, value)}
+    />
+  );
   const filterRows = <T,>(id: string, rows: T[]): T[] => {
     const needle = (tableFilters[id] ?? "").trim().toLowerCase();
     const afterGlobal = needle
@@ -511,61 +510,59 @@ export function Relatorios() {
   };
   const renderTableFilter = (id: string, total: number, filtered: number) => (
     <>
-      <TableFilter
-        value={tableFilters[id] ?? ""}
-        onChange={value => setTableFilter(id, value)}
-        total={total}
-        filtered={filtered}
-      />
-      <ColumnFiltersBar
-        reportId={id}
-        filters={columnFilters}
-        columns={columnsByReport[id] ?? []}
-        onChange={setColumnFilter}
-        onClear={clearColumnFilters}
-      />
+      <div className="mb-3 flex flex-wrap items-center gap-3">
+        <div className="min-w-64 flex-1">
+          <TableFilter
+            value={tableFilters[id] ?? ""}
+            onChange={value => setTableFilter(id, value)}
+            total={total}
+            filtered={filtered}
+          />
+        </div>
+        {hasColumnFilters(id) ? (
+          <button
+            type="button"
+            onClick={() => clearColumnFilters(id)}
+            className="mb-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-white/15 dark:bg-white/5 dark:text-slate-200"
+          >
+            Limpar filtros das colunas
+          </button>
+        ) : null}
+      </div>
       <TotalsBar
         rows={totalRowsByReport[id] ?? []}
         totals={totalsByReport[id] ?? []}
       />
     </>
   );
-  const renderColumnFilters = <T,>(
-    id: string,
-    columns: ColumnFilterDef<T>[]
-  ) => (
-    <ColumnFiltersBar
-      reportId={id}
-      filters={columnFilters}
-      columns={columns}
-      onChange={setColumnFilter}
-      onClear={clearColumnFilters}
-    />
-  );
-  const renderTotals = <T,>(rows: T[], totals: TotalDef<T>[]) => (
-    <TotalsBar rows={rows} totals={totals} />
-  );
   const vendasClienteColumns: ColumnFilterDef<any>[] = [
     { key: "cliente", label: "Cliente", value: r => r.cliente },
     { key: "produtos", label: "Produtos", value: r => r.produtos },
     { key: "vendas", label: "Vendas", value: r => r.vendas },
+    { key: "itens", label: "Itens", value: r => r.quantidadeItens },
     { key: "valorBruto", label: "Valor bruto", value: r => r.valorBruto },
   ];
   const cmvColumns: ColumnFilterDef<any>[] = [
     { key: "produto", label: "Produto", value: r => r.produto },
     { key: "categoria", label: "Categoria", value: r => r.categoria },
+    { key: "quantidade", label: "Qtd.", value: r => r.quantidade },
+    { key: "custoMedio", label: "Custo médio", value: r => r.custoMedio },
+    { key: "custoTotal", label: "Custo total", value: r => r.custoTotal },
     { key: "valorBruto", label: "Valor bruto", value: r => r.valorBruto },
+    { key: "valorUnitarioMedio", label: "Valor unit. médio", value: r => r.valorUnitarioMedio },
     { key: "margem", label: "Margem", value: r => fmtPct(r.margemLucro) },
   ];
   const clientesSemVendasColumns: ColumnFilterDef<any>[] = [
     { key: "cliente", label: "Cliente", value: r => r.cliente },
     { key: "tipo", label: "Tipo", value: r => r.tipo },
     { key: "situacao", label: "Situação", value: r => r.situacao },
+    { key: "ultimaVenda", label: "Última venda", value: r => fmtDate(r.ultimaVenda) },
     { key: "dias", label: "Dias", value: r => r.diasSemVenda },
   ];
   const lucroMargemColumns: ColumnFilterDef<any>[] = [
     { key: "mes", label: "Mês", value: r => r.mes },
     { key: "receita", label: "Receita", value: r => r.valorLiquido ?? r.valorBruto },
+    { key: "cmv", label: "CMV", value: r => r.custoTotal },
     { key: "lucro", label: "Lucro", value: r => r.lucroBruto },
     { key: "margem", label: "Margem", value: r => fmtPct(r.margemLucro) },
   ];
@@ -573,27 +570,38 @@ export function Relatorios() {
     { key: "cliente", label: "Cliente", value: r => r.cliente },
     { key: "tipo", label: "Tipo", value: r => r.tipoItem },
     { key: "vendas", label: "Vendas", value: r => r.vendas },
+    { key: "valorBruto", label: "Valor bruto", value: r => r.valorBruto },
     { key: "valorLiquido", label: "Valor líquido", value: r => r.valorLiquido },
+    { key: "itens", label: "Itens", value: r => r.totalVendido },
+    { key: "ticketMedio", label: "Ticket médio", value: r => r.ticketMedio },
   ];
   const abcColumns: ColumnFilterDef<any>[] = [
     { key: "nome", label: "Nome", value: r => r.nome },
     { key: "classe", label: "Classe", value: r => r.classe },
     { key: "valor", label: "Valor", value: r => r.valor },
+    { key: "participacao", label: "Participação", value: r => fmtPct(r.participacao) },
+    { key: "acumulado", label: "Acumulado", value: r => fmtPct(r.acumulado) },
   ];
   const clientesRiscoColumns: ColumnFilterDef<any>[] = [
     { key: "cliente", label: "Cliente", value: r => r.cliente },
     { key: "motivo", label: "Motivo", value: r => r.motivo },
     { key: "score", label: "Score", value: r => r.score },
+    { key: "valorAnterior", label: "Valor anterior", value: r => r.valorAnterior },
+    { key: "valorAtual", label: "Valor atual", value: r => r.valorAtual },
+    { key: "variacao", label: "Variação", value: r => fmtVariacao(r.variacaoValor) },
     { key: "acao", label: "Ação", value: r => r.acaoSugerida },
   ];
   const margemColumns: ColumnFilterDef<any>[] = [
     { key: "cliente", label: "Cliente", value: r => r.cliente },
     { key: "receita", label: "Receita", value: r => r.valorLiquido },
+    { key: "custo", label: "Custo", value: r => r.custoTotal },
     { key: "lucro", label: "Lucro", value: r => r.lucroBruto },
     { key: "margem", label: "Margem", value: r => fmtPct(r.margemLucro) },
+    { key: "ticket", label: "Ticket", value: r => r.ticketMedio },
   ];
   const mixColumns: ColumnFilterDef<any>[] = [
     { key: "cliente", label: "Cliente", value: r => r.cliente },
+    { key: "faturamento", label: "Faturamento", value: r => r.valorBruto },
     { key: "topProdutos", label: "Já compra", value: r => r.topProdutos },
     {
       key: "oportunidades",
@@ -605,6 +613,7 @@ export function Relatorios() {
     { key: "nome", label: "Nome", value: r => r.nome },
     { key: "tipo", label: "Tipo", value: r => r.tipo },
     { key: "situacao", label: "Situação", value: r => r.situacao },
+    { key: "cnpjCpf", label: "CNPJ/CPF", value: r => r.cnpjCpf },
     { key: "contato", label: "Contato", value: r => r.email ?? r.telefone },
   ];
   const vendasDetalhadasColumns: ColumnFilterDef<any>[] = [
@@ -612,18 +621,28 @@ export function Relatorios() {
     { key: "cliente", label: "Cliente", value: r => r.cliente },
     { key: "vendedor", label: "Vendedor", value: r => r.vendedor },
     { key: "status", label: "Status", value: r => r.status },
+    { key: "bruto", label: "Bruto", value: r => r.valorBruto },
+    { key: "liquido", label: "Líquido", value: r => r.valorLiquido },
+    { key: "frete", label: "Frete", value: r => r.frete },
+    { key: "desconto", label: "Desconto", value: r => r.desconto },
   ];
   const produtosVendidosColumns: ColumnFilterDef<any>[] = [
     { key: "data", label: "Data", value: r => fmtDate(r.dataVenda) },
     { key: "cliente", label: "Cliente", value: r => r.cliente },
     { key: "produto", label: "Produto", value: r => r.produto },
     { key: "tipo", label: "Tipo", value: r => r.tipoItem },
+    { key: "quantidade", label: "Qtd.", value: r => r.quantidade },
+    { key: "valorTotal", label: "Valor total", value: r => r.valorTotal },
+    { key: "desconto", label: "Desconto", value: r => r.descontoAplicado },
   ];
   const vendasMesColumns: ColumnFilterDef<any>[] = [
     { key: "mes", label: "Mês", value: r => r.mes },
     { key: "vendas", label: "Vendas", value: r => r.vendas },
+    { key: "itens", label: "Itens", value: r => r.quantidadeItens },
     { key: "bruto", label: "Bruto", value: r => r.valorBruto },
     { key: "liquido", label: "Líquido", value: r => r.valorLiquido },
+    { key: "frete", label: "Frete", value: r => r.frete },
+    { key: "desconto", label: "Desconto", value: r => r.desconto },
   ];
   const orcamentosColumns: ColumnFilterDef<any>[] = [
     { key: "data", label: "Data", value: r => fmtDate(r.dataOrcamento) },
@@ -1102,12 +1121,20 @@ export function Relatorios() {
                 <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
                   <thead className="bg-slate-50 dark:bg-white/5">
                     <tr>
-                      <th className="px-3 py-2 text-left">Cliente</th>
-                      <th className="px-3 py-2 text-right">Vendas</th>
-                      <th className="px-3 py-2 text-right">Itens</th>
-                      <th className="px-3 py-2 text-right">Valor bruto</th>
                       <th className="px-3 py-2 text-left">
-                        Produtos mais comprados
+                        {columnHeader("vendas-cliente", "cliente", "Cliente")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("vendas-cliente", "vendas", "Vendas", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("vendas-cliente", "itens", "Itens", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("vendas-cliente", "valorBruto", "Valor bruto", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("vendas-cliente", "produtos", "Produtos mais comprados")}
                       </th>
                     </tr>
                   </thead>
@@ -1213,16 +1240,30 @@ export function Relatorios() {
                 <table className="mt-4 min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
                   <thead className="bg-slate-50 dark:bg-white/5">
                     <tr>
-                      <th className="px-3 py-2 text-left">Produto</th>
-                      <th className="px-3 py-2 text-left">Categoria</th>
-                      <th className="px-3 py-2 text-right">Qtd.</th>
-                      <th className="px-3 py-2 text-right">Custo médio</th>
-                      <th className="px-3 py-2 text-right">Custo total</th>
-                      <th className="px-3 py-2 text-right">Valor bruto</th>
-                      <th className="px-3 py-2 text-right">
-                        Valor unit. médio
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("cmv", "produto", "Produto")}
                       </th>
-                      <th className="px-3 py-2 text-right">Margem</th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("cmv", "categoria", "Categoria")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("cmv", "quantidade", "Qtd.", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("cmv", "custoMedio", "Custo médio", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("cmv", "custoTotal", "Custo total", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("cmv", "valorBruto", "Valor bruto", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("cmv", "valorUnitarioMedio", "Valor unit. médio", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("cmv", "margem", "Margem", "right")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
@@ -1289,11 +1330,21 @@ export function Relatorios() {
                 <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
                   <thead className="bg-slate-50 dark:bg-white/5">
                     <tr>
-                      <th className="px-3 py-2 text-left">Cliente</th>
-                      <th className="px-3 py-2 text-left">Tipo</th>
-                      <th className="px-3 py-2 text-left">Situação</th>
-                      <th className="px-3 py-2 text-right">Última venda</th>
-                      <th className="px-3 py-2 text-right">Dias</th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("clientes-sem-vendas", "cliente", "Cliente")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("clientes-sem-vendas", "tipo", "Tipo")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("clientes-sem-vendas", "situacao", "Situação")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("clientes-sem-vendas", "ultimaVenda", "Última venda", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("clientes-sem-vendas", "dias", "Dias", "right")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
@@ -1377,11 +1428,21 @@ export function Relatorios() {
                 <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
                   <thead className="bg-slate-50 dark:bg-white/5">
                     <tr>
-                      <th className="px-3 py-2 text-left">Mês</th>
-                      <th className="px-3 py-2 text-right">Receita</th>
-                      <th className="px-3 py-2 text-right">CMV</th>
-                      <th className="px-3 py-2 text-right">Lucro bruto</th>
-                      <th className="px-3 py-2 text-right">Margem</th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("lucro-margem", "mes", "Mês")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("lucro-margem", "receita", "Receita", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("lucro-margem", "cmv", "CMV", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("lucro-margem", "lucro", "Lucro bruto", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("lucro-margem", "margem", "Margem", "right")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
@@ -1456,13 +1517,27 @@ export function Relatorios() {
                 <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
                   <thead className="bg-slate-50 dark:bg-white/5">
                     <tr>
-                      <th className="px-3 py-2 text-left">Cliente</th>
-                      <th className="px-3 py-2 text-left">Tipo</th>
-                      <th className="px-3 py-2 text-right">Vendas</th>
-                      <th className="px-3 py-2 text-right">Valor bruto</th>
-                      <th className="px-3 py-2 text-right">Valor líquido</th>
-                      <th className="px-3 py-2 text-right">Itens</th>
-                      <th className="px-3 py-2 text-right">Ticket médio</th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("maiores-clientes", "cliente", "Cliente")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("maiores-clientes", "tipo", "Tipo")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("maiores-clientes", "vendas", "Vendas", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("maiores-clientes", "valorBruto", "Valor bruto", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("maiores-clientes", "valorLiquido", "Valor líquido", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("maiores-clientes", "itens", "Itens", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("maiores-clientes", "ticketMedio", "Ticket médio", "right")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
@@ -1525,11 +1600,21 @@ export function Relatorios() {
                 <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
                   <thead className="bg-slate-50 dark:bg-white/5">
                     <tr>
-                      <th className="px-3 py-2 text-left">Cliente</th>
-                      <th className="px-3 py-2 text-center">Classe</th>
-                      <th className="px-3 py-2 text-right">Valor</th>
-                      <th className="px-3 py-2 text-right">Participação</th>
-                      <th className="px-3 py-2 text-right">Acumulado</th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("abc-clientes", "nome", "Cliente")}
+                      </th>
+                      <th className="px-3 py-2 text-center">
+                        {columnHeader("abc-clientes", "classe", "Classe", "center")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("abc-clientes", "valor", "Valor", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("abc-clientes", "participacao", "Participação", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("abc-clientes", "acumulado", "Acumulado", "right")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
@@ -1603,11 +1688,21 @@ export function Relatorios() {
                 <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
                   <thead className="bg-slate-50 dark:bg-white/5">
                     <tr>
-                      <th className="px-3 py-2 text-left">Produto</th>
-                      <th className="px-3 py-2 text-center">Classe</th>
-                      <th className="px-3 py-2 text-right">Valor</th>
-                      <th className="px-3 py-2 text-right">Participação</th>
-                      <th className="px-3 py-2 text-right">Acumulado</th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("abc-produtos", "nome", "Produto")}
+                      </th>
+                      <th className="px-3 py-2 text-center">
+                        {columnHeader("abc-produtos", "classe", "Classe", "center")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("abc-produtos", "valor", "Valor", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("abc-produtos", "participacao", "Participação", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("abc-produtos", "acumulado", "Acumulado", "right")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
@@ -1662,13 +1757,27 @@ export function Relatorios() {
                 <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
                   <thead className="bg-slate-50 dark:bg-white/5">
                     <tr>
-                      <th className="px-3 py-2 text-left">Cliente</th>
-                      <th className="px-3 py-2 text-right">Score</th>
-                      <th className="px-3 py-2 text-left">Motivo</th>
-                      <th className="px-3 py-2 text-right">Valor anterior</th>
-                      <th className="px-3 py-2 text-right">Valor atual</th>
-                      <th className="px-3 py-2 text-right">Variação</th>
-                      <th className="px-3 py-2 text-left">Ação sugerida</th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("clientes-risco", "cliente", "Cliente")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("clientes-risco", "score", "Score", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("clientes-risco", "motivo", "Motivo")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("clientes-risco", "valorAnterior", "Valor anterior", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("clientes-risco", "valorAtual", "Valor atual", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("clientes-risco", "variacao", "Variação", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("clientes-risco", "acao", "Ação sugerida")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
@@ -1742,12 +1851,24 @@ export function Relatorios() {
                 <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
                   <thead className="bg-slate-50 dark:bg-white/5">
                     <tr>
-                      <th className="px-3 py-2 text-left">Cliente</th>
-                      <th className="px-3 py-2 text-right">Receita líquida</th>
-                      <th className="px-3 py-2 text-right">Custo</th>
-                      <th className="px-3 py-2 text-right">Lucro</th>
-                      <th className="px-3 py-2 text-right">Margem</th>
-                      <th className="px-3 py-2 text-right">Ticket</th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("margem", "cliente", "Cliente")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("margem", "receita", "Receita líquida", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("margem", "custo", "Custo", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("margem", "lucro", "Lucro", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("margem", "margem", "Margem", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("margem", "ticket", "Ticket", "right")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
@@ -1820,10 +1941,18 @@ export function Relatorios() {
                 <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
                   <thead className="bg-slate-50 dark:bg-white/5">
                     <tr>
-                      <th className="px-3 py-2 text-left">Cliente</th>
-                      <th className="px-3 py-2 text-right">Faturamento</th>
-                      <th className="px-3 py-2 text-left">Já compra</th>
-                      <th className="px-3 py-2 text-left">Sugestões cross-sell</th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("mix-produtos", "cliente", "Cliente")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("mix-produtos", "faturamento", "Faturamento", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("mix-produtos", "topProdutos", "Já compra")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("mix-produtos", "oportunidades", "Sugestões cross-sell")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
@@ -1914,11 +2043,21 @@ export function Relatorios() {
                 <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
                   <thead className="bg-slate-50 dark:bg-white/5">
                     <tr>
-                      <th className="px-3 py-2 text-left">Nome</th>
-                      <th className="px-3 py-2 text-left">Tipo</th>
-                      <th className="px-3 py-2 text-left">Situação</th>
-                      <th className="px-3 py-2 text-left">CNPJ/CPF</th>
-                      <th className="px-3 py-2 text-left">Contato</th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("clientes", "nome", "Nome")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("clientes", "tipo", "Tipo")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("clientes", "situacao", "Situação")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("clientes", "cnpjCpf", "CNPJ/CPF")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("clientes", "contato", "Contato")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
@@ -1986,13 +2125,27 @@ export function Relatorios() {
                 <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
                   <thead className="bg-slate-50 dark:bg-white/5">
                     <tr>
-                      <th className="px-3 py-2 text-left">Data</th>
-                      <th className="px-3 py-2 text-left">Cliente</th>
-                      <th className="px-3 py-2 text-left">Vendedor</th>
-                      <th className="px-3 py-2 text-right">Bruto</th>
-                      <th className="px-3 py-2 text-right">Líquido</th>
-                      <th className="px-3 py-2 text-right">Frete</th>
-                      <th className="px-3 py-2 text-right">Desconto</th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("vendas-detalhadas", "data", "Data")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("vendas-detalhadas", "cliente", "Cliente")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("vendas-detalhadas", "vendedor", "Vendedor")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("vendas-detalhadas", "bruto", "Bruto", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("vendas-detalhadas", "liquido", "Líquido", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("vendas-detalhadas", "frete", "Frete", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("vendas-detalhadas", "desconto", "Desconto", "right")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
@@ -2072,13 +2225,27 @@ export function Relatorios() {
                 <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
                   <thead className="bg-slate-50 dark:bg-white/5">
                     <tr>
-                      <th className="px-3 py-2 text-left">Data</th>
-                      <th className="px-3 py-2 text-left">Cliente</th>
-                      <th className="px-3 py-2 text-left">Produto</th>
-                      <th className="px-3 py-2 text-left">Tipo</th>
-                      <th className="px-3 py-2 text-right">Qtd.</th>
-                      <th className="px-3 py-2 text-right">Valor total</th>
-                      <th className="px-3 py-2 text-right">Desconto</th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("produtos-vendidos", "data", "Data")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("produtos-vendidos", "cliente", "Cliente")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("produtos-vendidos", "produto", "Produto")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("produtos-vendidos", "tipo", "Tipo")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("produtos-vendidos", "quantidade", "Qtd.", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("produtos-vendidos", "valorTotal", "Valor total", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("produtos-vendidos", "desconto", "Desconto", "right")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
@@ -2152,13 +2319,27 @@ export function Relatorios() {
                 <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
                   <thead className="bg-slate-50 dark:bg-white/5">
                     <tr>
-                      <th className="px-3 py-2 text-left">Mês</th>
-                      <th className="px-3 py-2 text-right">Vendas</th>
-                      <th className="px-3 py-2 text-right">Itens</th>
-                      <th className="px-3 py-2 text-right">Bruto</th>
-                      <th className="px-3 py-2 text-right">Líquido</th>
-                      <th className="px-3 py-2 text-right">Frete</th>
-                      <th className="px-3 py-2 text-right">Desconto</th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("vendas-mes", "mes", "Mês")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("vendas-mes", "vendas", "Vendas", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("vendas-mes", "itens", "Itens", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("vendas-mes", "bruto", "Bruto", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("vendas-mes", "liquido", "Líquido", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("vendas-mes", "frete", "Frete", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("vendas-mes", "desconto", "Desconto", "right")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
@@ -2262,10 +2443,18 @@ export function Relatorios() {
                 <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
                   <thead className="bg-slate-50 dark:bg-white/5">
                     <tr>
-                      <th className="px-3 py-2 text-left">Data</th>
-                      <th className="px-3 py-2 text-left">Cliente</th>
-                      <th className="px-3 py-2 text-left">Status</th>
-                      <th className="px-3 py-2 text-right">Valor bruto</th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("orcamentos", "data", "Data")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("orcamentos", "cliente", "Cliente")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("orcamentos", "status", "Status")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("orcamentos", "valor", "Valor bruto", "right")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
