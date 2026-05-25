@@ -268,23 +268,35 @@ function ColumnHeaderFilter({
             placeholder={`Buscar ${label.toLowerCase()}`}
             className="mb-2 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-normal text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100"
           />
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={onSelectAll}
-              className="text-xs font-bold text-emerald-700 hover:underline dark:text-emerald-300"
-            >
-              Selecionar todos
-            </button>
-            <button
-              type="button"
-              onClick={onClearAll}
-              className="text-xs font-bold text-red-700 hover:underline dark:text-red-300"
-            >
-              Limpar todos
-            </button>
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={e => {
+                  e.stopPropagation();
+                  onSelectAll();
+                }}
+                className="text-xs font-bold text-emerald-700 hover:underline dark:text-emerald-300"
+              >
+                Selecionar todos
+              </button>
+              <button
+                type="button"
+                onClick={e => {
+                  e.stopPropagation();
+                  onClearAll();
+                }}
+                className="text-xs font-bold text-red-700 hover:underline dark:text-red-300"
+              >
+                Limpar filtro
+              </button>
+            </div>
             <span className="text-xs font-semibold text-slate-500">
-              {hasSelection ? `${selectedSet.size}/${options.length}` : `Todos (${options.length})`}
+              {hasSelection
+                ? selectedSet.size === 0
+                  ? "Nenhum selecionado"
+                  : `${selectedSet.size}/${options.length}`
+                : `Todos (${options.length})`}
             </span>
           </div>
           <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
@@ -636,21 +648,24 @@ export function Relatorios() {
     });
   };
   const selectAllColumnValues = (id: string, key: string) => {
-    setColumnFilters(current => {
-      const currentReport = current[id] ?? {};
-      const nextReport = { ...currentReport };
-      delete nextReport[key];
-      return { ...current, [id]: nextReport };
-    });
-  };
-  const clearAllColumnValues = (id: string, key: string) => {
+    const column = columnsByReport[id]?.find(c => c.key === key);
+    const allValues = uniqueColumnOptions(rawRowsByReport[id] ?? [], column).map(
+      option => option.value
+    );
     setColumnFilters(current => ({
       ...current,
       [id]: {
         ...(current[id] ?? {}),
-        [key]: { selected: [] },
+        [key]: { selected: allValues },
       },
     }));
+  };
+  const clearAllColumnValues = (id: string, key: string) => {
+    setColumnFilters(current => {
+      const currentReport = { ...(current[id] ?? {}) };
+      delete currentReport[key];
+      return { ...current, [id]: currentReport };
+    });
   };
   const setColumnSort = (
     id: string,
