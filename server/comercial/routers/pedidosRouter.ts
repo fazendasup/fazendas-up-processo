@@ -81,6 +81,17 @@ const avariaPedidoInput = z.object({
   observacoes: z.string().optional(),
 });
 
+const nullablePositiveNumber = z.preprocess(value => {
+  if (value === "" || value == null) return null;
+  if (typeof value === "string") {
+    const normalized = value.trim().replace(",", ".");
+    return normalized === "" ? null : Number(normalized);
+  }
+  return value;
+}, z.number().positive().nullable().optional());
+
+const nullableStringArray = z.array(z.string()).nullable().optional();
+
 const produtoInput = z.object({
   id: z.string().optional(),
   nome: z.string().min(2, "Nome do produto é obrigatório"),
@@ -88,13 +99,13 @@ const produtoInput = z.object({
   categoria: z.string().nullable().optional(),
   ativo: z.boolean().default(true),
   modoCompra: modoCompraSchema.default("UNIDADE"),
-  fatorCompraUnidade: z.number().positive().nullable().optional(),
-  rendimentoPorKg: z.number().positive().nullable().optional(),
+  fatorCompraUnidade: nullablePositiveNumber,
+  rendimentoPorKg: nullablePositiveNumber,
   ocultoListaCompra: z.boolean().default(false),
   mixAtivo: z.boolean().default(false),
   mixFolhaLeve: z.boolean().default(false),
   mixProdutoReferenciaId: z.string().nullable().optional(),
-  mixVariedades: z.array(z.string()).optional(),
+  mixVariedades: nullableStringArray,
 });
 
 export const pedidosRouter = router({
@@ -958,13 +969,13 @@ export const pedidosRouter = router({
       z.object({
         produtoId: z.string(),
         modoCompra: modoCompraSchema.optional(),
-        fatorCompraUnidade: z.number().positive().nullable().optional(),
-        rendimentoPorKg: z.number().positive().nullable().optional(),
+        fatorCompraUnidade: nullablePositiveNumber,
+        rendimentoPorKg: nullablePositiveNumber,
         ocultoListaCompra: z.boolean().optional(),
         mixAtivo: z.boolean().optional(),
         mixFolhaLeve: z.boolean().optional(),
         mixProdutoReferenciaId: z.string().nullable().optional(),
-        mixVariedades: z.array(z.string()).optional(),
+        mixVariedades: nullableStringArray,
       }),
     )
     .mutation(({ ctx, input }) =>
@@ -988,7 +999,12 @@ export const pedidosRouter = router({
           mixAtivo: input.mixAtivo,
           mixFolhaLeve: input.mixFolhaLeve,
           mixProdutoReferenciaId: input.mixProdutoReferenciaId,
-          mixVariedades: input.mixVariedades ? (input.mixVariedades as Prisma.InputJsonValue) : undefined,
+          mixVariedades:
+            input.mixVariedades === undefined
+              ? undefined
+              : input.mixVariedades == null
+                ? Prisma.JsonNull
+                : (input.mixVariedades as Prisma.InputJsonValue),
         },
       }),
     ),
