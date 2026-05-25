@@ -150,6 +150,101 @@ function TableFilter({
   );
 }
 
+type ColumnFilterDef<T> = {
+  key: string;
+  label: string;
+  value: (row: T) => unknown;
+};
+
+type TotalDef<T> = {
+  key: string;
+  label: string;
+  value: (row: T) => number | null | undefined;
+  format?: (value: number) => string;
+};
+
+function ColumnFiltersBar<T>({
+  reportId,
+  filters,
+  columns,
+  onChange,
+  onClear,
+}: {
+  reportId: string;
+  filters: Record<string, Record<string, string>>;
+  columns: ColumnFilterDef<T>[];
+  onChange: (reportId: string, column: string, value: string) => void;
+  onClear: (reportId: string) => void;
+}) {
+  const current = filters[reportId] ?? {};
+  const hasAny = Object.values(current).some(value => value.trim());
+
+  if (!columns.length) return null;
+
+  return (
+    <div className="mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-300">
+          Filtros por coluna
+        </span>
+        {hasAny ? (
+          <button
+            type="button"
+            onClick={() => onClear(reportId)}
+            className="text-xs font-bold text-emerald-700 hover:underline dark:text-emerald-400"
+          >
+            Limpar filtros das colunas
+          </button>
+        ) : null}
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        {columns.map(column => (
+          <label key={column.key} className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+            {column.label}
+            <input
+              value={current[column.key] ?? ""}
+              onChange={e => onChange(reportId, column.key, e.target.value)}
+              placeholder={`Filtrar ${column.label.toLowerCase()}`}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm font-normal text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20 dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-100"
+            />
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TotalsBar<T>({
+  rows,
+  totals,
+}: {
+  rows: T[];
+  totals: TotalDef<T>[];
+}) {
+  if (!totals.length) return null;
+
+  return (
+    <div className="mb-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+      {totals.map(total => {
+        const value = rows.reduce((sum, row) => sum + Number(total.value(row) ?? 0), 0);
+        return (
+          <div
+            key={total.key}
+            className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-400/25 dark:bg-emerald-950/20"
+          >
+            <div className="text-[11px] font-bold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">
+              Total {total.label}
+            </div>
+            <div className="mt-0.5 text-base font-bold text-slate-900 dark:text-slate-100">
+              {total.format ? total.format(value) : fmtNumber(value)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function Section({
   title,
   description,
@@ -223,6 +318,9 @@ export function Relatorios() {
     "valorBruto" | "valorLiquido" | "frete" | "desconto"
   >("valorLiquido");
   const [tableFilters, setTableFilters] = useState<Record<string, string>>({});
+  const [columnFilters, setColumnFilters] = useState<
+    Record<string, Record<string, string>>
+  >({});
   const [drill, setDrill] = useState<{ report: ReportId; value: string } | null>(
     null
   );
@@ -351,15 +449,54 @@ export function Relatorios() {
   const setTableFilter = (id: string, value: string) => {
     setTableFilters(current => ({ ...current, [id]: value }));
   };
+  const setColumnFilter = (id: string, column: string, value: string) => {
+    setColumnFilters(current => ({
+      ...current,
+      [id]: { ...(current[id] ?? {}), [column]: value },
+    }));
+  };
+  const clearColumnFilters = (id: string) => {
+    setColumnFilters(current => ({ ...current, [id]: {} }));
+  };
   const filterRows = <T,>(id: string, rows: T[]): T[] => {
     const needle = (tableFilters[id] ?? "").trim().toLowerCase();
-    if (!needle) return rows;
-    return rows.filter(row => rowToSearchText(row).toLowerCase().includes(needle));
+    const afterGlobal = needle
+      ? rows.filter(row =>
+          rowToSearchText(row).toLowerCase().includes(needle)
+        )
+      : rows;
+    return filterRowsColumns(
+      id,
+      afterGlobal,
+      (columnsByReport[id] ?? []) as ColumnFilterDef<T>[]
+    );
+  };
+  const filterRowsColumns = <T,>(
+    id: string,
+    rows: T[],
+    columns: ColumnFilterDef<T>[]
+  ): T[] => {
+    const current = columnFilters[id] ?? {};
+    const activeColumns = columns
+      .map(column => ({
+        ...column,
+        needle: (current[column.key] ?? "").trim().toLowerCase(),
+      }))
+      .filter(column => column.needle);
+
+    if (!activeColumns.length) return rows;
+
+    return rows.filter(row =>
+      activeColumns.every(column =>
+        rowToSearchText(column.value(row)).toLowerCase().includes(column.needle)
+      )
+    );
   };
   const filterRowsDrill = <T,>(
     id: ReportId,
     rows: T[],
-    match: (row: T) => string
+    match: (row: T) => string,
+    columns: ColumnFilterDef<T>[] = []
   ): T[] => {
     let out = filterRows(id, rows);
     if (drill?.report === id && drill.value) {
@@ -373,13 +510,380 @@ export function Relatorios() {
     setActive(report);
   };
   const renderTableFilter = (id: string, total: number, filtered: number) => (
-    <TableFilter
-      value={tableFilters[id] ?? ""}
-      onChange={value => setTableFilter(id, value)}
-      total={total}
-      filtered={filtered}
+    <>
+      <TableFilter
+        value={tableFilters[id] ?? ""}
+        onChange={value => setTableFilter(id, value)}
+        total={total}
+        filtered={filtered}
+      />
+      <ColumnFiltersBar
+        reportId={id}
+        filters={columnFilters}
+        columns={columnsByReport[id] ?? []}
+        onChange={setColumnFilter}
+        onClear={clearColumnFilters}
+      />
+      <TotalsBar
+        rows={totalRowsByReport[id] ?? []}
+        totals={totalsByReport[id] ?? []}
+      />
+    </>
+  );
+  const renderColumnFilters = <T,>(
+    id: string,
+    columns: ColumnFilterDef<T>[]
+  ) => (
+    <ColumnFiltersBar
+      reportId={id}
+      filters={columnFilters}
+      columns={columns}
+      onChange={setColumnFilter}
+      onClear={clearColumnFilters}
     />
   );
+  const renderTotals = <T,>(rows: T[], totals: TotalDef<T>[]) => (
+    <TotalsBar rows={rows} totals={totals} />
+  );
+  const vendasClienteColumns: ColumnFilterDef<any>[] = [
+    { key: "cliente", label: "Cliente", value: r => r.cliente },
+    { key: "produtos", label: "Produtos", value: r => r.produtos },
+    { key: "vendas", label: "Vendas", value: r => r.vendas },
+    { key: "valorBruto", label: "Valor bruto", value: r => r.valorBruto },
+  ];
+  const cmvColumns: ColumnFilterDef<any>[] = [
+    { key: "produto", label: "Produto", value: r => r.produto },
+    { key: "categoria", label: "Categoria", value: r => r.categoria },
+    { key: "valorBruto", label: "Valor bruto", value: r => r.valorBruto },
+    { key: "margem", label: "Margem", value: r => fmtPct(r.margemLucro) },
+  ];
+  const clientesSemVendasColumns: ColumnFilterDef<any>[] = [
+    { key: "cliente", label: "Cliente", value: r => r.cliente },
+    { key: "tipo", label: "Tipo", value: r => r.tipo },
+    { key: "situacao", label: "Situação", value: r => r.situacao },
+    { key: "dias", label: "Dias", value: r => r.diasSemVenda },
+  ];
+  const lucroMargemColumns: ColumnFilterDef<any>[] = [
+    { key: "mes", label: "Mês", value: r => r.mes },
+    { key: "receita", label: "Receita", value: r => r.valorLiquido ?? r.valorBruto },
+    { key: "lucro", label: "Lucro", value: r => r.lucroBruto },
+    { key: "margem", label: "Margem", value: r => fmtPct(r.margemLucro) },
+  ];
+  const maioresClientesColumns: ColumnFilterDef<any>[] = [
+    { key: "cliente", label: "Cliente", value: r => r.cliente },
+    { key: "tipo", label: "Tipo", value: r => r.tipoItem },
+    { key: "vendas", label: "Vendas", value: r => r.vendas },
+    { key: "valorLiquido", label: "Valor líquido", value: r => r.valorLiquido },
+  ];
+  const abcColumns: ColumnFilterDef<any>[] = [
+    { key: "nome", label: "Nome", value: r => r.nome },
+    { key: "classe", label: "Classe", value: r => r.classe },
+    { key: "valor", label: "Valor", value: r => r.valor },
+  ];
+  const clientesRiscoColumns: ColumnFilterDef<any>[] = [
+    { key: "cliente", label: "Cliente", value: r => r.cliente },
+    { key: "motivo", label: "Motivo", value: r => r.motivo },
+    { key: "score", label: "Score", value: r => r.score },
+    { key: "acao", label: "Ação", value: r => r.acaoSugerida },
+  ];
+  const margemColumns: ColumnFilterDef<any>[] = [
+    { key: "cliente", label: "Cliente", value: r => r.cliente },
+    { key: "receita", label: "Receita", value: r => r.valorLiquido },
+    { key: "lucro", label: "Lucro", value: r => r.lucroBruto },
+    { key: "margem", label: "Margem", value: r => fmtPct(r.margemLucro) },
+  ];
+  const mixColumns: ColumnFilterDef<any>[] = [
+    { key: "cliente", label: "Cliente", value: r => r.cliente },
+    { key: "topProdutos", label: "Já compra", value: r => r.topProdutos },
+    {
+      key: "oportunidades",
+      label: "Cross-sell",
+      value: r => r.oportunidadesCrossSell,
+    },
+  ];
+  const clientesColumns: ColumnFilterDef<any>[] = [
+    { key: "nome", label: "Nome", value: r => r.nome },
+    { key: "tipo", label: "Tipo", value: r => r.tipo },
+    { key: "situacao", label: "Situação", value: r => r.situacao },
+    { key: "contato", label: "Contato", value: r => r.email ?? r.telefone },
+  ];
+  const vendasDetalhadasColumns: ColumnFilterDef<any>[] = [
+    { key: "data", label: "Data", value: r => fmtDate(r.dataVenda) },
+    { key: "cliente", label: "Cliente", value: r => r.cliente },
+    { key: "vendedor", label: "Vendedor", value: r => r.vendedor },
+    { key: "status", label: "Status", value: r => r.status },
+  ];
+  const produtosVendidosColumns: ColumnFilterDef<any>[] = [
+    { key: "data", label: "Data", value: r => fmtDate(r.dataVenda) },
+    { key: "cliente", label: "Cliente", value: r => r.cliente },
+    { key: "produto", label: "Produto", value: r => r.produto },
+    { key: "tipo", label: "Tipo", value: r => r.tipoItem },
+  ];
+  const vendasMesColumns: ColumnFilterDef<any>[] = [
+    { key: "mes", label: "Mês", value: r => r.mes },
+    { key: "vendas", label: "Vendas", value: r => r.vendas },
+    { key: "bruto", label: "Bruto", value: r => r.valorBruto },
+    { key: "liquido", label: "Líquido", value: r => r.valorLiquido },
+  ];
+  const orcamentosColumns: ColumnFilterDef<any>[] = [
+    { key: "data", label: "Data", value: r => fmtDate(r.dataOrcamento) },
+    { key: "cliente", label: "Cliente", value: r => r.cliente },
+    { key: "status", label: "Status", value: r => r.status },
+    { key: "valor", label: "Valor", value: r => r.valorBruto },
+  ];
+  const columnsByReport: Record<string, ColumnFilterDef<any>[]> = {
+    "vendas-cliente": vendasClienteColumns,
+    cmv: cmvColumns,
+    "clientes-sem-vendas": clientesSemVendasColumns,
+    "lucro-margem": lucroMargemColumns,
+    "maiores-clientes": maioresClientesColumns,
+    "abc-clientes": abcColumns,
+    "abc-produtos": abcColumns,
+    "clientes-risco": clientesRiscoColumns,
+    margem: margemColumns,
+    "mix-produtos": mixColumns,
+    clientes: clientesColumns,
+    "vendas-detalhadas": vendasDetalhadasColumns,
+    "produtos-vendidos": produtosVendidosColumns,
+    "vendas-mes": vendasMesColumns,
+    orcamentos: orcamentosColumns,
+  };
+  const totalRowsByReport: Record<string, any[]> = data
+    ? {
+        "vendas-cliente": filterRowsDrill(
+          "vendas-cliente",
+          data.vendasPorCliente,
+          (r: any) => r.cliente
+        ),
+        cmv: filterRows("cmv", data.cmv.linhas),
+        "clientes-sem-vendas": filterRows(
+          "clientes-sem-vendas",
+          data.clientesSemVendas
+        ),
+        "lucro-margem": filterRows("lucro-margem", data.lucroMargemMes),
+        "maiores-clientes": filterRows("maiores-clientes", data.maioresClientes),
+        "abc-clientes": filterRowsDrill(
+          "abc-clientes",
+          data.abcClientes ?? [],
+          (r: any) => r.nome
+        ),
+        "abc-produtos": filterRowsDrill(
+          "abc-produtos",
+          data.abcProdutos ?? [],
+          (r: any) => r.nome
+        ),
+        "clientes-risco": filterRowsDrill(
+          "clientes-risco",
+          data.clientesRisco ?? [],
+          (r: any) => r.cliente
+        ),
+        margem: filterRowsDrill(
+          "margem",
+          data.margemPorCliente ?? [],
+          (r: any) => r.cliente
+        ),
+        "mix-produtos": filterRowsDrill(
+          "mix-produtos",
+          data.mixProdutosCliente ?? [],
+          (r: any) => r.cliente
+        ),
+        clientes: filterRows("clientes", data.clientes),
+        "vendas-detalhadas": filterRows(
+          "vendas-detalhadas",
+          data.vendasDetalhadas
+        ),
+        "produtos-vendidos": filterRows(
+          "produtos-vendidos",
+          data.produtosVendidosDetalhados
+        ),
+        "vendas-mes": filterRows("vendas-mes", data.vendasPorMes),
+        orcamentos: filterRows("orcamentos", data.orcamentos),
+      }
+    : {};
+  const totalsByReport: Record<string, TotalDef<any>[]> = {
+    "vendas-cliente": [
+      { key: "vendas", label: "vendas", value: r => r.vendas },
+      { key: "itens", label: "itens", value: r => r.quantidadeItens },
+      {
+        key: "valorBruto",
+        label: "valor bruto",
+        value: r => r.valorBruto,
+        format: fmtMoney,
+      },
+    ],
+    cmv: [
+      { key: "quantidade", label: "quantidade", value: r => r.quantidade },
+      {
+        key: "custoTotal",
+        label: "custo",
+        value: r => r.custoTotal,
+        format: fmtMoney,
+      },
+      {
+        key: "valorBruto",
+        label: "valor bruto",
+        value: r => r.valorBruto,
+        format: fmtMoney,
+      },
+    ],
+    "clientes-sem-vendas": [
+      { key: "clientes", label: "clientes", value: () => 1 },
+      { key: "dias", label: "dias sem venda", value: r => r.diasSemVenda },
+    ],
+    "lucro-margem": [
+      {
+        key: "receita",
+        label: "receita",
+        value: r => r.valorLiquido ?? r.valorBruto,
+        format: fmtMoney,
+      },
+      {
+        key: "cmv",
+        label: "CMV",
+        value: r => r.custoTotal,
+        format: fmtMoney,
+      },
+      {
+        key: "lucro",
+        label: "lucro bruto",
+        value: r => r.lucroBruto,
+        format: fmtMoney,
+      },
+    ],
+    "maiores-clientes": [
+      { key: "vendas", label: "vendas", value: r => r.vendas },
+      {
+        key: "bruto",
+        label: "valor bruto",
+        value: r => r.valorBruto,
+        format: fmtMoney,
+      },
+      {
+        key: "liquido",
+        label: "valor líquido",
+        value: r => r.valorLiquido,
+        format: fmtMoney,
+      },
+      { key: "itens", label: "itens", value: r => r.totalVendido },
+    ],
+    "abc-clientes": [
+      { key: "valor", label: "valor", value: r => r.valor, format: fmtMoney },
+      { key: "participacao", label: "participação", value: r => r.participacao, format: fmtPct },
+    ],
+    "abc-produtos": [
+      { key: "valor", label: "valor", value: r => r.valor, format: fmtMoney },
+      { key: "participacao", label: "participação", value: r => r.participacao, format: fmtPct },
+    ],
+    "clientes-risco": [
+      { key: "clientes", label: "clientes", value: () => 1 },
+      {
+        key: "anterior",
+        label: "valor anterior",
+        value: r => r.valorAnterior,
+        format: fmtMoney,
+      },
+      {
+        key: "atual",
+        label: "valor atual",
+        value: r => r.valorAtual,
+        format: fmtMoney,
+      },
+    ],
+    margem: [
+      {
+        key: "receita",
+        label: "receita líquida",
+        value: r => r.valorLiquido,
+        format: fmtMoney,
+      },
+      { key: "custo", label: "custo", value: r => r.custoTotal, format: fmtMoney },
+      { key: "lucro", label: "lucro", value: r => r.lucroBruto, format: fmtMoney },
+    ],
+    "mix-produtos": [
+      { key: "clientes", label: "clientes", value: () => 1 },
+      {
+        key: "faturamento",
+        label: "faturamento",
+        value: r => r.valorBruto,
+        format: fmtMoney,
+      },
+      {
+        key: "oportunidades",
+        label: "sugestões",
+        value: r => r.oportunidadesCrossSell?.length ?? 0,
+      },
+    ],
+    clientes: [{ key: "clientes", label: "clientes", value: () => 1 }],
+    "vendas-detalhadas": [
+      { key: "vendas", label: "vendas", value: () => 1 },
+      {
+        key: "bruto",
+        label: "bruto",
+        value: r => r.valorBruto,
+        format: fmtMoney,
+      },
+      {
+        key: "liquido",
+        label: "líquido",
+        value: r => r.valorLiquido,
+        format: fmtMoney,
+      },
+      { key: "frete", label: "frete", value: r => r.frete, format: fmtMoney },
+      {
+        key: "desconto",
+        label: "desconto",
+        value: r => r.desconto,
+        format: fmtMoney,
+      },
+    ],
+    "produtos-vendidos": [
+      { key: "itens", label: "itens", value: r => r.quantidade },
+      {
+        key: "valor",
+        label: "valor total",
+        value: r => r.valorTotal,
+        format: fmtMoney,
+      },
+      {
+        key: "desconto",
+        label: "desconto",
+        value: r => r.descontoAplicado,
+        format: fmtMoney,
+      },
+    ],
+    "vendas-mes": [
+      { key: "vendas", label: "vendas", value: r => r.vendas },
+      { key: "itens", label: "itens", value: r => r.quantidadeItens },
+      {
+        key: "bruto",
+        label: "bruto",
+        value: r => r.valorBruto,
+        format: fmtMoney,
+      },
+      {
+        key: "liquido",
+        label: "líquido",
+        value: r => r.valorLiquido,
+        format: fmtMoney,
+      },
+      { key: "frete", label: "frete", value: r => r.frete, format: fmtMoney },
+      {
+        key: "desconto",
+        label: "desconto",
+        value: r => r.desconto,
+        format: fmtMoney,
+      },
+    ],
+    orcamentos: [
+      { key: "orcamentos", label: "orçamentos", value: () => 1 },
+      {
+        key: "valor",
+        label: "valor bruto",
+        value: r => r.valorBruto,
+        format: fmtMoney,
+      },
+    ],
+  };
 
   return (
     <div className="space-y-6 p-4 lg:p-8">
