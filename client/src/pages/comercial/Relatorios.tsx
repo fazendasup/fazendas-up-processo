@@ -288,7 +288,7 @@ function ColumnHeaderFilter({
                 }}
                 className="text-xs font-bold text-red-700 hover:underline dark:text-red-300"
               >
-                Limpar filtro
+                Limpar todos
               </button>
             </div>
             <span className="text-xs font-semibold text-slate-500">
@@ -465,7 +465,7 @@ function Notice({ children }: { children: ReactNode }) {
 
 function Table({ children }: { children: ReactNode }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
+    <div className="min-h-[320px] overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
       {children}
     </div>
   );
@@ -661,11 +661,13 @@ export function Relatorios() {
     }));
   };
   const clearAllColumnValues = (id: string, key: string) => {
-    setColumnFilters(current => {
-      const currentReport = { ...(current[id] ?? {}) };
-      delete currentReport[key];
-      return { ...current, [id]: currentReport };
-    });
+    setColumnFilters(current => ({
+      ...current,
+      [id]: {
+        ...(current[id] ?? {}),
+        [key]: { selected: [] },
+      },
+    }));
   };
   const setColumnSort = (
     id: string,
