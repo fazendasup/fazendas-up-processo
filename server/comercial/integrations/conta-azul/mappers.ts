@@ -114,6 +114,7 @@ export type ContaAzulPedidoItemPayload = {
   categoria?: string | null;
   qtd?: number;
   preco?: number;
+  custo?: number;
 };
 
 export type ContaAzulProdutoCategoriaLookup = {
@@ -216,6 +217,7 @@ export function mapVendaItensResponse(
               : undefined;
       const qtdRaw = item.quantidade ?? item.qtd;
       const precoRaw = item.valor ?? item.preco ?? item.preco_unitario;
+      const custoRaw = item.custo ?? item.custo_unitario ?? item.custoUnitario;
       const qtd =
         typeof qtdRaw === "number"
           ? qtdRaw
@@ -228,6 +230,12 @@ export function mapVendaItensResponse(
           : typeof precoRaw === "string"
             ? Number(precoRaw)
             : 0;
+      const custo =
+        typeof custoRaw === "number"
+          ? custoRaw
+          : typeof custoRaw === "string"
+            ? Number(custoRaw)
+            : undefined;
       return {
         nome,
         sku,
@@ -236,6 +244,10 @@ export function mapVendaItensResponse(
           categoriaFallbackPorNome(nome),
         qtd: Number.isFinite(qtd) && qtd > 0 ? qtd : 1,
         preco: Number.isFinite(preco) && preco >= 0 ? preco : 0,
+        custo:
+          custo != null && Number.isFinite(custo) && custo >= 0
+            ? custo
+            : undefined,
       };
     })
     .filter((item): item is ContaAzulPedidoItemPayload => item != null);
@@ -352,6 +364,7 @@ export function mapPedidoCreate(
           categoria: i.categoria ?? null,
           quantidade: i.qtd ?? 1,
           precoUnit: i.preco ?? 0,
+          custoUnit: i.custo ?? null,
         })) ?? [],
     },
   };

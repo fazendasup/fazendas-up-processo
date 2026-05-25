@@ -295,7 +295,8 @@ exports.Prisma.ItemPedidoScalarFieldEnum = {
   produto: 'produto',
   categoria: 'categoria',
   quantidade: 'quantidade',
-  precoUnit: 'precoUnit'
+  precoUnit: 'precoUnit',
+  custoUnit: 'custoUnit'
 };
 
 exports.Prisma.InteracaoScalarFieldEnum = {

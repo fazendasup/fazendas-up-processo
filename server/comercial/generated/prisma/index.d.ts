@@ -17251,11 +17251,13 @@ export namespace Prisma {
   export type ItemPedidoAvgAggregateOutputType = {
     quantidade: Decimal | null
     precoUnit: Decimal | null
+    custoUnit: Decimal | null
   }
 
   export type ItemPedidoSumAggregateOutputType = {
     quantidade: Decimal | null
     precoUnit: Decimal | null
+    custoUnit: Decimal | null
   }
 
   export type ItemPedidoMinAggregateOutputType = {
@@ -17266,6 +17268,7 @@ export namespace Prisma {
     categoria: string | null
     quantidade: Decimal | null
     precoUnit: Decimal | null
+    custoUnit: Decimal | null
   }
 
   export type ItemPedidoMaxAggregateOutputType = {
@@ -17276,6 +17279,7 @@ export namespace Prisma {
     categoria: string | null
     quantidade: Decimal | null
     precoUnit: Decimal | null
+    custoUnit: Decimal | null
   }
 
   export type ItemPedidoCountAggregateOutputType = {
@@ -17286,6 +17290,7 @@ export namespace Prisma {
     categoria: number
     quantidade: number
     precoUnit: number
+    custoUnit: number
     _all: number
   }
 
@@ -17293,11 +17298,13 @@ export namespace Prisma {
   export type ItemPedidoAvgAggregateInputType = {
     quantidade?: true
     precoUnit?: true
+    custoUnit?: true
   }
 
   export type ItemPedidoSumAggregateInputType = {
     quantidade?: true
     precoUnit?: true
+    custoUnit?: true
   }
 
   export type ItemPedidoMinAggregateInputType = {
@@ -17308,6 +17315,7 @@ export namespace Prisma {
     categoria?: true
     quantidade?: true
     precoUnit?: true
+    custoUnit?: true
   }
 
   export type ItemPedidoMaxAggregateInputType = {
@@ -17318,6 +17326,7 @@ export namespace Prisma {
     categoria?: true
     quantidade?: true
     precoUnit?: true
+    custoUnit?: true
   }
 
   export type ItemPedidoCountAggregateInputType = {
@@ -17328,6 +17337,7 @@ export namespace Prisma {
     categoria?: true
     quantidade?: true
     precoUnit?: true
+    custoUnit?: true
     _all?: true
   }
 
@@ -17425,6 +17435,7 @@ export namespace Prisma {
     categoria: string | null
     quantidade: Decimal
     precoUnit: Decimal
+    custoUnit: Decimal | null
     _count: ItemPedidoCountAggregateOutputType | null
     _avg: ItemPedidoAvgAggregateOutputType | null
     _sum: ItemPedidoSumAggregateOutputType | null
@@ -17454,6 +17465,7 @@ export namespace Prisma {
     categoria?: boolean
     quantidade?: boolean
     precoUnit?: boolean
+    custoUnit?: boolean
     pedido?: boolean | PedidoDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["itemPedido"]>
 
@@ -17467,9 +17479,10 @@ export namespace Prisma {
     categoria?: boolean
     quantidade?: boolean
     precoUnit?: boolean
+    custoUnit?: boolean
   }
 
-  export type ItemPedidoOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "pedidoId" | "sku" | "produto" | "categoria" | "quantidade" | "precoUnit", ExtArgs["result"]["itemPedido"]>
+  export type ItemPedidoOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "pedidoId" | "sku" | "produto" | "categoria" | "quantidade" | "precoUnit" | "custoUnit", ExtArgs["result"]["itemPedido"]>
   export type ItemPedidoInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     pedido?: boolean | PedidoDefaultArgs<ExtArgs>
   }
@@ -17487,6 +17500,7 @@ export namespace Prisma {
       categoria: string | null
       quantidade: Prisma.Decimal
       precoUnit: Prisma.Decimal
+      custoUnit: Prisma.Decimal | null
     }, ExtArgs["result"]["itemPedido"]>
     composites: {}
   }
@@ -17864,6 +17878,7 @@ export namespace Prisma {
     readonly categoria: FieldRef<"ItemPedido", 'String'>
     readonly quantidade: FieldRef<"ItemPedido", 'Decimal'>
     readonly precoUnit: FieldRef<"ItemPedido", 'Decimal'>
+    readonly custoUnit: FieldRef<"ItemPedido", 'Decimal'>
   }
     
 
@@ -27043,7 +27058,8 @@ export namespace Prisma {
     produto: 'produto',
     categoria: 'categoria',
     quantidade: 'quantidade',
-    precoUnit: 'precoUnit'
+    precoUnit: 'precoUnit',
+    custoUnit: 'custoUnit'
   };
 
   export type ItemPedidoScalarFieldEnum = (typeof ItemPedidoScalarFieldEnum)[keyof typeof ItemPedidoScalarFieldEnum]
@@ -28820,6 +28836,7 @@ export namespace Prisma {
     categoria?: StringNullableFilter<"ItemPedido"> | string | null
     quantidade?: DecimalFilter<"ItemPedido"> | Decimal | DecimalJsLike | number | string
     precoUnit?: DecimalFilter<"ItemPedido"> | Decimal | DecimalJsLike | number | string
+    custoUnit?: DecimalNullableFilter<"ItemPedido"> | Decimal | DecimalJsLike | number | string | null
     pedido?: XOR<PedidoScalarRelationFilter, PedidoWhereInput>
   }
 
@@ -28831,6 +28848,7 @@ export namespace Prisma {
     categoria?: SortOrderInput | SortOrder
     quantidade?: SortOrder
     precoUnit?: SortOrder
+    custoUnit?: SortOrderInput | SortOrder
     pedido?: PedidoOrderByWithRelationInput
     _relevance?: ItemPedidoOrderByRelevanceInput
   }
@@ -28846,6 +28864,7 @@ export namespace Prisma {
     categoria?: StringNullableFilter<"ItemPedido"> | string | null
     quantidade?: DecimalFilter<"ItemPedido"> | Decimal | DecimalJsLike | number | string
     precoUnit?: DecimalFilter<"ItemPedido"> | Decimal | DecimalJsLike | number | string
+    custoUnit?: DecimalNullableFilter<"ItemPedido"> | Decimal | DecimalJsLike | number | string | null
     pedido?: XOR<PedidoScalarRelationFilter, PedidoWhereInput>
   }, "id">
 
@@ -28857,6 +28876,7 @@ export namespace Prisma {
     categoria?: SortOrderInput | SortOrder
     quantidade?: SortOrder
     precoUnit?: SortOrder
+    custoUnit?: SortOrderInput | SortOrder
     _count?: ItemPedidoCountOrderByAggregateInput
     _avg?: ItemPedidoAvgOrderByAggregateInput
     _max?: ItemPedidoMaxOrderByAggregateInput
@@ -28875,6 +28895,7 @@ export namespace Prisma {
     categoria?: StringNullableWithAggregatesFilter<"ItemPedido"> | string | null
     quantidade?: DecimalWithAggregatesFilter<"ItemPedido"> | Decimal | DecimalJsLike | number | string
     precoUnit?: DecimalWithAggregatesFilter<"ItemPedido"> | Decimal | DecimalJsLike | number | string
+    custoUnit?: DecimalNullableWithAggregatesFilter<"ItemPedido"> | Decimal | DecimalJsLike | number | string | null
   }
 
   export type InteracaoWhereInput = {
@@ -30771,6 +30792,7 @@ export namespace Prisma {
     categoria?: string | null
     quantidade: Decimal | DecimalJsLike | number | string
     precoUnit: Decimal | DecimalJsLike | number | string
+    custoUnit?: Decimal | DecimalJsLike | number | string | null
     pedido: PedidoCreateNestedOneWithoutItensInput
   }
 
@@ -30782,6 +30804,7 @@ export namespace Prisma {
     categoria?: string | null
     quantidade: Decimal | DecimalJsLike | number | string
     precoUnit: Decimal | DecimalJsLike | number | string
+    custoUnit?: Decimal | DecimalJsLike | number | string | null
   }
 
   export type ItemPedidoUpdateInput = {
@@ -30791,6 +30814,7 @@ export namespace Prisma {
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     precoUnit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    custoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     pedido?: PedidoUpdateOneRequiredWithoutItensNestedInput
   }
 
@@ -30802,6 +30826,7 @@ export namespace Prisma {
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     precoUnit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    custoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
   }
 
   export type ItemPedidoCreateManyInput = {
@@ -30812,6 +30837,7 @@ export namespace Prisma {
     categoria?: string | null
     quantidade: Decimal | DecimalJsLike | number | string
     precoUnit: Decimal | DecimalJsLike | number | string
+    custoUnit?: Decimal | DecimalJsLike | number | string | null
   }
 
   export type ItemPedidoUpdateManyMutationInput = {
@@ -30821,6 +30847,7 @@ export namespace Prisma {
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     precoUnit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    custoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
   }
 
   export type ItemPedidoUncheckedUpdateManyInput = {
@@ -30831,6 +30858,7 @@ export namespace Prisma {
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     precoUnit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    custoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
   }
 
   export type InteracaoCreateInput = {
@@ -32872,11 +32900,13 @@ export namespace Prisma {
     categoria?: SortOrder
     quantidade?: SortOrder
     precoUnit?: SortOrder
+    custoUnit?: SortOrder
   }
 
   export type ItemPedidoAvgOrderByAggregateInput = {
     quantidade?: SortOrder
     precoUnit?: SortOrder
+    custoUnit?: SortOrder
   }
 
   export type ItemPedidoMaxOrderByAggregateInput = {
@@ -32887,6 +32917,7 @@ export namespace Prisma {
     categoria?: SortOrder
     quantidade?: SortOrder
     precoUnit?: SortOrder
+    custoUnit?: SortOrder
   }
 
   export type ItemPedidoMinOrderByAggregateInput = {
@@ -32897,11 +32928,13 @@ export namespace Prisma {
     categoria?: SortOrder
     quantidade?: SortOrder
     precoUnit?: SortOrder
+    custoUnit?: SortOrder
   }
 
   export type ItemPedidoSumOrderByAggregateInput = {
     quantidade?: SortOrder
     precoUnit?: SortOrder
+    custoUnit?: SortOrder
   }
 
   export type EnumTipoInteracaoFilter<$PrismaModel = never> = {
@@ -38773,6 +38806,7 @@ export namespace Prisma {
     categoria?: string | null
     quantidade: Decimal | DecimalJsLike | number | string
     precoUnit: Decimal | DecimalJsLike | number | string
+    custoUnit?: Decimal | DecimalJsLike | number | string | null
   }
 
   export type ItemPedidoUncheckedCreateWithoutPedidoInput = {
@@ -38782,6 +38816,7 @@ export namespace Prisma {
     categoria?: string | null
     quantidade: Decimal | DecimalJsLike | number | string
     precoUnit: Decimal | DecimalJsLike | number | string
+    custoUnit?: Decimal | DecimalJsLike | number | string | null
   }
 
   export type ItemPedidoCreateOrConnectWithoutPedidoInput = {
@@ -38886,6 +38921,7 @@ export namespace Prisma {
     categoria?: StringNullableFilter<"ItemPedido"> | string | null
     quantidade?: DecimalFilter<"ItemPedido"> | Decimal | DecimalJsLike | number | string
     precoUnit?: DecimalFilter<"ItemPedido"> | Decimal | DecimalJsLike | number | string
+    custoUnit?: DecimalNullableFilter<"ItemPedido"> | Decimal | DecimalJsLike | number | string | null
   }
 
   export type PedidoCreateWithoutItensInput = {
@@ -40807,6 +40843,7 @@ export namespace Prisma {
     categoria?: string | null
     quantidade: Decimal | DecimalJsLike | number | string
     precoUnit: Decimal | DecimalJsLike | number | string
+    custoUnit?: Decimal | DecimalJsLike | number | string | null
   }
 
   export type ItemPedidoUpdateWithoutPedidoInput = {
@@ -40816,6 +40853,7 @@ export namespace Prisma {
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     precoUnit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    custoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
   }
 
   export type ItemPedidoUncheckedUpdateWithoutPedidoInput = {
@@ -40825,6 +40863,7 @@ export namespace Prisma {
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     precoUnit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    custoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
   }
 
   export type ItemPedidoUncheckedUpdateManyWithoutPedidoInput = {
@@ -40834,6 +40873,7 @@ export namespace Prisma {
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     precoUnit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    custoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
   }
 
 

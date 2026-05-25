@@ -307,6 +307,7 @@ async function enriquecerComposicaoPedidosPendentes(
                   categoria: i.categoria ?? null,
                   quantidade: i.qtd ?? 1,
                   precoUnit: i.preco ?? 0,
+                  custoUnit: i.custo ?? null,
                 })),
               },
             }
@@ -684,6 +685,7 @@ async function executarContaAzulSync(
                     categoria: i.categoria ?? null,
                     quantidade: i.qtd ?? 1,
                     precoUnit: i.preco ?? 0,
+                    custoUnit: i.custo ?? null,
                   })),
                 },
               }

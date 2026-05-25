@@ -17,6 +17,7 @@ const CENTRAL_NAV = [
   { href: "/comercial/oportunidades", label: "Oportunidades" },
   { href: "/comercial/mensagens", label: "Mensagens" },
   { href: "/comercial/kpis", label: "KPIs" },
+  { href: "/comercial/relatorios", label: "Relatórios" },
   { href: "/comercial/configuracoes", label: "Configurações" },
 ] as const;
 
@@ -32,19 +33,31 @@ function navClass(active: boolean) {
 export function ComercialLayout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { logout } = useAuth();
-  const me = trpc.comercial.pedidos.me.useQuery(undefined, { staleTime: 60_000 });
+  const me = trpc.comercial.pedidos.me.useQuery(undefined, {
+    staleTime: 60_000,
+  });
   const isPedidosArea =
     location === "/comercial/pedidos" ||
     location === "/comercial/estoque-vivo" ||
     location.startsWith("/comercial/pedidos-");
-  const nav = me.data?.perfil === "VENDEDOR" ? PEDIDOS_NAV : isPedidosArea ? PEDIDOS_NAV : CENTRAL_NAV;
+  const nav =
+    me.data?.perfil === "VENDEDOR"
+      ? PEDIDOS_NAV
+      : isPedidosArea
+        ? PEDIDOS_NAV
+        : CENTRAL_NAV;
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <Header />
       <div className="border-b border-border/60 bg-background/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-[100rem] flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-5">
-          <nav className="flex flex-wrap items-center gap-0.5" aria-label={isPedidosArea ? "Pedidos comerciais" : "Central comercial"}>
+          <nav
+            className="flex flex-wrap items-center gap-0.5"
+            aria-label={
+              isPedidosArea ? "Pedidos comerciais" : "Central comercial"
+            }
+          >
             {nav.map(item => {
               const active =
                 location === item.href ||
@@ -52,7 +65,11 @@ export function ComercialLayout({ children }: { children: ReactNode }) {
                   item.href !== "/comercial/pedidos" &&
                   location.startsWith(item.href));
               return (
-                <Link key={item.href} href={item.href} className={navClass(active)}>
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={navClass(active)}
+                >
                   {item.label}
                 </Link>
               );
@@ -69,9 +86,10 @@ export function ComercialLayout({ children }: { children: ReactNode }) {
         </div>
       </div>
       <main className="relative min-h-0 flex-1 overflow-auto">
-        <div className="mx-auto max-w-[100rem] px-3 py-4 sm:px-5 sm:py-6 md:px-6">{children}</div>
+        <div className="mx-auto max-w-[100rem] px-3 py-4 sm:px-5 sm:py-6 md:px-6">
+          {children}
+        </div>
       </main>
     </div>
   );
 }
-

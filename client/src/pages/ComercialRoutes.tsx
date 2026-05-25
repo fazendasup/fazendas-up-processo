@@ -18,9 +18,20 @@ const Oportunidades = lazy(() =>
 const Mensagens = lazy(() =>
   import("./comercial/Mensagens").then(m => ({ default: m.Mensagens }))
 );
-const Kpis = lazy(() => import("./comercial/Kpis").then(m => ({ default: m.Kpis })));
-const Pedidos = lazy(() => import("./comercial/Pedidos").then(m => ({ default: m.Pedidos })));
-const PedidosHistorico = lazy(() => import("./comercial/PedidosHistorico").then(m => ({ default: m.PedidosHistorico })));
+const Kpis = lazy(() =>
+  import("./comercial/Kpis").then(m => ({ default: m.Kpis }))
+);
+const Relatorios = lazy(() =>
+  import("./comercial/Relatorios").then(m => ({ default: m.Relatorios }))
+);
+const Pedidos = lazy(() =>
+  import("./comercial/Pedidos").then(m => ({ default: m.Pedidos }))
+);
+const PedidosHistorico = lazy(() =>
+  import("./comercial/PedidosHistorico").then(m => ({
+    default: m.PedidosHistorico,
+  }))
+);
 const Execucoes = lazy(() =>
   import("./comercial/Execucoes").then(m => ({ default: m.Execucoes }))
 );
@@ -39,7 +50,11 @@ export default function ComercialRoutes() {
           <Route path="/comercial/oportunidades" component={Oportunidades} />
           <Route path="/comercial/mensagens" component={Mensagens} />
           <Route path="/comercial/kpis" component={Kpis} />
-          <Route path="/comercial/pedidos-historico" component={PedidosHistorico} />
+          <Route path="/comercial/relatorios" component={Relatorios} />
+          <Route
+            path="/comercial/pedidos-historico"
+            component={PedidosHistorico}
+          />
           <Route path="/comercial/estoque-vivo">
             <Pedidos abaInicial="compras" />
           </Route>

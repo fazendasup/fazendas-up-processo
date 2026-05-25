@@ -13,6 +13,7 @@ import { manusRouter } from "../comercial/routers/manusRouter";
 import { mensagensRouter } from "../comercial/routers/mensagensRouter";
 import { oportunidadesRouter } from "../comercial/routers/oportunidadesRouter";
 import { pedidosRouter } from "../comercial/routers/pedidosRouter";
+import { relatoriosRouter } from "../comercial/routers/relatoriosRouter";
 
 export const comercialRouter = router({
   dashboard: dashboardRouter,
@@ -25,4 +26,5 @@ export const comercialRouter = router({
   manus: manusRouter,
   integracoes: integrationsRouter,
   pedidos: pedidosRouter,
+  relatorios: relatoriosRouter,
 });
