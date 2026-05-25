@@ -147,8 +147,8 @@ export function FarmAssistantSheet({ open, onOpenChange }: FarmAssistantSheetPro
             Assistente Fazendas Up
           </SheetTitle>
           <SheetDescription className="text-xs">
-            Pode executar transplantio, concluir tarefas do dia e outras operações — sempre com confirmação
-            antes de gravar. Não apaga dados do sistema.
+            Enxerga o resumo operacional e comercial disponível para o seu perfil. Operações continuam
+            sempre com confirmação antes de gravar; o assistente não apaga dados.
           </SheetDescription>
         </SheetHeader>
 
@@ -251,13 +251,14 @@ export function FarmAssistantSheet({ open, onOpenChange }: FarmAssistantSheetPro
                 placeholder="Pergunte sobre dados do projeto, peça um resumo ou um insight…"
                 height="calc(100vh - 11rem)"
                 className="h-full min-h-[280px] rounded-lg border-0 shadow-none"
-                emptyStateMessage="Ex.: “Resumo objetivo do projeto agora” ou “Quais planos estão na fila de germinação?” — respostas usam o resumo operacional enviado com a mensagem. Operações (transplantio, etc.) continuam disponíveis por texto; use com confirmação."
+                emptyStateMessage="Ex.: “Quais clientes merecem ação comercial hoje?” ou “Resumo objetivo do projeto agora” — respostas usam os dados operacionais e comerciais enviados com a mensagem."
                 suggestedPrompts={[
                   "Resumo operacional objetivo do projeto neste momento.",
+                  "Quais são os principais insights comerciais dos últimos 90 dias? Priorize ações práticas.",
+                  "Liste clientes em risco, oportunidades abertas e produtos com maior potencial de venda.",
+                  "Quais produtos e categorias lideram faturamento, quantidade e margem?",
                   "Quais planos de plantio estão ativos, em que status, e quais estão na fila de germinação / plantio inicial?",
                   "Como está a ocupação das torres por fase? Há capacidade livre ou gargalos a destacar?",
-                  "Liste tarefas pendentes para hoje e atrasadas por prioridade — só descreva, sem concluir nem alterar.",
-                  "Que ciclos de dosagem ou automação estão ativos e a que fases ou caixas se aplicam?",
                   "Um único insight de gestão a partir dos dados: maior risco ou oportunidade operacional hoje.",
                 ]}
               />

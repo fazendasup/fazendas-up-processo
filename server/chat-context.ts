@@ -15,8 +15,16 @@ export type EstoqueAssistantItem = {
 export type ComercialAssistantResumo =
   | {
       disponivel: true;
+      perfilComercial?: string | null;
+      escopo?: string;
+      periodoAnalise?: {
+        inicio: string;
+        fim: string;
+        janelaDias: number;
+      };
       clientesTotal: number;
       clientesPorTipo: Record<string, number>;
+      clientesPorStatus?: Record<string, number>;
       pedidosMes: number;
       vendasMesLiquido: number;
       vendasMesBruto: number;
@@ -27,10 +35,12 @@ export type ComercialAssistantResumo =
       mensagensPendentes: number;
       ultimaSyncContaAzul: string | null;
       statusUltimaSyncContaAzul: string | null;
+      paginas?: Record<string, unknown>;
+      insights?: string[];
     }
   | { disponivel: false; motivo: string };
 
-const MAX_SNAPSHOT_CHARS = 14_500;
+const MAX_SNAPSHOT_CHARS = 42_000;
 
 function clip(body: string): string {
   if (body.length <= MAX_SNAPSHOT_CHARS) return body;
@@ -44,6 +54,20 @@ function ts(v: Date | null | undefined): string {
   } catch {
     return String(v);
   }
+}
+
+function pushJsonBlock(lines: string[], title: string, value: unknown): void {
+  lines.push(`### ${title}`);
+  const json = JSON.stringify(value, null, 2);
+  if (!json) {
+    lines.push("- sem dados");
+    lines.push("");
+    return;
+  }
+  lines.push("```json");
+  lines.push(json.length > 8_000 ? `${json.slice(0, 7_900)}\n... [bloco truncado]` : json);
+  lines.push("```");
+  lines.push("");
 }
 
 /**
@@ -93,8 +117,16 @@ export function buildCompactFazendaSnapshotMarkdown(
 
   if (opts.comercial?.disponivel) {
     const c = opts.comercial;
-    lines.push("## Comercial (Conta Azul / carteira)");
+    lines.push("## Comercial (Conta Azul / carteira / pedidos)");
+    if (c.escopo) lines.push(`- Escopo de acesso do assistente: ${c.escopo}`);
+    if (c.perfilComercial) lines.push(`- Perfil comercial vinculado: ${c.perfilComercial}`);
+    if (c.periodoAnalise) {
+      lines.push(
+        `- Janela analítica principal: ${c.periodoAnalise.inicio} a ${c.periodoAnalise.fim} (${c.periodoAnalise.janelaDias} dias)`,
+      );
+    }
     lines.push(`- Clientes: ${c.clientesTotal}; por tipo: ${JSON.stringify(c.clientesPorTipo)}`);
+    if (c.clientesPorStatus) lines.push(`- Clientes por status: ${JSON.stringify(c.clientesPorStatus)}`);
     lines.push(
       `- Mês atual: ${c.pedidosMes} pedido(s); líquido R$ ${c.vendasMesLiquido.toFixed(2)}; bruto R$ ${c.vendasMesBruto.toFixed(2)}; frete R$ ${c.vendasMesFrete.toFixed(2)}; desconto R$ ${c.vendasMesDesconto.toFixed(2)}`,
     );
@@ -103,7 +135,20 @@ export function buildCompactFazendaSnapshotMarkdown(
     lines.push(
       `- Última sync Conta Azul: ${c.ultimaSyncContaAzul ?? "—"}; status: ${c.statusUltimaSyncContaAzul ?? "—"}`,
     );
+    if (c.insights?.length) {
+      lines.push("- Sinais pré-calculados:");
+      for (const insight of c.insights) lines.push(`  - ${insight}`);
+    }
     lines.push("");
+    if (c.paginas) {
+      lines.push("## Comercial — contexto completo por página");
+      lines.push(
+        "Use estes blocos para responder perguntas e tirar insights sobre Dashboard, Relatórios, Clientes, Oportunidades, Pedidos, Mensagens, Execuções e Configurações comerciais.",
+      );
+      for (const [title, value] of Object.entries(c.paginas)) {
+        pushJsonBlock(lines, title, value);
+      }
+    }
   }
 
   if (opts.estoqueItens) {
