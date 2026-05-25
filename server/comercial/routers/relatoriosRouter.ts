@@ -7,27 +7,106 @@ import {
 } from "../lib/pedido-status.js";
 import { mesIsoAmericaSp } from "@shared/comercial/periodo-america-sp";
 import { router, comercialProcedure } from "../../_core/trpc";
-
-function n(v: unknown): number {
-  const out = Number(v ?? 0);
-  return Number.isFinite(out) ? out : 0;
-}
-
-function round2(v: number): number {
-  return Math.round(v * 100) / 100;
-}
+import {
+  addMap,
+  curvaAbc,
+  n,
+  periodoAnterior,
+  round2,
+  variacaoPct,
+} from "../services/relatorios-calculos.js";
 
 function diasDesde(data: Date | null): number | null {
   if (!data) return null;
   return Math.max(0, Math.floor((Date.now() - data.getTime()) / 86_400_000));
 }
 
-function addMap<T>(map: Map<string, T>, key: string, init: () => T): T {
-  const current = map.get(key);
-  if (current) return current;
-  const created = init();
-  map.set(key, created);
-  return created;
+type ClienteAgg = {
+  clienteId: string;
+  cliente: string;
+  tipoCliente: string;
+  situacao: string;
+  vendas: number;
+  valorBruto: number;
+  valorLiquido: number;
+  quantidadeItens: number;
+  custoTotal: number;
+  custoQtd: number;
+  produtos: Map<string, { produto: string; quantidade: number; valorBruto: number }>;
+};
+
+type PedidoRelatorio = {
+  clienteId: string;
+  statusPedido: string;
+  itens: Array<{
+    produto: string;
+    quantidade: unknown;
+    precoUnit: unknown;
+    custoUnit?: unknown | null;
+  }>;
+  cliente: {
+    nome: string;
+    tipo: string;
+    statusRelacionamento: string;
+  };
+};
+
+function agregarVendasPorCliente(pedidos: PedidoRelatorio[]) {
+  const map = new Map<string, ClienteAgg>();
+  const produtoGlobal = new Map<string, number>();
+
+  for (const p of pedidos.filter(
+    row => classificarStatusPedido(row.statusPedido) === "venda"
+  )) {
+    const comp = composicaoDoPedidoParaDashboard(
+      p as unknown as Parameters<typeof composicaoDoPedidoParaDashboard>[0]
+    );
+    const qtdPedido = p.itens.reduce(
+      (sum: number, item) => sum + n(item.quantidade),
+      0
+    );
+    const row = addMap(map, p.clienteId, () => ({
+      clienteId: p.clienteId,
+      cliente: p.cliente.nome,
+      tipoCliente: p.cliente.tipo,
+      situacao: p.cliente.statusRelacionamento,
+      vendas: 0,
+      valorBruto: 0,
+      valorLiquido: 0,
+      quantidadeItens: 0,
+      custoTotal: 0,
+      custoQtd: 0,
+      produtos: new Map(),
+    }));
+    row.vendas += 1;
+    row.valorBruto += comp.valorBruto;
+    row.valorLiquido += comp.valorLiquido;
+    row.quantidadeItens += qtdPedido;
+
+    for (const item of p.itens) {
+      const quantidade = n(item.quantidade);
+      const valorTotal = n(item.quantidade) * n(item.precoUnit);
+      const custo =
+        item.custoUnit != null ? n(item.quantidade) * n(item.custoUnit) : null;
+      produtoGlobal.set(
+        item.produto,
+        (produtoGlobal.get(item.produto) ?? 0) + valorTotal
+      );
+      const prod = addMap(row.produtos, item.produto, () => ({
+        produto: item.produto,
+        quantidade: 0,
+        valorBruto: 0,
+      }));
+      prod.quantidade += quantidade;
+      prod.valorBruto += valorTotal;
+      if (custo != null) {
+        row.custoTotal += custo;
+        row.custoQtd += quantidade;
+      }
+    }
+  }
+
+  return { map, produtoGlobal };
 }
 
 function itemValorBruto(item: {
@@ -54,7 +133,8 @@ export const relatoriosRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
-      const [pedidos, clientes] = await Promise.all([
+      const prev = periodoAnterior(input.inicio, input.fim);
+      const [pedidos, pedidosAnterior, clientes] = await Promise.all([
         ctx.prisma!.pedido.findMany({
           where: {
             origemPedido: OrigemPedido.CONTA_AZUL,
@@ -76,6 +156,23 @@ export const relatoriosRouter = router({
             itens: true,
           },
           orderBy: { dataPedido: "desc" },
+        }),
+        ctx.prisma!.pedido.findMany({
+          where: {
+            origemPedido: OrigemPedido.CONTA_AZUL,
+            dataPedido: { gte: prev.inicio, lte: prev.fim },
+          },
+          include: {
+            cliente: {
+              select: {
+                id: true,
+                nome: true,
+                tipo: true,
+                statusRelacionamento: true,
+              },
+            },
+            itens: true,
+          },
         }),
         ctx.prisma!.cliente.findMany({
           select: {
@@ -115,6 +212,8 @@ export const relatoriosRouter = router({
           valorBruto: number;
           valorLiquido: number;
           quantidadeItens: number;
+          custoTotal: number;
+          custoQtd: number;
           produtos: Map<
             string,
             { produto: string; quantidade: number; valorBruto: number }
@@ -194,6 +293,8 @@ export const relatoriosRouter = router({
           valorBruto: 0,
           valorLiquido: 0,
           quantidadeItens: 0,
+          custoTotal: 0,
+          custoQtd: 0,
           produtos: new Map(),
         }));
         clienteRow.vendas += 1;
@@ -216,6 +317,10 @@ export const relatoriosRouter = router({
           );
           produtoCliente.quantidade += quantidade;
           produtoCliente.valorBruto += valorTotal;
+          if (custoTotal != null) {
+            clienteRow.custoTotal += custoTotal;
+            clienteRow.custoQtd += quantidade;
+          }
 
           const produtoCmv = addMap(cmvPorProduto, item.produto, () => ({
             produto: item.produto,
@@ -317,8 +422,168 @@ export const relatoriosRouter = router({
         })
         .sort((a, b) => a.mes.localeCompare(b.mes));
 
+      const aggAtual = agregarVendasPorCliente(pedidos);
+      const aggAnterior = agregarVendasPorCliente(pedidosAnterior);
+
+      const totalBrutoAtual = vendas.reduce(
+        (sum, p) => sum + composicaoDoPedidoParaDashboard(p).valorBruto,
+        0
+      );
+      const totalBrutoAnterior = pedidosAnterior
+        .filter(p => classificarStatusPedido(p.statusPedido) === "venda")
+        .reduce(
+          (sum, p) => sum + composicaoDoPedidoParaDashboard(p).valorBruto,
+          0
+        );
+      const totalLiquidoAtual = vendas.reduce(
+        (sum, p) => sum + composicaoDoPedidoParaDashboard(p).valorLiquido,
+        0
+      );
+      const totalLiquidoAnterior = pedidosAnterior
+        .filter(p => classificarStatusPedido(p.statusPedido) === "venda")
+        .reduce(
+          (sum, p) => sum + composicaoDoPedidoParaDashboard(p).valorLiquido,
+          0
+        );
+
+      const abcClientes = curvaAbc(
+        vendasPorClienteRows.map(r => ({
+          id: r.clienteId,
+          nome: r.cliente,
+          valor: r.valorLiquido,
+        }))
+      );
+      const abcProdutos = curvaAbc(
+        cmvRows.map(r => ({
+          id: r.produto,
+          nome: r.produto,
+          valor: r.valorBruto,
+        }))
+      );
+
+      const margemPorCliente = vendasPorClienteRows
+        .map(row => {
+          const lucro =
+            row.custoQtd > 0 ? row.valorLiquido - row.custoTotal : null;
+          return {
+            clienteId: row.clienteId,
+            cliente: row.cliente,
+            valorBruto: round2(row.valorBruto),
+            valorLiquido: round2(row.valorLiquido),
+            custoTotal: row.custoQtd > 0 ? round2(row.custoTotal) : null,
+            lucroBruto: lucro == null ? null : round2(lucro),
+            margemLucro:
+              lucro == null || row.valorLiquido <= 0
+                ? null
+                : round2(lucro / row.valorLiquido),
+            vendas: row.vendas,
+            ticketMedio: round2(row.ticketMedio),
+          };
+        })
+        .sort((a, b) => (b.lucroBruto ?? 0) - (a.lucroBruto ?? 0));
+
+      const produtosPopulares = Array.from(aggAtual.produtoGlobal.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 25)
+        .map(([produto]) => produto);
+
+      const mixProdutosCliente = vendasPorClienteRows.slice(0, 40).map(row => {
+        const comprados = new Set(row.produtos.map(p => p.produto));
+        const oportunidades = produtosPopulares
+          .filter(produto => !comprados.has(produto))
+          .slice(0, 5);
+        return {
+          clienteId: row.clienteId,
+          cliente: row.cliente,
+          valorBruto: round2(row.valorBruto),
+          topProdutos: row.produtos.map(p => p.produto).join(", "),
+          oportunidadesCrossSell: oportunidades,
+        };
+      });
+
+      const clientesRisco = Array.from(aggAnterior.map.entries())
+        .map(([clienteId, prevRow]) => {
+          const atual = aggAtual.map.get(clienteId);
+          const valorAnterior = prevRow.valorLiquido;
+          const valorAtual = atual?.valorLiquido ?? 0;
+          const vendasAnterior = prevRow.vendas;
+          const vendasAtual = atual?.vendas ?? 0;
+          if (valorAnterior < 300) return null;
+
+          const quedaValor = variacaoPct(valorAtual, valorAnterior);
+          const parouComprar = vendasAtual === 0 && vendasAnterior > 0;
+          const quedaForte =
+            quedaValor != null && quedaValor <= -0.35 && valorAtual > 0;
+          const score =
+            (parouComprar ? 50 : 0) +
+            (quedaForte ? 35 : 0) +
+            (quedaValor != null && quedaValor <= -0.2 ? 15 : 0);
+
+          if (score < 35) return null;
+
+          let motivo = "Queda de faturamento";
+          if (parouComprar) motivo = "Parou de comprar no período";
+          else if (quedaForte) motivo = "Queda forte vs período anterior";
+
+          return {
+            clienteId,
+            cliente: prevRow.cliente,
+            valorAnterior: round2(valorAnterior),
+            valorAtual: round2(valorAtual),
+            vendasAnterior,
+            vendasAtual,
+            variacaoValor: quedaValor,
+            score,
+            motivo,
+            acaoSugerida: parouComprar
+              ? "Reativar com contato comercial"
+              : "Oferecer mix complementar ou condição especial",
+          };
+        })
+        .filter((r): r is NonNullable<typeof r> => r != null)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 80);
+
       return {
         periodo: { inicio: input.inicio, fim: input.fim },
+        periodoAnterior: prev,
+        comparacaoPeriodo: {
+          vendas: {
+            atual: vendas.length,
+            anterior: pedidosAnterior.filter(
+              p => classificarStatusPedido(p.statusPedido) === "venda"
+            ).length,
+            variacao: variacaoPct(
+              vendas.length,
+              pedidosAnterior.filter(
+                p => classificarStatusPedido(p.statusPedido) === "venda"
+              ).length
+            ),
+          },
+          valorBruto: {
+            atual: round2(totalBrutoAtual),
+            anterior: round2(totalBrutoAnterior),
+            variacao: variacaoPct(totalBrutoAtual, totalBrutoAnterior),
+          },
+          valorLiquido: {
+            atual: round2(totalLiquidoAtual),
+            anterior: round2(totalLiquidoAnterior),
+            variacao: variacaoPct(totalLiquidoAtual, totalLiquidoAnterior),
+          },
+          clientesAtivos: {
+            atual: vendasPorCliente.size,
+            anterior: aggAnterior.map.size,
+            variacao: variacaoPct(
+              vendasPorCliente.size,
+              aggAnterior.map.size
+            ),
+          },
+        },
+        abcClientes,
+        abcProdutos,
+        margemPorCliente,
+        mixProdutosCliente,
+        clientesRisco,
         disponibilidade: {
           cmv: cmvRows.some(r => r.custoTotal != null),
           impostos: false,

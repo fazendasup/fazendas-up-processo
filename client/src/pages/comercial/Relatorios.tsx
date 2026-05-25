@@ -1,6 +1,23 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Download, FileBarChart, Info, Search } from "lucide-react";
 import {
+  AbcChart,
+  AbcParetoChart,
+  ChartCard,
+  ClienteLink,
+  DeltaBadge,
+  DrillBanner,
+  EmptyChart,
+  fmtMoney,
+  fmtNumber,
+  fmtPct,
+  fmtVariacao,
+  MargemChart,
+  MixChart,
+  RiscoChart,
+  shortLabel,
+} from "./RelatoriosSections";
+import {
   Area,
   Bar,
   BarChart,
@@ -32,6 +49,11 @@ const REPORTS = [
   { id: "clientes-sem-vendas", label: "Clientes sem vendas" },
   { id: "lucro-margem", label: "Lucro e margem" },
   { id: "maiores-clientes", label: "Maiores clientes" },
+  { id: "abc-clientes", label: "ABC clientes" },
+  { id: "abc-produtos", label: "ABC produtos" },
+  { id: "clientes-risco", label: "Clientes em risco" },
+  { id: "margem", label: "Margem por cliente" },
+  { id: "mix-produtos", label: "Mix e cross-sell" },
   { id: "impostos", label: "Impostos" },
   { id: "clientes", label: "Relação de clientes" },
   { id: "vendas-detalhadas", label: "Vendas detalhadas" },
@@ -56,25 +78,6 @@ const CHART_COLORS = [
   "#6366f1",
   "#84cc16",
 ] as const;
-
-function fmtMoney(n: number | null | undefined, digits = 2) {
-  if (n == null) return "—";
-  return Number(n).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    maximumFractionDigits: digits,
-  });
-}
-
-function fmtNumber(n: number | null | undefined, digits = 0) {
-  if (n == null) return "—";
-  return Number(n).toLocaleString("pt-BR", { maximumFractionDigits: digits });
-}
-
-function fmtPct(n: number | null | undefined) {
-  if (n == null) return "—";
-  return `${(Number(n) * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
-}
 
 function fmtDate(d: Date | string | null | undefined) {
   if (!d) return "—";
@@ -112,44 +115,6 @@ function rowToSearchText(value: unknown): string {
       .join(" ");
   }
   return String(value);
-}
-
-function shortLabel(value: string, max = 18) {
-  return value.length > max ? `${value.slice(0, max)}…` : value;
-}
-
-function ChartCard({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="mb-5 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-4 dark:border-white/10 dark:from-white/10 dark:to-white/5">
-      <div className="mb-3">
-        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-          {title}
-        </h3>
-        {description ? (
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            {description}
-          </p>
-        ) : null}
-      </div>
-      <div className="h-80">{children}</div>
-    </div>
-  );
-}
-
-function EmptyChart({ message }: { message: string }) {
-  return (
-    <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-center text-sm text-slate-500 dark:border-white/15 dark:bg-white/5 dark:text-slate-400">
-      {message}
-    </div>
-  );
 }
 
 function TableFilter({
@@ -258,6 +223,9 @@ export function Relatorios() {
     "valorBruto" | "valorLiquido" | "frete" | "desconto"
   >("valorLiquido");
   const [tableFilters, setTableFilters] = useState<Record<string, string>>({});
+  const [drill, setDrill] = useState<{ report: ReportId; value: string } | null>(
+    null
+  );
   const { inicio, fim } = useMemo(
     () => intervaloDoPreset(preset, { inicio: customInicio, fim: customFim }),
     [preset, customInicio, customFim]
@@ -280,6 +248,7 @@ export function Relatorios() {
     () =>
       (data?.vendasPorCliente ?? []).slice(0, 12).map((r: any) => ({
         cliente: shortLabel(r.cliente),
+        nome: r.cliente,
         valorBruto: Number(r.valorBruto ?? 0),
         itens: Number(r.quantidadeItens ?? 0),
       })),
@@ -387,6 +356,22 @@ export function Relatorios() {
     if (!needle) return rows;
     return rows.filter(row => rowToSearchText(row).toLowerCase().includes(needle));
   };
+  const filterRowsDrill = <T,>(
+    id: ReportId,
+    rows: T[],
+    match: (row: T) => string
+  ): T[] => {
+    let out = filterRows(id, rows);
+    if (drill?.report === id && drill.value) {
+      const v = drill.value.toLowerCase();
+      out = out.filter(row => match(row).toLowerCase() === v);
+    }
+    return out;
+  };
+  const setDrillFor = (report: ReportId, value: string) => {
+    setDrill({ report, value });
+    setActive(report);
+  };
   const renderTableFilter = (id: string, total: number, filtered: number) => (
     <TableFilter
       value={tableFilters[id] ?? ""}
@@ -425,12 +410,69 @@ export function Relatorios() {
                 ? "bg-emerald-600 text-white shadow-sm"
                 : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-300",
             ].join(" ")}
-            onClick={() => setActive(r.id)}
+            onClick={() => {
+              setActive(r.id);
+              setDrill(null);
+            }}
           >
             {r.label}
           </button>
         ))}
       </div>
+
+      {data?.comparacaoPeriodo ? (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-400/25 dark:bg-emerald-950/20">
+            <div className="text-xs font-bold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">
+              Receita líquida
+            </div>
+            <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">
+              {fmtMoney(data.comparacaoPeriodo.valorLiquido.atual)}
+            </div>
+            <div className="mt-2">
+              <DeltaBadge value={data.comparacaoPeriodo.valorLiquido.variacao} />
+            </div>
+            <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+              Anterior: {fmtMoney(data.comparacaoPeriodo.valorLiquido.anterior)}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-400/25 dark:bg-sky-950/20">
+            <div className="text-xs font-bold uppercase tracking-wide text-sky-800 dark:text-sky-300">
+              Valor bruto
+            </div>
+            <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">
+              {fmtMoney(data.comparacaoPeriodo.valorBruto.atual)}
+            </div>
+            <div className="mt-2">
+              <DeltaBadge value={data.comparacaoPeriodo.valorBruto.variacao} />
+            </div>
+          </div>
+          <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-400/25 dark:bg-violet-950/20">
+            <div className="text-xs font-bold uppercase tracking-wide text-violet-800 dark:text-violet-300">
+              Pedidos (vendas)
+            </div>
+            <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">
+              {fmtNumber(data.comparacaoPeriodo.vendas.atual)}
+            </div>
+            <div className="mt-2">
+              <DeltaBadge value={data.comparacaoPeriodo.vendas.variacao} />
+            </div>
+          </div>
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-400/25 dark:bg-amber-950/20">
+            <div className="text-xs font-bold uppercase tracking-wide text-amber-800 dark:text-amber-300">
+              Clientes ativos
+            </div>
+            <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">
+              {fmtNumber(data.comparacaoPeriodo.clientesAtivos.atual)}
+            </div>
+            <div className="mt-2">
+              <DeltaBadge
+                value={data.comparacaoPeriodo.clientesAtivos.variacao}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-400/25 dark:bg-emerald-950/20">
@@ -479,7 +521,11 @@ export function Relatorios() {
             <Section
               title="Análise das vendas por cliente"
               description="Produtos mais comprados por cliente no período, com quantidade de itens e valor bruto."
-              rows={filterRows("vendas-cliente", data.vendasPorCliente).map((r: any) => ({
+              rows={filterRowsDrill(
+                "vendas-cliente",
+                data.vendasPorCliente,
+                (r: any) => r.cliente
+              ).map((r: any) => ({
                 cliente: r.cliente,
                 vendas: r.vendas,
                 quantidadeItens: r.quantidadeItens,
@@ -491,7 +537,7 @@ export function Relatorios() {
             >
               <ChartCard
                 title="Top clientes por receita e volume"
-                description="Mostra quem concentra faturamento e a quantidade de itens comprados."
+                description="Clique em uma barra para filtrar a planilha abaixo (drill-down)."
               >
                 {chartVendasCliente.length ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -511,6 +557,14 @@ export function Relatorios() {
                         dataKey="valorBruto"
                         name="Valor bruto"
                         fill="#059669"
+                        cursor="pointer"
+                        onClick={d =>
+                          setDrillFor(
+                            "vendas-cliente",
+                            (d as { payload?: { nome?: string } })?.payload
+                              ?.nome ?? ""
+                          )
+                        }
                       />
                       <Line
                         yAxisId="right"
@@ -525,10 +579,20 @@ export function Relatorios() {
                   <EmptyChart message="Sem vendas por cliente no período." />
                 )}
               </ChartCard>
+              {drill?.report === "vendas-cliente" ? (
+                <DrillBanner
+                  label={drill.value}
+                  onClear={() => setDrill(null)}
+                />
+              ) : null}
               {renderTableFilter(
                 "vendas-cliente",
                 data.vendasPorCliente.length,
-                filterRows("vendas-cliente", data.vendasPorCliente).length
+                filterRowsDrill(
+                  "vendas-cliente",
+                  data.vendasPorCliente,
+                  (r: any) => r.cliente
+                ).length
               )}
               <Table>
                 <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
@@ -544,9 +608,17 @@ export function Relatorios() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
-                    {filterRows("vendas-cliente", data.vendasPorCliente).slice(0, 50).map((r: any) => (
+                    {filterRowsDrill(
+                      "vendas-cliente",
+                      data.vendasPorCliente,
+                      (r: any) => r.cliente
+                    )
+                      .slice(0, 50)
+                      .map((r: any) => (
                       <tr key={r.clienteId}>
-                        <td className="px-3 py-2 font-semibold">{r.cliente}</td>
+                        <td className="px-3 py-2">
+                          <ClienteLink id={r.clienteId} nome={r.cliente} />
+                        </td>
                         <td className="px-3 py-2 text-right">{r.vendas}</td>
                         <td className="px-3 py-2 text-right">
                           {fmtNumber(r.quantidadeItens)}
@@ -899,6 +971,376 @@ export function Relatorios() {
                         <td className="px-3 py-2 text-right">{fmtMoney(r.valorLiquido)}</td>
                         <td className="px-3 py-2 text-right">{fmtNumber(r.totalVendido)}</td>
                         <td className="px-3 py-2 text-right">{fmtMoney(r.ticketMedio)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Table>
+            </Section>
+          ) : null}
+
+          {active === "abc-clientes" ? (
+            <Section
+              title="Curva ABC de clientes"
+              description="Classificação A/B/C pela receita líquida acumulada. Clique no gráfico para filtrar."
+              rows={filterRowsDrill(
+                "abc-clientes",
+                data.abcClientes ?? [],
+                (r: any) => r.nome
+              ).map((r: any) => ({
+                cliente: r.nome,
+                classe: r.classe,
+                valor: r.valor,
+                participacao: r.participacao,
+                acumulado: r.acumulado,
+              }))}
+            >
+              <ChartCard title="Ranking ABC" description="Barras por receita líquida.">
+                <AbcChart
+                  rows={data.abcClientes ?? []}
+                  labelKey="Receita líquida"
+                  onPick={nome => setDrillFor("abc-clientes", nome)}
+                />
+              </ChartCard>
+              <ChartCard title="Pareto acumulado" description="Participação acumulada da carteira.">
+                <AbcParetoChart rows={data.abcClientes ?? []} />
+              </ChartCard>
+              {drill?.report === "abc-clientes" ? (
+                <DrillBanner label={drill.value} onClear={() => setDrill(null)} />
+              ) : null}
+              {renderTableFilter(
+                "abc-clientes",
+                (data.abcClientes ?? []).length,
+                filterRowsDrill(
+                  "abc-clientes",
+                  data.abcClientes ?? [],
+                  (r: any) => r.nome
+                ).length
+              )}
+              <Table>
+                <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
+                  <thead className="bg-slate-50 dark:bg-white/5">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Cliente</th>
+                      <th className="px-3 py-2 text-center">Classe</th>
+                      <th className="px-3 py-2 text-right">Valor</th>
+                      <th className="px-3 py-2 text-right">Participação</th>
+                      <th className="px-3 py-2 text-right">Acumulado</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-white/10">
+                    {filterRowsDrill(
+                      "abc-clientes",
+                      data.abcClientes ?? [],
+                      (r: any) => r.nome
+                    )
+                      .slice(0, 100)
+                      .map((r: any) => (
+                        <tr key={r.id}>
+                          <td className="px-3 py-2 font-semibold">{r.nome}</td>
+                          <td className="px-3 py-2 text-center">
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                                r.classe === "A"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : r.classe === "B"
+                                    ? "bg-sky-100 text-sky-800"
+                                    : "bg-slate-100 text-slate-600"
+                              }`}
+                            >
+                              {r.classe}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 text-right">{fmtMoney(r.valor)}</td>
+                          <td className="px-3 py-2 text-right">{fmtPct(r.participacao)}</td>
+                          <td className="px-3 py-2 text-right">{fmtPct(r.acumulado)}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </Table>
+            </Section>
+          ) : null}
+
+          {active === "abc-produtos" ? (
+            <Section
+              title="Curva ABC de produtos"
+              description="Produtos que mais contribuem para o faturamento bruto."
+              rows={filterRows("abc-produtos", data.abcProdutos ?? []).map(
+                (r: any) => ({
+                  produto: r.nome,
+                  classe: r.classe,
+                  valor: r.valor,
+                  participacao: r.participacao,
+                  acumulado: r.acumulado,
+                })
+              )}
+            >
+              <ChartCard title="Ranking ABC de produtos">
+                <AbcChart
+                  rows={data.abcProdutos ?? []}
+                  labelKey="Receita bruta"
+                  onPick={nome => setDrillFor("abc-produtos", nome)}
+                />
+              </ChartCard>
+              {drill?.report === "abc-produtos" ? (
+                <DrillBanner label={drill.value} onClear={() => setDrill(null)} />
+              ) : null}
+              {renderTableFilter(
+                "abc-produtos",
+                (data.abcProdutos ?? []).length,
+                filterRowsDrill(
+                  "abc-produtos",
+                  data.abcProdutos ?? [],
+                  (r: any) => r.nome
+                ).length
+              )}
+              <Table>
+                <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
+                  <thead className="bg-slate-50 dark:bg-white/5">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Produto</th>
+                      <th className="px-3 py-2 text-center">Classe</th>
+                      <th className="px-3 py-2 text-right">Valor</th>
+                      <th className="px-3 py-2 text-right">Participação</th>
+                      <th className="px-3 py-2 text-right">Acumulado</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-white/10">
+                    {filterRowsDrill(
+                      "abc-produtos",
+                      data.abcProdutos ?? [],
+                      (r: any) => r.nome
+                    ).map((r: any) => (
+                      <tr key={r.id}>
+                        <td className="px-3 py-2 font-semibold">{r.nome}</td>
+                        <td className="px-3 py-2 text-center">{r.classe}</td>
+                        <td className="px-3 py-2 text-right">{fmtMoney(r.valor)}</td>
+                        <td className="px-3 py-2 text-right">{fmtPct(r.participacao)}</td>
+                        <td className="px-3 py-2 text-right">{fmtPct(r.acumulado)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Table>
+            </Section>
+          ) : null}
+
+          {active === "clientes-risco" ? (
+            <Section
+              title="Clientes em risco"
+              description="Queda ou parada de compra vs período anterior equivalente."
+              rows={filterRowsDrill(
+                "clientes-risco",
+                data.clientesRisco ?? [],
+                (r: any) => r.cliente
+              )}
+            >
+              <ChartCard title="Score de risco" description="Clique para filtrar a lista.">
+                <RiscoChart
+                  rows={data.clientesRisco ?? []}
+                  onPick={nome => setDrillFor("clientes-risco", nome)}
+                />
+              </ChartCard>
+              {drill?.report === "clientes-risco" ? (
+                <DrillBanner label={drill.value} onClear={() => setDrill(null)} />
+              ) : null}
+              {renderTableFilter(
+                "clientes-risco",
+                (data.clientesRisco ?? []).length,
+                filterRowsDrill(
+                  "clientes-risco",
+                  data.clientesRisco ?? [],
+                  (r: any) => r.cliente
+                ).length
+              )}
+              <Table>
+                <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
+                  <thead className="bg-slate-50 dark:bg-white/5">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Cliente</th>
+                      <th className="px-3 py-2 text-right">Score</th>
+                      <th className="px-3 py-2 text-left">Motivo</th>
+                      <th className="px-3 py-2 text-right">Valor anterior</th>
+                      <th className="px-3 py-2 text-right">Valor atual</th>
+                      <th className="px-3 py-2 text-right">Variação</th>
+                      <th className="px-3 py-2 text-left">Ação sugerida</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-white/10">
+                    {filterRowsDrill(
+                      "clientes-risco",
+                      data.clientesRisco ?? [],
+                      (r: any) => r.cliente
+                    ).map((r: any) => (
+                      <tr key={r.clienteId}>
+                        <td className="px-3 py-2">
+                          <ClienteLink id={r.clienteId} nome={r.cliente} />
+                        </td>
+                        <td className="px-3 py-2 text-right font-bold text-red-600">
+                          {r.score}
+                        </td>
+                        <td className="px-3 py-2">{r.motivo}</td>
+                        <td className="px-3 py-2 text-right">
+                          {fmtMoney(r.valorAnterior)}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {fmtMoney(r.valorAtual)}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {fmtVariacao(r.variacaoValor)}
+                        </td>
+                        <td className="px-3 py-2 text-slate-600 dark:text-slate-400">
+                          {r.acaoSugerida}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Table>
+            </Section>
+          ) : null}
+
+          {active === "margem" ? (
+            <Section
+              title="Margem por cliente"
+              description="Lucro bruto e margem quando custo unitário está preenchido nos itens."
+              rows={filterRowsDrill(
+                "margem",
+                data.margemPorCliente ?? [],
+                (r: any) => r.cliente
+              )}
+            >
+              {!data.disponibilidade.cmv ? (
+                <Notice>
+                  Preencha custo unitário nos itens (sync Conta Azul) para ver margem real.
+                </Notice>
+              ) : null}
+              <ChartCard title="Margem e lucro por cliente">
+                <MargemChart
+                  rows={data.margemPorCliente ?? []}
+                  onPick={nome => setDrillFor("margem", nome)}
+                />
+              </ChartCard>
+              {drill?.report === "margem" ? (
+                <DrillBanner label={drill.value} onClear={() => setDrill(null)} />
+              ) : null}
+              {renderTableFilter(
+                "margem",
+                (data.margemPorCliente ?? []).length,
+                filterRowsDrill(
+                  "margem",
+                  data.margemPorCliente ?? [],
+                  (r: any) => r.cliente
+                ).length
+              )}
+              <Table>
+                <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
+                  <thead className="bg-slate-50 dark:bg-white/5">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Cliente</th>
+                      <th className="px-3 py-2 text-right">Receita líquida</th>
+                      <th className="px-3 py-2 text-right">Custo</th>
+                      <th className="px-3 py-2 text-right">Lucro</th>
+                      <th className="px-3 py-2 text-right">Margem</th>
+                      <th className="px-3 py-2 text-right">Ticket</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-white/10">
+                    {filterRowsDrill(
+                      "margem",
+                      data.margemPorCliente ?? [],
+                      (r: any) => r.cliente
+                    ).map((r: any) => (
+                      <tr key={r.clienteId}>
+                        <td className="px-3 py-2">
+                          <ClienteLink id={r.clienteId} nome={r.cliente} />
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {fmtMoney(r.valorLiquido)}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {fmtMoney(r.custoTotal)}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {fmtMoney(r.lucroBruto)}
+                        </td>
+                        <td className="px-3 py-2 text-right">{fmtPct(r.margemLucro)}</td>
+                        <td className="px-3 py-2 text-right">
+                          {fmtMoney(r.ticketMedio)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Table>
+            </Section>
+          ) : null}
+
+          {active === "mix-produtos" ? (
+            <Section
+              title="Mix de produtos e cross-sell"
+              description="Produtos populares que clientes relevantes ainda não compram no período."
+              rows={filterRowsDrill(
+                "mix-produtos",
+                data.mixProdutosCliente ?? [],
+                (r: any) => r.cliente
+              ).map((r: any) => ({
+                cliente: r.cliente,
+                valorBruto: r.valorBruto,
+                topProdutos: r.topProdutos,
+                oportunidades: r.oportunidadesCrossSell.join(" | "),
+              }))}
+            >
+              <ChartCard title="Oportunidades por cliente">
+                <MixChart
+                  rows={(data.mixProdutosCliente ?? []).map((r: any) => ({
+                    cliente: r.cliente,
+                    oportunidades: r.oportunidadesCrossSell?.length ?? 0,
+                  }))}
+                />
+              </ChartCard>
+              {drill?.report === "mix-produtos" ? (
+                <DrillBanner label={drill.value} onClear={() => setDrill(null)} />
+              ) : null}
+              {renderTableFilter(
+                "mix-produtos",
+                (data.mixProdutosCliente ?? []).length,
+                filterRowsDrill(
+                  "mix-produtos",
+                  data.mixProdutosCliente ?? [],
+                  (r: any) => r.cliente
+                ).length
+              )}
+              <Table>
+                <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
+                  <thead className="bg-slate-50 dark:bg-white/5">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Cliente</th>
+                      <th className="px-3 py-2 text-right">Faturamento</th>
+                      <th className="px-3 py-2 text-left">Já compra</th>
+                      <th className="px-3 py-2 text-left">Sugestões cross-sell</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-white/10">
+                    {filterRowsDrill(
+                      "mix-produtos",
+                      data.mixProdutosCliente ?? [],
+                      (r: any) => r.cliente
+                    ).map((r: any) => (
+                      <tr key={r.clienteId}>
+                        <td className="px-3 py-2">
+                          <ClienteLink id={r.clienteId} nome={r.cliente} />
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {fmtMoney(r.valorBruto)}
+                        </td>
+                        <td className="px-3 py-2 text-slate-600 dark:text-slate-400">
+                          {r.topProdutos || "—"}
+                        </td>
+                        <td className="px-3 py-2 font-medium text-violet-700 dark:text-violet-300">
+                          {r.oportunidadesCrossSell?.join(", ") || "—"}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
