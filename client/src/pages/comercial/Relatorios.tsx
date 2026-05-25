@@ -1,5 +1,14 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { Download, FileBarChart, Info, Search } from "lucide-react";
+import {
+  ArrowDownAZ,
+  ArrowUpAZ,
+  Check,
+  ChevronDown,
+  Download,
+  FileBarChart,
+  Info,
+  Search,
+} from "lucide-react";
 import {
   AbcChart,
   AbcParetoChart,
@@ -150,39 +159,194 @@ function TableFilter({
   );
 }
 
+type ColumnFilterState = {
+  selected?: string[];
+};
+
+type SortState = {
+  reportId: string;
+  columnKey: string;
+  direction: "asc" | "desc";
+} | null;
+
+type ColumnOption = {
+  label: string;
+  value: string;
+};
+
 function ColumnHeaderFilter({
   label,
-  value,
-  onChange,
+  options,
+  selected,
+  sortDirection,
+  isOpen,
+  onOpenChange,
+  onSort,
+  onToggleValue,
+  onSelectAll,
   align = "left",
 }: {
   label: string;
-  value: string;
-  onChange: (value: string) => void;
+  options: ColumnOption[];
+  selected?: string[];
+  sortDirection?: "asc" | "desc";
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSort: (direction: "asc" | "desc") => void;
+  onToggleValue: (value: string) => void;
+  onSelectAll: () => void;
   align?: "left" | "right" | "center";
 }) {
+  const [search, setSearch] = useState("");
+  const selectedSet = new Set(selected ?? []);
+  const hasSelection = selected != null;
+  const visibleOptions = options.filter(option =>
+    option.label.toLowerCase().includes(search.trim().toLowerCase())
+  );
+
   return (
     <div
       className={[
-        "min-w-28 space-y-1",
+        "relative min-w-28",
         align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left",
       ].join(" ")}
     >
-      <div>{label}</div>
-      <input
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        onClick={e => e.stopPropagation()}
-        placeholder="Filtrar"
+      <button
+        type="button"
+        onClick={e => {
+          e.stopPropagation();
+          onOpenChange(!isOpen);
+        }}
         className={[
-          "w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-normal text-slate-900 outline-none",
-          "placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20",
-          "dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-100",
-          align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left",
+          "inline-flex w-full items-center justify-between gap-2 rounded-md px-2 py-1 text-xs font-bold transition",
+          hasSelection || sortDirection
+            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
+            : "bg-transparent text-slate-900 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-white/10",
         ].join(" ")}
-      />
+      >
+        <span>{label}</span>
+        <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+      </button>
+      {isOpen ? (
+        <div
+          className="absolute left-0 top-full z-50 mt-1 w-72 rounded-xl border border-slate-200 bg-white p-3 text-left shadow-xl dark:border-white/10 dark:bg-slate-950"
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="mb-2 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => onSort("asc")}
+              className={[
+                "inline-flex items-center justify-center gap-1 rounded-lg border px-2 py-1.5 text-xs font-bold",
+                sortDirection === "asc"
+                  ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                  : "border-slate-200 text-slate-700 hover:bg-slate-50",
+              ].join(" ")}
+            >
+              <ArrowDownAZ className="h-3.5 w-3.5" />
+              A-Z / menor
+            </button>
+            <button
+              type="button"
+              onClick={() => onSort("desc")}
+              className={[
+                "inline-flex items-center justify-center gap-1 rounded-lg border px-2 py-1.5 text-xs font-bold",
+                sortDirection === "desc"
+                  ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                  : "border-slate-200 text-slate-700 hover:bg-slate-50",
+              ].join(" ")}
+            >
+              <ArrowUpAZ className="h-3.5 w-3.5" />
+              Z-A / maior
+            </button>
+          </div>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder={`Buscar ${label.toLowerCase()}`}
+            className="mb-2 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-normal text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100"
+          />
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={onSelectAll}
+              className="text-xs font-bold text-emerald-700 hover:underline dark:text-emerald-300"
+            >
+              Selecionar todos
+            </button>
+            <span className="text-xs font-semibold text-slate-500">
+              {hasSelection ? `${selectedSet.size}/${options.length}` : `Todos (${options.length})`}
+            </span>
+          </div>
+          <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
+            {visibleOptions.length ? (
+              visibleOptions.map(option => {
+                const checked = !hasSelection || selectedSet.has(option.value);
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => onToggleValue(option.value)}
+                    className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/10"
+                  >
+                    <span
+                      className={[
+                        "flex h-4 w-4 shrink-0 items-center justify-center rounded border",
+                        checked
+                          ? "border-emerald-500 bg-emerald-500 text-white"
+                          : "border-slate-300 bg-white dark:border-white/20 dark:bg-slate-900",
+                      ].join(" ")}
+                    >
+                      {checked ? <Check className="h-3 w-3" /> : null}
+                    </span>
+                    <span className="truncate">{option.label}</span>
+                  </button>
+                );
+              })
+            ) : (
+              <div className="rounded-lg bg-slate-50 px-2 py-2 text-xs text-slate-500 dark:bg-white/5">
+                Nenhum valor encontrado.
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
+}
+
+function columnValueLabel(value: unknown): string {
+  const text = rowToSearchText(value).trim();
+  return text || "—";
+}
+
+function compareColumnValues(a: unknown, b: unknown): number {
+  const an = Number(a);
+  const bn = Number(b);
+  if (Number.isFinite(an) && Number.isFinite(bn)) {
+    return an - bn;
+  }
+  return columnValueLabel(a).localeCompare(columnValueLabel(b), "pt-BR", {
+    numeric: true,
+    sensitivity: "base",
+  });
+}
+
+function uniqueColumnOptions<T>(
+  rows: T[],
+  column?: ColumnFilterDef<T>
+): ColumnOption[] {
+  if (!column) return [];
+  const values = new Map<string, string>();
+  for (const row of rows) {
+    const label = columnValueLabel(column.value(row));
+    values.set(label, label);
+  }
+  return Array.from(values.values())
+    .sort((a, b) =>
+      a.localeCompare(b, "pt-BR", { numeric: true, sensitivity: "base" })
+    )
+    .map(value => ({ label: value, value }));
 }
 
 type ColumnFilterDef<T> = {
@@ -303,8 +467,10 @@ export function Relatorios() {
   >("valorLiquido");
   const [tableFilters, setTableFilters] = useState<Record<string, string>>({});
   const [columnFilters, setColumnFilters] = useState<
-    Record<string, Record<string, string>>
+    Record<string, Record<string, ColumnFilterState>>
   >({});
+  const [openColumnFilter, setOpenColumnFilter] = useState<string | null>(null);
+  const [sortState, setSortState] = useState<SortState>(null);
   const [drill, setDrill] = useState<{ report: ReportId; value: string } | null>(
     null
   );
@@ -433,17 +599,54 @@ export function Relatorios() {
   const setTableFilter = (id: string, value: string) => {
     setTableFilters(current => ({ ...current, [id]: value }));
   };
-  const setColumnFilter = (id: string, column: string, value: string) => {
-    setColumnFilters(current => ({
-      ...current,
-      [id]: { ...(current[id] ?? {}), [column]: value },
-    }));
-  };
   const clearColumnFilters = (id: string) => {
     setColumnFilters(current => ({ ...current, [id]: {} }));
   };
   const hasColumnFilters = (id: string) =>
-    Object.values(columnFilters[id] ?? {}).some(value => value.trim());
+    Object.values(columnFilters[id] ?? {}).some(
+      filter => filter.selected != null
+    );
+  const toggleColumnValue = (id: string, key: string, value: string) => {
+    const column = columnsByReport[id]?.find(c => c.key === key);
+    const allValues = uniqueColumnOptions(rawRowsByReport[id] ?? [], column).map(
+      option => option.value
+    );
+    setColumnFilters(current => {
+      const currentReport = current[id] ?? {};
+      const currentFilter = currentReport[key] ?? {};
+      const selected = new Set(currentFilter.selected ?? allValues);
+      if (selected.has(value)) selected.delete(value);
+      else selected.add(value);
+      return {
+        ...current,
+        [id]: {
+          ...currentReport,
+          [key]: { selected: Array.from(selected) },
+        },
+      };
+    });
+  };
+  const selectAllColumnValues = (id: string, key: string) => {
+    setColumnFilters(current => {
+      const currentReport = current[id] ?? {};
+      const nextReport = { ...currentReport };
+      delete nextReport[key];
+      return { ...current, [id]: nextReport };
+    });
+  };
+  const setColumnSort = (
+    id: string,
+    key: string,
+    direction: "asc" | "desc"
+  ) => {
+    setSortState(current =>
+      current?.reportId === id &&
+      current.columnKey === key &&
+      current.direction === direction
+        ? null
+        : { reportId: id, columnKey: key, direction }
+    );
+  };
   const columnHeader = (
     id: string,
     key: string,
@@ -453,8 +656,23 @@ export function Relatorios() {
     <ColumnHeaderFilter
       label={label}
       align={align}
-      value={columnFilters[id]?.[key] ?? ""}
-      onChange={value => setColumnFilter(id, key, value)}
+      options={uniqueColumnOptions(
+        rawRowsByReport[id] ?? [],
+        columnsByReport[id]?.find(column => column.key === key)
+      )}
+      selected={columnFilters[id]?.[key]?.selected}
+      sortDirection={
+        sortState?.reportId === id && sortState.columnKey === key
+          ? sortState.direction
+          : undefined
+      }
+      isOpen={openColumnFilter === `${id}:${key}`}
+      onOpenChange={open =>
+        setOpenColumnFilter(open ? `${id}:${key}` : null)
+      }
+      onSort={direction => setColumnSort(id, key, direction)}
+      onToggleValue={value => toggleColumnValue(id, key, value)}
+      onSelectAll={() => selectAllColumnValues(id, key)}
     />
   );
   const filterRows = <T,>(id: string, rows: T[]): T[] => {
@@ -464,10 +682,13 @@ export function Relatorios() {
           rowToSearchText(row).toLowerCase().includes(needle)
         )
       : rows;
-    return filterRowsColumns(
+    return sortRows(
       id,
-      afterGlobal,
-      (columnsByReport[id] ?? []) as ColumnFilterDef<T>[]
+      filterRowsColumns(
+        id,
+        afterGlobal,
+        (columnsByReport[id] ?? []) as ColumnFilterDef<T>[]
+      )
     );
   };
   const filterRowsColumns = <T,>(
@@ -479,17 +700,28 @@ export function Relatorios() {
     const activeColumns = columns
       .map(column => ({
         ...column,
-        needle: (current[column.key] ?? "").trim().toLowerCase(),
+        selected: current[column.key]?.selected,
       }))
-      .filter(column => column.needle);
+      .filter(column => column.selected != null);
 
     if (!activeColumns.length) return rows;
 
     return rows.filter(row =>
       activeColumns.every(column =>
-        rowToSearchText(column.value(row)).toLowerCase().includes(column.needle)
+        column.selected!.includes(columnValueLabel(column.value(row)))
       )
     );
+  };
+  const sortRows = <T,>(id: string, rows: T[]): T[] => {
+    if (!sortState || sortState.reportId !== id) return rows;
+    const column = (columnsByReport[id] ?? []).find(
+      c => c.key === sortState.columnKey
+    ) as ColumnFilterDef<T> | undefined;
+    if (!column) return rows;
+    return [...rows].sort((a, b) => {
+      const result = compareColumnValues(column.value(a), column.value(b));
+      return sortState.direction === "asc" ? result : -result;
+    });
   };
   const filterRowsDrill = <T,>(
     id: ReportId,
@@ -502,7 +734,7 @@ export function Relatorios() {
       const v = drill.value.toLowerCase();
       out = out.filter(row => match(row).toLowerCase() === v);
     }
-    return out;
+    return sortRows(id, out);
   };
   const setDrillFor = (report: ReportId, value: string) => {
     setDrill({ report, value });
@@ -667,6 +899,25 @@ export function Relatorios() {
     "vendas-mes": vendasMesColumns,
     orcamentos: orcamentosColumns,
   };
+  const rawRowsByReport: Record<string, any[]> = data
+    ? {
+        "vendas-cliente": data.vendasPorCliente,
+        cmv: data.cmv.linhas,
+        "clientes-sem-vendas": data.clientesSemVendas,
+        "lucro-margem": data.lucroMargemMes,
+        "maiores-clientes": data.maioresClientes,
+        "abc-clientes": data.abcClientes ?? [],
+        "abc-produtos": data.abcProdutos ?? [],
+        "clientes-risco": data.clientesRisco ?? [],
+        margem: data.margemPorCliente ?? [],
+        "mix-produtos": data.mixProdutosCliente ?? [],
+        clientes: data.clientes,
+        "vendas-detalhadas": data.vendasDetalhadas,
+        "produtos-vendidos": data.produtosVendidosDetalhados,
+        "vendas-mes": data.vendasPorMes,
+        orcamentos: data.orcamentos,
+      }
+    : {};
   const totalRowsByReport: Record<string, any[]> = data
     ? {
         "vendas-cliente": filterRowsDrill(
