@@ -7,6 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Sprout, AlertCircle } from 'lucide-react';
 import { Link } from 'wouter';
+import { isCommercialAccessRole, isOperationalAdminRole } from '@shared/const';
+
+function landingAfterLogin(role: string | null | undefined): string {
+  if (isOperationalAdminRole(role)) return "/projetos";
+  if (isCommercialAccessRole(role)) return "/comercial/pedidos";
+  return "/";
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -14,9 +21,9 @@ export default function LoginPage() {
   const [error, setError] = useState('');
 
   const loginMutation = trpc.auth.login.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       setActiveProjetoId(null);
-      window.location.href = "/projetos";
+      window.location.href = landingAfterLogin(data.user.role);
     },
     onError: (err) => {
       setError(err.message || 'Erro ao fazer login');
