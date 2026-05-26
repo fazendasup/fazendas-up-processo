@@ -188,7 +188,7 @@ export function Dashboard() {
     <div className="relative z-10">
       {Tour}
 
-      {/* Toolbar fixa */}
+      {/* Toolbar do dashboard */}
       <motion.div data-tour="dash-toolbar" className={fuToolbar}>
         <motion.div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-4 py-5 md:px-8">
           <motion.div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
