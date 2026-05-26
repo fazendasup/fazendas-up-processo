@@ -302,7 +302,8 @@ function chunks<T>(items: T[], size: number): T[][] {
 }
 
 /**
- * Recalcula score, status (risco), tags e recria oportunidades `[sistema]` para todos os clientes com base nos pedidos locais.
+ * Recalcula score, status (risco), tags e recria oportunidades `[sistema]` para clientes ativos/recuperáveis.
+ * Clientes inferidos como INATIVO têm as oportunidades automáticas abertas removidas para não poluir a operação comercial.
  */
 export async function runInteligenciaComercial(
   prisma: PrismaClient
@@ -416,7 +417,10 @@ export async function runInteligenciaComercial(
       : [];
     const mergedTags = Array.from(new Set([...existentes, ...tagsSugeridas]));
 
-    const novas = gerarOportunidadesSugeridas(c.nome, sinais, status, carteira);
+    const novas =
+      status === StatusRelacionamento.INATIVO
+        ? []
+        : gerarOportunidadesSugeridas(c.nome, sinais, status, carteira);
     const operacoes = [
       prisma.cliente.update({
         where: { id: c.id },

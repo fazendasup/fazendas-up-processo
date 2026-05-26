@@ -2,6 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import {
   PrioridadeOportunidade,
+  StatusRelacionamento,
   StatusOportunidade,
 } from "../generated/prisma/index.js";
 import { router, comercialProcedure } from "../../_core/trpc";
@@ -64,13 +65,30 @@ export const oportunidadesRouter = router({
       z.object({
         status: z.nativeEnum(StatusOportunidade).optional(),
         prioridade: z.nativeEnum(PrioridadeOportunidade).optional(),
+        clienteStatus: z
+          .enum(["ATIVOS", "ATIVO", "ESTRATEGICO", "EM_RISCO", "INATIVO", "TODOS"])
+          .default("ATIVOS"),
       })
     )
     .query(async ({ ctx, input }) => {
+      const clienteWhere =
+        input.clienteStatus === "TODOS"
+          ? undefined
+          : input.clienteStatus === "ATIVOS"
+            ? {
+                statusRelacionamento: {
+                  in: [
+                    StatusRelacionamento.ATIVO,
+                    StatusRelacionamento.ESTRATEGICO,
+                  ],
+                },
+              }
+            : { statusRelacionamento: input.clienteStatus as StatusRelacionamento };
       const lista = await ctx.prisma!.oportunidade.findMany({
         where: {
           statusOportunidade: input.status,
           prioridade: input.prioridade,
+          ...(clienteWhere ? { cliente: clienteWhere } : {}),
         },
         include: {
           cliente: {

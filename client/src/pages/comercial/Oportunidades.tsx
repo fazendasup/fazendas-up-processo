@@ -28,15 +28,21 @@ const LS_FILTERS = "fu_oportunidades_filtros_v1";
 type FiltroLocal = {
   prioridade: "" | "ALTA" | "MEDIA" | "BAIXA";
   tipo: "" | "UPSELL" | "CROSS_SELL" | "REATIVACAO" | "NOVO_PRODUTO";
+  clienteStatus: "ATIVOS" | "ATIVO" | "ESTRATEGICO" | "EM_RISCO" | "INATIVO" | "TODOS";
 };
 
 function loadFiltros(): FiltroLocal {
+  const defaults: FiltroLocal = {
+    prioridade: "",
+    tipo: "",
+    clienteStatus: "ATIVOS",
+  };
   try {
     const raw = localStorage.getItem(LS_FILTERS);
-    if (!raw) return { prioridade: "", tipo: "" };
-    return { ...{ prioridade: "", tipo: "" }, ...JSON.parse(raw) };
+    if (!raw) return defaults;
+    return { ...defaults, ...JSON.parse(raw) };
   } catch {
-    return { prioridade: "", tipo: "" };
+    return defaults;
   }
 }
 
@@ -46,6 +52,20 @@ function prioridadeCor(p: string) {
   if (p === "MEDIA")
     return "bg-[#EFF6FF] text-[#1E40AF] ring-1 ring-[#1E40AF]/20";
   return "bg-[#F3F4F6] text-[#374151] ring-1 ring-[#E5E7EB]";
+}
+
+function clienteStatusCor(status: string) {
+  if (status === "ATIVO")
+    return "bg-[#ECFDF5] text-[#047857] ring-1 ring-[#10B981]/30";
+  if (status === "ESTRATEGICO")
+    return "bg-[#EEF2FF] text-[#3730A3] ring-1 ring-[#6366F1]/25";
+  if (status === "EM_RISCO")
+    return "bg-[#FFFBEB] text-[#B45309] ring-1 ring-[#F59E0B]/35";
+  return "bg-[#F3F4F6] text-[#6B7280] ring-1 ring-[#D1D5DB]";
+}
+
+function descricaoVisivel(texto: string) {
+  return texto.replace(/^\[sistema\]\s*/i, "");
 }
 
 function fmtMoney(n: number | null | undefined) {
@@ -80,6 +100,7 @@ export function Oportunidades() {
   const q = trpc.comercial.oportunidades.listar.useQuery({
     prioridade: filtro.prioridade || undefined,
     status: "ABERTA",
+    clienteStatus: filtro.clienteStatus,
   });
   const detalhe = trpc.comercial.oportunidades.detalheAnalitico.useQuery(
     { oportunidadeId: detalheId ?? "" },
@@ -199,6 +220,28 @@ export function Oportunidades() {
             <option value="NOVO_PRODUTO">Novo produto</option>
           </select>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="text-xs font-semibold uppercase tracking-wide text-[#6B7280]">
+            Clientes
+          </label>
+          <select
+            value={filtro.clienteStatus}
+            onChange={e =>
+              setFiltro(f => ({
+                ...f,
+                clienteStatus: e.target.value as FiltroLocal["clienteStatus"],
+              }))
+            }
+            className="rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-sm font-medium text-[#111827] outline-none transition duration-200 focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/25"
+          >
+            <option value="ATIVOS">Ativos e estratégicos</option>
+            <option value="ATIVO">Somente ativos</option>
+            <option value="ESTRATEGICO">Somente estratégicos</option>
+            <option value="EM_RISCO">Em risco</option>
+            <option value="INATIVO">Inativos</option>
+            <option value="TODOS">Todos</option>
+          </select>
+        </div>
         <Link
           href={comercialPath("/mensagens")}
           className="ml-auto inline-flex items-center gap-2 rounded-lg bg-[#1E40AF] px-4 py-2 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-[#1D4ED8] hover:shadow-[0_4px_12px_#00000020]"
@@ -211,7 +254,7 @@ export function Oportunidades() {
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-lg border border-[#D1FAE5] bg-gradient-to-br from-[#ECFDF5] to-white p-4 shadow-[0_1px_3px_#00000014]">
           <div className="text-xs font-semibold uppercase tracking-wide text-[#047857]">
-            Total abertas
+            Abertas no filtro
           </div>
           <div className="mt-1 text-3xl font-bold text-[#10B981]">
             {orderedList.length}
@@ -230,10 +273,17 @@ export function Oportunidades() {
         </div>
         <div className="rounded-lg border border-[#FEF3C7] bg-gradient-to-br from-[#FFFBEB] to-white p-4 shadow-[0_1px_3px_#00000014]">
           <div className="text-xs font-semibold uppercase tracking-wide text-[#B45309]">
-            Alta prioridade
+            Foco atual
           </div>
-          <div className="mt-1 text-3xl font-bold text-[#F59E0B]">
-            {orderedList.filter(o => o.prioridade === "ALTA").length}
+          <div className="mt-1 text-lg font-bold text-[#B45309]">
+            {filtro.clienteStatus === "ATIVOS"
+              ? "Ativos/estratégicos"
+              : filtro.clienteStatus === "TODOS"
+                ? "Todos os clientes"
+                : filtro.clienteStatus.replace(/_/g, " ")}
+          </div>
+          <div className="mt-1 text-xs text-[#92400E]">
+            Alta prioridade: {orderedList.filter(o => o.prioridade === "ALTA").length}
           </div>
         </div>
       </div>
@@ -282,6 +332,11 @@ export function Oportunidades() {
                     <Target className="h-3.5 w-3.5 text-[#10B981]" />
                     {op.tipoOportunidade.replace(/_/g, " ")}
                   </span>
+                  <span
+                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-bold ${clienteStatusCor(op.cliente.statusRelacionamento)}`}
+                  >
+                    {op.cliente.statusRelacionamento.replace(/_/g, " ")}
+                  </span>
                 </div>
                 <h2 className="mt-2 text-lg font-bold text-[#111827]">
                   <Link
@@ -291,9 +346,19 @@ export function Oportunidades() {
                     {op.cliente.nome}
                   </Link>
                 </h2>
-                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[#4B5563]">
-                  {op.descricao}
-                </p>
+                <div className="mt-3 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] p-3">
+                  <div className="text-[11px] font-bold uppercase tracking-wide text-[#6B7280]">
+                    Ação sugerida
+                  </div>
+                  <p className="mt-1 line-clamp-4 text-sm leading-relaxed text-[#374151]">
+                    {descricaoVisivel(op.descricao)}
+                  </p>
+                </div>
+                {op.cliente.statusRelacionamento === "INATIVO" ? (
+                  <p className="mt-2 rounded-lg border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs font-semibold text-[#92400E]">
+                    Cliente inativo: oculto no filtro padrão. Use apenas para revisão pontual.
+                  </p>
+                ) : null}
               </div>
             </div>
 
