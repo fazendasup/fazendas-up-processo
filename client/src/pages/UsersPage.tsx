@@ -18,13 +18,13 @@ import {
   DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Users, ShieldCheck, User, Loader2, Clock, Plus, KeyRound, Trash2, AlertCircle, Layers, Briefcase,
+  Users, ShieldCheck, User, Loader2, Clock, Plus, KeyRound, Trash2, AlertCircle, Layers, Briefcase, Eye,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { useRole } from '@/hooks/useRole';
 
-type GlobalAppRole = 'user' | 'admin' | 'platform_admin' | 'comercial';
+type GlobalAppRole = 'user' | 'admin' | 'platform_admin' | 'comercial' | 'visitante';
 
 export default function UsersPage() {
   return (
@@ -83,6 +83,8 @@ function UsersContent() {
       msg = 'Promover este usuário a Administrador operacional? Terá acesso a configurações e gestão de usuários.';
     } else if (next === 'comercial') {
       msg = 'Alterar para Comercial? Terá acesso apenas às áreas comerciais dos projetos vinculados.';
+    } else if (next === 'visitante') {
+      msg = 'Alterar para Visitante? Poderá visualizar o projeto vinculado e extrair relatórios, mas não editar nem acionar operações.';
     } else {
       msg = 'Rebaixar a Operador? Perderá acesso às áreas administrativas.';
     }
@@ -224,6 +226,7 @@ function UsersContent() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="user">Operador</SelectItem>
+                      <SelectItem value="visitante">Visitante</SelectItem>
                       <SelectItem value="admin">Administrador operacional</SelectItem>
                       <SelectItem value="comercial">Comercial</SelectItem>
                       {isPlatformAdmin && (
@@ -302,6 +305,13 @@ function UsersContent() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Eye className="w-4 h-4 text-slate-600" />
+            <div>
+              <p className="text-xs font-semibold">Visitante</p>
+              <p className="text-[10px] text-muted-foreground">Visualiza informações e extrai relatórios, sem editar nem acionar</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
             <Briefcase className="w-4 h-4 text-emerald-600" />
             <div>
               <p className="text-xs font-semibold">Comercial</p>
@@ -348,7 +358,9 @@ function UsersContent() {
                           ? 'bg-amber-100 text-amber-700'
                           : u.role === 'comercial'
                             ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-blue-100 text-blue-700'
+                            : u.role === 'visitante'
+                              ? 'bg-slate-100 text-slate-700'
+                              : 'bg-blue-100 text-blue-700'
                     }`}
                   >
                     {u.role === 'platform_admin' ? (
@@ -357,6 +369,8 @@ function UsersContent() {
                       <ShieldCheck className="w-5 h-5" />
                     ) : u.role === 'comercial' ? (
                       <Briefcase className="w-5 h-5" />
+                    ) : u.role === 'visitante' ? (
+                      <Eye className="w-5 h-5" />
                     ) : (
                       <User className="w-5 h-5" />
                     )}
@@ -393,6 +407,7 @@ function UsersContent() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="user">Operador</SelectItem>
+                        <SelectItem value="visitante">Visitante</SelectItem>
                         <SelectItem value="admin">Administrador operacional</SelectItem>
                         <SelectItem value="comercial">Comercial</SelectItem>
                         {isPlatformAdmin && (
@@ -480,7 +495,7 @@ function UsersContent() {
           <p className="font-semibold mb-1">Como funciona:</p>
           <ul className="list-disc list-inside space-y-0.5">
             <li>Cadastre novos usuários com email e senha clicando em <strong>"Novo Usuário"</strong></li>
-            <li>Defina o perfil: <strong>Operador</strong> (acesso operacional) ou <strong>Administrador</strong> (acesso total)</li>
+            <li>Defina o perfil: <strong>Visitante</strong> só visualiza, <strong>Operador</strong> executa operações e <strong>Administrador</strong> tem acesso total</li>
             <li>Use o ícone de chave para alterar a senha de um usuário</li>
             <li>Todas as atividades registram quem executou para rastreabilidade</li>
           </ul>

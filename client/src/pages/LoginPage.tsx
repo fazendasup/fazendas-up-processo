@@ -7,11 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Sprout, AlertCircle } from 'lucide-react';
 import { Link } from 'wouter';
-import { isCommercialAccessRole, isOperationalAdminRole } from '@shared/const';
+import { isOperationalAdminRole } from '@shared/const';
 
 function landingAfterLogin(role: string | null | undefined): string {
   if (isOperationalAdminRole(role)) return "/projetos";
-  if (isCommercialAccessRole(role)) return "/comercial/pedidos";
+  if (role === "comercial") return "/comercial/pedidos";
   return "/";
 }
 

@@ -5,6 +5,7 @@ import {
   isCommercialAccessRole,
   isOperationalAdminRole,
   isPlatformCommercialRole,
+  isVisitorRole,
   PROJETO_ATIVO_COOKIE,
   PROJETO_FORBIDDEN_ERR_MSG,
   PROJETO_HEADER,
@@ -58,6 +59,17 @@ const requireUser = t.middleware(async (opts) => {
 });
 
 export const protectedProcedure = t.procedure.use(requireUser);
+
+const requireProjetoWritable = t.middleware(async ({ ctx, next, type }) => {
+  if (type === "mutation" && isVisitorRole(ctx.user?.role)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message:
+        "Perfil visitante é somente leitura: não pode editar, acionar operações ou alterar dados do projeto.",
+    });
+  }
+  return next({ ctx });
+});
 
 function readProjetoIdFromRequest(req: TrpcContext["req"]): number | undefined {
   const h = req.headers[PROJETO_HEADER] ?? req.headers[PROJETO_HEADER.toLowerCase()];
@@ -120,7 +132,10 @@ const requireProjetoMiddleware = t.middleware(async (opts) => {
 });
 
 /** Requer usuário logado + projeto válido (header/cookie) com acesso e status ativo. */
-export const projectProcedure = t.procedure.use(requireUser).use(requireProjetoMiddleware);
+export const projectProcedure = t.procedure
+  .use(requireUser)
+  .use(requireProjetoWritable)
+  .use(requireProjetoMiddleware);
 
 function requireContratacaoModulo(modulo: ModuloContratavel) {
   return t.middleware(async ({ ctx, next }) => {

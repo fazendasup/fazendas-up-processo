@@ -5,11 +5,11 @@ import { z } from "zod";
 import * as db from "../db";
 import bcrypt from "bcryptjs";
 
-const appRoleSchema = z.enum(["user", "admin", "platform_admin", "comercial"]);
+const appRoleSchema = z.enum(["user", "admin", "platform_admin", "comercial", "visitante"]);
 
 function projetoRoleForAppRole(role: AppUserRole): "admin" | "operador" | "visualizador" {
   if (role === "admin" || role === "platform_admin") return "admin";
-  if (role === "comercial") return "visualizador";
+  if (role === "comercial" || role === "visitante") return "visualizador";
   return "operador";
 }
 

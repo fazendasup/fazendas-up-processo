@@ -3,7 +3,7 @@
 // ============================================================
 
 import { useAuth } from '@/_core/hooks/useAuth';
-import { isCommercialAccessRole, isOperationalAdminRole, isPlatformCommercialRole } from '@shared/const';
+import { isCommercialAccessRole, isOperationalAdminRole, isPlatformCommercialRole, isVisitorRole } from '@shared/const';
 
 export function useRole() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -12,6 +12,7 @@ export function useRole() {
   const isPlatformAdmin = isAuthenticated && isPlatformCommercialRole(user?.role);
   const isOperador = isAuthenticated && user?.role === 'user';
   const isComercial = isAuthenticated && user?.role === 'comercial';
+  const isVisitante = isAuthenticated && isVisitorRole(user?.role);
   const canAccessComercial = isAuthenticated && isCommercialAccessRole(user?.role);
   const isLoggedIn = isAuthenticated && !!user;
 
@@ -21,6 +22,7 @@ export function useRole() {
     isPlatformAdmin,
     isOperador,
     isComercial,
+    isVisitante,
     canAccessComercial,
     isLoggedIn,
     loading,

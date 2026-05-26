@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
-import { isCommercialAccessRole, isOperationalAdminRole } from "@shared/const";
+import { isOperationalAdminRole } from "@shared/const";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useProjeto } from "@/contexts/ProjetoContext";
 
 function landingForUserRole(role: string | null | undefined): string {
-  if (isCommercialAccessRole(role) && !isOperationalAdminRole(role)) {
+  if (role === "comercial") {
     return "/comercial/pedidos";
   }
   return "/";
