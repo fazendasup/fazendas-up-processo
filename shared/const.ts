@@ -18,6 +18,10 @@ export function isVisitorRole(role: string | null | undefined): boolean {
   return role === "visitante";
 }
 
+/** Mensagem padrão ao bloquear escrita para perfil visitante (API + UI). */
+export const VISITOR_READONLY_MSG =
+  "Perfil visitante é somente leitura: não pode editar, acionar operações ou alterar dados do projeto.";
+
 export function isOperationalAdminRole(role: string | null | undefined): boolean {
   return role === "admin" || role === "platform_admin";
 }

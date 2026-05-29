@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PROJETO_HEADER, PROJETO_REQUIRED_ERR_MSG, UNAUTHED_ERR_MSG } from "@shared/const";
+import { PROJETO_HEADER, PROJETO_REQUIRED_ERR_MSG, UNAUTHED_ERR_MSG, VISITOR_READONLY_MSG } from "@shared/const";
 import * as db from "./db";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
@@ -17,7 +17,10 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function createContext(role: "user" | "admin" | "platform_admin", opts?: { projetoHeader?: string }): TrpcContext {
+function createContext(
+  role: "user" | "admin" | "platform_admin" | "visitante",
+  opts?: { projetoHeader?: string },
+): TrpcContext {
   const privileged = role === "admin" || role === "platform_admin";
   return {
     user: {
@@ -81,6 +84,61 @@ describe("Permissões: fazenda.loadAll (projeto obrigatório)", () => {
     const ctx = createContext("user", { projetoHeader: "999999" });
     const caller = appRouter.createCaller(ctx);
     await expect(caller.fazenda.loadAll()).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+});
+
+describe("Permissões: visitante (somente leitura no projeto)", () => {
+  it("bloqueia visitante de atualizar perfil", async () => {
+    const ctx = createContext("visitante", { projetoHeader: "1" });
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.perfis.update({
+        andarId: 1,
+        perfilIndex: 0,
+        ativo: true,
+      }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: VISITOR_READONLY_MSG,
+    });
+  });
+
+  it("bloqueia visitante de batchUpdate em furos", async () => {
+    const ctx = createContext("visitante", { projetoHeader: "1" });
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.furos.batchUpdate({
+        andarId: 1,
+        updates: [{ perfilIndex: 0, furoIndex: 0, status: "plantado" }],
+      }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: VISITOR_READONLY_MSG,
+    });
+  });
+
+  it("bloqueia membro visualizador de atualizar perfil", async () => {
+    vi.spyOn(db, "getProjetoMembership").mockResolvedValue({ role: "visualizador" });
+    const ctx = createContext("user", { projetoHeader: "1" });
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.perfis.update({
+        andarId: 1,
+        perfilIndex: 0,
+        ativo: true,
+      }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: VISITOR_READONLY_MSG,
+    });
+  });
+
+  it("permite visitante listar perfis por andar", async () => {
+    vi.spyOn(db, "getPerfisByAndarId").mockResolvedValue([]);
+    const ctx = createContext("visitante", { projetoHeader: "1" });
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.perfis.listByAndar({ andarId: 1 });
+    expect(Array.isArray(result)).toBe(true);
   });
 });
 

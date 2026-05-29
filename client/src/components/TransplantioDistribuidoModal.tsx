@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { useRole } from "@/hooks/useRole";
+import { wrapReadOnlyMutation } from "@/lib/readOnlyMutation";
 import type { Andar, Torre, Fase, VariedadeConfig } from "@/lib/types";
 import {
   capacidadeAndar,
@@ -74,7 +76,11 @@ export function TransplantioDistribuidoModal({
   initialPerfilIndices?: number[];
 }) {
   const utils = trpc.useUtils();
-  const transplantar = trpc.andares.transplantarDistribuido.useMutation();
+  const { isVisitante } = useRole();
+  const transplantar = wrapReadOnlyMutation(
+    trpc.andares.transplantarDistribuido.useMutation(),
+    isVisitante,
+  );
 
   const slugVariedadeOrigem = useMemo(() => {
     const p = origemAndar?.perfis?.find((x) => x.ativo && x.variedadeId);
@@ -470,13 +476,13 @@ export function TransplantioDistribuidoModal({
             </div>
 
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={autoDistribuir}>
+              <Button variant="outline" className="flex-1" onClick={autoDistribuir} disabled={isVisitante}>
                 ⚡ Distribuir automaticamente
               </Button>
               <Button
                 className="flex-1"
                 onClick={confirmar}
-                disabled={faltam !== 0 || excedente > 0 || transplantar.isPending || perfisSelecionados.length === 0 || origemQtd === 0}
+                disabled={isVisitante || faltam !== 0 || excedente > 0 || transplantar.isPending || perfisSelecionados.length === 0 || origemQtd === 0}
               >
                 {transplantar.isPending ? "Transferindo..." : "✓ Confirmar"}
               </Button>

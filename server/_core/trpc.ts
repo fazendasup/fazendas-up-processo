@@ -13,6 +13,7 @@ import {
   PROJETO_REQUIRED_ERR_MSG,
   PROJETO_TIPO_ERR_MSG,
   UNAUTHED_ERR_MSG,
+  VISITOR_READONLY_MSG,
 } from "@shared/const";
 import type { ModuloContratavel } from "@shared/const";
 import { initTRPC, TRPCError } from "@trpc/server";
@@ -61,14 +62,24 @@ const requireUser = t.middleware(async (opts) => {
 export const protectedProcedure = t.procedure.use(requireUser);
 
 const requireProjetoWritable = t.middleware(async ({ ctx, next, type }) => {
-  if (type === "mutation" && isVisitorRole(ctx.user?.role)) {
+  if (!ctx.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
+  }
+  const user = ctx.user as User;
+  const isReadOnlyProjectUser =
+    ctx.projetoUsuarioRole === "visualizador" && user.role !== "comercial";
+  if (type === "mutation" && (isVisitorRole(user.role) || isReadOnlyProjectUser)) {
     throw new TRPCError({
       code: "FORBIDDEN",
-      message:
-        "Perfil visitante é somente leitura: não pode editar, acionar operações ou alterar dados do projeto.",
+      message: VISITOR_READONLY_MSG,
     });
   }
-  return next({ ctx });
+  return next({
+    ctx: {
+      ...ctx,
+      user,
+    },
+  });
 });
 
 function readProjetoIdFromRequest(req: TrpcContext["req"]): number | undefined {
@@ -134,8 +145,8 @@ const requireProjetoMiddleware = t.middleware(async (opts) => {
 /** Requer usuário logado + projeto válido (header/cookie) com acesso e status ativo. */
 export const projectProcedure = t.procedure
   .use(requireUser)
-  .use(requireProjetoWritable)
-  .use(requireProjetoMiddleware);
+  .use(requireProjetoMiddleware)
+  .use(requireProjetoWritable);
 
 function requireContratacaoModulo(modulo: ModuloContratavel) {
   return t.middleware(async ({ ctx, next }) => {

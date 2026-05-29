@@ -5,12 +5,19 @@
 
 import { trpc } from '@/lib/trpc';
 import { useFazenda } from '@/contexts/FazendaContext';
+import { useRole } from '@/hooks/useRole';
+import { wrapReadOnlyMutation } from '@/lib/readOnlyMutation';
 import { useCallback, useRef } from 'react';
 import type { Furo, PerfilData } from '@/lib/types';
 
 export function useFazendaMutations() {
   const utils = trpc.useUtils();
   const { data, updateData } = useFazenda();
+  const { isVisitante, loading: roleLoading } = useRole();
+  const isReadOnly = roleLoading || isVisitante;
+  const ro = <TData, TError, TVariables, TContext>(
+    m: import('@tanstack/react-query').UseMutationResult<TData, TError, TVariables, TContext>,
+  ) => wrapReadOnlyMutation(m, isReadOnly);
 
   // Debounced invalidation: coalesce multiple rapid mutations into one refetch
   const invalidateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -99,6 +106,7 @@ export function useFazendaMutations() {
   // ---- Perfis (single) — optimistic + debounced ----
   const updatePerfil = trpc.perfis.update.useMutation({
     onMutate: (input) => {
+      if (isReadOnly) return;
       const frontId = findAndarFrontId(input.andarId);
       if (frontId) {
         optimisticPerfilUpdate(frontId, input.perfilIndex, {
@@ -117,6 +125,7 @@ export function useFazendaMutations() {
   const batchUpdatePerfis = trpc.perfis.batchUpdate.useMutation({ onSuccess: debouncedInvalidate });
   const setAllPerfis = trpc.perfis.setAll.useMutation({
     onMutate: (input) => {
+      if (isReadOnly) return;
       const frontId = findAndarFrontId(input.andarId);
       if (frontId) {
         updateData((prev) => ({
@@ -143,6 +152,7 @@ export function useFazendaMutations() {
   // ---- Furos (single) — optimistic + debounced ----
   const updateFuro = trpc.furos.update.useMutation({
     onMutate: (input) => {
+      if (isReadOnly) return;
       const frontId = findAndarFrontId(input.andarId);
       if (frontId) {
         optimisticFuroUpdate(
@@ -161,6 +171,7 @@ export function useFazendaMutations() {
   // Batch furos — optimistic update all at once
   const batchUpdateFuros = trpc.furos.batchUpdate.useMutation({
     onMutate: (input) => {
+      if (isReadOnly) return;
       const frontId = findAndarFrontId(input.andarId);
       if (frontId) {
         updateData((prev) => ({
@@ -194,6 +205,7 @@ export function useFazendaMutations() {
 
   const setAllFuros = trpc.furos.setAll.useMutation({
     onMutate: (input) => {
+      if (isReadOnly) return;
       const frontId = findAndarFrontId(input.andarId);
       if (frontId) {
         updateData((prev) => ({
@@ -260,58 +272,59 @@ export function useFazendaMutations() {
   });
 
   return {
+    isReadOnly,
     // Medições
-    addMedicaoCaixa,
-    deleteMedicaoCaixa,
+    addMedicaoCaixa: ro(addMedicaoCaixa),
+    deleteMedicaoCaixa: ro(deleteMedicaoCaixa),
     // Aplicações Caixa
-    addAplicacaoCaixa,
-    deleteAplicacaoCaixa,
+    addAplicacaoCaixa: ro(addAplicacaoCaixa),
+    deleteAplicacaoCaixa: ro(deleteAplicacaoCaixa),
     // Andares
-    updateAndar,
-    clearAndar,
+    updateAndar: ro(updateAndar),
+    clearAndar: ro(clearAndar),
     // Perfis
-    updatePerfil,
-    resetPerfis,
-    batchUpdatePerfis,
-    setAllPerfis,
+    updatePerfil: ro(updatePerfil),
+    resetPerfis: ro(resetPerfis),
+    batchUpdatePerfis: ro(batchUpdatePerfis),
+    setAllPerfis: ro(setAllPerfis),
     // Furos
-    updateFuro,
-    resetFuros,
-    batchUpdateFuros,
-    setAllFuros,
+    updateFuro: ro(updateFuro),
+    resetFuros: ro(resetFuros),
+    batchUpdateFuros: ro(batchUpdateFuros),
+    setAllFuros: ro(setAllFuros),
     // Aplicações Andar
-    addAplicacaoAndar,
-    deleteAplicacaoAndar,
+    addAplicacaoAndar: ro(addAplicacaoAndar),
+    deleteAplicacaoAndar: ro(deleteAplicacaoAndar),
     // Germinação
-    createGerminacao,
-    updateGerminacao,
-    deleteGerminacao,
+    createGerminacao: ro(createGerminacao),
+    updateGerminacao: ro(updateGerminacao),
+    deleteGerminacao: ro(deleteGerminacao),
     // Transplantios
-    createTransplantio,
-    deleteTransplantio,
+    createTransplantio: ro(createTransplantio),
+    deleteTransplantio: ro(deleteTransplantio),
     // Manutenções
-    createManutencao,
-    updateManutencao,
-    deleteManutencao,
+    createManutencao: ro(createManutencao),
+    updateManutencao: ro(updateManutencao),
+    deleteManutencao: ro(deleteManutencao),
     // Ciclos
-    createCiclo,
-    updateCiclo,
-    marcarCicloExecutado,
-    deleteCiclo,
+    createCiclo: ro(createCiclo),
+    updateCiclo: ro(updateCiclo),
+    marcarCicloExecutado: ro(marcarCicloExecutado),
+    deleteCiclo: ro(deleteCiclo),
     // Variedades
-    createVariedade,
-    updateVariedade,
-    deleteVariedade,
+    createVariedade: ro(createVariedade),
+    updateVariedade: ro(updateVariedade),
+    deleteVariedade: ro(deleteVariedade),
     // Fases Config
-    upsertFaseConfig,
+    upsertFaseConfig: ro(upsertFaseConfig),
     // Movimentação
-    moverPerfil,
-    moverAndar,
+    moverPerfil: ro(moverPerfil),
+    moverAndar: ro(moverAndar),
     // Admin
-    seed,
-    reset,
-    resetOperationalClusters,
-    restoreFvInfrastructureIfEmpty,
+    seed: ro(seed),
+    reset: ro(reset),
+    resetOperationalClusters: ro(resetOperationalClusters),
+    restoreFvInfrastructureIfEmpty: ro(restoreFvInfrastructureIfEmpty),
     // Utility
     invalidate,
     debouncedInvalidate,
