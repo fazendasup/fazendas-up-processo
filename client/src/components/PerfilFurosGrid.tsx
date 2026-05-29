@@ -38,6 +38,8 @@ interface Props {
   /** Prazos alinhados ao catálogo `receitas` + mapa slug→id do BD. */
   cicloOpts?: CicloPrazoOpts;
   andarDataEntrada?: string | null; // data de entrada do andar (fallback)
+  /** Bloqueia plantio/colheita e edição (perfil visitante). */
+  readOnly?: boolean;
   /** Modo seleção em massa (clique/shift): quando ativo, o grid não executa ações de produção. */
   selectionMode?: boolean;
   selectedPerfis?: Set<number>;
@@ -47,6 +49,8 @@ interface Props {
   onPerfilInspect?: (perfilIndex: number) => void;
   onPerfilVariedadeChange?: (perfilIndex: number, variedadeId: string) => void;
   onPerfilDataChange?: (perfilIndex: number, dataEntrada: string) => void;
+  /** Corrige quantos furos ficam plantados no perfil (vegetativa/maturação). */
+  onPerfilSetPreenchidos?: (perfilIndex: number, preenchidos: number) => void;
   onAndarTodo?: () => void;
   onAndarVariedadeTodos?: (variedadeId: string) => void;
   /** No modo Plantar: data informada como plantio ou colheita/transplante alvo. */
@@ -105,9 +109,10 @@ function perfilStatus(
 
 export default function PerfilFurosGrid({
   furos, perfis, fase, projetoTipo, estruturaOverride, modo, variedades, cicloOpts, andarDataEntrada,
+  readOnly = false,
   selectionMode, selectedPerfis, onSelectPerfil,
   onFuroToggle, onPerfilToggle, onPerfilInspect, onPerfilVariedadeChange,
-  onPerfilDataChange,
+  onPerfilDataChange, onPerfilSetPreenchidos,
   onAndarTodo, onAndarVariedadeTodos,
   modoDataPlantio = 'plantio',
 }: Props) {
@@ -115,7 +120,8 @@ export default function PerfilFurosGrid({
   const isMaturacao = fase === 'maturacao';
   const faseComContagemColhidos =
     projetoTipo === 'microverdes' ? fase !== 'mudas' : isMaturacao;
-  const isInteractive = modo !== 'visualizacao';
+  const isInteractive = !readOnly && modo !== 'visualizacao';
+  const effectiveSelectionMode = readOnly ? false : !!selectionMode;
   const estrutura = estruturaFaseParaProjeto(projetoTipo, fase, estruturaOverride ?? null);
   const numPerfis = estrutura.perfis;
   const numFuros = estrutura.furosPorPerfil;
@@ -182,7 +188,7 @@ export default function PerfilFurosGrid({
           {Array.from({ length: numPerfis }, (_, i) => {
             const perfil = perfis.find((p) => p.perfilIndex === i);
             const isAtivo = perfil?.ativo || false;
-            const isSelected = !!selectedPerfis?.has(i);
+            const isSelected = !!selectedPerfis?.has(i) && effectiveSelectionMode;
             const variedade = perfil?.variedadeId
               ? variedades.find((v) => v.id === perfil.variedadeId)
               : undefined;
@@ -193,9 +199,9 @@ export default function PerfilFurosGrid({
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    disabled={!isInteractive && !selectionMode && !onPerfilInspect}
+                    disabled={!isInteractive && !effectiveSelectionMode && !onPerfilInspect}
                     onClick={(e) => {
-                      if (selectionMode) {
+                      if (effectiveSelectionMode) {
                         onSelectPerfil?.(i, e);
                         return;
                       }
@@ -218,7 +224,7 @@ export default function PerfilFurosGrid({
                         ? 'bg-emerald-50 border-emerald-400 shadow-sm'
                         : 'bg-gray-50 border-gray-200'
                     } ${
-                      selectionMode
+                      effectiveSelectionMode
                         ? `cursor-pointer hover:shadow-md ${isSelected ? 'ring-2 ring-blue-400 border-blue-400' : ''}`
                         : isInteractive || onPerfilInspect
                           ? 'hover:shadow-md active:scale-95 cursor-pointer'
@@ -255,7 +261,7 @@ export default function PerfilFurosGrid({
                         Ativar
                       </span>
                     )}
-                    {selectionMode && (
+                    {effectiveSelectionMode && (
                       <span className="absolute top-1 right-1 text-[9px] font-bold text-blue-700">
                         {isSelected ? '✓' : ''}
                       </span>
@@ -390,7 +396,7 @@ export default function PerfilFurosGrid({
               projetoTipo,
               fase,
             );
-            const isSelected = !!selectedPerfis?.has(i);
+            const isSelected = !!selectedPerfis?.has(i) && effectiveSelectionMode;
             const variedade = perfil?.variedadeId
               ? variedades.find((v) => v.id === perfil.variedadeId)
               : undefined;
@@ -401,9 +407,9 @@ export default function PerfilFurosGrid({
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    disabled={!isInteractive && !selectionMode && !onPerfilInspect}
+                    disabled={!isInteractive && !effectiveSelectionMode && !onPerfilInspect}
                     onClick={(e) => {
-                      if (selectionMode) {
+                      if (effectiveSelectionMode) {
                         onSelectPerfil?.(i, e);
                         return;
                       }
@@ -424,7 +430,7 @@ export default function PerfilFurosGrid({
                         ? 'bg-emerald-50 border-emerald-400'
                         : 'bg-gray-50 border-gray-200'
                     } ${
-                      selectionMode
+                      effectiveSelectionMode
                         ? `cursor-pointer hover:shadow-md ${isSelected ? 'ring-2 ring-blue-400 border-blue-400' : ''}`
                         : isInteractive || onPerfilInspect
                           ? 'hover:shadow-md active:scale-95 cursor-pointer'
@@ -454,7 +460,7 @@ export default function PerfilFurosGrid({
                     {cult === 'colhido' && (
                       <span className="text-[7px] mt-0.5 font-semibold text-amber-800 leading-none">✓</span>
                     )}
-                    {selectionMode && (
+                    {effectiveSelectionMode && (
                       <span className="absolute top-0.5 right-0.5 text-[8px] font-bold text-blue-700">
                         {isSelected ? '✓' : ''}
                       </span>
@@ -617,14 +623,14 @@ export default function PerfilFurosGrid({
                 ? 'border-amber-400 bg-amber-50/50'
                 : 'border-border bg-muted/20'
               } ${
-                selectionMode
+                effectiveSelectionMode
                   ? `${isSelected ? 'ring-2 ring-blue-400 border-blue-400' : 'hover:shadow-sm cursor-pointer'}`
                   : !isInteractive && onPerfilInspect
                     ? 'hover:shadow-sm cursor-pointer'
                     : ''
               }`}
               onClick={(e) => {
-                if (selectionMode) {
+                if (effectiveSelectionMode) {
                   onSelectPerfil?.(pIndex, e);
                   return;
                 }
@@ -680,7 +686,7 @@ export default function PerfilFurosGrid({
                         : 'bg-amber-100 text-amber-700 hover:bg-amber-200 active:bg-amber-300'
                     }`}
                     onClick={() => onPerfilToggle?.(pIndex, perfil?.variedadeId)}
-                    disabled={selectionMode}
+                    disabled={effectiveSelectionMode}
                   >
                     {modo === 'transplantio' ? (mv ? '🌱' : '🌱 Plantar') : mv ? '✂️' : '✂️ Colher'}
                   </button>
@@ -806,6 +812,51 @@ export default function PerfilFurosGrid({
               })}
             </div>
           </details>
+
+          {/* Corrigir quantidade de furos preenchidos por perfil */}
+          {!mv && onPerfilSetPreenchidos && (
+            <details className="text-xs">
+              <summary className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors py-1">
+                ▸ Corrigir furos preenchidos por perfil…
+              </summary>
+              <p className="text-[10px] text-muted-foreground mt-1 mb-2">
+                Ajuste quantas plantas existem de fato em cada perfil. Os primeiros furos ficam plantados e o restante vazio.
+              </p>
+              <div className="grid gap-2 grid-cols-2 sm:grid-cols-3">
+                {Array.from({ length: numPerfis }, (_, i) => {
+                  const plantadosI = furos.filter(
+                    (f) => f.perfilIndex === i && f.status === 'plantado',
+                  ).length;
+                  return (
+                    <div key={i} className="flex items-center gap-1.5 p-2 rounded border bg-muted/20">
+                      <span className="text-xs font-semibold text-muted-foreground w-8 shrink-0">
+                        {labelPosicaoProducao(projetoTipo, i)}
+                      </span>
+                      <input
+                        key={`${i}-${plantadosI}`}
+                        type="number"
+                        min={0}
+                        max={numFuros}
+                        defaultValue={plantadosI}
+                        onBlur={(e) => {
+                          const v = Math.max(
+                            0,
+                            Math.min(numFuros, Math.floor(Number(e.target.value) || 0)),
+                          );
+                          if (v !== plantadosI) onPerfilSetPreenchidos(i, v);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                        }}
+                        className="h-8 w-full text-xs rounded-md border border-input bg-background px-2 text-center"
+                      />
+                      <span className="text-[10px] text-muted-foreground shrink-0">/ {numFuros}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </details>
+          )}
 
           <Button
             type="button"

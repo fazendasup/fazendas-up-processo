@@ -33,6 +33,9 @@ import {
 import type { CultivoBandejaStatus } from '@/lib/utils-farm';
 import { PlantioModoDataSelector, labelCampoDataPlantio } from '@/components/PlantioModoDataSelector';
 import { useFazendaMutations } from '@/hooks/useFazendaMutations';
+import { useRole } from '@/hooks/useRole';
+import { wrapReadOnlyMutation } from '@/lib/readOnlyMutation';
+import { VISITOR_READONLY_MSG } from '@shared/const';
 import { useDbIdResolver } from '@/hooks/useDbIdResolver';
 import PerfilFurosGrid from '@/components/PerfilFurosGrid';
 import { TransplantioDistribuidoModal } from '@/components/TransplantioDistribuidoModal';
@@ -49,7 +52,7 @@ import {
 import {
   ArrowLeft, Droplets, AlertTriangle, Clock, Leaf,
   Trash2, Sprout, Scissors, Droplet, CheckCircle2, Wrench, ArrowRightLeft,
-  HelpCircle, Undo2, Copy, CheckSquare, Square, Info,
+  HelpCircle, Undo2, Copy, CheckSquare, Square, Info, Eye,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { useEffect, useState } from 'react';
@@ -69,7 +72,9 @@ export default function TorreDetail() {
   const isMicroverdes = activeProjeto?.tipo === 'microverdes';
   const projetoTipo = data.projetoTipo ?? activeProjeto?.tipo ?? null;
   const unidOperacao = termoUnidadeProducao(projetoTipo);
+  const { isVisitante, loading: roleLoading } = useRole();
   const mutations = useFazendaMutations();
+  const isReadOnly = roleLoading || isVisitante || mutations.isReadOnly;
   const resolver = useDbIdResolver();
   const [selectedAndar, setSelectedAndar] = useState<string | null>(null);
   const [tipoCaixa, setTipoCaixa] = useState<string>('');
@@ -110,6 +115,11 @@ export default function TorreDetail() {
     label: string;
   }>(null);
 
+  const blockReadOnlyAction = () => {
+    toast.error(VISITOR_READONLY_MSG);
+    return true;
+  };
+
   // ---- Colheita: query + mutation (must be before early return to respect React hooks rules) ----
   const colheitaAndarDbId = (() => {
     const torreObj = data.torres.find((t) => t.id === id);
@@ -126,21 +136,35 @@ export default function TorreDetail() {
     { andarId: colheitaAndarDbId!, perfilIndex: perfilHistoricoIndex ?? 0 },
     { enabled: !!colheitaAndarDbId && perfilHistoricoIndex != null },
   );
-  const updateEventoDataHora = trpc.lotes.updateEventoDataHora.useMutation({
-    onSuccess: async () => {
-      setEventoDataEdicao(null);
-      await historicoPerfil.refetch();
-      toast.success('Data do transplantio atualizada no histórico.');
-    },
-    onError: (err: any) => toast.error(err?.message || 'Não foi possível atualizar a data do transplantio.'),
-  });
-  const createColheita = trpc.registrosColheita.create.useMutation({
-    onSuccess: () => { refetchColheita(); toast.success('Colheita registrada!'); },
-    onError: (err: any) => { toast.error(`Erro: ${err.message}`); },
-  });
+  const updateEventoDataHora = wrapReadOnlyMutation(
+    trpc.lotes.updateEventoDataHora.useMutation({
+      onSuccess: async () => {
+        setEventoDataEdicao(null);
+        await historicoPerfil.refetch();
+        toast.success('Data do transplantio atualizada no histórico.');
+      },
+      onError: (err: any) => toast.error(err?.message || 'Não foi possível atualizar a data do transplantio.'),
+    }),
+    isReadOnly,
+  );
+  const createColheita = wrapReadOnlyMutation(
+    trpc.registrosColheita.create.useMutation({
+      onSuccess: () => { refetchColheita(); toast.success('Colheita registrada!'); },
+      onError: (err: any) => { toast.error(`Erro: ${err.message}`); },
+    }),
+    isReadOnly,
+  );
   const planosPlantioQuery = trpc.planosPlantio.list.useQuery();
 
   const torre = data.torres.find((t) => t.id === id);
+
+  useEffect(() => {
+    if (isReadOnly) {
+      setModoFuros('visualizacao');
+      setSelectionMode(false);
+      setSelectedPerfis(new Set());
+    }
+  }, [isReadOnly]);
 
   /** Deep-link desde alertas do dashboard: `/torre/:id?andar=:andarId` */
   useEffect(() => {
@@ -288,6 +312,7 @@ export default function TorreDetail() {
 
   const handleAddMedicao = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isReadOnly) return blockReadOnlyAction();
     const fd = new FormData(e.currentTarget);
     const ec = parseFloat(fd.get('ec') as string);
     const ph = parseFloat(fd.get('ph') as string);
@@ -311,6 +336,7 @@ export default function TorreDetail() {
 
   const handleAddAplicacaoCaixa = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isReadOnly) return blockReadOnlyAction();
     const fd = new FormData(e.currentTarget);
     const produto = fd.get('produto') as string;
     const quantidade = fd.get('quantidade') as string;
@@ -334,6 +360,7 @@ export default function TorreDetail() {
 
   const handleUpdateAndar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isReadOnly) return blockReadOnlyAction();
     if (!andarSelecionado) return;
     const fd = new FormData(e.currentTarget);
     const dataEntrada = fd.get('dataEntrada') as string;
@@ -366,6 +393,7 @@ export default function TorreDetail() {
 
   // Handler para atualizar data de um perfil individual
   const handleUpdatePerfilData = (perfilIndex: number, dataEntrada: string) => {
+    if (isReadOnly) return blockReadOnlyAction();
     if (!andarSelecionado) return;
     const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
     if (!andarDbId) return;
@@ -388,6 +416,7 @@ export default function TorreDetail() {
   };
 
   const handleUpdatePerfilQuantidadeMudas = (perfilIndex: number, quantidadeRaw: string) => {
+    if (isReadOnly) return blockReadOnlyAction();
     if (!andarSelecionado || !isMudas || isMicroverdes) return;
     const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
     if (!andarDbId) return;
@@ -407,6 +436,7 @@ export default function TorreDetail() {
   // ---- Furos handlers ----
 
   const handleFuroToggle = (perfilIndex: number, furoIndex: number, variedadeId?: string) => {
+    if (isReadOnly) return blockReadOnlyAction();
     if (!andarSelecionado) return;
     const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
     if (!andarDbId) return;
@@ -438,6 +468,7 @@ export default function TorreDetail() {
   };
 
   const handlePerfilToggle = (perfilIndex: number, variedadeId?: string) => {
+    if (isReadOnly) return blockReadOnlyAction();
     if (!andarSelecionado) return;
     const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
     if (!andarDbId) return;
@@ -529,7 +560,51 @@ export default function TorreDetail() {
     mutations.batchUpdateFuros.mutate({ andarId: andarDbId, updates });
   };
 
+  // Corrige quantos furos ficam plantados em um perfil (vegetativa/maturação):
+  // preenche os primeiros `preenchidos` furos e esvazia o restante.
+  const handlePerfilSetPreenchidos = (perfilIndex: number, preenchidos: number) => {
+    if (isReadOnly) return blockReadOnlyAction();
+    if (!andarSelecionado) return;
+    const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
+    if (!andarDbId) return;
+
+    const perfilFuros = (andarSelecionado.furos || [])
+      .filter((f) => f.perfilIndex === perfilIndex)
+      .sort((a, b) => a.furoIndex - b.furoIndex);
+    if (perfilFuros.length === 0) return;
+
+    const alvo = Math.max(0, Math.min(perfilFuros.length, Math.floor(preenchidos)));
+
+    const perfil = (andarSelecionado.perfis || []).find((p) => p.perfilIndex === perfilIndex);
+    const varSlug =
+      perfil?.variedadeId ||
+      perfilFuros.find((f) => f.status === 'plantado' && f.variedadeId)?.variedadeId ||
+      null;
+    const varDbId = varSlug ? (resolver.varSlugToId.get(varSlug) || null) : null;
+
+    if (alvo > 0 && !varDbId) {
+      toast.error('Defina a variedade do perfil antes de corrigir os furos preenchidos.');
+      return;
+    }
+
+    const updates = perfilFuros.map((f, i) => {
+      const preencher = i < alvo;
+      const furoVarDbId = f.variedadeId ? (resolver.varSlugToId.get(f.variedadeId) || null) : null;
+      return {
+        perfilIndex,
+        furoIndex: f.furoIndex,
+        status: preencher ? 'plantado' : 'vazio',
+        variedadeId: preencher ? (furoVarDbId ?? varDbId) : null,
+        loteId: preencher ? undefined : null,
+      };
+    });
+
+    mutations.batchUpdateFuros.mutate({ andarId: andarDbId, updates });
+    toast.success(`Perfil ${perfilIndex + 1}: ${alvo}/${perfilFuros.length} furos preenchidos.`);
+  };
+
   const handlePerfilVariedadeChange = (perfilIndex: number, variedadeId: string) => {
+    if (isReadOnly) return blockReadOnlyAction();
     if (!andarSelecionado) return;
     const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
     if (!andarDbId) return;
@@ -582,6 +657,7 @@ export default function TorreDetail() {
   };
 
   const handleAndarVariedadeTodos = (variedadeId: string) => {
+    if (isReadOnly) return blockReadOnlyAction();
     if (!andarSelecionado) return;
     const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
     if (!andarDbId) return;
@@ -646,6 +722,7 @@ export default function TorreDetail() {
   };
 
   const handleAndarTodo = () => {
+    if (isReadOnly) return blockReadOnlyAction();
     if (!andarSelecionado) return;
     const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
     if (!andarDbId) return;
@@ -786,6 +863,7 @@ export default function TorreDetail() {
   const handleSelectPerfil = (perfilIndex: number, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (isReadOnly) return blockReadOnlyAction();
     setSelectedPerfis((prev) => {
       const next = new Set(prev);
       const isShift = (e as any).shiftKey && lastClickedPerfil !== null;
@@ -831,6 +909,7 @@ export default function TorreDetail() {
   };
 
   const handleUndo = async () => {
+    if (isReadOnly) return blockReadOnlyAction();
     if (!undoPayload) return;
     await mutations.batchUpdatePerfis.mutateAsync({ andarId: undoPayload.andarDbId, updates: undoPayload.perfis as any });
     if (undoPayload.furos.length > 0) {
@@ -884,6 +963,7 @@ export default function TorreDetail() {
     patch: { ativo?: boolean; variedadeId?: number | null; dataEntrada?: Date | null; quantidadePlantas?: number | null },
     label: string
   ) => {
+    if (isReadOnly) return blockReadOnlyAction();
     if (!andarSelecionado) return;
     const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
     if (!andarDbId) return;
@@ -909,6 +989,7 @@ export default function TorreDetail() {
   };
 
   const clearSelectedPerfis = async () => {
+    if (isReadOnly) return blockReadOnlyAction();
     if (!andarSelecionado) return;
     const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
     if (!andarDbId) return;
@@ -940,6 +1021,7 @@ export default function TorreDetail() {
   };
 
   const copyFromAndar = async (sourceFrontAndarId: string) => {
+    if (isReadOnly) return blockReadOnlyAction();
     if (!andarSelecionado) return;
     const src = data.andares.find((a) => a.id === sourceFrontAndarId);
     if (!src) return;
@@ -983,6 +1065,7 @@ export default function TorreDetail() {
   };
 
   const handleMarcarLavado = () => {
+    if (isReadOnly) return blockReadOnlyAction();
     if (!andarSelecionado) return;
     const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
     if (!andarDbId) return;
@@ -993,6 +1076,7 @@ export default function TorreDetail() {
 
   const handleAddAplicacaoAndar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isReadOnly) return blockReadOnlyAction();
     if (!andarSelecionado) return;
     const fd = new FormData(e.currentTarget);
     const produto = fd.get('produto') as string;
@@ -1016,6 +1100,7 @@ export default function TorreDetail() {
   };
 
   const handleClearAndar = () => {
+    if (isReadOnly) return blockReadOnlyAction();
     if (!andarSelecionado) return;
     if (!window.confirm('Limpar dados deste andar? (variedades, data de entrada, furos/perfis e aplicações)')) return;
 
@@ -1027,6 +1112,7 @@ export default function TorreDetail() {
   };
 
   const handleDeleteMedicao = (medicaoId: string) => {
+    if (isReadOnly) return blockReadOnlyAction();
     const dbId = resolver.medicaoFrontIdToDbId.get(medicaoId);
     if (!dbId) return;
     mutations.deleteMedicaoCaixa.mutate({ id: dbId });
@@ -1034,6 +1120,7 @@ export default function TorreDetail() {
   };
 
   const handleDeleteAplicacaoCaixa = (aplicacaoId: string) => {
+    if (isReadOnly) return blockReadOnlyAction();
     const dbId = resolver.aplicacaoCaixaFrontIdToDbId.get(aplicacaoId);
     if (!dbId) return;
     mutations.deleteAplicacaoCaixa.mutate({ id: dbId });
@@ -1041,6 +1128,7 @@ export default function TorreDetail() {
   };
 
   const handleDeleteAplicacaoAndar = (aplicacaoId: string) => {
+    if (isReadOnly) return blockReadOnlyAction();
     if (!andarSelecionado) return;
     const dbId = resolver.aplicacaoAndarFrontIdToDbId.get(aplicacaoId);
     if (!dbId) return;
@@ -1049,6 +1137,7 @@ export default function TorreDetail() {
   };
 
   const handleRegistrarColheita = () => {
+    if (isReadOnly) return blockReadOnlyAction();
     if (!andarSelecionado) return;
     const andarDbId = resolver.andarFrontIdToDbId.get(andarSelecionado.id);
     const torreDbId = resolver.torreSlugToId.get(torre.id);
@@ -1098,6 +1187,15 @@ export default function TorreDetail() {
       <Header />
 
       <main className="container py-6">
+        {isReadOnly && (
+          <Alert className="mb-4 border-amber-200 bg-amber-50/90 dark:border-amber-900 dark:bg-amber-950/40">
+            <Eye className="h-4 w-4 text-amber-700 dark:text-amber-300" />
+            <AlertTitle className="text-amber-900 dark:text-amber-100">Modo visitante</AlertTitle>
+            <AlertDescription className="text-amber-900/90 dark:text-amber-100/90">
+              {VISITOR_READONLY_MSG} Você pode consultar torres, perfis e histórico; exporte relatórios pelas páginas do menu.
+            </AlertDescription>
+          </Alert>
+        )}
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-6">
                       <Link href="/"><Button variant="ghost" className="gap-1.5 text-muted-foreground h-10 text-sm"><ArrowLeft className="w-4 h-4" />Dashboard</Button></Link>
@@ -1288,7 +1386,7 @@ export default function TorreDetail() {
                     </TabsList>
 
                     <TabsContent value="medir">
-                      <form onSubmit={handleAddMedicao} className="space-y-3">
+                      <form onSubmit={handleAddMedicao} className="space-y-3" style={isReadOnly ? { pointerEvents: 'none', opacity: 0.55 } : undefined}>
                         <div className="grid grid-cols-2 gap-3">
                           <div><Label className="text-xs">EC</Label><Input name="ec" type="number" step="0.01" placeholder="Ex: 1.1" className="h-9 text-sm" required /></div>
                           <div><Label className="text-xs">pH</Label><Input name="ph" type="number" step="0.01" placeholder="Ex: 5.9" className="h-9 text-sm" required /></div>
@@ -1299,7 +1397,7 @@ export default function TorreDetail() {
                     </TabsContent>
 
                     <TabsContent value="aplicar">
-                      <form onSubmit={handleAddAplicacaoCaixa} className="space-y-3">
+                      <form onSubmit={handleAddAplicacaoCaixa} className="space-y-3" style={isReadOnly ? { pointerEvents: 'none', opacity: 0.55 } : undefined}>
                         <div><Label className="text-xs">Tipo</Label>
                           <Select value={tipoCaixa} onValueChange={setTipoCaixa}><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent>{TIPOS_APLICACAO_CAIXA.map((t) => (<SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>))}</SelectContent></Select>
                         </div>
@@ -1339,8 +1437,10 @@ export default function TorreDetail() {
                                 </div>
                               )}
                               <button
+                                type="button"
+                                disabled={isReadOnly}
                                 onClick={() => item._type === 'medicao' ? handleDeleteMedicao(item.id) : handleDeleteAplicacaoCaixa(item.id)}
-                                className="text-muted-foreground hover:text-destructive p-2 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                                className="text-muted-foreground hover:text-destructive p-2 min-w-[36px] min-h-[36px] flex items-center justify-center disabled:opacity-40"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -1383,15 +1483,16 @@ export default function TorreDetail() {
                   {torre.fase !== 'maturacao' && (
                     <Button
                       className="text-xs gap-1.5 h-9 px-3 bg-emerald-600 hover:bg-emerald-700"
+                      disabled={isReadOnly}
                       onClick={() => setShowTransplantioSmart(true)}
                     >
                       <Sprout className="w-4 h-4" /> Transplantar
                     </Button>
                   )}
-                    <Button variant="outline" className="text-xs gap-1.5 h-9 px-3" onClick={() => { setShowMover(true); setMoverTipo('andar'); setMoverDestinoTorre(''); setMoverDestinoAndar(''); setMoverDestinoPerfilIndex(''); }}>
+                    <Button variant="outline" className="text-xs gap-1.5 h-9 px-3" disabled={isReadOnly} onClick={() => { setShowMover(true); setMoverTipo('andar'); setMoverDestinoTorre(''); setMoverDestinoAndar(''); setMoverDestinoPerfilIndex(''); }}>
                       <ArrowRightLeft className="w-4 h-4" /> Mover
                     </Button>
-                    <Button variant="ghost" className="text-xs text-destructive h-9 px-3" onClick={handleClearAndar}>
+                    <Button variant="ghost" className="text-xs text-destructive h-9 px-3" disabled={isReadOnly} onClick={handleClearAndar}>
                       <Trash2 className="w-4 h-4 mr-1" /> Limpar
                     </Button>
                   </div>
@@ -1409,7 +1510,7 @@ export default function TorreDetail() {
                         <p className="text-[10px] text-red-600">Colheita total em {formatarData(andarSelecionado.dataColheitaTotal || null)}</p>
                       </div>
                     </div>
-                    <Button variant="outline" className="text-sm gap-1.5 h-9 px-3 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/50" onClick={handleMarcarLavado}>
+                    <Button variant="outline" className="text-sm gap-1.5 h-9 px-3 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/50" disabled={isReadOnly} onClick={handleMarcarLavado}>
                       <CheckCircle2 className="w-3 h-3" /> Marcar Lavado
                     </Button>
                   </div>
@@ -1455,7 +1556,7 @@ export default function TorreDetail() {
 
                 <div className="p-4">
                   {/* Data de entrada (aplica a todos os perfis) */}
-                  <form onSubmit={handleUpdateAndar} className="mb-4 p-3 bg-muted/30 rounded-lg border border-dashed space-y-3">
+                  <form onSubmit={handleUpdateAndar} className="mb-4 p-3 bg-muted/30 rounded-lg border border-dashed space-y-3" style={isReadOnly ? { pointerEvents: 'none', opacity: 0.55 } : undefined}>
                     {modoFuros === 'transplantio' && (
                       <PlantioModoDataSelector
                         value={modoDataPlantio}
@@ -1639,7 +1740,7 @@ export default function TorreDetail() {
                   </form>
 
                   {/* Barra de ações em massa (seleção múltipla) */}
-                  {andarSelecionado && (
+                  {andarSelecionado && !isReadOnly && (
                     <div className="mb-4 p-3 bg-muted/30 rounded-lg border border-dashed space-y-3">
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -1857,11 +1958,12 @@ export default function TorreDetail() {
 
                   {/* Modo selector */}
                   <div className="flex gap-2 mb-3">
-                    {modosDisponiveis.map((m) => (
+                    {(isReadOnly ? (['visualizacao'] as const) : modosDisponiveis).map((m) => (
                       <button
                         key={m}
                         type="button"
-                        onClick={() => setModoFuros(m)}
+                        disabled={isReadOnly && m !== 'visualizacao'}
+                        onClick={() => !isReadOnly && setModoFuros(m)}
                         className={`flex-1 py-2.5 sm:py-2 rounded-lg text-sm sm:text-xs font-semibold border transition-colors min-h-[40px] ${
                           modoFuros === m
                             ? m === 'transplantio' ? 'bg-emerald-100 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:bg-emerald-950/55 dark:border-emerald-700'
@@ -1880,6 +1982,7 @@ export default function TorreDetail() {
                     <div className="mb-3">
                       <Button
                         className="w-full bg-amber-600 hover:bg-amber-700 gap-1.5"
+                        disabled={isReadOnly}
                         onClick={() => setShowColheita(true)}
                       >
                         <Scissors className="w-4 h-4" />
@@ -1895,6 +1998,7 @@ export default function TorreDetail() {
                     fase={torre.fase}
                     projetoTipo={projetoTipo}
                     estruturaOverride={torre.estruturaOverride ?? null}
+                    readOnly={isReadOnly}
                     modo={modoFuros}
                     variedades={data.variedades}
                     cicloOpts={cicloPrazoOptsFromFazenda(data)}
@@ -1907,6 +2011,7 @@ export default function TorreDetail() {
                     onPerfilInspect={(perfilIndex) => setPerfilHistoricoIndex(perfilIndex)}
                     onPerfilVariedadeChange={handlePerfilVariedadeChange}
                     onPerfilDataChange={handleUpdatePerfilData}
+                    onPerfilSetPreenchidos={handlePerfilSetPreenchidos}
                     onAndarTodo={handleAndarTodo}
                     onAndarVariedadeTodos={handleAndarVariedadeTodos}
                     modoDataPlantio={modoFuros === 'transplantio' ? modoDataPlantio : 'plantio'}
