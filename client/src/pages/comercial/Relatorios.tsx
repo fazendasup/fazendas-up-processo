@@ -7,7 +7,9 @@ import {
   Download,
   FileBarChart,
   Info,
+  Phone,
   Search,
+  Target,
 } from "lucide-react";
 import {
   AbcChart,
@@ -75,7 +77,17 @@ const REPORTS = [
   { id: "vendedores", label: "Vendas por vendedor" },
 ] as const;
 
-type ReportId = (typeof REPORTS)[number]["id"];
+type ReportId = "prioridades" | (typeof REPORTS)[number]["id"];
+
+const ACTION_REPORTS: Array<{ id: ReportId; label: string }> = [
+  { id: "prioridades", label: "Prioridades" },
+  { id: "clientes-risco", label: "Clientes em risco" },
+  { id: "clientes-sem-vendas", label: "Reativar clientes" },
+  { id: "mix-produtos", label: "Cross-sell" },
+  { id: "maiores-clientes", label: "Top clientes" },
+  { id: "margem", label: "Margem" },
+  { id: "vendas-mes", label: "Mês a mês" },
+];
 
 const CHART_COLORS = [
   "#059669",
@@ -463,6 +475,31 @@ function Notice({ children }: { children: ReactNode }) {
   );
 }
 
+type ComercialPriority = {
+  id: string;
+  tipo: string;
+  titulo: string;
+  detalhe: string;
+  acao: string;
+  valor?: string;
+  report: ReportId;
+  drillValue?: string;
+  tone: "red" | "amber" | "emerald" | "sky";
+};
+
+const priorityToneClass: Record<ComercialPriority["tone"], string> = {
+  red: "border-red-200 bg-red-50 text-red-950 dark:border-red-400/25 dark:bg-red-950/20 dark:text-red-100",
+  amber:
+    "border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-400/25 dark:bg-amber-950/20 dark:text-amber-100",
+  emerald:
+    "border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-400/25 dark:bg-emerald-950/20 dark:text-emerald-100",
+  sky: "border-sky-200 bg-sky-50 text-sky-950 dark:border-sky-400/25 dark:bg-sky-950/20 dark:text-sky-100",
+};
+
+function isClienteAtivo(situacao: unknown) {
+  return String(situacao ?? "").toUpperCase() !== "INATIVO";
+}
+
 function Table({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-[320px] overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
@@ -479,7 +516,7 @@ export function Relatorios() {
     return d.toISOString().slice(0, 10);
   });
   const [customFim, setCustomFim] = useState(hojeIsoLocal);
-  const [active, setActive] = useState<ReportId>("vendas-cliente");
+  const [active, setActive] = useState<ReportId>("prioridades");
   const [metricaCliente, setMetricaCliente] = useState<
     "valorBruto" | "valorLiquido" | "totalVendido" | "ticketMedio"
   >("valorBruto");
@@ -616,6 +653,96 @@ export function Relatorios() {
       })),
     [data?.lucroMargemMes]
   );
+  const prioridades = useMemo<ComercialPriority[]>(() => {
+    if (!data) return [];
+    const items: ComercialPriority[] = [];
+
+    for (const r of (data.clientesRisco ?? []).slice(0, 3)) {
+      items.push({
+        id: `risco-${r.clienteId}`,
+        tipo: "Recuperar agora",
+        titulo: r.cliente,
+        detalhe: `${r.motivo}. Antes: ${fmtMoney(r.valorAnterior)} | agora: ${fmtMoney(r.valorAtual)}.`,
+        acao: "O vendedor deve chamar hoje e perguntar se houve problema, falta de produto ou troca de fornecedor.",
+        valor: fmtVariacao(r.variacaoValor),
+        report: "clientes-risco",
+        drillValue: r.cliente,
+        tone: "red",
+      });
+    }
+
+    for (const r of (data.clientesSemVendas ?? [])
+      .filter((row: any) => isClienteAtivo(row.situacao) && Number(row.diasSemVenda ?? 0) >= 30)
+      .slice(0, 3)) {
+      items.push({
+        id: `sem-venda-${r.id}`,
+        tipo: "Reativar",
+        titulo: r.cliente,
+        detalhe: `Sem compra há ${fmtNumber(r.diasSemVenda)} dias. Última venda: ${fmtDate(r.ultimaVenda)}.`,
+        acao: "Enviar mensagem simples: conferir demanda da semana e oferecer o mix que ele costumava comprar.",
+        report: "clientes-sem-vendas",
+        drillValue: r.cliente,
+        tone: "amber",
+      });
+    }
+
+    for (const r of (data.mixProdutosCliente ?? [])
+      .filter((row: any) => (row.oportunidadesCrossSell?.length ?? 0) > 0)
+      .slice(0, 3)) {
+      const sugestoes = r.oportunidadesCrossSell.slice(0, 2).join(" + ");
+      items.push({
+        id: `cross-${r.clienteId}`,
+        tipo: "Vender mais",
+        titulo: r.cliente,
+        detalhe: `Já compra: ${r.topProdutos || "mix não identificado"}.`,
+        acao: `Na próxima conversa, oferecer ${sugestoes}.`,
+        valor: fmtMoney(r.valorBruto),
+        report: "mix-produtos",
+        drillValue: r.cliente,
+        tone: "emerald",
+      });
+    }
+
+    for (const r of (data.margemPorCliente ?? [])
+      .filter((row: any) => row.margemLucro != null && row.valorLiquido >= 300 && row.margemLucro < 0.18)
+      .slice(0, 2)) {
+      items.push({
+        id: `margem-${r.clienteId}`,
+        tipo: "Proteger margem",
+        titulo: r.cliente,
+        detalhe: `Receita ${fmtMoney(r.valorLiquido)} com margem de ${fmtPct(r.margemLucro)}.`,
+        acao: "Revisar preço, desconto ou custo antes de tentar vender mais para este cliente.",
+        valor: fmtPct(r.margemLucro),
+        report: "margem",
+        drillValue: r.cliente,
+        tone: "sky",
+      });
+    }
+
+    return items.slice(0, 8);
+  }, [data]);
+  const focoComercial = useMemo(() => {
+    if (!data) {
+      return {
+        contatosHoje: 0,
+        crossSell: 0,
+        clientesAtivos: 0,
+        receita: 0,
+      };
+    }
+    return {
+      contatosHoje:
+        (data.clientesRisco?.length ?? 0) +
+        (data.clientesSemVendas ?? []).filter(
+          (row: any) => isClienteAtivo(row.situacao) && Number(row.diasSemVenda ?? 0) >= 30
+        ).length,
+      crossSell: (data.mixProdutosCliente ?? []).filter(
+        (row: any) => (row.oportunidadesCrossSell?.length ?? 0) > 0
+      ).length,
+      clientesAtivos: data.comparacaoPeriodo?.clientesAtivos?.atual ?? 0,
+      receita: data.comparacaoPeriodo?.valorLiquido?.atual ?? 0,
+    };
+  }, [data]);
 
   const setTableFilter = (id: string, value: string) => {
     setTableFilters(current => ({ ...current, [id]: value }));
@@ -1195,8 +1322,8 @@ export function Relatorios() {
     <div className="space-y-6 p-4 lg:p-8">
       <PageHeader
         kicker="Relatórios"
-        title="Relatórios comerciais"
-        subtitle="Vendas, clientes, produtos, custos, margens e dados financeiros calculados a partir da Conta Azul sincronizada."
+        title="Prioridades comerciais"
+        subtitle="Uma visão curta para decidir quem o vendedor deve chamar, o que oferecer e onde proteger margem."
         actions={
           <PeriodoFiltro
             preset={preset}
@@ -1209,8 +1336,13 @@ export function Relatorios() {
         }
       />
 
-      <div className="flex flex-wrap items-center gap-2">
-        {REPORTS.map(r => (
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+        <div className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
+          <Target className="h-4 w-4 text-emerald-600" />
+          Atalhos para ação
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+        {ACTION_REPORTS.map(r => (
           <button
             key={r.id}
             type="button"
@@ -1228,6 +1360,32 @@ export function Relatorios() {
             {r.label}
           </button>
         ))}
+        </div>
+        <details className="mt-3">
+          <summary className="cursor-pointer text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200">
+            Planilhas detalhadas e exportações
+          </summary>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {REPORTS.filter(r => !ACTION_REPORTS.some(a => a.id === r.id)).map(r => (
+              <button
+                key={r.id}
+                type="button"
+                className={[
+                  "rounded-full px-3 py-1.5 text-xs font-bold transition",
+                  active === r.id
+                    ? "bg-slate-800 text-white shadow-sm dark:bg-slate-100 dark:text-slate-950"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-300",
+                ].join(" ")}
+                onClick={() => {
+                  setActive(r.id);
+                  setDrill(null);
+                }}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </details>
       </div>
 
       {data?.comparacaoPeriodo ? (
@@ -1295,27 +1453,36 @@ export function Relatorios() {
         </div>
         <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-400/25 dark:bg-sky-950/20">
           <div className="text-xs font-bold uppercase tracking-wide text-sky-800 dark:text-sky-300">
-            Vendas detalhadas
+            Contatos recomendados
           </div>
           <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {data?.vendasDetalhadas.length ?? "—"}
+            {data ? fmtNumber(focoComercial.contatosHoje) : "—"}
           </div>
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+            risco + clientes ativos sem compra
+          </p>
         </div>
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-400/25 dark:bg-amber-950/20">
           <div className="text-xs font-bold uppercase tracking-wide text-amber-800 dark:text-amber-300">
-            Clientes
+            Ofertas de cross-sell
           </div>
           <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {data?.clientes.length ?? "—"}
+            {data ? fmtNumber(focoComercial.crossSell) : "—"}
           </div>
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+            clientes com produto complementar
+          </p>
         </div>
         <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-400/25 dark:bg-violet-950/20">
           <div className="text-xs font-bold uppercase tracking-wide text-violet-800 dark:text-violet-300">
-            Produtos vendidos
+            Receita líquida
           </div>
           <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {data?.produtosVendidosDetalhados.length ?? "—"}
+            {data ? fmtMoney(focoComercial.receita) : "—"}
           </div>
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+            base para priorizar esforço
+          </p>
         </div>
       </div>
 
@@ -1327,6 +1494,73 @@ export function Relatorios() {
         <Notice>Não foi possível carregar os relatórios comerciais.</Notice>
       ) : (
         <>
+          {active === "prioridades" ? (
+            <Section
+              title="O que fazer agora"
+              description="Lista curta para uma operação pequena: priorize ligação, WhatsApp ou revisão de preço antes de abrir planilhas."
+              rows={prioridades.map(item => ({
+                tipo: item.tipo,
+                cliente: item.titulo,
+                detalhe: item.detalhe,
+                acao: item.acao,
+                valor: item.valor ?? "",
+              }))}
+            >
+              <div className="grid gap-3 lg:grid-cols-2">
+                {prioridades.length ? (
+                  prioridades.map(item => (
+                    <div
+                      key={item.id}
+                      className={[
+                        "rounded-2xl border p-4 shadow-sm",
+                        priorityToneClass[item.tone],
+                      ].join(" ")}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-[11px] font-black uppercase tracking-wide opacity-80">
+                            {item.tipo}
+                          </div>
+                          <h3 className="mt-1 text-base font-black">
+                            {item.titulo}
+                          </h3>
+                        </div>
+                        {item.valor ? (
+                          <span className="rounded-full bg-white/70 px-2 py-1 text-xs font-black text-slate-900 dark:bg-white/10 dark:text-white">
+                            {item.valor}
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="mt-3 text-sm opacity-85">{item.detalhe}</p>
+                      <div className="mt-3 rounded-xl bg-white/70 p-3 text-sm font-semibold text-slate-900 dark:bg-white/10 dark:text-white">
+                        <Phone className="mr-2 inline h-4 w-4" />
+                        {item.acao}
+                      </div>
+                      <button
+                        type="button"
+                        className="mt-3 text-xs font-black underline underline-offset-4 opacity-80 transition hover:opacity-100"
+                        onClick={() => {
+                          setActive(item.report);
+                          setDrill(
+                            item.drillValue
+                              ? { report: item.report, value: item.drillValue }
+                              : null
+                          );
+                        }}
+                      >
+                        Ver dados que justificam esta ação
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500 dark:border-white/15 dark:text-slate-400 lg:col-span-2">
+                    Nenhuma prioridade crítica encontrada neste período. Use os atalhos acima para revisar top clientes, margem e vendas do mês.
+                  </div>
+                )}
+              </div>
+            </Section>
+          ) : null}
+
           {active === "vendas-cliente" ? (
             <Section
               title="Análise das vendas por cliente"
