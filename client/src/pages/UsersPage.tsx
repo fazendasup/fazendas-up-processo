@@ -25,6 +25,25 @@ import { motion } from 'framer-motion';
 import { useRole } from '@/hooks/useRole';
 
 type GlobalAppRole = 'user' | 'admin' | 'platform_admin' | 'comercial' | 'visitante';
+type RoleOption = GlobalAppRole | 'promoter';
+
+function appRoleFromOption(role: RoleOption): GlobalAppRole {
+  return role === 'promoter' ? 'comercial' : role;
+}
+
+function comercialPerfilFromOption(role: RoleOption): 'PROMOTER' | 'COMERCIAL' | undefined {
+  if (role === 'promoter') return 'PROMOTER';
+  if (role === 'comercial') return 'COMERCIAL';
+  return undefined;
+}
+
+function roleOptionForUser(user: { role: string; comercialPerfil?: string | null }): RoleOption {
+  if (user.role === 'comercial' && user.comercialPerfil === 'PROMOTER') return 'promoter';
+  if (['user', 'admin', 'platform_admin', 'comercial', 'visitante'].includes(user.role)) {
+    return user.role as GlobalAppRole;
+  }
+  return 'user';
+}
 
 export default function UsersPage() {
   return (
@@ -60,7 +79,7 @@ function UsersContent() {
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [newRole, setNewRole] = useState<GlobalAppRole>('user');
+  const [newRole, setNewRole] = useState<RoleOption>('user');
   const [newProjetoIds, setNewProjetoIds] = useState<number[]>([]);
   const [createError, setCreateError] = useState('');
 
@@ -74,7 +93,7 @@ function UsersContent() {
   const [resetNewPassword, setResetNewPassword] = useState('');
   const [resetError, setResetError] = useState('');
 
-  const handleRoleChange = (userId: number, next: GlobalAppRole) => {
+  const handleRoleChange = (userId: number, next: RoleOption) => {
     let msg: string;
     if (next === 'platform_admin') {
       msg =
@@ -83,13 +102,15 @@ function UsersContent() {
       msg = 'Promover este usuário a Administrador operacional? Terá acesso a configurações e gestão de usuários.';
     } else if (next === 'comercial') {
       msg = 'Alterar para Comercial? Terá acesso apenas às áreas comerciais dos projetos vinculados.';
+    } else if (next === 'promoter') {
+      msg = 'Alterar para Promoter? Terá acesso somente a Pedidos e Acompanhamento de avarias nos projetos vinculados.';
     } else if (next === 'visitante') {
       msg = 'Alterar para Visitante? Poderá visualizar o projeto vinculado e extrair relatórios, mas não editar nem acionar operações.';
     } else {
       msg = 'Rebaixar a Operador? Perderá acesso às áreas administrativas.';
     }
     if (!window.confirm(msg)) return;
-    updateRole.mutate({ id: userId, role: next });
+    updateRole.mutate({ id: userId, role: appRoleFromOption(next), comercialPerfil: comercialPerfilFromOption(next) });
   };
 
   const handleCreate = () => {
@@ -97,12 +118,20 @@ function UsersContent() {
     if (!newName.trim()) { setCreateError('Nome é obrigatório'); return; }
     if (!newEmail.trim()) { setCreateError('Email é obrigatório'); return; }
     if (!newPassword || newPassword.length < 6) { setCreateError('Senha deve ter no mínimo 6 caracteres'); return; }
-    if (newRole !== 'platform_admin' && newProjetoIds.length === 0) {
+    const role = appRoleFromOption(newRole);
+    if (role !== 'platform_admin' && newProjetoIds.length === 0) {
       setCreateError('Selecione ao menos um projeto para este usuário');
       return;
     }
     createUser.mutate(
-      { name: newName.trim(), email: newEmail.trim(), password: newPassword, role: newRole, projetoIds: newProjetoIds },
+      {
+        name: newName.trim(),
+        email: newEmail.trim(),
+        password: newPassword,
+        role,
+        comercialPerfil: comercialPerfilFromOption(newRole),
+        projetoIds: newProjetoIds,
+      },
       {
         onSuccess: () => {
           setShowCreateDialog(false);
@@ -218,7 +247,7 @@ function UsersContent() {
                   <Label>Perfil</Label>
                   <Select
                     value={newRole}
-                    onValueChange={(v) => setNewRole(v as GlobalAppRole)}
+                    onValueChange={(v) => setNewRole(v as RoleOption)}
                     disabled={createUser.isPending}
                   >
                     <SelectTrigger>
@@ -229,13 +258,14 @@ function UsersContent() {
                       <SelectItem value="visitante">Visitante</SelectItem>
                       <SelectItem value="admin">Administrador operacional</SelectItem>
                       <SelectItem value="comercial">Comercial</SelectItem>
+                      <SelectItem value="promoter">Promoter</SelectItem>
                       {isPlatformAdmin && (
                         <SelectItem value="platform_admin">Equipa da plataforma</SelectItem>
                       )}
                     </SelectContent>
                   </Select>
                 </div>
-                {newRole !== 'platform_admin' && (
+                {appRoleFromOption(newRole) !== 'platform_admin' && (
                   <div className="space-y-2">
                     <Label>Projetos com acesso</Label>
                     <div className="max-h-40 overflow-auto rounded-lg border p-2 space-y-1">
@@ -318,6 +348,13 @@ function UsersContent() {
               <p className="text-[10px] text-muted-foreground">Clientes, pedidos, oportunidades e mensagens comerciais</p>
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <Briefcase className="w-4 h-4 text-emerald-700" />
+            <div>
+              <p className="text-xs font-semibold">Promoter</p>
+              <p className="text-[10px] text-muted-foreground">Pedidos e acompanhamento de avarias</p>
+            </div>
+          </div>
           {isPlatformAdmin && (
             <div className="flex items-center gap-2">
               <Layers className="w-4 h-4 text-violet-600 dark:text-violet-400" />
@@ -398,8 +435,8 @@ function UsersContent() {
                     </span>
                   ) : (
                     <Select
-                      value={u.role}
-                      onValueChange={(val) => handleRoleChange(u.id, val as GlobalAppRole)}
+                      value={roleOptionForUser(u)}
+                      onValueChange={(val) => handleRoleChange(u.id, val as RoleOption)}
                       disabled={updateRole.isPending}
                     >
                       <SelectTrigger className="w-[min(100%,11rem)] h-9 text-sm">
@@ -410,6 +447,7 @@ function UsersContent() {
                         <SelectItem value="visitante">Visitante</SelectItem>
                         <SelectItem value="admin">Administrador operacional</SelectItem>
                         <SelectItem value="comercial">Comercial</SelectItem>
+                        <SelectItem value="promoter">Promoter</SelectItem>
                         {isPlatformAdmin && (
                           <SelectItem value="platform_admin">Equipa da plataforma</SelectItem>
                         )}
