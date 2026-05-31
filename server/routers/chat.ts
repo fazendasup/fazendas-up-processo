@@ -128,11 +128,11 @@ async function buildComercialAssistantResumo(enabled: boolean, user: User) {
       };
     }
 
-    if (comercialUsuario.perfil === "VENDEDOR") {
+    if (comercialUsuario.perfil === "PROMOTER" || comercialUsuario.perfil === "VENDEDOR") {
       return {
         disponivel: false as const,
         motivo:
-          "perfil VENDEDOR tem acesso comercial restrito à página de Pedidos; insights gerenciais exigem perfil COMERCIAL, GERENTE_COMERCIAL ou ADMIN",
+          "perfil PROMOTER tem acesso comercial restrito a Pedidos e Acompanhamento de avarias; insights gerenciais exigem perfil COMERCIAL, GERENTE_COMERCIAL ou ADMIN",
       };
     }
 

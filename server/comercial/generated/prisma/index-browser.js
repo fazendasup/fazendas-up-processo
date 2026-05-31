@@ -642,6 +642,7 @@ exports.Prisma.TemplateMensagemOrderByRelevanceFieldEnum = {
 };
 exports.PerfilUsuario = exports.$Enums.PerfilUsuario = {
   VENDEDOR: 'VENDEDOR',
+  PROMOTER: 'PROMOTER',
   GERENTE_COMERCIAL: 'GERENTE_COMERCIAL',
   COMERCIAL: 'COMERCIAL',
   OPERACOES: 'OPERACOES',

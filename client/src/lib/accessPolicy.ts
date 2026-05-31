@@ -1,9 +1,9 @@
 import { isOperationalAdminRole, type AppUserRole } from "@shared/const";
 
-export type ComercialPerfil = "VENDEDOR" | "OPERACOES" | "COMERCIAL" | "GERENTE_COMERCIAL" | "ADMIN";
+export type ComercialPerfil = "VENDEDOR" | "PROMOTER" | "OPERACOES" | "COMERCIAL" | "GERENTE_COMERCIAL" | "ADMIN";
 
 export function isPromoterPerfil(perfil: string | null | undefined): boolean {
-  return perfil === "VENDEDOR";
+  return perfil === "PROMOTER" || perfil === "VENDEDOR";
 }
 
 export function homeForUserRole(role: string | null | undefined): string {

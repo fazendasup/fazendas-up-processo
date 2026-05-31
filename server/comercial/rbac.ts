@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 
 const ordem: Record<PerfilUsuario, number> = {
   VENDEDOR: 1,
+  PROMOTER: 1,
   OPERACOES: 1,
   COMERCIAL: 2,
   GERENTE_COMERCIAL: 3,

@@ -51,7 +51,7 @@ export function Configuracoes() {
 
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
-  const [perfil, setPerfil] = useState<"GERENTE_COMERCIAL" | "COMERCIAL" | "OPERACOES" | "ADMIN">("COMERCIAL");
+  const [perfil, setPerfil] = useState<"PROMOTER" | "GERENTE_COMERCIAL" | "COMERCIAL" | "OPERACOES" | "ADMIN">("COMERCIAL");
   const [senhaTemp, setSenhaTemp] = useState("");
 
   const convidar = trpc.comercial.configuracoes.convidarUsuario.useMutation({
@@ -278,6 +278,7 @@ export function Configuracoes() {
                           onChange={(e) => setPerfil(e.target.value as typeof perfil)}
                           className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/25"
                         >
+                          <option value="PROMOTER">Promoter</option>
                           <option value="COMERCIAL">Comercial</option>
                           <option value="GERENTE_COMERCIAL">Gerente comercial</option>
                           <option value="OPERACOES">Operações</option>

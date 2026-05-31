@@ -267,7 +267,7 @@ const requireComercialModule = t.middleware(async ({ ctx, next, path }) => {
     });
   }
   if (
-    comercialUsuario.perfil === "VENDEDOR" &&
+    (comercialUsuario.perfil === "PROMOTER" || comercialUsuario.perfil === "VENDEDOR") &&
     !path.startsWith("comercial.pedidos") &&
     !path.startsWith("comercial.varejo")
   ) {

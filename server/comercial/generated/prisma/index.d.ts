@@ -146,6 +146,7 @@ export type TemplateMensagem = $Result.DefaultSelection<Prisma.$TemplateMensagem
 export namespace $Enums {
   export const PerfilUsuario: {
   VENDEDOR: 'VENDEDOR',
+  PROMOTER: 'PROMOTER',
   GERENTE_COMERCIAL: 'GERENTE_COMERCIAL',
   COMERCIAL: 'COMERCIAL',
   OPERACOES: 'OPERACOES',

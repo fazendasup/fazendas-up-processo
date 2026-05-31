@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { isPromoterPerfil } from "@/lib/accessPolicy";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -127,7 +128,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
   const diaDate = useMemo(() => new Date(`${dia}T12:00:00`), [dia]);
   const me = trpc.comercial.pedidos.me.useQuery();
   const isAdmin = me.data?.perfil === "ADMIN" || me.data?.perfil === "GERENTE_COMERCIAL";
-  const isPromoter = me.data?.perfil === "VENDEDOR";
+  const isPromoter = isPromoterPerfil(me.data?.perfil);
   const clientes = trpc.comercial.pedidos.clientes.useQuery({ busca: clienteBusca || undefined, limite: 80 });
   const clientesDoDia = trpc.comercial.pedidos.clientes.useQuery({ dia: diaDate, limite: 100 });
   const produtos = trpc.comercial.pedidos.produtos.useQuery({ incluirInativos: true });
