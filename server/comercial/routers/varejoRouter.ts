@@ -312,6 +312,19 @@ export const varejoRouter = router({
       let pedidosTotais = pedidos.length;
 
       const entregueQtdPorProduto = new Map<string, number>();
+      const sugestaoPorUnidadeProduto = new Map<
+        string,
+        {
+          contaAzulCustomerId: string;
+          unidade: string;
+          produtoId: string;
+          produtoNome: string;
+          categoria: string | null;
+          entregueQtd: number;
+          avariaQtd: number;
+          datasEntrega: Set<string>;
+        }
+      >();
       const serie = new Map<number, { entregue: number; avaria: number; valorPerdido: number; rotulo: string }>();
       const porUnidade = new Map<
         string,
@@ -335,6 +348,22 @@ export const varejoRouter = router({
         }
         return porUnidade.get(conta)!;
       };
+      const initSugestao = (conta: string, produtoId: string, produtoNome: string, categoria: string | null) => {
+        const key = `${conta}:${produtoId}`;
+        if (!sugestaoPorUnidadeProduto.has(key)) {
+          sugestaoPorUnidadeProduto.set(key, {
+            contaAzulCustomerId: conta,
+            unidade: nomePorConta.get(conta) ?? conta,
+            produtoId,
+            produtoNome,
+            categoria,
+            entregueQtd: 0,
+            avariaQtd: 0,
+            datasEntrega: new Set<string>(),
+          });
+        }
+        return sugestaoPorUnidadeProduto.get(key)!;
+      };
 
       for (const p of pedidos) {
         if (p.status === "ENTREGUE") {
@@ -347,6 +376,9 @@ export const varejoRouter = router({
             u.entregueQtd += q;
             s.entregue += q;
             entregueQtdPorProduto.set(item.produtoId, (entregueQtdPorProduto.get(item.produtoId) ?? 0) + q);
+            const sugestao = initSugestao(p.contaAzulCustomerId, item.produtoId, item.produtoNome, item.categoria);
+            sugestao.entregueQtd += q;
+            sugestao.datasEntrega.add(inicioDia(p.dataEntrega).toISOString());
           }
         } else if (p.status === "CANCELADO") {
           pedidosCancelados++;
@@ -388,6 +420,8 @@ export const varejoRouter = router({
         const u = initUnidade(a.contaAzulCustomerId);
         u.avariaQtd += q;
         u.valorPerdido += valor;
+        const sugestao = initSugestao(a.contaAzulCustomerId, a.produtoId, a.produtoNome, a.categoria);
+        sugestao.avariaQtd += q;
         const s = initSerie(a.dataEntrega);
         s.avaria += q;
         s.valorPerdido += valor;
@@ -423,6 +457,50 @@ export const varejoRouter = router({
           taxaAvaria: u.entregueQtd > 0 ? (u.avariaQtd / u.entregueQtd) * 100 : null,
         }))
         .sort((a, b) => b.valorPerdido - a.valorPerdido);
+
+      const sugestoesPedido = Array.from(sugestaoPorUnidadeProduto.values())
+        .filter((s) => s.entregueQtd > 0)
+        .map((s) => {
+          const entregas = Math.max(1, s.datasEntrega.size);
+          const mediaEntregue = s.entregueQtd / entregas;
+          const mediaAvaria = s.avariaQtd / entregas;
+          const taxaAvariaProduto = s.entregueQtd > 0 ? (s.avariaQtd / s.entregueQtd) * 100 : 0;
+          const fatorReducao = taxaAvariaProduto >= 10 ? 1 : taxaAvariaProduto >= 5 ? 0.5 : 0;
+          const quantidadeSugerida = Math.max(0, mediaEntregue - mediaAvaria * fatorReducao);
+          const acao =
+            taxaAvariaProduto >= 10
+              ? "reduzir"
+              : taxaAvariaProduto >= 5
+                ? "ajustar"
+                : "manter";
+          const confianca = entregas >= 4 ? "alta" : entregas >= 2 ? "media" : "baixa";
+          const motivo =
+            acao === "reduzir"
+              ? `Avaria alta (${taxaAvariaProduto.toFixed(1)}%). Sugestão reduz a média entregue pela média de perda.`
+              : acao === "ajustar"
+                ? `Avaria moderada (${taxaAvariaProduto.toFixed(1)}%). Sugestão reduz metade da perda média.`
+                : `Avaria controlada (${taxaAvariaProduto.toFixed(1)}%). Manter média histórica.`;
+          return {
+            unidade: s.unidade,
+            contaAzulCustomerId: s.contaAzulCustomerId,
+            produtoId: s.produtoId,
+            produtoNome: s.produtoNome,
+            categoria: s.categoria,
+            mediaEntregue,
+            mediaAvaria,
+            taxaAvaria: taxaAvariaProduto,
+            quantidadeSugerida: Math.round(quantidadeSugerida * 10) / 10,
+            entregasConsideradas: entregas,
+            acao,
+            confianca,
+            motivo,
+          };
+        })
+        .sort((a, b) => {
+          const prioridade = { reduzir: 0, ajustar: 1, manter: 2 } as const;
+          return prioridade[a.acao as keyof typeof prioridade] - prioridade[b.acao as keyof typeof prioridade] || b.taxaAvaria - a.taxaAvaria;
+        })
+        .slice(0, 16);
 
       // ----- Insights automáticos -----
       const insights: { tipo: "alerta" | "atencao" | "ok"; texto: string }[] = [];
@@ -467,6 +545,7 @@ export const varejoRouter = router({
         avariaDias,
         serieSemanal,
         breakdownUnidades,
+        sugestoesPedido,
         lancamentosRecentes: avarias
           .slice()
           .sort((a, b) => b.criadoEm.getTime() - a.criadoEm.getTime())

@@ -208,6 +208,17 @@ export function AcompanhamentoAvarias() {
         p.taxaAvaria != null ? p.taxaAvaria.toFixed(2) : "",
         String(p.valorPerdido),
       ]),
+      [],
+      ["Unidade", "Produto", "Qtd sugerida", "Media entregue", "Media avaria", "Taxa avaria %", "Acao"],
+      ...dados.sugestoesPedido.map((s: any) => [
+        s.unidade,
+        s.produtoNome,
+        String(s.quantidadeSugerida),
+        String(s.mediaEntregue.toFixed(1)),
+        String(s.mediaAvaria.toFixed(1)),
+        String(s.taxaAvaria.toFixed(1)),
+        s.acao,
+      ]),
     ];
     const csv = linhas
       .map((cols) => cols.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
@@ -549,6 +560,62 @@ export function AcompanhamentoAvarias() {
                     <span>{ins.texto}</span>
                   </div>
                 ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {dados.sugestoesPedido.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Sugestão de pedido para próxima entrega</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Baseada na média entregue e na taxa de avaria do histórico filtrado. Use como ponto de partida antes de confirmar o próximo pedido.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-2 lg:grid-cols-2">
+                  {dados.sugestoesPedido.map((s: any) => (
+                    <div key={`${s.contaAzulCustomerId}:${s.produtoId}`} className="rounded-lg border bg-background p-3 text-sm">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold">
+                            {s.produtoNome}
+                            {s.categoria ? <span className="text-muted-foreground"> · {s.categoria}</span> : null}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{s.unidade}</p>
+                        </div>
+                        <span
+                          className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                            s.acao === "reduzir"
+                              ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300"
+                              : s.acao === "ajustar"
+                                ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                                : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                          }`}
+                        >
+                          {s.acao === "reduzir" ? "Reduzir" : s.acao === "ajustar" ? "Ajustar" : "Manter"}
+                        </span>
+                      </div>
+                      <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                        <div className="rounded-md bg-muted/50 p-2">
+                          <p className="text-muted-foreground">Sugerido</p>
+                          <p className="text-lg font-bold">{fmtQtd(s.quantidadeSugerida)}</p>
+                        </div>
+                        <div className="rounded-md bg-muted/50 p-2">
+                          <p className="text-muted-foreground">Média entregue</p>
+                          <p className="font-semibold">{fmtQtd(s.mediaEntregue)}</p>
+                        </div>
+                        <div className="rounded-md bg-muted/50 p-2">
+                          <p className="text-muted-foreground">Avaria</p>
+                          <p className={`font-semibold ${taxaCor(s.taxaAvaria)}`}>{fmtPct(s.taxaAvaria)}</p>
+                        </div>
+                      </div>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {s.motivo} Confiança {s.confianca === "alta" ? "alta" : s.confianca === "media" ? "média" : "baixa"} ({s.entregasConsideradas} entrega(s)).
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}
