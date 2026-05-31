@@ -266,8 +266,12 @@ const requireComercialModule = t.middleware(async ({ ctx, next, path }) => {
         "Nenhum usuário comercial ativo vinculado. Cadastre o mesmo e-mail no módulo ou um perfil ADMIN comercial.",
     });
   }
-  if (comercialUsuario.perfil === "VENDEDOR" && !path.startsWith("comercial.pedidos")) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Vendedores acessam somente a página de Pedidos." });
+  if (
+    comercialUsuario.perfil === "VENDEDOR" &&
+    !path.startsWith("comercial.pedidos") &&
+    !path.startsWith("comercial.varejo")
+  ) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Promoters acessam somente Pedidos e Acompanhamento de avarias." });
   }
   let comercialEnv;
   try {

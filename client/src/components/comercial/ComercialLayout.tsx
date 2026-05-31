@@ -1,14 +1,28 @@
 import Header from "@/components/Header";
 import { Link, useLocation } from "wouter";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { LogOut } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import { canAccessCommercialPath, homeForCommercialPerfil, isPromoterPerfil } from "@/lib/accessPolicy";
 
 const PEDIDOS_NAV = [
   { href: "/comercial/pedidos", label: "Pedidos" },
   { href: "/comercial/estoque-vivo", label: "Estoque vivo" },
   { href: "/comercial/pedidos-historico", label: "Histórico" },
+] as const;
+
+const PROMOTER_NAV = [
+  { href: "/comercial/acompanhamento-avarias", label: "Acompanhamento avarias" },
+  { href: "/comercial/pedidos", label: "Pedido" },
+] as const;
+
+const COMERCIAL_NAV = [
+  { href: "/comercial/dashboard", label: "Painel", end: true },
+  { href: "/comercial/estoque-vivo", label: "Estoque" },
+  { href: "/comercial/pedidos", label: "Pedidos" },
+  { href: "/comercial/acompanhamento-avarias", label: "Acompanhamento avarias" },
+  { href: "/custos-producao", label: "Custo de produção" },
 ] as const;
 
 const CENTRAL_NAV = [
@@ -36,6 +50,15 @@ export function ComercialLayout({ children }: { children: ReactNode }) {
   const me = trpc.comercial.pedidos.me.useQuery(undefined, {
     staleTime: 60_000,
   });
+  const perfil = me.data?.perfil ?? null;
+  const isPromoter = isPromoterPerfil(perfil);
+  const isComercialRestrito = perfil === "COMERCIAL" || perfil === "OPERACOES";
+  useEffect(() => {
+    if (!perfil) return;
+    if (!canAccessCommercialPath(location, perfil)) {
+      window.location.replace(homeForCommercialPerfil(perfil));
+    }
+  }, [perfil, location]);
   const isPedidosArea =
     location === "/comercial/pedidos" ||
     location === "/comercial/estoque-vivo" ||
@@ -44,11 +67,13 @@ export function ComercialLayout({ children }: { children: ReactNode }) {
     location === "/comercial/acompanhamento-avarias" ||
     location.startsWith("/comercial/acompanhamento-avarias/");
   const nav =
-    me.data?.perfil === "VENDEDOR"
-      ? PEDIDOS_NAV
-      : isPedidosArea
-        ? PEDIDOS_NAV
-        : CENTRAL_NAV;
+    isPromoter
+      ? PROMOTER_NAV
+      : isComercialRestrito
+        ? COMERCIAL_NAV
+        : isPedidosArea
+          ? PEDIDOS_NAV
+          : CENTRAL_NAV;
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">

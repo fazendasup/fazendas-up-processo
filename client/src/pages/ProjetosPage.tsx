@@ -42,12 +42,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { setActiveProjetoId } from "@/lib/projeto-header";
+import { homeForUserRole } from "@/lib/accessPolicy";
 
 export { NOME_PROJETO_FAZENDA_LEGADO };
 
-/** Navega ao `/` no tick seguinte para o estado `activeProjetoId` já estar aplicado (evita `ProjetoOnboardingRedirect` voltar a `/projetos`). */
-function goHomeAfterProjetoAck(setLocation: (path: string, opts?: { replace?: boolean }) => void) {
-  queueMicrotask(() => setLocation("/"));
+/** Navega no tick seguinte para o estado `activeProjetoId` já estar aplicado (evita `ProjetoOnboardingRedirect` voltar a `/projetos`). */
+function goHomeAfterProjetoAck(setLocation: (path: string, opts?: { replace?: boolean }) => void, role: string | null | undefined) {
+  queueMicrotask(() => setLocation(homeForUserRole(role)));
 }
 
 function labelTipoProjeto(t: string) {
@@ -74,7 +75,7 @@ type EditProjetoValues = z.infer<typeof editProjetoSchema>;
 
 export default function ProjetosPage() {
   const { projetos, activeProjetoId, switchProjeto, isSwitching } = useProjeto();
-  const { isAdmin, isPlatformAdmin } = useRole();
+  const { isAdmin, isPlatformAdmin, role } = useRole();
   const utils = trpc.useUtils();
   const [, setLocation] = useLocation();
 
@@ -138,7 +139,7 @@ export default function ProjetosPage() {
       await utils.projetos.list.invalidate();
       await utils.projetos.operationalCounts.invalidate();
       switchProjeto(vars.toProjetoId);
-      goHomeAfterProjetoAck(setLocation);
+      goHomeAfterProjetoAck(setLocation, role);
     },
     onError: (err) => toast.error(err.message || "Não foi possível mover os dados"),
   });
@@ -161,7 +162,7 @@ export default function ProjetosPage() {
       await utils.projetos.operationalCounts.invalidate();
       switchProjeto(data.id);
       form.reset({ nome: "", tipo: "fazenda_vertical", descricao: "", endereco: "", usarCaixaAgua: false });
-      goHomeAfterProjetoAck(setLocation);
+      goHomeAfterProjetoAck(setLocation, role);
     },
     onError: (err) => {
       toast.error(err.message || "Não foi possível criar o projeto");
@@ -434,7 +435,7 @@ export default function ProjetosPage() {
                       </Button>
                     ) : ativo ? (
                       <Button type="button" size="sm" asChild>
-                        <Link href="/">Entrar no painel</Link>
+                        <Link href={homeForUserRole(role)}>Entrar no painel</Link>
                       </Button>
                     ) : (
                       <Button
@@ -443,7 +444,7 @@ export default function ProjetosPage() {
                         disabled={isSwitching}
                         onClick={() => {
                           switchProjeto(p.id);
-                          goHomeAfterProjetoAck(setLocation);
+                          goHomeAfterProjetoAck(setLocation, role);
                         }}
                       >
                         Entrar no painel

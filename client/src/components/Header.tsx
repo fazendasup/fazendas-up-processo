@@ -65,6 +65,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { navPermitidoPorModulo } from "@/lib/projetoModulosNav";
+import { canAccessCommercialPath, homeForUserRole, roleLabel as labelForRole } from "@/lib/accessPolicy";
 const FarmAssistantSheet = lazy(() =>
   import(/* @vite-ignore */ "@/components/FarmAssistantSheet").then(m => ({
     default: m.FarmAssistantSheet,
@@ -75,6 +76,7 @@ type NavItem = {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   requiredRole?: "admin" | "comercial";
+  comercialPerfis?: Array<"VENDEDOR" | "OPERACOES" | "COMERCIAL" | "GERENTE_COMERCIAL" | "ADMIN">;
   projetoTipo?: "fazenda_vertical" | "hidroponia";
 };
 
@@ -93,19 +95,13 @@ const ANALISE_ADMIN_PREFIX: NavItem[] = [
     icon: LayoutGrid,
     requiredRole: "admin",
   },
-  {
-    href: "/analytics",
-    label: "Analytics",
-    icon: BarChart3,
-    requiredRole: "admin",
-  },
-  {
-    href: "/custos-producao",
-    label: "Custos de produção",
-    icon: Coins,
-    requiredRole: "admin",
-  },
 ];
+
+const ANALISE_ANALYTICS: NavItem = {
+  href: "/analytics",
+  label: "Analytics",
+  icon: BarChart3,
+};
 
 const ANALISE_TODOS: NavItem = {
   href: "/inteligencia",
@@ -120,6 +116,13 @@ const ANALISE_VISAO: NavItem = {
 
 const COMERCIAL_ITEMS: NavItem[] = [
   {
+    href: "/comercial/estoque-vivo",
+    label: "Estoque",
+    icon: Package,
+    requiredRole: "comercial",
+    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
+  },
+  {
     href: "/comercial/pedidos",
     label: "Pedidos",
     icon: CalendarClock,
@@ -130,6 +133,7 @@ const COMERCIAL_ITEMS: NavItem[] = [
     label: "Painel comercial",
     icon: Briefcase,
     requiredRole: "comercial",
+    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
   },
   {
     href: "/comercial/acompanhamento-avarias",
@@ -137,15 +141,16 @@ const COMERCIAL_ITEMS: NavItem[] = [
     icon: BarChart3,
     requiredRole: "comercial",
   },
+  {
+    href: "/custos-producao",
+    label: "Custo de produção",
+    icon: Coins,
+    requiredRole: "comercial",
+    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
+  },
 ];
 
 const SISTEMA_EXTRAS_ADMIN: NavItem[] = [
-  {
-    href: "/receitas",
-    label: "Receitas e cadastros",
-    icon: BookOpen,
-    requiredRole: "admin",
-  },
   {
     href: "/config",
     label: "Configurações",
@@ -153,16 +158,23 @@ const SISTEMA_EXTRAS_ADMIN: NavItem[] = [
     requiredRole: "admin",
   },
   {
-    href: "/ciclos",
-    label: "Ciclos",
-    icon: CalendarClock,
-    requiredRole: "admin",
-  },
-  {
     href: "/administracao",
     label: "Administração",
     icon: Users,
     requiredRole: "admin",
+  },
+];
+
+const SISTEMA_PROCESSO_ITEMS: NavItem[] = [
+  {
+    href: "/receitas",
+    label: "Receitas e cadastros",
+    icon: BookOpen,
+  },
+  {
+    href: "/ciclos",
+    label: "Ciclos",
+    icon: CalendarClock,
   },
 ];
 
@@ -223,7 +235,7 @@ export default function Header() {
   const [location] = useLocation();
   const { exportCSV, backupJSON } = useFazenda();
   const mutations = useFazendaMutations();
-  const { isAdmin, isComercial, canAccessComercial, isLoggedIn } = useRole();
+  const { isAdmin, isComercial, canAccessComercial, canAccessProcesso, isLoggedIn } = useRole();
   const { user, logout } = useAuth();
   const {
     projetos,
@@ -239,9 +251,14 @@ export default function Header() {
     ),
     refetchInterval: 60000,
   });
+  const comercialMe = trpc.comercial.pedidos.me.useQuery(undefined, {
+    enabled: Boolean(isLoggedIn && activeProjetoId && canAccessComercial && modulosAtivos?.comercial),
+    staleTime: 60_000,
+  });
+  const comercialPerfil = comercialMe.data?.perfil ?? null;
 
   const operacaoItems = useMemo(() => {
-    if (!isLoggedIn || activeProjetoId == null) return [] as NavItem[];
+    if (!isLoggedIn || activeProjetoId == null || !canAccessProcesso) return [] as NavItem[];
     return OPERACAO_ITEMS.filter(item => {
       if (item.requiredRole === "admin" && !isAdmin) return false;
       if (item.requiredRole === "comercial" && !canAccessComercial)
@@ -255,6 +272,7 @@ export default function Header() {
     });
   }, [
     canAccessComercial,
+    canAccessProcesso,
     isAdmin,
     isLoggedIn,
     activeProjeto?.tipo,
@@ -263,9 +281,10 @@ export default function Header() {
   ]);
 
   const analiseItems = useMemo(() => {
-    if (!isLoggedIn || activeProjetoId == null) return [] as NavItem[];
+    if (!isLoggedIn || activeProjetoId == null || !canAccessProcesso) return [] as NavItem[];
     const list: NavItem[] = [];
     if (isAdmin) list.push(...ANALISE_ADMIN_PREFIX);
+    list.push(ANALISE_ANALYTICS);
     if (!isComercial) {
       list.push(ANALISE_TODOS);
       list.push(ANALISE_VISAO);
@@ -279,6 +298,7 @@ export default function Header() {
     });
   }, [
     canAccessComercial,
+    canAccessProcesso,
     isAdmin,
     isComercial,
     isLoggedIn,
@@ -289,15 +309,18 @@ export default function Header() {
   const comercialItems = useMemo(() => {
     if (!isLoggedIn || activeProjetoId == null || !canAccessComercial)
       return [] as NavItem[];
-    return COMERCIAL_ITEMS.filter(item =>
-      navPermitidoPorModulo(item.href, modulosAtivos)
-    );
-  }, [activeProjetoId, canAccessComercial, isLoggedIn, modulosAtivos]);
+    return COMERCIAL_ITEMS.filter(item => {
+      if (item.comercialPerfis && (!comercialPerfil || !item.comercialPerfis.includes(comercialPerfil as any))) return false;
+      if (!canAccessCommercialPath(item.href, comercialPerfil)) return false;
+      return navPermitidoPorModulo(item.href, modulosAtivos);
+    });
+  }, [activeProjetoId, canAccessComercial, comercialPerfil, isLoggedIn, modulosAtivos]);
 
   const sistemaItems = useMemo(() => {
     if (!isLoggedIn) return [] as NavItem[];
     const list: NavItem[] = [PROJETOS_ITEM];
     if (activeProjetoId == null) return list;
+    if (canAccessProcesso) list.push(...SISTEMA_PROCESSO_ITEMS);
     if (isAdmin) list.push(...SISTEMA_EXTRAS_ADMIN);
     return list.filter(item => {
       if (item.requiredRole === "admin" && !isAdmin) return false;
@@ -307,7 +330,7 @@ export default function Header() {
       }
       return true;
     });
-  }, [isAdmin, isLoggedIn, activeProjeto?.tipo, activeProjetoId]);
+  }, [canAccessProcesso, isAdmin, isLoggedIn, activeProjeto?.tipo, activeProjetoId]);
 
   const analiseGroupActive = useMemo(
     () => analiseItems.some(item => pathMatchesNav(location, item.href)),
@@ -343,14 +366,7 @@ export default function Header() {
     window.location.href = "/login";
   };
 
-  const roleLabel =
-    user?.role === "platform_admin"
-      ? "Equipe FUP"
-      : isAdmin
-        ? "Administrador"
-        : isComercial
-          ? "Comercial"
-          : "Operador";
+  const roleLabel = labelForRole(user?.role, comercialPerfil);
   const displayName = user?.name?.trim() || "Usuário";
   /** Evita "Administrador" em cima e "ADMINISTRADOR" embaixo quando o nome já é o papel */
   const showRoleLine = displayName.toLowerCase() !== roleLabel.toLowerCase();
@@ -360,7 +376,7 @@ export default function Header() {
       <div className="app-header-toolbar flex h-[3.25rem] w-full min-w-0 max-w-full flex-nowrap items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:thin]">
         {/* Logo */}
         <Link
-          href={activeProjetoId != null ? "/" : "/projetos"}
+          href={activeProjetoId != null ? homeForUserRole(user?.role) : "/projetos"}
           className="flex items-center gap-2 no-underline shrink-0 group"
         >
           <div className="app-logo-mark w-9 h-9 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-[1.03]">
@@ -668,7 +684,7 @@ export default function Header() {
             </div>
           )}
 
-          {isLoggedIn && activeProjetoId != null && (
+          {isLoggedIn && activeProjetoId != null && canAccessProcesso && (
             <Button
               type="button"
               variant="outline"
@@ -681,15 +697,17 @@ export default function Header() {
             </Button>
           )}
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="hidden 2xl:flex gap-1.5 text-xs h-9"
-            onClick={exportCSV}
-          >
-            <FileDown className="w-3.5 h-3.5" />
-            CSV
-          </Button>
+          {canAccessProcesso && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="hidden 2xl:flex gap-1.5 text-xs h-9"
+              onClick={exportCSV}
+            >
+              <FileDown className="w-3.5 h-3.5" />
+              CSV
+            </Button>
+          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -731,7 +749,7 @@ export default function Header() {
               <div className="2xl:hidden">
                 {isLoggedIn && (
                   <>
-                    {activeProjetoId != null && (
+                    {activeProjetoId != null && canAccessProcesso && (
                       <DropdownMenuItem
                         className="flex items-center gap-2 py-2.5"
                         onClick={() => setFarmAssistantOpen(true)}
@@ -905,20 +923,24 @@ export default function Header() {
                 )}
               </div>
 
-              <DropdownMenuItem
-                onClick={exportCSV}
-                className="flex items-center gap-2 2xl:hidden"
-              >
-                <FileDown className="w-4 h-4" />
-                Exportar CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={backupJSON}
-                className="flex items-center gap-2"
-              >
-                <Download className="w-4 h-4" />
-                Backup JSON
-              </DropdownMenuItem>
+              {canAccessProcesso && (
+                <>
+                  <DropdownMenuItem
+                    onClick={exportCSV}
+                    className="flex items-center gap-2 2xl:hidden"
+                  >
+                    <FileDown className="w-4 h-4" />
+                    Exportar CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={backupJSON}
+                    className="flex items-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    Backup JSON
+                  </DropdownMenuItem>
+                </>
+              )}
 
               {/* Admin-only actions */}
               {isAdmin && (

@@ -13,6 +13,9 @@ import { TipoProjetoRouteGuard } from "./components/TipoProjetoRouteGuard";
 import { ModuloProjetoRouteGuard } from "./components/ModuloProjetoRouteGuard";
 import { SyncDocumentTitle } from "./components/SyncDocumentTitle";
 import { RoutePageFallback } from "./components/RoutePageFallback";
+import { useAuth } from "./_core/hooks/useAuth";
+import { canAccessCommercialPath, homeForCommercialPerfil, homeForUserRole } from "./lib/accessPolicy";
+import { trpc } from "./lib/trpc";
 
 const LoginPage = lazy(() => import(/* @vite-ignore */"./pages/LoginPage"));
 const PrivacidadePage = lazy(() => import(/* @vite-ignore */"./pages/PrivacidadePage"));
@@ -41,6 +44,31 @@ const ModulosPlataformaPage = lazy(() => import(/* @vite-ignore */"./pages/Modul
 const ComercialRoutes = lazy(() => import(/* @vite-ignore */"./pages/ComercialRoutes"));
 const NotFound = lazy(() => import(/* @vite-ignore */"./pages/NotFound"));
 
+function RoleRootRoute() {
+  const { user } = useAuth();
+  const home = homeForUserRole(user?.role);
+  if (home !== "/") return <Redirect to={home} />;
+  return (
+    <ProtectedRoute requiredRole="processo">
+      <Home />
+    </ProtectedRoute>
+  );
+}
+
+function ComercialPerfilRouteGuard({ path, children }: { path: string; children: React.ReactNode }) {
+  const { user } = useAuth();
+  const me = trpc.comercial.pedidos.me.useQuery(undefined, {
+    enabled: user?.role === "comercial",
+    staleTime: 60_000,
+  });
+  if (user?.role !== "comercial") return <>{children}</>;
+  if (!me.data) return <RoutePageFallback />;
+  if (!canAccessCommercialPath(path, me.data.perfil)) {
+    return <Redirect to={homeForCommercialPerfil(me.data.perfil)} />;
+  }
+  return <>{children}</>;
+}
+
 function Router() {
   return (
     <>
@@ -53,11 +81,7 @@ function Router() {
           <Route path="/privacidade/" component={PrivacidadePage} />
 
           <Route path="/">
-            {() => (
-              <ProtectedRoute requiredRole="processo">
-                <Home />
-              </ProtectedRoute>
-            )}
+            {() => <RoleRootRoute />}
           </Route>
 
           <Route path="/hoje">
@@ -67,7 +91,7 @@ function Router() {
           </Route>
 
           <Route path="/analytics">
-            <ProtectedRoute requiredRole="admin">
+            <ProtectedRoute requiredRole="processo">
               <AnalyticsPage />
             </ProtectedRoute>
           </Route>
@@ -109,7 +133,7 @@ function Router() {
           </Route>
 
           <Route path="/ciclos">
-            <ProtectedRoute requiredRole="admin">
+            <ProtectedRoute requiredRole="processo">
               <CiclosPage />
             </ProtectedRoute>
           </Route>
@@ -139,23 +163,25 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/custos-producao">
-            <ProtectedRoute requiredRole="admin">
+            <ProtectedRoute requiredRole="comercial">
               <ModuloProjetoRouteGuard modulo="custos_producao">
-                <CustosProducaoPage />
+                <ComercialPerfilRouteGuard path="/custos-producao">
+                  <CustosProducaoPage />
+                </ComercialPerfilRouteGuard>
               </ModuloProjetoRouteGuard>
             </ProtectedRoute>
           </Route>
           <Route path="/comercial">
             <ProtectedRoute requiredRole="comercial">
               <ModuloProjetoRouteGuard modulo="comercial">
-                <Redirect to="/comercial/pedidos" />
+                <ComercialRoutes />
               </ModuloProjetoRouteGuard>
             </ProtectedRoute>
           </Route>
           <Route path="/comercial/">
             <ProtectedRoute requiredRole="comercial">
               <ModuloProjetoRouteGuard modulo="comercial">
-                <Redirect to="/comercial/pedidos" />
+                <ComercialRoutes />
               </ModuloProjetoRouteGuard>
             </ProtectedRoute>
           </Route>
@@ -167,12 +193,12 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/receitas">
-            <ProtectedRoute requiredRole="admin">
+            <ProtectedRoute requiredRole="processo">
               <ReceitasPage />
             </ProtectedRoute>
           </Route>
           <Route path="/cadastros">
-            <ProtectedRoute requiredRole="admin">
+            <ProtectedRoute requiredRole="processo">
               <ReceitasPage />
             </ProtectedRoute>
           </Route>

@@ -3,13 +3,7 @@ import { useLocation } from "wouter";
 import { isOperationalAdminRole } from "@shared/const";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useProjeto } from "@/contexts/ProjetoContext";
-
-function landingForUserRole(role: string | null | undefined): string {
-  if (role === "comercial") {
-    return "/comercial/pedidos";
-  }
-  return "/";
-}
+import { homeForUserRole } from "@/lib/accessPolicy";
 
 /**
  * Só após escolher ou criar projeto em /projetos é que o restante da app fica acessível.
@@ -30,14 +24,14 @@ export function ProjetoOnboardingRedirect({ children }: { children: React.ReactN
     if (isProjetos && isAdmin) return;
 
     if (!isAdmin && activeProjetoId != null && isProjetos) {
-      setLocation(landingForUserRole(user.role), { replace: true });
+      setLocation(homeForUserRole(user.role), { replace: true });
       return;
     }
 
     const projetosAtivos = projetos.filter(p => p.status === "ativo");
     if (!isAdmin && activeProjetoId == null && projetosAtivos.length > 0) {
       switchProjeto(projetosAtivos[0]!.id);
-      setLocation(landingForUserRole(user.role), { replace: true });
+      setLocation(homeForUserRole(user.role), { replace: true });
       return;
     }
 

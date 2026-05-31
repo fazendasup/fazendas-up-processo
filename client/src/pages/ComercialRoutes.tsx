@@ -1,7 +1,9 @@
 import { lazy, Suspense } from "react";
-import { Redirect, Route, Switch } from "wouter";
+import { Redirect, Route, Switch, useLocation } from "wouter";
 import { ComercialLayout } from "@/components/comercial/ComercialLayout";
 import { RoutePageFallback } from "@/components/RoutePageFallback";
+import { trpc } from "@/lib/trpc";
+import { canAccessCommercialPath, homeForCommercialPerfil } from "@/lib/accessPolicy";
 
 const Dashboard = lazy(() =>
   import("./comercial/Dashboard").then(m => ({ default: m.Dashboard }))
@@ -44,7 +46,19 @@ const Configuracoes = lazy(() =>
   import("./comercial/Configuracoes").then(m => ({ default: m.Configuracoes }))
 );
 
+function ComercialHomeRedirect() {
+  const me = trpc.comercial.pedidos.me.useQuery(undefined, { staleTime: 60_000 });
+  if (!me.data) return <RoutePageFallback />;
+  return <Redirect to={homeForCommercialPerfil(me.data.perfil)} />;
+}
+
 export default function ComercialRoutes() {
+  const [location] = useLocation();
+  const me = trpc.comercial.pedidos.me.useQuery(undefined, { staleTime: 60_000 });
+  if (!me.data) return <RoutePageFallback />;
+  if (!canAccessCommercialPath(location, me.data.perfil)) {
+    return <Redirect to={homeForCommercialPerfil(me.data.perfil)} />;
+  }
   return (
     <ComercialLayout>
       <Suspense fallback={<RoutePageFallback />}>
@@ -73,7 +87,7 @@ export default function ComercialRoutes() {
           <Route path="/comercial/execucoes" component={Execucoes} />
           <Route path="/comercial/configuracoes" component={Configuracoes} />
           <Route path="/comercial">
-            <Redirect to="/comercial/pedidos" />
+            <ComercialHomeRedirect />
           </Route>
         </Switch>
       </Suspense>

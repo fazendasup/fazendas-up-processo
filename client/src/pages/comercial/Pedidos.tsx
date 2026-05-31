@@ -127,6 +127,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
   const diaDate = useMemo(() => new Date(`${dia}T12:00:00`), [dia]);
   const me = trpc.comercial.pedidos.me.useQuery();
   const isAdmin = me.data?.perfil === "ADMIN" || me.data?.perfil === "GERENTE_COMERCIAL";
+  const isPromoter = me.data?.perfil === "VENDEDOR";
   const clientes = trpc.comercial.pedidos.clientes.useQuery({ busca: clienteBusca || undefined, limite: 80 });
   const clientesDoDia = trpc.comercial.pedidos.clientes.useQuery({ dia: diaDate, limite: 100 });
   const produtos = trpc.comercial.pedidos.produtos.useQuery({ incluirInativos: true });
@@ -152,7 +153,10 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
     { enabled: Boolean(pedidoAuditoriaId) },
   );
   const dashboard = trpc.comercial.pedidos.dashboard.useQuery({ dia: diaDate });
-  const compras = trpc.comercial.pedidos.compras.useQuery({ dia: diaDate, incluirOcultos: false });
+  const compras = trpc.comercial.pedidos.compras.useQuery(
+    { dia: diaDate, incluirOcultos: false },
+    { enabled: !isPromoter },
+  );
   const statusSemana = trpc.comercial.pedidos.statusSemana.useQuery({ dia: diaDate });
   const bloqueioSemana = statusSemana.data?.bloqueio ?? null;
   const podeCriarPedidos = statusSemana.data ? statusSemana.data.podeCriarPedidos : true;
@@ -551,9 +555,9 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
         <TabsList className="flex h-auto flex-wrap">
           <TabsTrigger value="operacional">Dashboard operacional</TabsTrigger>
           <TabsTrigger value="agenda">Emissão / Agenda</TabsTrigger>
-          <TabsTrigger value="regras">Regras comerciais</TabsTrigger>
-          <TabsTrigger value="produtos">Produtos</TabsTrigger>
-          <TabsTrigger value="compras">Estoque vivo / compras</TabsTrigger>
+          {!isPromoter && <TabsTrigger value="regras">Regras comerciais</TabsTrigger>}
+          {!isPromoter && <TabsTrigger value="produtos">Produtos</TabsTrigger>}
+          {!isPromoter && <TabsTrigger value="compras">Estoque vivo / compras</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="operacional" className="space-y-3">
