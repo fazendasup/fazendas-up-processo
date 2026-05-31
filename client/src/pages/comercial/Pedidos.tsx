@@ -474,7 +474,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
               {isAdmin && bloqueioSemana.pendentes === 0 && (
                 <Button
                   className="bg-red-600 hover:bg-red-700"
-                  disabled={fecharSemana.isPending}
+                  disabled={fecharSemana.isPending || !statusSemana.data?.conciliacaoBloqueio?.conciliado}
                   onClick={fecharSemanaBloqueante}
                 >
                   {fecharSemana.isPending ? "Fechando..." : `Fechar semana ${bloqueioSemana.rotulo}`}
@@ -482,6 +482,9 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
               )}
             </div>
           </div>
+          {statusSemana.data?.conciliacaoBloqueio && (
+            <PainelConciliacaoFechamento conciliacao={statusSemana.data.conciliacaoBloqueio} className="mt-3" />
+          )}
         </div>
       ) : statusSemana.data?.semanaAtual ? (
         <div className="rounded-lg border bg-muted/30 p-4">
@@ -528,12 +531,19 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
                   </Button>
                 ) : statusSemana.data.semanaAtual.totalPedidos > 0 ? (
                   <span className="text-xs text-muted-foreground">
-                    Defina entregue/cancelado em todos os pedidos para fechar.
+                    {statusSemana.data.semanaAtual.pendentes > 0
+                      ? "Defina entregue/cancelado em todos os pedidos para fechar."
+                      : statusSemana.data.conciliacaoContaAzul?.conciliado === false
+                        ? "Corrija divergências com o Conta Azul antes de fechar."
+                        : "Revise a semana antes de fechar."}
                   </span>
                 ) : null}
               </div>
             )}
           </div>
+          {statusSemana.data.conciliacaoContaAzul && (
+            <PainelConciliacaoFechamento conciliacao={statusSemana.data.conciliacaoContaAzul} className="mt-3" />
+          )}
         </div>
       ) : null}
 
@@ -1254,6 +1264,60 @@ function formatQuantidade(value: unknown) {
   return n.toLocaleString("pt-BR", { maximumFractionDigits: 3 });
 }
 
+function PainelConciliacaoFechamento({ conciliacao, className = "" }: { conciliacao: any; className?: string }) {
+  if (!conciliacao) return null;
+  const divergentes = (conciliacao.clientes ?? []).filter((c: any) => c.divergente);
+  const resumo = conciliacao.resumo ?? {};
+
+  return (
+    <div className={`rounded-lg border bg-background/80 p-3 text-sm ${className}`}>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <p className="font-semibold">Conciliação com Conta Azul</p>
+          <p className="text-xs text-muted-foreground">
+            Operacional: {fmtMoney(resumo.operacionalValor ?? 0)} · Conta Azul: {fmtMoney(resumo.contaAzulValor ?? 0)}
+            {resumo.descontoBoletoTotal > 0 ? ` · Desc. boleto KPI: ${fmtMoney(resumo.descontoBoletoTotal)}` : ""}
+          </p>
+          {conciliacao.ultimaSincronizacaoContaAzul && (
+            <p className="text-[11px] text-muted-foreground">
+              Última sync Conta Azul: {new Date(conciliacao.ultimaSincronizacaoContaAzul).toLocaleString("pt-BR")}
+            </p>
+          )}
+        </div>
+        <span
+          className={`rounded-full px-2 py-1 text-xs font-semibold ${
+            conciliacao.conciliado
+              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
+              : "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+          }`}
+        >
+          {conciliacao.conciliado ? "Conciliado" : `${divergentes.length} divergência(s)`}
+        </span>
+      </div>
+      {!conciliacao.conciliado && (
+        <>
+          <p className="mt-2 text-xs text-amber-800 dark:text-amber-200">
+            Corrija no Conta Azul ou no pedido e sincronize novamente antes de fechar a semana.
+          </p>
+          <div className="mt-2 space-y-1">
+            {divergentes.slice(0, 6).map((c: any) => (
+              <div key={c.contaAzulCustomerId} className="rounded-md border bg-muted/30 px-2 py-1 text-xs">
+                <span className="font-medium">{c.clienteNome}</span>
+                {" · pedidos "}
+                {c.operacional?.pedidos ?? 0}/{c.contaAzul?.pedidos ?? 0}
+                {" · un "}
+                {fmtQtd(c.operacional?.unidades ?? 0)}/{fmtQtd(c.contaAzul?.unidades ?? 0)}
+                {" · valor "}
+                {fmtMoney(c.operacional?.valorEstimado ?? 0)}/{fmtMoney(c.contaAzul?.valorLiquido ?? 0)}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function RegrasResumo({ regra }: { regra: any }) {
   if (!regra) {
     return (
@@ -1264,6 +1328,10 @@ function RegrasResumo({ regra }: { regra: any }) {
   }
   const entrega = `${regra.periodoEntrega || "Sem período"}${regra.horarioMaximoEntrega ? ` até ${regra.horarioMaximoEntrega}` : ""}`;
   const boleto = regra.prazoBoletoDias == null ? "Padrão" : `${regra.prazoBoletoDias} dias`;
+  const descontoBoleto =
+    regra.descontoBoletoPercentual == null || Number(regra.descontoBoletoPercentual) <= 0
+      ? "Sem desconto"
+      : `${Number(regra.descontoBoletoPercentual)}% no boleto`;
   const acumulacao = regra.acumulaPedidos ? `Acumula ${regra.diasAcumulo ?? "?"} dias` : "Não acumula";
   const entregaTaxa = regra.cobraTaxaEntrega ? "Cobra entrega" : "Sem taxa entrega";
 
@@ -1273,6 +1341,7 @@ function RegrasResumo({ regra }: { regra: any }) {
       <div className="grid gap-1.5 sm:grid-cols-2">
         <RegraChip label="Entrega" value={entrega} className="border-sky-200 bg-sky-50 text-sky-900 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-100" />
         <RegraChip label="Boleto" value={boleto} className="border-violet-200 bg-violet-50 text-violet-900 dark:border-violet-900 dark:bg-violet-950/30 dark:text-violet-100" />
+        <RegraChip label="Desc. boleto" value={descontoBoleto} className="border-fuchsia-200 bg-fuchsia-50 text-fuchsia-900 dark:border-fuchsia-900 dark:bg-fuchsia-950/30 dark:text-fuchsia-100" />
         <RegraChip label="Faturamento" value={acumulacao} className="border-orange-200 bg-orange-50 text-orange-900 dark:border-orange-900 dark:bg-orange-950/30 dark:text-orange-100" />
         <RegraChip label="Taxa" value={entregaTaxa} className="border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100" />
       </div>
@@ -1342,6 +1411,7 @@ function RegrasClienteArea({ clientes, busca, setBusca, clienteId, setClienteId,
               </div>
               <Field label="Horário máximo" value={merged.horarioMaximoEntrega ?? ""} onChange={(v: string) => setForm((f: any) => ({ ...f, horarioMaximoEntrega: v }))} type="time" />
               <Field label="Prazo boleto (dias)" value={merged.prazoBoletoDias ?? ""} onChange={(v: string) => setForm((f: any) => ({ ...f, prazoBoletoDias: v ? Number(v) : null }))} type="number" />
+              <Field label="Desconto em boleto (%)" value={merged.descontoBoletoPercentual ?? ""} onChange={(v: string) => setForm((f: any) => ({ ...f, descontoBoletoPercentual: v ? Number(v) : null }))} type="number" />
               <Check label="Cobra taxa de entrega" checked={Boolean(merged.cobraTaxaEntrega)} onChange={(v: boolean) => setForm((f: any) => ({ ...f, cobraTaxaEntrega: v }))} />
               <Check label="Acumula pedidos" checked={Boolean(merged.acumulaPedidos)} onChange={(v: boolean) => setForm((f: any) => ({ ...f, acumulaPedidos: v }))} />
               <Field label="Dias de acúmulo" value={merged.diasAcumulo ?? ""} onChange={(v: string) => setForm((f: any) => ({ ...f, diasAcumulo: v ? Number(v) : null }))} type="number" />
@@ -1374,6 +1444,7 @@ function RegrasClienteArea({ clientes, busca, setBusca, clienteId, setClienteId,
                   horarioMaximoEntrega: merged.horarioMaximoEntrega ?? null,
                   cobraTaxaEntrega: Boolean(merged.cobraTaxaEntrega),
                   prazoBoletoDias: merged.prazoBoletoDias ?? null,
+                  descontoBoletoPercentual: merged.descontoBoletoPercentual ?? null,
                   acumulaPedidos: Boolean(merged.acumulaPedidos),
                   diasAcumulo: merged.diasAcumulo ?? null,
                   prazoBoletoAcumuloDias: merged.prazoBoletoAcumuloDias ?? null,

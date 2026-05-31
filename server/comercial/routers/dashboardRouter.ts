@@ -15,6 +15,7 @@ import {
   classificarStatusPedido,
   pedidoContaOrcamento,
 } from "../lib/pedido-status.js";
+import { composicaoGerencialDoPedido, mapDescontoBoletoPorClienteId } from "../lib/valor-gerencial.js";
 import {
   diaIsoAmericaSp,
   mesIsoAmericaSp,
@@ -99,6 +100,9 @@ export const dashboardRouter = router({
       );
       const ticketMensalPorCliente = new Map<string, number>();
       let vendasComposicaoIncompleta = 0;
+      let valorLiquidoContaAzul = 0;
+      let descontoBoletoTotal = 0;
+      const descontoPorCliente = await mapDescontoBoletoPorClienteId(ctx.prisma!);
 
       for (const p of pedidos) {
         if (!pedidoNoMesCalendarioSp(p.dataPedido, input.inicio, input.fim))
@@ -106,16 +110,21 @@ export const dashboardRouter = router({
         const comp = composicaoDoPedidoParaDashboard(p);
         const cls = classificarStatusPedido(p.statusPedido);
         if (cls === "venda") {
-          somarTotais(composicaoVendas, comp);
-          somarTotais(composicaoVendasPorTipo[p.cliente.tipo], comp);
-          ticketPorTipo[p.cliente.tipo].total += comp.valorLiquido;
+          const pct = descontoPorCliente.get(p.clienteId) ?? 0;
+          const gerencial = composicaoGerencialDoPedido(comp, pct);
+          valorLiquidoContaAzul += comp.valorLiquido;
+          descontoBoletoTotal += gerencial.descontoBoletoValor;
+          const compKpi = { ...comp, valorLiquido: gerencial.valorGerencial };
+          somarTotais(composicaoVendas, compKpi);
+          somarTotais(composicaoVendasPorTipo[p.cliente.tipo], compKpi);
+          ticketPorTipo[p.cliente.tipo].total += gerencial.valorGerencial;
           ticketPorTipo[p.cliente.tipo].pedidos += 1;
           ticketPorTipo[p.cliente.tipo].clientes.add(p.clienteId);
           const clienteMesKey = `${p.clienteId}|${mesIsoAmericaSp(p.dataPedido)}`;
           ticketPorTipo[p.cliente.tipo].clienteMeses.add(clienteMesKey);
           ticketMensalPorCliente.set(
             clienteMesKey,
-            (ticketMensalPorCliente.get(clienteMesKey) ?? 0) + comp.valorLiquido
+            (ticketMensalPorCliente.get(clienteMesKey) ?? 0) + gerencial.valorGerencial,
           );
           pedidosVenda.push(p);
           if (pedidoComposicaoProvavelmenteIncompleta(p))
@@ -219,6 +228,8 @@ export const dashboardRouter = router({
           mensagensPendentes,
           composicaoVendas,
           composicaoOrcamentos,
+          valorLiquidoContaAzul,
+          descontoBoletoTotal,
           composicaoVendasPorTipo,
           composicaoOrcamentosPorTipo,
           ticketMedioPorTipo: Object.values(TipoCliente).map(tipo => {

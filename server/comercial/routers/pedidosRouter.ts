@@ -16,6 +16,7 @@ import {
   calcularStatusSemana,
   primeiraSemanaBloqueante,
 } from "../lib/fechamento.js";
+import { calcularConciliacaoSemanal } from "../lib/conciliacao-semanal.js";
 import { fimSemana, inicioSemana } from "../lib/semana.js";
 import { comercialProcedure, comercialRequirePerfis, router } from "../../_core/trpc";
 
@@ -409,6 +410,7 @@ export const pedidosRouter = router({
         horarioMaximoEntrega: z.string().nullable().optional(),
         cobraTaxaEntrega: z.boolean().default(false),
         prazoBoletoDias: z.number().int().nonnegative().nullable().optional(),
+        descontoBoletoPercentual: z.number().min(0).max(100).nullable().optional(),
         acumulaPedidos: z.boolean().default(false),
         diasAcumulo: z.number().int().nonnegative().nullable().optional(),
         prazoBoletoAcumuloDias: z.number().int().nonnegative().nullable().optional(),
@@ -430,6 +432,8 @@ export const pedidosRouter = router({
             horarioMaximoEntrega: input.horarioMaximoEntrega || null,
             cobraTaxaEntrega: input.cobraTaxaEntrega,
             prazoBoletoDias: input.prazoBoletoDias ?? null,
+            descontoBoletoPercentual:
+              input.descontoBoletoPercentual == null ? null : new Prisma.Decimal(input.descontoBoletoPercentual),
             acumulaPedidos: input.acumulaPedidos,
             diasAcumulo: input.diasAcumulo ?? null,
             prazoBoletoAcumuloDias: input.prazoBoletoAcumuloDias ?? null,
@@ -440,6 +444,8 @@ export const pedidosRouter = router({
             horarioMaximoEntrega: input.horarioMaximoEntrega || null,
             cobraTaxaEntrega: input.cobraTaxaEntrega,
             prazoBoletoDias: input.prazoBoletoDias ?? null,
+            descontoBoletoPercentual:
+              input.descontoBoletoPercentual == null ? null : new Prisma.Decimal(input.descontoBoletoPercentual),
             acumulaPedidos: input.acumulaPedidos,
             diasAcumulo: input.diasAcumulo ?? null,
             prazoBoletoAcumuloDias: input.prazoBoletoAcumuloDias ?? null,
@@ -899,79 +905,31 @@ export const pedidosRouter = router({
       const statusResumo = STATUS_PEDIDO.reduce<Record<string, number>>((acc, s) => ({ ...acc, [s]: 0 }), {});
       const clientes = new Set<string>();
       const produtos = new Map<string, { nome: string; categoria: string | null; quantidade: number; pedidos: number }>();
-      const operacionalPorCliente = new Map<string, { clienteNome: string; pedidos: number; unidades: number; valorEstimado: number }>();
-      const contaAzulPorCliente = new Map<string, { clienteNome: string; pedidos: number; unidades: number; valorLiquido: number }>();
       let unidades = 0;
       let valorEstimado = 0;
-      let unidadesContaAzul = 0;
-      let valorContaAzul = 0;
 
       for (const pedido of pedidos) {
         statusResumo[pedido.status] = (statusResumo[pedido.status] ?? 0) + 1;
         clientes.add(pedido.contaAzulCustomerId);
-        const opCliente = operacionalPorCliente.get(pedido.contaAzulCustomerId) ?? {
-          clienteNome: pedido.cliente?.nome ?? pedido.contaAzulCustomerId,
-          pedidos: 0,
-          unidades: 0,
-          valorEstimado: 0,
-        };
-        if (pedido.status !== "CANCELADO") opCliente.pedidos += 1;
         for (const item of pedido.itens) {
           const quantidade = Number(item.quantidade);
           unidades += quantidade;
           const valorItem = quantidade * (money(item.precoUnit) ?? 0);
           valorEstimado += valorItem;
-          if (pedido.status !== "CANCELADO") {
-            opCliente.unidades += quantidade;
-            opCliente.valorEstimado += valorItem;
-          }
           const key = item.produtoNome;
           const atual = produtos.get(key) ?? { nome: item.produtoNome, categoria: item.categoria, quantidade: 0, pedidos: 0 };
           atual.quantidade += quantidade;
           atual.pedidos += 1;
           produtos.set(key, atual);
         }
-        operacionalPorCliente.set(pedido.contaAzulCustomerId, opCliente);
       }
 
-      for (const venda of vendasContaAzul) {
-        const contaAzulCustomerId = venda.cliente.externalId ?? venda.cliente.id;
-        const comp = composicaoDoPedidoParaDashboard(venda);
-        const totalUnidades = venda.itens.reduce((sum, item) => sum + Number(item.quantidade), 0);
-        unidadesContaAzul += totalUnidades;
-        valorContaAzul += comp.valorLiquido;
-        const atual = contaAzulPorCliente.get(contaAzulCustomerId) ?? {
-          clienteNome: venda.cliente.nome,
-          pedidos: 0,
-          unidades: 0,
-          valorLiquido: 0,
-        };
-        atual.pedidos += 1;
-        atual.unidades += totalUnidades;
-        atual.valorLiquido += comp.valorLiquido;
-        contaAzulPorCliente.set(contaAzulCustomerId, atual);
-      }
-
-      const chavesConciliacao = new Set([...Array.from(operacionalPorCliente.keys()), ...Array.from(contaAzulPorCliente.keys())]);
-      const conciliacaoContaAzul = Array.from(chavesConciliacao)
-        .map((contaAzulCustomerId) => {
-          const op = operacionalPorCliente.get(contaAzulCustomerId);
-          const ca = contaAzulPorCliente.get(contaAzulCustomerId);
-          const diffPedidos = (op?.pedidos ?? 0) - (ca?.pedidos ?? 0);
-          const diffUnidades = (op?.unidades ?? 0) - (ca?.unidades ?? 0);
-          const diffValor = (op?.valorEstimado ?? 0) - (ca?.valorLiquido ?? 0);
-          return {
-            contaAzulCustomerId,
-            clienteNome: op?.clienteNome ?? ca?.clienteNome ?? contaAzulCustomerId,
-            operacional: op ?? { pedidos: 0, unidades: 0, valorEstimado: 0 },
-            contaAzul: ca ?? { pedidos: 0, unidades: 0, valorLiquido: 0 },
-            diffPedidos,
-            diffUnidades,
-            diffValor,
-            divergente: diffPedidos !== 0 || Math.abs(diffUnidades) > 0.001 || Math.abs(diffValor) > 0.01,
-          };
-        })
-        .sort((a, b) => Number(b.divergente) - Number(a.divergente) || Math.abs(b.diffValor) - Math.abs(a.diffValor));
+      const conciliacao = await calcularConciliacaoSemanal(
+        ctx.prisma!,
+        inicioDia(input.inicio),
+        fimDia(input.fim),
+      );
+      const conciliacaoContaAzul = conciliacao.clientes;
 
       return {
         resumo: {
@@ -981,11 +939,14 @@ export const pedidosRouter = router({
           produtos: produtos.size,
           valorEstimado,
           status: statusResumo,
-          contaAzulPedidos: vendasContaAzul.length,
-          contaAzulUnidades: unidadesContaAzul,
-          contaAzulValor: valorContaAzul,
-          diferencaValorContaAzul: valorEstimado - valorContaAzul,
-          clientesDivergentesContaAzul: conciliacaoContaAzul.filter((r) => r.divergente).length,
+          contaAzulPedidos: conciliacao.resumo.contaAzulPedidos,
+          contaAzulUnidades: conciliacao.resumo.contaAzulUnidades,
+          contaAzulValor: conciliacao.resumo.contaAzulValor,
+          contaAzulValorGerencial: conciliacao.resumo.contaAzulValorGerencial,
+          descontoBoletoTotal: conciliacao.resumo.descontoBoletoTotal,
+          diferencaValorContaAzul: conciliacao.resumo.operacionalValor - conciliacao.resumo.contaAzulValor,
+          clientesDivergentesContaAzul: conciliacao.resumo.clientesDivergentes,
+          ultimaSincronizacaoContaAzul: conciliacao.ultimaSincronizacaoContaAzul,
         },
         produtos: Array.from(produtos.values()).sort((a, b) => b.quantidade - a.quantidade || a.nome.localeCompare(b.nome, "pt-BR")),
         pedidos,
@@ -1208,15 +1169,26 @@ export const pedidosRouter = router({
     .input(z.object({ dia: z.coerce.date() }))
     .query(async ({ ctx, input }) => {
       const semanaInicio = inicioSemana(input.dia);
+      const semanaFim = fimSemana(input.dia);
       const [semanaAtual, bloqueio] = await Promise.all([
         calcularStatusSemana(ctx.prisma!, input.dia),
         primeiraSemanaBloqueante(ctx.prisma!, semanaInicio),
       ]);
+      const [conciliacaoAtual, conciliacaoBloqueio] = await Promise.all([
+        calcularConciliacaoSemanal(ctx.prisma!, semanaInicio, semanaFim),
+        bloqueio
+          ? calcularConciliacaoSemanal(ctx.prisma!, bloqueio.inicio, bloqueio.fim)
+          : Promise.resolve(null),
+      ]);
+      const podeFecharOperacional =
+        semanaAtual.totalPedidos > 0 && semanaAtual.pendentes === 0 && !semanaAtual.fechada;
       return {
         semanaAtual,
         bloqueio,
+        conciliacaoContaAzul: conciliacaoAtual,
+        conciliacaoBloqueio,
         podeCriarPedidos: bloqueio == null,
-        podeFecharSemanaAtual: semanaAtual.totalPedidos > 0 && semanaAtual.pendentes === 0 && !semanaAtual.fechada,
+        podeFecharSemanaAtual: podeFecharOperacional && conciliacaoAtual.conciliado,
       };
     }),
 
@@ -1248,6 +1220,14 @@ export const pedidosRouter = router({
         });
       }
 
+      const conciliacao = await calcularConciliacaoSemanal(ctx.prisma!, semanaInicio, semanaFim);
+      if (!conciliacao.conciliado) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Há ${conciliacao.resumo.clientesDivergentes} cliente(s) com divergência entre Pedidos e Conta Azul. Corrija os lançamentos e sincronize novamente antes de fechar.`,
+        });
+      }
+
       let totalEntregues = 0;
       let totalCancelados = 0;
       let valorEntregue = new Prisma.Decimal(0);
@@ -1276,6 +1256,16 @@ export const pedidosRouter = router({
         reabertoEm: null,
         reabertoPorId: null,
         reabertoPorNome: null,
+        snapshot: {
+          operacional: {
+            totalPedidos: pedidos.length,
+            totalEntregues,
+            totalCancelados,
+            valorEntregue: Number(valorEntregue),
+          },
+          conciliacaoContaAzul: conciliacao,
+          fechadoEm: new Date().toISOString(),
+        } as Prisma.InputJsonValue,
       };
 
       const fechamento = await ctx.prisma!.fechamentoSemanal.upsert({

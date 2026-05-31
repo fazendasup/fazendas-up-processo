@@ -5,6 +5,7 @@ import {
   classificarStatusPedido,
   pedidoContaOrcamento,
 } from "../lib/pedido-status.js";
+import { composicaoGerencialDoPedido, mapDescontoBoletoPorClienteId } from "../lib/valor-gerencial.js";
 import { mesIsoAmericaSp } from "@shared/comercial/periodo-america-sp";
 import { router, comercialProcedure } from "../../_core/trpc";
 import {
@@ -201,6 +202,9 @@ export const relatoriosRouter = router({
       const orcamentos = pedidos.filter(p =>
         pedidoContaOrcamento(p.statusPedido)
       );
+      const descontoPorCliente = await mapDescontoBoletoPorClienteId(ctx.prisma!);
+      let valorLiquidoContaAzul = 0;
+      let descontoBoletoTotal = 0;
       const vendasPorCliente = new Map<
         string,
         {
@@ -262,6 +266,10 @@ export const relatoriosRouter = router({
 
       const vendasDetalhadas = vendas.map(p => {
         const comp = composicaoDoPedidoParaDashboard(p);
+        const pct = descontoPorCliente.get(p.clienteId) ?? 0;
+        const gerencial = composicaoGerencialDoPedido(comp, pct);
+        valorLiquidoContaAzul += comp.valorLiquido;
+        descontoBoletoTotal += gerencial.descontoBoletoValor;
         const qtdPedido = p.itens.reduce(
           (sum, item) => sum + n(item.quantidade),
           0
@@ -280,7 +288,7 @@ export const relatoriosRouter = router({
         mes.vendas += 1;
         mes.quantidadeItens += qtdPedido;
         mes.valorBruto += comp.valorBruto;
-        mes.valorLiquido += comp.valorLiquido;
+        mes.valorLiquido += gerencial.valorGerencial;
         mes.frete += comp.valorFrete;
         mes.desconto += comp.valorDesconto;
 
@@ -299,7 +307,7 @@ export const relatoriosRouter = router({
         }));
         clienteRow.vendas += 1;
         clienteRow.valorBruto += comp.valorBruto;
-        clienteRow.valorLiquido += comp.valorLiquido;
+        clienteRow.valorLiquido += gerencial.valorGerencial;
         clienteRow.quantidadeItens += qtdPedido;
 
         for (const item of p.itens) {
@@ -435,10 +443,11 @@ export const relatoriosRouter = router({
           (sum, p) => sum + composicaoDoPedidoParaDashboard(p).valorBruto,
           0
         );
-      const totalLiquidoAtual = vendas.reduce(
-        (sum, p) => sum + composicaoDoPedidoParaDashboard(p).valorLiquido,
-        0
-      );
+      const totalLiquidoAtual = vendas.reduce((sum, p) => {
+        const comp = composicaoDoPedidoParaDashboard(p);
+        const pct = descontoPorCliente.get(p.clienteId) ?? 0;
+        return sum + composicaoGerencialDoPedido(comp, pct).valorGerencial;
+      }, 0);
       const totalLiquidoAnterior = pedidosAnterior
         .filter(p => classificarStatusPedido(p.statusPedido) === "venda")
         .reduce(
@@ -570,6 +579,8 @@ export const relatoriosRouter = router({
             anterior: round2(totalLiquidoAnterior),
             variacao: variacaoPct(totalLiquidoAtual, totalLiquidoAnterior),
           },
+          valorLiquidoContaAzul: round2(valorLiquidoContaAzul),
+          descontoBoletoTotal: round2(descontoBoletoTotal),
           clientesAtivos: {
             atual: vendasPorCliente.size,
             anterior: aggAnterior.map.size,

@@ -200,6 +200,7 @@ exports.Prisma.RegraComercialClienteScalarFieldEnum = {
   horarioMaximoEntrega: 'horarioMaximoEntrega',
   cobraTaxaEntrega: 'cobraTaxaEntrega',
   prazoBoletoDias: 'prazoBoletoDias',
+  descontoBoletoPercentual: 'descontoBoletoPercentual',
   acumulaPedidos: 'acumulaPedidos',
   diasAcumulo: 'diasAcumulo',
   prazoBoletoAcumuloDias: 'prazoBoletoAcumuloDias',

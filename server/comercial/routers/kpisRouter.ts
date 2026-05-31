@@ -2,6 +2,7 @@ import { z } from "zod";
 import { OrigemPedido, PeriodoKpi } from "../generated/prisma/index.js";
 import { composicaoDoPedidoParaDashboard, somarTotais, totaisVazios } from "../lib/composicao-valor.js";
 import { classificarStatusPedido } from "../lib/pedido-status.js";
+import { composicaoGerencialDoPedido, mapDescontoBoletoPorClienteId, round2 } from "../lib/valor-gerencial.js";
 import { diaIsoAmericaSp, mesIsoAmericaSp } from "@shared/comercial/periodo-america-sp";
 import { router, comercialProcedure } from "../../_core/trpc";
 
@@ -15,10 +16,6 @@ type SerieKpi = {
   pedidos: number;
   clientes: Set<string>;
 };
-
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
-}
 
 export const kpisRouter = router({
   snapshots: comercialProcedure
@@ -87,6 +84,9 @@ export const kpisRouter = router({
       const serieMap = new Map<string, SerieKpi>();
       let pedidosVenda = 0;
       let pedidosOrcamento = 0;
+      let valorLiquidoContaAzul = 0;
+      let descontoBoletoTotal = 0;
+      const descontoPorCliente = await mapDescontoBoletoPorClienteId(ctx.prisma!);
 
       for (const p of pedidos) {
         const comp = composicaoDoPedidoParaDashboard(p);
@@ -113,9 +113,15 @@ export const kpisRouter = router({
 
         if (cls !== "venda") continue;
 
+        const pct = descontoPorCliente.get(p.clienteId) ?? 0;
+        const gerencial = composicaoGerencialDoPedido(comp, pct);
+        valorLiquidoContaAzul += comp.valorLiquido;
+        descontoBoletoTotal += gerencial.descontoBoletoValor;
+        const compKpi = { ...comp, valorLiquido: gerencial.valorGerencial };
+
         pedidosVenda += 1;
-        somarTotais(composicaoVendas, comp);
-        serie.valor_liquido += comp.valorLiquido;
+        somarTotais(composicaoVendas, compKpi);
+        serie.valor_liquido += gerencial.valorGerencial;
         serie.valor_bruto += comp.valorBruto;
         serie.frete += comp.valorFrete;
         serie.desconto += comp.valorDesconto;
@@ -124,13 +130,16 @@ export const kpisRouter = router({
         serieMap.set(dia, serie);
 
         const acc = porCliente.get(p.clienteId) ?? { total: 0, qtd: 0, ultima: p.dataPedido };
-        acc.total += comp.valorLiquido;
+        acc.total += gerencial.valorGerencial;
         acc.qtd += 1;
         if (p.dataPedido > acc.ultima) acc.ultima = p.dataPedido;
         porCliente.set(p.clienteId, acc);
 
         const clienteMesKey = `${p.clienteId}|${mesIsoAmericaSp(p.dataPedido)}`;
-        ticketMensalPorCliente.set(clienteMesKey, (ticketMensalPorCliente.get(clienteMesKey) ?? 0) + comp.valorLiquido);
+        ticketMensalPorCliente.set(
+          clienteMesKey,
+          (ticketMensalPorCliente.get(clienteMesKey) ?? 0) + gerencial.valorGerencial,
+        );
       }
 
       const agora = input.fim;
@@ -149,6 +158,8 @@ export const kpisRouter = router({
         pedidosVenda,
         pedidosOrcamento,
         valorLiquido,
+        valorLiquidoContaAzul: round2(valorLiquidoContaAzul),
+        descontoBoletoTotal: round2(descontoBoletoTotal),
         valorBruto: round2(composicaoVendas.bruto),
         valorFrete: round2(composicaoVendas.frete),
         valorDesconto: round2(composicaoVendas.desconto),
