@@ -227,6 +227,95 @@ export function AcompanhamentoAvarias() {
     1,
     ...(dados?.serieSemanal.flatMap((s) => [s.entregue, s.avaria]) ?? [0]),
   );
+  const lancamentoAvariaCard = (
+    <Card className="border-amber-200 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/10">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">Lançar avaria em campo</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Uso do promoter no varejo: selecione a unidade, a data em que isso deve aparecer em Pedidos
+          (normalmente a próxima entrega), a variedade e a quantidade conferida.
+        </p>
+      </CardHeader>
+      <CardContent className="grid gap-3 lg:grid-cols-[minmax(180px,1fr)_minmax(160px,0.8fr)_minmax(220px,1.2fr)_8rem]">
+        <div>
+          <Label className="text-xs">Unidade conferida *</Label>
+          <Select
+            value={avariaUnidadeId}
+            onValueChange={setAvariaUnidadeId}
+            disabled={!grupoId || unidadesDaRede.length === 0}
+          >
+            <SelectTrigger className="h-10 bg-background">
+              <SelectValue placeholder={grupoId ? "Selecione a unidade..." : "Selecione a rede acima"} />
+            </SelectTrigger>
+            <SelectContent>
+              {unidadesDaRede.map((u) => (
+                <SelectItem key={u.id} value={u.id}>
+                  {u.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-xs">Data em Pedidos *</Label>
+          <Input
+            type="date"
+            className="h-10 bg-background"
+            value={avariaData}
+            onChange={(e) => setAvariaData(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Variedade/produto *</Label>
+          <Select value={avariaProdutoId} onValueChange={setAvariaProdutoId}>
+            <SelectTrigger className="h-10 bg-background">
+              <SelectValue placeholder="Selecione a variedade..." />
+            </SelectTrigger>
+            <SelectContent>
+              {(produtos.data ?? []).map((p: any) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.nome}
+                  {p.categoria ? ` · ${p.categoria}` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-xs">Qtd. *</Label>
+          <Input
+            inputMode="decimal"
+            className="h-10 bg-background"
+            value={avariaQuantidade}
+            onChange={(e) => setAvariaQuantidade(e.target.value)}
+            placeholder="Ex.: 3"
+          />
+        </div>
+        <div className="lg:col-span-3">
+          <Label className="text-xs">Observação de campo</Label>
+          <Input
+            className="h-10 bg-background"
+            value={avariaObservacoes}
+            onChange={(e) => setAvariaObservacoes(e.target.value)}
+            placeholder="Ex.: produto murcho na gôndola, validade curta, manuseio, quebra..."
+          />
+        </div>
+        <div className="flex items-end">
+          <Button
+            className="h-10 w-full"
+            disabled={registrarAvariaCampo.isPending}
+            onClick={registrarAvaria}
+          >
+            {registrarAvariaCampo.isPending ? "Salvando..." : "Registrar"}
+          </Button>
+        </div>
+        <p className="lg:col-span-4 text-xs text-muted-foreground">
+          Ao salvar, o sistema vincula a avaria ao pedido existente da unidade/data. Se não houver pedido,
+          cria um registro operacional só de avaria, mantendo rastreabilidade por pedido, data, variedade e usuário.
+        </p>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="space-y-5">
@@ -249,94 +338,6 @@ export function AcompanhamentoAvarias() {
           </>
         }
       />
-
-      <Card className="border-amber-200 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/10">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Lançar avaria em campo</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Uso do promoter no varejo: selecione a unidade, a data em que isso deve aparecer em Pedidos
-            (normalmente a próxima entrega), a variedade e a quantidade conferida.
-          </p>
-        </CardHeader>
-        <CardContent className="grid gap-3 lg:grid-cols-[minmax(180px,1fr)_minmax(160px,0.8fr)_minmax(220px,1.2fr)_8rem]">
-          <div>
-            <Label className="text-xs">Unidade conferida *</Label>
-            <Select
-              value={avariaUnidadeId}
-              onValueChange={setAvariaUnidadeId}
-              disabled={!grupoId || unidadesDaRede.length === 0}
-            >
-              <SelectTrigger className="h-10 bg-background">
-                <SelectValue placeholder={grupoId ? "Selecione a unidade..." : "Selecione a rede acima"} />
-              </SelectTrigger>
-              <SelectContent>
-                {unidadesDaRede.map((u) => (
-                  <SelectItem key={u.id} value={u.id}>
-                    {u.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className="text-xs">Data em Pedidos *</Label>
-            <Input
-              type="date"
-              className="h-10 bg-background"
-              value={avariaData}
-              onChange={(e) => setAvariaData(e.target.value)}
-            />
-          </div>
-          <div>
-            <Label className="text-xs">Variedade/produto *</Label>
-            <Select value={avariaProdutoId} onValueChange={setAvariaProdutoId}>
-              <SelectTrigger className="h-10 bg-background">
-                <SelectValue placeholder="Selecione a variedade..." />
-              </SelectTrigger>
-              <SelectContent>
-                {(produtos.data ?? []).map((p: any) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.nome}
-                    {p.categoria ? ` · ${p.categoria}` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className="text-xs">Qtd. *</Label>
-            <Input
-              inputMode="decimal"
-              className="h-10 bg-background"
-              value={avariaQuantidade}
-              onChange={(e) => setAvariaQuantidade(e.target.value)}
-              placeholder="Ex.: 3"
-            />
-          </div>
-          <div className="lg:col-span-3">
-            <Label className="text-xs">Observação de campo</Label>
-            <Input
-              className="h-10 bg-background"
-              value={avariaObservacoes}
-              onChange={(e) => setAvariaObservacoes(e.target.value)}
-              placeholder="Ex.: produto murcho na gôndola, validade curta, manuseio, quebra..."
-            />
-          </div>
-          <div className="flex items-end">
-            <Button
-              className="h-10 w-full"
-              disabled={registrarAvariaCampo.isPending}
-              onClick={registrarAvaria}
-            >
-              {registrarAvariaCampo.isPending ? "Salvando..." : "Registrar"}
-            </Button>
-          </div>
-          <p className="lg:col-span-4 text-xs text-muted-foreground">
-            Ao salvar, o sistema vincula a avaria ao pedido existente da unidade/data. Se não houver pedido,
-            cria um registro operacional só de avaria, mantendo rastreabilidade por pedido, data, variedade e usuário.
-          </p>
-        </CardContent>
-      </Card>
 
       {/* Gestão de redes (admin) */}
       {isAdmin && gerenciar && (
@@ -729,6 +730,8 @@ export function AcompanhamentoAvarias() {
           </p>
         </>
       ) : null}
+
+      {lancamentoAvariaCard}
     </div>
   );
 }

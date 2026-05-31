@@ -40,6 +40,9 @@ export function ComercialLayout({ children }: { children: ReactNode }) {
     location === "/comercial/pedidos" ||
     location === "/comercial/estoque-vivo" ||
     location.startsWith("/comercial/pedidos-");
+  const isStandaloneComercialPage =
+    location === "/comercial/acompanhamento-avarias" ||
+    location.startsWith("/comercial/acompanhamento-avarias/");
   const nav =
     me.data?.perfil === "VENDEDOR"
       ? PEDIDOS_NAV
@@ -50,41 +53,43 @@ export function ComercialLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <Header />
-      <div className="border-b border-border/60 bg-background/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-[100rem] flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-5">
-          <nav
-            className="flex flex-wrap items-center gap-0.5"
-            aria-label={
-              isPedidosArea ? "Pedidos comerciais" : "Central comercial"
-            }
-          >
-            {nav.map(item => {
-              const active =
-                location === item.href ||
-                (item.href !== "/comercial/dashboard" &&
-                  item.href !== "/comercial/pedidos" &&
-                  location.startsWith(item.href));
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={navClass(active)}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-            onClick={() => void logout()}
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Sair do supervisório</span>
-          </button>
+      {!isStandaloneComercialPage && (
+        <div className="border-b border-border/60 bg-background/95 backdrop-blur-sm">
+          <div className="mx-auto flex max-w-[100rem] flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-5">
+            <nav
+              className="flex flex-wrap items-center gap-0.5"
+              aria-label={
+                isPedidosArea ? "Pedidos comerciais" : "Central comercial"
+              }
+            >
+              {nav.map(item => {
+                const active =
+                  location === item.href ||
+                  (item.href !== "/comercial/dashboard" &&
+                    item.href !== "/comercial/pedidos" &&
+                    location.startsWith(item.href));
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={navClass(active)}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => void logout()}
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Sair do supervisório</span>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
       <main className="relative min-h-0 flex-1 overflow-auto">
         <div className="mx-auto max-w-[100rem] px-3 py-4 sm:px-5 sm:py-6 md:px-6">
           {children}
