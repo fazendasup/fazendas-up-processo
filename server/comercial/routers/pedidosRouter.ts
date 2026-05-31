@@ -11,6 +11,12 @@ import {
   type LinhaPedidoEstoque,
 } from "../lib/estoque-vivo.js";
 import { classificarStatusPedido } from "../lib/pedido-status.js";
+import {
+  assertSemanaAnteriorFechada,
+  calcularStatusSemana,
+  primeiraSemanaBloqueante,
+} from "../lib/fechamento.js";
+import { fimSemana, inicioSemana } from "../lib/semana.js";
 import { comercialProcedure, comercialRequirePerfis, router } from "../../_core/trpc";
 
 const adminComercial = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL");
@@ -347,6 +353,11 @@ export const pedidosRouter = router({
       if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
       const cliente = await ctx.prisma!.cliente.findUnique({ where: { externalId: input.contaAzulCustomerId } });
       if (!cliente) throw new TRPCError({ code: "NOT_FOUND", message: "Cliente Conta Azul não encontrado" });
+      // Gate de fechamento semanal: bloqueia a criação de novos pedidos enquanto a semana anterior
+      // não estiver revisada e fechada. Edições de pedidos já existentes não são bloqueadas.
+      if (!input.id) {
+        await assertSemanaAnteriorFechada(ctx.prisma!, input.dataEntrega);
+      }
       if (input.itens.length === 0 && input.avarias.length === 0) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Informe pelo menos um produto ou uma avaria" });
       }
@@ -447,6 +458,9 @@ export const pedidosRouter = router({
 
       const destino = inicioDia(input.dia);
       const origem = inicioDia(adicionarDias(destino, -7));
+
+      // Gate de fechamento: não permite copiar/criar pedidos no destino se houver semana anterior pendente.
+      await assertSemanaAnteriorFechada(ctx.prisma!, destino);
 
       const [pedidosOrigem, clientesDestino] = await Promise.all([
         ctx.prisma!.pedidoOperacional.findMany({
@@ -1008,4 +1022,116 @@ export const pedidosRouter = router({
         },
       }),
     ),
+
+  // ===================== Fechamento semanal =====================
+
+  /** Status da semana do dia informado + a primeira semana anterior que bloqueia novos pedidos. */
+  statusSemana: comercialProcedure
+    .input(z.object({ dia: z.coerce.date() }))
+    .query(async ({ ctx, input }) => {
+      const semanaInicio = inicioSemana(input.dia);
+      const [semanaAtual, bloqueio] = await Promise.all([
+        calcularStatusSemana(ctx.prisma!, input.dia),
+        primeiraSemanaBloqueante(ctx.prisma!, semanaInicio),
+      ]);
+      return {
+        semanaAtual,
+        bloqueio,
+        podeCriarPedidos: bloqueio == null,
+        podeFecharSemanaAtual: semanaAtual.totalPedidos > 0 && semanaAtual.pendentes === 0 && !semanaAtual.fechada,
+      };
+    }),
+
+  /** Fecha (ou refecha) a semana do dia informado. Exige que não haja pedidos pendentes. */
+  fecharSemana: comercialProcedure
+    .use(adminComercial)
+    .input(z.object({ dia: z.coerce.date() }))
+    .mutation(async ({ ctx, input }) => {
+      const usuario = ctx.comercialUsuario;
+      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+
+      const semanaInicio = inicioSemana(input.dia);
+      const semanaFim = fimSemana(input.dia);
+
+      if (semanaInicio.getTime() > inicioSemana(new Date()).getTime()) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Não é possível fechar uma semana futura." });
+      }
+
+      const pedidos = await ctx.prisma!.pedidoOperacional.findMany({
+        where: { dataEntrega: { gte: semanaInicio, lte: semanaFim } },
+        include: { itens: true },
+      });
+
+      const pendentes = pedidos.filter((p) => p.status !== "ENTREGUE" && p.status !== "CANCELADO");
+      if (pendentes.length > 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Ainda há ${pendentes.length} pedido(s) sem definição de entregue/cancelado. Revise antes de fechar a semana.`,
+        });
+      }
+
+      let totalEntregues = 0;
+      let totalCancelados = 0;
+      let valorEntregue = new Prisma.Decimal(0);
+      for (const p of pedidos) {
+        if (p.status === "ENTREGUE") {
+          totalEntregues++;
+          for (const item of p.itens) {
+            if (item.precoUnit != null) {
+              valorEntregue = valorEntregue.plus(new Prisma.Decimal(item.quantidade).times(item.precoUnit));
+            }
+          }
+        } else if (p.status === "CANCELADO") {
+          totalCancelados++;
+        }
+      }
+
+      const dadosFechamento = {
+        semanaFim,
+        fechadoPorId: usuario.id,
+        fechadoPorNome: usuario.nome,
+        fechadoEm: new Date(),
+        totalPedidos: pedidos.length,
+        totalEntregues,
+        totalCancelados,
+        valorEntregue,
+        reabertoEm: null,
+        reabertoPorId: null,
+        reabertoPorNome: null,
+      };
+
+      const fechamento = await ctx.prisma!.fechamentoSemanal.upsert({
+        where: { semanaInicio },
+        create: { semanaInicio, ...dadosFechamento },
+        update: dadosFechamento,
+      });
+
+      return { success: true, fechamento };
+    }),
+
+  /** Reabre uma semana já fechada (volta a bloquear até novo fechamento). */
+  reabrirSemana: comercialProcedure
+    .use(adminComercial)
+    .input(z.object({ dia: z.coerce.date() }))
+    .mutation(async ({ ctx, input }) => {
+      const usuario = ctx.comercialUsuario;
+      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+
+      const semanaInicio = inicioSemana(input.dia);
+      const existente = await ctx.prisma!.fechamentoSemanal.findUnique({ where: { semanaInicio } });
+      if (!existente) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Essa semana não está fechada." });
+      }
+
+      const fechamento = await ctx.prisma!.fechamentoSemanal.update({
+        where: { semanaInicio },
+        data: {
+          reabertoEm: new Date(),
+          reabertoPorId: usuario.id,
+          reabertoPorNome: usuario.nome,
+        },
+      });
+
+      return { success: true, fechamento };
+    }),
 });

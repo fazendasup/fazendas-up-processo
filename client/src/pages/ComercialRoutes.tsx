@@ -24,6 +24,11 @@ const Kpis = lazy(() =>
 const Relatorios = lazy(() =>
   import("./comercial/Relatorios").then(m => ({ default: m.Relatorios }))
 );
+const VarejoSupermercado = lazy(() =>
+  import("./comercial/VarejoSupermercado").then(m => ({
+    default: m.VarejoSupermercado,
+  }))
+);
 const Pedidos = lazy(() =>
   import("./comercial/Pedidos").then(m => ({ default: m.Pedidos }))
 );
@@ -51,6 +56,7 @@ export default function ComercialRoutes() {
           <Route path="/comercial/mensagens" component={Mensagens} />
           <Route path="/comercial/kpis" component={Kpis} />
           <Route path="/comercial/relatorios" component={Relatorios} />
+          <Route path="/comercial/varejo" component={VarejoSupermercado} />
           <Route
             path="/comercial/pedidos-historico"
             component={PedidosHistorico}

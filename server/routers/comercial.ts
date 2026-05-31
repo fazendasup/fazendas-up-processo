@@ -14,6 +14,7 @@ import { mensagensRouter } from "../comercial/routers/mensagensRouter";
 import { oportunidadesRouter } from "../comercial/routers/oportunidadesRouter";
 import { pedidosRouter } from "../comercial/routers/pedidosRouter";
 import { relatoriosRouter } from "../comercial/routers/relatoriosRouter";
+import { varejoRouter } from "../comercial/routers/varejoRouter";
 
 export const comercialRouter = router({
   dashboard: dashboardRouter,
@@ -27,4 +28,5 @@ export const comercialRouter = router({
   integracoes: integrationsRouter,
   pedidos: pedidosRouter,
   relatorios: relatoriosRouter,
+  varejo: varejoRouter,
 });

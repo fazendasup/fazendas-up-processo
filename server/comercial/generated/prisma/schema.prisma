@@ -158,11 +158,27 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
+/// Rede / grupo que agrupa Clientes-unidade (ex.: uma rede de supermercados com várias lojas).
+model GrupoCliente {
+  id           String       @id @default(cuid())
+  nome         String
+  tipo         TipoCliente?
+  observacoes  String?      @db.Text
+  criadoEm     DateTime     @default(now()) @map("criado_em")
+  atualizadoEm DateTime     @updatedAt @map("atualizado_em")
+
+  clientes Cliente[]
+
+  @@index([nome])
+  @@map("grupos_cliente")
+}
+
 model Cliente {
   id                    String               @id @default(cuid())
   externalId            String?              @unique @map("external_id")
   nome                  String
   tipo                  TipoCliente
+  grupoId               String?              @map("grupo_id")
   cnpjCpf               String?              @map("cnpj_cpf")
   endereco              String?
   contatoPrincipal      String?              @map("contato_principal")
@@ -176,6 +192,7 @@ model Cliente {
   dataCadastro          DateTime             @default(now()) @map("data_cadastro")
   dataUltimaAtualizacao DateTime             @updatedAt @map("data_ultima_atualizacao")
 
+  grupo                GrupoCliente?                @relation(fields: [grupoId], references: [id], onDelete: SetNull)
   pedidos              Pedido[]
   interacoes           Interacao[]
   oportunidades        Oportunidade[]
@@ -188,6 +205,7 @@ model Cliente {
 
   @@index([tipo, statusRelacionamento])
   @@index([nome])
+  @@index([grupoId])
   @@map("clientes")
 }
 
@@ -372,6 +390,28 @@ model PedidoOperacionalAuditoria {
 
   @@index([pedidoId, criadoEm])
   @@map("pedidos_operacionais_auditoria")
+}
+
+/// Fechamento semanal global da operação de pedidos.
+/// Trava a criação de pedidos de semanas seguintes enquanto a anterior não for revisada e fechada.
+model FechamentoSemanal {
+  id              String    @id @default(cuid())
+  semanaInicio    DateTime  @unique @map("semana_inicio")
+  semanaFim       DateTime  @map("semana_fim")
+  fechadoPorId    String?   @map("fechado_por_id")
+  fechadoPorNome  String?   @map("fechado_por_nome")
+  fechadoEm       DateTime  @default(now()) @map("fechado_em")
+  totalPedidos    Int       @default(0) @map("total_pedidos")
+  totalEntregues  Int       @default(0) @map("total_entregues")
+  totalCancelados Int       @default(0) @map("total_cancelados")
+  valorEntregue   Decimal?  @map("valor_entregue") @db.Decimal(14, 2)
+  reabertoEm      DateTime? @map("reaberto_em")
+  reabertoPorId   String?   @map("reaberto_por_id")
+  reabertoPorNome String?   @map("reaberto_por_nome")
+  snapshot        Json?
+
+  @@index([semanaInicio])
+  @@map("fechamentos_semanais")
 }
 
 model Pedido {

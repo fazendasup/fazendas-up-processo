@@ -18,6 +18,7 @@ const CENTRAL_NAV = [
   { href: "/comercial/mensagens", label: "Mensagens" },
   { href: "/comercial/kpis", label: "KPIs" },
   { href: "/comercial/relatorios", label: "Relatórios" },
+  { href: "/comercial/varejo", label: "Varejo" },
   { href: "/comercial/configuracoes", label: "Configurações" },
 ] as const;
 

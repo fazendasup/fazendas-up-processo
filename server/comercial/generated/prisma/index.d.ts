@@ -24,6 +24,11 @@ export type Usuario = $Result.DefaultSelection<Prisma.$UsuarioPayload>
  */
 export type RefreshToken = $Result.DefaultSelection<Prisma.$RefreshTokenPayload>
 /**
+ * Model GrupoCliente
+ * Rede / grupo que agrupa Clientes-unidade (ex.: uma rede de supermercados com várias lojas).
+ */
+export type GrupoCliente = $Result.DefaultSelection<Prisma.$GrupoClientePayload>
+/**
  * Model Cliente
  * 
  */
@@ -73,6 +78,12 @@ export type PedidoOperacionalAvaria = $Result.DefaultSelection<Prisma.$PedidoOpe
  * 
  */
 export type PedidoOperacionalAuditoria = $Result.DefaultSelection<Prisma.$PedidoOperacionalAuditoriaPayload>
+/**
+ * Model FechamentoSemanal
+ * Fechamento semanal global da operação de pedidos.
+ * Trava a criação de pedidos de semanas seguintes enquanto a anterior não for revisada e fechada.
+ */
+export type FechamentoSemanal = $Result.DefaultSelection<Prisma.$FechamentoSemanalPayload>
 /**
  * Model Pedido
  * 
@@ -517,6 +528,16 @@ export class PrismaClient<
   get refreshToken(): Prisma.RefreshTokenDelegate<ExtArgs, ClientOptions>;
 
   /**
+   * `prisma.grupoCliente`: Exposes CRUD operations for the **GrupoCliente** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more GrupoClientes
+    * const grupoClientes = await prisma.grupoCliente.findMany()
+    * ```
+    */
+  get grupoCliente(): Prisma.GrupoClienteDelegate<ExtArgs, ClientOptions>;
+
+  /**
    * `prisma.cliente`: Exposes CRUD operations for the **Cliente** model.
     * Example usage:
     * ```ts
@@ -615,6 +636,16 @@ export class PrismaClient<
     * ```
     */
   get pedidoOperacionalAuditoria(): Prisma.PedidoOperacionalAuditoriaDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.fechamentoSemanal`: Exposes CRUD operations for the **FechamentoSemanal** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more FechamentoSemanals
+    * const fechamentoSemanals = await prisma.fechamentoSemanal.findMany()
+    * ```
+    */
+  get fechamentoSemanal(): Prisma.FechamentoSemanalDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.pedido`: Exposes CRUD operations for the **Pedido** model.
@@ -1167,6 +1198,7 @@ export namespace Prisma {
   export const ModelName: {
     Usuario: 'Usuario',
     RefreshToken: 'RefreshToken',
+    GrupoCliente: 'GrupoCliente',
     Cliente: 'Cliente',
     EstoqueVivoConfig: 'EstoqueVivoConfig',
     ProdutoComercial: 'ProdutoComercial',
@@ -1177,6 +1209,7 @@ export namespace Prisma {
     PedidoOperacionalItem: 'PedidoOperacionalItem',
     PedidoOperacionalAvaria: 'PedidoOperacionalAvaria',
     PedidoOperacionalAuditoria: 'PedidoOperacionalAuditoria',
+    FechamentoSemanal: 'FechamentoSemanal',
     Pedido: 'Pedido',
     ItemPedido: 'ItemPedido',
     Interacao: 'Interacao',
@@ -1206,7 +1239,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "usuario" | "refreshToken" | "cliente" | "estoqueVivoConfig" | "produtoComercial" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "pedido" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "syncState" | "regraClassificacao" | "templateMensagem"
+      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "produtoComercial" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "syncState" | "regraClassificacao" | "templateMensagem"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1339,6 +1372,72 @@ export namespace Prisma {
           count: {
             args: Prisma.RefreshTokenCountArgs<ExtArgs>
             result: $Utils.Optional<RefreshTokenCountAggregateOutputType> | number
+          }
+        }
+      }
+      GrupoCliente: {
+        payload: Prisma.$GrupoClientePayload<ExtArgs>
+        fields: Prisma.GrupoClienteFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.GrupoClienteFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$GrupoClientePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.GrupoClienteFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$GrupoClientePayload>
+          }
+          findFirst: {
+            args: Prisma.GrupoClienteFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$GrupoClientePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.GrupoClienteFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$GrupoClientePayload>
+          }
+          findMany: {
+            args: Prisma.GrupoClienteFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$GrupoClientePayload>[]
+          }
+          create: {
+            args: Prisma.GrupoClienteCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$GrupoClientePayload>
+          }
+          createMany: {
+            args: Prisma.GrupoClienteCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.GrupoClienteDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$GrupoClientePayload>
+          }
+          update: {
+            args: Prisma.GrupoClienteUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$GrupoClientePayload>
+          }
+          deleteMany: {
+            args: Prisma.GrupoClienteDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.GrupoClienteUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.GrupoClienteUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$GrupoClientePayload>
+          }
+          aggregate: {
+            args: Prisma.GrupoClienteAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateGrupoCliente>
+          }
+          groupBy: {
+            args: Prisma.GrupoClienteGroupByArgs<ExtArgs>
+            result: $Utils.Optional<GrupoClienteGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.GrupoClienteCountArgs<ExtArgs>
+            result: $Utils.Optional<GrupoClienteCountAggregateOutputType> | number
           }
         }
       }
@@ -1999,6 +2098,72 @@ export namespace Prisma {
           count: {
             args: Prisma.PedidoOperacionalAuditoriaCountArgs<ExtArgs>
             result: $Utils.Optional<PedidoOperacionalAuditoriaCountAggregateOutputType> | number
+          }
+        }
+      }
+      FechamentoSemanal: {
+        payload: Prisma.$FechamentoSemanalPayload<ExtArgs>
+        fields: Prisma.FechamentoSemanalFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.FechamentoSemanalFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FechamentoSemanalPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.FechamentoSemanalFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FechamentoSemanalPayload>
+          }
+          findFirst: {
+            args: Prisma.FechamentoSemanalFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FechamentoSemanalPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.FechamentoSemanalFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FechamentoSemanalPayload>
+          }
+          findMany: {
+            args: Prisma.FechamentoSemanalFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FechamentoSemanalPayload>[]
+          }
+          create: {
+            args: Prisma.FechamentoSemanalCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FechamentoSemanalPayload>
+          }
+          createMany: {
+            args: Prisma.FechamentoSemanalCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.FechamentoSemanalDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FechamentoSemanalPayload>
+          }
+          update: {
+            args: Prisma.FechamentoSemanalUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FechamentoSemanalPayload>
+          }
+          deleteMany: {
+            args: Prisma.FechamentoSemanalDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.FechamentoSemanalUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.FechamentoSemanalUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FechamentoSemanalPayload>
+          }
+          aggregate: {
+            args: Prisma.FechamentoSemanalAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateFechamentoSemanal>
+          }
+          groupBy: {
+            args: Prisma.FechamentoSemanalGroupByArgs<ExtArgs>
+            result: $Utils.Optional<FechamentoSemanalGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.FechamentoSemanalCountArgs<ExtArgs>
+            result: $Utils.Optional<FechamentoSemanalCountAggregateOutputType> | number
           }
         }
       }
@@ -2826,6 +2991,7 @@ export namespace Prisma {
   export type GlobalOmitConfig = {
     usuario?: UsuarioOmit
     refreshToken?: RefreshTokenOmit
+    grupoCliente?: GrupoClienteOmit
     cliente?: ClienteOmit
     estoqueVivoConfig?: EstoqueVivoConfigOmit
     produtoComercial?: ProdutoComercialOmit
@@ -2836,6 +3002,7 @@ export namespace Prisma {
     pedidoOperacionalItem?: PedidoOperacionalItemOmit
     pedidoOperacionalAvaria?: PedidoOperacionalAvariaOmit
     pedidoOperacionalAuditoria?: PedidoOperacionalAuditoriaOmit
+    fechamentoSemanal?: FechamentoSemanalOmit
     pedido?: PedidoOmit
     itemPedido?: ItemPedidoOmit
     interacao?: InteracaoOmit
@@ -3004,6 +3171,37 @@ export namespace Prisma {
    */
   export type UsuarioCountOutputTypeCountAuditoriasPedidoArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: PedidoOperacionalAuditoriaWhereInput
+  }
+
+
+  /**
+   * Count Type GrupoClienteCountOutputType
+   */
+
+  export type GrupoClienteCountOutputType = {
+    clientes: number
+  }
+
+  export type GrupoClienteCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    clientes?: boolean | GrupoClienteCountOutputTypeCountClientesArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * GrupoClienteCountOutputType without action
+   */
+  export type GrupoClienteCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the GrupoClienteCountOutputType
+     */
+    select?: GrupoClienteCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * GrupoClienteCountOutputType without action
+   */
+  export type GrupoClienteCountOutputTypeCountClientesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ClienteWhereInput
   }
 
 
@@ -5349,6 +5547,972 @@ export namespace Prisma {
 
 
   /**
+   * Model GrupoCliente
+   */
+
+  export type AggregateGrupoCliente = {
+    _count: GrupoClienteCountAggregateOutputType | null
+    _min: GrupoClienteMinAggregateOutputType | null
+    _max: GrupoClienteMaxAggregateOutputType | null
+  }
+
+  export type GrupoClienteMinAggregateOutputType = {
+    id: string | null
+    nome: string | null
+    tipo: $Enums.TipoCliente | null
+    observacoes: string | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type GrupoClienteMaxAggregateOutputType = {
+    id: string | null
+    nome: string | null
+    tipo: $Enums.TipoCliente | null
+    observacoes: string | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type GrupoClienteCountAggregateOutputType = {
+    id: number
+    nome: number
+    tipo: number
+    observacoes: number
+    criadoEm: number
+    atualizadoEm: number
+    _all: number
+  }
+
+
+  export type GrupoClienteMinAggregateInputType = {
+    id?: true
+    nome?: true
+    tipo?: true
+    observacoes?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type GrupoClienteMaxAggregateInputType = {
+    id?: true
+    nome?: true
+    tipo?: true
+    observacoes?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type GrupoClienteCountAggregateInputType = {
+    id?: true
+    nome?: true
+    tipo?: true
+    observacoes?: true
+    criadoEm?: true
+    atualizadoEm?: true
+    _all?: true
+  }
+
+  export type GrupoClienteAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which GrupoCliente to aggregate.
+     */
+    where?: GrupoClienteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of GrupoClientes to fetch.
+     */
+    orderBy?: GrupoClienteOrderByWithRelationInput | GrupoClienteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: GrupoClienteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` GrupoClientes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` GrupoClientes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned GrupoClientes
+    **/
+    _count?: true | GrupoClienteCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: GrupoClienteMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: GrupoClienteMaxAggregateInputType
+  }
+
+  export type GetGrupoClienteAggregateType<T extends GrupoClienteAggregateArgs> = {
+        [P in keyof T & keyof AggregateGrupoCliente]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateGrupoCliente[P]>
+      : GetScalarType<T[P], AggregateGrupoCliente[P]>
+  }
+
+
+
+
+  export type GrupoClienteGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: GrupoClienteWhereInput
+    orderBy?: GrupoClienteOrderByWithAggregationInput | GrupoClienteOrderByWithAggregationInput[]
+    by: GrupoClienteScalarFieldEnum[] | GrupoClienteScalarFieldEnum
+    having?: GrupoClienteScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: GrupoClienteCountAggregateInputType | true
+    _min?: GrupoClienteMinAggregateInputType
+    _max?: GrupoClienteMaxAggregateInputType
+  }
+
+  export type GrupoClienteGroupByOutputType = {
+    id: string
+    nome: string
+    tipo: $Enums.TipoCliente | null
+    observacoes: string | null
+    criadoEm: Date
+    atualizadoEm: Date
+    _count: GrupoClienteCountAggregateOutputType | null
+    _min: GrupoClienteMinAggregateOutputType | null
+    _max: GrupoClienteMaxAggregateOutputType | null
+  }
+
+  type GetGrupoClienteGroupByPayload<T extends GrupoClienteGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<GrupoClienteGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof GrupoClienteGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], GrupoClienteGroupByOutputType[P]>
+            : GetScalarType<T[P], GrupoClienteGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type GrupoClienteSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nome?: boolean
+    tipo?: boolean
+    observacoes?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+    clientes?: boolean | GrupoCliente$clientesArgs<ExtArgs>
+    _count?: boolean | GrupoClienteCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["grupoCliente"]>
+
+
+
+  export type GrupoClienteSelectScalar = {
+    id?: boolean
+    nome?: boolean
+    tipo?: boolean
+    observacoes?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+  }
+
+  export type GrupoClienteOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "tipo" | "observacoes" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["grupoCliente"]>
+  export type GrupoClienteInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    clientes?: boolean | GrupoCliente$clientesArgs<ExtArgs>
+    _count?: boolean | GrupoClienteCountOutputTypeDefaultArgs<ExtArgs>
+  }
+
+  export type $GrupoClientePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "GrupoCliente"
+    objects: {
+      clientes: Prisma.$ClientePayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      nome: string
+      tipo: $Enums.TipoCliente | null
+      observacoes: string | null
+      criadoEm: Date
+      atualizadoEm: Date
+    }, ExtArgs["result"]["grupoCliente"]>
+    composites: {}
+  }
+
+  type GrupoClienteGetPayload<S extends boolean | null | undefined | GrupoClienteDefaultArgs> = $Result.GetResult<Prisma.$GrupoClientePayload, S>
+
+  type GrupoClienteCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<GrupoClienteFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: GrupoClienteCountAggregateInputType | true
+    }
+
+  export interface GrupoClienteDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['GrupoCliente'], meta: { name: 'GrupoCliente' } }
+    /**
+     * Find zero or one GrupoCliente that matches the filter.
+     * @param {GrupoClienteFindUniqueArgs} args - Arguments to find a GrupoCliente
+     * @example
+     * // Get one GrupoCliente
+     * const grupoCliente = await prisma.grupoCliente.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends GrupoClienteFindUniqueArgs>(args: SelectSubset<T, GrupoClienteFindUniqueArgs<ExtArgs>>): Prisma__GrupoClienteClient<$Result.GetResult<Prisma.$GrupoClientePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one GrupoCliente that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {GrupoClienteFindUniqueOrThrowArgs} args - Arguments to find a GrupoCliente
+     * @example
+     * // Get one GrupoCliente
+     * const grupoCliente = await prisma.grupoCliente.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends GrupoClienteFindUniqueOrThrowArgs>(args: SelectSubset<T, GrupoClienteFindUniqueOrThrowArgs<ExtArgs>>): Prisma__GrupoClienteClient<$Result.GetResult<Prisma.$GrupoClientePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first GrupoCliente that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {GrupoClienteFindFirstArgs} args - Arguments to find a GrupoCliente
+     * @example
+     * // Get one GrupoCliente
+     * const grupoCliente = await prisma.grupoCliente.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends GrupoClienteFindFirstArgs>(args?: SelectSubset<T, GrupoClienteFindFirstArgs<ExtArgs>>): Prisma__GrupoClienteClient<$Result.GetResult<Prisma.$GrupoClientePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first GrupoCliente that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {GrupoClienteFindFirstOrThrowArgs} args - Arguments to find a GrupoCliente
+     * @example
+     * // Get one GrupoCliente
+     * const grupoCliente = await prisma.grupoCliente.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends GrupoClienteFindFirstOrThrowArgs>(args?: SelectSubset<T, GrupoClienteFindFirstOrThrowArgs<ExtArgs>>): Prisma__GrupoClienteClient<$Result.GetResult<Prisma.$GrupoClientePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more GrupoClientes that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {GrupoClienteFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all GrupoClientes
+     * const grupoClientes = await prisma.grupoCliente.findMany()
+     * 
+     * // Get first 10 GrupoClientes
+     * const grupoClientes = await prisma.grupoCliente.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const grupoClienteWithIdOnly = await prisma.grupoCliente.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends GrupoClienteFindManyArgs>(args?: SelectSubset<T, GrupoClienteFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$GrupoClientePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a GrupoCliente.
+     * @param {GrupoClienteCreateArgs} args - Arguments to create a GrupoCliente.
+     * @example
+     * // Create one GrupoCliente
+     * const GrupoCliente = await prisma.grupoCliente.create({
+     *   data: {
+     *     // ... data to create a GrupoCliente
+     *   }
+     * })
+     * 
+     */
+    create<T extends GrupoClienteCreateArgs>(args: SelectSubset<T, GrupoClienteCreateArgs<ExtArgs>>): Prisma__GrupoClienteClient<$Result.GetResult<Prisma.$GrupoClientePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many GrupoClientes.
+     * @param {GrupoClienteCreateManyArgs} args - Arguments to create many GrupoClientes.
+     * @example
+     * // Create many GrupoClientes
+     * const grupoCliente = await prisma.grupoCliente.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends GrupoClienteCreateManyArgs>(args?: SelectSubset<T, GrupoClienteCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a GrupoCliente.
+     * @param {GrupoClienteDeleteArgs} args - Arguments to delete one GrupoCliente.
+     * @example
+     * // Delete one GrupoCliente
+     * const GrupoCliente = await prisma.grupoCliente.delete({
+     *   where: {
+     *     // ... filter to delete one GrupoCliente
+     *   }
+     * })
+     * 
+     */
+    delete<T extends GrupoClienteDeleteArgs>(args: SelectSubset<T, GrupoClienteDeleteArgs<ExtArgs>>): Prisma__GrupoClienteClient<$Result.GetResult<Prisma.$GrupoClientePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one GrupoCliente.
+     * @param {GrupoClienteUpdateArgs} args - Arguments to update one GrupoCliente.
+     * @example
+     * // Update one GrupoCliente
+     * const grupoCliente = await prisma.grupoCliente.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends GrupoClienteUpdateArgs>(args: SelectSubset<T, GrupoClienteUpdateArgs<ExtArgs>>): Prisma__GrupoClienteClient<$Result.GetResult<Prisma.$GrupoClientePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more GrupoClientes.
+     * @param {GrupoClienteDeleteManyArgs} args - Arguments to filter GrupoClientes to delete.
+     * @example
+     * // Delete a few GrupoClientes
+     * const { count } = await prisma.grupoCliente.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends GrupoClienteDeleteManyArgs>(args?: SelectSubset<T, GrupoClienteDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more GrupoClientes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {GrupoClienteUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many GrupoClientes
+     * const grupoCliente = await prisma.grupoCliente.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends GrupoClienteUpdateManyArgs>(args: SelectSubset<T, GrupoClienteUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one GrupoCliente.
+     * @param {GrupoClienteUpsertArgs} args - Arguments to update or create a GrupoCliente.
+     * @example
+     * // Update or create a GrupoCliente
+     * const grupoCliente = await prisma.grupoCliente.upsert({
+     *   create: {
+     *     // ... data to create a GrupoCliente
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the GrupoCliente we want to update
+     *   }
+     * })
+     */
+    upsert<T extends GrupoClienteUpsertArgs>(args: SelectSubset<T, GrupoClienteUpsertArgs<ExtArgs>>): Prisma__GrupoClienteClient<$Result.GetResult<Prisma.$GrupoClientePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of GrupoClientes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {GrupoClienteCountArgs} args - Arguments to filter GrupoClientes to count.
+     * @example
+     * // Count the number of GrupoClientes
+     * const count = await prisma.grupoCliente.count({
+     *   where: {
+     *     // ... the filter for the GrupoClientes we want to count
+     *   }
+     * })
+    **/
+    count<T extends GrupoClienteCountArgs>(
+      args?: Subset<T, GrupoClienteCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], GrupoClienteCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a GrupoCliente.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {GrupoClienteAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends GrupoClienteAggregateArgs>(args: Subset<T, GrupoClienteAggregateArgs>): Prisma.PrismaPromise<GetGrupoClienteAggregateType<T>>
+
+    /**
+     * Group by GrupoCliente.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {GrupoClienteGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends GrupoClienteGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: GrupoClienteGroupByArgs['orderBy'] }
+        : { orderBy?: GrupoClienteGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, GrupoClienteGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetGrupoClienteGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the GrupoCliente model
+   */
+  readonly fields: GrupoClienteFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for GrupoCliente.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__GrupoClienteClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    clientes<T extends GrupoCliente$clientesArgs<ExtArgs> = {}>(args?: Subset<T, GrupoCliente$clientesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ClientePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the GrupoCliente model
+   */
+  interface GrupoClienteFieldRefs {
+    readonly id: FieldRef<"GrupoCliente", 'String'>
+    readonly nome: FieldRef<"GrupoCliente", 'String'>
+    readonly tipo: FieldRef<"GrupoCliente", 'TipoCliente'>
+    readonly observacoes: FieldRef<"GrupoCliente", 'String'>
+    readonly criadoEm: FieldRef<"GrupoCliente", 'DateTime'>
+    readonly atualizadoEm: FieldRef<"GrupoCliente", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * GrupoCliente findUnique
+   */
+  export type GrupoClienteFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the GrupoCliente
+     */
+    select?: GrupoClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the GrupoCliente
+     */
+    omit?: GrupoClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: GrupoClienteInclude<ExtArgs> | null
+    /**
+     * Filter, which GrupoCliente to fetch.
+     */
+    where: GrupoClienteWhereUniqueInput
+  }
+
+  /**
+   * GrupoCliente findUniqueOrThrow
+   */
+  export type GrupoClienteFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the GrupoCliente
+     */
+    select?: GrupoClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the GrupoCliente
+     */
+    omit?: GrupoClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: GrupoClienteInclude<ExtArgs> | null
+    /**
+     * Filter, which GrupoCliente to fetch.
+     */
+    where: GrupoClienteWhereUniqueInput
+  }
+
+  /**
+   * GrupoCliente findFirst
+   */
+  export type GrupoClienteFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the GrupoCliente
+     */
+    select?: GrupoClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the GrupoCliente
+     */
+    omit?: GrupoClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: GrupoClienteInclude<ExtArgs> | null
+    /**
+     * Filter, which GrupoCliente to fetch.
+     */
+    where?: GrupoClienteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of GrupoClientes to fetch.
+     */
+    orderBy?: GrupoClienteOrderByWithRelationInput | GrupoClienteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for GrupoClientes.
+     */
+    cursor?: GrupoClienteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` GrupoClientes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` GrupoClientes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of GrupoClientes.
+     */
+    distinct?: GrupoClienteScalarFieldEnum | GrupoClienteScalarFieldEnum[]
+  }
+
+  /**
+   * GrupoCliente findFirstOrThrow
+   */
+  export type GrupoClienteFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the GrupoCliente
+     */
+    select?: GrupoClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the GrupoCliente
+     */
+    omit?: GrupoClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: GrupoClienteInclude<ExtArgs> | null
+    /**
+     * Filter, which GrupoCliente to fetch.
+     */
+    where?: GrupoClienteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of GrupoClientes to fetch.
+     */
+    orderBy?: GrupoClienteOrderByWithRelationInput | GrupoClienteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for GrupoClientes.
+     */
+    cursor?: GrupoClienteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` GrupoClientes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` GrupoClientes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of GrupoClientes.
+     */
+    distinct?: GrupoClienteScalarFieldEnum | GrupoClienteScalarFieldEnum[]
+  }
+
+  /**
+   * GrupoCliente findMany
+   */
+  export type GrupoClienteFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the GrupoCliente
+     */
+    select?: GrupoClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the GrupoCliente
+     */
+    omit?: GrupoClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: GrupoClienteInclude<ExtArgs> | null
+    /**
+     * Filter, which GrupoClientes to fetch.
+     */
+    where?: GrupoClienteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of GrupoClientes to fetch.
+     */
+    orderBy?: GrupoClienteOrderByWithRelationInput | GrupoClienteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing GrupoClientes.
+     */
+    cursor?: GrupoClienteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` GrupoClientes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` GrupoClientes.
+     */
+    skip?: number
+    distinct?: GrupoClienteScalarFieldEnum | GrupoClienteScalarFieldEnum[]
+  }
+
+  /**
+   * GrupoCliente create
+   */
+  export type GrupoClienteCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the GrupoCliente
+     */
+    select?: GrupoClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the GrupoCliente
+     */
+    omit?: GrupoClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: GrupoClienteInclude<ExtArgs> | null
+    /**
+     * The data needed to create a GrupoCliente.
+     */
+    data: XOR<GrupoClienteCreateInput, GrupoClienteUncheckedCreateInput>
+  }
+
+  /**
+   * GrupoCliente createMany
+   */
+  export type GrupoClienteCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many GrupoClientes.
+     */
+    data: GrupoClienteCreateManyInput | GrupoClienteCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * GrupoCliente update
+   */
+  export type GrupoClienteUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the GrupoCliente
+     */
+    select?: GrupoClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the GrupoCliente
+     */
+    omit?: GrupoClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: GrupoClienteInclude<ExtArgs> | null
+    /**
+     * The data needed to update a GrupoCliente.
+     */
+    data: XOR<GrupoClienteUpdateInput, GrupoClienteUncheckedUpdateInput>
+    /**
+     * Choose, which GrupoCliente to update.
+     */
+    where: GrupoClienteWhereUniqueInput
+  }
+
+  /**
+   * GrupoCliente updateMany
+   */
+  export type GrupoClienteUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update GrupoClientes.
+     */
+    data: XOR<GrupoClienteUpdateManyMutationInput, GrupoClienteUncheckedUpdateManyInput>
+    /**
+     * Filter which GrupoClientes to update
+     */
+    where?: GrupoClienteWhereInput
+    /**
+     * Limit how many GrupoClientes to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * GrupoCliente upsert
+   */
+  export type GrupoClienteUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the GrupoCliente
+     */
+    select?: GrupoClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the GrupoCliente
+     */
+    omit?: GrupoClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: GrupoClienteInclude<ExtArgs> | null
+    /**
+     * The filter to search for the GrupoCliente to update in case it exists.
+     */
+    where: GrupoClienteWhereUniqueInput
+    /**
+     * In case the GrupoCliente found by the `where` argument doesn't exist, create a new GrupoCliente with this data.
+     */
+    create: XOR<GrupoClienteCreateInput, GrupoClienteUncheckedCreateInput>
+    /**
+     * In case the GrupoCliente was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<GrupoClienteUpdateInput, GrupoClienteUncheckedUpdateInput>
+  }
+
+  /**
+   * GrupoCliente delete
+   */
+  export type GrupoClienteDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the GrupoCliente
+     */
+    select?: GrupoClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the GrupoCliente
+     */
+    omit?: GrupoClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: GrupoClienteInclude<ExtArgs> | null
+    /**
+     * Filter which GrupoCliente to delete.
+     */
+    where: GrupoClienteWhereUniqueInput
+  }
+
+  /**
+   * GrupoCliente deleteMany
+   */
+  export type GrupoClienteDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which GrupoClientes to delete
+     */
+    where?: GrupoClienteWhereInput
+    /**
+     * Limit how many GrupoClientes to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * GrupoCliente.clientes
+   */
+  export type GrupoCliente$clientesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Cliente
+     */
+    select?: ClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Cliente
+     */
+    omit?: ClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ClienteInclude<ExtArgs> | null
+    where?: ClienteWhereInput
+    orderBy?: ClienteOrderByWithRelationInput | ClienteOrderByWithRelationInput[]
+    cursor?: ClienteWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ClienteScalarFieldEnum | ClienteScalarFieldEnum[]
+  }
+
+  /**
+   * GrupoCliente without action
+   */
+  export type GrupoClienteDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the GrupoCliente
+     */
+    select?: GrupoClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the GrupoCliente
+     */
+    omit?: GrupoClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: GrupoClienteInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Model Cliente
    */
 
@@ -5373,6 +6537,7 @@ export namespace Prisma {
     externalId: string | null
     nome: string | null
     tipo: $Enums.TipoCliente | null
+    grupoId: string | null
     cnpjCpf: string | null
     endereco: string | null
     contatoPrincipal: string | null
@@ -5391,6 +6556,7 @@ export namespace Prisma {
     externalId: string | null
     nome: string | null
     tipo: $Enums.TipoCliente | null
+    grupoId: string | null
     cnpjCpf: string | null
     endereco: string | null
     contatoPrincipal: string | null
@@ -5409,6 +6575,7 @@ export namespace Prisma {
     externalId: number
     nome: number
     tipo: number
+    grupoId: number
     cnpjCpf: number
     endereco: number
     contatoPrincipal: number
@@ -5438,6 +6605,7 @@ export namespace Prisma {
     externalId?: true
     nome?: true
     tipo?: true
+    grupoId?: true
     cnpjCpf?: true
     endereco?: true
     contatoPrincipal?: true
@@ -5456,6 +6624,7 @@ export namespace Prisma {
     externalId?: true
     nome?: true
     tipo?: true
+    grupoId?: true
     cnpjCpf?: true
     endereco?: true
     contatoPrincipal?: true
@@ -5474,6 +6643,7 @@ export namespace Prisma {
     externalId?: true
     nome?: true
     tipo?: true
+    grupoId?: true
     cnpjCpf?: true
     endereco?: true
     contatoPrincipal?: true
@@ -5580,6 +6750,7 @@ export namespace Prisma {
     externalId: string | null
     nome: string
     tipo: $Enums.TipoCliente
+    grupoId: string | null
     cnpjCpf: string | null
     endereco: string | null
     contatoPrincipal: string | null
@@ -5618,6 +6789,7 @@ export namespace Prisma {
     externalId?: boolean
     nome?: boolean
     tipo?: boolean
+    grupoId?: boolean
     cnpjCpf?: boolean
     endereco?: boolean
     contatoPrincipal?: boolean
@@ -5630,6 +6802,7 @@ export namespace Prisma {
     urlSite?: boolean
     dataCadastro?: boolean
     dataUltimaAtualizacao?: boolean
+    grupo?: boolean | Cliente$grupoArgs<ExtArgs>
     pedidos?: boolean | Cliente$pedidosArgs<ExtArgs>
     interacoes?: boolean | Cliente$interacoesArgs<ExtArgs>
     oportunidades?: boolean | Cliente$oportunidadesArgs<ExtArgs>
@@ -5649,6 +6822,7 @@ export namespace Prisma {
     externalId?: boolean
     nome?: boolean
     tipo?: boolean
+    grupoId?: boolean
     cnpjCpf?: boolean
     endereco?: boolean
     contatoPrincipal?: boolean
@@ -5663,8 +6837,9 @@ export namespace Prisma {
     dataUltimaAtualizacao?: boolean
   }
 
-  export type ClienteOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "externalId" | "nome" | "tipo" | "cnpjCpf" | "endereco" | "contatoPrincipal" | "emailPrincipal" | "telefoneWhatsapp" | "scoreComercial" | "statusRelacionamento" | "tags" | "urlInstagram" | "urlSite" | "dataCadastro" | "dataUltimaAtualizacao", ExtArgs["result"]["cliente"]>
+  export type ClienteOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "externalId" | "nome" | "tipo" | "grupoId" | "cnpjCpf" | "endereco" | "contatoPrincipal" | "emailPrincipal" | "telefoneWhatsapp" | "scoreComercial" | "statusRelacionamento" | "tags" | "urlInstagram" | "urlSite" | "dataCadastro" | "dataUltimaAtualizacao", ExtArgs["result"]["cliente"]>
   export type ClienteInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    grupo?: boolean | Cliente$grupoArgs<ExtArgs>
     pedidos?: boolean | Cliente$pedidosArgs<ExtArgs>
     interacoes?: boolean | Cliente$interacoesArgs<ExtArgs>
     oportunidades?: boolean | Cliente$oportunidadesArgs<ExtArgs>
@@ -5680,6 +6855,7 @@ export namespace Prisma {
   export type $ClientePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Cliente"
     objects: {
+      grupo: Prisma.$GrupoClientePayload<ExtArgs> | null
       pedidos: Prisma.$PedidoPayload<ExtArgs>[]
       interacoes: Prisma.$InteracaoPayload<ExtArgs>[]
       oportunidades: Prisma.$OportunidadePayload<ExtArgs>[]
@@ -5695,6 +6871,7 @@ export namespace Prisma {
       externalId: string | null
       nome: string
       tipo: $Enums.TipoCliente
+      grupoId: string | null
       cnpjCpf: string | null
       endereco: string | null
       contatoPrincipal: string | null
@@ -6047,6 +7224,7 @@ export namespace Prisma {
    */
   export interface Prisma__ClienteClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    grupo<T extends Cliente$grupoArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$grupoArgs<ExtArgs>>): Prisma__GrupoClienteClient<$Result.GetResult<Prisma.$GrupoClientePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     pedidos<T extends Cliente$pedidosArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$pedidosArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     interacoes<T extends Cliente$interacoesArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$interacoesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$InteracaoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     oportunidades<T extends Cliente$oportunidadesArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$oportunidadesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OportunidadePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -6089,6 +7267,7 @@ export namespace Prisma {
     readonly externalId: FieldRef<"Cliente", 'String'>
     readonly nome: FieldRef<"Cliente", 'String'>
     readonly tipo: FieldRef<"Cliente", 'TipoCliente'>
+    readonly grupoId: FieldRef<"Cliente", 'String'>
     readonly cnpjCpf: FieldRef<"Cliente", 'String'>
     readonly endereco: FieldRef<"Cliente", 'String'>
     readonly contatoPrincipal: FieldRef<"Cliente", 'String'>
@@ -6441,6 +7620,25 @@ export namespace Prisma {
      * Limit how many Clientes to delete.
      */
     limit?: number
+  }
+
+  /**
+   * Cliente.grupo
+   */
+  export type Cliente$grupoArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the GrupoCliente
+     */
+    select?: GrupoClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the GrupoCliente
+     */
+    omit?: GrupoClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: GrupoClienteInclude<ExtArgs> | null
+    where?: GrupoClienteWhereInput
   }
 
   /**
@@ -16147,6 +17345,1029 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: PedidoOperacionalAuditoriaInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model FechamentoSemanal
+   */
+
+  export type AggregateFechamentoSemanal = {
+    _count: FechamentoSemanalCountAggregateOutputType | null
+    _avg: FechamentoSemanalAvgAggregateOutputType | null
+    _sum: FechamentoSemanalSumAggregateOutputType | null
+    _min: FechamentoSemanalMinAggregateOutputType | null
+    _max: FechamentoSemanalMaxAggregateOutputType | null
+  }
+
+  export type FechamentoSemanalAvgAggregateOutputType = {
+    totalPedidos: number | null
+    totalEntregues: number | null
+    totalCancelados: number | null
+    valorEntregue: Decimal | null
+  }
+
+  export type FechamentoSemanalSumAggregateOutputType = {
+    totalPedidos: number | null
+    totalEntregues: number | null
+    totalCancelados: number | null
+    valorEntregue: Decimal | null
+  }
+
+  export type FechamentoSemanalMinAggregateOutputType = {
+    id: string | null
+    semanaInicio: Date | null
+    semanaFim: Date | null
+    fechadoPorId: string | null
+    fechadoPorNome: string | null
+    fechadoEm: Date | null
+    totalPedidos: number | null
+    totalEntregues: number | null
+    totalCancelados: number | null
+    valorEntregue: Decimal | null
+    reabertoEm: Date | null
+    reabertoPorId: string | null
+    reabertoPorNome: string | null
+  }
+
+  export type FechamentoSemanalMaxAggregateOutputType = {
+    id: string | null
+    semanaInicio: Date | null
+    semanaFim: Date | null
+    fechadoPorId: string | null
+    fechadoPorNome: string | null
+    fechadoEm: Date | null
+    totalPedidos: number | null
+    totalEntregues: number | null
+    totalCancelados: number | null
+    valorEntregue: Decimal | null
+    reabertoEm: Date | null
+    reabertoPorId: string | null
+    reabertoPorNome: string | null
+  }
+
+  export type FechamentoSemanalCountAggregateOutputType = {
+    id: number
+    semanaInicio: number
+    semanaFim: number
+    fechadoPorId: number
+    fechadoPorNome: number
+    fechadoEm: number
+    totalPedidos: number
+    totalEntregues: number
+    totalCancelados: number
+    valorEntregue: number
+    reabertoEm: number
+    reabertoPorId: number
+    reabertoPorNome: number
+    snapshot: number
+    _all: number
+  }
+
+
+  export type FechamentoSemanalAvgAggregateInputType = {
+    totalPedidos?: true
+    totalEntregues?: true
+    totalCancelados?: true
+    valorEntregue?: true
+  }
+
+  export type FechamentoSemanalSumAggregateInputType = {
+    totalPedidos?: true
+    totalEntregues?: true
+    totalCancelados?: true
+    valorEntregue?: true
+  }
+
+  export type FechamentoSemanalMinAggregateInputType = {
+    id?: true
+    semanaInicio?: true
+    semanaFim?: true
+    fechadoPorId?: true
+    fechadoPorNome?: true
+    fechadoEm?: true
+    totalPedidos?: true
+    totalEntregues?: true
+    totalCancelados?: true
+    valorEntregue?: true
+    reabertoEm?: true
+    reabertoPorId?: true
+    reabertoPorNome?: true
+  }
+
+  export type FechamentoSemanalMaxAggregateInputType = {
+    id?: true
+    semanaInicio?: true
+    semanaFim?: true
+    fechadoPorId?: true
+    fechadoPorNome?: true
+    fechadoEm?: true
+    totalPedidos?: true
+    totalEntregues?: true
+    totalCancelados?: true
+    valorEntregue?: true
+    reabertoEm?: true
+    reabertoPorId?: true
+    reabertoPorNome?: true
+  }
+
+  export type FechamentoSemanalCountAggregateInputType = {
+    id?: true
+    semanaInicio?: true
+    semanaFim?: true
+    fechadoPorId?: true
+    fechadoPorNome?: true
+    fechadoEm?: true
+    totalPedidos?: true
+    totalEntregues?: true
+    totalCancelados?: true
+    valorEntregue?: true
+    reabertoEm?: true
+    reabertoPorId?: true
+    reabertoPorNome?: true
+    snapshot?: true
+    _all?: true
+  }
+
+  export type FechamentoSemanalAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FechamentoSemanal to aggregate.
+     */
+    where?: FechamentoSemanalWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FechamentoSemanals to fetch.
+     */
+    orderBy?: FechamentoSemanalOrderByWithRelationInput | FechamentoSemanalOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: FechamentoSemanalWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FechamentoSemanals from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FechamentoSemanals.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned FechamentoSemanals
+    **/
+    _count?: true | FechamentoSemanalCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: FechamentoSemanalAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: FechamentoSemanalSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: FechamentoSemanalMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: FechamentoSemanalMaxAggregateInputType
+  }
+
+  export type GetFechamentoSemanalAggregateType<T extends FechamentoSemanalAggregateArgs> = {
+        [P in keyof T & keyof AggregateFechamentoSemanal]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateFechamentoSemanal[P]>
+      : GetScalarType<T[P], AggregateFechamentoSemanal[P]>
+  }
+
+
+
+
+  export type FechamentoSemanalGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FechamentoSemanalWhereInput
+    orderBy?: FechamentoSemanalOrderByWithAggregationInput | FechamentoSemanalOrderByWithAggregationInput[]
+    by: FechamentoSemanalScalarFieldEnum[] | FechamentoSemanalScalarFieldEnum
+    having?: FechamentoSemanalScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: FechamentoSemanalCountAggregateInputType | true
+    _avg?: FechamentoSemanalAvgAggregateInputType
+    _sum?: FechamentoSemanalSumAggregateInputType
+    _min?: FechamentoSemanalMinAggregateInputType
+    _max?: FechamentoSemanalMaxAggregateInputType
+  }
+
+  export type FechamentoSemanalGroupByOutputType = {
+    id: string
+    semanaInicio: Date
+    semanaFim: Date
+    fechadoPorId: string | null
+    fechadoPorNome: string | null
+    fechadoEm: Date
+    totalPedidos: number
+    totalEntregues: number
+    totalCancelados: number
+    valorEntregue: Decimal | null
+    reabertoEm: Date | null
+    reabertoPorId: string | null
+    reabertoPorNome: string | null
+    snapshot: JsonValue | null
+    _count: FechamentoSemanalCountAggregateOutputType | null
+    _avg: FechamentoSemanalAvgAggregateOutputType | null
+    _sum: FechamentoSemanalSumAggregateOutputType | null
+    _min: FechamentoSemanalMinAggregateOutputType | null
+    _max: FechamentoSemanalMaxAggregateOutputType | null
+  }
+
+  type GetFechamentoSemanalGroupByPayload<T extends FechamentoSemanalGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<FechamentoSemanalGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof FechamentoSemanalGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], FechamentoSemanalGroupByOutputType[P]>
+            : GetScalarType<T[P], FechamentoSemanalGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type FechamentoSemanalSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    semanaInicio?: boolean
+    semanaFim?: boolean
+    fechadoPorId?: boolean
+    fechadoPorNome?: boolean
+    fechadoEm?: boolean
+    totalPedidos?: boolean
+    totalEntregues?: boolean
+    totalCancelados?: boolean
+    valorEntregue?: boolean
+    reabertoEm?: boolean
+    reabertoPorId?: boolean
+    reabertoPorNome?: boolean
+    snapshot?: boolean
+  }, ExtArgs["result"]["fechamentoSemanal"]>
+
+
+
+  export type FechamentoSemanalSelectScalar = {
+    id?: boolean
+    semanaInicio?: boolean
+    semanaFim?: boolean
+    fechadoPorId?: boolean
+    fechadoPorNome?: boolean
+    fechadoEm?: boolean
+    totalPedidos?: boolean
+    totalEntregues?: boolean
+    totalCancelados?: boolean
+    valorEntregue?: boolean
+    reabertoEm?: boolean
+    reabertoPorId?: boolean
+    reabertoPorNome?: boolean
+    snapshot?: boolean
+  }
+
+  export type FechamentoSemanalOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "semanaInicio" | "semanaFim" | "fechadoPorId" | "fechadoPorNome" | "fechadoEm" | "totalPedidos" | "totalEntregues" | "totalCancelados" | "valorEntregue" | "reabertoEm" | "reabertoPorId" | "reabertoPorNome" | "snapshot", ExtArgs["result"]["fechamentoSemanal"]>
+
+  export type $FechamentoSemanalPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "FechamentoSemanal"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      semanaInicio: Date
+      semanaFim: Date
+      fechadoPorId: string | null
+      fechadoPorNome: string | null
+      fechadoEm: Date
+      totalPedidos: number
+      totalEntregues: number
+      totalCancelados: number
+      valorEntregue: Prisma.Decimal | null
+      reabertoEm: Date | null
+      reabertoPorId: string | null
+      reabertoPorNome: string | null
+      snapshot: Prisma.JsonValue | null
+    }, ExtArgs["result"]["fechamentoSemanal"]>
+    composites: {}
+  }
+
+  type FechamentoSemanalGetPayload<S extends boolean | null | undefined | FechamentoSemanalDefaultArgs> = $Result.GetResult<Prisma.$FechamentoSemanalPayload, S>
+
+  type FechamentoSemanalCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<FechamentoSemanalFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: FechamentoSemanalCountAggregateInputType | true
+    }
+
+  export interface FechamentoSemanalDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['FechamentoSemanal'], meta: { name: 'FechamentoSemanal' } }
+    /**
+     * Find zero or one FechamentoSemanal that matches the filter.
+     * @param {FechamentoSemanalFindUniqueArgs} args - Arguments to find a FechamentoSemanal
+     * @example
+     * // Get one FechamentoSemanal
+     * const fechamentoSemanal = await prisma.fechamentoSemanal.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends FechamentoSemanalFindUniqueArgs>(args: SelectSubset<T, FechamentoSemanalFindUniqueArgs<ExtArgs>>): Prisma__FechamentoSemanalClient<$Result.GetResult<Prisma.$FechamentoSemanalPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one FechamentoSemanal that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {FechamentoSemanalFindUniqueOrThrowArgs} args - Arguments to find a FechamentoSemanal
+     * @example
+     * // Get one FechamentoSemanal
+     * const fechamentoSemanal = await prisma.fechamentoSemanal.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends FechamentoSemanalFindUniqueOrThrowArgs>(args: SelectSubset<T, FechamentoSemanalFindUniqueOrThrowArgs<ExtArgs>>): Prisma__FechamentoSemanalClient<$Result.GetResult<Prisma.$FechamentoSemanalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FechamentoSemanal that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FechamentoSemanalFindFirstArgs} args - Arguments to find a FechamentoSemanal
+     * @example
+     * // Get one FechamentoSemanal
+     * const fechamentoSemanal = await prisma.fechamentoSemanal.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends FechamentoSemanalFindFirstArgs>(args?: SelectSubset<T, FechamentoSemanalFindFirstArgs<ExtArgs>>): Prisma__FechamentoSemanalClient<$Result.GetResult<Prisma.$FechamentoSemanalPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FechamentoSemanal that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FechamentoSemanalFindFirstOrThrowArgs} args - Arguments to find a FechamentoSemanal
+     * @example
+     * // Get one FechamentoSemanal
+     * const fechamentoSemanal = await prisma.fechamentoSemanal.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends FechamentoSemanalFindFirstOrThrowArgs>(args?: SelectSubset<T, FechamentoSemanalFindFirstOrThrowArgs<ExtArgs>>): Prisma__FechamentoSemanalClient<$Result.GetResult<Prisma.$FechamentoSemanalPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more FechamentoSemanals that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FechamentoSemanalFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all FechamentoSemanals
+     * const fechamentoSemanals = await prisma.fechamentoSemanal.findMany()
+     * 
+     * // Get first 10 FechamentoSemanals
+     * const fechamentoSemanals = await prisma.fechamentoSemanal.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const fechamentoSemanalWithIdOnly = await prisma.fechamentoSemanal.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends FechamentoSemanalFindManyArgs>(args?: SelectSubset<T, FechamentoSemanalFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FechamentoSemanalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a FechamentoSemanal.
+     * @param {FechamentoSemanalCreateArgs} args - Arguments to create a FechamentoSemanal.
+     * @example
+     * // Create one FechamentoSemanal
+     * const FechamentoSemanal = await prisma.fechamentoSemanal.create({
+     *   data: {
+     *     // ... data to create a FechamentoSemanal
+     *   }
+     * })
+     * 
+     */
+    create<T extends FechamentoSemanalCreateArgs>(args: SelectSubset<T, FechamentoSemanalCreateArgs<ExtArgs>>): Prisma__FechamentoSemanalClient<$Result.GetResult<Prisma.$FechamentoSemanalPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many FechamentoSemanals.
+     * @param {FechamentoSemanalCreateManyArgs} args - Arguments to create many FechamentoSemanals.
+     * @example
+     * // Create many FechamentoSemanals
+     * const fechamentoSemanal = await prisma.fechamentoSemanal.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends FechamentoSemanalCreateManyArgs>(args?: SelectSubset<T, FechamentoSemanalCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a FechamentoSemanal.
+     * @param {FechamentoSemanalDeleteArgs} args - Arguments to delete one FechamentoSemanal.
+     * @example
+     * // Delete one FechamentoSemanal
+     * const FechamentoSemanal = await prisma.fechamentoSemanal.delete({
+     *   where: {
+     *     // ... filter to delete one FechamentoSemanal
+     *   }
+     * })
+     * 
+     */
+    delete<T extends FechamentoSemanalDeleteArgs>(args: SelectSubset<T, FechamentoSemanalDeleteArgs<ExtArgs>>): Prisma__FechamentoSemanalClient<$Result.GetResult<Prisma.$FechamentoSemanalPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one FechamentoSemanal.
+     * @param {FechamentoSemanalUpdateArgs} args - Arguments to update one FechamentoSemanal.
+     * @example
+     * // Update one FechamentoSemanal
+     * const fechamentoSemanal = await prisma.fechamentoSemanal.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends FechamentoSemanalUpdateArgs>(args: SelectSubset<T, FechamentoSemanalUpdateArgs<ExtArgs>>): Prisma__FechamentoSemanalClient<$Result.GetResult<Prisma.$FechamentoSemanalPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more FechamentoSemanals.
+     * @param {FechamentoSemanalDeleteManyArgs} args - Arguments to filter FechamentoSemanals to delete.
+     * @example
+     * // Delete a few FechamentoSemanals
+     * const { count } = await prisma.fechamentoSemanal.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends FechamentoSemanalDeleteManyArgs>(args?: SelectSubset<T, FechamentoSemanalDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FechamentoSemanals.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FechamentoSemanalUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many FechamentoSemanals
+     * const fechamentoSemanal = await prisma.fechamentoSemanal.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends FechamentoSemanalUpdateManyArgs>(args: SelectSubset<T, FechamentoSemanalUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one FechamentoSemanal.
+     * @param {FechamentoSemanalUpsertArgs} args - Arguments to update or create a FechamentoSemanal.
+     * @example
+     * // Update or create a FechamentoSemanal
+     * const fechamentoSemanal = await prisma.fechamentoSemanal.upsert({
+     *   create: {
+     *     // ... data to create a FechamentoSemanal
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the FechamentoSemanal we want to update
+     *   }
+     * })
+     */
+    upsert<T extends FechamentoSemanalUpsertArgs>(args: SelectSubset<T, FechamentoSemanalUpsertArgs<ExtArgs>>): Prisma__FechamentoSemanalClient<$Result.GetResult<Prisma.$FechamentoSemanalPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of FechamentoSemanals.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FechamentoSemanalCountArgs} args - Arguments to filter FechamentoSemanals to count.
+     * @example
+     * // Count the number of FechamentoSemanals
+     * const count = await prisma.fechamentoSemanal.count({
+     *   where: {
+     *     // ... the filter for the FechamentoSemanals we want to count
+     *   }
+     * })
+    **/
+    count<T extends FechamentoSemanalCountArgs>(
+      args?: Subset<T, FechamentoSemanalCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], FechamentoSemanalCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a FechamentoSemanal.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FechamentoSemanalAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends FechamentoSemanalAggregateArgs>(args: Subset<T, FechamentoSemanalAggregateArgs>): Prisma.PrismaPromise<GetFechamentoSemanalAggregateType<T>>
+
+    /**
+     * Group by FechamentoSemanal.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FechamentoSemanalGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends FechamentoSemanalGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: FechamentoSemanalGroupByArgs['orderBy'] }
+        : { orderBy?: FechamentoSemanalGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, FechamentoSemanalGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetFechamentoSemanalGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the FechamentoSemanal model
+   */
+  readonly fields: FechamentoSemanalFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for FechamentoSemanal.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__FechamentoSemanalClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the FechamentoSemanal model
+   */
+  interface FechamentoSemanalFieldRefs {
+    readonly id: FieldRef<"FechamentoSemanal", 'String'>
+    readonly semanaInicio: FieldRef<"FechamentoSemanal", 'DateTime'>
+    readonly semanaFim: FieldRef<"FechamentoSemanal", 'DateTime'>
+    readonly fechadoPorId: FieldRef<"FechamentoSemanal", 'String'>
+    readonly fechadoPorNome: FieldRef<"FechamentoSemanal", 'String'>
+    readonly fechadoEm: FieldRef<"FechamentoSemanal", 'DateTime'>
+    readonly totalPedidos: FieldRef<"FechamentoSemanal", 'Int'>
+    readonly totalEntregues: FieldRef<"FechamentoSemanal", 'Int'>
+    readonly totalCancelados: FieldRef<"FechamentoSemanal", 'Int'>
+    readonly valorEntregue: FieldRef<"FechamentoSemanal", 'Decimal'>
+    readonly reabertoEm: FieldRef<"FechamentoSemanal", 'DateTime'>
+    readonly reabertoPorId: FieldRef<"FechamentoSemanal", 'String'>
+    readonly reabertoPorNome: FieldRef<"FechamentoSemanal", 'String'>
+    readonly snapshot: FieldRef<"FechamentoSemanal", 'Json'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * FechamentoSemanal findUnique
+   */
+  export type FechamentoSemanalFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FechamentoSemanal
+     */
+    select?: FechamentoSemanalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FechamentoSemanal
+     */
+    omit?: FechamentoSemanalOmit<ExtArgs> | null
+    /**
+     * Filter, which FechamentoSemanal to fetch.
+     */
+    where: FechamentoSemanalWhereUniqueInput
+  }
+
+  /**
+   * FechamentoSemanal findUniqueOrThrow
+   */
+  export type FechamentoSemanalFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FechamentoSemanal
+     */
+    select?: FechamentoSemanalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FechamentoSemanal
+     */
+    omit?: FechamentoSemanalOmit<ExtArgs> | null
+    /**
+     * Filter, which FechamentoSemanal to fetch.
+     */
+    where: FechamentoSemanalWhereUniqueInput
+  }
+
+  /**
+   * FechamentoSemanal findFirst
+   */
+  export type FechamentoSemanalFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FechamentoSemanal
+     */
+    select?: FechamentoSemanalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FechamentoSemanal
+     */
+    omit?: FechamentoSemanalOmit<ExtArgs> | null
+    /**
+     * Filter, which FechamentoSemanal to fetch.
+     */
+    where?: FechamentoSemanalWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FechamentoSemanals to fetch.
+     */
+    orderBy?: FechamentoSemanalOrderByWithRelationInput | FechamentoSemanalOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FechamentoSemanals.
+     */
+    cursor?: FechamentoSemanalWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FechamentoSemanals from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FechamentoSemanals.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FechamentoSemanals.
+     */
+    distinct?: FechamentoSemanalScalarFieldEnum | FechamentoSemanalScalarFieldEnum[]
+  }
+
+  /**
+   * FechamentoSemanal findFirstOrThrow
+   */
+  export type FechamentoSemanalFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FechamentoSemanal
+     */
+    select?: FechamentoSemanalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FechamentoSemanal
+     */
+    omit?: FechamentoSemanalOmit<ExtArgs> | null
+    /**
+     * Filter, which FechamentoSemanal to fetch.
+     */
+    where?: FechamentoSemanalWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FechamentoSemanals to fetch.
+     */
+    orderBy?: FechamentoSemanalOrderByWithRelationInput | FechamentoSemanalOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FechamentoSemanals.
+     */
+    cursor?: FechamentoSemanalWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FechamentoSemanals from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FechamentoSemanals.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FechamentoSemanals.
+     */
+    distinct?: FechamentoSemanalScalarFieldEnum | FechamentoSemanalScalarFieldEnum[]
+  }
+
+  /**
+   * FechamentoSemanal findMany
+   */
+  export type FechamentoSemanalFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FechamentoSemanal
+     */
+    select?: FechamentoSemanalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FechamentoSemanal
+     */
+    omit?: FechamentoSemanalOmit<ExtArgs> | null
+    /**
+     * Filter, which FechamentoSemanals to fetch.
+     */
+    where?: FechamentoSemanalWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FechamentoSemanals to fetch.
+     */
+    orderBy?: FechamentoSemanalOrderByWithRelationInput | FechamentoSemanalOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing FechamentoSemanals.
+     */
+    cursor?: FechamentoSemanalWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FechamentoSemanals from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FechamentoSemanals.
+     */
+    skip?: number
+    distinct?: FechamentoSemanalScalarFieldEnum | FechamentoSemanalScalarFieldEnum[]
+  }
+
+  /**
+   * FechamentoSemanal create
+   */
+  export type FechamentoSemanalCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FechamentoSemanal
+     */
+    select?: FechamentoSemanalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FechamentoSemanal
+     */
+    omit?: FechamentoSemanalOmit<ExtArgs> | null
+    /**
+     * The data needed to create a FechamentoSemanal.
+     */
+    data: XOR<FechamentoSemanalCreateInput, FechamentoSemanalUncheckedCreateInput>
+  }
+
+  /**
+   * FechamentoSemanal createMany
+   */
+  export type FechamentoSemanalCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many FechamentoSemanals.
+     */
+    data: FechamentoSemanalCreateManyInput | FechamentoSemanalCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * FechamentoSemanal update
+   */
+  export type FechamentoSemanalUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FechamentoSemanal
+     */
+    select?: FechamentoSemanalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FechamentoSemanal
+     */
+    omit?: FechamentoSemanalOmit<ExtArgs> | null
+    /**
+     * The data needed to update a FechamentoSemanal.
+     */
+    data: XOR<FechamentoSemanalUpdateInput, FechamentoSemanalUncheckedUpdateInput>
+    /**
+     * Choose, which FechamentoSemanal to update.
+     */
+    where: FechamentoSemanalWhereUniqueInput
+  }
+
+  /**
+   * FechamentoSemanal updateMany
+   */
+  export type FechamentoSemanalUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update FechamentoSemanals.
+     */
+    data: XOR<FechamentoSemanalUpdateManyMutationInput, FechamentoSemanalUncheckedUpdateManyInput>
+    /**
+     * Filter which FechamentoSemanals to update
+     */
+    where?: FechamentoSemanalWhereInput
+    /**
+     * Limit how many FechamentoSemanals to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * FechamentoSemanal upsert
+   */
+  export type FechamentoSemanalUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FechamentoSemanal
+     */
+    select?: FechamentoSemanalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FechamentoSemanal
+     */
+    omit?: FechamentoSemanalOmit<ExtArgs> | null
+    /**
+     * The filter to search for the FechamentoSemanal to update in case it exists.
+     */
+    where: FechamentoSemanalWhereUniqueInput
+    /**
+     * In case the FechamentoSemanal found by the `where` argument doesn't exist, create a new FechamentoSemanal with this data.
+     */
+    create: XOR<FechamentoSemanalCreateInput, FechamentoSemanalUncheckedCreateInput>
+    /**
+     * In case the FechamentoSemanal was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<FechamentoSemanalUpdateInput, FechamentoSemanalUncheckedUpdateInput>
+  }
+
+  /**
+   * FechamentoSemanal delete
+   */
+  export type FechamentoSemanalDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FechamentoSemanal
+     */
+    select?: FechamentoSemanalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FechamentoSemanal
+     */
+    omit?: FechamentoSemanalOmit<ExtArgs> | null
+    /**
+     * Filter which FechamentoSemanal to delete.
+     */
+    where: FechamentoSemanalWhereUniqueInput
+  }
+
+  /**
+   * FechamentoSemanal deleteMany
+   */
+  export type FechamentoSemanalDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FechamentoSemanals to delete
+     */
+    where?: FechamentoSemanalWhereInput
+    /**
+     * Limit how many FechamentoSemanals to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * FechamentoSemanal without action
+   */
+  export type FechamentoSemanalDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FechamentoSemanal
+     */
+    select?: FechamentoSemanalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FechamentoSemanal
+     */
+    omit?: FechamentoSemanalOmit<ExtArgs> | null
   }
 
 
@@ -26868,11 +29089,24 @@ export namespace Prisma {
   export type RefreshTokenScalarFieldEnum = (typeof RefreshTokenScalarFieldEnum)[keyof typeof RefreshTokenScalarFieldEnum]
 
 
+  export const GrupoClienteScalarFieldEnum: {
+    id: 'id',
+    nome: 'nome',
+    tipo: 'tipo',
+    observacoes: 'observacoes',
+    criadoEm: 'criadoEm',
+    atualizadoEm: 'atualizadoEm'
+  };
+
+  export type GrupoClienteScalarFieldEnum = (typeof GrupoClienteScalarFieldEnum)[keyof typeof GrupoClienteScalarFieldEnum]
+
+
   export const ClienteScalarFieldEnum: {
     id: 'id',
     externalId: 'externalId',
     nome: 'nome',
     tipo: 'tipo',
+    grupoId: 'grupoId',
     cnpjCpf: 'cnpjCpf',
     endereco: 'endereco',
     contatoPrincipal: 'contatoPrincipal',
@@ -27031,6 +29265,26 @@ export namespace Prisma {
   };
 
   export type PedidoOperacionalAuditoriaScalarFieldEnum = (typeof PedidoOperacionalAuditoriaScalarFieldEnum)[keyof typeof PedidoOperacionalAuditoriaScalarFieldEnum]
+
+
+  export const FechamentoSemanalScalarFieldEnum: {
+    id: 'id',
+    semanaInicio: 'semanaInicio',
+    semanaFim: 'semanaFim',
+    fechadoPorId: 'fechadoPorId',
+    fechadoPorNome: 'fechadoPorNome',
+    fechadoEm: 'fechadoEm',
+    totalPedidos: 'totalPedidos',
+    totalEntregues: 'totalEntregues',
+    totalCancelados: 'totalCancelados',
+    valorEntregue: 'valorEntregue',
+    reabertoEm: 'reabertoEm',
+    reabertoPorId: 'reabertoPorId',
+    reabertoPorNome: 'reabertoPorNome',
+    snapshot: 'snapshot'
+  };
+
+  export type FechamentoSemanalScalarFieldEnum = (typeof FechamentoSemanalScalarFieldEnum)[keyof typeof FechamentoSemanalScalarFieldEnum]
 
 
   export const PedidoScalarFieldEnum: {
@@ -27239,6 +29493,15 @@ export namespace Prisma {
   export type RefreshTokenOrderByRelevanceFieldEnum = (typeof RefreshTokenOrderByRelevanceFieldEnum)[keyof typeof RefreshTokenOrderByRelevanceFieldEnum]
 
 
+  export const GrupoClienteOrderByRelevanceFieldEnum: {
+    id: 'id',
+    nome: 'nome',
+    observacoes: 'observacoes'
+  };
+
+  export type GrupoClienteOrderByRelevanceFieldEnum = (typeof GrupoClienteOrderByRelevanceFieldEnum)[keyof typeof GrupoClienteOrderByRelevanceFieldEnum]
+
+
   export const JsonNullValueFilter: {
     DbNull: typeof DbNull,
     JsonNull: typeof JsonNull,
@@ -27260,6 +29523,7 @@ export namespace Prisma {
     id: 'id',
     externalId: 'externalId',
     nome: 'nome',
+    grupoId: 'grupoId',
     cnpjCpf: 'cnpjCpf',
     endereco: 'endereco',
     contatoPrincipal: 'contatoPrincipal',
@@ -27369,6 +29633,17 @@ export namespace Prisma {
   };
 
   export type PedidoOperacionalAuditoriaOrderByRelevanceFieldEnum = (typeof PedidoOperacionalAuditoriaOrderByRelevanceFieldEnum)[keyof typeof PedidoOperacionalAuditoriaOrderByRelevanceFieldEnum]
+
+
+  export const FechamentoSemanalOrderByRelevanceFieldEnum: {
+    id: 'id',
+    fechadoPorId: 'fechadoPorId',
+    fechadoPorNome: 'fechadoPorNome',
+    reabertoPorId: 'reabertoPorId',
+    reabertoPorNome: 'reabertoPorNome'
+  };
+
+  export type FechamentoSemanalOrderByRelevanceFieldEnum = (typeof FechamentoSemanalOrderByRelevanceFieldEnum)[keyof typeof FechamentoSemanalOrderByRelevanceFieldEnum]
 
 
   export const PedidoOrderByRelevanceFieldEnum: {
@@ -27808,6 +30083,67 @@ export namespace Prisma {
     revogadoEm?: DateTimeNullableWithAggregatesFilter<"RefreshToken"> | Date | string | null
   }
 
+  export type GrupoClienteWhereInput = {
+    AND?: GrupoClienteWhereInput | GrupoClienteWhereInput[]
+    OR?: GrupoClienteWhereInput[]
+    NOT?: GrupoClienteWhereInput | GrupoClienteWhereInput[]
+    id?: StringFilter<"GrupoCliente"> | string
+    nome?: StringFilter<"GrupoCliente"> | string
+    tipo?: EnumTipoClienteNullableFilter<"GrupoCliente"> | $Enums.TipoCliente | null
+    observacoes?: StringNullableFilter<"GrupoCliente"> | string | null
+    criadoEm?: DateTimeFilter<"GrupoCliente"> | Date | string
+    atualizadoEm?: DateTimeFilter<"GrupoCliente"> | Date | string
+    clientes?: ClienteListRelationFilter
+  }
+
+  export type GrupoClienteOrderByWithRelationInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    tipo?: SortOrderInput | SortOrder
+    observacoes?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    clientes?: ClienteOrderByRelationAggregateInput
+    _relevance?: GrupoClienteOrderByRelevanceInput
+  }
+
+  export type GrupoClienteWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: GrupoClienteWhereInput | GrupoClienteWhereInput[]
+    OR?: GrupoClienteWhereInput[]
+    NOT?: GrupoClienteWhereInput | GrupoClienteWhereInput[]
+    nome?: StringFilter<"GrupoCliente"> | string
+    tipo?: EnumTipoClienteNullableFilter<"GrupoCliente"> | $Enums.TipoCliente | null
+    observacoes?: StringNullableFilter<"GrupoCliente"> | string | null
+    criadoEm?: DateTimeFilter<"GrupoCliente"> | Date | string
+    atualizadoEm?: DateTimeFilter<"GrupoCliente"> | Date | string
+    clientes?: ClienteListRelationFilter
+  }, "id">
+
+  export type GrupoClienteOrderByWithAggregationInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    tipo?: SortOrderInput | SortOrder
+    observacoes?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    _count?: GrupoClienteCountOrderByAggregateInput
+    _max?: GrupoClienteMaxOrderByAggregateInput
+    _min?: GrupoClienteMinOrderByAggregateInput
+  }
+
+  export type GrupoClienteScalarWhereWithAggregatesInput = {
+    AND?: GrupoClienteScalarWhereWithAggregatesInput | GrupoClienteScalarWhereWithAggregatesInput[]
+    OR?: GrupoClienteScalarWhereWithAggregatesInput[]
+    NOT?: GrupoClienteScalarWhereWithAggregatesInput | GrupoClienteScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"GrupoCliente"> | string
+    nome?: StringWithAggregatesFilter<"GrupoCliente"> | string
+    tipo?: EnumTipoClienteNullableWithAggregatesFilter<"GrupoCliente"> | $Enums.TipoCliente | null
+    observacoes?: StringNullableWithAggregatesFilter<"GrupoCliente"> | string | null
+    criadoEm?: DateTimeWithAggregatesFilter<"GrupoCliente"> | Date | string
+    atualizadoEm?: DateTimeWithAggregatesFilter<"GrupoCliente"> | Date | string
+  }
+
   export type ClienteWhereInput = {
     AND?: ClienteWhereInput | ClienteWhereInput[]
     OR?: ClienteWhereInput[]
@@ -27816,6 +30152,7 @@ export namespace Prisma {
     externalId?: StringNullableFilter<"Cliente"> | string | null
     nome?: StringFilter<"Cliente"> | string
     tipo?: EnumTipoClienteFilter<"Cliente"> | $Enums.TipoCliente
+    grupoId?: StringNullableFilter<"Cliente"> | string | null
     cnpjCpf?: StringNullableFilter<"Cliente"> | string | null
     endereco?: StringNullableFilter<"Cliente"> | string | null
     contatoPrincipal?: StringNullableFilter<"Cliente"> | string | null
@@ -27828,6 +30165,7 @@ export namespace Prisma {
     urlSite?: StringNullableFilter<"Cliente"> | string | null
     dataCadastro?: DateTimeFilter<"Cliente"> | Date | string
     dataUltimaAtualizacao?: DateTimeFilter<"Cliente"> | Date | string
+    grupo?: XOR<GrupoClienteNullableScalarRelationFilter, GrupoClienteWhereInput> | null
     pedidos?: PedidoListRelationFilter
     interacoes?: InteracaoListRelationFilter
     oportunidades?: OportunidadeListRelationFilter
@@ -27844,6 +30182,7 @@ export namespace Prisma {
     externalId?: SortOrderInput | SortOrder
     nome?: SortOrder
     tipo?: SortOrder
+    grupoId?: SortOrderInput | SortOrder
     cnpjCpf?: SortOrderInput | SortOrder
     endereco?: SortOrderInput | SortOrder
     contatoPrincipal?: SortOrderInput | SortOrder
@@ -27856,6 +30195,7 @@ export namespace Prisma {
     urlSite?: SortOrderInput | SortOrder
     dataCadastro?: SortOrder
     dataUltimaAtualizacao?: SortOrder
+    grupo?: GrupoClienteOrderByWithRelationInput
     pedidos?: PedidoOrderByRelationAggregateInput
     interacoes?: InteracaoOrderByRelationAggregateInput
     oportunidades?: OportunidadeOrderByRelationAggregateInput
@@ -27876,6 +30216,7 @@ export namespace Prisma {
     NOT?: ClienteWhereInput | ClienteWhereInput[]
     nome?: StringFilter<"Cliente"> | string
     tipo?: EnumTipoClienteFilter<"Cliente"> | $Enums.TipoCliente
+    grupoId?: StringNullableFilter<"Cliente"> | string | null
     cnpjCpf?: StringNullableFilter<"Cliente"> | string | null
     endereco?: StringNullableFilter<"Cliente"> | string | null
     contatoPrincipal?: StringNullableFilter<"Cliente"> | string | null
@@ -27888,6 +30229,7 @@ export namespace Prisma {
     urlSite?: StringNullableFilter<"Cliente"> | string | null
     dataCadastro?: DateTimeFilter<"Cliente"> | Date | string
     dataUltimaAtualizacao?: DateTimeFilter<"Cliente"> | Date | string
+    grupo?: XOR<GrupoClienteNullableScalarRelationFilter, GrupoClienteWhereInput> | null
     pedidos?: PedidoListRelationFilter
     interacoes?: InteracaoListRelationFilter
     oportunidades?: OportunidadeListRelationFilter
@@ -27904,6 +30246,7 @@ export namespace Prisma {
     externalId?: SortOrderInput | SortOrder
     nome?: SortOrder
     tipo?: SortOrder
+    grupoId?: SortOrderInput | SortOrder
     cnpjCpf?: SortOrderInput | SortOrder
     endereco?: SortOrderInput | SortOrder
     contatoPrincipal?: SortOrderInput | SortOrder
@@ -27931,6 +30274,7 @@ export namespace Prisma {
     externalId?: StringNullableWithAggregatesFilter<"Cliente"> | string | null
     nome?: StringWithAggregatesFilter<"Cliente"> | string
     tipo?: EnumTipoClienteWithAggregatesFilter<"Cliente"> | $Enums.TipoCliente
+    grupoId?: StringNullableWithAggregatesFilter<"Cliente"> | string | null
     cnpjCpf?: StringNullableWithAggregatesFilter<"Cliente"> | string | null
     endereco?: StringNullableWithAggregatesFilter<"Cliente"> | string | null
     contatoPrincipal?: StringNullableWithAggregatesFilter<"Cliente"> | string | null
@@ -28727,6 +31071,106 @@ export namespace Prisma {
     antes?: JsonNullableWithAggregatesFilter<"PedidoOperacionalAuditoria">
     depois?: JsonNullableWithAggregatesFilter<"PedidoOperacionalAuditoria">
     criadoEm?: DateTimeWithAggregatesFilter<"PedidoOperacionalAuditoria"> | Date | string
+  }
+
+  export type FechamentoSemanalWhereInput = {
+    AND?: FechamentoSemanalWhereInput | FechamentoSemanalWhereInput[]
+    OR?: FechamentoSemanalWhereInput[]
+    NOT?: FechamentoSemanalWhereInput | FechamentoSemanalWhereInput[]
+    id?: StringFilter<"FechamentoSemanal"> | string
+    semanaInicio?: DateTimeFilter<"FechamentoSemanal"> | Date | string
+    semanaFim?: DateTimeFilter<"FechamentoSemanal"> | Date | string
+    fechadoPorId?: StringNullableFilter<"FechamentoSemanal"> | string | null
+    fechadoPorNome?: StringNullableFilter<"FechamentoSemanal"> | string | null
+    fechadoEm?: DateTimeFilter<"FechamentoSemanal"> | Date | string
+    totalPedidos?: IntFilter<"FechamentoSemanal"> | number
+    totalEntregues?: IntFilter<"FechamentoSemanal"> | number
+    totalCancelados?: IntFilter<"FechamentoSemanal"> | number
+    valorEntregue?: DecimalNullableFilter<"FechamentoSemanal"> | Decimal | DecimalJsLike | number | string | null
+    reabertoEm?: DateTimeNullableFilter<"FechamentoSemanal"> | Date | string | null
+    reabertoPorId?: StringNullableFilter<"FechamentoSemanal"> | string | null
+    reabertoPorNome?: StringNullableFilter<"FechamentoSemanal"> | string | null
+    snapshot?: JsonNullableFilter<"FechamentoSemanal">
+  }
+
+  export type FechamentoSemanalOrderByWithRelationInput = {
+    id?: SortOrder
+    semanaInicio?: SortOrder
+    semanaFim?: SortOrder
+    fechadoPorId?: SortOrderInput | SortOrder
+    fechadoPorNome?: SortOrderInput | SortOrder
+    fechadoEm?: SortOrder
+    totalPedidos?: SortOrder
+    totalEntregues?: SortOrder
+    totalCancelados?: SortOrder
+    valorEntregue?: SortOrderInput | SortOrder
+    reabertoEm?: SortOrderInput | SortOrder
+    reabertoPorId?: SortOrderInput | SortOrder
+    reabertoPorNome?: SortOrderInput | SortOrder
+    snapshot?: SortOrderInput | SortOrder
+    _relevance?: FechamentoSemanalOrderByRelevanceInput
+  }
+
+  export type FechamentoSemanalWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    semanaInicio?: Date | string
+    AND?: FechamentoSemanalWhereInput | FechamentoSemanalWhereInput[]
+    OR?: FechamentoSemanalWhereInput[]
+    NOT?: FechamentoSemanalWhereInput | FechamentoSemanalWhereInput[]
+    semanaFim?: DateTimeFilter<"FechamentoSemanal"> | Date | string
+    fechadoPorId?: StringNullableFilter<"FechamentoSemanal"> | string | null
+    fechadoPorNome?: StringNullableFilter<"FechamentoSemanal"> | string | null
+    fechadoEm?: DateTimeFilter<"FechamentoSemanal"> | Date | string
+    totalPedidos?: IntFilter<"FechamentoSemanal"> | number
+    totalEntregues?: IntFilter<"FechamentoSemanal"> | number
+    totalCancelados?: IntFilter<"FechamentoSemanal"> | number
+    valorEntregue?: DecimalNullableFilter<"FechamentoSemanal"> | Decimal | DecimalJsLike | number | string | null
+    reabertoEm?: DateTimeNullableFilter<"FechamentoSemanal"> | Date | string | null
+    reabertoPorId?: StringNullableFilter<"FechamentoSemanal"> | string | null
+    reabertoPorNome?: StringNullableFilter<"FechamentoSemanal"> | string | null
+    snapshot?: JsonNullableFilter<"FechamentoSemanal">
+  }, "id" | "semanaInicio">
+
+  export type FechamentoSemanalOrderByWithAggregationInput = {
+    id?: SortOrder
+    semanaInicio?: SortOrder
+    semanaFim?: SortOrder
+    fechadoPorId?: SortOrderInput | SortOrder
+    fechadoPorNome?: SortOrderInput | SortOrder
+    fechadoEm?: SortOrder
+    totalPedidos?: SortOrder
+    totalEntregues?: SortOrder
+    totalCancelados?: SortOrder
+    valorEntregue?: SortOrderInput | SortOrder
+    reabertoEm?: SortOrderInput | SortOrder
+    reabertoPorId?: SortOrderInput | SortOrder
+    reabertoPorNome?: SortOrderInput | SortOrder
+    snapshot?: SortOrderInput | SortOrder
+    _count?: FechamentoSemanalCountOrderByAggregateInput
+    _avg?: FechamentoSemanalAvgOrderByAggregateInput
+    _max?: FechamentoSemanalMaxOrderByAggregateInput
+    _min?: FechamentoSemanalMinOrderByAggregateInput
+    _sum?: FechamentoSemanalSumOrderByAggregateInput
+  }
+
+  export type FechamentoSemanalScalarWhereWithAggregatesInput = {
+    AND?: FechamentoSemanalScalarWhereWithAggregatesInput | FechamentoSemanalScalarWhereWithAggregatesInput[]
+    OR?: FechamentoSemanalScalarWhereWithAggregatesInput[]
+    NOT?: FechamentoSemanalScalarWhereWithAggregatesInput | FechamentoSemanalScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"FechamentoSemanal"> | string
+    semanaInicio?: DateTimeWithAggregatesFilter<"FechamentoSemanal"> | Date | string
+    semanaFim?: DateTimeWithAggregatesFilter<"FechamentoSemanal"> | Date | string
+    fechadoPorId?: StringNullableWithAggregatesFilter<"FechamentoSemanal"> | string | null
+    fechadoPorNome?: StringNullableWithAggregatesFilter<"FechamentoSemanal"> | string | null
+    fechadoEm?: DateTimeWithAggregatesFilter<"FechamentoSemanal"> | Date | string
+    totalPedidos?: IntWithAggregatesFilter<"FechamentoSemanal"> | number
+    totalEntregues?: IntWithAggregatesFilter<"FechamentoSemanal"> | number
+    totalCancelados?: IntWithAggregatesFilter<"FechamentoSemanal"> | number
+    valorEntregue?: DecimalNullableWithAggregatesFilter<"FechamentoSemanal"> | Decimal | DecimalJsLike | number | string | null
+    reabertoEm?: DateTimeNullableWithAggregatesFilter<"FechamentoSemanal"> | Date | string | null
+    reabertoPorId?: StringNullableWithAggregatesFilter<"FechamentoSemanal"> | string | null
+    reabertoPorNome?: StringNullableWithAggregatesFilter<"FechamentoSemanal"> | string | null
+    snapshot?: JsonNullableWithAggregatesFilter<"FechamentoSemanal">
   }
 
   export type PedidoWhereInput = {
@@ -29680,6 +32124,73 @@ export namespace Prisma {
     revogadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
+  export type GrupoClienteCreateInput = {
+    id?: string
+    nome: string
+    tipo?: $Enums.TipoCliente | null
+    observacoes?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    clientes?: ClienteCreateNestedManyWithoutGrupoInput
+  }
+
+  export type GrupoClienteUncheckedCreateInput = {
+    id?: string
+    nome: string
+    tipo?: $Enums.TipoCliente | null
+    observacoes?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    clientes?: ClienteUncheckedCreateNestedManyWithoutGrupoInput
+  }
+
+  export type GrupoClienteUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: NullableEnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente | null
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    clientes?: ClienteUpdateManyWithoutGrupoNestedInput
+  }
+
+  export type GrupoClienteUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: NullableEnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente | null
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    clientes?: ClienteUncheckedUpdateManyWithoutGrupoNestedInput
+  }
+
+  export type GrupoClienteCreateManyInput = {
+    id?: string
+    nome: string
+    tipo?: $Enums.TipoCliente | null
+    observacoes?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type GrupoClienteUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: NullableEnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente | null
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type GrupoClienteUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: NullableEnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente | null
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type ClienteCreateInput = {
     id?: string
     externalId?: string | null
@@ -29697,6 +32208,7 @@ export namespace Prisma {
     urlSite?: string | null
     dataCadastro?: Date | string
     dataUltimaAtualizacao?: Date | string
+    grupo?: GrupoClienteCreateNestedOneWithoutClientesInput
     pedidos?: PedidoCreateNestedManyWithoutClienteInput
     interacoes?: InteracaoCreateNestedManyWithoutClienteInput
     oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
@@ -29713,6 +32225,7 @@ export namespace Prisma {
     externalId?: string | null
     nome: string
     tipo: $Enums.TipoCliente
+    grupoId?: string | null
     cnpjCpf?: string | null
     endereco?: string | null
     contatoPrincipal?: string | null
@@ -29753,6 +32266,7 @@ export namespace Prisma {
     urlSite?: NullableStringFieldUpdateOperationsInput | string | null
     dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
     dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    grupo?: GrupoClienteUpdateOneWithoutClientesNestedInput
     pedidos?: PedidoUpdateManyWithoutClienteNestedInput
     interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
     oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
@@ -29769,6 +32283,7 @@ export namespace Prisma {
     externalId?: NullableStringFieldUpdateOperationsInput | string | null
     nome?: StringFieldUpdateOperationsInput | string
     tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    grupoId?: NullableStringFieldUpdateOperationsInput | string | null
     cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
     endereco?: NullableStringFieldUpdateOperationsInput | string | null
     contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
@@ -29797,6 +32312,7 @@ export namespace Prisma {
     externalId?: string | null
     nome: string
     tipo: $Enums.TipoCliente
+    grupoId?: string | null
     cnpjCpf?: string | null
     endereco?: string | null
     contatoPrincipal?: string | null
@@ -29835,6 +32351,7 @@ export namespace Prisma {
     externalId?: NullableStringFieldUpdateOperationsInput | string | null
     nome?: StringFieldUpdateOperationsInput | string
     tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    grupoId?: NullableStringFieldUpdateOperationsInput | string | null
     cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
     endereco?: NullableStringFieldUpdateOperationsInput | string | null
     contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
@@ -30675,6 +33192,125 @@ export namespace Prisma {
     antes?: NullableJsonNullValueInput | InputJsonValue
     depois?: NullableJsonNullValueInput | InputJsonValue
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FechamentoSemanalCreateInput = {
+    id?: string
+    semanaInicio: Date | string
+    semanaFim: Date | string
+    fechadoPorId?: string | null
+    fechadoPorNome?: string | null
+    fechadoEm?: Date | string
+    totalPedidos?: number
+    totalEntregues?: number
+    totalCancelados?: number
+    valorEntregue?: Decimal | DecimalJsLike | number | string | null
+    reabertoEm?: Date | string | null
+    reabertoPorId?: string | null
+    reabertoPorNome?: string | null
+    snapshot?: NullableJsonNullValueInput | InputJsonValue
+  }
+
+  export type FechamentoSemanalUncheckedCreateInput = {
+    id?: string
+    semanaInicio: Date | string
+    semanaFim: Date | string
+    fechadoPorId?: string | null
+    fechadoPorNome?: string | null
+    fechadoEm?: Date | string
+    totalPedidos?: number
+    totalEntregues?: number
+    totalCancelados?: number
+    valorEntregue?: Decimal | DecimalJsLike | number | string | null
+    reabertoEm?: Date | string | null
+    reabertoPorId?: string | null
+    reabertoPorNome?: string | null
+    snapshot?: NullableJsonNullValueInput | InputJsonValue
+  }
+
+  export type FechamentoSemanalUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    semanaInicio?: DateTimeFieldUpdateOperationsInput | Date | string
+    semanaFim?: DateTimeFieldUpdateOperationsInput | Date | string
+    fechadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    fechadoPorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    fechadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    totalPedidos?: IntFieldUpdateOperationsInput | number
+    totalEntregues?: IntFieldUpdateOperationsInput | number
+    totalCancelados?: IntFieldUpdateOperationsInput | number
+    valorEntregue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    reabertoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reabertoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    reabertoPorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    snapshot?: NullableJsonNullValueInput | InputJsonValue
+  }
+
+  export type FechamentoSemanalUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    semanaInicio?: DateTimeFieldUpdateOperationsInput | Date | string
+    semanaFim?: DateTimeFieldUpdateOperationsInput | Date | string
+    fechadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    fechadoPorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    fechadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    totalPedidos?: IntFieldUpdateOperationsInput | number
+    totalEntregues?: IntFieldUpdateOperationsInput | number
+    totalCancelados?: IntFieldUpdateOperationsInput | number
+    valorEntregue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    reabertoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reabertoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    reabertoPorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    snapshot?: NullableJsonNullValueInput | InputJsonValue
+  }
+
+  export type FechamentoSemanalCreateManyInput = {
+    id?: string
+    semanaInicio: Date | string
+    semanaFim: Date | string
+    fechadoPorId?: string | null
+    fechadoPorNome?: string | null
+    fechadoEm?: Date | string
+    totalPedidos?: number
+    totalEntregues?: number
+    totalCancelados?: number
+    valorEntregue?: Decimal | DecimalJsLike | number | string | null
+    reabertoEm?: Date | string | null
+    reabertoPorId?: string | null
+    reabertoPorNome?: string | null
+    snapshot?: NullableJsonNullValueInput | InputJsonValue
+  }
+
+  export type FechamentoSemanalUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    semanaInicio?: DateTimeFieldUpdateOperationsInput | Date | string
+    semanaFim?: DateTimeFieldUpdateOperationsInput | Date | string
+    fechadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    fechadoPorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    fechadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    totalPedidos?: IntFieldUpdateOperationsInput | number
+    totalEntregues?: IntFieldUpdateOperationsInput | number
+    totalCancelados?: IntFieldUpdateOperationsInput | number
+    valorEntregue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    reabertoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reabertoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    reabertoPorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    snapshot?: NullableJsonNullValueInput | InputJsonValue
+  }
+
+  export type FechamentoSemanalUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    semanaInicio?: DateTimeFieldUpdateOperationsInput | Date | string
+    semanaFim?: DateTimeFieldUpdateOperationsInput | Date | string
+    fechadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    fechadoPorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    fechadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    totalPedidos?: IntFieldUpdateOperationsInput | number
+    totalEntregues?: IntFieldUpdateOperationsInput | number
+    totalCancelados?: IntFieldUpdateOperationsInput | number
+    valorEntregue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    reabertoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reabertoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    reabertoPorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    snapshot?: NullableJsonNullValueInput | InputJsonValue
   }
 
   export type PedidoCreateInput = {
@@ -31787,6 +34423,13 @@ export namespace Prisma {
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
+  export type EnumTipoClienteNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.TipoCliente | EnumTipoClienteFieldRefInput<$PrismaModel> | null
+    in?: $Enums.TipoCliente[] | null
+    notIn?: $Enums.TipoCliente[] | null
+    not?: NestedEnumTipoClienteNullableFilter<$PrismaModel> | $Enums.TipoCliente | null
+  }
+
   export type StringNullableFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel> | null
     in?: string[] | null
@@ -31800,6 +34443,77 @@ export namespace Prisma {
     endsWith?: string | StringFieldRefInput<$PrismaModel>
     search?: string
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
+  }
+
+  export type ClienteListRelationFilter = {
+    every?: ClienteWhereInput
+    some?: ClienteWhereInput
+    none?: ClienteWhereInput
+  }
+
+  export type ClienteOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type GrupoClienteOrderByRelevanceInput = {
+    fields: GrupoClienteOrderByRelevanceFieldEnum | GrupoClienteOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type GrupoClienteCountOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    tipo?: SortOrder
+    observacoes?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type GrupoClienteMaxOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    tipo?: SortOrder
+    observacoes?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type GrupoClienteMinOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    tipo?: SortOrder
+    observacoes?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type EnumTipoClienteNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.TipoCliente | EnumTipoClienteFieldRefInput<$PrismaModel> | null
+    in?: $Enums.TipoCliente[] | null
+    notIn?: $Enums.TipoCliente[] | null
+    not?: NestedEnumTipoClienteNullableWithAggregatesFilter<$PrismaModel> | $Enums.TipoCliente | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumTipoClienteNullableFilter<$PrismaModel>
+    _max?: NestedEnumTipoClienteNullableFilter<$PrismaModel>
+  }
+
+  export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | null
+    notIn?: string[] | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    search?: string
+    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
   export type EnumTipoClienteFilter<$PrismaModel = never> = {
@@ -31848,6 +34562,11 @@ export namespace Prisma {
     gt?: InputJsonValue
     gte?: InputJsonValue
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type GrupoClienteNullableScalarRelationFilter = {
+    is?: GrupoClienteWhereInput | null
+    isNot?: GrupoClienteWhereInput | null
   }
 
   export type PedidoListRelationFilter = {
@@ -31906,6 +34625,7 @@ export namespace Prisma {
     externalId?: SortOrder
     nome?: SortOrder
     tipo?: SortOrder
+    grupoId?: SortOrder
     cnpjCpf?: SortOrder
     endereco?: SortOrder
     contatoPrincipal?: SortOrder
@@ -31929,6 +34649,7 @@ export namespace Prisma {
     externalId?: SortOrder
     nome?: SortOrder
     tipo?: SortOrder
+    grupoId?: SortOrder
     cnpjCpf?: SortOrder
     endereco?: SortOrder
     contatoPrincipal?: SortOrder
@@ -31947,6 +34668,7 @@ export namespace Prisma {
     externalId?: SortOrder
     nome?: SortOrder
     tipo?: SortOrder
+    grupoId?: SortOrder
     cnpjCpf?: SortOrder
     endereco?: SortOrder
     contatoPrincipal?: SortOrder
@@ -31962,24 +34684,6 @@ export namespace Prisma {
 
   export type ClienteSumOrderByAggregateInput = {
     scoreComercial?: SortOrder
-  }
-
-  export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | null
-    notIn?: string[] | null
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    contains?: string | StringFieldRefInput<$PrismaModel>
-    startsWith?: string | StringFieldRefInput<$PrismaModel>
-    endsWith?: string | StringFieldRefInput<$PrismaModel>
-    search?: string
-    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedStringNullableFilter<$PrismaModel>
-    _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
   export type EnumTipoClienteWithAggregatesFilter<$PrismaModel = never> = {
@@ -32780,6 +35484,75 @@ export namespace Prisma {
     usuarioNome?: SortOrder
     acao?: SortOrder
     criadoEm?: SortOrder
+  }
+
+  export type FechamentoSemanalOrderByRelevanceInput = {
+    fields: FechamentoSemanalOrderByRelevanceFieldEnum | FechamentoSemanalOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type FechamentoSemanalCountOrderByAggregateInput = {
+    id?: SortOrder
+    semanaInicio?: SortOrder
+    semanaFim?: SortOrder
+    fechadoPorId?: SortOrder
+    fechadoPorNome?: SortOrder
+    fechadoEm?: SortOrder
+    totalPedidos?: SortOrder
+    totalEntregues?: SortOrder
+    totalCancelados?: SortOrder
+    valorEntregue?: SortOrder
+    reabertoEm?: SortOrder
+    reabertoPorId?: SortOrder
+    reabertoPorNome?: SortOrder
+    snapshot?: SortOrder
+  }
+
+  export type FechamentoSemanalAvgOrderByAggregateInput = {
+    totalPedidos?: SortOrder
+    totalEntregues?: SortOrder
+    totalCancelados?: SortOrder
+    valorEntregue?: SortOrder
+  }
+
+  export type FechamentoSemanalMaxOrderByAggregateInput = {
+    id?: SortOrder
+    semanaInicio?: SortOrder
+    semanaFim?: SortOrder
+    fechadoPorId?: SortOrder
+    fechadoPorNome?: SortOrder
+    fechadoEm?: SortOrder
+    totalPedidos?: SortOrder
+    totalEntregues?: SortOrder
+    totalCancelados?: SortOrder
+    valorEntregue?: SortOrder
+    reabertoEm?: SortOrder
+    reabertoPorId?: SortOrder
+    reabertoPorNome?: SortOrder
+  }
+
+  export type FechamentoSemanalMinOrderByAggregateInput = {
+    id?: SortOrder
+    semanaInicio?: SortOrder
+    semanaFim?: SortOrder
+    fechadoPorId?: SortOrder
+    fechadoPorNome?: SortOrder
+    fechadoEm?: SortOrder
+    totalPedidos?: SortOrder
+    totalEntregues?: SortOrder
+    totalCancelados?: SortOrder
+    valorEntregue?: SortOrder
+    reabertoEm?: SortOrder
+    reabertoPorId?: SortOrder
+    reabertoPorNome?: SortOrder
+  }
+
+  export type FechamentoSemanalSumOrderByAggregateInput = {
+    totalPedidos?: SortOrder
+    totalEntregues?: SortOrder
+    totalCancelados?: SortOrder
+    valorEntregue?: SortOrder
   }
 
   export type EnumOrigemPedidoFilter<$PrismaModel = never> = {
@@ -33795,6 +36568,62 @@ export namespace Prisma {
     update?: XOR<XOR<UsuarioUpdateToOneWithWhereWithoutRefreshTokensInput, UsuarioUpdateWithoutRefreshTokensInput>, UsuarioUncheckedUpdateWithoutRefreshTokensInput>
   }
 
+  export type ClienteCreateNestedManyWithoutGrupoInput = {
+    create?: XOR<ClienteCreateWithoutGrupoInput, ClienteUncheckedCreateWithoutGrupoInput> | ClienteCreateWithoutGrupoInput[] | ClienteUncheckedCreateWithoutGrupoInput[]
+    connectOrCreate?: ClienteCreateOrConnectWithoutGrupoInput | ClienteCreateOrConnectWithoutGrupoInput[]
+    createMany?: ClienteCreateManyGrupoInputEnvelope
+    connect?: ClienteWhereUniqueInput | ClienteWhereUniqueInput[]
+  }
+
+  export type ClienteUncheckedCreateNestedManyWithoutGrupoInput = {
+    create?: XOR<ClienteCreateWithoutGrupoInput, ClienteUncheckedCreateWithoutGrupoInput> | ClienteCreateWithoutGrupoInput[] | ClienteUncheckedCreateWithoutGrupoInput[]
+    connectOrCreate?: ClienteCreateOrConnectWithoutGrupoInput | ClienteCreateOrConnectWithoutGrupoInput[]
+    createMany?: ClienteCreateManyGrupoInputEnvelope
+    connect?: ClienteWhereUniqueInput | ClienteWhereUniqueInput[]
+  }
+
+  export type NullableEnumTipoClienteFieldUpdateOperationsInput = {
+    set?: $Enums.TipoCliente | null
+  }
+
+  export type NullableStringFieldUpdateOperationsInput = {
+    set?: string | null
+  }
+
+  export type ClienteUpdateManyWithoutGrupoNestedInput = {
+    create?: XOR<ClienteCreateWithoutGrupoInput, ClienteUncheckedCreateWithoutGrupoInput> | ClienteCreateWithoutGrupoInput[] | ClienteUncheckedCreateWithoutGrupoInput[]
+    connectOrCreate?: ClienteCreateOrConnectWithoutGrupoInput | ClienteCreateOrConnectWithoutGrupoInput[]
+    upsert?: ClienteUpsertWithWhereUniqueWithoutGrupoInput | ClienteUpsertWithWhereUniqueWithoutGrupoInput[]
+    createMany?: ClienteCreateManyGrupoInputEnvelope
+    set?: ClienteWhereUniqueInput | ClienteWhereUniqueInput[]
+    disconnect?: ClienteWhereUniqueInput | ClienteWhereUniqueInput[]
+    delete?: ClienteWhereUniqueInput | ClienteWhereUniqueInput[]
+    connect?: ClienteWhereUniqueInput | ClienteWhereUniqueInput[]
+    update?: ClienteUpdateWithWhereUniqueWithoutGrupoInput | ClienteUpdateWithWhereUniqueWithoutGrupoInput[]
+    updateMany?: ClienteUpdateManyWithWhereWithoutGrupoInput | ClienteUpdateManyWithWhereWithoutGrupoInput[]
+    deleteMany?: ClienteScalarWhereInput | ClienteScalarWhereInput[]
+  }
+
+  export type ClienteUncheckedUpdateManyWithoutGrupoNestedInput = {
+    create?: XOR<ClienteCreateWithoutGrupoInput, ClienteUncheckedCreateWithoutGrupoInput> | ClienteCreateWithoutGrupoInput[] | ClienteUncheckedCreateWithoutGrupoInput[]
+    connectOrCreate?: ClienteCreateOrConnectWithoutGrupoInput | ClienteCreateOrConnectWithoutGrupoInput[]
+    upsert?: ClienteUpsertWithWhereUniqueWithoutGrupoInput | ClienteUpsertWithWhereUniqueWithoutGrupoInput[]
+    createMany?: ClienteCreateManyGrupoInputEnvelope
+    set?: ClienteWhereUniqueInput | ClienteWhereUniqueInput[]
+    disconnect?: ClienteWhereUniqueInput | ClienteWhereUniqueInput[]
+    delete?: ClienteWhereUniqueInput | ClienteWhereUniqueInput[]
+    connect?: ClienteWhereUniqueInput | ClienteWhereUniqueInput[]
+    update?: ClienteUpdateWithWhereUniqueWithoutGrupoInput | ClienteUpdateWithWhereUniqueWithoutGrupoInput[]
+    updateMany?: ClienteUpdateManyWithWhereWithoutGrupoInput | ClienteUpdateManyWithWhereWithoutGrupoInput[]
+    deleteMany?: ClienteScalarWhereInput | ClienteScalarWhereInput[]
+  }
+
+  export type GrupoClienteCreateNestedOneWithoutClientesInput = {
+    create?: XOR<GrupoClienteCreateWithoutClientesInput, GrupoClienteUncheckedCreateWithoutClientesInput>
+    connectOrCreate?: GrupoClienteCreateOrConnectWithoutClientesInput
+    connect?: GrupoClienteWhereUniqueInput
+  }
+
   export type PedidoCreateNestedManyWithoutClienteInput = {
     create?: XOR<PedidoCreateWithoutClienteInput, PedidoUncheckedCreateWithoutClienteInput> | PedidoCreateWithoutClienteInput[] | PedidoUncheckedCreateWithoutClienteInput[]
     connectOrCreate?: PedidoCreateOrConnectWithoutClienteInput | PedidoCreateOrConnectWithoutClienteInput[]
@@ -33919,10 +36748,6 @@ export namespace Prisma {
     connect?: ClienteLegadoContaAzulLinkWhereUniqueInput | ClienteLegadoContaAzulLinkWhereUniqueInput[]
   }
 
-  export type NullableStringFieldUpdateOperationsInput = {
-    set?: string | null
-  }
-
   export type EnumTipoClienteFieldUpdateOperationsInput = {
     set?: $Enums.TipoCliente
   }
@@ -33937,6 +36762,16 @@ export namespace Prisma {
 
   export type EnumStatusRelacionamentoFieldUpdateOperationsInput = {
     set?: $Enums.StatusRelacionamento
+  }
+
+  export type GrupoClienteUpdateOneWithoutClientesNestedInput = {
+    create?: XOR<GrupoClienteCreateWithoutClientesInput, GrupoClienteUncheckedCreateWithoutClientesInput>
+    connectOrCreate?: GrupoClienteCreateOrConnectWithoutClientesInput
+    upsert?: GrupoClienteUpsertWithoutClientesInput
+    disconnect?: GrupoClienteWhereInput | boolean
+    delete?: GrupoClienteWhereInput | boolean
+    connect?: GrupoClienteWhereUniqueInput
+    update?: XOR<XOR<GrupoClienteUpdateToOneWithWhereWithoutClientesInput, GrupoClienteUpdateWithoutClientesInput>, GrupoClienteUncheckedUpdateWithoutClientesInput>
   }
 
   export type PedidoUpdateManyWithoutClienteNestedInput = {
@@ -35144,6 +37979,13 @@ export namespace Prisma {
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
   }
 
+  export type NestedEnumTipoClienteNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.TipoCliente | EnumTipoClienteFieldRefInput<$PrismaModel> | null
+    in?: $Enums.TipoCliente[] | null
+    notIn?: $Enums.TipoCliente[] | null
+    not?: NestedEnumTipoClienteNullableFilter<$PrismaModel> | $Enums.TipoCliente | null
+  }
+
   export type NestedStringNullableFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel> | null
     in?: string[] | null
@@ -35157,6 +37999,34 @@ export namespace Prisma {
     endsWith?: string | StringFieldRefInput<$PrismaModel>
     search?: string
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
+  }
+
+  export type NestedEnumTipoClienteNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.TipoCliente | EnumTipoClienteFieldRefInput<$PrismaModel> | null
+    in?: $Enums.TipoCliente[] | null
+    notIn?: $Enums.TipoCliente[] | null
+    not?: NestedEnumTipoClienteNullableWithAggregatesFilter<$PrismaModel> | $Enums.TipoCliente | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumTipoClienteNullableFilter<$PrismaModel>
+    _max?: NestedEnumTipoClienteNullableFilter<$PrismaModel>
+  }
+
+  export type NestedStringNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | null
+    notIn?: string[] | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    search?: string
+    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
   export type NestedEnumTipoClienteFilter<$PrismaModel = never> = {
@@ -35182,24 +38052,6 @@ export namespace Prisma {
     in?: $Enums.StatusRelacionamento[]
     notIn?: $Enums.StatusRelacionamento[]
     not?: NestedEnumStatusRelacionamentoFilter<$PrismaModel> | $Enums.StatusRelacionamento
-  }
-
-  export type NestedStringNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | null
-    notIn?: string[] | null
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    contains?: string | StringFieldRefInput<$PrismaModel>
-    startsWith?: string | StringFieldRefInput<$PrismaModel>
-    endsWith?: string | StringFieldRefInput<$PrismaModel>
-    search?: string
-    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedStringNullableFilter<$PrismaModel>
-    _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
   export type NestedEnumTipoClienteWithAggregatesFilter<$PrismaModel = never> = {
@@ -36169,6 +39021,134 @@ export namespace Prisma {
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
   }
 
+  export type ClienteCreateWithoutGrupoInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+    pedidos?: PedidoCreateNestedManyWithoutClienteInput
+    interacoes?: InteracaoCreateNestedManyWithoutClienteInput
+    oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
+    mensagens?: MensagemCreateNestedManyWithoutClienteInput
+    execucoes?: ExecucaoApiCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
+  }
+
+  export type ClienteUncheckedCreateWithoutGrupoInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+    pedidos?: PedidoUncheckedCreateNestedManyWithoutClienteInput
+    interacoes?: InteracaoUncheckedCreateNestedManyWithoutClienteInput
+    oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutClienteInput
+    mensagens?: MensagemUncheckedCreateNestedManyWithoutClienteInput
+    execucoes?: ExecucaoApiUncheckedCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteUncheckedCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
+  }
+
+  export type ClienteCreateOrConnectWithoutGrupoInput = {
+    where: ClienteWhereUniqueInput
+    create: XOR<ClienteCreateWithoutGrupoInput, ClienteUncheckedCreateWithoutGrupoInput>
+  }
+
+  export type ClienteCreateManyGrupoInputEnvelope = {
+    data: ClienteCreateManyGrupoInput | ClienteCreateManyGrupoInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ClienteUpsertWithWhereUniqueWithoutGrupoInput = {
+    where: ClienteWhereUniqueInput
+    update: XOR<ClienteUpdateWithoutGrupoInput, ClienteUncheckedUpdateWithoutGrupoInput>
+    create: XOR<ClienteCreateWithoutGrupoInput, ClienteUncheckedCreateWithoutGrupoInput>
+  }
+
+  export type ClienteUpdateWithWhereUniqueWithoutGrupoInput = {
+    where: ClienteWhereUniqueInput
+    data: XOR<ClienteUpdateWithoutGrupoInput, ClienteUncheckedUpdateWithoutGrupoInput>
+  }
+
+  export type ClienteUpdateManyWithWhereWithoutGrupoInput = {
+    where: ClienteScalarWhereInput
+    data: XOR<ClienteUpdateManyMutationInput, ClienteUncheckedUpdateManyWithoutGrupoInput>
+  }
+
+  export type ClienteScalarWhereInput = {
+    AND?: ClienteScalarWhereInput | ClienteScalarWhereInput[]
+    OR?: ClienteScalarWhereInput[]
+    NOT?: ClienteScalarWhereInput | ClienteScalarWhereInput[]
+    id?: StringFilter<"Cliente"> | string
+    externalId?: StringNullableFilter<"Cliente"> | string | null
+    nome?: StringFilter<"Cliente"> | string
+    tipo?: EnumTipoClienteFilter<"Cliente"> | $Enums.TipoCliente
+    grupoId?: StringNullableFilter<"Cliente"> | string | null
+    cnpjCpf?: StringNullableFilter<"Cliente"> | string | null
+    endereco?: StringNullableFilter<"Cliente"> | string | null
+    contatoPrincipal?: StringNullableFilter<"Cliente"> | string | null
+    emailPrincipal?: StringNullableFilter<"Cliente"> | string | null
+    telefoneWhatsapp?: StringNullableFilter<"Cliente"> | string | null
+    scoreComercial?: DecimalNullableFilter<"Cliente"> | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFilter<"Cliente"> | $Enums.StatusRelacionamento
+    tags?: JsonFilter<"Cliente">
+    urlInstagram?: StringNullableFilter<"Cliente"> | string | null
+    urlSite?: StringNullableFilter<"Cliente"> | string | null
+    dataCadastro?: DateTimeFilter<"Cliente"> | Date | string
+    dataUltimaAtualizacao?: DateTimeFilter<"Cliente"> | Date | string
+  }
+
+  export type GrupoClienteCreateWithoutClientesInput = {
+    id?: string
+    nome: string
+    tipo?: $Enums.TipoCliente | null
+    observacoes?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type GrupoClienteUncheckedCreateWithoutClientesInput = {
+    id?: string
+    nome: string
+    tipo?: $Enums.TipoCliente | null
+    observacoes?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type GrupoClienteCreateOrConnectWithoutClientesInput = {
+    where: GrupoClienteWhereUniqueInput
+    create: XOR<GrupoClienteCreateWithoutClientesInput, GrupoClienteUncheckedCreateWithoutClientesInput>
+  }
+
   export type PedidoCreateWithoutClienteInput = {
     id?: string
     externalId?: string | null
@@ -36500,6 +39480,35 @@ export namespace Prisma {
   export type ClienteLegadoContaAzulLinkCreateManyClienteInputEnvelope = {
     data: ClienteLegadoContaAzulLinkCreateManyClienteInput | ClienteLegadoContaAzulLinkCreateManyClienteInput[]
     skipDuplicates?: boolean
+  }
+
+  export type GrupoClienteUpsertWithoutClientesInput = {
+    update: XOR<GrupoClienteUpdateWithoutClientesInput, GrupoClienteUncheckedUpdateWithoutClientesInput>
+    create: XOR<GrupoClienteCreateWithoutClientesInput, GrupoClienteUncheckedCreateWithoutClientesInput>
+    where?: GrupoClienteWhereInput
+  }
+
+  export type GrupoClienteUpdateToOneWithWhereWithoutClientesInput = {
+    where?: GrupoClienteWhereInput
+    data: XOR<GrupoClienteUpdateWithoutClientesInput, GrupoClienteUncheckedUpdateWithoutClientesInput>
+  }
+
+  export type GrupoClienteUpdateWithoutClientesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: NullableEnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente | null
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type GrupoClienteUncheckedUpdateWithoutClientesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: NullableEnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente | null
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type PedidoUpsertWithWhereUniqueWithoutClienteInput = {
@@ -37111,6 +40120,7 @@ export namespace Prisma {
     urlSite?: string | null
     dataCadastro?: Date | string
     dataUltimaAtualizacao?: Date | string
+    grupo?: GrupoClienteCreateNestedOneWithoutClientesInput
     pedidos?: PedidoCreateNestedManyWithoutClienteInput
     interacoes?: InteracaoCreateNestedManyWithoutClienteInput
     oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
@@ -37126,6 +40136,7 @@ export namespace Prisma {
     externalId?: string | null
     nome: string
     tipo: $Enums.TipoCliente
+    grupoId?: string | null
     cnpjCpf?: string | null
     endereco?: string | null
     contatoPrincipal?: string | null
@@ -37207,6 +40218,7 @@ export namespace Prisma {
     urlSite?: NullableStringFieldUpdateOperationsInput | string | null
     dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
     dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    grupo?: GrupoClienteUpdateOneWithoutClientesNestedInput
     pedidos?: PedidoUpdateManyWithoutClienteNestedInput
     interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
     oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
@@ -37222,6 +40234,7 @@ export namespace Prisma {
     externalId?: NullableStringFieldUpdateOperationsInput | string | null
     nome?: StringFieldUpdateOperationsInput | string
     tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    grupoId?: NullableStringFieldUpdateOperationsInput | string | null
     cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
     endereco?: NullableStringFieldUpdateOperationsInput | string | null
     contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
@@ -37277,6 +40290,7 @@ export namespace Prisma {
     urlSite?: string | null
     dataCadastro?: Date | string
     dataUltimaAtualizacao?: Date | string
+    grupo?: GrupoClienteCreateNestedOneWithoutClientesInput
     pedidos?: PedidoCreateNestedManyWithoutClienteInput
     interacoes?: InteracaoCreateNestedManyWithoutClienteInput
     oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
@@ -37292,6 +40306,7 @@ export namespace Prisma {
     externalId?: string | null
     nome: string
     tipo: $Enums.TipoCliente
+    grupoId?: string | null
     cnpjCpf?: string | null
     endereco?: string | null
     contatoPrincipal?: string | null
@@ -37347,6 +40362,7 @@ export namespace Prisma {
     urlSite?: NullableStringFieldUpdateOperationsInput | string | null
     dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
     dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    grupo?: GrupoClienteUpdateOneWithoutClientesNestedInput
     pedidos?: PedidoUpdateManyWithoutClienteNestedInput
     interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
     oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
@@ -37362,6 +40378,7 @@ export namespace Prisma {
     externalId?: NullableStringFieldUpdateOperationsInput | string | null
     nome?: StringFieldUpdateOperationsInput | string
     tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    grupoId?: NullableStringFieldUpdateOperationsInput | string | null
     cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
     endereco?: NullableStringFieldUpdateOperationsInput | string | null
     contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
@@ -37577,6 +40594,7 @@ export namespace Prisma {
     urlSite?: string | null
     dataCadastro?: Date | string
     dataUltimaAtualizacao?: Date | string
+    grupo?: GrupoClienteCreateNestedOneWithoutClientesInput
     pedidos?: PedidoCreateNestedManyWithoutClienteInput
     interacoes?: InteracaoCreateNestedManyWithoutClienteInput
     oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
@@ -37592,6 +40610,7 @@ export namespace Prisma {
     externalId?: string | null
     nome: string
     tipo: $Enums.TipoCliente
+    grupoId?: string | null
     cnpjCpf?: string | null
     endereco?: string | null
     contatoPrincipal?: string | null
@@ -37821,6 +40840,7 @@ export namespace Prisma {
     urlSite?: NullableStringFieldUpdateOperationsInput | string | null
     dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
     dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    grupo?: GrupoClienteUpdateOneWithoutClientesNestedInput
     pedidos?: PedidoUpdateManyWithoutClienteNestedInput
     interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
     oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
@@ -37836,6 +40856,7 @@ export namespace Prisma {
     externalId?: NullableStringFieldUpdateOperationsInput | string | null
     nome?: StringFieldUpdateOperationsInput | string
     tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    grupoId?: NullableStringFieldUpdateOperationsInput | string | null
     cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
     endereco?: NullableStringFieldUpdateOperationsInput | string | null
     contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
@@ -38238,6 +41259,7 @@ export namespace Prisma {
     urlSite?: string | null
     dataCadastro?: Date | string
     dataUltimaAtualizacao?: Date | string
+    grupo?: GrupoClienteCreateNestedOneWithoutClientesInput
     pedidos?: PedidoCreateNestedManyWithoutClienteInput
     interacoes?: InteracaoCreateNestedManyWithoutClienteInput
     oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
@@ -38253,6 +41275,7 @@ export namespace Prisma {
     externalId?: string | null
     nome: string
     tipo: $Enums.TipoCliente
+    grupoId?: string | null
     cnpjCpf?: string | null
     endereco?: string | null
     contatoPrincipal?: string | null
@@ -38439,6 +41462,7 @@ export namespace Prisma {
     urlSite?: NullableStringFieldUpdateOperationsInput | string | null
     dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
     dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    grupo?: GrupoClienteUpdateOneWithoutClientesNestedInput
     pedidos?: PedidoUpdateManyWithoutClienteNestedInput
     interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
     oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
@@ -38454,6 +41478,7 @@ export namespace Prisma {
     externalId?: NullableStringFieldUpdateOperationsInput | string | null
     nome?: StringFieldUpdateOperationsInput | string
     tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    grupoId?: NullableStringFieldUpdateOperationsInput | string | null
     cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
     endereco?: NullableStringFieldUpdateOperationsInput | string | null
     contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
@@ -38757,6 +41782,7 @@ export namespace Prisma {
     urlSite?: string | null
     dataCadastro?: Date | string
     dataUltimaAtualizacao?: Date | string
+    grupo?: GrupoClienteCreateNestedOneWithoutClientesInput
     interacoes?: InteracaoCreateNestedManyWithoutClienteInput
     oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
     mensagens?: MensagemCreateNestedManyWithoutClienteInput
@@ -38772,6 +41798,7 @@ export namespace Prisma {
     externalId?: string | null
     nome: string
     tipo: $Enums.TipoCliente
+    grupoId?: string | null
     cnpjCpf?: string | null
     endereco?: string | null
     contatoPrincipal?: string | null
@@ -38857,6 +41884,7 @@ export namespace Prisma {
     urlSite?: NullableStringFieldUpdateOperationsInput | string | null
     dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
     dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    grupo?: GrupoClienteUpdateOneWithoutClientesNestedInput
     interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
     oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
     mensagens?: MensagemUpdateManyWithoutClienteNestedInput
@@ -38872,6 +41900,7 @@ export namespace Prisma {
     externalId?: NullableStringFieldUpdateOperationsInput | string | null
     nome?: StringFieldUpdateOperationsInput | string
     tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    grupoId?: NullableStringFieldUpdateOperationsInput | string | null
     cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
     endereco?: NullableStringFieldUpdateOperationsInput | string | null
     contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
@@ -39017,6 +42046,7 @@ export namespace Prisma {
     urlSite?: string | null
     dataCadastro?: Date | string
     dataUltimaAtualizacao?: Date | string
+    grupo?: GrupoClienteCreateNestedOneWithoutClientesInput
     pedidos?: PedidoCreateNestedManyWithoutClienteInput
     oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
     mensagens?: MensagemCreateNestedManyWithoutClienteInput
@@ -39032,6 +42062,7 @@ export namespace Prisma {
     externalId?: string | null
     nome: string
     tipo: $Enums.TipoCliente
+    grupoId?: string | null
     cnpjCpf?: string | null
     endereco?: string | null
     contatoPrincipal?: string | null
@@ -39087,6 +42118,7 @@ export namespace Prisma {
     urlSite?: NullableStringFieldUpdateOperationsInput | string | null
     dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
     dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    grupo?: GrupoClienteUpdateOneWithoutClientesNestedInput
     pedidos?: PedidoUpdateManyWithoutClienteNestedInput
     oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
     mensagens?: MensagemUpdateManyWithoutClienteNestedInput
@@ -39102,6 +42134,7 @@ export namespace Prisma {
     externalId?: NullableStringFieldUpdateOperationsInput | string | null
     nome?: StringFieldUpdateOperationsInput | string
     tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    grupoId?: NullableStringFieldUpdateOperationsInput | string | null
     cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
     endereco?: NullableStringFieldUpdateOperationsInput | string | null
     contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
@@ -39141,6 +42174,7 @@ export namespace Prisma {
     urlSite?: string | null
     dataCadastro?: Date | string
     dataUltimaAtualizacao?: Date | string
+    grupo?: GrupoClienteCreateNestedOneWithoutClientesInput
     pedidos?: PedidoCreateNestedManyWithoutClienteInput
     interacoes?: InteracaoCreateNestedManyWithoutClienteInput
     mensagens?: MensagemCreateNestedManyWithoutClienteInput
@@ -39156,6 +42190,7 @@ export namespace Prisma {
     externalId?: string | null
     nome: string
     tipo: $Enums.TipoCliente
+    grupoId?: string | null
     cnpjCpf?: string | null
     endereco?: string | null
     contatoPrincipal?: string | null
@@ -39248,6 +42283,7 @@ export namespace Prisma {
     urlSite?: NullableStringFieldUpdateOperationsInput | string | null
     dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
     dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    grupo?: GrupoClienteUpdateOneWithoutClientesNestedInput
     pedidos?: PedidoUpdateManyWithoutClienteNestedInput
     interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
     mensagens?: MensagemUpdateManyWithoutClienteNestedInput
@@ -39263,6 +42299,7 @@ export namespace Prisma {
     externalId?: NullableStringFieldUpdateOperationsInput | string | null
     nome?: StringFieldUpdateOperationsInput | string
     tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    grupoId?: NullableStringFieldUpdateOperationsInput | string | null
     cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
     endereco?: NullableStringFieldUpdateOperationsInput | string | null
     contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
@@ -39345,6 +42382,7 @@ export namespace Prisma {
     urlSite?: string | null
     dataCadastro?: Date | string
     dataUltimaAtualizacao?: Date | string
+    grupo?: GrupoClienteCreateNestedOneWithoutClientesInput
     pedidos?: PedidoCreateNestedManyWithoutClienteInput
     interacoes?: InteracaoCreateNestedManyWithoutClienteInput
     oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
@@ -39360,6 +42398,7 @@ export namespace Prisma {
     externalId?: string | null
     nome: string
     tipo: $Enums.TipoCliente
+    grupoId?: string | null
     cnpjCpf?: string | null
     endereco?: string | null
     contatoPrincipal?: string | null
@@ -39452,6 +42491,7 @@ export namespace Prisma {
     urlSite?: NullableStringFieldUpdateOperationsInput | string | null
     dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
     dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    grupo?: GrupoClienteUpdateOneWithoutClientesNestedInput
     pedidos?: PedidoUpdateManyWithoutClienteNestedInput
     interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
     oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
@@ -39467,6 +42507,7 @@ export namespace Prisma {
     externalId?: NullableStringFieldUpdateOperationsInput | string | null
     nome?: StringFieldUpdateOperationsInput | string
     tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    grupoId?: NullableStringFieldUpdateOperationsInput | string | null
     cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
     endereco?: NullableStringFieldUpdateOperationsInput | string | null
     contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
@@ -39549,6 +42590,7 @@ export namespace Prisma {
     urlSite?: string | null
     dataCadastro?: Date | string
     dataUltimaAtualizacao?: Date | string
+    grupo?: GrupoClienteCreateNestedOneWithoutClientesInput
     pedidos?: PedidoCreateNestedManyWithoutClienteInput
     interacoes?: InteracaoCreateNestedManyWithoutClienteInput
     oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
@@ -39564,6 +42606,7 @@ export namespace Prisma {
     externalId?: string | null
     nome: string
     tipo: $Enums.TipoCliente
+    grupoId?: string | null
     cnpjCpf?: string | null
     endereco?: string | null
     contatoPrincipal?: string | null
@@ -39619,6 +42662,7 @@ export namespace Prisma {
     urlSite?: NullableStringFieldUpdateOperationsInput | string | null
     dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
     dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    grupo?: GrupoClienteUpdateOneWithoutClientesNestedInput
     pedidos?: PedidoUpdateManyWithoutClienteNestedInput
     interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
     oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
@@ -39634,6 +42678,7 @@ export namespace Prisma {
     externalId?: NullableStringFieldUpdateOperationsInput | string | null
     nome?: StringFieldUpdateOperationsInput | string
     tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    grupoId?: NullableStringFieldUpdateOperationsInput | string | null
     cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
     endereco?: NullableStringFieldUpdateOperationsInput | string | null
     contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
@@ -40026,6 +43071,100 @@ export namespace Prisma {
     antes?: NullableJsonNullValueInput | InputJsonValue
     depois?: NullableJsonNullValueInput | InputJsonValue
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ClienteCreateManyGrupoInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+  }
+
+  export type ClienteUpdateWithoutGrupoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedidos?: PedidoUpdateManyWithoutClienteNestedInput
+    interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
+    oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
+    mensagens?: MensagemUpdateManyWithoutClienteNestedInput
+    execucoes?: ExecucaoApiUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
+  }
+
+  export type ClienteUncheckedUpdateWithoutGrupoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedidos?: PedidoUncheckedUpdateManyWithoutClienteNestedInput
+    interacoes?: InteracaoUncheckedUpdateManyWithoutClienteNestedInput
+    oportunidades?: OportunidadeUncheckedUpdateManyWithoutClienteNestedInput
+    mensagens?: MensagemUncheckedUpdateManyWithoutClienteNestedInput
+    execucoes?: ExecucaoApiUncheckedUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUncheckedUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
+  }
+
+  export type ClienteUncheckedUpdateManyWithoutGrupoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type PedidoCreateManyClienteInput = {

@@ -140,6 +140,9 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
   );
   const dashboard = trpc.comercial.pedidos.dashboard.useQuery({ dia: diaDate });
   const compras = trpc.comercial.pedidos.compras.useQuery({ dia: diaDate, incluirOcultos: false });
+  const statusSemana = trpc.comercial.pedidos.statusSemana.useQuery({ dia: diaDate });
+  const bloqueioSemana = statusSemana.data?.bloqueio ?? null;
+  const podeCriarPedidos = statusSemana.data ? statusSemana.data.podeCriarPedidos : true;
 
   const salvarPedido = trpc.comercial.pedidos.salvarPedido.useMutation({
     onSuccess: async () => {
@@ -152,6 +155,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
         utils.comercial.pedidos.agenda.invalidate(),
         utils.comercial.pedidos.dashboard.invalidate(),
         utils.comercial.pedidos.compras.invalidate(),
+        utils.comercial.pedidos.statusSemana.invalidate(),
       ]);
     },
     onError: (err) => toast.error(err.message || "Não foi possível salvar o pedido."),
@@ -160,6 +164,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
     onSuccess: () => {
       void utils.comercial.pedidos.dashboard.invalidate();
       void utils.comercial.pedidos.agenda.invalidate();
+      void utils.comercial.pedidos.statusSemana.invalidate();
     },
     onError: (err) => toast.error(err.message),
   });
@@ -184,6 +189,28 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
     },
     onError: (err) => toast.error(err.message || "Não foi possível trazer a semana anterior."),
   });
+  const fecharSemana = trpc.comercial.pedidos.fecharSemana.useMutation({
+    onSuccess: async () => {
+      toast.success("Semana fechada. Histórico validado e próxima semana liberada.");
+      await Promise.all([
+        utils.comercial.pedidos.statusSemana.invalidate(),
+        utils.comercial.pedidos.agenda.invalidate(),
+        utils.comercial.pedidos.dashboard.invalidate(),
+      ]);
+    },
+    onError: (err) => toast.error(err.message || "Não foi possível fechar a semana."),
+  });
+  const reabrirSemana = trpc.comercial.pedidos.reabrirSemana.useMutation({
+    onSuccess: async () => {
+      toast.success("Semana reaberta para ajustes.");
+      await Promise.all([
+        utils.comercial.pedidos.statusSemana.invalidate(),
+        utils.comercial.pedidos.agenda.invalidate(),
+        utils.comercial.pedidos.dashboard.invalidate(),
+      ]);
+    },
+    onError: (err) => toast.error(err.message || "Não foi possível reabrir a semana."),
+  });
   const mudarPrioridade = trpc.comercial.pedidos.atualizarPrioridadeClienteDia.useMutation({
     onSuccess: () => void utils.comercial.pedidos.dashboard.invalidate(),
     onError: (err) => toast.error(err.message),
@@ -196,6 +223,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
         utils.comercial.pedidos.dashboard.invalidate(),
         utils.comercial.pedidos.compras.invalidate(),
         utils.comercial.pedidos.relatorioHistorico.invalidate(),
+        utils.comercial.pedidos.statusSemana.invalidate(),
       ]);
     },
     onError: (err) => toast.error(err.message || "Não foi possível cancelar o pedido."),
@@ -297,6 +325,11 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
   }, [dashboard.data]);
 
   function salvarPedidoAtual() {
+    if (!pedidoEditId && !podeCriarPedidos && bloqueioSemana) {
+      return toast.error(
+        `Feche a semana de ${bloqueioSemana.rotulo} antes de criar novos pedidos.`,
+      );
+    }
     if (!clienteId) return toast.error("Selecione um cliente Conta Azul.");
     if (!tipoVenda) return toast.error("Tipo de venda é obrigatório.");
     const itens = linhas
@@ -319,7 +352,34 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
     });
   }
 
+  function irParaSemanaPendente() {
+    if (!bloqueioSemana) return;
+    setDia(isoLocal(new Date(bloqueioSemana.inicio)));
+  }
+
+  function fecharSemanaAtual() {
+    const info = statusSemana.data?.semanaAtual;
+    if (!info) return;
+    const ok = window.confirm(
+      `Fechar a semana de ${info.rotulo}?\n\nIsso valida o histórico (${info.entregues} entregue(s), ${info.cancelados} cancelado(s)) e libera a criação de pedidos da próxima semana. Você poderá reabrir depois, se necessário.`,
+    );
+    if (!ok) return;
+    fecharSemana.mutate({ dia: diaDate });
+  }
+
+  function fecharSemanaBloqueante() {
+    if (!bloqueioSemana) return;
+    const ok = window.confirm(
+      `Fechar a semana de ${bloqueioSemana.rotulo}?\n\nTodos os pedidos estão revisados. Isso valida o histórico e libera a criação de novos pedidos.`,
+    );
+    if (!ok) return;
+    fecharSemana.mutate({ dia: new Date(bloqueioSemana.inicio) });
+  }
+
   function trazerSemanaAnterior() {
+    if (!podeCriarPedidos && bloqueioSemana) {
+      return toast.error(`Feche a semana de ${bloqueioSemana.rotulo} antes de trazer pedidos.`);
+    }
     const origem = new Date(diaDate);
     origem.setDate(origem.getDate() - 7);
     const origemLabel = origem.toLocaleDateString("pt-BR");
@@ -358,7 +418,11 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
           <Button variant="outline" onClick={() => setDia(hojeIso())}>
             Hoje
           </Button>
-          <Button variant="outline" disabled={copiarSemanaAnterior.isPending} onClick={trazerSemanaAnterior}>
+          <Button
+            variant="outline"
+            disabled={copiarSemanaAnterior.isPending || !podeCriarPedidos}
+            onClick={trazerSemanaAnterior}
+          >
             {copiarSemanaAnterior.isPending ? "Copiando..." : "Trazer semana anterior"}
           </Button>
           <Button variant="outline" asChild>
@@ -366,6 +430,98 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
           </Button>
         </div>
       </div>
+
+      {/* Gate de fechamento semanal */}
+      {bloqueioSemana ? (
+        <div className="rounded-lg border border-red-300 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/40">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400" />
+              <div className="space-y-0.5">
+                <p className="font-semibold text-red-800 dark:text-red-200">
+                  Semana de {bloqueioSemana.rotulo} ainda não foi fechada
+                </p>
+                <p className="text-sm text-red-700 dark:text-red-300">
+                  {bloqueioSemana.pendentes > 0
+                    ? `Há ${bloqueioSemana.pendentes} pedido(s) sem definição de entregue/cancelado. Revise e feche a semana para liberar novos pedidos.`
+                    : "Os pedidos já estão revisados, mas a semana ainda não foi fechada. Finalize o fechamento para liberar novos pedidos."}
+                </p>
+                {!isAdmin && (
+                  <p className="text-xs text-red-600 dark:text-red-400">
+                    Apenas administradores/gerentes podem fechar a semana.
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={irParaSemanaPendente}>
+                Revisar semana de {bloqueioSemana.rotulo}
+              </Button>
+              {isAdmin && bloqueioSemana.pendentes === 0 && (
+                <Button
+                  className="bg-red-600 hover:bg-red-700"
+                  disabled={fecharSemana.isPending}
+                  onClick={fecharSemanaBloqueante}
+                >
+                  {fecharSemana.isPending ? "Fechando..." : `Fechar semana ${bloqueioSemana.rotulo}`}
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : statusSemana.data?.semanaAtual ? (
+        <div className="rounded-lg border bg-muted/30 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              {statusSemana.data.semanaAtual.fechada ? (
+                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+              ) : (
+                <Clock className="h-5 w-5 text-amber-600" />
+              )}
+              <div className="space-y-0.5">
+                <p className="text-sm font-semibold">
+                  Semana de {statusSemana.data.semanaAtual.rotulo}
+                  {statusSemana.data.semanaAtual.fechada ? " · fechada" : ""}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {statusSemana.data.semanaAtual.totalPedidos} pedido(s) ·{" "}
+                  {statusSemana.data.semanaAtual.entregues} entregue(s) ·{" "}
+                  {statusSemana.data.semanaAtual.cancelados} cancelado(s) ·{" "}
+                  {statusSemana.data.semanaAtual.pendentes} pendente(s)
+                  {statusSemana.data.semanaAtual.fechada && statusSemana.data.semanaAtual.fechadoPorNome
+                    ? ` · por ${statusSemana.data.semanaAtual.fechadoPorNome}`
+                    : ""}
+                </p>
+              </div>
+            </div>
+            {isAdmin && (
+              <div className="flex flex-wrap gap-2">
+                {statusSemana.data.semanaAtual.fechada ? (
+                  <Button
+                    variant="outline"
+                    disabled={reabrirSemana.isPending}
+                    onClick={() => {
+                      if (window.confirm(`Reabrir a semana de ${statusSemana.data!.semanaAtual.rotulo} para ajustes?`)) {
+                        reabrirSemana.mutate({ dia: diaDate });
+                      }
+                    }}
+                  >
+                    {reabrirSemana.isPending ? "Reabrindo..." : "Reabrir semana"}
+                  </Button>
+                ) : statusSemana.data.podeFecharSemanaAtual ? (
+                  <Button disabled={fecharSemana.isPending} onClick={fecharSemanaAtual}>
+                    {fecharSemana.isPending ? "Fechando..." : "Fechar semana"}
+                  </Button>
+                ) : statusSemana.data.semanaAtual.totalPedidos > 0 ? (
+                  <span className="text-xs text-muted-foreground">
+                    Defina entregue/cancelado em todos os pedidos para fechar.
+                  </span>
+                ) : null}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
 
       <Tabs defaultValue={abaInicial} className="space-y-4">
         <TabsList className="flex h-auto flex-wrap">

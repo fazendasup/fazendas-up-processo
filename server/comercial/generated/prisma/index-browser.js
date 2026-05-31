@@ -138,11 +138,21 @@ exports.Prisma.RefreshTokenScalarFieldEnum = {
   revogadoEm: 'revogadoEm'
 };
 
+exports.Prisma.GrupoClienteScalarFieldEnum = {
+  id: 'id',
+  nome: 'nome',
+  tipo: 'tipo',
+  observacoes: 'observacoes',
+  criadoEm: 'criadoEm',
+  atualizadoEm: 'atualizadoEm'
+};
+
 exports.Prisma.ClienteScalarFieldEnum = {
   id: 'id',
   externalId: 'externalId',
   nome: 'nome',
   tipo: 'tipo',
+  grupoId: 'grupoId',
   cnpjCpf: 'cnpjCpf',
   endereco: 'endereco',
   contatoPrincipal: 'contatoPrincipal',
@@ -271,6 +281,23 @@ exports.Prisma.PedidoOperacionalAuditoriaScalarFieldEnum = {
   antes: 'antes',
   depois: 'depois',
   criadoEm: 'criadoEm'
+};
+
+exports.Prisma.FechamentoSemanalScalarFieldEnum = {
+  id: 'id',
+  semanaInicio: 'semanaInicio',
+  semanaFim: 'semanaFim',
+  fechadoPorId: 'fechadoPorId',
+  fechadoPorNome: 'fechadoPorNome',
+  fechadoEm: 'fechadoEm',
+  totalPedidos: 'totalPedidos',
+  totalEntregues: 'totalEntregues',
+  totalCancelados: 'totalCancelados',
+  valorEntregue: 'valorEntregue',
+  reabertoEm: 'reabertoEm',
+  reabertoPorId: 'reabertoPorId',
+  reabertoPorNome: 'reabertoPorNome',
+  snapshot: 'snapshot'
 };
 
 exports.Prisma.PedidoScalarFieldEnum = {
@@ -428,6 +455,12 @@ exports.Prisma.RefreshTokenOrderByRelevanceFieldEnum = {
   tokenHash: 'tokenHash'
 };
 
+exports.Prisma.GrupoClienteOrderByRelevanceFieldEnum = {
+  id: 'id',
+  nome: 'nome',
+  observacoes: 'observacoes'
+};
+
 exports.Prisma.JsonNullValueFilter = {
   DbNull: Prisma.DbNull,
   JsonNull: Prisma.JsonNull,
@@ -443,6 +476,7 @@ exports.Prisma.ClienteOrderByRelevanceFieldEnum = {
   id: 'id',
   externalId: 'externalId',
   nome: 'nome',
+  grupoId: 'grupoId',
   cnpjCpf: 'cnpjCpf',
   endereco: 'endereco',
   contatoPrincipal: 'contatoPrincipal',
@@ -522,6 +556,14 @@ exports.Prisma.PedidoOperacionalAuditoriaOrderByRelevanceFieldEnum = {
   usuarioId: 'usuarioId',
   usuarioNome: 'usuarioNome',
   acao: 'acao'
+};
+
+exports.Prisma.FechamentoSemanalOrderByRelevanceFieldEnum = {
+  id: 'id',
+  fechadoPorId: 'fechadoPorId',
+  fechadoPorNome: 'fechadoPorNome',
+  reabertoPorId: 'reabertoPorId',
+  reabertoPorNome: 'reabertoPorNome'
 };
 
 exports.Prisma.PedidoOrderByRelevanceFieldEnum = {
@@ -718,6 +760,7 @@ exports.PeriodoKpi = exports.$Enums.PeriodoKpi = {
 exports.Prisma.ModelName = {
   Usuario: 'Usuario',
   RefreshToken: 'RefreshToken',
+  GrupoCliente: 'GrupoCliente',
   Cliente: 'Cliente',
   EstoqueVivoConfig: 'EstoqueVivoConfig',
   ProdutoComercial: 'ProdutoComercial',
@@ -728,6 +771,7 @@ exports.Prisma.ModelName = {
   PedidoOperacionalItem: 'PedidoOperacionalItem',
   PedidoOperacionalAvaria: 'PedidoOperacionalAvaria',
   PedidoOperacionalAuditoria: 'PedidoOperacionalAuditoria',
+  FechamentoSemanal: 'FechamentoSemanal',
   Pedido: 'Pedido',
   ItemPedido: 'ItemPedido',
   Interacao: 'Interacao',
