@@ -176,9 +176,8 @@ export const varejoRouter = router({
         return precoEspecial.get(`${contaAzulCustomerId}:${produtoId}`) ?? precoBasePorProduto.get(produtoId) ?? 0;
       };
 
-      // ----- Pedidos entregues: volume e faturamento -----
+      // ----- Pedidos entregues: volume validado (sem expor faturamento no relatório do cliente) -----
       let volumeEntregue = 0;
-      let faturamento = 0;
       let pedidosEntregues = 0;
       let pedidosCancelados = 0;
       let pedidosTotais = pedidos.length;
@@ -187,7 +186,7 @@ export const varejoRouter = router({
       const serie = new Map<number, { entregue: number; avaria: number; valorPerdido: number; rotulo: string }>();
       const porUnidade = new Map<
         string,
-        { contaAzulCustomerId: string; nome: string; entregueQtd: number; faturamento: number; avariaQtd: number; valorPerdido: number }
+        { contaAzulCustomerId: string; nome: string; entregueQtd: number; avariaQtd: number; valorPerdido: number }
       >();
 
       const initSerie = (d: Date) => {
@@ -201,7 +200,6 @@ export const varejoRouter = router({
             contaAzulCustomerId: conta,
             nome: nomePorConta.get(conta) ?? conta,
             entregueQtd: 0,
-            faturamento: 0,
             avariaQtd: 0,
             valorPerdido: 0,
           });
@@ -216,11 +214,8 @@ export const varejoRouter = router({
           const s = initSerie(p.dataEntrega);
           for (const item of p.itens) {
             const q = num(item.quantidade);
-            const valor = q * num(item.precoUnit);
             volumeEntregue += q;
-            faturamento += valor;
             u.entregueQtd += q;
-            u.faturamento += valor;
             s.entregue += q;
             entregueQtdPorProduto.set(item.produtoId, (entregueQtdPorProduto.get(item.produtoId) ?? 0) + q);
           }
@@ -329,7 +324,6 @@ export const varejoRouter = router({
         periodo: { inicio, fim },
         unidadesConsideradas: unidades.map((u) => ({ id: u.id, nome: u.nome, externalId: u.externalId })),
         kpis: {
-          faturamento,
           volumeEntregue,
           avariaQtdTotal,
           valorPerdidoTotal,

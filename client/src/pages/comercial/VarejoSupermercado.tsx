@@ -10,7 +10,6 @@ import {
   Plus,
   Store,
   Trash2,
-  TrendingDown,
   Truck,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
@@ -64,7 +63,7 @@ function Barra({ valor, max, cor }: { valor: number; max: number; cor: string })
   );
 }
 
-export function VarejoSupermercado() {
+export function AcompanhamentoAvarias() {
   const utils = trpc.useUtils();
   const me = trpc.comercial.pedidos.me.useQuery(undefined, { staleTime: 60_000 });
   const isAdmin = me.data?.perfil === "ADMIN" || me.data?.perfil === "GERENTE_COMERCIAL";
@@ -131,12 +130,13 @@ export function VarejoSupermercado() {
     if (!dados) return;
     const linhas = [
       ["Indicador", "Valor"],
-      ["Faturamento", String(dados.kpis.faturamento)],
       ["Volume entregue", String(dados.kpis.volumeEntregue)],
       ["Quantidade avariada", String(dados.kpis.avariaQtdTotal)],
       ["Valor perdido", String(dados.kpis.valorPerdidoTotal)],
       ["Taxa de avaria (%)", String(dados.kpis.taxaAvaria.toFixed(2))],
       ["Pontualidade (%)", String(dados.kpis.pontualidade.toFixed(2))],
+      ["Pedidos avaliados", String(dados.kpis.pedidosTotais)],
+      ["Entregas validadas", String(dados.kpis.pedidosEntregues)],
       [],
       ["Produto", "Categoria", "Entregue", "Avaria", "Taxa avaria %", "Valor perdido"],
       ...dados.topProdutosAvaria.map((p) => [
@@ -155,7 +155,7 @@ export function VarejoSupermercado() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `varejo_${redeSelecionada?.nome ?? "rede"}.csv`;
+    a.download = `acompanhamento_avarias_${redeSelecionada?.nome ?? "rede"}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -170,9 +170,9 @@ export function VarejoSupermercado() {
   return (
     <div className="space-y-5">
       <PageHeader
-        kicker="Comercial · Varejo"
-        title="Acompanhamento de varejo"
-        subtitle="Vendas, avarias e indicadores por rede de supermercado e por unidade. Relatório pronto para compartilhar com o cliente."
+        kicker="Comercial · Cliente"
+        title="Acompanhamento avarias"
+        subtitle="Relatório por rede e unidade de supermercado, usando os pedidos validados. Mostra apenas indicadores compartilháveis com o cliente."
         actions={
           <>
             {isAdmin && (
@@ -193,9 +193,12 @@ export function VarejoSupermercado() {
       {isAdmin && gerenciar && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Redes e unidades</CardTitle>
+            <CardTitle className="text-base">Configuração interna: redes e unidades</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+              Área visível somente para administradores. O cliente vê apenas filtros, KPIs e gráficos do acompanhamento.
+            </p>
             <div className="flex flex-wrap items-end gap-2">
               <div className="grow">
                 <Label className="text-xs">Nova rede (supermercado)</Label>
@@ -328,7 +331,7 @@ export function VarejoSupermercado() {
 
       {!grupoId ? (
         <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-          Selecione uma rede de supermercado para ver o acompanhamento de vendas e avarias.
+          Selecione uma rede de supermercado para ver o acompanhamento de avarias.
         </div>
       ) : relatorio.isLoading ? (
         <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
@@ -349,9 +352,10 @@ export function VarejoSupermercado() {
               sub={`${dados.kpis.pedidosEntregues} pedido(s) entregue(s)`}
             />
             <KpiCard
-              icon={<TrendingDown className="h-4 w-4" />}
-              label="Faturamento (entregue)"
-              valor={fmtMoney(dados.kpis.faturamento)}
+              icon={<CheckCircle2 className="h-4 w-4" />}
+              label="Entregas validadas"
+              valor={`${dados.kpis.pedidosEntregues}`}
+              sub={`${dados.kpis.pedidosTotais} pedido(s) avaliados no período`}
             />
             <KpiCard
               icon={<Percent className="h-4 w-4" />}
@@ -373,7 +377,7 @@ export function VarejoSupermercado() {
           {dados.insights.length > 0 && (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Insights</CardTitle>
+                <CardTitle className="text-base">Insights para o cliente</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 {dados.insights.map((ins, i) => (
@@ -513,7 +517,6 @@ export function VarejoSupermercado() {
                       <tr className="border-b text-left text-xs text-muted-foreground">
                         <th className="py-2">Unidade</th>
                         <th className="py-2 text-right">Entregue</th>
-                        <th className="py-2 text-right">Faturamento</th>
                         <th className="py-2 text-right">Avaria</th>
                         <th className="py-2 text-right">Taxa</th>
                         <th className="py-2 text-right">Valor perdido</th>
@@ -524,7 +527,6 @@ export function VarejoSupermercado() {
                         <tr key={u.contaAzulCustomerId} className="border-b last:border-0">
                           <td className="py-2">{u.nome}</td>
                           <td className="py-2 text-right">{fmtQtd(u.entregueQtd)}</td>
-                          <td className="py-2 text-right">{fmtMoney(u.faturamento)}</td>
                           <td className="py-2 text-right">{fmtQtd(u.avariaQtd)}</td>
                           <td className={`py-2 text-right font-semibold ${taxaCor(u.taxaAvaria)}`}>
                             {fmtPct(u.taxaAvaria)}
@@ -541,8 +543,8 @@ export function VarejoSupermercado() {
 
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Info className="h-3.5 w-3.5" />
-            Valor perdido calculado pelas regras comerciais (preços especiais) do cliente, com fallback no preço base do
-            produto.
+            Visão preparada para cliente: não expõe custos, margem, estoque, fornecedores, produção ou dados operacionais
+            internos. O valor perdido usa as regras comerciais aplicáveis ao cliente.
           </p>
         </>
       ) : null}
