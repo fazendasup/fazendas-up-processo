@@ -131,6 +131,12 @@ const COMERCIAL_ITEMS: NavItem[] = [
     icon: Briefcase,
     requiredRole: "comercial",
   },
+  {
+    href: "/comercial/acompanhamento-avarias",
+    label: "Acompanhamento avarias",
+    icon: BarChart3,
+    requiredRole: "comercial",
+  },
 ];
 
 const SISTEMA_EXTRAS_ADMIN: NavItem[] = [

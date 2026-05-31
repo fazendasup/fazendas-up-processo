@@ -28,6 +28,7 @@ const STATIC: Record<string, string> = {
   "/comercial/oportunidades": "Comercial — Oportunidades",
   "/comercial/mensagens": "Comercial — Mensagens",
   "/comercial/kpis": "Comercial — KPIs",
+  "/comercial/acompanhamento-avarias": "Comercial — Acompanhamento avarias",
   "/comercial/configuracoes": "Comercial — Configurações",
   "/comercial/execucoes": "Comercial — Execuções",
   "/receitas": "Receitas",
