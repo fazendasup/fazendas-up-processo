@@ -69,6 +69,14 @@ function ComercialPerfilRouteGuard({ path, children }: { path: string; children:
   return <>{children}</>;
 }
 
+function ProjetosRoute() {
+  const { user } = useAuth();
+  if (user && homeForUserRole(user.role) !== "/projetos") {
+    return <Redirect to={homeForUserRole(user.role)} />;
+  }
+  return <ProjetosPage />;
+}
+
 function Router() {
   return (
     <>
@@ -125,9 +133,11 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/estoque">
-            <ProtectedRoute requiredRole="admin">
+            <ProtectedRoute requiredRole="comercial">
               <ModuloProjetoRouteGuard modulo="estoque">
-                <EstoquePage />
+                <ComercialPerfilRouteGuard path="/estoque">
+                  <EstoquePage />
+                </ComercialPerfilRouteGuard>
               </ModuloProjetoRouteGuard>
             </ProtectedRoute>
           </Route>
@@ -236,7 +246,7 @@ function Router() {
 
           <Route path="/projetos">
             <ProtectedRoute>
-              <ProjetosPage />
+              <ProjetosRoute />
             </ProtectedRoute>
           </Route>
           <Route path="/404" component={NotFound} />

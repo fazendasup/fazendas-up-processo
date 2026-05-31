@@ -325,7 +325,7 @@ export default function Header() {
 
   const sistemaItems = useMemo(() => {
     if (!isLoggedIn) return [] as NavItem[];
-    const list: NavItem[] = [PROJETOS_ITEM];
+    const list: NavItem[] = isAdmin ? [PROJETOS_ITEM] : [];
     if (activeProjetoId == null) return list;
     if (canAccessProcesso) list.push(...SISTEMA_PROCESSO_ITEMS);
     if (isAdmin) list.push(...SISTEMA_EXTRAS_ADMIN);

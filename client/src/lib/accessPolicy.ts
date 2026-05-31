@@ -24,6 +24,7 @@ export function canAccessCommercialPath(path: string, perfil: string | null | un
     return [
       "/comercial",
       "/comercial/dashboard",
+      "/estoque",
       "/comercial/estoque-vivo",
       "/comercial/pedidos",
       "/comercial/acompanhamento-avarias",
