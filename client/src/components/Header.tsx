@@ -85,7 +85,13 @@ const OPERACAO_ITEMS: NavItem[] = [
   { href: "/planejamento", label: "Plantio", icon: CalendarIcon },
   { href: "/automacao", label: "Automação", icon: Cpu },
   { href: "/manutencao", label: "Manutenção", icon: Wrench },
-  { href: "/estoque", label: "Estoque", icon: Package, requiredRole: "admin" },
+  {
+    href: "/estoque",
+    label: "Estoque",
+    icon: Package,
+    requiredRole: "comercial",
+    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
+  },
 ];
 
 const ANALISE_ADMIN_PREFIX: NavItem[] = [
@@ -103,6 +109,14 @@ const ANALISE_ANALYTICS: NavItem = {
   icon: BarChart3,
 };
 
+const ANALISE_CUSTOS: NavItem = {
+  href: "/custos-producao",
+  label: "Custos de produção",
+  icon: Coins,
+  requiredRole: "comercial",
+  comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
+};
+
 const ANALISE_TODOS: NavItem = {
   href: "/inteligencia",
   label: "Inteligência",
@@ -115,13 +129,6 @@ const ANALISE_VISAO: NavItem = {
 };
 
 const COMERCIAL_ITEMS: NavItem[] = [
-  {
-    href: "/comercial/estoque-vivo",
-    label: "Estoque",
-    icon: Package,
-    requiredRole: "comercial",
-    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
-  },
   {
     href: "/comercial/pedidos",
     label: "Pedidos",
@@ -140,13 +147,6 @@ const COMERCIAL_ITEMS: NavItem[] = [
     label: "Acompanhamento avarias",
     icon: BarChart3,
     requiredRole: "comercial",
-  },
-  {
-    href: "/custos-producao",
-    label: "Custo de produção",
-    icon: Coins,
-    requiredRole: "comercial",
-    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
   },
 ];
 
@@ -258,11 +258,13 @@ export default function Header() {
   const comercialPerfil = comercialMe.data?.perfil ?? null;
 
   const operacaoItems = useMemo(() => {
-    if (!isLoggedIn || activeProjetoId == null || !canAccessProcesso) return [] as NavItem[];
+    if (!isLoggedIn || activeProjetoId == null || (!canAccessProcesso && !canAccessComercial)) return [] as NavItem[];
     return OPERACAO_ITEMS.filter(item => {
+      if (!canAccessProcesso && item.requiredRole !== "comercial") return false;
       if (item.requiredRole === "admin" && !isAdmin) return false;
       if (item.requiredRole === "comercial" && !canAccessComercial)
         return false;
+      if (item.comercialPerfis && !isAdmin && (!comercialPerfil || !item.comercialPerfis.includes(comercialPerfil as any))) return false;
       if (item.projetoTipo != null) {
         if (!activeProjeto || activeProjeto.tipo !== item.projetoTipo)
           return false;
@@ -273,6 +275,7 @@ export default function Header() {
   }, [
     canAccessComercial,
     canAccessProcesso,
+    comercialPerfil,
     isAdmin,
     isLoggedIn,
     activeProjeto?.tipo,
@@ -281,24 +284,28 @@ export default function Header() {
   ]);
 
   const analiseItems = useMemo(() => {
-    if (!isLoggedIn || activeProjetoId == null || !canAccessProcesso) return [] as NavItem[];
+    if (!isLoggedIn || activeProjetoId == null || (!canAccessProcesso && !canAccessComercial)) return [] as NavItem[];
     const list: NavItem[] = [];
     if (isAdmin) list.push(...ANALISE_ADMIN_PREFIX);
-    list.push(ANALISE_ANALYTICS);
-    if (!isComercial) {
+    if (canAccessProcesso) list.push(ANALISE_ANALYTICS);
+    if (!isComercial && canAccessProcesso) {
       list.push(ANALISE_TODOS);
       list.push(ANALISE_VISAO);
     }
+    if (canAccessComercial) list.push(ANALISE_CUSTOS);
     return list.filter(item => {
       if (item.requiredRole === "admin" && !isAdmin) return false;
       if (item.requiredRole === "comercial" && !canAccessComercial)
         return false;
+      if (item.comercialPerfis && !isAdmin && (!comercialPerfil || !item.comercialPerfis.includes(comercialPerfil as any))) return false;
+      if (item.requiredRole === "comercial" && !canAccessCommercialPath(item.href, comercialPerfil)) return false;
       if (!navPermitidoPorModulo(item.href, modulosAtivos)) return false;
       return true;
     });
   }, [
     canAccessComercial,
     canAccessProcesso,
+    comercialPerfil,
     isAdmin,
     isComercial,
     isLoggedIn,
