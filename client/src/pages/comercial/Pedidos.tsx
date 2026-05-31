@@ -609,8 +609,16 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
                           <p className="mb-1 text-xs font-bold uppercase tracking-wide text-amber-800 dark:text-amber-200">Avarias</p>
                           <div className="flex flex-wrap gap-2">
                             {grupo.avarias.map((a: any) => (
-                              <span key={a.id} className="rounded-full bg-background px-2 py-1 text-xs">
-                                {Number(a.quantidade)} × {a.produtoNome}{a.categoria ? ` · ${a.categoria}` : ""}
+                              <span key={a.id} className="rounded-lg bg-background px-2 py-1 text-xs">
+                                <span className="font-medium">
+                                  {Number(a.quantidade)} × {a.produtoNome}{a.categoria ? ` · ${a.categoria}` : ""}
+                                </span>
+                                {a.observacoes ? <span className="block text-muted-foreground">{a.observacoes}</span> : null}
+                                {a.criadoPor?.nome || a.criadoPor?.email ? (
+                                  <span className="block text-[10px] text-muted-foreground">
+                                    Lançado por {a.criadoPor?.nome ?? a.criadoPor?.email}
+                                  </span>
+                                ) : null}
                               </span>
                             ))}
                           </div>
@@ -806,8 +814,16 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
                         <p className="mb-1 text-xs font-bold uppercase tracking-wide text-amber-800 dark:text-amber-200">Avarias</p>
                         <div className="flex flex-wrap gap-2">
                           {p.avarias.map((a: any) => (
-                            <span key={a.id} className="rounded-full bg-background px-2 py-1 text-xs">
-                              {Number(a.quantidade)} × {a.produtoNome}{a.categoria ? ` · ${a.categoria}` : ""}
+                            <span key={a.id} className="rounded-lg bg-background px-2 py-1 text-xs">
+                              <span className="font-medium">
+                                {Number(a.quantidade)} × {a.produtoNome}{a.categoria ? ` · ${a.categoria}` : ""}
+                              </span>
+                              {a.observacoes ? <span className="block text-muted-foreground">{a.observacoes}</span> : null}
+                              {a.criadoPor?.nome || a.criadoPor?.email ? (
+                                <span className="block text-[10px] text-muted-foreground">
+                                  Lançado por {a.criadoPor?.nome ?? a.criadoPor?.email}
+                                </span>
+                              ) : null}
                             </span>
                           ))}
                         </div>

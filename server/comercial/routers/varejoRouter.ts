@@ -8,6 +8,26 @@ const adminComercial = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL");
 
 const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
+async function registrarAuditoriaPedido(
+  prisma: Prisma.TransactionClient,
+  pedidoId: string,
+  usuario: { id: string; nome: string },
+  acao: string,
+  antes: unknown,
+  depois: unknown,
+) {
+  await prisma.pedidoOperacionalAuditoria.create({
+    data: {
+      pedidoId,
+      usuarioId: usuario.id,
+      usuarioNome: usuario.nome,
+      acao,
+      antes: antes == null ? undefined : (antes as Prisma.InputJsonValue),
+      depois: depois == null ? undefined : (depois as Prisma.InputJsonValue),
+    },
+  });
+}
+
 function inicioDia(d: Date): Date {
   const out = new Date(d);
   out.setHours(0, 0, 0, 0);
@@ -110,6 +130,111 @@ export const varejoRouter = router({
     });
   }),
 
+  registrarAvariaCampo: comercialProcedure
+    .input(
+      z.object({
+        clienteId: z.string().min(1, "Unidade é obrigatória"),
+        dataEntrega: z.coerce.date(),
+        produtoId: z.string().min(1, "Variedade é obrigatória"),
+        quantidade: z.number().positive("Quantidade deve ser maior que zero"),
+        observacoes: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const usuario = ctx.comercialUsuario;
+      if (!usuario) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      }
+
+      const [cliente, produto] = await Promise.all([
+        ctx.prisma!.cliente.findUnique({ where: { id: input.clienteId } }),
+        ctx.prisma!.produtoComercial.findFirst({ where: { id: input.produtoId, ativo: true } }),
+      ]);
+
+      if (!cliente?.externalId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Unidade sem vínculo com Conta Azul. Vincule a unidade antes de lançar avarias.",
+        });
+      }
+      if (!produto) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Variedade não encontrada ou inativa." });
+      }
+
+      const dataEntrega = inicioDia(input.dataEntrega);
+      const observacoes = input.observacoes?.trim() || null;
+
+      return ctx.prisma!.$transaction(async (tx) => {
+        let pedido = await tx.pedidoOperacional.findFirst({
+          where: {
+            contaAzulCustomerId: cliente.externalId!,
+            dataEntrega: { gte: dataEntrega, lte: fimDia(dataEntrega) },
+            status: { not: "CANCELADO" },
+          },
+          include: { avarias: true, itens: true },
+          orderBy: { criadoEm: "asc" },
+        });
+        let pedidoCriado = false;
+
+        if (!pedido) {
+          pedido = await tx.pedidoOperacional.create({
+            data: {
+              clienteId: cliente.id,
+              contaAzulCustomerId: cliente.externalId!,
+              dataEntrega,
+              diaSemana: dataEntrega.getDay(),
+              tipoVenda: "AVULSO",
+              observacoes: "Registro criado automaticamente por lançamento de avaria em campo.",
+              criadoPorId: usuario.id,
+              editadoPorId: usuario.id,
+            },
+            include: { avarias: true, itens: true },
+          });
+          pedidoCriado = true;
+        }
+
+        const avaria = await tx.pedidoOperacionalAvaria.create({
+          data: {
+            pedidoId: pedido.id,
+            clienteId: cliente.id,
+            contaAzulCustomerId: cliente.externalId!,
+            dataEntrega,
+            produtoId: produto.id,
+            produtoNome: produto.nome,
+            categoria: produto.categoria,
+            quantidade: new Prisma.Decimal(input.quantidade),
+            observacoes,
+            criadoPorId: usuario.id,
+          },
+        });
+
+        await registrarAuditoriaPedido(
+          tx,
+          pedido.id,
+          { id: usuario.id, nome: usuario.nome },
+          "avaria_campo_registrada",
+          pedidoCriado ? null : { avariasAntes: pedido.avarias.length },
+          {
+            avariaId: avaria.id,
+            produtoId: produto.id,
+            produtoNome: produto.nome,
+            quantidade: input.quantidade,
+            dataEntrega,
+            observacoes,
+            origem: "acompanhamento_avarias",
+            pedidoCriado,
+          },
+        );
+
+        return {
+          success: true,
+          pedidoId: pedido.id,
+          avariaId: avaria.id,
+          pedidoCriado,
+        };
+      });
+    }),
+
   // ---------------- Relatório de varejo (vendas + avarias) ----------------
 
   relatorio: comercialProcedure
@@ -156,6 +281,10 @@ export const varejoRouter = router({
         }),
         prisma.pedidoOperacionalAvaria.findMany({
           where: { contaAzulCustomerId: { in: externalIds }, dataEntrega: { gte: inicio, lte: fim } },
+          include: {
+            criadoPor: { select: { nome: true, email: true } },
+            pedido: { select: { id: true, status: true, tipoVenda: true } },
+          },
         }),
         prisma.regraComercialCliente.findMany({
           where: { contaAzulCustomerId: { in: externalIds } },
@@ -338,6 +467,23 @@ export const varejoRouter = router({
         avariaDias,
         serieSemanal,
         breakdownUnidades,
+        lancamentosRecentes: avarias
+          .slice()
+          .sort((a, b) => b.criadoEm.getTime() - a.criadoEm.getTime())
+          .slice(0, 20)
+          .map((a) => ({
+            id: a.id,
+            pedidoId: a.pedidoId,
+            unidade: nomePorConta.get(a.contaAzulCustomerId) ?? a.contaAzulCustomerId,
+            dataEntrega: a.dataEntrega,
+            produtoNome: a.produtoNome,
+            categoria: a.categoria,
+            quantidade: num(a.quantidade),
+            observacoes: a.observacoes,
+            criadoEm: a.criadoEm,
+            criadoPorNome: a.criadoPor?.nome ?? a.criadoPor?.email ?? null,
+            statusPedido: a.pedido.status,
+          })),
         insights,
       };
     }),

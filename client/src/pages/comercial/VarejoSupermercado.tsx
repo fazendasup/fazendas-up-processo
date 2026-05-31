@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -42,6 +42,11 @@ function fmtMoney(value: unknown) {
   return Number(value ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function fmtDate(value: unknown) {
+  if (!value) return "—";
+  return new Date(value as string | Date).toLocaleDateString("pt-BR");
+}
+
 function fmtPct(value: number | null | undefined) {
   if (value == null) return "—";
   return `${value.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
@@ -76,6 +81,11 @@ export function AcompanhamentoAvarias() {
   const [gerenciar, setGerenciar] = useState(false);
   const [novaRede, setNovaRede] = useState("");
   const [unidadeParaVincular, setUnidadeParaVincular] = useState("");
+  const [avariaUnidadeId, setAvariaUnidadeId] = useState("");
+  const [avariaData, setAvariaData] = useState(hojeIsoLocal());
+  const [avariaProdutoId, setAvariaProdutoId] = useState("");
+  const [avariaQuantidade, setAvariaQuantidade] = useState("1");
+  const [avariaObservacoes, setAvariaObservacoes] = useState("");
 
   const intervalo = useMemo(
     () => intervaloDoPreset(preset, { inicio: customInicio, fim: customFim }),
@@ -84,9 +94,24 @@ export function AcompanhamentoAvarias() {
 
   const redes = trpc.comercial.varejo.listarRedes.useQuery(undefined);
   const clientesSuper = trpc.comercial.varejo.clientesSupermercado.useQuery();
+  const produtos = trpc.comercial.pedidos.produtos.useQuery({ incluirInativos: false });
 
   const redeSelecionada = redes.data?.find((r) => r.id === grupoId);
   const unidadesDaRede = redeSelecionada?.unidades ?? [];
+
+  useEffect(() => {
+    if (!grupoId) {
+      setAvariaUnidadeId("");
+      return;
+    }
+    if (unidadeId !== TODAS_UNIDADES) {
+      setAvariaUnidadeId(unidadeId);
+      return;
+    }
+    setAvariaUnidadeId((atual) =>
+      unidadesDaRede.some((u) => u.id === atual) ? atual : "",
+    );
+  }, [grupoId, unidadeId, redeSelecionada?.id, unidadesDaRede]);
 
   const relatorio = trpc.comercial.varejo.relatorio.useQuery(
     {
@@ -123,8 +148,44 @@ export function AcompanhamentoAvarias() {
     },
     onError: (err) => toast.error(err.message),
   });
+  const registrarAvariaCampo = trpc.comercial.varejo.registrarAvariaCampo.useMutation({
+    onSuccess: async (result) => {
+      toast.success("Avaria registrada.", {
+        description: result.pedidoCriado
+          ? "Foi criado um registro em Pedidos para essa unidade/data."
+          : "A avaria foi vinculada ao pedido existente da unidade/data.",
+      });
+      setAvariaProdutoId("");
+      setAvariaQuantidade("1");
+      setAvariaObservacoes("");
+      await Promise.all([
+        utils.comercial.varejo.relatorio.invalidate(),
+        utils.comercial.pedidos.agenda.invalidate(),
+        utils.comercial.pedidos.dashboard.invalidate(),
+        utils.comercial.pedidos.relatorioHistorico.invalidate(),
+      ]);
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   const dados = relatorio.data;
+
+  function registrarAvaria() {
+    const quantidade = Number(avariaQuantidade.replace(",", "."));
+    if (!avariaUnidadeId) return toast.error("Selecione a unidade conferida.");
+    if (!avariaData) return toast.error("Informe a data em que a avaria deve aparecer em Pedidos.");
+    if (!avariaProdutoId) return toast.error("Selecione a variedade/produto.");
+    if (!Number.isFinite(quantidade) || quantidade <= 0) {
+      return toast.error("Informe uma quantidade maior que zero.");
+    }
+    registrarAvariaCampo.mutate({
+      clienteId: avariaUnidadeId,
+      dataEntrega: new Date(`${avariaData}T12:00:00`),
+      produtoId: avariaProdutoId,
+      quantidade,
+      observacoes: avariaObservacoes,
+    });
+  }
 
   function exportarCsv() {
     if (!dados) return;
@@ -188,6 +249,94 @@ export function AcompanhamentoAvarias() {
           </>
         }
       />
+
+      <Card className="border-amber-200 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/10">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Lançar avaria em campo</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Uso do promoter no varejo: selecione a unidade, a data em que isso deve aparecer em Pedidos
+            (normalmente a próxima entrega), a variedade e a quantidade conferida.
+          </p>
+        </CardHeader>
+        <CardContent className="grid gap-3 lg:grid-cols-[minmax(180px,1fr)_minmax(160px,0.8fr)_minmax(220px,1.2fr)_8rem]">
+          <div>
+            <Label className="text-xs">Unidade conferida *</Label>
+            <Select
+              value={avariaUnidadeId}
+              onValueChange={setAvariaUnidadeId}
+              disabled={!grupoId || unidadesDaRede.length === 0}
+            >
+              <SelectTrigger className="h-10 bg-background">
+                <SelectValue placeholder={grupoId ? "Selecione a unidade..." : "Selecione a rede acima"} />
+              </SelectTrigger>
+              <SelectContent>
+                {unidadesDaRede.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Data em Pedidos *</Label>
+            <Input
+              type="date"
+              className="h-10 bg-background"
+              value={avariaData}
+              onChange={(e) => setAvariaData(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Variedade/produto *</Label>
+            <Select value={avariaProdutoId} onValueChange={setAvariaProdutoId}>
+              <SelectTrigger className="h-10 bg-background">
+                <SelectValue placeholder="Selecione a variedade..." />
+              </SelectTrigger>
+              <SelectContent>
+                {(produtos.data ?? []).map((p: any) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.nome}
+                    {p.categoria ? ` · ${p.categoria}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Qtd. *</Label>
+            <Input
+              inputMode="decimal"
+              className="h-10 bg-background"
+              value={avariaQuantidade}
+              onChange={(e) => setAvariaQuantidade(e.target.value)}
+              placeholder="Ex.: 3"
+            />
+          </div>
+          <div className="lg:col-span-3">
+            <Label className="text-xs">Observação de campo</Label>
+            <Input
+              className="h-10 bg-background"
+              value={avariaObservacoes}
+              onChange={(e) => setAvariaObservacoes(e.target.value)}
+              placeholder="Ex.: produto murcho na gôndola, validade curta, manuseio, quebra..."
+            />
+          </div>
+          <div className="flex items-end">
+            <Button
+              className="h-10 w-full"
+              disabled={registrarAvariaCampo.isPending}
+              onClick={registrarAvaria}
+            >
+              {registrarAvariaCampo.isPending ? "Salvando..." : "Registrar"}
+            </Button>
+          </div>
+          <p className="lg:col-span-4 text-xs text-muted-foreground">
+            Ao salvar, o sistema vincula a avaria ao pedido existente da unidade/data. Se não houver pedido,
+            cria um registro operacional só de avaria, mantendo rastreabilidade por pedido, data, variedade e usuário.
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Gestão de redes (admin) */}
       {isAdmin && gerenciar && (
@@ -397,6 +546,38 @@ export function AcompanhamentoAvarias() {
                       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                     )}
                     <span>{ins.texto}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {dados.lancamentosRecentes.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Últimos lançamentos de campo</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {dados.lancamentosRecentes.map((l: any) => (
+                  <div key={l.id} className="rounded-lg border bg-background p-3 text-sm">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p className="font-semibold">
+                          {fmtQtd(l.quantidade)} × {l.produtoNome}
+                          {l.categoria ? <span className="text-muted-foreground"> · {l.categoria}</span> : null}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {l.unidade} · aparece em Pedidos em {fmtDate(l.dataEntrega)} · pedido {l.pedidoId}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">
+                        {l.statusPedido?.toLowerCase?.() ?? l.statusPedido}
+                      </span>
+                    </div>
+                    {l.observacoes ? <p className="mt-2 text-xs text-muted-foreground">{l.observacoes}</p> : null}
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      Lançado por {l.criadoPorNome ?? "n/d"} em {fmtDate(l.criadoEm)}
+                    </p>
                   </div>
                 ))}
               </CardContent>

@@ -548,7 +548,7 @@ export const pedidosRouter = router({
         include: {
           cliente: { include: { regraComercial: { include: { precosEspeciais: { include: { produto: true } } } } } },
           itens: true,
-          avarias: true,
+          avarias: { include: { criadoPor: { select: { nome: true, email: true } } } },
         },
         orderBy: [{ prioridadeEntrega: "asc" }, { cliente: { nome: "asc" } }],
       });
