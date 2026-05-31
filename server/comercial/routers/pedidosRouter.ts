@@ -187,6 +187,66 @@ export const pedidosRouter = router({
       return { cliente, regra, semRegras: !regra };
     }),
 
+  avisoAvariasCliente: comercialProcedure
+    .input(
+      z.object({
+        contaAzulCustomerId: z.string().min(1),
+        dia: z.coerce.date(),
+        janelaDias: z.number().int().min(1).max(60).default(14),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const fim = fimDia(input.dia);
+      const inicio = inicioDia(adicionarDias(input.dia, -(input.janelaDias - 1)));
+      const avarias = await ctx.prisma!.pedidoOperacionalAvaria.findMany({
+        where: {
+          contaAzulCustomerId: input.contaAzulCustomerId,
+          dataEntrega: { gte: inicio, lte: fim },
+        },
+        include: {
+          criadoPor: { select: { nome: true, email: true } },
+          pedido: { select: { id: true, status: true, tipoVenda: true } },
+        },
+        orderBy: [{ dataEntrega: "desc" }, { criadoEm: "desc" }],
+      });
+
+      const resumoPorProduto = new Map<string, { produtoId: string; produtoNome: string; categoria: string | null; quantidade: number }>();
+      let quantidadeTotal = 0;
+      for (const avaria of avarias) {
+        const quantidade = Number(avaria.quantidade ?? 0) || 0;
+        quantidadeTotal += quantidade;
+        const atual = resumoPorProduto.get(avaria.produtoId) ?? {
+          produtoId: avaria.produtoId,
+          produtoNome: avaria.produtoNome,
+          categoria: avaria.categoria,
+          quantidade: 0,
+        };
+        atual.quantidade += quantidade;
+        resumoPorProduto.set(avaria.produtoId, atual);
+      }
+
+      return {
+        janelaDias: input.janelaDias,
+        inicio,
+        fim,
+        possuiAvarias: avarias.length > 0,
+        quantidadeTotal,
+        produtos: Array.from(resumoPorProduto.values()).sort((a, b) => b.quantidade - a.quantidade || a.produtoNome.localeCompare(b.produtoNome, "pt-BR")),
+        lancamentos: avarias.map((a) => ({
+          id: a.id,
+          pedidoId: a.pedidoId,
+          dataEntrega: a.dataEntrega,
+          produtoId: a.produtoId,
+          produtoNome: a.produtoNome,
+          categoria: a.categoria,
+          quantidade: Number(a.quantidade ?? 0) || 0,
+          observacoes: a.observacoes,
+          criadoPor: a.criadoPor,
+          pedido: a.pedido,
+        })),
+      };
+    }),
+
   produtos: comercialProcedure
     .input(z.object({ incluirInativos: z.boolean().default(false), busca: z.string().optional() }).default({ incluirInativos: false }))
     .query(async ({ ctx, input }) => {

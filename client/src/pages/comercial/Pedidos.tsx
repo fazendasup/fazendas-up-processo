@@ -61,6 +61,15 @@ function fmtMoney(v: unknown) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function fmtQtd(v: unknown) {
+  const n = Number(v ?? 0);
+  return Number.isInteger(n) ? String(n) : n.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+}
+
+function fmtDate(v: string | Date) {
+  return new Date(v).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+}
+
 function labelStatus(s: string) {
   return s.toLowerCase().replace("_", " ");
 }
@@ -125,6 +134,10 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
     { contaAzulCustomerId: clienteId },
     { enabled: Boolean(clienteId) },
   );
+  const avisoAvariasCliente = trpc.comercial.pedidos.avisoAvariasCliente.useQuery(
+    { contaAzulCustomerId: clienteId, dia: diaDate, janelaDias: 14 },
+    { enabled: Boolean(clienteId) },
+  );
   const contextoRegras = trpc.comercial.pedidos.contextoCliente.useQuery(
     { contaAzulCustomerId: clienteRegrasId },
     { enabled: Boolean(clienteRegrasId) },
@@ -156,6 +169,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
         utils.comercial.pedidos.dashboard.invalidate(),
         utils.comercial.pedidos.compras.invalidate(),
         utils.comercial.pedidos.statusSemana.invalidate(),
+        utils.comercial.pedidos.avisoAvariasCliente.invalidate(),
       ]);
     },
     onError: (err) => toast.error(err.message || "Não foi possível salvar o pedido."),
@@ -655,6 +669,9 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
                   <p className="text-xs text-muted-foreground">{clienteSelecionado.cnpjCpf || "Sem documento"}</p>
                 </div>
               )}
+              {clienteId && (
+                <AvisoAvariasPedido aviso={avisoAvariasCliente.data} isLoading={avisoAvariasCliente.isLoading} />
+              )}
               <PainelRegrasVenda regra={regra} precos={regra?.precosEspeciais ?? []} />
               <div>
                 <Label className="text-xs">Tipo de venda *</Label>
@@ -948,6 +965,71 @@ function ClientePicker({ busca, setBusca, clientes, value, onChange }: any) {
           <option key={c.externalId} value={c.externalId}>{c.nome} {c.cnpjCpf ? `· ${c.cnpjCpf}` : ""}</option>
         ))}
       </select>
+    </div>
+  );
+}
+
+function AvisoAvariasPedido({ aviso, isLoading }: { aviso: any; isLoading: boolean }) {
+  if (isLoading) {
+    return (
+      <div className="rounded-lg border bg-muted/20 p-3 text-sm text-muted-foreground">
+        Verificando avarias recentes da unidade...
+      </div>
+    );
+  }
+
+  if (!aviso) return null;
+
+  if (!aviso.possuiAvarias) {
+    return (
+      <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 text-sm text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-100">
+        <div className="flex items-start gap-2">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <p className="font-semibold">Sem avarias recentes para esta unidade.</p>
+            <p className="text-xs opacity-80">Nenhuma avaria lançada nos últimos {aviso.janelaDias} dias. Pode seguir com o pedido normal.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const produtos = (aviso.produtos ?? []).slice(0, 3);
+  const lancamentos = (aviso.lancamentos ?? []).slice(0, 3);
+
+  return (
+    <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50/60 p-3 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-100">
+      <div className="flex items-start gap-2">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+        <div>
+          <p className="font-semibold">Atenção: esta unidade teve avarias recentes.</p>
+          <p className="text-xs opacity-80">
+            {fmtQtd(aviso.quantidadeTotal)} un em {aviso.lancamentos?.length ?? 0} lançamento(s) nos últimos {aviso.janelaDias} dias. Considere isso antes de confirmar as quantidades.
+          </p>
+        </div>
+      </div>
+      {produtos.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {produtos.map((p: any) => (
+            <span key={p.produtoId} className="rounded-full bg-background/70 px-2 py-1 text-xs">
+              {p.produtoNome}: {fmtQtd(p.quantidade)} un
+            </span>
+          ))}
+        </div>
+      )}
+      {lancamentos.length > 0 && (
+        <div className="space-y-1 text-xs opacity-90">
+          {lancamentos.map((l: any) => (
+            <p key={l.id}>
+              {fmtDate(l.dataEntrega)}: {fmtQtd(l.quantidade)} un de {l.produtoNome}
+              {l.observacoes ? ` - ${l.observacoes}` : ""}
+            </p>
+          ))}
+        </div>
+      )}
+      <Link href="/comercial/acompanhamento-avarias" className="inline-flex text-xs font-semibold underline-offset-4 hover:underline">
+        Ver sugestão de pedido no Acompanhamento avarias
+      </Link>
     </div>
   );
 }
