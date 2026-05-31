@@ -607,6 +607,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
                         </div>
                       </div>
                       <RegrasResumo regra={grupo.regras} />
+                      <AlertaAvariasPedidoCopiado alertas={grupo.alertasAvariasPendentes} />
                       <div className="grid gap-2">
                         {grupo.itens.map((item: any) => (
                           <div key={item.id} className="rounded-lg bg-muted/40 px-2 py-1.5 text-sm">
@@ -826,6 +827,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
                         </span>
                       ))}
                     </div>
+                    <AlertaAvariasPedidoCopiado alertas={p.alertaAvariasPendentes ? [p.alertaAvariasPendentes] : []} className="mt-2" />
                     {p.avarias?.length ? (
                       <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50/50 p-2 dark:border-amber-900/60 dark:bg-amber-950/10">
                         <p className="mb-1 text-xs font-bold uppercase tracking-wide text-amber-800 dark:text-amber-200">Avarias</p>
@@ -980,6 +982,11 @@ function AvisoAvariasPedido({ aviso, isLoading }: { aviso: any; isLoading: boole
 
   if (!aviso) return null;
 
+  const usaPedidoBase = aviso.criterio === "APOS_PEDIDO_SEMANA_ANTERIOR" && aviso.pedidoBase;
+  const periodoTexto = usaPedidoBase
+    ? `depois do pedido-base de ${fmtDate(aviso.pedidoBase.dataEntrega)}`
+    : `nos últimos ${aviso.janelaDias} dias`;
+
   if (!aviso.possuiAvarias) {
     return (
       <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 text-sm text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-100">
@@ -987,7 +994,7 @@ function AvisoAvariasPedido({ aviso, isLoading }: { aviso: any; isLoading: boole
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
             <p className="font-semibold">Sem avarias recentes para esta unidade.</p>
-            <p className="text-xs opacity-80">Nenhuma avaria lançada nos últimos {aviso.janelaDias} dias. Pode seguir com o pedido normal.</p>
+            <p className="text-xs opacity-80">Nenhuma avaria lançada {periodoTexto}. Pode seguir com o pedido normal.</p>
           </div>
         </div>
       </div>
@@ -1004,7 +1011,7 @@ function AvisoAvariasPedido({ aviso, isLoading }: { aviso: any; isLoading: boole
         <div>
           <p className="font-semibold">Atenção: esta unidade teve avarias recentes.</p>
           <p className="text-xs opacity-80">
-            {fmtQtd(aviso.quantidadeTotal)} un em {aviso.lancamentos?.length ?? 0} lançamento(s) nos últimos {aviso.janelaDias} dias. Considere isso antes de confirmar as quantidades.
+            {fmtQtd(aviso.quantidadeTotal)} un em {aviso.lancamentos?.length ?? 0} lançamento(s) {periodoTexto}. Considere isso antes de confirmar as quantidades.
           </p>
         </div>
       </div>
@@ -1030,6 +1037,39 @@ function AvisoAvariasPedido({ aviso, isLoading }: { aviso: any; isLoading: boole
       <Link href="/comercial/acompanhamento-avarias" className="inline-flex text-xs font-semibold underline-offset-4 hover:underline">
         Ver sugestão de pedido no Acompanhamento avarias
       </Link>
+    </div>
+  );
+}
+
+function AlertaAvariasPedidoCopiado({ alertas, className = "" }: { alertas: any[]; className?: string }) {
+  const ativos = (alertas ?? []).filter(Boolean);
+  if (ativos.length === 0) return null;
+
+  const quantidadeTotal = ativos.reduce((sum, alerta) => sum + (Number(alerta.quantidadeTotal ?? 0) || 0), 0);
+  const lancamentos = ativos.flatMap((alerta) => alerta.lancamentos ?? []).slice(0, 4);
+  const primeiraBase = ativos[0]?.dataPedidoBase;
+
+  return (
+    <div className={`rounded-lg border border-amber-200 bg-amber-50/60 p-2 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-100 ${className}`}>
+      <div className="flex items-start gap-2">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+        <div>
+          <p className="font-semibold">Pedido copiado sem avarias, mas há avarias lançadas depois do pedido-base.</p>
+          <p className="text-xs opacity-85">
+            {fmtQtd(quantidadeTotal)} un lançada(s) pelo campo
+            {primeiraBase ? ` após o pedido de ${fmtDate(primeiraBase)}` : ""}. Revise as quantidades antes de finalizar.
+          </p>
+        </div>
+      </div>
+      {lancamentos.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {lancamentos.map((l: any) => (
+            <span key={l.id} className="rounded-full bg-background/70 px-2 py-1 text-xs">
+              {fmtDate(l.dataEntrega)} · {fmtQtd(l.quantidade)} un {l.produtoNome}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

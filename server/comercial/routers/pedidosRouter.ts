@@ -75,6 +75,96 @@ async function registrarAuditoria(
   });
 }
 
+function jsonObject(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
+}
+
+async function alertasAvariasDepoisPedidoOrigem(
+  prisma: PrismaClient,
+  pedidos: Array<{ id: string; contaAzulCustomerId: string; dataEntrega: Date; criadoEm: Date }>,
+) {
+  if (pedidos.length === 0) return new Map<string, unknown>();
+
+  const auditoriasCopia = await prisma.pedidoOperacionalAuditoria.findMany({
+    where: {
+      pedidoId: { in: pedidos.map((p) => p.id) },
+      acao: "pedido_copiado_semana_anterior",
+    },
+    select: { pedidoId: true, depois: true },
+    orderBy: { criadoEm: "desc" },
+  });
+
+  const origemPorPedido = new Map<string, string>();
+  for (const auditoria of auditoriasCopia) {
+    if (origemPorPedido.has(auditoria.pedidoId)) continue;
+    const depois = jsonObject(auditoria.depois);
+    const pedidoOrigemId = typeof depois?.pedidoOrigemId === "string" ? depois.pedidoOrigemId : null;
+    if (pedidoOrigemId) origemPorPedido.set(auditoria.pedidoId, pedidoOrigemId);
+  }
+  if (origemPorPedido.size === 0) return new Map<string, unknown>();
+
+  const pedidosOrigem = await prisma.pedidoOperacional.findMany({
+    where: { id: { in: Array.from(origemPorPedido.values()) } },
+    select: { id: true, contaAzulCustomerId: true, dataEntrega: true, criadoEm: true },
+  });
+  const origemPorId = new Map(pedidosOrigem.map((p) => [p.id, p]));
+
+  const criterios = pedidos
+    .map((pedido) => {
+      const origemId = origemPorPedido.get(pedido.id);
+      const origem = origemId ? origemPorId.get(origemId) : null;
+      if (!origem) return null;
+      return {
+        contaAzulCustomerId: pedido.contaAzulCustomerId,
+        criadoEm: { gt: origem.criadoEm },
+        dataEntrega: { gte: inicioDia(origem.dataEntrega), lte: fimDia(pedido.dataEntrega) },
+      };
+    })
+    .filter(Boolean) as Prisma.PedidoOperacionalAvariaWhereInput[];
+  if (criterios.length === 0) return new Map<string, unknown>();
+
+  const avarias = await prisma.pedidoOperacionalAvaria.findMany({
+    where: { OR: criterios },
+    include: { criadoPor: { select: { nome: true, email: true } } },
+    orderBy: [{ dataEntrega: "desc" }, { criadoEm: "desc" }],
+  });
+
+  const alertas = new Map<string, unknown>();
+  for (const pedido of pedidos) {
+    const origemId = origemPorPedido.get(pedido.id);
+    const origem = origemId ? origemPorId.get(origemId) : null;
+    if (!origem) continue;
+    const avariasPedido = avarias.filter(
+      (a) =>
+        a.contaAzulCustomerId === pedido.contaAzulCustomerId &&
+        a.criadoEm > origem.criadoEm &&
+        a.dataEntrega >= inicioDia(origem.dataEntrega) &&
+        a.dataEntrega <= fimDia(pedido.dataEntrega),
+    );
+    if (avariasPedido.length === 0) continue;
+
+    const quantidadeTotal = avariasPedido.reduce((sum, a) => sum + (Number(a.quantidade ?? 0) || 0), 0);
+    alertas.set(pedido.id, {
+      pedidoOrigemId: origem.id,
+      dataPedidoBase: origem.dataEntrega,
+      criadoEmPedidoBase: origem.criadoEm,
+      quantidadeTotal,
+      lancamentos: avariasPedido.slice(0, 5).map((a) => ({
+        id: a.id,
+        dataEntrega: a.dataEntrega,
+        produtoId: a.produtoId,
+        produtoNome: a.produtoNome,
+        categoria: a.categoria,
+        quantidade: Number(a.quantidade ?? 0) || 0,
+        observacoes: a.observacoes,
+        criadoPor: a.criadoPor,
+      })),
+    });
+  }
+
+  return alertas;
+}
+
 const itemPedidoInput = z.object({
   produtoId: z.string().min(1, "Produto é obrigatório"),
   quantidade: z.number().positive("Quantidade deve ser maior que zero"),
@@ -198,10 +288,21 @@ export const pedidosRouter = router({
     .query(async ({ ctx, input }) => {
       const fim = fimDia(input.dia);
       const inicio = inicioDia(adicionarDias(input.dia, -(input.janelaDias - 1)));
+      const dataPedidoBase = inicioDia(adicionarDias(input.dia, -7));
+      const pedidoBase = await ctx.prisma!.pedidoOperacional.findFirst({
+        where: {
+          contaAzulCustomerId: input.contaAzulCustomerId,
+          dataEntrega: { gte: dataPedidoBase, lte: fimDia(dataPedidoBase) },
+          status: { not: "CANCELADO" },
+        },
+        select: { id: true, dataEntrega: true, criadoEm: true },
+        orderBy: { criadoEm: "desc" },
+      });
       const avarias = await ctx.prisma!.pedidoOperacionalAvaria.findMany({
         where: {
           contaAzulCustomerId: input.contaAzulCustomerId,
-          dataEntrega: { gte: inicio, lte: fim },
+          dataEntrega: { gte: pedidoBase ? inicioDia(pedidoBase.dataEntrega) : inicio, lte: fim },
+          ...(pedidoBase ? { criadoEm: { gt: pedidoBase.criadoEm } } : {}),
         },
         include: {
           criadoPor: { select: { nome: true, email: true } },
@@ -229,6 +330,8 @@ export const pedidosRouter = router({
         janelaDias: input.janelaDias,
         inicio,
         fim,
+        criterio: pedidoBase ? "APOS_PEDIDO_SEMANA_ANTERIOR" : "JANELA_RECENTE",
+        pedidoBase,
         possuiAvarias: avarias.length > 0,
         quantidadeTotal,
         produtos: Array.from(resumoPorProduto.values()).sort((a, b) => b.quantidade - a.quantidade || a.produtoNome.localeCompare(b.produtoNome, "pt-BR")),
@@ -370,7 +473,7 @@ export const pedidosRouter = router({
     .query(async ({ ctx, input }) => {
       const whereDia = input.dia ? { dataEntrega: { gte: inicioDia(input.dia), lte: fimDia(input.dia) } } : {};
       const busca = input.busca?.trim();
-      return ctx.prisma!.pedidoOperacional.findMany({
+      const pedidos = await ctx.prisma!.pedidoOperacional.findMany({
         where: {
           ...whereDia,
           ...(input.contaAzulCustomerId ? { contaAzulCustomerId: input.contaAzulCustomerId } : {}),
@@ -394,6 +497,11 @@ export const pedidosRouter = router({
           editadoPor: { select: { nome: true, email: true } },
         },
       });
+      const alertas = await alertasAvariasDepoisPedidoOrigem(ctx.prisma!, pedidos);
+      return pedidos.map((pedido) => ({
+        ...pedido,
+        alertaAvariasPendentes: alertas.get(pedido.id) ?? null,
+      }));
     }),
 
   salvarPedido: comercialProcedure
@@ -552,6 +660,10 @@ export const pedidosRouter = router({
             ignorados++;
             continue;
           }
+          if (pedidoOrigem.itens.length === 0) {
+            ignorados++;
+            continue;
+          }
 
           const novoPedido = await tx.pedidoOperacional.create({
             data: {
@@ -568,6 +680,8 @@ export const pedidosRouter = router({
             },
           });
 
+          // Cópia semanal replica apenas o pedido tradicional; avarias ficam rastreadas no histórico
+          // e aparecem como alerta separado para o vendedor.
           await tx.pedidoOperacionalItem.createMany({
             data: pedidoOrigem.itens.map((item) => ({
               pedidoId: novoPedido.id,
@@ -612,7 +726,8 @@ export const pedidosRouter = router({
         },
         orderBy: [{ prioridadeEntrega: "asc" }, { cliente: { nome: "asc" } }],
       });
-      const grupos = new Map<string, { contaAzulCustomerId: string; cliente: unknown; regras: unknown; status: string; prioridadeEntrega: number | null; pedidos: typeof pedidos; itens: unknown[]; avarias: unknown[] }>();
+      const alertas = await alertasAvariasDepoisPedidoOrigem(ctx.prisma!, pedidos);
+      const grupos = new Map<string, { contaAzulCustomerId: string; cliente: unknown; regras: unknown; status: string; prioridadeEntrega: number | null; pedidos: typeof pedidos; itens: unknown[]; avarias: unknown[]; alertasAvariasPendentes: unknown[] }>();
       for (const p of pedidos) {
         const key = p.contaAzulCustomerId;
         const atual = grupos.get(key) ?? {
@@ -624,10 +739,13 @@ export const pedidosRouter = router({
           pedidos: [],
           itens: [],
           avarias: [],
+          alertasAvariasPendentes: [],
         };
         atual.pedidos.push(p);
         atual.itens.push(...p.itens.map((i) => ({ ...i, pedidoObservacoes: p.observacoes, tipoVenda: p.tipoVenda })));
         atual.avarias.push(...p.avarias.map((a) => ({ ...a, pedidoObservacoes: p.observacoes, tipoVenda: p.tipoVenda })));
+        const alerta = alertas.get(p.id);
+        if (alerta) atual.alertasAvariasPendentes.push(alerta);
         grupos.set(key, atual);
       }
       return Array.from(grupos.values()).sort((a, b) => (a.prioridadeEntrega ?? 9999) - (b.prioridadeEntrega ?? 9999));
