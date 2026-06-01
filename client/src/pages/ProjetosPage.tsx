@@ -47,8 +47,12 @@ import { homeForUserRole } from "@/lib/accessPolicy";
 export { NOME_PROJETO_FAZENDA_LEGADO };
 
 /** Navega no tick seguinte para o estado `activeProjetoId` já estar aplicado (evita `ProjetoOnboardingRedirect` voltar a `/projetos`). */
+function painelPathForProjeto(role: string | null | undefined) {
+  return role === "comercial" ? homeForUserRole(role) : "/";
+}
+
 function goHomeAfterProjetoAck(setLocation: (path: string, opts?: { replace?: boolean }) => void, role: string | null | undefined) {
-  queueMicrotask(() => setLocation(homeForUserRole(role)));
+  queueMicrotask(() => setLocation(painelPathForProjeto(role)));
 }
 
 function labelTipoProjeto(t: string) {
@@ -435,7 +439,7 @@ export default function ProjetosPage() {
                       </Button>
                     ) : ativo ? (
                       <Button type="button" size="sm" asChild>
-                        <Link href={homeForUserRole(role)}>Entrar no painel</Link>
+                        <Link href={painelPathForProjeto(role)}>Entrar no painel</Link>
                       </Button>
                     ) : (
                       <Button
