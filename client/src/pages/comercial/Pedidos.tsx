@@ -129,6 +129,11 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
   const diaDate = useMemo(() => new Date(`${dia}T12:00:00`), [dia]);
   const me = trpc.comercial.pedidos.me.useQuery();
   const isAdmin = me.data?.perfil === "ADMIN" || me.data?.perfil === "GERENTE_COMERCIAL";
+  const canEditarEstoqueVivo =
+    me.data?.perfil === "ADMIN" ||
+    me.data?.perfil === "GERENTE_COMERCIAL" ||
+    me.data?.perfil === "COMERCIAL" ||
+    me.data?.perfil === "OPERACOES";
   const isPromoter = isPromoterPerfil(me.data?.perfil);
   useEffect(() => {
     setAba(abaInicial);
@@ -970,7 +975,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
             estoque={compras.data}
             produtos={produtos.data ?? []}
             isLoading={compras.isLoading}
-            isAdmin={isAdmin}
+            isAdmin={canEditarEstoqueVivo}
             onUpdate={(payload: any) => atualizarCompra.mutate(payload)}
             onSalvarMixFolha={(payload: any) => salvarMixFolha.mutate(payload)}
           />
@@ -1528,6 +1533,10 @@ function ComprasArea({ estoque, produtos, isLoading, isAdmin, onUpdate, onSalvar
     () => new Map(produtos.map((p: any) => [p.nome, p.id])),
     [produtos],
   );
+  const produtoUpdatePayload = (row: any, pid: string | null | undefined) => ({
+    produtoId: pid || undefined,
+    produtoNome: row.nome,
+  });
 
   useEffect(() => {
     if (!cfg) return;
@@ -1623,11 +1632,11 @@ function ComprasArea({ estoque, produtos, isLoading, isAdmin, onUpdate, onSalvar
                         </td>
                         <td className="px-3 py-2 tabular-nums">{row.quantidadePedido}</td>
                         <td className="px-3 py-2">
-                          {isAdmin && pid ? (
+                          {isAdmin ? (
                             <select
                               className="h-8 rounded-md border bg-background px-1 text-xs"
                               value={row.modoCompra === "kilo" ? "KG" : "UNIDADE"}
-                              onChange={(e) => onUpdate({ produtoId: pid, modoCompra: e.target.value })}
+                              onChange={(e) => onUpdate({ ...produtoUpdatePayload(row, pid), modoCompra: e.target.value })}
                             >
                               <option value="UNIDADE">Un.</option>
                               <option value="KG">Kg</option>
@@ -1639,7 +1648,7 @@ function ComprasArea({ estoque, produtos, isLoading, isAdmin, onUpdate, onSalvar
                         <td className="px-3 py-2">
                           {row.modoCompra === "kilo" ? (
                             "—"
-                          ) : isAdmin && pid ? (
+                          ) : isAdmin ? (
                             <Input
                               type="number"
                               min={0.01}
@@ -1650,7 +1659,7 @@ function ComprasArea({ estoque, produtos, isLoading, isAdmin, onUpdate, onSalvar
                               onBlur={(e) => {
                                 const raw = e.target.value.trim();
                                 onUpdate({
-                                  produtoId: pid,
+                                  ...produtoUpdatePayload(row, pid),
                                   fatorCompraUnidade: raw === "" ? null : Number(raw.replace(",", ".")),
                                 });
                               }}
@@ -1662,7 +1671,7 @@ function ComprasArea({ estoque, produtos, isLoading, isAdmin, onUpdate, onSalvar
                         <td className="px-3 py-2">
                           {row.modoCompra === "unidade" ? (
                             "—"
-                          ) : isAdmin && pid ? (
+                          ) : isAdmin ? (
                             <Input
                               type="number"
                               min={0.01}
@@ -1673,7 +1682,7 @@ function ComprasArea({ estoque, produtos, isLoading, isAdmin, onUpdate, onSalvar
                               onBlur={(e) => {
                                 const raw = e.target.value.trim();
                                 onUpdate({
-                                  produtoId: pid,
+                                  ...produtoUpdatePayload(row, pid),
                                   rendimentoPorKg: raw === "" ? null : Number(raw.replace(",", ".")),
                                 });
                               }}
@@ -1683,11 +1692,11 @@ function ComprasArea({ estoque, produtos, isLoading, isAdmin, onUpdate, onSalvar
                           )}
                         </td>
                         <td className="px-3 py-2">
-                          {isAdmin && pid ? (
+                          {isAdmin ? (
                             <input
                               type="checkbox"
                               checked={row.mixAtivo}
-                              onChange={(e) => onUpdate({ produtoId: pid, mixAtivo: e.target.checked })}
+                              onChange={(e) => onUpdate({ ...produtoUpdatePayload(row, pid), mixAtivo: e.target.checked })}
                             />
                           ) : row.mixAtivo ? "Sim" : "—"}
                         </td>
@@ -1699,13 +1708,13 @@ function ComprasArea({ estoque, produtos, isLoading, isAdmin, onUpdate, onSalvar
                             </span>
                           )}
                         </td>
-                        {isAdmin && pid ? (
+                        {isAdmin ? (
                           <td className="px-3 py-2">
                             <Button
                               size="sm"
                               variant="ghost"
                               className="h-8 px-2"
-                              onClick={() => onUpdate({ produtoId: pid, ocultoListaCompra: !oculto })}
+                              onClick={() => onUpdate({ ...produtoUpdatePayload(row, pid), ocultoListaCompra: !oculto })}
                             >
                               {oculto ? <RefreshCcw className="h-3 w-3" /> : "−"}
                             </Button>

@@ -143,10 +143,52 @@ const COMERCIAL_ITEMS: NavItem[] = [
     comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
   },
   {
+    href: "/comercial/clientes",
+    label: "Clientes",
+    icon: Users,
+    requiredRole: "comercial",
+    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
+  },
+  {
+    href: "/comercial/oportunidades",
+    label: "Oportunidades",
+    icon: Sparkles,
+    requiredRole: "comercial",
+    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
+  },
+  {
+    href: "/comercial/mensagens",
+    label: "Mensagens",
+    icon: LineChart,
+    requiredRole: "comercial",
+    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
+  },
+  {
+    href: "/comercial/kpis",
+    label: "KPIs",
+    icon: BarChart3,
+    requiredRole: "comercial",
+    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
+  },
+  {
+    href: "/comercial/relatorios",
+    label: "Relatórios",
+    icon: FileDown,
+    requiredRole: "comercial",
+    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
+  },
+  {
     href: "/comercial/acompanhamento-avarias",
     label: "Acompanhamento avarias",
     icon: BarChart3,
     requiredRole: "comercial",
+  },
+  {
+    href: "/comercial/execucoes",
+    label: "Execuções",
+    icon: Settings2,
+    requiredRole: "comercial",
+    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
   },
 ];
 

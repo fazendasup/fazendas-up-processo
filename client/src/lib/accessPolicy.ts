@@ -28,16 +28,22 @@ export function canAccessCommercialPath(path: string, perfil: string | null | un
     return path === "/comercial/acompanhamento-avarias" || path === "/comercial/pedidos" || path === "/comercial/varejo";
   }
   if (perfil === "COMERCIAL" || perfil === "OPERACOES") {
-    return [
-      "/comercial",
+    const allowed = [
       "/comercial/dashboard",
+      "/comercial/clientes",
+      "/comercial/oportunidades",
+      "/comercial/mensagens",
+      "/comercial/kpis",
+      "/comercial/relatorios",
+      "/comercial/execucoes",
       "/estoque",
       "/comercial/estoque-vivo",
       "/comercial/pedidos",
       "/comercial/acompanhamento-avarias",
       "/comercial/varejo",
       "/custos-producao",
-    ].includes(path);
+    ];
+    return path === "/comercial" || allowed.some((allowedPath) => path === allowedPath || path.startsWith(`${allowedPath}/`));
   }
   return true;
 }

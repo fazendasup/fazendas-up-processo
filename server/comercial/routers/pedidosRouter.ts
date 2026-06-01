@@ -21,6 +21,7 @@ import { fimSemana, inicioSemana } from "../lib/semana.js";
 import { comercialProcedure, comercialRequirePerfis, router } from "../../_core/trpc";
 
 const adminComercial = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL");
+const podeConfigurarEstoqueVivo = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL", "COMERCIAL", "OPERACOES");
 
 const STATUS_PEDIDO = ["PENDENTE", "PRONTO", "ENTREGUE", "CANCELADO"] as const;
 const statusSchema = z.enum(["PENDENTE", "PRONTO", "ENTREGUE", "CANCELADO"]);
@@ -1090,7 +1091,7 @@ export const pedidosRouter = router({
     }),
 
   salvarConfigMixFolhaLeve: comercialProcedure
-    .use(adminComercial)
+    .use(podeConfigurarEstoqueVivo)
     .input(
       z.object({
         referenciaProduto: z.string().min(1),
@@ -1117,10 +1118,11 @@ export const pedidosRouter = router({
     }),
 
   atualizarCompraProduto: comercialProcedure
-    .use(adminComercial)
+    .use(podeConfigurarEstoqueVivo)
     .input(
       z.object({
-        produtoId: z.string(),
+        produtoId: z.string().optional(),
+        produtoNome: z.string().min(1).optional(),
         modoCompra: modoCompraSchema.optional(),
         fatorCompraUnidade: nullablePositiveNumber,
         rendimentoPorKg: nullablePositiveNumber,
@@ -1131,10 +1133,8 @@ export const pedidosRouter = router({
         mixVariedades: nullableStringArray,
       }),
     )
-    .mutation(({ ctx, input }) =>
-      ctx.prisma!.produtoComercial.update({
-        where: { id: input.produtoId },
-        data: {
+    .mutation(({ ctx, input }) => {
+      const data = {
           modoCompra: input.modoCompra,
           fatorCompraUnidade:
             input.fatorCompraUnidade === undefined
@@ -1158,9 +1158,26 @@ export const pedidosRouter = router({
               : input.mixVariedades == null
                 ? Prisma.JsonNull
                 : (input.mixVariedades as Prisma.InputJsonValue),
-        },
-      }),
-    ),
+        };
+      if (input.produtoId) {
+        return ctx.prisma!.produtoComercial.update({
+          where: { id: input.produtoId },
+          data,
+        });
+      }
+      if (!input.produtoNome?.trim()) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Informe o produto para configurar o estoque vivo.",
+        });
+      }
+      const nome = input.produtoNome.trim();
+      return ctx.prisma!.produtoComercial.upsert({
+        where: { nome },
+        create: { nome, ...data },
+        update: data,
+      });
+    }),
 
   // ===================== Fechamento semanal =====================
 

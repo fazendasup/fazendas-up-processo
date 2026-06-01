@@ -40,13 +40,19 @@ describe("accessPolicy", () => {
     for (const perfil of ["COMERCIAL", "OPERACOES"] as const) {
       expect(homeForCommercialPerfil(perfil)).toBe("/comercial/dashboard");
       expect(canAccessCommercialPath("/comercial/dashboard", perfil)).toBe(true);
+      expect(canAccessCommercialPath("/comercial/clientes", perfil)).toBe(true);
+      expect(canAccessCommercialPath("/comercial/clientes/cliente-1", perfil)).toBe(true);
+      expect(canAccessCommercialPath("/comercial/oportunidades", perfil)).toBe(true);
+      expect(canAccessCommercialPath("/comercial/mensagens", perfil)).toBe(true);
+      expect(canAccessCommercialPath("/comercial/kpis", perfil)).toBe(true);
+      expect(canAccessCommercialPath("/comercial/relatorios", perfil)).toBe(true);
+      expect(canAccessCommercialPath("/comercial/execucoes", perfil)).toBe(true);
       expect(canAccessCommercialPath("/estoque", perfil)).toBe(true);
       expect(canAccessCommercialPath("/comercial/estoque-vivo", perfil)).toBe(true);
       expect(canAccessCommercialPath("/comercial/pedidos", perfil)).toBe(true);
       expect(canAccessCommercialPath("/comercial/acompanhamento-avarias", perfil)).toBe(true);
       expect(canAccessCommercialPath("/custos-producao", perfil)).toBe(true);
 
-      expect(canAccessCommercialPath("/comercial/clientes", perfil)).toBe(false);
       expect(canAccessCommercialPath("/comercial/configuracoes", perfil)).toBe(false);
       expect(canAccessCommercialPath("/projetos", perfil)).toBe(false);
     }
