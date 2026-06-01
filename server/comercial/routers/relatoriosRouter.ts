@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { OrigemPedido } from "../generated/prisma/index.js";
+import { OrigemPedido, StatusRelacionamento } from "../generated/prisma/index.js";
 import { composicaoDoPedidoParaDashboard } from "../lib/composicao-valor.js";
 import {
   classificarStatusPedido,
@@ -51,6 +51,26 @@ type PedidoRelatorio = {
     statusRelacionamento: string;
   };
 };
+
+const clienteSituacaoFiltroSchema = z
+  .enum(["TODOS", "ATIVOS", "INATIVOS"])
+  .default("TODOS");
+
+type ClienteSituacaoFiltro = z.infer<typeof clienteSituacaoFiltroSchema>;
+
+function clienteWherePorSituacao(filtro: ClienteSituacaoFiltro) {
+  if (filtro === "ATIVOS") {
+    return {
+      statusRelacionamento: { not: StatusRelacionamento.INATIVO },
+    };
+  }
+  if (filtro === "INATIVOS") {
+    return {
+      statusRelacionamento: StatusRelacionamento.INATIVO,
+    };
+  }
+  return undefined;
+}
 
 function agregarVendasPorCliente(pedidos: PedidoRelatorio[]) {
   const map = new Map<string, ClienteAgg>();
@@ -131,15 +151,21 @@ export const relatoriosRouter = router({
       z.object({
         inicio: z.coerce.date(),
         fim: z.coerce.date(),
+        clienteSituacao: clienteSituacaoFiltroSchema,
       })
     )
     .query(async ({ ctx, input }) => {
       const prev = periodoAnterior(input.inicio, input.fim);
+      const clienteSituacaoWhere = clienteWherePorSituacao(input.clienteSituacao);
+      const clientePedidoWhere = clienteSituacaoWhere
+        ? { cliente: { is: clienteSituacaoWhere } }
+        : {};
       const [pedidos, pedidosAnterior, clientes] = await Promise.all([
         ctx.prisma!.pedido.findMany({
           where: {
             origemPedido: OrigemPedido.CONTA_AZUL,
             dataPedido: { gte: input.inicio, lte: input.fim },
+            ...clientePedidoWhere,
           },
           include: {
             cliente: {
@@ -162,6 +188,7 @@ export const relatoriosRouter = router({
           where: {
             origemPedido: OrigemPedido.CONTA_AZUL,
             dataPedido: { gte: prev.inicio, lte: prev.fim },
+            ...clientePedidoWhere,
           },
           include: {
             cliente: {
@@ -176,6 +203,7 @@ export const relatoriosRouter = router({
           },
         }),
         ctx.prisma!.cliente.findMany({
+          where: clienteSituacaoWhere,
           select: {
             id: true,
             nome: true,

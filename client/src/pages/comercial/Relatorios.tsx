@@ -79,6 +79,17 @@ const REPORTS = [
 
 type ReportId = "prioridades" | (typeof REPORTS)[number]["id"];
 
+type ClienteSituacaoFiltro = "TODOS" | "ATIVOS" | "INATIVOS";
+
+const CLIENTE_SITUACAO_OPTIONS: Array<{
+  value: ClienteSituacaoFiltro;
+  label: string;
+}> = [
+  { value: "TODOS", label: "Todos" },
+  { value: "ATIVOS", label: "Ativos" },
+  { value: "INATIVOS", label: "Inativos" },
+];
+
 const ACTION_REPORTS: Array<{ id: ReportId; label: string }> = [
   { id: "prioridades", label: "Prioridades" },
   { id: "clientes-risco", label: "Clientes em risco" },
@@ -523,6 +534,8 @@ export function Relatorios() {
   const [metricaMes, setMetricaMes] = useState<
     "valorBruto" | "valorLiquido" | "frete" | "desconto"
   >("valorLiquido");
+  const [clienteSituacao, setClienteSituacao] =
+    useState<ClienteSituacaoFiltro>("TODOS");
   const [tableFilters, setTableFilters] = useState<Record<string, string>>({});
   const [columnFilters, setColumnFilters] = useState<
     Record<string, Record<string, ColumnFilterState>>
@@ -537,7 +550,7 @@ export function Relatorios() {
     [preset, customInicio, customFim]
   );
   const q = trpc.comercial.relatorios.resumo.useQuery(
-    { inicio, fim },
+    { inicio, fim, clienteSituacao },
     { staleTime: 30_000 }
   );
   const data = q.data;
@@ -1325,14 +1338,30 @@ export function Relatorios() {
         title="Prioridades comerciais"
         subtitle="Uma visão curta para decidir quem o vendedor deve chamar, o que oferecer e onde proteger margem."
         actions={
-          <PeriodoFiltro
-            preset={preset}
-            onPresetChange={setPreset}
-            customInicio={customInicio}
-            customFim={customFim}
-            onCustomInicio={setCustomInicio}
-            onCustomFim={setCustomFim}
-          />
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="flex min-w-36 flex-col gap-1 text-xs font-bold text-slate-600 dark:text-slate-300">
+              Status clientes
+              <select
+                value={clienteSituacao}
+                onChange={e => setClienteSituacao(e.target.value as ClienteSituacaoFiltro)}
+                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
+              >
+                {CLIENTE_SITUACAO_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <PeriodoFiltro
+              preset={preset}
+              onPresetChange={setPreset}
+              customInicio={customInicio}
+              customFim={customFim}
+              onCustomInicio={setCustomInicio}
+              onCustomFim={setCustomFim}
+            />
+          </div>
         }
       />
 
