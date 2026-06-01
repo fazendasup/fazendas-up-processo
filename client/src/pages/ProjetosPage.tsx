@@ -52,7 +52,14 @@ function painelPathForProjeto(role: string | null | undefined) {
 }
 
 function goHomeAfterProjetoAck(setLocation: (path: string, opts?: { replace?: boolean }) => void, role: string | null | undefined) {
-  queueMicrotask(() => setLocation(painelPathForProjeto(role)));
+  const path = painelPathForProjeto(role);
+  window.setTimeout(() => {
+    if (typeof window !== "undefined") {
+      window.location.assign(path);
+      return;
+    }
+    setLocation(path);
+  }, 0);
 }
 
 function labelTipoProjeto(t: string) {
@@ -438,8 +445,8 @@ export default function ProjetosPage() {
                         Arquivado
                       </Button>
                     ) : ativo ? (
-                      <Button type="button" size="sm" asChild>
-                        <Link href={painelPathForProjeto(role)}>Entrar no painel</Link>
+                      <Button type="button" size="sm" onClick={() => goHomeAfterProjetoAck(setLocation, role)}>
+                        Entrar no painel
                       </Button>
                     ) : (
                       <Button
