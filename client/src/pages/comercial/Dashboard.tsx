@@ -70,15 +70,6 @@ const TIPOS_CLIENTE = [
   { value: "OUTROS", label: "Outros" },
 ] as const;
 
-const PAINEL_COMERCIAL_TABS = [
-  { href: "/comercial/dashboard", label: "Painel", icon: LayoutGrid },
-  { href: "/comercial/clientes", label: "Carteira", icon: Users },
-  { href: "/comercial/oportunidades", label: "Oportunidades", icon: Target },
-  { href: "/comercial/mensagens", label: "Mensagens", icon: MessageSquareWarning },
-  { href: "/comercial/kpis", label: "KPIs", icon: PieChartIcon },
-  { href: "/comercial/relatorios", label: "Relatórios", icon: TrendingUp },
-] as const;
-
 function labelTipoOportunidade(tipo: string): string {
   const map: Record<string, string> = {
     UPSELL: "Upsell",
@@ -215,30 +206,6 @@ export function Dashboard() {
               className="lg:max-w-3xl"
             />
           </motion.div>
-          <nav
-            className="flex flex-wrap gap-2 rounded-2xl border border-slate-200/80 bg-white/80 p-1.5 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-black/20"
-            aria-label="Abas do painel comercial"
-          >
-            {PAINEL_COMERCIAL_TABS.map((item) => {
-              const Icon = item.icon;
-              const active = item.href === "/comercial/dashboard";
-              return (
-                <Link
-                  key={item.href}
-                  href={comercialPath(item.href.replace("/comercial", ""))}
-                  className={[
-                    "inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold no-underline transition",
-                    active
-                      ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-[0_0_20px_-8px_rgba(59,130,246,0.65)]"
-                      : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/10",
-                  ].join(" ")}
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
           <motion.div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
