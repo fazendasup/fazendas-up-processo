@@ -143,52 +143,10 @@ const COMERCIAL_ITEMS: NavItem[] = [
     comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
   },
   {
-    href: "/comercial/clientes",
-    label: "Clientes",
-    icon: Users,
-    requiredRole: "comercial",
-    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
-  },
-  {
-    href: "/comercial/oportunidades",
-    label: "Oportunidades",
-    icon: Sparkles,
-    requiredRole: "comercial",
-    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
-  },
-  {
-    href: "/comercial/mensagens",
-    label: "Mensagens",
-    icon: LineChart,
-    requiredRole: "comercial",
-    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
-  },
-  {
-    href: "/comercial/kpis",
-    label: "KPIs",
-    icon: BarChart3,
-    requiredRole: "comercial",
-    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
-  },
-  {
-    href: "/comercial/relatorios",
-    label: "Relatórios",
-    icon: FileDown,
-    requiredRole: "comercial",
-    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
-  },
-  {
     href: "/comercial/acompanhamento-avarias",
     label: "Acompanhamento avarias",
     icon: BarChart3,
     requiredRole: "comercial",
-  },
-  {
-    href: "/comercial/execucoes",
-    label: "Execuções",
-    icon: Settings2,
-    requiredRole: "comercial",
-    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
   },
 ];
 
@@ -510,7 +468,7 @@ export default function Header() {
                   aria-haspopup="menu"
                 >
                   <Briefcase className="w-3 h-3" />
-                  <span className="hidden 2xl:inline">Painel comercial</span>
+                  <span className="hidden 2xl:inline">Comercial</span>
                   <ChevronDown className="w-2.5 h-2.5 hidden 2xl:inline opacity-60" />
                 </button>
               </DropdownMenuTrigger>
@@ -829,7 +787,7 @@ export default function Header() {
                       <DropdownMenuSub>
                         <DropdownMenuSubTrigger className="py-2.5">
                           <Briefcase className="w-4 h-4" />
-                          <span>Painel comercial</span>
+                          <span>Comercial</span>
                         </DropdownMenuSubTrigger>
                         <DropdownMenuSubContent>
                           {comercialItems.map(item => {
