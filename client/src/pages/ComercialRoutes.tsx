@@ -46,16 +46,13 @@ const Configuracoes = lazy(() =>
   import("./comercial/Configuracoes").then(m => ({ default: m.Configuracoes }))
 );
 
-function ComercialHomeRedirect() {
-  const me = trpc.comercial.pedidos.me.useQuery(undefined, { staleTime: 60_000 });
-  if (!me.data) return <RoutePageFallback />;
-  return <Redirect to={homeForCommercialPerfil(me.data.perfil)} />;
-}
-
 export default function ComercialRoutes() {
   const [location] = useLocation();
   const me = trpc.comercial.pedidos.me.useQuery(undefined, { staleTime: 60_000 });
   if (!me.data) return <RoutePageFallback />;
+  if (location === "/comercial" || location === "/comercial/") {
+    return <Redirect to={homeForCommercialPerfil(me.data.perfil)} />;
+  }
   if (!canAccessCommercialPath(location, me.data.perfil)) {
     return <Redirect to={homeForCommercialPerfil(me.data.perfil)} />;
   }
@@ -86,9 +83,6 @@ export default function ComercialRoutes() {
           </Route>
           <Route path="/comercial/execucoes" component={Execucoes} />
           <Route path="/comercial/configuracoes" component={Configuracoes} />
-          <Route path="/comercial">
-            <ComercialHomeRedirect />
-          </Route>
         </Switch>
       </Suspense>
     </ComercialLayout>

@@ -6,7 +6,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import Header from '@/components/Header';
-import ProtectedRoute from '@/components/ProtectedRoute';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VariedadesCadastroTable } from '@/components/VariedadesCadastroTable';
 import { trpc } from '@/lib/trpc';
@@ -148,10 +147,9 @@ export default function ReceitasPage() {
   }, [location]);
 
   return (
-    <ProtectedRoute requiredRole="admin">
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="container py-6 max-w-5xl">
+    <div className="min-h-screen bg-background">
+      <Header />
+      <main className="container py-6 max-w-5xl">
           <div className="mb-6">
             <h1 className="font-display text-2xl font-bold flex items-center gap-2 flex-wrap">
               <BookOpen className="w-6 h-6" />
@@ -188,9 +186,8 @@ export default function ReceitasPage() {
               <VariedadesCadastroTable />
             </TabsContent>
           </Tabs>
-        </main>
-      </div>
-    </ProtectedRoute>
+      </main>
+    </div>
   );
 }
 

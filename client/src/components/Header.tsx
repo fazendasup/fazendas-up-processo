@@ -252,10 +252,10 @@ export default function Header() {
     refetchInterval: 60000,
   });
   const comercialMe = trpc.comercial.pedidos.me.useQuery(undefined, {
-    enabled: Boolean(isLoggedIn && activeProjetoId && canAccessComercial && modulosAtivos?.comercial),
+    enabled: Boolean(isLoggedIn && activeProjetoId && isComercial && modulosAtivos?.comercial),
     staleTime: 60_000,
   });
-  const comercialPerfil = comercialMe.data?.perfil ?? null;
+  const comercialPerfil = isAdmin ? "ADMIN" : (comercialMe.data?.perfil ?? null);
 
   const operacaoItems = useMemo(() => {
     if (!isLoggedIn || activeProjetoId == null || (!canAccessProcesso && !canAccessComercial)) return [] as NavItem[];
@@ -317,11 +317,11 @@ export default function Header() {
     if (!isLoggedIn || activeProjetoId == null || !canAccessComercial)
       return [] as NavItem[];
     return COMERCIAL_ITEMS.filter(item => {
-      if (item.comercialPerfis && (!comercialPerfil || !item.comercialPerfis.includes(comercialPerfil as any))) return false;
+      if (item.comercialPerfis && !isAdmin && (!comercialPerfil || !item.comercialPerfis.includes(comercialPerfil as any))) return false;
       if (!canAccessCommercialPath(item.href, comercialPerfil)) return false;
       return navPermitidoPorModulo(item.href, modulosAtivos);
     });
-  }, [activeProjetoId, canAccessComercial, comercialPerfil, isLoggedIn, modulosAtivos]);
+  }, [activeProjetoId, canAccessComercial, comercialPerfil, isAdmin, isLoggedIn, modulosAtivos]);
 
   const sistemaItems = useMemo(() => {
     if (!isLoggedIn) return [] as NavItem[];

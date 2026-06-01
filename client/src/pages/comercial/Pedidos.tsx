@@ -112,6 +112,7 @@ type PedidosTab = "operacional" | "agenda" | "regras" | "produtos" | "compras";
 
 export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTab } = {}) {
   const utils = trpc.useUtils();
+  const [aba, setAba] = useState<PedidosTab>(abaInicial);
   const [dia, setDia] = useState(diaOperacionalInicial);
   const [busca, setBusca] = useState("");
   const [clienteBusca, setClienteBusca] = useState("");
@@ -129,6 +130,14 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
   const me = trpc.comercial.pedidos.me.useQuery();
   const isAdmin = me.data?.perfil === "ADMIN" || me.data?.perfil === "GERENTE_COMERCIAL";
   const isPromoter = isPromoterPerfil(me.data?.perfil);
+  useEffect(() => {
+    setAba(abaInicial);
+  }, [abaInicial]);
+  useEffect(() => {
+    if (isPromoter && (aba === "regras" || aba === "produtos" || aba === "compras")) {
+      setAba("operacional");
+    }
+  }, [aba, isPromoter]);
   const clientes = trpc.comercial.pedidos.clientes.useQuery({ busca: clienteBusca || undefined, limite: 80 });
   const clientesDoDia = trpc.comercial.pedidos.clientes.useQuery({ dia: diaDate, limite: 100 });
   const produtos = trpc.comercial.pedidos.produtos.useQuery({ incluirInativos: true });
@@ -552,7 +561,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
         </div>
       ) : null}
 
-      <Tabs defaultValue={abaInicial} className="space-y-4">
+      <Tabs value={aba} onValueChange={(value) => setAba(value as PedidosTab)} className="space-y-4">
         <TabsList className="flex h-auto flex-wrap">
           <TabsTrigger value="operacional">Dashboard operacional</TabsTrigger>
           <TabsTrigger value="agenda">Emissão / Agenda</TabsTrigger>

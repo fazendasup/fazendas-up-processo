@@ -216,7 +216,26 @@ export const platformAdminProcedure = t.procedure
 /** Projeto ativo + role global admin (sem exigir tipo de projeto específico). */
 export const adminProjectProcedure = projectProcedure.use(requireGlobalAdmin);
 
+const requireEstoqueAccess = t.middleware(async ({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
+  }
+  if (isOperationalAdminRole(ctx.user.role)) {
+    return next({ ctx: { ...ctx, user: ctx.user } });
+  }
+  if (ctx.user.role !== "comercial") {
+    throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
+  }
+
+  const comercialUsuario = await resolveComercialUsuario(ctx.user);
+  if (!comercialUsuario || comercialUsuario.perfil === "PROMOTER" || comercialUsuario.perfil === "VENDEDOR") {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Promoters acessam somente Pedidos e Acompanhamento de avarias." });
+  }
+  return next({ ctx: { ...ctx, user: ctx.user, comercialUsuario } });
+});
+
 export const adminEstoqueProjectProcedure = estoqueModuleProcedure.use(requireGlobalAdmin);
+export const estoqueAccessProjectProcedure = estoqueModuleProcedure.use(requireEstoqueAccess);
 export const adminAutomacaoModuleProcedure = automacaoModuleProcedure.use(requireGlobalAdmin);
 export const adminInteligenciaProjectProcedure = inteligenciaModuleProcedure.use(requireGlobalAdmin);
 export const adminVisaoCultivoProjectProcedure = visaoCultivoModuleProcedure.use(requireGlobalAdmin);

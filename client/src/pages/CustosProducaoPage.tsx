@@ -3,7 +3,6 @@
 // ============================================================
 
 import Header from "@/components/Header";
-import ProtectedRoute from "@/components/ProtectedRoute";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -344,10 +343,9 @@ export default function CustosProducaoPage() {
   const maxDriver = drivers[0]?.valorAproximado ?? 1;
 
   return (
-    <ProtectedRoute requiredRole="admin">
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="mx-auto max-w-7xl space-y-6 p-4 pb-16 md:p-6">
+    <div className="min-h-screen bg-background">
+      <Header />
+      <main className="mx-auto max-w-7xl space-y-6 p-4 pb-16 md:p-6">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
               <Coins className="h-7 w-7 text-amber-600" aria-hidden />
@@ -1051,8 +1049,7 @@ export default function CustosProducaoPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        </main>
-      </div>
-    </ProtectedRoute>
+      </main>
+    </div>
   );
 }

@@ -1,4 +1,4 @@
-import { adminEstoqueProjectProcedure, projetoIdFromCtx, router } from "../_core/trpc";
+import { estoqueAccessProjectProcedure, projetoIdFromCtx, router } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "../db";
@@ -62,12 +62,12 @@ function enrich(row: EstoqueItemRow) {
 }
 
 export const estoqueRouter = router({
-  list: adminEstoqueProjectProcedure.query(async ({ ctx }) => {
+  list: estoqueAccessProjectProcedure.query(async ({ ctx }) => {
     const rows = await db.getAllEstoqueItens(projetoIdFromCtx(ctx));
     return rows.map((r) => enrich(normalizeLegacyUnits(r)));
   }),
 
-  kpis: adminEstoqueProjectProcedure.query(async ({ ctx }) => {
+  kpis: estoqueAccessProjectProcedure.query(async ({ ctx }) => {
     const rows = await db.getAllEstoqueItens(projetoIdFromCtx(ctx));
     const enriched = rows.map((r) => enrich(normalizeLegacyUnits(r)));
     let valorTotal = 0;
@@ -109,7 +109,7 @@ export const estoqueRouter = router({
     };
   }),
 
-  create: adminEstoqueProjectProcedure
+  create: estoqueAccessProjectProcedure
     .input(
       z.object({
         categoria: categoriaZ,
@@ -144,7 +144,7 @@ export const estoqueRouter = router({
       });
     }),
 
-  update: adminEstoqueProjectProcedure
+  update: estoqueAccessProjectProcedure
     .input(
       z.object({
         id: z.number().int().positive(),
@@ -174,7 +174,7 @@ export const estoqueRouter = router({
       return db.updateEstoqueItem(projetoIdFromCtx(ctx), id, updates as never);
     }),
 
-  delete: adminEstoqueProjectProcedure
+  delete: estoqueAccessProjectProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input, ctx }) => {
       const row = await db.getEstoqueItemById(projetoIdFromCtx(ctx), input.id);

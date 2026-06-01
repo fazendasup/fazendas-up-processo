@@ -99,6 +99,20 @@ describe("Auth: login por email/senha", () => {
 
 describe("Users: CRUD por admin", () => {
   const newUserEmail = `newuser_${Date.now()}@test.com`;
+  let projetoId: number;
+
+  beforeAll(async () => {
+    const projeto = await db.createProjeto(
+      {
+        nome: `Projeto Teste Usuarios ${Date.now()}`,
+        tipo: "fazenda_vertical",
+        status: "ativo",
+      },
+      1,
+      "admin",
+    );
+    projetoId = projeto.id;
+  });
 
   it("admin pode criar novo usuário com senha", async () => {
     const ctx = createContext("admin");
@@ -108,6 +122,7 @@ describe("Users: CRUD por admin", () => {
       email: newUserEmail,
       password: "Senha123!",
       role: "user",
+      projetoIds: [projetoId],
     });
     expect(result.success).toBe(true);
     expect(result.id).toBeDefined();
@@ -122,6 +137,7 @@ describe("Users: CRUD por admin", () => {
         email: newUserEmail,
         password: "Senha123!",
         role: "user",
+        projetoIds: [projetoId],
       })
     ).rejects.toThrow(/já existe/i);
   });
