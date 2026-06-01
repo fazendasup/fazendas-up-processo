@@ -42,24 +42,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { setActiveProjetoId } from "@/lib/projeto-header";
-import { homeForUserRole } from "@/lib/accessPolicy";
+import { dashboardPathForUserRole } from "@/lib/accessPolicy";
 
 export { NOME_PROJETO_FAZENDA_LEGADO };
 
 /** Navega no tick seguinte para o estado `activeProjetoId` já estar aplicado (evita `ProjetoOnboardingRedirect` voltar a `/projetos`). */
-function painelPathForProjeto(role: string | null | undefined) {
-  return role === "comercial" ? homeForUserRole(role) : "/";
-}
-
 function goHomeAfterProjetoAck(setLocation: (path: string, opts?: { replace?: boolean }) => void, role: string | null | undefined) {
-  const path = painelPathForProjeto(role);
-  window.setTimeout(() => {
-    if (typeof window !== "undefined") {
-      window.location.assign(path);
-      return;
-    }
-    setLocation(path);
-  }, 0);
+  queueMicrotask(() => setLocation(dashboardPathForUserRole(role)));
 }
 
 function labelTipoProjeto(t: string) {

@@ -6,8 +6,15 @@ export function isPromoterPerfil(perfil: string | null | undefined): boolean {
   return perfil === "PROMOTER" || perfil === "VENDEDOR";
 }
 
+/** Destino logo após login (seleção de projeto para admin; home do módulo para comercial). */
 export function homeForUserRole(role: string | null | undefined): string {
   if (isOperationalAdminRole(role)) return "/projetos";
+  if (role === "comercial") return "/comercial";
+  return "/";
+}
+
+/** Painel operacional quando o projeto já está selecionado (Dashboard no menu). */
+export function dashboardPathForUserRole(role: string | null | undefined): string {
   if (role === "comercial") return "/comercial";
   return "/";
 }

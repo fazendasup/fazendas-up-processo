@@ -14,6 +14,7 @@ import { ModuloProjetoRouteGuard } from "./components/ModuloProjetoRouteGuard";
 import { SyncDocumentTitle } from "./components/SyncDocumentTitle";
 import { RoutePageFallback } from "./components/RoutePageFallback";
 import { useAuth } from "./_core/hooks/useAuth";
+import { isProcessAccessRole } from "@shared/const";
 import { canAccessCommercialPath, homeForCommercialPerfil, homeForUserRole } from "./lib/accessPolicy";
 import { trpc } from "./lib/trpc";
 
@@ -46,8 +47,10 @@ const NotFound = lazy(() => import(/* @vite-ignore */"./pages/NotFound"));
 
 function RoleRootRoute() {
   const { user } = useAuth();
-  const home = homeForUserRole(user?.role);
-  if (home !== "/") return <Redirect to={home} />;
+  if (user?.role === "comercial") return <Redirect to="/comercial" />;
+  if (user && !isProcessAccessRole(user.role)) {
+    return <Redirect to={homeForUserRole(user.role)} />;
+  }
   return (
     <ProtectedRoute requiredRole="processo">
       <Home />

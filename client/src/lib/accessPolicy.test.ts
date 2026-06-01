@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { canAccessCommercialPath, homeForCommercialPerfil, homeForUserRole, roleLabel } from "./accessPolicy";
+import {
+  canAccessCommercialPath,
+  dashboardPathForUserRole,
+  homeForCommercialPerfil,
+  homeForUserRole,
+  roleLabel,
+} from "./accessPolicy";
 
 describe("accessPolicy", () => {
   it("direciona cada papel global para a home correta", () => {
@@ -7,6 +13,13 @@ describe("accessPolicy", () => {
     expect(homeForUserRole("platform_admin")).toBe("/projetos");
     expect(homeForUserRole("comercial")).toBe("/comercial");
     expect(homeForUserRole("user")).toBe("/");
+  });
+
+  it("mantem dashboard operacional em / para admin com projeto selecionado", () => {
+    expect(dashboardPathForUserRole("admin")).toBe("/");
+    expect(dashboardPathForUserRole("platform_admin")).toBe("/");
+    expect(dashboardPathForUserRole("user")).toBe("/");
+    expect(dashboardPathForUserRole("comercial")).toBe("/comercial");
   });
 
   it("mantem promoter restrito a pedidos e acompanhamento de avarias", () => {

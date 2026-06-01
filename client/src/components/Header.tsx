@@ -65,7 +65,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { navPermitidoPorModulo } from "@/lib/projetoModulosNav";
-import { canAccessCommercialPath, homeForUserRole, roleLabel as labelForRole } from "@/lib/accessPolicy";
+import { canAccessCommercialPath, dashboardPathForUserRole, roleLabel as labelForRole } from "@/lib/accessPolicy";
 const FarmAssistantSheet = lazy(() =>
   import(/* @vite-ignore */ "@/components/FarmAssistantSheet").then(m => ({
     default: m.FarmAssistantSheet,
@@ -383,7 +383,7 @@ export default function Header() {
       <div className="app-header-toolbar flex h-[3.25rem] w-full min-w-0 max-w-full flex-nowrap items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:thin]">
         {/* Logo */}
         <Link
-          href={activeProjetoId != null ? homeForUserRole(user?.role) : "/projetos"}
+          href={activeProjetoId != null ? dashboardPathForUserRole(user?.role) : "/projetos"}
           className="flex items-center gap-2 no-underline shrink-0 group"
         >
           <div className="app-logo-mark w-9 h-9 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-[1.03]">
