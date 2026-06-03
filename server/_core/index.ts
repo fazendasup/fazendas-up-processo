@@ -16,6 +16,7 @@ import { getStaticDeployReadiness, serveStatic } from "./static";
 import { ensureBootstrapAdmin } from "../bootstrap-admin";
 import * as db from "../db";
 import { runDrizzleMigrateFromEnv } from "../run-drizzle-migrate";
+import { applyRuntimeSchemaEnsures } from "../ensure-runtime-schema";
 import { runComercialPrismaMigrateFromEnv } from "../run-comercial-prisma-migrate";
 import { initMqttFromEnv, shutdownMqtt } from "./mqtt";
 import { APP_VERSION } from "./release-meta";
@@ -310,24 +311,8 @@ async function startServer() {
     }
   }
 
-  await db.ensureUsersRoleVarchar();
-  await db.ensureCiclosDosagemColumn();
-  await db.ensurePlanosPlantioGerminacaoColumns();
-  await db.ensureTransplantiosRastreioColumns();
-  await db.ensureManutencoesBancadaColumns();
-  await db.ensureRegistrosColheitaBancadaColumns();
-  await db.ensureReceitasCrescimentoNovasColunas();
-  await db.ensureEstoqueItensTable();
-  await db.ensureEstoqueUnidadesKgLFromLegacyGramMl();
-  await db.ensureVisionCultivoTables();
-  await db.ensureProjetosTables();
-  await db.ensureProjetoModulosTable();
-  await db.ensureProjetosMicroverdesSupport();
-  await db.ensureBancadasSchemaColumns();
-  await db.ensurePerfisCultivoStatusColumn();
-  await db.ensurePerfisReceitaIdColumn();
-  await db.ensurePerfisQuantidadePlantasColumn();
-  await db.ensureLotesProducaoSchema();
+  // Schema evolutivo (colunas/tabelas idempotentes) — fonte única partilhada com os testes.
+  await applyRuntimeSchemaEnsures();
   try {
     const bf = await db.backfillLotesProducaoLegado();
     if (
@@ -344,15 +329,7 @@ async function startServer() {
   } catch (e) {
     console.error("[Server] backfillLotesProducaoLegado falhou:", e);
   }
-  await db.ensureVariedadesBabyLeafColumn();
   await db.ensureProjetoMembershipsBootstrap();
-  const schemaEns = await db.ensureIncompleteMultiProjetoSchema();
-  if (schemaEns.ok && schemaEns.columnsAdded.length > 0) {
-    console.log(
-      `[Server] Multi-projeto: colunas projetoId criadas em ${schemaEns.columnsAdded.length} tabela(s): ${schemaEns.columnsAdded.join(", ")} (nullRows=${schemaEns.nullRowsPatched})`
-    );
-  }
-  await db.ensureTorresNumeroEstruturaColumns();
   if (process.env.AUTO_MIGRATE_LEGACY_DATA === "1") {
     try {
       const r = await db.migrateAllOperationalDataToFazendaVerticalPrincipal();

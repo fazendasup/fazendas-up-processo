@@ -150,6 +150,17 @@ export async function getDb() {
   return _db;
 }
 
+/** Fecha o pool subjacente (usado em teardown de testes para o processo encerrar limpo). */
+export async function closeDb(): Promise<void> {
+  if (!_db) return;
+  try {
+    await (_db as unknown as { $client?: { end?: () => Promise<void> } }).$client?.end?.();
+  } catch {
+    /* pool já fechado ou sem cliente exposto */
+  }
+  _db = null;
+}
+
 /** Tabelas operacionais com `projetoId` (nomes MySQL) — UPDATE WHERE projetoId IS NULL. */
 const OPERATIONAL_TABLE_NAMES_MYSQL = [
   "variedades",
