@@ -583,8 +583,11 @@ export type InsertTarefa = typeof tarefas.$inferInsert;
 export const registrosColheita = mysqlTable("registros_colheita", {
   id: int("id").autoincrement().primaryKey(),
   projetoId: int("projetoId").notNull(),
-  torreId: int("torreId").notNull(),
-  andarId: int("andarId").notNull(),
+  /** Fazenda vertical / microverdes: colheita por torre+andar. Em hidroponia fica nulo (usa `bancadaId`). */
+  torreId: int("torreId"),
+  andarId: int("andarId"),
+  /** Hidroponia de bancada: colheita por bancada. Em FV/microverdes fica nulo (usa torre/andar). */
+  bancadaId: int("bancadaId"),
   variedadeId: int("variedadeId"),
   variedadeNome: varchar("variedadeNome", { length: 128 }),
   receitaId: int("receitaId"),

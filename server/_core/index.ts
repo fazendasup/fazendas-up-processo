@@ -315,6 +315,7 @@ async function startServer() {
   await db.ensurePlanosPlantioGerminacaoColumns();
   await db.ensureTransplantiosRastreioColumns();
   await db.ensureManutencoesBancadaColumns();
+  await db.ensureRegistrosColheitaBancadaColumns();
   await db.ensureReceitasCrescimentoNovasColunas();
   await db.ensureEstoqueItensTable();
   await db.ensureEstoqueUnidadesKgLFromLegacyGramMl();

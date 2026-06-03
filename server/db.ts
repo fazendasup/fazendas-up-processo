@@ -3294,6 +3294,29 @@ export async function ensureTransplantiosRastreioColumns(): Promise<void> {
   }
 }
 
+/** Suporte a colheita de hidroponia: torre/andar passam a opcionais e adiciona `bancadaId`. */
+export async function ensureRegistrosColheitaBancadaColumns(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  const statements = [
+    "ALTER TABLE `registros_colheita` ADD COLUMN `bancadaId` int NULL",
+    "ALTER TABLE `registros_colheita` MODIFY COLUMN `torreId` int NULL",
+    "ALTER TABLE `registros_colheita` MODIFY COLUMN `andarId` int NULL",
+  ];
+
+  for (const stmt of statements) {
+    try {
+      await db.execute(sql.raw(stmt));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (isMysqlDuplicateColumnError(err)) continue;
+      if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
+      console.error("[Database] ensureRegistrosColheitaBancadaColumns:", err);
+    }
+  }
+}
+
 /** Suporte a manutenção de hidroponia: torre passa a opcional e adiciona `bancadaId`. */
 export async function ensureManutencoesBancadaColumns(): Promise<void> {
   const db = await getDb();
@@ -4737,9 +4760,20 @@ export async function getRegistrosColheitaByAndarId(projetoId: number, andarId: 
     .where(and(eq(registrosColheita.projetoId, projetoId), eq(registrosColheita.andarId, andarId)));
 }
 
+export async function getRegistrosColheitaByBancadaId(projetoId: number, bancadaId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(registrosColheita)
+    .where(and(eq(registrosColheita.projetoId, projetoId), eq(registrosColheita.bancadaId, bancadaId)))
+    .orderBy(desc(registrosColheita.dataColheita));
+}
+
 export async function createRegistroColheita(data: InsertRegistroColheita) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  await ensureRegistrosColheitaBancadaColumns();
   const result = await db.insert(registrosColheita).values(data);
   return { id: result[0].insertId };
 }

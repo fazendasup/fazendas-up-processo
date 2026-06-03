@@ -168,7 +168,7 @@ export default function AnalyticsPage() {
           <TabsList
             className={
               isHidroponia
-                ? 'grid w-full grid-cols-3 h-auto'
+                ? 'grid w-full grid-cols-3 sm:grid-cols-5 h-auto'
                 : 'grid w-full grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 h-auto'
             }
           >
@@ -194,17 +194,19 @@ export default function AnalyticsPage() {
                 <TabsTrigger value="desperdicio" className="text-xs gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5" /> Desperdício
                 </TabsTrigger>
-                <TabsTrigger value="yield" className="text-xs gap-1.5">
-                  <TrendingUp className="w-3.5 h-3.5" /> Yield
-                </TabsTrigger>
-                <TabsTrigger value="planejado" className="text-xs gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Plan. vs Real
-                </TabsTrigger>
-                <TabsTrigger value="relatorios" className="text-xs gap-1.5">
-                  <FileText className="w-3.5 h-3.5" /> Relatórios
-                </TabsTrigger>
               </>
             )}
+            <TabsTrigger value="yield" className="text-xs gap-1.5">
+              <TrendingUp className="w-3.5 h-3.5" /> Yield
+            </TabsTrigger>
+            {!isHidroponia && (
+              <TabsTrigger value="planejado" className="text-xs gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Plan. vs Real
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="relatorios" className="text-xs gap-1.5">
+              <FileText className="w-3.5 h-3.5" /> Relatórios
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="ecph">
@@ -229,17 +231,19 @@ export default function AnalyticsPage() {
               <TabsContent value="desperdicio">
                 <DesperdicioSection data={data} period={period} />
               </TabsContent>
-              <TabsContent value="yield">
-                <YieldSection data={data} period={period} />
-              </TabsContent>
-              <TabsContent value="planejado">
-                <PlanejadoVsRealizadoSection data={data} period={period} />
-              </TabsContent>
-              <TabsContent value="relatorios">
-                <RelatoriosSection data={data} period={period} />
-              </TabsContent>
             </>
           )}
+          <TabsContent value="yield">
+            <YieldSection data={data} period={period} />
+          </TabsContent>
+          {!isHidroponia && (
+            <TabsContent value="planejado">
+              <PlanejadoVsRealizadoSection data={data} period={period} />
+            </TabsContent>
+          )}
+          <TabsContent value="relatorios">
+            <RelatoriosSection data={data} period={period} />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
@@ -1842,12 +1846,19 @@ function PlanejadoVsRealizadoSection({ data, period }: { data: FazendaData; peri
 // ============================================================
 
 function RelatoriosSection({ data, period }: { data: FazendaData; period: PeriodFilter }) {
+  const isHidroponia = data.projetoTipo === 'hidroponia';
   const colheitasQuery = trpc.registrosColheita.list.useQuery();
   const planosQuery = trpc.planosPlantio.list.useQuery();
   const tarefasQuery = trpc.tarefas.list.useQuery();
+  const bancadasQuery = trpc.bancadas.list.useQuery(undefined, { enabled: isHidroponia, staleTime: 30_000 });
   const colheitas = colheitasQuery.data || [];
   const planos = planosQuery.data || [];
   const tarefas = tarefasQuery.data || [];
+  const bancadaNome = useMemo(() => {
+    const m = new Map<number, string>();
+    for (const b of bancadasQuery.data ?? []) m.set(b.id, b.nome);
+    return m;
+  }, [bancadasQuery.data]);
 
   const exportCSV = useCallback((filename: string, headers: string[], rows: string[][]) => {
     const csv = [headers.join(','), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n');
@@ -1861,6 +1872,21 @@ function RelatoriosSection({ data, period }: { data: FazendaData; period: Period
   }, []);
 
   const exportProducao = useCallback(() => {
+    if (isHidroponia) {
+      const headers = ['Data', 'Variedade', 'Bancada', 'Unidades', 'Peso (g)', 'Qualidade', 'Destino', 'Observações'];
+      const rows = colheitas.map((c: any) => [
+        c.dataColheita ? new Date(c.dataColheita).toLocaleDateString('pt-BR') : '',
+        c.variedadeNome || '',
+        c.bancadaId ? (bancadaNome.get(c.bancadaId) || c.bancadaId) : '',
+        c.quantidadePlantas || 0,
+        c.pesoTotalGramas || 0,
+        c.qualidade || '',
+        c.destino || '',
+        c.observacoes || '',
+      ]);
+      exportCSV('relatorio-producao', headers, rows);
+      return;
+    }
     const headers = ['Data', 'Variedade', 'Torre', 'Andar', 'Plantas', 'Peso (g)', 'Qualidade', 'Destino', 'Observações'];
     const rows = colheitas.map((c: any) => [
       c.dataColheita ? new Date(c.dataColheita).toLocaleDateString('pt-BR') : '',
@@ -1874,7 +1900,7 @@ function RelatoriosSection({ data, period }: { data: FazendaData; period: Period
       c.observacoes || '',
     ]);
     exportCSV('relatorio-producao', headers, rows);
-  }, [colheitas, exportCSV]);
+  }, [colheitas, exportCSV, isHidroponia, bancadaNome]);
 
   const exportOperacional = useCallback(() => {
     const headers = ['Título', 'Tipo', 'Prioridade', 'Status', 'Vencimento', 'Concluído Em', 'Concluído Por'];

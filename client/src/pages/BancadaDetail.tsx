@@ -45,6 +45,7 @@ import {
   Trash2,
   ClipboardList,
   CalendarClock,
+  Scissors,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -122,6 +123,21 @@ export default function BancadaDetail() {
       await utils.bancadas.list.invalidate();
     },
     onError: (e) => toast.error(e.message || "Erro"),
+  });
+  const colheitasQuery = trpc.registrosColheita.listByBancada.useQuery(
+    { bancadaId },
+    { enabled: Number.isFinite(bancadaId) && bancadaId > 0 },
+  );
+  const createColheita = trpc.registrosColheita.create.useMutation({
+    onSuccess: async () => {
+      toast.success("Colheita registrada");
+      await Promise.all([
+        utils.registrosColheita.listByBancada.invalidate({ bancadaId }),
+        utils.bancadas.getById.invalidate({ id: bancadaId }),
+        utils.bancadas.list.invalidate(),
+      ]);
+    },
+    onError: (e) => toast.error(e.message || "Erro ao registrar colheita"),
   });
 
   const b = bancadaQuery.data;
@@ -329,6 +345,40 @@ export default function BancadaDetail() {
     });
     e.currentTarget.reset();
     setTipoAplicacao("");
+  };
+
+  const colheitas = colheitasQuery.data ?? [];
+  const plantioVarNome = useMemo(() => {
+    if (!b?.plantioVariedadeId) return null;
+    return data.variedades.find((v) => resolver.varSlugToId.get(v.id) === b.plantioVariedadeId)?.nome ?? null;
+  }, [b?.plantioVariedadeId, data.variedades, resolver.varSlugToId]);
+
+  const handleRegistrarColheita = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!b) return;
+    if (!b.plantioVariedadeId) {
+      toast.error("Defina a variedade do plantio antes de registrar a colheita.");
+      return;
+    }
+    const fd = new FormData(e.currentTarget);
+    const pesoRaw = (fd.get("peso") as string)?.trim();
+    const peso = pesoRaw ? parseFloat(pesoRaw.replace(",", ".")) : NaN;
+    const qtdRaw = (fd.get("quantidade") as string)?.trim();
+    const qtd = qtdRaw ? parseInt(qtdRaw, 10) : (b.quantidadeCaixas || 1);
+    createColheita.mutate(
+      {
+        bancadaId,
+        variedadeId: b.plantioVariedadeId,
+        variedadeNome: plantioVarNome,
+        dataColheita: new Date(),
+        quantidadePlantas: Number.isFinite(qtd) && qtd > 0 ? qtd : 1,
+        pesoTotalGramas: Number.isFinite(peso) ? peso : null,
+        qualidade: (fd.get("qualidade") as string) || "B",
+        destino: (fd.get("destino") as string) || null,
+        observacoes: (fd.get("observacoes") as string)?.trim() || null,
+      },
+      { onSuccess: () => e.currentTarget?.reset?.() },
+    );
   };
 
   if (!Number.isFinite(bancadaId) || bancadaId < 1) {
@@ -688,6 +738,96 @@ export default function BancadaDetail() {
                     Esvaziar
                   </Button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-card rounded-xl border shadow-sm overflow-hidden"
+        >
+          <div className="p-4 border-b flex items-center gap-2">
+            <Scissors className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <h2 className="font-display font-semibold text-sm">Colheita</h2>
+          </div>
+          <div className="p-4 space-y-4">
+            <form onSubmit={handleRegistrarColheita} className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                {plantioVarNome
+                  ? <>Colhendo <span className="font-semibold text-foreground">{plantioVarNome}</span>. Ao registrar, a bancada é liberada para novo plantio.</>
+                  : "Defina a variedade do plantio acima antes de registrar a colheita."}
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Peso total (g)</Label>
+                  <Input name="peso" type="number" step="0.1" placeholder="Ex: 1200" className="h-9 text-sm" />
+                </div>
+                <div>
+                  <Label className="text-xs">Unidades/maços colhidos</Label>
+                  <Input name="quantidade" type="number" min="1" defaultValue={b.quantidadeCaixas || 1} className="h-9 text-sm" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Qualidade</Label>
+                  <select name="qualidade" defaultValue="A" className="h-9 w-full rounded-md border bg-background px-2 text-sm">
+                    <option value="A">A (excelente)</option>
+                    <option value="B">B (boa)</option>
+                    <option value="C">C (abaixo)</option>
+                  </select>
+                </div>
+                <div>
+                  <Label className="text-xs">Destino (opcional)</Label>
+                  <select name="destino" defaultValue="" className="h-9 w-full rounded-md border bg-background px-2 text-sm">
+                    <option value="">—</option>
+                    <option value="venda_direta">Venda direta</option>
+                    <option value="estoque">Estoque</option>
+                    <option value="doacao">Doação</option>
+                    <option value="descarte">Descarte</option>
+                    <option value="outro">Outro</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs">Observações (opcional)</Label>
+                <Input name="observacoes" placeholder="Notas da colheita…" className="h-9 text-sm" />
+              </div>
+              <Button
+                type="submit"
+                size="sm"
+                className="w-full bg-emerald-600 hover:bg-emerald-700"
+                disabled={createColheita.isPending || !b.plantioVariedadeId}
+              >
+                {createColheita.isPending ? "A guardar…" : "Registrar colheita"}
+              </Button>
+            </form>
+
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2">Histórico de colheitas ({colheitas.length})</p>
+              <div className="max-h-60 overflow-y-auto space-y-2">
+                {colheitas.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-3">Nenhuma colheita registrada.</p>
+                ) : (
+                  colheitas.map((c) => (
+                    <div key={c.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50 text-xs">
+                      <div>
+                        <p className="font-medium">
+                          {c.variedadeNome || "Colheita"}
+                          {c.pesoTotalGramas != null ? ` · ${c.pesoTotalGramas} g` : ""}
+                          {c.quantidadePlantas ? ` · ${c.quantidadePlantas} un` : ""}
+                          {c.qualidade ? ` · ${c.qualidade}` : ""}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {formatarData(String(c.dataColheita))}
+                          {c.destino ? ` · ${c.destino}` : ""}
+                          {c.executadoPorNome ? ` · ${c.executadoPorNome}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
