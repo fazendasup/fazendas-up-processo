@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "f76f6a6b-acc2-4111-96f3-8c2299259145",
-  "prevId": "f8419503-8510-42a3-ad7d-7a07832242bb",
+  "id": "a7568672-41f3-4887-80b0-ea0714708ea3",
+  "prevId": "f76f6a6b-acc2-4111-96f3-8c2299259145",
   "tables": {
     "alert_events": {
       "name": "alert_events",
@@ -3826,6 +3826,13 @@
           "notNull": true,
           "autoincrement": false,
           "default": "'user'"
+        },
+        "criadoPorId": {
+          "name": "criadoPorId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "createdAt": {
           "name": "createdAt",

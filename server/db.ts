@@ -3305,6 +3305,20 @@ export async function ensureTransplantiosRastreioColumns(): Promise<void> {
   }
 }
 
+/** Rastreio de autoria: admin operacional só vê/gere usuários que criou. */
+export async function ensureUsersCriadoPorColumn(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.execute(sql.raw("ALTER TABLE `users` ADD COLUMN `criadoPorId` int NULL"));
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (isMysqlDuplicateColumnError(err)) return;
+    if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
+    console.error("[Database] ensureUsersCriadoPorColumn:", err);
+  }
+}
+
 /** Suporte a colheita de hidroponia: torre/andar passam a opcionais e adiciona `bancadaId`. */
 export async function ensureRegistrosColheitaBancadaColumns(): Promise<void> {
   const db = await getDb();
@@ -4493,9 +4507,11 @@ export async function createUserWithPassword(data: {
   email: string;
   passwordHash: string;
   role: AppUserRole;
+  criadoPorId?: number | null;
 }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  await ensureUsersCriadoPorColumn();
   const openId = `local_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
   const result = await db.insert(users).values({
     openId,
@@ -4504,6 +4520,7 @@ export async function createUserWithPassword(data: {
     passwordHash: data.passwordHash,
     loginMethod: 'password',
     role: data.role,
+    criadoPorId: data.criadoPorId ?? null,
     lastSignedIn: new Date(),
   });
   return { id: result[0].insertId, openId };
@@ -4567,6 +4584,7 @@ export async function getAllUsers() {
     name: users.name,
     email: users.email,
     role: users.role,
+    criadoPorId: users.criadoPorId,
     createdAt: users.createdAt,
     lastSignedIn: users.lastSignedIn,
   }).from(users);
@@ -4583,13 +4601,35 @@ export async function getUsersForProjetos(projetoIds: number[]) {
       name: users.name,
       email: users.email,
       role: users.role,
+      criadoPorId: users.criadoPorId,
       createdAt: users.createdAt,
       lastSignedIn: users.lastSignedIn,
     })
     .from(users)
     .innerJoin(projetoUsuarios, eq(projetoUsuarios.userId, users.id))
     .where(inArray(projetoUsuarios.projetoId, projetoIds))
-    .groupBy(users.id, users.openId, users.name, users.email, users.role, users.createdAt, users.lastSignedIn);
+    .groupBy(users.id, users.openId, users.name, users.email, users.role, users.criadoPorId, users.createdAt, users.lastSignedIn);
+  return appendProjetoAccessToUsers(rows);
+}
+
+/** Usuários criados por `creatorId` (mais o próprio). Base do escopo do admin operacional. */
+export async function getUsersCreatedByOrSelf(creatorId: number) {
+  const dbConn = await getDb();
+  if (!dbConn) return [];
+  await ensureUsersCriadoPorColumn();
+  const rows = await dbConn
+    .select({
+      id: users.id,
+      openId: users.openId,
+      name: users.name,
+      email: users.email,
+      role: users.role,
+      criadoPorId: users.criadoPorId,
+      createdAt: users.createdAt,
+      lastSignedIn: users.lastSignedIn,
+    })
+    .from(users)
+    .where(or(eq(users.criadoPorId, creatorId), eq(users.id, creatorId)));
   return appendProjetoAccessToUsers(rows);
 }
 

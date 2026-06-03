@@ -27,6 +27,8 @@ export const users = mysqlTable("users", {
   loginMethod: varchar("loginMethod", { length: 64 }),
   /** VARCHAR na BD (mig. 0027): evita ENUM desalinhado com `platform_admin` em hosts antigos. */
   role: varchar("role", { length: 32 }).default("user").notNull(),
+  /** Quem criou este usuário. Admin operacional só enxerga/gere usuários que criou (platform_admin vê todos). */
+  criadoPorId: int("criadoPorId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),

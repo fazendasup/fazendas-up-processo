@@ -29,9 +29,8 @@ async function assertPodeGerenciarUsuario(ctxUser: { id: number; role: string },
   if (!target || target.role === "platform_admin") {
     throw new TRPCError({ code: "FORBIDDEN", message: "Sem permissão para gerir este usuário" });
   }
-  const projetos = await projetosGerenciaveis(ctxUser);
-  const visiveis = await db.getUsersForProjetos(projetos.map((p) => p.projeto.id));
-  if (!visiveis.some((u) => u.id === targetUserId)) {
+  // Admin operacional só pode gerir usuários que ele próprio criou.
+  if (target.criadoPorId !== ctxUser.id) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Sem permissão para gerir este usuário" });
   }
 }
@@ -89,9 +88,10 @@ async function appendComercialPerfis<T extends { email: string | null; role: str
 
 export const usersRouter = router({
     list: adminProcedure.query(async ({ ctx }) => {
+      // platform_admin vê todos; admin operacional só vê os usuários que criou (e ele mesmo).
       const rows = isPlatformCommercialRole(ctx.user.role)
         ? await db.getAllUsers()
-        : await db.getUsersForProjetos((await projetosGerenciaveis(ctx.user)).map((p) => p.projeto.id));
+        : await db.getUsersCreatedByOrSelf(ctx.user.id);
       return appendComercialPerfis(rows);
     }),
     create: adminProcedure
@@ -129,6 +129,7 @@ export const usersRouter = router({
           email,
           passwordHash,
           role: input.role,
+          criadoPorId: ctx.user.id,
         });
         for (const projetoId of projetoIds) {
           await db.addProjetoUser(projetoId, Number(result.id), projetoRoleForAppRole(input.role));
