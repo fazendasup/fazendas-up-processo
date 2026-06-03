@@ -1208,11 +1208,12 @@ export async function getProjetoRow(projetoId: number) {
 }
 
 /**
- * No arranque ou sob demanda (tRPC): garante o projeto legado e liga **todos** os usuários a ele
- * (INSERT IGNORE), não só quem ainda não tinha nenhum projeto ativo.
+ * No arranque ou sob demanda (tRPC): garante o projeto legado e liga a ele **apenas usuários órfãos**
+ * (sem nenhuma filiação em `projeto_usuarios`). NÃO liga usuários que já pertencem a algum projeto.
  *
- * Motivo: após multi-projeto, quem já tinha sido associado só a um projeto novo/vazio deixava de ver
- * «Fazenda Vertical Principal», onde a migração 0014 consolidou torres/ciclos — o painel ficava a 0.
+ * Segurança/isolamento: um usuário criado para o projeto X NÃO pode receber acesso automático ao projeto
+ * legado — isso vazaria acesso entre projetos. O backfill legado serve só para contas pré-multi-projeto
+ * que ficariam sem nenhum projeto.
  */
 export async function ensureProjetoMembershipsBootstrap(): Promise<{ ok: boolean; message?: string }> {
   const dbConn = await getDb();
@@ -1250,10 +1251,13 @@ export async function ensureProjetoMembershipsBootstrap(): Promise<{ ok: boolean
       }
     }
 
-    /** Liga cada usuário ao projeto legado (idempotente; não remove outras filiações). */
+    /** Liga ao projeto legado SOMENTE usuários órfãos (sem nenhuma filiação) — evita acesso cruzado. */
     await dbConn.execute(
       sql.raw(`INSERT IGNORE INTO projeto_usuarios (projetoId, userId, role)
-        SELECT ${pid}, u.id, 'admin' FROM users u`),
+        SELECT ${pid}, u.id, 'admin' FROM users u
+        WHERE NOT EXISTS (
+          SELECT 1 FROM projeto_usuarios pu WHERE pu.userId = u.id
+        )`),
     );
     return { ok: true };
   } catch (error) {

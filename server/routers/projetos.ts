@@ -72,7 +72,10 @@ export const projetosRouter = router({
         toProjetoId: z.number().int().positive(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      // Isolamento: só pode mover dados entre projetos aos quais o usuário pertence (platform_admin: todos).
+      await assertPodeGerenciarProjeto(ctx.user, input.fromProjetoId);
+      await assertPodeGerenciarProjeto(ctx.user, input.toProjetoId);
       try {
         await db.reassignOperationalDataBetweenProjetos(input.fromProjetoId, input.toProjetoId);
         return { ok: true as const };
@@ -86,7 +89,7 @@ export const projetosRouter = router({
    * Migra todo o cadastro operacional antigo para "Fazenda Vertical Principal" (qualquer usuário autenticado).
    * Atribui `projetoId` em linhas NULL, une outras origens, devolve contagens de verificação e erros parciais.
    */
-  /** Só administrador global — reatribui dados operacionais em massa (multi-tenant). */
+  /** Administrador — reatribui dados operacionais de legado para "Fazenda Vertical Principal". */
   migrateLegacyDataToFazendaVerticalPrincipal: adminProcedure.mutation(async () => {
     try {
       const result = await db.migrateAllOperationalDataToFazendaVerticalPrincipal();
