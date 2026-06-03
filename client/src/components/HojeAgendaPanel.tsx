@@ -375,6 +375,7 @@ export function HojeAgendaPanel({
   onCloseModal: () => void;
 }) {
   const { data, refetch: refetchFazenda } = useFazenda();
+  const isHidroponia = data.projetoTipo === 'hidroponia';
   const { isAdmin } = useRole();
   const planosQuery = trpc.planosPlantio.list.useQuery();
   const tarefasQuery = trpc.tarefas.list.useQuery();
@@ -826,8 +827,9 @@ export function HojeAgendaPanel({
         showPlantio: false,
         gruposHoje: [] as GrupoTarefas[],
         gruposAtrasadas: [] as GrupoTarefas[],
-        showPerfisProntos: true,
-        total: perfisProntosRows.length,
+        // Andares/perfis prontos só existem em fazenda vertical/microverdes (torres).
+        showPerfisProntos: !isHidroponia,
+        total: isHidroponia ? 0 : perfisProntosRows.length,
       };
     }
     const showCiclos =
@@ -879,6 +881,7 @@ export function HojeAgendaPanel({
     linhasCicloAtrasadas.length,
     nPlantioGerminacao,
     perfisProntosRows.length,
+    isHidroponia,
   ]);
 
   const kpisHoje = useMemo(() => {
@@ -1120,7 +1123,7 @@ export function HojeAgendaPanel({
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground font-normal">
-                        Só germinação e início de plano (sem transplantio vegetativa/maturação nem colheita — faça essas acções na torre).
+                        Só germinação e início de plano (sem transplantio vegetativa/maturação nem colheita — faça essas acções {isHidroponia ? 'na bancada' : 'na torre'}).
                       </p>
                     </CardHeader>
                     <CardContent className="pt-0 space-y-4">

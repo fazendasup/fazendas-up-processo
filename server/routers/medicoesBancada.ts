@@ -12,6 +12,10 @@ export const medicoesBancadaRouter = router({
       return db.getMedicoesByBancadaId(pid, input.bancadaId);
     }),
 
+  ultimasPorProjeto: hidroponiaProcedure.query(async ({ ctx }) => {
+    return db.getUltimasMedicoesPorProjeto(projetoIdFromCtx(ctx));
+  }),
+
   create: hidroponiaProcedure
     .input(
       z.object({

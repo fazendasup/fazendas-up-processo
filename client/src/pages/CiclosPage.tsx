@@ -64,6 +64,7 @@ function dateAtLocalNoonFromYmd(ymd: string): Date {
 
 export default function CiclosPage() {
   const { data } = useFazenda();
+  const isHidroponia = data.projetoTipo === 'hidroponia';
   const mutations = useFazendaMutations();
   const resolver = useDbIdResolver();
   const [showForm, setShowForm] = useState(false);
@@ -352,7 +353,9 @@ export default function CiclosPage() {
           <div>
             <h1 className="font-display text-2xl font-bold">Ciclos de Aplicação</h1>
             <p className="text-sm text-muted-foreground">
-              Configure ciclos recorrentes para caixas d'água e andares
+              {isHidroponia
+                ? 'Configure ciclos recorrentes de aplicação nas bancadas'
+                : "Configure ciclos recorrentes para caixas d'água e andares"}
             </p>
           </div>
           <Dialog open={showForm} onOpenChange={(open) => { setShowForm(open); if (!open) resetForm(); }}>
@@ -409,19 +412,21 @@ export default function CiclosPage() {
                   </div>
                 </div>
 
-                <div>
-                  <Label className="text-xs">Aplicar em</Label>
-                  <Select value={alvo} onValueChange={setAlvo}>
-                    <SelectTrigger className="h-9 text-sm">
-                      <SelectValue placeholder="Ambos" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ambos">Caixas e Andares</SelectItem>
-                      <SelectItem value="caixa">Apenas Caixas d'Água</SelectItem>
-                      <SelectItem value="andar">Apenas Andares</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {!isHidroponia && (
+                  <div>
+                    <Label className="text-xs">Aplicar em</Label>
+                    <Select value={alvo} onValueChange={setAlvo}>
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue placeholder="Ambos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ambos">Caixas e Andares</SelectItem>
+                        <SelectItem value="caixa">Apenas Caixas d'Água</SelectItem>
+                        <SelectItem value="andar">Apenas Andares</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 {editingId && (
                   <div>

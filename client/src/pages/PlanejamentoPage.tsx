@@ -135,6 +135,7 @@ function agendaFilterFromStorage(): AgendaFilter {
 
 export default function PlanejamentoPage() {
   const { data } = useFazenda();
+  const isHidroponia = data.projetoTipo === 'hidroponia';
   const { isAdmin } = useRole();
   const utils = trpc.useUtils();
 
@@ -298,10 +299,10 @@ export default function PlanejamentoPage() {
 
   useEffect(() => {
     const tab = new URLSearchParams(window.location.search).get('tab');
-    if (tab === 'lista' || tab === 'calendario' || tab === 'colheita2') {
+    if (tab === 'lista' || tab === 'calendario' || (tab === 'colheita2' && !isHidroponia)) {
       setActiveTab(tab);
     }
-  }, []);
+  }, [isHidroponia]);
 
   const selectedReceita = useMemo(() => {
     if (!selectedReceitaId) return null;
@@ -556,10 +557,12 @@ export default function PlanejamentoPage() {
               <ListFilter className="w-3.5 h-3.5" />
               Planos
             </TabsTrigger>
-            <TabsTrigger value="colheita2" className="gap-1.5">
-              <CalendarClock className="w-3.5 h-3.5" />
-              Colheita contínua
-            </TabsTrigger>
+            {!isHidroponia && (
+              <TabsTrigger value="colheita2" className="gap-1.5">
+                <CalendarClock className="w-3.5 h-3.5" />
+                Colheita contínua
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* ---- Calendário ---- */}
@@ -581,10 +584,12 @@ export default function PlanejamentoPage() {
             </div>
           </TabsContent>
 
-          {/* ---- Meta colheita contínua (intervalo configurável) ---- */}
-          <TabsContent value="colheita2" className="space-y-4">
-            <PlanejamentoColheitaContinua />
-          </TabsContent>
+          {/* ---- Meta colheita contínua (intervalo configurável) — só fazenda vertical/microverdes ---- */}
+          {!isHidroponia && (
+            <TabsContent value="colheita2" className="space-y-4">
+              <PlanejamentoColheitaContinua />
+            </TabsContent>
+          )}
 
           {/* ---- Lista de Planos ---- */}
           <TabsContent value="lista" className="space-y-4">

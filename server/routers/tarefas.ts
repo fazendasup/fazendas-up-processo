@@ -214,6 +214,10 @@ export const tarefasRouter = router({
 
         data = await db.loadFullFazendaData(projetoIdFromCtx(ctx));
 
+        const isHidroponia = (data as { projetoTipo?: string | null }).projetoTipo === 'hidroponia';
+        const bancadasList = isHidroponia ? await db.getAllBancadas(projetoIdFromCtx(ctx)) : [];
+        const bancadasMap = new Map(bancadasList.map((b) => [b.id, b]));
+
         const tarefasHoje = data.tarefas.filter(
           (t) => ymdInTimeZone(t.dataVencimento, tz) === ymdHoje,
         );
@@ -262,17 +266,35 @@ export const tarefasRouter = router({
           const prazo = new Date(m.prazo!);
           const ymdP = ymdInTimeZone(prazo, tz);
           if (ymdP && ymdP <= ymdHoje) {
-            const torre = data.torres.find(t => t.id === m.torreId);
-            const titulo = `Manutenção URGENTE: ${m.tipo} — ${torre?.nome || 'Torre'}${m.andarNumero ? ` A${m.andarNumero}` : ''}`;
+            const unidadeNome = (m as { bancadaId?: number | null }).bancadaId != null
+              ? (bancadasMap.get((m as { bancadaId?: number | null }).bancadaId!)?.nome || 'Bancada')
+              : (data.torres.find(t => t.id === m.torreId)?.nome || 'Torre');
+            const titulo = `Manutenção URGENTE: ${m.tipo} — ${unidadeNome}${m.andarNumero ? ` A${m.andarNumero}` : ''}`;
             if (!titulosExistentes.has(titulo)) {
-              await db.createTarefa({ projetoId: projetoIdFromCtx(ctx), titulo, descricao: m.descricao, tipo: 'manutencao', prioridade: 'urgente', dataVencimento: inicioDia, torreId: m.torreId, andarNumero: m.andarNumero });
+              await db.createTarefa({ projetoId: projetoIdFromCtx(ctx), titulo, descricao: m.descricao, tipo: 'manutencao', prioridade: 'urgente', dataVencimento: inicioDia, torreId: m.torreId ?? undefined, andarNumero: m.andarNumero });
               tarefasCriadas.push(titulo);
               titulosExistentes.add(titulo);
             }
           }
         }
 
+        // Hidroponia: colheita prevista por bancada (sem lavagem/transplantio de torre).
+        if (isHidroponia) {
+          for (const b of bancadasList.filter((x) => x.ativa && x.plantioPrevisaoColheita && x.plantioVariedadeId != null)) {
+            const ymdC = ymdInTimeZone(new Date(b.plantioPrevisaoColheita as Date), tz);
+            if (ymdC && ymdC <= ymdHoje) {
+              const titulo = `Colheita: ${b.nome}`;
+              if (!titulosExistentes.has(titulo)) {
+                await db.createTarefa({ projetoId: projetoIdFromCtx(ctx), titulo, descricao: `Bancada ${b.nome} com colheita prevista para hoje ou atrasada.`, tipo: 'colheita', prioridade: 'alta', dataVencimento: inicioDia });
+                tarefasCriadas.push(titulo);
+                titulosExistentes.add(titulo);
+              }
+            }
+          }
+        }
+
         for (const andar of data.andares.filter(a => !a.lavado)) {
+          if (isHidroponia) break;
           const torre = data.torres.find(t => t.id === andar.torreId);
           const titulo = `Lavagem: ${torre?.nome || 'Torre'} — Andar ${andar.numero}`;
           if (!titulosExistentes.has(titulo)) {

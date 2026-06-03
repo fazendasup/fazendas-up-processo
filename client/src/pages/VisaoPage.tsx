@@ -143,10 +143,23 @@ export default function VisaoPage() {
   const listAnalises = trpc.visao.listarAnalises.useQuery({ limit: 25 });
   const listAmostras = trpc.visao.listarAmostrasTreino.useQuery({ limit: 60 });
 
+  const isHidroponia = fazendaData.projetoTipo === "hidroponia";
+  const bancadasQuery = trpc.bancadas.list.useQuery(undefined, {
+    enabled: isHidroponia,
+    staleTime: 30_000,
+  });
+
   const torreItems = useMemo(
     () => (torres || []).map((t: Torre) => ({ slug: t.id, label: t.nome || t.id })),
     [torres],
   );
+  const bancadaItems = useMemo(
+    () => (bancadasQuery.data || []).map((b) => ({ slug: b.slug, label: b.nome })),
+    [bancadasQuery.data],
+  );
+  /** Reaproveita o mesmo campo de contexto (`torreSlug`) para torre (FV) ou bancada (hidroponia). */
+  const contextoItems = isHidroponia ? bancadaItems : torreItems;
+  const contextoLabel = isHidroponia ? "Bancada (opcional)" : "Torre (opcional)";
 
   const onPickFile = useCallback((file: File | null) => {
     fileRef.current = file;
@@ -269,16 +282,16 @@ export default function VisaoPage() {
                       onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
                     />
                   </div>
-                  {torreItems.length > 0 && (
+                  {contextoItems.length > 0 && (
                     <div className="space-y-2">
-                      <Label>Torre (opcional)</Label>
+                      <Label>{contextoLabel}</Label>
                       <Select value={torreSlug || "__none__"} onValueChange={(v) => setTorreSlug(v === "__none__" ? "" : v)}>
                         <SelectTrigger className="w-[220px]">
                           <SelectValue placeholder="—" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="__none__">—</SelectItem>
-                          {torreItems.map((t) => (
+                          {contextoItems.map((t) => (
                             <SelectItem key={t.slug} value={t.slug}>
                               {t.label}
                             </SelectItem>

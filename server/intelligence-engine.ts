@@ -32,7 +32,32 @@ export interface FazendaSnapshot {
   receitas: any[];
   registrosColheita: any[];
   planosPlantio: any[];
+  /** Tipo do projeto ("fazenda_vertical" | "microverdes" | "hidroponia"). */
+  projetoTipo?: string | null;
+  /** Hidroponia: unidades operacionais (bancadas) e últimas medições por bancada. */
+  bancadas?: any[];
+  medicoesBancada?: any[];
 }
+
+/** Nome da unidade alvo de uma manutenção: bancada (hidroponia) ou torre (FV/microverdes). */
+function nomeUnidadeManutencao(
+  m: any,
+  torresMap: Map<any, any>,
+  bancadasMap: Map<any, any>,
+): { nome: string; entidadeTipo: "bancada" | "torre"; fase?: string } {
+  if (m.bancadaId != null) {
+    const b = bancadasMap.get(m.bancadaId);
+    return { nome: b?.nome || "Bancada", entidadeTipo: "bancada", fase: b?.fase };
+  }
+  const t = torresMap.get(m.torreId);
+  return { nome: t?.nome || "Torre", entidadeTipo: "torre", fase: t?.fase };
+}
+
+const FAIXAS_FASE_HIDRO: Record<string, { ecMin: number; ecMax: number; phMin: number; phMax: number }> = {
+  mudas: { ecMin: 1.0, ecMax: 1.2, phMin: 5.8, phMax: 6.2 },
+  vegetativa: { ecMin: 1.5, ecMax: 2.0, phMin: 5.5, phMax: 6.5 },
+  maturacao: { ecMin: 2.0, ecMax: 2.5, phMin: 5.8, phMax: 6.2 },
+};
 
 export interface AlertCandidate {
   tipo: string;
@@ -194,22 +219,23 @@ function avaliarColheitaAtrasada(data: FazendaSnapshot, hoje: Date): AlertCandid
 function avaliarManutencaoVencida(data: FazendaSnapshot, hoje: Date): AlertCandidate[] {
   const alertas: AlertCandidate[] = [];
   const torresMap = new Map((data.torres || []).map((t: any) => [t.id, t]));
+  const bancadasMap = new Map((data.bancadas || []).map((b: any) => [b.id, b]));
 
   for (const m of (data.manutencoes || []).filter((x: any) => x.status === "aberta" && x.prazo)) {
     const prazo = toDateStart(new Date(m.prazo));
     const diasVencido = diasEntre(prazo, hoje);
     if (diasVencido >= 1) {
-      const torre = torresMap.get(m.torreId);
+      const unidade = nomeUnidadeManutencao(m, torresMap, bancadasMap);
       alertas.push({
         tipo: "manutencao_vencida",
         severidade: diasVencido >= 7 ? "critica" : diasVencido >= 3 ? "alta" : "media",
         prioridade: diasVencido >= 7 ? "urgente" : "alta",
-        titulo: `Manutenção vencida: ${m.tipo} — ${torre?.nome || "Torre"}`,
+        titulo: `Manutenção vencida: ${m.tipo} — ${unidade.nome}`,
         descricao: `Manutenção "${m.tipo}" está vencida há ${diasVencido} dia(s).`,
         entidadeTipo: "manutencao",
         entidadeId: m.id,
-        entidadeNome: `${m.tipo} — ${torre?.nome || "Torre"}`,
-        fase: torre?.fase,
+        entidadeNome: `${m.tipo} — ${unidade.nome}`,
+        fase: unidade.fase,
         origem: "motor_regras",
         sugestaoAcao: "Executar manutenção e registrar resolução.",
         nivelConfianca: "alta",
@@ -507,14 +533,15 @@ function avaliarLoteForaPadrao(data: FazendaSnapshot, _hoje: Date): AlertCandida
 function avaliarManutencaoCritica(data: FazendaSnapshot, hoje: Date): AlertCandidate[] {
   const alertas: AlertCandidate[] = [];
   const torresMap = new Map(data.torres.map((t: any) => [t.id, t]));
+  const bancadasMap = new Map((data.bancadas || []).map((b: any) => [b.id, b]));
 
   // 4a. Manutenções abertas em itens críticos
-  const tiposCriticos = ["vazamento_tubo_injetor", "bomba_defeito", "sistema_irrigacao", "falha_eletrica"];
+  const tiposCriticos = ["vazamento_tubo_injetor", "bomba_defeito", "sistema_irrigacao", "falha_eletrica", "bomba", "vazamento", "eletrica"];
   for (const m of data.manutencoes.filter((m: any) => m.status === "aberta")) {
     const isCritico = tiposCriticos.some((tc) => m.tipo.toLowerCase().includes(tc.replaceAll("_", " ")) || m.tipo.toLowerCase().includes(tc));
     if (!isCritico && !m.prazo) continue;
 
-    const torre = torresMap.get(m.torreId);
+    const unidade = nomeUnidadeManutencao(m, torresMap, bancadasMap);
     let diasAberta = 0;
     if (m.dataAbertura) {
       diasAberta = diasEntre(new Date(m.dataAbertura), hoje);
@@ -525,12 +552,12 @@ function avaliarManutencaoCritica(data: FazendaSnapshot, hoje: Date): AlertCandi
         tipo: "manutencao_critica",
         severidade: isCritico ? "critica" : "alta",
         prioridade: isCritico ? "urgente" : "alta",
-        titulo: `Manutenção crítica: ${m.tipo} — ${torre?.nome || "Torre"}`,
-        descricao: `Manutenção "${m.tipo}" aberta há ${diasAberta} dia(s) em ${torre?.nome || "Torre"}${m.andarNumero ? ` A${m.andarNumero}` : ""}. ${isCritico ? "Tipo classificado como crítico para operação." : "Tempo de resolução acima do esperado."}`,
+        titulo: `Manutenção crítica: ${m.tipo} — ${unidade.nome}`,
+        descricao: `Manutenção "${m.tipo}" aberta há ${diasAberta} dia(s) em ${unidade.nome}${m.andarNumero ? ` A${m.andarNumero}` : ""}. ${isCritico ? "Tipo classificado como crítico para operação." : "Tempo de resolução acima do esperado."}`,
         entidadeTipo: "manutencao",
         entidadeId: m.id,
-        entidadeNome: `${m.tipo} — ${torre?.nome || "Torre"}`,
-        fase: torre?.fase,
+        entidadeNome: `${m.tipo} — ${unidade.nome}`,
+        fase: unidade.fase,
         origem: "motor_regras",
         sugestaoAcao: `Priorizar resolução imediata. ${isCritico ? "Verificar impacto na irrigação e produção." : "Avaliar se está bloqueando operação."}`,
         nivelConfianca: "alta",
@@ -541,15 +568,16 @@ function avaliarManutencaoCritica(data: FazendaSnapshot, hoje: Date): AlertCandi
     }
   }
 
-  // 4b. Manutenções recorrentes na mesma torre
-  const manutPorTorre = new Map<number, any[]>();
+  // 4b. Manutenções recorrentes na mesma unidade (torre ou bancada)
+  const manutPorUnidade = new Map<string, any[]>();
   for (const m of data.manutencoes) {
-    const arr = manutPorTorre.get(m.torreId) || [];
+    const chave = m.bancadaId != null ? `b:${m.bancadaId}` : `t:${m.torreId}`;
+    const arr = manutPorUnidade.get(chave) || [];
     arr.push(m);
-    manutPorTorre.set(m.torreId, arr);
+    manutPorUnidade.set(chave, arr);
   }
 
-  for (const [torreId, manuts] of Array.from(manutPorTorre)) {
+  for (const [chave, manuts] of Array.from(manutPorUnidade)) {
     const abertas = manuts.filter((m: any) => m.status === "aberta");
     const total30dias = manuts.filter((m: any) => {
       const dt = new Date(m.dataAbertura || m.createdAt);
@@ -557,23 +585,113 @@ function avaliarManutencaoCritica(data: FazendaSnapshot, hoje: Date): AlertCandi
     });
 
     if (abertas.length >= 3 || total30dias.length >= 5) {
-      const torre = torresMap.get(torreId);
+      const unidade = nomeUnidadeManutencao(manuts[0], torresMap, bancadasMap);
+      const idNum = Number(chave.split(":")[1]);
+      const palavra = unidade.entidadeTipo === "bancada" ? "bancada" : "torre";
       alertas.push({
         tipo: "concentracao_risco",
         severidade: abertas.length >= 3 ? "alta" : "media",
         prioridade: "alta",
-        titulo: `Concentração de manutenções: ${torre?.nome || "Torre"}`,
-        descricao: `${torre?.nome || "Torre"} tem ${abertas.length} manutenção(ões) aberta(s) e ${total30dias.length} nos últimos 30 dias. Pode indicar problema estrutural.`,
-        entidadeTipo: "torre",
-        entidadeId: torreId,
-        entidadeNome: torre?.nome || "Torre",
-        fase: torre?.fase,
+        titulo: `Concentração de manutenções: ${unidade.nome}`,
+        descricao: `${unidade.nome} tem ${abertas.length} manutenção(ões) aberta(s) e ${total30dias.length} nos últimos 30 dias. Pode indicar problema estrutural.`,
+        entidadeTipo: unidade.entidadeTipo,
+        entidadeId: idNum,
+        entidadeNome: unidade.nome,
+        fase: unidade.fase,
         origem: "motor_regras",
-        sugestaoAcao: `Avaliar condição geral da torre. Considerar inspeção completa e manutenção preventiva.`,
+        sugestaoAcao: `Avaliar condição geral da ${palavra}. Considerar inspeção completa e manutenção preventiva.`,
         nivelConfianca: "alta",
         gerarTarefa: false,
         dadosSnapshot: { abertas: abertas.length, ultimos30dias: total30dias.length },
-        hashUnico: gerarHash("concentracao_manut", "torre", torreId),
+        hashUnico: gerarHash("concentracao_manut", unidade.entidadeTipo, idNum),
+      });
+    }
+  }
+
+  return alertas;
+}
+
+// ============================================================
+// REGRA hidroponia: EC/pH da bancada fora da faixa ou sem leitura recente
+// ============================================================
+function avaliarBancadaEcPh(data: FazendaSnapshot, hoje: Date): AlertCandidate[] {
+  const alertas: AlertCandidate[] = [];
+  const bancadas = (data.bancadas || []).filter((b: any) => b.ativa && b.status === "ativa");
+  const medPorBancada = new Map<number, any>();
+  for (const m of data.medicoesBancada || []) {
+    if (!medPorBancada.has(m.bancadaId)) medPorBancada.set(m.bancadaId, m);
+  }
+
+  for (const b of bancadas) {
+    const faixa = FAIXAS_FASE_HIDRO[b.fase as string] || FAIXAS_FASE_HIDRO.vegetativa;
+    const med = medPorBancada.get(b.id);
+
+    if (!med) {
+      alertas.push({
+        tipo: "medicao_atrasada",
+        severidade: "media",
+        prioridade: "media",
+        titulo: `Sem leitura de EC/pH: ${b.nome}`,
+        descricao: `A bancada ${b.nome} ainda não tem nenhuma medição de EC/pH registrada.`,
+        entidadeTipo: "bancada",
+        entidadeId: b.id,
+        entidadeNome: b.nome,
+        fase: b.fase,
+        origem: "motor_regras",
+        sugestaoAcao: "Registrar leitura de EC e pH da solução nutritiva da bancada.",
+        nivelConfianca: "alta",
+        gerarTarefa: true,
+        dadosSnapshot: {},
+        hashUnico: gerarHash("medicao_atrasada", "bancada", b.id),
+      });
+      continue;
+    }
+
+    const diasSemMedir = diasEntre(toDateStart(new Date(med.createdAt)), hoje);
+    if (diasSemMedir >= 3) {
+      alertas.push({
+        tipo: "medicao_atrasada",
+        severidade: diasSemMedir >= 7 ? "alta" : "media",
+        prioridade: diasSemMedir >= 7 ? "alta" : "media",
+        titulo: `Medição de EC/pH atrasada: ${b.nome}`,
+        descricao: `Última leitura da bancada ${b.nome} foi há ${diasSemMedir} dia(s).`,
+        entidadeTipo: "bancada",
+        entidadeId: b.id,
+        entidadeNome: b.nome,
+        fase: b.fase,
+        origem: "motor_regras",
+        sugestaoAcao: "Registrar nova leitura de EC e pH para acompanhar a solução nutritiva.",
+        nivelConfianca: "alta",
+        gerarTarefa: true,
+        dadosSnapshot: { diasSemMedir },
+        hashUnico: gerarHash("medicao_atrasada", "bancada", b.id, String(diasSemMedir)),
+      });
+    }
+
+    const ec = med.ec != null ? Number(med.ec) : null;
+    const ph = med.ph != null ? Number(med.ph) : null;
+    const ecFora = ec != null && (ec < faixa.ecMin || ec > faixa.ecMax);
+    const phFora = ph != null && (ph < faixa.phMin || ph > faixa.phMax);
+    if (ecFora || phFora) {
+      const partes: string[] = [];
+      if (ecFora) partes.push(`EC ${ec!.toFixed(2)} (ideal ${faixa.ecMin}-${faixa.ecMax})`);
+      if (phFora) partes.push(`pH ${ph!.toFixed(1)} (ideal ${faixa.phMin}-${faixa.phMax})`);
+      alertas.push({
+        tipo: "desvio_ec_ph",
+        severidade: ecFora && phFora ? "alta" : "media",
+        prioridade: ecFora && phFora ? "alta" : "media",
+        titulo: `EC/pH fora da faixa: ${b.nome}`,
+        descricao: `Bancada ${b.nome} (${b.fase}) com ${partes.join(" e ")}.`,
+        entidadeTipo: "bancada",
+        entidadeId: b.id,
+        entidadeNome: b.nome,
+        fase: b.fase,
+        origem: "motor_regras",
+        sugestaoAcao: "Ajustar a solução nutritiva (dosagem/diluição) e corrigir o pH.",
+        nivelConfianca: "media",
+        gerarTarefa: true,
+        dadosSnapshot: { ec, ph, faixa },
+        hashUnico: gerarHash("desvio_ec_ph", "bancada", b.id),
       });
     }
   }
@@ -841,6 +959,19 @@ export function executarMotorInteligencia(data: FazendaSnapshot): AlertCandidate
   hoje.setHours(0, 0, 0, 0);
 
   const snap = mergeGerminacaoDesdePlanos(data);
+
+  // Hidroponia de bancada: as regras de torre/andar/perfil/caixa d'água não se aplicam.
+  // Rodamos manutenção (agnóstica a unidade), EC/pH por bancada e as regras de plano/germinação genéricas.
+  if (data.projetoTipo === "hidroponia") {
+    return [
+      ...avaliarBancadaEcPh(snap, hoje),
+      ...avaliarManutencaoVencida(snap, hoje),
+      ...avaliarManutencaoCritica(snap, hoje),
+      ...avaliarLoteForaPadrao(snap, hoje),
+      ...avaliarInconsistenciaPlano(snap, hoje),
+      ...avaliarSequenciaIncompleta(snap, hoje),
+    ];
+  }
 
   const todosAlertas: AlertCandidate[] = [
     ...avaliarColheitaAtrasada(snap, hoje),

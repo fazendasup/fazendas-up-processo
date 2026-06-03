@@ -371,16 +371,18 @@ export default function ProjetosPage() {
                       {ativo && <span className="ml-2 text-primary font-medium">· Ativo agora</span>}
                     </p>
                     <p className="text-[11px] text-muted-foreground/90 mt-1 font-mono tabular-nums">
-                      Torres {p.operationalCounts.torres} · Andares {p.operationalCounts.andares} · Ciclos{" "}
-                      {p.operationalCounts.ciclos} · Caixas {p.operationalCounts.caixasAgua} · Variedades{" "}
-                      {p.operationalCounts.variedades}
-                      {p.tipo === "hidroponia" && (
+                      {p.tipo === "hidroponia" ? (
                         <>
-                          {" "}
-                          · Bancadas {p.operationalCounts.bancadas}
+                          Bancadas {p.operationalCounts.bancadas} · Ciclos {p.operationalCounts.ciclos} · Variedades{" "}
+                          {p.operationalCounts.variedades} · Planos {p.operationalCounts.planosPlantio}
                         </>
-                      )}{" "}
-                      · Planos {p.operationalCounts.planosPlantio}
+                      ) : (
+                        <>
+                          Torres {p.operationalCounts.torres} · Andares {p.operationalCounts.andares} · Ciclos{" "}
+                          {p.operationalCounts.ciclos} · Caixas {p.operationalCounts.caixasAgua} · Variedades{" "}
+                          {p.operationalCounts.variedades} · Planos {p.operationalCounts.planosPlantio}
+                        </>
+                      )}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2 shrink-0 items-center justify-end">

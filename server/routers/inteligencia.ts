@@ -13,7 +13,12 @@ export const inteligenciaRouter = router({
     const pid = projetoIdFromCtx(ctx);
     const { executarMotorInteligencia } = await import("../intelligence-engine");
     const fazendaData = await db.loadFullFazendaData(pid);
-    const candidatos = executarMotorInteligencia(fazendaData);
+    const snapshot: typeof fazendaData & { bancadas?: unknown[]; medicoesBancada?: unknown[] } = fazendaData;
+    if ((fazendaData as { projetoTipo?: string | null }).projetoTipo === "hidroponia") {
+      snapshot.bancadas = await db.getAllBancadas(pid);
+      snapshot.medicoesBancada = await db.getUltimasMedicoesPorProjeto(pid);
+    }
+    const candidatos = executarMotorInteligencia(snapshot);
 
     let criados = 0;
     let atualizados = 0;

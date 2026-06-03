@@ -258,7 +258,7 @@ export function FarmAssistantSheet({ open, onOpenChange }: FarmAssistantSheetPro
                   "Liste clientes em risco, oportunidades abertas e produtos com maior potencial de venda.",
                   "Quais produtos e categorias lideram faturamento, quantidade e margem?",
                   "Quais planos de plantio estão ativos, em que status, e quais estão na fila de germinação / plantio inicial?",
-                  "Como está a ocupação das torres por fase? Há capacidade livre ou gargalos a destacar?",
+                  "Como está a ocupação por fase (torres ou bancadas)? Há capacidade livre ou gargalos a destacar?",
                   "Um único insight de gestão a partir dos dados: maior risco ou oportunidade operacional hoje.",
                 ]}
               />

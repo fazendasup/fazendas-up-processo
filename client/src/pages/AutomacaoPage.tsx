@@ -39,6 +39,7 @@ import { useProjeto } from "@/contexts/ProjetoContext";
 import { useRole } from "@/hooks/useRole";
 import { trpc } from "@/lib/trpc";
 import { PainelProgramacoesVertical } from "@/components/PainelProgramacoesVertical";
+import AutomacaoHidroponia from "@/components/AutomacaoHidroponia";
 import { carregarProgramacoes, salvarProgramacoes, type ProgramacaoVertical } from "@/lib/programacoesAutomacao";
 import { FASES_CONFIG, torreEstaAtivaNoDashboard, type Fase } from "@/lib/types";
 
@@ -392,6 +393,12 @@ function ScadaCompactMetricTile({
 }
 
 export default function AutomacaoPage() {
+  const { activeProjeto } = useProjeto();
+  if (activeProjeto?.tipo === "hidroponia") return <AutomacaoHidroponia />;
+  return <AutomacaoVertical />;
+}
+
+function AutomacaoVertical() {
   const { user } = useAuth();
   const { activeProjetoId, modulosAtivos } = useProjeto();
   const { isAdmin } = useRole();

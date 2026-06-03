@@ -120,6 +120,7 @@ const PIE_COLORS = [COLORS.mudas, COLORS.vegetativa, COLORS.maturacao, COLORS.pu
 
 export default function AnalyticsPage() {
   const { data, loading } = useFazenda();
+  const isHidroponia = data.projetoTipo === 'hidroponia';
   const [period, setPeriod] = useState<PeriodFilter>('30d');
 
   if (loading) {
@@ -164,63 +165,81 @@ export default function AnalyticsPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="ecph" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 h-auto">
+          <TabsList
+            className={
+              isHidroponia
+                ? 'grid w-full grid-cols-3 h-auto'
+                : 'grid w-full grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 h-auto'
+            }
+          >
             <TabsTrigger value="ecph" className="text-xs gap-1.5">
               <Droplet className="w-3.5 h-3.5" /> EC/pH
             </TabsTrigger>
-            <TabsTrigger value="producao" className="text-xs gap-1.5">
-              <Scissors className="w-3.5 h-3.5" /> Produção
-            </TabsTrigger>
+            {!isHidroponia && (
+              <TabsTrigger value="producao" className="text-xs gap-1.5">
+                <Scissors className="w-3.5 h-3.5" /> Produção
+              </TabsTrigger>
+            )}
             <TabsTrigger value="germinacao" className="text-xs gap-1.5">
               <Sprout className="w-3.5 h-3.5" /> Germinação
             </TabsTrigger>
             <TabsTrigger value="manutencao" className="text-xs gap-1.5">
               <Wrench className="w-3.5 h-3.5" /> Manutenção
             </TabsTrigger>
-            <TabsTrigger value="ocupacao" className="text-xs gap-1.5">
-              <Target className="w-3.5 h-3.5" /> Ocupação
-            </TabsTrigger>
-            <TabsTrigger value="desperdicio" className="text-xs gap-1.5">
-              <AlertTriangle className="w-3.5 h-3.5" /> Desperdício
-            </TabsTrigger>
-            <TabsTrigger value="yield" className="text-xs gap-1.5">
-              <TrendingUp className="w-3.5 h-3.5" /> Yield
-            </TabsTrigger>
-            <TabsTrigger value="planejado" className="text-xs gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Plan. vs Real
-            </TabsTrigger>
-            <TabsTrigger value="relatorios" className="text-xs gap-1.5">
-              <FileText className="w-3.5 h-3.5" /> Relatórios
-            </TabsTrigger>
+            {!isHidroponia && (
+              <>
+                <TabsTrigger value="ocupacao" className="text-xs gap-1.5">
+                  <Target className="w-3.5 h-3.5" /> Ocupação
+                </TabsTrigger>
+                <TabsTrigger value="desperdicio" className="text-xs gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5" /> Desperdício
+                </TabsTrigger>
+                <TabsTrigger value="yield" className="text-xs gap-1.5">
+                  <TrendingUp className="w-3.5 h-3.5" /> Yield
+                </TabsTrigger>
+                <TabsTrigger value="planejado" className="text-xs gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Plan. vs Real
+                </TabsTrigger>
+                <TabsTrigger value="relatorios" className="text-xs gap-1.5">
+                  <FileText className="w-3.5 h-3.5" /> Relatórios
+                </TabsTrigger>
+              </>
+            )}
           </TabsList>
 
           <TabsContent value="ecph">
-            <ECpHSection data={data} period={period} />
+            {isHidroponia ? <ECpHSectionHidroponia /> : <ECpHSection data={data} period={period} />}
           </TabsContent>
-          <TabsContent value="producao">
-            <ProducaoSection data={data} period={period} />
-          </TabsContent>
+          {!isHidroponia && (
+            <TabsContent value="producao">
+              <ProducaoSection data={data} period={period} />
+            </TabsContent>
+          )}
           <TabsContent value="germinacao">
             <GerminacaoSection data={data} period={period} />
           </TabsContent>
           <TabsContent value="manutencao">
             <ManutencaoSection data={data} period={period} />
           </TabsContent>
-          <TabsContent value="ocupacao">
-            <OcupacaoSection data={data} />
-          </TabsContent>
-          <TabsContent value="desperdicio">
-            <DesperdicioSection data={data} period={period} />
-          </TabsContent>
-          <TabsContent value="yield">
-            <YieldSection data={data} period={period} />
-          </TabsContent>
-          <TabsContent value="planejado">
-            <PlanejadoVsRealizadoSection data={data} period={period} />
-          </TabsContent>
-          <TabsContent value="relatorios">
-            <RelatoriosSection data={data} period={period} />
-          </TabsContent>
+          {!isHidroponia && (
+            <>
+              <TabsContent value="ocupacao">
+                <OcupacaoSection data={data} />
+              </TabsContent>
+              <TabsContent value="desperdicio">
+                <DesperdicioSection data={data} period={period} />
+              </TabsContent>
+              <TabsContent value="yield">
+                <YieldSection data={data} period={period} />
+              </TabsContent>
+              <TabsContent value="planejado">
+                <PlanejadoVsRealizadoSection data={data} period={period} />
+              </TabsContent>
+              <TabsContent value="relatorios">
+                <RelatoriosSection data={data} period={period} />
+              </TabsContent>
+            </>
+          )}
         </Tabs>
       </main>
     </div>
@@ -230,6 +249,94 @@ export default function AnalyticsPage() {
 // ============================================================
 // 1. EC/pH Evolution
 // ============================================================
+
+function ECpHSectionHidroponia() {
+  const bancadasQuery = trpc.bancadas.list.useQuery(undefined, { staleTime: 30_000 });
+  const medicoesQuery = trpc.medicoesBancada.ultimasPorProjeto.useQuery(undefined, { staleTime: 30_000 });
+
+  const bancadas = (bancadasQuery.data ?? []).filter((b) => b.ativa && b.status === 'ativa');
+  const medMap = useMemo(() => {
+    const m = new Map<number, { ec: number | null; ph: number | null; temp: number | null; createdAt: string }>();
+    for (const med of medicoesQuery.data ?? []) {
+      m.set(med.bancadaId, {
+        ec: med.ec != null ? Number(med.ec) : null,
+        ph: med.ph != null ? Number(med.ph) : null,
+        temp: med.temperaturaAgua != null ? Number(med.temperaturaAgua) : null,
+        createdAt: String(med.createdAt),
+      });
+    }
+    return m;
+  }, [medicoesQuery.data]);
+
+  const linhas = bancadas.map((b) => {
+    const cfg = FASES_CONFIG[b.fase as Fase] ?? FASES_CONFIG.vegetativa;
+    const med = medMap.get(b.id);
+    const ecOk = med?.ec != null && med.ec >= cfg.ecMin && med.ec <= cfg.ecMax;
+    const phOk = med?.ph != null && med.ph >= cfg.phMin && med.ph <= cfg.phMax;
+    return { bancada: b, cfg, med, ecOk, phOk };
+  });
+
+  const comLeitura = linhas.filter((l) => l.med);
+  const naFaixa = comLeitura.filter((l) => l.ecOk && l.phOk).length;
+
+  if (bancadasQuery.isLoading || medicoesQuery.isLoading) {
+    return <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">Carregando medições…</CardContent></Card>;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Card><CardContent className="p-3.5"><p className="text-[10px] text-muted-foreground font-medium">Bancadas ativas</p><p className="font-display font-bold text-xl">{bancadas.length}</p></CardContent></Card>
+        <Card><CardContent className="p-3.5"><p className="text-[10px] text-muted-foreground font-medium">Com leitura</p><p className="font-display font-bold text-xl">{comLeitura.length}</p></CardContent></Card>
+        <Card><CardContent className="p-3.5"><p className="text-[10px] text-muted-foreground font-medium">EC/pH na faixa</p><p className="font-display font-bold text-xl">{naFaixa}/{comLeitura.length}</p></CardContent></Card>
+        <Card><CardContent className="p-3.5"><p className="text-[10px] text-muted-foreground font-medium">Sem leitura</p><p className="font-display font-bold text-xl">{bancadas.length - comLeitura.length}</p></CardContent></Card>
+      </div>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2"><Droplet className="w-4 h-4 text-sky-600" /> EC / pH por bancada</CardTitle>
+          <CardDescription>Última leitura registrada de cada bancada, comparada à faixa ideal da fase.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0 overflow-x-auto">
+          {bancadas.length === 0 ? (
+            <p className="p-8 text-center text-sm text-muted-foreground">Nenhuma bancada ativa.</p>
+          ) : (
+            <table className="min-w-[640px] w-full text-sm">
+              <thead className="bg-muted/30 text-xs">
+                <tr>
+                  <th className="text-left p-2">Bancada</th>
+                  <th className="text-left p-2">Fase</th>
+                  <th className="text-right p-2">EC</th>
+                  <th className="text-right p-2">pH</th>
+                  <th className="text-right p-2">Temp. água</th>
+                  <th className="text-left p-2">Última leitura</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60">
+                {linhas.map(({ bancada, cfg, med, ecOk, phOk }) => (
+                  <tr key={bancada.id} className="hover:bg-muted/10">
+                    <td className="p-2 font-medium">{bancada.nome}</td>
+                    <td className="p-2 text-muted-foreground">{cfg.label}</td>
+                    <td className={`p-2 text-right tabular-nums font-semibold ${med?.ec == null ? 'text-muted-foreground' : ecOk ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                      {med?.ec != null ? med.ec.toFixed(2) : '—'}
+                      <span className="block text-[9px] font-normal text-muted-foreground">{cfg.ecMin}-{cfg.ecMax}</span>
+                    </td>
+                    <td className={`p-2 text-right tabular-nums font-semibold ${med?.ph == null ? 'text-muted-foreground' : phOk ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                      {med?.ph != null ? med.ph.toFixed(1) : '—'}
+                      <span className="block text-[9px] font-normal text-muted-foreground">{cfg.phMin}-{cfg.phMax}</span>
+                    </td>
+                    <td className="p-2 text-right tabular-nums">{med?.temp != null ? `${med.temp.toFixed(1)}°` : '—'}</td>
+                    <td className="p-2 text-xs text-muted-foreground">{med ? formatDateFull(new Date(med.createdAt)) : 'Sem leitura'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter }) {
   const [selectedCaixa, setSelectedCaixa] = useState<string>('all');

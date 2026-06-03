@@ -1609,6 +1609,22 @@ export async function getMedicoesByBancadaId(projetoId: number, bancadaId: numbe
     .orderBy(desc(medicoesBancada.createdAt));
 }
 
+/** Última medição (EC/pH/temperatura) de cada bancada do projeto — usado no SCADA de hidroponia. */
+export async function getUltimasMedicoesPorProjeto(projetoId: number) {
+  const dbConn = await getDb();
+  if (!dbConn) return [];
+  const rows = await dbConn
+    .select()
+    .from(medicoesBancada)
+    .where(eq(medicoesBancada.projetoId, projetoId))
+    .orderBy(desc(medicoesBancada.createdAt));
+  const ultimaPorBancada = new Map<number, (typeof rows)[number]>();
+  for (const r of rows) {
+    if (!ultimaPorBancada.has(r.bancadaId)) ultimaPorBancada.set(r.bancadaId, r);
+  }
+  return Array.from(ultimaPorBancada.values());
+}
+
 export async function createMedicaoBancada(
   data: Pick<InsertMedicaoBancada, "projetoId" | "bancadaId"> & {
     ec: number;
