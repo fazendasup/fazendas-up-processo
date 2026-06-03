@@ -11,6 +11,7 @@ import * as db from "./db";
 export async function applyRuntimeSchemaEnsures(): Promise<void> {
   await db.ensureUsersRoleVarchar();
   await db.ensureUsersCriadoPorColumn();
+  await db.ensureProjetosCriadoPorColumn();
   await db.ensureCiclosDosagemColumn();
   await db.ensurePlanosPlantioGerminacaoColumns();
   await db.ensureTransplantiosRastreioColumns();

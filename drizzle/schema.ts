@@ -45,6 +45,8 @@ export const projetos = mysqlTable("projetos", {
   descricao: text("descricao"),
   endereco: varchar("endereco", { length: 500 }),
   responsavelId: int("responsavelId"),
+  /** Dono do projeto: admin operacional só gere os projetos que ele mesmo criou (platform_admin gere todos). Nulo = legado/equipe. */
+  criadoPorId: int("criadoPorId"),
   /** Em `microverdes`: permite usar o módulo de caixas d'água (rega automática futura). FV/hidroponia: normalmente true. */
   usarCaixaAgua: boolean("usarCaixaAgua").notNull().default(true),
   status: mysqlEnum("status", ["ativo", "inativo", "planejamento"]).default("ativo").notNull(),

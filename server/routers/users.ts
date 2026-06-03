@@ -20,7 +20,8 @@ async function projetosGerenciaveis(ctxUser: { id: number; role: string }) {
   if (isPlatformCommercialRole(ctxUser.role)) {
     return db.listProjetosForPlatform({ includeInactive: true });
   }
-  return db.listProjetosForUser(ctxUser.id, { includeInactive: true });
+  // Admin operacional só pode vincular/gerir usuários nos projetos que ELE criou (dono).
+  return db.listProjetosOwnedBy(ctxUser.id, { includeInactive: true });
 }
 
 async function assertPodeGerenciarUsuario(ctxUser: { id: number; role: string }, targetUserId: number) {

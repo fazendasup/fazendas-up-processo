@@ -299,6 +299,34 @@ export async function listProjetosForPlatform(opts?: ListProjetosForUserOpts) {
   return whereClause ? q.where(whereClause) : q;
 }
 
+/** Projetos cujo dono (criadoPorId) é o usuário. Base do escopo de gestão do admin operacional. */
+export async function listProjetosOwnedBy(userId: number, opts?: ListProjetosForUserOpts) {
+  const dbConn = await getDb();
+  if (!dbConn) return [];
+  await ensureProjetosTables();
+  await ensureProjetosCriadoPorColumn();
+  const dono = eq(projetos.criadoPorId, userId);
+  const whereClause =
+    opts?.includeInactive === true ? dono : and(dono, eq(projetos.status, "ativo"));
+  return dbConn
+    .select({ projeto: projetos, role: sql<"admin">`'admin'` })
+    .from(projetos)
+    .where(whereClause);
+}
+
+/** True se o usuário é o dono (criador) do projeto. */
+export async function isProjetoOwner(userId: number, projetoId: number): Promise<boolean> {
+  const dbConn = await getDb();
+  if (!dbConn) return false;
+  await ensureProjetosCriadoPorColumn();
+  const rows = await dbConn
+    .select({ id: projetos.id })
+    .from(projetos)
+    .where(and(eq(projetos.id, projetoId), eq(projetos.criadoPorId, userId)))
+    .limit(1);
+  return rows.length > 0;
+}
+
 /** Id do projeto cujo nome corresponde (case-insensitive). Usado para resolver o projeto-dono do comercial. */
 export async function getProjetoIdByNome(nome: string): Promise<number | null> {
   const dbConn = await getDb();
@@ -863,6 +891,7 @@ export async function createProjeto(data: InsertProjeto, creatorUserId: number, 
   if (!dbConn) throw new Error("Database not available");
   await ensureProjetosTables();
   const usarCaixaAgua = data.tipo === "microverdes" ? Boolean(data.usarCaixaAgua ?? false) : true;
+  await ensureProjetosCriadoPorColumn();
   const payload: InsertProjeto = {
     nome: data.nome,
     tipo: data.tipo,
@@ -870,6 +899,8 @@ export async function createProjeto(data: InsertProjeto, creatorUserId: number, 
     descricao: data.descricao ?? null,
     endereco: data.endereco ?? null,
     responsavelId: data.responsavelId ?? null,
+    // Dono = quem criou (admin operacional gere só os seus; platform_admin gere todos via bypass).
+    criadoPorId: creatorUserId,
     usarCaixaAgua,
   };
   const [ins] = await dbConn.insert(projetos).values(payload);
@@ -3319,11 +3350,27 @@ export async function ensureTransplantiosRastreioColumns(): Promise<void> {
   }
 }
 
+/** Dono do projeto: admin operacional só gere os projetos que criou. */
+export async function ensureProjetosCriadoPorColumn(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    if (await columnExists(db, "projetos", "criadoPorId")) return;
+    await db.execute(sql.raw("ALTER TABLE `projetos` ADD COLUMN `criadoPorId` int NULL"));
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (isMysqlDuplicateColumnError(err)) return;
+    if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
+    console.error("[Database] ensureProjetosCriadoPorColumn:", err);
+  }
+}
+
 /** Rastreio de autoria: admin operacional só vê/gere usuários que criou. */
 export async function ensureUsersCriadoPorColumn(): Promise<void> {
   const db = await getDb();
   if (!db) return;
   try {
+    if (await columnExists(db, "users", "criadoPorId")) return;
     await db.execute(sql.raw("ALTER TABLE `users` ADD COLUMN `criadoPorId` int NULL"));
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

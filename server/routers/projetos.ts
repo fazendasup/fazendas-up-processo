@@ -20,10 +20,15 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "../db";
 
+/**
+ * Gestão de projeto (editar, usuários, mover dados): platform_admin gere todos;
+ * admin operacional gere SOMENTE os projetos que ele mesmo criou (dono). Ser apenas
+ * membro não dá poder de gestão — evita acesso administrativo cruzado entre projetos.
+ */
 async function assertPodeGerenciarProjeto(user: { id: number; role: string }, projetoId: number) {
   if (isPlatformCommercialRole(user.role)) return;
-  const row = await db.getProjetoMembership(user.id, projetoId);
-  if (!row) {
+  const owner = await db.isProjetoOwner(user.id, projetoId);
+  if (!owner) {
     throw new TRPCError({ code: "FORBIDDEN", message: PROJETO_FORBIDDEN_ERR_MSG });
   }
 }
@@ -44,6 +49,17 @@ export const projetosRouter = router({
       return db.listProjetosForPlatform({ includeInactive: true });
     }
     return db.listProjetosForUser(ctx.user.id, { includeInactive });
+  }),
+
+  /**
+   * Projetos que o usuário pode GERIR (criar/atribuir usuários): platform_admin → todos;
+   * admin operacional → apenas os que ele criou (dono). Usado no formulário de novo usuário.
+   */
+  gerenciaveis: adminProcedure.query(async ({ ctx }) => {
+    if (isPlatformCommercialRole(ctx.user.role)) {
+      return db.listProjetosForPlatform({ includeInactive: true });
+    }
+    return db.listProjetosOwnedBy(ctx.user.id, { includeInactive: true });
   }),
 
   /** Contagens opcionais (ex.: página Projetos). Falhas por tabela são ignoradas (zeros). */
@@ -156,7 +172,8 @@ export const projetosRouter = router({
         usarCaixaAgua: z.boolean().optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await assertPodeGerenciarProjeto(ctx.user, input.id);
       const { id, ...rest } = input;
       await db.updateProjeto(id, rest);
       return { success: true };
@@ -164,14 +181,16 @@ export const projetosRouter = router({
 
   deactivate: adminProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await assertPodeGerenciarProjeto(ctx.user, input.id);
       await db.deactivateProjeto(input.id);
       return { success: true };
     }),
 
   reactivate: adminProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await assertPodeGerenciarProjeto(ctx.user, input.id);
       await db.reactivateProjeto(input.id);
       return { success: true };
     }),

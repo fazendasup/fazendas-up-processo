@@ -56,7 +56,7 @@ export default function UsersPage() {
 function UsersContent() {
   const { isPlatformAdmin } = useRole();
   const { data: users, isLoading, refetch } = trpc.users.list.useQuery();
-  const { data: projetosRows } = trpc.projetos.list.useQuery();
+  const { data: projetosRows } = trpc.projetos.gerenciaveis.useQuery();
   const updateRole = trpc.users.updateRole.useMutation({
     onSuccess: () => { refetch(); toast.success('Permissão atualizada!'); },
     onError: (err) => { toast.error(`Erro: ${err.message}`); },
