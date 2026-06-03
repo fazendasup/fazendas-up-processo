@@ -277,7 +277,8 @@ export function transformFazendaLoadAllResponse(raw: unknown): FazendaData {
 
   const manutencoes: Manutencao[] = ((r.manutencoes as any[]) || []).map((m: any) => ({
     id: `m-${m.id}`,
-    torreId: torreSlugMap.get(m.torreId) || "",
+    torreId: m.torreId != null ? (torreSlugMap.get(m.torreId) || "") : "",
+    bancadaId: m.bancadaId ?? undefined,
     andarNumero: m.andarNumero || undefined,
     tipo: m.tipo as Manutencao["tipo"],
     descricao: m.descricao,

@@ -8,15 +8,21 @@ export const manutencoesRouter = router({
   }),
   create: projectProcedure
     .input(
-      z.object({
-        torreId: z.number(),
-        andarNumero: z.number().optional(),
-        tipo: z.string(),
-        descricao: z.string(),
-        dataAbertura: z.date(),
-        prazo: z.date().optional(),
-        lampadaIndex: z.number().optional(),
-      }),
+      z
+        .object({
+          torreId: z.number().optional(),
+          bancadaId: z.number().optional(),
+          andarNumero: z.number().optional(),
+          tipo: z.string(),
+          descricao: z.string(),
+          dataAbertura: z.date(),
+          prazo: z.date().optional(),
+          lampadaIndex: z.number().optional(),
+        })
+        .refine((v) => v.torreId != null || v.bancadaId != null, {
+          message: "Informe a torre ou a bancada da manutenção",
+          path: ["torreId"],
+        }),
     )
     .mutation(async ({ input, ctx }) => {
       return db.createManutencao({

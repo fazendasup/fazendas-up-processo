@@ -1,14 +1,16 @@
 // ============================================================
 // ManutencaoPage — Migrado para tRPC mutations
+// Suporta fazenda vertical/microverdes (por torre) e hidroponia (por bancada).
 // ============================================================
 
 import Header from '@/components/Header';
 import { useFazenda } from '@/contexts/FazendaContext';
-import type { Manutencao, ManutencaoStatus } from '@/lib/types';
-import { MANUTENCAO_TIPOS } from '@/lib/types';
-import { formatarData, formatarDataHora } from '@/lib/utils-farm';
+import type { Manutencao } from '@/lib/types';
+import { MANUTENCAO_TIPOS, MANUTENCAO_TIPOS_HIDROPONIA, labelTipoManutencao } from '@/lib/types';
+import { formatarData } from '@/lib/utils-farm';
 import { useFazendaMutations } from '@/hooks/useFazendaMutations';
 import { useDbIdResolver } from '@/hooks/useDbIdResolver';
+import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,9 +22,9 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from '@/components/ui/dialog';
 import {
-  Wrench, Plus, Trash2, CheckCircle2, AlertTriangle, Clock, Play,
+  Wrench, Plus, Trash2, CheckCircle2, AlertTriangle, Play,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
@@ -32,38 +34,81 @@ export default function ManutencaoPage() {
   const resolver = useDbIdResolver();
   const [showForm, setShowForm] = useState(false);
   const [torreId, setTorreId] = useState<string>('');
+  const [bancadaId, setBancadaId] = useState<string>('');
   const [tipo, setTipo] = useState<string>('');
   const [showConcluir, setShowConcluir] = useState<string | null>(null);
+
+  const isHidroponia = data.projetoTipo === 'hidroponia';
+  const tiposDisponiveis = isHidroponia ? MANUTENCAO_TIPOS_HIDROPONIA : MANUTENCAO_TIPOS;
+
+  const bancadasQuery = trpc.bancadas.list.useQuery(undefined, {
+    enabled: isHidroponia,
+    staleTime: 30_000,
+  });
+  const bancadas = bancadasQuery.data ?? [];
+  const bancadaNomeById = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const b of bancadas) map.set(b.id, b.nome);
+    return map;
+  }, [bancadas]);
+
+  const nomeUnidade = (m: Manutencao): string => {
+    if (m.bancadaId != null) return bancadaNomeById.get(m.bancadaId) ?? 'Bancada';
+    return data.torres.find((t) => t.id === m.torreId)?.nome ?? '-';
+  };
+
+  const resetForm = () => {
+    setTorreId('');
+    setBancadaId('');
+    setTipo('');
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const descricao = fd.get('descricao') as string;
-    const andarNumero = parseInt(fd.get('andarNumero') as string) || undefined;
     const prazo = fd.get('prazo') as string;
-    const lampadaIndex = parseInt(fd.get('lampadaIndex') as string);
 
-    if (!torreId || !tipo || !descricao) {
+    if (!tipo || !descricao) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
 
-    const torreDbId = resolver.torreSlugToId.get(torreId);
-    if (!torreDbId) { toast.error('Torre não encontrada'); return; }
-
-    mutations.createManutencao.mutate({
-      torreId: torreDbId,
-      andarNumero: andarNumero || undefined,
+    const base = {
       tipo,
       descricao,
       dataAbertura: new Date(),
       prazo: prazo ? new Date(prazo) : undefined,
-      lampadaIndex: tipo === 'lampada_queimada' && !isNaN(lampadaIndex) ? lampadaIndex : undefined,
-    });
+    };
+
+    if (isHidroponia) {
+      if (!bancadaId) {
+        toast.error('Selecione a bancada');
+        return;
+      }
+      mutations.createManutencao.mutate({
+        ...base,
+        bancadaId: Number(bancadaId),
+      });
+    } else {
+      const andarNumero = parseInt(fd.get('andarNumero') as string) || undefined;
+      const lampadaIndex = parseInt(fd.get('lampadaIndex') as string);
+      if (!torreId) {
+        toast.error('Selecione a torre');
+        return;
+      }
+      const torreDbId = resolver.torreSlugToId.get(torreId);
+      if (!torreDbId) { toast.error('Torre não encontrada'); return; }
+      mutations.createManutencao.mutate({
+        ...base,
+        torreId: torreDbId,
+        andarNumero: andarNumero || undefined,
+        lampadaIndex: tipo === 'lampada_queimada' && !isNaN(lampadaIndex) ? lampadaIndex : undefined,
+      });
+    }
 
     setShowForm(false);
-    setTorreId('');
-    setTipo('');
+    resetForm();
     toast.success('Manutenção registrada!');
   };
 
@@ -115,10 +160,12 @@ export default function ManutencaoPage() {
               Manutenção
             </h1>
             <p className="text-sm text-muted-foreground">
-              Registro e acompanhamento de manutenções por torre e andar
+              {isHidroponia
+                ? 'Registro e acompanhamento de manutenções por bancada'
+                : 'Registro e acompanhamento de manutenções por torre e andar'}
             </p>
           </div>
-          <Dialog open={showForm} onOpenChange={setShowForm}>
+          <Dialog open={showForm} onOpenChange={(open) => { setShowForm(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
               <Button size="sm" className="gap-1.5">
                 <Plus className="w-4 h-4" />
@@ -130,24 +177,47 @@ export default function ManutencaoPage() {
                 <DialogTitle className="font-display">Registrar Manutenção</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label className="text-xs">Torre *</Label>
-                  <Select value={torreId} onValueChange={setTorreId}>
-                    <SelectTrigger className="h-9 text-sm">
-                      <SelectValue placeholder="Selecione a torre..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {data.torres.map((t) => (
-                        <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
+                {isHidroponia ? (
                   <div>
-                    <Label className="text-xs">Andar (opcional)</Label>
-                    <Input name="andarNumero" type="number" min="1" max="12" placeholder="Ex: 5" className="h-9 text-sm" />
+                    <Label className="text-xs">Bancada *</Label>
+                    <Select value={bancadaId} onValueChange={setBancadaId}>
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue placeholder="Selecione a bancada..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {bancadas.map((b) => (
+                          <SelectItem key={b.id} value={String(b.id)}>{b.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {bancadas.length === 0 && (
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        Nenhuma bancada cadastrada. Crie bancadas em Configurações.
+                      </p>
+                    )}
                   </div>
+                ) : (
+                  <div>
+                    <Label className="text-xs">Torre *</Label>
+                    <Select value={torreId} onValueChange={setTorreId}>
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue placeholder="Selecione a torre..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {data.torres.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className={isHidroponia ? '' : 'grid grid-cols-2 gap-3'}>
+                  {!isHidroponia && (
+                    <div>
+                      <Label className="text-xs">Andar (opcional)</Label>
+                      <Input name="andarNumero" type="number" min="1" max="12" placeholder="Ex: 5" className="h-9 text-sm" />
+                    </div>
+                  )}
                   <div>
                     <Label className="text-xs">Tipo *</Label>
                     <Select value={tipo} onValueChange={setTipo}>
@@ -155,14 +225,14 @@ export default function ManutencaoPage() {
                         <SelectValue placeholder="Tipo..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {MANUTENCAO_TIPOS.map((t) => (
+                        {tiposDisponiveis.map((t) => (
                           <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
-                {tipo === 'lampada_queimada' && (
+                {!isHidroponia && tipo === 'lampada_queimada' && (
                   <div>
                     <Label className="text-xs">Lâmpada (1-5)</Label>
                     <Input name="lampadaIndex" type="number" min="1" max="5" placeholder="Ex: 3" className="h-9 text-sm" />
@@ -201,7 +271,7 @@ export default function ManutencaoPage() {
               <ManutencaoCard
                 key={m.id}
                 m={m}
-                torres={data.torres}
+                unidade={nomeUnidade(m)}
                 onIniciar={handleIniciar}
                 onConcluir={(id) => setShowConcluir(id)}
                 onDelete={handleDelete}
@@ -217,7 +287,7 @@ export default function ManutencaoPage() {
               <ManutencaoCard
                 key={m.id}
                 m={m}
-                torres={data.torres}
+                unidade={nomeUnidade(m)}
                 onConcluir={(id) => setShowConcluir(id)}
                 onDelete={handleDelete}
               />
@@ -234,7 +304,7 @@ export default function ManutencaoPage() {
             </div>
           ) : (
             concluidas.slice(0, 20).map((m) => (
-              <ManutencaoCard key={m.id} m={m} torres={data.torres} onDelete={handleDelete} />
+              <ManutencaoCard key={m.id} m={m} unidade={nomeUnidade(m)} onDelete={handleDelete} />
             ))
           )}
         </Section>
@@ -285,19 +355,18 @@ function Section({ title, count, icon, children }: { title: string; count: numbe
 
 function ManutencaoCard({
   m,
-  torres,
+  unidade,
   onIniciar,
   onConcluir,
   onDelete,
 }: {
   m: Manutencao;
-  torres: { id: string; nome: string }[];
+  unidade: string;
   onIniciar?: (id: string) => void;
   onConcluir?: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
-  const torre = torres.find((t) => t.id === m.torreId);
-  const tipoLabel = MANUTENCAO_TIPOS.find((t) => t.value === m.tipo)?.label || m.tipo;
+  const tipoLabel = labelTipoManutencao(m.tipo);
   const hoje = new Date();
   const vencida = m.status !== 'concluida' && m.prazo && new Date(m.prazo) < hoje;
 
@@ -318,7 +387,7 @@ function ManutencaoCard({
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="text-xs font-semibold">{torre?.nome || '-'}</span>
+            <span className="text-xs font-semibold">{unidade || '-'}</span>
             {m.andarNumero && <span className="text-[10px] text-muted-foreground">Andar {m.andarNumero}</span>}
             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
               {tipoLabel}

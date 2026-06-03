@@ -461,7 +461,10 @@ export type InsertTransplantio = typeof transplantios.$inferInsert;
 export const manutencoes = mysqlTable("manutencoes", {
   id: int("id").autoincrement().primaryKey(),
   projetoId: int("projetoId").notNull(),
-  torreId: int("torreId").notNull(),
+  /** Fazenda vertical / microverdes: manutenção é por torre. Em hidroponia fica nulo (usa `bancadaId`). */
+  torreId: int("torreId"),
+  /** Hidroponia de bancada: manutenção é por bancada. Em FV/microverdes fica nulo (usa `torreId`). */
+  bancadaId: int("bancadaId"),
   andarNumero: int("andarNumero"),
   tipo: varchar("tipo", { length: 32 }).notNull(),
   descricao: text("descricao").notNull(),

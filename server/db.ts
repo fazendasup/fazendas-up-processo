@@ -3042,6 +3042,7 @@ export async function getAllManutencoes(projetoId: number) {
 export async function createManutencao(data: InsertManutencao) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  await ensureManutencoesBancadaColumns();
   const result = await db.insert(manutencoes).values(data);
   return { id: result[0].insertId };
 }
@@ -3273,6 +3274,28 @@ export async function ensureTransplantiosRastreioColumns(): Promise<void> {
       // Se tabela não existe ainda, apenas deixe falhar em silêncio (setup inicial/migrações cuidam disso).
       if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
       console.error("[Database] ensureTransplantiosRastreioColumns:", err);
+    }
+  }
+}
+
+/** Suporte a manutenção de hidroponia: torre passa a opcional e adiciona `bancadaId`. */
+export async function ensureManutencoesBancadaColumns(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  const statements = [
+    "ALTER TABLE `manutencoes` ADD COLUMN `bancadaId` int NULL",
+    "ALTER TABLE `manutencoes` MODIFY COLUMN `torreId` int NULL",
+  ];
+
+  for (const stmt of statements) {
+    try {
+      await db.execute(sql.raw(stmt));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (isMysqlDuplicateColumnError(err)) continue;
+      if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
+      console.error("[Database] ensureManutencoesBancadaColumns:", err);
     }
   }
 }

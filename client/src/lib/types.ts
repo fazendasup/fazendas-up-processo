@@ -160,12 +160,15 @@ export interface RegistroTransplantio {
 }
 
 // ---- Manutenção ----
-export type ManutencaoTipo = 'vazamento_injetor' | 'vazamento_coletor' | 'lampada_queimada' | 'outro';
+export type ManutencaoTipo = string;
 export type ManutencaoStatus = 'aberta' | 'em_andamento' | 'concluida';
 
 export interface Manutencao {
   id: string;
+  /** Slug da torre (fazenda vertical / microverdes). Vazio quando a manutenção é de bancada. */
   torreId: string;
+  /** Id numérico da bancada (hidroponia de bancada). Indefinido quando a manutenção é de torre. */
+  bancadaId?: number;
   andarNumero?: number;
   tipo: ManutencaoTipo;
   descricao: string;
@@ -179,12 +182,33 @@ export interface Manutencao {
   concluidoPorNome?: string;
 }
 
+/** Tipos de manutenção de fazenda vertical / microverdes (estrutura de torres e iluminação). */
 export const MANUTENCAO_TIPOS = [
   { value: 'vazamento_injetor', label: 'Vazamento Tubo Injetor' },
   { value: 'vazamento_coletor', label: 'Vazamento Tubo Coletor' },
   { value: 'lampada_queimada', label: 'Lâmpada Queimada' },
   { value: 'outro', label: 'Outro' },
 ] as const;
+
+/** Tipos de manutenção de hidroponia de bancada (bombas, solução nutritiva, sensores etc.). */
+export const MANUTENCAO_TIPOS_HIDROPONIA = [
+  { value: 'bomba', label: 'Bomba / recalque' },
+  { value: 'vazamento', label: 'Vazamento / encanamento' },
+  { value: 'sensor_ecph', label: 'Sensor de EC/pH' },
+  { value: 'aeracao', label: 'Aeração / oxigenação' },
+  { value: 'reservatorio', label: "Reservatório / caixa d'água" },
+  { value: 'eletrica', label: 'Elétrica / energia' },
+  { value: 'limpeza', label: 'Limpeza / higienização' },
+  { value: 'solucao_nutritiva', label: 'Solução nutritiva' },
+  { value: 'estrutura_bancada', label: 'Estrutura da bancada' },
+  { value: 'outro', label: 'Outro' },
+] as const;
+
+/** Resolve o rótulo de um tipo de manutenção em qualquer um dos catálogos (torre ou bancada). */
+export function labelTipoManutencao(tipo: string): string {
+  const todos = [...MANUTENCAO_TIPOS, ...MANUTENCAO_TIPOS_HIDROPONIA];
+  return todos.find((t) => t.value === tipo)?.label || tipo;
+}
 
 // ---- Torres ----
 export interface Torre {
