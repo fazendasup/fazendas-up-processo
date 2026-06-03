@@ -25,6 +25,7 @@ import type { PerfilUsuario } from "../comercial/generated/prisma";
 import { getComercialEnv } from "../comercial/env";
 import { getComercialPrisma } from "../comercial/db";
 import { resolveComercialUsuario } from "../comercial/resolve-usuario";
+import { getComercialOwnerProjetoId } from "../comercial/owner-projeto";
 import type { TrpcContext } from "./context";
 import type { ProjetoTipo } from "./context";
 
@@ -276,6 +277,18 @@ const requireComercialModule = t.middleware(async ({ ctx, next, path }) => {
   }
   if (!isCommercialAccessRole(ctx.user.role)) {
     throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
+  }
+  // Isolamento (Fase 1): o módulo comercial é single-tenant — só o projeto-dono pode acessá-lo,
+  // para que os dados (Conta Azul, vendas, pedidos) não vazem para outros projetos.
+  const ownerProjetoId = await getComercialOwnerProjetoId();
+  const activeProjetoId = (ctx as { projetoId?: number | null }).projetoId ?? null;
+  if (ownerProjetoId == null || activeProjetoId !== ownerProjetoId) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message:
+        "O módulo comercial está disponível apenas no projeto comercial principal. " +
+        "Configure COMERCIAL_PROJETO_ID se necessário.",
+    });
   }
   const comercialUsuario = await resolveComercialUsuario(ctx.user);
   if (!comercialUsuario) {

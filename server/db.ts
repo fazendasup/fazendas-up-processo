@@ -299,6 +299,16 @@ export async function listProjetosForPlatform(opts?: ListProjetosForUserOpts) {
   return whereClause ? q.where(whereClause) : q;
 }
 
+/** Id do projeto cujo nome corresponde (case-insensitive). Usado para resolver o projeto-dono do comercial. */
+export async function getProjetoIdByNome(nome: string): Promise<number | null> {
+  const dbConn = await getDb();
+  if (!dbConn) return null;
+  const alvo = nome.trim().toLowerCase();
+  const rows = await dbConn.select({ id: projetos.id, nome: projetos.nome }).from(projetos);
+  const match = rows.find((r) => (r.nome ?? "").trim().toLowerCase() === alvo);
+  return match ? match.id : null;
+}
+
 /** Contagens por projeto para diagnosticar dados “presos” noutro ID (multi-projeto). */
 export type OperationalCounts = {
   torres: number;
