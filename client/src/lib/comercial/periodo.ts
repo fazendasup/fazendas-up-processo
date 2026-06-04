@@ -1,6 +1,7 @@
 export type PeriodoPreset =
   | "semana_atual"
   | "mes_atual"
+  | "ano_atual"
   | "todo_periodo"
   | "ultimos_12_meses"
   | "personalizado";
@@ -63,12 +64,19 @@ export function intervaloDoPreset(
     return { inicio: inicioSemanaAtualSp(agora), fim };
   }
 
+  if (preset === "ano_atual") {
+    const hoje = diaIsoAmericaSp(agora);
+    const [ano] = hoje.split("-").map(Number);
+    return { inicio: inicioDiaAmericaSp(`${ano}-01-01`), fim };
+  }
+
   return { inicio: inicioMesAmericaSp(agora), fim };
 }
 
 export function labelPreset(p: PeriodoPreset, custom?: { inicio: string; fim: string }): string {
   if (p === "semana_atual") return "Esta semana";
   if (p === "mes_atual") return "Este mês";
+  if (p === "ano_atual") return "Este ano";
   if (p === "todo_periodo") return "Todo o período";
   if (p === "ultimos_12_meses") return "Últimos 12 meses";
   if (p === "personalizado" && custom?.inicio && custom?.fim) {

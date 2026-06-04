@@ -5,6 +5,7 @@ import { hojeIsoLocal, labelPreset, type PeriodoPreset } from "@/lib/comercial/p
 const PRESETS: { id: PeriodoPreset; label: string }[] = [
   { id: "semana_atual", label: "Esta semana" },
   { id: "mes_atual", label: "Este mês" },
+  { id: "ano_atual", label: "Este ano" },
   { id: "todo_periodo", label: "Todo o período" },
   { id: "ultimos_12_meses", label: "Últimos 12 meses" },
   { id: "personalizado", label: "Personalizado" },
