@@ -42,6 +42,9 @@ export function canAccessCommercialPath(path: string, perfil: string | null | un
       "/comercial/acompanhamento-avarias",
       "/comercial/varejo",
       "/custos-producao",
+      "/receitas",
+      "/cadastros",
+      "/ciclos",
     ];
     return path === "/comercial" || allowed.some((allowedPath) => path === allowedPath || path.startsWith(`${allowedPath}/`));
   }

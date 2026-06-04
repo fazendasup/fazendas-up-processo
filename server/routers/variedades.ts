@@ -1,4 +1,4 @@
-import { projetoIdFromCtx, adminProjectProcedure, projectProcedure, router } from "../_core/trpc";
+import { projetoIdFromCtx, commercialEditorProjectProcedure, projectProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 import * as db from "../db";
 
@@ -71,7 +71,7 @@ export const variedadesRouter = router({
 
       return eventos;
     }),
-  create: adminProjectProcedure
+  create: commercialEditorProjectProcedure
     .input(
       z.object({
         slug: z.string().optional(),
@@ -97,7 +97,7 @@ export const variedadesRouter = router({
         babyLeaf: input.babyLeaf ?? false,
       });
     }),
-  update: adminProjectProcedure
+  update: commercialEditorProjectProcedure
     .input(
       z.object({
         id: z.number(),
@@ -114,7 +114,7 @@ export const variedadesRouter = router({
       await db.updateVariedade(projetoIdFromCtx(ctx), id, data);
       return { success: true };
     }),
-  delete: adminProjectProcedure
+  delete: commercialEditorProjectProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       await db.deleteVariedade(projetoIdFromCtx(ctx), input.id);

@@ -18,7 +18,7 @@ import {
   DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Users, ShieldCheck, User, Loader2, Clock, Plus, KeyRound, Trash2, AlertCircle, Layers, Briefcase, Eye,
+  Users, ShieldCheck, User, Loader2, Clock, Plus, KeyRound, Trash2, AlertCircle, Layers, Briefcase, Eye, Link2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -26,6 +26,15 @@ import { useRole } from '@/hooks/useRole';
 
 type GlobalAppRole = 'user' | 'admin' | 'platform_admin' | 'comercial' | 'visitante';
 type RoleOption = GlobalAppRole | 'promoter';
+type ProjetoRole = 'admin' | 'operador' | 'visualizador';
+type UserProjectAccess = { id: number; nome: string; role: string };
+type ManageableProject = {
+  id: number;
+  nome: string;
+  tipo: string;
+  status: string;
+  criadoPorId?: number | null;
+};
 
 function appRoleFromOption(role: RoleOption): GlobalAppRole {
   return role === 'promoter' ? 'comercial' : role;
@@ -45,6 +54,18 @@ function roleOptionForUser(user: { role: string; comercialPerfil?: string | null
   return 'user';
 }
 
+function projetoRoleForUser(role: string): ProjetoRole {
+  if (role === 'admin' || role === 'platform_admin') return 'admin';
+  if (role === 'comercial' || role === 'visitante') return 'visualizador';
+  return 'operador';
+}
+
+function labelProjetoRole(role: string): string {
+  if (role === 'admin') return 'Admin';
+  if (role === 'visualizador') return 'Visualizador';
+  return 'Operador';
+}
+
 export default function UsersPage() {
   return (
     <ProtectedRoute requiredRole="admin">
@@ -55,6 +76,7 @@ export default function UsersPage() {
 
 function UsersContent() {
   const { isPlatformAdmin } = useRole();
+  const utils = trpc.useUtils();
   const { data: users, isLoading, refetch } = trpc.users.list.useQuery();
   const { data: projetosRows } = trpc.projetos.gerenciaveis.useQuery();
   const updateRole = trpc.users.updateRole.useMutation({
@@ -73,6 +95,30 @@ function UsersContent() {
     onSuccess: () => { refetch(); toast.success('Usuário excluído!'); },
     onError: (err) => { toast.error(`Erro: ${err.message}`); },
   });
+  const addProjetoUser = trpc.projetos.addUser.useMutation({
+    onSuccess: () => {
+      refetch();
+      utils.projetos.gerenciaveis.invalidate();
+      toast.success('Projeto vinculado ao usuário!');
+    },
+    onError: (err) => { toast.error(`Erro: ${err.message}`); },
+  });
+  const removeProjetoUser = trpc.projetos.removeUser.useMutation({
+    onSuccess: () => {
+      refetch();
+      utils.projetos.gerenciaveis.invalidate();
+      toast.success('Vínculo removido!');
+    },
+    onError: (err) => { toast.error(`Erro: ${err.message}`); },
+  });
+  const setProjectOwner = trpc.projetos.setOwner.useMutation({
+    onSuccess: () => {
+      refetch();
+      utils.projetos.gerenciaveis.invalidate();
+      toast.success('Dono do projeto atualizado!');
+    },
+    onError: (err) => { toast.error(`Erro: ${err.message}`); },
+  });
 
   // Estado do formulário de novo usuário
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -82,10 +128,19 @@ function UsersContent() {
   const [newRole, setNewRole] = useState<RoleOption>('user');
   const [newProjetoIds, setNewProjetoIds] = useState<number[]>([]);
   const [createError, setCreateError] = useState('');
+  const [selectedProjetoByUser, setSelectedProjetoByUser] = useState<Record<number, string>>({});
 
-  const projetosDisponiveis = useMemo(
-    () => (projetosRows ?? []).map((row) => row.projeto).filter((p) => p.status === 'ativo'),
+  const projetosGerenciaveis = useMemo(
+    () => (projetosRows ?? []).map((row) => row.projeto as ManageableProject),
     [projetosRows],
+  );
+  const projetosDisponiveis = useMemo(
+    () => projetosGerenciaveis.filter((p) => p.status === 'ativo'),
+    [projetosGerenciaveis],
+  );
+  const adminUsers = useMemo(
+    () => (users ?? []).filter((u) => u.role === 'admin'),
+    [users],
   );
 
   // Estado do dialog de reset de senha
@@ -164,6 +219,37 @@ function UsersContent() {
     deleteUser.mutate({ id: userId });
   };
 
+  const handleAddProjetoToUser = (user: { id: number; name: string | null; role: string }) => {
+    const rawProjetoId = selectedProjetoByUser[user.id];
+    const projetoId = Number(rawProjetoId);
+    if (!Number.isInteger(projetoId) || projetoId <= 0) {
+      toast.error('Selecione um projeto para vincular.');
+      return;
+    }
+    addProjetoUser.mutate(
+      { projetoId, userId: user.id, role: projetoRoleForUser(user.role) },
+      { onSuccess: () => setSelectedProjetoByUser((prev) => ({ ...prev, [user.id]: '' })) },
+    );
+  };
+
+  const handleRemoveProjetoFromUser = (
+    user: { id: number; name: string | null },
+    projeto: UserProjectAccess,
+  ) => {
+    const nome = user.name || 'Sem nome';
+    if (!window.confirm(`Remover ${nome} do projeto "${projeto.nome}"?`)) return;
+    removeProjetoUser.mutate({ projetoId: projeto.id, userId: user.id });
+  };
+
+  const handleOwnerChange = (projeto: ManageableProject, value: string) => {
+    const ownerUserId = value === 'none' ? null : Number(value);
+    const msg = ownerUserId == null
+      ? `Deixar "${projeto.nome}" sem dono operacional? Apenas a equipe da plataforma poderá gerir este projeto.`
+      : `Definir o dono operacional de "${projeto.nome}"? O usuário será vinculado ao projeto como admin.`;
+    if (!window.confirm(msg)) return;
+    setProjectOwner.mutate({ projetoId: projeto.id, ownerUserId });
+  };
+
   const formatDate = (d: Date | string | null) => {
     if (!d) return '-';
     const date = d instanceof Date ? d : new Date(d);
@@ -183,7 +269,7 @@ function UsersContent() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="container py-6 max-w-4xl">
+      <main className="container py-6 max-w-6xl">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="font-display text-2xl font-bold flex items-center gap-2">
@@ -366,6 +452,62 @@ function UsersContent() {
           )}
         </div>
 
+        {isPlatformAdmin && (
+          <div className="mb-6 rounded-xl border bg-card p-4">
+            <div className="mb-3 flex items-start gap-2">
+              <Layers className="mt-0.5 h-4 w-4 text-violet-600 dark:text-violet-400" />
+              <div>
+                <p className="text-sm font-semibold">Dono operacional dos projetos</p>
+                <p className="text-xs text-muted-foreground">
+                  A equipe define quais administradores podem gerir cada projeto. Projetos sem dono ficam sob gestão exclusiva da plataforma.
+                </p>
+              </div>
+            </div>
+            {projetosGerenciaveis.length === 0 ? (
+              <p className="rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                Nenhum projeto disponível.
+              </p>
+            ) : (
+              <div className="grid gap-2 md:grid-cols-2">
+                {projetosGerenciaveis.map((projeto) => {
+                  const selectedOwner = adminUsers.some((u) => u.id === projeto.criadoPorId)
+                    ? String(projeto.criadoPorId)
+                    : 'none';
+                  return (
+                    <div key={projeto.id} className="rounded-lg border bg-background/60 p-3">
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">{projeto.nome}</p>
+                          <p className="text-[10px] uppercase text-muted-foreground">
+                            {projeto.tipo} · {projeto.status}
+                          </p>
+                        </div>
+                      </div>
+                      <Select
+                        value={selectedOwner}
+                        onValueChange={(value) => handleOwnerChange(projeto, value)}
+                        disabled={setProjectOwner.isPending}
+                      >
+                        <SelectTrigger className="h-9 text-xs">
+                          <SelectValue placeholder="Sem dono operacional" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Sem dono operacional</SelectItem>
+                          {adminUsers.map((user) => (
+                            <SelectItem key={user.id} value={String(user.id)}>
+                              {user.name || user.email || `Usuário #${user.id}`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {isLoading ? (
           <div className="text-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground mx-auto" />
@@ -379,55 +521,59 @@ function UsersContent() {
           </div>
         ) : (
           <div className="space-y-2">
-            {users.map((u) => (
-              <motion.div
-                key={u.id}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-4 bg-card rounded-xl border flex items-center justify-between gap-4"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                      u.role === 'platform_admin'
-                        ? 'bg-violet-100 text-violet-800 dark:bg-violet-950/50 dark:text-violet-300'
-                        : u.role === 'admin'
-                          ? 'bg-amber-100 text-amber-700'
-                          : u.role === 'comercial'
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : u.role === 'visitante'
-                              ? 'bg-slate-100 text-slate-700'
-                              : 'bg-blue-100 text-blue-700'
-                    }`}
-                  >
-                    {u.role === 'platform_admin' ? (
-                      <Layers className="w-5 h-5" />
-                    ) : u.role === 'admin' ? (
-                      <ShieldCheck className="w-5 h-5" />
-                    ) : u.role === 'comercial' ? (
-                      <Briefcase className="w-5 h-5" />
-                    ) : u.role === 'visitante' ? (
-                      <Eye className="w-5 h-5" />
-                    ) : (
-                      <User className="w-5 h-5" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-sm truncate">{u.name || 'Sem nome'}</p>
-                    <p className="text-xs text-muted-foreground truncate">{u.email || 'Sem email'}</p>
-                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
-                      <Clock className="w-3 h-3" />
-                      <span>Último acesso: {formatDate(u.lastSignedIn)}</span>
-                    </div>
-                    {Array.isArray((u as { projetos?: { nome: string }[] }).projetos) && (u as { projetos?: { nome: string }[] }).projetos!.length > 0 && (
-                      <p className="mt-1 text-[10px] text-muted-foreground truncate">
-                        Projetos: {(u as { projetos: { nome: string }[] }).projetos.map((p) => p.nome).join(', ')}
-                      </p>
-                    )}
-                  </div>
-                </div>
+            {users.map((u) => {
+              const userProjetos = Array.isArray((u as { projetos?: UserProjectAccess[] }).projetos)
+                ? (u as { projetos: UserProjectAccess[] }).projetos
+                : [];
+              const linkedProjectIds = new Set(userProjetos.map((p) => p.id));
+              const projetosParaAdicionar = projetosDisponiveis.filter((p) => !linkedProjectIds.has(p.id));
+              const canManageProjectLinks = u.role !== 'platform_admin';
 
-                <div className="flex items-center gap-2 shrink-0">
+              return (
+                <motion.div
+                  key={u.id}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-4 rounded-xl border bg-card p-4"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                          u.role === 'platform_admin'
+                            ? 'bg-violet-100 text-violet-800 dark:bg-violet-950/50 dark:text-violet-300'
+                            : u.role === 'admin'
+                              ? 'bg-amber-100 text-amber-700'
+                              : u.role === 'comercial'
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : u.role === 'visitante'
+                                  ? 'bg-slate-100 text-slate-700'
+                                  : 'bg-blue-100 text-blue-700'
+                        }`}
+                      >
+                        {u.role === 'platform_admin' ? (
+                          <Layers className="h-5 w-5" />
+                        ) : u.role === 'admin' ? (
+                          <ShieldCheck className="h-5 w-5" />
+                        ) : u.role === 'comercial' ? (
+                          <Briefcase className="h-5 w-5" />
+                        ) : u.role === 'visitante' ? (
+                          <Eye className="h-5 w-5" />
+                        ) : (
+                          <User className="h-5 w-5" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold">{u.name || 'Sem nome'}</p>
+                        <p className="truncate text-xs text-muted-foreground">{u.email || 'Sem email'}</p>
+                        <div className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          <span>Último acesso: {formatDate(u.lastSignedIn)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-2">
                   {/* Role selector — conta plataforma só pode ser alterada por outro platform_admin */}
                   {!isPlatformAdmin && u.role === 'platform_admin' ? (
                     <span className="text-xs font-medium text-violet-700 dark:text-violet-300 px-2 py-1.5 rounded-md border border-violet-200 dark:border-violet-800 whitespace-nowrap">
@@ -477,9 +623,91 @@ function UsersContent() {
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
-                </div>
-              </motion.div>
-            ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border bg-background/60 p-3">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Link2 className="h-4 w-4 text-muted-foreground" />
+                        <p className="text-xs font-semibold">Projetos vinculados</p>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">
+                        {u.role === 'platform_admin' ? 'Acesso global' : `${userProjetos.length} vínculo(s)`}
+                      </span>
+                    </div>
+
+                    {u.role === 'platform_admin' ? (
+                      <p className="text-xs text-muted-foreground">
+                        Contas da equipe da plataforma não dependem de vínculo por projeto.
+                      </p>
+                    ) : (
+                      <>
+                        {userProjetos.length === 0 ? (
+                          <p className="mb-3 rounded-md bg-muted/50 px-2 py-1.5 text-xs text-muted-foreground">
+                            Este usuário ainda não está vinculado a nenhum projeto.
+                          </p>
+                        ) : (
+                          <div className="mb-3 flex flex-wrap gap-2">
+                            {userProjetos.map((projeto) => (
+                              <span
+                                key={projeto.id}
+                                className="inline-flex items-center gap-1 rounded-full border bg-muted/40 px-2 py-1 text-[11px]"
+                              >
+                                <span className="max-w-[14rem] truncate">{projeto.nome}</span>
+                                <span className="text-muted-foreground">· {labelProjetoRole(projeto.role)}</span>
+                                {canManageProjectLinks && (
+                                  <button
+                                    type="button"
+                                    className="ml-1 text-muted-foreground hover:text-destructive"
+                                    title="Remover vínculo"
+                                    onClick={() => handleRemoveProjetoFromUser(u, projeto)}
+                                    disabled={removeProjetoUser.isPending}
+                                  >
+                                    ×
+                                  </button>
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {canManageProjectLinks && (
+                          <div className="flex flex-col gap-2 sm:flex-row">
+                            <Select
+                              value={selectedProjetoByUser[u.id] || ''}
+                              onValueChange={(value) => setSelectedProjetoByUser((prev) => ({ ...prev, [u.id]: value }))}
+                              disabled={addProjetoUser.isPending || projetosParaAdicionar.length === 0}
+                            >
+                              <SelectTrigger className="h-9 text-xs sm:flex-1">
+                                <SelectValue placeholder="Adicionar projeto..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {projetosParaAdicionar.map((projeto) => (
+                                  <SelectItem key={projeto.id} value={String(projeto.id)}>
+                                    {projeto.nome}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1"
+                              onClick={() => handleAddProjetoToUser(u)}
+                              disabled={addProjetoUser.isPending || projetosParaAdicionar.length === 0}
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                              Vincular
+                            </Button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         )}
 

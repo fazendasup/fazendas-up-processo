@@ -17,7 +17,7 @@ import {
   parcelasRateioParaVariedade,
 } from "../custosProducaoRateio";
 import {
-  adminCustosProducaoProjectProcedure,
+  commercialEditorCustosProducaoProjectProcedure,
   custosProducaoModuleProcedure,
   projetoIdFromCtx,
   router,
@@ -401,7 +401,7 @@ export const custosProducaoRouter = router({
       return { variedade: v, itens: rows.map(enrichLinha), parcelasRateio };
     }),
 
-  create: adminCustosProducaoProjectProcedure.input(linhaInput).mutation(async ({ ctx, input }) => {
+  create: commercialEditorCustosProducaoProjectProcedure.input(linhaInput).mutation(async ({ ctx, input }) => {
     const pid = projetoIdFromCtx(ctx);
     if (input.variedadeId != null) {
       const row = await db.getVariedadeById(pid, input.variedadeId);
@@ -411,7 +411,7 @@ export const custosProducaoRouter = router({
     return { id };
   }),
 
-  update: adminCustosProducaoProjectProcedure
+  update: commercialEditorCustosProducaoProjectProcedure
     .input(
       z
         .object({
@@ -478,7 +478,7 @@ export const custosProducaoRouter = router({
       return { success: true };
     }),
 
-  delete: adminCustosProducaoProjectProcedure
+  delete: commercialEditorCustosProducaoProjectProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
       await db.deleteCustoProducaoItem(projetoIdFromCtx(ctx), input.id);

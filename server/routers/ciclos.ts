@@ -1,4 +1,4 @@
-import { projetoIdFromCtx, adminProjectProcedure, projectProcedure, router } from "../_core/trpc";
+import { projetoIdFromCtx, commercialEditorProjectProcedure, projectProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 import * as db from "../db";
 
@@ -6,7 +6,7 @@ export const ciclosRouter = router({
   list: projectProcedure.query(async ({ ctx }) => {
     return db.getAllCiclos(projetoIdFromCtx(ctx));
   }),
-  create: adminProjectProcedure
+  create: commercialEditorProjectProcedure
     .input(
       z.object({
         nome: z.string(),
@@ -24,7 +24,7 @@ export const ciclosRouter = router({
     .mutation(async ({ ctx, input }) => {
       return db.createCiclo({ ...input, projetoId: projetoIdFromCtx(ctx) });
     }),
-  update: adminProjectProcedure
+  update: commercialEditorProjectProcedure
     .input(
       z.object({
         id: z.number(),
@@ -61,7 +61,7 @@ export const ciclosRouter = router({
       });
       return { success: true };
     }),
-  delete: adminProjectProcedure
+  delete: commercialEditorProjectProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       await db.deleteCiclo(projetoIdFromCtx(ctx), input.id);

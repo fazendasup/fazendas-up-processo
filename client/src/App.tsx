@@ -146,8 +146,10 @@ function Router() {
           </Route>
 
           <Route path="/ciclos">
-            <ProtectedRoute requiredRole="processo">
-              <CiclosPage />
+            <ProtectedRoute requiredRole="comercial">
+              <ComercialPerfilRouteGuard path="/ciclos">
+                <CiclosPage />
+              </ComercialPerfilRouteGuard>
             </ProtectedRoute>
           </Route>
           <Route path="/config">
@@ -206,13 +208,17 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/receitas">
-            <ProtectedRoute requiredRole="processo">
-              <ReceitasPage />
+            <ProtectedRoute requiredRole="comercial">
+              <ComercialPerfilRouteGuard path="/receitas">
+                <ReceitasPage />
+              </ComercialPerfilRouteGuard>
             </ProtectedRoute>
           </Route>
           <Route path="/cadastros">
-            <ProtectedRoute requiredRole="processo">
-              <ReceitasPage />
+            <ProtectedRoute requiredRole="comercial">
+              <ComercialPerfilRouteGuard path="/cadastros">
+                <ReceitasPage />
+              </ComercialPerfilRouteGuard>
             </ProtectedRoute>
           </Route>
           <Route path="/tarefas">

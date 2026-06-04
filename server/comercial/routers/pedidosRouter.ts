@@ -367,7 +367,7 @@ export const pedidosRouter = router({
     }),
 
   salvarProduto: comercialProcedure
-    .use(adminComercial)
+    .use(podeConfigurarEstoqueVivo)
     .input(produtoInput)
     .mutation(async ({ ctx, input }) => {
       const data = {
@@ -391,7 +391,7 @@ export const pedidosRouter = router({
     }),
 
   excluirProduto: comercialProcedure
-    .use(adminComercial)
+    .use(podeConfigurarEstoqueVivo)
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const usos = await ctx.prisma!.pedidoOperacionalItem.count({ where: { produtoId: input.id } });
@@ -402,7 +402,7 @@ export const pedidosRouter = router({
     }),
 
   salvarRegraCliente: comercialProcedure
-    .use(adminComercial)
+    .use(podeConfigurarEstoqueVivo)
     .input(
       z.object({
         contaAzulCustomerId: z.string().min(1),

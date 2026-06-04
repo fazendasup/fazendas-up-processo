@@ -235,12 +235,32 @@ const requireEstoqueAccess = t.middleware(async ({ ctx, next }) => {
   return next({ ctx: { ...ctx, user: ctx.user, comercialUsuario } });
 });
 
+const requireOperationalOrCommercialEditor = t.middleware(async ({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
+  }
+  if (isOperationalAdminRole(ctx.user.role)) {
+    return next({ ctx: { ...ctx, user: ctx.user } });
+  }
+  if (ctx.user.role !== "comercial") {
+    throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
+  }
+
+  const comercialUsuario = await resolveComercialUsuario(ctx.user);
+  if (!comercialUsuario || comercialUsuario.perfil === "PROMOTER" || comercialUsuario.perfil === "VENDEDOR") {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Promoters acessam somente Pedidos e Acompanhamento de avarias." });
+  }
+  return next({ ctx: { ...ctx, user: ctx.user, comercialUsuario } });
+});
+
 export const adminEstoqueProjectProcedure = estoqueModuleProcedure.use(requireGlobalAdmin);
 export const estoqueAccessProjectProcedure = estoqueModuleProcedure.use(requireEstoqueAccess);
 export const adminAutomacaoModuleProcedure = automacaoModuleProcedure.use(requireGlobalAdmin);
 export const adminInteligenciaProjectProcedure = inteligenciaModuleProcedure.use(requireGlobalAdmin);
 export const adminVisaoCultivoProjectProcedure = visaoCultivoModuleProcedure.use(requireGlobalAdmin);
 export const adminCustosProducaoProjectProcedure = custosProducaoModuleProcedure.use(requireGlobalAdmin);
+export const commercialEditorProjectProcedure = projectProcedure.use(requireOperationalOrCommercialEditor);
+export const commercialEditorCustosProducaoProjectProcedure = custosProducaoModuleProcedure.use(requireOperationalOrCommercialEditor);
 
 function isProjetoComTorres(tipo: ProjetoTipo | null | undefined): boolean {
   return tipo === "fazenda_vertical" || tipo === "microverdes";

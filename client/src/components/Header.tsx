@@ -170,11 +170,13 @@ const SISTEMA_PROCESSO_ITEMS: NavItem[] = [
     href: "/receitas",
     label: "Receitas e cadastros",
     icon: BookOpen,
+    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
   },
   {
     href: "/ciclos",
     label: "Ciclos",
     icon: CalendarClock,
+    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
   },
 ];
 
@@ -327,17 +329,19 @@ export default function Header() {
     if (!isLoggedIn) return [] as NavItem[];
     const list: NavItem[] = isAdmin ? [PROJETOS_ITEM] : [];
     if (activeProjetoId == null) return list;
-    if (canAccessProcesso) list.push(...SISTEMA_PROCESSO_ITEMS);
+    if (canAccessProcesso || canAccessComercial) list.push(...SISTEMA_PROCESSO_ITEMS);
     if (isAdmin) list.push(...SISTEMA_EXTRAS_ADMIN);
     return list.filter(item => {
       if (item.requiredRole === "admin" && !isAdmin) return false;
+      if (item.comercialPerfis && isComercial && (!comercialPerfil || !item.comercialPerfis.includes(comercialPerfil as any))) return false;
+      if (isComercial && !canAccessCommercialPath(item.href, comercialPerfil)) return false;
       if (item.projetoTipo != null) {
         if (!activeProjeto || activeProjeto.tipo !== item.projetoTipo)
           return false;
       }
       return true;
     });
-  }, [canAccessProcesso, isAdmin, isLoggedIn, activeProjeto?.tipo, activeProjetoId]);
+  }, [canAccessComercial, canAccessProcesso, comercialPerfil, isAdmin, isComercial, isLoggedIn, activeProjeto?.tipo, activeProjetoId]);
 
   const analiseGroupActive = useMemo(
     () => analiseItems.some(item => pathMatchesNav(location, item.href)),

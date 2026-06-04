@@ -1,4 +1,4 @@
-import { projetoIdFromCtx, adminProjectProcedure, projectProcedure, router } from "../_core/trpc";
+import { projetoIdFromCtx, commercialEditorProjectProcedure, projectProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 import * as db from "../db";
 
@@ -16,7 +16,7 @@ export const receitasRouter = router({
     .query(async ({ ctx, input }) => {
       return db.getReceitasByVariedadeId(projetoIdFromCtx(ctx), input.variedadeId);
     }),
-  create: adminProjectProcedure
+  create: commercialEditorProjectProcedure
     .input(
       z.object({
         nome: z.string(),
@@ -54,7 +54,7 @@ export const receitasRouter = router({
       await db.syncVariedadeDiasFromReceitaPrioritaria(projetoId, input.variedadeId);
       return out;
     }),
-  update: adminProjectProcedure
+  update: commercialEditorProjectProcedure
     .input(
       z.object({
         id: z.number(),
@@ -96,7 +96,7 @@ export const receitasRouter = router({
       }
       return { success: true };
     }),
-  delete: adminProjectProcedure
+  delete: commercialEditorProjectProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       const projetoId = projetoIdFromCtx(ctx);

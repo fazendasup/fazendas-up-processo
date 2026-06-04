@@ -1042,6 +1042,13 @@ export async function reactivateProjeto(projetoId: number) {
   await updateProjeto(projetoId, { status: "ativo" });
 }
 
+export async function updateProjetoOwner(projetoId: number, ownerUserId: number | null) {
+  const dbConn = await getDb();
+  if (!dbConn) throw new Error("Database not available");
+  await ensureProjetosCriadoPorColumn();
+  await dbConn.update(projetos).set({ criadoPorId: ownerUserId }).where(eq(projetos.id, projetoId));
+}
+
 export async function addProjetoUser(projetoId: number, userId: number, role: InsertProjetoUsuario["role"]) {
   const dbConn = await getDb();
   if (!dbConn) throw new Error("Database not available");

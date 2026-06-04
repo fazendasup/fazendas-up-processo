@@ -33,6 +33,18 @@ async function assertPodeGerenciarProjeto(user: { id: number; role: string }, pr
   }
 }
 
+async function assertPodeGerenciarVinculoUsuario(ctxUser: { id: number; role: string }, targetUserId: number) {
+  const target = await db.getUserById(targetUserId);
+  if (!target) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Usuário não encontrado" });
+  }
+  if (isPlatformCommercialRole(ctxUser.role)) return target;
+  if (target.role === "platform_admin" || (target.id !== ctxUser.id && target.criadoPorId !== ctxUser.id)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Sem permissão para gerir este usuário" });
+  }
+  return target;
+}
+
 export const projetosRouter = router({
   /**
    * Reexecuta a mesma lógica do arranque do servidor (projeto padrão + linhas em projeto_usuarios).
@@ -179,6 +191,31 @@ export const projetosRouter = router({
       return { success: true };
     }),
 
+  setOwner: platformAdminProcedure
+    .input(
+      z.object({
+        projetoId: z.number().int().positive(),
+        ownerUserId: z.number().int().positive().nullable(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      if (input.ownerUserId != null) {
+        const user = await db.getUserById(input.ownerUserId);
+        if (!user) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Usuário não encontrado" });
+        }
+        if (user.role !== "admin") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "O dono do projeto deve ser um Administrador operacional.",
+          });
+        }
+        await db.addProjetoUser(input.projetoId, input.ownerUserId, "admin");
+      }
+      await db.updateProjetoOwner(input.projetoId, input.ownerUserId);
+      return { success: true };
+    }),
+
   deactivate: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
@@ -205,10 +242,7 @@ export const projetosRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       await assertPodeGerenciarProjeto(ctx.user, input.projetoId);
-      const u = await db.getUserById(input.userId);
-      if (!u) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Usuário não encontrado" });
-      }
+      await assertPodeGerenciarVinculoUsuario(ctx.user, input.userId);
       await db.addProjetoUser(input.projetoId, input.userId, input.role);
       return { success: true };
     }),
@@ -217,6 +251,14 @@ export const projetosRouter = router({
     .input(z.object({ projetoId: z.number(), userId: z.number() }))
     .mutation(async ({ ctx, input }) => {
       await assertPodeGerenciarProjeto(ctx.user, input.projetoId);
+      await assertPodeGerenciarVinculoUsuario(ctx.user, input.userId);
+      const projeto = await db.getProjetoById(input.projetoId);
+      if (projeto?.criadoPorId === input.userId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Troque o dono do projeto antes de remover este usuário.",
+        });
+      }
       await db.removeProjetoUser(input.projetoId, input.userId);
       return { success: true };
     }),
@@ -231,6 +273,7 @@ export const projetosRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       await assertPodeGerenciarProjeto(ctx.user, input.projetoId);
+      await assertPodeGerenciarVinculoUsuario(ctx.user, input.userId);
       await db.updateProjetoUserRole(input.projetoId, input.userId, input.role);
       return { success: true };
     }),
