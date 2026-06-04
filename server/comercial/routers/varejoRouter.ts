@@ -4,7 +4,7 @@ import { Prisma, TipoCliente } from "../generated/prisma/index.js";
 import { comercialProcedure, comercialRequirePerfis, router } from "../../_core/trpc";
 import { inicioSemana, rotuloSemana } from "../lib/semana.js";
 
-const adminComercial = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL");
+const editorComercial = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL", "COMERCIAL", "OPERACOES");
 
 const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
@@ -72,7 +72,7 @@ export const varejoRouter = router({
     }),
 
   salvarRede: comercialProcedure
-    .use(adminComercial)
+    .use(editorComercial)
     .input(
       z.object({
         id: z.string().optional(),
@@ -93,7 +93,7 @@ export const varejoRouter = router({
     }),
 
   excluirRede: comercialProcedure
-    .use(adminComercial)
+    .use(editorComercial)
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // Desvincula as unidades antes de remover a rede (o onDelete já é SetNull, mas deixamos explícito).
@@ -103,7 +103,7 @@ export const varejoRouter = router({
     }),
 
   vincularUnidades: comercialProcedure
-    .use(adminComercial)
+    .use(editorComercial)
     .input(z.object({ grupoId: z.string(), clienteIds: z.array(z.string()).min(1) }))
     .mutation(async ({ ctx, input }) => {
       await ctx.prisma!.cliente.updateMany({
@@ -114,7 +114,7 @@ export const varejoRouter = router({
     }),
 
   desvincularUnidade: comercialProcedure
-    .use(adminComercial)
+    .use(editorComercial)
     .input(z.object({ clienteId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       await ctx.prisma!.cliente.update({ where: { id: input.clienteId }, data: { grupoId: null } });

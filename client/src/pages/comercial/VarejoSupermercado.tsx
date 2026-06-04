@@ -71,7 +71,11 @@ function Barra({ valor, max, cor }: { valor: number; max: number; cor: string })
 export function AcompanhamentoAvarias() {
   const utils = trpc.useUtils();
   const me = trpc.comercial.pedidos.me.useQuery(undefined, { staleTime: 60_000 });
-  const isAdmin = me.data?.perfil === "ADMIN" || me.data?.perfil === "GERENTE_COMERCIAL";
+  const canEditarComercial =
+    me.data?.perfil === "ADMIN" ||
+    me.data?.perfil === "GERENTE_COMERCIAL" ||
+    me.data?.perfil === "COMERCIAL" ||
+    me.data?.perfil === "OPERACOES";
 
   const [grupoId, setGrupoId] = useState("");
   const [unidadeId, setUnidadeId] = useState(TODAS_UNIDADES);
@@ -336,7 +340,7 @@ export function AcompanhamentoAvarias() {
         subtitle="Relatório por rede e unidade de supermercado, usando os pedidos validados. Mostra apenas indicadores compartilháveis com o cliente."
         actions={
           <>
-            {isAdmin && (
+            {canEditarComercial && (
               <Button variant="outline" onClick={() => setGerenciar((v) => !v)}>
                 <Store className="mr-1.5 h-4 w-4" />
                 {gerenciar ? "Fechar gestão de redes" : "Gerenciar redes"}
@@ -350,15 +354,15 @@ export function AcompanhamentoAvarias() {
         }
       />
 
-      {/* Gestão de redes (admin) */}
-      {isAdmin && gerenciar && (
+      {/* Gestão de redes (comercial completo) */}
+      {canEditarComercial && gerenciar && (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Configuração interna: redes e unidades</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
-              Área visível somente para administradores. O cliente vê apenas filtros, KPIs e gráficos do acompanhamento.
+              Área interna de gestão comercial. O cliente vê apenas filtros, KPIs e gráficos do acompanhamento.
             </p>
             <div className="flex flex-wrap items-end gap-2">
               <div className="grow">

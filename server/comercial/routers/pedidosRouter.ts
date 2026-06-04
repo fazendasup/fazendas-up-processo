@@ -20,7 +20,6 @@ import { calcularConciliacaoSemanal } from "../lib/conciliacao-semanal.js";
 import { fimSemana, inicioSemana } from "../lib/semana.js";
 import { comercialProcedure, comercialRequirePerfis, router } from "../../_core/trpc";
 
-const adminComercial = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL");
 const podeConfigurarEstoqueVivo = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL", "COMERCIAL", "OPERACOES");
 
 const STATUS_PEDIDO = ["PENDENTE", "PRONTO", "ENTREGUE", "CANCELADO"] as const;
@@ -785,7 +784,7 @@ export const pedidosRouter = router({
     }),
 
   atualizarPrioridadeClienteDia: comercialProcedure
-    .use(adminComercial)
+    .use(podeConfigurarEstoqueVivo)
     .input(z.object({ contaAzulCustomerId: z.string(), dia: z.coerce.date(), prioridadeEntrega: z.number().int().nullable() }))
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
@@ -1211,7 +1210,7 @@ export const pedidosRouter = router({
 
   /** Fecha (ou refecha) a semana do dia informado. Exige que não haja pedidos pendentes. */
   fecharSemana: comercialProcedure
-    .use(adminComercial)
+    .use(podeConfigurarEstoqueVivo)
     .input(z.object({ dia: z.coerce.date() }))
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
@@ -1296,7 +1295,7 @@ export const pedidosRouter = router({
 
   /** Reabre uma semana já fechada (volta a bloquear até novo fechamento). */
   reabrirSemana: comercialProcedure
-    .use(adminComercial)
+    .use(podeConfigurarEstoqueVivo)
     .input(z.object({ dia: z.coerce.date() }))
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;

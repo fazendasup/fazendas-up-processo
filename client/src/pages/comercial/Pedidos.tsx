@@ -128,8 +128,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
 
   const diaDate = useMemo(() => new Date(`${dia}T12:00:00`), [dia]);
   const me = trpc.comercial.pedidos.me.useQuery();
-  const isAdmin = me.data?.perfil === "ADMIN" || me.data?.perfil === "GERENTE_COMERCIAL";
-  const canEditarEstoqueVivo =
+  const canEditarComercial =
     me.data?.perfil === "ADMIN" ||
     me.data?.perfil === "GERENTE_COMERCIAL" ||
     me.data?.perfil === "COMERCIAL" ||
@@ -479,9 +478,9 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
                     ? `Há ${bloqueioSemana.pendentes} pedido(s) sem definição de entregue/cancelado. Revise e feche a semana para liberar novos pedidos.`
                     : "Os pedidos já estão revisados, mas a semana ainda não foi fechada. Finalize o fechamento para liberar novos pedidos."}
                 </p>
-                {!isAdmin && (
+                {!canEditarComercial && (
                   <p className="text-xs text-red-600 dark:text-red-400">
-                    Apenas administradores/gerentes podem fechar a semana.
+                    Apenas usuários comerciais completos podem fechar a semana.
                   </p>
                 )}
               </div>
@@ -490,7 +489,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
               <Button variant="outline" onClick={irParaSemanaPendente}>
                 Revisar semana de {bloqueioSemana.rotulo}
               </Button>
-              {isAdmin && bloqueioSemana.pendentes === 0 && (
+              {canEditarComercial && bloqueioSemana.pendentes === 0 && (
                 <Button
                   className="bg-red-600 hover:bg-red-700"
                   disabled={fecharSemana.isPending || !statusSemana.data?.conciliacaoBloqueio?.conciliado}
@@ -530,7 +529,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
                 </p>
               </div>
             </div>
-            {isAdmin && (
+            {canEditarComercial && (
               <div className="flex flex-wrap gap-2">
                 {statusSemana.data.semanaAtual.fechada ? (
                   <Button
@@ -601,7 +600,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
                           </p>
                         </div>
                         <div className="flex shrink-0 flex-wrap items-center gap-2">
-                          {isAdmin && (
+                          {canEditarComercial && (
                             <Input
                               type="number"
                               placeholder="Ordem"
@@ -955,7 +954,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
             contexto={contextoRegras.data}
             produtos={produtos.data ?? []}
             onSalvar={(payload: any) => salvarRegra.mutate(payload)}
-            disabled={!isAdmin || salvarRegra.isPending}
+            disabled={!canEditarComercial || salvarRegra.isPending}
           />
         </TabsContent>
 
@@ -966,7 +965,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
             setEdit={setProdutoEdit}
             onSalvar={(payload: any) => salvarProduto.mutate(payload)}
             onExcluir={(id: string) => excluirProduto.mutate({ id })}
-            isAdmin={isAdmin}
+            canEdit={canEditarComercial}
           />
         </TabsContent>
 
@@ -975,7 +974,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
             estoque={compras.data}
             produtos={produtos.data ?? []}
             isLoading={compras.isLoading}
-            isAdmin={canEditarEstoqueVivo}
+            isAdmin={canEditarComercial}
             onUpdate={(payload: any) => atualizarCompra.mutate(payload)}
             onSalvarMixFolha={(payload: any) => salvarMixFolha.mutate(payload)}
           />
@@ -1482,24 +1481,24 @@ function RegrasClienteArea({ clientes, busca, setBusca, clienteId, setClienteId,
   );
 }
 
-function ProdutosArea({ produtos, edit, setEdit, onSalvar, onExcluir, isAdmin }: any) {
+function ProdutosArea({ produtos, edit, setEdit, onSalvar, onExcluir, canEdit }: any) {
   const p = edit ?? { nome: "", precoBase: "", categoria: "", ativo: true };
   return (
     <div className="grid gap-4 xl:grid-cols-[360px_1fr]">
       <Card>
         <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Package className="h-4 w-4" /> Catálogo</CardTitle></CardHeader>
         <CardContent className="space-y-3">
-          {!isAdmin && <p className="rounded-lg bg-muted p-2 text-xs text-muted-foreground">Somente administrativo pode criar, editar ou excluir produtos.</p>}
-          <Field label="Nome" value={p.nome} onChange={(v: string) => setEdit({ ...p, nome: v })} disabled={!isAdmin} />
-          <Field label="Preço base" value={p.precoBase ?? ""} onChange={(v: string) => setEdit({ ...p, precoBase: v })} type="number" disabled={!isAdmin} />
+          {!canEdit && <p className="rounded-lg bg-muted p-2 text-xs text-muted-foreground">Seu perfil pode visualizar produtos, mas não editar este catálogo.</p>}
+          <Field label="Nome" value={p.nome} onChange={(v: string) => setEdit({ ...p, nome: v })} disabled={!canEdit} />
+          <Field label="Preço base" value={p.precoBase ?? ""} onChange={(v: string) => setEdit({ ...p, precoBase: v })} type="number" disabled={!canEdit} />
           <div>
             <Label className="text-xs">Categoria</Label>
-            <select disabled={!isAdmin} className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={p.categoria ?? ""} onChange={(e) => setEdit({ ...p, categoria: e.target.value })}>
+            <select disabled={!canEdit} className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={p.categoria ?? ""} onChange={(e) => setEdit({ ...p, categoria: e.target.value })}>
               <option value="">Sem categoria</option>
               {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          <Button disabled={!isAdmin} onClick={() => onSalvar({ ...p, precoBase: p.precoBase === "" ? null : Number(p.precoBase), ativo: p.ativo ?? true })}>Salvar produto</Button>
+          <Button disabled={!canEdit} onClick={() => onSalvar({ ...p, precoBase: p.precoBase === "" ? null : Number(p.precoBase), ativo: p.ativo ?? true })}>Salvar produto</Button>
         </CardContent>
       </Card>
       <Card>
@@ -1511,8 +1510,8 @@ function ProdutosArea({ produtos, edit, setEdit, onSalvar, onExcluir, isAdmin }:
                 <p className="text-xs text-muted-foreground">{prod.categoria || "sem categoria"} · {fmtMoney(prod.precoBase ?? 0)} · usado em {prod.usoPedidos ?? 0} item(ns)</p>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={!isAdmin} onClick={() => setEdit({ ...prod, precoBase: prod.precoBase == null ? "" : String(Number(prod.precoBase)) })}>Editar</Button>
-                <Button variant="ghost" size="sm" disabled={!isAdmin} onClick={() => onExcluir(prod.id)}>Excluir</Button>
+                <Button variant="outline" size="sm" disabled={!canEdit} onClick={() => setEdit({ ...prod, precoBase: prod.precoBase == null ? "" : String(Number(prod.precoBase)) })}>Editar</Button>
+                <Button variant="ghost" size="sm" disabled={!canEdit} onClick={() => onExcluir(prod.id)}>Excluir</Button>
               </div>
             </div>
           ))}
