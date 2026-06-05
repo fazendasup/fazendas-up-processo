@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 function fmtDate(v: string | Date) {
-  return new Date(v).toLocaleDateString("pt-BR");
+  return new Date(v).toLocaleDateString("pt-BR", { timeZone: "UTC" });
 }
 
 function fmtMoney(v: unknown) {

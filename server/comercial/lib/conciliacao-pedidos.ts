@@ -7,6 +7,7 @@ import {
   type ProdutoOperacionalLookup,
 } from "./produto-operacional.js";
 import { GO_LIVE_PEDIDOS } from "./semana.js";
+import { ymdInTimeZone } from "../../zoned-day.js";
 
 type PedidoOperacionalComItens = Prisma.PedidoOperacionalGetPayload<{
   include: { itens: true; cliente: { select: { externalId: true; nome: true } } };
@@ -78,6 +79,7 @@ export type DivergenciaConciliacao = {
 };
 
 type OpcoesDivergenciaConciliacao = {
+  compararData?: boolean;
   compararValorEstimado?: boolean;
   regraEntrega?: RegraEntregaConciliacao | null;
 };
@@ -102,7 +104,11 @@ export function taxaEntregaParaConciliacao(
 export function opcoesCalcularDivergencias(
   operacional: Pick<PedidoOperacionalComItens, "snapshotConciliacao">,
 ): OpcoesDivergenciaConciliacao {
-  return { compararValorEstimado: !pedidoCriadoAPartirDoContaAzul(operacional) };
+  const criadoDoContaAzul = pedidoCriadoAPartirDoContaAzul(operacional);
+  return {
+    compararData: !criadoDoContaAzul,
+    compararValorEstimado: !criadoDoContaAzul,
+  };
 }
 
 function inicioDia(d: Date): Date {
@@ -124,7 +130,7 @@ function antesDoCortePedidos(d: Date): boolean {
 }
 
 function mesmoDia(a: Date, b: Date): boolean {
-  return inicioDia(a).getTime() === inicioDia(b).getTime();
+  return ymdInTimeZone(a, "America/Sao_Paulo") === ymdInTimeZone(b, "America/Sao_Paulo");
 }
 
 function diffDias(a: Date, b: Date): number {
@@ -183,13 +189,14 @@ export function calcularDivergencias(
   opcoes: OpcoesDivergenciaConciliacao = {},
 ): DivergenciaConciliacao[] {
   const divergencias: DivergenciaConciliacao[] = [];
+  const compararData = opcoes.compararData ?? true;
   const compararValorEstimado = opcoes.compararValorEstimado ?? true;
 
-  if (!mesmoDia(operacional.dataEntrega, contaAzul.dataPedido)) {
+  if (compararData && !mesmoDia(operacional.dataEntrega, contaAzul.dataPedido)) {
     divergencias.push({
       campo: "data",
-      operacional: operacional.dataEntrega.toISOString().slice(0, 10),
-      contaAzul: contaAzul.dataPedido.toISOString().slice(0, 10),
+      operacional: ymdInTimeZone(operacional.dataEntrega, "America/Sao_Paulo"),
+      contaAzul: ymdInTimeZone(contaAzul.dataPedido, "America/Sao_Paulo"),
     });
   }
 
@@ -380,6 +387,31 @@ export async function processarConciliacaoAposSyncVenda(
         });
       });
       return { sugestoes: 0, divergencias: 1 };
+    }
+    if (divergencias.length === 0 && vinculado.statusConciliacao === "DIVERGENTE") {
+      await prisma.$transaction(async (tx) => {
+        await tx.pedidoOperacional.update({
+          where: { id: vinculado.id },
+          data: {
+            statusConciliacao: "CONCILIADO",
+            snapshotConciliacao: {
+              operacional: snapshotOperacional(vinculado),
+              contaAzul: snapshotContaAzul(contaAzul),
+            } as Prisma.InputJsonValue,
+          },
+        });
+        await tx.pedido.update({
+          where: { id: contaAzul.id },
+          data: { statusConciliacao: "CONCILIADA" },
+        });
+        await registrarEvento(tx, {
+          pedidoOperacionalId: vinculado.id,
+          pedidoContaAzulId: contaAzul.id,
+          tipo: "DIVERGENCIA_RESOLVIDA",
+          antes: vinculado.snapshotConciliacao ?? undefined,
+          depois: { operacional: snapshotOperacional(vinculado), contaAzul: snapshotContaAzul(contaAzul) },
+        });
+      });
     }
     return { sugestoes: 0, divergencias: 0 };
   }
@@ -664,8 +696,8 @@ export async function criarOperacionalDeVenda(
       data: {
         clienteId: contaAzul.cliente.id,
         contaAzulCustomerId: contaAzul.cliente.externalId!,
-        dataEntrega: inicioDia(contaAzul.dataPedido),
-        diaSemana: inicioDia(contaAzul.dataPedido).getDay(),
+        dataEntrega: contaAzul.dataPedido,
+        diaSemana: contaAzul.dataPedido.getUTCDay(),
         tipoVenda: "AVULSO",
         status: "PENDENTE",
         statusConciliacao: "CONCILIADO",
