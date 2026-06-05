@@ -1135,6 +1135,8 @@ export const pedidosRouter = router({
           descontoBoletoTotal: conciliacao.resumo.descontoBoletoTotal,
           diferencaValorContaAzul: conciliacao.resumo.operacionalValor - conciliacao.resumo.contaAzulValor,
           clientesDivergentesContaAzul: conciliacao.resumo.clientesDivergentes,
+          clientesAguardandoVendaContaAzul: conciliacao.resumo.clientesAguardandoVenda,
+          clientesVendaSemPedidoContaAzul: conciliacao.resumo.clientesVendaSemPedido,
           ultimaSincronizacaoContaAzul: conciliacao.ultimaSincronizacaoContaAzul,
         },
         produtos: Array.from(produtos.values()).sort((a, b) => b.quantidade - a.quantidade || a.nome.localeCompare(b.nome, "pt-BR")),
@@ -1444,7 +1446,7 @@ export const pedidosRouter = router({
       if (!conciliacao.conciliado) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: `Há ${conciliacao.resumo.clientesDivergentes} cliente(s) com divergência entre Pedidos e Conta Azul. Corrija os lançamentos e sincronize novamente antes de fechar.`,
+          message: `Há ${conciliacao.resumo.clientesDivergentes} cliente(s) com divergência real entre Pedidos e Conta Azul. Corrija os lançamentos e sincronize novamente antes de fechar.`,
         });
       }
 

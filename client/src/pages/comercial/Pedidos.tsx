@@ -1297,9 +1297,25 @@ function formatQuantidade(value: unknown) {
   return n.toLocaleString("pt-BR", { maximumFractionDigits: 3 });
 }
 
+function statusConciliacaoSemanalLabel(status: string) {
+  switch (status) {
+    case "aguardando_venda":
+      return "aguardando venda";
+    case "venda_sem_pedido":
+      return "venda sem pedido";
+    case "divergente":
+      return "divergente";
+    default:
+      return "ok";
+  }
+}
+
 function PainelConciliacaoFechamento({ conciliacao, className = "" }: { conciliacao: any; className?: string }) {
   if (!conciliacao) return null;
-  const divergentes = (conciliacao.clientes ?? []).filter((c: any) => c.divergente);
+  const clientes = conciliacao.clientes ?? [];
+  const divergentes = clientes.filter((c: any) => c.status === "divergente" || c.divergente);
+  const aguardando = clientes.filter((c: any) => c.status === "aguardando_venda");
+  const vendasSemPedido = clientes.filter((c: any) => c.status === "venda_sem_pedido");
   const resumo = conciliacao.resumo ?? {};
 
   return (
@@ -1324,18 +1340,30 @@ function PainelConciliacaoFechamento({ conciliacao, className = "" }: { concilia
               : "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
           }`}
         >
-          {conciliacao.conciliado ? "Conciliado" : `${divergentes.length} divergência(s)`}
+          {conciliacao.conciliado
+            ? aguardando.length > 0 || vendasSemPedido.length > 0
+              ? "Sem divergências bloqueantes"
+              : "Conciliado"
+            : `${divergentes.length} divergência(s)`}
         </span>
       </div>
+      {(aguardando.length > 0 || vendasSemPedido.length > 0) && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          {aguardando.length > 0 ? `${aguardando.length} cliente(s) aguardando venda no Conta Azul. ` : ""}
+          {vendasSemPedido.length > 0 ? `${vendasSemPedido.length} cliente(s) com venda sem pedido operacional.` : ""}
+        </p>
+      )}
       {!conciliacao.conciliado && (
         <>
           <p className="mt-2 text-xs text-amber-800 dark:text-amber-200">
-            Corrija no Conta Azul ou no pedido e sincronize novamente antes de fechar a semana.
+            Corrija divergências reais no Conta Azul ou no pedido e sincronize novamente antes de fechar a semana.
           </p>
           <div className="mt-2 space-y-1">
             {divergentes.slice(0, 6).map((c: any) => (
               <div key={c.contaAzulCustomerId} className="rounded-md border bg-muted/30 px-2 py-1 text-xs">
                 <span className="font-medium">{c.clienteNome}</span>
+                {" · "}
+                {statusConciliacaoSemanalLabel(c.status)}
                 {" · pedidos "}
                 {c.operacional?.pedidos ?? 0}/{c.contaAzul?.pedidos ?? 0}
                 {" · un "}
@@ -1346,6 +1374,17 @@ function PainelConciliacaoFechamento({ conciliacao, className = "" }: { concilia
             ))}
           </div>
         </>
+      )}
+      {conciliacao.conciliado && aguardando.length > 0 && (
+        <div className="mt-2 space-y-1">
+          {aguardando.slice(0, 4).map((c: any) => (
+            <div key={c.contaAzulCustomerId} className="rounded-md border border-sky-200 bg-sky-50/60 px-2 py-1 text-xs dark:border-sky-900 dark:bg-sky-950/20">
+              <span className="font-medium">{c.clienteNome}</span>
+              {" · aguardando venda · pedidos "}
+              {c.operacional?.pedidos ?? 0}/{c.contaAzul?.pedidos ?? 0}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

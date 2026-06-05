@@ -82,7 +82,7 @@ type OpcoesDivergenciaConciliacao = {
   regraEntrega?: RegraEntregaConciliacao | null;
 };
 
-function pedidoCriadoAPartirDoContaAzul(pedido: Pick<PedidoOperacionalComItens, "snapshotConciliacao">): boolean {
+export function pedidoCriadoAPartirDoContaAzul(pedido: { snapshotConciliacao?: unknown }): boolean {
   const snapshot = pedido.snapshotConciliacao;
   if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) return false;
   const raw = snapshot as Record<string, unknown>;

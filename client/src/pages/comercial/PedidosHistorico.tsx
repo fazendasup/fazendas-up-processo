@@ -305,24 +305,52 @@ export function PedidosHistorico() {
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
             <HistoricoKpi icon={<CalendarDays className="h-4 w-4 text-cyan-700" />} label="Vendas Conta Azul" value={resumo?.contaAzulPedidos ?? 0} />
             <HistoricoKpi icon={<PackageCheck className="h-4 w-4 text-emerald-700" />} label="Unid. Conta Azul" value={fmtQtd(resumo?.contaAzulUnidades ?? 0)} />
             <HistoricoKpi icon={<BarChart3 className="h-4 w-4 text-violet-700" />} label="Valor Conta Azul" value={fmtMoney(resumo?.contaAzulValor ?? 0)} />
             <HistoricoKpi icon={<BarChart3 className="h-4 w-4 text-amber-700" />} label="Diferença valor" value={fmtMoney(resumo?.diferencaValorContaAzul ?? 0)} />
-            <HistoricoKpi icon={<Users className="h-4 w-4 text-rose-700" />} label="Clientes divergentes" value={resumo?.clientesDivergentesContaAzul ?? 0} />
+            <HistoricoKpi icon={<Users className="h-4 w-4 text-rose-700" />} label="Divergências reais" value={resumo?.clientesDivergentesContaAzul ?? 0} />
+            <HistoricoKpi icon={<Users className="h-4 w-4 text-sky-700" />} label="Aguardando venda" value={resumo?.clientesAguardandoVendaContaAzul ?? 0} />
           </div>
 
           <div className="grid gap-2 xl:grid-cols-2">
             {(relatorio.data?.contaAzul?.conciliacao ?? []).slice(0, 12).map((row: any) => (
-              <div key={row.contaAzulCustomerId} className={`rounded-xl border p-3 ${row.divergente ? "border-amber-300 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/20" : "bg-background/70"}`}>
+              <div
+                key={row.contaAzulCustomerId}
+                className={`rounded-xl border p-3 ${
+                  row.status === "divergente" || row.divergente
+                    ? "border-amber-300 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/20"
+                    : row.status === "aguardando_venda"
+                      ? "border-sky-300 bg-sky-50/50 dark:border-sky-900 dark:bg-sky-950/20"
+                      : row.status === "venda_sem_pedido"
+                        ? "border-violet-300 bg-violet-50/50 dark:border-violet-900 dark:bg-violet-950/20"
+                        : "bg-background/70"
+                }`}
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate font-semibold">{row.clienteNome}</p>
                     <p className="text-xs text-muted-foreground">Operacional × Conta Azul</p>
                   </div>
-                  <span className={`rounded-full border px-2 py-1 text-xs font-semibold ${row.divergente ? "border-amber-300 text-amber-800 dark:text-amber-200" : "border-emerald-300 text-emerald-700 dark:text-emerald-200"}`}>
-                    {row.divergente ? "divergente" : "ok"}
+                  <span
+                    className={`rounded-full border px-2 py-1 text-xs font-semibold ${
+                      row.status === "divergente" || row.divergente
+                        ? "border-amber-300 text-amber-800 dark:text-amber-200"
+                        : row.status === "aguardando_venda"
+                          ? "border-sky-300 text-sky-800 dark:text-sky-200"
+                          : row.status === "venda_sem_pedido"
+                            ? "border-violet-300 text-violet-800 dark:text-violet-200"
+                            : "border-emerald-300 text-emerald-700 dark:text-emerald-200"
+                    }`}
+                  >
+                    {row.status === "aguardando_venda"
+                      ? "aguardando venda"
+                      : row.status === "venda_sem_pedido"
+                        ? "venda sem pedido"
+                        : row.status === "divergente" || row.divergente
+                          ? "divergente"
+                          : "ok"}
                   </span>
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
