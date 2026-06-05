@@ -42,9 +42,7 @@ type ResolverChaveItem = ReturnType<typeof criarResolverChaveItemConciliacao>;
 
 async function carregarProdutosConciliacao(prisma: PrismaClient): Promise<ProdutoOperacionalLookup[]> {
   return prisma.produtoComercial.findMany({
-    where: {
-      OR: [{ ativo: true, importadoOperacao: true }, { contaAzulProdutoId: { not: null } }],
-    },
+    where: { contaAzulProdutoId: { not: null } },
     select: {
       id: true,
       nome: true,
@@ -563,7 +561,7 @@ export async function criarOperacionalDeVenda(
   if (existente) throw new Error("Esta venda já possui pedido operacional vinculado.");
 
   const produtosAtivos = await prisma.produtoComercial.findMany({
-    where: { ativo: true, importadoOperacao: true },
+    where: { contaAzulProdutoId: { not: null }, ativo: true, importadoOperacao: true },
     select: {
       id: true,
       nome: true,

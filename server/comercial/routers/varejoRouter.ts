@@ -155,7 +155,14 @@ export const varejoRouter = router({
 
       const [cliente, produto] = await Promise.all([
         ctx.prisma!.cliente.findUnique({ where: { id: input.clienteId } }),
-        ctx.prisma!.produtoComercial.findFirst({ where: { id: input.produtoId, ativo: true } }),
+        ctx.prisma!.produtoComercial.findFirst({
+          where: {
+            id: input.produtoId,
+            ativo: true,
+            importadoOperacao: true,
+            contaAzulProdutoId: { not: null },
+          },
+        }),
       ]);
 
       if (!cliente?.externalId) {
@@ -318,7 +325,10 @@ export const varejoRouter = router({
           where: { contaAzulCustomerId: { in: externalIds } },
           include: { precosEspeciais: true },
         }),
-        prisma.produtoComercial.findMany({ select: { id: true, nome: true, precoBase: true, categoria: true } }),
+        prisma.produtoComercial.findMany({
+          where: { contaAzulProdutoId: { not: null }, importadoOperacao: true, ativo: true },
+          select: { id: true, nome: true, precoBase: true, categoria: true },
+        }),
       ]);
 
       // Mapa de preço por (cliente, produto) com base nas regras comerciais; fallback no precoBase.

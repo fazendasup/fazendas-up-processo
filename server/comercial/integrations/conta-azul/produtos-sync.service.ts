@@ -134,7 +134,8 @@ async function upsertProdutoCatalogo(
       where: { id: legado.id },
       data: {
         ...dataBase,
-        importadoOperacao: legado.importadoOperacao || legado.ativo,
+        ativo: false,
+        importadoOperacao: false,
       },
     });
     return "atualizado";
@@ -165,6 +166,16 @@ export type SincronizarCatalogoProdutosResult = {
   ignorados: number;
 };
 
+let syncCatalogoProdutosEmAndamento: Promise<SincronizarCatalogoProdutosResult> | null = null;
+
+export function isSyncCatalogoProdutosEmAndamento(): boolean {
+  return syncCatalogoProdutosEmAndamento != null;
+}
+
+export type IniciarSyncCatalogoProdutosResult =
+  | { status: "started"; emSegundoPlano: true }
+  | { status: "already_running"; emSegundoPlano: true };
+
 export async function sincronizarCatalogoProdutosContaAzul(
   prisma: PrismaClient,
   env: Env,
@@ -187,6 +198,29 @@ export async function sincronizarCatalogoProdutosContaAzul(
   }
 
   return { recebidos: itens.length, novos, atualizados, ignorados };
+}
+
+/** Dispara o sync sem manter a requisição do navegador aberta. */
+export function iniciarSincronizacaoCatalogoProdutosEmBackground(
+  prisma: PrismaClient,
+  env: Env,
+): IniciarSyncCatalogoProdutosResult {
+  if (syncCatalogoProdutosEmAndamento) return { status: "already_running", emSegundoPlano: true };
+
+  const execucao = sincronizarCatalogoProdutosContaAzul(prisma, env);
+  syncCatalogoProdutosEmAndamento = execucao;
+  void execucao
+    .then((resultado) => {
+      logger.info({ resultado }, "Catálogo de produtos Conta Azul sincronizado.");
+    })
+    .catch((err) => {
+      logger.error({ err }, "Falha ao sincronizar catálogo de produtos Conta Azul.");
+    })
+    .finally(() => {
+      if (syncCatalogoProdutosEmAndamento === execucao) syncCatalogoProdutosEmAndamento = null;
+    });
+
+  return { status: "started", emSegundoPlano: true };
 }
 
 export async function importarProdutosParaOperacao(

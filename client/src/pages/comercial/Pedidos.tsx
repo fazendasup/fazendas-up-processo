@@ -1506,11 +1506,16 @@ function ProdutosArea({ produtosOperacao, edit, setEdit, onSalvar, onExcluir, ca
   );
   const sincronizar = trpc.comercial.pedidos.sincronizarCatalogoContaAzul.useMutation({
     onSuccess: (r) => {
-      toast.success(`Catálogo sincronizado: ${r.recebidos} produto(s) no Conta Azul.`, {
-        description: `${r.novos} novo(s), ${r.atualizados} atualizado(s).`,
-      });
-      void utils.comercial.pedidos.catalogoContaAzul.invalidate();
-      void utils.comercial.pedidos.produtos.invalidate();
+      toast.success(
+        r.status === "already_running"
+          ? "Sincronização do catálogo já está em andamento."
+          : "Sincronização do catálogo iniciada.",
+        { description: "A lista será atualizada em alguns segundos." },
+      );
+      window.setTimeout(() => {
+        void utils.comercial.pedidos.catalogoContaAzul.invalidate();
+        void utils.comercial.pedidos.produtos.invalidate();
+      }, 5000);
     },
     onError: (e) => toast.error(e.message),
   });

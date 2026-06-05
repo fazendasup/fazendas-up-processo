@@ -602,7 +602,7 @@ async function executarContaAzulSync(
     const vendasItens = await fetchTodasVendasBusca(http, env);
     const vendaIdsAtuais = new Set<string>();
     const catalogoProdutos = await prisma.produtoComercial.findMany({
-      where: { ativo: true },
+      where: { contaAzulProdutoId: { not: null }, ativo: true, importadoOperacao: true },
       select: { nome: true, categoria: true },
     });
 

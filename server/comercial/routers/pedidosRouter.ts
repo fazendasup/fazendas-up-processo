@@ -38,7 +38,7 @@ import {
 } from "../lib/produto-operacional.js";
 import {
   importarProdutosParaOperacao,
-  sincronizarCatalogoProdutosContaAzul,
+  iniciarSincronizacaoCatalogoProdutosEmBackground,
 } from "../integrations/conta-azul/produtos-sync.service.js";
 
 const podeConfigurarEstoqueVivo = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL", "COMERCIAL", "OPERACOES");
@@ -404,14 +404,13 @@ export const pedidosRouter = router({
         where: {
           ...(input.apenasOperacao
             ? {
-                OR: [
-                  { importadoOperacao: true, ...(input.incluirInativos ? {} : { ativo: true }) },
-                  { contaAzulProdutoId: null, ...(input.incluirInativos ? {} : { ativo: true }) },
-                ],
+                contaAzulProdutoId: { not: null },
+                importadoOperacao: true,
+                ...(input.incluirInativos ? {} : { ativo: true }),
               }
             : input.incluirInativos
-              ? {}
-              : { ativo: true }),
+              ? { contaAzulProdutoId: { not: null } }
+              : { contaAzulProdutoId: { not: null }, ativo: true }),
           ...(input.busca?.trim() ? { nome: { contains: input.busca.trim() } } : {}),
         },
         orderBy: [{ ativo: "desc" }, { nome: "asc" }],
@@ -448,7 +447,11 @@ export const pedidosRouter = router({
       if (!ctx.comercialEnv) {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Ambiente comercial indisponível." });
       }
-      return sincronizarCatalogoProdutosContaAzul(ctx.prisma!, ctx.comercialEnv);
+      const r = iniciarSincronizacaoCatalogoProdutosEmBackground(ctx.prisma!, ctx.comercialEnv);
+      if (r.status === "already_running") {
+        return r;
+      }
+      return r;
     }),
 
   importarProdutosContaAzul: comercialProcedure
@@ -468,8 +471,14 @@ export const pedidosRouter = router({
       }
       const existente = await ctx.prisma!.produtoComercial.findUnique({ where: { id: input.id } });
       if (!existente) throw new TRPCError({ code: "NOT_FOUND", message: "Produto não encontrado." });
+      if (!existente.contaAzulProdutoId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Este produto não veio do Conta Azul e não pode ser usado na operação.",
+        });
+      }
       const data = {
-        nome: existente.contaAzulProdutoId ? existente.nome : input.nome.trim(),
+        nome: existente.nome,
         precoBase: input.precoBase == null ? null : new Prisma.Decimal(input.precoBase),
         categoria: input.categoria?.trim() || null,
         ativo: input.ativo,
@@ -642,7 +651,8 @@ export const pedidosRouter = router({
         where: {
           id: { in: produtoIds },
           ativo: true,
-          OR: [{ importadoOperacao: true }, { contaAzulProdutoId: null }],
+          importadoOperacao: true,
+          contaAzulProdutoId: { not: null },
         },
       });
       if (produtos.length !== produtoIds.length) {
@@ -1213,7 +1223,10 @@ export const pedidosRouter = router({
           },
           include: { itens: { include: { produto: true } } },
         }),
-        ctx.prisma!.produtoComercial.findMany({ orderBy: { nome: "asc" } }),
+        ctx.prisma!.produtoComercial.findMany({
+          where: { contaAzulProdutoId: { not: null }, importadoOperacao: true, ativo: true },
+          orderBy: { nome: "asc" },
+        }),
         ctx.prisma!.estoqueVivoConfig.findUnique({ where: { id: "default" } }),
       ]);
 
@@ -1689,9 +1702,7 @@ export const pedidosRouter = router({
       });
 
       const produtosConciliacao = await ctx.prisma!.produtoComercial.findMany({
-        where: {
-          OR: [{ ativo: true, importadoOperacao: true }, { contaAzulProdutoId: { not: null } }],
-        },
+        where: { contaAzulProdutoId: { not: null } },
         select: {
           id: true,
           nome: true,
@@ -1729,7 +1740,7 @@ export const pedidosRouter = router({
 
       const [ativos, catalogo] = await Promise.all([
         ctx.prisma!.produtoComercial.findMany({
-          where: { ativo: true, importadoOperacao: true },
+          where: { contaAzulProdutoId: { not: null }, ativo: true, importadoOperacao: true },
           select: {
             id: true,
             nome: true,
