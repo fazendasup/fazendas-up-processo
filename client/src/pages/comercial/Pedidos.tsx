@@ -68,6 +68,13 @@ function fmtQtd(v: unknown) {
   return Number.isInteger(n) ? String(n) : n.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
 }
 
+function observacaoOperacional(obs: unknown) {
+  const texto = String(obs ?? "").trim();
+  if (!texto) return null;
+  if (/^Criado a partir da venda Conta Azul\.?$/i.test(texto)) return null;
+  return texto;
+}
+
 function fmtDate(v: string | Date) {
   return new Date(v).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
@@ -646,15 +653,30 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
                       <RegrasResumo regra={grupo.regras} />
                       <AlertaAvariasPedidoCopiado alertas={grupo.alertasAvariasPendentes} />
                       <div className="grid gap-2">
-                        {grupo.itens.map((item: any) => (
-                          <div key={item.id} className="rounded-lg bg-muted/40 px-2 py-1.5 text-sm">
-                            <p className="font-medium">
-                              {Number(item.quantidade)} × {item.produtoNome}
-                              {item.categoria ? <span className="ml-1 text-xs text-muted-foreground">({item.categoria})</span> : null}
-                            </p>
-                            {item.pedidoObservacoes && <p className="text-xs text-muted-foreground">Obs. pedido: {item.pedidoObservacoes}</p>}
-                          </div>
-                        ))}
+                        {grupo.itens.map((item: any) => {
+                          const obs = observacaoOperacional(item.pedidoObservacoes);
+                          return (
+                            <div key={item.id} className="flex items-center gap-3 rounded-xl bg-sky-50/70 px-3 py-2.5 text-sm ring-1 ring-sky-100 dark:bg-sky-950/20 dark:ring-sky-900/50">
+                              <div className="flex h-12 w-14 shrink-0 flex-col items-center justify-center rounded-lg bg-white text-sky-900 shadow-sm ring-1 ring-sky-100 dark:bg-slate-950 dark:text-sky-100 dark:ring-sky-900">
+                                <span className="text-lg font-extrabold leading-none">{fmtQtd(item.quantidade)}</span>
+                                <span className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-700 dark:text-sky-300">Qtd.</span>
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-base font-extrabold leading-tight text-slate-950 dark:text-slate-50">
+                                  {item.produtoNome}
+                                </p>
+                                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                  {item.categoria ? (
+                                    <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground ring-1 ring-sky-100 dark:bg-slate-950/70 dark:ring-sky-900">
+                                      {item.categoria}
+                                    </span>
+                                  ) : null}
+                                  {obs ? <span className="text-xs text-muted-foreground">Obs.: {obs}</span> : null}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                       {grupo.avarias?.length ? (
                         <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-2 dark:border-amber-900/60 dark:bg-amber-950/10">
