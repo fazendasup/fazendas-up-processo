@@ -1499,9 +1499,10 @@ function RegrasClienteArea({ clientes, busca, setBusca, clienteId, setClienteId,
 function ProdutosArea({ produtosOperacao, edit, setEdit, onSalvar, onExcluir, canEdit }: any) {
   const utils = trpc.useUtils();
   const [buscaCatalogo, setBuscaCatalogo] = useState("");
+  const [somenteAtivosContaAzul, setSomenteAtivosContaAzul] = useState(true);
   const [selecionados, setSelecionados] = useState<string[]>([]);
   const catalogo = trpc.comercial.pedidos.catalogoContaAzul.useQuery(
-    { busca: buscaCatalogo || undefined, apenasDisponiveis: true },
+    { busca: buscaCatalogo || undefined, apenasDisponiveis: true, somenteAtivosContaAzul },
     { enabled: canEdit },
   );
   const sincronizar = trpc.comercial.pedidos.sincronizarCatalogoContaAzul.useMutation({
@@ -1565,6 +1566,17 @@ function ProdutosArea({ produtosOperacao, edit, setEdit, onSalvar, onExcluir, ca
               value={buscaCatalogo}
               onChange={(e) => setBuscaCatalogo(e.target.value)}
             />
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={somenteAtivosContaAzul}
+                onChange={(e) => {
+                  setSomenteAtivosContaAzul(e.target.checked);
+                  setSelecionados([]);
+                }}
+              />
+              Mostrar somente produtos ativos no Conta Azul
+            </label>
             {canEdit && itensCatalogo.length > 0 && (
               <div className="flex flex-wrap items-center gap-2">
                 <Button

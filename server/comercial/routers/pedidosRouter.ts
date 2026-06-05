@@ -406,7 +406,7 @@ export const pedidosRouter = router({
             ? {
                 contaAzulProdutoId: { not: null },
                 importadoOperacao: true,
-                ...(input.incluirInativos ? {} : { ativo: true }),
+                ativo: true,
               }
             : input.incluirInativos
               ? { contaAzulProdutoId: { not: null } }
@@ -426,14 +426,16 @@ export const pedidosRouter = router({
         .object({
           busca: z.string().optional(),
           apenasDisponiveis: z.boolean().default(true),
+          somenteAtivosContaAzul: z.boolean().default(true),
         })
-        .default({ apenasDisponiveis: true }),
+        .default({ apenasDisponiveis: true, somenteAtivosContaAzul: true }),
     )
     .query(async ({ ctx, input }) => {
       const produtos = await ctx.prisma!.produtoComercial.findMany({
         where: {
           contaAzulProdutoId: { not: null },
           ...(input.apenasDisponiveis ? { importadoOperacao: false } : {}),
+          ...(input.somenteAtivosContaAzul ? { statusContaAzul: "ATIVO" } : {}),
           ...(input.busca?.trim() ? { nome: { contains: input.busca.trim() } } : {}),
         },
         orderBy: [{ nome: "asc" }],
