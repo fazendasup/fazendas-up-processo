@@ -37,7 +37,7 @@ describe("accessPolicy", () => {
   });
 
   it("mantem lider de colheita restrito a pedidos e avarias sem areas comerciais", () => {
-    expect(homeForCommercialPerfil("LIDER_COLHEITA")).toBe("/comercial/acompanhamento-avarias");
+    expect(homeForCommercialPerfil("LIDER_COLHEITA")).toBe("/comercial/pedidos");
     expect(roleLabel("comercial", "LIDER_COLHEITA")).toBe("Líder de colheita");
 
     expect(canAccessCommercialPath("/comercial/pedidos", "LIDER_COLHEITA")).toBe(true);

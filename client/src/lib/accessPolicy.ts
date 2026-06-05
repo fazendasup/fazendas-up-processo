@@ -35,9 +35,8 @@ export function dashboardPathForUserRole(role: string | null | undefined): strin
 }
 
 export function homeForCommercialPerfil(perfil: string | null | undefined): string {
-  return isPromoterPerfil(perfil) || isLiderColheitaPerfil(perfil)
-    ? "/comercial/acompanhamento-avarias"
-    : "/comercial/dashboard";
+  if (isLiderColheitaPerfil(perfil)) return "/comercial/pedidos";
+  return isPromoterPerfil(perfil) ? "/comercial/acompanhamento-avarias" : "/comercial/dashboard";
 }
 
 export function canAccessCommercialPath(path: string, perfil: string | null | undefined): boolean {
