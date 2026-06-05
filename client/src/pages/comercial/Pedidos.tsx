@@ -1328,10 +1328,10 @@ function statusConciliacaoSemanalLabel(status: string) {
 
 function detalheConciliacaoSemanal(c: any) {
   if (c.status === "aguardando_venda") {
-    return "Sem correção agora: existe pedido operacional, mas a venda ainda não apareceu no Conta Azul.";
+    return `Há mais pedidos operacionais (${c.operacional?.pedidos ?? 0}) do que vendas CA (${c.contaAzul?.pedidos ?? 0}). Aguarde/sincronize a venda ou confira se o pedido deve ser cancelado.`;
   }
   if (c.status === "venda_sem_pedido") {
-    return "Crie o pedido operacional a partir da venda Conta Azul ou vincule a um pedido existente.";
+    return `Há mais vendas CA (${c.contaAzul?.pedidos ?? 0}) do que pedidos operacionais (${c.operacional?.pedidos ?? 0}). Crie o pedido a partir da venda CA que falta ou vincule a um pedido existente.`;
   }
   const problemas: string[] = [];
   if ((c.diffPedidos ?? 0) !== 0) {
@@ -1452,14 +1452,36 @@ function PainelConciliacaoFechamento({
               <span className="font-medium">{c.clienteNome}</span>
               {" · aguardando venda · pedidos "}
               {c.operacional?.pedidos ?? 0}/{c.contaAzul?.pedidos ?? 0}
+              <span className="block text-muted-foreground">{detalheConciliacaoSemanal(c)}</span>
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
-                className="ml-2 h-7 px-2 text-xs"
+                className="mt-1 h-7 px-2 text-xs"
                 onClick={onIrConciliacao}
               >
                 Abrir conciliação
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+      {conciliacao.conciliado && vendasSemPedido.length > 0 && (
+        <div className="mt-2 space-y-1">
+          {vendasSemPedido.slice(0, 6).map((c: any) => (
+            <div key={c.contaAzulCustomerId} className="rounded-md border border-violet-200 bg-violet-50/60 px-2 py-1 text-xs dark:border-violet-900 dark:bg-violet-950/20">
+              <span className="font-medium">{c.clienteNome}</span>
+              {" · venda CA sem pedido · pedidos "}
+              {c.operacional?.pedidos ?? 0}/{c.contaAzul?.pedidos ?? 0}
+              <span className="block text-muted-foreground">{detalheConciliacaoSemanal(c)}</span>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="mt-1 h-7 px-2 text-xs"
+                onClick={onIrConciliacao}
+              >
+                Criar/vincular pedido
               </Button>
             </div>
           ))}

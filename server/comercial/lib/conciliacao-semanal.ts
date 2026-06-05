@@ -90,10 +90,9 @@ function classificarClienteSemanal(
   diffUnidades: number,
   diffValor: number,
 ): StatusConciliacaoSemanalCliente {
-  if (opPedidos > 0 && caPedidos === 0) return "aguardando_venda";
-  if (caPedidos > 0 && opPedidos === 0) return "venda_sem_pedido";
+  if (opPedidos > caPedidos) return "aguardando_venda";
+  if (caPedidos > opPedidos) return "venda_sem_pedido";
   if (
-    opPedidos !== caPedidos ||
     Math.abs(diffUnidades) > 0.001 ||
     Math.abs(diffValor) > 0.05
   ) {
