@@ -383,3 +383,43 @@ export function mapPedidoCreate(
     },
   };
 }
+
+export type ContaAzulProdutoResumo = {
+  id: string;
+  nome: string;
+  codigo: string | null;
+  valorVenda: number | null;
+  status: string | null;
+  tipo: string | null;
+};
+
+/** Item de GET /v1/produtos (OpenAPI Conta Azul — inventário). */
+export function mapProdutoContaAzulItem(raw: unknown): ContaAzulProdutoResumo | null {
+  if (!raw || typeof raw !== "object") return null;
+  const item = raw as Record<string, unknown>;
+  const id = typeof item.id === "string" ? item.id : null;
+  const nome = typeof item.nome === "string" ? item.nome.trim() : "";
+  if (!id || !nome) return null;
+  const tipo = typeof item.tipo === "string" ? item.tipo.toUpperCase().trim() : "PRODUTO";
+  if (tipo && tipo !== "PRODUTO" && tipo !== "VARIACAO_PRODUTO") return null;
+  const codigo =
+    typeof item.codigo === "string" && item.codigo.trim()
+      ? item.codigo.trim()
+      : null;
+  const valorRaw = item.valor_venda ?? item.valorVenda;
+  const valorVenda =
+    typeof valorRaw === "number"
+      ? valorRaw
+      : typeof valorRaw === "string"
+        ? Number(valorRaw)
+        : null;
+  const status = typeof item.status === "string" ? item.status.toUpperCase().trim() : null;
+  return {
+    id,
+    nome,
+    codigo,
+    valorVenda: valorVenda != null && Number.isFinite(valorVenda) ? valorVenda : null,
+    status,
+    tipo,
+  };
+}

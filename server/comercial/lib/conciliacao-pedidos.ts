@@ -1,5 +1,11 @@
 import { Prisma, type PrismaClient } from "../generated/prisma/index.js";
 import { classificarStatusPedido } from "./pedido-status.js";
+import {
+  criarIndiceProdutosOperacionais,
+  criarResolverChaveItemConciliacao,
+  resolverProdutoOperacional,
+  type ProdutoOperacionalLookup,
+} from "./produto-operacional.js";
 import { GO_LIVE_PEDIDOS } from "./semana.js";
 
 type PedidoOperacionalComItens = Prisma.PedidoOperacionalGetPayload<{
@@ -28,9 +34,28 @@ export type SnapshotConciliacao = {
     dataPedido: string;
     statusPedido: string;
     valorLiquido: number;
-    itens: Array<{ produto: string; quantidade: number; precoUnit: number }>;
+    itens: Array<{ produto: string; sku?: string | null; quantidade: number; precoUnit: number }>;
   };
 };
+
+type ResolverChaveItem = ReturnType<typeof criarResolverChaveItemConciliacao>;
+
+async function carregarProdutosConciliacao(prisma: PrismaClient): Promise<ProdutoOperacionalLookup[]> {
+  return prisma.produtoComercial.findMany({
+    where: {
+      OR: [{ ativo: true, importadoOperacao: true }, { contaAzulProdutoId: { not: null } }],
+    },
+    select: {
+      id: true,
+      nome: true,
+      sku: true,
+      contaAzulProdutoId: true,
+      ativo: true,
+      importadoOperacao: true,
+      categoria: true,
+    },
+  });
+}
 
 export type DivergenciaConciliacao = {
   campo: string;
@@ -102,6 +127,7 @@ export function snapshotContaAzul(pedido: PedidoContaAzulComItens): SnapshotConc
     valorLiquido: num(pedido.valorLiquido ?? pedido.valorTotal),
     itens: pedido.itens.map((i) => ({
       produto: i.produto,
+      sku: i.sku,
       quantidade: num(i.quantidade),
       precoUnit: num(i.precoUnit),
     })),
@@ -111,6 +137,7 @@ export function snapshotContaAzul(pedido: PedidoContaAzulComItens): SnapshotConc
 export function calcularDivergencias(
   operacional: PedidoOperacionalComItens,
   contaAzul: PedidoContaAzulComItens,
+  resolverChave?: ResolverChaveItem,
 ): DivergenciaConciliacao[] {
   const divergencias: DivergenciaConciliacao[] = [];
 
@@ -124,12 +151,16 @@ export function calcularDivergencias(
 
   const mapOp = new Map<string, number>();
   for (const item of operacional.itens) {
-    const key = normalizarNome(item.produtoNome);
+    const key = resolverChave
+      ? resolverChave("operacional", { produtoId: item.produtoId, produtoNome: item.produtoNome })
+      : `nome:${normalizarNome(item.produtoNome)}`;
     mapOp.set(key, (mapOp.get(key) ?? 0) + num(item.quantidade));
   }
   const mapCa = new Map<string, number>();
   for (const item of contaAzul.itens) {
-    const key = normalizarNome(item.produto);
+    const key = resolverChave
+      ? resolverChave("contaAzul", { produto: item.produto, sku: item.sku })
+      : `nome:${normalizarNome(item.produto)}`;
     mapCa.set(key, (mapCa.get(key) ?? 0) + num(item.quantidade));
   }
 
@@ -158,6 +189,7 @@ export function calcularDivergencias(
 export function scoreSugestaoVinculo(
   operacional: PedidoOperacionalComItens,
   contaAzul: PedidoContaAzulComItens,
+  resolverChave?: ResolverChaveItem,
 ): number {
   if (!documentoContaAzulConciliavel(contaAzul)) return 0;
   const extOp = operacional.contaAzulCustomerId;
@@ -171,15 +203,31 @@ export function scoreSugestaoVinculo(
   else if (dias <= 7) score += 8;
   else return 0;
 
-  const nomesOp = new Set(operacional.itens.map((i) => normalizarNome(i.produtoNome)).filter(Boolean));
-  const nomesCa = new Set(contaAzul.itens.map((i) => normalizarNome(i.produto)).filter(Boolean));
-  if (nomesOp.size === 0 || nomesCa.size === 0) return score;
+  const chavesOp = new Set(
+    operacional.itens
+      .map((i) =>
+        resolverChave
+          ? resolverChave("operacional", { produtoId: i.produtoId, produtoNome: i.produtoNome })
+          : `nome:${normalizarNome(i.produtoNome)}`,
+      )
+      .filter(Boolean),
+  );
+  const chavesCa = new Set(
+    contaAzul.itens
+      .map((i) =>
+        resolverChave
+          ? resolverChave("contaAzul", { produto: i.produto, sku: i.sku })
+          : `nome:${normalizarNome(i.produto)}`,
+      )
+      .filter(Boolean),
+  );
+  if (chavesOp.size === 0 || chavesCa.size === 0) return score;
 
   let overlap = 0;
-  for (const n of Array.from(nomesOp)) {
-    if (nomesCa.has(n)) overlap++;
+  for (const chave of Array.from(chavesOp)) {
+    if (chavesCa.has(chave)) overlap++;
   }
-  score += Math.min(25, Math.round((overlap / Math.max(nomesOp.size, nomesCa.size)) * 25));
+  score += Math.min(25, Math.round((overlap / Math.max(chavesOp.size, chavesCa.size)) * 25));
   return score;
 }
 
@@ -248,8 +296,11 @@ export async function processarConciliacaoAposSyncVenda(
     include: { itens: true, cliente: { select: { externalId: true, nome: true } } },
   });
 
+  const produtosConciliacao = await carregarProdutosConciliacao(prisma);
+  const resolverChave = criarResolverChaveItemConciliacao(produtosConciliacao);
+
   if (vinculado) {
-    const divergencias = calcularDivergencias(vinculado, contaAzul);
+    const divergencias = calcularDivergencias(vinculado, contaAzul, resolverChave);
     if (divergencias.length > 0 && vinculado.statusConciliacao === "CONCILIADO") {
       await prisma.$transaction(async (tx) => {
         await tx.pedidoOperacional.update({
@@ -290,7 +341,7 @@ export async function processarConciliacaoAposSyncVenda(
 
   let melhor: { op: PedidoOperacionalComItens; score: number } | null = null;
   for (const op of candidatos) {
-    const score = scoreSugestaoVinculo(op, contaAzul);
+    const score = scoreSugestaoVinculo(op, contaAzul, resolverChave);
     if (score >= 70 && (!melhor || score > melhor.score)) melhor = { op, score };
   }
   if (!melhor) return { sugestoes: 0, divergencias: 0 };
@@ -352,7 +403,9 @@ export async function confirmarVinculoConciliacao(
   });
   if (outro) throw new Error("Esta venda Conta Azul já está vinculada a outro pedido operacional.");
 
-  const divergencias = calcularDivergencias(operacional, contaAzul);
+  const produtosConciliacao = await carregarProdutosConciliacao(prisma);
+  const resolverChave = criarResolverChaveItemConciliacao(produtosConciliacao);
+  const divergencias = calcularDivergencias(operacional, contaAzul, resolverChave);
   const snapshot: SnapshotConciliacao = {
     operacional: snapshotOperacional(operacional),
     contaAzul: snapshotContaAzul(contaAzul),
@@ -509,8 +562,30 @@ export async function criarOperacionalDeVenda(
   });
   if (existente) throw new Error("Esta venda já possui pedido operacional vinculado.");
 
-  const produtos = await prisma.produtoComercial.findMany({ where: { ativo: true } });
-  const porNome = new Map(produtos.map((p) => [normalizarNome(p.nome), p]));
+  const produtosAtivos = await prisma.produtoComercial.findMany({
+    where: { ativo: true, importadoOperacao: true },
+    select: {
+      id: true,
+      nome: true,
+      sku: true,
+      contaAzulProdutoId: true,
+      ativo: true,
+      importadoOperacao: true,
+      categoria: true,
+    },
+  });
+  const indice = criarIndiceProdutosOperacionais(produtosAtivos);
+  const faltantes = contaAzul.itens
+    .map((item) => {
+      const prod = resolverProdutoOperacional(indice, { produto: item.produto, sku: item.sku });
+      return prod ? null : item.produto;
+    })
+    .filter((nome): nome is string => Boolean(nome));
+  if (faltantes.length > 0) {
+    throw new Error(
+      `Produto(s) não ativo(s) na operação: ${faltantes.join(", ")}. Importe/ative no catálogo Conta Azul (aba Produtos).`,
+    );
+  }
 
   const operacional = await prisma.$transaction(async (tx) => {
     const pedido = await tx.pedidoOperacional.create({
@@ -532,10 +607,7 @@ export async function criarOperacionalDeVenda(
         } as Prisma.InputJsonValue,
         itens: {
           create: contaAzul.itens.map((item) => {
-            const prod = porNome.get(normalizarNome(item.produto));
-            if (!prod) {
-              throw new Error(`Produto comercial não encontrado para o item "${item.produto}". Cadastre o produto antes de importar.`);
-            }
+            const prod = resolverProdutoOperacional(indice, { produto: item.produto, sku: item.sku })!;
             return {
               produtoId: prod.id,
               produtoNome: prod.nome,

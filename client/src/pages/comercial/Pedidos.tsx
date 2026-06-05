@@ -152,7 +152,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
   }, [aba, isPromoter]);
   const clientes = trpc.comercial.pedidos.clientes.useQuery({ busca: clienteBusca || undefined, limite: 80 });
   const clientesDoDia = trpc.comercial.pedidos.clientes.useQuery({ dia: diaDate, limite: 100 });
-  const produtos = trpc.comercial.pedidos.produtos.useQuery({ incluirInativos: true });
+  const produtos = trpc.comercial.pedidos.produtos.useQuery({ incluirInativos: true, apenasOperacao: true });
   const contextoCliente = trpc.comercial.pedidos.contextoCliente.useQuery(
     { contaAzulCustomerId: clienteId },
     { enabled: Boolean(clienteId) },
@@ -975,7 +975,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
 
         <TabsContent value="produtos">
           <ProdutosArea
-            produtos={produtos.data ?? []}
+            produtosOperacao={produtos.data ?? []}
             edit={produtoEdit}
             setEdit={setProdutoEdit}
             onSalvar={(payload: any) => salvarProduto.mutate(payload)}
@@ -1496,42 +1496,204 @@ function RegrasClienteArea({ clientes, busca, setBusca, clienteId, setClienteId,
   );
 }
 
-function ProdutosArea({ produtos, edit, setEdit, onSalvar, onExcluir, canEdit }: any) {
+function ProdutosArea({ produtosOperacao, edit, setEdit, onSalvar, onExcluir, canEdit }: any) {
+  const utils = trpc.useUtils();
+  const [buscaCatalogo, setBuscaCatalogo] = useState("");
+  const [selecionados, setSelecionados] = useState<string[]>([]);
+  const catalogo = trpc.comercial.pedidos.catalogoContaAzul.useQuery(
+    { busca: buscaCatalogo || undefined, apenasDisponiveis: true },
+    { enabled: canEdit },
+  );
+  const sincronizar = trpc.comercial.pedidos.sincronizarCatalogoContaAzul.useMutation({
+    onSuccess: (r) => {
+      toast.success(`Catálogo sincronizado: ${r.recebidos} produto(s) no Conta Azul.`, {
+        description: `${r.novos} novo(s), ${r.atualizados} atualizado(s).`,
+      });
+      void utils.comercial.pedidos.catalogoContaAzul.invalidate();
+      void utils.comercial.pedidos.produtos.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const importar = trpc.comercial.pedidos.importarProdutosContaAzul.useMutation({
+    onSuccess: (r) => {
+      toast.success(`${r.importados} produto(s) ativado(s) na operação.`);
+      setSelecionados([]);
+      void utils.comercial.pedidos.catalogoContaAzul.invalidate();
+      void utils.comercial.pedidos.produtos.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   const p = edit ?? { nome: "", precoBase: "", categoria: "", ativo: true };
+  const itensCatalogo = catalogo.data ?? [];
+  const todosSelecionados = itensCatalogo.length > 0 && selecionados.length === itensCatalogo.length;
+
   return (
-    <div className="grid gap-4 xl:grid-cols-[360px_1fr]">
-      <Card>
-        <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Package className="h-4 w-4" /> Catálogo</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          {!canEdit && <p className="rounded-lg bg-muted p-2 text-xs text-muted-foreground">Seu perfil pode visualizar produtos, mas não editar este catálogo.</p>}
-          <Field label="Nome" value={p.nome} onChange={(v: string) => setEdit({ ...p, nome: v })} disabled={!canEdit} />
-          <Field label="Preço base" value={p.precoBase ?? ""} onChange={(v: string) => setEdit({ ...p, precoBase: v })} type="number" disabled={!canEdit} />
-          <div>
-            <Label className="text-xs">Categoria</Label>
-            <select disabled={!canEdit} className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={p.categoria ?? ""} onChange={(e) => setEdit({ ...p, categoria: e.target.value })}>
-              <option value="">Sem categoria</option>
-              {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <Button disabled={!canEdit} onClick={() => onSalvar({ ...p, precoBase: p.precoBase === "" ? null : Number(p.precoBase), ativo: p.ativo ?? true })}>Salvar produto</Button>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="space-y-2 p-4">
-          {produtos.map((prod: any) => (
-            <div key={prod.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3">
-              <div>
-                <p className="font-semibold">{prod.nome} {!prod.ativo && <span className="text-xs text-muted-foreground">(inativo)</span>}</p>
-                <p className="text-xs text-muted-foreground">{prod.categoria || "sem categoria"} · {fmtMoney(prod.precoBase ?? 0)} · usado em {prod.usoPedidos ?? 0} item(ns)</p>
+    <div className="space-y-4">
+      <div className="rounded-lg border border-cyan-200 bg-cyan-50/40 p-3 text-sm text-cyan-950 dark:border-cyan-900 dark:bg-cyan-950/20 dark:text-cyan-100">
+        Produtos vêm do <strong>Conta Azul</strong>. Sincronize o catálogo completo e escolha quais itens entram na operação (pedidos, regras, compras e conciliação).
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <Card>
+          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Package className="h-4 w-4" /> Disponíveis no Conta Azul
+            </CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!canEdit || sincronizar.isPending}
+              onClick={() => sincronizar.mutate()}
+            >
+              {sincronizar.isPending ? "Sincronizando…" : "Sincronizar catálogo"}
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {!canEdit && (
+              <p className="rounded-lg bg-muted p-2 text-xs text-muted-foreground">
+                Seu perfil pode visualizar, mas não importar produtos.
+              </p>
+            )}
+            <Input
+              placeholder="Buscar por nome ou SKU"
+              value={buscaCatalogo}
+              onChange={(e) => setBuscaCatalogo(e.target.value)}
+            />
+            {canEdit && itensCatalogo.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setSelecionados(todosSelecionados ? [] : itensCatalogo.map((i: any) => i.id))}
+                >
+                  {todosSelecionados ? "Limpar seleção" : "Selecionar todos"}
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={selecionados.length === 0 || importar.isPending}
+                  onClick={() => importar.mutate({ produtoIds: selecionados })}
+                >
+                  Ativar selecionados ({selecionados.length})
+                </Button>
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={!canEdit} onClick={() => setEdit({ ...prod, precoBase: prod.precoBase == null ? "" : String(Number(prod.precoBase)) })}>Editar</Button>
-                <Button variant="ghost" size="sm" disabled={!canEdit} onClick={() => onExcluir(prod.id)}>Excluir</Button>
-              </div>
+            )}
+            <div className="max-h-[420px] space-y-2 overflow-y-auto">
+              {catalogo.isLoading ? (
+                <p className="text-sm text-muted-foreground">Carregando catálogo…</p>
+              ) : itensCatalogo.length === 0 ? (
+                <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                  Nenhum produto pendente de importação. Clique em &quot;Sincronizar catálogo&quot; para buscar do Conta Azul.
+                </p>
+              ) : (
+                itensCatalogo.map((prod: any) => (
+                  <label
+                    key={prod.id}
+                    className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 hover:bg-muted/30"
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      disabled={!canEdit}
+                      checked={selecionados.includes(prod.id)}
+                      onChange={(e) =>
+                        setSelecionados((prev) =>
+                          e.target.checked ? [...prev, prod.id] : prev.filter((id) => id !== prod.id),
+                        )
+                      }
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium">{prod.nome}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {prod.sku ? `SKU ${prod.sku} · ` : ""}
+                        {fmtMoney(prod.precoBase ?? 0)}
+                        {prod.statusContaAzul ? ` · ${prod.statusContaAzul}` : ""}
+                      </p>
+                    </div>
+                  </label>
+                ))
+              )}
             </div>
-          ))}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Configuração operacional</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {!edit ? (
+                <p className="text-sm text-muted-foreground">Selecione um produto ativo abaixo para ajustar categoria, preço base e compras.</p>
+              ) : (
+                <>
+                  <p className="text-sm font-medium">{p.nome}</p>
+                  {p.contaAzulProdutoId && (
+                    <p className="text-xs text-muted-foreground">Nome e preço vêm do Conta Azul na sincronização.</p>
+                  )}
+                  {!p.contaAzulProdutoId && (
+                    <Field label="Nome" value={p.nome} onChange={(v: string) => setEdit({ ...p, nome: v })} disabled={!canEdit} />
+                  )}
+                  <Field label="Preço base (override)" value={p.precoBase ?? ""} onChange={(v: string) => setEdit({ ...p, precoBase: v })} type="number" disabled={!canEdit} />
+                  <div>
+                    <Label className="text-xs">Categoria</Label>
+                    <select disabled={!canEdit} className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={p.categoria ?? ""} onChange={(e) => setEdit({ ...p, categoria: e.target.value })}>
+                      <option value="">Sem categoria</option>
+                      {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      disabled={!canEdit}
+                      onClick={() =>
+                        onSalvar({
+                          ...p,
+                          precoBase: p.precoBase === "" ? null : Number(p.precoBase),
+                          ativo: p.ativo ?? true,
+                        })
+                      }
+                    >
+                      Salvar ajustes
+                    </Button>
+                    <Button variant="ghost" onClick={() => setEdit(null)}>Cancelar</Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Ativos na operação ({produtosOperacao.length})</CardTitle>
+            </CardHeader>
+            <CardContent className="max-h-[360px] space-y-2 overflow-y-auto p-4">
+              {produtosOperacao.map((prod: any) => (
+                <div key={prod.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3">
+                  <div>
+                    <p className="font-semibold">
+                      {prod.nome}
+                      {!prod.ativo && <span className="text-xs text-muted-foreground"> (inativo)</span>}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {prod.categoria || "sem categoria"} · {fmtMoney(prod.precoBase ?? 0)}
+                      {prod.sku ? ` · SKU ${prod.sku}` : ""}
+                      {" · "}usado em {prod.usoPedidos ?? 0} item(ns)
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" disabled={!canEdit} onClick={() => setEdit({ ...prod, precoBase: prod.precoBase == null ? "" : String(Number(prod.precoBase)) })}>
+                      Editar
+                    </Button>
+                    <Button variant="ghost" size="sm" disabled={!canEdit} onClick={() => onExcluir(prod.id)}>
+                      Desativar
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

@@ -177,6 +177,11 @@ exports.Prisma.EstoqueVivoConfigScalarFieldEnum = {
 exports.Prisma.ProdutoComercialScalarFieldEnum = {
   id: 'id',
   nome: 'nome',
+  contaAzulProdutoId: 'contaAzulProdutoId',
+  sku: 'sku',
+  statusContaAzul: 'statusContaAzul',
+  sincronizadoEm: 'sincronizadoEm',
+  importadoOperacao: 'importadoOperacao',
   precoBase: 'precoBase',
   categoria: 'categoria',
   ativo: 'ativo',
@@ -516,6 +521,9 @@ exports.Prisma.EstoqueVivoConfigOrderByRelevanceFieldEnum = {
 exports.Prisma.ProdutoComercialOrderByRelevanceFieldEnum = {
   id: 'id',
   nome: 'nome',
+  contaAzulProdutoId: 'contaAzulProdutoId',
+  sku: 'sku',
+  statusContaAzul: 'statusContaAzul',
   categoria: 'categoria',
   mixProdutoReferenciaId: 'mixProdutoReferenciaId'
 };

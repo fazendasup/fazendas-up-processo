@@ -31,6 +31,15 @@ import {
   marcarVendaErrada,
   scoreSugestaoVinculo,
 } from "../lib/conciliacao-pedidos.js";
+import {
+  criarIndiceProdutosOperacionais,
+  criarResolverChaveItemConciliacao,
+  listarProdutosFaltantesVenda,
+} from "../lib/produto-operacional.js";
+import {
+  importarProdutosParaOperacao,
+  sincronizarCatalogoProdutosContaAzul,
+} from "../integrations/conta-azul/produtos-sync.service.js";
 
 const podeConfigurarEstoqueVivo = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL", "COMERCIAL", "OPERACOES");
 
@@ -381,11 +390,28 @@ export const pedidosRouter = router({
     }),
 
   produtos: comercialProcedure
-    .input(z.object({ incluirInativos: z.boolean().default(false), busca: z.string().optional() }).default({ incluirInativos: false }))
+    .input(
+      z
+        .object({
+          incluirInativos: z.boolean().default(false),
+          apenasOperacao: z.boolean().default(true),
+          busca: z.string().optional(),
+        })
+        .default({ incluirInativos: false, apenasOperacao: true }),
+    )
     .query(async ({ ctx, input }) => {
       const produtos = await ctx.prisma!.produtoComercial.findMany({
         where: {
-          ...(input.incluirInativos ? {} : { ativo: true }),
+          ...(input.apenasOperacao
+            ? {
+                OR: [
+                  { importadoOperacao: true, ...(input.incluirInativos ? {} : { ativo: true }) },
+                  { contaAzulProdutoId: null, ...(input.incluirInativos ? {} : { ativo: true }) },
+                ],
+              }
+            : input.incluirInativos
+              ? {}
+              : { ativo: true }),
           ...(input.busca?.trim() ? { nome: { contains: input.busca.trim() } } : {}),
         },
         orderBy: [{ ativo: "desc" }, { nome: "asc" }],
@@ -394,12 +420,56 @@ export const pedidosRouter = router({
       return produtos.map((p) => ({ ...p, usoPedidos: p._count.itensPedido }));
     }),
 
+  catalogoContaAzul: comercialProcedure
+    .use(podeConfigurarEstoqueVivo)
+    .input(
+      z
+        .object({
+          busca: z.string().optional(),
+          apenasDisponiveis: z.boolean().default(true),
+        })
+        .default({ apenasDisponiveis: true }),
+    )
+    .query(async ({ ctx, input }) => {
+      const produtos = await ctx.prisma!.produtoComercial.findMany({
+        where: {
+          contaAzulProdutoId: { not: null },
+          ...(input.apenasDisponiveis ? { importadoOperacao: false } : {}),
+          ...(input.busca?.trim() ? { nome: { contains: input.busca.trim() } } : {}),
+        },
+        orderBy: [{ nome: "asc" }],
+      });
+      return produtos;
+    }),
+
+  sincronizarCatalogoContaAzul: comercialProcedure
+    .use(podeConfigurarEstoqueVivo)
+    .mutation(async ({ ctx }) => {
+      if (!ctx.comercialEnv) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Ambiente comercial indisponível." });
+      }
+      return sincronizarCatalogoProdutosContaAzul(ctx.prisma!, ctx.comercialEnv);
+    }),
+
+  importarProdutosContaAzul: comercialProcedure
+    .use(podeConfigurarEstoqueVivo)
+    .input(z.object({ produtoIds: z.array(z.string().min(1)).min(1) }))
+    .mutation(async ({ ctx, input }) => importarProdutosParaOperacao(ctx.prisma!, input.produtoIds)),
+
   salvarProduto: comercialProcedure
     .use(podeConfigurarEstoqueVivo)
     .input(produtoInput)
     .mutation(async ({ ctx, input }) => {
+      if (!input.id) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Produtos devem ser importados do catálogo Conta Azul. Sincronize e selecione os itens na aba Produtos.",
+        });
+      }
+      const existente = await ctx.prisma!.produtoComercial.findUnique({ where: { id: input.id } });
+      if (!existente) throw new TRPCError({ code: "NOT_FOUND", message: "Produto não encontrado." });
       const data = {
-        nome: input.nome.trim(),
+        nome: existente.contaAzulProdutoId ? existente.nome : input.nome.trim(),
         precoBase: input.precoBase == null ? null : new Prisma.Decimal(input.precoBase),
         categoria: input.categoria?.trim() || null,
         ativo: input.ativo,
@@ -412,10 +482,7 @@ export const pedidosRouter = router({
         mixProdutoReferenciaId: input.mixProdutoReferenciaId || null,
         mixVariedades: input.mixVariedades ? (input.mixVariedades as Prisma.InputJsonValue) : Prisma.JsonNull,
       };
-      if (input.id) {
-        return ctx.prisma!.produtoComercial.update({ where: { id: input.id }, data });
-      }
-      return ctx.prisma!.produtoComercial.create({ data });
+      return ctx.prisma!.produtoComercial.update({ where: { id: input.id }, data });
     }),
 
   excluirProduto: comercialProcedure
@@ -572,10 +639,17 @@ export const pedidosRouter = router({
       }
       const produtoIds = Array.from(new Set([...input.itens.map((i) => i.produtoId), ...input.avarias.map((a) => a.produtoId)]));
       const produtos = await ctx.prisma!.produtoComercial.findMany({
-        where: { id: { in: produtoIds }, ativo: true },
+        where: {
+          id: { in: produtoIds },
+          ativo: true,
+          OR: [{ importadoOperacao: true }, { contaAzulProdutoId: null }],
+        },
       });
       if (produtos.length !== produtoIds.length) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Um ou mais produtos não existem ou estão inativos" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Um ou mais produtos não existem, não estão ativos na operação ou não foram importados do Conta Azul.",
+        });
       }
       const produtoMap = new Map(produtos.map((p) => [p.id, p]));
       const regra = await ctx.prisma!.regraComercialCliente.findUnique({
@@ -1614,18 +1688,79 @@ export const pedidosRouter = router({
         take: 80,
       });
 
+      const produtosConciliacao = await ctx.prisma!.produtoComercial.findMany({
+        where: {
+          OR: [{ ativo: true, importadoOperacao: true }, { contaAzulProdutoId: { not: null } }],
+        },
+        select: {
+          id: true,
+          nome: true,
+          sku: true,
+          contaAzulProdutoId: true,
+          ativo: true,
+          importadoOperacao: true,
+          categoria: true,
+        },
+      });
+      const resolverChave = criarResolverChaveItemConciliacao(produtosConciliacao);
+
       return {
         venda,
         candidatos: candidatos
           .map((op) => ({
             pedido: op,
-            score: scoreSugestaoVinculo(op, venda),
+            score: scoreSugestaoVinculo(op, venda, resolverChave),
             diasDistancia: diasEntrePedidos(op, venda),
-            divergencias: calcularDivergencias(op, venda),
+            divergencias: calcularDivergencias(op, venda, resolverChave),
             vinculadoNestaVenda: op.pedidoContaAzulId === venda.id,
           }))
           .sort((a, b) => b.score - a.score || a.diasDistancia - b.diasDistancia),
       };
+    }),
+
+  conciliacaoProdutosFaltantesVenda: comercialProcedure
+    .input(z.object({ pedidoContaAzulId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const venda = await ctx.prisma!.pedido.findUnique({
+        where: { id: input.pedidoContaAzulId },
+        include: { itens: true },
+      });
+      if (!venda) throw new TRPCError({ code: "NOT_FOUND", message: "Venda não encontrada." });
+
+      const [ativos, catalogo] = await Promise.all([
+        ctx.prisma!.produtoComercial.findMany({
+          where: { ativo: true, importadoOperacao: true },
+          select: {
+            id: true,
+            nome: true,
+            sku: true,
+            contaAzulProdutoId: true,
+            ativo: true,
+            importadoOperacao: true,
+            categoria: true,
+          },
+        }),
+        ctx.prisma!.produtoComercial.findMany({
+          where: { contaAzulProdutoId: { not: null } },
+          select: {
+            id: true,
+            nome: true,
+            sku: true,
+            contaAzulProdutoId: true,
+            ativo: true,
+            importadoOperacao: true,
+            categoria: true,
+          },
+        }),
+      ]);
+
+      const indice = criarIndiceProdutosOperacionais(ativos);
+      const faltantes = listarProdutosFaltantesVenda(
+        indice,
+        venda.itens.map((i) => ({ produto: i.produto, sku: i.sku })),
+        catalogo,
+      );
+      return { faltantes };
     }),
 
   conciliacaoConfirmarVinculo: comercialProcedure

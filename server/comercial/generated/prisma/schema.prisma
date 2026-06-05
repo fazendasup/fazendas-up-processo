@@ -240,6 +240,11 @@ model EstoqueVivoConfig {
 model ProdutoComercial {
   id                     String            @id @default(cuid())
   nome                   String            @unique
+  contaAzulProdutoId     String?           @unique @map("conta_azul_produto_id")
+  sku                    String?
+  statusContaAzul        String?           @map("status_conta_azul")
+  sincronizadoEm         DateTime?         @map("sincronizado_em")
+  importadoOperacao      Boolean           @default(false) @map("importado_operacao")
   precoBase              Decimal?          @map("preco_base") @db.Decimal(14, 2)
   categoria              String?
   ativo                  Boolean           @default(true)
@@ -262,6 +267,8 @@ model ProdutoComercial {
 
   @@index([nome])
   @@index([categoria])
+  @@index([sku])
+  @@index([importadoOperacao, ativo])
   @@map("produtos_comerciais")
 }
 

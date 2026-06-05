@@ -86,6 +86,16 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
       toast.success("Pedido operacional criado a partir da venda.");
       void utils.comercial.pedidos.conciliacaoPainel.invalidate();
       void utils.comercial.pedidos.agenda.invalidate();
+      void utils.comercial.pedidos.conciliacaoProdutosFaltantesVenda.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const importarProdutos = trpc.comercial.pedidos.importarProdutosContaAzul.useMutation({
+    onSuccess: (r) => {
+      toast.success(`${r.importados} produto(s) ativado(s). Tente criar o pedido novamente.`);
+      void utils.comercial.pedidos.conciliacaoProdutosFaltantesVenda.invalidate();
+      void utils.comercial.pedidos.produtos.invalidate();
+      void utils.comercial.pedidos.catalogoContaAzul.invalidate();
     },
     onError: (e) => toast.error(e.message),
   });
@@ -235,41 +245,24 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
       {(painel.data?.vendasSemPedido ?? []).length > 0 && (
         <Section title="Vendas/orçamentos Conta Azul sem pedido operacional" icon={<XCircle className="h-4 w-4" />}>
           {painel.data!.vendasSemPedido.map((v: any) => (
-            <Card key={v.id}>
-              <CardContent className="flex flex-wrap items-start justify-between gap-3 p-4">
-                <BlocoVenda titulo="Venda" venda={v} />
-                <div className="flex flex-wrap gap-2">
-                  <Button size="sm" disabled={criarDeVenda.isPending} onClick={() => criarDeVenda.mutate({ pedidoContaAzulId: v.id })}>
-                    Criar pedido operacional
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => setVendaCandidatosId((atual) => (atual === v.id ? null : v.id))}>
-                    Vincular a pedido existente
-                  </Button>
-                  <Button size="sm" variant="outline" disabled={ignorar.isPending} onClick={() => ignorar.mutate({ pedidoContaAzulId: v.id })}>
-                    Ignorar
-                  </Button>
-                  <Button size="sm" variant="ghost" disabled={marcarErrada.isPending} onClick={() => marcarErrada.mutate({ pedidoContaAzulId: v.id })}>
-                    Marcar venda errada
-                  </Button>
-                </div>
-                {vendaCandidatosId === v.id && (
-                  <div className="w-full">
-                    <CandidatosVenda
-                      isLoading={candidatos.isLoading}
-                      candidatos={candidatos.data?.candidatos ?? []}
-                      vendaId={v.id}
-                      onConfirmar={(pedidoOperacionalId) =>
-                        confirmar.mutate({
-                          pedidoOperacionalId,
-                          pedidoContaAzulId: v.id,
-                          observacoes: "Operador vinculou manualmente uma venda sem pedido sugerido.",
-                        })
-                      }
-                    />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <VendaSemPedidoCard
+              key={v.id}
+              venda={v}
+              criarDeVenda={criarDeVenda}
+              ignorar={ignorar}
+              marcarErrada={marcarErrada}
+              importarProdutos={importarProdutos}
+              vendaCandidatosId={vendaCandidatosId}
+              setVendaCandidatosId={setVendaCandidatosId}
+              candidatos={candidatos}
+              onConfirmarVinculo={(pedidoOperacionalId) =>
+                confirmar.mutate({
+                  pedidoOperacionalId,
+                  pedidoContaAzulId: v.id,
+                  observacoes: "Operador vinculou manualmente uma venda sem pedido sugerido.",
+                })
+              }
+            />
           ))}
         </Section>
       )}
@@ -454,6 +447,89 @@ function CandidatosVenda({
         })}
       </div>
     </div>
+  );
+}
+
+function VendaSemPedidoCard({
+  venda,
+  criarDeVenda,
+  ignorar,
+  marcarErrada,
+  importarProdutos,
+  vendaCandidatosId,
+  setVendaCandidatosId,
+  candidatos,
+  onConfirmarVinculo,
+}: {
+  venda: any;
+  criarDeVenda: { isPending: boolean; mutate: (input: { pedidoContaAzulId: string }) => void };
+  ignorar: { isPending: boolean; mutate: (input: { pedidoContaAzulId: string }) => void };
+  marcarErrada: { isPending: boolean; mutate: (input: { pedidoContaAzulId: string }) => void };
+  importarProdutos: { isPending: boolean; mutate: (input: { produtoIds: string[] }) => void };
+  vendaCandidatosId: string | null;
+  setVendaCandidatosId: (id: string | null) => void;
+  candidatos: { isLoading: boolean; data?: { candidatos: any[] } };
+  onConfirmarVinculo: (pedidoOperacionalId: string) => void;
+}) {
+  const faltantes = trpc.comercial.pedidos.conciliacaoProdutosFaltantesVenda.useQuery({ pedidoContaAzulId: venda.id });
+  const idsAtivacao = (faltantes.data?.faltantes ?? [])
+    .filter((f) => f.podeAtivar && f.produtoCatalogoId)
+    .map((f) => f.produtoCatalogoId as string);
+
+  return (
+    <Card>
+      <CardContent className="flex flex-wrap items-start justify-between gap-3 p-4">
+        <BlocoVenda titulo="Venda" venda={venda} />
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" disabled={criarDeVenda.isPending} onClick={() => criarDeVenda.mutate({ pedidoContaAzulId: venda.id })}>
+            Criar pedido operacional
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setVendaCandidatosId(vendaCandidatosId === venda.id ? null : venda.id)}>
+            Vincular a pedido existente
+          </Button>
+          <Button size="sm" variant="outline" disabled={ignorar.isPending} onClick={() => ignorar.mutate({ pedidoContaAzulId: venda.id })}>
+            Ignorar
+          </Button>
+          <Button size="sm" variant="ghost" disabled={marcarErrada.isPending} onClick={() => marcarErrada.mutate({ pedidoContaAzulId: venda.id })}>
+            Marcar venda errada
+          </Button>
+        </div>
+        {(faltantes.data?.faltantes?.length ?? 0) > 0 && (
+          <div className="w-full rounded-lg border border-amber-300 bg-amber-50/50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/20">
+            <p className="mb-2 font-medium text-amber-900 dark:text-amber-100">Produtos da venda ainda não ativos na operação</p>
+            <ul className="mb-2 space-y-1 text-xs text-muted-foreground">
+              {faltantes.data!.faltantes.map((f) => (
+                <li key={`${f.nome}-${f.sku ?? ""}`}>
+                  {f.nome}
+                  {f.sku ? ` (SKU ${f.sku})` : ""}
+                  {!f.podeAtivar ? " — sincronize o catálogo na aba Produtos" : ""}
+                </li>
+              ))}
+            </ul>
+            {idsAtivacao.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={importarProdutos.isPending}
+                onClick={() => importarProdutos.mutate({ produtoIds: idsAtivacao })}
+              >
+                Ativar agora ({idsAtivacao.length})
+              </Button>
+            )}
+          </div>
+        )}
+        {vendaCandidatosId === venda.id && (
+          <div className="w-full">
+            <CandidatosVenda
+              isLoading={candidatos.isLoading}
+              candidatos={candidatos.data?.candidatos ?? []}
+              vendaId={venda.id}
+              onConfirmar={onConfirmarVinculo}
+            />
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

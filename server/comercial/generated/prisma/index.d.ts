@@ -8898,6 +8898,11 @@ export namespace Prisma {
   export type ProdutoComercialMinAggregateOutputType = {
     id: string | null
     nome: string | null
+    contaAzulProdutoId: string | null
+    sku: string | null
+    statusContaAzul: string | null
+    sincronizadoEm: Date | null
+    importadoOperacao: boolean | null
     precoBase: Decimal | null
     categoria: string | null
     ativo: boolean | null
@@ -8915,6 +8920,11 @@ export namespace Prisma {
   export type ProdutoComercialMaxAggregateOutputType = {
     id: string | null
     nome: string | null
+    contaAzulProdutoId: string | null
+    sku: string | null
+    statusContaAzul: string | null
+    sincronizadoEm: Date | null
+    importadoOperacao: boolean | null
     precoBase: Decimal | null
     categoria: string | null
     ativo: boolean | null
@@ -8932,6 +8942,11 @@ export namespace Prisma {
   export type ProdutoComercialCountAggregateOutputType = {
     id: number
     nome: number
+    contaAzulProdutoId: number
+    sku: number
+    statusContaAzul: number
+    sincronizadoEm: number
+    importadoOperacao: number
     precoBase: number
     categoria: number
     ativo: number
@@ -8964,6 +8979,11 @@ export namespace Prisma {
   export type ProdutoComercialMinAggregateInputType = {
     id?: true
     nome?: true
+    contaAzulProdutoId?: true
+    sku?: true
+    statusContaAzul?: true
+    sincronizadoEm?: true
+    importadoOperacao?: true
     precoBase?: true
     categoria?: true
     ativo?: true
@@ -8981,6 +9001,11 @@ export namespace Prisma {
   export type ProdutoComercialMaxAggregateInputType = {
     id?: true
     nome?: true
+    contaAzulProdutoId?: true
+    sku?: true
+    statusContaAzul?: true
+    sincronizadoEm?: true
+    importadoOperacao?: true
     precoBase?: true
     categoria?: true
     ativo?: true
@@ -8998,6 +9023,11 @@ export namespace Prisma {
   export type ProdutoComercialCountAggregateInputType = {
     id?: true
     nome?: true
+    contaAzulProdutoId?: true
+    sku?: true
+    statusContaAzul?: true
+    sincronizadoEm?: true
+    importadoOperacao?: true
     precoBase?: true
     categoria?: true
     ativo?: true
@@ -9103,6 +9133,11 @@ export namespace Prisma {
   export type ProdutoComercialGroupByOutputType = {
     id: string
     nome: string
+    contaAzulProdutoId: string | null
+    sku: string | null
+    statusContaAzul: string | null
+    sincronizadoEm: Date | null
+    importadoOperacao: boolean
     precoBase: Decimal | null
     categoria: string | null
     ativo: boolean
@@ -9140,6 +9175,11 @@ export namespace Prisma {
   export type ProdutoComercialSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     nome?: boolean
+    contaAzulProdutoId?: boolean
+    sku?: boolean
+    statusContaAzul?: boolean
+    sincronizadoEm?: boolean
+    importadoOperacao?: boolean
     precoBase?: boolean
     categoria?: boolean
     ativo?: boolean
@@ -9166,6 +9206,11 @@ export namespace Prisma {
   export type ProdutoComercialSelectScalar = {
     id?: boolean
     nome?: boolean
+    contaAzulProdutoId?: boolean
+    sku?: boolean
+    statusContaAzul?: boolean
+    sincronizadoEm?: boolean
+    importadoOperacao?: boolean
     precoBase?: boolean
     categoria?: boolean
     ativo?: boolean
@@ -9181,7 +9226,7 @@ export namespace Prisma {
     atualizadoEm?: boolean
   }
 
-  export type ProdutoComercialOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "precoBase" | "categoria" | "ativo" | "modoCompra" | "fatorCompraUnidade" | "rendimentoPorKg" | "ocultoListaCompra" | "mixAtivo" | "mixFolhaLeve" | "mixProdutoReferenciaId" | "mixVariedades" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["produtoComercial"]>
+  export type ProdutoComercialOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "contaAzulProdutoId" | "sku" | "statusContaAzul" | "sincronizadoEm" | "importadoOperacao" | "precoBase" | "categoria" | "ativo" | "modoCompra" | "fatorCompraUnidade" | "rendimentoPorKg" | "ocultoListaCompra" | "mixAtivo" | "mixFolhaLeve" | "mixProdutoReferenciaId" | "mixVariedades" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["produtoComercial"]>
   export type ProdutoComercialInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     precosEspeciais?: boolean | ProdutoComercial$precosEspeciaisArgs<ExtArgs>
     itensPedido?: boolean | ProdutoComercial$itensPedidoArgs<ExtArgs>
@@ -9203,6 +9248,11 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       id: string
       nome: string
+      contaAzulProdutoId: string | null
+      sku: string | null
+      statusContaAzul: string | null
+      sincronizadoEm: Date | null
+      importadoOperacao: boolean
       precoBase: Prisma.Decimal | null
       categoria: string | null
       ativo: boolean
@@ -9592,6 +9642,11 @@ export namespace Prisma {
   interface ProdutoComercialFieldRefs {
     readonly id: FieldRef<"ProdutoComercial", 'String'>
     readonly nome: FieldRef<"ProdutoComercial", 'String'>
+    readonly contaAzulProdutoId: FieldRef<"ProdutoComercial", 'String'>
+    readonly sku: FieldRef<"ProdutoComercial", 'String'>
+    readonly statusContaAzul: FieldRef<"ProdutoComercial", 'String'>
+    readonly sincronizadoEm: FieldRef<"ProdutoComercial", 'DateTime'>
+    readonly importadoOperacao: FieldRef<"ProdutoComercial", 'Boolean'>
     readonly precoBase: FieldRef<"ProdutoComercial", 'Decimal'>
     readonly categoria: FieldRef<"ProdutoComercial", 'String'>
     readonly ativo: FieldRef<"ProdutoComercial", 'Boolean'>
@@ -30485,6 +30540,11 @@ export namespace Prisma {
   export const ProdutoComercialScalarFieldEnum: {
     id: 'id',
     nome: 'nome',
+    contaAzulProdutoId: 'contaAzulProdutoId',
+    sku: 'sku',
+    statusContaAzul: 'statusContaAzul',
+    sincronizadoEm: 'sincronizadoEm',
+    importadoOperacao: 'importadoOperacao',
     precoBase: 'precoBase',
     categoria: 'categoria',
     ativo: 'ativo',
@@ -30920,6 +30980,9 @@ export namespace Prisma {
   export const ProdutoComercialOrderByRelevanceFieldEnum: {
     id: 'id',
     nome: 'nome',
+    contaAzulProdutoId: 'contaAzulProdutoId',
+    sku: 'sku',
+    statusContaAzul: 'statusContaAzul',
     categoria: 'categoria',
     mixProdutoReferenciaId: 'mixProdutoReferenciaId'
   };
@@ -31747,6 +31810,11 @@ export namespace Prisma {
     NOT?: ProdutoComercialWhereInput | ProdutoComercialWhereInput[]
     id?: StringFilter<"ProdutoComercial"> | string
     nome?: StringFilter<"ProdutoComercial"> | string
+    contaAzulProdutoId?: StringNullableFilter<"ProdutoComercial"> | string | null
+    sku?: StringNullableFilter<"ProdutoComercial"> | string | null
+    statusContaAzul?: StringNullableFilter<"ProdutoComercial"> | string | null
+    sincronizadoEm?: DateTimeNullableFilter<"ProdutoComercial"> | Date | string | null
+    importadoOperacao?: BoolFilter<"ProdutoComercial"> | boolean
     precoBase?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
     categoria?: StringNullableFilter<"ProdutoComercial"> | string | null
     ativo?: BoolFilter<"ProdutoComercial"> | boolean
@@ -31770,6 +31838,11 @@ export namespace Prisma {
   export type ProdutoComercialOrderByWithRelationInput = {
     id?: SortOrder
     nome?: SortOrder
+    contaAzulProdutoId?: SortOrderInput | SortOrder
+    sku?: SortOrderInput | SortOrder
+    statusContaAzul?: SortOrderInput | SortOrder
+    sincronizadoEm?: SortOrderInput | SortOrder
+    importadoOperacao?: SortOrder
     precoBase?: SortOrderInput | SortOrder
     categoria?: SortOrderInput | SortOrder
     ativo?: SortOrder
@@ -31794,9 +31867,14 @@ export namespace Prisma {
   export type ProdutoComercialWhereUniqueInput = Prisma.AtLeast<{
     id?: string
     nome?: string
+    contaAzulProdutoId?: string
     AND?: ProdutoComercialWhereInput | ProdutoComercialWhereInput[]
     OR?: ProdutoComercialWhereInput[]
     NOT?: ProdutoComercialWhereInput | ProdutoComercialWhereInput[]
+    sku?: StringNullableFilter<"ProdutoComercial"> | string | null
+    statusContaAzul?: StringNullableFilter<"ProdutoComercial"> | string | null
+    sincronizadoEm?: DateTimeNullableFilter<"ProdutoComercial"> | Date | string | null
+    importadoOperacao?: BoolFilter<"ProdutoComercial"> | boolean
     precoBase?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
     categoria?: StringNullableFilter<"ProdutoComercial"> | string | null
     ativo?: BoolFilter<"ProdutoComercial"> | boolean
@@ -31815,11 +31893,16 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaListRelationFilter
     mixProdutoReferencia?: XOR<ProdutoComercialNullableScalarRelationFilter, ProdutoComercialWhereInput> | null
     mixReferenciadoPor?: ProdutoComercialListRelationFilter
-  }, "id" | "nome">
+  }, "id" | "nome" | "contaAzulProdutoId">
 
   export type ProdutoComercialOrderByWithAggregationInput = {
     id?: SortOrder
     nome?: SortOrder
+    contaAzulProdutoId?: SortOrderInput | SortOrder
+    sku?: SortOrderInput | SortOrder
+    statusContaAzul?: SortOrderInput | SortOrder
+    sincronizadoEm?: SortOrderInput | SortOrder
+    importadoOperacao?: SortOrder
     precoBase?: SortOrderInput | SortOrder
     categoria?: SortOrderInput | SortOrder
     ativo?: SortOrder
@@ -31846,6 +31929,11 @@ export namespace Prisma {
     NOT?: ProdutoComercialScalarWhereWithAggregatesInput | ProdutoComercialScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"ProdutoComercial"> | string
     nome?: StringWithAggregatesFilter<"ProdutoComercial"> | string
+    contaAzulProdutoId?: StringNullableWithAggregatesFilter<"ProdutoComercial"> | string | null
+    sku?: StringNullableWithAggregatesFilter<"ProdutoComercial"> | string | null
+    statusContaAzul?: StringNullableWithAggregatesFilter<"ProdutoComercial"> | string | null
+    sincronizadoEm?: DateTimeNullableWithAggregatesFilter<"ProdutoComercial"> | Date | string | null
+    importadoOperacao?: BoolWithAggregatesFilter<"ProdutoComercial"> | boolean
     precoBase?: DecimalNullableWithAggregatesFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
     categoria?: StringNullableWithAggregatesFilter<"ProdutoComercial"> | string | null
     ativo?: BoolWithAggregatesFilter<"ProdutoComercial"> | boolean
@@ -33963,6 +34051,11 @@ export namespace Prisma {
   export type ProdutoComercialCreateInput = {
     id?: string
     nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
     precoBase?: Decimal | DecimalJsLike | number | string | null
     categoria?: string | null
     ativo?: boolean
@@ -33985,6 +34078,11 @@ export namespace Prisma {
   export type ProdutoComercialUncheckedCreateInput = {
     id?: string
     nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
     precoBase?: Decimal | DecimalJsLike | number | string | null
     categoria?: string | null
     ativo?: boolean
@@ -34007,6 +34105,11 @@ export namespace Prisma {
   export type ProdutoComercialUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
     precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     ativo?: BoolFieldUpdateOperationsInput | boolean
@@ -34029,6 +34132,11 @@ export namespace Prisma {
   export type ProdutoComercialUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
     precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     ativo?: BoolFieldUpdateOperationsInput | boolean
@@ -34051,6 +34159,11 @@ export namespace Prisma {
   export type ProdutoComercialCreateManyInput = {
     id?: string
     nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
     precoBase?: Decimal | DecimalJsLike | number | string | null
     categoria?: string | null
     ativo?: boolean
@@ -34069,6 +34182,11 @@ export namespace Prisma {
   export type ProdutoComercialUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
     precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     ativo?: BoolFieldUpdateOperationsInput | boolean
@@ -34086,6 +34204,11 @@ export namespace Prisma {
   export type ProdutoComercialUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
     precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     ativo?: BoolFieldUpdateOperationsInput | boolean
@@ -36560,6 +36683,11 @@ export namespace Prisma {
   export type ProdutoComercialCountOrderByAggregateInput = {
     id?: SortOrder
     nome?: SortOrder
+    contaAzulProdutoId?: SortOrder
+    sku?: SortOrder
+    statusContaAzul?: SortOrder
+    sincronizadoEm?: SortOrder
+    importadoOperacao?: SortOrder
     precoBase?: SortOrder
     categoria?: SortOrder
     ativo?: SortOrder
@@ -36584,6 +36712,11 @@ export namespace Prisma {
   export type ProdutoComercialMaxOrderByAggregateInput = {
     id?: SortOrder
     nome?: SortOrder
+    contaAzulProdutoId?: SortOrder
+    sku?: SortOrder
+    statusContaAzul?: SortOrder
+    sincronizadoEm?: SortOrder
+    importadoOperacao?: SortOrder
     precoBase?: SortOrder
     categoria?: SortOrder
     ativo?: SortOrder
@@ -36601,6 +36734,11 @@ export namespace Prisma {
   export type ProdutoComercialMinOrderByAggregateInput = {
     id?: SortOrder
     nome?: SortOrder
+    contaAzulProdutoId?: SortOrder
+    sku?: SortOrder
+    statusContaAzul?: SortOrder
+    sincronizadoEm?: SortOrder
+    importadoOperacao?: SortOrder
     precoBase?: SortOrder
     categoria?: SortOrder
     ativo?: SortOrder
@@ -41927,6 +42065,11 @@ export namespace Prisma {
   export type ProdutoComercialCreateWithoutMixReferenciadoPorInput = {
     id?: string
     nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
     precoBase?: Decimal | DecimalJsLike | number | string | null
     categoria?: string | null
     ativo?: boolean
@@ -41948,6 +42091,11 @@ export namespace Prisma {
   export type ProdutoComercialUncheckedCreateWithoutMixReferenciadoPorInput = {
     id?: string
     nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
     precoBase?: Decimal | DecimalJsLike | number | string | null
     categoria?: string | null
     ativo?: boolean
@@ -41974,6 +42122,11 @@ export namespace Prisma {
   export type ProdutoComercialCreateWithoutMixProdutoReferenciaInput = {
     id?: string
     nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
     precoBase?: Decimal | DecimalJsLike | number | string | null
     categoria?: string | null
     ativo?: boolean
@@ -41995,6 +42148,11 @@ export namespace Prisma {
   export type ProdutoComercialUncheckedCreateWithoutMixProdutoReferenciaInput = {
     id?: string
     nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
     precoBase?: Decimal | DecimalJsLike | number | string | null
     categoria?: string | null
     ativo?: boolean
@@ -42112,6 +42270,11 @@ export namespace Prisma {
   export type ProdutoComercialUpdateWithoutMixReferenciadoPorInput = {
     id?: StringFieldUpdateOperationsInput | string
     nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
     precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     ativo?: BoolFieldUpdateOperationsInput | boolean
@@ -42133,6 +42296,11 @@ export namespace Prisma {
   export type ProdutoComercialUncheckedUpdateWithoutMixReferenciadoPorInput = {
     id?: StringFieldUpdateOperationsInput | string
     nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
     precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     ativo?: BoolFieldUpdateOperationsInput | boolean
@@ -42173,6 +42341,11 @@ export namespace Prisma {
     NOT?: ProdutoComercialScalarWhereInput | ProdutoComercialScalarWhereInput[]
     id?: StringFilter<"ProdutoComercial"> | string
     nome?: StringFilter<"ProdutoComercial"> | string
+    contaAzulProdutoId?: StringNullableFilter<"ProdutoComercial"> | string | null
+    sku?: StringNullableFilter<"ProdutoComercial"> | string | null
+    statusContaAzul?: StringNullableFilter<"ProdutoComercial"> | string | null
+    sincronizadoEm?: DateTimeNullableFilter<"ProdutoComercial"> | Date | string | null
+    importadoOperacao?: BoolFilter<"ProdutoComercial"> | boolean
     precoBase?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
     categoria?: StringNullableFilter<"ProdutoComercial"> | string | null
     ativo?: BoolFilter<"ProdutoComercial"> | boolean
@@ -42526,6 +42699,11 @@ export namespace Prisma {
   export type ProdutoComercialCreateWithoutPrecosEspeciaisInput = {
     id?: string
     nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
     precoBase?: Decimal | DecimalJsLike | number | string | null
     categoria?: string | null
     ativo?: boolean
@@ -42547,6 +42725,11 @@ export namespace Prisma {
   export type ProdutoComercialUncheckedCreateWithoutPrecosEspeciaisInput = {
     id?: string
     nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
     precoBase?: Decimal | DecimalJsLike | number | string | null
     categoria?: string | null
     ativo?: boolean
@@ -42627,6 +42810,11 @@ export namespace Prisma {
   export type ProdutoComercialUpdateWithoutPrecosEspeciaisInput = {
     id?: StringFieldUpdateOperationsInput | string
     nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
     precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     ativo?: BoolFieldUpdateOperationsInput | boolean
@@ -42648,6 +42836,11 @@ export namespace Prisma {
   export type ProdutoComercialUncheckedUpdateWithoutPrecosEspeciaisInput = {
     id?: StringFieldUpdateOperationsInput | string
     nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
     precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     ativo?: BoolFieldUpdateOperationsInput | boolean
@@ -43321,6 +43514,11 @@ export namespace Prisma {
   export type ProdutoComercialCreateWithoutItensPedidoInput = {
     id?: string
     nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
     precoBase?: Decimal | DecimalJsLike | number | string | null
     categoria?: string | null
     ativo?: boolean
@@ -43342,6 +43540,11 @@ export namespace Prisma {
   export type ProdutoComercialUncheckedCreateWithoutItensPedidoInput = {
     id?: string
     nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
     precoBase?: Decimal | DecimalJsLike | number | string | null
     categoria?: string | null
     ativo?: boolean
@@ -43436,6 +43639,11 @@ export namespace Prisma {
   export type ProdutoComercialUpdateWithoutItensPedidoInput = {
     id?: StringFieldUpdateOperationsInput | string
     nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
     precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     ativo?: BoolFieldUpdateOperationsInput | boolean
@@ -43457,6 +43665,11 @@ export namespace Prisma {
   export type ProdutoComercialUncheckedUpdateWithoutItensPedidoInput = {
     id?: StringFieldUpdateOperationsInput | string
     nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
     precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     ativo?: BoolFieldUpdateOperationsInput | boolean
@@ -43590,6 +43803,11 @@ export namespace Prisma {
   export type ProdutoComercialCreateWithoutAvariasPedidoInput = {
     id?: string
     nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
     precoBase?: Decimal | DecimalJsLike | number | string | null
     categoria?: string | null
     ativo?: boolean
@@ -43611,6 +43829,11 @@ export namespace Prisma {
   export type ProdutoComercialUncheckedCreateWithoutAvariasPedidoInput = {
     id?: string
     nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
     precoBase?: Decimal | DecimalJsLike | number | string | null
     categoria?: string | null
     ativo?: boolean
@@ -43809,6 +44032,11 @@ export namespace Prisma {
   export type ProdutoComercialUpdateWithoutAvariasPedidoInput = {
     id?: StringFieldUpdateOperationsInput | string
     nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
     precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     ativo?: BoolFieldUpdateOperationsInput | boolean
@@ -43830,6 +44058,11 @@ export namespace Prisma {
   export type ProdutoComercialUncheckedUpdateWithoutAvariasPedidoInput = {
     id?: StringFieldUpdateOperationsInput | string
     nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
     precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     ativo?: BoolFieldUpdateOperationsInput | boolean
@@ -46399,6 +46632,11 @@ export namespace Prisma {
   export type ProdutoComercialCreateManyMixProdutoReferenciaInput = {
     id?: string
     nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
     precoBase?: Decimal | DecimalJsLike | number | string | null
     categoria?: string | null
     ativo?: boolean
@@ -46515,6 +46753,11 @@ export namespace Prisma {
   export type ProdutoComercialUpdateWithoutMixProdutoReferenciaInput = {
     id?: StringFieldUpdateOperationsInput | string
     nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
     precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     ativo?: BoolFieldUpdateOperationsInput | boolean
@@ -46536,6 +46779,11 @@ export namespace Prisma {
   export type ProdutoComercialUncheckedUpdateWithoutMixProdutoReferenciaInput = {
     id?: StringFieldUpdateOperationsInput | string
     nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
     precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     ativo?: BoolFieldUpdateOperationsInput | boolean
@@ -46557,6 +46805,11 @@ export namespace Prisma {
   export type ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaInput = {
     id?: StringFieldUpdateOperationsInput | string
     nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
     precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     categoria?: NullableStringFieldUpdateOperationsInput | string | null
     ativo?: BoolFieldUpdateOperationsInput | boolean
