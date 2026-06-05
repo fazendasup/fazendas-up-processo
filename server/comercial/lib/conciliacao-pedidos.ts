@@ -12,10 +12,26 @@ type PedidoOperacionalComItens = Prisma.PedidoOperacionalGetPayload<{
   include: { itens: true; cliente: { select: { externalId: true; nome: true } } };
 }>;
 
+export const REGRA_ENTREGA_CONCILIACAO_SELECT = {
+  cobraTaxaEntrega: true,
+  valorTaxaEntrega: true,
+} as const;
+
+export type RegraEntregaConciliacao = {
+  cobraTaxaEntrega: boolean;
+  valorTaxaEntrega?: Prisma.Decimal | number | string | null;
+};
+
 type PedidoContaAzulComItens = Prisma.PedidoGetPayload<{
   include: {
     itens: true;
-    cliente: { select: { externalId: true; nome: true; regraComercial: { select: { acumulaPedidos: true } } } };
+    cliente: {
+      select: {
+        externalId: true;
+        nome: true;
+        regraComercial: { select: { acumulaPedidos: true } & typeof REGRA_ENTREGA_CONCILIACAO_SELECT };
+      };
+    };
   };
 }>;
 
@@ -60,6 +76,34 @@ export type DivergenciaConciliacao = {
   operacional: unknown;
   contaAzul: unknown;
 };
+
+type OpcoesDivergenciaConciliacao = {
+  compararValorEstimado?: boolean;
+  regraEntrega?: RegraEntregaConciliacao | null;
+};
+
+function pedidoCriadoAPartirDoContaAzul(pedido: Pick<PedidoOperacionalComItens, "snapshotConciliacao">): boolean {
+  const snapshot = pedido.snapshotConciliacao;
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) return false;
+  const raw = snapshot as Record<string, unknown>;
+  return Object.prototype.hasOwnProperty.call(raw, "operacional") && raw.operacional === null;
+}
+
+export function taxaEntregaParaConciliacao(
+  regra: RegraEntregaConciliacao | null | undefined,
+  valorFreteContaAzul?: unknown,
+): number {
+  if (!regra?.cobraTaxaEntrega) return 0;
+  const configurada = num(regra.valorTaxaEntrega);
+  if (configurada > 0) return configurada;
+  return num(valorFreteContaAzul);
+}
+
+export function opcoesCalcularDivergencias(
+  operacional: Pick<PedidoOperacionalComItens, "snapshotConciliacao">,
+): OpcoesDivergenciaConciliacao {
+  return { compararValorEstimado: !pedidoCriadoAPartirDoContaAzul(operacional) };
+}
 
 function inicioDia(d: Date): Date {
   const out = new Date(d);
@@ -136,8 +180,10 @@ export function calcularDivergencias(
   operacional: PedidoOperacionalComItens,
   contaAzul: PedidoContaAzulComItens,
   resolverChave?: ResolverChaveItem,
+  opcoes: OpcoesDivergenciaConciliacao = {},
 ): DivergenciaConciliacao[] {
   const divergencias: DivergenciaConciliacao[] = [];
+  const compararValorEstimado = opcoes.compararValorEstimado ?? true;
 
   if (!mesmoDia(operacional.dataEntrega, contaAzul.dataPedido)) {
     divergencias.push({
@@ -175,10 +221,19 @@ export function calcularDivergencias(
     }
   }
 
-  const valorOp = operacional.itens.reduce((s, i) => s + num(i.quantidade) * (num(i.precoUnit) || 0), 0);
-  const valorCa = num(contaAzul.valorLiquido ?? contaAzul.valorTotal);
-  if (valorOp > 0 && valorCa > 0 && Math.abs(valorOp - valorCa) > 0.05) {
-    divergencias.push({ campo: "valor_estimado", operacional: valorOp, contaAzul: valorCa });
+  if (compararValorEstimado) {
+    const regraEntrega = opcoes.regraEntrega ?? contaAzul.cliente.regraComercial ?? null;
+    const taxaEntrega = taxaEntregaParaConciliacao(regraEntrega, contaAzul.valorFrete);
+    const valorItens = operacional.itens.reduce((s, i) => s + num(i.quantidade) * (num(i.precoUnit) || 0), 0);
+    const valorOp = valorItens + taxaEntrega;
+    const valorCa = num(contaAzul.valorLiquido ?? contaAzul.valorTotal);
+    if (valorOp > 0 && valorCa > 0 && Math.abs(valorOp - valorCa) > 0.05) {
+      divergencias.push({
+        campo: "valor_estimado",
+        operacional: taxaEntrega > 0 ? { itens: valorItens, taxaEntrega, total: valorOp } : valorOp,
+        contaAzul: valorCa,
+      });
+    }
   }
 
   return divergencias;
@@ -279,7 +334,13 @@ export async function processarConciliacaoAposSyncVenda(
     where: { id: pedidoContaAzulId },
     include: {
       itens: true,
-      cliente: { select: { externalId: true, nome: true, regraComercial: { select: { acumulaPedidos: true } } } },
+      cliente: {
+        select: {
+          externalId: true,
+          nome: true,
+          regraComercial: { select: { acumulaPedidos: true, ...REGRA_ENTREGA_CONCILIACAO_SELECT } },
+        },
+      },
     },
   });
   if (!contaAzul?.cliente.externalId) return { sugestoes: 0, divergencias: 0 };
@@ -298,7 +359,7 @@ export async function processarConciliacaoAposSyncVenda(
   const resolverChave = criarResolverChaveItemConciliacao(produtosConciliacao);
 
   if (vinculado) {
-    const divergencias = calcularDivergencias(vinculado, contaAzul, resolverChave);
+    const divergencias = calcularDivergencias(vinculado, contaAzul, resolverChave, opcoesCalcularDivergencias(vinculado));
     if (divergencias.length > 0 && vinculado.statusConciliacao === "CONCILIADO") {
       await prisma.$transaction(async (tx) => {
         await tx.pedidoOperacional.update({
@@ -388,7 +449,13 @@ export async function confirmarVinculoConciliacao(
       where: { id: input.pedidoContaAzulId },
       include: {
         itens: true,
-        cliente: { select: { externalId: true, nome: true, regraComercial: { select: { acumulaPedidos: true } } } },
+        cliente: {
+          select: {
+            externalId: true,
+            nome: true,
+            regraComercial: { select: { acumulaPedidos: true, ...REGRA_ENTREGA_CONCILIACAO_SELECT } },
+          },
+        },
       },
     }),
   ]);
@@ -403,7 +470,7 @@ export async function confirmarVinculoConciliacao(
 
   const produtosConciliacao = await carregarProdutosConciliacao(prisma);
   const resolverChave = criarResolverChaveItemConciliacao(produtosConciliacao);
-  const divergencias = calcularDivergencias(operacional, contaAzul, resolverChave);
+  const divergencias = calcularDivergencias(operacional, contaAzul, resolverChave, opcoesCalcularDivergencias(operacional));
   const snapshot: SnapshotConciliacao = {
     operacional: snapshotOperacional(operacional),
     contaAzul: snapshotContaAzul(contaAzul),
@@ -547,7 +614,14 @@ export async function criarOperacionalDeVenda(
     where: { id: input.pedidoContaAzulId },
     include: {
       itens: true,
-      cliente: { select: { id: true, externalId: true, nome: true, regraComercial: { select: { acumulaPedidos: true } } } },
+      cliente: {
+        select: {
+          id: true,
+          externalId: true,
+          nome: true,
+          regraComercial: { select: { acumulaPedidos: true, ...REGRA_ENTREGA_CONCILIACAO_SELECT } },
+        },
+      },
     },
   });
   if (!contaAzul?.cliente.externalId) throw new Error("Venda sem cliente Conta Azul vinculado.");

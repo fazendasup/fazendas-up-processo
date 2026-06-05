@@ -279,6 +279,7 @@ model RegraComercialCliente {
   periodoEntrega           PeriodoEntregaCliente? @map("periodo_entrega")
   horarioMaximoEntrega     String?                @map("horario_maximo_entrega")
   cobraTaxaEntrega         Boolean                @default(false) @map("cobra_taxa_entrega")
+  valorTaxaEntrega         Decimal?               @map("valor_taxa_entrega") @db.Decimal(14, 2)
   prazoBoletoDias          Int?                   @map("prazo_boleto_dias")
   descontoBoletoPercentual Decimal?               @map("desconto_boleto_percentual") @db.Decimal(5, 2)
   acumulaPedidos           Boolean                @default(false) @map("acumula_pedidos")

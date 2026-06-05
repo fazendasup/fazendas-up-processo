@@ -1366,7 +1366,11 @@ function RegrasResumo({ regra }: { regra: any }) {
       ? "Sem desconto"
       : `${Number(regra.descontoBoletoPercentual)}% no boleto`;
   const acumulacao = regra.acumulaPedidos ? `Acumula ${regra.diasAcumulo ?? "?"} dias` : "Não acumula";
-  const entregaTaxa = regra.cobraTaxaEntrega ? "Cobra entrega" : "Sem taxa entrega";
+  const entregaTaxa = regra.cobraTaxaEntrega
+    ? regra.valorTaxaEntrega != null && Number(regra.valorTaxaEntrega) > 0
+      ? `Cobra entrega (${fmtMoney(Number(regra.valorTaxaEntrega))})`
+      : "Cobra entrega"
+    : "Sem taxa entrega";
 
   return (
     <div className="rounded-xl border bg-card/80 p-2 shadow-sm">
@@ -1445,7 +1449,15 @@ function RegrasClienteArea({ clientes, busca, setBusca, clienteId, setClienteId,
               <Field label="Horário máximo" value={merged.horarioMaximoEntrega ?? ""} onChange={(v: string) => setForm((f: any) => ({ ...f, horarioMaximoEntrega: v }))} type="time" />
               <Field label="Prazo boleto (dias)" value={merged.prazoBoletoDias ?? ""} onChange={(v: string) => setForm((f: any) => ({ ...f, prazoBoletoDias: v ? Number(v) : null }))} type="number" />
               <Field label="Desconto em boleto (%)" value={merged.descontoBoletoPercentual ?? ""} onChange={(v: string) => setForm((f: any) => ({ ...f, descontoBoletoPercentual: v ? Number(v) : null }))} type="number" />
-              <Check label="Cobra taxa de entrega" checked={Boolean(merged.cobraTaxaEntrega)} onChange={(v: boolean) => setForm((f: any) => ({ ...f, cobraTaxaEntrega: v }))} />
+              <Check label="Cobra taxa de entrega" checked={Boolean(merged.cobraTaxaEntrega)} onChange={(v: boolean) => setForm((f: any) => ({ ...f, cobraTaxaEntrega: v, ...(v ? {} : { valorTaxaEntrega: null }) }))} />
+              {merged.cobraTaxaEntrega && (
+                <Field
+                  label="Valor taxa de entrega (R$)"
+                  value={merged.valorTaxaEntrega ?? ""}
+                  onChange={(v: string) => setForm((f: any) => ({ ...f, valorTaxaEntrega: v ? Number(v) : null }))}
+                  type="number"
+                />
+              )}
               <Check label="Acumula pedidos" checked={Boolean(merged.acumulaPedidos)} onChange={(v: boolean) => setForm((f: any) => ({ ...f, acumulaPedidos: v }))} />
               <Field label="Dias de acúmulo" value={merged.diasAcumulo ?? ""} onChange={(v: string) => setForm((f: any) => ({ ...f, diasAcumulo: v ? Number(v) : null }))} type="number" />
               <Field label="Prazo boleto com acúmulo" value={merged.prazoBoletoAcumuloDias ?? ""} onChange={(v: string) => setForm((f: any) => ({ ...f, prazoBoletoAcumuloDias: v ? Number(v) : null }))} type="number" />
@@ -1476,6 +1488,7 @@ function RegrasClienteArea({ clientes, busca, setBusca, clienteId, setClienteId,
                   periodoEntrega: merged.periodoEntrega ?? null,
                   horarioMaximoEntrega: merged.horarioMaximoEntrega ?? null,
                   cobraTaxaEntrega: Boolean(merged.cobraTaxaEntrega),
+                  valorTaxaEntrega: merged.cobraTaxaEntrega ? merged.valorTaxaEntrega ?? null : null,
                   prazoBoletoDias: merged.prazoBoletoDias ?? null,
                   descontoBoletoPercentual: merged.descontoBoletoPercentual ?? null,
                   acumulaPedidos: Boolean(merged.acumulaPedidos),

@@ -22,6 +22,8 @@ import { comercialProcedure, comercialRequirePerfis, router } from "../../_core/
 import {
   calcularDivergencias,
   confirmarVinculoConciliacao,
+  opcoesCalcularDivergencias,
+  REGRA_ENTREGA_CONCILIACAO_SELECT,
   criarOperacionalDeVenda,
   desvincularConciliacao,
   diasEntrePedidos,
@@ -516,6 +518,7 @@ export const pedidosRouter = router({
         periodoEntrega: periodoEntregaSchema,
         horarioMaximoEntrega: z.string().nullable().optional(),
         cobraTaxaEntrega: z.boolean().default(false),
+        valorTaxaEntrega: z.number().nonnegative().nullable().optional(),
         prazoBoletoDias: z.number().int().nonnegative().nullable().optional(),
         descontoBoletoPercentual: z.number().min(0).max(100).nullable().optional(),
         acumulaPedidos: z.boolean().default(false),
@@ -538,6 +541,10 @@ export const pedidosRouter = router({
             periodoEntrega: input.periodoEntrega ?? null,
             horarioMaximoEntrega: input.horarioMaximoEntrega || null,
             cobraTaxaEntrega: input.cobraTaxaEntrega,
+            valorTaxaEntrega:
+              input.cobraTaxaEntrega && input.valorTaxaEntrega != null
+                ? new Prisma.Decimal(input.valorTaxaEntrega)
+                : null,
             prazoBoletoDias: input.prazoBoletoDias ?? null,
             descontoBoletoPercentual:
               input.descontoBoletoPercentual == null ? null : new Prisma.Decimal(input.descontoBoletoPercentual),
@@ -550,6 +557,10 @@ export const pedidosRouter = router({
             periodoEntrega: input.periodoEntrega ?? null,
             horarioMaximoEntrega: input.horarioMaximoEntrega || null,
             cobraTaxaEntrega: input.cobraTaxaEntrega,
+            valorTaxaEntrega:
+              input.cobraTaxaEntrega && input.valorTaxaEntrega != null
+                ? new Prisma.Decimal(input.valorTaxaEntrega)
+                : null,
             prazoBoletoDias: input.prazoBoletoDias ?? null,
             descontoBoletoPercentual:
               input.descontoBoletoPercentual == null ? null : new Prisma.Decimal(input.descontoBoletoPercentual),
@@ -1540,7 +1551,13 @@ export const pedidosRouter = router({
             pedidoContaAzul: {
               include: {
                 itens: true,
-                cliente: { select: { externalId: true, nome: true, regraComercial: { select: { acumulaPedidos: true } } } },
+                cliente: {
+                  select: {
+                    externalId: true,
+                    nome: true,
+                    regraComercial: { select: { acumulaPedidos: true, ...REGRA_ENTREGA_CONCILIACAO_SELECT } },
+                  },
+                },
               },
             },
           },
@@ -1550,7 +1567,14 @@ export const pedidosRouter = router({
         prisma.pedido.findMany({
           where: { origemPedido: OrigemPedido.CONTA_AZUL, dataPedido: { gte: inicio, lte: fim } },
           include: {
-            cliente: { select: { id: true, externalId: true, nome: true, regraComercial: { select: { acumulaPedidos: true } } } },
+            cliente: {
+              select: {
+                id: true,
+                externalId: true,
+                nome: true,
+                regraComercial: { select: { acumulaPedidos: true, ...REGRA_ENTREGA_CONCILIACAO_SELECT } },
+              },
+            },
             itens: true,
             pedidoOperacionalVinculo: { select: { id: true, statusConciliacao: true } },
           },
@@ -1565,11 +1589,26 @@ export const pedidosRouter = router({
       ]);
 
       const documentosConciliaveis = vendas.filter((v) => documentoContaAzulConciliavel(v));
+      const produtosConciliacao = await prisma.produtoComercial.findMany({
+        where: { contaAzulProdutoId: { not: null } },
+        select: {
+          id: true,
+          nome: true,
+          sku: true,
+          contaAzulProdutoId: true,
+          ativo: true,
+          importadoOperacao: true,
+          categoria: true,
+        },
+      });
+      const resolverChaveConciliacao = criarResolverChaveItemConciliacao(produtosConciliacao);
       const sugestoes = operacionais
         .filter((op) => op.statusConciliacao === "VINCULO_SUGERIDO" && op.sugestaoPedidoContaAzulId)
         .map((op) => {
           const venda = documentosConciliaveis.find((v) => v.id === op.sugestaoPedidoContaAzulId);
-          const divergencias = venda ? calcularDivergencias(op, venda) : [];
+          const divergencias = venda
+            ? calcularDivergencias(op, venda, resolverChaveConciliacao, opcoesCalcularDivergencias(op))
+            : [];
           return {
             operacional: op,
             venda,
@@ -1672,7 +1711,14 @@ export const pedidosRouter = router({
         where: { id: input.pedidoContaAzulId },
         include: {
           itens: true,
-          cliente: { select: { id: true, externalId: true, nome: true, regraComercial: { select: { acumulaPedidos: true } } } },
+          cliente: {
+            select: {
+              id: true,
+              externalId: true,
+              nome: true,
+              regraComercial: { select: { acumulaPedidos: true, ...REGRA_ENTREGA_CONCILIACAO_SELECT } },
+            },
+          },
         },
       });
       if (!venda?.cliente.externalId) {
@@ -1724,7 +1770,7 @@ export const pedidosRouter = router({
             pedido: op,
             score: scoreSugestaoVinculo(op, venda, resolverChave),
             diasDistancia: diasEntrePedidos(op, venda),
-            divergencias: calcularDivergencias(op, venda, resolverChave),
+            divergencias: calcularDivergencias(op, venda, resolverChave, opcoesCalcularDivergencias(op)),
             vinculadoNestaVenda: op.pedidoContaAzulId === venda.id,
           }))
           .sort((a, b) => b.score - a.score || a.diasDistancia - b.diasDistancia),
