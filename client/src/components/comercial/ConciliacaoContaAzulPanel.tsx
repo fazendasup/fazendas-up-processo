@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, CheckCircle2, Link2, Unlink, XCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
@@ -31,9 +31,15 @@ function labelStatusConciliacao(status: string) {
 export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: Date }) {
   const utils = trpc.useUtils();
   const painel = trpc.comercial.pedidos.conciliacaoPainel.useQuery({ inicio, fim });
+  const [vendaCandidatosId, setVendaCandidatosId] = useState<string | null>(null);
+  const candidatos = trpc.comercial.pedidos.conciliacaoCandidatosVenda.useQuery(
+    { pedidoContaAzulId: vendaCandidatosId ?? "", janelaDias: 14 },
+    { enabled: Boolean(vendaCandidatosId) },
+  );
 
   const confirmar = trpc.comercial.pedidos.conciliacaoConfirmarVinculo.useMutation({
     onSuccess: (r) => {
+      setVendaCandidatosId(null);
       toast.success(
         r.divergencias?.length
           ? "Vínculo confirmado com divergências registradas."
@@ -143,6 +149,13 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
                   <Button
                     size="sm"
                     variant="outline"
+                    onClick={() => setVendaCandidatosId((atual) => (atual === s.venda.id ? null : s.venda.id))}
+                  >
+                    Escolher outro pedido
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
                     disabled={manterOp.isPending}
                     onClick={() => manterOp.mutate({ pedidoOperacionalId: s.operacional.id })}
                   >
@@ -162,6 +175,24 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
                     Venda CA errada
                   </Button>
                 </div>
+                {vendaCandidatosId === s.venda.id && (
+                  <CandidatosVenda
+                    isLoading={candidatos.isLoading}
+                    candidatos={candidatos.data?.candidatos ?? []}
+                    vendaId={s.venda.id}
+                    suggestedId={s.operacional.id}
+                    onConfirmar={(pedidoOperacionalId) =>
+                      confirmar.mutate({
+                        pedidoOperacionalId,
+                        pedidoContaAzulId: s.venda.id,
+                        observacoes:
+                          pedidoOperacionalId === s.operacional.id
+                            ? undefined
+                            : "Operador selecionou manualmente outro pedido operacional para esta venda.",
+                      })
+                    }
+                  />
+                )}
               </CardContent>
             </Card>
           ))}
@@ -201,6 +232,9 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
                   <Button size="sm" disabled={criarDeVenda.isPending} onClick={() => criarDeVenda.mutate({ pedidoContaAzulId: v.id })}>
                     Criar pedido operacional
                   </Button>
+                  <Button size="sm" variant="outline" onClick={() => setVendaCandidatosId((atual) => (atual === v.id ? null : v.id))}>
+                    Vincular a pedido existente
+                  </Button>
                   <Button size="sm" variant="outline" disabled={ignorar.isPending} onClick={() => ignorar.mutate({ pedidoContaAzulId: v.id })}>
                     Ignorar
                   </Button>
@@ -208,6 +242,22 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
                     Marcar venda errada
                   </Button>
                 </div>
+                {vendaCandidatosId === v.id && (
+                  <div className="w-full">
+                    <CandidatosVenda
+                      isLoading={candidatos.isLoading}
+                      candidatos={candidatos.data?.candidatos ?? []}
+                      vendaId={v.id}
+                      onConfirmar={(pedidoOperacionalId) =>
+                        confirmar.mutate({
+                          pedidoOperacionalId,
+                          pedidoContaAzulId: v.id,
+                          observacoes: "Operador vinculou manualmente uma venda sem pedido sugerido.",
+                        })
+                      }
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -320,6 +370,78 @@ function BlocoVenda({ titulo, venda }: { titulo: string; venda: any }) {
           <li key={i.id ?? i.produto}>{i.produto}: {Number(i.quantidade)}</li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function CandidatosVenda({
+  isLoading,
+  candidatos,
+  suggestedId,
+  onConfirmar,
+}: {
+  isLoading: boolean;
+  candidatos: any[];
+  vendaId: string;
+  suggestedId?: string;
+  onConfirmar: (pedidoOperacionalId: string) => void;
+}) {
+  if (isLoading) {
+    return <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">Buscando pedidos possíveis...</p>;
+  }
+
+  if (candidatos.length === 0) {
+    return (
+      <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+        Nenhum pedido operacional do mesmo cliente foi encontrado na janela de 14 dias.
+      </p>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border bg-muted/20 p-3">
+      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+        Escolha manualmente o pedido correto
+      </p>
+      <div className="space-y-2">
+        {candidatos.map((c) => {
+          const pedido = c.pedido;
+          const bloqueado = pedido.pedidoContaAzulId && !c.vinculadoNestaVenda;
+          return (
+            <div key={pedido.id} className="rounded-lg border bg-background/80 p-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-semibold">
+                    {pedido.cliente?.nome ?? pedido.contaAzulCustomerId}
+                    {pedido.id === suggestedId ? <span className="ml-2 rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] text-cyan-800">sugestão automática</span> : null}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {fmtDate(pedido.dataEntrega)} · score {c.score} · {c.diasDistancia} dia(s) de distância · {labelStatusConciliacao(pedido.statusConciliacao ?? "PLANEJADO")}
+                    {pedido.pedidoContaAzul?.numeroVenda ? ` · já vinculado à venda nº ${pedido.pedidoContaAzul.numeroVenda}` : ""}
+                  </p>
+                  <ul className="mt-1 text-xs text-muted-foreground">
+                    {(pedido.itens ?? []).slice(0, 5).map((i: any) => (
+                      <li key={i.id ?? i.produtoNome}>
+                        {i.produtoNome}: {Number(i.quantidade)}
+                      </li>
+                    ))}
+                  </ul>
+                  {c.divergencias?.length > 0 ? (
+                    <p className="mt-1 text-xs text-amber-700 dark:text-amber-200">
+                      {c.divergencias.length} divergência(s) se este vínculo for confirmado.
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-200">Sem divergências relevantes.</p>
+                  )}
+                </div>
+                <Button size="sm" disabled={bloqueado} onClick={() => onConfirmar(pedido.id)}>
+                  {bloqueado ? "Já vinculado" : "Confirmar neste pedido"}
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

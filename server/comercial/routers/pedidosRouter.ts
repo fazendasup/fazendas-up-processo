@@ -24,9 +24,11 @@ import {
   confirmarVinculoConciliacao,
   criarOperacionalDeVenda,
   desvincularConciliacao,
+  diasEntrePedidos,
   ignorarVendaContaAzul,
   manterOperacionalComoVerdade,
   marcarVendaErrada,
+  scoreSugestaoVinculo,
 } from "../lib/conciliacao-pedidos.js";
 
 const podeConfigurarEstoqueVivo = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL", "COMERCIAL", "OPERACOES");
@@ -1459,6 +1461,51 @@ export const pedidosRouter = router({
           valorLiquido: v.valorLiquido ?? v.valorTotal,
           itens: v.itens,
         })),
+      };
+    }),
+
+  conciliacaoCandidatosVenda: comercialProcedure
+    .input(z.object({ pedidoContaAzulId: z.string(), janelaDias: z.number().int().min(0).max(30).default(14) }))
+    .query(async ({ ctx, input }) => {
+      const venda = await ctx.prisma!.pedido.findUnique({
+        where: { id: input.pedidoContaAzulId },
+        include: { itens: true, cliente: { select: { id: true, externalId: true, nome: true } } },
+      });
+      if (!venda?.cliente.externalId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Venda Conta Azul não encontrada ou sem cliente vinculado." });
+      }
+
+      const janelaMs = input.janelaDias * 86_400_000;
+      const candidatos = await ctx.prisma!.pedidoOperacional.findMany({
+        where: {
+          contaAzulCustomerId: venda.cliente.externalId,
+          status: { not: "CANCELADO" },
+          OR: [{ pedidoContaAzulId: null }, { pedidoContaAzulId: venda.id }],
+          dataEntrega: {
+            gte: inicioDia(new Date(venda.dataPedido.getTime() - janelaMs)),
+            lte: fimDia(new Date(venda.dataPedido.getTime() + janelaMs)),
+          },
+        },
+        include: {
+          cliente: { select: { nome: true, externalId: true } },
+          itens: true,
+          pedidoContaAzul: { select: { id: true, numeroVenda: true, externalId: true } },
+        },
+        orderBy: [{ dataEntrega: "asc" }, { criadoEm: "asc" }],
+        take: 80,
+      });
+
+      return {
+        venda,
+        candidatos: candidatos
+          .map((op) => ({
+            pedido: op,
+            score: scoreSugestaoVinculo(op, venda),
+            diasDistancia: diasEntrePedidos(op, venda),
+            divergencias: calcularDivergencias(op, venda),
+            vinculadoNestaVenda: op.pedidoContaAzulId === venda.id,
+          }))
+          .sort((a, b) => b.score - a.score || a.diasDistancia - b.diasDistancia),
       };
     }),
 

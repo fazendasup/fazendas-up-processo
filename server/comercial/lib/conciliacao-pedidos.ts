@@ -173,6 +173,10 @@ export function scoreSugestaoVinculo(
   return score;
 }
 
+export function diasEntrePedidos(operacional: { dataEntrega: Date }, contaAzul: { dataPedido: Date }): number {
+  return diffDias(operacional.dataEntrega, contaAzul.dataPedido);
+}
+
 async function registrarEvento(
   prisma: PrismaClient | Prisma.TransactionClient,
   data: {
