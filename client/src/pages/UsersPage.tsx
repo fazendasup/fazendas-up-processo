@@ -25,7 +25,7 @@ import { motion } from 'framer-motion';
 import { useRole } from '@/hooks/useRole';
 
 type GlobalAppRole = 'user' | 'admin' | 'platform_admin' | 'comercial' | 'visitante';
-type RoleOption = GlobalAppRole | 'promoter';
+type RoleOption = GlobalAppRole | 'promoter' | 'lider_colheita';
 type ProjetoRole = 'admin' | 'operador' | 'visualizador';
 type UserProjectAccess = { id: number; nome: string; role: string };
 type ManageableProject = {
@@ -37,17 +37,19 @@ type ManageableProject = {
 };
 
 function appRoleFromOption(role: RoleOption): GlobalAppRole {
-  return role === 'promoter' ? 'comercial' : role;
+  return role === 'promoter' || role === 'lider_colheita' ? 'comercial' : role;
 }
 
-function comercialPerfilFromOption(role: RoleOption): 'PROMOTER' | 'COMERCIAL' | undefined {
+function comercialPerfilFromOption(role: RoleOption): 'PROMOTER' | 'LIDER_COLHEITA' | 'COMERCIAL' | undefined {
   if (role === 'promoter') return 'PROMOTER';
+  if (role === 'lider_colheita') return 'LIDER_COLHEITA';
   if (role === 'comercial') return 'COMERCIAL';
   return undefined;
 }
 
 function roleOptionForUser(user: { role: string; comercialPerfil?: string | null }): RoleOption {
   if (user.role === 'comercial' && user.comercialPerfil === 'PROMOTER') return 'promoter';
+  if (user.role === 'comercial' && user.comercialPerfil === 'LIDER_COLHEITA') return 'lider_colheita';
   if (['user', 'admin', 'platform_admin', 'comercial', 'visitante'].includes(user.role)) {
     return user.role as GlobalAppRole;
   }
@@ -159,6 +161,8 @@ function UsersContent() {
       msg = 'Alterar para Comercial? Terá acesso apenas às áreas comerciais dos projetos vinculados.';
     } else if (next === 'promoter') {
       msg = 'Alterar para Promoter? Terá acesso somente a Pedidos e Acompanhamento de avarias nos projetos vinculados.';
+    } else if (next === 'lider_colheita') {
+      msg = 'Alterar para Líder de colheita? Terá acesso somente a Pedidos e Acompanhamento de avarias, sem números de vendas.';
     } else if (next === 'visitante') {
       msg = 'Alterar para Visitante? Poderá visualizar o projeto vinculado e extrair relatórios, mas não editar nem acionar operações.';
     } else {
@@ -345,6 +349,7 @@ function UsersContent() {
                       <SelectItem value="admin">Administrador operacional</SelectItem>
                       <SelectItem value="comercial">Comercial</SelectItem>
                       <SelectItem value="promoter">Promoter</SelectItem>
+                      <SelectItem value="lider_colheita">Líder de colheita</SelectItem>
                       {isPlatformAdmin && (
                         <SelectItem value="platform_admin">Equipa da plataforma</SelectItem>
                       )}
@@ -594,6 +599,7 @@ function UsersContent() {
                         <SelectItem value="admin">Administrador operacional</SelectItem>
                         <SelectItem value="comercial">Comercial</SelectItem>
                         <SelectItem value="promoter">Promoter</SelectItem>
+                        <SelectItem value="lider_colheita">Líder de colheita</SelectItem>
                         {isPlatformAdmin && (
                           <SelectItem value="platform_admin">Equipa da plataforma</SelectItem>
                         )}

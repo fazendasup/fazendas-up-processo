@@ -8,7 +8,7 @@ import { getComercialPrisma } from "../comercial/db";
 import { hashPassword as hashComercialPassword } from "../comercial/lib/password";
 
 const appRoleSchema = z.enum(["user", "admin", "platform_admin", "comercial", "visitante"]);
-const comercialPerfilSchema = z.enum(["COMERCIAL", "PROMOTER"]).optional();
+const comercialPerfilSchema = z.enum(["COMERCIAL", "PROMOTER", "LIDER_COLHEITA"]).optional();
 
 function projetoRoleForAppRole(role: AppUserRole): "admin" | "operador" | "visualizador" {
   if (role === "admin" || role === "platform_admin") return "admin";
@@ -40,7 +40,7 @@ async function upsertComercialUsuario(input: {
   nome: string;
   email: string;
   senhaTemporaria?: string;
-  perfil: "COMERCIAL" | "PROMOTER";
+  perfil: "COMERCIAL" | "PROMOTER" | "LIDER_COLHEITA";
 }) {
   const prisma = getComercialPrisma();
   const email = input.email.toLowerCase().trim();
@@ -188,7 +188,7 @@ export const usersRouter = router({
             nome: user.name ?? user.email,
             email: user.email,
             senhaTemporaria: input.newPassword,
-            perfil: perfil === "PROMOTER" ? "PROMOTER" : "COMERCIAL",
+            perfil: perfil === "PROMOTER" || perfil === "LIDER_COLHEITA" ? perfil : "COMERCIAL",
           });
         }
         return { success: true };
