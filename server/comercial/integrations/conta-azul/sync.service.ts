@@ -20,7 +20,6 @@ import {
 import { refreshAccessToken } from "./oauth.service";
 import { runInteligenciaComercial } from "../../services/inteligencia-comercial";
 import { processarConciliacaoAposSyncVenda } from "../../lib/conciliacao-pedidos.js";
-import { classificarStatusPedido } from "../../lib/pedido-status.js";
 import {
   composicaoFromTotalApenas,
   composicaoFromVendaBuscaItem,
@@ -701,11 +700,9 @@ async function executarContaAzulSync(
         },
       });
       pedidosGravados++;
-      if (classificarStatusPedido(saved.statusPedido) === "venda") {
-        const conc = await processarConciliacaoAposSyncVenda(prisma, saved.id);
-        conciliacaoSugestoes += conc.sugestoes;
-        conciliacaoDivergencias += conc.divergencias;
-      }
+      const conc = await processarConciliacaoAposSyncVenda(prisma, saved.id);
+      conciliacaoSugestoes += conc.sugestoes;
+      conciliacaoDivergencias += conc.divergencias;
     }
 
     const pedidosRemovidosForaDaBusca = await removerVendasForaDaBuscaAtual(

@@ -28,6 +28,15 @@ function labelStatusConciliacao(status: string) {
   return map[status] ?? status.toLowerCase();
 }
 
+function tipoDocumentoContaAzul(status: string | null | undefined) {
+  const s = String(status ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  if (/orcament|orcamento|cotac|proposta/.test(s)) return "Orçamento";
+  return "Venda";
+}
+
 export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: Date }) {
   const utils = trpc.useUtils();
   const painel = trpc.comercial.pedidos.conciliacaoPainel.useQuery({ inicio, fim });
@@ -102,13 +111,14 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-cyan-200 bg-cyan-50/50 p-3 text-sm text-cyan-950 dark:border-cyan-900 dark:bg-cyan-950/20 dark:text-cyan-100">
-        A sincronização importa vendas do Conta Azul e sugere vínculos, mas <strong>não substitui</strong> pedidos
-        operacionais automaticamente. Confirme manualmente ou marque divergências para preservar a rastreabilidade.
+        A sincronização importa vendas e orçamentos conciliáveis do Conta Azul e sugere vínculos, mas{" "}
+        <strong>não substitui</strong> pedidos operacionais automaticamente. Confirme manualmente ou marque
+        divergências para preservar a rastreabilidade.
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <ResumoCard label="Sem venda CA" value={resumo?.semVenda ?? 0} />
-        <ResumoCard label="Vendas sem pedido" value={resumo?.vendasSemPedido ?? 0} />
+        <ResumoCard label="Docs. CA sem pedido" value={resumo?.vendasSemPedido ?? 0} />
         <ResumoCard label="Sugestões" value={resumo?.sugestoes ?? 0} highlight={Boolean(resumo?.sugestoes)} />
         <ResumoCard label="Conciliados" value={resumo?.conciliados ?? 0} ok />
         <ResumoCard label="Divergentes" value={resumo?.divergentes ?? 0} alert={Boolean(resumo?.divergentes)} />
@@ -223,7 +233,7 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
       )}
 
       {(painel.data?.vendasSemPedido ?? []).length > 0 && (
-        <Section title="Vendas Conta Azul sem pedido operacional" icon={<XCircle className="h-4 w-4" />}>
+        <Section title="Vendas/orçamentos Conta Azul sem pedido operacional" icon={<XCircle className="h-4 w-4" />}>
           {painel.data!.vendasSemPedido.map((v: any) => (
             <Card key={v.id}>
               <CardContent className="flex flex-wrap items-start justify-between gap-3 p-4">
@@ -356,12 +366,13 @@ function BlocoPedido({ titulo, pedido, compact }: { titulo: string; pedido: any;
 }
 
 function BlocoVenda({ titulo, venda }: { titulo: string; venda: any }) {
+  const tipo = tipoDocumentoContaAzul(venda.statusPedido);
   return (
     <div>
       <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{titulo}</p>
       <p className="font-semibold">{venda.cliente?.nome ?? "Cliente"}</p>
       <p className="text-xs text-muted-foreground">
-        {fmtDate(venda.dataPedido)} · {venda.numeroVenda ? `nº ${venda.numeroVenda}` : venda.externalId?.slice(0, 8)}
+        {tipo} · {fmtDate(venda.dataPedido)} · {venda.numeroVenda ? `nº ${venda.numeroVenda}` : venda.externalId?.slice(0, 8)}
         {" · "}{fmtMoney(venda.valorLiquido ?? venda.valorTotal)}
         {" · "}{labelStatusConciliacao(venda.statusConciliacao ?? "NAO_CONCILIADA")}
       </p>

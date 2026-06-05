@@ -25,6 +25,7 @@ import {
   criarOperacionalDeVenda,
   desvincularConciliacao,
   diasEntrePedidos,
+  documentoContaAzulConciliavel,
   ignorarVendaContaAzul,
   manterOperacionalComoVerdade,
   marcarVendaErrada,
@@ -1447,7 +1448,12 @@ export const pedidosRouter = router({
           include: {
             cliente: { select: { nome: true, externalId: true } },
             itens: true,
-            pedidoContaAzul: { include: { itens: true, cliente: { select: { externalId: true, nome: true } } } },
+            pedidoContaAzul: {
+              include: {
+                itens: true,
+                cliente: { select: { externalId: true, nome: true, regraComercial: { select: { acumulaPedidos: true } } } },
+              },
+            },
           },
           orderBy: [{ dataEntrega: "desc" }, { criadoEm: "desc" }],
           take: 300,
@@ -1455,7 +1461,7 @@ export const pedidosRouter = router({
         prisma.pedido.findMany({
           where: { origemPedido: OrigemPedido.CONTA_AZUL, dataPedido: { gte: inicio, lte: fim } },
           include: {
-            cliente: { select: { id: true, externalId: true, nome: true } },
+            cliente: { select: { id: true, externalId: true, nome: true, regraComercial: { select: { acumulaPedidos: true } } } },
             itens: true,
             pedidoOperacionalVinculo: { select: { id: true, statusConciliacao: true } },
           },
@@ -1469,11 +1475,11 @@ export const pedidosRouter = router({
         }),
       ]);
 
-      const vendasRealizadas = vendas.filter((v) => classificarStatusPedido(v.statusPedido) === "venda");
+      const documentosConciliaveis = vendas.filter((v) => documentoContaAzulConciliavel(v));
       const sugestoes = operacionais
         .filter((op) => op.statusConciliacao === "VINCULO_SUGERIDO" && op.sugestaoPedidoContaAzulId)
         .map((op) => {
-          const venda = vendasRealizadas.find((v) => v.id === op.sugestaoPedidoContaAzulId);
+          const venda = documentosConciliaveis.find((v) => v.id === op.sugestaoPedidoContaAzulId);
           const divergencias = venda ? calcularDivergencias(op, venda) : [];
           return {
             operacional: op,
@@ -1486,7 +1492,7 @@ export const pedidosRouter = router({
       const semVenda = operacionais.filter(
         (op) => !op.pedidoContaAzulId && op.statusConciliacao !== "VENDA_ERRADA",
       );
-      const vendasSemPedido = vendasRealizadas.filter(
+      const vendasSemPedido = documentosConciliaveis.filter(
         (v) =>
           !v.pedidoOperacionalVinculo &&
           v.statusConciliacao !== "IGNORADA" &&
@@ -1575,7 +1581,10 @@ export const pedidosRouter = router({
     .query(async ({ ctx, input }) => {
       const venda = await ctx.prisma!.pedido.findUnique({
         where: { id: input.pedidoContaAzulId },
-        include: { itens: true, cliente: { select: { id: true, externalId: true, nome: true } } },
+        include: {
+          itens: true,
+          cliente: { select: { id: true, externalId: true, nome: true, regraComercial: { select: { acumulaPedidos: true } } } },
+        },
       });
       if (!venda?.cliente.externalId) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Venda Conta Azul não encontrada ou sem cliente vinculado." });

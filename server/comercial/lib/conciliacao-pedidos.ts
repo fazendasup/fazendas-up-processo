@@ -7,7 +7,10 @@ type PedidoOperacionalComItens = Prisma.PedidoOperacionalGetPayload<{
 }>;
 
 type PedidoContaAzulComItens = Prisma.PedidoGetPayload<{
-  include: { itens: true; cliente: { select: { externalId: true; nome: true } } };
+  include: {
+    itens: true;
+    cliente: { select: { externalId: true; nome: true; regraComercial: { select: { acumulaPedidos: true } } } };
+  };
 }>;
 
 export type SnapshotConciliacao = {
@@ -156,7 +159,7 @@ export function scoreSugestaoVinculo(
   operacional: PedidoOperacionalComItens,
   contaAzul: PedidoContaAzulComItens,
 ): number {
-  if (classificarStatusPedido(contaAzul.statusPedido) !== "venda") return 0;
+  if (!documentoContaAzulConciliavel(contaAzul)) return 0;
   const extOp = operacional.contaAzulCustomerId;
   const extCa = contaAzul.cliente.externalId;
   if (!extOp || !extCa || extOp !== extCa) return 0;
@@ -182,6 +185,15 @@ export function scoreSugestaoVinculo(
 
 export function diasEntrePedidos(operacional: { dataEntrega: Date }, contaAzul: { dataPedido: Date }): number {
   return diffDias(operacional.dataEntrega, contaAzul.dataPedido);
+}
+
+export function documentoContaAzulConciliavel(pedido: {
+  statusPedido: string | null;
+  cliente: { regraComercial?: { acumulaPedidos: boolean } | null };
+}): boolean {
+  const cls = classificarStatusPedido(pedido.statusPedido);
+  if (cls === "venda") return true;
+  return cls === "orcamento" && pedido.cliente.regraComercial?.acumulaPedidos === true;
 }
 
 async function registrarEvento(
@@ -219,11 +231,14 @@ export async function processarConciliacaoAposSyncVenda(
 ): Promise<{ sugestoes: number; divergencias: number }> {
   const contaAzul = await prisma.pedido.findUnique({
     where: { id: pedidoContaAzulId },
-    include: { itens: true, cliente: { select: { externalId: true, nome: true } } },
+    include: {
+      itens: true,
+      cliente: { select: { externalId: true, nome: true, regraComercial: { select: { acumulaPedidos: true } } } },
+    },
   });
   if (!contaAzul?.cliente.externalId) return { sugestoes: 0, divergencias: 0 };
   if (antesDoCortePedidos(contaAzul.dataPedido)) return { sugestoes: 0, divergencias: 0 };
-  if (classificarStatusPedido(contaAzul.statusPedido) !== "venda") return { sugestoes: 0, divergencias: 0 };
+  if (!documentoContaAzulConciliavel(contaAzul)) return { sugestoes: 0, divergencias: 0 };
   if (contaAzul.statusConciliacao === "IGNORADA" || contaAzul.statusConciliacao === "VENDA_ERRADA") {
     return { sugestoes: 0, divergencias: 0 };
   }
@@ -322,7 +337,10 @@ export async function confirmarVinculoConciliacao(
     }),
     prisma.pedido.findUnique({
       where: { id: input.pedidoContaAzulId },
-      include: { itens: true, cliente: { select: { externalId: true, nome: true } } },
+      include: {
+        itens: true,
+        cliente: { select: { externalId: true, nome: true, regraComercial: { select: { acumulaPedidos: true } } } },
+      },
     }),
   ]);
   if (!operacional || !contaAzul) throw new Error("Pedido operacional ou venda Conta Azul não encontrado.");
@@ -476,7 +494,10 @@ export async function criarOperacionalDeVenda(
 ) {
   const contaAzul = await prisma.pedido.findUnique({
     where: { id: input.pedidoContaAzulId },
-    include: { itens: true, cliente: { select: { id: true, externalId: true, nome: true } } },
+    include: {
+      itens: true,
+      cliente: { select: { id: true, externalId: true, nome: true, regraComercial: { select: { acumulaPedidos: true } } } },
+    },
   });
   if (!contaAzul?.cliente.externalId) throw new Error("Venda sem cliente Conta Azul vinculado.");
   if (antesDoCortePedidos(contaAzul.dataPedido)) {
