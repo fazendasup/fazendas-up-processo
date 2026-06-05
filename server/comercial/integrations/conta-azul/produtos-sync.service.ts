@@ -8,10 +8,22 @@ import type { AxiosInstance } from "axios";
 
 type ContaAzulProdutosPage = {
   items?: unknown[];
+  itens?: unknown[];
+  produtos?: unknown[];
+  data?: unknown[];
   totalItems?: number;
+  total_items?: number;
+  total_itens?: number;
 };
 
-function buildProdutosPath(pagina: number, tamanhoPagina: number, status?: "ATIVO" | "INATIVO"): string {
+type ProdutosEndpoint = "/v1/produtos" | "/v1/produto/busca";
+
+function buildProdutosPath(
+  endpoint: ProdutosEndpoint,
+  pagina: number,
+  tamanhoPagina: number,
+  status?: "ATIVO" | "INATIVO",
+): string {
   const qs = new URLSearchParams({
     pagina: String(pagina),
     tamanho_pagina: String(tamanhoPagina),
@@ -19,30 +31,68 @@ function buildProdutosPath(pagina: number, tamanhoPagina: number, status?: "ATIV
     direcao_ordenacao: "ASC",
   });
   if (status) qs.set("status", status);
-  return `/v1/produtos?${qs.toString()}`;
+  return `${endpoint}?${qs.toString()}`;
 }
 
-export async function fetchTodosProdutosContaAzul(http: AxiosInstance): Promise<ContaAzulProdutoResumo[]> {
+function itensProdutoPage(res: ContaAzulProdutosPage | unknown[]): unknown[] {
+  if (Array.isArray(res)) return res;
+  return res.items ?? res.itens ?? res.produtos ?? res.data ?? [];
+}
+
+function totalProdutoPage(res: ContaAzulProdutosPage | unknown[]): number | null {
+  if (Array.isArray(res)) return null;
+  return res.totalItems ?? res.total_items ?? res.total_itens ?? null;
+}
+
+async function fetchProdutosContaAzulPorEndpoint(
+  http: AxiosInstance,
+  endpoint: ProdutosEndpoint,
+): Promise<ContaAzulProdutoResumo[]> {
   const tamanho = 200;
   const maxPaginas = 200;
   const porId = new Map<string, ContaAzulProdutoResumo>();
 
   for (const status of ["ATIVO", "INATIVO"] as const) {
+    let recebidosStatus = 0;
     for (let pagina = 1; pagina <= maxPaginas; pagina++) {
-      const path = buildProdutosPath(pagina, tamanho, status);
-      const res = await contaAzulGet<ContaAzulProdutosPage>(http, path);
-      const batch = res.items ?? [];
+      const path = buildProdutosPath(endpoint, pagina, tamanho, status);
+      const res = await contaAzulGet<ContaAzulProdutosPage | unknown[]>(http, path);
+      const batch = itensProdutoPage(res);
+      recebidosStatus += batch.length;
       for (const raw of batch) {
         const mapped = mapProdutoContaAzulItem(raw);
         if (mapped) porId.set(mapped.id, mapped);
       }
       if (batch.length === 0) break;
       if (batch.length < tamanho) break;
-      if (typeof res.totalItems === "number" && pagina * tamanho >= res.totalItems) break;
+      const total = totalProdutoPage(res);
+      if (typeof total === "number" && recebidosStatus >= total) break;
     }
   }
 
   return Array.from(porId.values());
+}
+
+export async function fetchTodosProdutosContaAzul(http: AxiosInstance): Promise<ContaAzulProdutoResumo[]> {
+  const endpoints: ProdutosEndpoint[] = ["/v1/produtos", "/v1/produto/busca"];
+  const erros: string[] = [];
+
+  for (const endpoint of endpoints) {
+    try {
+      const itens = await fetchProdutosContaAzulPorEndpoint(http, endpoint);
+      if (itens.length > 0) return itens;
+      logger.warn({ endpoint }, "Endpoint de produtos Conta Azul retornou zero itens; tentando fallback se disponível.");
+    } catch (e) {
+      erros.push(`${endpoint}: ${e instanceof Error ? e.message : String(e)}`);
+      logger.warn({ endpoint, err: e }, "Falha ao sincronizar produtos Conta Azul por endpoint; tentando fallback.");
+    }
+  }
+
+  if (erros.length === endpoints.length) {
+    throw new Error(`Não foi possível consultar produtos no Conta Azul. ${erros.join(" | ")}`);
+  }
+
+  return [];
 }
 
 async function upsertProdutoCatalogo(
