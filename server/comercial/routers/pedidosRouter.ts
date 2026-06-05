@@ -19,6 +19,15 @@ import {
 import { calcularConciliacaoSemanal } from "../lib/conciliacao-semanal.js";
 import { fimSemana, inicioSemana } from "../lib/semana.js";
 import { comercialProcedure, comercialRequirePerfis, router } from "../../_core/trpc";
+import {
+  calcularDivergencias,
+  confirmarVinculoConciliacao,
+  criarOperacionalDeVenda,
+  desvincularConciliacao,
+  ignorarVendaContaAzul,
+  manterOperacionalComoVerdade,
+  marcarVendaErrada,
+} from "../lib/conciliacao-pedidos.js";
 
 const podeConfigurarEstoqueVivo = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL", "COMERCIAL", "OPERACOES");
 
@@ -873,6 +882,7 @@ export const pedidosRouter = router({
           criadoPor: { select: { nome: true, email: true } },
           editadoPor: { select: { nome: true, email: true } },
           auditoria: { orderBy: { criadoEm: "desc" }, take: 5 },
+          pedidoContaAzul: { select: { id: true, externalId: true, numeroVenda: true, dataPedido: true, statusPedido: true, valorLiquido: true, valorTotal: true } },
         },
         orderBy: [{ dataEntrega: "desc" }, { cliente: { nome: "asc" } }, { criadoEm: "desc" }],
         take: 500,
@@ -1317,5 +1327,211 @@ export const pedidosRouter = router({
       });
 
       return { success: true, fechamento };
+    }),
+
+  conciliacaoPainel: comercialProcedure
+    .input(z.object({ inicio: z.coerce.date(), fim: z.coerce.date() }))
+    .query(async ({ ctx, input }) => {
+      const inicio = inicioDia(input.inicio);
+      const fim = fimDia(input.fim);
+      const prisma = ctx.prisma!;
+
+      const [operacionais, vendas, eventos] = await Promise.all([
+        prisma.pedidoOperacional.findMany({
+          where: { dataEntrega: { gte: inicio, lte: fim } },
+          include: {
+            cliente: { select: { nome: true, externalId: true } },
+            itens: true,
+            pedidoContaAzul: { include: { itens: true, cliente: { select: { externalId: true, nome: true } } } },
+          },
+          orderBy: [{ dataEntrega: "desc" }, { criadoEm: "desc" }],
+          take: 300,
+        }),
+        prisma.pedido.findMany({
+          where: { origemPedido: OrigemPedido.CONTA_AZUL, dataPedido: { gte: inicio, lte: fim } },
+          include: {
+            cliente: { select: { id: true, externalId: true, nome: true } },
+            itens: true,
+            pedidoOperacionalVinculo: { select: { id: true, statusConciliacao: true } },
+          },
+          orderBy: { dataPedido: "desc" },
+          take: 300,
+        }),
+        prisma.pedidoConciliacaoEvento.findMany({
+          where: { criadoEm: { gte: inicio, lte: fim } },
+          orderBy: { criadoEm: "desc" },
+          take: 40,
+        }),
+      ]);
+
+      const vendasRealizadas = vendas.filter((v) => classificarStatusPedido(v.statusPedido) === "venda");
+      const sugestoes = operacionais
+        .filter((op) => op.statusConciliacao === "VINCULO_SUGERIDO" && op.sugestaoPedidoContaAzulId)
+        .map((op) => {
+          const venda = vendasRealizadas.find((v) => v.id === op.sugestaoPedidoContaAzulId);
+          const divergencias = venda ? calcularDivergencias(op, venda) : [];
+          return {
+            operacional: op,
+            venda,
+            divergencias,
+          };
+        })
+        .filter((s) => s.venda);
+
+      const semVenda = operacionais.filter(
+        (op) => !op.pedidoContaAzulId && op.statusConciliacao !== "VENDA_ERRADA",
+      );
+      const vendasSemPedido = vendasRealizadas.filter(
+        (v) =>
+          !v.pedidoOperacionalVinculo &&
+          v.statusConciliacao !== "IGNORADA" &&
+          v.statusConciliacao !== "VENDA_ERRADA" &&
+          v.statusConciliacao !== "CONCILIADA",
+      );
+      const conciliados = operacionais.filter((op) => op.statusConciliacao === "CONCILIADO" && op.pedidoContaAzul);
+      const divergentes = operacionais.filter((op) => op.statusConciliacao === "DIVERGENTE");
+
+      return {
+        resumo: {
+          semVenda: semVenda.length,
+          vendasSemPedido: vendasSemPedido.length,
+          sugestoes: sugestoes.length,
+          conciliados: conciliados.length,
+          divergentes: divergentes.length,
+        },
+        semVenda,
+        vendasSemPedido,
+        sugestoes,
+        conciliados,
+        divergentes,
+        eventos,
+      };
+    }),
+
+  conciliacaoReferenciasAvaria: comercialProcedure
+    .input(z.object({ clienteId: z.string(), dataEntrega: z.coerce.date() }))
+    .query(async ({ ctx, input }) => {
+      const cliente = await ctx.prisma!.cliente.findUnique({ where: { id: input.clienteId } });
+      if (!cliente?.externalId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Unidade sem vínculo Conta Azul." });
+      }
+      const diaIni = inicioDia(input.dataEntrega);
+      const diaFim = fimDia(input.dataEntrega);
+      const [operacionais, vendas] = await Promise.all([
+        ctx.prisma!.pedidoOperacional.findMany({
+          where: {
+            contaAzulCustomerId: cliente.externalId,
+            dataEntrega: { gte: diaIni, lte: diaFim },
+            status: { not: "CANCELADO" },
+          },
+          include: {
+            itens: { select: { produtoNome: true, quantidade: true } },
+            pedidoContaAzul: { select: { id: true, numeroVenda: true, externalId: true } },
+          },
+          orderBy: { criadoEm: "asc" },
+        }),
+        ctx.prisma!.pedido.findMany({
+          where: {
+            origemPedido: OrigemPedido.CONTA_AZUL,
+            clienteId: cliente.id,
+            dataPedido: { gte: diaIni, lte: diaFim },
+          },
+          include: { itens: { select: { produto: true, quantidade: true } } },
+          orderBy: { dataPedido: "asc" },
+        }),
+      ]);
+      const vendasFiltradas = vendas.filter((v) => classificarStatusPedido(v.statusPedido) === "venda");
+      return {
+        operacionais: operacionais.map((op) => ({
+          id: op.id,
+          status: op.status,
+          statusConciliacao: op.statusConciliacao,
+          observacoes: op.observacoes,
+          itens: op.itens,
+          numeroVenda: op.pedidoContaAzul?.numeroVenda ?? null,
+          pedidoContaAzulId: op.pedidoContaAzulId,
+        })),
+        vendas: vendasFiltradas.map((v) => ({
+          id: v.id,
+          numeroVenda: v.numeroVenda,
+          externalId: v.externalId,
+          statusConciliacao: v.statusConciliacao,
+          valorLiquido: v.valorLiquido ?? v.valorTotal,
+          itens: v.itens,
+        })),
+      };
+    }),
+
+  conciliacaoConfirmarVinculo: comercialProcedure
+    .use(podeConfigurarEstoqueVivo)
+    .input(
+      z.object({
+        pedidoOperacionalId: z.string(),
+        pedidoContaAzulId: z.string(),
+        observacoes: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const usuario = ctx.comercialUsuario;
+      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      return confirmarVinculoConciliacao(ctx.prisma!, {
+        ...input,
+        usuario: { id: usuario.id, nome: usuario.nome },
+      });
+    }),
+
+  conciliacaoMarcarVendaErrada: comercialProcedure
+    .use(podeConfigurarEstoqueVivo)
+    .input(
+      z.object({
+        pedidoContaAzulId: z.string(),
+        pedidoOperacionalId: z.string().optional(),
+        observacoes: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const usuario = ctx.comercialUsuario;
+      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      await marcarVendaErrada(ctx.prisma!, { ...input, usuario: { id: usuario.id, nome: usuario.nome } });
+      return { success: true };
+    }),
+
+  conciliacaoIgnorarVenda: comercialProcedure
+    .use(podeConfigurarEstoqueVivo)
+    .input(z.object({ pedidoContaAzulId: z.string(), observacoes: z.string().optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const usuario = ctx.comercialUsuario;
+      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      await ignorarVendaContaAzul(ctx.prisma!, { ...input, usuario: { id: usuario.id, nome: usuario.nome } });
+      return { success: true };
+    }),
+
+  conciliacaoManterOperacional: comercialProcedure
+    .use(podeConfigurarEstoqueVivo)
+    .input(z.object({ pedidoOperacionalId: z.string(), observacoes: z.string().optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const usuario = ctx.comercialUsuario;
+      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      await manterOperacionalComoVerdade(ctx.prisma!, { ...input, usuario: { id: usuario.id, nome: usuario.nome } });
+      return { success: true };
+    }),
+
+  conciliacaoCriarOperacionalDeVenda: comercialProcedure
+    .use(podeConfigurarEstoqueVivo)
+    .input(z.object({ pedidoContaAzulId: z.string(), observacoes: z.string().optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const usuario = ctx.comercialUsuario;
+      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      return criarOperacionalDeVenda(ctx.prisma!, { ...input, usuario: { id: usuario.id, nome: usuario.nome } });
+    }),
+
+  conciliacaoDesvincular: comercialProcedure
+    .use(podeConfigurarEstoqueVivo)
+    .input(z.object({ pedidoOperacionalId: z.string(), observacoes: z.string().optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const usuario = ctx.comercialUsuario;
+      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      await desvincularConciliacao(ctx.prisma!, { ...input, usuario: { id: usuario.id, nome: usuario.nome } });
+      return { success: true };
     }),
 });

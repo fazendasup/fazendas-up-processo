@@ -124,11 +124,23 @@ export type ContaAzulProdutoCategoriaLookup = {
 
 export type ContaAzulPedidoPayload = {
   id?: string;
+  numeroVenda?: string;
   data?: string;
   total?: number;
   status?: string;
   itens?: ContaAzulPedidoItemPayload[];
 };
+
+export function extrairNumeroVendaContaAzul(raw: unknown): string | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const candidates = [o.numero, o.numero_venda, o.numeroVenda, o.codigo, o.sequencia];
+  for (const c of candidates) {
+    if (typeof c === "number" && Number.isFinite(c)) return String(c);
+    if (typeof c === "string" && c.trim()) return c.trim();
+  }
+  return null;
+}
 
 function normalizarProdutoNome(s: string): string {
   return s
@@ -300,6 +312,7 @@ export function mapVendaBuscaItem(raw: unknown): {
     clienteExternalId,
     payload: {
       id,
+      numeroVenda: extrairNumeroVendaContaAzul(raw) ?? undefined,
       total: Number.isFinite(total) ? total : 0,
       data,
       status,
@@ -346,6 +359,7 @@ export function mapPedidoCreate(
 ): Prisma.PedidoCreateInput {
   return {
     externalId: payload.id ?? undefined,
+    numeroVenda: payload.numeroVenda ?? undefined,
     dataPedido: parseDataVendaContaAzul(payload.data),
     valorTotal: composicao.valorLiquido,
     valorBruto: composicao.valorBruto,

@@ -9,6 +9,7 @@ import {
   mapPessoaApiItem,
   mapPessoaFromVendaClienteEmbutido,
   pessoaItemTemPerfilCliente,
+  extrairNumeroVendaContaAzul,
   mapVendaBuscaItem,
   mapVendaItensResponse,
   parseDataVendaContaAzul,
@@ -18,6 +19,8 @@ import {
 } from "./mappers";
 import { refreshAccessToken } from "./oauth.service";
 import { runInteligenciaComercial } from "../../services/inteligencia-comercial";
+import { processarConciliacaoAposSyncVenda } from "../../lib/conciliacao-pedidos.js";
+import { classificarStatusPedido } from "../../lib/pedido-status.js";
 import {
   composicaoFromTotalApenas,
   composicaoFromVendaBuscaItem,
@@ -605,6 +608,8 @@ async function executarContaAzulSync(
     });
 
     let pedidosGravados = 0;
+    let conciliacaoSugestoes = 0;
+    let conciliacaoDivergencias = 0;
     for (const raw of vendasItens) {
       const mapped = mapVendaBuscaItem(raw);
       if (!mapped) continue;
@@ -653,11 +658,13 @@ async function executarContaAzulSync(
         continue;
       }
       const { composicao, composicaoDetalhada, statusPedido } = resolved;
+      const numeroVenda = payload.numeroVenda ?? extrairNumeroVendaContaAzul(raw) ?? undefined;
       const payloadComItens = {
         ...payload,
+        numeroVenda,
         itens: resolved.itens?.length ? resolved.itens : payload.itens,
       };
-      await prisma.pedido.upsert({
+      const saved = await prisma.pedido.upsert({
         where: { externalId: payload.id },
         create: mapPedidoCreate(
           cli.id,
@@ -667,6 +674,7 @@ async function executarContaAzulSync(
           statusPedido
         ),
         update: {
+          numeroVenda: numeroVenda ?? undefined,
           dataPedido,
           valorTotal: composicao.valorLiquido,
           valorBruto: composicao.valorBruto,
@@ -693,6 +701,11 @@ async function executarContaAzulSync(
         },
       });
       pedidosGravados++;
+      if (classificarStatusPedido(saved.statusPedido) === "venda") {
+        const conc = await processarConciliacaoAposSyncVenda(prisma, saved.id);
+        conciliacaoSugestoes += conc.sugestoes;
+        conciliacaoDivergencias += conc.divergencias;
+      }
     }
 
     const pedidosRemovidosForaDaBusca = await removerVendasForaDaBuscaAtual(
@@ -730,6 +743,8 @@ async function executarContaAzulSync(
           detalhesVendaRestantes: composicaoCtx.detailBudget.remaining,
           composicaoEnriquecidos,
           pedidosRemovidosForaDaBusca,
+          conciliacaoSugestoes,
+          conciliacaoDivergencias,
         },
         duracaoMs: Date.now() - started,
       },

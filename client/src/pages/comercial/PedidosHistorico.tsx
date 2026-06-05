@@ -61,6 +61,7 @@ function exportCsv(rows: any[], filename: string) {
     "categoria",
     "quantidade",
     "preco_unit",
+    "numero_venda_conta_azul",
     "observacoes",
     "criado_por",
     "editado_por",
@@ -76,6 +77,7 @@ function exportCsv(rows: any[], filename: string) {
         item.categoria ?? "",
         String(item.quantidade ?? ""),
         String(item.precoUnit ?? ""),
+        pedido.pedidoContaAzul?.numeroVenda ?? "",
         pedido.observacoes ?? "",
         pedido.criadoPor?.nome ?? "",
         pedido.editadoPor?.nome ?? "",
@@ -399,6 +401,10 @@ export function PedidosHistorico() {
                   <p className="text-xs text-muted-foreground">
                     {new Date(pedido.dataEntrega).toLocaleDateString("pt-BR")} · {pedido.tipoVenda.replace(/_/g, " ").toLowerCase()} · criado por{" "}
                     {pedido.criadoPor?.nome ?? "não informado"}
+                    {pedido.pedidoContaAzul?.numeroVenda ? ` · venda Conta Azul nº ${pedido.pedidoContaAzul.numeroVenda}` : ""}
+                    {pedido.statusConciliacao && pedido.statusConciliacao !== "PLANEJADO"
+                      ? ` · conciliação: ${String(pedido.statusConciliacao).toLowerCase().replace(/_/g, " ")}`
+                      : ""}
                   </p>
                 </div>
                 <span className={`rounded-full border px-2 py-1 text-xs font-semibold ${statusClass(pedido.status)}`}>{labelStatus(pedido.status)}</span>

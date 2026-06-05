@@ -238,6 +238,10 @@ exports.Prisma.PedidoOperacionalScalarFieldEnum = {
   diaSemana: 'diaSemana',
   tipoVenda: 'tipoVenda',
   status: 'status',
+  statusConciliacao: 'statusConciliacao',
+  pedidoContaAzulId: 'pedidoContaAzulId',
+  sugestaoPedidoContaAzulId: 'sugestaoPedidoContaAzulId',
+  snapshotConciliacao: 'snapshotConciliacao',
   observacoes: 'observacoes',
   prioridadeEntrega: 'prioridadeEntrega',
   criadoPorId: 'criadoPorId',
@@ -304,6 +308,7 @@ exports.Prisma.FechamentoSemanalScalarFieldEnum = {
 exports.Prisma.PedidoScalarFieldEnum = {
   id: 'id',
   externalId: 'externalId',
+  numeroVenda: 'numeroVenda',
   clienteId: 'clienteId',
   dataPedido: 'dataPedido',
   valorTotal: 'valorTotal',
@@ -313,7 +318,23 @@ exports.Prisma.PedidoScalarFieldEnum = {
   valorLiquido: 'valorLiquido',
   composicaoDetalhada: 'composicaoDetalhada',
   statusPedido: 'statusPedido',
+  statusConciliacao: 'statusConciliacao',
+  sugestaoPedidoOperacionalId: 'sugestaoPedidoOperacionalId',
   origemPedido: 'origemPedido'
+};
+
+exports.Prisma.PedidoConciliacaoEventoScalarFieldEnum = {
+  id: 'id',
+  pedidoOperacionalId: 'pedidoOperacionalId',
+  pedidoContaAzulId: 'pedidoContaAzulId',
+  tipo: 'tipo',
+  antes: 'antes',
+  depois: 'depois',
+  divergencias: 'divergencias',
+  usuarioId: 'usuarioId',
+  usuarioNome: 'usuarioNome',
+  observacoes: 'observacoes',
+  criadoEm: 'criadoEm'
 };
 
 exports.Prisma.ItemPedidoScalarFieldEnum = {
@@ -525,6 +546,8 @@ exports.Prisma.PedidoOperacionalOrderByRelevanceFieldEnum = {
   id: 'id',
   clienteId: 'clienteId',
   contaAzulCustomerId: 'contaAzulCustomerId',
+  pedidoContaAzulId: 'pedidoContaAzulId',
+  sugestaoPedidoContaAzulId: 'sugestaoPedidoContaAzulId',
   observacoes: 'observacoes',
   criadoPorId: 'criadoPorId',
   editadoPorId: 'editadoPorId'
@@ -570,8 +593,20 @@ exports.Prisma.FechamentoSemanalOrderByRelevanceFieldEnum = {
 exports.Prisma.PedidoOrderByRelevanceFieldEnum = {
   id: 'id',
   externalId: 'externalId',
+  numeroVenda: 'numeroVenda',
   clienteId: 'clienteId',
-  statusPedido: 'statusPedido'
+  statusPedido: 'statusPedido',
+  sugestaoPedidoOperacionalId: 'sugestaoPedidoOperacionalId'
+};
+
+exports.Prisma.PedidoConciliacaoEventoOrderByRelevanceFieldEnum = {
+  id: 'id',
+  pedidoOperacionalId: 'pedidoOperacionalId',
+  pedidoContaAzulId: 'pedidoContaAzulId',
+  tipo: 'tipo',
+  usuarioId: 'usuarioId',
+  usuarioNome: 'usuarioNome',
+  observacoes: 'observacoes'
 };
 
 exports.Prisma.ItemPedidoOrderByRelevanceFieldEnum = {
@@ -693,6 +728,23 @@ exports.PedidoOperacionalStatus = exports.$Enums.PedidoOperacionalStatus = {
   CANCELADO: 'CANCELADO'
 };
 
+exports.StatusConciliacaoOperacional = exports.$Enums.StatusConciliacaoOperacional = {
+  PLANEJADO: 'PLANEJADO',
+  VINCULO_SUGERIDO: 'VINCULO_SUGERIDO',
+  CONCILIADO: 'CONCILIADO',
+  DIVERGENTE: 'DIVERGENTE',
+  VENDA_ERRADA: 'VENDA_ERRADA'
+};
+
+exports.StatusConciliacaoContaAzul = exports.$Enums.StatusConciliacaoContaAzul = {
+  NAO_CONCILIADA: 'NAO_CONCILIADA',
+  SUGERIDA: 'SUGERIDA',
+  CONCILIADA: 'CONCILIADA',
+  DIVERGENTE: 'DIVERGENTE',
+  IGNORADA: 'IGNORADA',
+  VENDA_ERRADA: 'VENDA_ERRADA'
+};
+
 exports.OrigemPedido = exports.$Enums.OrigemPedido = {
   CONTA_AZUL: 'CONTA_AZUL',
   MANUAL: 'MANUAL'
@@ -775,6 +827,7 @@ exports.Prisma.ModelName = {
   PedidoOperacionalAuditoria: 'PedidoOperacionalAuditoria',
   FechamentoSemanal: 'FechamentoSemanal',
   Pedido: 'Pedido',
+  PedidoConciliacaoEvento: 'PedidoConciliacaoEvento',
   ItemPedido: 'ItemPedido',
   Interacao: 'Interacao',
   Oportunidade: 'Oportunidade',

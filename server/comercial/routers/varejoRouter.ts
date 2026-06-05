@@ -135,6 +135,7 @@ export const varejoRouter = router({
       z.object({
         clienteId: z.string().min(1, "Unidade é obrigatória"),
         dataEntrega: z.coerce.date(),
+        pedidoOperacionalId: z.string().optional(),
         produtoId: z.string().min(1, "Variedade é obrigatória"),
         quantidade: z.number().positive("Quantidade deve ser maior que zero"),
         observacoes: z.string().optional(),
@@ -165,16 +166,32 @@ export const varejoRouter = router({
       const observacoes = input.observacoes?.trim() || null;
 
       return ctx.prisma!.$transaction(async (tx) => {
-        let pedido = await tx.pedidoOperacional.findFirst({
-          where: {
-            contaAzulCustomerId: cliente.externalId!,
-            dataEntrega: { gte: dataEntrega, lte: fimDia(dataEntrega) },
-            status: { not: "CANCELADO" },
-          },
-          include: { avarias: true, itens: true },
-          orderBy: { criadoEm: "asc" },
-        });
+        let pedido = input.pedidoOperacionalId
+          ? await tx.pedidoOperacional.findFirst({
+              where: {
+                id: input.pedidoOperacionalId,
+                contaAzulCustomerId: cliente.externalId!,
+                status: { not: "CANCELADO" },
+              },
+              include: { avarias: true, itens: true, pedidoContaAzul: { select: { numeroVenda: true } } },
+            })
+          : await tx.pedidoOperacional.findFirst({
+              where: {
+                contaAzulCustomerId: cliente.externalId!,
+                dataEntrega: { gte: dataEntrega, lte: fimDia(dataEntrega) },
+                status: { not: "CANCELADO" },
+              },
+              include: { avarias: true, itens: true, pedidoContaAzul: { select: { numeroVenda: true } } },
+              orderBy: { criadoEm: "asc" },
+            });
         let pedidoCriado = false;
+
+        if (input.pedidoOperacionalId && !pedido) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Pedido operacional selecionado não encontrado para esta unidade.",
+          });
+        }
 
         if (!pedido) {
           pedido = await tx.pedidoOperacional.create({
@@ -188,7 +205,7 @@ export const varejoRouter = router({
               criadoPorId: usuario.id,
               editadoPorId: usuario.id,
             },
-            include: { avarias: true, itens: true },
+            include: { avarias: true, itens: true, pedidoContaAzul: { select: { numeroVenda: true } } },
           });
           pedidoCriado = true;
         }
@@ -223,6 +240,7 @@ export const varejoRouter = router({
             observacoes,
             origem: "acompanhamento_avarias",
             pedidoCriado,
+            numeroVenda: pedido.pedidoContaAzul?.numeroVenda ?? null,
           },
         );
 
@@ -231,6 +249,7 @@ export const varejoRouter = router({
           pedidoId: pedido.id,
           avariaId: avaria.id,
           pedidoCriado,
+          numeroVenda: pedido.pedidoContaAzul?.numeroVenda ?? null,
         };
       });
     }),

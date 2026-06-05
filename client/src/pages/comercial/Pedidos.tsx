@@ -27,6 +27,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ConciliacaoContaAzulPanel } from "@/components/comercial/ConciliacaoContaAzulPanel";
 
 const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const STATUS = ["PENDENTE", "PRONTO", "ENTREGUE", "CANCELADO"] as const;
@@ -108,7 +109,7 @@ function statusBarClass(status: string) {
 type ProdutoLinha = { produtoId: string; quantidade: string; observacoes: string };
 type AvariaLinha = { produtoId: string; quantidade: string; observacoes: string };
 
-type PedidosTab = "operacional" | "agenda" | "regras" | "produtos" | "compras";
+type PedidosTab = "operacional" | "agenda" | "conciliacao" | "regras" | "produtos" | "compras";
 
 export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTab } = {}) {
   const utils = trpc.useUtils();
@@ -127,6 +128,13 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
   const [produtoEdit, setProdutoEdit] = useState<any>(null);
 
   const diaDate = useMemo(() => new Date(`${dia}T12:00:00`), [dia]);
+  const conciliacaoIntervalo = useMemo(() => {
+    const fim = new Date(diaDate);
+    const inicio = new Date(diaDate);
+    inicio.setDate(inicio.getDate() - 14);
+    fim.setDate(fim.getDate() + 7);
+    return { inicio, fim };
+  }, [diaDate]);
   const me = trpc.comercial.pedidos.me.useQuery();
   const canEditarComercial =
     me.data?.perfil === "ADMIN" ||
@@ -569,6 +577,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
         <TabsList className="flex h-auto flex-wrap">
           <TabsTrigger value="operacional">Dashboard operacional</TabsTrigger>
           <TabsTrigger value="agenda">Emissão / Agenda</TabsTrigger>
+          {!isPromoter && <TabsTrigger value="conciliacao">Conciliação Conta Azul</TabsTrigger>}
           {!isPromoter && <TabsTrigger value="regras">Regras comerciais</TabsTrigger>}
           {!isPromoter && <TabsTrigger value="produtos">Produtos</TabsTrigger>}
           {!isPromoter && <TabsTrigger value="compras">Estoque vivo / compras</TabsTrigger>}
@@ -675,6 +684,12 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
             </CardContent>
           </Card>
         </TabsContent>
+
+        {!isPromoter && (
+          <TabsContent value="conciliacao" className="space-y-3">
+            <ConciliacaoContaAzulPanel inicio={conciliacaoIntervalo.inicio} fim={conciliacaoIntervalo.fim} />
+          </TabsContent>
+        )}
 
         <TabsContent value="agenda" className="grid gap-4 xl:grid-cols-[minmax(360px,0.9fr)_1.1fr]">
           <Card>

@@ -90,6 +90,7 @@ export function AcompanhamentoAvarias() {
   const [avariaProdutoId, setAvariaProdutoId] = useState("");
   const [avariaQuantidade, setAvariaQuantidade] = useState("1");
   const [avariaObservacoes, setAvariaObservacoes] = useState("");
+  const [avariaPedidoOperacionalId, setAvariaPedidoOperacionalId] = useState("");
 
   const intervalo = useMemo(
     () => intervaloDoPreset(preset, { inicio: customInicio, fim: customFim }),
@@ -116,6 +117,18 @@ export function AcompanhamentoAvarias() {
       unidadesDaRede.some((u) => u.id === atual) ? atual : "",
     );
   }, [grupoId, unidadeId, redeSelecionada?.id, unidadesDaRede]);
+
+  const referenciasAvaria = trpc.comercial.pedidos.conciliacaoReferenciasAvaria.useQuery(
+    {
+      clienteId: avariaUnidadeId,
+      dataEntrega: new Date(`${avariaData}T12:00:00`),
+    },
+    { enabled: Boolean(avariaUnidadeId && avariaData) },
+  );
+
+  useEffect(() => {
+    setAvariaPedidoOperacionalId("");
+  }, [avariaUnidadeId, avariaData]);
 
   const relatorio = trpc.comercial.varejo.relatorio.useQuery(
     {
@@ -185,6 +198,7 @@ export function AcompanhamentoAvarias() {
     registrarAvariaCampo.mutate({
       clienteId: avariaUnidadeId,
       dataEntrega: new Date(`${avariaData}T12:00:00`),
+      pedidoOperacionalId: avariaPedidoOperacionalId || undefined,
       produtoId: avariaProdutoId,
       quantidade,
       observacoes: avariaObservacoes,
@@ -279,6 +293,39 @@ export function AcompanhamentoAvarias() {
             value={avariaData}
             onChange={(e) => setAvariaData(e.target.value)}
           />
+        </div>
+        <div className="lg:col-span-4">
+          <Label className="text-xs">Pedido / venda de referência</Label>
+          <select
+            className="h-10 w-full rounded-md border bg-background px-2 text-sm"
+            value={avariaPedidoOperacionalId}
+            onChange={(e) => setAvariaPedidoOperacionalId(e.target.value)}
+            disabled={!avariaUnidadeId || referenciasAvaria.isLoading}
+          >
+            <option value="">
+              {referenciasAvaria.isLoading
+                ? "Carregando pedidos..."
+                : (referenciasAvaria.data?.operacionais?.length ?? 0) > 0
+                  ? "Selecione o pedido operacional (recomendado)"
+                  : "Nenhum pedido no dia — será criado automaticamente"}
+            </option>
+            {(referenciasAvaria.data?.operacionais ?? []).map((op: any) => (
+              <option key={op.id} value={op.id}>
+                Pedido {op.status.toLowerCase()}
+                {op.numeroVenda ? ` · venda nº ${op.numeroVenda}` : ""}
+                {" · "}
+                {(op.itens ?? []).map((i: any) => `${i.produtoNome} (${Number(i.quantidade)})`).join(", ").slice(0, 80)}
+              </option>
+            ))}
+          </select>
+          {(referenciasAvaria.data?.vendas ?? []).length > 0 && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Vendas Conta Azul no dia:{" "}
+              {referenciasAvaria.data!.vendas
+                .map((v: any) => (v.numeroVenda ? `nº ${v.numeroVenda}` : v.externalId?.slice(0, 8)))
+                .join(", ")}
+            </p>
+          )}
         </div>
         <div>
           <Label className="text-xs">Variedade/produto *</Label>

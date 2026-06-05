@@ -111,6 +111,23 @@ enum PedidoOperacionalStatus {
   CANCELADO
 }
 
+enum StatusConciliacaoOperacional {
+  PLANEJADO
+  VINCULO_SUGERIDO
+  CONCILIADO
+  DIVERGENTE
+  VENDA_ERRADA
+}
+
+enum StatusConciliacaoContaAzul {
+  NAO_CONCILIADA
+  SUGERIDA
+  CONCILIADA
+  DIVERGENTE
+  IGNORADA
+  VENDA_ERRADA
+}
+
 enum TipoVendaPedido {
   RECORRENTE_SEMANAL
   RECORRENTE_QUINZENAL
@@ -305,30 +322,38 @@ model PrecoEspecialCliente {
 }
 
 model PedidoOperacional {
-  id                  String                  @id @default(cuid())
-  clienteId           String?                 @map("cliente_id")
-  contaAzulCustomerId String                  @map("conta_azul_customer_id")
-  dataEntrega         DateTime                @map("data_entrega")
-  diaSemana           Int                     @map("dia_semana")
-  tipoVenda           TipoVendaPedido         @map("tipo_venda")
-  status              PedidoOperacionalStatus @default(PENDENTE)
-  observacoes         String?                 @db.Text
-  prioridadeEntrega   Int?                    @map("prioridade_entrega")
-  criadoPorId         String?                 @map("criado_por_id")
-  editadoPorId        String?                 @map("editado_por_id")
-  criadoEm            DateTime                @default(now()) @map("criado_em")
-  atualizadoEm        DateTime                @updatedAt @map("atualizado_em")
+  id                        String                       @id @default(cuid())
+  clienteId                 String?                      @map("cliente_id")
+  contaAzulCustomerId       String                       @map("conta_azul_customer_id")
+  dataEntrega               DateTime                     @map("data_entrega")
+  diaSemana                 Int                          @map("dia_semana")
+  tipoVenda                 TipoVendaPedido              @map("tipo_venda")
+  status                    PedidoOperacionalStatus      @default(PENDENTE)
+  statusConciliacao         StatusConciliacaoOperacional @default(PLANEJADO) @map("status_conciliacao")
+  pedidoContaAzulId         String?                      @unique @map("pedido_conta_azul_id")
+  sugestaoPedidoContaAzulId String?                      @map("sugestao_pedido_conta_azul_id")
+  snapshotConciliacao       Json?                        @map("snapshot_conciliacao")
+  observacoes               String?                      @db.Text
+  prioridadeEntrega         Int?                         @map("prioridade_entrega")
+  criadoPorId               String?                      @map("criado_por_id")
+  editadoPorId              String?                      @map("editado_por_id")
+  criadoEm                  DateTime                     @default(now()) @map("criado_em")
+  atualizadoEm              DateTime                     @updatedAt @map("atualizado_em")
 
-  cliente    Cliente?                     @relation(fields: [clienteId], references: [id], onDelete: SetNull)
-  criadoPor  Usuario?                     @relation("PedidoCriadoPor", fields: [criadoPorId], references: [id], onDelete: SetNull)
-  editadoPor Usuario?                     @relation("PedidoEditadoPor", fields: [editadoPorId], references: [id], onDelete: SetNull)
-  itens      PedidoOperacionalItem[]
-  avarias    PedidoOperacionalAvaria[]
-  auditoria  PedidoOperacionalAuditoria[]
+  cliente            Cliente?                     @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  criadoPor          Usuario?                     @relation("PedidoCriadoPor", fields: [criadoPorId], references: [id], onDelete: SetNull)
+  editadoPor         Usuario?                     @relation("PedidoEditadoPor", fields: [editadoPorId], references: [id], onDelete: SetNull)
+  pedidoContaAzul    Pedido?                      @relation("PedidoOperacionalVinculo", fields: [pedidoContaAzulId], references: [id], onDelete: SetNull)
+  itens              PedidoOperacionalItem[]
+  avarias            PedidoOperacionalAvaria[]
+  auditoria          PedidoOperacionalAuditoria[]
+  eventosConciliacao PedidoConciliacaoEvento[]
 
   @@index([contaAzulCustomerId, dataEntrega])
   @@index([clienteId, dataEntrega])
   @@index([dataEntrega, status])
+  @@index([statusConciliacao])
+  @@index([sugestaoPedidoContaAzulId])
   @@map("pedidos_operacionais")
 }
 
@@ -417,23 +442,53 @@ model FechamentoSemanal {
 }
 
 model Pedido {
-  id                  String       @id @default(cuid())
-  externalId          String?      @unique @map("external_id")
-  clienteId           String       @map("cliente_id")
-  dataPedido          DateTime     @map("data_pedido")
-  valorTotal          Decimal      @map("valor_total") @db.Decimal(14, 2)
-  valorBruto          Decimal?     @map("valor_bruto") @db.Decimal(14, 2)
-  valorFrete          Decimal      @default(0) @map("valor_frete") @db.Decimal(14, 2)
-  valorDesconto       Decimal      @default(0) @map("valor_desconto") @db.Decimal(14, 2)
-  valorLiquido        Decimal?     @map("valor_liquido") @db.Decimal(14, 2)
-  composicaoDetalhada Boolean      @default(false) @map("composicao_detalhada")
-  statusPedido        String       @map("status_pedido")
-  origemPedido        OrigemPedido @map("origem_pedido")
-  cliente             Cliente      @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-  itens               ItemPedido[]
+  id                          String                     @id @default(cuid())
+  externalId                  String?                    @unique @map("external_id")
+  numeroVenda                 String?                    @map("numero_venda")
+  clienteId                   String                     @map("cliente_id")
+  dataPedido                  DateTime                   @map("data_pedido")
+  valorTotal                  Decimal                    @map("valor_total") @db.Decimal(14, 2)
+  valorBruto                  Decimal?                   @map("valor_bruto") @db.Decimal(14, 2)
+  valorFrete                  Decimal                    @default(0) @map("valor_frete") @db.Decimal(14, 2)
+  valorDesconto               Decimal                    @default(0) @map("valor_desconto") @db.Decimal(14, 2)
+  valorLiquido                Decimal?                   @map("valor_liquido") @db.Decimal(14, 2)
+  composicaoDetalhada         Boolean                    @default(false) @map("composicao_detalhada")
+  statusPedido                String                     @map("status_pedido")
+  statusConciliacao           StatusConciliacaoContaAzul @default(NAO_CONCILIADA) @map("status_conciliacao")
+  sugestaoPedidoOperacionalId String?                    @map("sugestao_pedido_operacional_id")
+  origemPedido                OrigemPedido               @map("origem_pedido")
+  cliente                     Cliente                    @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  itens                       ItemPedido[]
+  pedidoOperacionalVinculo    PedidoOperacional?         @relation("PedidoOperacionalVinculo")
+  eventosConciliacao          PedidoConciliacaoEvento[]
 
   @@index([clienteId, dataPedido])
+  @@index([statusConciliacao])
+  @@index([numeroVenda])
+  @@index([sugestaoPedidoOperacionalId])
   @@map("pedidos")
+}
+
+model PedidoConciliacaoEvento {
+  id                  String   @id @default(cuid())
+  pedidoOperacionalId String?  @map("pedido_operacional_id")
+  pedidoContaAzulId   String?  @map("pedido_conta_azul_id")
+  tipo                String
+  antes               Json?
+  depois              Json?
+  divergencias        Json?
+  usuarioId           String?  @map("usuario_id")
+  usuarioNome         String?  @map("usuario_nome")
+  observacoes         String?  @db.Text
+  criadoEm            DateTime @default(now()) @map("criado_em")
+
+  pedidoOperacional PedidoOperacional? @relation(fields: [pedidoOperacionalId], references: [id], onDelete: SetNull)
+  pedidoContaAzul   Pedido?            @relation(fields: [pedidoContaAzulId], references: [id], onDelete: SetNull)
+
+  @@index([pedidoOperacionalId, criadoEm])
+  @@index([pedidoContaAzulId, criadoEm])
+  @@index([tipo, criadoEm])
+  @@map("pedidos_conciliacao_eventos")
 }
 
 model ItemPedido {

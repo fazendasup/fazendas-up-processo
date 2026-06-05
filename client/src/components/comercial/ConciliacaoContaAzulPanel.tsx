@@ -1,0 +1,340 @@
+import { useMemo } from "react";
+import { toast } from "sonner";
+import { AlertTriangle, CheckCircle2, Link2, Unlink, XCircle } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+function fmtDate(v: string | Date) {
+  return new Date(v).toLocaleDateString("pt-BR");
+}
+
+function fmtMoney(v: unknown) {
+  return Number(v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function labelStatusConciliacao(status: string) {
+  const map: Record<string, string> = {
+    PLANEJADO: "planejado",
+    VINCULO_SUGERIDO: "sugestão",
+    CONCILIADO: "conciliado",
+    DIVERGENTE: "divergente",
+    VENDA_ERRADA: "venda errada",
+    NAO_CONCILIADA: "sem vínculo",
+    SUGERIDA: "sugestão",
+    CONCILIADA: "conciliada",
+    IGNORADA: "ignorada",
+  };
+  return map[status] ?? status.toLowerCase();
+}
+
+export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: Date }) {
+  const utils = trpc.useUtils();
+  const painel = trpc.comercial.pedidos.conciliacaoPainel.useQuery({ inicio, fim });
+
+  const confirmar = trpc.comercial.pedidos.conciliacaoConfirmarVinculo.useMutation({
+    onSuccess: (r) => {
+      toast.success(
+        r.divergencias?.length
+          ? "Vínculo confirmado com divergências registradas."
+          : "Vínculo confirmado com sucesso.",
+      );
+      void utils.comercial.pedidos.conciliacaoPainel.invalidate();
+      void utils.comercial.pedidos.agenda.invalidate();
+      void utils.comercial.pedidos.relatorioHistorico.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const marcarErrada = trpc.comercial.pedidos.conciliacaoMarcarVendaErrada.useMutation({
+    onSuccess: () => {
+      toast.success("Venda marcada como incorreta.");
+      void utils.comercial.pedidos.conciliacaoPainel.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const ignorar = trpc.comercial.pedidos.conciliacaoIgnorarVenda.useMutation({
+    onSuccess: () => {
+      toast.message("Venda ignorada na conciliação.");
+      void utils.comercial.pedidos.conciliacaoPainel.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const manterOp = trpc.comercial.pedidos.conciliacaoManterOperacional.useMutation({
+    onSuccess: () => {
+      toast.success("Pedido operacional mantido como referência.");
+      void utils.comercial.pedidos.conciliacaoPainel.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const criarDeVenda = trpc.comercial.pedidos.conciliacaoCriarOperacionalDeVenda.useMutation({
+    onSuccess: () => {
+      toast.success("Pedido operacional criado a partir da venda.");
+      void utils.comercial.pedidos.conciliacaoPainel.invalidate();
+      void utils.comercial.pedidos.agenda.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const desvincular = trpc.comercial.pedidos.conciliacaoDesvincular.useMutation({
+    onSuccess: () => {
+      toast.success("Vínculo removido.");
+      void utils.comercial.pedidos.conciliacaoPainel.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const resumo = painel.data?.resumo;
+  const alertas = useMemo(() => {
+    const d = painel.data;
+    if (!d) return 0;
+    return (d.divergentes?.length ?? 0) + (d.sugestoes?.length ?? 0) + (d.vendasSemPedido?.length ?? 0);
+  }, [painel.data]);
+
+  if (painel.isLoading) {
+    return <p className="text-sm text-muted-foreground">Carregando conciliação Conta Azul...</p>;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-cyan-200 bg-cyan-50/50 p-3 text-sm text-cyan-950 dark:border-cyan-900 dark:bg-cyan-950/20 dark:text-cyan-100">
+        A sincronização importa vendas do Conta Azul e sugere vínculos, mas <strong>não substitui</strong> pedidos
+        operacionais automaticamente. Confirme manualmente ou marque divergências para preservar a rastreabilidade.
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <ResumoCard label="Sem venda CA" value={resumo?.semVenda ?? 0} />
+        <ResumoCard label="Vendas sem pedido" value={resumo?.vendasSemPedido ?? 0} />
+        <ResumoCard label="Sugestões" value={resumo?.sugestoes ?? 0} highlight={Boolean(resumo?.sugestoes)} />
+        <ResumoCard label="Conciliados" value={resumo?.conciliados ?? 0} ok />
+        <ResumoCard label="Divergentes" value={resumo?.divergentes ?? 0} alert={Boolean(resumo?.divergentes)} />
+      </div>
+
+      {alertas > 0 && (
+        <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-200">
+          <AlertTriangle className="h-4 w-4" />
+          {alertas} item(ns) precisam de revisão neste período.
+        </p>
+      )}
+
+      {(painel.data?.sugestoes ?? []).length > 0 && (
+        <Section title="Sugestões de vínculo" icon={<Link2 className="h-4 w-4" />}>
+          {painel.data!.sugestoes.map((s: any) => (
+            <Card key={`${s.operacional.id}-${s.venda.id}`} className="border-amber-200/80">
+              <CardContent className="space-y-3 p-4">
+                <div className="grid gap-3 lg:grid-cols-2">
+                  <BlocoPedido titulo="Pedido operacional" pedido={s.operacional} />
+                  <BlocoVenda titulo="Venda Conta Azul" venda={s.venda} />
+                </div>
+                {s.divergencias?.length > 0 && (
+                  <DivergenciasLista divergencias={s.divergencias} />
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    disabled={confirmar.isPending}
+                    onClick={() =>
+                      confirmar.mutate({
+                        pedidoOperacionalId: s.operacional.id,
+                        pedidoContaAzulId: s.venda.id,
+                      })
+                    }
+                  >
+                    Confirmar vínculo
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={manterOp.isPending}
+                    onClick={() => manterOp.mutate({ pedidoOperacionalId: s.operacional.id })}
+                  >
+                    Manter operacional
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={marcarErrada.isPending}
+                    onClick={() =>
+                      marcarErrada.mutate({
+                        pedidoContaAzulId: s.venda.id,
+                        pedidoOperacionalId: s.operacional.id,
+                      })
+                    }
+                  >
+                    Venda CA errada
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </Section>
+      )}
+
+      {(painel.data?.divergentes ?? []).length > 0 && (
+        <Section title="Divergências após conciliação ou alteração no Conta Azul" icon={<AlertTriangle className="h-4 w-4 text-amber-600" />}>
+          {painel.data!.divergentes.map((op: any) => (
+            <Card key={op.id} className="border-amber-300 bg-amber-50/30 dark:border-amber-900 dark:bg-amber-950/10">
+              <CardContent className="space-y-2 p-4">
+                <BlocoPedido titulo="Pedido operacional (referência)" pedido={op} />
+                {op.pedidoContaAzul && <BlocoVenda titulo="Venda Conta Azul atual" venda={op.pedidoContaAzul} />}
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" disabled={manterOp.isPending} onClick={() => manterOp.mutate({ pedidoOperacionalId: op.id })}>
+                    Manter operacional como verdade
+                  </Button>
+                  {op.pedidoContaAzulId && (
+                    <Button size="sm" variant="ghost" disabled={desvincular.isPending} onClick={() => desvincular.mutate({ pedidoOperacionalId: op.id })}>
+                      <Unlink className="mr-1 h-3 w-3" /> Desvincular
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </Section>
+      )}
+
+      {(painel.data?.vendasSemPedido ?? []).length > 0 && (
+        <Section title="Vendas Conta Azul sem pedido operacional" icon={<XCircle className="h-4 w-4" />}>
+          {painel.data!.vendasSemPedido.map((v: any) => (
+            <Card key={v.id}>
+              <CardContent className="flex flex-wrap items-start justify-between gap-3 p-4">
+                <BlocoVenda titulo="Venda" venda={v} />
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" disabled={criarDeVenda.isPending} onClick={() => criarDeVenda.mutate({ pedidoContaAzulId: v.id })}>
+                    Criar pedido operacional
+                  </Button>
+                  <Button size="sm" variant="outline" disabled={ignorar.isPending} onClick={() => ignorar.mutate({ pedidoContaAzulId: v.id })}>
+                    Ignorar
+                  </Button>
+                  <Button size="sm" variant="ghost" disabled={marcarErrada.isPending} onClick={() => marcarErrada.mutate({ pedidoContaAzulId: v.id })}>
+                    Marcar venda errada
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </Section>
+      )}
+
+      {(painel.data?.semVenda ?? []).length > 0 && (
+        <Section title="Pedidos operacionais ainda sem venda no Conta Azul" icon={<CheckCircle2 className="h-4 w-4" />}>
+          <div className="grid gap-2 lg:grid-cols-2">
+            {painel.data!.semVenda.slice(0, 12).map((op: any) => (
+              <Card key={op.id}>
+                <CardContent className="p-3">
+                  <BlocoPedido titulo="Aguardando venda" pedido={op} compact />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {(painel.data?.eventos ?? []).length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Histórico de conciliação</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {painel.data!.eventos.slice(0, 8).map((ev: any) => (
+              <div key={ev.id} className="rounded-lg border bg-muted/20 px-3 py-2 text-xs">
+                <p className="font-semibold">{ev.tipo.replace(/_/g, " ").toLowerCase()}</p>
+                <p className="text-muted-foreground">
+                  {ev.usuarioNome ? `${ev.usuarioNome} · ` : ""}
+                  {new Date(ev.criadoEm).toLocaleString("pt-BR")}
+                </p>
+                {ev.observacoes ? <p>{ev.observacoes}</p> : null}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function ResumoCard({
+  label,
+  value,
+  alert,
+  ok,
+  highlight,
+}: {
+  label: string;
+  value: number;
+  alert?: boolean;
+  ok?: boolean;
+  highlight?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-xl border p-3 ${
+        alert ? "border-amber-300 bg-amber-50/60 dark:border-amber-900 dark:bg-amber-950/20" : ok ? "border-emerald-200 bg-emerald-50/40 dark:border-emerald-900 dark:bg-emerald-950/20" : highlight ? "border-cyan-200 bg-cyan-50/40" : "bg-card/80"
+      }`}
+    >
+      <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-2xl font-extrabold">{value}</p>
+    </div>
+  );
+}
+
+function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <section className="space-y-3">
+      <h3 className="flex items-center gap-2 text-sm font-bold">{icon}{title}</h3>
+      <div className="space-y-3">{children}</div>
+    </section>
+  );
+}
+
+function BlocoPedido({ titulo, pedido, compact }: { titulo: string; pedido: any; compact?: boolean }) {
+  return (
+    <div>
+      <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{titulo}</p>
+      <p className="font-semibold">{pedido.cliente?.nome ?? pedido.contaAzulCustomerId}</p>
+      <p className="text-xs text-muted-foreground">
+        {fmtDate(pedido.dataEntrega)} · {labelStatusConciliacao(pedido.statusConciliacao ?? "PLANEJADO")}
+        {pedido.pedidoContaAzul?.numeroVenda ? ` · venda nº ${pedido.pedidoContaAzul.numeroVenda}` : ""}
+      </p>
+      {!compact && (
+        <ul className="mt-1 text-xs text-muted-foreground">
+          {(pedido.itens ?? []).slice(0, 4).map((i: any) => (
+            <li key={i.id ?? i.produtoNome}>{i.produtoNome}: {Number(i.quantidade)}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function BlocoVenda({ titulo, venda }: { titulo: string; venda: any }) {
+  return (
+    <div>
+      <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{titulo}</p>
+      <p className="font-semibold">{venda.cliente?.nome ?? "Cliente"}</p>
+      <p className="text-xs text-muted-foreground">
+        {fmtDate(venda.dataPedido)} · {venda.numeroVenda ? `nº ${venda.numeroVenda}` : venda.externalId?.slice(0, 8)}
+        {" · "}{fmtMoney(venda.valorLiquido ?? venda.valorTotal)}
+        {" · "}{labelStatusConciliacao(venda.statusConciliacao ?? "NAO_CONCILIADA")}
+      </p>
+      <ul className="mt-1 text-xs text-muted-foreground">
+        {(venda.itens ?? []).slice(0, 4).map((i: any) => (
+          <li key={i.id ?? i.produto}>{i.produto}: {Number(i.quantidade)}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function DivergenciasLista({ divergencias }: { divergencias: any[] }) {
+  return (
+    <div className="rounded-md border border-amber-200 bg-amber-50/70 p-2 text-xs dark:border-amber-900 dark:bg-amber-950/30">
+      <p className="mb-1 font-semibold text-amber-900 dark:text-amber-100">Divergências detectadas</p>
+      <ul className="space-y-1">
+        {divergencias.map((d: any) => (
+          <li key={d.campo}>
+            <strong>{d.campo}</strong>: operacional {String(d.operacional)} × Conta Azul {String(d.contaAzul)}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
