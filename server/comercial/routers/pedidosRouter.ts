@@ -89,6 +89,47 @@ function ocultarValoresConciliacaoCliente<T extends Record<string, any>>(row: T)
   };
 }
 
+type RegraOrdenacaoEntrega = {
+  periodoEntrega?: string | null;
+  horarioMaximoEntrega?: string | null;
+};
+
+function minutosDoHorario(horario: string | null | undefined): number | null {
+  if (!horario) return null;
+  const match = /^(\d{1,2}):(\d{2})/.exec(horario.trim());
+  if (!match) return null;
+  const horas = Number(match[1]);
+  const minutos = Number(match[2]);
+  if (!Number.isInteger(horas) || !Number.isInteger(minutos) || horas < 0 || horas > 23 || minutos < 0 || minutos > 59) {
+    return null;
+  }
+  return horas * 60 + minutos;
+}
+
+function prioridadeEntregaAutomatica(regra: RegraOrdenacaoEntrega | null | undefined): number {
+  const periodoBase =
+    regra?.periodoEntrega === "MANHA"
+      ? 0
+      : regra?.periodoEntrega === "TARDE"
+        ? 12 * 60
+        : 24 * 60;
+  return minutosDoHorario(regra?.horarioMaximoEntrega) ?? periodoBase;
+}
+
+function compararEntregaPorRegra(
+  a: { cliente?: { nome?: string | null; regraComercial?: RegraOrdenacaoEntrega | null } | null; criadoEm?: Date },
+  b: { cliente?: { nome?: string | null; regraComercial?: RegraOrdenacaoEntrega | null } | null; criadoEm?: Date },
+): number {
+  const prioridadeA = prioridadeEntregaAutomatica(a.cliente?.regraComercial);
+  const prioridadeB = prioridadeEntregaAutomatica(b.cliente?.regraComercial);
+  if (prioridadeA !== prioridadeB) return prioridadeA - prioridadeB;
+  const nomeA = a.cliente?.nome ?? "";
+  const nomeB = b.cliente?.nome ?? "";
+  const porNome = nomeA.localeCompare(nomeB, "pt-BR");
+  if (porNome !== 0) return porNome;
+  return (a.criadoEm?.getTime() ?? 0) - (b.criadoEm?.getTime() ?? 0);
+}
+
 function inicioDia(d: Date): Date {
   const out = new Date(d);
   out.setHours(0, 0, 0, 0);
@@ -668,9 +709,9 @@ export const pedidosRouter = router({
               }
             : {}),
         },
-        orderBy: [{ dataEntrega: "asc" }, { prioridadeEntrega: "asc" }, { criadoEm: "desc" }],
+        orderBy: [{ dataEntrega: "asc" }, { cliente: { nome: "asc" } }, { criadoEm: "desc" }],
         include: {
-          cliente: true,
+          cliente: { include: { regraComercial: true } },
           itens: { include: { produto: true } },
           avarias: { include: { produto: true, criadoPor: { select: { nome: true, email: true } } } },
           criadoPor: { select: { nome: true, email: true } },
@@ -678,7 +719,7 @@ export const pedidosRouter = router({
         },
       });
       const alertas = await alertasAvariasDepoisPedidoOrigem(ctx.prisma!, pedidos);
-      return pedidos.map((pedido) => ({
+      return pedidos.sort(compararEntregaPorRegra).map((pedido) => ({
         ...(deveOcultarValores(ctx) ? ocultarValoresPedido(pedido) : pedido),
         alertaAvariasPendentes: alertas.get(pedido.id) ?? null,
       }));
@@ -941,10 +982,11 @@ export const pedidosRouter = router({
           itens: true,
           avarias: { include: { criadoPor: { select: { nome: true, email: true } } } },
         },
-        orderBy: [{ prioridadeEntrega: "asc" }, { cliente: { nome: "asc" } }],
+        orderBy: [{ cliente: { nome: "asc" } }, { criadoEm: "asc" }],
       });
+      pedidos.sort(compararEntregaPorRegra);
       const alertas = await alertasAvariasDepoisPedidoOrigem(ctx.prisma!, pedidos);
-      const grupos = new Map<string, { contaAzulCustomerId: string; cliente: unknown; regras: unknown; status: string; prioridadeEntrega: number | null; pedidos: typeof pedidos; itens: unknown[]; avarias: unknown[]; alertasAvariasPendentes: unknown[] }>();
+      const grupos = new Map<string, { contaAzulCustomerId: string; cliente: unknown; regras: unknown; status: string; prioridadeEntrega: number; pedidos: typeof pedidos; itens: unknown[]; avarias: unknown[]; alertasAvariasPendentes: unknown[] }>();
       for (const p of pedidos) {
         const pedido = deveOcultarValores(ctx) ? ocultarValoresPedido(p) : p;
         const key = p.contaAzulCustomerId;
@@ -953,7 +995,7 @@ export const pedidosRouter = router({
           cliente: pedido.cliente,
           regras: pedido.cliente?.regraComercial ?? null,
           status: p.status,
-          prioridadeEntrega: p.prioridadeEntrega,
+          prioridadeEntrega: prioridadeEntregaAutomatica(p.cliente?.regraComercial),
           pedidos: [],
           itens: [],
           avarias: [],
@@ -966,7 +1008,7 @@ export const pedidosRouter = router({
         if (alerta) atual.alertasAvariasPendentes.push(alerta);
         grupos.set(key, atual);
       }
-      return Array.from(grupos.values()).sort((a, b) => (a.prioridadeEntrega ?? 9999) - (b.prioridadeEntrega ?? 9999));
+      return Array.from(grupos.values()).sort((a, b) => a.prioridadeEntrega - b.prioridadeEntrega);
     }),
 
   atualizarStatusClienteDia: comercialProcedure

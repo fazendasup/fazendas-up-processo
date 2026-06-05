@@ -254,10 +254,6 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
     },
     onError: (err) => toast.error(err.message || "Não foi possível reabrir a semana."),
   });
-  const mudarPrioridade = trpc.comercial.pedidos.atualizarPrioridadeClienteDia.useMutation({
-    onSuccess: () => void utils.comercial.pedidos.dashboard.invalidate(),
-    onError: (err) => toast.error(err.message),
-  });
   const cancelarPedido = trpc.comercial.pedidos.cancelarPedido.useMutation({
     onSuccess: async (result) => {
       toast.success(result.alreadyCancelled ? "Pedido já estava cancelado." : "Pedido cancelado e mantido no histórico.");
@@ -628,21 +624,6 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
                           </p>
                         </div>
                         <div className="flex shrink-0 flex-wrap items-center gap-2">
-                          {canEditarComercial && (
-                            <Input
-                              type="number"
-                              placeholder="Ordem"
-                              defaultValue={grupo.prioridadeEntrega ?? ""}
-                              className="h-8 w-20"
-                              onBlur={(e) =>
-                                mudarPrioridade.mutate({
-                                  contaAzulCustomerId: grupo.contaAzulCustomerId,
-                                  dia: diaDate,
-                                  prioridadeEntrega: e.target.value ? Number(e.target.value) : null,
-                                })
-                              }
-                            />
-                          )}
                           <select
                             className={`h-8 rounded-md border px-2 text-xs font-semibold ${statusSelectClass(grupo.status)}`}
                             value={grupo.status}
