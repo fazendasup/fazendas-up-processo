@@ -509,7 +509,15 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
             </div>
           </div>
           {statusSemana.data?.conciliacaoBloqueio && (
-            <PainelConciliacaoFechamento conciliacao={statusSemana.data.conciliacaoBloqueio} className="mt-3" />
+            <PainelConciliacaoFechamento
+              conciliacao={statusSemana.data.conciliacaoBloqueio}
+              className="mt-3"
+              onIrConciliacao={() => setAba("conciliacao")}
+              onConfigurarRegras={(contaAzulCustomerId) => {
+                setClienteRegrasId(contaAzulCustomerId);
+                setAba("regras");
+              }}
+            />
           )}
         </div>
       ) : statusSemana.data?.semanaAtual ? (
@@ -568,7 +576,15 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
             )}
           </div>
           {statusSemana.data.conciliacaoContaAzul && (
-            <PainelConciliacaoFechamento conciliacao={statusSemana.data.conciliacaoContaAzul} className="mt-3" />
+            <PainelConciliacaoFechamento
+              conciliacao={statusSemana.data.conciliacaoContaAzul}
+              className="mt-3"
+              onIrConciliacao={() => setAba("conciliacao")}
+              onConfigurarRegras={(contaAzulCustomerId) => {
+                setClienteRegrasId(contaAzulCustomerId);
+                setAba("regras");
+              }}
+            />
           )}
         </div>
       ) : null}
@@ -1331,7 +1347,17 @@ function detalheConciliacaoSemanal(c: any) {
   return `Corrija ${problemas.join(", ")}. Se a diferença de valor for frete, preencha Regras do cliente > Valor taxa de entrega.`;
 }
 
-function PainelConciliacaoFechamento({ conciliacao, className = "" }: { conciliacao: any; className?: string }) {
+function PainelConciliacaoFechamento({
+  conciliacao,
+  className = "",
+  onIrConciliacao,
+  onConfigurarRegras,
+}: {
+  conciliacao: any;
+  className?: string;
+  onIrConciliacao?: () => void;
+  onConfigurarRegras?: (contaAzulCustomerId: string) => void;
+}) {
   if (!conciliacao) return null;
   const clientes = conciliacao.clientes ?? [];
   const divergentes = clientes.filter((c: any) => c.status === "divergente" || c.divergente);
@@ -1392,6 +1418,28 @@ function PainelConciliacaoFechamento({ conciliacao, className = "" }: { concilia
                 {" · valor "}
                 {fmtMoney(c.operacional?.valorEstimado ?? 0)}/{fmtMoney(c.contaAzul?.valorLiquido ?? 0)}
                 <span className="block text-muted-foreground">{detalheConciliacaoSemanal(c)}</span>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {Math.abs(Number(c.diffValor ?? 0)) > 0.05 && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => onConfigurarRegras?.(c.contaAzulCustomerId)}
+                    >
+                      Ajustar frete/regras
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-xs"
+                    onClick={onIrConciliacao}
+                  >
+                    Abrir conciliação
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
@@ -1404,6 +1452,15 @@ function PainelConciliacaoFechamento({ conciliacao, className = "" }: { concilia
               <span className="font-medium">{c.clienteNome}</span>
               {" · aguardando venda · pedidos "}
               {c.operacional?.pedidos ?? 0}/{c.contaAzul?.pedidos ?? 0}
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="ml-2 h-7 px-2 text-xs"
+                onClick={onIrConciliacao}
+              >
+                Abrir conciliação
+              </Button>
             </div>
           ))}
         </div>

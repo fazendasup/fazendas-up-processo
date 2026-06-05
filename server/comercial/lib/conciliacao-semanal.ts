@@ -67,6 +67,7 @@ type OperacionalSemanal = {
   status: string;
   snapshotConciliacao: unknown;
   cliente: { nome: string } | null;
+  pedidoContaAzul: { valorLiquido: unknown; valorTotal: unknown } | null;
   itens: Array<{ quantidade: unknown; precoUnit: unknown }>;
 };
 
@@ -115,6 +116,7 @@ export async function calcularConciliacaoSemanal(
         status: true,
         snapshotConciliacao: true,
         cliente: { select: { nome: true } },
+        pedidoContaAzul: { select: { valorLiquido: true, valorTotal: true } },
         itens: true,
       },
     }),
@@ -215,7 +217,13 @@ export async function calcularConciliacaoSemanal(
       opCliente.unidades += quantidade;
     }
 
-    if (!pedidoCriadoAPartirDoContaAzul(pedido)) {
+    const criadoDoContaAzul = pedidoCriadoAPartirDoContaAzul(pedido);
+    if (criadoDoContaAzul) {
+      const valorPedidoCa = money(pedido.pedidoContaAzul?.valorLiquido ?? pedido.pedidoContaAzul?.valorTotal);
+      const valorPedido = valorPedidoCa ?? valorItensPedido(pedido.itens);
+      operacionalValor += valorPedido;
+      opCliente.valorEstimado += valorPedido;
+    } else {
       const regra = regraPorCliente.get(pedido.contaAzulCustomerId);
       const freteCliente = contaAzulPorCliente.get(pedido.contaAzulCustomerId);
       const freteReferencia =
