@@ -641,39 +641,50 @@ export const pedidosRouter = router({
       const usuario = ctx.comercialUsuario;
       if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
 
-      const destino = inicioDia(input.dia);
-      const origem = inicioDia(adicionarDias(destino, -7));
+      const semanaDestinoInicio = inicioSemana(input.dia);
+      const semanaDestinoFim = fimSemana(input.dia);
+      const semanaOrigemInicio = inicioSemana(adicionarDias(semanaDestinoInicio, -7));
+      const semanaOrigemFim = fimSemana(semanaOrigemInicio);
 
       // Gate de fechamento: não permite copiar/criar pedidos no destino se houver semana anterior pendente.
-      await assertSemanaAnteriorFechada(ctx.prisma!, destino);
+      await assertSemanaAnteriorFechada(ctx.prisma!, semanaDestinoInicio);
 
       const [pedidosOrigem, clientesDestino] = await Promise.all([
         ctx.prisma!.pedidoOperacional.findMany({
           where: {
-            dataEntrega: { gte: origem, lte: fimDia(origem) },
+            dataEntrega: { gte: semanaOrigemInicio, lte: semanaOrigemFim },
             status: { not: "CANCELADO" },
           },
           include: { itens: true },
-          orderBy: [{ prioridadeEntrega: "asc" }, { criadoEm: "asc" }],
+          orderBy: [{ dataEntrega: "asc" }, { prioridadeEntrega: "asc" }, { criadoEm: "asc" }],
         }),
         ctx.prisma!.pedidoOperacional.findMany({
-          where: { dataEntrega: { gte: destino, lte: fimDia(destino) } },
-          select: { contaAzulCustomerId: true },
-          distinct: ["contaAzulCustomerId"],
+          where: { dataEntrega: { gte: semanaDestinoInicio, lte: semanaDestinoFim } },
+          select: { contaAzulCustomerId: true, dataEntrega: true },
         }),
       ]);
 
       if (pedidosOrigem.length === 0) {
-        return { criados: 0, ignorados: 0, origem, destino, mensagem: "Nenhum pedido encontrado na semana anterior." };
+        return {
+          criados: 0,
+          ignorados: 0,
+          origem: semanaOrigemInicio,
+          destino: semanaDestinoInicio,
+          mensagem: "Nenhum pedido encontrado na semana anterior.",
+        };
       }
 
-      const clientesJaNoDestino = new Set(clientesDestino.map((p) => p.contaAzulCustomerId));
+      const destinoKey = (contaAzulCustomerId: string, data: Date) =>
+        `${contaAzulCustomerId}:${inicioDia(data).toISOString().slice(0, 10)}`;
+      const clientesJaNoDestino = new Set(clientesDestino.map((p) => destinoKey(p.contaAzulCustomerId, p.dataEntrega)));
       let criados = 0;
       let ignorados = 0;
 
       await ctx.prisma!.$transaction(async (tx) => {
         for (const pedidoOrigem of pedidosOrigem) {
-          if (clientesJaNoDestino.has(pedidoOrigem.contaAzulCustomerId)) {
+          const dataDestino = inicioDia(adicionarDias(pedidoOrigem.dataEntrega, 7));
+          const keyDestino = destinoKey(pedidoOrigem.contaAzulCustomerId, dataDestino);
+          if (clientesJaNoDestino.has(keyDestino)) {
             ignorados++;
             continue;
           }
@@ -686,10 +697,11 @@ export const pedidosRouter = router({
             data: {
               clienteId: pedidoOrigem.clienteId,
               contaAzulCustomerId: pedidoOrigem.contaAzulCustomerId,
-              dataEntrega: destino,
-              diaSemana: diaSemana(destino),
+              dataEntrega: dataDestino,
+              diaSemana: diaSemana(dataDestino),
               tipoVenda: pedidoOrigem.tipoVenda,
               status: "PENDENTE",
+              statusConciliacao: "PLANEJADO",
               observacoes: pedidoOrigem.observacoes,
               prioridadeEntrega: pedidoOrigem.prioridadeEntrega,
               criadoPorId: usuario.id,
@@ -720,15 +732,18 @@ export const pedidosRouter = router({
             null,
             {
               pedidoOrigemId: pedidoOrigem.id,
-              dataOrigem: origem.toISOString(),
-              dataDestino: destino.toISOString(),
+              dataOrigem: pedidoOrigem.dataEntrega.toISOString(),
+              dataDestino: dataDestino.toISOString(),
+              semanaOrigem: semanaOrigemInicio.toISOString(),
+              semanaDestino: semanaDestinoInicio.toISOString(),
             },
           );
+          clientesJaNoDestino.add(keyDestino);
           criados++;
         }
       });
 
-      return { criados, ignorados, origem, destino };
+      return { criados, ignorados, origem: semanaOrigemInicio, destino: semanaDestinoInicio };
     }),
 
   dashboard: comercialProcedure

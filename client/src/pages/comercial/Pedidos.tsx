@@ -212,11 +212,11 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
     onSuccess: async (result) => {
       if (result.criados === 0) {
         toast.message(result.mensagem ?? "Nenhum pedido novo foi copiado.", {
-          description: result.ignorados ? `${result.ignorados} cliente(s) já tinham pedido no dia.` : undefined,
+          description: result.ignorados ? `${result.ignorados} pedido(s) já existiam na semana atual.` : undefined,
         });
       } else {
         toast.success(`${result.criados} pedido(s) copiado(s) da semana anterior.`, {
-          description: result.ignorados ? `${result.ignorados} cliente(s) ignorado(s) para evitar duplicidade.` : undefined,
+          description: result.ignorados ? `${result.ignorados} pedido(s) ignorado(s) para evitar duplicidade.` : undefined,
         });
       }
       await Promise.all([
@@ -463,7 +463,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
             disabled={copiarSemanaAnterior.isPending || !podeCriarPedidos}
             onClick={trazerSemanaAnterior}
           >
-            {copiarSemanaAnterior.isPending ? "Copiando..." : "Trazer semana anterior"}
+            {copiarSemanaAnterior.isPending ? "Copiando..." : "Trazer semana anterior inteira"}
           </Button>
           <Button variant="outline" asChild>
             <Link href="/comercial/pedidos-historico">Histórico</Link>
