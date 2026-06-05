@@ -1310,6 +1310,27 @@ function statusConciliacaoSemanalLabel(status: string) {
   }
 }
 
+function detalheConciliacaoSemanal(c: any) {
+  if (c.status === "aguardando_venda") {
+    return "Sem correção agora: existe pedido operacional, mas a venda ainda não apareceu no Conta Azul.";
+  }
+  if (c.status === "venda_sem_pedido") {
+    return "Crie o pedido operacional a partir da venda Conta Azul ou vincule a um pedido existente.";
+  }
+  const problemas: string[] = [];
+  if ((c.diffPedidos ?? 0) !== 0) {
+    problemas.push(`pedidos ${c.operacional?.pedidos ?? 0}/${c.contaAzul?.pedidos ?? 0}`);
+  }
+  if (Math.abs(Number(c.diffUnidades ?? 0)) > 0.001) {
+    problemas.push(`quantidade ${fmtQtd(c.operacional?.unidades ?? 0)}/${fmtQtd(c.contaAzul?.unidades ?? 0)}`);
+  }
+  if (Math.abs(Number(c.diffValor ?? 0)) > 0.05) {
+    problemas.push(`valor ${fmtMoney(c.operacional?.valorEstimado ?? 0)}/${fmtMoney(c.contaAzul?.valorLiquido ?? 0)}`);
+  }
+  if (problemas.length === 0) return "Status antigo sem divergência recalculada. Sincronize novamente.";
+  return `Corrija ${problemas.join(", ")}. Se a diferença de valor for frete, preencha Regras do cliente > Valor taxa de entrega.`;
+}
+
 function PainelConciliacaoFechamento({ conciliacao, className = "" }: { conciliacao: any; className?: string }) {
   if (!conciliacao) return null;
   const clientes = conciliacao.clientes ?? [];
@@ -1370,6 +1391,7 @@ function PainelConciliacaoFechamento({ conciliacao, className = "" }: { concilia
                 {fmtQtd(c.operacional?.unidades ?? 0)}/{fmtQtd(c.contaAzul?.unidades ?? 0)}
                 {" · valor "}
                 {fmtMoney(c.operacional?.valorEstimado ?? 0)}/{fmtMoney(c.contaAzul?.valorLiquido ?? 0)}
+                <span className="block text-muted-foreground">{detalheConciliacaoSemanal(c)}</span>
               </div>
             ))}
           </div>

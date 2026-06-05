@@ -13,6 +13,58 @@ function fmtMoney(v: unknown) {
   return Number(v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function fmtDivergenciaValor(v: unknown) {
+  if (v && typeof v === "object" && !Array.isArray(v)) {
+    const data = v as { itens?: unknown; taxaEntrega?: unknown; total?: unknown };
+    const partes = [];
+    if (data.itens != null) partes.push(`itens ${fmtMoney(data.itens)}`);
+    if (data.taxaEntrega != null && Number(data.taxaEntrega) > 0) {
+      partes.push(`taxa/frete ${fmtMoney(data.taxaEntrega)}`);
+    }
+    if (data.total != null) partes.push(`total ${fmtMoney(data.total)}`);
+    return partes.length > 0 ? partes.join(" + ") : JSON.stringify(v);
+  }
+  return typeof v === "number" || !Number.isNaN(Number(v)) ? fmtMoney(v) : String(v ?? "-");
+}
+
+function detalheDivergencia(d: any) {
+  const campo = String(d?.campo ?? "");
+  if (campo === "data") {
+    return {
+      titulo: "Data diferente",
+      acao: `Corrija a data de entrega do pedido operacional (${d.operacional}) ou a data da venda no Conta Azul (${d.contaAzul}).`,
+      valores: `Operacional ${d.operacional} × Conta Azul ${d.contaAzul}`,
+    };
+  }
+  if (campo === "valor_estimado") {
+    const opTotal =
+      d.operacional && typeof d.operacional === "object" && !Array.isArray(d.operacional)
+        ? Number((d.operacional as any).total ?? 0)
+        : Number(d.operacional ?? 0);
+    const caTotal = Number(d.contaAzul ?? 0);
+    const diff = opTotal - caTotal;
+    return {
+      titulo: "Valor diferente",
+      acao:
+        "Verifique preço dos itens e frete. Se a diferença for entrega, preencha o valor em Regras do cliente > Valor taxa de entrega.",
+      valores: `Operacional ${fmtDivergenciaValor(d.operacional)} × Conta Azul ${fmtMoney(d.contaAzul)} · diferença ${fmtMoney(diff)}`,
+    };
+  }
+  if (campo.startsWith("item:")) {
+    const produto = campo.replace(/^item:/, "");
+    return {
+      titulo: `Quantidade/produto diferente: ${produto}`,
+      acao: "Ajuste a quantidade no pedido operacional ou corrija os itens da venda no Conta Azul e sincronize novamente.",
+      valores: `Operacional ${Number(d.operacional ?? 0).toLocaleString("pt-BR")} un × Conta Azul ${Number(d.contaAzul ?? 0).toLocaleString("pt-BR")} un`,
+    };
+  }
+  return {
+    titulo: campo || "Divergência",
+    acao: "Revise os dados do pedido operacional e da venda Conta Azul.",
+    valores: `Operacional ${String(d.operacional)} × Conta Azul ${String(d.contaAzul)}`,
+  };
+}
+
 function labelStatusConciliacao(status: string) {
   const map: Record<string, string> = {
     PLANEJADO: "planejado",
@@ -226,6 +278,7 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
               <CardContent className="space-y-2 p-4">
                 <BlocoPedido titulo="Pedido operacional (referência)" pedido={op} />
                 {op.pedidoContaAzul && <BlocoVenda titulo="Venda Conta Azul atual" venda={op.pedidoContaAzul} />}
+                <DivergenciasLista divergencias={op.divergencias ?? []} />
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" disabled={manterOp.isPending} onClick={() => manterOp.mutate({ pedidoOperacionalId: op.id })}>
                     Manter operacional como verdade
@@ -534,15 +587,27 @@ function VendaSemPedidoCard({
 }
 
 function DivergenciasLista({ divergencias }: { divergencias: any[] }) {
+  if (!divergencias.length) {
+    return (
+      <div className="rounded-md border border-emerald-200 bg-emerald-50/70 p-2 text-xs text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
+        Nenhuma divergência recalculada. Sincronize novamente; se persistir, o status antigo será normalizado no próximo processamento.
+      </div>
+    );
+  }
   return (
     <div className="rounded-md border border-amber-200 bg-amber-50/70 p-2 text-xs dark:border-amber-900 dark:bg-amber-950/30">
-      <p className="mb-1 font-semibold text-amber-900 dark:text-amber-100">Divergências detectadas</p>
-      <ul className="space-y-1">
-        {divergencias.map((d: any) => (
-          <li key={d.campo}>
-            <strong>{d.campo}</strong>: operacional {String(d.operacional)} × Conta Azul {String(d.contaAzul)}
-          </li>
-        ))}
+      <p className="mb-2 font-semibold text-amber-900 dark:text-amber-100">Onde corrigir</p>
+      <ul className="space-y-2">
+        {divergencias.map((d: any) => {
+          const detalhe = detalheDivergencia(d);
+          return (
+            <li key={`${d.campo}-${detalhe.valores}`} className="rounded border border-amber-200/70 bg-background/70 p-2">
+              <p className="font-semibold text-foreground">{detalhe.titulo}</p>
+              <p className="text-muted-foreground">{detalhe.valores}</p>
+              <p className="mt-1 text-amber-900 dark:text-amber-100">{detalhe.acao}</p>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

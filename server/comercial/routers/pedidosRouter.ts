@@ -1630,7 +1630,19 @@ export const pedidosRouter = router({
           v.statusConciliacao !== "CONCILIADA",
       );
       const conciliados = operacionais.filter((op) => op.statusConciliacao === "CONCILIADO" && op.pedidoContaAzul);
-      const divergentes = operacionais.filter((op) => op.statusConciliacao === "DIVERGENTE");
+      const divergentes = operacionais
+        .filter((op) => op.statusConciliacao === "DIVERGENTE")
+        .map((op) => ({
+          ...op,
+          divergencias: op.pedidoContaAzul
+            ? calcularDivergencias(
+                op,
+                op.pedidoContaAzul,
+                resolverChaveConciliacao,
+                opcoesCalcularDivergencias(op),
+              )
+            : [],
+        }));
 
       return {
         resumo: {

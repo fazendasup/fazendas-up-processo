@@ -358,6 +358,9 @@ export function PedidosHistorico() {
                   <CompareMetric label="Unidades" left={fmtQtd(row.operacional.unidades)} right={fmtQtd(row.contaAzul.unidades)} diff={fmtQtd(row.diffUnidades)} />
                   <CompareMetric label="Valor" left={fmtMoney(row.operacional.valorEstimado)} right={fmtMoney(row.contaAzul.valorLiquido)} diff={fmtMoney(row.diffValor)} />
                 </div>
+                <p className="mt-2 rounded-lg bg-muted/50 px-2 py-1 text-xs text-muted-foreground">
+                  {detalheConciliacaoHistorico(row)}
+                </p>
               </div>
             ))}
             {!relatorio.data?.contaAzul?.conciliacao?.length ? (
@@ -506,4 +509,19 @@ function CompareMetric({
       <p className="text-muted-foreground">Dif.: {diff}</p>
     </div>
   );
+}
+
+function detalheConciliacaoHistorico(row: any) {
+  if (row.status === "aguardando_venda") {
+    return "Aguardando a venda aparecer no Conta Azul; não é divergência real.";
+  }
+  if (row.status === "venda_sem_pedido") {
+    return "Crie pedido operacional a partir da venda CA ou vincule a um pedido existente.";
+  }
+  const partes: string[] = [];
+  if ((row.diffPedidos ?? 0) !== 0) partes.push("número de pedidos");
+  if (Math.abs(Number(row.diffUnidades ?? 0)) > 0.001) partes.push("quantidade");
+  if (Math.abs(Number(row.diffValor ?? 0)) > 0.05) partes.push("valor/frete");
+  if (partes.length === 0) return "Sem diferença recalculada; sincronize novamente.";
+  return `Corrigir: ${partes.join(", ")}. Para frete, revisar Regras do cliente > Valor taxa de entrega.`;
 }
