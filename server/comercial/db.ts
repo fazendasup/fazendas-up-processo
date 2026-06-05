@@ -2,6 +2,7 @@ import { createRequire } from "node:module";
 import { join } from "node:path";
 import type { PrismaClient } from "./generated/prisma/index.js";
 import { ensureComercialDatabaseUrlEnv } from "./env";
+import { mysqlUrlWithPrismaPoolLimit } from "./mysql-url";
 
 const require = createRequire(import.meta.url);
 
@@ -16,16 +17,14 @@ const globalForPrisma = globalThis as unknown as { comercialPrisma?: PrismaClien
 export function getComercialPrisma(): PrismaClient {
   if (globalForPrisma.comercialPrisma) return globalForPrisma.comercialPrisma;
 
-  const databaseUrl = ensureComercialDatabaseUrlEnv();
+  const databaseUrl = mysqlUrlWithPrismaPoolLimit(ensureComercialDatabaseUrlEnv());
   const { PrismaClient } = require(prismaClientModulePath()) as typeof import("./generated/prisma/index.js");
   const client = new PrismaClient({
     datasources: { db: { url: databaseUrl } },
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
 
-  if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.comercialPrisma = client;
-  }
+  globalForPrisma.comercialPrisma = client;
 
   return client;
 }

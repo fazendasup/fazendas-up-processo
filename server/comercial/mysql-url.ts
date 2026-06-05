@@ -31,4 +31,16 @@ export function swapMysqlDatabaseInUrl(url: string, databaseName: string): strin
   return parsed.toString();
 }
 
+/** Aplica limites conservadores ao pool Prisma/MySQL sem sobrescrever configuração explícita. */
+export function mysqlUrlWithPrismaPoolLimit(url: string): string {
+  const parsed = new URL(url);
+  if (!parsed.searchParams.has("connection_limit")) {
+    parsed.searchParams.set("connection_limit", process.env.COMERCIAL_PRISMA_CONNECTION_LIMIT?.trim() || "3");
+  }
+  if (!parsed.searchParams.has("pool_timeout")) {
+    parsed.searchParams.set("pool_timeout", process.env.COMERCIAL_PRISMA_POOL_TIMEOUT?.trim() || "10");
+  }
+  return parsed.toString();
+}
+
 export { assertSafeMysqlDatabaseName };
