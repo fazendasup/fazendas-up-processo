@@ -1,5 +1,6 @@
 import { Prisma, type PrismaClient } from "../generated/prisma/index.js";
 import { classificarStatusPedido } from "./pedido-status.js";
+import { GO_LIVE_PEDIDOS } from "./semana.js";
 
 type PedidoOperacionalComItens = Prisma.PedidoOperacionalGetPayload<{
   include: { itens: true; cliente: { select: { externalId: true; nome: true } } };
@@ -44,6 +45,12 @@ function fimDia(d: Date): Date {
   const out = new Date(d);
   out.setHours(23, 59, 59, 999);
   return out;
+}
+
+const CORTE_INICIO_PEDIDOS = inicioDia(GO_LIVE_PEDIDOS);
+
+function antesDoCortePedidos(d: Date): boolean {
+  return fimDia(d).getTime() < CORTE_INICIO_PEDIDOS.getTime();
 }
 
 function mesmoDia(a: Date, b: Date): boolean {
@@ -215,6 +222,7 @@ export async function processarConciliacaoAposSyncVenda(
     include: { itens: true, cliente: { select: { externalId: true, nome: true } } },
   });
   if (!contaAzul?.cliente.externalId) return { sugestoes: 0, divergencias: 0 };
+  if (antesDoCortePedidos(contaAzul.dataPedido)) return { sugestoes: 0, divergencias: 0 };
   if (classificarStatusPedido(contaAzul.statusPedido) !== "venda") return { sugestoes: 0, divergencias: 0 };
   if (contaAzul.statusConciliacao === "IGNORADA" || contaAzul.statusConciliacao === "VENDA_ERRADA") {
     return { sugestoes: 0, divergencias: 0 };
@@ -471,6 +479,9 @@ export async function criarOperacionalDeVenda(
     include: { itens: true, cliente: { select: { id: true, externalId: true, nome: true } } },
   });
   if (!contaAzul?.cliente.externalId) throw new Error("Venda sem cliente Conta Azul vinculado.");
+  if (antesDoCortePedidos(contaAzul.dataPedido)) {
+    throw new Error("Pedidos operacionais começam em 01/06/2026.");
+  }
 
   const existente = await prisma.pedidoOperacional.findFirst({
     where: { pedidoContaAzulId: contaAzul.id },

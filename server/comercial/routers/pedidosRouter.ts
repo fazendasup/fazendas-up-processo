@@ -17,7 +17,7 @@ import {
   primeiraSemanaBloqueante,
 } from "../lib/fechamento.js";
 import { calcularConciliacaoSemanal } from "../lib/conciliacao-semanal.js";
-import { fimSemana, inicioSemana } from "../lib/semana.js";
+import { fimSemana, GO_LIVE_PEDIDOS, inicioSemana } from "../lib/semana.js";
 import { comercialProcedure, comercialRequirePerfis, router } from "../../_core/trpc";
 import {
   calcularDivergencias,
@@ -49,6 +49,23 @@ function fimDia(d: Date): Date {
   const out = new Date(d);
   out.setHours(23, 59, 59, 999);
   return out;
+}
+
+const CORTE_INICIO_PEDIDOS = inicioDia(GO_LIVE_PEDIDOS);
+
+function antesDoCortePedidos(d: Date): boolean {
+  return fimDia(d).getTime() < CORTE_INICIO_PEDIDOS.getTime();
+}
+
+function inicioComCortePedidos(d: Date): Date {
+  const inicio = inicioDia(d);
+  return inicio.getTime() < CORTE_INICIO_PEDIDOS.getTime() ? new Date(CORTE_INICIO_PEDIDOS) : inicio;
+}
+
+function intervaloComCortePedidos(inicio: Date, fim: Date): { inicio: Date; fim: Date; vazio: boolean } {
+  const outInicio = inicioComCortePedidos(inicio);
+  const outFim = fimDia(fim);
+  return { inicio: outInicio, fim: outFim, vazio: outFim.getTime() < outInicio.getTime() };
 }
 
 function adicionarDias(d: Date, dias: number): Date {
@@ -236,9 +253,9 @@ export const pedidosRouter = router({
             ],
           }
         : {};
-      const idsNoDia = input.dia
+      const idsNoDia = input.dia && !antesDoCortePedidos(input.dia)
         ? await ctx.prisma!.pedidoOperacional.findMany({
-            where: { dataEntrega: { gte: inicioDia(input.dia), lte: fimDia(input.dia) } },
+            where: { dataEntrega: { gte: inicioComCortePedidos(input.dia), lte: fimDia(input.dia) } },
             select: { contaAzulCustomerId: true },
             distinct: ["contaAzulCustomerId"],
           })
@@ -488,7 +505,10 @@ export const pedidosRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const whereDia = input.dia ? { dataEntrega: { gte: inicioDia(input.dia), lte: fimDia(input.dia) } } : {};
+      if (input.dia && antesDoCortePedidos(input.dia)) return [];
+      const whereDia = input.dia
+        ? { dataEntrega: { gte: inicioComCortePedidos(input.dia), lte: fimDia(input.dia) } }
+        : { dataEntrega: { gte: CORTE_INICIO_PEDIDOS } };
       const busca = input.busca?.trim();
       const pedidos = await ctx.prisma!.pedidoOperacional.findMany({
         where: {
@@ -536,6 +556,9 @@ export const pedidosRouter = router({
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
       if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      if (antesDoCortePedidos(input.dataEntrega)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Pedidos operacionais começam em 01/06/2026." });
+      }
       const cliente = await ctx.prisma!.cliente.findUnique({ where: { externalId: input.contaAzulCustomerId } });
       if (!cliente) throw new TRPCError({ code: "NOT_FOUND", message: "Cliente Conta Azul não encontrado" });
       // Gate de fechamento semanal: bloqueia a criação de novos pedidos enquanto a semana anterior
@@ -646,6 +669,16 @@ export const pedidosRouter = router({
       const semanaOrigemInicio = inicioSemana(adicionarDias(semanaDestinoInicio, -7));
       const semanaOrigemFim = fimSemana(semanaOrigemInicio);
 
+      if (semanaOrigemFim.getTime() < CORTE_INICIO_PEDIDOS.getTime()) {
+        return {
+          criados: 0,
+          ignorados: 0,
+          origem: semanaOrigemInicio,
+          destino: semanaDestinoInicio,
+          mensagem: "A semana anterior está antes do início operacional (01/06/2026).",
+        };
+      }
+
       // Gate de fechamento: não permite copiar/criar pedidos no destino se houver semana anterior pendente.
       await assertSemanaAnteriorFechada(ctx.prisma!, semanaDestinoInicio);
 
@@ -749,8 +782,9 @@ export const pedidosRouter = router({
   dashboard: comercialProcedure
     .input(z.object({ dia: z.coerce.date() }))
     .query(async ({ ctx, input }) => {
+      if (antesDoCortePedidos(input.dia)) return [];
       const pedidos = await ctx.prisma!.pedidoOperacional.findMany({
-        where: { dataEntrega: { gte: inicioDia(input.dia), lte: fimDia(input.dia) } },
+        where: { dataEntrega: { gte: inicioComCortePedidos(input.dia), lte: fimDia(input.dia) } },
         include: {
           cliente: { include: { regraComercial: { include: { precosEspeciais: { include: { produto: true } } } } } },
           itens: true,
@@ -788,9 +822,12 @@ export const pedidosRouter = router({
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
       if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      if (antesDoCortePedidos(input.dia)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Pedidos operacionais começam em 01/06/2026." });
+      }
       const where = {
         contaAzulCustomerId: input.contaAzulCustomerId,
-        dataEntrega: { gte: inicioDia(input.dia), lte: fimDia(input.dia) },
+        dataEntrega: { gte: inicioComCortePedidos(input.dia), lte: fimDia(input.dia) },
       };
       const pedidos = await ctx.prisma!.pedidoOperacional.findMany({ where, select: { id: true, status: true } });
       await ctx.prisma!.$transaction(async (tx) => {
@@ -815,10 +852,13 @@ export const pedidosRouter = router({
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
       if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      if (antesDoCortePedidos(input.dia)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Pedidos operacionais começam em 01/06/2026." });
+      }
       await ctx.prisma!.pedidoOperacional.updateMany({
         where: {
           contaAzulCustomerId: input.contaAzulCustomerId,
-          dataEntrega: { gte: inicioDia(input.dia), lte: fimDia(input.dia) },
+          dataEntrega: { gte: inicioComCortePedidos(input.dia), lte: fimDia(input.dia) },
         },
         data: { prioridadeEntrega: input.prioridadeEntrega, editadoPorId: usuario.id },
       });
@@ -876,9 +916,33 @@ export const pedidosRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const busca = input.busca?.trim();
+      const intervalo = intervaloComCortePedidos(input.inicio, input.fim);
+      if (intervalo.vazio) {
+        return {
+          resumo: {
+            pedidos: 0,
+            clientes: 0,
+            unidades: 0,
+            produtos: 0,
+            valorEstimado: 0,
+            status: STATUS_PEDIDO.reduce<Record<string, number>>((acc, s) => ({ ...acc, [s]: 0 }), {}),
+            contaAzulPedidos: 0,
+            contaAzulUnidades: 0,
+            contaAzulValor: 0,
+            contaAzulValorGerencial: 0,
+            descontoBoletoTotal: 0,
+            diferencaValorContaAzul: 0,
+            clientesDivergentesContaAzul: 0,
+            ultimaSincronizacaoContaAzul: null,
+          },
+          produtos: [],
+          pedidos: [],
+          contaAzul: { vendas: [], conciliacao: [] },
+        };
+      }
       const pedidos = await ctx.prisma!.pedidoOperacional.findMany({
         where: {
-          dataEntrega: { gte: inicioDia(input.inicio), lte: fimDia(input.fim) },
+          dataEntrega: { gte: intervalo.inicio, lte: intervalo.fim },
           ...(input.contaAzulCustomerId ? { contaAzulCustomerId: input.contaAzulCustomerId } : {}),
           ...(input.status ? { status: input.status } : {}),
           ...(busca
@@ -907,7 +971,7 @@ export const pedidosRouter = router({
       const vendasContaAzulRaw = await ctx.prisma!.pedido.findMany({
         where: {
           origemPedido: OrigemPedido.CONTA_AZUL,
-          dataPedido: { gte: inicioDia(input.inicio), lte: fimDia(input.fim) },
+          dataPedido: { gte: intervalo.inicio, lte: intervalo.fim },
           ...(input.contaAzulCustomerId ? { cliente: { externalId: input.contaAzulCustomerId } } : {}),
           ...(busca
             ? {
@@ -953,8 +1017,8 @@ export const pedidosRouter = router({
 
       const conciliacao = await calcularConciliacaoSemanal(
         ctx.prisma!,
-        inicioDia(input.inicio),
-        fimDia(input.fim),
+        intervalo.inicio,
+        intervalo.fim,
       );
       const conciliacaoContaAzul = conciliacao.clientes;
 
@@ -995,9 +1059,13 @@ export const pedidosRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const busca = input.busca?.trim();
+      const intervalo = intervaloComCortePedidos(input.inicio, input.fim);
+      if (intervalo.vazio) {
+        return { resumo: { registros: 0, quantidade: 0, clientes: 0, produtos: 0 }, produtos: [], avarias: [] };
+      }
       const avarias = await ctx.prisma!.pedidoOperacionalAvaria.findMany({
         where: {
-          dataEntrega: { gte: inicioDia(input.inicio), lte: fimDia(input.fim) },
+          dataEntrega: { gte: intervalo.inicio, lte: intervalo.fim },
           ...(input.contaAzulCustomerId ? { contaAzulCustomerId: input.contaAzulCustomerId } : {}),
           ...(busca
             ? {
@@ -1054,10 +1122,18 @@ export const pedidosRouter = router({
   compras: comercialProcedure
     .input(z.object({ dia: z.coerce.date(), incluirOcultos: z.boolean().default(false) }))
     .query(async ({ ctx, input }) => {
+      if (antesDoCortePedidos(input.dia)) {
+        return {
+          linhas: [],
+          desativados: [],
+          totais: { sumNec: 0, sumUn: 0, sumKg: 0 },
+          cfgMix: { ...ESTOQUE_MIX_FOLHA_PADRAO, qtdReferencia: 0, partePorVariedade: 0 },
+        };
+      }
       const [pedidosDb, produtosDb, cfgRow] = await Promise.all([
         ctx.prisma!.pedidoOperacional.findMany({
           where: {
-            dataEntrega: { gte: inicioDia(input.dia), lte: fimDia(input.dia) },
+            dataEntrega: { gte: inicioComCortePedidos(input.dia), lte: fimDia(input.dia) },
             status: { not: "CANCELADO" },
           },
           include: { itens: { include: { produto: true } } },
@@ -1349,8 +1425,20 @@ export const pedidosRouter = router({
   conciliacaoPainel: comercialProcedure
     .input(z.object({ inicio: z.coerce.date(), fim: z.coerce.date() }))
     .query(async ({ ctx, input }) => {
-      const inicio = inicioDia(input.inicio);
-      const fim = fimDia(input.fim);
+      const intervalo = intervaloComCortePedidos(input.inicio, input.fim);
+      if (intervalo.vazio) {
+        return {
+          resumo: { semVenda: 0, vendasSemPedido: 0, sugestoes: 0, conciliados: 0, divergentes: 0 },
+          semVenda: [],
+          vendasSemPedido: [],
+          sugestoes: [],
+          conciliados: [],
+          divergentes: [],
+          eventos: [],
+        };
+      }
+      const inicio = intervalo.inicio;
+      const fim = intervalo.fim;
       const prisma = ctx.prisma!;
 
       const [operacionais, vendas, eventos] = await Promise.all([
@@ -1428,6 +1516,9 @@ export const pedidosRouter = router({
   conciliacaoReferenciasAvaria: comercialProcedure
     .input(z.object({ clienteId: z.string(), dataEntrega: z.coerce.date() }))
     .query(async ({ ctx, input }) => {
+      if (antesDoCortePedidos(input.dataEntrega)) {
+        return { operacionais: [], vendas: [] };
+      }
       const cliente = await ctx.prisma!.cliente.findUnique({ where: { id: input.clienteId } });
       if (!cliente?.externalId) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Unidade sem vínculo Conta Azul." });
@@ -1489,15 +1580,19 @@ export const pedidosRouter = router({
       if (!venda?.cliente.externalId) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Venda Conta Azul não encontrada ou sem cliente vinculado." });
       }
+      if (antesDoCortePedidos(venda.dataPedido)) {
+        return { venda, candidatos: [] };
+      }
 
       const janelaMs = input.janelaDias * 86_400_000;
+      const inicioJanela = inicioComCortePedidos(new Date(venda.dataPedido.getTime() - janelaMs));
       const candidatos = await ctx.prisma!.pedidoOperacional.findMany({
         where: {
           contaAzulCustomerId: venda.cliente.externalId,
           status: { not: "CANCELADO" },
           OR: [{ pedidoContaAzulId: null }, { pedidoContaAzulId: venda.id }],
           dataEntrega: {
-            gte: inicioDia(new Date(venda.dataPedido.getTime() - janelaMs)),
+            gte: inicioJanela,
             lte: fimDia(new Date(venda.dataPedido.getTime() + janelaMs)),
           },
         },

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { Prisma, TipoCliente } from "../generated/prisma/index.js";
 import { comercialProcedure, comercialRequirePerfis, router } from "../../_core/trpc";
-import { inicioSemana, rotuloSemana } from "../lib/semana.js";
+import { GO_LIVE_PEDIDOS, inicioSemana, rotuloSemana } from "../lib/semana.js";
 
 const editorComercial = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL", "COMERCIAL", "OPERACOES");
 
@@ -38,6 +38,12 @@ function fimDia(d: Date): Date {
   const out = new Date(d);
   out.setHours(23, 59, 59, 999);
   return out;
+}
+
+const CORTE_INICIO_PEDIDOS = inicioDia(GO_LIVE_PEDIDOS);
+
+function antesDoCortePedidos(d: Date): boolean {
+  return fimDia(d).getTime() < CORTE_INICIO_PEDIDOS.getTime();
 }
 
 function num(v: unknown): number {
@@ -160,6 +166,9 @@ export const varejoRouter = router({
       }
       if (!produto) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Variedade não encontrada ou inativa." });
+      }
+      if (antesDoCortePedidos(input.dataEntrega)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Pedidos operacionais começam em 01/06/2026." });
       }
 
       const dataEntrega = inicioDia(input.dataEntrega);
