@@ -1,9 +1,24 @@
 import { isOperationalAdminRole, type AppUserRole } from "@shared/const";
 
-export type ComercialPerfil = "VENDEDOR" | "PROMOTER" | "OPERACOES" | "COMERCIAL" | "GERENTE_COMERCIAL" | "ADMIN";
+export type ComercialPerfil =
+  | "VENDEDOR"
+  | "PROMOTER"
+  | "LIDER_COLHEITA"
+  | "OPERACOES"
+  | "COMERCIAL"
+  | "GERENTE_COMERCIAL"
+  | "ADMIN";
 
 export function isPromoterPerfil(perfil: string | null | undefined): boolean {
   return perfil === "PROMOTER" || perfil === "VENDEDOR";
+}
+
+export function isLiderColheitaPerfil(perfil: string | null | undefined): boolean {
+  return perfil === "LIDER_COLHEITA";
+}
+
+export function ocultarValoresComerciais(perfil: string | null | undefined): boolean {
+  return isLiderColheitaPerfil(perfil);
 }
 
 /** Destino logo após login (seleção de projeto para admin; home do módulo para comercial). */
@@ -20,10 +35,15 @@ export function dashboardPathForUserRole(role: string | null | undefined): strin
 }
 
 export function homeForCommercialPerfil(perfil: string | null | undefined): string {
-  return isPromoterPerfil(perfil) ? "/comercial/acompanhamento-avarias" : "/comercial/dashboard";
+  return isPromoterPerfil(perfil) || isLiderColheitaPerfil(perfil)
+    ? "/comercial/acompanhamento-avarias"
+    : "/comercial/dashboard";
 }
 
 export function canAccessCommercialPath(path: string, perfil: string | null | undefined): boolean {
+  if (isLiderColheitaPerfil(perfil)) {
+    return path === "/comercial/acompanhamento-avarias" || path === "/comercial/pedidos";
+  }
   if (isPromoterPerfil(perfil)) {
     return path === "/comercial/acompanhamento-avarias" || path === "/comercial/pedidos" || path === "/comercial/varejo";
   }
@@ -54,7 +74,10 @@ export function canAccessCommercialPath(path: string, perfil: string | null | un
 export function roleLabel(role: AppUserRole | string | null | undefined, comercialPerfil?: string | null): string {
   if (role === "platform_admin") return "Equipe FUP";
   if (isOperationalAdminRole(role)) return "Administrador";
-  if (role === "comercial") return isPromoterPerfil(comercialPerfil) ? "Promoter" : "Comercial";
+  if (role === "comercial") {
+    if (isLiderColheitaPerfil(comercialPerfil)) return "Líder de colheita";
+    return isPromoterPerfil(comercialPerfil) ? "Promoter" : "Comercial";
+  }
   if (role === "visitante") return "Visitante";
   return "Operador";
 }

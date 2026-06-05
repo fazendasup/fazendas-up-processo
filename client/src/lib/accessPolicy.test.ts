@@ -36,6 +36,19 @@ describe("accessPolicy", () => {
     expect(canAccessCommercialPath("/projetos", "PROMOTER")).toBe(false);
   });
 
+  it("mantem lider de colheita restrito a pedidos e avarias sem areas comerciais", () => {
+    expect(homeForCommercialPerfil("LIDER_COLHEITA")).toBe("/comercial/acompanhamento-avarias");
+    expect(roleLabel("comercial", "LIDER_COLHEITA")).toBe("Líder de colheita");
+
+    expect(canAccessCommercialPath("/comercial/pedidos", "LIDER_COLHEITA")).toBe(true);
+    expect(canAccessCommercialPath("/comercial/acompanhamento-avarias", "LIDER_COLHEITA")).toBe(true);
+
+    expect(canAccessCommercialPath("/comercial/varejo", "LIDER_COLHEITA")).toBe(false);
+    expect(canAccessCommercialPath("/comercial/dashboard", "LIDER_COLHEITA")).toBe(false);
+    expect(canAccessCommercialPath("/comercial/relatorios", "LIDER_COLHEITA")).toBe(false);
+    expect(canAccessCommercialPath("/custos-producao", "LIDER_COLHEITA")).toBe(false);
+  });
+
   it("limita comercial/operacoes as paginas comerciais liberadas", () => {
     for (const perfil of ["COMERCIAL", "OPERACOES"] as const) {
       expect(homeForCommercialPerfil(perfil)).toBe("/comercial/dashboard");

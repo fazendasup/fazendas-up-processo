@@ -229,8 +229,13 @@ const requireEstoqueAccess = t.middleware(async ({ ctx, next }) => {
   }
 
   const comercialUsuario = await resolveComercialUsuario(ctx.user);
-  if (!comercialUsuario || comercialUsuario.perfil === "PROMOTER" || comercialUsuario.perfil === "VENDEDOR") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Promoters acessam somente Pedidos e Acompanhamento de avarias." });
+  if (
+    !comercialUsuario ||
+    comercialUsuario.perfil === "PROMOTER" ||
+    comercialUsuario.perfil === "VENDEDOR" ||
+    comercialUsuario.perfil === "LIDER_COLHEITA"
+  ) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Perfil restrito acessa somente Pedidos e Acompanhamento de avarias." });
   }
   return next({ ctx: { ...ctx, user: ctx.user, comercialUsuario } });
 });
@@ -247,8 +252,13 @@ const requireOperationalOrCommercialEditor = t.middleware(async ({ ctx, next }) 
   }
 
   const comercialUsuario = await resolveComercialUsuario(ctx.user);
-  if (!comercialUsuario || comercialUsuario.perfil === "PROMOTER" || comercialUsuario.perfil === "VENDEDOR") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Promoters acessam somente Pedidos e Acompanhamento de avarias." });
+  if (
+    !comercialUsuario ||
+    comercialUsuario.perfil === "PROMOTER" ||
+    comercialUsuario.perfil === "VENDEDOR" ||
+    comercialUsuario.perfil === "LIDER_COLHEITA"
+  ) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Perfil restrito acessa somente Pedidos e Acompanhamento de avarias." });
   }
   return next({ ctx: { ...ctx, user: ctx.user, comercialUsuario } });
 });
@@ -324,6 +334,12 @@ const requireComercialModule = t.middleware(async ({ ctx, next, path }) => {
     !path.startsWith("comercial.varejo")
   ) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Promoters acessam somente Pedidos e Acompanhamento de avarias." });
+  }
+  if (
+    comercialUsuario.perfil === "LIDER_COLHEITA" &&
+    !path.startsWith("comercial.pedidos")
+  ) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Líder de colheita acessa somente Pedidos e Acompanhamento de avarias." });
   }
   let comercialEnv;
   try {

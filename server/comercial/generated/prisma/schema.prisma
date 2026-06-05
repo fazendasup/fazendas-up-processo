@@ -12,6 +12,7 @@ datasource db {
 enum PerfilUsuario {
   VENDEDOR
   PROMOTER
+  LIDER_COLHEITA
   GERENTE_COMERCIAL
   COMERCIAL
   OPERACOES

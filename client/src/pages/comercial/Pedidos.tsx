@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { isPromoterPerfil } from "@/lib/accessPolicy";
+import { isLiderColheitaPerfil, isPromoterPerfil, ocultarValoresComerciais } from "@/lib/accessPolicy";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -142,14 +142,17 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
     me.data?.perfil === "COMERCIAL" ||
     me.data?.perfil === "OPERACOES";
   const isPromoter = isPromoterPerfil(me.data?.perfil);
+  const isLiderColheita = isLiderColheitaPerfil(me.data?.perfil);
+  const perfilOperacionalRestrito = isPromoter || isLiderColheita;
+  const podeVerValores = !ocultarValoresComerciais(me.data?.perfil);
   useEffect(() => {
     setAba(abaInicial);
   }, [abaInicial]);
   useEffect(() => {
-    if (isPromoter && (aba === "regras" || aba === "produtos" || aba === "compras")) {
+    if (perfilOperacionalRestrito && (aba === "conciliacao" || aba === "regras" || aba === "produtos" || aba === "compras")) {
       setAba("operacional");
     }
-  }, [aba, isPromoter]);
+  }, [aba, perfilOperacionalRestrito]);
   const clientes = trpc.comercial.pedidos.clientes.useQuery({ busca: clienteBusca || undefined, limite: 80 });
   const clientesDoDia = trpc.comercial.pedidos.clientes.useQuery({ dia: diaDate, limite: 100 });
   const produtos = trpc.comercial.pedidos.produtos.useQuery({ incluirInativos: true, apenasOperacao: true });
@@ -508,7 +511,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
               )}
             </div>
           </div>
-          {statusSemana.data?.conciliacaoBloqueio && (
+          {!isLiderColheita && statusSemana.data?.conciliacaoBloqueio && (
             <PainelConciliacaoFechamento
               conciliacao={statusSemana.data.conciliacaoBloqueio}
               className="mt-3"
@@ -575,7 +578,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
               </div>
             )}
           </div>
-          {statusSemana.data.conciliacaoContaAzul && (
+          {!isLiderColheita && statusSemana.data.conciliacaoContaAzul && (
             <PainelConciliacaoFechamento
               conciliacao={statusSemana.data.conciliacaoContaAzul}
               className="mt-3"
@@ -593,10 +596,10 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
         <TabsList className="flex h-auto flex-wrap">
           <TabsTrigger value="operacional">Dashboard operacional</TabsTrigger>
           <TabsTrigger value="agenda">Emissão / Agenda</TabsTrigger>
-          {!isPromoter && <TabsTrigger value="conciliacao">Conciliação Conta Azul</TabsTrigger>}
-          {!isPromoter && <TabsTrigger value="regras">Regras comerciais</TabsTrigger>}
-          {!isPromoter && <TabsTrigger value="produtos">Produtos</TabsTrigger>}
-          {!isPromoter && <TabsTrigger value="compras">Estoque vivo / compras</TabsTrigger>}
+          {!perfilOperacionalRestrito && <TabsTrigger value="conciliacao">Conciliação Conta Azul</TabsTrigger>}
+          {!perfilOperacionalRestrito && <TabsTrigger value="regras">Regras comerciais</TabsTrigger>}
+          {!perfilOperacionalRestrito && <TabsTrigger value="produtos">Produtos</TabsTrigger>}
+          {!perfilOperacionalRestrito && <TabsTrigger value="compras">Estoque vivo / compras</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="operacional" className="space-y-3">
@@ -778,8 +781,9 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
                       <Button variant="ghost" onClick={() => setLinhas((prev) => prev.filter((_, i) => i !== idx))}>Remover</Button>
                       {produto && (
                         <p className="text-xs text-muted-foreground sm:col-span-3">
-                          Categoria: {produto.categoria || "sem categoria"} · preço usado: {fmtMoney(especial ?? produto.precoBase ?? 0)}
-                          {especial ? " (especial do cliente)" : ""}
+                          Categoria: {produto.categoria || "sem categoria"}
+                          {podeVerValores ? ` · preço usado: ${fmtMoney(especial ?? produto.precoBase ?? 0)}` : ""}
+                          {podeVerValores && especial ? " (especial do cliente)" : ""}
                         </p>
                       )}
                     </div>

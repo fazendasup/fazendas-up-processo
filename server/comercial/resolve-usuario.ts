@@ -28,7 +28,7 @@ export async function resolveComercialUsuario(erpUser: User) {
 
   if (erpUser.role === "comercial") {
     return prisma.usuario.findFirst({
-      where: { status: "ATIVO", perfil: { in: ["PROMOTER", "VENDEDOR", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"] } },
+      where: { status: "ATIVO", perfil: { in: ["LIDER_COLHEITA", "PROMOTER", "VENDEDOR", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"] } },
       orderBy: { dataCadastro: "asc" },
     });
   }

@@ -51,6 +51,44 @@ const tipoVendaSchema = z.enum(["RECORRENTE_SEMANAL", "RECORRENTE_QUINZENAL", "P
 const periodoEntregaSchema = z.enum(["MANHA", "TARDE"]).nullable().optional();
 const modoCompraSchema = z.enum(["UNIDADE", "KG"]);
 
+function deveOcultarValores(ctx: { comercialUsuario?: { perfil?: string } | null }): boolean {
+  return ctx.comercialUsuario?.perfil === "LIDER_COLHEITA";
+}
+
+function ocultarValoresPedido<T extends Record<string, any>>(pedido: T): T {
+  return {
+    ...pedido,
+    itens: (pedido.itens ?? []).map((item: any) => ({
+      ...item,
+      precoUnit: null,
+      produto: item.produto ? { ...item.produto, precoBase: null } : item.produto,
+    })),
+    cliente: pedido.cliente?.regraComercial
+      ? {
+          ...pedido.cliente,
+          regraComercial: {
+            ...pedido.cliente.regraComercial,
+            valorTaxaEntrega: null,
+            descontoBoletoPercentual: null,
+            precosEspeciais: [],
+          },
+        }
+      : pedido.cliente,
+    pedidoContaAzul: pedido.pedidoContaAzul
+      ? { ...pedido.pedidoContaAzul, valorLiquido: null, valorTotal: null }
+      : pedido.pedidoContaAzul,
+  };
+}
+
+function ocultarValoresConciliacaoCliente<T extends Record<string, any>>(row: T): T {
+  return {
+    ...row,
+    operacional: row.operacional ? { ...row.operacional, valorEstimado: null } : row.operacional,
+    contaAzul: row.contaAzul ? { ...row.contaAzul, valorLiquido: null, valorGerencial: null, descontoBoletoValor: null } : row.contaAzul,
+    diffValor: null,
+  };
+}
+
 function inicioDia(d: Date): Date {
   const out = new Date(d);
   out.setHours(0, 0, 0, 0);
@@ -315,6 +353,17 @@ export const pedidosRouter = router({
         where: { contaAzulCustomerId: input.contaAzulCustomerId },
         include: { precosEspeciais: { include: { produto: true } } },
       });
+      if (deveOcultarValores(ctx)) {
+        const regraSemValores = regra
+          ? {
+              ...regra,
+              valorTaxaEntrega: null,
+              descontoBoletoPercentual: null,
+              precosEspeciais: [],
+            }
+          : regra;
+        return { cliente, regra: regraSemValores, semRegras: !regra };
+      }
       return { cliente, regra, semRegras: !regra };
     }),
 
@@ -418,7 +467,11 @@ export const pedidosRouter = router({
         orderBy: [{ ativo: "desc" }, { nome: "asc" }],
         include: { _count: { select: { itensPedido: true } } },
       });
-      return produtos.map((p) => ({ ...p, usoPedidos: p._count.itensPedido }));
+      return produtos.map((p) => ({
+        ...p,
+        precoBase: deveOcultarValores(ctx) ? null : p.precoBase,
+        usoPedidos: p._count.itensPedido,
+      }));
     }),
 
   catalogoContaAzul: comercialProcedure
@@ -626,7 +679,7 @@ export const pedidosRouter = router({
       });
       const alertas = await alertasAvariasDepoisPedidoOrigem(ctx.prisma!, pedidos);
       return pedidos.map((pedido) => ({
-        ...pedido,
+        ...(deveOcultarValores(ctx) ? ocultarValoresPedido(pedido) : pedido),
         alertaAvariasPendentes: alertas.get(pedido.id) ?? null,
       }));
     }),
@@ -893,11 +946,12 @@ export const pedidosRouter = router({
       const alertas = await alertasAvariasDepoisPedidoOrigem(ctx.prisma!, pedidos);
       const grupos = new Map<string, { contaAzulCustomerId: string; cliente: unknown; regras: unknown; status: string; prioridadeEntrega: number | null; pedidos: typeof pedidos; itens: unknown[]; avarias: unknown[]; alertasAvariasPendentes: unknown[] }>();
       for (const p of pedidos) {
+        const pedido = deveOcultarValores(ctx) ? ocultarValoresPedido(p) : p;
         const key = p.contaAzulCustomerId;
         const atual = grupos.get(key) ?? {
           contaAzulCustomerId: key,
-          cliente: p.cliente,
-          regras: p.cliente?.regraComercial ?? null,
+          cliente: pedido.cliente,
+          regras: pedido.cliente?.regraComercial ?? null,
           status: p.status,
           prioridadeEntrega: p.prioridadeEntrega,
           pedidos: [],
@@ -905,9 +959,9 @@ export const pedidosRouter = router({
           avarias: [],
           alertasAvariasPendentes: [],
         };
-        atual.pedidos.push(p);
-        atual.itens.push(...p.itens.map((i) => ({ ...i, pedidoObservacoes: p.observacoes, tipoVenda: p.tipoVenda })));
-        atual.avarias.push(...p.avarias.map((a) => ({ ...a, pedidoObservacoes: p.observacoes, tipoVenda: p.tipoVenda })));
+        atual.pedidos.push(pedido);
+        atual.itens.push(...pedido.itens.map((i: any) => ({ ...i, pedidoObservacoes: p.observacoes, tipoVenda: p.tipoVenda })));
+        atual.avarias.push(...pedido.avarias.map((a: any) => ({ ...a, pedidoObservacoes: p.observacoes, tipoVenda: p.tipoVenda })));
         const alerta = alertas.get(p.id);
         if (alerta) atual.alertasAvariasPendentes.push(alerta);
         grupos.set(key, atual);
@@ -1118,7 +1172,10 @@ export const pedidosRouter = router({
         intervalo.inicio,
         intervalo.fim,
       );
-      const conciliacaoContaAzul = conciliacao.clientes;
+      const ocultarValores = deveOcultarValores(ctx);
+      const conciliacaoContaAzul = ocultarValores
+        ? conciliacao.clientes.map(ocultarValoresConciliacaoCliente)
+        : conciliacao.clientes;
 
       return {
         resumo: {
@@ -1126,23 +1183,31 @@ export const pedidosRouter = router({
           clientes: clientes.size,
           unidades,
           produtos: produtos.size,
-          valorEstimado,
+          valorEstimado: ocultarValores ? null : valorEstimado,
           status: statusResumo,
           contaAzulPedidos: conciliacao.resumo.contaAzulPedidos,
           contaAzulUnidades: conciliacao.resumo.contaAzulUnidades,
-          contaAzulValor: conciliacao.resumo.contaAzulValor,
-          contaAzulValorGerencial: conciliacao.resumo.contaAzulValorGerencial,
-          descontoBoletoTotal: conciliacao.resumo.descontoBoletoTotal,
-          diferencaValorContaAzul: conciliacao.resumo.operacionalValor - conciliacao.resumo.contaAzulValor,
+          contaAzulValor: ocultarValores ? null : conciliacao.resumo.contaAzulValor,
+          contaAzulValorGerencial: ocultarValores ? null : conciliacao.resumo.contaAzulValorGerencial,
+          descontoBoletoTotal: ocultarValores ? null : conciliacao.resumo.descontoBoletoTotal,
+          diferencaValorContaAzul: ocultarValores ? null : conciliacao.resumo.operacionalValor - conciliacao.resumo.contaAzulValor,
           clientesDivergentesContaAzul: conciliacao.resumo.clientesDivergentes,
           clientesAguardandoVendaContaAzul: conciliacao.resumo.clientesAguardandoVenda,
           clientesVendaSemPedidoContaAzul: conciliacao.resumo.clientesVendaSemPedido,
           ultimaSincronizacaoContaAzul: conciliacao.ultimaSincronizacaoContaAzul,
         },
         produtos: Array.from(produtos.values()).sort((a, b) => b.quantidade - a.quantidade || a.nome.localeCompare(b.nome, "pt-BR")),
-        pedidos,
+        pedidos: ocultarValores ? pedidos.map(ocultarValoresPedido) : pedidos,
         contaAzul: {
-          vendas: vendasContaAzul.map((p) => ({ ...p, valorLiquidoDashboard: composicaoDoPedidoParaDashboard(p).valorLiquido })),
+          vendas: vendasContaAzul.map((p) => ({
+            ...p,
+            valorTotal: ocultarValores ? null : p.valorTotal,
+            valorLiquido: ocultarValores ? null : p.valorLiquido,
+            valorFrete: ocultarValores ? null : p.valorFrete,
+            valorDesconto: ocultarValores ? null : p.valorDesconto,
+            valorLiquidoDashboard: ocultarValores ? null : composicaoDoPedidoParaDashboard(p).valorLiquido,
+            itens: ocultarValores ? p.itens.map((i) => ({ ...i, precoUnit: null, custoUnit: null })) : p.itens,
+          })),
           conciliacao: conciliacaoContaAzul,
         },
       };
@@ -1633,7 +1698,7 @@ export const pedidosRouter = router({
       const divergentes = operacionais
         .filter((op) => op.statusConciliacao === "DIVERGENTE")
         .map((op) => ({
-          ...op,
+          ...(deveOcultarValores(ctx) ? ocultarValoresPedido(op) : op),
           divergencias: op.pedidoContaAzul
             ? calcularDivergencias(
                 op,
@@ -1643,6 +1708,17 @@ export const pedidosRouter = router({
               )
             : [],
         }));
+      const limparVenda = (v: any) =>
+        deveOcultarValores(ctx)
+          ? {
+              ...v,
+              valorTotal: null,
+              valorLiquido: null,
+              valorFrete: null,
+              valorDesconto: null,
+              itens: (v.itens ?? []).map((i: any) => ({ ...i, precoUnit: null, custoUnit: null })),
+            }
+          : v;
 
       return {
         resumo: {
@@ -1652,10 +1728,10 @@ export const pedidosRouter = router({
           conciliados: conciliados.length,
           divergentes: divergentes.length,
         },
-        semVenda,
-        vendasSemPedido,
+        semVenda: deveOcultarValores(ctx) ? semVenda.map(ocultarValoresPedido) : semVenda,
+        vendasSemPedido: vendasSemPedido.map(limparVenda),
         sugestoes,
-        conciliados,
+        conciliados: deveOcultarValores(ctx) ? conciliados.map(ocultarValoresPedido) : conciliados,
         divergentes,
         eventos,
       };

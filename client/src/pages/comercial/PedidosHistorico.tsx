@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { AlertTriangle, BarChart3, CalendarDays, Download, PackageCheck, Search, ShoppingBasket, Users } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { ocultarValoresComerciais } from "@/lib/accessPolicy";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -128,6 +129,8 @@ export function PedidosHistorico() {
   const [status, setStatus] = useState("");
   const [busca, setBusca] = useState("");
 
+  const me = trpc.comercial.pedidos.me.useQuery();
+  const podeVerValores = !ocultarValoresComerciais(me.data?.perfil);
   const clientes = trpc.comercial.pedidos.clientes.useQuery({ busca: clienteBusca || undefined, limite: 100 });
   const relatorio = trpc.comercial.pedidos.relatorioHistorico.useQuery({
     inicio: new Date(`${inicio}T12:00:00`),
@@ -237,7 +240,9 @@ export function PedidosHistorico() {
         <HistoricoKpi icon={<PackageCheck className="h-4 w-4 text-emerald-700" />} label="Unidades" value={fmtQtd(resumo?.unidades ?? 0)} />
         <HistoricoKpi icon={<Users className="h-4 w-4 text-blue-700" />} label="Clientes" value={resumo?.clientes ?? 0} />
         <HistoricoKpi icon={<ShoppingBasket className="h-4 w-4 text-lime-700" />} label="Produtos" value={resumo?.produtos ?? 0} />
-        <HistoricoKpi icon={<BarChart3 className="h-4 w-4 text-violet-700" />} label="Valor estimado" value={fmtMoney(resumo?.valorEstimado ?? 0)} />
+        {podeVerValores ? (
+          <HistoricoKpi icon={<BarChart3 className="h-4 w-4 text-violet-700" />} label="Valor estimado" value={fmtMoney(resumo?.valorEstimado ?? 0)} />
+        ) : null}
       </section>
 
       <Card className="border-amber-200/70 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/10">
@@ -297,6 +302,7 @@ export function PedidosHistorico() {
         </CardContent>
       </Card>
 
+      {podeVerValores ? (
       <Card className="border-cyan-200/70 bg-cyan-50/40 dark:border-cyan-900/60 dark:bg-cyan-950/10">
         <CardHeader>
           <CardTitle className="text-base">Conciliação com Conta Azul</CardTitle>
@@ -371,6 +377,7 @@ export function PedidosHistorico() {
           </div>
         </CardContent>
       </Card>
+      ) : null}
 
       <div className="grid gap-4 xl:grid-cols-[0.85fr_1.15fr]">
         <Card>
@@ -446,7 +453,7 @@ export function PedidosHistorico() {
                   <div key={item.id} className="rounded-lg bg-muted/30 px-2 py-1.5 text-sm">
                     <strong>{fmtQtd(item.quantidade)} × {item.produtoNome}</strong>
                     {item.categoria ? <span className="ml-1 text-xs text-muted-foreground">({item.categoria})</span> : null}
-                    {item.precoUnit ? <span className="ml-2 text-xs text-muted-foreground">{fmtMoney(item.precoUnit)}</span> : null}
+                    {podeVerValores && item.precoUnit ? <span className="ml-2 text-xs text-muted-foreground">{fmtMoney(item.precoUnit)}</span> : null}
                   </div>
                 ))}
               </div>

@@ -76,7 +76,7 @@ type NavItem = {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   requiredRole?: "admin" | "comercial";
-  comercialPerfis?: Array<"VENDEDOR" | "PROMOTER" | "OPERACOES" | "COMERCIAL" | "GERENTE_COMERCIAL" | "ADMIN">;
+  comercialPerfis?: Array<"VENDEDOR" | "PROMOTER" | "LIDER_COLHEITA" | "OPERACOES" | "COMERCIAL" | "GERENTE_COMERCIAL" | "ADMIN">;
   projetoTipo?: "fazenda_vertical" | "hidroponia";
 };
 
