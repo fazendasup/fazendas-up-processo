@@ -80,6 +80,7 @@ export type DivergenciaConciliacao = {
 
 type OpcoesDivergenciaConciliacao = {
   compararData?: boolean;
+  compararItens?: boolean;
   compararValorEstimado?: boolean;
   regraEntrega?: RegraEntregaConciliacao | null;
 };
@@ -107,6 +108,7 @@ export function opcoesCalcularDivergencias(
   const criadoDoContaAzul = pedidoCriadoAPartirDoContaAzul(operacional);
   return {
     compararData: !criadoDoContaAzul,
+    compararItens: !criadoDoContaAzul,
     compararValorEstimado: !criadoDoContaAzul,
   };
 }
@@ -190,6 +192,7 @@ export function calcularDivergencias(
 ): DivergenciaConciliacao[] {
   const divergencias: DivergenciaConciliacao[] = [];
   const compararData = opcoes.compararData ?? true;
+  const compararItens = opcoes.compararItens ?? true;
   const compararValorEstimado = opcoes.compararValorEstimado ?? true;
 
   if (compararData && !mesmoDia(operacional.dataEntrega, contaAzul.dataPedido)) {
@@ -200,31 +203,33 @@ export function calcularDivergencias(
     });
   }
 
-  const mapOp = new Map<string, number>();
-  for (const item of operacional.itens) {
-    const key = resolverChave
-      ? resolverChave("operacional", { produtoId: item.produtoId, produtoNome: item.produtoNome })
-      : `nome:${normalizarNome(item.produtoNome)}`;
-    mapOp.set(key, (mapOp.get(key) ?? 0) + num(item.quantidade));
-  }
-  const mapCa = new Map<string, number>();
-  for (const item of contaAzul.itens) {
-    const key = resolverChave
-      ? resolverChave("contaAzul", { produto: item.produto, sku: item.sku })
-      : `nome:${normalizarNome(item.produto)}`;
-    mapCa.set(key, (mapCa.get(key) ?? 0) + num(item.quantidade));
-  }
+  if (compararItens) {
+    const mapOp = new Map<string, number>();
+    for (const item of operacional.itens) {
+      const key = resolverChave
+        ? resolverChave("operacional", { produtoId: item.produtoId, produtoNome: item.produtoNome })
+        : `nome:${normalizarNome(item.produtoNome)}`;
+      mapOp.set(key, (mapOp.get(key) ?? 0) + num(item.quantidade));
+    }
+    const mapCa = new Map<string, number>();
+    for (const item of contaAzul.itens) {
+      const key = resolverChave
+        ? resolverChave("contaAzul", { produto: item.produto, sku: item.sku })
+        : `nome:${normalizarNome(item.produto)}`;
+      mapCa.set(key, (mapCa.get(key) ?? 0) + num(item.quantidade));
+    }
 
-  const nomes = new Set([...Array.from(mapOp.keys()), ...Array.from(mapCa.keys())]);
-  for (const nome of Array.from(nomes)) {
-    const qOp = mapOp.get(nome) ?? 0;
-    const qCa = mapCa.get(nome) ?? 0;
-    if (Math.abs(qOp - qCa) > 0.001) {
-      divergencias.push({
-        campo: `item:${nome || "sem_nome"}`,
-        operacional: qOp,
-        contaAzul: qCa,
-      });
+    const nomes = new Set([...Array.from(mapOp.keys()), ...Array.from(mapCa.keys())]);
+    for (const nome of Array.from(nomes)) {
+      const qOp = mapOp.get(nome) ?? 0;
+      const qCa = mapCa.get(nome) ?? 0;
+      if (Math.abs(qOp - qCa) > 0.001) {
+        divergencias.push({
+          campo: `item:${nome || "sem_nome"}`,
+          operacional: qOp,
+          contaAzul: qCa,
+        });
+      }
     }
   }
 

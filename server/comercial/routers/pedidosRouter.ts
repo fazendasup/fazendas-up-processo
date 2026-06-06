@@ -1739,17 +1739,16 @@ export const pedidosRouter = router({
       const conciliados = operacionais.filter((op) => op.statusConciliacao === "CONCILIADO" && op.pedidoContaAzul);
       const divergentes = operacionais
         .filter((op) => op.statusConciliacao === "DIVERGENTE")
-        .map((op) => ({
-          ...(deveOcultarValores(ctx) ? ocultarValoresPedido(op) : op),
-          divergencias: op.pedidoContaAzul
-            ? calcularDivergencias(
-                op,
-                op.pedidoContaAzul,
-                resolverChaveConciliacao,
-                opcoesCalcularDivergencias(op),
-              )
-            : [],
-        }));
+        .map((op) => {
+          const divergencias = op.pedidoContaAzul
+            ? calcularDivergencias(op, op.pedidoContaAzul, resolverChaveConciliacao, opcoesCalcularDivergencias(op))
+            : [];
+          return {
+            ...(deveOcultarValores(ctx) ? ocultarValoresPedido(op) : op),
+            divergencias,
+          };
+        })
+        .filter((op) => op.divergencias.length > 0);
       const limparVenda = (v: any) =>
         deveOcultarValores(ctx)
           ? {
