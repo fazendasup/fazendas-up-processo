@@ -4,7 +4,7 @@ import { z } from "zod";
 import { comercialProcedure, comercialRequirePerfis, publicProcedure, router } from "../../_core/trpc";
 import { getComercialPrisma } from "../db";
 
-const podeGerenciarEntregas = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL", "COMERCIAL", "OPERACOES");
+const podeGerenciarEntregas = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL", "COMERCIAL", "OPERACOES", "LOGISTICA");
 const podeUsarModoEntregador = comercialRequirePerfis(
   "ADMIN",
   "GERENTE_COMERCIAL",

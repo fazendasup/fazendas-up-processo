@@ -1,25 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
   <rect width="512" height="512" rx="112" fill="#059669"/>
-  <path
-    fill="#ffffff"
-    d="M103 369C116 237 246 105 414 84c-17 169-149 299-311 285Z"
-  />
-  <path
-    stroke="#059669"
-    stroke-linecap="round"
-    stroke-width="26"
-    d="M123 350c84-96 164-170 267-243"
-  />
-  <path
-    stroke="#059669"
-    stroke-linecap="round"
-    stroke-width="18"
-    d="M208 262c43-3 82-16 116-39M169 313c34 5 67 1 99-12M258 208c31-9 59-25 84-47"
-  />
-  <path
-    stroke="#ffffff"
-    stroke-linecap="round"
-    stroke-width="34"
-    d="M86 407c22-23 42-42 60-59"
-  />
+  <path fill="#ffffff" d="M256 85c-52 26-84 73-88 132-45 4-82 35-95 80-18 63 30 125 93 116 24 31 57 49 90 49s66-18 90-49c63 9 111-53 93-116-13-45-50-76-95-80-4-59-36-106-88-132Z"/>
+  <path fill="#ecfdf5" d="M256 116c-34 25-54 64-52 109-38-19-83-7-105 28-32 51 9 113 68 104 17 43 52 70 89 70s72-27 89-70c59 9 100-53 68-104-22-35-67-47-105-28 2-45-18-84-52-109Z"/>
+  <path stroke="#059669" stroke-linecap="round" stroke-width="22" d="M256 139v260M173 255c46 39 73 85 83 144M339 255c-46 39-73 85-83 144M121 305c55 8 99 28 135 94M391 305c-55 8-99 28-135 94"/>
+  <path stroke="#059669" stroke-linecap="round" stroke-width="15" d="M210 193c18 19 32 43 42 70M302 193c-18 19-32 43-42 70M164 329c28 8 52 23 72 45M348 329c-28 8-52 23-72 45"/>
 </svg>

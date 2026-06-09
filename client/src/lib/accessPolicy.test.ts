@@ -49,6 +49,18 @@ describe("accessPolicy", () => {
     expect(canAccessCommercialPath("/custos-producao", "LIDER_COLHEITA")).toBe(false);
   });
 
+  it("limita logistica a entregas e modo entregador", () => {
+    expect(homeForCommercialPerfil("LOGISTICA")).toBe("/comercial/entregador");
+    expect(roleLabel("comercial", "LOGISTICA")).toBe("Logística");
+
+    expect(canAccessCommercialPath("/comercial/entregas", "LOGISTICA")).toBe(true);
+    expect(canAccessCommercialPath("/comercial/entregador", "LOGISTICA")).toBe(true);
+
+    expect(canAccessCommercialPath("/comercial/pedidos", "LOGISTICA")).toBe(false);
+    expect(canAccessCommercialPath("/comercial/dashboard", "LOGISTICA")).toBe(false);
+    expect(canAccessCommercialPath("/comercial/clientes", "LOGISTICA")).toBe(false);
+  });
+
   it("limita comercial/operacoes as paginas comerciais liberadas", () => {
     for (const perfil of ["COMERCIAL", "OPERACOES"] as const) {
       expect(homeForCommercialPerfil(perfil)).toBe("/comercial/dashboard");

@@ -346,7 +346,7 @@ const requireComercialModule = t.middleware(async ({ ctx, next, path }) => {
     path !== "comercial.pedidos.me" &&
     !path.startsWith("comercial.entregas")
   ) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Logística acessa somente o modo entregador." });
+    throw new TRPCError({ code: "FORBIDDEN", message: "Logística acessa somente Entregas e Modo entregador." });
   }
   let comercialEnv;
   try {

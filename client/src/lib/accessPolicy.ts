@@ -43,7 +43,8 @@ export function homeForCommercialPerfil(perfil: string | null | undefined): stri
 
 export function canAccessCommercialPath(path: string, perfil: string | null | undefined): boolean {
   if (perfil === "LOGISTICA") {
-    return path === "/comercial/entregador" || path.startsWith("/comercial/entregador/");
+    const allowed = ["/comercial/entregas", "/comercial/entregador"];
+    return allowed.some((allowedPath) => path === allowedPath || path.startsWith(`${allowedPath}/`));
   }
   if (isLiderColheitaPerfil(perfil)) {
     return path === "/comercial/acompanhamento-avarias" || path === "/comercial/pedidos";
