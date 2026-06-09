@@ -80,8 +80,22 @@ export function isMobileMapClient(): boolean {
   return window.matchMedia("(max-width: 900px), (pointer: coarse)").matches;
 }
 
-/** Embed sem Maps Embed API — funciona melhor no Safari mobile. */
-export function buildMapsEmbedUrl(options: {
+/** Embed com rota — requer Maps Embed API ativa. */
+export function buildMapsDirectionsEmbedUrl(options: {
+  destino: string;
+  localizacao?: { latitude: number; longitude: number } | null;
+}): string | null {
+  const apiKey = googleMapsApiKey();
+  const destino = options.destino.trim();
+  const localizacao = options.localizacao;
+  if (!apiKey || !localizacao) return null;
+
+  const origin = `${localizacao.latitude},${localizacao.longitude}`;
+  return `https://www.google.com/maps/embed/v1/directions?key=${encodeURIComponent(apiKey)}&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destino)}&mode=driving`;
+}
+
+/** Embed simples sem API key. */
+export function buildMapsSimpleEmbedUrl(options: {
   destino: string;
   localizacao?: { latitude: number; longitude: number } | null;
 }): string {
@@ -96,7 +110,7 @@ export function buildMapsEmbedUrl(options: {
   return `https://maps.google.com/maps?q=${encodeURIComponent(destino)}&output=embed`;
 }
 
-/** Imagem estática da rota — mais confiável que iframe no iOS. */
+/** Imagem estática — requer Maps Static API ativa. */
 export function buildMapsStaticUrl(options: {
   destino: string;
   localizacao?: { latitude: number; longitude: number } | null;
@@ -107,7 +121,7 @@ export function buildMapsStaticUrl(options: {
   if (!apiKey) return null;
 
   const width = options.width ?? 640;
-  const height = options.height ?? 360;
+  const height = options.height ?? 400;
   const params = new URLSearchParams({
     size: `${width}x${height}`,
     scale: "2",

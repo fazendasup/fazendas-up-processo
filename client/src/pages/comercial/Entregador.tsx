@@ -649,7 +649,7 @@ function MobileDriverRouteMap({
         destino={destino}
         localizacao={localizacaoAtual}
         navUrl={navUrl}
-        className={navegando ? "min-h-[45vh] flex-1" : "h-[320px]"}
+        className={navegando ? "h-[50vh] min-h-[300px]" : undefined}
       />
 
       {navUrl ? (
