@@ -21,6 +21,22 @@ export function linkGoogleMaps(endereco: string | null | undefined) {
   return `https://www.google.com/maps/dir/?api=1&destination=${destino}&travelmode=driving`;
 }
 
+export function linkGoogleMapsNavegacao(
+  endereco: string | null | undefined,
+  origem?: { latitude: number; longitude: number } | null,
+) {
+  if (!endereco?.trim()) return null;
+  const params = new URLSearchParams({
+    api: "1",
+    destination: endereco.trim(),
+    travelmode: "driving",
+  });
+  if (origem) {
+    params.set("origin", `${origem.latitude},${origem.longitude}`);
+  }
+  return `https://www.google.com/maps/dir/?${params.toString()}`;
+}
+
 export function linkGoogleMapsRota(paradas: Array<{ endereco?: string | null }>) {
   const enderecos = paradas
     .map((parada) => parada.endereco?.trim())

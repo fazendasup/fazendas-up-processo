@@ -75,6 +75,32 @@ export function loadGoogleMapsScript(): Promise<boolean> {
   return mapsLoadPromise;
 }
 
+export function isMobileMapClient(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(max-width: 900px), (pointer: coarse)").matches;
+}
+
+export function buildMapsEmbedUrl(options: {
+  destino: string;
+  localizacao?: { latitude: number; longitude: number } | null;
+}): string {
+  const destino = options.destino.trim();
+  const apiKey = googleMapsApiKey();
+  const localizacao = options.localizacao;
+
+  if (apiKey && localizacao) {
+    const origin = `${localizacao.latitude},${localizacao.longitude}`;
+    return `https://www.google.com/maps/embed/v1/directions?key=${encodeURIComponent(apiKey)}&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destino)}&mode=driving`;
+  }
+
+  if (localizacao) {
+    const origin = `${localizacao.latitude},${localizacao.longitude}`;
+    return `https://maps.google.com/maps?saddr=${encodeURIComponent(origin)}&daddr=${encodeURIComponent(destino)}&output=embed`;
+  }
+
+  return `https://www.google.com/maps?q=${encodeURIComponent(destino)}&output=embed`;
+}
+
 export function createMapMarker(
   map: google.maps.Map,
   position: google.maps.LatLngLiteral,

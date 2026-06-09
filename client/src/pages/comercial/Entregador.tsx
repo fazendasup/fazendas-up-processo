@@ -17,14 +17,15 @@ import { PageHeader } from "@/components/comercial/ui/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmbeddedMap } from "@/components/EmbeddedMap";
 import { MapView } from "@/components/Map";
-import { createMapMarker } from "@/lib/googleMapsLoader";
+import { createMapMarker, isMobileMapClient } from "@/lib/googleMapsLoader";
 import { trpc } from "@/lib/trpc";
 import {
   diaOperacionalInicial,
   labelStatusParada,
   labelStatusRota,
-  linkGoogleMaps,
+  linkGoogleMapsNavegacao,
   linkTelefone,
   linkWhatsapp,
 } from "@/lib/entregas";
@@ -286,7 +287,7 @@ export function Entregador() {
     };
   }, [avisarErroGps, registrarLocalizacao, rota?.id, rota?.status, rota?.compartilhamentoAtivo]);
 
-  const mapsUrl = linkGoogleMaps(paradaAtual?.endereco);
+  const mapsUrl = linkGoogleMapsNavegacao(paradaAtual?.endereco, localizacaoAtual);
   const telUrl = linkTelefone(paradaAtual?.telefoneWhatsapp);
   const waUrl = linkWhatsapp(
     paradaAtual?.telefoneWhatsapp,
@@ -547,15 +548,154 @@ function DriverRouteMap({
   localizacaoAtual: LocalizacaoEntrega | null;
   onIniciarNavegacao: () => void;
 }) {
+  const [usarMapaEmbutido] = useState(() => isMobileMapClient());
+
+  if (!destino?.trim()) {
+    return (
+      <div className="rounded-xl border border-dashed border-border/70 bg-muted/30 px-4 py-8 text-center text-sm text-muted-foreground">
+        Endereço indisponível para exibir o mapa.
+      </div>
+    );
+  }
+
+  if (usarMapaEmbutido) {
+    return (
+      <MobileDriverRouteMap
+        destino={destino.trim()}
+        localizacaoAtual={localizacaoAtual}
+        onIniciarNavegacao={onIniciarNavegacao}
+      />
+    );
+  }
+
+  return (
+    <DesktopDriverRouteMap
+      destino={destino.trim()}
+      localizacaoAtual={localizacaoAtual}
+      onIniciarNavegacao={onIniciarNavegacao}
+    />
+  );
+}
+
+function MobileDriverRouteMap({
+  destino,
+  localizacaoAtual,
+  onIniciarNavegacao,
+}: {
+  destino: string;
+  localizacaoAtual: LocalizacaoEntrega | null;
+  onIniciarNavegacao: () => void;
+}) {
+  const [navegando, setNavegando] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const navUrl = linkGoogleMapsNavegacao(destino, localizacaoAtual);
+
+  const iniciarNavegacao = async () => {
+    setNavegando(true);
+    onIniciarNavegacao();
+    try {
+      await containerRef.current?.requestFullscreen?.();
+    } catch {
+      // Alguns PWAs mobile não expõem Fullscreen API; o overlay fixo mantém a experiência em tela cheia.
+    }
+  };
+
+  const sairNavegacao = async () => {
+    setNavegando(false);
+    try {
+      if (document.fullscreenElement === containerRef.current) {
+        await document.exitFullscreen();
+      }
+    } catch {
+      // Sair do fullscreen pode falhar se o navegador já tiver encerrado o modo.
+    }
+  };
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        setNavegando(false);
+      }
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      data-no-pull-refresh="true"
+      className={cn(
+        "space-y-2 bg-background",
+        navegando && "fixed inset-0 z-50 flex flex-col space-y-3 p-3 pt-[max(0.75rem,env(safe-area-inset-top))]",
+      )}
+    >
+      {navegando ? (
+        <div className="flex items-start justify-between gap-3 rounded-xl border bg-card/95 p-3 shadow-sm">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">Navegação no app</p>
+            <p className="truncate text-sm font-medium">{destino}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {localizacaoAtual ? "Rota atualizada com sua posição." : "Aguardando GPS para traçar a rota."}
+            </p>
+          </div>
+          <Button size="icon" variant="outline" onClick={() => void sairNavegacao()} aria-label="Sair da navegação">
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : null}
+
+      <EmbeddedMap
+        destino={destino}
+        localizacao={localizacaoAtual}
+        className={navegando ? "min-h-[55vh] flex-1" : "h-[320px]"}
+      />
+
+      {navegando ? (
+        <div className="space-y-2 rounded-xl border bg-card/95 p-3 text-xs text-muted-foreground shadow-sm">
+          <p>GPS automático ativo enquanto esta tela permanecer aberta.</p>
+          {navUrl ? (
+            <Button className="h-11 w-full" variant="secondary" asChild>
+              <a href={navUrl} target="_blank" rel="noreferrer">
+                <Navigation className="h-4 w-4" />
+                Abrir rota no Google Maps
+              </a>
+            </Button>
+          ) : null}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <Button className="h-12 w-full text-base" onClick={() => void iniciarNavegacao()}>
+            <Maximize2 className="h-5 w-5" />
+            Iniciar navegação no app
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            {localizacaoAtual
+              ? "GPS automático ativo. Mantenha o PWA aberto para enviar posição durante a rota."
+              : "Ao iniciar a navegação, o app solicitará sua posição e mostrará a rota automaticamente."}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DesktopDriverRouteMap({
+  destino,
+  localizacaoAtual,
+  onIniciarNavegacao,
+}: {
+  destino: string;
+  localizacaoAtual: LocalizacaoEntrega | null;
+  onIniciarNavegacao: () => void;
+}) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [navegando, setNavegando] = useState(false);
   const [routeInfo, setRouteInfo] = useState<{ distancia: string; duracao: string } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const directionsRef = useRef<google.maps.DirectionsRenderer | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
-  const fallbackMapUrl = destino?.trim()
-    ? `https://www.google.com/maps?q=${encodeURIComponent(destino.trim())}&output=embed`
-    : null;
+  const fallbackMapUrl = `https://www.google.com/maps?q=${encodeURIComponent(destino)}&output=embed`;
 
   const redimensionarMapa = useCallback(() => {
     if (!map || !window.google?.maps) return;
@@ -607,7 +747,7 @@ function DriverRouteMap({
   }, [redimensionarMapa]);
 
   useEffect(() => {
-    if (!map || !window.google?.maps || !destino?.trim()) return;
+    if (!map || !window.google?.maps) return;
 
     const clearMarkers = () => {
       for (const marker of markersRef.current) marker.setMap(null);
@@ -645,9 +785,8 @@ function DriverRouteMap({
 
     const run = async () => {
       clearMarkers();
-      const destinoTexto = destino.trim();
       const destinoPos = await new Promise<google.maps.LatLngLiteral | null>((resolve) => {
-        geocoder.geocode({ address: destinoTexto }, (results, status) => {
+        geocoder.geocode({ address: destino }, (results, status) => {
           if (status !== "OK" || !results?.[0]?.geometry.location) {
             resolve(null);
             return;
@@ -678,7 +817,7 @@ function DriverRouteMap({
       service.route(
         {
           origin: origem,
-          destination: destinoTexto,
+          destination: destino,
           travelMode: window.google.maps.TravelMode.DRIVING,
         },
         (result, status) => {
@@ -735,7 +874,7 @@ function DriverRouteMap({
         <div className="flex items-start justify-between gap-3 rounded-xl border bg-card/95 p-3 shadow-sm">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">Navegação no app</p>
-            <p className="truncate text-sm font-medium">{destino ?? "Destino da entrega"}</p>
+            <p className="truncate text-sm font-medium">{destino}</p>
             <p className="mt-1 text-xs text-muted-foreground">
               {routeInfo ? `${routeInfo.distancia} • ${routeInfo.duracao}` : "Calculando rota..."}
             </p>
@@ -764,7 +903,7 @@ function DriverRouteMap({
         </div>
       ) : (
         <div className="space-y-2">
-          <Button className="h-12 w-full text-base" disabled={!destino} onClick={() => void iniciarNavegacao()}>
+          <Button className="h-12 w-full text-base" onClick={() => void iniciarNavegacao()}>
             <Maximize2 className="h-5 w-5" />
             Iniciar navegação no app
           </Button>
