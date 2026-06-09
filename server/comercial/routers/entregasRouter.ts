@@ -13,6 +13,11 @@ const podeUsarModoEntregador = comercialRequirePerfis(
   "LOGISTICA",
 );
 const paradaStatusSchema = z.enum(["PENDENTE", "EM_ROTA", "ENTREGUE", "PROBLEMA", "PULADA"]);
+const localizacaoEntregaSchema = z.object({
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  precisaoMetros: z.number().nullable().optional(),
+});
 
 type RegraOrdenacaoEntrega = {
   periodoEntrega?: string | null;
@@ -668,9 +673,7 @@ export const entregasRouter = router({
     .input(
       z.object({
         rotaId: z.string(),
-        latitude: z.number().min(-90).max(90),
-        longitude: z.number().min(-180).max(180),
-        precisaoMetros: z.number().nullable().optional(),
+        ...localizacaoEntregaSchema.shape,
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -711,6 +714,7 @@ export const entregasRouter = router({
         paradaId: z.string(),
         status: paradaStatusSchema,
         observacoesProblema: z.string().optional(),
+        localizacao: localizacaoEntregaSchema.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -722,6 +726,32 @@ export const entregasRouter = router({
       if (!parada) throw new TRPCError({ code: "NOT_FOUND", message: "Parada não encontrada." });
 
       const agora = new Date();
+      if (
+        input.localizacao &&
+        parada.rota.status === "EM_ROTA" &&
+        parada.rota.compartilhamentoAtivo
+      ) {
+        await ctx.prisma!.$transaction([
+          ctx.prisma!.rotaEntrega.update({
+            where: { id: parada.rotaId },
+            data: {
+              ultimaLatitude: input.localizacao.latitude,
+              ultimaLongitude: input.localizacao.longitude,
+              ultimaPrecisaoMetros: input.localizacao.precisaoMetros ?? null,
+              ultimaLocalizacaoEm: agora,
+            },
+          }),
+          ctx.prisma!.historicoLocalizacaoEntrega.create({
+            data: {
+              rotaId: parada.rotaId,
+              latitude: input.localizacao.latitude,
+              longitude: input.localizacao.longitude,
+              precisaoMetros: input.localizacao.precisaoMetros ?? null,
+            },
+          }),
+        ]);
+      }
+
       await ctx.prisma!.paradaEntrega.update({
         where: { id: parada.id },
         data: {

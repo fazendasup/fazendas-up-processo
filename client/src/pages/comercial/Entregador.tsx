@@ -25,6 +25,12 @@ import {
 } from "@/lib/entregas";
 import { cn } from "@/lib/utils";
 
+type LocalizacaoEntrega = {
+  latitude: number;
+  longitude: number;
+  precisaoMetros: number | null;
+};
+
 function useQueryDia() {
   const [location] = useLocation();
   const params = new URLSearchParams(location.split("?")[1] ?? "");
@@ -38,6 +44,7 @@ export function Entregador() {
   const watchIdRef = useRef<number | null>(null);
   const [aceitouLocalizacao, setAceitouLocalizacao] = useState(false);
   const [problemaTexto, setProblemaTexto] = useState("");
+  const [atualizandoStatus, setAtualizandoStatus] = useState(false);
 
   const roteiro = trpc.comercial.entregas.roteiro.useQuery({ dia: diaDate }, { refetchInterval: 15000 });
   const iniciar = trpc.comercial.entregas.iniciarRota.useMutation({
@@ -83,6 +90,46 @@ export function Entregador() {
       },
       { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 },
     );
+  };
+
+  const obterLocalizacaoFresca = async (): Promise<LocalizacaoEntrega | undefined> => {
+    if (!rota || rota.status !== "EM_ROTA" || !rota.compartilhamentoAtivo || !navigator.geolocation) return undefined;
+    return new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) =>
+          resolve({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            precisaoMetros: pos.coords.accuracy,
+          }),
+        () => {
+          toast.warning("Entrega atualizada, mas não consegui obter o GPS neste momento.");
+          resolve(undefined);
+        },
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
+      );
+    });
+  };
+
+  const atualizarStatusParada = async (
+    status: "ENTREGUE" | "PROBLEMA" | "PULADA",
+    observacoesProblema?: string,
+  ) => {
+    if (!paradaAtual) return;
+    setAtualizandoStatus(true);
+    try {
+      const localizacao = await obterLocalizacaoFresca();
+      await atualizarParada.mutateAsync({
+        paradaId: paradaAtual.id,
+        status,
+        observacoesProblema,
+        localizacao,
+      });
+    } catch {
+      // O onError da mutation já mostra a mensagem correta.
+    } finally {
+      setAtualizandoStatus(false);
+    }
   };
 
   useEffect(() => {
@@ -247,8 +294,8 @@ export function Entregador() {
 
               <Button
                 className="h-14 bg-emerald-600 text-base hover:bg-emerald-700"
-                disabled={atualizarParada.isPending}
-                onClick={() => atualizarParada.mutate({ paradaId: paradaAtual.id, status: "ENTREGUE" })}
+                disabled={atualizandoStatus || atualizarParada.isPending}
+                onClick={() => void atualizarStatusParada("ENTREGUE")}
               >
                 <CheckCircle2 className="h-5 w-5" />
                 Marcar entregue
@@ -263,14 +310,8 @@ export function Entregador() {
               <Button
                 className="h-12"
                 variant="destructive"
-                disabled={atualizarParada.isPending}
-                onClick={() =>
-                  atualizarParada.mutate({
-                    paradaId: paradaAtual.id,
-                    status: "PROBLEMA",
-                    observacoesProblema: problemaTexto,
-                  })
-                }
+                disabled={atualizandoStatus || atualizarParada.isPending}
+                onClick={() => void atualizarStatusParada("PROBLEMA", problemaTexto)}
               >
                 <AlertTriangle className="h-4 w-4" />
                 Problema na entrega
@@ -279,8 +320,8 @@ export function Entregador() {
               <Button
                 className="h-12"
                 variant="outline"
-                disabled={atualizarParada.isPending}
-                onClick={() => atualizarParada.mutate({ paradaId: paradaAtual.id, status: "PULADA" })}
+                disabled={atualizandoStatus || atualizarParada.isPending}
+                onClick={() => void atualizarStatusParada("PULADA")}
               >
                 <SkipForward className="h-4 w-4" />
                 Pular e ir para próxima
