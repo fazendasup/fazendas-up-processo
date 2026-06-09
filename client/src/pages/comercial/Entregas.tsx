@@ -35,7 +35,10 @@ import {
 import { cn } from "@/lib/utils";
 
 type RoteiroRota = {
+  id: string;
   status: string;
+  nome: string | null;
+  entregadorId: string | null;
   entregadorNome: string | null;
   localizacao: {
     latitude: number;
@@ -59,22 +62,31 @@ export function Entregas() {
   const [nomeRota, setNomeRota] = useState("");
   const [buscaCliente, setBuscaCliente] = useState("");
   const [clienteManualId, setClienteManualId] = useState("");
+  const [rotaSelecionadaId, setRotaSelecionadaId] = useState<string | null>(null);
 
   const roteiro = trpc.comercial.entregas.roteiro.useQuery(
-    { dia: diaDate },
+    { dia: diaDate, rotaId: rotaSelecionadaId ?? undefined },
     { refetchInterval: 60_000 },
   );
   const entregadores = trpc.comercial.entregas.listarEntregadores.useQuery();
   const [entregadorId, setEntregadorId] = useState("");
 
   useEffect(() => {
-    setNomeRota(roteiro.data?.rota?.nome ?? "");
-    setEntregadorId(roteiro.data?.rota?.entregadorId ?? "");
+    if (!rotaSelecionadaId && roteiro.data?.rota?.id) {
+      setRotaSelecionadaId(roteiro.data.rota.id);
+    }
+  }, [roteiro.data?.rota?.id, rotaSelecionadaId]);
+
+  useEffect(() => {
+    const rotaAtual = roteiro.data?.rota ?? null;
+    setNomeRota(rotaAtual?.nome ?? "");
+    setEntregadorId(rotaAtual?.entregadorId ?? "");
   }, [roteiro.data?.rota?.id, roteiro.data?.rota?.nome, roteiro.data?.rota?.entregadorId]);
 
   const criarManual = trpc.comercial.entregas.criarRotaManual.useMutation({
-    onSuccess: async () => {
+    onSuccess: async (data) => {
       toast.success("Rota manual criada.");
+      if (data.rota?.id) setRotaSelecionadaId(data.rota.id);
       await utils.comercial.entregas.roteiro.invalidate();
     },
     onError: (err) => toast.error(err.message),
@@ -114,8 +126,9 @@ export function Entregas() {
   });
 
   const gerar = trpc.comercial.entregas.gerarRoteiro.useMutation({
-    onSuccess: async () => {
-      toast.success("Roteiro gerado.");
+    onSuccess: async (data) => {
+      toast.success("Nova rota gerada.");
+      if (data.rota?.id) setRotaSelecionadaId(data.rota.id);
       await utils.comercial.entregas.roteiro.invalidate();
     },
     onError: (err) => toast.error(err.message),
@@ -138,6 +151,7 @@ export function Entregas() {
   });
 
   const rota = roteiro.data?.rota ?? null;
+  const rotas = roteiro.data?.rotas ?? [];
   const planejadas = roteiro.data?.planejadas ?? [];
   const paradas = rota?.paradas ?? [];
   const rotaEditavel = rota?.status === "PLANEJADA";
@@ -198,27 +212,25 @@ export function Entregas() {
               disabled={gerar.isPending || planejadas.length === 0}
             >
               <Route className="h-4 w-4" />
-              Gerar roteiro
+              Gerar nova rota
             </Button>
-            {!rota ? (
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  criarManual.mutate({
-                    dia: diaDate,
-                    nome: nomeRota || undefined,
-                    entregadorId: entregadorId || undefined,
-                  })
-                }
-                disabled={criarManual.isPending}
-              >
-                <Plus className="h-4 w-4" />
-                Criar rota manual
-              </Button>
-            ) : null}
+            <Button
+              variant="secondary"
+              onClick={() =>
+                criarManual.mutate({
+                  dia: diaDate,
+                  nome: nomeRota || undefined,
+                  entregadorId: entregadorId || undefined,
+                })
+              }
+              disabled={criarManual.isPending}
+            >
+              <Plus className="h-4 w-4" />
+              Criar rota vazia
+            </Button>
             {rota ? (
               <Button asChild variant="secondary">
-                <Link href={`/comercial/entregador?dia=${dia}`}>
+                <Link href={`/comercial/entregador?dia=${dia}&rota=${rota.id}`}>
                   <Smartphone className="h-4 w-4" />
                   Modo entregador
                 </Link>
@@ -236,7 +248,31 @@ export function Entregas() {
         }
       />
 
-      <LiveRouteMap rota={rota} />
+      <LiveRouteMap rotas={rotas} rotaSelecionadaId={rota?.id ?? null} />
+
+      {rotas.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Rotas do dia ({rotas.length})</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            {rotas.map((item) => (
+              <Button
+                key={item.id}
+                size="sm"
+                variant={item.id === rota?.id ? "default" : "outline"}
+                onClick={() => setRotaSelecionadaId(item.id)}
+              >
+                {item.nome ?? "Rota"}
+                {item.entregadorNome ? ` · ${item.entregadorNome}` : ""}
+                <Badge className="ml-2" variant="secondary">
+                  {labelStatusRota(item.status)}
+                </Badge>
+              </Button>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <Card>
@@ -504,7 +540,15 @@ export function Entregas() {
   );
 }
 
-function LiveRouteMap({ rota }: { rota: RoteiroRota | null }) {
+const CORES_ENTREGADOR = ["#059669", "#2563eb", "#d97706", "#7c3aed", "#db2777", "#0891b2"];
+
+function LiveRouteMap({
+  rotas,
+  rotaSelecionadaId,
+}: {
+  rotas: RoteiroRota[];
+  rotaSelecionadaId: string | null;
+}) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
   const geocodeCacheRef = useRef(new Map<string, google.maps.LatLngLiteral>());
@@ -548,59 +592,72 @@ function LiveRouteMap({ rota }: { rota: RoteiroRota | null }) {
       const bounds = new window.google!.maps.LatLngBounds();
       let hasBounds = false;
 
-      if (rota?.localizacao) {
-        const pos = {
-          lat: rota.localizacao.latitude,
-          lng: rota.localizacao.longitude,
-        };
-        addMarker(
-          pos,
-          rota.entregadorNome ?? "Entregador",
-          rota.entregadorNome
-            ? `Entregador: ${rota.entregadorNome}`
-            : "Localização atual do entregador",
-          "rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-xl ring-4 ring-emerald-200 whitespace-nowrap",
-        );
-        bounds.extend(pos);
-        hasBounds = true;
-      }
+      for (let rotaIndex = 0; rotaIndex < rotas.length; rotaIndex++) {
+        const rota = rotas[rotaIndex]!;
+        const cor = CORES_ENTREGADOR[rotaIndex % CORES_ENTREGADOR.length]!;
+        const destaque = rota.id === rotaSelecionadaId;
 
-      const paradas = rota?.paradas ?? [];
-      for (const parada of paradas) {
-        if (!parada.endereco?.trim()) continue;
-        const cacheKey = parada.endereco.trim();
-        let pos = geocodeCacheRef.current.get(cacheKey);
-        if (!pos) {
-          pos = await new Promise<google.maps.LatLngLiteral | null>((resolve) => {
-            geocoder.geocode({ address: cacheKey }, (results, status) => {
-              if (status !== "OK" || !results?.[0]?.geometry.location) {
-                resolve(null);
-                return;
-              }
-              const location = results[0].geometry.location;
-              resolve({ lat: location.lat(), lng: location.lng() });
-            });
-          }) ?? undefined;
-          if (pos) geocodeCacheRef.current.set(cacheKey, pos);
+        if (rota.localizacao) {
+          const pos = {
+            lat: rota.localizacao.latitude,
+            lng: rota.localizacao.longitude,
+          };
+          addMarker(
+            pos,
+            rota.entregadorNome ?? `R${rotaIndex + 1}`,
+            rota.entregadorNome
+              ? `Entregador: ${rota.entregadorNome}`
+              : "Localização do entregador",
+            `rounded-full px-4 py-2 text-xs font-bold text-white shadow-xl ring-4 whitespace-nowrap ${
+              destaque ? "ring-white" : "ring-transparent"
+            }`,
+          );
+          const marker = markersRef.current[markersRef.current.length - 1];
+          if (marker?.content instanceof HTMLElement) {
+            marker.content.style.backgroundColor = cor;
+          }
+          bounds.extend(pos);
+          hasBounds = true;
         }
-        if (cancelled || !pos) continue;
 
-        const statusClass =
-          parada.status === "ENTREGUE"
-            ? "bg-emerald-600"
-            : parada.status === "PROBLEMA"
-              ? "bg-rose-600"
-              : parada.status === "EM_ROTA"
-                ? "bg-blue-600"
-                : "bg-slate-700";
-        addMarker(
-          pos,
-          String(parada.ordem),
-          `${parada.ordem}. ${parada.clienteNome}`,
-          `flex h-8 w-8 items-center justify-center rounded-full ${statusClass} text-sm font-bold text-white shadow-md ring-2 ring-white`,
-        );
-        bounds.extend(pos);
-        hasBounds = true;
+        for (const parada of rota.paradas) {
+          if (!parada.endereco?.trim()) continue;
+          const cacheKey = parada.endereco.trim();
+          let pos = geocodeCacheRef.current.get(cacheKey);
+          if (!pos) {
+            pos = await new Promise<google.maps.LatLngLiteral | null>((resolve) => {
+              geocoder.geocode({ address: cacheKey }, (results, status) => {
+                if (status !== "OK" || !results?.[0]?.geometry.location) {
+                  resolve(null);
+                  return;
+                }
+                const location = results[0].geometry.location;
+                resolve({ lat: location.lat(), lng: location.lng() });
+              });
+            }) ?? undefined;
+            if (pos) geocodeCacheRef.current.set(cacheKey, pos);
+          }
+          if (cancelled || !pos) continue;
+
+          const statusClass =
+            parada.status === "ENTREGUE"
+              ? "bg-emerald-600"
+              : parada.status === "PROBLEMA"
+                ? "bg-rose-600"
+                : parada.status === "EM_ROTA"
+                  ? "bg-blue-600"
+                  : "bg-slate-700";
+          addMarker(
+            pos,
+            String(parada.ordem),
+            `${rota.entregadorNome ?? "Rota"} · ${parada.ordem}. ${parada.clienteNome}`,
+            `flex h-8 w-8 items-center justify-center rounded-full ${statusClass} text-sm font-bold text-white shadow-md ring-2 ${
+              destaque ? "ring-amber-300" : "ring-white"
+            }`,
+          );
+          bounds.extend(pos);
+          hasBounds = true;
+        }
       }
 
       if (!cancelled && hasBounds) {
@@ -614,7 +671,7 @@ function LiveRouteMap({ rota }: { rota: RoteiroRota | null }) {
       cancelled = true;
       clearMarkers();
     };
-  }, [map, rota]);
+  }, [map, rotas, rotaSelecionadaId]);
 
   return (
     <Card>
@@ -638,21 +695,14 @@ function LiveRouteMap({ rota }: { rota: RoteiroRota | null }) {
           <span className="rounded-full bg-emerald-600 px-2 py-1 font-semibold text-white">Entregue</span>
           <span className="rounded-full bg-rose-600 px-2 py-1 font-semibold text-white">Problema</span>
         </div>
-        {rota?.status === "CONCLUIDA" ? (
+        {rotas.some((r) => r.localizacao) ? (
           <p className="text-sm text-muted-foreground">
-            Rota concluída. O compartilhamento de localização foi encerrado.
-          </p>
-        ) : rota?.localizacao ? (
-          <p className="text-sm text-muted-foreground">
-            Localização do entregador atualizada às{" "}
-            {rota.localizacao.atualizadaEm
-              ? new Date(rota.localizacao.atualizadaEm).toLocaleTimeString("pt-BR")
-              : "—"}
-            . Este mapa consulta o sistema a cada 1 minuto.
+            Acompanhe todas as rotas ativas no mapa. O GPS de cada entregador atualiza a cada 1 minuto com o PWA
+            aberto.
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">
-            O GPS aparece quando o entregador inicia a rota e aceita compartilhar localização.
+            O GPS aparece quando o entregador inicia a rota e mantém o PWA aberto durante a entrega.
           </p>
         )}
       </CardContent>

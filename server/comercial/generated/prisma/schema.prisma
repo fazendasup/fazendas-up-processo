@@ -388,7 +388,7 @@ model PedidoOperacional {
 
 model RotaEntrega {
   id                    String            @id @default(cuid())
-  dataEntrega           DateTime          @unique @map("data_entrega")
+  dataEntrega           DateTime          @map("data_entrega")
   nome                  String?
   status                RotaEntregaStatus @default(PLANEJADA)
   entregadorId          String?           @map("entregador_id")

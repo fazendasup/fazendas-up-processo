@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -14,6 +14,7 @@ import { PageHeader } from "@/components/comercial/ui/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { MapView } from "@/components/Map";
 import { trpc } from "@/lib/trpc";
 import {
   diaOperacionalInicial,
@@ -31,22 +32,29 @@ type LocalizacaoEntrega = {
   precisaoMetros: number | null;
 };
 
-function useQueryDia() {
+function useQueryParams() {
   const [location] = useLocation();
   const params = new URLSearchParams(location.split("?")[1] ?? "");
-  return params.get("dia") || diaOperacionalInicial();
+  return {
+    dia: params.get("dia") || diaOperacionalInicial(),
+    rotaId: params.get("rota"),
+  };
 }
 
 export function Entregador() {
-  const dia = useQueryDia();
+  const { dia, rotaId } = useQueryParams();
   const diaDate = useMemo(() => new Date(`${dia}T12:00:00`), [dia]);
   const utils = trpc.useUtils();
-  const watchIdRef = useRef<number | null>(null);
+  const gpsErroAvisadoRef = useRef(false);
   const [aceitouLocalizacao, setAceitouLocalizacao] = useState(false);
   const [problemaTexto, setProblemaTexto] = useState("");
   const [atualizandoStatus, setAtualizandoStatus] = useState(false);
+  const [localizacaoAtual, setLocalizacaoAtual] = useState<LocalizacaoEntrega | null>(null);
 
-  const roteiro = trpc.comercial.entregas.roteiro.useQuery({ dia: diaDate }, { refetchInterval: 15000 });
+  const roteiro = trpc.comercial.entregas.roteiro.useQuery(
+    { dia: diaDate, rotaId: rotaId ?? undefined },
+    { refetchInterval: 15000 },
+  );
   const iniciar = trpc.comercial.entregas.iniciarRota.useMutation({
     onSuccess: async () => {
       toast.success("Rota iniciada.");
@@ -70,6 +78,9 @@ export function Entregador() {
   });
 
   const rota = roteiro.data?.rota ?? null;
+  const rotas = roteiro.data?.rotas ?? [];
+  const rotaRef = useRef(rota);
+  rotaRef.current = rota;
   const paradaAtual =
     rota?.status === "EM_ROTA"
       ? (rota.paradas.find((p) => p.status === "EM_ROTA") ??
@@ -80,6 +91,11 @@ export function Entregador() {
     if (!rota || rota.status !== "EM_ROTA" || !rota.compartilhamentoAtivo || !navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        setLocalizacaoAtual({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          precisaoMetros: pos.coords.accuracy,
+        });
         atualizarLocalizacao.mutate({
           rotaId: rota.id,
           latitude: pos.coords.latitude,
@@ -98,12 +114,15 @@ export function Entregador() {
     if (!rota || rota.status !== "EM_ROTA" || !rota.compartilhamentoAtivo || !navigator.geolocation) return undefined;
     return new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
-        (pos) =>
-          resolve({
+        (pos) => {
+          const localizacao = {
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
             precisaoMetros: pos.coords.accuracy,
-          }),
+          };
+          setLocalizacaoAtual(localizacao);
+          resolve(localizacao);
+        },
         () => {
           toast.warning("Entrega atualizada, mas não consegui obter o GPS neste momento.");
           resolve(undefined);
@@ -134,52 +153,58 @@ export function Entregador() {
     }
   };
 
+  /** Envia GPS a cada 60s enquanto a rota está ativa e o app visível (PWA aberto). */
   useEffect(() => {
-    if (!rota || rota.status !== "EM_ROTA" || !rota.compartilhamentoAtivo) {
-      if (watchIdRef.current != null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
-      return;
-    }
+    if (!rota || rota.status !== "EM_ROTA" || !rota.compartilhamentoAtivo) return;
     if (!navigator.geolocation) return;
 
-    let ultimoEnvio = 0;
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      (pos) => {
-        const agora = Date.now();
-        if (agora - ultimoEnvio < 60_000) return;
-        ultimoEnvio = agora;
-        atualizarLocalizacao.mutate({
-          rotaId: rota.id,
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          precisaoMetros: pos.coords.accuracy,
-        });
-      },
-      () => {
-        toast.error("Não foi possível obter a localização.");
-      },
-      { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 },
-    );
+    gpsErroAvisadoRef.current = false;
 
-    return () => {
-      if (watchIdRef.current != null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
+    const enviarPeriodicamente = () => {
+      const atual = rotaRef.current;
+      if (!atual || atual.status !== "EM_ROTA" || !atual.compartilhamentoAtivo) return;
+      if (document.visibilityState !== "visible") return;
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          gpsErroAvisadoRef.current = false;
+          setLocalizacaoAtual({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            precisaoMetros: pos.coords.accuracy,
+          });
+          atualizarLocalizacao.mutate({
+            rotaId: atual.id,
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            precisaoMetros: pos.coords.accuracy,
+          });
+        },
+        () => {
+          if (!gpsErroAvisadoRef.current) {
+            gpsErroAvisadoRef.current = true;
+            toast.error("Não foi possível obter a localização. Verifique se o GPS está ativo.");
+          }
+        },
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 },
+      );
     };
-  }, [rota?.id, rota?.status, rota?.compartilhamentoAtivo]);
 
-  useEffect(() => {
+    enviarPeriodicamente();
+    const intervalId = window.setInterval(enviarPeriodicamente, 60_000);
+
     const onVisibility = () => {
       if (document.visibilityState === "visible") {
-        enviarLocalizacaoAtual();
+        enviarPeriodicamente();
       }
     };
     document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, [rota?.id, rota?.status, rota?.compartilhamentoAtivo]);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [rota?.id, rota?.status, rota?.compartilhamentoAtivo, atualizarLocalizacao]);
 
   const mapsUrl = linkGoogleMaps(paradaAtual?.endereco);
   const telUrl = linkTelefone(paradaAtual?.telefoneWhatsapp);
@@ -193,8 +218,30 @@ export function Entregador() {
       <PageHeader
         kicker="Modo entregador"
         title="Entregas de hoje"
-        subtitle="Use esta tela no celular. Navegue pelo Google Maps e volte aqui para marcar a entrega."
+        subtitle="Use esta tela no celular. O mapa interno mantém o PWA aberto para enviar GPS durante a rota."
       />
+
+      {rotas.length > 1 ? (
+        <Card>
+          <CardContent className="flex flex-wrap gap-2 pt-6">
+            {rotas.map((item) => (
+              <Button
+                key={item.id}
+                size="sm"
+                variant={item.id === rota?.id ? "default" : "outline"}
+                asChild
+              >
+                <Link href={`/comercial/entregador?dia=${dia}&rota=${item.id}`}>
+                  {item.nome ?? "Rota"}
+                  <Badge className="ml-2" variant="secondary">
+                    {labelStatusRota(item.status)}
+                  </Badge>
+                </Link>
+              </Button>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {rota ? (
         <div className="flex flex-wrap gap-2">
@@ -268,12 +315,18 @@ export function Entregador() {
               <Badge className="mt-3">{labelStatusParada(paradaAtual.status)}</Badge>
             </div>
 
+            <DriverRouteMap
+              destino={paradaAtual.endereco}
+              localizacaoAtual={localizacaoAtual}
+              onAtualizarLocalizacao={enviarLocalizacaoAtual}
+            />
+
             <div className="grid gap-3">
               <Button className="h-14 text-base" disabled={!mapsUrl} asChild={Boolean(mapsUrl)}>
                 {mapsUrl ? (
                   <a href={mapsUrl} target="_blank" rel="noreferrer" onClick={enviarLocalizacaoAtual}>
                     <Navigation className="h-5 w-5" />
-                    Abrir entrega atual no Google Maps
+                    Abrir no Google Maps (opcional)
                   </a>
                 ) : (
                   <>
@@ -382,6 +435,169 @@ export function Entregador() {
           </CardContent>
         </Card>
       ) : null}
+    </div>
+  );
+}
+
+function DriverRouteMap({
+  destino,
+  localizacaoAtual,
+  onAtualizarLocalizacao,
+}: {
+  destino: string | null | undefined;
+  localizacaoAtual: LocalizacaoEntrega | null;
+  onAtualizarLocalizacao: () => void;
+}) {
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const directionsRef = useRef<google.maps.DirectionsRenderer | null>(null);
+  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
+
+  useEffect(() => {
+    if (!map || !window.google?.maps || !destino?.trim()) return;
+
+    const clearMarkers = () => {
+      for (const marker of markersRef.current) marker.map = null;
+      markersRef.current = [];
+    };
+
+    const markerContent = (label: string, className: string) => {
+      const el = document.createElement("div");
+      el.className = className;
+      el.textContent = label;
+      return el;
+    };
+
+    const addMarker = (position: google.maps.LatLngLiteral, label: string, title: string, className: string) => {
+      const marker = new window.google!.maps.marker.AdvancedMarkerElement({
+        map,
+        position,
+        title,
+        content: markerContent(label, className),
+      });
+      markersRef.current.push(marker);
+    };
+
+    const renderer =
+      directionsRef.current ??
+      new window.google.maps.DirectionsRenderer({
+        map,
+        suppressMarkers: true,
+        preserveViewport: false,
+        polylineOptions: {
+          strokeColor: "#059669",
+          strokeOpacity: 0.95,
+          strokeWeight: 6,
+        },
+      });
+    directionsRef.current = renderer;
+    renderer.setMap(map);
+    const clearDirections = () => {
+      renderer.setMap(null);
+      renderer.setMap(map);
+    };
+
+    let cancelled = false;
+    const service = new window.google.maps.DirectionsService();
+    const geocoder = new window.google.maps.Geocoder();
+
+    const run = async () => {
+      clearMarkers();
+      const destinoTexto = destino.trim();
+      const destinoPos = await new Promise<google.maps.LatLngLiteral | null>((resolve) => {
+        geocoder.geocode({ address: destinoTexto }, (results, status) => {
+          if (status !== "OK" || !results?.[0]?.geometry.location) {
+            resolve(null);
+            return;
+          }
+          const location = results[0].geometry.location;
+          resolve({ lat: location.lat(), lng: location.lng() });
+        });
+      });
+
+      if (cancelled) return;
+
+      if (destinoPos) {
+        addMarker(
+          destinoPos,
+          "Entrega",
+          "Destino da entrega",
+          "rounded-full bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-md ring-2 ring-white",
+        );
+      }
+
+      if (!localizacaoAtual) {
+        clearDirections();
+        if (destinoPos) {
+          map.setCenter(destinoPos);
+          map.setZoom(15);
+        }
+        return;
+      }
+
+      const origem = { lat: localizacaoAtual.latitude, lng: localizacaoAtual.longitude };
+      addMarker(
+        origem,
+        "Você",
+        "Sua posição atual",
+        "rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-md ring-2 ring-emerald-100",
+      );
+
+      service.route(
+        {
+          origin: origem,
+          destination: destinoTexto,
+          travelMode: window.google.maps.TravelMode.DRIVING,
+        },
+        (result, status) => {
+          if (cancelled) return;
+          if (status === "OK" && result) {
+            renderer.setDirections(result);
+            return;
+          }
+          clearDirections();
+          const bounds = new window.google!.maps.LatLngBounds();
+          bounds.extend(origem);
+          if (destinoPos) bounds.extend(destinoPos);
+          map.fitBounds(bounds, 64);
+        },
+      );
+    };
+
+    void run();
+
+    return () => {
+      cancelled = true;
+      clearMarkers();
+    };
+  }, [destino, localizacaoAtual?.latitude, localizacaoAtual?.longitude, map]);
+
+  useEffect(() => {
+    return () => {
+      directionsRef.current?.setMap(null);
+      directionsRef.current = null;
+      for (const marker of markersRef.current) marker.map = null;
+      markersRef.current = [];
+    };
+  }, []);
+
+  return (
+    <div className="space-y-2">
+      <MapView
+        className="h-[300px] overflow-hidden rounded-xl border border-border/70"
+        initialCenter={{ lat: -3.119, lng: -60.0217 }}
+        initialZoom={13}
+        onMapReady={setMap}
+      />
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+        <span>
+          {localizacaoAtual
+            ? "Rota dentro do PWA. Mantenha esta tela aberta para enviar GPS a cada minuto."
+            : "Toque em atualizar posição para traçar a rota dentro do PWA."}
+        </span>
+        <Button size="sm" variant="outline" onClick={onAtualizarLocalizacao}>
+          Atualizar posição
+        </Button>
+      </div>
     </div>
   );
 }

@@ -36294,11 +36294,11 @@ export namespace Prisma {
 
   export type RotaEntregaWhereUniqueInput = Prisma.AtLeast<{
     id?: string
-    dataEntrega?: Date | string
     tokenPublico?: string
     AND?: RotaEntregaWhereInput | RotaEntregaWhereInput[]
     OR?: RotaEntregaWhereInput[]
     NOT?: RotaEntregaWhereInput | RotaEntregaWhereInput[]
+    dataEntrega?: DateTimeFilter<"RotaEntrega"> | Date | string
     nome?: StringNullableFilter<"RotaEntrega"> | string | null
     status?: EnumRotaEntregaStatusFilter<"RotaEntrega"> | $Enums.RotaEntregaStatus
     entregadorId?: StringNullableFilter<"RotaEntrega"> | string | null
@@ -36319,7 +36319,7 @@ export namespace Prisma {
     atualizadoPor?: XOR<UsuarioNullableScalarRelationFilter, UsuarioWhereInput> | null
     paradas?: ParadaEntregaListRelationFilter
     localizacoes?: HistoricoLocalizacaoEntregaListRelationFilter
-  }, "id" | "dataEntrega" | "tokenPublico">
+  }, "id" | "tokenPublico">
 
   export type RotaEntregaOrderByWithAggregationInput = {
     id?: SortOrder

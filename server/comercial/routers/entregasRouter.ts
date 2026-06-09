@@ -219,37 +219,81 @@ function paradaParaResposta(parada: {
   };
 }
 
-async function carregarRoteiro(prisma: ReturnType<typeof getComercialPrisma>, dia: Date) {
-  const [rota, planejadas] = await Promise.all([
-    prisma.rotaEntrega.findUnique({
-      where: { dataEntrega: inicioDia(dia) },
-      include: {
-        paradas: {
-          orderBy: [{ ordem: "asc" }, { criadoEm: "asc" }],
-          include: { cliente: { include: { regraComercial: true } } },
-        },
-        entregador: { select: { id: true, nome: true, email: true } },
+const rotaInclude = {
+  paradas: {
+    orderBy: [{ ordem: "asc" as const }, { criadoEm: "asc" as const }],
+    include: { cliente: { include: { regraComercial: true } } },
+  },
+  entregador: { select: { id: true, nome: true, email: true } },
+};
+
+type RotaCarregada = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getComercialPrisma>["rotaEntrega"]["findFirst"]>>
+> & {
+  paradas: Array<Parameters<typeof paradaParaResposta>[0]>;
+  entregador?: { id: string; nome: string; email: string | null } | null;
+};
+
+function rotaParaResposta(rota: RotaCarregada) {
+  return {
+    id: rota.id,
+    dataEntrega: rota.dataEntrega,
+    nome: rota.nome,
+    status: rota.status,
+    entregadorId: rota.entregadorId,
+    entregadorNome: rota.entregadorNome ?? rota.entregador?.nome ?? null,
+    compartilhamentoAtivo: rota.compartilhamentoAtivo,
+    iniciadoEm: rota.iniciadoEm,
+    encerradoEm: rota.encerradoEm,
+    localizacao: localizacaoRota(rota),
+    paradas: rota.paradas.map(paradaParaResposta),
+  };
+}
+
+async function idsClientesEmRotasAtivas(prisma: ReturnType<typeof getComercialPrisma>, dia: Date) {
+  const paradas = await prisma.paradaEntrega.findMany({
+    where: {
+      rota: {
+        dataEntrega: { gte: inicioDia(dia), lte: fimDia(dia) },
+        status: { in: ["PLANEJADA", "EM_ROTA"] },
       },
+    },
+    select: { contaAzulCustomerId: true },
+  });
+  return new Set(paradas.map((p) => p.contaAzulCustomerId));
+}
+
+async function carregarRoteiro(
+  prisma: ReturnType<typeof getComercialPrisma>,
+  dia: Date,
+  opts?: { rotaId?: string | null; entregadorId?: string | null },
+) {
+  const [rotasDb, planejadasTodas, idsEmRotasAtivas] = await Promise.all([
+    prisma.rotaEntrega.findMany({
+      where: {
+        dataEntrega: { gte: inicioDia(dia), lte: fimDia(dia) },
+        ...(opts?.entregadorId ? { entregadorId: opts.entregadorId } : {}),
+      },
+      include: rotaInclude,
+      orderBy: [{ status: "asc" }, { criadoEm: "asc" }],
     }),
     clientesPlanejados(prisma, dia),
+    idsClientesEmRotasAtivas(prisma, dia),
   ]);
 
+  const rotas = rotasDb.map((r) => rotaParaResposta(r as RotaCarregada));
+  const selecionada =
+    (opts?.rotaId ? rotas.find((r) => r.id === opts.rotaId) : null) ??
+    rotas.find((r) => r.status === "EM_ROTA") ??
+    rotas.find((r) => r.status === "PLANEJADA") ??
+    rotas[0] ??
+    null;
+
+  const planejadas = planejadasTodas.filter((p) => !idsEmRotasAtivas.has(p.contaAzulCustomerId));
+
   return {
-    rota: rota
-      ? {
-          id: rota.id,
-          dataEntrega: rota.dataEntrega,
-          nome: rota.nome,
-          status: rota.status,
-          entregadorId: rota.entregadorId,
-          entregadorNome: rota.entregadorNome ?? rota.entregador?.nome ?? null,
-          compartilhamentoAtivo: rota.compartilhamentoAtivo,
-          iniciadoEm: rota.iniciadoEm,
-          encerradoEm: rota.encerradoEm,
-          localizacao: localizacaoRota(rota),
-          paradas: rota.paradas.map(paradaParaResposta),
-        }
-      : null,
+    rota: selecionada,
+    rotas,
     planejadas,
   };
 }
@@ -273,8 +317,15 @@ async function sincronizarPedidosEntregue(
 export const entregasRouter = router({
   roteiro: comercialProcedure
     .use(podeUsarModoEntregador)
-    .input(z.object({ dia: z.coerce.date() }))
-    .query(async ({ ctx, input }) => carregarRoteiro(ctx.prisma!, input.dia)),
+    .input(z.object({ dia: z.coerce.date(), rotaId: z.string().optional() }))
+    .query(async ({ ctx, input }) => {
+      const entregadorFiltro =
+        ctx.comercialUsuario?.perfil === "LOGISTICA" ? ctx.comercialUsuario.id : undefined;
+      return carregarRoteiro(ctx.prisma!, input.dia, {
+        rotaId: input.rotaId,
+        entregadorId: entregadorFiltro,
+      });
+    }),
 
   listarEntregadores: comercialProcedure
     .use(podeGerenciarEntregas)
@@ -302,15 +353,16 @@ export const entregasRouter = router({
       const usuario = ctx.comercialUsuario;
       if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED" });
       const dataEntrega = inicioDia(input.dia);
-      const existente = await ctx.prisma!.rotaEntrega.findUnique({ where: { dataEntrega } });
-      if (existente) {
-        throw new TRPCError({ code: "CONFLICT", message: "Já existe uma rota para este dia." });
-      }
       const entregador = await resolverEntregador(ctx.prisma!, input.entregadorId);
-      await ctx.prisma!.rotaEntrega.create({
+      const rotasDoDia = await ctx.prisma!.rotaEntrega.count({
+        where: { dataEntrega: { gte: inicioDia(input.dia), lte: fimDia(input.dia) } },
+      });
+      const nova = await ctx.prisma!.rotaEntrega.create({
         data: {
           dataEntrega,
-          nome: input.nome?.trim() || `Rota manual ${dataEntrega.toLocaleDateString("pt-BR")}`,
+          nome:
+            input.nome?.trim() ||
+            `Rota ${rotasDoDia + 1} · ${dataEntrega.toLocaleDateString("pt-BR")}`,
           entregadorId: entregador.entregadorId,
           entregadorNome: entregador.entregadorNome,
           tokenPublico: tokenPublico("rota"),
@@ -318,7 +370,7 @@ export const entregasRouter = router({
           atualizadoPorId: usuario.id,
         },
       });
-      return carregarRoteiro(ctx.prisma!, input.dia);
+      return carregarRoteiro(ctx.prisma!, input.dia, { rotaId: nova.id });
     }),
 
   atualizarRota: comercialProcedure
@@ -396,6 +448,19 @@ export const entregasRouter = router({
       if (jaExiste > 0) {
         throw new TRPCError({ code: "CONFLICT", message: "Cliente já está nesta rota." });
       }
+      const emOutraRota = await ctx.prisma!.paradaEntrega.findFirst({
+        where: {
+          contaAzulCustomerId: input.contaAzulCustomerId,
+          rotaId: { not: rota.id },
+          rota: {
+            dataEntrega: { gte: inicioDia(rota.dataEntrega), lte: fimDia(rota.dataEntrega) },
+            status: { in: ["PLANEJADA", "EM_ROTA"] },
+          },
+        },
+      });
+      if (emOutraRota) {
+        throw new TRPCError({ code: "CONFLICT", message: "Cliente já está em outra rota ativa do dia." });
+      }
       if (pedidosProgramados === 0) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -412,7 +477,7 @@ export const entregasRouter = router({
           tokenPublico: tokenPublico("parada"),
         },
       });
-      return carregarRoteiro(ctx.prisma!, rota.dataEntrega);
+      return carregarRoteiro(ctx.prisma!, rota.dataEntrega, { rotaId: rota.id });
     }),
 
   removerParada: comercialProcedure
@@ -457,95 +522,51 @@ export const entregasRouter = router({
       const usuario = ctx.comercialUsuario;
       if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED" });
 
-      const planejadas = await clientesPlanejados(ctx.prisma!, input.dia);
+      const idsEmRotasAtivas = await idsClientesEmRotasAtivas(ctx.prisma!, input.dia);
+      const planejadas = (await clientesPlanejados(ctx.prisma!, input.dia)).filter(
+        (p) => !idsEmRotasAtivas.has(p.contaAzulCustomerId),
+      );
       if (planejadas.length === 0) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Não há entregas planejadas para este dia." });
-      }
-
-      let entregadorNome: string | null = null;
-      if (input.entregadorId) {
-        const entregador = await ctx.prisma!.usuario.findUnique({
-          where: { id: input.entregadorId },
-          select: { nome: true, status: true },
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Não há clientes disponíveis para uma nova rota neste dia.",
         });
-        if (!entregador || entregador.status !== "ATIVO") {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Entregador inválido." });
-        }
-        entregadorNome = entregador.nome;
       }
 
+      const entregador = await resolverEntregador(ctx.prisma!, input.entregadorId);
       const dataEntrega = inicioDia(input.dia);
-      const existente = await ctx.prisma!.rotaEntrega.findUnique({
-        where: { dataEntrega },
-        include: { paradas: true },
+      const rotasDoDia = await ctx.prisma!.rotaEntrega.count({
+        where: { dataEntrega: { gte: inicioDia(input.dia), lte: fimDia(input.dia) } },
       });
 
-      if (existente?.status === "EM_ROTA") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "A rota já está em andamento. Encerre antes de regenerar." });
-      }
+      const rota = await ctx.prisma!.rotaEntrega.create({
+        data: {
+          dataEntrega,
+          nome:
+            input.nome?.trim() ||
+            `Rota ${rotasDoDia + 1} · ${dataEntrega.toLocaleDateString("pt-BR")}`,
+          entregadorId: entregador.entregadorId,
+          entregadorNome: entregador.entregadorNome,
+          tokenPublico: tokenPublico("rota"),
+          criadoPorId: usuario.id,
+          atualizadoPorId: usuario.id,
+        },
+      });
 
-      const paradasExistentes = new Map(existente?.paradas.map((p) => [p.contaAzulCustomerId, p]) ?? []);
-
-      const rota = existente
-        ? await ctx.prisma!.rotaEntrega.update({
-            where: { id: existente.id },
-            data: {
-              nome: input.nome?.trim() || existente.nome,
-              entregadorId: input.entregadorId ?? existente.entregadorId,
-              entregadorNome: entregadorNome ?? existente.entregadorNome,
-              atualizadoPorId: usuario.id,
-              status: existente.status === "CONCLUIDA" ? "PLANEJADA" : existente.status,
-            },
-          })
-        : await ctx.prisma!.rotaEntrega.create({
-            data: {
-              dataEntrega,
-              nome: input.nome?.trim() || `Rota ${dataEntrega.toLocaleDateString("pt-BR")}`,
-              entregadorId: input.entregadorId ?? null,
-              entregadorNome,
-              tokenPublico: tokenPublico("rota"),
-              criadoPorId: usuario.id,
-              atualizadoPorId: usuario.id,
-            },
-          });
-
-      const idsMantidos = new Set<string>();
       for (let index = 0; index < planejadas.length; index++) {
         const planejada = planejadas[index]!;
-        const anterior = paradasExistentes.get(planejada.contaAzulCustomerId);
-        if (anterior) {
-          idsMantidos.add(anterior.id);
-          await ctx.prisma!.paradaEntrega.update({
-            where: { id: anterior.id },
-            data: {
-              ordem: index + 1,
-              clienteId: planejada.clienteId,
-            },
-          });
-        } else {
-          await ctx.prisma!.paradaEntrega.create({
-            data: {
-              rotaId: rota.id,
-              contaAzulCustomerId: planejada.contaAzulCustomerId,
-              clienteId: planejada.clienteId,
-              ordem: index + 1,
-              tokenPublico: tokenPublico("parada"),
-            },
-          });
-        }
-      }
-
-      if (existente) {
-        await ctx.prisma!.paradaEntrega.deleteMany({
-          where: {
+        await ctx.prisma!.paradaEntrega.create({
+          data: {
             rotaId: rota.id,
-            id: { notIn: Array.from(idsMantidos) },
-            status: { in: ["PENDENTE", "PULADA"] },
+            contaAzulCustomerId: planejada.contaAzulCustomerId,
+            clienteId: planejada.clienteId,
+            ordem: index + 1,
+            tokenPublico: tokenPublico("parada"),
           },
         });
       }
 
-      return carregarRoteiro(ctx.prisma!, input.dia);
+      return carregarRoteiro(ctx.prisma!, input.dia, { rotaId: rota.id });
     }),
 
   salvarOrdem: comercialProcedure
