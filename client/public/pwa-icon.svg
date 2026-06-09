@@ -2,16 +2,24 @@
   <rect width="512" height="512" rx="112" fill="#059669"/>
   <path
     fill="#ffffff"
-    d="M391 116c-92 6-176 38-228 91-50 50-67 115-43 171 58 18 121-1 170-49 54-53 87-134 101-213Z"
+    d="M103 369C116 237 246 105 414 84c-17 169-149 299-311 285Z"
   />
   <path
     stroke="#059669"
     stroke-linecap="round"
-    stroke-width="24"
-    d="M135 377c66-78 142-130 226-184"
+    stroke-width="26"
+    d="M123 350c84-96 164-170 267-243"
   />
   <path
-    fill="#ffffff"
-    d="M138 373c-22 13-39 29-51 48-6 9 1 21 12 21h44c10 0 18-8 18-18v-36c0-13-12-21-23-15Z"
+    stroke="#059669"
+    stroke-linecap="round"
+    stroke-width="18"
+    d="M208 262c43-3 82-16 116-39M169 313c34 5 67 1 99-12M258 208c31-9 59-25 84-47"
+  />
+  <path
+    stroke="#ffffff"
+    stroke-linecap="round"
+    stroke-width="34"
+    d="M86 407c22-23 42-42 60-59"
   />
 </svg>
