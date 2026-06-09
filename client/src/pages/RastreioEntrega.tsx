@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRoute } from "wouter";
 import { MapPin, Package, Truck } from "lucide-react";
 import { MapView } from "@/components/Map";
+import { createMapMarker } from "@/lib/googleMapsLoader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
@@ -151,23 +152,13 @@ function EntregadorLiveMap({
   useEffect(() => {
     if (!map || !window.google?.maps) return;
 
-    const content = document.createElement("div");
-    content.className =
-      "rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold text-white shadow-lg ring-4 ring-emerald-200";
-    content.textContent = "Entregador";
-
-    const marker = new window.google.maps.marker.AdvancedMarkerElement({
-      map,
-      position,
-      title: `Entregador - ${clienteNome}`,
-      content,
-    });
+    const marker = createMapMarker(map, position, `Entregador - ${clienteNome}`, "#059669");
 
     map.setCenter(position);
     map.setZoom(15);
 
     return () => {
-      marker.map = null;
+      marker.setMap(null);
     };
   }, [clienteNome, map, position]);
 

@@ -8,6 +8,7 @@ import {
   MapPin,
   Navigation,
   Phone,
+  RefreshCw,
   SkipForward,
   Truck,
   X,
@@ -17,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapView } from "@/components/Map";
+import { createMapMarker } from "@/lib/googleMapsLoader";
 import { trpc } from "@/lib/trpc";
 import {
   diaOperacionalInicial,
@@ -43,6 +45,59 @@ function useQueryParams() {
   };
 }
 
+function useMobilePullToRefresh(onRefresh: () => Promise<void>, disabled = false) {
+  const startYRef = useRef<number | null>(null);
+  const pullDistanceRef = useRef(0);
+  const [pullDistance, setPullDistance] = useState(0);
+
+  useEffect(() => {
+    const reset = () => {
+      startYRef.current = null;
+      pullDistanceRef.current = 0;
+      setPullDistance(0);
+    };
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (disabled || window.scrollY > 0) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("[data-no-pull-refresh='true']")) return;
+      startYRef.current = event.touches[0]?.clientY ?? null;
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (disabled || startYRef.current === null || window.scrollY > 0) return;
+      const currentY = event.touches[0]?.clientY;
+      if (currentY === undefined) return;
+
+      const distance = Math.max(0, Math.min(120, currentY - startYRef.current));
+      pullDistanceRef.current = distance;
+      setPullDistance(distance);
+    };
+
+    const onTouchEnd = () => {
+      const shouldRefresh = pullDistanceRef.current >= 80;
+      reset();
+      if (shouldRefresh && !disabled) {
+        void onRefresh();
+      }
+    };
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("touchend", onTouchEnd);
+    window.addEventListener("touchcancel", reset);
+
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchcancel", reset);
+    };
+  }, [disabled, onRefresh]);
+
+  return pullDistance;
+}
+
 export function Entregador() {
   const { dia, rotaId } = useQueryParams();
   const diaDate = useMemo(() => new Date(`${dia}T12:00:00`), [dia]);
@@ -51,6 +106,7 @@ export function Entregador() {
   const [aceitouLocalizacao, setAceitouLocalizacao] = useState(false);
   const [problemaTexto, setProblemaTexto] = useState("");
   const [atualizandoStatus, setAtualizandoStatus] = useState(false);
+  const [atualizandoRoteiro, setAtualizandoRoteiro] = useState(false);
   const [localizacaoAtual, setLocalizacaoAtual] = useState<LocalizacaoEntrega | null>(null);
 
   const roteiro = trpc.comercial.entregas.roteiro.useQuery(
@@ -89,6 +145,19 @@ export function Entregador() {
         rota.paradas.find((p) => p.status === "PENDENTE") ??
         null)
       : null;
+
+  const atualizarRoteiro = useCallback(async () => {
+    setAtualizandoRoteiro(true);
+    try {
+      await roteiro.refetch();
+      toast.success("Roteiro atualizado.");
+    } catch {
+      toast.error("Não foi possível atualizar o roteiro agora.");
+    } finally {
+      setAtualizandoRoteiro(false);
+    }
+  }, [roteiro]);
+  const pullDistance = useMobilePullToRefresh(atualizarRoteiro, atualizandoRoteiro);
 
   const registrarLocalizacao = useCallback(
     (rotaIdAtual: string, coords: GeolocationCoordinates) => {
@@ -226,11 +295,30 @@ export function Entregador() {
 
   return (
     <div className="mx-auto max-w-xl space-y-5 pb-24">
+      {(pullDistance > 12 || atualizandoRoteiro) ? (
+        <div
+          className="fixed left-1/2 top-[max(0.75rem,env(safe-area-inset-top))] z-50 -translate-x-1/2 rounded-full border bg-background/95 px-4 py-2 text-xs font-medium text-muted-foreground shadow-md backdrop-blur"
+          style={{ transform: `translate(-50%, ${Math.min(pullDistance / 3, 28)}px)` }}
+        >
+          {atualizandoRoteiro ? "Atualizando roteiro..." : pullDistance >= 80 ? "Solte para atualizar" : "Puxe para atualizar"}
+        </div>
+      ) : null}
+
       <PageHeader
         kicker="Modo entregador"
         title="Entregas de hoje"
         subtitle="Use esta tela no celular. O mapa interno mantém o PWA aberto para enviar GPS durante a rota."
       />
+
+      <Button
+        className="w-full"
+        variant="outline"
+        disabled={atualizandoRoteiro}
+        onClick={() => void atualizarRoteiro()}
+      >
+        <RefreshCw className={cn("h-4 w-4", atualizandoRoteiro && "animate-spin")} />
+        Atualizar roteiro
+      </Button>
 
       {rotas.length > 1 ? (
         <Card>
@@ -464,7 +552,7 @@ function DriverRouteMap({
   const [routeInfo, setRouteInfo] = useState<{ distancia: string; duracao: string } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const directionsRef = useRef<google.maps.DirectionsRenderer | null>(null);
-  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
+  const markersRef = useRef<google.maps.Marker[]>([]);
 
   const redimensionarMapa = useCallback(() => {
     if (!map || !window.google?.maps) return;
@@ -519,24 +607,12 @@ function DriverRouteMap({
     if (!map || !window.google?.maps || !destino?.trim()) return;
 
     const clearMarkers = () => {
-      for (const marker of markersRef.current) marker.map = null;
+      for (const marker of markersRef.current) marker.setMap(null);
       markersRef.current = [];
     };
 
-    const markerContent = (label: string, className: string) => {
-      const el = document.createElement("div");
-      el.className = className;
-      el.textContent = label;
-      return el;
-    };
-
-    const addMarker = (position: google.maps.LatLngLiteral, label: string, title: string, className: string) => {
-      const marker = new window.google!.maps.marker.AdvancedMarkerElement({
-        map,
-        position,
-        title,
-        content: markerContent(label, className),
-      });
+    const addMarker = (position: google.maps.LatLngLiteral, title: string, color: string) => {
+      const marker = createMapMarker(map, position, title, color);
       markersRef.current.push(marker);
     };
 
@@ -581,12 +657,7 @@ function DriverRouteMap({
       if (cancelled) return;
 
       if (destinoPos) {
-        addMarker(
-          destinoPos,
-          "Entrega",
-          "Destino da entrega",
-          "rounded-full bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-md ring-2 ring-white",
-        );
+        addMarker(destinoPos, "Destino da entrega", "#2563eb");
       }
 
       if (!localizacaoAtual) {
@@ -599,12 +670,7 @@ function DriverRouteMap({
       }
 
       const origem = { lat: localizacaoAtual.latitude, lng: localizacaoAtual.longitude };
-      addMarker(
-        origem,
-        "Você",
-        "Sua posição atual",
-        "rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-md ring-2 ring-emerald-100",
-      );
+      addMarker(origem, "Sua posição atual", "#059669");
 
       service.route(
         {
@@ -648,7 +714,7 @@ function DriverRouteMap({
     return () => {
       directionsRef.current?.setMap(null);
       directionsRef.current = null;
-      for (const marker of markersRef.current) marker.map = null;
+      for (const marker of markersRef.current) marker.setMap(null);
       markersRef.current = [];
     };
   }, []);
@@ -656,6 +722,7 @@ function DriverRouteMap({
   return (
     <div
       ref={containerRef}
+      data-no-pull-refresh="true"
       className={cn(
         "space-y-2 bg-background",
         navegando && "fixed inset-0 z-50 flex flex-col space-y-3 p-3 pt-[max(0.75rem,env(safe-area-inset-top))]",

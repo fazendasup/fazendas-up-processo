@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { MapView } from "@/components/Map";
+import { createMapMarker } from "@/lib/googleMapsLoader";
 import { trpc } from "@/lib/trpc";
 import {
   diaOperacionalInicial,
@@ -550,7 +551,7 @@ function LiveRouteMap({
   rotaSelecionadaId: string | null;
 }) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
-  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
+  const markersRef = useRef<google.maps.Marker[]>([]);
   const geocodeCacheRef = useRef(new Map<string, google.maps.LatLngLiteral>());
 
   useEffect(() => {
@@ -560,29 +561,12 @@ function LiveRouteMap({
     const geocoder = new window.google.maps.Geocoder();
 
     const clearMarkers = () => {
-      for (const marker of markersRef.current) marker.map = null;
+      for (const marker of markersRef.current) marker.setMap(null);
       markersRef.current = [];
     };
 
-    const markerContent = (label: string, className: string) => {
-      const el = document.createElement("div");
-      el.className = className;
-      el.textContent = label;
-      return el;
-    };
-
-    const addMarker = (
-      position: google.maps.LatLngLiteral,
-      label: string,
-      title: string,
-      className: string,
-    ) => {
-      const marker = new window.google!.maps.marker.AdvancedMarkerElement({
-        map,
-        position,
-        title,
-        content: markerContent(label, className),
-      });
+    const addMarker = (position: google.maps.LatLngLiteral, title: string, color: string) => {
+      const marker = createMapMarker(map, position, title, color);
       markersRef.current.push(marker);
       return marker;
     };
@@ -604,18 +588,9 @@ function LiveRouteMap({
           };
           addMarker(
             pos,
-            rota.entregadorNome ?? `R${rotaIndex + 1}`,
-            rota.entregadorNome
-              ? `Entregador: ${rota.entregadorNome}`
-              : "Localização do entregador",
-            `rounded-full px-4 py-2 text-xs font-bold text-white shadow-xl ring-4 whitespace-nowrap ${
-              destaque ? "ring-white" : "ring-transparent"
-            }`,
+            rota.entregadorNome ? `Entregador: ${rota.entregadorNome}` : "Localização do entregador",
+            cor,
           );
-          const marker = markersRef.current[markersRef.current.length - 1];
-          if (marker?.content instanceof HTMLElement) {
-            marker.content.style.backgroundColor = cor;
-          }
           bounds.extend(pos);
           hasBounds = true;
         }
@@ -639,21 +614,18 @@ function LiveRouteMap({
           }
           if (cancelled || !pos) continue;
 
-          const statusClass =
+          const statusColor =
             parada.status === "ENTREGUE"
-              ? "bg-emerald-600"
+              ? "#059669"
               : parada.status === "PROBLEMA"
-                ? "bg-rose-600"
+                ? "#e11d48"
                 : parada.status === "EM_ROTA"
-                  ? "bg-blue-600"
-                  : "bg-slate-700";
+                  ? "#2563eb"
+                  : "#334155";
           addMarker(
             pos,
-            String(parada.ordem),
             `${rota.entregadorNome ?? "Rota"} · ${parada.ordem}. ${parada.clienteNome}`,
-            `flex h-8 w-8 items-center justify-center rounded-full ${statusClass} text-sm font-bold text-white shadow-md ring-2 ${
-              destaque ? "ring-amber-300" : "ring-white"
-            }`,
+            statusColor,
           );
           bounds.extend(pos);
           hasBounds = true;
