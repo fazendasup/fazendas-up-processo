@@ -80,25 +80,49 @@ export function isMobileMapClient(): boolean {
   return window.matchMedia("(max-width: 900px), (pointer: coarse)").matches;
 }
 
+/** Embed sem Maps Embed API — funciona melhor no Safari mobile. */
 export function buildMapsEmbedUrl(options: {
   destino: string;
   localizacao?: { latitude: number; longitude: number } | null;
 }): string {
   const destino = options.destino.trim();
-  const apiKey = googleMapsApiKey();
   const localizacao = options.localizacao;
-
-  if (apiKey && localizacao) {
-    const origin = `${localizacao.latitude},${localizacao.longitude}`;
-    return `https://www.google.com/maps/embed/v1/directions?key=${encodeURIComponent(apiKey)}&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destino)}&mode=driving`;
-  }
 
   if (localizacao) {
     const origin = `${localizacao.latitude},${localizacao.longitude}`;
     return `https://maps.google.com/maps?saddr=${encodeURIComponent(origin)}&daddr=${encodeURIComponent(destino)}&output=embed`;
   }
 
-  return `https://www.google.com/maps?q=${encodeURIComponent(destino)}&output=embed`;
+  return `https://maps.google.com/maps?q=${encodeURIComponent(destino)}&output=embed`;
+}
+
+/** Imagem estática da rota — mais confiável que iframe no iOS. */
+export function buildMapsStaticUrl(options: {
+  destino: string;
+  localizacao?: { latitude: number; longitude: number } | null;
+  width?: number;
+  height?: number;
+}): string | null {
+  const apiKey = googleMapsApiKey();
+  if (!apiKey) return null;
+
+  const width = options.width ?? 640;
+  const height = options.height ?? 360;
+  const params = new URLSearchParams({
+    size: `${width}x${height}`,
+    scale: "2",
+    maptype: "roadmap",
+    key: apiKey,
+  });
+
+  if (options.localizacao) {
+    const origem = `${options.localizacao.latitude},${options.localizacao.longitude}`;
+    params.append("markers", `color:0x059669|label:V|${origem}`);
+  }
+
+  params.append("markers", `color:0x2563eb|label:D|${options.destino.trim()}`);
+
+  return `https://maps.googleapis.com/maps/api/staticmap?${params.toString()}`;
 }
 
 export function createMapMarker(

@@ -648,31 +648,36 @@ function MobileDriverRouteMap({
       <EmbeddedMap
         destino={destino}
         localizacao={localizacaoAtual}
-        className={navegando ? "min-h-[55vh] flex-1" : "h-[320px]"}
+        navUrl={navUrl}
+        className={navegando ? "min-h-[45vh] flex-1" : "h-[320px]"}
       />
+
+      {navUrl ? (
+        <Button className="h-14 w-full text-base" asChild>
+          <a href={navUrl} target="_blank" rel="noreferrer" onClick={onIniciarNavegacao}>
+            <Navigation className="h-5 w-5" />
+            {navegando ? "Continuar rota no Google Maps" : "Iniciar rota no Google Maps"}
+          </a>
+        </Button>
+      ) : null}
 
       {navegando ? (
         <div className="space-y-2 rounded-xl border bg-card/95 p-3 text-xs text-muted-foreground shadow-sm">
           <p>GPS automático ativo enquanto esta tela permanecer aberta.</p>
-          {navUrl ? (
-            <Button className="h-11 w-full" variant="secondary" asChild>
-              <a href={navUrl} target="_blank" rel="noreferrer">
-                <Navigation className="h-4 w-4" />
-                Abrir rota no Google Maps
-              </a>
-            </Button>
-          ) : null}
+          <Button className="h-10 w-full" variant="outline" onClick={() => void sairNavegacao()}>
+            Voltar para entregas
+          </Button>
         </div>
       ) : (
         <div className="space-y-2">
-          <Button className="h-12 w-full text-base" onClick={() => void iniciarNavegacao()}>
+          <Button className="h-12 w-full text-base" variant="outline" onClick={() => void iniciarNavegacao()}>
             <Maximize2 className="h-5 w-5" />
-            Iniciar navegação no app
+            Expandir mapa na tela
           </Button>
           <p className="text-xs text-muted-foreground">
             {localizacaoAtual
-              ? "GPS automático ativo. Mantenha o PWA aberto para enviar posição durante a rota."
-              : "Ao iniciar a navegação, o app solicitará sua posição e mostrará a rota automaticamente."}
+              ? "GPS automático ativo. Para navegação com voz, use o botão do Google Maps acima."
+              : "Ao iniciar, o app pedirá sua posição e mostrará a rota automaticamente."}
           </p>
         </div>
       )}
