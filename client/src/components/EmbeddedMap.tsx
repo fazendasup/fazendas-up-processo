@@ -15,22 +15,33 @@ type Localizacao = {
 
 type MapMode = "static" | "directions" | "simple" | "fallback";
 
+function initialMode(options: {
+  preferNavigation: boolean;
+  staticUrl: string | null;
+  directionsEmbedUrl: string | null;
+}): MapMode {
+  if (options.preferNavigation) {
+    return options.directionsEmbedUrl ? "directions" : "simple";
+  }
+  if (options.staticUrl) return "static";
+  return options.directionsEmbedUrl ? "directions" : "simple";
+}
+
 export function EmbeddedMap({
   destino,
   localizacao,
   className,
   title = "Mapa da entrega",
   navUrl,
+  preferNavigation = false,
 }: {
   destino: string;
   localizacao?: Localizacao | null;
   className?: string;
   title?: string;
   navUrl?: string | null;
+  preferNavigation?: boolean;
 }) {
-  const [mode, setMode] = useState<MapMode>("static");
-  const [staticLoaded, setStaticLoaded] = useState(false);
-
   const staticUrl = useMemo(
     () => buildMapsStaticUrl({ destino, localizacao, width: 640, height: 400 }),
     [destino, localizacao?.latitude, localizacao?.longitude],
@@ -44,10 +55,15 @@ export function EmbeddedMap({
     [destino, localizacao?.latitude, localizacao?.longitude],
   );
 
+  const [mode, setMode] = useState<MapMode>(() =>
+    initialMode({ preferNavigation, staticUrl, directionsEmbedUrl }),
+  );
+  const [staticLoaded, setStaticLoaded] = useState(false);
+
   useEffect(() => {
-    setMode(staticUrl ? "static" : directionsEmbedUrl ? "directions" : "simple");
+    setMode(initialMode({ preferNavigation, staticUrl, directionsEmbedUrl }));
     setStaticLoaded(false);
-  }, [staticUrl, directionsEmbedUrl, destino, localizacao?.latitude, localizacao?.longitude]);
+  }, [preferNavigation, staticUrl, directionsEmbedUrl, destino, localizacao?.latitude, localizacao?.longitude]);
 
   useEffect(() => {
     if (mode !== "static") return;
@@ -55,9 +71,9 @@ export function EmbeddedMap({
       if (!staticLoaded) {
         setMode(directionsEmbedUrl ? "directions" : "simple");
       }
-    }, 6000);
+    }, preferNavigation ? 1500 : 3000);
     return () => window.clearTimeout(timeoutId);
-  }, [mode, staticLoaded, directionsEmbedUrl]);
+  }, [mode, staticLoaded, directionsEmbedUrl, preferNavigation]);
 
   useEffect(() => {
     if (mode !== "directions" && mode !== "simple") return;
@@ -67,9 +83,9 @@ export function EmbeddedMap({
         if (current === "simple") return "fallback";
         return current;
       });
-    }, 6000);
+    }, preferNavigation ? 8000 : 6000);
     return () => window.clearTimeout(timeoutId);
-  }, [mode, directionsEmbedUrl, simpleEmbedUrl]);
+  }, [mode, directionsEmbedUrl, simpleEmbedUrl, preferNavigation]);
 
   const embedUrl = mode === "directions" ? directionsEmbedUrl : mode === "simple" ? simpleEmbedUrl : null;
 
@@ -86,7 +102,6 @@ export function EmbeddedMap({
           alt={title}
           className="h-full w-full object-cover"
           loading="eager"
-          referrerPolicy="no-referrer-when-downgrade"
           onLoad={() => setStaticLoaded(true)}
           onError={() => setMode(directionsEmbedUrl ? "directions" : "simple")}
         />
@@ -123,9 +138,9 @@ export function EmbeddedMap({
         </div>
       ) : null}
 
-      {mode !== "fallback" && mode !== "static" ? (
+      {(mode === "directions" || mode === "simple") && !preferNavigation ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/35 to-transparent px-3 py-2 text-[11px] text-white">
-          Carregando mapa...
+          Carregando rota...
         </div>
       ) : null}
     </div>
