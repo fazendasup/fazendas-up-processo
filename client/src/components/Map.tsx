@@ -87,25 +87,65 @@ declare global {
   }
 }
 
+let mapsLoadPromise: Promise<boolean> | null = null;
+
+async function waitForMapsReady(timeoutMs = 15_000): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (window.google?.maps?.importLibrary) {
+      try {
+        await window.google.maps.importLibrary("maps");
+        await Promise.all([
+          window.google.maps.importLibrary("marker"),
+          window.google.maps.importLibrary("geocoding"),
+          window.google.maps.importLibrary("geometry"),
+        ]);
+        return Boolean(window.google.maps.Map);
+      } catch (error) {
+        console.error("Google Maps importLibrary failed", error);
+        return false;
+      }
+    }
+    await new Promise((resolve) => window.setTimeout(resolve, 50));
+  }
+  return false;
+}
+
 function loadMapScript() {
   const apiKey = googleMapsApiKey();
   if (!apiKey) return Promise.resolve(false);
-  if (window.google?.maps) return Promise.resolve(true);
-  return new Promise<boolean>(resolve => {
+  if (window.google?.maps?.Map) return Promise.resolve(true);
+  if (mapsLoadPromise) return mapsLoadPromise;
+
+  mapsLoadPromise = new Promise<boolean>((resolve) => {
+    const existing = document.querySelector<HTMLScriptElement>("script[data-fazendas-maps-loader]");
+    if (existing) {
+      void waitForMapsReady().then((ready) => {
+        if (!ready) mapsLoadPromise = null;
+        resolve(ready);
+      });
+      return;
+    }
+
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly&libraries=marker,places,geocoding,geometry,routes`;
+    script.dataset.fazendasMapsLoader = "1";
     script.async = true;
-    script.crossOrigin = "anonymous";
-    script.onload = () => {
-      resolve(Boolean(window.google?.maps));
-      script.remove(); // Clean up immediately
-    };
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly&loading=async`;
     script.onerror = () => {
       console.error("Failed to load Google Maps script");
+      mapsLoadPromise = null;
       resolve(false);
+    };
+    script.onload = () => {
+      void waitForMapsReady().then((ready) => {
+        if (!ready) mapsLoadPromise = null;
+        resolve(ready);
+      });
     };
     document.head.appendChild(script);
   });
+
+  return mapsLoadPromise;
 }
 
 interface MapViewProps {
@@ -127,10 +167,10 @@ export function MapView({
 
   const init = usePersistFn(async () => {
     const loaded = await loadMapScript();
-    if (!loaded || !window.google?.maps) {
+    if (!loaded || !window.google?.maps?.Map) {
       setLoadError(
         googleMapsApiKey()
-          ? "Não foi possível carregar o Google Maps. Verifique a chave e as APIs Maps JavaScript + Geocoding."
+          ? "Não foi possível carregar o Google Maps. Verifique no Google Cloud: Maps JavaScript API e Geocoding API ativas, faturamento habilitado e referrer https://app.fazendasup.com.br/* liberado na chave."
           : "Google Maps não configurado. Defina GOOGLE_MAPS_API_KEY (ou VITE_FRONTEND_FORGE_API_KEY) no Railway.",
       );
       return;
@@ -139,17 +179,24 @@ export function MapView({
       console.error("Map container not found");
       return;
     }
-    map.current = new window.google.maps.Map(mapContainer.current, {
-      zoom: initialZoom,
-      center: initialCenter,
-      mapTypeControl: true,
-      fullscreenControl: true,
-      zoomControl: true,
-      streetViewControl: true,
-      mapId: "DEMO_MAP_ID",
-    });
-    if (onMapReady) {
-      onMapReady(map.current);
+    try {
+      map.current = new window.google.maps.Map(mapContainer.current, {
+        zoom: initialZoom,
+        center: initialCenter,
+        mapTypeControl: true,
+        fullscreenControl: true,
+        zoomControl: true,
+        streetViewControl: true,
+        mapId: "DEMO_MAP_ID",
+      });
+      if (onMapReady) {
+        onMapReady(map.current);
+      }
+    } catch (error) {
+      console.error("Google Maps init failed", error);
+      setLoadError(
+        "O Google Maps carregou, mas não iniciou o mapa. Confira restrições da chave (referrer do domínio) e APIs habilitadas no Google Cloud.",
+      );
     }
   });
 
