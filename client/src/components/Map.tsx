@@ -14,6 +14,7 @@ declare global {
 
 interface MapViewProps {
   className?: string;
+  fallbackUrl?: string | null;
   initialCenter?: google.maps.LatLngLiteral;
   initialZoom?: number;
   onMapReady?: (map: google.maps.Map) => void;
@@ -21,6 +22,7 @@ interface MapViewProps {
 
 export function MapView({
   className,
+  fallbackUrl,
   initialCenter = { lat: 37.7749, lng: -122.4194 },
   initialZoom = 12,
   onMapReady,
@@ -106,8 +108,20 @@ export function MapView({
         </div>
       ) : null}
       {loadError ? (
-        <div className="absolute inset-0 z-20 flex items-center justify-center rounded-xl border border-dashed border-border/70 bg-muted/90 px-4 text-center text-sm text-muted-foreground">
-          {loadError}
+        <div className="absolute inset-0 z-20 overflow-hidden rounded-xl border border-dashed border-border/70 bg-muted/90">
+          {fallbackUrl ? (
+            <iframe
+              className="h-full w-full border-0"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              src={fallbackUrl}
+              title="Mapa"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center px-4 text-center text-sm text-muted-foreground">
+              {loadError}
+            </div>
+          )}
         </div>
       ) : null}
     </div>

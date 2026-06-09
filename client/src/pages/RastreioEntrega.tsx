@@ -165,6 +165,7 @@ function EntregadorLiveMap({
   return (
     <MapView
       className="h-72 overflow-hidden rounded-xl border border-border/70"
+      fallbackUrl={`https://www.google.com/maps?q=${latitude},${longitude}&z=15&output=embed`}
       initialCenter={position}
       initialZoom={15}
       onMapReady={setMap}

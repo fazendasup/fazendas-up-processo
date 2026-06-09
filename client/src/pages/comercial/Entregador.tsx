@@ -553,6 +553,9 @@ function DriverRouteMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const directionsRef = useRef<google.maps.DirectionsRenderer | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
+  const fallbackMapUrl = destino?.trim()
+    ? `https://www.google.com/maps?q=${encodeURIComponent(destino.trim())}&output=embed`
+    : null;
 
   const redimensionarMapa = useCallback(() => {
     if (!map || !window.google?.maps) return;
@@ -748,6 +751,7 @@ function DriverRouteMap({
           "overflow-hidden rounded-xl border border-border/70",
           navegando ? "min-h-0 flex-1" : "h-[300px]",
         )}
+        fallbackUrl={fallbackMapUrl}
         initialCenter={{ lat: -3.119, lng: -60.0217 }}
         initialZoom={13}
         onMapReady={setMap}

@@ -64,7 +64,7 @@ export function loadGoogleMapsScript(): Promise<boolean> {
     script.dataset.fazendasMapsLoader = "1";
     script.async = true;
     script.defer = true;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly&libraries=geocoding,geometry&callback=__fazendasUpMapsReady`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly&callback=__fazendasUpMapsReady`;
     script.onerror = () => {
       window.clearTimeout(timeoutId);
       finish(false);
