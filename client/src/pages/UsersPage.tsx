@@ -25,7 +25,7 @@ import { motion } from 'framer-motion';
 import { useRole } from '@/hooks/useRole';
 
 type GlobalAppRole = 'user' | 'admin' | 'platform_admin' | 'comercial' | 'visitante';
-type RoleOption = GlobalAppRole | 'promoter' | 'lider_colheita';
+type RoleOption = GlobalAppRole | 'promoter' | 'lider_colheita' | 'logistica';
 type ProjetoRole = 'admin' | 'operador' | 'visualizador';
 type UserProjectAccess = { id: number; nome: string; role: string };
 type ManageableProject = {
@@ -37,12 +37,13 @@ type ManageableProject = {
 };
 
 function appRoleFromOption(role: RoleOption): GlobalAppRole {
-  return role === 'promoter' || role === 'lider_colheita' ? 'comercial' : role;
+  return role === 'promoter' || role === 'lider_colheita' || role === 'logistica' ? 'comercial' : role;
 }
 
-function comercialPerfilFromOption(role: RoleOption): 'PROMOTER' | 'LIDER_COLHEITA' | 'COMERCIAL' | undefined {
+function comercialPerfilFromOption(role: RoleOption): 'PROMOTER' | 'LIDER_COLHEITA' | 'LOGISTICA' | 'COMERCIAL' | undefined {
   if (role === 'promoter') return 'PROMOTER';
   if (role === 'lider_colheita') return 'LIDER_COLHEITA';
+  if (role === 'logistica') return 'LOGISTICA';
   if (role === 'comercial') return 'COMERCIAL';
   return undefined;
 }
@@ -50,6 +51,7 @@ function comercialPerfilFromOption(role: RoleOption): 'PROMOTER' | 'LIDER_COLHEI
 function roleOptionForUser(user: { role: string; comercialPerfil?: string | null }): RoleOption {
   if (user.role === 'comercial' && user.comercialPerfil === 'PROMOTER') return 'promoter';
   if (user.role === 'comercial' && user.comercialPerfil === 'LIDER_COLHEITA') return 'lider_colheita';
+  if (user.role === 'comercial' && user.comercialPerfil === 'LOGISTICA') return 'logistica';
   if (['user', 'admin', 'platform_admin', 'comercial', 'visitante'].includes(user.role)) {
     return user.role as GlobalAppRole;
   }
@@ -163,6 +165,8 @@ function UsersContent() {
       msg = 'Alterar para Promoter? Terá acesso somente a Pedidos e Acompanhamento de avarias nos projetos vinculados.';
     } else if (next === 'lider_colheita') {
       msg = 'Alterar para Líder de colheita? Terá acesso somente a Pedidos e Acompanhamento de avarias, sem números de vendas.';
+    } else if (next === 'logistica') {
+      msg = 'Alterar para Logística? Terá acesso somente ao modo entregador das entregas.';
     } else if (next === 'visitante') {
       msg = 'Alterar para Visitante? Poderá visualizar o projeto vinculado e extrair relatórios, mas não editar nem acionar operações.';
     } else {
@@ -350,6 +354,7 @@ function UsersContent() {
                       <SelectItem value="comercial">Comercial</SelectItem>
                       <SelectItem value="promoter">Promoter</SelectItem>
                       <SelectItem value="lider_colheita">Líder de colheita</SelectItem>
+                      <SelectItem value="logistica">Logística</SelectItem>
                       {isPlatformAdmin && (
                         <SelectItem value="platform_admin">Equipa da plataforma</SelectItem>
                       )}
@@ -444,6 +449,13 @@ function UsersContent() {
             <div>
               <p className="text-xs font-semibold">Promoter</p>
               <p className="text-[10px] text-muted-foreground">Pedidos e acompanhamento de avarias</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Briefcase className="w-4 h-4 text-teal-700" />
+            <div>
+              <p className="text-xs font-semibold">Logística</p>
+              <p className="text-[10px] text-muted-foreground">Somente modo entregador das entregas</p>
             </div>
           </div>
           {isPlatformAdmin && (
@@ -600,6 +612,7 @@ function UsersContent() {
                         <SelectItem value="comercial">Comercial</SelectItem>
                         <SelectItem value="promoter">Promoter</SelectItem>
                         <SelectItem value="lider_colheita">Líder de colheita</SelectItem>
+                        <SelectItem value="logistica">Logística</SelectItem>
                         {isPlatformAdmin && (
                           <SelectItem value="platform_admin">Equipa da plataforma</SelectItem>
                         )}

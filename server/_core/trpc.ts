@@ -341,6 +341,13 @@ const requireComercialModule = t.middleware(async ({ ctx, next, path }) => {
   ) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Líder de colheita acessa somente Pedidos e Acompanhamento de avarias." });
   }
+  if (
+    comercialUsuario.perfil === "LOGISTICA" &&
+    path !== "comercial.pedidos.me" &&
+    !path.startsWith("comercial.entregas")
+  ) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Logística acessa somente o modo entregador." });
+  }
   let comercialEnv;
   try {
     comercialEnv = getComercialEnv();

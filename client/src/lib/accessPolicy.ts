@@ -7,6 +7,7 @@ export type ComercialPerfil =
   | "OPERACOES"
   | "COMERCIAL"
   | "GERENTE_COMERCIAL"
+  | "LOGISTICA"
   | "ADMIN";
 
 export function isPromoterPerfil(perfil: string | null | undefined): boolean {
@@ -35,11 +36,15 @@ export function dashboardPathForUserRole(role: string | null | undefined): strin
 }
 
 export function homeForCommercialPerfil(perfil: string | null | undefined): string {
+  if (perfil === "LOGISTICA") return "/comercial/entregador";
   if (isLiderColheitaPerfil(perfil)) return "/comercial/pedidos";
   return isPromoterPerfil(perfil) ? "/comercial/acompanhamento-avarias" : "/comercial/dashboard";
 }
 
 export function canAccessCommercialPath(path: string, perfil: string | null | undefined): boolean {
+  if (perfil === "LOGISTICA") {
+    return path === "/comercial/entregador" || path.startsWith("/comercial/entregador/");
+  }
   if (isLiderColheitaPerfil(perfil)) {
     return path === "/comercial/acompanhamento-avarias" || path === "/comercial/pedidos";
   }
@@ -58,6 +63,8 @@ export function canAccessCommercialPath(path: string, perfil: string | null | un
       "/estoque",
       "/comercial/estoque-vivo",
       "/comercial/pedidos",
+      "/comercial/entregas",
+      "/comercial/entregador",
       "/comercial/acompanhamento-avarias",
       "/comercial/varejo",
       "/custos-producao",
@@ -74,6 +81,7 @@ export function roleLabel(role: AppUserRole | string | null | undefined, comerci
   if (role === "platform_admin") return "Equipe FUP";
   if (isOperationalAdminRole(role)) return "Administrador";
   if (role === "comercial") {
+    if (comercialPerfil === "LOGISTICA") return "Logística";
     if (isLiderColheitaPerfil(comercialPerfil)) return "Líder de colheita";
     return isPromoterPerfil(comercialPerfil) ? "Promoter" : "Comercial";
   }

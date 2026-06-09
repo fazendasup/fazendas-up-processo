@@ -65,6 +65,13 @@ export const ENV = {
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   frontendForgeApiUrl: process.env.VITE_FRONTEND_FORGE_API_URL ?? "",
   frontendForgeApiKey: process.env.VITE_FRONTEND_FORGE_API_KEY ?? "",
+  /** Chave Google Maps — lida em runtime (Railway) sem depender do build Vite. */
+  googleMapsApiKey: (
+    process.env.GOOGLE_MAPS_API_KEY ??
+    process.env.VITE_GOOGLE_MAPS_API_KEY ??
+    process.env.VITE_FRONTEND_FORGE_API_KEY ??
+    ""
+  ).trim(),
 
   /**
    * MQTT (opcional) — ver `docs/MQTT-INTEGRACAO.md` e `server/_core/mqtt.ts`.

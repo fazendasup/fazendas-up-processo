@@ -86,6 +86,10 @@ type ItemEnriquecido = {
   diasAteEsgotar: number | null;
   dataEsgotamentoIso: string | null;
   dataCompraSugeridaIso: string | null;
+  consumoAplicadoAteIso: string | null;
+  sugestaoCompraQuantidade: number;
+  estoqueAlvoQuantidade: number | null;
+  valorCompraSugerida: number | null;
   status: string;
   valorLinha: number;
   custoConsumoDiario: number | null;
@@ -97,6 +101,36 @@ const fmtMoney = (n: number) =>
 
 const fmtNum = (n: number | null | undefined, dec = 1) =>
   n == null || !Number.isFinite(n) ? "—" : n.toLocaleString("pt-BR", { maximumFractionDigits: dec });
+
+function renderCompraSugeridaCell(
+  row: Pick<
+    ItemEnriquecido,
+    "dataCompraSugeridaIso" | "sugestaoCompraQuantidade" | "valorCompraSugerida" | "unidadeTipo"
+  >,
+) {
+  const data = row.dataCompraSugeridaIso
+    ? format(parseISO(row.dataCompraSugeridaIso), "dd MMM yy", { locale: ptBR })
+    : null;
+  const volume =
+    row.sugestaoCompraQuantidade > 0 ? (
+      <div className="font-semibold text-foreground mt-0.5">
+        {fmtNum(row.sugestaoCompraQuantidade, 2)} {labelUnidadeEstoque(row.unidadeTipo)}
+      </div>
+    ) : null;
+  const valor =
+    row.sugestaoCompraQuantidade > 0 && row.valorCompraSugerida != null ? (
+      <div className="text-[9px] text-muted-foreground">{fmtMoney(row.valorCompraSugerida)}</div>
+    ) : null;
+
+  if (!data && !volume) return "—";
+  return (
+    <div>
+      {data && <div>{data}</div>}
+      {volume}
+      {valor}
+    </div>
+  );
+}
 
 function collectIsoDates(
   rows: ItemEnriquecido[],
@@ -194,6 +228,8 @@ function toExportRow(r: ItemEnriquecido): LinhaEstoqueExport {
     status: r.status,
     valorLinha: r.valorLinha,
     consumoMedioDiario: r.consumoMedioDiario,
+    sugestaoCompraQuantidade: r.sugestaoCompraQuantidade,
+    valorCompraSugerida: r.valorCompraSugerida,
   };
 }
 
@@ -296,6 +332,17 @@ export default function EstoquePage() {
     onSuccess: async () => {
       await utils.estoque.invalidate();
       toast.success("Item removido");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const aplicarConsumoMut = trpc.estoque.aplicarConsumoDiario.useMutation({
+    onSuccess: async (result) => {
+      await utils.estoque.invalidate();
+      toast.success(
+        result.atualizados > 0
+          ? `Baixa diária aplicada em ${result.atualizados} item(ns).`
+          : "Estoque já estava atualizado para hoje.",
+      );
     },
     onError: (e) => toast.error(e.message),
   });
@@ -433,7 +480,9 @@ export default function EstoquePage() {
                 Valor total
               </div>
               <p className="text-xl font-bold mt-1">{fmtMoney(kpis.valorTotalInventario)}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{kpis.totalItens} itens</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {kpis.totalItens} itens · use baixa diária para atualizar consumo
+              </p>
             </div>
             <div className="surface-panel p-4 border border-border/60 rounded-xl">
               <div className="flex items-center gap-2 text-[10px] font-semibold uppercase text-muted-foreground">
@@ -456,12 +505,14 @@ export default function EstoquePage() {
             <div className="surface-panel p-4 border border-border/60 rounded-xl">
               <div className="flex items-center gap-2 text-[10px] font-semibold uppercase text-muted-foreground">
                 <Boxes className="w-3.5 h-3.5" />
-                Cobertura média
+                Compra sugerida
               </div>
               <p className="text-xl font-bold mt-1">
-                {kpis.diasMedioCobertura != null ? `${fmtNum(kpis.diasMedioCobertura, 0)} dias` : "—"}
+                {fmtMoney(kpis.valorCompraSugerida)}
               </p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">Média de dias até esgotar (itens com uso)</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {kpis.itensComCompraSugerida} itens com volume sugerido
+              </p>
             </div>
           </div>
         )}
@@ -485,10 +536,22 @@ export default function EstoquePage() {
                 </TabsTrigger>
               ))}
             </TabsList>
-            <Button size="sm" className="gap-1.5 shrink-0" onClick={openCreate}>
-              <Plus className="w-4 h-4" />
-              Novo item
-            </Button>
+            <div className="flex flex-wrap gap-2 shrink-0">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                disabled={aplicarConsumoMut.isPending}
+                onClick={() => aplicarConsumoMut.mutate()}
+              >
+                <TrendingDown className="w-4 h-4" />
+                Atualizar baixa diária
+              </Button>
+              <Button size="sm" className="gap-1.5" onClick={openCreate}>
+                <Plus className="w-4 h-4" />
+                Novo item
+              </Button>
+            </div>
           </div>
 
           <TabsContent value={TAB_GERAL} className="space-y-4 mt-0">
@@ -605,14 +668,14 @@ export default function EstoquePage() {
                     <TableRow>
                       <TableHead className="w-[9%] px-1.5">Categoria</TableHead>
                       <TableHead className="w-[14%] px-1.5">Item</TableHead>
-                      <TableHead className="w-[10%] px-1.5 text-right">Qtd</TableHead>
+                      <TableHead className="w-[9%] px-1.5 text-right">Saldo atual</TableHead>
                       <TableHead className="w-[6%] px-1.5 text-right">Mín.</TableHead>
                       <TableHead className="w-[8%] px-1.5">Uso / freq.</TableHead>
                       <TableHead className="w-[6%] px-1.5 text-right">Dias cob.</TableHead>
                       <TableHead className="w-[5%] px-1.5">Entrega</TableHead>
-                      <TableHead className="w-[7%] px-1.5">Compra sug.</TableHead>
+                      <TableHead className="w-[11%] px-1.5">Compra sug.</TableHead>
                       <TableHead className="w-[7%] px-1.5">Esgot.</TableHead>
-                      <TableHead className="w-[8%] px-1.5 text-right">Valor</TableHead>
+                      <TableHead className="w-[7%] px-1.5 text-right">Valor</TableHead>
                       <TableHead className="w-[7%] px-1.5 text-right">Custo/d</TableHead>
                       <TableHead className="w-[4%] px-1 text-center">ABC</TableHead>
                       <TableHead className="w-[6%] px-1.5">Status</TableHead>
@@ -661,8 +724,14 @@ export default function EstoquePage() {
                               </div>
                             </TableCell>
                             <TableCell className="px-1.5 align-top text-right tabular-nums whitespace-normal break-words">
-                              {fmtNum(row.quantidadeTotal, 2)}{" "}
-                              {labelUnidadeEstoque(row.unidadeTipo)}
+                              <div>
+                                {fmtNum(row.quantidadeTotal, 2)} {labelUnidadeEstoque(row.unidadeTipo)}
+                              </div>
+                              {row.consumoAplicadoAteIso && (
+                                <div className="text-[9px] text-muted-foreground">
+                                  baixa até {format(parseISO(row.consumoAplicadoAteIso), "dd/MM", { locale: ptBR })}
+                                </div>
+                              )}
                             </TableCell>
                             <TableCell className="px-1.5 align-top text-right tabular-nums whitespace-normal">
                               {row.nivelMinimo != null ? fmtNum(row.nivelMinimo, 2) : "—"}
@@ -680,9 +749,7 @@ export default function EstoquePage() {
                             </TableCell>
                             <TableCell className="px-1.5 align-top whitespace-normal">{row.prazoEntregaDias} d</TableCell>
                             <TableCell className="px-1.5 align-top whitespace-normal break-words">
-                              {row.dataCompraSugeridaIso
-                                ? format(parseISO(row.dataCompraSugeridaIso), "dd MMM yy", { locale: ptBR })
-                                : "—"}
+                              {renderCompraSugeridaCell(row)}
                             </TableCell>
                             <TableCell className="px-1.5 align-top whitespace-normal break-words">
                               {row.dataEsgotamentoIso
@@ -831,12 +898,12 @@ export default function EstoquePage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-[20%] px-1.5">Item</TableHead>
-                        <TableHead className="w-[11%] px-1.5 text-right">Qtd</TableHead>
+                        <TableHead className="w-[10%] px-1.5 text-right">Saldo atual</TableHead>
                         <TableHead className="w-[9%] px-1.5">Uso / freq.</TableHead>
                         <TableHead className="w-[6%] px-1.5">Entrega</TableHead>
-                        <TableHead className="w-[11%] px-1.5">Compra sug.</TableHead>
+                        <TableHead className="w-[14%] px-1.5">Compra sug.</TableHead>
                         <TableHead className="w-[11%] px-1.5">Esgot.</TableHead>
-                        <TableHead className="w-[10%] px-1.5 text-right">Valor</TableHead>
+                        <TableHead className="w-[9%] px-1.5 text-right">Valor</TableHead>
                         <TableHead className="w-[9%] px-1.5 text-right">Custo/d</TableHead>
                         <TableHead className="w-[8%] px-1.5">Status</TableHead>
                         <TableHead className="w-[5%] px-0.5" />
@@ -879,17 +946,21 @@ export default function EstoquePage() {
                               </div>
                             </TableCell>
                             <TableCell className="px-1.5 align-top text-right tabular-nums whitespace-normal break-words">
-                              {fmtNum(row.quantidadeTotal, 2)}{" "}
-                              {labelUnidadeEstoque(row.unidadeTipo)}
+                              <div>
+                                {fmtNum(row.quantidadeTotal, 2)} {labelUnidadeEstoque(row.unidadeTipo)}
+                              </div>
+                              {row.consumoAplicadoAteIso && (
+                                <div className="text-[9px] text-muted-foreground">
+                                  baixa até {format(parseISO(row.consumoAplicadoAteIso), "dd/MM", { locale: ptBR })}
+                                </div>
+                              )}
                             </TableCell>
                             <TableCell className="px-1.5 align-top tabular-nums whitespace-normal break-words">
                               {fmtNum(row.usoPorEvento, 2)} / {fmtNum(row.frequenciaDias, 1)} d
                             </TableCell>
                             <TableCell className="px-1.5 align-top whitespace-normal">{row.prazoEntregaDias} d</TableCell>
                             <TableCell className="px-1.5 align-top whitespace-normal break-words">
-                              {row.dataCompraSugeridaIso
-                                ? format(parseISO(row.dataCompraSugeridaIso), "dd MMM yy", { locale: ptBR })
-                                : "—"}
+                              {renderCompraSugeridaCell(row)}
                             </TableCell>
                             <TableCell className="px-1.5 align-top whitespace-normal break-words">
                               {row.dataEsgotamentoIso
@@ -982,8 +1053,8 @@ export default function EstoquePage() {
               ]}
             </DialogTitle>
             <DialogDescription>
-              Fornecedor, preço unitário e nível mínimo são esperados para cada item. Pode guardar mesmo com campos vazios:
-              a lista mostra o indicador &quot;Falta dados&quot; (ícone de alerta) até completar o cadastro.
+              O sistema calcula cobertura e compra sugerida pelo uso informado. Para consumo diário,
+              preencha frequência como 1 dia; use &quot;Atualizar baixa diária&quot; para aplicar o desconto no saldo.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-2">
@@ -1052,7 +1123,7 @@ export default function EstoquePage() {
                   value={form.frequenciaDias}
                   onChange={(e) => setForm({ ...form, frequenciaDias: e.target.value })}
                 />
-                <p className="text-[10px] text-muted-foreground mt-0.5">Intervalo médio entre utilizações</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Use 1 para descontar todos os dias</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">

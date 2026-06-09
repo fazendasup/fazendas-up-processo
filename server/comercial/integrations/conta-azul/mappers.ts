@@ -15,6 +15,76 @@ export type ContaAzulPessoaPayload = {
   endereco?: string;
 };
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function str(value: unknown): string | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  if (typeof value === "object" && value) {
+    const record = value as Record<string, unknown>;
+    return firstString(record.nome, record.name, record.sigla, record.uf, record.descricao, record.description);
+  }
+  if (typeof value !== "string") return undefined;
+  const out = value.trim();
+  return out || undefined;
+}
+
+function firstString(...values: unknown[]): string | undefined {
+  for (const value of values) {
+    const out = str(value);
+    if (out) return out;
+  }
+  return undefined;
+}
+
+function joinEndereco(parts: Array<string | undefined>): string | undefined {
+  const out = parts
+    .map((part) => part?.trim())
+    .filter((part): part is string => Boolean(part));
+  return out.length ? out.join(", ") : undefined;
+}
+
+function extrairEnderecoContaAzul(raw: unknown): string | undefined {
+  const root = asRecord(raw);
+  if (!root) return undefined;
+  for (const nested of [root.data, root.pessoa, root.cliente, root.customer]) {
+    const nestedEndereco = extrairEnderecoContaAzul(nested);
+    if (nestedEndereco) return nestedEndereco;
+  }
+
+  const enderecoRaw =
+    root.endereco ??
+    root.enderecoPrincipal ??
+    root.endereco_principal ??
+    root.address ??
+    root.enderecos ??
+    root.addresses;
+
+  if (Array.isArray(enderecoRaw)) {
+    for (const item of enderecoRaw) {
+      const itemEndereco = extrairEnderecoContaAzul(item) ?? str(item);
+      if (itemEndereco) return itemEndereco;
+    }
+  }
+
+  const enderecoDireto = str(enderecoRaw);
+  if (enderecoDireto) return enderecoDireto;
+
+  const e = asRecord(enderecoRaw) ?? root;
+  return joinEndereco([
+    firstString(e.logradouro, e.nome_logradouro, e.rua, e.endereco, e.address, e.street),
+    firstString(e.numero, e.numeroEndereco, e.numero_endereco, e.number, e.numberAddress),
+    firstString(e.complemento, e.complement, e.complementoEndereco),
+    firstString(e.bairro, e.neighborhood),
+    firstString(e.cidade, e.municipio, e.city),
+    firstString(e.estado, e.uf, e.state),
+    firstString(e.cep, e.codigoPostal, e.codigo_postal, e.zipCode, e.zip_code),
+  ]);
+}
+
 /** Resposta GET /v1/pessoas (OpenAPI Conta Azul) */
 export type ContaAzulPessoasListResponse = {
   items?: Array<{
@@ -26,16 +96,24 @@ export type ContaAzulPessoasListResponse = {
     data_alteracao?: string;
     /** Ex.: ["CLIENTE","FORNECEDOR"] — não importar quem não for cliente de fato. */
     perfis?: string[];
-    endereco?: {
+    endereco?:
+      | string
+      | {
       logradouro?: string;
       numero?: string;
+      complemento?: string;
       bairro?: string;
       cidade?: string;
+      municipio?: string;
       estado?: string;
+      uf?: string;
       cep?: string;
-    } | null;
+    }
+      | null;
   }>;
   totalItems?: number;
+  total_items?: number;
+  total_itens?: number;
 };
 
 /** Conta Azul separa perfis; só deve virar cadastro local quem tem perfil de cliente. */
@@ -54,26 +132,13 @@ export function pessoaItemTemPerfilCliente(
 export function mapPessoaApiItem(
   item: NonNullable<ContaAzulPessoasListResponse["items"]>[number]
 ): ContaAzulPessoaPayload {
-  const e = item.endereco;
-  let enderecoStr: string | undefined;
-  if (e && typeof e === "object") {
-    const parts = [
-      e.logradouro,
-      e.numero,
-      e.bairro,
-      e.cidade,
-      e.estado,
-      e.cep,
-    ].filter(Boolean);
-    enderecoStr = parts.length ? parts.join(", ") : undefined;
-  }
   return {
     id: item.id,
     nome: item.nome,
     cpfCnpj: item.documento ?? undefined,
     email: item.email ?? undefined,
     telefone: item.telefone ?? undefined,
-    endereco: enderecoStr,
+    endereco: extrairEnderecoContaAzul(item),
   };
 }
 
@@ -346,7 +411,7 @@ export function mapPessoaFromVendaClienteEmbutido(
     nome: typeof c.nome === "string" ? c.nome : undefined,
     email: typeof c.email === "string" ? c.email : undefined,
     telefone: typeof c.telefone === "string" ? c.telefone : undefined,
-    endereco: typeof c.endereco === "string" ? c.endereco : undefined,
+    endereco: extrairEnderecoContaAzul(c),
   };
 }
 

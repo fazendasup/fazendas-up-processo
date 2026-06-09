@@ -12,6 +12,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 // OAuth routes removed - using email/password authentication instead
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { registerPublicConfigRoute } from "./publicConfig";
 import { getStaticDeployReadiness, serveStatic } from "./static";
 import { ensureBootstrapAdmin } from "../bootstrap-admin";
 import * as db from "../db";
@@ -220,6 +221,8 @@ async function startServer() {
       e instanceof Error ? e.message : e
     );
   }
+
+  registerPublicConfigRoute(app);
 
   /** Site (HTML/JS/CSS) já disponível durante a inicialização da BD — evita página em branco / 404. */
   if (process.env.NODE_ENV !== "development") {

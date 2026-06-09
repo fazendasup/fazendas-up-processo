@@ -51,7 +51,7 @@ export function Configuracoes() {
 
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
-  const [perfil, setPerfil] = useState<"PROMOTER" | "LIDER_COLHEITA" | "GERENTE_COMERCIAL" | "COMERCIAL" | "OPERACOES" | "ADMIN">("COMERCIAL");
+  const [perfil, setPerfil] = useState<"PROMOTER" | "LIDER_COLHEITA" | "GERENTE_COMERCIAL" | "COMERCIAL" | "OPERACOES" | "LOGISTICA" | "ADMIN">("COMERCIAL");
   const [senhaTemp, setSenhaTemp] = useState("");
 
   const convidar = trpc.comercial.configuracoes.convidarUsuario.useMutation({
@@ -283,6 +283,7 @@ export function Configuracoes() {
                           <option value="COMERCIAL">Comercial</option>
                           <option value="GERENTE_COMERCIAL">Gerente comercial</option>
                           <option value="OPERACOES">Operações</option>
+                          <option value="LOGISTICA">Logística</option>
                           <option value="ADMIN">Admin</option>
                         </select>
                       </label>

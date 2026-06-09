@@ -12,6 +12,7 @@ import { kpisRouter } from "../comercial/routers/kpisRouter";
 import { manusRouter } from "../comercial/routers/manusRouter";
 import { mensagensRouter } from "../comercial/routers/mensagensRouter";
 import { oportunidadesRouter } from "../comercial/routers/oportunidadesRouter";
+import { entregasRouter } from "../comercial/routers/entregasRouter";
 import { pedidosRouter } from "../comercial/routers/pedidosRouter";
 import { relatoriosRouter } from "../comercial/routers/relatoriosRouter";
 import { varejoRouter } from "../comercial/routers/varejoRouter";
@@ -27,6 +28,7 @@ export const comercialRouter = router({
   manus: manusRouter,
   integracoes: integrationsRouter,
   pedidos: pedidosRouter,
+  entregas: entregasRouter,
   relatorios: relatoriosRouter,
   varejo: varejoRouter,
 });

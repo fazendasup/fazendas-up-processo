@@ -13,6 +13,7 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import "./index.css";
+import { registerServiceWorker } from "@/lib/pwa";
 import { isInsecureHttpOnHttpsPage } from "@/lib/secureExternalUrl";
 
 /** Umami (ou compatível): só carrega com env real (sem placeholder / %VITE_*). */
@@ -51,6 +52,7 @@ function loadOptionalAnalytics() {
   document.body.appendChild(s);
 }
 loadOptionalAnalytics();
+void registerServiceWorker();
 
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -256,6 +256,52 @@ exports.Prisma.PedidoOperacionalScalarFieldEnum = {
   atualizadoEm: 'atualizadoEm'
 };
 
+exports.Prisma.RotaEntregaScalarFieldEnum = {
+  id: 'id',
+  dataEntrega: 'dataEntrega',
+  nome: 'nome',
+  status: 'status',
+  entregadorId: 'entregadorId',
+  entregadorNome: 'entregadorNome',
+  tokenPublico: 'tokenPublico',
+  compartilhamentoAtivo: 'compartilhamentoAtivo',
+  iniciadoEm: 'iniciadoEm',
+  encerradoEm: 'encerradoEm',
+  ultimaLatitude: 'ultimaLatitude',
+  ultimaLongitude: 'ultimaLongitude',
+  ultimaPrecisaoMetros: 'ultimaPrecisaoMetros',
+  ultimaLocalizacaoEm: 'ultimaLocalizacaoEm',
+  criadoPorId: 'criadoPorId',
+  atualizadoPorId: 'atualizadoPorId',
+  criadoEm: 'criadoEm',
+  atualizadoEm: 'atualizadoEm'
+};
+
+exports.Prisma.ParadaEntregaScalarFieldEnum = {
+  id: 'id',
+  rotaId: 'rotaId',
+  contaAzulCustomerId: 'contaAzulCustomerId',
+  clienteId: 'clienteId',
+  ordem: 'ordem',
+  status: 'status',
+  tokenPublico: 'tokenPublico',
+  observacoes: 'observacoes',
+  observacoesProblema: 'observacoesProblema',
+  entregueEm: 'entregueEm',
+  problemaEm: 'problemaEm',
+  criadoEm: 'criadoEm',
+  atualizadoEm: 'atualizadoEm'
+};
+
+exports.Prisma.HistoricoLocalizacaoEntregaScalarFieldEnum = {
+  id: 'id',
+  rotaId: 'rotaId',
+  latitude: 'latitude',
+  longitude: 'longitude',
+  precisaoMetros: 'precisaoMetros',
+  criadoEm: 'criadoEm'
+};
+
 exports.Prisma.PedidoOperacionalItemScalarFieldEnum = {
   id: 'id',
   pedidoId: 'pedidoId',
@@ -562,6 +608,31 @@ exports.Prisma.PedidoOperacionalOrderByRelevanceFieldEnum = {
   editadoPorId: 'editadoPorId'
 };
 
+exports.Prisma.RotaEntregaOrderByRelevanceFieldEnum = {
+  id: 'id',
+  nome: 'nome',
+  entregadorId: 'entregadorId',
+  entregadorNome: 'entregadorNome',
+  tokenPublico: 'tokenPublico',
+  criadoPorId: 'criadoPorId',
+  atualizadoPorId: 'atualizadoPorId'
+};
+
+exports.Prisma.ParadaEntregaOrderByRelevanceFieldEnum = {
+  id: 'id',
+  rotaId: 'rotaId',
+  contaAzulCustomerId: 'contaAzulCustomerId',
+  clienteId: 'clienteId',
+  tokenPublico: 'tokenPublico',
+  observacoes: 'observacoes',
+  observacoesProblema: 'observacoesProblema'
+};
+
+exports.Prisma.HistoricoLocalizacaoEntregaOrderByRelevanceFieldEnum = {
+  id: 'id',
+  rotaId: 'rotaId'
+};
+
 exports.Prisma.PedidoOperacionalItemOrderByRelevanceFieldEnum = {
   id: 'id',
   pedidoId: 'pedidoId',
@@ -691,6 +762,7 @@ exports.PerfilUsuario = exports.$Enums.PerfilUsuario = {
   GERENTE_COMERCIAL: 'GERENTE_COMERCIAL',
   COMERCIAL: 'COMERCIAL',
   OPERACOES: 'OPERACOES',
+  LOGISTICA: 'LOGISTICA',
   ADMIN: 'ADMIN'
 };
 
@@ -744,6 +816,21 @@ exports.StatusConciliacaoOperacional = exports.$Enums.StatusConciliacaoOperacion
   CONCILIADO: 'CONCILIADO',
   DIVERGENTE: 'DIVERGENTE',
   VENDA_ERRADA: 'VENDA_ERRADA'
+};
+
+exports.RotaEntregaStatus = exports.$Enums.RotaEntregaStatus = {
+  PLANEJADA: 'PLANEJADA',
+  EM_ROTA: 'EM_ROTA',
+  CONCLUIDA: 'CONCLUIDA',
+  CANCELADA: 'CANCELADA'
+};
+
+exports.ParadaEntregaStatus = exports.$Enums.ParadaEntregaStatus = {
+  PENDENTE: 'PENDENTE',
+  EM_ROTA: 'EM_ROTA',
+  ENTREGUE: 'ENTREGUE',
+  PROBLEMA: 'PROBLEMA',
+  PULADA: 'PULADA'
 };
 
 exports.StatusConciliacaoContaAzul = exports.$Enums.StatusConciliacaoContaAzul = {
@@ -832,6 +919,9 @@ exports.Prisma.ModelName = {
   ClienteLegadoContaAzulLink: 'ClienteLegadoContaAzulLink',
   PrecoEspecialCliente: 'PrecoEspecialCliente',
   PedidoOperacional: 'PedidoOperacional',
+  RotaEntrega: 'RotaEntrega',
+  ParadaEntrega: 'ParadaEntrega',
+  HistoricoLocalizacaoEntrega: 'HistoricoLocalizacaoEntrega',
   PedidoOperacionalItem: 'PedidoOperacionalItem',
   PedidoOperacionalAvaria: 'PedidoOperacionalAvaria',
   PedidoOperacionalAuditoria: 'PedidoOperacionalAuditoria',

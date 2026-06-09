@@ -57,6 +57,18 @@ export function serveStatic(app: Express) {
   }
   console.log(`[static] Ficheiros públicos: ${distPath}`);
 
+  const sendPwaAsset = (route: string, fileName: string, contentType: string) => {
+    app.get(route, (_req, res, next) => {
+      res.set("Cache-Control", "no-cache");
+      res.type(contentType);
+      res.sendFile(path.join(distPath, fileName), (err) => {
+        if (err) next();
+      });
+    });
+  };
+  sendPwaAsset("/sw.js", "sw.js", "application/javascript");
+  sendPwaAsset("/manifest.webmanifest", "manifest.webmanifest", "application/manifest+json");
+
   app.use(
     express.static(distPath, {
       index: "index.html",

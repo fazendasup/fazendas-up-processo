@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Redirect, Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { PwaInstallHint } from "./components/PwaInstallHint";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { ProjetoProvider } from "./contexts/ProjetoContext";
 import { FazendaProvider } from "./contexts/FazendaContext";
@@ -43,6 +44,7 @@ const ProjetosPage = lazy(() => import(/* @vite-ignore */"./pages/ProjetosPage")
 const AutomacaoPage = lazy(() => import(/* @vite-ignore */"./pages/AutomacaoPage"));
 const ModulosPlataformaPage = lazy(() => import(/* @vite-ignore */"./pages/ModulosPlataformaPage"));
 const ComercialRoutes = lazy(() => import(/* @vite-ignore */"./pages/ComercialRoutes"));
+const RastreioEntrega = lazy(() => import(/* @vite-ignore */"./pages/RastreioEntrega"));
 const NotFound = lazy(() => import(/* @vite-ignore */"./pages/NotFound"));
 
 function RoleRootRoute() {
@@ -90,6 +92,7 @@ function Router() {
           <Route path="/login/" component={LoginPage} />
           <Route path="/privacidade" component={PrivacidadePage} />
           <Route path="/privacidade/" component={PrivacidadePage} />
+          <Route path="/rastreio/:token" component={RastreioEntrega} />
 
           <Route path="/">
             {() => <RoleRootRoute />}
@@ -275,6 +278,7 @@ function App() {
             <AgendaModalProvider>
               <TooltipProvider>
                 <Toaster />
+                <PwaInstallHint />
                 <ProjetoOnboardingRedirect>
                   <Router />
                 </ProjetoOnboardingRedirect>

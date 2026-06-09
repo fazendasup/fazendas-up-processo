@@ -10,6 +10,7 @@ import {
 import {
   iniciarSyncContaAzulEmBackground,
   isContaAzulSyncEmAndamento,
+  runContaAzulClientesSync,
 } from "../integrations/conta-azul/sync.service";
 import { runInteligenciaComercial } from "../services/inteligencia-comercial";
 
@@ -17,14 +18,16 @@ const syncCA = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL");
 
 function detalhesSync(detalhes: unknown): {
   pedidosGravados: number | null;
+  clientesComEndereco: number | null;
   inteligenciaOportunidades: number | null;
 } {
   if (!detalhes || typeof detalhes !== "object") {
-    return { pedidosGravados: null, inteligenciaOportunidades: null };
+    return { pedidosGravados: null, clientesComEndereco: null, inteligenciaOportunidades: null };
   }
   const d = detalhes as Record<string, unknown>;
   return {
     pedidosGravados: typeof d.pedidosGravados === "number" ? d.pedidosGravados : null,
+    clientesComEndereco: typeof d.clientesComEndereco === "number" ? d.clientesComEndereco : null,
     inteligenciaOportunidades:
       typeof d.inteligenciaOportunidades === "number" ? d.inteligenciaOportunidades : null,
   };
@@ -52,7 +55,9 @@ export const integrationsRouter = router({
 
   /** Inicia sync em segundo plano — resposta imediata; acompanhe com statusSyncContaAzul. */
   sincronizarContaAzul: comercialProcedure.use(syncCA).mutation(async ({ ctx }) => {
-    const r = iniciarSyncContaAzulEmBackground(ctx.prisma!, ctx.comercialEnv!, "manual");
+    const r = iniciarSyncContaAzulEmBackground(ctx.prisma!, ctx.comercialEnv!, "manual", {
+      forceFullClientes: true,
+    });
     if (r.status === "already_running") {
       throw new TRPCError({
         code: "CONFLICT",
@@ -61,6 +66,12 @@ export const integrationsRouter = router({
       });
     }
     return { ok: true as const, emSegundoPlano: true as const };
+  }),
+
+  sincronizarEnderecosContaAzul: comercialProcedure.use(syncCA).mutation(async ({ ctx }) => {
+    return runContaAzulClientesSync(ctx.prisma!, ctx.comercialEnv!, {
+      forceFullClientes: true,
+    });
   }),
 
   statusSyncContaAzul: comercialProcedure.use(syncCA).query(async ({ ctx }) => {

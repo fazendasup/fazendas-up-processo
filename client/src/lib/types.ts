@@ -315,6 +315,25 @@ export interface ReceitaCrescimentoResumo {
   updatedAt: string | null;
 }
 
+export interface EstoqueBackupItem {
+  id: number;
+  categoria: string;
+  nome: string;
+  quantidadeTotal: number;
+  unidadeTipo: string;
+  usoPorEvento: number;
+  frequenciaDias: number;
+  prazoEntregaDias: number;
+  diasMargemCompra: number;
+  nivelMinimo: number | null;
+  precoUnitario: number | null;
+  fornecedor: string | null;
+  observacoes: string | null;
+  consumoAplicadoAte: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
 // ---- Dados da Fazenda ----
 export interface FazendaData {
   /** Tipo do projeto ativo (vem do servidor em `fazenda.loadAll`). */
@@ -332,6 +351,7 @@ export interface FazendaData {
   germinacao: LoteGerminacao[];
   transplantios: RegistroTransplantio[];
   manutencoes: Manutencao[];
+  estoqueItens: EstoqueBackupItem[];
 }
 
 // ---- Gerar perfis iniciais por fase ----
@@ -493,5 +513,6 @@ export function gerarDadosIniciais(): FazendaData {
     germinacao: [],
     transplantios: [],
     manutencoes: [],
+    estoqueItens: [],
   };
 }

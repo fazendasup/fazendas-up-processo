@@ -1,0 +1,650 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "wouter";
+import { toast } from "sonner";
+import {
+  ArrowDown,
+  ArrowUp,
+  Copy,
+  MapPin,
+  Navigation,
+  Plus,
+  RefreshCcw,
+  Route,
+  Save,
+  Smartphone,
+  Trash2,
+  Truck,
+} from "lucide-react";
+import { PageHeader } from "@/components/comercial/ui/PageHeader";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { MapView } from "@/components/Map";
+import { trpc } from "@/lib/trpc";
+import {
+  diaOperacionalInicial,
+  labelStatusParada,
+  labelStatusRota,
+  linkGoogleMaps,
+  linkGoogleMapsRota,
+  trackingUrlAbsoluto,
+} from "@/lib/entregas";
+import { cn } from "@/lib/utils";
+
+type RoteiroRota = {
+  status: string;
+  entregadorNome: string | null;
+  localizacao: {
+    latitude: number;
+    longitude: number;
+    precisaoMetros: number | null;
+    atualizadaEm: string | Date | null;
+  } | null;
+  paradas: Array<{
+    id: string;
+    ordem: number;
+    status: string;
+    clienteNome: string;
+    endereco: string | null;
+  }>;
+};
+
+export function Entregas() {
+  const utils = trpc.useUtils();
+  const [dia, setDia] = useState(diaOperacionalInicial());
+  const diaDate = useMemo(() => new Date(`${dia}T12:00:00`), [dia]);
+  const [nomeRota, setNomeRota] = useState("");
+  const [buscaCliente, setBuscaCliente] = useState("");
+  const [clienteManualId, setClienteManualId] = useState("");
+
+  const roteiro = trpc.comercial.entregas.roteiro.useQuery(
+    { dia: diaDate },
+    { refetchInterval: 60_000 },
+  );
+  const entregadores = trpc.comercial.entregas.listarEntregadores.useQuery();
+  const [entregadorId, setEntregadorId] = useState("");
+
+  useEffect(() => {
+    setNomeRota(roteiro.data?.rota?.nome ?? "");
+    setEntregadorId(roteiro.data?.rota?.entregadorId ?? "");
+  }, [roteiro.data?.rota?.id, roteiro.data?.rota?.nome, roteiro.data?.rota?.entregadorId]);
+
+  const criarManual = trpc.comercial.entregas.criarRotaManual.useMutation({
+    onSuccess: async () => {
+      toast.success("Rota manual criada.");
+      await utils.comercial.entregas.roteiro.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const atualizarRota = trpc.comercial.entregas.atualizarRota.useMutation({
+    onSuccess: async () => {
+      toast.success("Rota atualizada.");
+      await utils.comercial.entregas.roteiro.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const excluirRota = trpc.comercial.entregas.excluirRota.useMutation({
+    onSuccess: async () => {
+      toast.success("Rota excluída.");
+      await utils.comercial.entregas.roteiro.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const adicionarParada = trpc.comercial.entregas.adicionarParadaManual.useMutation({
+    onSuccess: async () => {
+      toast.success("Cliente adicionado à rota.");
+      setClienteManualId("");
+      await utils.comercial.entregas.roteiro.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const removerParada = trpc.comercial.entregas.removerParada.useMutation({
+    onSuccess: async () => {
+      toast.success("Parada removida.");
+      await utils.comercial.entregas.roteiro.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const gerar = trpc.comercial.entregas.gerarRoteiro.useMutation({
+    onSuccess: async () => {
+      toast.success("Roteiro gerado.");
+      await utils.comercial.entregas.roteiro.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const salvarOrdem = trpc.comercial.entregas.salvarOrdem.useMutation({
+    onSuccess: async () => {
+      toast.success("Ordem salva.");
+      await utils.comercial.entregas.roteiro.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const atribuir = trpc.comercial.entregas.atribuirEntregador.useMutation({
+    onSuccess: async () => {
+      toast.success("Entregador atualizado.");
+      await utils.comercial.entregas.roteiro.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const rota = roteiro.data?.rota ?? null;
+  const planejadas = roteiro.data?.planejadas ?? [];
+  const paradas = rota?.paradas ?? [];
+  const rotaMapsUrl = linkGoogleMapsRota(paradas);
+  const clientesProgramadosDisponiveis = useMemo(() => {
+    const idsNaRota = new Set(paradas.map((p) => p.contaAzulCustomerId));
+    const termo = buscaCliente.trim().toLocaleLowerCase("pt-BR");
+    return planejadas.filter((item) => {
+      if (idsNaRota.has(item.contaAzulCustomerId)) return false;
+      if (!termo) return true;
+      return item.clienteNome.toLocaleLowerCase("pt-BR").includes(termo);
+    });
+  }, [buscaCliente, paradas, planejadas]);
+
+  const moverParada = (index: number, direcao: -1 | 1) => {
+    if (!rota) return;
+    const novoIndex = index + direcao;
+    if (novoIndex < 0 || novoIndex >= paradas.length) return;
+    const ids = paradas.map((p) => p.id);
+    const [item] = ids.splice(index, 1);
+    ids.splice(novoIndex, 0, item);
+    salvarOrdem.mutate({ rotaId: rota.id, paradaIds: ids });
+  };
+
+  const copiarLink = async (token: string) => {
+    try {
+      await navigator.clipboard.writeText(trackingUrlAbsoluto(token));
+      toast.success("Link de rastreio copiado.");
+    } catch {
+      toast.error("Não foi possível copiar o link.");
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        kicker="Logística"
+        title="Roteiro do dia"
+        subtitle="Monte a rota de entregas, priorize paradas e compartilhe o rastreamento com clientes."
+        actions={
+          <>
+            <Input type="date" value={dia} onChange={(e) => setDia(e.target.value)} className="w-auto" />
+            <Button
+              variant="outline"
+              onClick={() => void utils.comercial.entregas.roteiro.invalidate()}
+              disabled={roteiro.isFetching}
+            >
+              <RefreshCcw className={cn("h-4 w-4", roteiro.isFetching && "animate-spin")} />
+              Atualizar
+            </Button>
+            <Button
+              onClick={() =>
+                gerar.mutate({
+                  dia: diaDate,
+                  entregadorId: entregadorId || undefined,
+                })
+              }
+              disabled={gerar.isPending || planejadas.length === 0}
+            >
+              <Route className="h-4 w-4" />
+              Gerar roteiro
+            </Button>
+            {!rota ? (
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  criarManual.mutate({
+                    dia: diaDate,
+                    nome: nomeRota || undefined,
+                    entregadorId: entregadorId || undefined,
+                  })
+                }
+                disabled={criarManual.isPending}
+              >
+                <Plus className="h-4 w-4" />
+                Criar rota manual
+              </Button>
+            ) : null}
+            {rota ? (
+              <Button asChild variant="secondary">
+                <Link href={`/comercial/entregador?dia=${dia}`}>
+                  <Smartphone className="h-4 w-4" />
+                  Modo entregador
+                </Link>
+              </Button>
+            ) : null}
+            {rotaMapsUrl ? (
+              <Button asChild>
+                <a href={rotaMapsUrl} target="_blank" rel="noreferrer">
+                  <Navigation className="h-4 w-4" />
+                  Abrir rota no Maps
+                </a>
+              </Button>
+            ) : null}
+          </>
+        }
+      />
+
+      <LiveRouteMap rota={rota} />
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Truck className="h-5 w-5" />
+              Paradas do dia
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {!rota && planejadas.length > 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {planejadas.length} cliente(s) com entrega prevista. Clique em &quot;Gerar roteiro&quot; para montar a rota.
+              </p>
+            ) : null}
+            {!rota && planejadas.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhuma entrega planejada para este dia.</p>
+            ) : null}
+
+            {rota ? (
+              <div className="flex flex-wrap items-center gap-2 pb-2">
+                <Badge variant="outline">{labelStatusRota(rota.status)}</Badge>
+                {rota.entregadorNome ? <Badge variant="secondary">{rota.entregadorNome}</Badge> : null}
+                {rota.localizacao ? (
+                  <Badge variant="outline">
+                    GPS {new Date(rota.localizacao.atualizadaEm ?? "").toLocaleTimeString("pt-BR")}
+                  </Badge>
+                ) : null}
+              </div>
+            ) : null}
+
+            {paradas.map((parada, index) => (
+              <div
+                key={parada.id}
+                className="rounded-xl border border-border/70 p-3 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                        {parada.ordem}
+                      </span>
+                      <div>
+                        <p className="font-semibold">{parada.clienteNome}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {parada.periodoEntrega === "MANHA"
+                            ? "Manhã"
+                            : parada.periodoEntrega === "TARDE"
+                              ? "Tarde"
+                              : "Sem período"}
+                          {parada.horarioMaximoEntrega ? ` · até ${parada.horarioMaximoEntrega}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                    {parada.endereco ? (
+                      <p className="mt-2 flex items-start gap-1 text-sm text-muted-foreground">
+                        <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
+                        {parada.endereco}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    <Badge>{labelStatusParada(parada.status)}</Badge>
+                    <div className="flex gap-1">
+                      <Button
+                        size="icon-sm"
+                        variant="outline"
+                        disabled={index === 0 || salvarOrdem.isPending || rota?.status === "EM_ROTA"}
+                        onClick={() => moverParada(index, -1)}
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon-sm"
+                        variant="outline"
+                        disabled={
+                          index === paradas.length - 1 || salvarOrdem.isPending || rota?.status === "EM_ROTA"
+                        }
+                        onClick={() => moverParada(index, 1)}
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {linkGoogleMaps(parada.endereco) ? (
+                    <Button size="sm" asChild>
+                      <a href={linkGoogleMaps(parada.endereco)!} target="_blank" rel="noreferrer">
+                        <Navigation className="h-4 w-4" />
+                        Abrir no Google Maps
+                      </a>
+                    </Button>
+                  ) : null}
+                  <Button size="sm" variant="ghost" onClick={() => void copiarLink(parada.tokenPublico)}>
+                    <Copy className="h-4 w-4" />
+                    Copiar rastreio do cliente
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    disabled={removerParada.isPending || rota?.status === "EM_ROTA"}
+                    onClick={() => removerParada.mutate({ paradaId: parada.id })}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Remover
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Planejamento sugerido</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {planejadas.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Sem clientes para este dia.</p>
+              ) : (
+                planejadas.map((item) => (
+                  <div key={item.contaAzulCustomerId} className="rounded-lg border border-border/60 px-3 py-2 text-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium">{item.clienteNome}</span>
+                      <span className="text-xs text-muted-foreground">#{item.ordemSugerida}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {item.itensCount} item(ns) · {item.pedidosCount} pedido(s)
+                    </p>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          {rota ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Editar rota</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="nome-rota">Nome da rota</Label>
+                  <Input
+                    id="nome-rota"
+                    value={nomeRota}
+                    onChange={(e) => setNomeRota(e.target.value)}
+                    placeholder="Ex.: Rota segunda-feira"
+                    disabled={rota.status === "EM_ROTA"}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="entregador">Responsável pela rota</Label>
+                  <select
+                    id="entregador"
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={entregadorId || rota.entregadorId || ""}
+                    onChange={(e) => setEntregadorId(e.target.value)}
+                  >
+                    <option value="">Selecionar entregador</option>
+                    {(entregadores.data ?? []).map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <Button
+                  className="w-full"
+                  variant="secondary"
+                  disabled={atribuir.isPending || atualizarRota.isPending}
+                  onClick={() =>
+                    atualizarRota.mutate({
+                      rotaId: rota.id,
+                      nome: nomeRota || undefined,
+                      entregadorId: entregadorId || rota.entregadorId || null,
+                    })
+                  }
+                >
+                  <Save className="h-4 w-4" />
+                  Salvar rota
+                </Button>
+                <Button
+                  className="w-full"
+                  variant="destructive"
+                  disabled={excluirRota.isPending || rota.status === "EM_ROTA"}
+                  onClick={() => {
+                    if (window.confirm("Excluir esta rota e todas as paradas?")) {
+                      excluirRota.mutate({ rotaId: rota.id });
+                    }
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Excluir rota
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {rota ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Adicionar cliente</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="busca-cliente-rota">Buscar cliente programado</Label>
+                  <Input
+                    id="busca-cliente-rota"
+                    value={buscaCliente}
+                    onChange={(e) => setBuscaCliente(e.target.value)}
+                    placeholder="Nome do cliente com entrega no dia"
+                    disabled={rota.status === "EM_ROTA"}
+                  />
+                </div>
+                <select
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  value={clienteManualId}
+                  onChange={(e) => setClienteManualId(e.target.value)}
+                  disabled={rota.status === "EM_ROTA"}
+                >
+                  <option value="">Selecionar cliente</option>
+                  {clientesProgramadosDisponiveis.map((cliente) => (
+                    <option key={cliente.contaAzulCustomerId} value={cliente.contaAzulCustomerId}>
+                      {cliente.clienteNome}
+                    </option>
+                  ))}
+                </select>
+                {clientesProgramadosDisponiveis.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Nenhum cliente programado para este dia disponível para adicionar.
+                  </p>
+                ) : null}
+                <Button
+                  className="w-full"
+                  disabled={!clienteManualId || adicionarParada.isPending || rota.status === "EM_ROTA"}
+                  onClick={() =>
+                    adicionarParada.mutate({
+                      rotaId: rota.id,
+                      contaAzulCustomerId: clienteManualId,
+                    })
+                  }
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar à rota
+                </Button>
+                {rota.status === "EM_ROTA" ? (
+                  <p className="text-xs text-muted-foreground">
+                    Para editar paradas, encerre a rota em andamento primeiro.
+                  </p>
+                ) : null}
+              </CardContent>
+            </Card>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LiveRouteMap({ rota }: { rota: RoteiroRota | null }) {
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
+  const geocodeCacheRef = useRef(new Map<string, google.maps.LatLngLiteral>());
+
+  useEffect(() => {
+    if (!map || !window.google) return;
+
+    let cancelled = false;
+    const geocoder = new window.google.maps.Geocoder();
+
+    const clearMarkers = () => {
+      for (const marker of markersRef.current) marker.map = null;
+      markersRef.current = [];
+    };
+
+    const markerContent = (label: string, className: string) => {
+      const el = document.createElement("div");
+      el.className = className;
+      el.textContent = label;
+      return el;
+    };
+
+    const addMarker = (
+      position: google.maps.LatLngLiteral,
+      label: string,
+      title: string,
+      className: string,
+    ) => {
+      const marker = new window.google!.maps.marker.AdvancedMarkerElement({
+        map,
+        position,
+        title,
+        content: markerContent(label, className),
+      });
+      markersRef.current.push(marker);
+      return marker;
+    };
+
+    const run = async () => {
+      clearMarkers();
+      const bounds = new window.google!.maps.LatLngBounds();
+      let hasBounds = false;
+
+      if (rota?.localizacao) {
+        const pos = {
+          lat: rota.localizacao.latitude,
+          lng: rota.localizacao.longitude,
+        };
+        addMarker(
+          pos,
+          rota.entregadorNome ?? "Entregador",
+          rota.entregadorNome
+            ? `Entregador: ${rota.entregadorNome}`
+            : "Localização atual do entregador",
+          "rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-xl ring-4 ring-emerald-200 whitespace-nowrap",
+        );
+        bounds.extend(pos);
+        hasBounds = true;
+      }
+
+      const paradas = rota?.paradas ?? [];
+      for (const parada of paradas) {
+        if (!parada.endereco?.trim()) continue;
+        const cacheKey = parada.endereco.trim();
+        let pos = geocodeCacheRef.current.get(cacheKey);
+        if (!pos) {
+          pos = await new Promise<google.maps.LatLngLiteral | null>((resolve) => {
+            geocoder.geocode({ address: cacheKey }, (results, status) => {
+              if (status !== "OK" || !results?.[0]?.geometry.location) {
+                resolve(null);
+                return;
+              }
+              const location = results[0].geometry.location;
+              resolve({ lat: location.lat(), lng: location.lng() });
+            });
+          }) ?? undefined;
+          if (pos) geocodeCacheRef.current.set(cacheKey, pos);
+        }
+        if (cancelled || !pos) continue;
+
+        const statusClass =
+          parada.status === "ENTREGUE"
+            ? "bg-emerald-600"
+            : parada.status === "PROBLEMA"
+              ? "bg-rose-600"
+              : parada.status === "EM_ROTA"
+                ? "bg-blue-600"
+                : "bg-slate-700";
+        addMarker(
+          pos,
+          String(parada.ordem),
+          `${parada.ordem}. ${parada.clienteNome}`,
+          `flex h-8 w-8 items-center justify-center rounded-full ${statusClass} text-sm font-bold text-white shadow-md ring-2 ring-white`,
+        );
+        bounds.extend(pos);
+        hasBounds = true;
+      }
+
+      if (!cancelled && hasBounds) {
+        map.fitBounds(bounds, 64);
+      }
+    };
+
+    void run();
+
+    return () => {
+      cancelled = true;
+      clearMarkers();
+    };
+  }, [map, rota]);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <MapPin className="h-5 w-5" />
+          Mapa ao vivo
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <MapView
+          className="h-[360px] overflow-hidden rounded-xl border border-border/70"
+          initialCenter={{ lat: -15.7939, lng: -47.8828 }}
+          initialZoom={5}
+          onMapReady={setMap}
+        />
+        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+          <span className="rounded-full bg-emerald-600 px-2 py-1 font-semibold text-white">Entregador</span>
+          <span className="rounded-full bg-blue-600 px-2 py-1 font-semibold text-white">Atual</span>
+          <span className="rounded-full bg-slate-700 px-2 py-1 font-semibold text-white">Pendente</span>
+          <span className="rounded-full bg-emerald-600 px-2 py-1 font-semibold text-white">Entregue</span>
+          <span className="rounded-full bg-rose-600 px-2 py-1 font-semibold text-white">Problema</span>
+        </div>
+        {rota?.localizacao ? (
+          <p className="text-sm text-muted-foreground">
+            Localização do entregador atualizada às{" "}
+            {rota.localizacao.atualizadaEm
+              ? new Date(rota.localizacao.atualizadaEm).toLocaleTimeString("pt-BR")
+              : "—"}
+            . Este mapa consulta o sistema a cada 1 minuto.
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            O GPS aparece quando o entregador inicia a rota e aceita compartilhar localização.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

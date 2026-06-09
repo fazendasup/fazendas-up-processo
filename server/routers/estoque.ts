@@ -54,24 +54,35 @@ function enrich(row: EstoqueItemRow) {
     diasAteEsgotar: p.diasAteEsgotar,
     dataEsgotamentoIso: p.dataEsgotamento?.toISOString() ?? null,
     dataCompraSugeridaIso: p.dataCompraSugerida?.toISOString() ?? null,
+    consumoAplicadoAteIso: row.consumoAplicadoAte?.toISOString() ?? null,
+    sugestaoCompraQuantidade: p.sugestaoCompraQuantidade,
+    estoqueAlvoQuantidade: p.estoqueAlvoQuantidade,
     status: p.status,
     valorLinha,
     custoConsumoDiario: custoDia,
     custoConsumoMensal: custoDia != null ? custoDia * 30 : null,
+    valorCompraSugerida:
+      row.precoUnitario != null && Number.isFinite(row.precoUnitario)
+        ? p.sugestaoCompraQuantidade * row.precoUnitario
+        : null,
   };
 }
 
 export const estoqueRouter = router({
   list: estoqueAccessProjectProcedure.query(async ({ ctx }) => {
-    const rows = await db.getAllEstoqueItens(projetoIdFromCtx(ctx));
+    const pid = projetoIdFromCtx(ctx);
+    const rows = await db.getAllEstoqueItens(pid);
     return rows.map((r) => enrich(normalizeLegacyUnits(r)));
   }),
 
   kpis: estoqueAccessProjectProcedure.query(async ({ ctx }) => {
-    const rows = await db.getAllEstoqueItens(projetoIdFromCtx(ctx));
+    const pid = projetoIdFromCtx(ctx);
+    const rows = await db.getAllEstoqueItens(pid);
     const enriched = rows.map((r) => enrich(normalizeLegacyUnits(r)));
     let valorTotal = 0;
     let custoMes = 0;
+    let valorCompraSugerida = 0;
+    let itensComCompraSugerida = 0;
     let criticos = 0;
     let atencao = 0;
     let diasCoberturaSum = 0;
@@ -86,6 +97,10 @@ export const estoqueRouter = router({
     for (const e of enriched) {
       valorTotal += e.valorLinha;
       if (e.custoConsumoMensal != null) custoMes += e.custoConsumoMensal;
+      if (e.sugestaoCompraQuantidade > 0) {
+        itensComCompraSugerida++;
+        if (e.valorCompraSugerida != null) valorCompraSugerida += e.valorCompraSugerida;
+      }
       if (e.status === "critico") criticos++;
       else if (e.status === "atencao") atencao++;
       if (e.diasAteEsgotar != null && Number.isFinite(e.diasAteEsgotar)) {
@@ -101,12 +116,19 @@ export const estoqueRouter = router({
     return {
       valorTotalInventario: valorTotal,
       custoConsumoMensalEstimado: custoMes,
+      valorCompraSugerida,
+      itensComCompraSugerida,
       itensCriticos: criticos,
       itensAtencao: atencao,
       diasMedioCobertura: diasCoberturaN > 0 ? diasCoberturaSum / diasCoberturaN : null,
       totalItens: enriched.length,
       porCategoria,
     };
+  }),
+
+  aplicarConsumoDiario: estoqueAccessProjectProcedure.mutation(async ({ ctx }) => {
+    const pid = projetoIdFromCtx(ctx);
+    return db.aplicarConsumoDiarioEstoque(pid);
   }),
 
   create: estoqueAccessProjectProcedure
@@ -171,6 +193,15 @@ export const estoqueRouter = router({
         if (v !== undefined) (updates as Record<string, unknown>)[k] = v;
       }
       if (Object.keys(updates).length === 0) return row;
+      if (
+        updates.quantidadeTotal !== undefined ||
+        updates.usoPorEvento !== undefined ||
+        updates.frequenciaDias !== undefined
+      ) {
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        updates.consumoAplicadoAte = hoje;
+      }
       return db.updateEstoqueItem(projetoIdFromCtx(ctx), id, updates as never);
     }),
 

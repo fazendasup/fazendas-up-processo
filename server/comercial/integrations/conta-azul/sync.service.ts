@@ -93,10 +93,10 @@ function formatContaAzulDataAlteracao(d: Date): string {
   return `${y}-${mo}-${day}T${h}:${mi}:${s}-03:00`;
 }
 
-function buildPessoasPath(cursor: string | null): string {
+function buildPessoasPath(cursor: string | null, pagina = 1, tamanhoPagina = 100): string {
   const qs = new URLSearchParams({
-    pagina: "1",
-    tamanho_pagina: "100",
+    pagina: String(pagina),
+    tamanho_pagina: String(tamanhoPagina),
     tipo_ordenacao: "NOME",
     ordem_ordenacao: "ASC",
     /** Doc Conta Azul: evita misturar fornecedor/transportadora na carteira comercial. */
@@ -121,6 +121,118 @@ function buildPessoasPath(cursor: string | null): string {
 
 function pessoasPathUsaFiltroData(path: string): boolean {
   return path.includes("data_alteracao_de=");
+}
+
+async function fetchTodasPessoas(
+  http: AxiosInstance,
+  cursor: string | null,
+): Promise<ContaAzulPessoasListResponse> {
+  const tamanho = 100;
+  const maxPaginas = 100;
+  const items: NonNullable<ContaAzulPessoasListResponse["items"]> = [];
+  let total: number | undefined;
+
+  for (let pagina = 1; pagina <= maxPaginas; pagina++) {
+    const path = buildPessoasPath(cursor, pagina, tamanho);
+    let res: ContaAzulPessoasListResponse;
+    try {
+      res = await contaAzulGet<ContaAzulPessoasListResponse>(http, path);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      const podeTentarSemFiltro =
+        pessoasPathUsaFiltroData(path) &&
+        /\bConta Azul \((400|500|502|503)\)/.test(msg);
+      if (podeTentarSemFiltro) {
+        logger.warn(
+          { err: e },
+          "Conta Azul GET /v1/pessoas com filtro de data falhou; repetindo sem data_alteracao_*"
+        );
+        return fetchTodasPessoas(http, null);
+      }
+      throw e;
+    }
+
+    const batch = res.items ?? [];
+    items.push(...batch);
+    total = res.totalItems ?? res.total_items ?? res.total_itens ?? total;
+    if (batch.length === 0) break;
+    if (batch.length < tamanho) break;
+    if (typeof total === "number" && items.length >= total) break;
+  }
+
+  return { items, totalItems: total ?? items.length };
+}
+
+async function enriquecerPessoasComEnderecoDetalhado(
+  http: AxiosInstance,
+  rawItems: NonNullable<ContaAzulPessoasListResponse["items"]>,
+): Promise<NonNullable<ContaAzulPessoasListResponse["items"]>> {
+  const out: NonNullable<ContaAzulPessoasListResponse["items"]> = [];
+  for (const raw of rawItems) {
+    const mapped = mapPessoaApiItem(raw);
+    if (mapped.endereco || !raw.id) {
+      out.push(raw);
+      continue;
+    }
+    try {
+      const detalhe = await contaAzulGet<NonNullable<ContaAzulPessoasListResponse["items"]>[number]>(
+        http,
+        `/v1/pessoas/${encodeURIComponent(raw.id)}`
+      );
+      const enderecoDetalhe = mapPessoaApiItem(detalhe).endereco;
+      out.push(enderecoDetalhe ? { ...raw, endereco: enderecoDetalhe } : raw);
+    } catch (e) {
+      logger.warn(
+        { pessoaId: raw.id, err: e instanceof Error ? e.message : String(e) },
+        "Conta Azul: detalhe da pessoa indisponível para endereço"
+      );
+      out.push(raw);
+    }
+  }
+  return out;
+}
+
+async function upsertClientesContaAzul(
+  prisma: PrismaClient,
+  rawItems: NonNullable<ContaAzulPessoasListResponse["items"]>,
+): Promise<{ clientesProcessados: number; clientesComEndereco: number; maxAlteracao: string | null }> {
+  let clientesComEndereco = 0;
+  let clientesProcessados = 0;
+  let maxAlteracao: string | null = null;
+
+  for (const raw of rawItems) {
+    if (!pessoaItemTemPerfilCliente(raw)) {
+      logger.debug(
+        { id: raw.id, nome: raw.nome, perfis: raw.perfis },
+        "Pessoa ignorada (sem perfil Cliente)"
+      );
+      continue;
+    }
+    const p = mapPessoaApiItem(raw);
+    if (!p.id) continue;
+    const data = mapClienteUpsert(p);
+    if (data.endereco) clientesComEndereco++;
+    clientesProcessados++;
+    await prisma.cliente.upsert({
+      where: { externalId: p.id },
+      create: { ...data, externalId: p.id },
+      update: {
+        nome: data.nome,
+        cnpjCpf: data.cnpjCpf,
+        ...(data.endereco ? { endereco: data.endereco } : {}),
+        emailPrincipal: data.emailPrincipal,
+        telefoneWhatsapp: data.telefoneWhatsapp,
+        contatoPrincipal: data.contatoPrincipal,
+      },
+    });
+
+    if (raw.data_alteracao) {
+      if (!maxAlteracao || raw.data_alteracao > maxAlteracao)
+        maxAlteracao = raw.data_alteracao;
+    }
+  }
+
+  return { clientesProcessados, clientesComEndereco, maxAlteracao };
 }
 
 /** data_inicio/fim como calendário America/Sao_Paulo (evita deslocar dia vs UTC). */
@@ -435,6 +547,7 @@ async function removerVendasForaDaBuscaAtual(
 
 export type ContaAzulSyncResult = {
   clientesProcessados: number;
+  clientesComEndereco: number;
   vendasRecebidas: number;
   pedidosGravados: number;
   inteligenciaOportunidades: number;
@@ -457,10 +570,11 @@ export type IniciarSyncContaAzulResult =
 export function iniciarSyncContaAzulEmBackground(
   prisma: PrismaClient,
   env: Env,
-  mode: ContaAzulSyncMode = "manual"
+  mode: ContaAzulSyncMode = "manual",
+  options?: { forceFullClientes?: boolean }
 ): IniciarSyncContaAzulResult {
   if (syncEmAndamento) return { status: "already_running" };
-  const execucao = executarContaAzulSync(prisma, env, mode);
+  const execucao = executarContaAzulSync(prisma, env, mode, options);
   syncEmAndamento = execucao;
   void execucao.finally(() => {
     if (syncEmAndamento === execucao) syncEmAndamento = null;
@@ -468,10 +582,99 @@ export function iniciarSyncContaAzulEmBackground(
   return { status: "started" };
 }
 
+export type ContaAzulClientesSyncResult = {
+  clientesProcessados: number;
+  clientesComEndereco: number;
+};
+
+export async function runContaAzulClientesSync(
+  prisma: PrismaClient,
+  env: Env,
+  options?: { forceFullClientes?: boolean }
+): Promise<ContaAzulClientesSyncResult> {
+  const started = Date.now();
+  const cred = await ensureValidAccessToken(prisma, env);
+  if (!cred?.accessToken) {
+    await prisma.execucaoApi.create({
+      data: {
+        acaoApi: AcaoApi.SYNC_CA,
+        statusExecucao: StatusExecucaoApi.FALHA,
+        detalhesExecucao: {
+          step: "clientes_enderecos",
+          message: "Sem access token configurado",
+        },
+        duracaoMs: Date.now() - started,
+      },
+    });
+    throw new Error(
+      "Conta Azul: sem token — conclua OAuth em /integrations/conta-azul/auth"
+    );
+  }
+
+  try {
+    const http = createContaAzulHttp(env, cred.accessToken);
+    const syncState = await prisma.syncState.upsert({
+      where: { provider: "CONTA_AZUL" },
+      create: { provider: "CONTA_AZUL" },
+      update: {},
+    });
+    const cursor = options?.forceFullClientes ? null : syncState.cursor;
+    const pessoasRes = await fetchTodasPessoas(http, cursor);
+    const rawItems = await enriquecerPessoasComEnderecoDetalhado(http, pessoasRes.items ?? []);
+    const clientesSync = await upsertClientesContaAzul(prisma, rawItems);
+    if (clientesSync.maxAlteracao) {
+      await prisma.syncState.update({
+        where: { provider: "CONTA_AZUL" },
+        data: { cursor: clientesSync.maxAlteracao },
+      });
+    }
+
+    await prisma.execucaoApi.create({
+      data: {
+        acaoApi: AcaoApi.SYNC_CA,
+        statusExecucao: StatusExecucaoApi.SUCESSO,
+        detalhesExecucao: {
+          step: "clientes_enderecos",
+          clientesProcessados: clientesSync.clientesProcessados,
+          clientesComEndereco: clientesSync.clientesComEndereco,
+          totalPessoasContaAzul: pessoasRes.totalItems ?? rawItems.length,
+          forceFullClientes: Boolean(options?.forceFullClientes),
+        },
+        duracaoMs: Date.now() - started,
+      },
+    });
+
+    logger.info(
+      {
+        clientes: clientesSync.clientesProcessados,
+        clientesComEndereco: clientesSync.clientesComEndereco,
+      },
+      "Conta Azul: sync de clientes/endereço concluído"
+    );
+
+    return {
+      clientesProcessados: clientesSync.clientesProcessados,
+      clientesComEndereco: clientesSync.clientesComEndereco,
+    };
+  } catch (e) {
+    logger.error({ err: e }, "Conta Azul: sync de clientes/endereço falhou");
+    await prisma.execucaoApi.create({
+      data: {
+        acaoApi: AcaoApi.SYNC_CA,
+        statusExecucao: StatusExecucaoApi.FALHA,
+        mensagemErro: e instanceof Error ? e.message : String(e),
+        detalhesExecucao: { step: "clientes_enderecos" },
+        duracaoMs: Date.now() - started,
+      },
+    });
+    throw e;
+  }
+}
+
 export async function runContaAzulSync(
   prisma: PrismaClient,
   env: Env,
-  options?: { mode?: ContaAzulSyncMode; skipIfBusy?: boolean }
+  options?: { mode?: ContaAzulSyncMode; skipIfBusy?: boolean; forceFullClientes?: boolean }
 ): Promise<ContaAzulSyncResult> {
   if (syncEmAndamento) {
     if (options?.skipIfBusy) {
@@ -480,6 +683,7 @@ export async function runContaAzulSync(
       );
       return {
         clientesProcessados: 0,
+        clientesComEndereco: 0,
         vendasRecebidas: 0,
         pedidosGravados: 0,
         inteligenciaOportunidades: 0,
@@ -491,7 +695,9 @@ export async function runContaAzulSync(
   }
 
   const mode = options?.mode ?? "manual";
-  const execucao = executarContaAzulSync(prisma, env, mode);
+  const execucao = executarContaAzulSync(prisma, env, mode, {
+    forceFullClientes: options?.forceFullClientes,
+  });
   syncEmAndamento = execucao;
   try {
     return await execucao;
@@ -503,7 +709,8 @@ export async function runContaAzulSync(
 async function executarContaAzulSync(
   prisma: PrismaClient,
   env: Env,
-  mode: ContaAzulSyncMode
+  mode: ContaAzulSyncMode,
+  options?: { forceFullClientes?: boolean }
 ): Promise<ContaAzulSyncResult> {
   const started = Date.now();
   const composicaoCtx: ResolveComposicaoCtx = {
@@ -535,69 +742,15 @@ async function executarContaAzulSync(
       update: {},
     });
 
-    const cursor = syncState.cursor;
-
-    const pathPessoas = buildPessoasPath(cursor);
-    let pessoasRes: ContaAzulPessoasListResponse;
-    try {
-      pessoasRes = await contaAzulGet<ContaAzulPessoasListResponse>(
-        http,
-        pathPessoas
-      );
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      const podeTentarSemFiltro =
-        pessoasPathUsaFiltroData(pathPessoas) &&
-        /\bConta Azul \((400|500|502|503)\)/.test(msg);
-      if (podeTentarSemFiltro) {
-        logger.warn(
-          { err: e },
-          "Conta Azul GET /v1/pessoas com filtro de data falhou; repetindo sem data_alteracao_*"
-        );
-        pessoasRes = await contaAzulGet<ContaAzulPessoasListResponse>(
-          http,
-          buildPessoasPath(null)
-        );
-      } else {
-        throw e;
-      }
-    }
+    const cursor = options?.forceFullClientes ? null : syncState.cursor;
+    const pessoasRes = await fetchTodasPessoas(http, cursor);
     const rawItems = pessoasRes.items ?? [];
 
     let nextCursor: string | null = cursor ?? null;
-    let maxAlteracao: string | null = null;
+    const clientesSync = await upsertClientesContaAzul(prisma, rawItems);
+    const { clientesComEndereco } = clientesSync;
 
-    for (const raw of rawItems) {
-      if (!pessoaItemTemPerfilCliente(raw)) {
-        logger.debug(
-          { id: raw.id, nome: raw.nome, perfis: raw.perfis },
-          "Pessoa ignorada (sem perfil Cliente)"
-        );
-        continue;
-      }
-      const p = mapPessoaApiItem(raw);
-      if (!p.id) continue;
-      const data = mapClienteUpsert(p);
-      await prisma.cliente.upsert({
-        where: { externalId: p.id },
-        create: { ...data, externalId: p.id },
-        update: {
-          nome: data.nome,
-          cnpjCpf: data.cnpjCpf,
-          endereco: data.endereco,
-          emailPrincipal: data.emailPrincipal,
-          telefoneWhatsapp: data.telefoneWhatsapp,
-          contatoPrincipal: data.contatoPrincipal,
-        },
-      });
-
-      if (raw.data_alteracao) {
-        if (!maxAlteracao || raw.data_alteracao > maxAlteracao)
-          maxAlteracao = raw.data_alteracao;
-      }
-    }
-
-    if (maxAlteracao) nextCursor = maxAlteracao;
+    if (clientesSync.maxAlteracao) nextCursor = clientesSync.maxAlteracao;
 
     const vendasItens = await fetchTodasVendasBusca(http, env);
     const vendaIdsAtuais = new Set<string>();
@@ -628,7 +781,7 @@ async function executarContaAzulSync(
             update: {
               nome: data.nome,
               cnpjCpf: data.cnpjCpf,
-              endereco: data.endereco,
+              ...(data.endereco ? { endereco: data.endereco } : {}),
               emailPrincipal: data.emailPrincipal,
               telefoneWhatsapp: data.telefoneWhatsapp,
               contatoPrincipal: data.contatoPrincipal,
@@ -730,6 +883,7 @@ async function executarContaAzulSync(
         statusExecucao: StatusExecucaoApi.SUCESSO,
         detalhesExecucao: {
           clientesProcessados: rawItems.length,
+          clientesComEndereco,
           totalPessoasContaAzul: pessoasRes.totalItems ?? rawItems.length,
           vendasRecebidas: vendasItens.length,
           pedidosGravados,
@@ -750,6 +904,7 @@ async function executarContaAzulSync(
     logger.info(
       {
         clientes: rawItems.length,
+        clientesComEndereco,
         vendasRecebidas: vendasItens.length,
         pedidosGravados,
         intelOportunidades: intel.oportunidadesCriadas,
@@ -759,6 +914,7 @@ async function executarContaAzulSync(
 
     return {
       clientesProcessados: rawItems.length,
+      clientesComEndereco,
       vendasRecebidas: vendasItens.length,
       pedidosGravados,
       inteligenciaOportunidades: intel.oportunidadesCriadas,

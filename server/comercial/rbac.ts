@@ -6,6 +6,7 @@ const ordem: Record<PerfilUsuario, number> = {
   PROMOTER: 1,
   LIDER_COLHEITA: 1,
   OPERACOES: 1,
+  LOGISTICA: 1,
   COMERCIAL: 2,
   GERENTE_COMERCIAL: 3,
   ADMIN: 4,

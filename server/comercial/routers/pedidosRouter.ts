@@ -850,6 +850,56 @@ export const pedidosRouter = router({
       });
     }),
 
+  alterarDataPedido: comercialProcedure
+    .input(z.object({ pedidoId: z.string().min(1), dataEntrega: z.coerce.date() }))
+    .mutation(async ({ ctx, input }) => {
+      const usuario = ctx.comercialUsuario;
+      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      if (antesDoCortePedidos(input.dataEntrega)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Pedidos operacionais começam em 01/06/2026." });
+      }
+
+      const novaData = inicioDia(input.dataEntrega);
+      const pedido = await ctx.prisma!.pedidoOperacional.findUnique({
+        where: { id: input.pedidoId },
+        include: { avarias: true },
+      });
+      if (!pedido) throw new TRPCError({ code: "NOT_FOUND", message: "Pedido não encontrado" });
+      if (pedido.status === "CANCELADO") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Não é possível alterar a data de pedido cancelado." });
+      }
+      if (inicioDia(pedido.dataEntrega).getTime() === novaData.getTime()) {
+        return { success: true, unchanged: true };
+      }
+
+      await assertSemanaAnteriorFechada(ctx.prisma!, novaData);
+
+      await ctx.prisma!.$transaction(async (tx) => {
+        await tx.pedidoOperacional.update({
+          where: { id: pedido.id },
+          data: {
+            dataEntrega: novaData,
+            diaSemana: diaSemana(novaData),
+            editadoPorId: usuario.id,
+          },
+        });
+        await tx.pedidoOperacionalAvaria.updateMany({
+          where: { pedidoId: pedido.id },
+          data: { dataEntrega: novaData },
+        });
+        await registrarAuditoria(
+          tx as any,
+          pedido.id,
+          { id: usuario.id, nome: usuario.nome },
+          "data_pedido_alterada",
+          { dataEntrega: pedido.dataEntrega, diaSemana: pedido.diaSemana },
+          { dataEntrega: novaData, diaSemana: diaSemana(novaData) },
+        );
+      });
+
+      return { success: true, unchanged: false };
+    }),
+
   copiarSemanaAnterior: comercialProcedure
     .input(z.object({ dia: z.coerce.date() }))
     .mutation(async ({ ctx, input }) => {

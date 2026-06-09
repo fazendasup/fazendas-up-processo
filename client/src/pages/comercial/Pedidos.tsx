@@ -127,6 +127,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
   const [clienteId, setClienteId] = useState("");
   const [pedidoEditId, setPedidoEditId] = useState<string | null>(null);
   const [pedidoAuditoriaId, setPedidoAuditoriaId] = useState<string | null>(null);
+  const [datasPedidos, setDatasPedidos] = useState<Record<string, string>>({});
   const [tipoVenda, setTipoVenda] = useState("");
   const [obsPedido, setObsPedido] = useState("");
   const [linhas, setLinhas] = useState<ProdutoLinha[]>([{ produtoId: "", quantidade: "1", observacoes: "" }]);
@@ -273,6 +274,21 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
       ]);
     },
     onError: (err) => toast.error(err.message || "Não foi possível cancelar o pedido."),
+  });
+  const alterarDataPedido = trpc.comercial.pedidos.alterarDataPedido.useMutation({
+    onSuccess: async (result) => {
+      toast.success(result.unchanged ? "Pedido já estava nesta data." : "Data do pedido alterada.");
+      await Promise.all([
+        utils.comercial.pedidos.agenda.invalidate(),
+        utils.comercial.pedidos.dashboard.invalidate(),
+        utils.comercial.pedidos.compras.invalidate(),
+        utils.comercial.pedidos.clientes.invalidate(),
+        utils.comercial.pedidos.relatorioHistorico.invalidate(),
+        utils.comercial.pedidos.statusSemana.invalidate(),
+        utils.comercial.entregas.roteiro.invalidate(),
+      ]);
+    },
+    onError: (err) => toast.error(err.message || "Não foi possível alterar a data do pedido."),
   });
   const salvarProduto = trpc.comercial.pedidos.salvarProduto.useMutation({
     onSuccess: () => {
@@ -444,6 +460,21 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
     );
     if (!ok) return;
     cancelarPedido.mutate({ pedidoId: pedido.id });
+  }
+
+  function alterarDataPedidoAgenda(pedido: any) {
+    const dataAtual = isoLocal(new Date(pedido.dataEntrega));
+    const novaData = datasPedidos[pedido.id] || dataAtual;
+    if (!novaData) return toast.error("Informe a nova data do pedido.");
+    if (novaData === dataAtual) return toast.message("Pedido já está nesta data.");
+    const ok = window.confirm(
+      `Mover o pedido de ${pedido.cliente?.nome ?? pedido.contaAzulCustomerId} de ${fmtDate(pedido.dataEntrega)} para ${fmtDate(`${novaData}T12:00:00`)}?`,
+    );
+    if (!ok) return;
+    alterarDataPedido.mutate({
+      pedidoId: pedido.id,
+      dataEntrega: new Date(`${novaData}T12:00:00`),
+    });
   }
 
   return (
@@ -915,6 +946,36 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
                       </div>
                     ) : null}
                     {p.observacoes && <p className="mt-2 text-sm text-muted-foreground">{p.observacoes}</p>}
+                    <div className="mt-3 flex flex-wrap items-end gap-2 rounded-lg border bg-muted/20 p-2">
+                      <div>
+                        <Label className="text-xs">Mover para outra data</Label>
+                        <Input
+                          type="date"
+                          className="h-9 w-40"
+                          value={datasPedidos[p.id] ?? isoLocal(new Date(p.dataEntrega))}
+                          onChange={(e) =>
+                            setDatasPedidos((prev) => ({
+                              ...prev,
+                              [p.id]: e.target.value,
+                            }))
+                          }
+                          disabled={p.status === "CANCELADO" || alterarDataPedido.isPending}
+                        />
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={
+                          p.status === "CANCELADO" ||
+                          alterarDataPedido.isPending ||
+                          (datasPedidos[p.id] ?? isoLocal(new Date(p.dataEntrega))) === isoLocal(new Date(p.dataEntrega))
+                        }
+                        onClick={() => alterarDataPedidoAgenda(p)}
+                      >
+                        <CalendarDays className="mr-2 h-4 w-4" />
+                        Mudar data
+                      </Button>
+                    </div>
                     <div className="mt-2 flex flex-wrap gap-2">
                       <Button
                         size="sm"

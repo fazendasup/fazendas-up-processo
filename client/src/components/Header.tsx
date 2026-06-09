@@ -60,6 +60,7 @@ import {
   Brain,
   Sparkles,
   Briefcase,
+  Truck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -76,7 +77,7 @@ type NavItem = {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   requiredRole?: "admin" | "comercial";
-  comercialPerfis?: Array<"VENDEDOR" | "PROMOTER" | "LIDER_COLHEITA" | "OPERACOES" | "COMERCIAL" | "GERENTE_COMERCIAL" | "ADMIN">;
+  comercialPerfis?: Array<"VENDEDOR" | "PROMOTER" | "LIDER_COLHEITA" | "OPERACOES" | "COMERCIAL" | "GERENTE_COMERCIAL" | "LOGISTICA" | "ADMIN">;
   projetoTipo?: "fazenda_vertical" | "hidroponia";
 };
 
@@ -134,6 +135,20 @@ const COMERCIAL_ITEMS: NavItem[] = [
     label: "Pedidos",
     icon: CalendarClock,
     requiredRole: "comercial",
+  },
+  {
+    href: "/comercial/entregas",
+    label: "Entregas",
+    icon: Truck,
+    requiredRole: "comercial",
+    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
+  },
+  {
+    href: "/comercial/entregador",
+    label: "Modo entregador",
+    icon: Truck,
+    requiredRole: "comercial",
+    comercialPerfis: ["LOGISTICA"],
   },
   {
     href: "/comercial/dashboard",

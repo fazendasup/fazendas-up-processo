@@ -16,6 +16,7 @@ enum PerfilUsuario {
   GERENTE_COMERCIAL
   COMERCIAL
   OPERACOES
+  LOGISTICA
   ADMIN
 }
 
@@ -112,6 +113,21 @@ enum PedidoOperacionalStatus {
   CANCELADO
 }
 
+enum RotaEntregaStatus {
+  PLANEJADA
+  EM_ROTA
+  CONCLUIDA
+  CANCELADA
+}
+
+enum ParadaEntregaStatus {
+  PENDENTE
+  EM_ROTA
+  ENTREGUE
+  PROBLEMA
+  PULADA
+}
+
 enum StatusConciliacaoOperacional {
   PLANEJADO
   VINCULO_SUGERIDO
@@ -161,6 +177,9 @@ model Usuario {
   pedidosEditados  PedidoOperacional[]          @relation("PedidoEditadoPor")
   avariasCriadas   PedidoOperacionalAvaria[]    @relation("AvariaCriadaPor")
   auditoriasPedido PedidoOperacionalAuditoria[]
+  rotasEntrega     RotaEntrega[]                @relation("RotaEntregaEntregador")
+  rotasCriadas     RotaEntrega[]                @relation("RotaEntregaCriadaPor")
+  rotasAtualizadas RotaEntrega[]                @relation("RotaEntregaAtualizadaPor")
 
   @@map("usuarios")
 }
@@ -221,6 +240,7 @@ model Cliente {
   pedidosOperacionais  PedidoOperacional[]
   avariasOperacionais  PedidoOperacionalAvaria[]
   linksLegadoContaAzul ClienteLegadoContaAzulLink[]
+  paradasEntrega       ParadaEntrega[]
 
   @@index([tipo, statusRelacionamento])
   @@index([nome])
@@ -364,6 +384,75 @@ model PedidoOperacional {
   @@index([statusConciliacao])
   @@index([sugestaoPedidoContaAzulId])
   @@map("pedidos_operacionais")
+}
+
+model RotaEntrega {
+  id                    String            @id @default(cuid())
+  dataEntrega           DateTime          @unique @map("data_entrega")
+  nome                  String?
+  status                RotaEntregaStatus @default(PLANEJADA)
+  entregadorId          String?           @map("entregador_id")
+  entregadorNome        String?           @map("entregador_nome")
+  tokenPublico          String            @unique @map("token_publico")
+  compartilhamentoAtivo Boolean           @default(false) @map("compartilhamento_ativo")
+  iniciadoEm            DateTime?         @map("iniciado_em")
+  encerradoEm           DateTime?         @map("encerrado_em")
+  ultimaLatitude        Decimal?          @map("ultima_latitude") @db.Decimal(10, 7)
+  ultimaLongitude       Decimal?          @map("ultima_longitude") @db.Decimal(10, 7)
+  ultimaPrecisaoMetros  Decimal?          @map("ultima_precisao_metros") @db.Decimal(10, 2)
+  ultimaLocalizacaoEm   DateTime?         @map("ultima_localizacao_em")
+  criadoPorId           String?           @map("criado_por_id")
+  atualizadoPorId       String?           @map("atualizado_por_id")
+  criadoEm              DateTime          @default(now()) @map("criado_em")
+  atualizadoEm          DateTime          @updatedAt @map("atualizado_em")
+
+  entregador    Usuario?                      @relation("RotaEntregaEntregador", fields: [entregadorId], references: [id], onDelete: SetNull)
+  criadoPor     Usuario?                      @relation("RotaEntregaCriadaPor", fields: [criadoPorId], references: [id], onDelete: SetNull)
+  atualizadoPor Usuario?                      @relation("RotaEntregaAtualizadaPor", fields: [atualizadoPorId], references: [id], onDelete: SetNull)
+  paradas       ParadaEntrega[]
+  localizacoes  HistoricoLocalizacaoEntrega[]
+
+  @@index([dataEntrega, status])
+  @@index([entregadorId])
+  @@map("rotas_entrega")
+}
+
+model ParadaEntrega {
+  id                  String              @id @default(cuid())
+  rotaId              String              @map("rota_id")
+  contaAzulCustomerId String              @map("conta_azul_customer_id")
+  clienteId           String?             @map("cliente_id")
+  ordem               Int
+  status              ParadaEntregaStatus @default(PENDENTE)
+  tokenPublico        String              @unique @map("token_publico")
+  observacoes         String?             @db.Text
+  observacoesProblema String?             @map("observacoes_problema") @db.Text
+  entregueEm          DateTime?           @map("entregue_em")
+  problemaEm          DateTime?           @map("problema_em")
+  criadoEm            DateTime            @default(now()) @map("criado_em")
+  atualizadoEm        DateTime            @updatedAt @map("atualizado_em")
+
+  rota    RotaEntrega @relation(fields: [rotaId], references: [id], onDelete: Cascade)
+  cliente Cliente?    @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+
+  @@unique([rotaId, contaAzulCustomerId])
+  @@index([rotaId, ordem])
+  @@index([clienteId])
+  @@map("paradas_entrega")
+}
+
+model HistoricoLocalizacaoEntrega {
+  id             String   @id @default(cuid())
+  rotaId         String   @map("rota_id")
+  latitude       Decimal  @db.Decimal(10, 7)
+  longitude      Decimal  @db.Decimal(10, 7)
+  precisaoMetros Decimal? @map("precisao_metros") @db.Decimal(10, 2)
+  criadoEm       DateTime @default(now()) @map("criado_em")
+
+  rota RotaEntrega @relation(fields: [rotaId], references: [id], onDelete: Cascade)
+
+  @@index([rotaId, criadoEm])
+  @@map("historico_localizacao_entrega")
 }
 
 model PedidoOperacionalItem {

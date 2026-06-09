@@ -64,6 +64,21 @@ export type PrecoEspecialCliente = $Result.DefaultSelection<Prisma.$PrecoEspecia
  */
 export type PedidoOperacional = $Result.DefaultSelection<Prisma.$PedidoOperacionalPayload>
 /**
+ * Model RotaEntrega
+ * 
+ */
+export type RotaEntrega = $Result.DefaultSelection<Prisma.$RotaEntregaPayload>
+/**
+ * Model ParadaEntrega
+ * 
+ */
+export type ParadaEntrega = $Result.DefaultSelection<Prisma.$ParadaEntregaPayload>
+/**
+ * Model HistoricoLocalizacaoEntrega
+ * 
+ */
+export type HistoricoLocalizacaoEntrega = $Result.DefaultSelection<Prisma.$HistoricoLocalizacaoEntregaPayload>
+/**
  * Model PedidoOperacionalItem
  * 
  */
@@ -156,6 +171,7 @@ export namespace $Enums {
   GERENTE_COMERCIAL: 'GERENTE_COMERCIAL',
   COMERCIAL: 'COMERCIAL',
   OPERACOES: 'OPERACOES',
+  LOGISTICA: 'LOGISTICA',
   ADMIN: 'ADMIN'
 };
 
@@ -297,6 +313,27 @@ export const PedidoOperacionalStatus: {
 export type PedidoOperacionalStatus = (typeof PedidoOperacionalStatus)[keyof typeof PedidoOperacionalStatus]
 
 
+export const RotaEntregaStatus: {
+  PLANEJADA: 'PLANEJADA',
+  EM_ROTA: 'EM_ROTA',
+  CONCLUIDA: 'CONCLUIDA',
+  CANCELADA: 'CANCELADA'
+};
+
+export type RotaEntregaStatus = (typeof RotaEntregaStatus)[keyof typeof RotaEntregaStatus]
+
+
+export const ParadaEntregaStatus: {
+  PENDENTE: 'PENDENTE',
+  EM_ROTA: 'EM_ROTA',
+  ENTREGUE: 'ENTREGUE',
+  PROBLEMA: 'PROBLEMA',
+  PULADA: 'PULADA'
+};
+
+export type ParadaEntregaStatus = (typeof ParadaEntregaStatus)[keyof typeof ParadaEntregaStatus]
+
+
 export const StatusConciliacaoOperacional: {
   PLANEJADO: 'PLANEJADO',
   VINCULO_SUGERIDO: 'VINCULO_SUGERIDO',
@@ -406,6 +443,14 @@ export const PeriodoKpi: typeof $Enums.PeriodoKpi
 export type PedidoOperacionalStatus = $Enums.PedidoOperacionalStatus
 
 export const PedidoOperacionalStatus: typeof $Enums.PedidoOperacionalStatus
+
+export type RotaEntregaStatus = $Enums.RotaEntregaStatus
+
+export const RotaEntregaStatus: typeof $Enums.RotaEntregaStatus
+
+export type ParadaEntregaStatus = $Enums.ParadaEntregaStatus
+
+export const ParadaEntregaStatus: typeof $Enums.ParadaEntregaStatus
 
 export type StatusConciliacaoOperacional = $Enums.StatusConciliacaoOperacional
 
@@ -644,6 +689,36 @@ export class PrismaClient<
     * ```
     */
   get pedidoOperacional(): Prisma.PedidoOperacionalDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.rotaEntrega`: Exposes CRUD operations for the **RotaEntrega** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more RotaEntregas
+    * const rotaEntregas = await prisma.rotaEntrega.findMany()
+    * ```
+    */
+  get rotaEntrega(): Prisma.RotaEntregaDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.paradaEntrega`: Exposes CRUD operations for the **ParadaEntrega** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ParadaEntregas
+    * const paradaEntregas = await prisma.paradaEntrega.findMany()
+    * ```
+    */
+  get paradaEntrega(): Prisma.ParadaEntregaDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.historicoLocalizacaoEntrega`: Exposes CRUD operations for the **HistoricoLocalizacaoEntrega** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more HistoricoLocalizacaoEntregas
+    * const historicoLocalizacaoEntregas = await prisma.historicoLocalizacaoEntrega.findMany()
+    * ```
+    */
+  get historicoLocalizacaoEntrega(): Prisma.HistoricoLocalizacaoEntregaDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.pedidoOperacionalItem`: Exposes CRUD operations for the **PedidoOperacionalItem** model.
@@ -1254,6 +1329,9 @@ export namespace Prisma {
     ClienteLegadoContaAzulLink: 'ClienteLegadoContaAzulLink',
     PrecoEspecialCliente: 'PrecoEspecialCliente',
     PedidoOperacional: 'PedidoOperacional',
+    RotaEntrega: 'RotaEntrega',
+    ParadaEntrega: 'ParadaEntrega',
+    HistoricoLocalizacaoEntrega: 'HistoricoLocalizacaoEntrega',
     PedidoOperacionalItem: 'PedidoOperacionalItem',
     PedidoOperacionalAvaria: 'PedidoOperacionalAvaria',
     PedidoOperacionalAuditoria: 'PedidoOperacionalAuditoria',
@@ -1288,7 +1366,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "produtoComercial" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "syncState" | "regraClassificacao" | "templateMensagem"
+      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "produtoComercial" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "syncState" | "regraClassificacao" | "templateMensagem"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1949,6 +2027,204 @@ export namespace Prisma {
           count: {
             args: Prisma.PedidoOperacionalCountArgs<ExtArgs>
             result: $Utils.Optional<PedidoOperacionalCountAggregateOutputType> | number
+          }
+        }
+      }
+      RotaEntrega: {
+        payload: Prisma.$RotaEntregaPayload<ExtArgs>
+        fields: Prisma.RotaEntregaFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.RotaEntregaFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RotaEntregaPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.RotaEntregaFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RotaEntregaPayload>
+          }
+          findFirst: {
+            args: Prisma.RotaEntregaFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RotaEntregaPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.RotaEntregaFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RotaEntregaPayload>
+          }
+          findMany: {
+            args: Prisma.RotaEntregaFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RotaEntregaPayload>[]
+          }
+          create: {
+            args: Prisma.RotaEntregaCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RotaEntregaPayload>
+          }
+          createMany: {
+            args: Prisma.RotaEntregaCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.RotaEntregaDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RotaEntregaPayload>
+          }
+          update: {
+            args: Prisma.RotaEntregaUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RotaEntregaPayload>
+          }
+          deleteMany: {
+            args: Prisma.RotaEntregaDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.RotaEntregaUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.RotaEntregaUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RotaEntregaPayload>
+          }
+          aggregate: {
+            args: Prisma.RotaEntregaAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateRotaEntrega>
+          }
+          groupBy: {
+            args: Prisma.RotaEntregaGroupByArgs<ExtArgs>
+            result: $Utils.Optional<RotaEntregaGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.RotaEntregaCountArgs<ExtArgs>
+            result: $Utils.Optional<RotaEntregaCountAggregateOutputType> | number
+          }
+        }
+      }
+      ParadaEntrega: {
+        payload: Prisma.$ParadaEntregaPayload<ExtArgs>
+        fields: Prisma.ParadaEntregaFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ParadaEntregaFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ParadaEntregaPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ParadaEntregaFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ParadaEntregaPayload>
+          }
+          findFirst: {
+            args: Prisma.ParadaEntregaFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ParadaEntregaPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ParadaEntregaFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ParadaEntregaPayload>
+          }
+          findMany: {
+            args: Prisma.ParadaEntregaFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ParadaEntregaPayload>[]
+          }
+          create: {
+            args: Prisma.ParadaEntregaCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ParadaEntregaPayload>
+          }
+          createMany: {
+            args: Prisma.ParadaEntregaCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.ParadaEntregaDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ParadaEntregaPayload>
+          }
+          update: {
+            args: Prisma.ParadaEntregaUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ParadaEntregaPayload>
+          }
+          deleteMany: {
+            args: Prisma.ParadaEntregaDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ParadaEntregaUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.ParadaEntregaUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ParadaEntregaPayload>
+          }
+          aggregate: {
+            args: Prisma.ParadaEntregaAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateParadaEntrega>
+          }
+          groupBy: {
+            args: Prisma.ParadaEntregaGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ParadaEntregaGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ParadaEntregaCountArgs<ExtArgs>
+            result: $Utils.Optional<ParadaEntregaCountAggregateOutputType> | number
+          }
+        }
+      }
+      HistoricoLocalizacaoEntrega: {
+        payload: Prisma.$HistoricoLocalizacaoEntregaPayload<ExtArgs>
+        fields: Prisma.HistoricoLocalizacaoEntregaFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.HistoricoLocalizacaoEntregaFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$HistoricoLocalizacaoEntregaPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.HistoricoLocalizacaoEntregaFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$HistoricoLocalizacaoEntregaPayload>
+          }
+          findFirst: {
+            args: Prisma.HistoricoLocalizacaoEntregaFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$HistoricoLocalizacaoEntregaPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.HistoricoLocalizacaoEntregaFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$HistoricoLocalizacaoEntregaPayload>
+          }
+          findMany: {
+            args: Prisma.HistoricoLocalizacaoEntregaFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$HistoricoLocalizacaoEntregaPayload>[]
+          }
+          create: {
+            args: Prisma.HistoricoLocalizacaoEntregaCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$HistoricoLocalizacaoEntregaPayload>
+          }
+          createMany: {
+            args: Prisma.HistoricoLocalizacaoEntregaCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.HistoricoLocalizacaoEntregaDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$HistoricoLocalizacaoEntregaPayload>
+          }
+          update: {
+            args: Prisma.HistoricoLocalizacaoEntregaUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$HistoricoLocalizacaoEntregaPayload>
+          }
+          deleteMany: {
+            args: Prisma.HistoricoLocalizacaoEntregaDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.HistoricoLocalizacaoEntregaUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.HistoricoLocalizacaoEntregaUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$HistoricoLocalizacaoEntregaPayload>
+          }
+          aggregate: {
+            args: Prisma.HistoricoLocalizacaoEntregaAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateHistoricoLocalizacaoEntrega>
+          }
+          groupBy: {
+            args: Prisma.HistoricoLocalizacaoEntregaGroupByArgs<ExtArgs>
+            result: $Utils.Optional<HistoricoLocalizacaoEntregaGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.HistoricoLocalizacaoEntregaCountArgs<ExtArgs>
+            result: $Utils.Optional<HistoricoLocalizacaoEntregaCountAggregateOutputType> | number
           }
         }
       }
@@ -3114,6 +3390,9 @@ export namespace Prisma {
     clienteLegadoContaAzulLink?: ClienteLegadoContaAzulLinkOmit
     precoEspecialCliente?: PrecoEspecialClienteOmit
     pedidoOperacional?: PedidoOperacionalOmit
+    rotaEntrega?: RotaEntregaOmit
+    paradaEntrega?: ParadaEntregaOmit
+    historicoLocalizacaoEntrega?: HistoricoLocalizacaoEntregaOmit
     pedidoOperacionalItem?: PedidoOperacionalItemOmit
     pedidoOperacionalAvaria?: PedidoOperacionalAvariaOmit
     pedidoOperacionalAuditoria?: PedidoOperacionalAuditoriaOmit
@@ -3217,6 +3496,9 @@ export namespace Prisma {
     pedidosEditados: number
     avariasCriadas: number
     auditoriasPedido: number
+    rotasEntrega: number
+    rotasCriadas: number
+    rotasAtualizadas: number
   }
 
   export type UsuarioCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -3227,6 +3509,9 @@ export namespace Prisma {
     pedidosEditados?: boolean | UsuarioCountOutputTypeCountPedidosEditadosArgs
     avariasCriadas?: boolean | UsuarioCountOutputTypeCountAvariasCriadasArgs
     auditoriasPedido?: boolean | UsuarioCountOutputTypeCountAuditoriasPedidoArgs
+    rotasEntrega?: boolean | UsuarioCountOutputTypeCountRotasEntregaArgs
+    rotasCriadas?: boolean | UsuarioCountOutputTypeCountRotasCriadasArgs
+    rotasAtualizadas?: boolean | UsuarioCountOutputTypeCountRotasAtualizadasArgs
   }
 
   // Custom InputTypes
@@ -3289,6 +3574,27 @@ export namespace Prisma {
     where?: PedidoOperacionalAuditoriaWhereInput
   }
 
+  /**
+   * UsuarioCountOutputType without action
+   */
+  export type UsuarioCountOutputTypeCountRotasEntregaArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RotaEntregaWhereInput
+  }
+
+  /**
+   * UsuarioCountOutputType without action
+   */
+  export type UsuarioCountOutputTypeCountRotasCriadasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RotaEntregaWhereInput
+  }
+
+  /**
+   * UsuarioCountOutputType without action
+   */
+  export type UsuarioCountOutputTypeCountRotasAtualizadasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RotaEntregaWhereInput
+  }
+
 
   /**
    * Count Type GrupoClienteCountOutputType
@@ -3334,6 +3640,7 @@ export namespace Prisma {
     pedidosOperacionais: number
     avariasOperacionais: number
     linksLegadoContaAzul: number
+    paradasEntrega: number
   }
 
   export type ClienteCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -3345,6 +3652,7 @@ export namespace Prisma {
     pedidosOperacionais?: boolean | ClienteCountOutputTypeCountPedidosOperacionaisArgs
     avariasOperacionais?: boolean | ClienteCountOutputTypeCountAvariasOperacionaisArgs
     linksLegadoContaAzul?: boolean | ClienteCountOutputTypeCountLinksLegadoContaAzulArgs
+    paradasEntrega?: boolean | ClienteCountOutputTypeCountParadasEntregaArgs
   }
 
   // Custom InputTypes
@@ -3412,6 +3720,13 @@ export namespace Prisma {
    */
   export type ClienteCountOutputTypeCountLinksLegadoContaAzulArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: ClienteLegadoContaAzulLinkWhereInput
+  }
+
+  /**
+   * ClienteCountOutputType without action
+   */
+  export type ClienteCountOutputTypeCountParadasEntregaArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ParadaEntregaWhereInput
   }
 
 
@@ -3559,6 +3874,46 @@ export namespace Prisma {
    */
   export type PedidoOperacionalCountOutputTypeCountEventosConciliacaoArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: PedidoConciliacaoEventoWhereInput
+  }
+
+
+  /**
+   * Count Type RotaEntregaCountOutputType
+   */
+
+  export type RotaEntregaCountOutputType = {
+    paradas: number
+    localizacoes: number
+  }
+
+  export type RotaEntregaCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    paradas?: boolean | RotaEntregaCountOutputTypeCountParadasArgs
+    localizacoes?: boolean | RotaEntregaCountOutputTypeCountLocalizacoesArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * RotaEntregaCountOutputType without action
+   */
+  export type RotaEntregaCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RotaEntregaCountOutputType
+     */
+    select?: RotaEntregaCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * RotaEntregaCountOutputType without action
+   */
+  export type RotaEntregaCountOutputTypeCountParadasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ParadaEntregaWhereInput
+  }
+
+  /**
+   * RotaEntregaCountOutputType without action
+   */
+  export type RotaEntregaCountOutputTypeCountLocalizacoesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: HistoricoLocalizacaoEntregaWhereInput
   }
 
 
@@ -3793,6 +4148,9 @@ export namespace Prisma {
     pedidosEditados?: boolean | Usuario$pedidosEditadosArgs<ExtArgs>
     avariasCriadas?: boolean | Usuario$avariasCriadasArgs<ExtArgs>
     auditoriasPedido?: boolean | Usuario$auditoriasPedidoArgs<ExtArgs>
+    rotasEntrega?: boolean | Usuario$rotasEntregaArgs<ExtArgs>
+    rotasCriadas?: boolean | Usuario$rotasCriadasArgs<ExtArgs>
+    rotasAtualizadas?: boolean | Usuario$rotasAtualizadasArgs<ExtArgs>
     _count?: boolean | UsuarioCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["usuario"]>
 
@@ -3817,6 +4175,9 @@ export namespace Prisma {
     pedidosEditados?: boolean | Usuario$pedidosEditadosArgs<ExtArgs>
     avariasCriadas?: boolean | Usuario$avariasCriadasArgs<ExtArgs>
     auditoriasPedido?: boolean | Usuario$auditoriasPedidoArgs<ExtArgs>
+    rotasEntrega?: boolean | Usuario$rotasEntregaArgs<ExtArgs>
+    rotasCriadas?: boolean | Usuario$rotasCriadasArgs<ExtArgs>
+    rotasAtualizadas?: boolean | Usuario$rotasAtualizadasArgs<ExtArgs>
     _count?: boolean | UsuarioCountOutputTypeDefaultArgs<ExtArgs>
   }
 
@@ -3830,6 +4191,9 @@ export namespace Prisma {
       pedidosEditados: Prisma.$PedidoOperacionalPayload<ExtArgs>[]
       avariasCriadas: Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>[]
       auditoriasPedido: Prisma.$PedidoOperacionalAuditoriaPayload<ExtArgs>[]
+      rotasEntrega: Prisma.$RotaEntregaPayload<ExtArgs>[]
+      rotasCriadas: Prisma.$RotaEntregaPayload<ExtArgs>[]
+      rotasAtualizadas: Prisma.$RotaEntregaPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -4186,6 +4550,9 @@ export namespace Prisma {
     pedidosEditados<T extends Usuario$pedidosEditadosArgs<ExtArgs> = {}>(args?: Subset<T, Usuario$pedidosEditadosArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     avariasCriadas<T extends Usuario$avariasCriadasArgs<ExtArgs> = {}>(args?: Subset<T, Usuario$avariasCriadasArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     auditoriasPedido<T extends Usuario$auditoriasPedidoArgs<ExtArgs> = {}>(args?: Subset<T, Usuario$auditoriasPedidoArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalAuditoriaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    rotasEntrega<T extends Usuario$rotasEntregaArgs<ExtArgs> = {}>(args?: Subset<T, Usuario$rotasEntregaArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RotaEntregaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    rotasCriadas<T extends Usuario$rotasCriadasArgs<ExtArgs> = {}>(args?: Subset<T, Usuario$rotasCriadasArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RotaEntregaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    rotasAtualizadas<T extends Usuario$rotasAtualizadasArgs<ExtArgs> = {}>(args?: Subset<T, Usuario$rotasAtualizadasArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RotaEntregaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4730,6 +5097,78 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: PedidoOperacionalAuditoriaScalarFieldEnum | PedidoOperacionalAuditoriaScalarFieldEnum[]
+  }
+
+  /**
+   * Usuario.rotasEntrega
+   */
+  export type Usuario$rotasEntregaArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RotaEntrega
+     */
+    select?: RotaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RotaEntrega
+     */
+    omit?: RotaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RotaEntregaInclude<ExtArgs> | null
+    where?: RotaEntregaWhereInput
+    orderBy?: RotaEntregaOrderByWithRelationInput | RotaEntregaOrderByWithRelationInput[]
+    cursor?: RotaEntregaWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: RotaEntregaScalarFieldEnum | RotaEntregaScalarFieldEnum[]
+  }
+
+  /**
+   * Usuario.rotasCriadas
+   */
+  export type Usuario$rotasCriadasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RotaEntrega
+     */
+    select?: RotaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RotaEntrega
+     */
+    omit?: RotaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RotaEntregaInclude<ExtArgs> | null
+    where?: RotaEntregaWhereInput
+    orderBy?: RotaEntregaOrderByWithRelationInput | RotaEntregaOrderByWithRelationInput[]
+    cursor?: RotaEntregaWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: RotaEntregaScalarFieldEnum | RotaEntregaScalarFieldEnum[]
+  }
+
+  /**
+   * Usuario.rotasAtualizadas
+   */
+  export type Usuario$rotasAtualizadasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RotaEntrega
+     */
+    select?: RotaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RotaEntrega
+     */
+    omit?: RotaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RotaEntregaInclude<ExtArgs> | null
+    where?: RotaEntregaWhereInput
+    orderBy?: RotaEntregaOrderByWithRelationInput | RotaEntregaOrderByWithRelationInput[]
+    cursor?: RotaEntregaWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: RotaEntregaScalarFieldEnum | RotaEntregaScalarFieldEnum[]
   }
 
   /**
@@ -6946,6 +7385,7 @@ export namespace Prisma {
     pedidosOperacionais?: boolean | Cliente$pedidosOperacionaisArgs<ExtArgs>
     avariasOperacionais?: boolean | Cliente$avariasOperacionaisArgs<ExtArgs>
     linksLegadoContaAzul?: boolean | Cliente$linksLegadoContaAzulArgs<ExtArgs>
+    paradasEntrega?: boolean | Cliente$paradasEntregaArgs<ExtArgs>
     _count?: boolean | ClienteCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["cliente"]>
 
@@ -6983,6 +7423,7 @@ export namespace Prisma {
     pedidosOperacionais?: boolean | Cliente$pedidosOperacionaisArgs<ExtArgs>
     avariasOperacionais?: boolean | Cliente$avariasOperacionaisArgs<ExtArgs>
     linksLegadoContaAzul?: boolean | Cliente$linksLegadoContaAzulArgs<ExtArgs>
+    paradasEntrega?: boolean | Cliente$paradasEntregaArgs<ExtArgs>
     _count?: boolean | ClienteCountOutputTypeDefaultArgs<ExtArgs>
   }
 
@@ -6999,6 +7440,7 @@ export namespace Prisma {
       pedidosOperacionais: Prisma.$PedidoOperacionalPayload<ExtArgs>[]
       avariasOperacionais: Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>[]
       linksLegadoContaAzul: Prisma.$ClienteLegadoContaAzulLinkPayload<ExtArgs>[]
+      paradasEntrega: Prisma.$ParadaEntregaPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -7368,6 +7810,7 @@ export namespace Prisma {
     pedidosOperacionais<T extends Cliente$pedidosOperacionaisArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$pedidosOperacionaisArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     avariasOperacionais<T extends Cliente$avariasOperacionaisArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$avariasOperacionaisArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     linksLegadoContaAzul<T extends Cliente$linksLegadoContaAzulArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$linksLegadoContaAzulArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ClienteLegadoContaAzulLinkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    paradasEntrega<T extends Cliente$paradasEntregaArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$paradasEntregaArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ParadaEntregaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -7984,6 +8427,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: ClienteLegadoContaAzulLinkScalarFieldEnum | ClienteLegadoContaAzulLinkScalarFieldEnum[]
+  }
+
+  /**
+   * Cliente.paradasEntrega
+   */
+  export type Cliente$paradasEntregaArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ParadaEntrega
+     */
+    select?: ParadaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ParadaEntrega
+     */
+    omit?: ParadaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ParadaEntregaInclude<ExtArgs> | null
+    where?: ParadaEntregaWhereInput
+    orderBy?: ParadaEntregaOrderByWithRelationInput | ParadaEntregaOrderByWithRelationInput[]
+    cursor?: ParadaEntregaWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ParadaEntregaScalarFieldEnum | ParadaEntregaScalarFieldEnum[]
   }
 
   /**
@@ -14573,6 +15040,3299 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: PedidoOperacionalInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model RotaEntrega
+   */
+
+  export type AggregateRotaEntrega = {
+    _count: RotaEntregaCountAggregateOutputType | null
+    _avg: RotaEntregaAvgAggregateOutputType | null
+    _sum: RotaEntregaSumAggregateOutputType | null
+    _min: RotaEntregaMinAggregateOutputType | null
+    _max: RotaEntregaMaxAggregateOutputType | null
+  }
+
+  export type RotaEntregaAvgAggregateOutputType = {
+    ultimaLatitude: Decimal | null
+    ultimaLongitude: Decimal | null
+    ultimaPrecisaoMetros: Decimal | null
+  }
+
+  export type RotaEntregaSumAggregateOutputType = {
+    ultimaLatitude: Decimal | null
+    ultimaLongitude: Decimal | null
+    ultimaPrecisaoMetros: Decimal | null
+  }
+
+  export type RotaEntregaMinAggregateOutputType = {
+    id: string | null
+    dataEntrega: Date | null
+    nome: string | null
+    status: $Enums.RotaEntregaStatus | null
+    entregadorId: string | null
+    entregadorNome: string | null
+    tokenPublico: string | null
+    compartilhamentoAtivo: boolean | null
+    iniciadoEm: Date | null
+    encerradoEm: Date | null
+    ultimaLatitude: Decimal | null
+    ultimaLongitude: Decimal | null
+    ultimaPrecisaoMetros: Decimal | null
+    ultimaLocalizacaoEm: Date | null
+    criadoPorId: string | null
+    atualizadoPorId: string | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type RotaEntregaMaxAggregateOutputType = {
+    id: string | null
+    dataEntrega: Date | null
+    nome: string | null
+    status: $Enums.RotaEntregaStatus | null
+    entregadorId: string | null
+    entregadorNome: string | null
+    tokenPublico: string | null
+    compartilhamentoAtivo: boolean | null
+    iniciadoEm: Date | null
+    encerradoEm: Date | null
+    ultimaLatitude: Decimal | null
+    ultimaLongitude: Decimal | null
+    ultimaPrecisaoMetros: Decimal | null
+    ultimaLocalizacaoEm: Date | null
+    criadoPorId: string | null
+    atualizadoPorId: string | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type RotaEntregaCountAggregateOutputType = {
+    id: number
+    dataEntrega: number
+    nome: number
+    status: number
+    entregadorId: number
+    entregadorNome: number
+    tokenPublico: number
+    compartilhamentoAtivo: number
+    iniciadoEm: number
+    encerradoEm: number
+    ultimaLatitude: number
+    ultimaLongitude: number
+    ultimaPrecisaoMetros: number
+    ultimaLocalizacaoEm: number
+    criadoPorId: number
+    atualizadoPorId: number
+    criadoEm: number
+    atualizadoEm: number
+    _all: number
+  }
+
+
+  export type RotaEntregaAvgAggregateInputType = {
+    ultimaLatitude?: true
+    ultimaLongitude?: true
+    ultimaPrecisaoMetros?: true
+  }
+
+  export type RotaEntregaSumAggregateInputType = {
+    ultimaLatitude?: true
+    ultimaLongitude?: true
+    ultimaPrecisaoMetros?: true
+  }
+
+  export type RotaEntregaMinAggregateInputType = {
+    id?: true
+    dataEntrega?: true
+    nome?: true
+    status?: true
+    entregadorId?: true
+    entregadorNome?: true
+    tokenPublico?: true
+    compartilhamentoAtivo?: true
+    iniciadoEm?: true
+    encerradoEm?: true
+    ultimaLatitude?: true
+    ultimaLongitude?: true
+    ultimaPrecisaoMetros?: true
+    ultimaLocalizacaoEm?: true
+    criadoPorId?: true
+    atualizadoPorId?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type RotaEntregaMaxAggregateInputType = {
+    id?: true
+    dataEntrega?: true
+    nome?: true
+    status?: true
+    entregadorId?: true
+    entregadorNome?: true
+    tokenPublico?: true
+    compartilhamentoAtivo?: true
+    iniciadoEm?: true
+    encerradoEm?: true
+    ultimaLatitude?: true
+    ultimaLongitude?: true
+    ultimaPrecisaoMetros?: true
+    ultimaLocalizacaoEm?: true
+    criadoPorId?: true
+    atualizadoPorId?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type RotaEntregaCountAggregateInputType = {
+    id?: true
+    dataEntrega?: true
+    nome?: true
+    status?: true
+    entregadorId?: true
+    entregadorNome?: true
+    tokenPublico?: true
+    compartilhamentoAtivo?: true
+    iniciadoEm?: true
+    encerradoEm?: true
+    ultimaLatitude?: true
+    ultimaLongitude?: true
+    ultimaPrecisaoMetros?: true
+    ultimaLocalizacaoEm?: true
+    criadoPorId?: true
+    atualizadoPorId?: true
+    criadoEm?: true
+    atualizadoEm?: true
+    _all?: true
+  }
+
+  export type RotaEntregaAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which RotaEntrega to aggregate.
+     */
+    where?: RotaEntregaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RotaEntregas to fetch.
+     */
+    orderBy?: RotaEntregaOrderByWithRelationInput | RotaEntregaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: RotaEntregaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RotaEntregas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RotaEntregas.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned RotaEntregas
+    **/
+    _count?: true | RotaEntregaCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: RotaEntregaAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: RotaEntregaSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: RotaEntregaMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: RotaEntregaMaxAggregateInputType
+  }
+
+  export type GetRotaEntregaAggregateType<T extends RotaEntregaAggregateArgs> = {
+        [P in keyof T & keyof AggregateRotaEntrega]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateRotaEntrega[P]>
+      : GetScalarType<T[P], AggregateRotaEntrega[P]>
+  }
+
+
+
+
+  export type RotaEntregaGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RotaEntregaWhereInput
+    orderBy?: RotaEntregaOrderByWithAggregationInput | RotaEntregaOrderByWithAggregationInput[]
+    by: RotaEntregaScalarFieldEnum[] | RotaEntregaScalarFieldEnum
+    having?: RotaEntregaScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: RotaEntregaCountAggregateInputType | true
+    _avg?: RotaEntregaAvgAggregateInputType
+    _sum?: RotaEntregaSumAggregateInputType
+    _min?: RotaEntregaMinAggregateInputType
+    _max?: RotaEntregaMaxAggregateInputType
+  }
+
+  export type RotaEntregaGroupByOutputType = {
+    id: string
+    dataEntrega: Date
+    nome: string | null
+    status: $Enums.RotaEntregaStatus
+    entregadorId: string | null
+    entregadorNome: string | null
+    tokenPublico: string
+    compartilhamentoAtivo: boolean
+    iniciadoEm: Date | null
+    encerradoEm: Date | null
+    ultimaLatitude: Decimal | null
+    ultimaLongitude: Decimal | null
+    ultimaPrecisaoMetros: Decimal | null
+    ultimaLocalizacaoEm: Date | null
+    criadoPorId: string | null
+    atualizadoPorId: string | null
+    criadoEm: Date
+    atualizadoEm: Date
+    _count: RotaEntregaCountAggregateOutputType | null
+    _avg: RotaEntregaAvgAggregateOutputType | null
+    _sum: RotaEntregaSumAggregateOutputType | null
+    _min: RotaEntregaMinAggregateOutputType | null
+    _max: RotaEntregaMaxAggregateOutputType | null
+  }
+
+  type GetRotaEntregaGroupByPayload<T extends RotaEntregaGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<RotaEntregaGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof RotaEntregaGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], RotaEntregaGroupByOutputType[P]>
+            : GetScalarType<T[P], RotaEntregaGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type RotaEntregaSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    dataEntrega?: boolean
+    nome?: boolean
+    status?: boolean
+    entregadorId?: boolean
+    entregadorNome?: boolean
+    tokenPublico?: boolean
+    compartilhamentoAtivo?: boolean
+    iniciadoEm?: boolean
+    encerradoEm?: boolean
+    ultimaLatitude?: boolean
+    ultimaLongitude?: boolean
+    ultimaPrecisaoMetros?: boolean
+    ultimaLocalizacaoEm?: boolean
+    criadoPorId?: boolean
+    atualizadoPorId?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+    entregador?: boolean | RotaEntrega$entregadorArgs<ExtArgs>
+    criadoPor?: boolean | RotaEntrega$criadoPorArgs<ExtArgs>
+    atualizadoPor?: boolean | RotaEntrega$atualizadoPorArgs<ExtArgs>
+    paradas?: boolean | RotaEntrega$paradasArgs<ExtArgs>
+    localizacoes?: boolean | RotaEntrega$localizacoesArgs<ExtArgs>
+    _count?: boolean | RotaEntregaCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["rotaEntrega"]>
+
+
+
+  export type RotaEntregaSelectScalar = {
+    id?: boolean
+    dataEntrega?: boolean
+    nome?: boolean
+    status?: boolean
+    entregadorId?: boolean
+    entregadorNome?: boolean
+    tokenPublico?: boolean
+    compartilhamentoAtivo?: boolean
+    iniciadoEm?: boolean
+    encerradoEm?: boolean
+    ultimaLatitude?: boolean
+    ultimaLongitude?: boolean
+    ultimaPrecisaoMetros?: boolean
+    ultimaLocalizacaoEm?: boolean
+    criadoPorId?: boolean
+    atualizadoPorId?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+  }
+
+  export type RotaEntregaOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "dataEntrega" | "nome" | "status" | "entregadorId" | "entregadorNome" | "tokenPublico" | "compartilhamentoAtivo" | "iniciadoEm" | "encerradoEm" | "ultimaLatitude" | "ultimaLongitude" | "ultimaPrecisaoMetros" | "ultimaLocalizacaoEm" | "criadoPorId" | "atualizadoPorId" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["rotaEntrega"]>
+  export type RotaEntregaInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    entregador?: boolean | RotaEntrega$entregadorArgs<ExtArgs>
+    criadoPor?: boolean | RotaEntrega$criadoPorArgs<ExtArgs>
+    atualizadoPor?: boolean | RotaEntrega$atualizadoPorArgs<ExtArgs>
+    paradas?: boolean | RotaEntrega$paradasArgs<ExtArgs>
+    localizacoes?: boolean | RotaEntrega$localizacoesArgs<ExtArgs>
+    _count?: boolean | RotaEntregaCountOutputTypeDefaultArgs<ExtArgs>
+  }
+
+  export type $RotaEntregaPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "RotaEntrega"
+    objects: {
+      entregador: Prisma.$UsuarioPayload<ExtArgs> | null
+      criadoPor: Prisma.$UsuarioPayload<ExtArgs> | null
+      atualizadoPor: Prisma.$UsuarioPayload<ExtArgs> | null
+      paradas: Prisma.$ParadaEntregaPayload<ExtArgs>[]
+      localizacoes: Prisma.$HistoricoLocalizacaoEntregaPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      dataEntrega: Date
+      nome: string | null
+      status: $Enums.RotaEntregaStatus
+      entregadorId: string | null
+      entregadorNome: string | null
+      tokenPublico: string
+      compartilhamentoAtivo: boolean
+      iniciadoEm: Date | null
+      encerradoEm: Date | null
+      ultimaLatitude: Prisma.Decimal | null
+      ultimaLongitude: Prisma.Decimal | null
+      ultimaPrecisaoMetros: Prisma.Decimal | null
+      ultimaLocalizacaoEm: Date | null
+      criadoPorId: string | null
+      atualizadoPorId: string | null
+      criadoEm: Date
+      atualizadoEm: Date
+    }, ExtArgs["result"]["rotaEntrega"]>
+    composites: {}
+  }
+
+  type RotaEntregaGetPayload<S extends boolean | null | undefined | RotaEntregaDefaultArgs> = $Result.GetResult<Prisma.$RotaEntregaPayload, S>
+
+  type RotaEntregaCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<RotaEntregaFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: RotaEntregaCountAggregateInputType | true
+    }
+
+  export interface RotaEntregaDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['RotaEntrega'], meta: { name: 'RotaEntrega' } }
+    /**
+     * Find zero or one RotaEntrega that matches the filter.
+     * @param {RotaEntregaFindUniqueArgs} args - Arguments to find a RotaEntrega
+     * @example
+     * // Get one RotaEntrega
+     * const rotaEntrega = await prisma.rotaEntrega.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends RotaEntregaFindUniqueArgs>(args: SelectSubset<T, RotaEntregaFindUniqueArgs<ExtArgs>>): Prisma__RotaEntregaClient<$Result.GetResult<Prisma.$RotaEntregaPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one RotaEntrega that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {RotaEntregaFindUniqueOrThrowArgs} args - Arguments to find a RotaEntrega
+     * @example
+     * // Get one RotaEntrega
+     * const rotaEntrega = await prisma.rotaEntrega.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends RotaEntregaFindUniqueOrThrowArgs>(args: SelectSubset<T, RotaEntregaFindUniqueOrThrowArgs<ExtArgs>>): Prisma__RotaEntregaClient<$Result.GetResult<Prisma.$RotaEntregaPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first RotaEntrega that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RotaEntregaFindFirstArgs} args - Arguments to find a RotaEntrega
+     * @example
+     * // Get one RotaEntrega
+     * const rotaEntrega = await prisma.rotaEntrega.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends RotaEntregaFindFirstArgs>(args?: SelectSubset<T, RotaEntregaFindFirstArgs<ExtArgs>>): Prisma__RotaEntregaClient<$Result.GetResult<Prisma.$RotaEntregaPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first RotaEntrega that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RotaEntregaFindFirstOrThrowArgs} args - Arguments to find a RotaEntrega
+     * @example
+     * // Get one RotaEntrega
+     * const rotaEntrega = await prisma.rotaEntrega.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends RotaEntregaFindFirstOrThrowArgs>(args?: SelectSubset<T, RotaEntregaFindFirstOrThrowArgs<ExtArgs>>): Prisma__RotaEntregaClient<$Result.GetResult<Prisma.$RotaEntregaPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more RotaEntregas that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RotaEntregaFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all RotaEntregas
+     * const rotaEntregas = await prisma.rotaEntrega.findMany()
+     * 
+     * // Get first 10 RotaEntregas
+     * const rotaEntregas = await prisma.rotaEntrega.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const rotaEntregaWithIdOnly = await prisma.rotaEntrega.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends RotaEntregaFindManyArgs>(args?: SelectSubset<T, RotaEntregaFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RotaEntregaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a RotaEntrega.
+     * @param {RotaEntregaCreateArgs} args - Arguments to create a RotaEntrega.
+     * @example
+     * // Create one RotaEntrega
+     * const RotaEntrega = await prisma.rotaEntrega.create({
+     *   data: {
+     *     // ... data to create a RotaEntrega
+     *   }
+     * })
+     * 
+     */
+    create<T extends RotaEntregaCreateArgs>(args: SelectSubset<T, RotaEntregaCreateArgs<ExtArgs>>): Prisma__RotaEntregaClient<$Result.GetResult<Prisma.$RotaEntregaPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many RotaEntregas.
+     * @param {RotaEntregaCreateManyArgs} args - Arguments to create many RotaEntregas.
+     * @example
+     * // Create many RotaEntregas
+     * const rotaEntrega = await prisma.rotaEntrega.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends RotaEntregaCreateManyArgs>(args?: SelectSubset<T, RotaEntregaCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a RotaEntrega.
+     * @param {RotaEntregaDeleteArgs} args - Arguments to delete one RotaEntrega.
+     * @example
+     * // Delete one RotaEntrega
+     * const RotaEntrega = await prisma.rotaEntrega.delete({
+     *   where: {
+     *     // ... filter to delete one RotaEntrega
+     *   }
+     * })
+     * 
+     */
+    delete<T extends RotaEntregaDeleteArgs>(args: SelectSubset<T, RotaEntregaDeleteArgs<ExtArgs>>): Prisma__RotaEntregaClient<$Result.GetResult<Prisma.$RotaEntregaPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one RotaEntrega.
+     * @param {RotaEntregaUpdateArgs} args - Arguments to update one RotaEntrega.
+     * @example
+     * // Update one RotaEntrega
+     * const rotaEntrega = await prisma.rotaEntrega.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends RotaEntregaUpdateArgs>(args: SelectSubset<T, RotaEntregaUpdateArgs<ExtArgs>>): Prisma__RotaEntregaClient<$Result.GetResult<Prisma.$RotaEntregaPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more RotaEntregas.
+     * @param {RotaEntregaDeleteManyArgs} args - Arguments to filter RotaEntregas to delete.
+     * @example
+     * // Delete a few RotaEntregas
+     * const { count } = await prisma.rotaEntrega.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends RotaEntregaDeleteManyArgs>(args?: SelectSubset<T, RotaEntregaDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more RotaEntregas.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RotaEntregaUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many RotaEntregas
+     * const rotaEntrega = await prisma.rotaEntrega.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends RotaEntregaUpdateManyArgs>(args: SelectSubset<T, RotaEntregaUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one RotaEntrega.
+     * @param {RotaEntregaUpsertArgs} args - Arguments to update or create a RotaEntrega.
+     * @example
+     * // Update or create a RotaEntrega
+     * const rotaEntrega = await prisma.rotaEntrega.upsert({
+     *   create: {
+     *     // ... data to create a RotaEntrega
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the RotaEntrega we want to update
+     *   }
+     * })
+     */
+    upsert<T extends RotaEntregaUpsertArgs>(args: SelectSubset<T, RotaEntregaUpsertArgs<ExtArgs>>): Prisma__RotaEntregaClient<$Result.GetResult<Prisma.$RotaEntregaPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of RotaEntregas.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RotaEntregaCountArgs} args - Arguments to filter RotaEntregas to count.
+     * @example
+     * // Count the number of RotaEntregas
+     * const count = await prisma.rotaEntrega.count({
+     *   where: {
+     *     // ... the filter for the RotaEntregas we want to count
+     *   }
+     * })
+    **/
+    count<T extends RotaEntregaCountArgs>(
+      args?: Subset<T, RotaEntregaCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], RotaEntregaCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a RotaEntrega.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RotaEntregaAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends RotaEntregaAggregateArgs>(args: Subset<T, RotaEntregaAggregateArgs>): Prisma.PrismaPromise<GetRotaEntregaAggregateType<T>>
+
+    /**
+     * Group by RotaEntrega.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RotaEntregaGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends RotaEntregaGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: RotaEntregaGroupByArgs['orderBy'] }
+        : { orderBy?: RotaEntregaGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, RotaEntregaGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetRotaEntregaGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the RotaEntrega model
+   */
+  readonly fields: RotaEntregaFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for RotaEntrega.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__RotaEntregaClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    entregador<T extends RotaEntrega$entregadorArgs<ExtArgs> = {}>(args?: Subset<T, RotaEntrega$entregadorArgs<ExtArgs>>): Prisma__UsuarioClient<$Result.GetResult<Prisma.$UsuarioPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    criadoPor<T extends RotaEntrega$criadoPorArgs<ExtArgs> = {}>(args?: Subset<T, RotaEntrega$criadoPorArgs<ExtArgs>>): Prisma__UsuarioClient<$Result.GetResult<Prisma.$UsuarioPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    atualizadoPor<T extends RotaEntrega$atualizadoPorArgs<ExtArgs> = {}>(args?: Subset<T, RotaEntrega$atualizadoPorArgs<ExtArgs>>): Prisma__UsuarioClient<$Result.GetResult<Prisma.$UsuarioPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    paradas<T extends RotaEntrega$paradasArgs<ExtArgs> = {}>(args?: Subset<T, RotaEntrega$paradasArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ParadaEntregaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    localizacoes<T extends RotaEntrega$localizacoesArgs<ExtArgs> = {}>(args?: Subset<T, RotaEntrega$localizacoesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$HistoricoLocalizacaoEntregaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the RotaEntrega model
+   */
+  interface RotaEntregaFieldRefs {
+    readonly id: FieldRef<"RotaEntrega", 'String'>
+    readonly dataEntrega: FieldRef<"RotaEntrega", 'DateTime'>
+    readonly nome: FieldRef<"RotaEntrega", 'String'>
+    readonly status: FieldRef<"RotaEntrega", 'RotaEntregaStatus'>
+    readonly entregadorId: FieldRef<"RotaEntrega", 'String'>
+    readonly entregadorNome: FieldRef<"RotaEntrega", 'String'>
+    readonly tokenPublico: FieldRef<"RotaEntrega", 'String'>
+    readonly compartilhamentoAtivo: FieldRef<"RotaEntrega", 'Boolean'>
+    readonly iniciadoEm: FieldRef<"RotaEntrega", 'DateTime'>
+    readonly encerradoEm: FieldRef<"RotaEntrega", 'DateTime'>
+    readonly ultimaLatitude: FieldRef<"RotaEntrega", 'Decimal'>
+    readonly ultimaLongitude: FieldRef<"RotaEntrega", 'Decimal'>
+    readonly ultimaPrecisaoMetros: FieldRef<"RotaEntrega", 'Decimal'>
+    readonly ultimaLocalizacaoEm: FieldRef<"RotaEntrega", 'DateTime'>
+    readonly criadoPorId: FieldRef<"RotaEntrega", 'String'>
+    readonly atualizadoPorId: FieldRef<"RotaEntrega", 'String'>
+    readonly criadoEm: FieldRef<"RotaEntrega", 'DateTime'>
+    readonly atualizadoEm: FieldRef<"RotaEntrega", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * RotaEntrega findUnique
+   */
+  export type RotaEntregaFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RotaEntrega
+     */
+    select?: RotaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RotaEntrega
+     */
+    omit?: RotaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RotaEntregaInclude<ExtArgs> | null
+    /**
+     * Filter, which RotaEntrega to fetch.
+     */
+    where: RotaEntregaWhereUniqueInput
+  }
+
+  /**
+   * RotaEntrega findUniqueOrThrow
+   */
+  export type RotaEntregaFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RotaEntrega
+     */
+    select?: RotaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RotaEntrega
+     */
+    omit?: RotaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RotaEntregaInclude<ExtArgs> | null
+    /**
+     * Filter, which RotaEntrega to fetch.
+     */
+    where: RotaEntregaWhereUniqueInput
+  }
+
+  /**
+   * RotaEntrega findFirst
+   */
+  export type RotaEntregaFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RotaEntrega
+     */
+    select?: RotaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RotaEntrega
+     */
+    omit?: RotaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RotaEntregaInclude<ExtArgs> | null
+    /**
+     * Filter, which RotaEntrega to fetch.
+     */
+    where?: RotaEntregaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RotaEntregas to fetch.
+     */
+    orderBy?: RotaEntregaOrderByWithRelationInput | RotaEntregaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for RotaEntregas.
+     */
+    cursor?: RotaEntregaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RotaEntregas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RotaEntregas.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of RotaEntregas.
+     */
+    distinct?: RotaEntregaScalarFieldEnum | RotaEntregaScalarFieldEnum[]
+  }
+
+  /**
+   * RotaEntrega findFirstOrThrow
+   */
+  export type RotaEntregaFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RotaEntrega
+     */
+    select?: RotaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RotaEntrega
+     */
+    omit?: RotaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RotaEntregaInclude<ExtArgs> | null
+    /**
+     * Filter, which RotaEntrega to fetch.
+     */
+    where?: RotaEntregaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RotaEntregas to fetch.
+     */
+    orderBy?: RotaEntregaOrderByWithRelationInput | RotaEntregaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for RotaEntregas.
+     */
+    cursor?: RotaEntregaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RotaEntregas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RotaEntregas.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of RotaEntregas.
+     */
+    distinct?: RotaEntregaScalarFieldEnum | RotaEntregaScalarFieldEnum[]
+  }
+
+  /**
+   * RotaEntrega findMany
+   */
+  export type RotaEntregaFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RotaEntrega
+     */
+    select?: RotaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RotaEntrega
+     */
+    omit?: RotaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RotaEntregaInclude<ExtArgs> | null
+    /**
+     * Filter, which RotaEntregas to fetch.
+     */
+    where?: RotaEntregaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RotaEntregas to fetch.
+     */
+    orderBy?: RotaEntregaOrderByWithRelationInput | RotaEntregaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing RotaEntregas.
+     */
+    cursor?: RotaEntregaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RotaEntregas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RotaEntregas.
+     */
+    skip?: number
+    distinct?: RotaEntregaScalarFieldEnum | RotaEntregaScalarFieldEnum[]
+  }
+
+  /**
+   * RotaEntrega create
+   */
+  export type RotaEntregaCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RotaEntrega
+     */
+    select?: RotaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RotaEntrega
+     */
+    omit?: RotaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RotaEntregaInclude<ExtArgs> | null
+    /**
+     * The data needed to create a RotaEntrega.
+     */
+    data: XOR<RotaEntregaCreateInput, RotaEntregaUncheckedCreateInput>
+  }
+
+  /**
+   * RotaEntrega createMany
+   */
+  export type RotaEntregaCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many RotaEntregas.
+     */
+    data: RotaEntregaCreateManyInput | RotaEntregaCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * RotaEntrega update
+   */
+  export type RotaEntregaUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RotaEntrega
+     */
+    select?: RotaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RotaEntrega
+     */
+    omit?: RotaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RotaEntregaInclude<ExtArgs> | null
+    /**
+     * The data needed to update a RotaEntrega.
+     */
+    data: XOR<RotaEntregaUpdateInput, RotaEntregaUncheckedUpdateInput>
+    /**
+     * Choose, which RotaEntrega to update.
+     */
+    where: RotaEntregaWhereUniqueInput
+  }
+
+  /**
+   * RotaEntrega updateMany
+   */
+  export type RotaEntregaUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update RotaEntregas.
+     */
+    data: XOR<RotaEntregaUpdateManyMutationInput, RotaEntregaUncheckedUpdateManyInput>
+    /**
+     * Filter which RotaEntregas to update
+     */
+    where?: RotaEntregaWhereInput
+    /**
+     * Limit how many RotaEntregas to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * RotaEntrega upsert
+   */
+  export type RotaEntregaUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RotaEntrega
+     */
+    select?: RotaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RotaEntrega
+     */
+    omit?: RotaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RotaEntregaInclude<ExtArgs> | null
+    /**
+     * The filter to search for the RotaEntrega to update in case it exists.
+     */
+    where: RotaEntregaWhereUniqueInput
+    /**
+     * In case the RotaEntrega found by the `where` argument doesn't exist, create a new RotaEntrega with this data.
+     */
+    create: XOR<RotaEntregaCreateInput, RotaEntregaUncheckedCreateInput>
+    /**
+     * In case the RotaEntrega was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<RotaEntregaUpdateInput, RotaEntregaUncheckedUpdateInput>
+  }
+
+  /**
+   * RotaEntrega delete
+   */
+  export type RotaEntregaDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RotaEntrega
+     */
+    select?: RotaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RotaEntrega
+     */
+    omit?: RotaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RotaEntregaInclude<ExtArgs> | null
+    /**
+     * Filter which RotaEntrega to delete.
+     */
+    where: RotaEntregaWhereUniqueInput
+  }
+
+  /**
+   * RotaEntrega deleteMany
+   */
+  export type RotaEntregaDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which RotaEntregas to delete
+     */
+    where?: RotaEntregaWhereInput
+    /**
+     * Limit how many RotaEntregas to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * RotaEntrega.entregador
+   */
+  export type RotaEntrega$entregadorArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Usuario
+     */
+    select?: UsuarioSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Usuario
+     */
+    omit?: UsuarioOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UsuarioInclude<ExtArgs> | null
+    where?: UsuarioWhereInput
+  }
+
+  /**
+   * RotaEntrega.criadoPor
+   */
+  export type RotaEntrega$criadoPorArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Usuario
+     */
+    select?: UsuarioSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Usuario
+     */
+    omit?: UsuarioOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UsuarioInclude<ExtArgs> | null
+    where?: UsuarioWhereInput
+  }
+
+  /**
+   * RotaEntrega.atualizadoPor
+   */
+  export type RotaEntrega$atualizadoPorArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Usuario
+     */
+    select?: UsuarioSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Usuario
+     */
+    omit?: UsuarioOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UsuarioInclude<ExtArgs> | null
+    where?: UsuarioWhereInput
+  }
+
+  /**
+   * RotaEntrega.paradas
+   */
+  export type RotaEntrega$paradasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ParadaEntrega
+     */
+    select?: ParadaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ParadaEntrega
+     */
+    omit?: ParadaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ParadaEntregaInclude<ExtArgs> | null
+    where?: ParadaEntregaWhereInput
+    orderBy?: ParadaEntregaOrderByWithRelationInput | ParadaEntregaOrderByWithRelationInput[]
+    cursor?: ParadaEntregaWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ParadaEntregaScalarFieldEnum | ParadaEntregaScalarFieldEnum[]
+  }
+
+  /**
+   * RotaEntrega.localizacoes
+   */
+  export type RotaEntrega$localizacoesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the HistoricoLocalizacaoEntrega
+     */
+    select?: HistoricoLocalizacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the HistoricoLocalizacaoEntrega
+     */
+    omit?: HistoricoLocalizacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: HistoricoLocalizacaoEntregaInclude<ExtArgs> | null
+    where?: HistoricoLocalizacaoEntregaWhereInput
+    orderBy?: HistoricoLocalizacaoEntregaOrderByWithRelationInput | HistoricoLocalizacaoEntregaOrderByWithRelationInput[]
+    cursor?: HistoricoLocalizacaoEntregaWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: HistoricoLocalizacaoEntregaScalarFieldEnum | HistoricoLocalizacaoEntregaScalarFieldEnum[]
+  }
+
+  /**
+   * RotaEntrega without action
+   */
+  export type RotaEntregaDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RotaEntrega
+     */
+    select?: RotaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RotaEntrega
+     */
+    omit?: RotaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RotaEntregaInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model ParadaEntrega
+   */
+
+  export type AggregateParadaEntrega = {
+    _count: ParadaEntregaCountAggregateOutputType | null
+    _avg: ParadaEntregaAvgAggregateOutputType | null
+    _sum: ParadaEntregaSumAggregateOutputType | null
+    _min: ParadaEntregaMinAggregateOutputType | null
+    _max: ParadaEntregaMaxAggregateOutputType | null
+  }
+
+  export type ParadaEntregaAvgAggregateOutputType = {
+    ordem: number | null
+  }
+
+  export type ParadaEntregaSumAggregateOutputType = {
+    ordem: number | null
+  }
+
+  export type ParadaEntregaMinAggregateOutputType = {
+    id: string | null
+    rotaId: string | null
+    contaAzulCustomerId: string | null
+    clienteId: string | null
+    ordem: number | null
+    status: $Enums.ParadaEntregaStatus | null
+    tokenPublico: string | null
+    observacoes: string | null
+    observacoesProblema: string | null
+    entregueEm: Date | null
+    problemaEm: Date | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type ParadaEntregaMaxAggregateOutputType = {
+    id: string | null
+    rotaId: string | null
+    contaAzulCustomerId: string | null
+    clienteId: string | null
+    ordem: number | null
+    status: $Enums.ParadaEntregaStatus | null
+    tokenPublico: string | null
+    observacoes: string | null
+    observacoesProblema: string | null
+    entregueEm: Date | null
+    problemaEm: Date | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type ParadaEntregaCountAggregateOutputType = {
+    id: number
+    rotaId: number
+    contaAzulCustomerId: number
+    clienteId: number
+    ordem: number
+    status: number
+    tokenPublico: number
+    observacoes: number
+    observacoesProblema: number
+    entregueEm: number
+    problemaEm: number
+    criadoEm: number
+    atualizadoEm: number
+    _all: number
+  }
+
+
+  export type ParadaEntregaAvgAggregateInputType = {
+    ordem?: true
+  }
+
+  export type ParadaEntregaSumAggregateInputType = {
+    ordem?: true
+  }
+
+  export type ParadaEntregaMinAggregateInputType = {
+    id?: true
+    rotaId?: true
+    contaAzulCustomerId?: true
+    clienteId?: true
+    ordem?: true
+    status?: true
+    tokenPublico?: true
+    observacoes?: true
+    observacoesProblema?: true
+    entregueEm?: true
+    problemaEm?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type ParadaEntregaMaxAggregateInputType = {
+    id?: true
+    rotaId?: true
+    contaAzulCustomerId?: true
+    clienteId?: true
+    ordem?: true
+    status?: true
+    tokenPublico?: true
+    observacoes?: true
+    observacoesProblema?: true
+    entregueEm?: true
+    problemaEm?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type ParadaEntregaCountAggregateInputType = {
+    id?: true
+    rotaId?: true
+    contaAzulCustomerId?: true
+    clienteId?: true
+    ordem?: true
+    status?: true
+    tokenPublico?: true
+    observacoes?: true
+    observacoesProblema?: true
+    entregueEm?: true
+    problemaEm?: true
+    criadoEm?: true
+    atualizadoEm?: true
+    _all?: true
+  }
+
+  export type ParadaEntregaAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ParadaEntrega to aggregate.
+     */
+    where?: ParadaEntregaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ParadaEntregas to fetch.
+     */
+    orderBy?: ParadaEntregaOrderByWithRelationInput | ParadaEntregaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ParadaEntregaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ParadaEntregas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ParadaEntregas.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ParadaEntregas
+    **/
+    _count?: true | ParadaEntregaCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: ParadaEntregaAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: ParadaEntregaSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ParadaEntregaMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ParadaEntregaMaxAggregateInputType
+  }
+
+  export type GetParadaEntregaAggregateType<T extends ParadaEntregaAggregateArgs> = {
+        [P in keyof T & keyof AggregateParadaEntrega]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateParadaEntrega[P]>
+      : GetScalarType<T[P], AggregateParadaEntrega[P]>
+  }
+
+
+
+
+  export type ParadaEntregaGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ParadaEntregaWhereInput
+    orderBy?: ParadaEntregaOrderByWithAggregationInput | ParadaEntregaOrderByWithAggregationInput[]
+    by: ParadaEntregaScalarFieldEnum[] | ParadaEntregaScalarFieldEnum
+    having?: ParadaEntregaScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ParadaEntregaCountAggregateInputType | true
+    _avg?: ParadaEntregaAvgAggregateInputType
+    _sum?: ParadaEntregaSumAggregateInputType
+    _min?: ParadaEntregaMinAggregateInputType
+    _max?: ParadaEntregaMaxAggregateInputType
+  }
+
+  export type ParadaEntregaGroupByOutputType = {
+    id: string
+    rotaId: string
+    contaAzulCustomerId: string
+    clienteId: string | null
+    ordem: number
+    status: $Enums.ParadaEntregaStatus
+    tokenPublico: string
+    observacoes: string | null
+    observacoesProblema: string | null
+    entregueEm: Date | null
+    problemaEm: Date | null
+    criadoEm: Date
+    atualizadoEm: Date
+    _count: ParadaEntregaCountAggregateOutputType | null
+    _avg: ParadaEntregaAvgAggregateOutputType | null
+    _sum: ParadaEntregaSumAggregateOutputType | null
+    _min: ParadaEntregaMinAggregateOutputType | null
+    _max: ParadaEntregaMaxAggregateOutputType | null
+  }
+
+  type GetParadaEntregaGroupByPayload<T extends ParadaEntregaGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ParadaEntregaGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ParadaEntregaGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ParadaEntregaGroupByOutputType[P]>
+            : GetScalarType<T[P], ParadaEntregaGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ParadaEntregaSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    rotaId?: boolean
+    contaAzulCustomerId?: boolean
+    clienteId?: boolean
+    ordem?: boolean
+    status?: boolean
+    tokenPublico?: boolean
+    observacoes?: boolean
+    observacoesProblema?: boolean
+    entregueEm?: boolean
+    problemaEm?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+    rota?: boolean | RotaEntregaDefaultArgs<ExtArgs>
+    cliente?: boolean | ParadaEntrega$clienteArgs<ExtArgs>
+  }, ExtArgs["result"]["paradaEntrega"]>
+
+
+
+  export type ParadaEntregaSelectScalar = {
+    id?: boolean
+    rotaId?: boolean
+    contaAzulCustomerId?: boolean
+    clienteId?: boolean
+    ordem?: boolean
+    status?: boolean
+    tokenPublico?: boolean
+    observacoes?: boolean
+    observacoesProblema?: boolean
+    entregueEm?: boolean
+    problemaEm?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+  }
+
+  export type ParadaEntregaOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "rotaId" | "contaAzulCustomerId" | "clienteId" | "ordem" | "status" | "tokenPublico" | "observacoes" | "observacoesProblema" | "entregueEm" | "problemaEm" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["paradaEntrega"]>
+  export type ParadaEntregaInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    rota?: boolean | RotaEntregaDefaultArgs<ExtArgs>
+    cliente?: boolean | ParadaEntrega$clienteArgs<ExtArgs>
+  }
+
+  export type $ParadaEntregaPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ParadaEntrega"
+    objects: {
+      rota: Prisma.$RotaEntregaPayload<ExtArgs>
+      cliente: Prisma.$ClientePayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      rotaId: string
+      contaAzulCustomerId: string
+      clienteId: string | null
+      ordem: number
+      status: $Enums.ParadaEntregaStatus
+      tokenPublico: string
+      observacoes: string | null
+      observacoesProblema: string | null
+      entregueEm: Date | null
+      problemaEm: Date | null
+      criadoEm: Date
+      atualizadoEm: Date
+    }, ExtArgs["result"]["paradaEntrega"]>
+    composites: {}
+  }
+
+  type ParadaEntregaGetPayload<S extends boolean | null | undefined | ParadaEntregaDefaultArgs> = $Result.GetResult<Prisma.$ParadaEntregaPayload, S>
+
+  type ParadaEntregaCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ParadaEntregaFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ParadaEntregaCountAggregateInputType | true
+    }
+
+  export interface ParadaEntregaDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ParadaEntrega'], meta: { name: 'ParadaEntrega' } }
+    /**
+     * Find zero or one ParadaEntrega that matches the filter.
+     * @param {ParadaEntregaFindUniqueArgs} args - Arguments to find a ParadaEntrega
+     * @example
+     * // Get one ParadaEntrega
+     * const paradaEntrega = await prisma.paradaEntrega.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ParadaEntregaFindUniqueArgs>(args: SelectSubset<T, ParadaEntregaFindUniqueArgs<ExtArgs>>): Prisma__ParadaEntregaClient<$Result.GetResult<Prisma.$ParadaEntregaPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one ParadaEntrega that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ParadaEntregaFindUniqueOrThrowArgs} args - Arguments to find a ParadaEntrega
+     * @example
+     * // Get one ParadaEntrega
+     * const paradaEntrega = await prisma.paradaEntrega.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ParadaEntregaFindUniqueOrThrowArgs>(args: SelectSubset<T, ParadaEntregaFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ParadaEntregaClient<$Result.GetResult<Prisma.$ParadaEntregaPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ParadaEntrega that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ParadaEntregaFindFirstArgs} args - Arguments to find a ParadaEntrega
+     * @example
+     * // Get one ParadaEntrega
+     * const paradaEntrega = await prisma.paradaEntrega.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ParadaEntregaFindFirstArgs>(args?: SelectSubset<T, ParadaEntregaFindFirstArgs<ExtArgs>>): Prisma__ParadaEntregaClient<$Result.GetResult<Prisma.$ParadaEntregaPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ParadaEntrega that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ParadaEntregaFindFirstOrThrowArgs} args - Arguments to find a ParadaEntrega
+     * @example
+     * // Get one ParadaEntrega
+     * const paradaEntrega = await prisma.paradaEntrega.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ParadaEntregaFindFirstOrThrowArgs>(args?: SelectSubset<T, ParadaEntregaFindFirstOrThrowArgs<ExtArgs>>): Prisma__ParadaEntregaClient<$Result.GetResult<Prisma.$ParadaEntregaPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more ParadaEntregas that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ParadaEntregaFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ParadaEntregas
+     * const paradaEntregas = await prisma.paradaEntrega.findMany()
+     * 
+     * // Get first 10 ParadaEntregas
+     * const paradaEntregas = await prisma.paradaEntrega.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const paradaEntregaWithIdOnly = await prisma.paradaEntrega.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ParadaEntregaFindManyArgs>(args?: SelectSubset<T, ParadaEntregaFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ParadaEntregaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a ParadaEntrega.
+     * @param {ParadaEntregaCreateArgs} args - Arguments to create a ParadaEntrega.
+     * @example
+     * // Create one ParadaEntrega
+     * const ParadaEntrega = await prisma.paradaEntrega.create({
+     *   data: {
+     *     // ... data to create a ParadaEntrega
+     *   }
+     * })
+     * 
+     */
+    create<T extends ParadaEntregaCreateArgs>(args: SelectSubset<T, ParadaEntregaCreateArgs<ExtArgs>>): Prisma__ParadaEntregaClient<$Result.GetResult<Prisma.$ParadaEntregaPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many ParadaEntregas.
+     * @param {ParadaEntregaCreateManyArgs} args - Arguments to create many ParadaEntregas.
+     * @example
+     * // Create many ParadaEntregas
+     * const paradaEntrega = await prisma.paradaEntrega.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ParadaEntregaCreateManyArgs>(args?: SelectSubset<T, ParadaEntregaCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a ParadaEntrega.
+     * @param {ParadaEntregaDeleteArgs} args - Arguments to delete one ParadaEntrega.
+     * @example
+     * // Delete one ParadaEntrega
+     * const ParadaEntrega = await prisma.paradaEntrega.delete({
+     *   where: {
+     *     // ... filter to delete one ParadaEntrega
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ParadaEntregaDeleteArgs>(args: SelectSubset<T, ParadaEntregaDeleteArgs<ExtArgs>>): Prisma__ParadaEntregaClient<$Result.GetResult<Prisma.$ParadaEntregaPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one ParadaEntrega.
+     * @param {ParadaEntregaUpdateArgs} args - Arguments to update one ParadaEntrega.
+     * @example
+     * // Update one ParadaEntrega
+     * const paradaEntrega = await prisma.paradaEntrega.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ParadaEntregaUpdateArgs>(args: SelectSubset<T, ParadaEntregaUpdateArgs<ExtArgs>>): Prisma__ParadaEntregaClient<$Result.GetResult<Prisma.$ParadaEntregaPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more ParadaEntregas.
+     * @param {ParadaEntregaDeleteManyArgs} args - Arguments to filter ParadaEntregas to delete.
+     * @example
+     * // Delete a few ParadaEntregas
+     * const { count } = await prisma.paradaEntrega.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ParadaEntregaDeleteManyArgs>(args?: SelectSubset<T, ParadaEntregaDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ParadaEntregas.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ParadaEntregaUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ParadaEntregas
+     * const paradaEntrega = await prisma.paradaEntrega.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ParadaEntregaUpdateManyArgs>(args: SelectSubset<T, ParadaEntregaUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one ParadaEntrega.
+     * @param {ParadaEntregaUpsertArgs} args - Arguments to update or create a ParadaEntrega.
+     * @example
+     * // Update or create a ParadaEntrega
+     * const paradaEntrega = await prisma.paradaEntrega.upsert({
+     *   create: {
+     *     // ... data to create a ParadaEntrega
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ParadaEntrega we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ParadaEntregaUpsertArgs>(args: SelectSubset<T, ParadaEntregaUpsertArgs<ExtArgs>>): Prisma__ParadaEntregaClient<$Result.GetResult<Prisma.$ParadaEntregaPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of ParadaEntregas.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ParadaEntregaCountArgs} args - Arguments to filter ParadaEntregas to count.
+     * @example
+     * // Count the number of ParadaEntregas
+     * const count = await prisma.paradaEntrega.count({
+     *   where: {
+     *     // ... the filter for the ParadaEntregas we want to count
+     *   }
+     * })
+    **/
+    count<T extends ParadaEntregaCountArgs>(
+      args?: Subset<T, ParadaEntregaCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ParadaEntregaCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ParadaEntrega.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ParadaEntregaAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ParadaEntregaAggregateArgs>(args: Subset<T, ParadaEntregaAggregateArgs>): Prisma.PrismaPromise<GetParadaEntregaAggregateType<T>>
+
+    /**
+     * Group by ParadaEntrega.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ParadaEntregaGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ParadaEntregaGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ParadaEntregaGroupByArgs['orderBy'] }
+        : { orderBy?: ParadaEntregaGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ParadaEntregaGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetParadaEntregaGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ParadaEntrega model
+   */
+  readonly fields: ParadaEntregaFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ParadaEntrega.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ParadaEntregaClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    rota<T extends RotaEntregaDefaultArgs<ExtArgs> = {}>(args?: Subset<T, RotaEntregaDefaultArgs<ExtArgs>>): Prisma__RotaEntregaClient<$Result.GetResult<Prisma.$RotaEntregaPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    cliente<T extends ParadaEntrega$clienteArgs<ExtArgs> = {}>(args?: Subset<T, ParadaEntrega$clienteArgs<ExtArgs>>): Prisma__ClienteClient<$Result.GetResult<Prisma.$ClientePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ParadaEntrega model
+   */
+  interface ParadaEntregaFieldRefs {
+    readonly id: FieldRef<"ParadaEntrega", 'String'>
+    readonly rotaId: FieldRef<"ParadaEntrega", 'String'>
+    readonly contaAzulCustomerId: FieldRef<"ParadaEntrega", 'String'>
+    readonly clienteId: FieldRef<"ParadaEntrega", 'String'>
+    readonly ordem: FieldRef<"ParadaEntrega", 'Int'>
+    readonly status: FieldRef<"ParadaEntrega", 'ParadaEntregaStatus'>
+    readonly tokenPublico: FieldRef<"ParadaEntrega", 'String'>
+    readonly observacoes: FieldRef<"ParadaEntrega", 'String'>
+    readonly observacoesProblema: FieldRef<"ParadaEntrega", 'String'>
+    readonly entregueEm: FieldRef<"ParadaEntrega", 'DateTime'>
+    readonly problemaEm: FieldRef<"ParadaEntrega", 'DateTime'>
+    readonly criadoEm: FieldRef<"ParadaEntrega", 'DateTime'>
+    readonly atualizadoEm: FieldRef<"ParadaEntrega", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ParadaEntrega findUnique
+   */
+  export type ParadaEntregaFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ParadaEntrega
+     */
+    select?: ParadaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ParadaEntrega
+     */
+    omit?: ParadaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ParadaEntregaInclude<ExtArgs> | null
+    /**
+     * Filter, which ParadaEntrega to fetch.
+     */
+    where: ParadaEntregaWhereUniqueInput
+  }
+
+  /**
+   * ParadaEntrega findUniqueOrThrow
+   */
+  export type ParadaEntregaFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ParadaEntrega
+     */
+    select?: ParadaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ParadaEntrega
+     */
+    omit?: ParadaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ParadaEntregaInclude<ExtArgs> | null
+    /**
+     * Filter, which ParadaEntrega to fetch.
+     */
+    where: ParadaEntregaWhereUniqueInput
+  }
+
+  /**
+   * ParadaEntrega findFirst
+   */
+  export type ParadaEntregaFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ParadaEntrega
+     */
+    select?: ParadaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ParadaEntrega
+     */
+    omit?: ParadaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ParadaEntregaInclude<ExtArgs> | null
+    /**
+     * Filter, which ParadaEntrega to fetch.
+     */
+    where?: ParadaEntregaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ParadaEntregas to fetch.
+     */
+    orderBy?: ParadaEntregaOrderByWithRelationInput | ParadaEntregaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ParadaEntregas.
+     */
+    cursor?: ParadaEntregaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ParadaEntregas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ParadaEntregas.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ParadaEntregas.
+     */
+    distinct?: ParadaEntregaScalarFieldEnum | ParadaEntregaScalarFieldEnum[]
+  }
+
+  /**
+   * ParadaEntrega findFirstOrThrow
+   */
+  export type ParadaEntregaFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ParadaEntrega
+     */
+    select?: ParadaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ParadaEntrega
+     */
+    omit?: ParadaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ParadaEntregaInclude<ExtArgs> | null
+    /**
+     * Filter, which ParadaEntrega to fetch.
+     */
+    where?: ParadaEntregaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ParadaEntregas to fetch.
+     */
+    orderBy?: ParadaEntregaOrderByWithRelationInput | ParadaEntregaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ParadaEntregas.
+     */
+    cursor?: ParadaEntregaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ParadaEntregas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ParadaEntregas.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ParadaEntregas.
+     */
+    distinct?: ParadaEntregaScalarFieldEnum | ParadaEntregaScalarFieldEnum[]
+  }
+
+  /**
+   * ParadaEntrega findMany
+   */
+  export type ParadaEntregaFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ParadaEntrega
+     */
+    select?: ParadaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ParadaEntrega
+     */
+    omit?: ParadaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ParadaEntregaInclude<ExtArgs> | null
+    /**
+     * Filter, which ParadaEntregas to fetch.
+     */
+    where?: ParadaEntregaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ParadaEntregas to fetch.
+     */
+    orderBy?: ParadaEntregaOrderByWithRelationInput | ParadaEntregaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ParadaEntregas.
+     */
+    cursor?: ParadaEntregaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ParadaEntregas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ParadaEntregas.
+     */
+    skip?: number
+    distinct?: ParadaEntregaScalarFieldEnum | ParadaEntregaScalarFieldEnum[]
+  }
+
+  /**
+   * ParadaEntrega create
+   */
+  export type ParadaEntregaCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ParadaEntrega
+     */
+    select?: ParadaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ParadaEntrega
+     */
+    omit?: ParadaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ParadaEntregaInclude<ExtArgs> | null
+    /**
+     * The data needed to create a ParadaEntrega.
+     */
+    data: XOR<ParadaEntregaCreateInput, ParadaEntregaUncheckedCreateInput>
+  }
+
+  /**
+   * ParadaEntrega createMany
+   */
+  export type ParadaEntregaCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ParadaEntregas.
+     */
+    data: ParadaEntregaCreateManyInput | ParadaEntregaCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ParadaEntrega update
+   */
+  export type ParadaEntregaUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ParadaEntrega
+     */
+    select?: ParadaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ParadaEntrega
+     */
+    omit?: ParadaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ParadaEntregaInclude<ExtArgs> | null
+    /**
+     * The data needed to update a ParadaEntrega.
+     */
+    data: XOR<ParadaEntregaUpdateInput, ParadaEntregaUncheckedUpdateInput>
+    /**
+     * Choose, which ParadaEntrega to update.
+     */
+    where: ParadaEntregaWhereUniqueInput
+  }
+
+  /**
+   * ParadaEntrega updateMany
+   */
+  export type ParadaEntregaUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ParadaEntregas.
+     */
+    data: XOR<ParadaEntregaUpdateManyMutationInput, ParadaEntregaUncheckedUpdateManyInput>
+    /**
+     * Filter which ParadaEntregas to update
+     */
+    where?: ParadaEntregaWhereInput
+    /**
+     * Limit how many ParadaEntregas to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ParadaEntrega upsert
+   */
+  export type ParadaEntregaUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ParadaEntrega
+     */
+    select?: ParadaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ParadaEntrega
+     */
+    omit?: ParadaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ParadaEntregaInclude<ExtArgs> | null
+    /**
+     * The filter to search for the ParadaEntrega to update in case it exists.
+     */
+    where: ParadaEntregaWhereUniqueInput
+    /**
+     * In case the ParadaEntrega found by the `where` argument doesn't exist, create a new ParadaEntrega with this data.
+     */
+    create: XOR<ParadaEntregaCreateInput, ParadaEntregaUncheckedCreateInput>
+    /**
+     * In case the ParadaEntrega was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ParadaEntregaUpdateInput, ParadaEntregaUncheckedUpdateInput>
+  }
+
+  /**
+   * ParadaEntrega delete
+   */
+  export type ParadaEntregaDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ParadaEntrega
+     */
+    select?: ParadaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ParadaEntrega
+     */
+    omit?: ParadaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ParadaEntregaInclude<ExtArgs> | null
+    /**
+     * Filter which ParadaEntrega to delete.
+     */
+    where: ParadaEntregaWhereUniqueInput
+  }
+
+  /**
+   * ParadaEntrega deleteMany
+   */
+  export type ParadaEntregaDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ParadaEntregas to delete
+     */
+    where?: ParadaEntregaWhereInput
+    /**
+     * Limit how many ParadaEntregas to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * ParadaEntrega.cliente
+   */
+  export type ParadaEntrega$clienteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Cliente
+     */
+    select?: ClienteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Cliente
+     */
+    omit?: ClienteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ClienteInclude<ExtArgs> | null
+    where?: ClienteWhereInput
+  }
+
+  /**
+   * ParadaEntrega without action
+   */
+  export type ParadaEntregaDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ParadaEntrega
+     */
+    select?: ParadaEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ParadaEntrega
+     */
+    omit?: ParadaEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ParadaEntregaInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model HistoricoLocalizacaoEntrega
+   */
+
+  export type AggregateHistoricoLocalizacaoEntrega = {
+    _count: HistoricoLocalizacaoEntregaCountAggregateOutputType | null
+    _avg: HistoricoLocalizacaoEntregaAvgAggregateOutputType | null
+    _sum: HistoricoLocalizacaoEntregaSumAggregateOutputType | null
+    _min: HistoricoLocalizacaoEntregaMinAggregateOutputType | null
+    _max: HistoricoLocalizacaoEntregaMaxAggregateOutputType | null
+  }
+
+  export type HistoricoLocalizacaoEntregaAvgAggregateOutputType = {
+    latitude: Decimal | null
+    longitude: Decimal | null
+    precisaoMetros: Decimal | null
+  }
+
+  export type HistoricoLocalizacaoEntregaSumAggregateOutputType = {
+    latitude: Decimal | null
+    longitude: Decimal | null
+    precisaoMetros: Decimal | null
+  }
+
+  export type HistoricoLocalizacaoEntregaMinAggregateOutputType = {
+    id: string | null
+    rotaId: string | null
+    latitude: Decimal | null
+    longitude: Decimal | null
+    precisaoMetros: Decimal | null
+    criadoEm: Date | null
+  }
+
+  export type HistoricoLocalizacaoEntregaMaxAggregateOutputType = {
+    id: string | null
+    rotaId: string | null
+    latitude: Decimal | null
+    longitude: Decimal | null
+    precisaoMetros: Decimal | null
+    criadoEm: Date | null
+  }
+
+  export type HistoricoLocalizacaoEntregaCountAggregateOutputType = {
+    id: number
+    rotaId: number
+    latitude: number
+    longitude: number
+    precisaoMetros: number
+    criadoEm: number
+    _all: number
+  }
+
+
+  export type HistoricoLocalizacaoEntregaAvgAggregateInputType = {
+    latitude?: true
+    longitude?: true
+    precisaoMetros?: true
+  }
+
+  export type HistoricoLocalizacaoEntregaSumAggregateInputType = {
+    latitude?: true
+    longitude?: true
+    precisaoMetros?: true
+  }
+
+  export type HistoricoLocalizacaoEntregaMinAggregateInputType = {
+    id?: true
+    rotaId?: true
+    latitude?: true
+    longitude?: true
+    precisaoMetros?: true
+    criadoEm?: true
+  }
+
+  export type HistoricoLocalizacaoEntregaMaxAggregateInputType = {
+    id?: true
+    rotaId?: true
+    latitude?: true
+    longitude?: true
+    precisaoMetros?: true
+    criadoEm?: true
+  }
+
+  export type HistoricoLocalizacaoEntregaCountAggregateInputType = {
+    id?: true
+    rotaId?: true
+    latitude?: true
+    longitude?: true
+    precisaoMetros?: true
+    criadoEm?: true
+    _all?: true
+  }
+
+  export type HistoricoLocalizacaoEntregaAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which HistoricoLocalizacaoEntrega to aggregate.
+     */
+    where?: HistoricoLocalizacaoEntregaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of HistoricoLocalizacaoEntregas to fetch.
+     */
+    orderBy?: HistoricoLocalizacaoEntregaOrderByWithRelationInput | HistoricoLocalizacaoEntregaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: HistoricoLocalizacaoEntregaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` HistoricoLocalizacaoEntregas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` HistoricoLocalizacaoEntregas.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned HistoricoLocalizacaoEntregas
+    **/
+    _count?: true | HistoricoLocalizacaoEntregaCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: HistoricoLocalizacaoEntregaAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: HistoricoLocalizacaoEntregaSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: HistoricoLocalizacaoEntregaMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: HistoricoLocalizacaoEntregaMaxAggregateInputType
+  }
+
+  export type GetHistoricoLocalizacaoEntregaAggregateType<T extends HistoricoLocalizacaoEntregaAggregateArgs> = {
+        [P in keyof T & keyof AggregateHistoricoLocalizacaoEntrega]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateHistoricoLocalizacaoEntrega[P]>
+      : GetScalarType<T[P], AggregateHistoricoLocalizacaoEntrega[P]>
+  }
+
+
+
+
+  export type HistoricoLocalizacaoEntregaGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: HistoricoLocalizacaoEntregaWhereInput
+    orderBy?: HistoricoLocalizacaoEntregaOrderByWithAggregationInput | HistoricoLocalizacaoEntregaOrderByWithAggregationInput[]
+    by: HistoricoLocalizacaoEntregaScalarFieldEnum[] | HistoricoLocalizacaoEntregaScalarFieldEnum
+    having?: HistoricoLocalizacaoEntregaScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: HistoricoLocalizacaoEntregaCountAggregateInputType | true
+    _avg?: HistoricoLocalizacaoEntregaAvgAggregateInputType
+    _sum?: HistoricoLocalizacaoEntregaSumAggregateInputType
+    _min?: HistoricoLocalizacaoEntregaMinAggregateInputType
+    _max?: HistoricoLocalizacaoEntregaMaxAggregateInputType
+  }
+
+  export type HistoricoLocalizacaoEntregaGroupByOutputType = {
+    id: string
+    rotaId: string
+    latitude: Decimal
+    longitude: Decimal
+    precisaoMetros: Decimal | null
+    criadoEm: Date
+    _count: HistoricoLocalizacaoEntregaCountAggregateOutputType | null
+    _avg: HistoricoLocalizacaoEntregaAvgAggregateOutputType | null
+    _sum: HistoricoLocalizacaoEntregaSumAggregateOutputType | null
+    _min: HistoricoLocalizacaoEntregaMinAggregateOutputType | null
+    _max: HistoricoLocalizacaoEntregaMaxAggregateOutputType | null
+  }
+
+  type GetHistoricoLocalizacaoEntregaGroupByPayload<T extends HistoricoLocalizacaoEntregaGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<HistoricoLocalizacaoEntregaGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof HistoricoLocalizacaoEntregaGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], HistoricoLocalizacaoEntregaGroupByOutputType[P]>
+            : GetScalarType<T[P], HistoricoLocalizacaoEntregaGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type HistoricoLocalizacaoEntregaSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    rotaId?: boolean
+    latitude?: boolean
+    longitude?: boolean
+    precisaoMetros?: boolean
+    criadoEm?: boolean
+    rota?: boolean | RotaEntregaDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["historicoLocalizacaoEntrega"]>
+
+
+
+  export type HistoricoLocalizacaoEntregaSelectScalar = {
+    id?: boolean
+    rotaId?: boolean
+    latitude?: boolean
+    longitude?: boolean
+    precisaoMetros?: boolean
+    criadoEm?: boolean
+  }
+
+  export type HistoricoLocalizacaoEntregaOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "rotaId" | "latitude" | "longitude" | "precisaoMetros" | "criadoEm", ExtArgs["result"]["historicoLocalizacaoEntrega"]>
+  export type HistoricoLocalizacaoEntregaInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    rota?: boolean | RotaEntregaDefaultArgs<ExtArgs>
+  }
+
+  export type $HistoricoLocalizacaoEntregaPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "HistoricoLocalizacaoEntrega"
+    objects: {
+      rota: Prisma.$RotaEntregaPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      rotaId: string
+      latitude: Prisma.Decimal
+      longitude: Prisma.Decimal
+      precisaoMetros: Prisma.Decimal | null
+      criadoEm: Date
+    }, ExtArgs["result"]["historicoLocalizacaoEntrega"]>
+    composites: {}
+  }
+
+  type HistoricoLocalizacaoEntregaGetPayload<S extends boolean | null | undefined | HistoricoLocalizacaoEntregaDefaultArgs> = $Result.GetResult<Prisma.$HistoricoLocalizacaoEntregaPayload, S>
+
+  type HistoricoLocalizacaoEntregaCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<HistoricoLocalizacaoEntregaFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: HistoricoLocalizacaoEntregaCountAggregateInputType | true
+    }
+
+  export interface HistoricoLocalizacaoEntregaDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['HistoricoLocalizacaoEntrega'], meta: { name: 'HistoricoLocalizacaoEntrega' } }
+    /**
+     * Find zero or one HistoricoLocalizacaoEntrega that matches the filter.
+     * @param {HistoricoLocalizacaoEntregaFindUniqueArgs} args - Arguments to find a HistoricoLocalizacaoEntrega
+     * @example
+     * // Get one HistoricoLocalizacaoEntrega
+     * const historicoLocalizacaoEntrega = await prisma.historicoLocalizacaoEntrega.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends HistoricoLocalizacaoEntregaFindUniqueArgs>(args: SelectSubset<T, HistoricoLocalizacaoEntregaFindUniqueArgs<ExtArgs>>): Prisma__HistoricoLocalizacaoEntregaClient<$Result.GetResult<Prisma.$HistoricoLocalizacaoEntregaPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one HistoricoLocalizacaoEntrega that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {HistoricoLocalizacaoEntregaFindUniqueOrThrowArgs} args - Arguments to find a HistoricoLocalizacaoEntrega
+     * @example
+     * // Get one HistoricoLocalizacaoEntrega
+     * const historicoLocalizacaoEntrega = await prisma.historicoLocalizacaoEntrega.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends HistoricoLocalizacaoEntregaFindUniqueOrThrowArgs>(args: SelectSubset<T, HistoricoLocalizacaoEntregaFindUniqueOrThrowArgs<ExtArgs>>): Prisma__HistoricoLocalizacaoEntregaClient<$Result.GetResult<Prisma.$HistoricoLocalizacaoEntregaPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first HistoricoLocalizacaoEntrega that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {HistoricoLocalizacaoEntregaFindFirstArgs} args - Arguments to find a HistoricoLocalizacaoEntrega
+     * @example
+     * // Get one HistoricoLocalizacaoEntrega
+     * const historicoLocalizacaoEntrega = await prisma.historicoLocalizacaoEntrega.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends HistoricoLocalizacaoEntregaFindFirstArgs>(args?: SelectSubset<T, HistoricoLocalizacaoEntregaFindFirstArgs<ExtArgs>>): Prisma__HistoricoLocalizacaoEntregaClient<$Result.GetResult<Prisma.$HistoricoLocalizacaoEntregaPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first HistoricoLocalizacaoEntrega that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {HistoricoLocalizacaoEntregaFindFirstOrThrowArgs} args - Arguments to find a HistoricoLocalizacaoEntrega
+     * @example
+     * // Get one HistoricoLocalizacaoEntrega
+     * const historicoLocalizacaoEntrega = await prisma.historicoLocalizacaoEntrega.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends HistoricoLocalizacaoEntregaFindFirstOrThrowArgs>(args?: SelectSubset<T, HistoricoLocalizacaoEntregaFindFirstOrThrowArgs<ExtArgs>>): Prisma__HistoricoLocalizacaoEntregaClient<$Result.GetResult<Prisma.$HistoricoLocalizacaoEntregaPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more HistoricoLocalizacaoEntregas that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {HistoricoLocalizacaoEntregaFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all HistoricoLocalizacaoEntregas
+     * const historicoLocalizacaoEntregas = await prisma.historicoLocalizacaoEntrega.findMany()
+     * 
+     * // Get first 10 HistoricoLocalizacaoEntregas
+     * const historicoLocalizacaoEntregas = await prisma.historicoLocalizacaoEntrega.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const historicoLocalizacaoEntregaWithIdOnly = await prisma.historicoLocalizacaoEntrega.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends HistoricoLocalizacaoEntregaFindManyArgs>(args?: SelectSubset<T, HistoricoLocalizacaoEntregaFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$HistoricoLocalizacaoEntregaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a HistoricoLocalizacaoEntrega.
+     * @param {HistoricoLocalizacaoEntregaCreateArgs} args - Arguments to create a HistoricoLocalizacaoEntrega.
+     * @example
+     * // Create one HistoricoLocalizacaoEntrega
+     * const HistoricoLocalizacaoEntrega = await prisma.historicoLocalizacaoEntrega.create({
+     *   data: {
+     *     // ... data to create a HistoricoLocalizacaoEntrega
+     *   }
+     * })
+     * 
+     */
+    create<T extends HistoricoLocalizacaoEntregaCreateArgs>(args: SelectSubset<T, HistoricoLocalizacaoEntregaCreateArgs<ExtArgs>>): Prisma__HistoricoLocalizacaoEntregaClient<$Result.GetResult<Prisma.$HistoricoLocalizacaoEntregaPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many HistoricoLocalizacaoEntregas.
+     * @param {HistoricoLocalizacaoEntregaCreateManyArgs} args - Arguments to create many HistoricoLocalizacaoEntregas.
+     * @example
+     * // Create many HistoricoLocalizacaoEntregas
+     * const historicoLocalizacaoEntrega = await prisma.historicoLocalizacaoEntrega.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends HistoricoLocalizacaoEntregaCreateManyArgs>(args?: SelectSubset<T, HistoricoLocalizacaoEntregaCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a HistoricoLocalizacaoEntrega.
+     * @param {HistoricoLocalizacaoEntregaDeleteArgs} args - Arguments to delete one HistoricoLocalizacaoEntrega.
+     * @example
+     * // Delete one HistoricoLocalizacaoEntrega
+     * const HistoricoLocalizacaoEntrega = await prisma.historicoLocalizacaoEntrega.delete({
+     *   where: {
+     *     // ... filter to delete one HistoricoLocalizacaoEntrega
+     *   }
+     * })
+     * 
+     */
+    delete<T extends HistoricoLocalizacaoEntregaDeleteArgs>(args: SelectSubset<T, HistoricoLocalizacaoEntregaDeleteArgs<ExtArgs>>): Prisma__HistoricoLocalizacaoEntregaClient<$Result.GetResult<Prisma.$HistoricoLocalizacaoEntregaPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one HistoricoLocalizacaoEntrega.
+     * @param {HistoricoLocalizacaoEntregaUpdateArgs} args - Arguments to update one HistoricoLocalizacaoEntrega.
+     * @example
+     * // Update one HistoricoLocalizacaoEntrega
+     * const historicoLocalizacaoEntrega = await prisma.historicoLocalizacaoEntrega.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends HistoricoLocalizacaoEntregaUpdateArgs>(args: SelectSubset<T, HistoricoLocalizacaoEntregaUpdateArgs<ExtArgs>>): Prisma__HistoricoLocalizacaoEntregaClient<$Result.GetResult<Prisma.$HistoricoLocalizacaoEntregaPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more HistoricoLocalizacaoEntregas.
+     * @param {HistoricoLocalizacaoEntregaDeleteManyArgs} args - Arguments to filter HistoricoLocalizacaoEntregas to delete.
+     * @example
+     * // Delete a few HistoricoLocalizacaoEntregas
+     * const { count } = await prisma.historicoLocalizacaoEntrega.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends HistoricoLocalizacaoEntregaDeleteManyArgs>(args?: SelectSubset<T, HistoricoLocalizacaoEntregaDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more HistoricoLocalizacaoEntregas.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {HistoricoLocalizacaoEntregaUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many HistoricoLocalizacaoEntregas
+     * const historicoLocalizacaoEntrega = await prisma.historicoLocalizacaoEntrega.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends HistoricoLocalizacaoEntregaUpdateManyArgs>(args: SelectSubset<T, HistoricoLocalizacaoEntregaUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one HistoricoLocalizacaoEntrega.
+     * @param {HistoricoLocalizacaoEntregaUpsertArgs} args - Arguments to update or create a HistoricoLocalizacaoEntrega.
+     * @example
+     * // Update or create a HistoricoLocalizacaoEntrega
+     * const historicoLocalizacaoEntrega = await prisma.historicoLocalizacaoEntrega.upsert({
+     *   create: {
+     *     // ... data to create a HistoricoLocalizacaoEntrega
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the HistoricoLocalizacaoEntrega we want to update
+     *   }
+     * })
+     */
+    upsert<T extends HistoricoLocalizacaoEntregaUpsertArgs>(args: SelectSubset<T, HistoricoLocalizacaoEntregaUpsertArgs<ExtArgs>>): Prisma__HistoricoLocalizacaoEntregaClient<$Result.GetResult<Prisma.$HistoricoLocalizacaoEntregaPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of HistoricoLocalizacaoEntregas.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {HistoricoLocalizacaoEntregaCountArgs} args - Arguments to filter HistoricoLocalizacaoEntregas to count.
+     * @example
+     * // Count the number of HistoricoLocalizacaoEntregas
+     * const count = await prisma.historicoLocalizacaoEntrega.count({
+     *   where: {
+     *     // ... the filter for the HistoricoLocalizacaoEntregas we want to count
+     *   }
+     * })
+    **/
+    count<T extends HistoricoLocalizacaoEntregaCountArgs>(
+      args?: Subset<T, HistoricoLocalizacaoEntregaCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], HistoricoLocalizacaoEntregaCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a HistoricoLocalizacaoEntrega.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {HistoricoLocalizacaoEntregaAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends HistoricoLocalizacaoEntregaAggregateArgs>(args: Subset<T, HistoricoLocalizacaoEntregaAggregateArgs>): Prisma.PrismaPromise<GetHistoricoLocalizacaoEntregaAggregateType<T>>
+
+    /**
+     * Group by HistoricoLocalizacaoEntrega.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {HistoricoLocalizacaoEntregaGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends HistoricoLocalizacaoEntregaGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: HistoricoLocalizacaoEntregaGroupByArgs['orderBy'] }
+        : { orderBy?: HistoricoLocalizacaoEntregaGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, HistoricoLocalizacaoEntregaGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetHistoricoLocalizacaoEntregaGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the HistoricoLocalizacaoEntrega model
+   */
+  readonly fields: HistoricoLocalizacaoEntregaFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for HistoricoLocalizacaoEntrega.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__HistoricoLocalizacaoEntregaClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    rota<T extends RotaEntregaDefaultArgs<ExtArgs> = {}>(args?: Subset<T, RotaEntregaDefaultArgs<ExtArgs>>): Prisma__RotaEntregaClient<$Result.GetResult<Prisma.$RotaEntregaPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the HistoricoLocalizacaoEntrega model
+   */
+  interface HistoricoLocalizacaoEntregaFieldRefs {
+    readonly id: FieldRef<"HistoricoLocalizacaoEntrega", 'String'>
+    readonly rotaId: FieldRef<"HistoricoLocalizacaoEntrega", 'String'>
+    readonly latitude: FieldRef<"HistoricoLocalizacaoEntrega", 'Decimal'>
+    readonly longitude: FieldRef<"HistoricoLocalizacaoEntrega", 'Decimal'>
+    readonly precisaoMetros: FieldRef<"HistoricoLocalizacaoEntrega", 'Decimal'>
+    readonly criadoEm: FieldRef<"HistoricoLocalizacaoEntrega", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * HistoricoLocalizacaoEntrega findUnique
+   */
+  export type HistoricoLocalizacaoEntregaFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the HistoricoLocalizacaoEntrega
+     */
+    select?: HistoricoLocalizacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the HistoricoLocalizacaoEntrega
+     */
+    omit?: HistoricoLocalizacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: HistoricoLocalizacaoEntregaInclude<ExtArgs> | null
+    /**
+     * Filter, which HistoricoLocalizacaoEntrega to fetch.
+     */
+    where: HistoricoLocalizacaoEntregaWhereUniqueInput
+  }
+
+  /**
+   * HistoricoLocalizacaoEntrega findUniqueOrThrow
+   */
+  export type HistoricoLocalizacaoEntregaFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the HistoricoLocalizacaoEntrega
+     */
+    select?: HistoricoLocalizacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the HistoricoLocalizacaoEntrega
+     */
+    omit?: HistoricoLocalizacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: HistoricoLocalizacaoEntregaInclude<ExtArgs> | null
+    /**
+     * Filter, which HistoricoLocalizacaoEntrega to fetch.
+     */
+    where: HistoricoLocalizacaoEntregaWhereUniqueInput
+  }
+
+  /**
+   * HistoricoLocalizacaoEntrega findFirst
+   */
+  export type HistoricoLocalizacaoEntregaFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the HistoricoLocalizacaoEntrega
+     */
+    select?: HistoricoLocalizacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the HistoricoLocalizacaoEntrega
+     */
+    omit?: HistoricoLocalizacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: HistoricoLocalizacaoEntregaInclude<ExtArgs> | null
+    /**
+     * Filter, which HistoricoLocalizacaoEntrega to fetch.
+     */
+    where?: HistoricoLocalizacaoEntregaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of HistoricoLocalizacaoEntregas to fetch.
+     */
+    orderBy?: HistoricoLocalizacaoEntregaOrderByWithRelationInput | HistoricoLocalizacaoEntregaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for HistoricoLocalizacaoEntregas.
+     */
+    cursor?: HistoricoLocalizacaoEntregaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` HistoricoLocalizacaoEntregas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` HistoricoLocalizacaoEntregas.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of HistoricoLocalizacaoEntregas.
+     */
+    distinct?: HistoricoLocalizacaoEntregaScalarFieldEnum | HistoricoLocalizacaoEntregaScalarFieldEnum[]
+  }
+
+  /**
+   * HistoricoLocalizacaoEntrega findFirstOrThrow
+   */
+  export type HistoricoLocalizacaoEntregaFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the HistoricoLocalizacaoEntrega
+     */
+    select?: HistoricoLocalizacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the HistoricoLocalizacaoEntrega
+     */
+    omit?: HistoricoLocalizacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: HistoricoLocalizacaoEntregaInclude<ExtArgs> | null
+    /**
+     * Filter, which HistoricoLocalizacaoEntrega to fetch.
+     */
+    where?: HistoricoLocalizacaoEntregaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of HistoricoLocalizacaoEntregas to fetch.
+     */
+    orderBy?: HistoricoLocalizacaoEntregaOrderByWithRelationInput | HistoricoLocalizacaoEntregaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for HistoricoLocalizacaoEntregas.
+     */
+    cursor?: HistoricoLocalizacaoEntregaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` HistoricoLocalizacaoEntregas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` HistoricoLocalizacaoEntregas.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of HistoricoLocalizacaoEntregas.
+     */
+    distinct?: HistoricoLocalizacaoEntregaScalarFieldEnum | HistoricoLocalizacaoEntregaScalarFieldEnum[]
+  }
+
+  /**
+   * HistoricoLocalizacaoEntrega findMany
+   */
+  export type HistoricoLocalizacaoEntregaFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the HistoricoLocalizacaoEntrega
+     */
+    select?: HistoricoLocalizacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the HistoricoLocalizacaoEntrega
+     */
+    omit?: HistoricoLocalizacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: HistoricoLocalizacaoEntregaInclude<ExtArgs> | null
+    /**
+     * Filter, which HistoricoLocalizacaoEntregas to fetch.
+     */
+    where?: HistoricoLocalizacaoEntregaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of HistoricoLocalizacaoEntregas to fetch.
+     */
+    orderBy?: HistoricoLocalizacaoEntregaOrderByWithRelationInput | HistoricoLocalizacaoEntregaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing HistoricoLocalizacaoEntregas.
+     */
+    cursor?: HistoricoLocalizacaoEntregaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` HistoricoLocalizacaoEntregas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` HistoricoLocalizacaoEntregas.
+     */
+    skip?: number
+    distinct?: HistoricoLocalizacaoEntregaScalarFieldEnum | HistoricoLocalizacaoEntregaScalarFieldEnum[]
+  }
+
+  /**
+   * HistoricoLocalizacaoEntrega create
+   */
+  export type HistoricoLocalizacaoEntregaCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the HistoricoLocalizacaoEntrega
+     */
+    select?: HistoricoLocalizacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the HistoricoLocalizacaoEntrega
+     */
+    omit?: HistoricoLocalizacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: HistoricoLocalizacaoEntregaInclude<ExtArgs> | null
+    /**
+     * The data needed to create a HistoricoLocalizacaoEntrega.
+     */
+    data: XOR<HistoricoLocalizacaoEntregaCreateInput, HistoricoLocalizacaoEntregaUncheckedCreateInput>
+  }
+
+  /**
+   * HistoricoLocalizacaoEntrega createMany
+   */
+  export type HistoricoLocalizacaoEntregaCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many HistoricoLocalizacaoEntregas.
+     */
+    data: HistoricoLocalizacaoEntregaCreateManyInput | HistoricoLocalizacaoEntregaCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * HistoricoLocalizacaoEntrega update
+   */
+  export type HistoricoLocalizacaoEntregaUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the HistoricoLocalizacaoEntrega
+     */
+    select?: HistoricoLocalizacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the HistoricoLocalizacaoEntrega
+     */
+    omit?: HistoricoLocalizacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: HistoricoLocalizacaoEntregaInclude<ExtArgs> | null
+    /**
+     * The data needed to update a HistoricoLocalizacaoEntrega.
+     */
+    data: XOR<HistoricoLocalizacaoEntregaUpdateInput, HistoricoLocalizacaoEntregaUncheckedUpdateInput>
+    /**
+     * Choose, which HistoricoLocalizacaoEntrega to update.
+     */
+    where: HistoricoLocalizacaoEntregaWhereUniqueInput
+  }
+
+  /**
+   * HistoricoLocalizacaoEntrega updateMany
+   */
+  export type HistoricoLocalizacaoEntregaUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update HistoricoLocalizacaoEntregas.
+     */
+    data: XOR<HistoricoLocalizacaoEntregaUpdateManyMutationInput, HistoricoLocalizacaoEntregaUncheckedUpdateManyInput>
+    /**
+     * Filter which HistoricoLocalizacaoEntregas to update
+     */
+    where?: HistoricoLocalizacaoEntregaWhereInput
+    /**
+     * Limit how many HistoricoLocalizacaoEntregas to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * HistoricoLocalizacaoEntrega upsert
+   */
+  export type HistoricoLocalizacaoEntregaUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the HistoricoLocalizacaoEntrega
+     */
+    select?: HistoricoLocalizacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the HistoricoLocalizacaoEntrega
+     */
+    omit?: HistoricoLocalizacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: HistoricoLocalizacaoEntregaInclude<ExtArgs> | null
+    /**
+     * The filter to search for the HistoricoLocalizacaoEntrega to update in case it exists.
+     */
+    where: HistoricoLocalizacaoEntregaWhereUniqueInput
+    /**
+     * In case the HistoricoLocalizacaoEntrega found by the `where` argument doesn't exist, create a new HistoricoLocalizacaoEntrega with this data.
+     */
+    create: XOR<HistoricoLocalizacaoEntregaCreateInput, HistoricoLocalizacaoEntregaUncheckedCreateInput>
+    /**
+     * In case the HistoricoLocalizacaoEntrega was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<HistoricoLocalizacaoEntregaUpdateInput, HistoricoLocalizacaoEntregaUncheckedUpdateInput>
+  }
+
+  /**
+   * HistoricoLocalizacaoEntrega delete
+   */
+  export type HistoricoLocalizacaoEntregaDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the HistoricoLocalizacaoEntrega
+     */
+    select?: HistoricoLocalizacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the HistoricoLocalizacaoEntrega
+     */
+    omit?: HistoricoLocalizacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: HistoricoLocalizacaoEntregaInclude<ExtArgs> | null
+    /**
+     * Filter which HistoricoLocalizacaoEntrega to delete.
+     */
+    where: HistoricoLocalizacaoEntregaWhereUniqueInput
+  }
+
+  /**
+   * HistoricoLocalizacaoEntrega deleteMany
+   */
+  export type HistoricoLocalizacaoEntregaDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which HistoricoLocalizacaoEntregas to delete
+     */
+    where?: HistoricoLocalizacaoEntregaWhereInput
+    /**
+     * Limit how many HistoricoLocalizacaoEntregas to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * HistoricoLocalizacaoEntrega without action
+   */
+  export type HistoricoLocalizacaoEntregaDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the HistoricoLocalizacaoEntrega
+     */
+    select?: HistoricoLocalizacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the HistoricoLocalizacaoEntrega
+     */
+    omit?: HistoricoLocalizacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: HistoricoLocalizacaoEntregaInclude<ExtArgs> | null
   }
 
 
@@ -30650,6 +34410,61 @@ export namespace Prisma {
   export type PedidoOperacionalScalarFieldEnum = (typeof PedidoOperacionalScalarFieldEnum)[keyof typeof PedidoOperacionalScalarFieldEnum]
 
 
+  export const RotaEntregaScalarFieldEnum: {
+    id: 'id',
+    dataEntrega: 'dataEntrega',
+    nome: 'nome',
+    status: 'status',
+    entregadorId: 'entregadorId',
+    entregadorNome: 'entregadorNome',
+    tokenPublico: 'tokenPublico',
+    compartilhamentoAtivo: 'compartilhamentoAtivo',
+    iniciadoEm: 'iniciadoEm',
+    encerradoEm: 'encerradoEm',
+    ultimaLatitude: 'ultimaLatitude',
+    ultimaLongitude: 'ultimaLongitude',
+    ultimaPrecisaoMetros: 'ultimaPrecisaoMetros',
+    ultimaLocalizacaoEm: 'ultimaLocalizacaoEm',
+    criadoPorId: 'criadoPorId',
+    atualizadoPorId: 'atualizadoPorId',
+    criadoEm: 'criadoEm',
+    atualizadoEm: 'atualizadoEm'
+  };
+
+  export type RotaEntregaScalarFieldEnum = (typeof RotaEntregaScalarFieldEnum)[keyof typeof RotaEntregaScalarFieldEnum]
+
+
+  export const ParadaEntregaScalarFieldEnum: {
+    id: 'id',
+    rotaId: 'rotaId',
+    contaAzulCustomerId: 'contaAzulCustomerId',
+    clienteId: 'clienteId',
+    ordem: 'ordem',
+    status: 'status',
+    tokenPublico: 'tokenPublico',
+    observacoes: 'observacoes',
+    observacoesProblema: 'observacoesProblema',
+    entregueEm: 'entregueEm',
+    problemaEm: 'problemaEm',
+    criadoEm: 'criadoEm',
+    atualizadoEm: 'atualizadoEm'
+  };
+
+  export type ParadaEntregaScalarFieldEnum = (typeof ParadaEntregaScalarFieldEnum)[keyof typeof ParadaEntregaScalarFieldEnum]
+
+
+  export const HistoricoLocalizacaoEntregaScalarFieldEnum: {
+    id: 'id',
+    rotaId: 'rotaId',
+    latitude: 'latitude',
+    longitude: 'longitude',
+    precisaoMetros: 'precisaoMetros',
+    criadoEm: 'criadoEm'
+  };
+
+  export type HistoricoLocalizacaoEntregaScalarFieldEnum = (typeof HistoricoLocalizacaoEntregaScalarFieldEnum)[keyof typeof HistoricoLocalizacaoEntregaScalarFieldEnum]
+
+
   export const PedidoOperacionalItemScalarFieldEnum: {
     id: 'id',
     pedidoId: 'pedidoId',
@@ -31052,6 +34867,40 @@ export namespace Prisma {
   export type PedidoOperacionalOrderByRelevanceFieldEnum = (typeof PedidoOperacionalOrderByRelevanceFieldEnum)[keyof typeof PedidoOperacionalOrderByRelevanceFieldEnum]
 
 
+  export const RotaEntregaOrderByRelevanceFieldEnum: {
+    id: 'id',
+    nome: 'nome',
+    entregadorId: 'entregadorId',
+    entregadorNome: 'entregadorNome',
+    tokenPublico: 'tokenPublico',
+    criadoPorId: 'criadoPorId',
+    atualizadoPorId: 'atualizadoPorId'
+  };
+
+  export type RotaEntregaOrderByRelevanceFieldEnum = (typeof RotaEntregaOrderByRelevanceFieldEnum)[keyof typeof RotaEntregaOrderByRelevanceFieldEnum]
+
+
+  export const ParadaEntregaOrderByRelevanceFieldEnum: {
+    id: 'id',
+    rotaId: 'rotaId',
+    contaAzulCustomerId: 'contaAzulCustomerId',
+    clienteId: 'clienteId',
+    tokenPublico: 'tokenPublico',
+    observacoes: 'observacoes',
+    observacoesProblema: 'observacoesProblema'
+  };
+
+  export type ParadaEntregaOrderByRelevanceFieldEnum = (typeof ParadaEntregaOrderByRelevanceFieldEnum)[keyof typeof ParadaEntregaOrderByRelevanceFieldEnum]
+
+
+  export const HistoricoLocalizacaoEntregaOrderByRelevanceFieldEnum: {
+    id: 'id',
+    rotaId: 'rotaId'
+  };
+
+  export type HistoricoLocalizacaoEntregaOrderByRelevanceFieldEnum = (typeof HistoricoLocalizacaoEntregaOrderByRelevanceFieldEnum)[keyof typeof HistoricoLocalizacaoEntregaOrderByRelevanceFieldEnum]
+
+
   export const PedidoOperacionalItemOrderByRelevanceFieldEnum: {
     id: 'id',
     pedidoId: 'pedidoId',
@@ -31341,6 +35190,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'RotaEntregaStatus'
+   */
+  export type EnumRotaEntregaStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RotaEntregaStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'ParadaEntregaStatus'
+   */
+  export type EnumParadaEntregaStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ParadaEntregaStatus'>
+    
+
+
+  /**
    * Reference to a field of type 'StatusConciliacaoContaAzul'
    */
   export type EnumStatusConciliacaoContaAzulFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'StatusConciliacaoContaAzul'>
@@ -31445,6 +35308,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalListRelationFilter
     avariasCriadas?: PedidoOperacionalAvariaListRelationFilter
     auditoriasPedido?: PedidoOperacionalAuditoriaListRelationFilter
+    rotasEntrega?: RotaEntregaListRelationFilter
+    rotasCriadas?: RotaEntregaListRelationFilter
+    rotasAtualizadas?: RotaEntregaListRelationFilter
   }
 
   export type UsuarioOrderByWithRelationInput = {
@@ -31462,6 +35328,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalOrderByRelationAggregateInput
     avariasCriadas?: PedidoOperacionalAvariaOrderByRelationAggregateInput
     auditoriasPedido?: PedidoOperacionalAuditoriaOrderByRelationAggregateInput
+    rotasEntrega?: RotaEntregaOrderByRelationAggregateInput
+    rotasCriadas?: RotaEntregaOrderByRelationAggregateInput
+    rotasAtualizadas?: RotaEntregaOrderByRelationAggregateInput
     _relevance?: UsuarioOrderByRelevanceInput
   }
 
@@ -31483,6 +35352,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalListRelationFilter
     avariasCriadas?: PedidoOperacionalAvariaListRelationFilter
     auditoriasPedido?: PedidoOperacionalAuditoriaListRelationFilter
+    rotasEntrega?: RotaEntregaListRelationFilter
+    rotasCriadas?: RotaEntregaListRelationFilter
+    rotasAtualizadas?: RotaEntregaListRelationFilter
   }, "id" | "email">
 
   export type UsuarioOrderByWithAggregationInput = {
@@ -31659,6 +35531,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalListRelationFilter
     avariasOperacionais?: PedidoOperacionalAvariaListRelationFilter
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkListRelationFilter
+    paradasEntrega?: ParadaEntregaListRelationFilter
   }
 
   export type ClienteOrderByWithRelationInput = {
@@ -31689,6 +35562,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalOrderByRelationAggregateInput
     avariasOperacionais?: PedidoOperacionalAvariaOrderByRelationAggregateInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkOrderByRelationAggregateInput
+    paradasEntrega?: ParadaEntregaOrderByRelationAggregateInput
     _relevance?: ClienteOrderByRelevanceInput
   }
 
@@ -31723,6 +35597,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalListRelationFilter
     avariasOperacionais?: PedidoOperacionalAvariaListRelationFilter
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkListRelationFilter
+    paradasEntrega?: ParadaEntregaListRelationFilter
   }, "id" | "externalId">
 
   export type ClienteOrderByWithAggregationInput = {
@@ -32359,6 +36234,306 @@ export namespace Prisma {
     editadoPorId?: StringNullableWithAggregatesFilter<"PedidoOperacional"> | string | null
     criadoEm?: DateTimeWithAggregatesFilter<"PedidoOperacional"> | Date | string
     atualizadoEm?: DateTimeWithAggregatesFilter<"PedidoOperacional"> | Date | string
+  }
+
+  export type RotaEntregaWhereInput = {
+    AND?: RotaEntregaWhereInput | RotaEntregaWhereInput[]
+    OR?: RotaEntregaWhereInput[]
+    NOT?: RotaEntregaWhereInput | RotaEntregaWhereInput[]
+    id?: StringFilter<"RotaEntrega"> | string
+    dataEntrega?: DateTimeFilter<"RotaEntrega"> | Date | string
+    nome?: StringNullableFilter<"RotaEntrega"> | string | null
+    status?: EnumRotaEntregaStatusFilter<"RotaEntrega"> | $Enums.RotaEntregaStatus
+    entregadorId?: StringNullableFilter<"RotaEntrega"> | string | null
+    entregadorNome?: StringNullableFilter<"RotaEntrega"> | string | null
+    tokenPublico?: StringFilter<"RotaEntrega"> | string
+    compartilhamentoAtivo?: BoolFilter<"RotaEntrega"> | boolean
+    iniciadoEm?: DateTimeNullableFilter<"RotaEntrega"> | Date | string | null
+    encerradoEm?: DateTimeNullableFilter<"RotaEntrega"> | Date | string | null
+    ultimaLatitude?: DecimalNullableFilter<"RotaEntrega"> | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: DecimalNullableFilter<"RotaEntrega"> | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: DecimalNullableFilter<"RotaEntrega"> | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: DateTimeNullableFilter<"RotaEntrega"> | Date | string | null
+    criadoPorId?: StringNullableFilter<"RotaEntrega"> | string | null
+    atualizadoPorId?: StringNullableFilter<"RotaEntrega"> | string | null
+    criadoEm?: DateTimeFilter<"RotaEntrega"> | Date | string
+    atualizadoEm?: DateTimeFilter<"RotaEntrega"> | Date | string
+    entregador?: XOR<UsuarioNullableScalarRelationFilter, UsuarioWhereInput> | null
+    criadoPor?: XOR<UsuarioNullableScalarRelationFilter, UsuarioWhereInput> | null
+    atualizadoPor?: XOR<UsuarioNullableScalarRelationFilter, UsuarioWhereInput> | null
+    paradas?: ParadaEntregaListRelationFilter
+    localizacoes?: HistoricoLocalizacaoEntregaListRelationFilter
+  }
+
+  export type RotaEntregaOrderByWithRelationInput = {
+    id?: SortOrder
+    dataEntrega?: SortOrder
+    nome?: SortOrderInput | SortOrder
+    status?: SortOrder
+    entregadorId?: SortOrderInput | SortOrder
+    entregadorNome?: SortOrderInput | SortOrder
+    tokenPublico?: SortOrder
+    compartilhamentoAtivo?: SortOrder
+    iniciadoEm?: SortOrderInput | SortOrder
+    encerradoEm?: SortOrderInput | SortOrder
+    ultimaLatitude?: SortOrderInput | SortOrder
+    ultimaLongitude?: SortOrderInput | SortOrder
+    ultimaPrecisaoMetros?: SortOrderInput | SortOrder
+    ultimaLocalizacaoEm?: SortOrderInput | SortOrder
+    criadoPorId?: SortOrderInput | SortOrder
+    atualizadoPorId?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    entregador?: UsuarioOrderByWithRelationInput
+    criadoPor?: UsuarioOrderByWithRelationInput
+    atualizadoPor?: UsuarioOrderByWithRelationInput
+    paradas?: ParadaEntregaOrderByRelationAggregateInput
+    localizacoes?: HistoricoLocalizacaoEntregaOrderByRelationAggregateInput
+    _relevance?: RotaEntregaOrderByRelevanceInput
+  }
+
+  export type RotaEntregaWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    dataEntrega?: Date | string
+    tokenPublico?: string
+    AND?: RotaEntregaWhereInput | RotaEntregaWhereInput[]
+    OR?: RotaEntregaWhereInput[]
+    NOT?: RotaEntregaWhereInput | RotaEntregaWhereInput[]
+    nome?: StringNullableFilter<"RotaEntrega"> | string | null
+    status?: EnumRotaEntregaStatusFilter<"RotaEntrega"> | $Enums.RotaEntregaStatus
+    entregadorId?: StringNullableFilter<"RotaEntrega"> | string | null
+    entregadorNome?: StringNullableFilter<"RotaEntrega"> | string | null
+    compartilhamentoAtivo?: BoolFilter<"RotaEntrega"> | boolean
+    iniciadoEm?: DateTimeNullableFilter<"RotaEntrega"> | Date | string | null
+    encerradoEm?: DateTimeNullableFilter<"RotaEntrega"> | Date | string | null
+    ultimaLatitude?: DecimalNullableFilter<"RotaEntrega"> | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: DecimalNullableFilter<"RotaEntrega"> | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: DecimalNullableFilter<"RotaEntrega"> | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: DateTimeNullableFilter<"RotaEntrega"> | Date | string | null
+    criadoPorId?: StringNullableFilter<"RotaEntrega"> | string | null
+    atualizadoPorId?: StringNullableFilter<"RotaEntrega"> | string | null
+    criadoEm?: DateTimeFilter<"RotaEntrega"> | Date | string
+    atualizadoEm?: DateTimeFilter<"RotaEntrega"> | Date | string
+    entregador?: XOR<UsuarioNullableScalarRelationFilter, UsuarioWhereInput> | null
+    criadoPor?: XOR<UsuarioNullableScalarRelationFilter, UsuarioWhereInput> | null
+    atualizadoPor?: XOR<UsuarioNullableScalarRelationFilter, UsuarioWhereInput> | null
+    paradas?: ParadaEntregaListRelationFilter
+    localizacoes?: HistoricoLocalizacaoEntregaListRelationFilter
+  }, "id" | "dataEntrega" | "tokenPublico">
+
+  export type RotaEntregaOrderByWithAggregationInput = {
+    id?: SortOrder
+    dataEntrega?: SortOrder
+    nome?: SortOrderInput | SortOrder
+    status?: SortOrder
+    entregadorId?: SortOrderInput | SortOrder
+    entregadorNome?: SortOrderInput | SortOrder
+    tokenPublico?: SortOrder
+    compartilhamentoAtivo?: SortOrder
+    iniciadoEm?: SortOrderInput | SortOrder
+    encerradoEm?: SortOrderInput | SortOrder
+    ultimaLatitude?: SortOrderInput | SortOrder
+    ultimaLongitude?: SortOrderInput | SortOrder
+    ultimaPrecisaoMetros?: SortOrderInput | SortOrder
+    ultimaLocalizacaoEm?: SortOrderInput | SortOrder
+    criadoPorId?: SortOrderInput | SortOrder
+    atualizadoPorId?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    _count?: RotaEntregaCountOrderByAggregateInput
+    _avg?: RotaEntregaAvgOrderByAggregateInput
+    _max?: RotaEntregaMaxOrderByAggregateInput
+    _min?: RotaEntregaMinOrderByAggregateInput
+    _sum?: RotaEntregaSumOrderByAggregateInput
+  }
+
+  export type RotaEntregaScalarWhereWithAggregatesInput = {
+    AND?: RotaEntregaScalarWhereWithAggregatesInput | RotaEntregaScalarWhereWithAggregatesInput[]
+    OR?: RotaEntregaScalarWhereWithAggregatesInput[]
+    NOT?: RotaEntregaScalarWhereWithAggregatesInput | RotaEntregaScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"RotaEntrega"> | string
+    dataEntrega?: DateTimeWithAggregatesFilter<"RotaEntrega"> | Date | string
+    nome?: StringNullableWithAggregatesFilter<"RotaEntrega"> | string | null
+    status?: EnumRotaEntregaStatusWithAggregatesFilter<"RotaEntrega"> | $Enums.RotaEntregaStatus
+    entregadorId?: StringNullableWithAggregatesFilter<"RotaEntrega"> | string | null
+    entregadorNome?: StringNullableWithAggregatesFilter<"RotaEntrega"> | string | null
+    tokenPublico?: StringWithAggregatesFilter<"RotaEntrega"> | string
+    compartilhamentoAtivo?: BoolWithAggregatesFilter<"RotaEntrega"> | boolean
+    iniciadoEm?: DateTimeNullableWithAggregatesFilter<"RotaEntrega"> | Date | string | null
+    encerradoEm?: DateTimeNullableWithAggregatesFilter<"RotaEntrega"> | Date | string | null
+    ultimaLatitude?: DecimalNullableWithAggregatesFilter<"RotaEntrega"> | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: DecimalNullableWithAggregatesFilter<"RotaEntrega"> | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: DecimalNullableWithAggregatesFilter<"RotaEntrega"> | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: DateTimeNullableWithAggregatesFilter<"RotaEntrega"> | Date | string | null
+    criadoPorId?: StringNullableWithAggregatesFilter<"RotaEntrega"> | string | null
+    atualizadoPorId?: StringNullableWithAggregatesFilter<"RotaEntrega"> | string | null
+    criadoEm?: DateTimeWithAggregatesFilter<"RotaEntrega"> | Date | string
+    atualizadoEm?: DateTimeWithAggregatesFilter<"RotaEntrega"> | Date | string
+  }
+
+  export type ParadaEntregaWhereInput = {
+    AND?: ParadaEntregaWhereInput | ParadaEntregaWhereInput[]
+    OR?: ParadaEntregaWhereInput[]
+    NOT?: ParadaEntregaWhereInput | ParadaEntregaWhereInput[]
+    id?: StringFilter<"ParadaEntrega"> | string
+    rotaId?: StringFilter<"ParadaEntrega"> | string
+    contaAzulCustomerId?: StringFilter<"ParadaEntrega"> | string
+    clienteId?: StringNullableFilter<"ParadaEntrega"> | string | null
+    ordem?: IntFilter<"ParadaEntrega"> | number
+    status?: EnumParadaEntregaStatusFilter<"ParadaEntrega"> | $Enums.ParadaEntregaStatus
+    tokenPublico?: StringFilter<"ParadaEntrega"> | string
+    observacoes?: StringNullableFilter<"ParadaEntrega"> | string | null
+    observacoesProblema?: StringNullableFilter<"ParadaEntrega"> | string | null
+    entregueEm?: DateTimeNullableFilter<"ParadaEntrega"> | Date | string | null
+    problemaEm?: DateTimeNullableFilter<"ParadaEntrega"> | Date | string | null
+    criadoEm?: DateTimeFilter<"ParadaEntrega"> | Date | string
+    atualizadoEm?: DateTimeFilter<"ParadaEntrega"> | Date | string
+    rota?: XOR<RotaEntregaScalarRelationFilter, RotaEntregaWhereInput>
+    cliente?: XOR<ClienteNullableScalarRelationFilter, ClienteWhereInput> | null
+  }
+
+  export type ParadaEntregaOrderByWithRelationInput = {
+    id?: SortOrder
+    rotaId?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    clienteId?: SortOrderInput | SortOrder
+    ordem?: SortOrder
+    status?: SortOrder
+    tokenPublico?: SortOrder
+    observacoes?: SortOrderInput | SortOrder
+    observacoesProblema?: SortOrderInput | SortOrder
+    entregueEm?: SortOrderInput | SortOrder
+    problemaEm?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    rota?: RotaEntregaOrderByWithRelationInput
+    cliente?: ClienteOrderByWithRelationInput
+    _relevance?: ParadaEntregaOrderByRelevanceInput
+  }
+
+  export type ParadaEntregaWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    tokenPublico?: string
+    rotaId_contaAzulCustomerId?: ParadaEntregaRotaIdContaAzulCustomerIdCompoundUniqueInput
+    AND?: ParadaEntregaWhereInput | ParadaEntregaWhereInput[]
+    OR?: ParadaEntregaWhereInput[]
+    NOT?: ParadaEntregaWhereInput | ParadaEntregaWhereInput[]
+    rotaId?: StringFilter<"ParadaEntrega"> | string
+    contaAzulCustomerId?: StringFilter<"ParadaEntrega"> | string
+    clienteId?: StringNullableFilter<"ParadaEntrega"> | string | null
+    ordem?: IntFilter<"ParadaEntrega"> | number
+    status?: EnumParadaEntregaStatusFilter<"ParadaEntrega"> | $Enums.ParadaEntregaStatus
+    observacoes?: StringNullableFilter<"ParadaEntrega"> | string | null
+    observacoesProblema?: StringNullableFilter<"ParadaEntrega"> | string | null
+    entregueEm?: DateTimeNullableFilter<"ParadaEntrega"> | Date | string | null
+    problemaEm?: DateTimeNullableFilter<"ParadaEntrega"> | Date | string | null
+    criadoEm?: DateTimeFilter<"ParadaEntrega"> | Date | string
+    atualizadoEm?: DateTimeFilter<"ParadaEntrega"> | Date | string
+    rota?: XOR<RotaEntregaScalarRelationFilter, RotaEntregaWhereInput>
+    cliente?: XOR<ClienteNullableScalarRelationFilter, ClienteWhereInput> | null
+  }, "id" | "tokenPublico" | "rotaId_contaAzulCustomerId">
+
+  export type ParadaEntregaOrderByWithAggregationInput = {
+    id?: SortOrder
+    rotaId?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    clienteId?: SortOrderInput | SortOrder
+    ordem?: SortOrder
+    status?: SortOrder
+    tokenPublico?: SortOrder
+    observacoes?: SortOrderInput | SortOrder
+    observacoesProblema?: SortOrderInput | SortOrder
+    entregueEm?: SortOrderInput | SortOrder
+    problemaEm?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    _count?: ParadaEntregaCountOrderByAggregateInput
+    _avg?: ParadaEntregaAvgOrderByAggregateInput
+    _max?: ParadaEntregaMaxOrderByAggregateInput
+    _min?: ParadaEntregaMinOrderByAggregateInput
+    _sum?: ParadaEntregaSumOrderByAggregateInput
+  }
+
+  export type ParadaEntregaScalarWhereWithAggregatesInput = {
+    AND?: ParadaEntregaScalarWhereWithAggregatesInput | ParadaEntregaScalarWhereWithAggregatesInput[]
+    OR?: ParadaEntregaScalarWhereWithAggregatesInput[]
+    NOT?: ParadaEntregaScalarWhereWithAggregatesInput | ParadaEntregaScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"ParadaEntrega"> | string
+    rotaId?: StringWithAggregatesFilter<"ParadaEntrega"> | string
+    contaAzulCustomerId?: StringWithAggregatesFilter<"ParadaEntrega"> | string
+    clienteId?: StringNullableWithAggregatesFilter<"ParadaEntrega"> | string | null
+    ordem?: IntWithAggregatesFilter<"ParadaEntrega"> | number
+    status?: EnumParadaEntregaStatusWithAggregatesFilter<"ParadaEntrega"> | $Enums.ParadaEntregaStatus
+    tokenPublico?: StringWithAggregatesFilter<"ParadaEntrega"> | string
+    observacoes?: StringNullableWithAggregatesFilter<"ParadaEntrega"> | string | null
+    observacoesProblema?: StringNullableWithAggregatesFilter<"ParadaEntrega"> | string | null
+    entregueEm?: DateTimeNullableWithAggregatesFilter<"ParadaEntrega"> | Date | string | null
+    problemaEm?: DateTimeNullableWithAggregatesFilter<"ParadaEntrega"> | Date | string | null
+    criadoEm?: DateTimeWithAggregatesFilter<"ParadaEntrega"> | Date | string
+    atualizadoEm?: DateTimeWithAggregatesFilter<"ParadaEntrega"> | Date | string
+  }
+
+  export type HistoricoLocalizacaoEntregaWhereInput = {
+    AND?: HistoricoLocalizacaoEntregaWhereInput | HistoricoLocalizacaoEntregaWhereInput[]
+    OR?: HistoricoLocalizacaoEntregaWhereInput[]
+    NOT?: HistoricoLocalizacaoEntregaWhereInput | HistoricoLocalizacaoEntregaWhereInput[]
+    id?: StringFilter<"HistoricoLocalizacaoEntrega"> | string
+    rotaId?: StringFilter<"HistoricoLocalizacaoEntrega"> | string
+    latitude?: DecimalFilter<"HistoricoLocalizacaoEntrega"> | Decimal | DecimalJsLike | number | string
+    longitude?: DecimalFilter<"HistoricoLocalizacaoEntrega"> | Decimal | DecimalJsLike | number | string
+    precisaoMetros?: DecimalNullableFilter<"HistoricoLocalizacaoEntrega"> | Decimal | DecimalJsLike | number | string | null
+    criadoEm?: DateTimeFilter<"HistoricoLocalizacaoEntrega"> | Date | string
+    rota?: XOR<RotaEntregaScalarRelationFilter, RotaEntregaWhereInput>
+  }
+
+  export type HistoricoLocalizacaoEntregaOrderByWithRelationInput = {
+    id?: SortOrder
+    rotaId?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
+    precisaoMetros?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    rota?: RotaEntregaOrderByWithRelationInput
+    _relevance?: HistoricoLocalizacaoEntregaOrderByRelevanceInput
+  }
+
+  export type HistoricoLocalizacaoEntregaWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: HistoricoLocalizacaoEntregaWhereInput | HistoricoLocalizacaoEntregaWhereInput[]
+    OR?: HistoricoLocalizacaoEntregaWhereInput[]
+    NOT?: HistoricoLocalizacaoEntregaWhereInput | HistoricoLocalizacaoEntregaWhereInput[]
+    rotaId?: StringFilter<"HistoricoLocalizacaoEntrega"> | string
+    latitude?: DecimalFilter<"HistoricoLocalizacaoEntrega"> | Decimal | DecimalJsLike | number | string
+    longitude?: DecimalFilter<"HistoricoLocalizacaoEntrega"> | Decimal | DecimalJsLike | number | string
+    precisaoMetros?: DecimalNullableFilter<"HistoricoLocalizacaoEntrega"> | Decimal | DecimalJsLike | number | string | null
+    criadoEm?: DateTimeFilter<"HistoricoLocalizacaoEntrega"> | Date | string
+    rota?: XOR<RotaEntregaScalarRelationFilter, RotaEntregaWhereInput>
+  }, "id">
+
+  export type HistoricoLocalizacaoEntregaOrderByWithAggregationInput = {
+    id?: SortOrder
+    rotaId?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
+    precisaoMetros?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    _count?: HistoricoLocalizacaoEntregaCountOrderByAggregateInput
+    _avg?: HistoricoLocalizacaoEntregaAvgOrderByAggregateInput
+    _max?: HistoricoLocalizacaoEntregaMaxOrderByAggregateInput
+    _min?: HistoricoLocalizacaoEntregaMinOrderByAggregateInput
+    _sum?: HistoricoLocalizacaoEntregaSumOrderByAggregateInput
+  }
+
+  export type HistoricoLocalizacaoEntregaScalarWhereWithAggregatesInput = {
+    AND?: HistoricoLocalizacaoEntregaScalarWhereWithAggregatesInput | HistoricoLocalizacaoEntregaScalarWhereWithAggregatesInput[]
+    OR?: HistoricoLocalizacaoEntregaScalarWhereWithAggregatesInput[]
+    NOT?: HistoricoLocalizacaoEntregaScalarWhereWithAggregatesInput | HistoricoLocalizacaoEntregaScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"HistoricoLocalizacaoEntrega"> | string
+    rotaId?: StringWithAggregatesFilter<"HistoricoLocalizacaoEntrega"> | string
+    latitude?: DecimalWithAggregatesFilter<"HistoricoLocalizacaoEntrega"> | Decimal | DecimalJsLike | number | string
+    longitude?: DecimalWithAggregatesFilter<"HistoricoLocalizacaoEntrega"> | Decimal | DecimalJsLike | number | string
+    precisaoMetros?: DecimalNullableWithAggregatesFilter<"HistoricoLocalizacaoEntrega"> | Decimal | DecimalJsLike | number | string | null
+    criadoEm?: DateTimeWithAggregatesFilter<"HistoricoLocalizacaoEntrega"> | Date | string
   }
 
   export type PedidoOperacionalItemWhereInput = {
@@ -33641,6 +37816,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalCreateNestedManyWithoutEditadoPorInput
     avariasCriadas?: PedidoOperacionalAvariaCreateNestedManyWithoutCriadoPorInput
     auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
+    rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
+    rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
+    rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUncheckedCreateInput = {
@@ -33658,6 +37836,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalUncheckedCreateNestedManyWithoutEditadoPorInput
     avariasCriadas?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutCriadoPorInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
+    rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
+    rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
+    rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUpdateInput = {
@@ -33675,6 +37856,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalUpdateManyWithoutEditadoPorNestedInput
     avariasCriadas?: PedidoOperacionalAvariaUpdateManyWithoutCriadoPorNestedInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
+    rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
+    rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
+    rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUncheckedUpdateInput = {
@@ -33692,6 +37876,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorNestedInput
     avariasCriadas?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorNestedInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
+    rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
+    rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioCreateManyInput = {
@@ -33873,6 +38060,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateInput = {
@@ -33902,6 +38090,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteUpdateInput = {
@@ -33931,6 +38120,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateInput = {
@@ -33960,6 +38150,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteCreateManyInput = {
@@ -34669,6 +38860,330 @@ export namespace Prisma {
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RotaEntregaCreateInput = {
+    id?: string
+    dataEntrega: Date | string
+    nome?: string | null
+    status?: $Enums.RotaEntregaStatus
+    entregadorNome?: string | null
+    tokenPublico: string
+    compartilhamentoAtivo?: boolean
+    iniciadoEm?: Date | string | null
+    encerradoEm?: Date | string | null
+    ultimaLatitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: Date | string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    entregador?: UsuarioCreateNestedOneWithoutRotasEntregaInput
+    criadoPor?: UsuarioCreateNestedOneWithoutRotasCriadasInput
+    atualizadoPor?: UsuarioCreateNestedOneWithoutRotasAtualizadasInput
+    paradas?: ParadaEntregaCreateNestedManyWithoutRotaInput
+    localizacoes?: HistoricoLocalizacaoEntregaCreateNestedManyWithoutRotaInput
+  }
+
+  export type RotaEntregaUncheckedCreateInput = {
+    id?: string
+    dataEntrega: Date | string
+    nome?: string | null
+    status?: $Enums.RotaEntregaStatus
+    entregadorId?: string | null
+    entregadorNome?: string | null
+    tokenPublico: string
+    compartilhamentoAtivo?: boolean
+    iniciadoEm?: Date | string | null
+    encerradoEm?: Date | string | null
+    ultimaLatitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: Date | string | null
+    criadoPorId?: string | null
+    atualizadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    paradas?: ParadaEntregaUncheckedCreateNestedManyWithoutRotaInput
+    localizacoes?: HistoricoLocalizacaoEntregaUncheckedCreateNestedManyWithoutRotaInput
+  }
+
+  export type RotaEntregaUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    nome?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumRotaEntregaStatusFieldUpdateOperationsInput | $Enums.RotaEntregaStatus
+    entregadorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    compartilhamentoAtivo?: BoolFieldUpdateOperationsInput | boolean
+    iniciadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    encerradoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimaLatitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    entregador?: UsuarioUpdateOneWithoutRotasEntregaNestedInput
+    criadoPor?: UsuarioUpdateOneWithoutRotasCriadasNestedInput
+    atualizadoPor?: UsuarioUpdateOneWithoutRotasAtualizadasNestedInput
+    paradas?: ParadaEntregaUpdateManyWithoutRotaNestedInput
+    localizacoes?: HistoricoLocalizacaoEntregaUpdateManyWithoutRotaNestedInput
+  }
+
+  export type RotaEntregaUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    nome?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumRotaEntregaStatusFieldUpdateOperationsInput | $Enums.RotaEntregaStatus
+    entregadorId?: NullableStringFieldUpdateOperationsInput | string | null
+    entregadorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    compartilhamentoAtivo?: BoolFieldUpdateOperationsInput | boolean
+    iniciadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    encerradoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimaLatitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    atualizadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    paradas?: ParadaEntregaUncheckedUpdateManyWithoutRotaNestedInput
+    localizacoes?: HistoricoLocalizacaoEntregaUncheckedUpdateManyWithoutRotaNestedInput
+  }
+
+  export type RotaEntregaCreateManyInput = {
+    id?: string
+    dataEntrega: Date | string
+    nome?: string | null
+    status?: $Enums.RotaEntregaStatus
+    entregadorId?: string | null
+    entregadorNome?: string | null
+    tokenPublico: string
+    compartilhamentoAtivo?: boolean
+    iniciadoEm?: Date | string | null
+    encerradoEm?: Date | string | null
+    ultimaLatitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: Date | string | null
+    criadoPorId?: string | null
+    atualizadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type RotaEntregaUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    nome?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumRotaEntregaStatusFieldUpdateOperationsInput | $Enums.RotaEntregaStatus
+    entregadorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    compartilhamentoAtivo?: BoolFieldUpdateOperationsInput | boolean
+    iniciadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    encerradoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimaLatitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RotaEntregaUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    nome?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumRotaEntregaStatusFieldUpdateOperationsInput | $Enums.RotaEntregaStatus
+    entregadorId?: NullableStringFieldUpdateOperationsInput | string | null
+    entregadorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    compartilhamentoAtivo?: BoolFieldUpdateOperationsInput | boolean
+    iniciadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    encerradoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimaLatitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    atualizadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ParadaEntregaCreateInput = {
+    id?: string
+    contaAzulCustomerId: string
+    ordem: number
+    status?: $Enums.ParadaEntregaStatus
+    tokenPublico: string
+    observacoes?: string | null
+    observacoesProblema?: string | null
+    entregueEm?: Date | string | null
+    problemaEm?: Date | string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    rota: RotaEntregaCreateNestedOneWithoutParadasInput
+    cliente?: ClienteCreateNestedOneWithoutParadasEntregaInput
+  }
+
+  export type ParadaEntregaUncheckedCreateInput = {
+    id?: string
+    rotaId: string
+    contaAzulCustomerId: string
+    clienteId?: string | null
+    ordem: number
+    status?: $Enums.ParadaEntregaStatus
+    tokenPublico: string
+    observacoes?: string | null
+    observacoesProblema?: string | null
+    entregueEm?: Date | string | null
+    problemaEm?: Date | string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type ParadaEntregaUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    ordem?: IntFieldUpdateOperationsInput | number
+    status?: EnumParadaEntregaStatusFieldUpdateOperationsInput | $Enums.ParadaEntregaStatus
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    observacoesProblema?: NullableStringFieldUpdateOperationsInput | string | null
+    entregueEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    problemaEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    rota?: RotaEntregaUpdateOneRequiredWithoutParadasNestedInput
+    cliente?: ClienteUpdateOneWithoutParadasEntregaNestedInput
+  }
+
+  export type ParadaEntregaUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    rotaId?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    ordem?: IntFieldUpdateOperationsInput | number
+    status?: EnumParadaEntregaStatusFieldUpdateOperationsInput | $Enums.ParadaEntregaStatus
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    observacoesProblema?: NullableStringFieldUpdateOperationsInput | string | null
+    entregueEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    problemaEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ParadaEntregaCreateManyInput = {
+    id?: string
+    rotaId: string
+    contaAzulCustomerId: string
+    clienteId?: string | null
+    ordem: number
+    status?: $Enums.ParadaEntregaStatus
+    tokenPublico: string
+    observacoes?: string | null
+    observacoesProblema?: string | null
+    entregueEm?: Date | string | null
+    problemaEm?: Date | string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type ParadaEntregaUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    ordem?: IntFieldUpdateOperationsInput | number
+    status?: EnumParadaEntregaStatusFieldUpdateOperationsInput | $Enums.ParadaEntregaStatus
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    observacoesProblema?: NullableStringFieldUpdateOperationsInput | string | null
+    entregueEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    problemaEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ParadaEntregaUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    rotaId?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    ordem?: IntFieldUpdateOperationsInput | number
+    status?: EnumParadaEntregaStatusFieldUpdateOperationsInput | $Enums.ParadaEntregaStatus
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    observacoesProblema?: NullableStringFieldUpdateOperationsInput | string | null
+    entregueEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    problemaEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type HistoricoLocalizacaoEntregaCreateInput = {
+    id?: string
+    latitude: Decimal | DecimalJsLike | number | string
+    longitude: Decimal | DecimalJsLike | number | string
+    precisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    criadoEm?: Date | string
+    rota: RotaEntregaCreateNestedOneWithoutLocalizacoesInput
+  }
+
+  export type HistoricoLocalizacaoEntregaUncheckedCreateInput = {
+    id?: string
+    rotaId: string
+    latitude: Decimal | DecimalJsLike | number | string
+    longitude: Decimal | DecimalJsLike | number | string
+    precisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    criadoEm?: Date | string
+  }
+
+  export type HistoricoLocalizacaoEntregaUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    latitude?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    longitude?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    precisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    rota?: RotaEntregaUpdateOneRequiredWithoutLocalizacoesNestedInput
+  }
+
+  export type HistoricoLocalizacaoEntregaUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    rotaId?: StringFieldUpdateOperationsInput | string
+    latitude?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    longitude?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    precisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type HistoricoLocalizacaoEntregaCreateManyInput = {
+    id?: string
+    rotaId: string
+    latitude: Decimal | DecimalJsLike | number | string
+    longitude: Decimal | DecimalJsLike | number | string
+    precisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    criadoEm?: Date | string
+  }
+
+  export type HistoricoLocalizacaoEntregaUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    latitude?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    longitude?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    precisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type HistoricoLocalizacaoEntregaUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    rotaId?: StringFieldUpdateOperationsInput | string
+    latitude?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    longitude?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    precisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type PedidoOperacionalItemCreateInput = {
@@ -36106,6 +40621,12 @@ export namespace Prisma {
     none?: PedidoOperacionalAuditoriaWhereInput
   }
 
+  export type RotaEntregaListRelationFilter = {
+    every?: RotaEntregaWhereInput
+    some?: RotaEntregaWhereInput
+    none?: RotaEntregaWhereInput
+  }
+
   export type MensagemOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -36127,6 +40648,10 @@ export namespace Prisma {
   }
 
   export type PedidoOperacionalAuditoriaOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type RotaEntregaOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -36458,6 +40983,12 @@ export namespace Prisma {
     none?: ClienteLegadoContaAzulLinkWhereInput
   }
 
+  export type ParadaEntregaListRelationFilter = {
+    every?: ParadaEntregaWhereInput
+    some?: ParadaEntregaWhereInput
+    none?: ParadaEntregaWhereInput
+  }
+
   export type PedidoOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -36471,6 +41002,10 @@ export namespace Prisma {
   }
 
   export type ClienteLegadoContaAzulLinkOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type ParadaEntregaOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -37260,6 +41795,248 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumStatusConciliacaoOperacionalFilter<$PrismaModel>
     _max?: NestedEnumStatusConciliacaoOperacionalFilter<$PrismaModel>
+  }
+
+  export type EnumRotaEntregaStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.RotaEntregaStatus | EnumRotaEntregaStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.RotaEntregaStatus[]
+    notIn?: $Enums.RotaEntregaStatus[]
+    not?: NestedEnumRotaEntregaStatusFilter<$PrismaModel> | $Enums.RotaEntregaStatus
+  }
+
+  export type HistoricoLocalizacaoEntregaListRelationFilter = {
+    every?: HistoricoLocalizacaoEntregaWhereInput
+    some?: HistoricoLocalizacaoEntregaWhereInput
+    none?: HistoricoLocalizacaoEntregaWhereInput
+  }
+
+  export type HistoricoLocalizacaoEntregaOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type RotaEntregaOrderByRelevanceInput = {
+    fields: RotaEntregaOrderByRelevanceFieldEnum | RotaEntregaOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type RotaEntregaCountOrderByAggregateInput = {
+    id?: SortOrder
+    dataEntrega?: SortOrder
+    nome?: SortOrder
+    status?: SortOrder
+    entregadorId?: SortOrder
+    entregadorNome?: SortOrder
+    tokenPublico?: SortOrder
+    compartilhamentoAtivo?: SortOrder
+    iniciadoEm?: SortOrder
+    encerradoEm?: SortOrder
+    ultimaLatitude?: SortOrder
+    ultimaLongitude?: SortOrder
+    ultimaPrecisaoMetros?: SortOrder
+    ultimaLocalizacaoEm?: SortOrder
+    criadoPorId?: SortOrder
+    atualizadoPorId?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type RotaEntregaAvgOrderByAggregateInput = {
+    ultimaLatitude?: SortOrder
+    ultimaLongitude?: SortOrder
+    ultimaPrecisaoMetros?: SortOrder
+  }
+
+  export type RotaEntregaMaxOrderByAggregateInput = {
+    id?: SortOrder
+    dataEntrega?: SortOrder
+    nome?: SortOrder
+    status?: SortOrder
+    entregadorId?: SortOrder
+    entregadorNome?: SortOrder
+    tokenPublico?: SortOrder
+    compartilhamentoAtivo?: SortOrder
+    iniciadoEm?: SortOrder
+    encerradoEm?: SortOrder
+    ultimaLatitude?: SortOrder
+    ultimaLongitude?: SortOrder
+    ultimaPrecisaoMetros?: SortOrder
+    ultimaLocalizacaoEm?: SortOrder
+    criadoPorId?: SortOrder
+    atualizadoPorId?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type RotaEntregaMinOrderByAggregateInput = {
+    id?: SortOrder
+    dataEntrega?: SortOrder
+    nome?: SortOrder
+    status?: SortOrder
+    entregadorId?: SortOrder
+    entregadorNome?: SortOrder
+    tokenPublico?: SortOrder
+    compartilhamentoAtivo?: SortOrder
+    iniciadoEm?: SortOrder
+    encerradoEm?: SortOrder
+    ultimaLatitude?: SortOrder
+    ultimaLongitude?: SortOrder
+    ultimaPrecisaoMetros?: SortOrder
+    ultimaLocalizacaoEm?: SortOrder
+    criadoPorId?: SortOrder
+    atualizadoPorId?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type RotaEntregaSumOrderByAggregateInput = {
+    ultimaLatitude?: SortOrder
+    ultimaLongitude?: SortOrder
+    ultimaPrecisaoMetros?: SortOrder
+  }
+
+  export type EnumRotaEntregaStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.RotaEntregaStatus | EnumRotaEntregaStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.RotaEntregaStatus[]
+    notIn?: $Enums.RotaEntregaStatus[]
+    not?: NestedEnumRotaEntregaStatusWithAggregatesFilter<$PrismaModel> | $Enums.RotaEntregaStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumRotaEntregaStatusFilter<$PrismaModel>
+    _max?: NestedEnumRotaEntregaStatusFilter<$PrismaModel>
+  }
+
+  export type EnumParadaEntregaStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.ParadaEntregaStatus | EnumParadaEntregaStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.ParadaEntregaStatus[]
+    notIn?: $Enums.ParadaEntregaStatus[]
+    not?: NestedEnumParadaEntregaStatusFilter<$PrismaModel> | $Enums.ParadaEntregaStatus
+  }
+
+  export type RotaEntregaScalarRelationFilter = {
+    is?: RotaEntregaWhereInput
+    isNot?: RotaEntregaWhereInput
+  }
+
+  export type ParadaEntregaOrderByRelevanceInput = {
+    fields: ParadaEntregaOrderByRelevanceFieldEnum | ParadaEntregaOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type ParadaEntregaRotaIdContaAzulCustomerIdCompoundUniqueInput = {
+    rotaId: string
+    contaAzulCustomerId: string
+  }
+
+  export type ParadaEntregaCountOrderByAggregateInput = {
+    id?: SortOrder
+    rotaId?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    clienteId?: SortOrder
+    ordem?: SortOrder
+    status?: SortOrder
+    tokenPublico?: SortOrder
+    observacoes?: SortOrder
+    observacoesProblema?: SortOrder
+    entregueEm?: SortOrder
+    problemaEm?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type ParadaEntregaAvgOrderByAggregateInput = {
+    ordem?: SortOrder
+  }
+
+  export type ParadaEntregaMaxOrderByAggregateInput = {
+    id?: SortOrder
+    rotaId?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    clienteId?: SortOrder
+    ordem?: SortOrder
+    status?: SortOrder
+    tokenPublico?: SortOrder
+    observacoes?: SortOrder
+    observacoesProblema?: SortOrder
+    entregueEm?: SortOrder
+    problemaEm?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type ParadaEntregaMinOrderByAggregateInput = {
+    id?: SortOrder
+    rotaId?: SortOrder
+    contaAzulCustomerId?: SortOrder
+    clienteId?: SortOrder
+    ordem?: SortOrder
+    status?: SortOrder
+    tokenPublico?: SortOrder
+    observacoes?: SortOrder
+    observacoesProblema?: SortOrder
+    entregueEm?: SortOrder
+    problemaEm?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type ParadaEntregaSumOrderByAggregateInput = {
+    ordem?: SortOrder
+  }
+
+  export type EnumParadaEntregaStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ParadaEntregaStatus | EnumParadaEntregaStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.ParadaEntregaStatus[]
+    notIn?: $Enums.ParadaEntregaStatus[]
+    not?: NestedEnumParadaEntregaStatusWithAggregatesFilter<$PrismaModel> | $Enums.ParadaEntregaStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumParadaEntregaStatusFilter<$PrismaModel>
+    _max?: NestedEnumParadaEntregaStatusFilter<$PrismaModel>
+  }
+
+  export type HistoricoLocalizacaoEntregaOrderByRelevanceInput = {
+    fields: HistoricoLocalizacaoEntregaOrderByRelevanceFieldEnum | HistoricoLocalizacaoEntregaOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type HistoricoLocalizacaoEntregaCountOrderByAggregateInput = {
+    id?: SortOrder
+    rotaId?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
+    precisaoMetros?: SortOrder
+    criadoEm?: SortOrder
+  }
+
+  export type HistoricoLocalizacaoEntregaAvgOrderByAggregateInput = {
+    latitude?: SortOrder
+    longitude?: SortOrder
+    precisaoMetros?: SortOrder
+  }
+
+  export type HistoricoLocalizacaoEntregaMaxOrderByAggregateInput = {
+    id?: SortOrder
+    rotaId?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
+    precisaoMetros?: SortOrder
+    criadoEm?: SortOrder
+  }
+
+  export type HistoricoLocalizacaoEntregaMinOrderByAggregateInput = {
+    id?: SortOrder
+    rotaId?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
+    precisaoMetros?: SortOrder
+    criadoEm?: SortOrder
+  }
+
+  export type HistoricoLocalizacaoEntregaSumOrderByAggregateInput = {
+    latitude?: SortOrder
+    longitude?: SortOrder
+    precisaoMetros?: SortOrder
   }
 
   export type PedidoOperacionalScalarRelationFilter = {
@@ -38289,6 +43066,27 @@ export namespace Prisma {
     connect?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
   }
 
+  export type RotaEntregaCreateNestedManyWithoutEntregadorInput = {
+    create?: XOR<RotaEntregaCreateWithoutEntregadorInput, RotaEntregaUncheckedCreateWithoutEntregadorInput> | RotaEntregaCreateWithoutEntregadorInput[] | RotaEntregaUncheckedCreateWithoutEntregadorInput[]
+    connectOrCreate?: RotaEntregaCreateOrConnectWithoutEntregadorInput | RotaEntregaCreateOrConnectWithoutEntregadorInput[]
+    createMany?: RotaEntregaCreateManyEntregadorInputEnvelope
+    connect?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+  }
+
+  export type RotaEntregaCreateNestedManyWithoutCriadoPorInput = {
+    create?: XOR<RotaEntregaCreateWithoutCriadoPorInput, RotaEntregaUncheckedCreateWithoutCriadoPorInput> | RotaEntregaCreateWithoutCriadoPorInput[] | RotaEntregaUncheckedCreateWithoutCriadoPorInput[]
+    connectOrCreate?: RotaEntregaCreateOrConnectWithoutCriadoPorInput | RotaEntregaCreateOrConnectWithoutCriadoPorInput[]
+    createMany?: RotaEntregaCreateManyCriadoPorInputEnvelope
+    connect?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+  }
+
+  export type RotaEntregaCreateNestedManyWithoutAtualizadoPorInput = {
+    create?: XOR<RotaEntregaCreateWithoutAtualizadoPorInput, RotaEntregaUncheckedCreateWithoutAtualizadoPorInput> | RotaEntregaCreateWithoutAtualizadoPorInput[] | RotaEntregaUncheckedCreateWithoutAtualizadoPorInput[]
+    connectOrCreate?: RotaEntregaCreateOrConnectWithoutAtualizadoPorInput | RotaEntregaCreateOrConnectWithoutAtualizadoPorInput[]
+    createMany?: RotaEntregaCreateManyAtualizadoPorInputEnvelope
+    connect?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+  }
+
   export type MensagemUncheckedCreateNestedManyWithoutAprovadorInput = {
     create?: XOR<MensagemCreateWithoutAprovadorInput, MensagemUncheckedCreateWithoutAprovadorInput> | MensagemCreateWithoutAprovadorInput[] | MensagemUncheckedCreateWithoutAprovadorInput[]
     connectOrCreate?: MensagemCreateOrConnectWithoutAprovadorInput | MensagemCreateOrConnectWithoutAprovadorInput[]
@@ -38336,6 +43134,27 @@ export namespace Prisma {
     connectOrCreate?: PedidoOperacionalAuditoriaCreateOrConnectWithoutUsuarioInput | PedidoOperacionalAuditoriaCreateOrConnectWithoutUsuarioInput[]
     createMany?: PedidoOperacionalAuditoriaCreateManyUsuarioInputEnvelope
     connect?: PedidoOperacionalAuditoriaWhereUniqueInput | PedidoOperacionalAuditoriaWhereUniqueInput[]
+  }
+
+  export type RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput = {
+    create?: XOR<RotaEntregaCreateWithoutEntregadorInput, RotaEntregaUncheckedCreateWithoutEntregadorInput> | RotaEntregaCreateWithoutEntregadorInput[] | RotaEntregaUncheckedCreateWithoutEntregadorInput[]
+    connectOrCreate?: RotaEntregaCreateOrConnectWithoutEntregadorInput | RotaEntregaCreateOrConnectWithoutEntregadorInput[]
+    createMany?: RotaEntregaCreateManyEntregadorInputEnvelope
+    connect?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+  }
+
+  export type RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput = {
+    create?: XOR<RotaEntregaCreateWithoutCriadoPorInput, RotaEntregaUncheckedCreateWithoutCriadoPorInput> | RotaEntregaCreateWithoutCriadoPorInput[] | RotaEntregaUncheckedCreateWithoutCriadoPorInput[]
+    connectOrCreate?: RotaEntregaCreateOrConnectWithoutCriadoPorInput | RotaEntregaCreateOrConnectWithoutCriadoPorInput[]
+    createMany?: RotaEntregaCreateManyCriadoPorInputEnvelope
+    connect?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+  }
+
+  export type RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput = {
+    create?: XOR<RotaEntregaCreateWithoutAtualizadoPorInput, RotaEntregaUncheckedCreateWithoutAtualizadoPorInput> | RotaEntregaCreateWithoutAtualizadoPorInput[] | RotaEntregaUncheckedCreateWithoutAtualizadoPorInput[]
+    connectOrCreate?: RotaEntregaCreateOrConnectWithoutAtualizadoPorInput | RotaEntregaCreateOrConnectWithoutAtualizadoPorInput[]
+    createMany?: RotaEntregaCreateManyAtualizadoPorInputEnvelope
+    connect?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
   }
 
   export type StringFieldUpdateOperationsInput = {
@@ -38452,6 +43271,48 @@ export namespace Prisma {
     deleteMany?: PedidoOperacionalAuditoriaScalarWhereInput | PedidoOperacionalAuditoriaScalarWhereInput[]
   }
 
+  export type RotaEntregaUpdateManyWithoutEntregadorNestedInput = {
+    create?: XOR<RotaEntregaCreateWithoutEntregadorInput, RotaEntregaUncheckedCreateWithoutEntregadorInput> | RotaEntregaCreateWithoutEntregadorInput[] | RotaEntregaUncheckedCreateWithoutEntregadorInput[]
+    connectOrCreate?: RotaEntregaCreateOrConnectWithoutEntregadorInput | RotaEntregaCreateOrConnectWithoutEntregadorInput[]
+    upsert?: RotaEntregaUpsertWithWhereUniqueWithoutEntregadorInput | RotaEntregaUpsertWithWhereUniqueWithoutEntregadorInput[]
+    createMany?: RotaEntregaCreateManyEntregadorInputEnvelope
+    set?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    disconnect?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    delete?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    connect?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    update?: RotaEntregaUpdateWithWhereUniqueWithoutEntregadorInput | RotaEntregaUpdateWithWhereUniqueWithoutEntregadorInput[]
+    updateMany?: RotaEntregaUpdateManyWithWhereWithoutEntregadorInput | RotaEntregaUpdateManyWithWhereWithoutEntregadorInput[]
+    deleteMany?: RotaEntregaScalarWhereInput | RotaEntregaScalarWhereInput[]
+  }
+
+  export type RotaEntregaUpdateManyWithoutCriadoPorNestedInput = {
+    create?: XOR<RotaEntregaCreateWithoutCriadoPorInput, RotaEntregaUncheckedCreateWithoutCriadoPorInput> | RotaEntregaCreateWithoutCriadoPorInput[] | RotaEntregaUncheckedCreateWithoutCriadoPorInput[]
+    connectOrCreate?: RotaEntregaCreateOrConnectWithoutCriadoPorInput | RotaEntregaCreateOrConnectWithoutCriadoPorInput[]
+    upsert?: RotaEntregaUpsertWithWhereUniqueWithoutCriadoPorInput | RotaEntregaUpsertWithWhereUniqueWithoutCriadoPorInput[]
+    createMany?: RotaEntregaCreateManyCriadoPorInputEnvelope
+    set?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    disconnect?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    delete?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    connect?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    update?: RotaEntregaUpdateWithWhereUniqueWithoutCriadoPorInput | RotaEntregaUpdateWithWhereUniqueWithoutCriadoPorInput[]
+    updateMany?: RotaEntregaUpdateManyWithWhereWithoutCriadoPorInput | RotaEntregaUpdateManyWithWhereWithoutCriadoPorInput[]
+    deleteMany?: RotaEntregaScalarWhereInput | RotaEntregaScalarWhereInput[]
+  }
+
+  export type RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput = {
+    create?: XOR<RotaEntregaCreateWithoutAtualizadoPorInput, RotaEntregaUncheckedCreateWithoutAtualizadoPorInput> | RotaEntregaCreateWithoutAtualizadoPorInput[] | RotaEntregaUncheckedCreateWithoutAtualizadoPorInput[]
+    connectOrCreate?: RotaEntregaCreateOrConnectWithoutAtualizadoPorInput | RotaEntregaCreateOrConnectWithoutAtualizadoPorInput[]
+    upsert?: RotaEntregaUpsertWithWhereUniqueWithoutAtualizadoPorInput | RotaEntregaUpsertWithWhereUniqueWithoutAtualizadoPorInput[]
+    createMany?: RotaEntregaCreateManyAtualizadoPorInputEnvelope
+    set?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    disconnect?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    delete?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    connect?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    update?: RotaEntregaUpdateWithWhereUniqueWithoutAtualizadoPorInput | RotaEntregaUpdateWithWhereUniqueWithoutAtualizadoPorInput[]
+    updateMany?: RotaEntregaUpdateManyWithWhereWithoutAtualizadoPorInput | RotaEntregaUpdateManyWithWhereWithoutAtualizadoPorInput[]
+    deleteMany?: RotaEntregaScalarWhereInput | RotaEntregaScalarWhereInput[]
+  }
+
   export type MensagemUncheckedUpdateManyWithoutAprovadorNestedInput = {
     create?: XOR<MensagemCreateWithoutAprovadorInput, MensagemUncheckedCreateWithoutAprovadorInput> | MensagemCreateWithoutAprovadorInput[] | MensagemUncheckedCreateWithoutAprovadorInput[]
     connectOrCreate?: MensagemCreateOrConnectWithoutAprovadorInput | MensagemCreateOrConnectWithoutAprovadorInput[]
@@ -38548,6 +43409,48 @@ export namespace Prisma {
     update?: PedidoOperacionalAuditoriaUpdateWithWhereUniqueWithoutUsuarioInput | PedidoOperacionalAuditoriaUpdateWithWhereUniqueWithoutUsuarioInput[]
     updateMany?: PedidoOperacionalAuditoriaUpdateManyWithWhereWithoutUsuarioInput | PedidoOperacionalAuditoriaUpdateManyWithWhereWithoutUsuarioInput[]
     deleteMany?: PedidoOperacionalAuditoriaScalarWhereInput | PedidoOperacionalAuditoriaScalarWhereInput[]
+  }
+
+  export type RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput = {
+    create?: XOR<RotaEntregaCreateWithoutEntregadorInput, RotaEntregaUncheckedCreateWithoutEntregadorInput> | RotaEntregaCreateWithoutEntregadorInput[] | RotaEntregaUncheckedCreateWithoutEntregadorInput[]
+    connectOrCreate?: RotaEntregaCreateOrConnectWithoutEntregadorInput | RotaEntregaCreateOrConnectWithoutEntregadorInput[]
+    upsert?: RotaEntregaUpsertWithWhereUniqueWithoutEntregadorInput | RotaEntregaUpsertWithWhereUniqueWithoutEntregadorInput[]
+    createMany?: RotaEntregaCreateManyEntregadorInputEnvelope
+    set?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    disconnect?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    delete?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    connect?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    update?: RotaEntregaUpdateWithWhereUniqueWithoutEntregadorInput | RotaEntregaUpdateWithWhereUniqueWithoutEntregadorInput[]
+    updateMany?: RotaEntregaUpdateManyWithWhereWithoutEntregadorInput | RotaEntregaUpdateManyWithWhereWithoutEntregadorInput[]
+    deleteMany?: RotaEntregaScalarWhereInput | RotaEntregaScalarWhereInput[]
+  }
+
+  export type RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput = {
+    create?: XOR<RotaEntregaCreateWithoutCriadoPorInput, RotaEntregaUncheckedCreateWithoutCriadoPorInput> | RotaEntregaCreateWithoutCriadoPorInput[] | RotaEntregaUncheckedCreateWithoutCriadoPorInput[]
+    connectOrCreate?: RotaEntregaCreateOrConnectWithoutCriadoPorInput | RotaEntregaCreateOrConnectWithoutCriadoPorInput[]
+    upsert?: RotaEntregaUpsertWithWhereUniqueWithoutCriadoPorInput | RotaEntregaUpsertWithWhereUniqueWithoutCriadoPorInput[]
+    createMany?: RotaEntregaCreateManyCriadoPorInputEnvelope
+    set?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    disconnect?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    delete?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    connect?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    update?: RotaEntregaUpdateWithWhereUniqueWithoutCriadoPorInput | RotaEntregaUpdateWithWhereUniqueWithoutCriadoPorInput[]
+    updateMany?: RotaEntregaUpdateManyWithWhereWithoutCriadoPorInput | RotaEntregaUpdateManyWithWhereWithoutCriadoPorInput[]
+    deleteMany?: RotaEntregaScalarWhereInput | RotaEntregaScalarWhereInput[]
+  }
+
+  export type RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput = {
+    create?: XOR<RotaEntregaCreateWithoutAtualizadoPorInput, RotaEntregaUncheckedCreateWithoutAtualizadoPorInput> | RotaEntregaCreateWithoutAtualizadoPorInput[] | RotaEntregaUncheckedCreateWithoutAtualizadoPorInput[]
+    connectOrCreate?: RotaEntregaCreateOrConnectWithoutAtualizadoPorInput | RotaEntregaCreateOrConnectWithoutAtualizadoPorInput[]
+    upsert?: RotaEntregaUpsertWithWhereUniqueWithoutAtualizadoPorInput | RotaEntregaUpsertWithWhereUniqueWithoutAtualizadoPorInput[]
+    createMany?: RotaEntregaCreateManyAtualizadoPorInputEnvelope
+    set?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    disconnect?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    delete?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    connect?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+    update?: RotaEntregaUpdateWithWhereUniqueWithoutAtualizadoPorInput | RotaEntregaUpdateWithWhereUniqueWithoutAtualizadoPorInput[]
+    updateMany?: RotaEntregaUpdateManyWithWhereWithoutAtualizadoPorInput | RotaEntregaUpdateManyWithWhereWithoutAtualizadoPorInput[]
+    deleteMany?: RotaEntregaScalarWhereInput | RotaEntregaScalarWhereInput[]
   }
 
   export type UsuarioCreateNestedOneWithoutRefreshTokensInput = {
@@ -38686,6 +43589,13 @@ export namespace Prisma {
     connect?: ClienteLegadoContaAzulLinkWhereUniqueInput | ClienteLegadoContaAzulLinkWhereUniqueInput[]
   }
 
+  export type ParadaEntregaCreateNestedManyWithoutClienteInput = {
+    create?: XOR<ParadaEntregaCreateWithoutClienteInput, ParadaEntregaUncheckedCreateWithoutClienteInput> | ParadaEntregaCreateWithoutClienteInput[] | ParadaEntregaUncheckedCreateWithoutClienteInput[]
+    connectOrCreate?: ParadaEntregaCreateOrConnectWithoutClienteInput | ParadaEntregaCreateOrConnectWithoutClienteInput[]
+    createMany?: ParadaEntregaCreateManyClienteInputEnvelope
+    connect?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
+  }
+
   export type PedidoUncheckedCreateNestedManyWithoutClienteInput = {
     create?: XOR<PedidoCreateWithoutClienteInput, PedidoUncheckedCreateWithoutClienteInput> | PedidoCreateWithoutClienteInput[] | PedidoUncheckedCreateWithoutClienteInput[]
     connectOrCreate?: PedidoCreateOrConnectWithoutClienteInput | PedidoCreateOrConnectWithoutClienteInput[]
@@ -38746,6 +43656,13 @@ export namespace Prisma {
     connectOrCreate?: ClienteLegadoContaAzulLinkCreateOrConnectWithoutClienteInput | ClienteLegadoContaAzulLinkCreateOrConnectWithoutClienteInput[]
     createMany?: ClienteLegadoContaAzulLinkCreateManyClienteInputEnvelope
     connect?: ClienteLegadoContaAzulLinkWhereUniqueInput | ClienteLegadoContaAzulLinkWhereUniqueInput[]
+  }
+
+  export type ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput = {
+    create?: XOR<ParadaEntregaCreateWithoutClienteInput, ParadaEntregaUncheckedCreateWithoutClienteInput> | ParadaEntregaCreateWithoutClienteInput[] | ParadaEntregaUncheckedCreateWithoutClienteInput[]
+    connectOrCreate?: ParadaEntregaCreateOrConnectWithoutClienteInput | ParadaEntregaCreateOrConnectWithoutClienteInput[]
+    createMany?: ParadaEntregaCreateManyClienteInputEnvelope
+    connect?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
   }
 
   export type EnumTipoClienteFieldUpdateOperationsInput = {
@@ -38896,6 +43813,20 @@ export namespace Prisma {
     deleteMany?: ClienteLegadoContaAzulLinkScalarWhereInput | ClienteLegadoContaAzulLinkScalarWhereInput[]
   }
 
+  export type ParadaEntregaUpdateManyWithoutClienteNestedInput = {
+    create?: XOR<ParadaEntregaCreateWithoutClienteInput, ParadaEntregaUncheckedCreateWithoutClienteInput> | ParadaEntregaCreateWithoutClienteInput[] | ParadaEntregaUncheckedCreateWithoutClienteInput[]
+    connectOrCreate?: ParadaEntregaCreateOrConnectWithoutClienteInput | ParadaEntregaCreateOrConnectWithoutClienteInput[]
+    upsert?: ParadaEntregaUpsertWithWhereUniqueWithoutClienteInput | ParadaEntregaUpsertWithWhereUniqueWithoutClienteInput[]
+    createMany?: ParadaEntregaCreateManyClienteInputEnvelope
+    set?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
+    disconnect?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
+    delete?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
+    connect?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
+    update?: ParadaEntregaUpdateWithWhereUniqueWithoutClienteInput | ParadaEntregaUpdateWithWhereUniqueWithoutClienteInput[]
+    updateMany?: ParadaEntregaUpdateManyWithWhereWithoutClienteInput | ParadaEntregaUpdateManyWithWhereWithoutClienteInput[]
+    deleteMany?: ParadaEntregaScalarWhereInput | ParadaEntregaScalarWhereInput[]
+  }
+
   export type PedidoUncheckedUpdateManyWithoutClienteNestedInput = {
     create?: XOR<PedidoCreateWithoutClienteInput, PedidoUncheckedCreateWithoutClienteInput> | PedidoCreateWithoutClienteInput[] | PedidoUncheckedCreateWithoutClienteInput[]
     connectOrCreate?: PedidoCreateOrConnectWithoutClienteInput | PedidoCreateOrConnectWithoutClienteInput[]
@@ -39016,6 +43947,20 @@ export namespace Prisma {
     update?: ClienteLegadoContaAzulLinkUpdateWithWhereUniqueWithoutClienteInput | ClienteLegadoContaAzulLinkUpdateWithWhereUniqueWithoutClienteInput[]
     updateMany?: ClienteLegadoContaAzulLinkUpdateManyWithWhereWithoutClienteInput | ClienteLegadoContaAzulLinkUpdateManyWithWhereWithoutClienteInput[]
     deleteMany?: ClienteLegadoContaAzulLinkScalarWhereInput | ClienteLegadoContaAzulLinkScalarWhereInput[]
+  }
+
+  export type ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput = {
+    create?: XOR<ParadaEntregaCreateWithoutClienteInput, ParadaEntregaUncheckedCreateWithoutClienteInput> | ParadaEntregaCreateWithoutClienteInput[] | ParadaEntregaUncheckedCreateWithoutClienteInput[]
+    connectOrCreate?: ParadaEntregaCreateOrConnectWithoutClienteInput | ParadaEntregaCreateOrConnectWithoutClienteInput[]
+    upsert?: ParadaEntregaUpsertWithWhereUniqueWithoutClienteInput | ParadaEntregaUpsertWithWhereUniqueWithoutClienteInput[]
+    createMany?: ParadaEntregaCreateManyClienteInputEnvelope
+    set?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
+    disconnect?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
+    delete?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
+    connect?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
+    update?: ParadaEntregaUpdateWithWhereUniqueWithoutClienteInput | ParadaEntregaUpdateWithWhereUniqueWithoutClienteInput[]
+    updateMany?: ParadaEntregaUpdateManyWithWhereWithoutClienteInput | ParadaEntregaUpdateManyWithWhereWithoutClienteInput[]
+    deleteMany?: ParadaEntregaScalarWhereInput | ParadaEntregaScalarWhereInput[]
   }
 
   export type PrecoEspecialClienteCreateNestedManyWithoutProdutoInput = {
@@ -39582,6 +44527,190 @@ export namespace Prisma {
     update?: PedidoConciliacaoEventoUpdateWithWhereUniqueWithoutPedidoOperacionalInput | PedidoConciliacaoEventoUpdateWithWhereUniqueWithoutPedidoOperacionalInput[]
     updateMany?: PedidoConciliacaoEventoUpdateManyWithWhereWithoutPedidoOperacionalInput | PedidoConciliacaoEventoUpdateManyWithWhereWithoutPedidoOperacionalInput[]
     deleteMany?: PedidoConciliacaoEventoScalarWhereInput | PedidoConciliacaoEventoScalarWhereInput[]
+  }
+
+  export type UsuarioCreateNestedOneWithoutRotasEntregaInput = {
+    create?: XOR<UsuarioCreateWithoutRotasEntregaInput, UsuarioUncheckedCreateWithoutRotasEntregaInput>
+    connectOrCreate?: UsuarioCreateOrConnectWithoutRotasEntregaInput
+    connect?: UsuarioWhereUniqueInput
+  }
+
+  export type UsuarioCreateNestedOneWithoutRotasCriadasInput = {
+    create?: XOR<UsuarioCreateWithoutRotasCriadasInput, UsuarioUncheckedCreateWithoutRotasCriadasInput>
+    connectOrCreate?: UsuarioCreateOrConnectWithoutRotasCriadasInput
+    connect?: UsuarioWhereUniqueInput
+  }
+
+  export type UsuarioCreateNestedOneWithoutRotasAtualizadasInput = {
+    create?: XOR<UsuarioCreateWithoutRotasAtualizadasInput, UsuarioUncheckedCreateWithoutRotasAtualizadasInput>
+    connectOrCreate?: UsuarioCreateOrConnectWithoutRotasAtualizadasInput
+    connect?: UsuarioWhereUniqueInput
+  }
+
+  export type ParadaEntregaCreateNestedManyWithoutRotaInput = {
+    create?: XOR<ParadaEntregaCreateWithoutRotaInput, ParadaEntregaUncheckedCreateWithoutRotaInput> | ParadaEntregaCreateWithoutRotaInput[] | ParadaEntregaUncheckedCreateWithoutRotaInput[]
+    connectOrCreate?: ParadaEntregaCreateOrConnectWithoutRotaInput | ParadaEntregaCreateOrConnectWithoutRotaInput[]
+    createMany?: ParadaEntregaCreateManyRotaInputEnvelope
+    connect?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
+  }
+
+  export type HistoricoLocalizacaoEntregaCreateNestedManyWithoutRotaInput = {
+    create?: XOR<HistoricoLocalizacaoEntregaCreateWithoutRotaInput, HistoricoLocalizacaoEntregaUncheckedCreateWithoutRotaInput> | HistoricoLocalizacaoEntregaCreateWithoutRotaInput[] | HistoricoLocalizacaoEntregaUncheckedCreateWithoutRotaInput[]
+    connectOrCreate?: HistoricoLocalizacaoEntregaCreateOrConnectWithoutRotaInput | HistoricoLocalizacaoEntregaCreateOrConnectWithoutRotaInput[]
+    createMany?: HistoricoLocalizacaoEntregaCreateManyRotaInputEnvelope
+    connect?: HistoricoLocalizacaoEntregaWhereUniqueInput | HistoricoLocalizacaoEntregaWhereUniqueInput[]
+  }
+
+  export type ParadaEntregaUncheckedCreateNestedManyWithoutRotaInput = {
+    create?: XOR<ParadaEntregaCreateWithoutRotaInput, ParadaEntregaUncheckedCreateWithoutRotaInput> | ParadaEntregaCreateWithoutRotaInput[] | ParadaEntregaUncheckedCreateWithoutRotaInput[]
+    connectOrCreate?: ParadaEntregaCreateOrConnectWithoutRotaInput | ParadaEntregaCreateOrConnectWithoutRotaInput[]
+    createMany?: ParadaEntregaCreateManyRotaInputEnvelope
+    connect?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
+  }
+
+  export type HistoricoLocalizacaoEntregaUncheckedCreateNestedManyWithoutRotaInput = {
+    create?: XOR<HistoricoLocalizacaoEntregaCreateWithoutRotaInput, HistoricoLocalizacaoEntregaUncheckedCreateWithoutRotaInput> | HistoricoLocalizacaoEntregaCreateWithoutRotaInput[] | HistoricoLocalizacaoEntregaUncheckedCreateWithoutRotaInput[]
+    connectOrCreate?: HistoricoLocalizacaoEntregaCreateOrConnectWithoutRotaInput | HistoricoLocalizacaoEntregaCreateOrConnectWithoutRotaInput[]
+    createMany?: HistoricoLocalizacaoEntregaCreateManyRotaInputEnvelope
+    connect?: HistoricoLocalizacaoEntregaWhereUniqueInput | HistoricoLocalizacaoEntregaWhereUniqueInput[]
+  }
+
+  export type EnumRotaEntregaStatusFieldUpdateOperationsInput = {
+    set?: $Enums.RotaEntregaStatus
+  }
+
+  export type UsuarioUpdateOneWithoutRotasEntregaNestedInput = {
+    create?: XOR<UsuarioCreateWithoutRotasEntregaInput, UsuarioUncheckedCreateWithoutRotasEntregaInput>
+    connectOrCreate?: UsuarioCreateOrConnectWithoutRotasEntregaInput
+    upsert?: UsuarioUpsertWithoutRotasEntregaInput
+    disconnect?: UsuarioWhereInput | boolean
+    delete?: UsuarioWhereInput | boolean
+    connect?: UsuarioWhereUniqueInput
+    update?: XOR<XOR<UsuarioUpdateToOneWithWhereWithoutRotasEntregaInput, UsuarioUpdateWithoutRotasEntregaInput>, UsuarioUncheckedUpdateWithoutRotasEntregaInput>
+  }
+
+  export type UsuarioUpdateOneWithoutRotasCriadasNestedInput = {
+    create?: XOR<UsuarioCreateWithoutRotasCriadasInput, UsuarioUncheckedCreateWithoutRotasCriadasInput>
+    connectOrCreate?: UsuarioCreateOrConnectWithoutRotasCriadasInput
+    upsert?: UsuarioUpsertWithoutRotasCriadasInput
+    disconnect?: UsuarioWhereInput | boolean
+    delete?: UsuarioWhereInput | boolean
+    connect?: UsuarioWhereUniqueInput
+    update?: XOR<XOR<UsuarioUpdateToOneWithWhereWithoutRotasCriadasInput, UsuarioUpdateWithoutRotasCriadasInput>, UsuarioUncheckedUpdateWithoutRotasCriadasInput>
+  }
+
+  export type UsuarioUpdateOneWithoutRotasAtualizadasNestedInput = {
+    create?: XOR<UsuarioCreateWithoutRotasAtualizadasInput, UsuarioUncheckedCreateWithoutRotasAtualizadasInput>
+    connectOrCreate?: UsuarioCreateOrConnectWithoutRotasAtualizadasInput
+    upsert?: UsuarioUpsertWithoutRotasAtualizadasInput
+    disconnect?: UsuarioWhereInput | boolean
+    delete?: UsuarioWhereInput | boolean
+    connect?: UsuarioWhereUniqueInput
+    update?: XOR<XOR<UsuarioUpdateToOneWithWhereWithoutRotasAtualizadasInput, UsuarioUpdateWithoutRotasAtualizadasInput>, UsuarioUncheckedUpdateWithoutRotasAtualizadasInput>
+  }
+
+  export type ParadaEntregaUpdateManyWithoutRotaNestedInput = {
+    create?: XOR<ParadaEntregaCreateWithoutRotaInput, ParadaEntregaUncheckedCreateWithoutRotaInput> | ParadaEntregaCreateWithoutRotaInput[] | ParadaEntregaUncheckedCreateWithoutRotaInput[]
+    connectOrCreate?: ParadaEntregaCreateOrConnectWithoutRotaInput | ParadaEntregaCreateOrConnectWithoutRotaInput[]
+    upsert?: ParadaEntregaUpsertWithWhereUniqueWithoutRotaInput | ParadaEntregaUpsertWithWhereUniqueWithoutRotaInput[]
+    createMany?: ParadaEntregaCreateManyRotaInputEnvelope
+    set?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
+    disconnect?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
+    delete?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
+    connect?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
+    update?: ParadaEntregaUpdateWithWhereUniqueWithoutRotaInput | ParadaEntregaUpdateWithWhereUniqueWithoutRotaInput[]
+    updateMany?: ParadaEntregaUpdateManyWithWhereWithoutRotaInput | ParadaEntregaUpdateManyWithWhereWithoutRotaInput[]
+    deleteMany?: ParadaEntregaScalarWhereInput | ParadaEntregaScalarWhereInput[]
+  }
+
+  export type HistoricoLocalizacaoEntregaUpdateManyWithoutRotaNestedInput = {
+    create?: XOR<HistoricoLocalizacaoEntregaCreateWithoutRotaInput, HistoricoLocalizacaoEntregaUncheckedCreateWithoutRotaInput> | HistoricoLocalizacaoEntregaCreateWithoutRotaInput[] | HistoricoLocalizacaoEntregaUncheckedCreateWithoutRotaInput[]
+    connectOrCreate?: HistoricoLocalizacaoEntregaCreateOrConnectWithoutRotaInput | HistoricoLocalizacaoEntregaCreateOrConnectWithoutRotaInput[]
+    upsert?: HistoricoLocalizacaoEntregaUpsertWithWhereUniqueWithoutRotaInput | HistoricoLocalizacaoEntregaUpsertWithWhereUniqueWithoutRotaInput[]
+    createMany?: HistoricoLocalizacaoEntregaCreateManyRotaInputEnvelope
+    set?: HistoricoLocalizacaoEntregaWhereUniqueInput | HistoricoLocalizacaoEntregaWhereUniqueInput[]
+    disconnect?: HistoricoLocalizacaoEntregaWhereUniqueInput | HistoricoLocalizacaoEntregaWhereUniqueInput[]
+    delete?: HistoricoLocalizacaoEntregaWhereUniqueInput | HistoricoLocalizacaoEntregaWhereUniqueInput[]
+    connect?: HistoricoLocalizacaoEntregaWhereUniqueInput | HistoricoLocalizacaoEntregaWhereUniqueInput[]
+    update?: HistoricoLocalizacaoEntregaUpdateWithWhereUniqueWithoutRotaInput | HistoricoLocalizacaoEntregaUpdateWithWhereUniqueWithoutRotaInput[]
+    updateMany?: HistoricoLocalizacaoEntregaUpdateManyWithWhereWithoutRotaInput | HistoricoLocalizacaoEntregaUpdateManyWithWhereWithoutRotaInput[]
+    deleteMany?: HistoricoLocalizacaoEntregaScalarWhereInput | HistoricoLocalizacaoEntregaScalarWhereInput[]
+  }
+
+  export type ParadaEntregaUncheckedUpdateManyWithoutRotaNestedInput = {
+    create?: XOR<ParadaEntregaCreateWithoutRotaInput, ParadaEntregaUncheckedCreateWithoutRotaInput> | ParadaEntregaCreateWithoutRotaInput[] | ParadaEntregaUncheckedCreateWithoutRotaInput[]
+    connectOrCreate?: ParadaEntregaCreateOrConnectWithoutRotaInput | ParadaEntregaCreateOrConnectWithoutRotaInput[]
+    upsert?: ParadaEntregaUpsertWithWhereUniqueWithoutRotaInput | ParadaEntregaUpsertWithWhereUniqueWithoutRotaInput[]
+    createMany?: ParadaEntregaCreateManyRotaInputEnvelope
+    set?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
+    disconnect?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
+    delete?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
+    connect?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
+    update?: ParadaEntregaUpdateWithWhereUniqueWithoutRotaInput | ParadaEntregaUpdateWithWhereUniqueWithoutRotaInput[]
+    updateMany?: ParadaEntregaUpdateManyWithWhereWithoutRotaInput | ParadaEntregaUpdateManyWithWhereWithoutRotaInput[]
+    deleteMany?: ParadaEntregaScalarWhereInput | ParadaEntregaScalarWhereInput[]
+  }
+
+  export type HistoricoLocalizacaoEntregaUncheckedUpdateManyWithoutRotaNestedInput = {
+    create?: XOR<HistoricoLocalizacaoEntregaCreateWithoutRotaInput, HistoricoLocalizacaoEntregaUncheckedCreateWithoutRotaInput> | HistoricoLocalizacaoEntregaCreateWithoutRotaInput[] | HistoricoLocalizacaoEntregaUncheckedCreateWithoutRotaInput[]
+    connectOrCreate?: HistoricoLocalizacaoEntregaCreateOrConnectWithoutRotaInput | HistoricoLocalizacaoEntregaCreateOrConnectWithoutRotaInput[]
+    upsert?: HistoricoLocalizacaoEntregaUpsertWithWhereUniqueWithoutRotaInput | HistoricoLocalizacaoEntregaUpsertWithWhereUniqueWithoutRotaInput[]
+    createMany?: HistoricoLocalizacaoEntregaCreateManyRotaInputEnvelope
+    set?: HistoricoLocalizacaoEntregaWhereUniqueInput | HistoricoLocalizacaoEntregaWhereUniqueInput[]
+    disconnect?: HistoricoLocalizacaoEntregaWhereUniqueInput | HistoricoLocalizacaoEntregaWhereUniqueInput[]
+    delete?: HistoricoLocalizacaoEntregaWhereUniqueInput | HistoricoLocalizacaoEntregaWhereUniqueInput[]
+    connect?: HistoricoLocalizacaoEntregaWhereUniqueInput | HistoricoLocalizacaoEntregaWhereUniqueInput[]
+    update?: HistoricoLocalizacaoEntregaUpdateWithWhereUniqueWithoutRotaInput | HistoricoLocalizacaoEntregaUpdateWithWhereUniqueWithoutRotaInput[]
+    updateMany?: HistoricoLocalizacaoEntregaUpdateManyWithWhereWithoutRotaInput | HistoricoLocalizacaoEntregaUpdateManyWithWhereWithoutRotaInput[]
+    deleteMany?: HistoricoLocalizacaoEntregaScalarWhereInput | HistoricoLocalizacaoEntregaScalarWhereInput[]
+  }
+
+  export type RotaEntregaCreateNestedOneWithoutParadasInput = {
+    create?: XOR<RotaEntregaCreateWithoutParadasInput, RotaEntregaUncheckedCreateWithoutParadasInput>
+    connectOrCreate?: RotaEntregaCreateOrConnectWithoutParadasInput
+    connect?: RotaEntregaWhereUniqueInput
+  }
+
+  export type ClienteCreateNestedOneWithoutParadasEntregaInput = {
+    create?: XOR<ClienteCreateWithoutParadasEntregaInput, ClienteUncheckedCreateWithoutParadasEntregaInput>
+    connectOrCreate?: ClienteCreateOrConnectWithoutParadasEntregaInput
+    connect?: ClienteWhereUniqueInput
+  }
+
+  export type EnumParadaEntregaStatusFieldUpdateOperationsInput = {
+    set?: $Enums.ParadaEntregaStatus
+  }
+
+  export type RotaEntregaUpdateOneRequiredWithoutParadasNestedInput = {
+    create?: XOR<RotaEntregaCreateWithoutParadasInput, RotaEntregaUncheckedCreateWithoutParadasInput>
+    connectOrCreate?: RotaEntregaCreateOrConnectWithoutParadasInput
+    upsert?: RotaEntregaUpsertWithoutParadasInput
+    connect?: RotaEntregaWhereUniqueInput
+    update?: XOR<XOR<RotaEntregaUpdateToOneWithWhereWithoutParadasInput, RotaEntregaUpdateWithoutParadasInput>, RotaEntregaUncheckedUpdateWithoutParadasInput>
+  }
+
+  export type ClienteUpdateOneWithoutParadasEntregaNestedInput = {
+    create?: XOR<ClienteCreateWithoutParadasEntregaInput, ClienteUncheckedCreateWithoutParadasEntregaInput>
+    connectOrCreate?: ClienteCreateOrConnectWithoutParadasEntregaInput
+    upsert?: ClienteUpsertWithoutParadasEntregaInput
+    disconnect?: ClienteWhereInput | boolean
+    delete?: ClienteWhereInput | boolean
+    connect?: ClienteWhereUniqueInput
+    update?: XOR<XOR<ClienteUpdateToOneWithWhereWithoutParadasEntregaInput, ClienteUpdateWithoutParadasEntregaInput>, ClienteUncheckedUpdateWithoutParadasEntregaInput>
+  }
+
+  export type RotaEntregaCreateNestedOneWithoutLocalizacoesInput = {
+    create?: XOR<RotaEntregaCreateWithoutLocalizacoesInput, RotaEntregaUncheckedCreateWithoutLocalizacoesInput>
+    connectOrCreate?: RotaEntregaCreateOrConnectWithoutLocalizacoesInput
+    connect?: RotaEntregaWhereUniqueInput
+  }
+
+  export type RotaEntregaUpdateOneRequiredWithoutLocalizacoesNestedInput = {
+    create?: XOR<RotaEntregaCreateWithoutLocalizacoesInput, RotaEntregaUncheckedCreateWithoutLocalizacoesInput>
+    connectOrCreate?: RotaEntregaCreateOrConnectWithoutLocalizacoesInput
+    upsert?: RotaEntregaUpsertWithoutLocalizacoesInput
+    connect?: RotaEntregaWhereUniqueInput
+    update?: XOR<XOR<RotaEntregaUpdateToOneWithWhereWithoutLocalizacoesInput, RotaEntregaUpdateWithoutLocalizacoesInput>, RotaEntregaUncheckedUpdateWithoutLocalizacoesInput>
   }
 
   export type PedidoOperacionalCreateNestedOneWithoutItensInput = {
@@ -40487,6 +45616,40 @@ export namespace Prisma {
     _max?: NestedEnumStatusConciliacaoOperacionalFilter<$PrismaModel>
   }
 
+  export type NestedEnumRotaEntregaStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.RotaEntregaStatus | EnumRotaEntregaStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.RotaEntregaStatus[]
+    notIn?: $Enums.RotaEntregaStatus[]
+    not?: NestedEnumRotaEntregaStatusFilter<$PrismaModel> | $Enums.RotaEntregaStatus
+  }
+
+  export type NestedEnumRotaEntregaStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.RotaEntregaStatus | EnumRotaEntregaStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.RotaEntregaStatus[]
+    notIn?: $Enums.RotaEntregaStatus[]
+    not?: NestedEnumRotaEntregaStatusWithAggregatesFilter<$PrismaModel> | $Enums.RotaEntregaStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumRotaEntregaStatusFilter<$PrismaModel>
+    _max?: NestedEnumRotaEntregaStatusFilter<$PrismaModel>
+  }
+
+  export type NestedEnumParadaEntregaStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.ParadaEntregaStatus | EnumParadaEntregaStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.ParadaEntregaStatus[]
+    notIn?: $Enums.ParadaEntregaStatus[]
+    not?: NestedEnumParadaEntregaStatusFilter<$PrismaModel> | $Enums.ParadaEntregaStatus
+  }
+
+  export type NestedEnumParadaEntregaStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ParadaEntregaStatus | EnumParadaEntregaStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.ParadaEntregaStatus[]
+    notIn?: $Enums.ParadaEntregaStatus[]
+    not?: NestedEnumParadaEntregaStatusWithAggregatesFilter<$PrismaModel> | $Enums.ParadaEntregaStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumParadaEntregaStatusFilter<$PrismaModel>
+    _max?: NestedEnumParadaEntregaStatusFilter<$PrismaModel>
+  }
+
   export type NestedEnumStatusConciliacaoContaAzulFilter<$PrismaModel = never> = {
     equals?: $Enums.StatusConciliacaoContaAzul | EnumStatusConciliacaoContaAzulFieldRefInput<$PrismaModel>
     in?: $Enums.StatusConciliacaoContaAzul[]
@@ -40956,6 +46119,168 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type RotaEntregaCreateWithoutEntregadorInput = {
+    id?: string
+    dataEntrega: Date | string
+    nome?: string | null
+    status?: $Enums.RotaEntregaStatus
+    entregadorNome?: string | null
+    tokenPublico: string
+    compartilhamentoAtivo?: boolean
+    iniciadoEm?: Date | string | null
+    encerradoEm?: Date | string | null
+    ultimaLatitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: Date | string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    criadoPor?: UsuarioCreateNestedOneWithoutRotasCriadasInput
+    atualizadoPor?: UsuarioCreateNestedOneWithoutRotasAtualizadasInput
+    paradas?: ParadaEntregaCreateNestedManyWithoutRotaInput
+    localizacoes?: HistoricoLocalizacaoEntregaCreateNestedManyWithoutRotaInput
+  }
+
+  export type RotaEntregaUncheckedCreateWithoutEntregadorInput = {
+    id?: string
+    dataEntrega: Date | string
+    nome?: string | null
+    status?: $Enums.RotaEntregaStatus
+    entregadorNome?: string | null
+    tokenPublico: string
+    compartilhamentoAtivo?: boolean
+    iniciadoEm?: Date | string | null
+    encerradoEm?: Date | string | null
+    ultimaLatitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: Date | string | null
+    criadoPorId?: string | null
+    atualizadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    paradas?: ParadaEntregaUncheckedCreateNestedManyWithoutRotaInput
+    localizacoes?: HistoricoLocalizacaoEntregaUncheckedCreateNestedManyWithoutRotaInput
+  }
+
+  export type RotaEntregaCreateOrConnectWithoutEntregadorInput = {
+    where: RotaEntregaWhereUniqueInput
+    create: XOR<RotaEntregaCreateWithoutEntregadorInput, RotaEntregaUncheckedCreateWithoutEntregadorInput>
+  }
+
+  export type RotaEntregaCreateManyEntregadorInputEnvelope = {
+    data: RotaEntregaCreateManyEntregadorInput | RotaEntregaCreateManyEntregadorInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type RotaEntregaCreateWithoutCriadoPorInput = {
+    id?: string
+    dataEntrega: Date | string
+    nome?: string | null
+    status?: $Enums.RotaEntregaStatus
+    entregadorNome?: string | null
+    tokenPublico: string
+    compartilhamentoAtivo?: boolean
+    iniciadoEm?: Date | string | null
+    encerradoEm?: Date | string | null
+    ultimaLatitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: Date | string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    entregador?: UsuarioCreateNestedOneWithoutRotasEntregaInput
+    atualizadoPor?: UsuarioCreateNestedOneWithoutRotasAtualizadasInput
+    paradas?: ParadaEntregaCreateNestedManyWithoutRotaInput
+    localizacoes?: HistoricoLocalizacaoEntregaCreateNestedManyWithoutRotaInput
+  }
+
+  export type RotaEntregaUncheckedCreateWithoutCriadoPorInput = {
+    id?: string
+    dataEntrega: Date | string
+    nome?: string | null
+    status?: $Enums.RotaEntregaStatus
+    entregadorId?: string | null
+    entregadorNome?: string | null
+    tokenPublico: string
+    compartilhamentoAtivo?: boolean
+    iniciadoEm?: Date | string | null
+    encerradoEm?: Date | string | null
+    ultimaLatitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: Date | string | null
+    atualizadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    paradas?: ParadaEntregaUncheckedCreateNestedManyWithoutRotaInput
+    localizacoes?: HistoricoLocalizacaoEntregaUncheckedCreateNestedManyWithoutRotaInput
+  }
+
+  export type RotaEntregaCreateOrConnectWithoutCriadoPorInput = {
+    where: RotaEntregaWhereUniqueInput
+    create: XOR<RotaEntregaCreateWithoutCriadoPorInput, RotaEntregaUncheckedCreateWithoutCriadoPorInput>
+  }
+
+  export type RotaEntregaCreateManyCriadoPorInputEnvelope = {
+    data: RotaEntregaCreateManyCriadoPorInput | RotaEntregaCreateManyCriadoPorInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type RotaEntregaCreateWithoutAtualizadoPorInput = {
+    id?: string
+    dataEntrega: Date | string
+    nome?: string | null
+    status?: $Enums.RotaEntregaStatus
+    entregadorNome?: string | null
+    tokenPublico: string
+    compartilhamentoAtivo?: boolean
+    iniciadoEm?: Date | string | null
+    encerradoEm?: Date | string | null
+    ultimaLatitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: Date | string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    entregador?: UsuarioCreateNestedOneWithoutRotasEntregaInput
+    criadoPor?: UsuarioCreateNestedOneWithoutRotasCriadasInput
+    paradas?: ParadaEntregaCreateNestedManyWithoutRotaInput
+    localizacoes?: HistoricoLocalizacaoEntregaCreateNestedManyWithoutRotaInput
+  }
+
+  export type RotaEntregaUncheckedCreateWithoutAtualizadoPorInput = {
+    id?: string
+    dataEntrega: Date | string
+    nome?: string | null
+    status?: $Enums.RotaEntregaStatus
+    entregadorId?: string | null
+    entregadorNome?: string | null
+    tokenPublico: string
+    compartilhamentoAtivo?: boolean
+    iniciadoEm?: Date | string | null
+    encerradoEm?: Date | string | null
+    ultimaLatitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: Date | string | null
+    criadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    paradas?: ParadaEntregaUncheckedCreateNestedManyWithoutRotaInput
+    localizacoes?: HistoricoLocalizacaoEntregaUncheckedCreateNestedManyWithoutRotaInput
+  }
+
+  export type RotaEntregaCreateOrConnectWithoutAtualizadoPorInput = {
+    where: RotaEntregaWhereUniqueInput
+    create: XOR<RotaEntregaCreateWithoutAtualizadoPorInput, RotaEntregaUncheckedCreateWithoutAtualizadoPorInput>
+  }
+
+  export type RotaEntregaCreateManyAtualizadoPorInputEnvelope = {
+    data: RotaEntregaCreateManyAtualizadoPorInput | RotaEntregaCreateManyAtualizadoPorInput[]
+    skipDuplicates?: boolean
+  }
+
   export type MensagemUpsertWithWhereUniqueWithoutAprovadorInput = {
     where: MensagemWhereUniqueInput
     update: XOR<MensagemUpdateWithoutAprovadorInput, MensagemUncheckedUpdateWithoutAprovadorInput>
@@ -41171,6 +46496,78 @@ export namespace Prisma {
     criadoEm?: DateTimeFilter<"PedidoOperacionalAuditoria"> | Date | string
   }
 
+  export type RotaEntregaUpsertWithWhereUniqueWithoutEntregadorInput = {
+    where: RotaEntregaWhereUniqueInput
+    update: XOR<RotaEntregaUpdateWithoutEntregadorInput, RotaEntregaUncheckedUpdateWithoutEntregadorInput>
+    create: XOR<RotaEntregaCreateWithoutEntregadorInput, RotaEntregaUncheckedCreateWithoutEntregadorInput>
+  }
+
+  export type RotaEntregaUpdateWithWhereUniqueWithoutEntregadorInput = {
+    where: RotaEntregaWhereUniqueInput
+    data: XOR<RotaEntregaUpdateWithoutEntregadorInput, RotaEntregaUncheckedUpdateWithoutEntregadorInput>
+  }
+
+  export type RotaEntregaUpdateManyWithWhereWithoutEntregadorInput = {
+    where: RotaEntregaScalarWhereInput
+    data: XOR<RotaEntregaUpdateManyMutationInput, RotaEntregaUncheckedUpdateManyWithoutEntregadorInput>
+  }
+
+  export type RotaEntregaScalarWhereInput = {
+    AND?: RotaEntregaScalarWhereInput | RotaEntregaScalarWhereInput[]
+    OR?: RotaEntregaScalarWhereInput[]
+    NOT?: RotaEntregaScalarWhereInput | RotaEntregaScalarWhereInput[]
+    id?: StringFilter<"RotaEntrega"> | string
+    dataEntrega?: DateTimeFilter<"RotaEntrega"> | Date | string
+    nome?: StringNullableFilter<"RotaEntrega"> | string | null
+    status?: EnumRotaEntregaStatusFilter<"RotaEntrega"> | $Enums.RotaEntregaStatus
+    entregadorId?: StringNullableFilter<"RotaEntrega"> | string | null
+    entregadorNome?: StringNullableFilter<"RotaEntrega"> | string | null
+    tokenPublico?: StringFilter<"RotaEntrega"> | string
+    compartilhamentoAtivo?: BoolFilter<"RotaEntrega"> | boolean
+    iniciadoEm?: DateTimeNullableFilter<"RotaEntrega"> | Date | string | null
+    encerradoEm?: DateTimeNullableFilter<"RotaEntrega"> | Date | string | null
+    ultimaLatitude?: DecimalNullableFilter<"RotaEntrega"> | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: DecimalNullableFilter<"RotaEntrega"> | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: DecimalNullableFilter<"RotaEntrega"> | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: DateTimeNullableFilter<"RotaEntrega"> | Date | string | null
+    criadoPorId?: StringNullableFilter<"RotaEntrega"> | string | null
+    atualizadoPorId?: StringNullableFilter<"RotaEntrega"> | string | null
+    criadoEm?: DateTimeFilter<"RotaEntrega"> | Date | string
+    atualizadoEm?: DateTimeFilter<"RotaEntrega"> | Date | string
+  }
+
+  export type RotaEntregaUpsertWithWhereUniqueWithoutCriadoPorInput = {
+    where: RotaEntregaWhereUniqueInput
+    update: XOR<RotaEntregaUpdateWithoutCriadoPorInput, RotaEntregaUncheckedUpdateWithoutCriadoPorInput>
+    create: XOR<RotaEntregaCreateWithoutCriadoPorInput, RotaEntregaUncheckedCreateWithoutCriadoPorInput>
+  }
+
+  export type RotaEntregaUpdateWithWhereUniqueWithoutCriadoPorInput = {
+    where: RotaEntregaWhereUniqueInput
+    data: XOR<RotaEntregaUpdateWithoutCriadoPorInput, RotaEntregaUncheckedUpdateWithoutCriadoPorInput>
+  }
+
+  export type RotaEntregaUpdateManyWithWhereWithoutCriadoPorInput = {
+    where: RotaEntregaScalarWhereInput
+    data: XOR<RotaEntregaUpdateManyMutationInput, RotaEntregaUncheckedUpdateManyWithoutCriadoPorInput>
+  }
+
+  export type RotaEntregaUpsertWithWhereUniqueWithoutAtualizadoPorInput = {
+    where: RotaEntregaWhereUniqueInput
+    update: XOR<RotaEntregaUpdateWithoutAtualizadoPorInput, RotaEntregaUncheckedUpdateWithoutAtualizadoPorInput>
+    create: XOR<RotaEntregaCreateWithoutAtualizadoPorInput, RotaEntregaUncheckedCreateWithoutAtualizadoPorInput>
+  }
+
+  export type RotaEntregaUpdateWithWhereUniqueWithoutAtualizadoPorInput = {
+    where: RotaEntregaWhereUniqueInput
+    data: XOR<RotaEntregaUpdateWithoutAtualizadoPorInput, RotaEntregaUncheckedUpdateWithoutAtualizadoPorInput>
+  }
+
+  export type RotaEntregaUpdateManyWithWhereWithoutAtualizadoPorInput = {
+    where: RotaEntregaScalarWhereInput
+    data: XOR<RotaEntregaUpdateManyMutationInput, RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorInput>
+  }
+
   export type UsuarioCreateWithoutRefreshTokensInput = {
     id?: string
     nome: string
@@ -41185,6 +46582,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalCreateNestedManyWithoutEditadoPorInput
     avariasCriadas?: PedidoOperacionalAvariaCreateNestedManyWithoutCriadoPorInput
     auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
+    rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
+    rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
+    rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUncheckedCreateWithoutRefreshTokensInput = {
@@ -41201,6 +46601,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalUncheckedCreateNestedManyWithoutEditadoPorInput
     avariasCriadas?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutCriadoPorInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
+    rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
+    rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
+    rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioCreateOrConnectWithoutRefreshTokensInput = {
@@ -41233,6 +46636,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalUpdateManyWithoutEditadoPorNestedInput
     avariasCriadas?: PedidoOperacionalAvariaUpdateManyWithoutCriadoPorNestedInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
+    rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
+    rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
+    rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUncheckedUpdateWithoutRefreshTokensInput = {
@@ -41249,6 +46655,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorNestedInput
     avariasCriadas?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorNestedInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
+    rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
+    rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type ClienteCreateWithoutGrupoInput = {
@@ -41277,6 +46686,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutGrupoInput = {
@@ -41305,6 +46715,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutGrupoInput = {
@@ -41736,6 +47147,46 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type ParadaEntregaCreateWithoutClienteInput = {
+    id?: string
+    contaAzulCustomerId: string
+    ordem: number
+    status?: $Enums.ParadaEntregaStatus
+    tokenPublico: string
+    observacoes?: string | null
+    observacoesProblema?: string | null
+    entregueEm?: Date | string | null
+    problemaEm?: Date | string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    rota: RotaEntregaCreateNestedOneWithoutParadasInput
+  }
+
+  export type ParadaEntregaUncheckedCreateWithoutClienteInput = {
+    id?: string
+    rotaId: string
+    contaAzulCustomerId: string
+    ordem: number
+    status?: $Enums.ParadaEntregaStatus
+    tokenPublico: string
+    observacoes?: string | null
+    observacoesProblema?: string | null
+    entregueEm?: Date | string | null
+    problemaEm?: Date | string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type ParadaEntregaCreateOrConnectWithoutClienteInput = {
+    where: ParadaEntregaWhereUniqueInput
+    create: XOR<ParadaEntregaCreateWithoutClienteInput, ParadaEntregaUncheckedCreateWithoutClienteInput>
+  }
+
+  export type ParadaEntregaCreateManyClienteInputEnvelope = {
+    data: ParadaEntregaCreateManyClienteInput | ParadaEntregaCreateManyClienteInput[]
+    skipDuplicates?: boolean
+  }
+
   export type GrupoClienteUpsertWithoutClientesInput = {
     update: XOR<GrupoClienteUpdateWithoutClientesInput, GrupoClienteUncheckedUpdateWithoutClientesInput>
     create: XOR<GrupoClienteCreateWithoutClientesInput, GrupoClienteUncheckedCreateWithoutClientesInput>
@@ -42002,6 +47453,41 @@ export namespace Prisma {
     revisado?: BoolFilter<"ClienteLegadoContaAzulLink"> | boolean
     criadoEm?: DateTimeFilter<"ClienteLegadoContaAzulLink"> | Date | string
     atualizadoEm?: DateTimeFilter<"ClienteLegadoContaAzulLink"> | Date | string
+  }
+
+  export type ParadaEntregaUpsertWithWhereUniqueWithoutClienteInput = {
+    where: ParadaEntregaWhereUniqueInput
+    update: XOR<ParadaEntregaUpdateWithoutClienteInput, ParadaEntregaUncheckedUpdateWithoutClienteInput>
+    create: XOR<ParadaEntregaCreateWithoutClienteInput, ParadaEntregaUncheckedCreateWithoutClienteInput>
+  }
+
+  export type ParadaEntregaUpdateWithWhereUniqueWithoutClienteInput = {
+    where: ParadaEntregaWhereUniqueInput
+    data: XOR<ParadaEntregaUpdateWithoutClienteInput, ParadaEntregaUncheckedUpdateWithoutClienteInput>
+  }
+
+  export type ParadaEntregaUpdateManyWithWhereWithoutClienteInput = {
+    where: ParadaEntregaScalarWhereInput
+    data: XOR<ParadaEntregaUpdateManyMutationInput, ParadaEntregaUncheckedUpdateManyWithoutClienteInput>
+  }
+
+  export type ParadaEntregaScalarWhereInput = {
+    AND?: ParadaEntregaScalarWhereInput | ParadaEntregaScalarWhereInput[]
+    OR?: ParadaEntregaScalarWhereInput[]
+    NOT?: ParadaEntregaScalarWhereInput | ParadaEntregaScalarWhereInput[]
+    id?: StringFilter<"ParadaEntrega"> | string
+    rotaId?: StringFilter<"ParadaEntrega"> | string
+    contaAzulCustomerId?: StringFilter<"ParadaEntrega"> | string
+    clienteId?: StringNullableFilter<"ParadaEntrega"> | string | null
+    ordem?: IntFilter<"ParadaEntrega"> | number
+    status?: EnumParadaEntregaStatusFilter<"ParadaEntrega"> | $Enums.ParadaEntregaStatus
+    tokenPublico?: StringFilter<"ParadaEntrega"> | string
+    observacoes?: StringNullableFilter<"ParadaEntrega"> | string | null
+    observacoesProblema?: StringNullableFilter<"ParadaEntrega"> | string | null
+    entregueEm?: DateTimeNullableFilter<"ParadaEntrega"> | Date | string | null
+    problemaEm?: DateTimeNullableFilter<"ParadaEntrega"> | Date | string | null
+    criadoEm?: DateTimeFilter<"ParadaEntrega"> | Date | string
+    atualizadoEm?: DateTimeFilter<"ParadaEntrega"> | Date | string
   }
 
   export type PrecoEspecialClienteCreateWithoutProdutoInput = {
@@ -42425,6 +47911,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutRegraComercialInput = {
@@ -42453,6 +47940,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutRegraComercialInput = {
@@ -42523,6 +48011,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutRegraComercialInput = {
@@ -42551,6 +48040,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
   }
 
   export type PrecoEspecialClienteUpsertWithWhereUniqueWithoutRegraInput = {
@@ -42595,6 +48085,7 @@ export namespace Prisma {
     regraComercial?: RegraComercialClienteCreateNestedOneWithoutClienteInput
     pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutLinksLegadoContaAzulInput = {
@@ -42623,6 +48114,7 @@ export namespace Prisma {
     regraComercial?: RegraComercialClienteUncheckedCreateNestedOneWithoutClienteInput
     pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutLinksLegadoContaAzulInput = {
@@ -42667,6 +48159,7 @@ export namespace Prisma {
     regraComercial?: RegraComercialClienteUpdateOneWithoutClienteNestedInput
     pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutLinksLegadoContaAzulInput = {
@@ -42695,6 +48188,7 @@ export namespace Prisma {
     regraComercial?: RegraComercialClienteUncheckedUpdateOneWithoutClienteNestedInput
     pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
   }
 
   export type RegraComercialClienteCreateWithoutPrecosEspeciaisInput = {
@@ -42927,6 +48421,7 @@ export namespace Prisma {
     regraComercial?: RegraComercialClienteCreateNestedOneWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutPedidosOperacionaisInput = {
@@ -42955,6 +48450,7 @@ export namespace Prisma {
     regraComercial?: RegraComercialClienteUncheckedCreateNestedOneWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutPedidosOperacionaisInput = {
@@ -42976,6 +48472,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalCreateNestedManyWithoutEditadoPorInput
     avariasCriadas?: PedidoOperacionalAvariaCreateNestedManyWithoutCriadoPorInput
     auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
+    rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
+    rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
+    rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUncheckedCreateWithoutPedidosCriadosInput = {
@@ -42992,6 +48491,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalUncheckedCreateNestedManyWithoutEditadoPorInput
     avariasCriadas?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutCriadoPorInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
+    rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
+    rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
+    rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioCreateOrConnectWithoutPedidosCriadosInput = {
@@ -43013,6 +48515,9 @@ export namespace Prisma {
     pedidosCriados?: PedidoOperacionalCreateNestedManyWithoutCriadoPorInput
     avariasCriadas?: PedidoOperacionalAvariaCreateNestedManyWithoutCriadoPorInput
     auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
+    rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
+    rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
+    rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUncheckedCreateWithoutPedidosEditadosInput = {
@@ -43029,6 +48534,9 @@ export namespace Prisma {
     pedidosCriados?: PedidoOperacionalUncheckedCreateNestedManyWithoutCriadoPorInput
     avariasCriadas?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutCriadoPorInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
+    rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
+    rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
+    rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioCreateOrConnectWithoutPedidosEditadosInput = {
@@ -43254,6 +48762,7 @@ export namespace Prisma {
     regraComercial?: RegraComercialClienteUpdateOneWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutPedidosOperacionaisInput = {
@@ -43282,6 +48791,7 @@ export namespace Prisma {
     regraComercial?: RegraComercialClienteUncheckedUpdateOneWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
   }
 
   export type UsuarioUpsertWithoutPedidosCriadosInput = {
@@ -43309,6 +48819,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalUpdateManyWithoutEditadoPorNestedInput
     avariasCriadas?: PedidoOperacionalAvariaUpdateManyWithoutCriadoPorNestedInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
+    rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
+    rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
+    rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUncheckedUpdateWithoutPedidosCriadosInput = {
@@ -43325,6 +48838,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorNestedInput
     avariasCriadas?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorNestedInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
+    rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
+    rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUpsertWithoutPedidosEditadosInput = {
@@ -43352,6 +48868,9 @@ export namespace Prisma {
     pedidosCriados?: PedidoOperacionalUpdateManyWithoutCriadoPorNestedInput
     avariasCriadas?: PedidoOperacionalAvariaUpdateManyWithoutCriadoPorNestedInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
+    rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
+    rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
+    rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUncheckedUpdateWithoutPedidosEditadosInput = {
@@ -43368,6 +48887,9 @@ export namespace Prisma {
     pedidosCriados?: PedidoOperacionalUncheckedUpdateManyWithoutCriadoPorNestedInput
     avariasCriadas?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorNestedInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
+    rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
+    rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type PedidoUpsertWithoutPedidoOperacionalVinculoInput = {
@@ -43500,6 +49022,732 @@ export namespace Prisma {
     usuarioNome?: StringNullableFilter<"PedidoConciliacaoEvento"> | string | null
     observacoes?: StringNullableFilter<"PedidoConciliacaoEvento"> | string | null
     criadoEm?: DateTimeFilter<"PedidoConciliacaoEvento"> | Date | string
+  }
+
+  export type UsuarioCreateWithoutRotasEntregaInput = {
+    id?: string
+    nome: string
+    email: string
+    senhaHash: string
+    perfil: $Enums.PerfilUsuario
+    status?: $Enums.StatusUsuario
+    dataCadastro?: Date | string
+    mensagens?: MensagemCreateNestedManyWithoutAprovadorInput
+    refreshTokens?: RefreshTokenCreateNestedManyWithoutUsuarioInput
+    oportunidades?: OportunidadeCreateNestedManyWithoutResponsavelInput
+    pedidosCriados?: PedidoOperacionalCreateNestedManyWithoutCriadoPorInput
+    pedidosEditados?: PedidoOperacionalCreateNestedManyWithoutEditadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaCreateNestedManyWithoutCriadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
+    rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
+    rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
+  }
+
+  export type UsuarioUncheckedCreateWithoutRotasEntregaInput = {
+    id?: string
+    nome: string
+    email: string
+    senhaHash: string
+    perfil: $Enums.PerfilUsuario
+    status?: $Enums.StatusUsuario
+    dataCadastro?: Date | string
+    mensagens?: MensagemUncheckedCreateNestedManyWithoutAprovadorInput
+    refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUsuarioInput
+    oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutResponsavelInput
+    pedidosCriados?: PedidoOperacionalUncheckedCreateNestedManyWithoutCriadoPorInput
+    pedidosEditados?: PedidoOperacionalUncheckedCreateNestedManyWithoutEditadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutCriadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
+    rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
+    rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
+  }
+
+  export type UsuarioCreateOrConnectWithoutRotasEntregaInput = {
+    where: UsuarioWhereUniqueInput
+    create: XOR<UsuarioCreateWithoutRotasEntregaInput, UsuarioUncheckedCreateWithoutRotasEntregaInput>
+  }
+
+  export type UsuarioCreateWithoutRotasCriadasInput = {
+    id?: string
+    nome: string
+    email: string
+    senhaHash: string
+    perfil: $Enums.PerfilUsuario
+    status?: $Enums.StatusUsuario
+    dataCadastro?: Date | string
+    mensagens?: MensagemCreateNestedManyWithoutAprovadorInput
+    refreshTokens?: RefreshTokenCreateNestedManyWithoutUsuarioInput
+    oportunidades?: OportunidadeCreateNestedManyWithoutResponsavelInput
+    pedidosCriados?: PedidoOperacionalCreateNestedManyWithoutCriadoPorInput
+    pedidosEditados?: PedidoOperacionalCreateNestedManyWithoutEditadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaCreateNestedManyWithoutCriadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
+    rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
+    rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
+  }
+
+  export type UsuarioUncheckedCreateWithoutRotasCriadasInput = {
+    id?: string
+    nome: string
+    email: string
+    senhaHash: string
+    perfil: $Enums.PerfilUsuario
+    status?: $Enums.StatusUsuario
+    dataCadastro?: Date | string
+    mensagens?: MensagemUncheckedCreateNestedManyWithoutAprovadorInput
+    refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUsuarioInput
+    oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutResponsavelInput
+    pedidosCriados?: PedidoOperacionalUncheckedCreateNestedManyWithoutCriadoPorInput
+    pedidosEditados?: PedidoOperacionalUncheckedCreateNestedManyWithoutEditadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutCriadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
+    rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
+    rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
+  }
+
+  export type UsuarioCreateOrConnectWithoutRotasCriadasInput = {
+    where: UsuarioWhereUniqueInput
+    create: XOR<UsuarioCreateWithoutRotasCriadasInput, UsuarioUncheckedCreateWithoutRotasCriadasInput>
+  }
+
+  export type UsuarioCreateWithoutRotasAtualizadasInput = {
+    id?: string
+    nome: string
+    email: string
+    senhaHash: string
+    perfil: $Enums.PerfilUsuario
+    status?: $Enums.StatusUsuario
+    dataCadastro?: Date | string
+    mensagens?: MensagemCreateNestedManyWithoutAprovadorInput
+    refreshTokens?: RefreshTokenCreateNestedManyWithoutUsuarioInput
+    oportunidades?: OportunidadeCreateNestedManyWithoutResponsavelInput
+    pedidosCriados?: PedidoOperacionalCreateNestedManyWithoutCriadoPorInput
+    pedidosEditados?: PedidoOperacionalCreateNestedManyWithoutEditadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaCreateNestedManyWithoutCriadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
+    rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
+    rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
+  }
+
+  export type UsuarioUncheckedCreateWithoutRotasAtualizadasInput = {
+    id?: string
+    nome: string
+    email: string
+    senhaHash: string
+    perfil: $Enums.PerfilUsuario
+    status?: $Enums.StatusUsuario
+    dataCadastro?: Date | string
+    mensagens?: MensagemUncheckedCreateNestedManyWithoutAprovadorInput
+    refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUsuarioInput
+    oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutResponsavelInput
+    pedidosCriados?: PedidoOperacionalUncheckedCreateNestedManyWithoutCriadoPorInput
+    pedidosEditados?: PedidoOperacionalUncheckedCreateNestedManyWithoutEditadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutCriadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
+    rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
+    rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
+  }
+
+  export type UsuarioCreateOrConnectWithoutRotasAtualizadasInput = {
+    where: UsuarioWhereUniqueInput
+    create: XOR<UsuarioCreateWithoutRotasAtualizadasInput, UsuarioUncheckedCreateWithoutRotasAtualizadasInput>
+  }
+
+  export type ParadaEntregaCreateWithoutRotaInput = {
+    id?: string
+    contaAzulCustomerId: string
+    ordem: number
+    status?: $Enums.ParadaEntregaStatus
+    tokenPublico: string
+    observacoes?: string | null
+    observacoesProblema?: string | null
+    entregueEm?: Date | string | null
+    problemaEm?: Date | string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    cliente?: ClienteCreateNestedOneWithoutParadasEntregaInput
+  }
+
+  export type ParadaEntregaUncheckedCreateWithoutRotaInput = {
+    id?: string
+    contaAzulCustomerId: string
+    clienteId?: string | null
+    ordem: number
+    status?: $Enums.ParadaEntregaStatus
+    tokenPublico: string
+    observacoes?: string | null
+    observacoesProblema?: string | null
+    entregueEm?: Date | string | null
+    problemaEm?: Date | string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type ParadaEntregaCreateOrConnectWithoutRotaInput = {
+    where: ParadaEntregaWhereUniqueInput
+    create: XOR<ParadaEntregaCreateWithoutRotaInput, ParadaEntregaUncheckedCreateWithoutRotaInput>
+  }
+
+  export type ParadaEntregaCreateManyRotaInputEnvelope = {
+    data: ParadaEntregaCreateManyRotaInput | ParadaEntregaCreateManyRotaInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type HistoricoLocalizacaoEntregaCreateWithoutRotaInput = {
+    id?: string
+    latitude: Decimal | DecimalJsLike | number | string
+    longitude: Decimal | DecimalJsLike | number | string
+    precisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    criadoEm?: Date | string
+  }
+
+  export type HistoricoLocalizacaoEntregaUncheckedCreateWithoutRotaInput = {
+    id?: string
+    latitude: Decimal | DecimalJsLike | number | string
+    longitude: Decimal | DecimalJsLike | number | string
+    precisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    criadoEm?: Date | string
+  }
+
+  export type HistoricoLocalizacaoEntregaCreateOrConnectWithoutRotaInput = {
+    where: HistoricoLocalizacaoEntregaWhereUniqueInput
+    create: XOR<HistoricoLocalizacaoEntregaCreateWithoutRotaInput, HistoricoLocalizacaoEntregaUncheckedCreateWithoutRotaInput>
+  }
+
+  export type HistoricoLocalizacaoEntregaCreateManyRotaInputEnvelope = {
+    data: HistoricoLocalizacaoEntregaCreateManyRotaInput | HistoricoLocalizacaoEntregaCreateManyRotaInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type UsuarioUpsertWithoutRotasEntregaInput = {
+    update: XOR<UsuarioUpdateWithoutRotasEntregaInput, UsuarioUncheckedUpdateWithoutRotasEntregaInput>
+    create: XOR<UsuarioCreateWithoutRotasEntregaInput, UsuarioUncheckedCreateWithoutRotasEntregaInput>
+    where?: UsuarioWhereInput
+  }
+
+  export type UsuarioUpdateToOneWithWhereWithoutRotasEntregaInput = {
+    where?: UsuarioWhereInput
+    data: XOR<UsuarioUpdateWithoutRotasEntregaInput, UsuarioUncheckedUpdateWithoutRotasEntregaInput>
+  }
+
+  export type UsuarioUpdateWithoutRotasEntregaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: StringFieldUpdateOperationsInput | string
+    perfil?: EnumPerfilUsuarioFieldUpdateOperationsInput | $Enums.PerfilUsuario
+    status?: EnumStatusUsuarioFieldUpdateOperationsInput | $Enums.StatusUsuario
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    mensagens?: MensagemUpdateManyWithoutAprovadorNestedInput
+    refreshTokens?: RefreshTokenUpdateManyWithoutUsuarioNestedInput
+    oportunidades?: OportunidadeUpdateManyWithoutResponsavelNestedInput
+    pedidosCriados?: PedidoOperacionalUpdateManyWithoutCriadoPorNestedInput
+    pedidosEditados?: PedidoOperacionalUpdateManyWithoutEditadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUpdateManyWithoutCriadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
+    rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
+    rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
+  }
+
+  export type UsuarioUncheckedUpdateWithoutRotasEntregaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: StringFieldUpdateOperationsInput | string
+    perfil?: EnumPerfilUsuarioFieldUpdateOperationsInput | $Enums.PerfilUsuario
+    status?: EnumStatusUsuarioFieldUpdateOperationsInput | $Enums.StatusUsuario
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    mensagens?: MensagemUncheckedUpdateManyWithoutAprovadorNestedInput
+    refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUsuarioNestedInput
+    oportunidades?: OportunidadeUncheckedUpdateManyWithoutResponsavelNestedInput
+    pedidosCriados?: PedidoOperacionalUncheckedUpdateManyWithoutCriadoPorNestedInput
+    pedidosEditados?: PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
+    rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
+  }
+
+  export type UsuarioUpsertWithoutRotasCriadasInput = {
+    update: XOR<UsuarioUpdateWithoutRotasCriadasInput, UsuarioUncheckedUpdateWithoutRotasCriadasInput>
+    create: XOR<UsuarioCreateWithoutRotasCriadasInput, UsuarioUncheckedCreateWithoutRotasCriadasInput>
+    where?: UsuarioWhereInput
+  }
+
+  export type UsuarioUpdateToOneWithWhereWithoutRotasCriadasInput = {
+    where?: UsuarioWhereInput
+    data: XOR<UsuarioUpdateWithoutRotasCriadasInput, UsuarioUncheckedUpdateWithoutRotasCriadasInput>
+  }
+
+  export type UsuarioUpdateWithoutRotasCriadasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: StringFieldUpdateOperationsInput | string
+    perfil?: EnumPerfilUsuarioFieldUpdateOperationsInput | $Enums.PerfilUsuario
+    status?: EnumStatusUsuarioFieldUpdateOperationsInput | $Enums.StatusUsuario
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    mensagens?: MensagemUpdateManyWithoutAprovadorNestedInput
+    refreshTokens?: RefreshTokenUpdateManyWithoutUsuarioNestedInput
+    oportunidades?: OportunidadeUpdateManyWithoutResponsavelNestedInput
+    pedidosCriados?: PedidoOperacionalUpdateManyWithoutCriadoPorNestedInput
+    pedidosEditados?: PedidoOperacionalUpdateManyWithoutEditadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUpdateManyWithoutCriadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
+    rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
+    rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
+  }
+
+  export type UsuarioUncheckedUpdateWithoutRotasCriadasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: StringFieldUpdateOperationsInput | string
+    perfil?: EnumPerfilUsuarioFieldUpdateOperationsInput | $Enums.PerfilUsuario
+    status?: EnumStatusUsuarioFieldUpdateOperationsInput | $Enums.StatusUsuario
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    mensagens?: MensagemUncheckedUpdateManyWithoutAprovadorNestedInput
+    refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUsuarioNestedInput
+    oportunidades?: OportunidadeUncheckedUpdateManyWithoutResponsavelNestedInput
+    pedidosCriados?: PedidoOperacionalUncheckedUpdateManyWithoutCriadoPorNestedInput
+    pedidosEditados?: PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
+    rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
+    rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
+  }
+
+  export type UsuarioUpsertWithoutRotasAtualizadasInput = {
+    update: XOR<UsuarioUpdateWithoutRotasAtualizadasInput, UsuarioUncheckedUpdateWithoutRotasAtualizadasInput>
+    create: XOR<UsuarioCreateWithoutRotasAtualizadasInput, UsuarioUncheckedCreateWithoutRotasAtualizadasInput>
+    where?: UsuarioWhereInput
+  }
+
+  export type UsuarioUpdateToOneWithWhereWithoutRotasAtualizadasInput = {
+    where?: UsuarioWhereInput
+    data: XOR<UsuarioUpdateWithoutRotasAtualizadasInput, UsuarioUncheckedUpdateWithoutRotasAtualizadasInput>
+  }
+
+  export type UsuarioUpdateWithoutRotasAtualizadasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: StringFieldUpdateOperationsInput | string
+    perfil?: EnumPerfilUsuarioFieldUpdateOperationsInput | $Enums.PerfilUsuario
+    status?: EnumStatusUsuarioFieldUpdateOperationsInput | $Enums.StatusUsuario
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    mensagens?: MensagemUpdateManyWithoutAprovadorNestedInput
+    refreshTokens?: RefreshTokenUpdateManyWithoutUsuarioNestedInput
+    oportunidades?: OportunidadeUpdateManyWithoutResponsavelNestedInput
+    pedidosCriados?: PedidoOperacionalUpdateManyWithoutCriadoPorNestedInput
+    pedidosEditados?: PedidoOperacionalUpdateManyWithoutEditadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUpdateManyWithoutCriadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
+    rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
+    rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
+  }
+
+  export type UsuarioUncheckedUpdateWithoutRotasAtualizadasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: StringFieldUpdateOperationsInput | string
+    perfil?: EnumPerfilUsuarioFieldUpdateOperationsInput | $Enums.PerfilUsuario
+    status?: EnumStatusUsuarioFieldUpdateOperationsInput | $Enums.StatusUsuario
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    mensagens?: MensagemUncheckedUpdateManyWithoutAprovadorNestedInput
+    refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUsuarioNestedInput
+    oportunidades?: OportunidadeUncheckedUpdateManyWithoutResponsavelNestedInput
+    pedidosCriados?: PedidoOperacionalUncheckedUpdateManyWithoutCriadoPorNestedInput
+    pedidosEditados?: PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
+    rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
+    rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
+  }
+
+  export type ParadaEntregaUpsertWithWhereUniqueWithoutRotaInput = {
+    where: ParadaEntregaWhereUniqueInput
+    update: XOR<ParadaEntregaUpdateWithoutRotaInput, ParadaEntregaUncheckedUpdateWithoutRotaInput>
+    create: XOR<ParadaEntregaCreateWithoutRotaInput, ParadaEntregaUncheckedCreateWithoutRotaInput>
+  }
+
+  export type ParadaEntregaUpdateWithWhereUniqueWithoutRotaInput = {
+    where: ParadaEntregaWhereUniqueInput
+    data: XOR<ParadaEntregaUpdateWithoutRotaInput, ParadaEntregaUncheckedUpdateWithoutRotaInput>
+  }
+
+  export type ParadaEntregaUpdateManyWithWhereWithoutRotaInput = {
+    where: ParadaEntregaScalarWhereInput
+    data: XOR<ParadaEntregaUpdateManyMutationInput, ParadaEntregaUncheckedUpdateManyWithoutRotaInput>
+  }
+
+  export type HistoricoLocalizacaoEntregaUpsertWithWhereUniqueWithoutRotaInput = {
+    where: HistoricoLocalizacaoEntregaWhereUniqueInput
+    update: XOR<HistoricoLocalizacaoEntregaUpdateWithoutRotaInput, HistoricoLocalizacaoEntregaUncheckedUpdateWithoutRotaInput>
+    create: XOR<HistoricoLocalizacaoEntregaCreateWithoutRotaInput, HistoricoLocalizacaoEntregaUncheckedCreateWithoutRotaInput>
+  }
+
+  export type HistoricoLocalizacaoEntregaUpdateWithWhereUniqueWithoutRotaInput = {
+    where: HistoricoLocalizacaoEntregaWhereUniqueInput
+    data: XOR<HistoricoLocalizacaoEntregaUpdateWithoutRotaInput, HistoricoLocalizacaoEntregaUncheckedUpdateWithoutRotaInput>
+  }
+
+  export type HistoricoLocalizacaoEntregaUpdateManyWithWhereWithoutRotaInput = {
+    where: HistoricoLocalizacaoEntregaScalarWhereInput
+    data: XOR<HistoricoLocalizacaoEntregaUpdateManyMutationInput, HistoricoLocalizacaoEntregaUncheckedUpdateManyWithoutRotaInput>
+  }
+
+  export type HistoricoLocalizacaoEntregaScalarWhereInput = {
+    AND?: HistoricoLocalizacaoEntregaScalarWhereInput | HistoricoLocalizacaoEntregaScalarWhereInput[]
+    OR?: HistoricoLocalizacaoEntregaScalarWhereInput[]
+    NOT?: HistoricoLocalizacaoEntregaScalarWhereInput | HistoricoLocalizacaoEntregaScalarWhereInput[]
+    id?: StringFilter<"HistoricoLocalizacaoEntrega"> | string
+    rotaId?: StringFilter<"HistoricoLocalizacaoEntrega"> | string
+    latitude?: DecimalFilter<"HistoricoLocalizacaoEntrega"> | Decimal | DecimalJsLike | number | string
+    longitude?: DecimalFilter<"HistoricoLocalizacaoEntrega"> | Decimal | DecimalJsLike | number | string
+    precisaoMetros?: DecimalNullableFilter<"HistoricoLocalizacaoEntrega"> | Decimal | DecimalJsLike | number | string | null
+    criadoEm?: DateTimeFilter<"HistoricoLocalizacaoEntrega"> | Date | string
+  }
+
+  export type RotaEntregaCreateWithoutParadasInput = {
+    id?: string
+    dataEntrega: Date | string
+    nome?: string | null
+    status?: $Enums.RotaEntregaStatus
+    entregadorNome?: string | null
+    tokenPublico: string
+    compartilhamentoAtivo?: boolean
+    iniciadoEm?: Date | string | null
+    encerradoEm?: Date | string | null
+    ultimaLatitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: Date | string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    entregador?: UsuarioCreateNestedOneWithoutRotasEntregaInput
+    criadoPor?: UsuarioCreateNestedOneWithoutRotasCriadasInput
+    atualizadoPor?: UsuarioCreateNestedOneWithoutRotasAtualizadasInput
+    localizacoes?: HistoricoLocalizacaoEntregaCreateNestedManyWithoutRotaInput
+  }
+
+  export type RotaEntregaUncheckedCreateWithoutParadasInput = {
+    id?: string
+    dataEntrega: Date | string
+    nome?: string | null
+    status?: $Enums.RotaEntregaStatus
+    entregadorId?: string | null
+    entregadorNome?: string | null
+    tokenPublico: string
+    compartilhamentoAtivo?: boolean
+    iniciadoEm?: Date | string | null
+    encerradoEm?: Date | string | null
+    ultimaLatitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: Date | string | null
+    criadoPorId?: string | null
+    atualizadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    localizacoes?: HistoricoLocalizacaoEntregaUncheckedCreateNestedManyWithoutRotaInput
+  }
+
+  export type RotaEntregaCreateOrConnectWithoutParadasInput = {
+    where: RotaEntregaWhereUniqueInput
+    create: XOR<RotaEntregaCreateWithoutParadasInput, RotaEntregaUncheckedCreateWithoutParadasInput>
+  }
+
+  export type ClienteCreateWithoutParadasEntregaInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+    grupo?: GrupoClienteCreateNestedOneWithoutClientesInput
+    pedidos?: PedidoCreateNestedManyWithoutClienteInput
+    interacoes?: InteracaoCreateNestedManyWithoutClienteInput
+    oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
+    mensagens?: MensagemCreateNestedManyWithoutClienteInput
+    execucoes?: ExecucaoApiCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
+  }
+
+  export type ClienteUncheckedCreateWithoutParadasEntregaInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    grupoId?: string | null
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+    pedidos?: PedidoUncheckedCreateNestedManyWithoutClienteInput
+    interacoes?: InteracaoUncheckedCreateNestedManyWithoutClienteInput
+    oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutClienteInput
+    mensagens?: MensagemUncheckedCreateNestedManyWithoutClienteInput
+    execucoes?: ExecucaoApiUncheckedCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteUncheckedCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
+  }
+
+  export type ClienteCreateOrConnectWithoutParadasEntregaInput = {
+    where: ClienteWhereUniqueInput
+    create: XOR<ClienteCreateWithoutParadasEntregaInput, ClienteUncheckedCreateWithoutParadasEntregaInput>
+  }
+
+  export type RotaEntregaUpsertWithoutParadasInput = {
+    update: XOR<RotaEntregaUpdateWithoutParadasInput, RotaEntregaUncheckedUpdateWithoutParadasInput>
+    create: XOR<RotaEntregaCreateWithoutParadasInput, RotaEntregaUncheckedCreateWithoutParadasInput>
+    where?: RotaEntregaWhereInput
+  }
+
+  export type RotaEntregaUpdateToOneWithWhereWithoutParadasInput = {
+    where?: RotaEntregaWhereInput
+    data: XOR<RotaEntregaUpdateWithoutParadasInput, RotaEntregaUncheckedUpdateWithoutParadasInput>
+  }
+
+  export type RotaEntregaUpdateWithoutParadasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    nome?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumRotaEntregaStatusFieldUpdateOperationsInput | $Enums.RotaEntregaStatus
+    entregadorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    compartilhamentoAtivo?: BoolFieldUpdateOperationsInput | boolean
+    iniciadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    encerradoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimaLatitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    entregador?: UsuarioUpdateOneWithoutRotasEntregaNestedInput
+    criadoPor?: UsuarioUpdateOneWithoutRotasCriadasNestedInput
+    atualizadoPor?: UsuarioUpdateOneWithoutRotasAtualizadasNestedInput
+    localizacoes?: HistoricoLocalizacaoEntregaUpdateManyWithoutRotaNestedInput
+  }
+
+  export type RotaEntregaUncheckedUpdateWithoutParadasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    nome?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumRotaEntregaStatusFieldUpdateOperationsInput | $Enums.RotaEntregaStatus
+    entregadorId?: NullableStringFieldUpdateOperationsInput | string | null
+    entregadorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    compartilhamentoAtivo?: BoolFieldUpdateOperationsInput | boolean
+    iniciadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    encerradoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimaLatitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    atualizadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    localizacoes?: HistoricoLocalizacaoEntregaUncheckedUpdateManyWithoutRotaNestedInput
+  }
+
+  export type ClienteUpsertWithoutParadasEntregaInput = {
+    update: XOR<ClienteUpdateWithoutParadasEntregaInput, ClienteUncheckedUpdateWithoutParadasEntregaInput>
+    create: XOR<ClienteCreateWithoutParadasEntregaInput, ClienteUncheckedCreateWithoutParadasEntregaInput>
+    where?: ClienteWhereInput
+  }
+
+  export type ClienteUpdateToOneWithWhereWithoutParadasEntregaInput = {
+    where?: ClienteWhereInput
+    data: XOR<ClienteUpdateWithoutParadasEntregaInput, ClienteUncheckedUpdateWithoutParadasEntregaInput>
+  }
+
+  export type ClienteUpdateWithoutParadasEntregaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    grupo?: GrupoClienteUpdateOneWithoutClientesNestedInput
+    pedidos?: PedidoUpdateManyWithoutClienteNestedInput
+    interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
+    oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
+    mensagens?: MensagemUpdateManyWithoutClienteNestedInput
+    execucoes?: ExecucaoApiUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
+  }
+
+  export type ClienteUncheckedUpdateWithoutParadasEntregaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    grupoId?: NullableStringFieldUpdateOperationsInput | string | null
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedidos?: PedidoUncheckedUpdateManyWithoutClienteNestedInput
+    interacoes?: InteracaoUncheckedUpdateManyWithoutClienteNestedInput
+    oportunidades?: OportunidadeUncheckedUpdateManyWithoutClienteNestedInput
+    mensagens?: MensagemUncheckedUpdateManyWithoutClienteNestedInput
+    execucoes?: ExecucaoApiUncheckedUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUncheckedUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
+  }
+
+  export type RotaEntregaCreateWithoutLocalizacoesInput = {
+    id?: string
+    dataEntrega: Date | string
+    nome?: string | null
+    status?: $Enums.RotaEntregaStatus
+    entregadorNome?: string | null
+    tokenPublico: string
+    compartilhamentoAtivo?: boolean
+    iniciadoEm?: Date | string | null
+    encerradoEm?: Date | string | null
+    ultimaLatitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: Date | string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    entregador?: UsuarioCreateNestedOneWithoutRotasEntregaInput
+    criadoPor?: UsuarioCreateNestedOneWithoutRotasCriadasInput
+    atualizadoPor?: UsuarioCreateNestedOneWithoutRotasAtualizadasInput
+    paradas?: ParadaEntregaCreateNestedManyWithoutRotaInput
+  }
+
+  export type RotaEntregaUncheckedCreateWithoutLocalizacoesInput = {
+    id?: string
+    dataEntrega: Date | string
+    nome?: string | null
+    status?: $Enums.RotaEntregaStatus
+    entregadorId?: string | null
+    entregadorNome?: string | null
+    tokenPublico: string
+    compartilhamentoAtivo?: boolean
+    iniciadoEm?: Date | string | null
+    encerradoEm?: Date | string | null
+    ultimaLatitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: Date | string | null
+    criadoPorId?: string | null
+    atualizadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    paradas?: ParadaEntregaUncheckedCreateNestedManyWithoutRotaInput
+  }
+
+  export type RotaEntregaCreateOrConnectWithoutLocalizacoesInput = {
+    where: RotaEntregaWhereUniqueInput
+    create: XOR<RotaEntregaCreateWithoutLocalizacoesInput, RotaEntregaUncheckedCreateWithoutLocalizacoesInput>
+  }
+
+  export type RotaEntregaUpsertWithoutLocalizacoesInput = {
+    update: XOR<RotaEntregaUpdateWithoutLocalizacoesInput, RotaEntregaUncheckedUpdateWithoutLocalizacoesInput>
+    create: XOR<RotaEntregaCreateWithoutLocalizacoesInput, RotaEntregaUncheckedCreateWithoutLocalizacoesInput>
+    where?: RotaEntregaWhereInput
+  }
+
+  export type RotaEntregaUpdateToOneWithWhereWithoutLocalizacoesInput = {
+    where?: RotaEntregaWhereInput
+    data: XOR<RotaEntregaUpdateWithoutLocalizacoesInput, RotaEntregaUncheckedUpdateWithoutLocalizacoesInput>
+  }
+
+  export type RotaEntregaUpdateWithoutLocalizacoesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    nome?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumRotaEntregaStatusFieldUpdateOperationsInput | $Enums.RotaEntregaStatus
+    entregadorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    compartilhamentoAtivo?: BoolFieldUpdateOperationsInput | boolean
+    iniciadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    encerradoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimaLatitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    entregador?: UsuarioUpdateOneWithoutRotasEntregaNestedInput
+    criadoPor?: UsuarioUpdateOneWithoutRotasCriadasNestedInput
+    atualizadoPor?: UsuarioUpdateOneWithoutRotasAtualizadasNestedInput
+    paradas?: ParadaEntregaUpdateManyWithoutRotaNestedInput
+  }
+
+  export type RotaEntregaUncheckedUpdateWithoutLocalizacoesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    nome?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumRotaEntregaStatusFieldUpdateOperationsInput | $Enums.RotaEntregaStatus
+    entregadorId?: NullableStringFieldUpdateOperationsInput | string | null
+    entregadorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    compartilhamentoAtivo?: BoolFieldUpdateOperationsInput | boolean
+    iniciadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    encerradoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimaLatitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    atualizadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    paradas?: ParadaEntregaUncheckedUpdateManyWithoutRotaNestedInput
   }
 
   export type PedidoOperacionalCreateWithoutItensInput = {
@@ -43807,6 +50055,7 @@ export namespace Prisma {
     regraComercial?: RegraComercialClienteCreateNestedOneWithoutClienteInput
     pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutAvariasOperacionaisInput = {
@@ -43835,6 +50084,7 @@ export namespace Prisma {
     regraComercial?: RegraComercialClienteUncheckedCreateNestedOneWithoutClienteInput
     pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutAvariasOperacionaisInput = {
@@ -43913,6 +50163,9 @@ export namespace Prisma {
     pedidosCriados?: PedidoOperacionalCreateNestedManyWithoutCriadoPorInput
     pedidosEditados?: PedidoOperacionalCreateNestedManyWithoutEditadoPorInput
     auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
+    rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
+    rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
+    rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUncheckedCreateWithoutAvariasCriadasInput = {
@@ -43929,6 +50182,9 @@ export namespace Prisma {
     pedidosCriados?: PedidoOperacionalUncheckedCreateNestedManyWithoutCriadoPorInput
     pedidosEditados?: PedidoOperacionalUncheckedCreateNestedManyWithoutEditadoPorInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
+    rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
+    rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
+    rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioCreateOrConnectWithoutAvariasCriadasInput = {
@@ -44030,6 +50286,7 @@ export namespace Prisma {
     regraComercial?: RegraComercialClienteUpdateOneWithoutClienteNestedInput
     pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutAvariasOperacionaisInput = {
@@ -44058,6 +50315,7 @@ export namespace Prisma {
     regraComercial?: RegraComercialClienteUncheckedUpdateOneWithoutClienteNestedInput
     pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
   }
 
   export type ProdutoComercialUpsertWithoutAvariasPedidoInput = {
@@ -44148,6 +50406,9 @@ export namespace Prisma {
     pedidosCriados?: PedidoOperacionalUpdateManyWithoutCriadoPorNestedInput
     pedidosEditados?: PedidoOperacionalUpdateManyWithoutEditadoPorNestedInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
+    rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
+    rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
+    rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUncheckedUpdateWithoutAvariasCriadasInput = {
@@ -44164,6 +50425,9 @@ export namespace Prisma {
     pedidosCriados?: PedidoOperacionalUncheckedUpdateManyWithoutCriadoPorNestedInput
     pedidosEditados?: PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorNestedInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
+    rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
+    rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type PedidoOperacionalCreateWithoutAuditoriaInput = {
@@ -44231,6 +50495,9 @@ export namespace Prisma {
     pedidosCriados?: PedidoOperacionalCreateNestedManyWithoutCriadoPorInput
     pedidosEditados?: PedidoOperacionalCreateNestedManyWithoutEditadoPorInput
     avariasCriadas?: PedidoOperacionalAvariaCreateNestedManyWithoutCriadoPorInput
+    rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
+    rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
+    rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUncheckedCreateWithoutAuditoriasPedidoInput = {
@@ -44247,6 +50514,9 @@ export namespace Prisma {
     pedidosCriados?: PedidoOperacionalUncheckedCreateNestedManyWithoutCriadoPorInput
     pedidosEditados?: PedidoOperacionalUncheckedCreateNestedManyWithoutEditadoPorInput
     avariasCriadas?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutCriadoPorInput
+    rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
+    rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
+    rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioCreateOrConnectWithoutAuditoriasPedidoInput = {
@@ -44336,6 +50606,9 @@ export namespace Prisma {
     pedidosCriados?: PedidoOperacionalUpdateManyWithoutCriadoPorNestedInput
     pedidosEditados?: PedidoOperacionalUpdateManyWithoutEditadoPorNestedInput
     avariasCriadas?: PedidoOperacionalAvariaUpdateManyWithoutCriadoPorNestedInput
+    rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
+    rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
+    rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUncheckedUpdateWithoutAuditoriasPedidoInput = {
@@ -44352,6 +50625,9 @@ export namespace Prisma {
     pedidosCriados?: PedidoOperacionalUncheckedUpdateManyWithoutCriadoPorNestedInput
     pedidosEditados?: PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorNestedInput
     avariasCriadas?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
+    rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type ClienteCreateWithoutPedidosInput = {
@@ -44380,6 +50656,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutPedidosInput = {
@@ -44408,6 +50685,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutPedidosInput = {
@@ -44569,6 +50847,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutPedidosInput = {
@@ -44597,6 +50876,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
   }
 
   export type ItemPedidoUpsertWithWhereUniqueWithoutPedidoInput = {
@@ -45028,6 +51308,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutInteracoesInput = {
@@ -45056,6 +51337,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutInteracoesInput = {
@@ -45100,6 +51382,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutInteracoesInput = {
@@ -45128,6 +51411,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteCreateWithoutOportunidadesInput = {
@@ -45156,6 +51440,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutOportunidadesInput = {
@@ -45184,6 +51469,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutOportunidadesInput = {
@@ -45205,6 +51491,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalCreateNestedManyWithoutEditadoPorInput
     avariasCriadas?: PedidoOperacionalAvariaCreateNestedManyWithoutCriadoPorInput
     auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
+    rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
+    rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
+    rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUncheckedCreateWithoutOportunidadesInput = {
@@ -45221,6 +51510,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalUncheckedCreateNestedManyWithoutEditadoPorInput
     avariasCriadas?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutCriadoPorInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
+    rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
+    rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
+    rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioCreateOrConnectWithoutOportunidadesInput = {
@@ -45265,6 +51557,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutOportunidadesInput = {
@@ -45293,6 +51586,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
   }
 
   export type UsuarioUpsertWithoutOportunidadesInput = {
@@ -45320,6 +51614,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalUpdateManyWithoutEditadoPorNestedInput
     avariasCriadas?: PedidoOperacionalAvariaUpdateManyWithoutCriadoPorNestedInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
+    rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
+    rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
+    rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUncheckedUpdateWithoutOportunidadesInput = {
@@ -45336,6 +51633,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorNestedInput
     avariasCriadas?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorNestedInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
+    rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
+    rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type ClienteCreateWithoutMensagensInput = {
@@ -45364,6 +51664,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutMensagensInput = {
@@ -45392,6 +51693,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutMensagensInput = {
@@ -45413,6 +51715,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalCreateNestedManyWithoutEditadoPorInput
     avariasCriadas?: PedidoOperacionalAvariaCreateNestedManyWithoutCriadoPorInput
     auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
+    rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
+    rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
+    rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUncheckedCreateWithoutMensagensInput = {
@@ -45429,6 +51734,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalUncheckedCreateNestedManyWithoutEditadoPorInput
     avariasCriadas?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutCriadoPorInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
+    rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
+    rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
+    rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioCreateOrConnectWithoutMensagensInput = {
@@ -45473,6 +51781,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutMensagensInput = {
@@ -45501,6 +51810,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
   }
 
   export type UsuarioUpsertWithoutMensagensInput = {
@@ -45528,6 +51838,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalUpdateManyWithoutEditadoPorNestedInput
     avariasCriadas?: PedidoOperacionalAvariaUpdateManyWithoutCriadoPorNestedInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
+    rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
+    rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
+    rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUncheckedUpdateWithoutMensagensInput = {
@@ -45544,6 +51857,9 @@ export namespace Prisma {
     pedidosEditados?: PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorNestedInput
     avariasCriadas?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorNestedInput
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
+    rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
+    rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type ClienteCreateWithoutExecucoesInput = {
@@ -45572,6 +51888,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutExecucoesInput = {
@@ -45600,6 +51917,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutExecucoesInput = {
@@ -45644,6 +51962,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutExecucoesInput = {
@@ -45672,6 +51991,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
   }
 
   export type MensagemCreateManyAprovadorInput = {
@@ -45770,6 +52090,66 @@ export namespace Prisma {
     antes?: NullableJsonNullValueInput | InputJsonValue
     depois?: NullableJsonNullValueInput | InputJsonValue
     criadoEm?: Date | string
+  }
+
+  export type RotaEntregaCreateManyEntregadorInput = {
+    id?: string
+    dataEntrega: Date | string
+    nome?: string | null
+    status?: $Enums.RotaEntregaStatus
+    entregadorNome?: string | null
+    tokenPublico: string
+    compartilhamentoAtivo?: boolean
+    iniciadoEm?: Date | string | null
+    encerradoEm?: Date | string | null
+    ultimaLatitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: Date | string | null
+    criadoPorId?: string | null
+    atualizadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type RotaEntregaCreateManyCriadoPorInput = {
+    id?: string
+    dataEntrega: Date | string
+    nome?: string | null
+    status?: $Enums.RotaEntregaStatus
+    entregadorId?: string | null
+    entregadorNome?: string | null
+    tokenPublico: string
+    compartilhamentoAtivo?: boolean
+    iniciadoEm?: Date | string | null
+    encerradoEm?: Date | string | null
+    ultimaLatitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: Date | string | null
+    atualizadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type RotaEntregaCreateManyAtualizadoPorInput = {
+    id?: string
+    dataEntrega: Date | string
+    nome?: string | null
+    status?: $Enums.RotaEntregaStatus
+    entregadorId?: string | null
+    entregadorNome?: string | null
+    tokenPublico: string
+    compartilhamentoAtivo?: boolean
+    iniciadoEm?: Date | string | null
+    encerradoEm?: Date | string | null
+    ultimaLatitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: Date | string | null
+    criadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
   }
 
   export type MensagemUpdateWithoutAprovadorInput = {
@@ -46082,6 +52462,198 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type RotaEntregaUpdateWithoutEntregadorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    nome?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumRotaEntregaStatusFieldUpdateOperationsInput | $Enums.RotaEntregaStatus
+    entregadorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    compartilhamentoAtivo?: BoolFieldUpdateOperationsInput | boolean
+    iniciadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    encerradoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimaLatitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    criadoPor?: UsuarioUpdateOneWithoutRotasCriadasNestedInput
+    atualizadoPor?: UsuarioUpdateOneWithoutRotasAtualizadasNestedInput
+    paradas?: ParadaEntregaUpdateManyWithoutRotaNestedInput
+    localizacoes?: HistoricoLocalizacaoEntregaUpdateManyWithoutRotaNestedInput
+  }
+
+  export type RotaEntregaUncheckedUpdateWithoutEntregadorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    nome?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumRotaEntregaStatusFieldUpdateOperationsInput | $Enums.RotaEntregaStatus
+    entregadorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    compartilhamentoAtivo?: BoolFieldUpdateOperationsInput | boolean
+    iniciadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    encerradoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimaLatitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    atualizadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    paradas?: ParadaEntregaUncheckedUpdateManyWithoutRotaNestedInput
+    localizacoes?: HistoricoLocalizacaoEntregaUncheckedUpdateManyWithoutRotaNestedInput
+  }
+
+  export type RotaEntregaUncheckedUpdateManyWithoutEntregadorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    nome?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumRotaEntregaStatusFieldUpdateOperationsInput | $Enums.RotaEntregaStatus
+    entregadorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    compartilhamentoAtivo?: BoolFieldUpdateOperationsInput | boolean
+    iniciadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    encerradoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimaLatitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    atualizadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RotaEntregaUpdateWithoutCriadoPorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    nome?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumRotaEntregaStatusFieldUpdateOperationsInput | $Enums.RotaEntregaStatus
+    entregadorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    compartilhamentoAtivo?: BoolFieldUpdateOperationsInput | boolean
+    iniciadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    encerradoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimaLatitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    entregador?: UsuarioUpdateOneWithoutRotasEntregaNestedInput
+    atualizadoPor?: UsuarioUpdateOneWithoutRotasAtualizadasNestedInput
+    paradas?: ParadaEntregaUpdateManyWithoutRotaNestedInput
+    localizacoes?: HistoricoLocalizacaoEntregaUpdateManyWithoutRotaNestedInput
+  }
+
+  export type RotaEntregaUncheckedUpdateWithoutCriadoPorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    nome?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumRotaEntregaStatusFieldUpdateOperationsInput | $Enums.RotaEntregaStatus
+    entregadorId?: NullableStringFieldUpdateOperationsInput | string | null
+    entregadorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    compartilhamentoAtivo?: BoolFieldUpdateOperationsInput | boolean
+    iniciadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    encerradoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimaLatitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    atualizadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    paradas?: ParadaEntregaUncheckedUpdateManyWithoutRotaNestedInput
+    localizacoes?: HistoricoLocalizacaoEntregaUncheckedUpdateManyWithoutRotaNestedInput
+  }
+
+  export type RotaEntregaUncheckedUpdateManyWithoutCriadoPorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    nome?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumRotaEntregaStatusFieldUpdateOperationsInput | $Enums.RotaEntregaStatus
+    entregadorId?: NullableStringFieldUpdateOperationsInput | string | null
+    entregadorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    compartilhamentoAtivo?: BoolFieldUpdateOperationsInput | boolean
+    iniciadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    encerradoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimaLatitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    atualizadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RotaEntregaUpdateWithoutAtualizadoPorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    nome?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumRotaEntregaStatusFieldUpdateOperationsInput | $Enums.RotaEntregaStatus
+    entregadorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    compartilhamentoAtivo?: BoolFieldUpdateOperationsInput | boolean
+    iniciadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    encerradoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimaLatitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    entregador?: UsuarioUpdateOneWithoutRotasEntregaNestedInput
+    criadoPor?: UsuarioUpdateOneWithoutRotasCriadasNestedInput
+    paradas?: ParadaEntregaUpdateManyWithoutRotaNestedInput
+    localizacoes?: HistoricoLocalizacaoEntregaUpdateManyWithoutRotaNestedInput
+  }
+
+  export type RotaEntregaUncheckedUpdateWithoutAtualizadoPorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    nome?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumRotaEntregaStatusFieldUpdateOperationsInput | $Enums.RotaEntregaStatus
+    entregadorId?: NullableStringFieldUpdateOperationsInput | string | null
+    entregadorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    compartilhamentoAtivo?: BoolFieldUpdateOperationsInput | boolean
+    iniciadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    encerradoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimaLatitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    paradas?: ParadaEntregaUncheckedUpdateManyWithoutRotaNestedInput
+    localizacoes?: HistoricoLocalizacaoEntregaUncheckedUpdateManyWithoutRotaNestedInput
+  }
+
+  export type RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    nome?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumRotaEntregaStatusFieldUpdateOperationsInput | $Enums.RotaEntregaStatus
+    entregadorId?: NullableStringFieldUpdateOperationsInput | string | null
+    entregadorNome?: NullableStringFieldUpdateOperationsInput | string | null
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    compartilhamentoAtivo?: BoolFieldUpdateOperationsInput | boolean
+    iniciadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    encerradoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimaLatitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLongitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaPrecisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ultimaLocalizacaoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type ClienteCreateManyGrupoInput = {
     id?: string
     externalId?: string | null
@@ -46127,6 +52699,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutGrupoInput = {
@@ -46155,6 +52728,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateManyWithoutGrupoInput = {
@@ -46284,6 +52858,21 @@ export namespace Prisma {
     metodo: string
     confianca: Decimal | DecimalJsLike | number | string
     revisado?: boolean
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type ParadaEntregaCreateManyClienteInput = {
+    id?: string
+    rotaId: string
+    contaAzulCustomerId: string
+    ordem: number
+    status?: $Enums.ParadaEntregaStatus
+    tokenPublico: string
+    observacoes?: string | null
+    observacoesProblema?: string | null
+    entregueEm?: Date | string | null
+    problemaEm?: Date | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
   }
@@ -46634,6 +53223,51 @@ export namespace Prisma {
     metodo?: StringFieldUpdateOperationsInput | string
     confianca?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     revisado?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ParadaEntregaUpdateWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    ordem?: IntFieldUpdateOperationsInput | number
+    status?: EnumParadaEntregaStatusFieldUpdateOperationsInput | $Enums.ParadaEntregaStatus
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    observacoesProblema?: NullableStringFieldUpdateOperationsInput | string | null
+    entregueEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    problemaEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    rota?: RotaEntregaUpdateOneRequiredWithoutParadasNestedInput
+  }
+
+  export type ParadaEntregaUncheckedUpdateWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    rotaId?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    ordem?: IntFieldUpdateOperationsInput | number
+    status?: EnumParadaEntregaStatusFieldUpdateOperationsInput | $Enums.ParadaEntregaStatus
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    observacoesProblema?: NullableStringFieldUpdateOperationsInput | string | null
+    entregueEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    problemaEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ParadaEntregaUncheckedUpdateManyWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    rotaId?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    ordem?: IntFieldUpdateOperationsInput | number
+    status?: EnumParadaEntregaStatusFieldUpdateOperationsInput | $Enums.ParadaEntregaStatus
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    observacoesProblema?: NullableStringFieldUpdateOperationsInput | string | null
+    entregueEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    problemaEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -47087,6 +53721,98 @@ export namespace Prisma {
     usuarioId?: NullableStringFieldUpdateOperationsInput | string | null
     usuarioNome?: NullableStringFieldUpdateOperationsInput | string | null
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ParadaEntregaCreateManyRotaInput = {
+    id?: string
+    contaAzulCustomerId: string
+    clienteId?: string | null
+    ordem: number
+    status?: $Enums.ParadaEntregaStatus
+    tokenPublico: string
+    observacoes?: string | null
+    observacoesProblema?: string | null
+    entregueEm?: Date | string | null
+    problemaEm?: Date | string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type HistoricoLocalizacaoEntregaCreateManyRotaInput = {
+    id?: string
+    latitude: Decimal | DecimalJsLike | number | string
+    longitude: Decimal | DecimalJsLike | number | string
+    precisaoMetros?: Decimal | DecimalJsLike | number | string | null
+    criadoEm?: Date | string
+  }
+
+  export type ParadaEntregaUpdateWithoutRotaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    ordem?: IntFieldUpdateOperationsInput | number
+    status?: EnumParadaEntregaStatusFieldUpdateOperationsInput | $Enums.ParadaEntregaStatus
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    observacoesProblema?: NullableStringFieldUpdateOperationsInput | string | null
+    entregueEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    problemaEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneWithoutParadasEntregaNestedInput
+  }
+
+  export type ParadaEntregaUncheckedUpdateWithoutRotaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    ordem?: IntFieldUpdateOperationsInput | number
+    status?: EnumParadaEntregaStatusFieldUpdateOperationsInput | $Enums.ParadaEntregaStatus
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    observacoesProblema?: NullableStringFieldUpdateOperationsInput | string | null
+    entregueEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    problemaEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ParadaEntregaUncheckedUpdateManyWithoutRotaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    ordem?: IntFieldUpdateOperationsInput | number
+    status?: EnumParadaEntregaStatusFieldUpdateOperationsInput | $Enums.ParadaEntregaStatus
+    tokenPublico?: StringFieldUpdateOperationsInput | string
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    observacoesProblema?: NullableStringFieldUpdateOperationsInput | string | null
+    entregueEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    problemaEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type HistoricoLocalizacaoEntregaUpdateWithoutRotaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    latitude?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    longitude?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    precisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type HistoricoLocalizacaoEntregaUncheckedUpdateWithoutRotaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    latitude?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    longitude?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    precisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type HistoricoLocalizacaoEntregaUncheckedUpdateManyWithoutRotaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    latitude?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    longitude?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    precisaoMetros?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 

@@ -753,6 +753,7 @@ export const estoqueItens = mysqlTable("estoque_itens", {
   precoUnitario: float("precoUnitario"),
   fornecedor: varchar("fornecedor", { length: 256 }),
   observacoes: text("observacoes"),
+  consumoAplicadoAte: timestamp("consumoAplicadoAte"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

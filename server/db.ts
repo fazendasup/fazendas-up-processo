@@ -1,4 +1,5 @@
 import { receitaCicloPrioritariaParaVariedade } from "@shared/cicloReceita";
+import { aplicarConsumoDiarioEstoque as calcularConsumoDiarioEstoque } from "@shared/estoque";
 import { eq, and, or, inArray, sql, asc, desc, count, ne, isNull, gt, max, gte, isNotNull, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import type { Pool as Mysql2Pool } from "mysql2";
@@ -2337,6 +2338,7 @@ export async function deleteTorre(projetoId: number, id: number) {
 export async function getAllEstoqueItens(projetoId: number) {
   const db = await getDb();
   if (!db) return [];
+  await ensureEstoqueItensTable();
   return db
     .select()
     .from(estoqueItens)
@@ -2347,12 +2349,39 @@ export async function getAllEstoqueItens(projetoId: number) {
 export async function getEstoqueItemById(projetoId: number, id: number) {
   const db = await getDb();
   if (!db) return undefined;
+  await ensureEstoqueItensTable();
   const r = await db
     .select()
     .from(estoqueItens)
     .where(and(eq(estoqueItens.projetoId, projetoId), eq(estoqueItens.id, id)))
     .limit(1);
   return r[0];
+}
+
+export async function aplicarConsumoDiarioEstoque(projetoId: number, hoje = new Date()) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await getAllEstoqueItens(projetoId);
+  const consumoAplicadoAte = new Date(hoje);
+  consumoAplicadoAte.setHours(0, 0, 0, 0);
+  let atualizados = 0;
+  let consumoTotal = 0;
+
+  for (const row of rows) {
+    const calculado = calcularConsumoDiarioEstoque(row, hoje);
+    if (calculado.diasAplicados <= 0) continue;
+    await db
+      .update(estoqueItens)
+      .set({
+        quantidadeTotal: calculado.quantidadeAtualizada,
+        consumoAplicadoAte,
+      })
+      .where(and(eq(estoqueItens.projetoId, projetoId), eq(estoqueItens.id, row.id)));
+    atualizados++;
+    consumoTotal += calculado.consumoAplicado;
+  }
+
+  return { atualizados, consumoTotal, consumoAplicadoAte };
 }
 
 const INSERT_ESTOQUE_ITENS = `INSERT INTO estoque_itens (
@@ -3211,6 +3240,7 @@ export async function loadFullFazendaData(projetoId: number) {
     allTarefas,
     allRegistrosColheita,
     allPlanosPlantio,
+    allEstoqueItens,
   ] = await Promise.all([
     db.select().from(torres).where(eq(torres.projetoId, projetoId)),
     omitCaixaAguaModulo
@@ -3236,6 +3266,7 @@ export async function loadFullFazendaData(projetoId: number) {
     db.select().from(tarefas).where(eq(tarefas.projetoId, projetoId)),
     db.select().from(registrosColheita).where(eq(registrosColheita.projetoId, projetoId)),
     db.select().from(planosPlantio).where(eq(planosPlantio.projetoId, projetoId)),
+    db.select().from(estoqueItens).where(eq(estoqueItens.projetoId, projetoId)),
   ]);
 
   const torresOut = omitCaixaAguaModulo
@@ -3274,6 +3305,7 @@ export async function loadFullFazendaData(projetoId: number) {
     tarefas: allTarefas,
     registrosColheita: allRegistrosColheita,
     planosPlantio: allPlanosPlantio,
+    estoqueItens: allEstoqueItens,
   };
 }
 
@@ -4006,6 +4038,7 @@ export async function ensureEstoqueItensTable(): Promise<void> {
   \`precoUnitario\` float,
   \`fornecedor\` varchar(256),
   \`observacoes\` text,
+  \`consumoAplicadoAte\` timestamp NULL,
   \`createdAt\` timestamp NOT NULL DEFAULT (now()),
   \`updatedAt\` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT \`estoque_itens_id\` PRIMARY KEY(\`id\`)
@@ -4022,7 +4055,22 @@ export async function ensureEstoqueItensTable(): Promise<void> {
   try {
     await db.execute(sql.raw("ALTER TABLE `estoque_itens` ADD COLUMN `projetoId` int NOT NULL DEFAULT 1"));
   } catch (err: unknown) {
-    if (isMysqlDuplicateColumnError(err)) return;
+    if (!isMysqlDuplicateColumnError(err)) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!/Duplicate column name/i.test(msg)) {
+        console.warn("[Database] ensureEstoqueItensTable projetoId:", msg.slice(0, 160));
+      }
+    }
+  }
+  try {
+    await db.execute(sql.raw("ALTER TABLE `estoque_itens` ADD COLUMN `consumoAplicadoAte` timestamp NULL AFTER `observacoes`"));
+  } catch (err: unknown) {
+    if (!isMysqlDuplicateColumnError(err)) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!/Duplicate column name/i.test(msg)) {
+        console.warn("[Database] ensureEstoqueItensTable consumoAplicadoAte:", msg.slice(0, 160));
+      }
+    }
   }
 }
 

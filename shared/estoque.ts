@@ -1,4 +1,4 @@
-import { addDays, startOfDay } from "date-fns";
+import { addDays, differenceInCalendarDays, startOfDay } from "date-fns";
 
 export const CATEGORIAS_ESTOQUE = [
   "sementes",
@@ -82,6 +82,8 @@ export type ProjecaoEstoque = {
   diasAteEsgotar: number | null;
   dataEsgotamento: Date | null;
   dataCompraSugerida: Date | null;
+  sugestaoCompraQuantidade: number;
+  estoqueAlvoQuantidade: number | null;
   status: StatusProjecaoEstoque;
 };
 
@@ -95,11 +97,17 @@ export function projetarEstoque(row: {
 }): ProjecaoEstoque {
   const { quantidadeTotal, usoPorEvento, frequenciaDias, prazoEntregaDias, diasMargemCompra, nivelMinimo } = row;
   if (usoPorEvento <= 0 || frequenciaDias <= 0) {
+    const sugestaoSemUso =
+      nivelMinimo != null && nivelMinimo > 0 && quantidadeTotal < nivelMinimo
+        ? Math.max(0, nivelMinimo - Math.max(0, quantidadeTotal))
+        : 0;
     return {
       consumoMedioDiario: null,
       diasAteEsgotar: null,
       dataEsgotamento: null,
       dataCompraSugerida: null,
+      sugestaoCompraQuantidade: sugestaoSemUso,
+      estoqueAlvoQuantidade: nivelMinimo != null && nivelMinimo > 0 ? nivelMinimo : null,
       status: "sem_uso",
     };
   }
@@ -108,6 +116,12 @@ export function projetarEstoque(row: {
   const hoje = startOfDay(new Date());
   const dataEsgotamento = addDays(hoje, Math.max(0, Math.floor(dias)));
   const dataCompraSugerida = addDays(dataEsgotamento, -(prazoEntregaDias + diasMargemCompra));
+  const diasCoberturaCompra = Math.max(1, prazoEntregaDias + diasMargemCompra + 30);
+  const estoqueAlvoQuantidade = Math.max(
+    nivelMinimo != null && nivelMinimo > 0 ? nivelMinimo : 0,
+    consumoMedioDiario * diasCoberturaCompra,
+  );
+  const sugestaoCompraQuantidade = Math.max(0, estoqueAlvoQuantidade - Math.max(0, quantidadeTotal));
 
   let status: StatusProjecaoEstoque = "ok";
   const compra = startOfDay(dataCompraSugerida);
@@ -123,7 +137,44 @@ export function projetarEstoque(row: {
     diasAteEsgotar: dias,
     dataEsgotamento,
     dataCompraSugerida,
+    sugestaoCompraQuantidade,
+    estoqueAlvoQuantidade,
     status,
+  };
+}
+
+export function diasConsumoEstoqueAtrasado(row: {
+  createdAt?: Date | string | null;
+  consumoAplicadoAte?: Date | string | null;
+}, hoje = new Date()): number {
+  const inicioRaw = row.consumoAplicadoAte ?? row.createdAt;
+  if (!inicioRaw) return 0;
+  const inicio = startOfDay(new Date(inicioRaw));
+  const fim = startOfDay(hoje);
+  const dias = differenceInCalendarDays(fim, inicio);
+  return Number.isFinite(dias) ? Math.max(0, dias) : 0;
+}
+
+export function aplicarConsumoDiarioEstoque(row: {
+  quantidadeTotal: number;
+  usoPorEvento: number;
+  frequenciaDias: number;
+  createdAt?: Date | string | null;
+  consumoAplicadoAte?: Date | string | null;
+}, hoje = new Date()): {
+  diasAplicados: number;
+  consumoAplicado: number;
+  quantidadeAtualizada: number;
+  consumoAplicadoAte: Date;
+} {
+  const consumo = consumoMedioDiario(row.usoPorEvento, row.frequenciaDias) ?? 0;
+  const diasAplicados = consumo > 0 ? diasConsumoEstoqueAtrasado(row, hoje) : 0;
+  const consumoAplicado = diasAplicados * consumo;
+  return {
+    diasAplicados,
+    consumoAplicado,
+    quantidadeAtualizada: Math.max(0, row.quantidadeTotal - consumoAplicado),
+    consumoAplicadoAte: startOfDay(hoje),
   };
 }
 

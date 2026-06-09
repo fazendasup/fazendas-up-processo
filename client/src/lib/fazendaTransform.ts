@@ -20,6 +20,7 @@ import type {
   RegistroTransplantio,
   Manutencao,
   CicloAplicacao,
+  EstoqueBackupItem,
 } from "@/lib/types";
 import { FASES_CONFIG } from "@/lib/types";
 import { compareTorresPorExibicao } from "@/lib/utils";
@@ -324,6 +325,25 @@ export function transformFazendaLoadAllResponse(raw: unknown): FazendaData {
     ativo: c.ativo,
   }));
 
+  const estoqueItens: EstoqueBackupItem[] = ((r.estoqueItens as any[]) || []).map((e: any) => ({
+    id: Number(e.id),
+    categoria: String(e.categoria || ""),
+    nome: String(e.nome || ""),
+    quantidadeTotal: Number(e.quantidadeTotal ?? 0),
+    unidadeTipo: String(e.unidadeTipo || "unidade"),
+    usoPorEvento: Number(e.usoPorEvento ?? 0),
+    frequenciaDias: Number(e.frequenciaDias ?? 1),
+    prazoEntregaDias: Number(e.prazoEntregaDias ?? 7),
+    diasMargemCompra: Number(e.diasMargemCompra ?? 7),
+    nivelMinimo: e.nivelMinimo != null ? Number(e.nivelMinimo) : null,
+    precoUnitario: e.precoUnitario != null ? Number(e.precoUnitario) : null,
+    fornecedor: e.fornecedor ?? null,
+    observacoes: e.observacoes ?? null,
+    consumoAplicadoAte: toDateStr(e.consumoAplicadoAte),
+    createdAt: toDateStr(e.createdAt),
+    updatedAt: toDateStr(e.updatedAt),
+  }));
+
   return {
     projetoTipo: (r.projetoTipo as FazendaData["projetoTipo"]) ?? null,
     torres,
@@ -337,6 +357,7 @@ export function transformFazendaLoadAllResponse(raw: unknown): FazendaData {
     germinacao,
     transplantios,
     manutencoes,
+    estoqueItens,
   };
 }
 
@@ -353,4 +374,5 @@ export const EMPTY_FAZENDA_DATA: FazendaData = {
   germinacao: [],
   transplantios: [],
   manutencoes: [],
+  estoqueItens: [],
 };

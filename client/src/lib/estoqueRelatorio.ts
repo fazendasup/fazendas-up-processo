@@ -20,6 +20,8 @@ export type LinhaEstoqueExport = {
   status: string;
   valorLinha: number;
   consumoMedioDiario: number | null;
+  sugestaoCompraQuantidade?: number;
+  valorCompraSugerida?: number | null;
 };
 
 function csvCell(v: string | number | null | undefined): string {
@@ -43,6 +45,8 @@ const CSV_HEADERS = [
   "Fornecedor",
   "Dias até esgotar",
   "Data compra sugerida",
+  "Quantidade sugerida compra",
+  "Valor compra sugerida (BRL)",
   "Data esgotamento",
   "Status",
   "Valor linha (BRL)",
@@ -68,6 +72,8 @@ export function linhasParaCsv(rows: LinhaEstoqueExport[]): string {
         csvCell(r.fornecedor),
         csvCell(r.diasAteEsgotar != null ? Math.round(r.diasAteEsgotar) : ""),
         csvCell(r.dataCompraSugeridaIso),
+        csvCell(r.sugestaoCompraQuantidade ?? 0),
+        csvCell(r.valorCompraSugerida),
         csvCell(r.dataEsgotamentoIso),
         csvCell(r.status),
         csvCell(r.valorLinha),
@@ -147,15 +153,26 @@ th{background:#f3f3f3;font-size:10px;text-transform:uppercase}
 @media print{ body{margin:8px} }
 </style></head><body>`;
   const bodyTop = `<h1>${esc(opts.titulo)}</h1><div class="meta">${esc(opts.geradoEm)}${opts.subtitulo ? ` · ${esc(opts.subtitulo)}` : ""}</div><table><thead><tr>
-<th>Categoria</th><th>Item</th><th class="num">Qtd</th><th>Un</th><th class="num">Mín.</th><th class="num">Dias cob.</th><th>Compra sug.</th><th>Esgot.</th><th class="num">Valor</th><th>Status</th><th>Fornecedor</th>
+<th>Categoria</th><th>Item</th><th class="num">Saldo</th><th>Un</th><th class="num">Mín.</th><th class="num">Dias cob.</th><th>Compra sug.</th><th>Esgot.</th><th class="num">Valor</th><th>Status</th><th>Fornecedor</th>
 </tr></thead><tbody>`;
   const bodyRows = rows
     .map((r) => {
       const dias = r.diasAteEsgotar != null ? String(Math.round(r.diasAteEsgotar)) : "—";
       const min = r.nivelMinimo != null ? String(r.nivelMinimo) : "—";
+      const compraSug =
+        r.dataCompraSugeridaIso || (r.sugestaoCompraQuantidade && r.sugestaoCompraQuantidade > 0)
+          ? [
+              r.dataCompraSugeridaIso ?? "",
+              r.sugestaoCompraQuantidade && r.sugestaoCompraQuantidade > 0
+                ? `${r.sugestaoCompraQuantidade} ${r.unidadeTipo}`
+                : "",
+            ]
+              .filter(Boolean)
+              .join(" · ")
+          : "—";
       return `<tr>
 <td>${esc(r.categoria)}</td><td>${esc(r.nome)}</td><td class="num">${esc(String(r.quantidadeTotal))}</td><td>${esc(r.unidadeTipo)}</td>
-<td class="num">${esc(min)}</td><td class="num">${esc(dias)}</td><td>${esc(r.dataCompraSugeridaIso ?? "—")}</td><td>${esc(r.dataEsgotamentoIso ?? "—")}</td>
+<td class="num">${esc(min)}</td><td class="num">${esc(dias)}</td><td>${esc(compraSug)}</td><td>${esc(r.dataEsgotamentoIso ?? "—")}</td>
 <td class="num">${esc(String(r.valorLinha.toFixed(2)))}</td><td>${esc(r.status)}</td><td>${esc(r.fornecedor ?? "—")}</td>
 </tr>`;
     })
