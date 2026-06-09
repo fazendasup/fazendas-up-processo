@@ -71,9 +71,11 @@ export function Entregador() {
 
   const rota = roteiro.data?.rota ?? null;
   const paradaAtual =
-    rota?.paradas.find((p) => p.status === "EM_ROTA") ??
-    rota?.paradas.find((p) => p.status === "PENDENTE") ??
-    null;
+    rota?.status === "EM_ROTA"
+      ? (rota.paradas.find((p) => p.status === "EM_ROTA") ??
+        rota.paradas.find((p) => p.status === "PENDENTE") ??
+        null)
+      : null;
   const enviarLocalizacaoAtual = () => {
     if (!rota || rota.status !== "EM_ROTA" || !rota.compartilhamentoAtivo || !navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
@@ -207,7 +209,21 @@ export function Entregador() {
         </Card>
       )}
 
-      {rota && rota.status !== "EM_ROTA" ? (
+      {rota?.status === "CONCLUIDA" ? (
+        <Card className="border-emerald-200 bg-emerald-50/70 dark:border-emerald-900 dark:bg-emerald-950/30">
+          <CardContent className="flex items-start gap-3 pt-6 text-sm">
+            <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-600" />
+            <div>
+              <p className="font-semibold text-emerald-800 dark:text-emerald-200">Rota concluída</p>
+              <p className="mt-1 text-muted-foreground">
+                Todas as entregas desta rota foram finalizadas. O compartilhamento de localização foi encerrado.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {rota?.status === "PLANEJADA" ? (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Iniciar rota</CardTitle>

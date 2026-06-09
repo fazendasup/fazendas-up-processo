@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import {
   ArrowDown,
   ArrowUp,
+  CheckCircle2,
   Copy,
   MapPin,
   Navigation,
@@ -139,6 +140,7 @@ export function Entregas() {
   const rota = roteiro.data?.rota ?? null;
   const planejadas = roteiro.data?.planejadas ?? [];
   const paradas = rota?.paradas ?? [];
+  const rotaEditavel = rota?.status === "PLANEJADA";
   const rotaMapsUrl = linkGoogleMapsRota(paradas);
   const clientesProgramadosDisponiveis = useMemo(() => {
     const idsNaRota = new Set(paradas.map((p) => p.contaAzulCustomerId));
@@ -263,6 +265,12 @@ export function Entregas() {
                     GPS {new Date(rota.localizacao.atualizadaEm ?? "").toLocaleTimeString("pt-BR")}
                   </Badge>
                 ) : null}
+                {rota.status === "CONCLUIDA" ? (
+                  <span className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Rota finalizada
+                  </span>
+                ) : null}
               </div>
             ) : null}
 
@@ -302,7 +310,7 @@ export function Entregas() {
                       <Button
                         size="icon-sm"
                         variant="outline"
-                        disabled={index === 0 || salvarOrdem.isPending || rota?.status === "EM_ROTA"}
+                        disabled={index === 0 || salvarOrdem.isPending || !rotaEditavel}
                         onClick={() => moverParada(index, -1)}
                       >
                         <ArrowUp className="h-4 w-4" />
@@ -310,9 +318,7 @@ export function Entregas() {
                       <Button
                         size="icon-sm"
                         variant="outline"
-                        disabled={
-                          index === paradas.length - 1 || salvarOrdem.isPending || rota?.status === "EM_ROTA"
-                        }
+                        disabled={index === paradas.length - 1 || salvarOrdem.isPending || !rotaEditavel}
                         onClick={() => moverParada(index, 1)}
                       >
                         <ArrowDown className="h-4 w-4" />
@@ -336,7 +342,7 @@ export function Entregas() {
                   <Button
                     size="sm"
                     variant="destructive"
-                    disabled={removerParada.isPending || rota?.status === "EM_ROTA"}
+                    disabled={removerParada.isPending || !rotaEditavel}
                     onClick={() => removerParada.mutate({ paradaId: parada.id })}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -385,7 +391,7 @@ export function Entregas() {
                     value={nomeRota}
                     onChange={(e) => setNomeRota(e.target.value)}
                     placeholder="Ex.: Rota segunda-feira"
-                    disabled={rota.status === "EM_ROTA"}
+                    disabled={!rotaEditavel}
                   />
                 </div>
                 <div className="space-y-2">
@@ -395,6 +401,7 @@ export function Entregas() {
                     className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={entregadorId || rota.entregadorId || ""}
                     onChange={(e) => setEntregadorId(e.target.value)}
+                    disabled={!rotaEditavel}
                   >
                     <option value="">Selecionar entregador</option>
                     {(entregadores.data ?? []).map((u) => (
@@ -407,7 +414,7 @@ export function Entregas() {
                 <Button
                   className="w-full"
                   variant="secondary"
-                  disabled={atribuir.isPending || atualizarRota.isPending}
+                  disabled={!rotaEditavel || atribuir.isPending || atualizarRota.isPending}
                   onClick={() =>
                     atualizarRota.mutate({
                       rotaId: rota.id,
@@ -422,7 +429,7 @@ export function Entregas() {
                 <Button
                   className="w-full"
                   variant="destructive"
-                  disabled={excluirRota.isPending || rota.status === "EM_ROTA"}
+                  disabled={!rotaEditavel || excluirRota.isPending}
                   onClick={() => {
                     if (window.confirm("Excluir esta rota e todas as paradas?")) {
                       excluirRota.mutate({ rotaId: rota.id });
@@ -449,14 +456,14 @@ export function Entregas() {
                     value={buscaCliente}
                     onChange={(e) => setBuscaCliente(e.target.value)}
                     placeholder="Nome do cliente com entrega no dia"
-                    disabled={rota.status === "EM_ROTA"}
+                    disabled={!rotaEditavel}
                   />
                 </div>
                 <select
                   className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   value={clienteManualId}
                   onChange={(e) => setClienteManualId(e.target.value)}
-                  disabled={rota.status === "EM_ROTA"}
+                  disabled={!rotaEditavel}
                 >
                   <option value="">Selecionar cliente</option>
                   {clientesProgramadosDisponiveis.map((cliente) => (
@@ -472,7 +479,7 @@ export function Entregas() {
                 ) : null}
                 <Button
                   className="w-full"
-                  disabled={!clienteManualId || adicionarParada.isPending || rota.status === "EM_ROTA"}
+                  disabled={!clienteManualId || adicionarParada.isPending || !rotaEditavel}
                   onClick={() =>
                     adicionarParada.mutate({
                       rotaId: rota.id,
@@ -483,9 +490,9 @@ export function Entregas() {
                   <Plus className="h-4 w-4" />
                   Adicionar à rota
                 </Button>
-                {rota.status === "EM_ROTA" ? (
+                {!rotaEditavel ? (
                   <p className="text-xs text-muted-foreground">
-                    Para editar paradas, encerre a rota em andamento primeiro.
+                    Rotas em andamento ou concluídas ficam fechadas para edição.
                   </p>
                 ) : null}
               </CardContent>
@@ -631,7 +638,11 @@ function LiveRouteMap({ rota }: { rota: RoteiroRota | null }) {
           <span className="rounded-full bg-emerald-600 px-2 py-1 font-semibold text-white">Entregue</span>
           <span className="rounded-full bg-rose-600 px-2 py-1 font-semibold text-white">Problema</span>
         </div>
-        {rota?.localizacao ? (
+        {rota?.status === "CONCLUIDA" ? (
+          <p className="text-sm text-muted-foreground">
+            Rota concluída. O compartilhamento de localização foi encerrado.
+          </p>
+        ) : rota?.localizacao ? (
           <p className="text-sm text-muted-foreground">
             Localização do entregador atualizada às{" "}
             {rota.localizacao.atualizadaEm

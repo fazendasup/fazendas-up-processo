@@ -625,11 +625,20 @@ export const entregasRouter = router({
         include: { paradas: { orderBy: { ordem: "asc" } } },
       });
       if (!rota) throw new TRPCError({ code: "NOT_FOUND", message: "Rota não encontrada." });
+      if (rota.status === "CONCLUIDA") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Esta rota já foi concluída." });
+      }
+      if (rota.status === "EM_ROTA") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Esta rota já está em andamento." });
+      }
       if (rota.paradas.length === 0) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "A rota não possui paradas." });
       }
 
       const primeiraPendente = rota.paradas.find((p) => p.status === "PENDENTE");
+      if (!primeiraPendente) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "A rota não possui paradas pendentes." });
+      }
       await ctx.prisma!.$transaction(async (tx) => {
         await tx.rotaEntrega.update({
           where: { id: rota.id },
