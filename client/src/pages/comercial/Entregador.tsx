@@ -109,10 +109,11 @@ export function Entregador() {
   const [atualizandoStatus, setAtualizandoStatus] = useState(false);
   const [atualizandoRoteiro, setAtualizandoRoteiro] = useState(false);
   const [localizacaoAtual, setLocalizacaoAtual] = useState<LocalizacaoEntrega | null>(null);
+  const localizacaoAtualRef = useRef<LocalizacaoEntrega | null>(null);
 
   const roteiro = trpc.comercial.entregas.roteiro.useQuery(
     { dia: diaDate, rotaId: rotaId ?? undefined },
-    { refetchInterval: 15000 },
+    { refetchInterval: false },
   );
   const iniciar = trpc.comercial.entregas.iniciarRota.useMutation({
     onSuccess: async () => {
@@ -140,6 +141,7 @@ export function Entregador() {
   const rotas = roteiro.data?.rotas ?? [];
   const rotaRef = useRef(rota);
   rotaRef.current = rota;
+  localizacaoAtualRef.current = localizacaoAtual;
   const paradaAtual =
     rota?.status === "EM_ROTA"
       ? (rota.paradas.find((p) => p.status === "EM_ROTA") ??
@@ -161,14 +163,20 @@ export function Entregador() {
   const pullDistance = useMobilePullToRefresh(atualizarRoteiro, atualizandoRoteiro);
 
   const registrarLocalizacao = useCallback(
-    (rotaIdAtual: string, coords: GeolocationCoordinates) => {
+    (
+      rotaIdAtual: string,
+      coords: GeolocationCoordinates,
+      opcoes: { atualizarMapa?: boolean } = {},
+    ) => {
       gpsErroAvisadoRef.current = false;
       const localizacao = {
         latitude: coords.latitude,
         longitude: coords.longitude,
         precisaoMetros: coords.accuracy,
       };
-      setLocalizacaoAtual(localizacao);
+      if (opcoes.atualizarMapa) {
+        setLocalizacaoAtual(localizacao);
+      }
       atualizarLocalizacao.mutate({
         rotaId: rotaIdAtual,
         latitude: coords.latitude,
@@ -189,7 +197,7 @@ export function Entregador() {
     if (!rota || rota.status !== "EM_ROTA" || !rota.compartilhamentoAtivo || !navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        registrarLocalizacao(rota.id, pos.coords);
+        registrarLocalizacao(rota.id, pos.coords, { atualizarMapa: true });
       },
       avisarErroGps,
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
@@ -206,7 +214,7 @@ export function Entregador() {
             longitude: pos.coords.longitude,
             precisaoMetros: pos.coords.accuracy,
           };
-          registrarLocalizacao(rota.id, pos.coords);
+          registrarLocalizacao(rota.id, pos.coords, { atualizarMapa: true });
           resolve(localizacao);
         },
         () => {
@@ -250,7 +258,9 @@ export function Entregador() {
       const atual = rotaRef.current;
       if (!atual || atual.status !== "EM_ROTA" || !atual.compartilhamentoAtivo) return;
       if (document.visibilityState !== "visible") return;
-      registrarLocalizacao(atual.id, pos.coords);
+      registrarLocalizacao(atual.id, pos.coords, {
+        atualizarMapa: localizacaoAtualRef.current === null,
+      });
     };
 
     const enviarPeriodicamente = () => {
@@ -267,11 +277,6 @@ export function Entregador() {
 
     enviarPeriodicamente();
     const intervalId = window.setInterval(enviarPeriodicamente, 60_000);
-    const watchId = navigator.geolocation.watchPosition(registrarSeAtivo, avisarErroGps, {
-      enableHighAccuracy: true,
-      maximumAge: 5000,
-      timeout: 20000,
-    });
 
     const onVisibility = () => {
       if (document.visibilityState === "visible") {
@@ -282,7 +287,6 @@ export function Entregador() {
 
     return () => {
       window.clearInterval(intervalId);
-      navigator.geolocation.clearWatch(watchId);
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [avisarErroGps, registrarLocalizacao, rota?.id, rota?.status, rota?.compartilhamentoAtivo]);
