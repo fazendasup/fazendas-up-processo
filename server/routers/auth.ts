@@ -9,6 +9,13 @@ import * as db from "../db";
 import type { InsertPlanoPlantio } from "../../drizzle/schema";
 import bcrypt from "bcryptjs";
 
+function normalizeLoginEmail(value: unknown) {
+  return String(value ?? "")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/\s+/g, "")
+    .toLowerCase();
+}
+
 export const authRouter = router({
     me: publicProcedure.query(opts => {
       if (!opts.ctx.user) return null;
@@ -17,7 +24,7 @@ export const authRouter = router({
     }),
     login: publicProcedure
       .input(z.object({
-        email: z.string().email(),
+        email: z.preprocess(normalizeLoginEmail, z.string().email("Email inválido")),
         password: z.string().min(1),
       }))
       .mutation(async ({ input, ctx }) => {
@@ -32,7 +39,7 @@ export const authRouter = router({
 
         let user: Awaited<ReturnType<typeof db.getUserByEmail>>;
         try {
-          user = await db.getUserByEmail(input.email.toLowerCase().trim());
+          user = await db.getUserByEmail(input.email);
         } catch (e) {
           const connRefused = (() => {
             let cur: unknown = e;
@@ -52,7 +59,7 @@ export const authRouter = router({
           });
         }
 
-        const emailNorm = input.email.toLowerCase().trim();
+        const emailNorm = input.email;
         if (process.env.AUTH_DEBUG_LOGIN === "1") {
           console.log("[Auth] login debug", {
             emailNorm,

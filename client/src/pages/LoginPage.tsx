@@ -9,6 +9,33 @@ import { Loader2, Sprout, AlertCircle } from 'lucide-react';
 import { Link } from 'wouter';
 import { homeForUserRole } from '@/lib/accessPolicy';
 
+function normalizeLoginEmail(value: string) {
+  return value
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/\s+/g, "")
+    .toLowerCase();
+}
+
+function isEmailValido(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function loginErrorMessage(message: string | undefined) {
+  const raw = message?.trim();
+  if (!raw) return 'Erro ao fazer login';
+  const lower = raw.toLowerCase();
+  if (
+    lower.includes('expected pattern') ||
+    lower.includes('invalid email') ||
+    lower.includes('invalid_string') ||
+    lower.includes('invalid_format') ||
+    lower.includes('zod')
+  ) {
+    return 'Email inválido. Confira se foi digitado corretamente.';
+  }
+  return raw;
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,18 +47,24 @@ export default function LoginPage() {
       window.location.href = homeForUserRole(data.user.role);
     },
     onError: (err) => {
-      setError(err.message || 'Erro ao fazer login');
+      setError(loginErrorMessage(err.message));
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!email.trim() || !password.trim()) {
+    const emailNormalizado = normalizeLoginEmail(email);
+    if (!emailNormalizado || !password.trim()) {
       setError('Preencha email e senha');
       return;
     }
-    loginMutation.mutate({ email: email.trim(), password });
+    if (!isEmailValido(emailNormalizado)) {
+      setError('Email inválido. Confira se foi digitado corretamente.');
+      return;
+    }
+    setEmail(emailNormalizado);
+    loginMutation.mutate({ email: emailNormalizado, password });
   };
 
   return (
@@ -64,8 +97,12 @@ export default function LoginPage() {
                   type="email"
                   placeholder="seu@email.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(normalizeLoginEmail(e.target.value))}
                   autoComplete="email"
+                  inputMode="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   autoFocus
                   disabled={loginMutation.isPending}
                 />
