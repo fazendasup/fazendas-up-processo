@@ -34,6 +34,7 @@ import {
   linkGoogleMapsRota,
   trackingUrlAbsoluto,
 } from "@/lib/entregas";
+import { buscarRotaOsrm, geocodificarEndereco } from "@/lib/geocoding";
 import { cn } from "@/lib/utils";
 
 type RoteiroRota = {
@@ -593,17 +594,19 @@ function LiveRouteMap({
 }) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
+  const polylinesRef = useRef<google.maps.Polyline[]>([]);
   const geocodeCacheRef = useRef(new Map<string, google.maps.LatLngLiteral>());
 
   useEffect(() => {
     if (!map || !window.google) return;
 
     let cancelled = false;
-    const geocoder = new window.google.maps.Geocoder();
 
-    const clearMarkers = () => {
+    const clearOverlays = () => {
       for (const marker of markersRef.current) marker.setMap(null);
       markersRef.current = [];
+      for (const polyline of polylinesRef.current) polyline.setMap(null);
+      polylinesRef.current = [];
     };
 
     const addMarker = (position: google.maps.LatLngLiteral, title: string, color: string) => {
@@ -612,8 +615,34 @@ function LiveRouteMap({
       return marker;
     };
 
+    const resolverEndereco = async (endereco: string) => {
+      const cacheKey = endereco.trim();
+      const cached = geocodeCacheRef.current.get(cacheKey);
+      if (cached) return cached;
+
+      const geocoded = await geocodificarEndereco(cacheKey);
+      if (geocoded) {
+        geocodeCacheRef.current.set(cacheKey, geocoded);
+        return geocoded;
+      }
+
+      return new Promise<google.maps.LatLngLiteral | null>((resolve) => {
+        const geocoder = new window.google!.maps.Geocoder();
+        geocoder.geocode({ address: cacheKey }, (results, status) => {
+          if (status !== "OK" || !results?.[0]?.geometry.location) {
+            resolve(null);
+            return;
+          }
+          const location = results[0].geometry.location;
+          const pos = { lat: location.lat(), lng: location.lng() };
+          geocodeCacheRef.current.set(cacheKey, pos);
+          resolve(pos);
+        });
+      });
+    };
+
     const run = async () => {
-      clearMarkers();
+      clearOverlays();
       const bounds = new window.google!.maps.LatLngBounds();
       let hasBounds = false;
 
@@ -621,12 +650,14 @@ function LiveRouteMap({
         const rota = rotas[rotaIndex]!;
         const cor = CORES_ENTREGADOR[rotaIndex % CORES_ENTREGADOR.length]!;
         const destaque = rota.id === rotaSelecionadaId;
+        const pontosRota: Array<{ lat: number; lng: number }> = [];
 
         if (rota.localizacao) {
           const pos = {
             lat: rota.localizacao.latitude,
             lng: rota.localizacao.longitude,
           };
+          pontosRota.push(pos);
           addMarker(
             pos,
             rota.entregadorNome ? `Entregador: ${rota.entregadorNome}` : "Localização do entregador",
@@ -638,22 +669,10 @@ function LiveRouteMap({
 
         for (const parada of rota.paradas) {
           if (!parada.endereco?.trim()) continue;
-          const cacheKey = parada.endereco.trim();
-          let pos = geocodeCacheRef.current.get(cacheKey);
-          if (!pos) {
-            pos = await new Promise<google.maps.LatLngLiteral | null>((resolve) => {
-              geocoder.geocode({ address: cacheKey }, (results, status) => {
-                if (status !== "OK" || !results?.[0]?.geometry.location) {
-                  resolve(null);
-                  return;
-                }
-                const location = results[0].geometry.location;
-                resolve({ lat: location.lat(), lng: location.lng() });
-              });
-            }) ?? undefined;
-            if (pos) geocodeCacheRef.current.set(cacheKey, pos);
-          }
+          const pos = await resolverEndereco(parada.endereco);
           if (cancelled || !pos) continue;
+
+          pontosRota.push(pos);
 
           const statusColor =
             parada.status === "ENTREGUE"
@@ -671,6 +690,25 @@ function LiveRouteMap({
           bounds.extend(pos);
           hasBounds = true;
         }
+
+        if (pontosRota.length >= 2) {
+          const path = await buscarRotaOsrm(pontosRota);
+          if (cancelled) return;
+
+          const routePath =
+            path.length > 0
+              ? path
+              : pontosRota;
+
+          const polyline = new window.google.maps.Polyline({
+            path: routePath,
+            map,
+            strokeColor: cor,
+            strokeOpacity: destaque ? 0.9 : 0.45,
+            strokeWeight: destaque ? 6 : 4,
+          });
+          polylinesRef.current.push(polyline);
+        }
       }
 
       if (!cancelled && hasBounds) {
@@ -682,7 +720,7 @@ function LiveRouteMap({
 
     return () => {
       cancelled = true;
-      clearMarkers();
+      clearOverlays();
     };
   }, [map, rotas, rotaSelecionadaId]);
 

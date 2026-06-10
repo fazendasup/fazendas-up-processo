@@ -124,6 +124,25 @@ async function geocodeVariante(query: string): Promise<LatLng | null> {
   return null;
 }
 
+export async function buscarRotaOsrm(pontos: LatLng[]): Promise<LatLng[]> {
+  if (pontos.length < 2) return [];
+
+  try {
+    const coords = pontos.map((ponto) => `${ponto.lng},${ponto.lat}`).join(";");
+    const response = await withTimeout(
+      `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`,
+    );
+    if (!response.ok) return [];
+    const data = (await response.json()) as {
+      routes?: Array<{ geometry?: { coordinates?: [number, number][] } }>;
+    };
+    const coordinates = data.routes?.[0]?.geometry?.coordinates ?? [];
+    return coordinates.map(([lng, lat]) => ({ lat, lng }));
+  } catch {
+    return [];
+  }
+}
+
 export async function geocodificarEndereco(endereco: string): Promise<LatLng | null> {
   const cacheKey = endereco.trim().toLowerCase();
   if (geocodeCache.has(cacheKey)) {
