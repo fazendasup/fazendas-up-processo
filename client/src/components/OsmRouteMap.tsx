@@ -118,6 +118,13 @@ export function OsmRouteMap({
             .addTo(map)
             .bindTooltip("Você", { permanent: false });
 
+          if (navegando) {
+            map.flyTo([origem.lat, origem.lng], 18, {
+              animate: true,
+              duration: 0.35,
+            });
+          }
+
           if (destinoPos) {
             const pontos = await buscarRota(origem, destinoPos);
             if (cancelado) return;
@@ -144,13 +151,6 @@ export function OsmRouteMap({
             if (!navegando) {
               map.setView([origem.lat, origem.lng], 15);
             }
-          }
-
-          if (navegando) {
-            map.flyTo([origem.lat, origem.lng], 18, {
-              animate: true,
-              duration: 0.8,
-            });
           }
         } else if (destinoPos) {
           rotaRef.current?.remove();

@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Maximize2,
   MapPin,
+  Navigation,
   Phone,
   RefreshCw,
   SkipForward,
@@ -24,6 +25,7 @@ import {
   diaOperacionalInicial,
   labelStatusParada,
   labelStatusRota,
+  linkGoogleMapsNavegacao,
   linkTelefone,
   linkWhatsapp,
 } from "@/lib/entregas";
@@ -37,6 +39,7 @@ type LocalizacaoEntrega = {
 
 const GPS_BACKGROUND_INTERVAL_MS = 60_000;
 const GPS_NAVIGATION_SEND_INTERVAL_MS = 2_000;
+const GPS_NAVIGATION_POLL_INTERVAL_MS = 2_000;
 
 type ScreenWakeLockSentinel = {
   release: () => Promise<void>;
@@ -362,31 +365,53 @@ export function Entregador() {
     if (!navigator.geolocation) return;
 
     ultimoEnvioNavegacaoRef.current = 0;
+    let solicitandoPosicao = false;
+
+    const processarPosicaoNavegacao = (pos: GeolocationPosition) => {
+      solicitandoPosicao = false;
+      if (document.visibilityState !== "visible") return;
+      const atual = rotaRef.current;
+      if (!atual || atual.status !== "EM_ROTA" || !atual.compartilhamentoAtivo) return;
+
+      gpsErroAvisadoRef.current = false;
+      setLocalizacaoAtual({
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        precisaoMetros: pos.coords.accuracy,
+      });
+
+      const agora = Date.now();
+      if (agora - ultimoEnvioNavegacaoRef.current >= GPS_NAVIGATION_SEND_INTERVAL_MS) {
+        ultimoEnvioNavegacaoRef.current = agora;
+        registrarLocalizacao(atual.id, pos.coords);
+      }
+    };
+
+    const solicitarPosicao = () => {
+      if (document.visibilityState !== "visible" || solicitandoPosicao) return;
+      solicitandoPosicao = true;
+      navigator.geolocation.getCurrentPosition(
+        processarPosicaoNavegacao,
+        () => {
+          solicitandoPosicao = false;
+          avisarErroGps();
+        },
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 },
+      );
+    };
 
     const watchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        if (document.visibilityState !== "visible") return;
-        const atual = rotaRef.current;
-        if (!atual || atual.status !== "EM_ROTA" || !atual.compartilhamentoAtivo) return;
-
-        gpsErroAvisadoRef.current = false;
-        setLocalizacaoAtual({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          precisaoMetros: pos.coords.accuracy,
-        });
-
-        const agora = Date.now();
-        if (agora - ultimoEnvioNavegacaoRef.current >= GPS_NAVIGATION_SEND_INTERVAL_MS) {
-          ultimoEnvioNavegacaoRef.current = agora;
-          registrarLocalizacao(atual.id, pos.coords);
-        }
-      },
+      processarPosicaoNavegacao,
       avisarErroGps,
       { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 },
     );
+    solicitarPosicao();
+    const intervalId = window.setInterval(solicitarPosicao, GPS_NAVIGATION_POLL_INTERVAL_MS);
 
-    return () => navigator.geolocation.clearWatch(watchId);
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+      window.clearInterval(intervalId);
+    };
   }, [avisarErroGps, navegacaoNoAppAtiva, registrarLocalizacao, rota?.id, rota?.status, rota?.compartilhamentoAtivo]);
 
   const telUrl = linkTelefone(paradaAtual?.telefoneWhatsapp);
@@ -686,6 +711,7 @@ function MobileDriverRouteMap({
 }) {
   const [navegando, setNavegando] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const navUrl = linkGoogleMapsNavegacao(destino, localizacaoAtual);
   useScreenWakeLock(navegando);
 
   const iniciarNavegacao = async () => {
@@ -760,6 +786,14 @@ function MobileDriverRouteMap({
       {navegando ? (
         <div className="space-y-2 rounded-xl border bg-card/95 p-3 text-xs text-muted-foreground shadow-sm">
           <p>GPS em tempo real ativo enquanto esta tela permanecer aberta. O app envia a posição a cada poucos segundos.</p>
+          {navUrl ? (
+            <Button className="h-10 w-full" variant="secondary" asChild>
+              <a href={navUrl} target="_blank" rel="noreferrer" onClick={onIniciarNavegacao}>
+                <Navigation className="h-4 w-4" />
+                Abrir no Google Maps (opcional)
+              </a>
+            </Button>
+          ) : null}
           <Button className="h-10 w-full" variant="outline" onClick={() => void sairNavegacao()}>
             Voltar para entregas
           </Button>
@@ -770,9 +804,17 @@ function MobileDriverRouteMap({
             <Maximize2 className="h-5 w-5" />
             Iniciar navegação no app
           </Button>
+          {navUrl ? (
+            <Button className="h-11 w-full" variant="outline" asChild>
+              <a href={navUrl} target="_blank" rel="noreferrer" onClick={onIniciarNavegacao}>
+                <Navigation className="h-4 w-4" />
+                Abrir no Google Maps (opcional)
+              </a>
+            </Button>
+          ) : null}
           <p className="text-xs text-muted-foreground">
             {localizacaoAtual
-              ? "GPS automático ativo. Inicie a navegação no app para enviar posição em tempo real."
+              ? "GPS automático ativo. Para rastreio em tempo real, mantenha a navegação no app aberta."
               : "Ao iniciar, o app pedirá sua posição e mostrará a rota automaticamente."}
           </p>
         </div>
