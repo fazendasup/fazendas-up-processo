@@ -11,16 +11,35 @@ type Localizacao = {
 };
 
 const MANAUS_CENTER: LatLng = { lat: -3.1190275, lng: -60.0217314 };
+const ROUTE_RECALC_MIN_INTERVAL_MS = 15_000;
+const ROUTE_RECALC_MIN_DISTANCE_METERS = 40;
+
+function distanciaMetros(a: LatLng, b: LatLng): number {
+  const earthRadiusMeters = 6_371_000;
+  const toRad = (value: number) => (value * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * earthRadiusMeters * Math.asin(Math.sqrt(h));
+}
 
 async function buscarRota(origem: LatLng, destino: LatLng): Promise<LatLng[]> {
-  const url = `https://router.project-osrm.org/route/v1/driving/${origem.lng},${origem.lat};${destino.lng},${destino.lat}?overview=full&geometries=geojson`;
-  const response = await fetch(url, { signal: AbortSignal.timeout(12_000) });
-  if (!response.ok) return [];
-  const data = (await response.json()) as {
-    routes?: Array<{ geometry?: { coordinates?: [number, number][] } }>;
-  };
-  const coordinates = data.routes?.[0]?.geometry?.coordinates ?? [];
-  return coordinates.map(([lng, lat]) => ({ lat, lng }));
+  try {
+    const url = `https://router.project-osrm.org/route/v1/driving/${origem.lng},${origem.lat};${destino.lng},${destino.lat}?overview=full&geometries=geojson`;
+    const response = await fetch(url, { signal: AbortSignal.timeout(8_000) });
+    if (!response.ok) return [];
+    const data = (await response.json()) as {
+      routes?: Array<{ geometry?: { coordinates?: [number, number][] } }>;
+    };
+    const coordinates = data.routes?.[0]?.geometry?.coordinates ?? [];
+    return coordinates.map(([lng, lat]) => ({ lat, lng }));
+  } catch {
+    return [];
+  }
 }
 
 export function OsmRouteMap({
@@ -40,6 +59,12 @@ export function OsmRouteMap({
   const marcadorOrigemRef = useRef<L.CircleMarker | null>(null);
   const marcadorDestinoRef = useRef<L.CircleMarker | null>(null);
   const destinoPosRef = useRef<LatLng | null>(null);
+  const destinoPromiseRef = useRef<Promise<LatLng | null> | null>(null);
+  const rotaEmAndamentoRef = useRef(false);
+  const rotaRequestIdRef = useRef(0);
+  const ultimaRotaOrigemRef = useRef<LatLng | null>(null);
+  const ultimaRotaDestinoRef = useRef<LatLng | null>(null);
+  const ultimaRotaMsRef = useRef(0);
   const [mapReady, setMapReady] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -57,6 +82,7 @@ export function OsmRouteMap({
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       maxZoom: 19,
     }).addTo(map);
+    map.setView([MANAUS_CENTER.lat, MANAUS_CENTER.lng], 12);
 
     setMapReady(true);
 
@@ -66,6 +92,8 @@ export function OsmRouteMap({
       rotaRef.current = null;
       marcadorOrigemRef.current = null;
       marcadorDestinoRef.current = null;
+      destinoPromiseRef.current = null;
+      rotaEmAndamentoRef.current = false;
       setMapReady(false);
     };
   }, []);
@@ -82,8 +110,34 @@ export function OsmRouteMap({
       setAviso(null);
 
       try {
+        const origem = localizacao ? { lat: localizacao.latitude, lng: localizacao.longitude } : null;
+
+        if (origem) {
+          marcadorOrigemRef.current?.remove();
+          marcadorOrigemRef.current = L.circleMarker([origem.lat, origem.lng], {
+            radius: navegando ? 13 : 10,
+            color: "#ffffff",
+            weight: navegando ? 4 : 2,
+            fillColor: "#059669",
+            fillOpacity: 1,
+          })
+            .addTo(map)
+            .bindTooltip("Você", { permanent: false });
+
+          if (navegando) {
+            map.flyTo([origem.lat, origem.lng], 18, {
+              animate: true,
+              duration: 0.25,
+            });
+          } else if (!destinoPosRef.current) {
+            map.setView([origem.lat, origem.lng], 15);
+          }
+          setCarregando(false);
+        }
+
         if (!destinoPosRef.current) {
-          destinoPosRef.current = await geocodificarEndereco(destino);
+          destinoPromiseRef.current ??= geocodificarEndereco(destino);
+          destinoPosRef.current = await destinoPromiseRef.current;
         }
         const destinoPos = destinoPosRef.current;
 
@@ -102,55 +156,60 @@ export function OsmRouteMap({
           })
             .addTo(map)
             .bindTooltip("Entrega", { permanent: false });
+          setCarregando(false);
         }
 
-        if (localizacao) {
-          const origem = { lat: localizacao.latitude, lng: localizacao.longitude };
-
-          marcadorOrigemRef.current?.remove();
-          marcadorOrigemRef.current = L.circleMarker([origem.lat, origem.lng], {
-            radius: navegando ? 13 : 10,
-            color: "#ffffff",
-            weight: navegando ? 4 : 2,
-            fillColor: "#059669",
-            fillOpacity: 1,
-          })
-            .addTo(map)
-            .bindTooltip("Você", { permanent: false });
-
-          if (navegando) {
-            map.flyTo([origem.lat, origem.lng], 18, {
-              animate: true,
-              duration: 0.35,
-            });
-          }
-
+        if (origem) {
           if (destinoPos) {
-            const pontos = await buscarRota(origem, destinoPos);
-            if (cancelado) return;
+            const agora = Date.now();
+            const mudouDestino =
+              !ultimaRotaDestinoRef.current || distanciaMetros(ultimaRotaDestinoRef.current, destinoPos) > 5;
+            const mudouOrigem =
+              !ultimaRotaOrigemRef.current ||
+              distanciaMetros(ultimaRotaOrigemRef.current, origem) >= ROUTE_RECALC_MIN_DISTANCE_METERS;
+            const passouIntervalo = agora - ultimaRotaMsRef.current >= ROUTE_RECALC_MIN_INTERVAL_MS;
+            const deveRecalcular = !rotaRef.current || mudouDestino || mudouOrigem || (!navegando && passouIntervalo);
 
-            rotaRef.current?.remove();
-            if (pontos.length > 0) {
-              rotaRef.current = L.polyline(
-                pontos.map((p) => [p.lat, p.lng] as [number, number]),
-                { color: "#059669", weight: 5, opacity: 0.9 },
-              ).addTo(map);
-              if (!navegando) {
-                map.fitBounds(rotaRef.current.getBounds(), { padding: [48, 48] });
+            if (deveRecalcular && !rotaEmAndamentoRef.current) {
+              rotaEmAndamentoRef.current = true;
+              const requestId = ++rotaRequestIdRef.current;
+              const pontos = await buscarRota(origem, destinoPos);
+              rotaEmAndamentoRef.current = false;
+              if (cancelado || requestId !== rotaRequestIdRef.current) return;
+
+              rotaRef.current?.remove();
+              if (pontos.length > 0) {
+                rotaRef.current = L.polyline(
+                  pontos.map((p) => [p.lat, p.lng] as [number, number]),
+                  { color: "#059669", weight: 5, opacity: 0.9 },
+                ).addTo(map);
+                ultimaRotaOrigemRef.current = origem;
+                ultimaRotaDestinoRef.current = destinoPos;
+                ultimaRotaMsRef.current = Date.now();
+                if (!navegando) {
+                  map.fitBounds(rotaRef.current.getBounds(), { padding: [48, 48] });
+                }
+              } else if (!rotaRef.current) {
+                rotaRef.current = L.polyline(
+                  [
+                    [origem.lat, origem.lng],
+                    [destinoPos.lat, destinoPos.lng],
+                  ],
+                  { color: "#059669", weight: 4, opacity: 0.55, dashArray: "8 8" },
+                ).addTo(map);
+                if (!navegando) {
+                  map.fitBounds(rotaRef.current.getBounds(), { padding: [48, 48] });
+                }
               }
-            } else {
-              if (!navegando) {
-                map.fitBounds(
-                  L.latLngBounds([origem.lat, origem.lng], [destinoPos.lat, destinoPos.lng]),
-                  { padding: [48, 48] },
-                );
-              }
+            } else if (!navegando && !rotaRef.current) {
+              map.fitBounds(
+                L.latLngBounds([origem.lat, origem.lng], [destinoPos.lat, destinoPos.lng]),
+                { padding: [48, 48] },
+              );
             }
-          } else {
+          } else if (!navegando) {
             rotaRef.current?.remove();
-            if (!navegando) {
-              map.setView([origem.lat, origem.lng], 15);
-            }
+            map.setView([origem.lat, origem.lng], 15);
           }
         } else if (destinoPos) {
           rotaRef.current?.remove();
@@ -179,6 +238,13 @@ export function OsmRouteMap({
 
   useEffect(() => {
     destinoPosRef.current = null;
+    destinoPromiseRef.current = null;
+    ultimaRotaOrigemRef.current = null;
+    ultimaRotaDestinoRef.current = null;
+    ultimaRotaMsRef.current = 0;
+    rotaRequestIdRef.current += 1;
+    rotaRef.current?.remove();
+    rotaRef.current = null;
   }, [destino]);
 
   useEffect(() => {
