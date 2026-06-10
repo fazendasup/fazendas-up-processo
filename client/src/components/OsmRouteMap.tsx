@@ -78,7 +78,7 @@ export function OsmRouteMap({
     let cancelado = false;
 
     const atualizar = async () => {
-      setCarregando(true);
+      setCarregando(!marcadorOrigemRef.current && !marcadorDestinoRef.current);
       setAviso(null);
 
       try {
@@ -109,9 +109,9 @@ export function OsmRouteMap({
 
           marcadorOrigemRef.current?.remove();
           marcadorOrigemRef.current = L.circleMarker([origem.lat, origem.lng], {
-            radius: 10,
+            radius: navegando ? 13 : 10,
             color: "#ffffff",
-            weight: 2,
+            weight: navegando ? 4 : 2,
             fillColor: "#059669",
             fillOpacity: 1,
           })
@@ -128,20 +128,29 @@ export function OsmRouteMap({
                 pontos.map((p) => [p.lat, p.lng] as [number, number]),
                 { color: "#059669", weight: 5, opacity: 0.9 },
               ).addTo(map);
-              map.fitBounds(rotaRef.current.getBounds(), { padding: [48, 48] });
+              if (!navegando) {
+                map.fitBounds(rotaRef.current.getBounds(), { padding: [48, 48] });
+              }
             } else {
-              map.fitBounds(
-                L.latLngBounds([origem.lat, origem.lng], [destinoPos.lat, destinoPos.lng]),
-                { padding: [48, 48] },
-              );
+              if (!navegando) {
+                map.fitBounds(
+                  L.latLngBounds([origem.lat, origem.lng], [destinoPos.lat, destinoPos.lng]),
+                  { padding: [48, 48] },
+                );
+              }
             }
           } else {
             rotaRef.current?.remove();
-            map.setView([origem.lat, origem.lng], 15);
+            if (!navegando) {
+              map.setView([origem.lat, origem.lng], 15);
+            }
           }
 
           if (navegando) {
-            map.setView([origem.lat, origem.lng], 16, { animate: true });
+            map.flyTo([origem.lat, origem.lng], 18, {
+              animate: true,
+              duration: 0.8,
+            });
           }
         } else if (destinoPos) {
           rotaRef.current?.remove();

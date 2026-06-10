@@ -35,6 +35,9 @@ type LocalizacaoEntrega = {
   precisaoMetros: number | null;
 };
 
+const GPS_BACKGROUND_INTERVAL_MS = 60_000;
+const GPS_NAVIGATION_SEND_INTERVAL_MS = 2_000;
+
 type ScreenWakeLockSentinel = {
   release: () => Promise<void>;
   addEventListener: (type: "release", listener: () => void) => void;
@@ -164,8 +167,11 @@ export function Entregador() {
   const [problemaTexto, setProblemaTexto] = useState("");
   const [atualizandoStatus, setAtualizandoStatus] = useState(false);
   const [atualizandoRoteiro, setAtualizandoRoteiro] = useState(false);
+  const [navegacaoNoAppAtiva, setNavegacaoNoAppAtiva] = useState(false);
   const [localizacaoAtual, setLocalizacaoAtual] = useState<LocalizacaoEntrega | null>(null);
   const localizacaoAtualRef = useRef<LocalizacaoEntrega | null>(null);
+  const navegacaoNoAppAtivaRef = useRef(false);
+  const ultimoEnvioNavegacaoRef = useRef(0);
 
   const roteiro = trpc.comercial.entregas.roteiro.useQuery(
     { dia: diaDate, rotaId: rotaId ?? undefined },
@@ -198,6 +204,7 @@ export function Entregador() {
   const rotaRef = useRef(rota);
   rotaRef.current = rota;
   localizacaoAtualRef.current = localizacaoAtual;
+  navegacaoNoAppAtivaRef.current = navegacaoNoAppAtiva;
   const paradaAtual =
     rota?.status === "EM_ROTA"
       ? (rota.paradas.find((p) => p.status === "EM_ROTA") ??
@@ -303,7 +310,7 @@ export function Entregador() {
     }
   };
 
-  /** Mantém o GPS automático enquanto a rota está ativa e o app visível (PWA aberto). */
+  /** Mantém o GPS em segundo plano leve quando a rota está ativa e o app visível. */
   useEffect(() => {
     if (!rota || rota.status !== "EM_ROTA" || !rota.compartilhamentoAtivo) return;
     if (!navigator.geolocation) return;
@@ -314,6 +321,7 @@ export function Entregador() {
       const atual = rotaRef.current;
       if (!atual || atual.status !== "EM_ROTA" || !atual.compartilhamentoAtivo) return;
       if (document.visibilityState !== "visible") return;
+      if (navegacaoNoAppAtivaRef.current) return;
       registrarLocalizacao(atual.id, pos.coords, {
         atualizarMapa: localizacaoAtualRef.current === null,
       });
@@ -332,7 +340,7 @@ export function Entregador() {
     };
 
     enviarPeriodicamente();
-    const intervalId = window.setInterval(enviarPeriodicamente, 60_000);
+    const intervalId = window.setInterval(enviarPeriodicamente, GPS_BACKGROUND_INTERVAL_MS);
 
     const onVisibility = () => {
       if (document.visibilityState === "visible") {
@@ -346,6 +354,40 @@ export function Entregador() {
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [avisarErroGps, registrarLocalizacao, rota?.id, rota?.status, rota?.compartilhamentoAtivo]);
+
+  /** Durante a navegação interna, acompanha e envia o entregador quase em tempo real. */
+  useEffect(() => {
+    if (!navegacaoNoAppAtiva) return;
+    if (!rota || rota.status !== "EM_ROTA" || !rota.compartilhamentoAtivo) return;
+    if (!navigator.geolocation) return;
+
+    ultimoEnvioNavegacaoRef.current = 0;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        if (document.visibilityState !== "visible") return;
+        const atual = rotaRef.current;
+        if (!atual || atual.status !== "EM_ROTA" || !atual.compartilhamentoAtivo) return;
+
+        gpsErroAvisadoRef.current = false;
+        setLocalizacaoAtual({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          precisaoMetros: pos.coords.accuracy,
+        });
+
+        const agora = Date.now();
+        if (agora - ultimoEnvioNavegacaoRef.current >= GPS_NAVIGATION_SEND_INTERVAL_MS) {
+          ultimoEnvioNavegacaoRef.current = agora;
+          registrarLocalizacao(atual.id, pos.coords);
+        }
+      },
+      avisarErroGps,
+      { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 },
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [avisarErroGps, navegacaoNoAppAtiva, registrarLocalizacao, rota?.id, rota?.status, rota?.compartilhamentoAtivo]);
 
   const telUrl = linkTelefone(paradaAtual?.telefoneWhatsapp);
   const waUrl = linkWhatsapp(
@@ -478,11 +520,12 @@ export function Entregador() {
               destino={paradaAtual.endereco}
               localizacaoAtual={localizacaoAtual}
               onIniciarNavegacao={enviarLocalizacaoAtual}
+              onNavegacaoChange={setNavegacaoNoAppAtiva}
             />
 
             <div className="grid gap-3">
               <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-muted-foreground">
-                Use a navegação no app para manter o envio automático da localização a cada 1 minuto.
+                Use a navegação no app para manter o envio automático da localização em tempo real.
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -592,10 +635,12 @@ function DriverRouteMap({
   destino,
   localizacaoAtual,
   onIniciarNavegacao,
+  onNavegacaoChange,
 }: {
   destino: string | null | undefined;
   localizacaoAtual: LocalizacaoEntrega | null;
   onIniciarNavegacao: () => void;
+  onNavegacaoChange: (ativa: boolean) => void;
 }) {
   const [usarMapaEmbutido] = useState(() => isMobileMapClient());
 
@@ -613,6 +658,7 @@ function DriverRouteMap({
         destino={destino.trim()}
         localizacaoAtual={localizacaoAtual}
         onIniciarNavegacao={onIniciarNavegacao}
+        onNavegacaoChange={onNavegacaoChange}
       />
     );
   }
@@ -622,6 +668,7 @@ function DriverRouteMap({
       destino={destino.trim()}
       localizacaoAtual={localizacaoAtual}
       onIniciarNavegacao={onIniciarNavegacao}
+      onNavegacaoChange={onNavegacaoChange}
     />
   );
 }
@@ -630,10 +677,12 @@ function MobileDriverRouteMap({
   destino,
   localizacaoAtual,
   onIniciarNavegacao,
+  onNavegacaoChange,
 }: {
   destino: string;
   localizacaoAtual: LocalizacaoEntrega | null;
   onIniciarNavegacao: () => void;
+  onNavegacaoChange: (ativa: boolean) => void;
 }) {
   const [navegando, setNavegando] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -641,6 +690,7 @@ function MobileDriverRouteMap({
 
   const iniciarNavegacao = async () => {
     setNavegando(true);
+    onNavegacaoChange(true);
     onIniciarNavegacao();
     try {
       await containerRef.current?.requestFullscreen?.();
@@ -651,6 +701,7 @@ function MobileDriverRouteMap({
 
   const sairNavegacao = async () => {
     setNavegando(false);
+    onNavegacaoChange(false);
     try {
       if (document.fullscreenElement === containerRef.current) {
         await document.exitFullscreen();
@@ -664,11 +715,16 @@ function MobileDriverRouteMap({
     const onFullscreenChange = () => {
       if (!document.fullscreenElement) {
         setNavegando(false);
+        onNavegacaoChange(false);
       }
     };
     document.addEventListener("fullscreenchange", onFullscreenChange);
     return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
-  }, []);
+  }, [onNavegacaoChange]);
+
+  useEffect(() => {
+    return () => onNavegacaoChange(false);
+  }, [onNavegacaoChange]);
 
   return (
     <div
@@ -703,7 +759,7 @@ function MobileDriverRouteMap({
 
       {navegando ? (
         <div className="space-y-2 rounded-xl border bg-card/95 p-3 text-xs text-muted-foreground shadow-sm">
-          <p>GPS automático ativo enquanto esta tela permanecer aberta. O app envia a posição a cada 1 minuto.</p>
+          <p>GPS em tempo real ativo enquanto esta tela permanecer aberta. O app envia a posição a cada poucos segundos.</p>
           <Button className="h-10 w-full" variant="outline" onClick={() => void sairNavegacao()}>
             Voltar para entregas
           </Button>
@@ -716,7 +772,7 @@ function MobileDriverRouteMap({
           </Button>
           <p className="text-xs text-muted-foreground">
             {localizacaoAtual
-              ? "GPS automático ativo. Mantenha esta tela aberta para enviar posição durante a rota."
+              ? "GPS automático ativo. Inicie a navegação no app para enviar posição em tempo real."
               : "Ao iniciar, o app pedirá sua posição e mostrará a rota automaticamente."}
           </p>
         </div>
@@ -729,10 +785,12 @@ function DesktopDriverRouteMap({
   destino,
   localizacaoAtual,
   onIniciarNavegacao,
+  onNavegacaoChange: _onNavegacaoChange,
 }: {
   destino: string;
   localizacaoAtual: LocalizacaoEntrega | null;
   onIniciarNavegacao: () => void;
+  onNavegacaoChange: (ativa: boolean) => void;
 }) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [navegando, setNavegando] = useState(false);
