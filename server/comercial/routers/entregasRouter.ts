@@ -14,9 +14,9 @@ const podeUsarModoEntregador = comercialRequirePerfis(
 );
 const paradaStatusSchema = z.enum(["PENDENTE", "EM_ROTA", "ENTREGUE", "PROBLEMA", "PULADA"]);
 const localizacaoEntregaSchema = z.object({
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
-  precisaoMetros: z.number().nullable().optional(),
+  latitude: z.number().finite().min(-90).max(90),
+  longitude: z.number().finite().min(-180).max(180),
+  precisaoMetros: z.number().finite().nonnegative().nullable().optional(),
 });
 
 type RegraOrdenacaoEntrega = {
@@ -75,6 +75,23 @@ function localizacaoRota(rota: {
     longitude: Number(rota.ultimaLongitude),
     precisaoMetros: rota.ultimaPrecisaoMetros == null ? null : Number(rota.ultimaPrecisaoMetros),
     atualizadaEm: rota.ultimaLocalizacaoEm,
+  };
+}
+
+function decimalString(value: number, scale: number): string {
+  return value.toFixed(scale);
+}
+
+function precisaoDecimalString(value: number | null | undefined): string | null {
+  if (value == null || !Number.isFinite(value)) return null;
+  return decimalString(Math.min(value, 99_999_999.99), 2);
+}
+
+function localizacaoParaBanco(localizacao: z.infer<typeof localizacaoEntregaSchema>) {
+  return {
+    latitude: decimalString(localizacao.latitude, 7),
+    longitude: decimalString(localizacao.longitude, 7),
+    precisaoMetros: precisaoDecimalString(localizacao.precisaoMetros),
   };
 }
 
@@ -714,22 +731,23 @@ export const entregasRouter = router({
       }
 
       const agora = new Date();
+      const localizacao = localizacaoParaBanco(input);
       await ctx.prisma!.$transaction([
         ctx.prisma!.rotaEntrega.update({
           where: { id: input.rotaId },
           data: {
-            ultimaLatitude: input.latitude,
-            ultimaLongitude: input.longitude,
-            ultimaPrecisaoMetros: input.precisaoMetros ?? null,
+            ultimaLatitude: localizacao.latitude,
+            ultimaLongitude: localizacao.longitude,
+            ultimaPrecisaoMetros: localizacao.precisaoMetros,
             ultimaLocalizacaoEm: agora,
           },
         }),
         ctx.prisma!.historicoLocalizacaoEntrega.create({
           data: {
             rotaId: input.rotaId,
-            latitude: input.latitude,
-            longitude: input.longitude,
-            precisaoMetros: input.precisaoMetros ?? null,
+            latitude: localizacao.latitude,
+            longitude: localizacao.longitude,
+            precisaoMetros: localizacao.precisaoMetros,
           },
         }),
       ]);
@@ -761,22 +779,23 @@ export const entregasRouter = router({
         parada.rota.status === "EM_ROTA" &&
         parada.rota.compartilhamentoAtivo
       ) {
+        const localizacao = localizacaoParaBanco(input.localizacao);
         await ctx.prisma!.$transaction([
           ctx.prisma!.rotaEntrega.update({
             where: { id: parada.rotaId },
             data: {
-              ultimaLatitude: input.localizacao.latitude,
-              ultimaLongitude: input.localizacao.longitude,
-              ultimaPrecisaoMetros: input.localizacao.precisaoMetros ?? null,
+              ultimaLatitude: localizacao.latitude,
+              ultimaLongitude: localizacao.longitude,
+              ultimaPrecisaoMetros: localizacao.precisaoMetros,
               ultimaLocalizacaoEm: agora,
             },
           }),
           ctx.prisma!.historicoLocalizacaoEntrega.create({
             data: {
               rotaId: parada.rotaId,
-              latitude: input.localizacao.latitude,
-              longitude: input.localizacao.longitude,
-              precisaoMetros: input.localizacao.precisaoMetros ?? null,
+              latitude: localizacao.latitude,
+              longitude: localizacao.longitude,
+              precisaoMetros: localizacao.precisaoMetros,
             },
           }),
         ]);

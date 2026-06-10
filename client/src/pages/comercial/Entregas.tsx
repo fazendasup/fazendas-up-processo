@@ -158,6 +158,7 @@ export function Entregas() {
   const planejadas = roteiro.data?.planejadas ?? [];
   const paradas = rota?.paradas ?? [];
   const rotaEditavel = rota?.status === "PLANEJADA";
+  const rotaPodeExcluir = rota ? rota.status !== "EM_ROTA" : false;
   const rotaMapsUrl = linkGoogleMapsRota(paradas);
   const clientesProgramadosDisponiveis = useMemo(() => {
     const idsNaRota = new Set(paradas.map((p) => p.contaAzulCustomerId));
@@ -287,7 +288,7 @@ export function Entregas() {
                       toast.info(
                         item.status === "PLANEJADA"
                           ? "Edite nome, entregador, paradas e ordem no painel abaixo."
-                          : "Rotas em andamento ou concluídas ficam fechadas para edição.",
+                          : "Rotas em andamento ou concluídas ficam fechadas para edição. Rotas concluídas podem ser excluídas.",
                       );
                     }}
                   >
@@ -297,7 +298,7 @@ export function Entregas() {
                   <Button
                     size="sm"
                     variant="destructive"
-                    disabled={item.status !== "PLANEJADA" || excluirRota.isPending}
+                    disabled={item.status === "EM_ROTA" || excluirRota.isPending}
                     onClick={() => {
                       setRotaSelecionadaId(item.id);
                       if (window.confirm("Excluir esta rota e todas as paradas?")) {
@@ -506,7 +507,7 @@ export function Entregas() {
                 <Button
                   className="w-full"
                   variant="destructive"
-                  disabled={!rotaEditavel || excluirRota.isPending}
+                  disabled={!rotaPodeExcluir || excluirRota.isPending}
                   onClick={() => {
                     if (window.confirm("Excluir esta rota e todas as paradas?")) {
                       excluirRota.mutate({ rotaId: rota.id });
