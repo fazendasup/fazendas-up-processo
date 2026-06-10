@@ -17,7 +17,7 @@ import { PageHeader } from "@/components/comercial/ui/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { EmbeddedMap } from "@/components/EmbeddedMap";
+import { OsmRouteMap } from "@/components/OsmRouteMap";
 import { MapView } from "@/components/Map";
 import { createMapMarker, isMobileMapClient } from "@/lib/googleMapsLoader";
 import { trpc } from "@/lib/trpc";
@@ -645,11 +645,10 @@ function MobileDriverRouteMap({
         </div>
       ) : null}
 
-      <EmbeddedMap
+      <OsmRouteMap
         destino={destino}
         localizacao={localizacaoAtual}
-        navUrl={navUrl}
-        preferNavigation={navegando}
+        navegando={navegando}
         className={navegando ? "min-h-0 flex-1" : undefined}
       />
 
