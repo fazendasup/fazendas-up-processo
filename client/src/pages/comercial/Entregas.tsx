@@ -6,6 +6,7 @@ import {
   ArrowUp,
   CheckCircle2,
   Copy,
+  Edit3,
   MapPin,
   Navigation,
   Plus,
@@ -104,6 +105,7 @@ export function Entregas() {
   const excluirRota = trpc.comercial.entregas.excluirRota.useMutation({
     onSuccess: async () => {
       toast.success("Rota excluída.");
+      setRotaSelecionadaId(null);
       await utils.comercial.entregas.roteiro.invalidate();
     },
     onError: (err) => toast.error(err.message),
@@ -256,20 +258,58 @@ export function Entregas() {
           <CardHeader>
             <CardTitle className="text-lg">Rotas do dia ({rotas.length})</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
+          <CardContent className="space-y-2">
             {rotas.map((item) => (
-              <Button
+              <div
                 key={item.id}
-                size="sm"
-                variant={item.id === rota?.id ? "default" : "outline"}
-                onClick={() => setRotaSelecionadaId(item.id)}
+                className={cn(
+                  "flex flex-wrap items-center justify-between gap-2 rounded-xl border p-2",
+                  item.id === rota?.id ? "border-primary bg-primary/5" : "border-border/70",
+                )}
               >
-                {item.nome ?? "Rota"}
-                {item.entregadorNome ? ` · ${item.entregadorNome}` : ""}
-                <Badge className="ml-2" variant="secondary">
-                  {labelStatusRota(item.status)}
-                </Badge>
-              </Button>
+                <Button
+                  size="sm"
+                  variant={item.id === rota?.id ? "default" : "ghost"}
+                  onClick={() => setRotaSelecionadaId(item.id)}
+                >
+                  {item.nome ?? "Rota"}
+                  {item.entregadorNome ? ` · ${item.entregadorNome}` : ""}
+                  <Badge className="ml-2" variant="secondary">
+                    {labelStatusRota(item.status)}
+                  </Badge>
+                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setRotaSelecionadaId(item.id);
+                      toast.info(
+                        item.status === "PLANEJADA"
+                          ? "Edite nome, entregador, paradas e ordem no painel abaixo."
+                          : "Rotas em andamento ou concluídas ficam fechadas para edição.",
+                      );
+                    }}
+                  >
+                    <Edit3 className="h-4 w-4" />
+                    Editar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    disabled={item.status !== "PLANEJADA" || excluirRota.isPending}
+                    onClick={() => {
+                      setRotaSelecionadaId(item.id);
+                      if (window.confirm("Excluir esta rota e todas as paradas?")) {
+                        excluirRota.mutate({ rotaId: item.id });
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Excluir
+                  </Button>
+                </div>
+              </div>
             ))}
           </CardContent>
         </Card>
@@ -669,8 +709,8 @@ function LiveRouteMap({
         </div>
         {rotas.some((r) => r.localizacao) ? (
           <p className="text-sm text-muted-foreground">
-            Acompanhe todas as rotas ativas no mapa. O GPS de cada entregador atualiza a cada 1 minuto com o PWA
-            aberto.
+            Acompanhe todas as rotas ativas no mapa. No modo navegação, o GPS do entregador atualiza em poucos
+            segundos com o PWA aberto.
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">
