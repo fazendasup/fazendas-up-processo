@@ -12,6 +12,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 // OAuth routes removed - using email/password authentication instead
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { registerGeocodeRoute } from "./geocodeRoute";
 import { registerPublicConfigRoute } from "./publicConfig";
 import { getStaticDeployReadiness, serveStatic } from "./static";
 import { ensureBootstrapAdmin } from "../bootstrap-admin";
@@ -223,6 +224,7 @@ async function startServer() {
   }
 
   registerPublicConfigRoute(app);
+  registerGeocodeRoute(app);
 
   /** Site (HTML/JS/CSS) já disponível durante a inicialização da BD — evita página em branco / 404. */
   if (process.env.NODE_ENV !== "development") {
