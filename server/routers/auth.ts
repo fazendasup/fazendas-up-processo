@@ -11,8 +11,9 @@ import bcrypt from "bcryptjs";
 
 function normalizeLoginEmail(value: unknown) {
   return String(value ?? "")
-    .replace(/[\u200B-\u200D\uFEFF]/g, "")
-    .replace(/\s+/g, "")
+    .normalize("NFKC")
+    .replace(/[\u0000-\u001F\u007F-\u009F\u00A0\u1680\u180E\u2000-\u200F\u2028-\u202F\u205F\u2060-\u206F\u3000\uFEFF\s]+/g, "")
+    .replace(/[^A-Za-z0-9@._%+-]/g, "")
     .toLowerCase();
 }
 

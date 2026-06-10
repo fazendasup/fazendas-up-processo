@@ -11,13 +11,10 @@ import { homeForUserRole } from '@/lib/accessPolicy';
 
 function normalizeLoginEmail(value: string) {
   return value
-    .replace(/[\u200B-\u200D\uFEFF]/g, "")
-    .replace(/\s+/g, "")
+    .normalize("NFKC")
+    .replace(/[\u0000-\u001F\u007F-\u009F\u00A0\u1680\u180E\u2000-\u200F\u2028-\u202F\u205F\u2060-\u206F\u3000\uFEFF\s]+/g, "")
+    .replace(/[^A-Za-z0-9@._%+-]/g, "")
     .toLowerCase();
-}
-
-function isEmailValido(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
 function loginErrorMessage(message: string | undefined) {
@@ -59,10 +56,6 @@ export default function LoginPage() {
       setError('Preencha email e senha');
       return;
     }
-    if (!isEmailValido(emailNormalizado)) {
-      setError('Email inválido. Confira se foi digitado corretamente.');
-      return;
-    }
     setEmail(emailNormalizado);
     loginMutation.mutate({ email: emailNormalizado, password });
   };
@@ -94,7 +87,7 @@ export default function LoginPage() {
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
-                  type="email"
+                  type="text"
                   placeholder="seu@email.com"
                   value={email}
                   onChange={(e) => setEmail(normalizeLoginEmail(e.target.value))}
