@@ -277,6 +277,9 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
   });
   const alterarDataPedido = trpc.comercial.pedidos.alterarDataPedido.useMutation({
     onSuccess: async (result) => {
+      if (!result.unchanged && result.dataEntrega) {
+        setDia(isoLocal(new Date(result.dataEntrega)));
+      }
       toast.success(
         result.unchanged
           ? "Pedido já estava nesta data."

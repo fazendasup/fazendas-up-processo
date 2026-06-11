@@ -918,7 +918,7 @@ export const pedidosRouter = router({
         }
       });
 
-      return { success: true, unchanged: false, pedidosMovidos: pedidosAlvoIds.length };
+      return { success: true, unchanged: false, pedidosMovidos: pedidosAlvoIds.length, dataEntrega: novaData };
     }),
 
   copiarSemanaAnterior: comercialProcedure
