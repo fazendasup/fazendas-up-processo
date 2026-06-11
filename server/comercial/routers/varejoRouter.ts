@@ -6,8 +6,6 @@ import { GO_LIVE_PEDIDOS, inicioSemana, rotuloSemana } from "../lib/semana.js";
 
 const editorComercial = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL", "COMERCIAL", "OPERACOES");
 
-const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
-
 async function registrarAuditoriaPedido(
   prisma: Prisma.TransactionClient,
   pedidoId: string,
@@ -274,16 +272,12 @@ export const varejoRouter = router({
 
   relatorio: comercialProcedure
     .input(
-      z
-        .object({
-          grupoId: z.string().optional(),
-          unidadeClienteId: z.string().optional(),
-          inicio: z.coerce.date(),
-          fim: z.coerce.date(),
-        })
-        .refine((v) => v.grupoId || v.unidadeClienteId, {
-          message: "Informe uma rede ou uma unidade.",
-        }),
+      z.object({
+        grupoId: z.string().optional(),
+        unidadeClienteId: z.string().optional(),
+        inicio: z.coerce.date(),
+        fim: z.coerce.date(),
+      }),
     )
     .query(async ({ ctx, input }) => {
       const prisma = ctx.prisma!;
@@ -291,7 +285,9 @@ export const varejoRouter = router({
       // Resolve as unidades-alvo (Clientes).
       const unidades = input.unidadeClienteId
         ? await prisma.cliente.findMany({ where: { id: input.unidadeClienteId } })
-        : await prisma.cliente.findMany({ where: { grupoId: input.grupoId } });
+        : input.grupoId
+          ? await prisma.cliente.findMany({ where: { grupoId: input.grupoId } })
+          : await prisma.cliente.findMany({ where: { tipo: "SUPERMERCADO" } });
 
       if (unidades.length === 0) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Nenhuma unidade encontrada para o filtro informado." });
@@ -431,7 +427,6 @@ export const varejoRouter = router({
         { produtoId: string; nome: string; categoria: string | null; quantidade: number; valorPerdido: number }
       >();
       const avariaPorCategoria = new Map<string, number>();
-      const avariaPorDiaSemana = new Array(7).fill(0) as number[];
 
       for (const a of avarias) {
         const q = num(a.quantidade);
@@ -453,7 +448,6 @@ export const varejoRouter = router({
 
         const cat = a.categoria || "Sem categoria";
         avariaPorCategoria.set(cat, (avariaPorCategoria.get(cat) ?? 0) + q);
-        avariaPorDiaSemana[new Date(a.dataEntrega).getDay()] += q;
 
         const u = initUnidade(a.contaAzulCustomerId);
         u.avariaQtd += q;
@@ -486,8 +480,6 @@ export const varejoRouter = router({
       const avariaCategorias = Array.from(avariaPorCategoria.entries())
         .map(([categoria, quantidade]) => ({ categoria, quantidade }))
         .sort((a, b) => b.quantidade - a.quantidade);
-
-      const avariaDias = avariaPorDiaSemana.map((quantidade, dia) => ({ dia: DIAS_SEMANA[dia], quantidade }));
 
       const breakdownUnidades = Array.from(porUnidade.values())
         .map((u) => ({
@@ -557,14 +549,6 @@ export const varejoRouter = router({
           texto: `${piorProduto.nome}: ${piorProduto.taxaAvaria!.toFixed(1)}% de avaria. Considere reduzir o volume entregue desse item.`,
         });
       }
-      const piorDia = avariaDias.reduce((acc, d) => (d.quantidade > acc.quantidade ? d : acc), avariaDias[0]);
-      if (piorDia && piorDia.quantidade > 0 && avariaQtdTotal > 0) {
-        insights.push({
-          tipo: "atencao",
-          texto: `Avarias concentradas na entrega de ${piorDia.dia.toLowerCase()} (${piorDia.quantidade} un). Avalie reduzir o volume desse dia.`,
-        });
-      }
-
       return {
         periodo: { inicio, fim },
         unidadesConsideradas: unidades.map((u) => ({ id: u.id, nome: u.nome, externalId: u.externalId })),
@@ -580,7 +564,6 @@ export const varejoRouter = router({
         },
         topProdutosAvaria,
         avariaCategorias,
-        avariaDias,
         serieSemanal,
         breakdownUnidades,
         sugestoesPedido,

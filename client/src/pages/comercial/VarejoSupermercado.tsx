@@ -33,6 +33,7 @@ import {
 } from "@/lib/comercial/periodo";
 
 const TODAS_UNIDADES = "__todas__";
+const GERAL_FAZENDAS_UP = "__geral_fazendas_up__";
 
 function fmtQtd(value: unknown) {
   return Number(value ?? 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 });
@@ -77,7 +78,7 @@ export function AcompanhamentoAvarias() {
     me.data?.perfil === "COMERCIAL" ||
     me.data?.perfil === "OPERACOES";
 
-  const [grupoId, setGrupoId] = useState("");
+  const [grupoId, setGrupoId] = useState(GERAL_FAZENDAS_UP);
   const [unidadeId, setUnidadeId] = useState(TODAS_UNIDADES);
   const [preset, setPreset] = useState<PeriodoPreset>("mes_atual");
   const [customInicio, setCustomInicio] = useState(hojeIsoLocal());
@@ -101,8 +102,11 @@ export function AcompanhamentoAvarias() {
   const clientesSuper = trpc.comercial.varejo.clientesSupermercado.useQuery();
   const produtos = trpc.comercial.pedidos.produtos.useQuery({ incluirInativos: false });
 
-  const redeSelecionada = redes.data?.find((r) => r.id === grupoId);
+  const isGeralFazendasUp = grupoId === GERAL_FAZENDAS_UP;
+  const redeSelecionada = isGeralFazendasUp ? undefined : redes.data?.find((r) => r.id === grupoId);
   const unidadesDaRede = redeSelecionada?.unidades ?? [];
+  const unidadesDisponiveis = isGeralFazendasUp ? (clientesSuper.data ?? []) : unidadesDaRede;
+  const escopoRelatorio = isGeralFazendasUp ? "Fazendas UP geral" : redeSelecionada?.nome ?? "rede selecionada";
 
   useEffect(() => {
     if (!grupoId) {
@@ -114,9 +118,9 @@ export function AcompanhamentoAvarias() {
       return;
     }
     setAvariaUnidadeId((atual) =>
-      unidadesDaRede.some((u) => u.id === atual) ? atual : "",
+      unidadesDisponiveis.some((u) => u.id === atual) ? atual : "",
     );
-  }, [grupoId, unidadeId, redeSelecionada?.id, unidadesDaRede]);
+  }, [grupoId, unidadeId, redeSelecionada?.id, unidadesDisponiveis]);
 
   const referenciasAvaria = trpc.comercial.pedidos.conciliacaoReferenciasAvaria.useQuery(
     {
@@ -132,7 +136,7 @@ export function AcompanhamentoAvarias() {
 
   const relatorio = trpc.comercial.varejo.relatorio.useQuery(
     {
-      grupoId: grupoId || undefined,
+      grupoId: !isGeralFazendasUp && grupoId ? grupoId : undefined,
       unidadeClienteId: unidadeId !== TODAS_UNIDADES ? unidadeId : undefined,
       inicio: intervalo.inicio,
       fim: intervalo.fim,
@@ -245,13 +249,12 @@ export function AcompanhamentoAvarias() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `acompanhamento_avarias_${redeSelecionada?.nome ?? "rede"}.csv`;
+    a.download = `acompanhamento_avarias_${redeSelecionada?.nome ?? "fazendas_up_geral"}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
 
   const maxAvariaCategoria = Math.max(1, ...(dados?.avariaCategorias.map((c) => c.quantidade) ?? [0]));
-  const maxAvariaDia = Math.max(1, ...(dados?.avariaDias.map((d) => d.quantidade) ?? [0]));
   const maxSerie = Math.max(
     1,
     ...(dados?.serieSemanal.flatMap((s) => [s.entregue, s.avaria]) ?? [0]),
@@ -271,13 +274,13 @@ export function AcompanhamentoAvarias() {
           <Select
             value={avariaUnidadeId}
             onValueChange={setAvariaUnidadeId}
-            disabled={!grupoId || unidadesDaRede.length === 0}
+            disabled={!grupoId || unidadesDisponiveis.length === 0}
           >
             <SelectTrigger className="h-10 bg-background">
-              <SelectValue placeholder={grupoId ? "Selecione a unidade..." : "Selecione a rede acima"} />
+              <SelectValue placeholder={grupoId ? "Selecione a unidade..." : "Selecione o escopo acima"} />
             </SelectTrigger>
             <SelectContent>
-              {unidadesDaRede.map((u) => (
+              {unidadesDisponiveis.map((u) => (
                 <SelectItem key={u.id} value={u.id}>
                   {u.nome}
                 </SelectItem>
@@ -449,7 +452,7 @@ export function AcompanhamentoAvarias() {
               </div>
               <Button
                 variant="outline"
-                disabled={!unidadeParaVincular || !grupoId || vincularUnidades.isPending}
+                disabled={!unidadeParaVincular || isGeralFazendasUp || !grupoId || vincularUnidades.isPending}
                 onClick={() =>
                   vincularUnidades.mutate({ grupoId, clienteIds: [unidadeParaVincular] })
                 }
@@ -457,8 +460,8 @@ export function AcompanhamentoAvarias() {
                 <Link2 className="mr-1.5 h-4 w-4" />
                 Vincular à rede selecionada
               </Button>
-              {!grupoId && (
-                <p className="text-xs text-muted-foreground">Selecione uma rede abaixo para vincular unidades.</p>
+              {(!grupoId || isGeralFazendasUp) && (
+                <p className="text-xs text-muted-foreground">Selecione uma rede específica abaixo para vincular unidades.</p>
               )}
             </div>
 
@@ -493,8 +496,8 @@ export function AcompanhamentoAvarias() {
       {/* Filtros */}
       <Card>
         <CardContent className="flex flex-wrap items-end gap-3 pt-5">
-          <div className="min-w-[220px]">
-            <Label className="text-xs">Rede de supermercado</Label>
+          <div className="min-w-[240px]">
+            <Label className="text-xs">Escopo do relatório</Label>
             <Select
               value={grupoId}
               onValueChange={(v) => {
@@ -503,9 +506,12 @@ export function AcompanhamentoAvarias() {
               }}
             >
               <SelectTrigger className="h-9">
-                <SelectValue placeholder="Selecione uma rede..." />
+                <SelectValue placeholder="Selecione o escopo..." />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value={GERAL_FAZENDAS_UP}>
+                  Fazendas UP geral · todos os supermercados
+                </SelectItem>
                 {(redes.data ?? []).map((r) => (
                   <SelectItem key={r.id} value={r.id}>
                     {r.nome} ({r.totalUnidades})
@@ -522,7 +528,7 @@ export function AcompanhamentoAvarias() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={TODAS_UNIDADES}>Todas as unidades</SelectItem>
-                {unidadesDaRede.map((u) => (
+                {unidadesDisponiveis.map((u) => (
                   <SelectItem key={u.id} value={u.id}>
                     {u.nome}
                   </SelectItem>
@@ -543,7 +549,7 @@ export function AcompanhamentoAvarias() {
 
       {!grupoId ? (
         <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-          Selecione uma rede de supermercado para ver o acompanhamento de avarias.
+          Selecione o escopo do relatório para ver o acompanhamento de avarias.
         </div>
       ) : relatorio.isLoading ? (
         <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
@@ -561,7 +567,7 @@ export function AcompanhamentoAvarias() {
               icon={<Truck className="h-4 w-4" />}
               label="Volume entregue"
               valor={`${fmtQtd(dados.kpis.volumeEntregue)} un`}
-              sub={`${dados.kpis.pedidosEntregues} pedido(s) entregue(s)`}
+              sub={`${dados.kpis.pedidosEntregues} pedido(s) entregue(s) · ${escopoRelatorio}`}
             />
             <KpiCard
               icon={<CheckCircle2 className="h-4 w-4" />}
@@ -733,44 +739,27 @@ export function AcompanhamentoAvarias() {
               </CardContent>
             </Card>
 
-            {/* Avaria por categoria + por dia */}
+            {/* Avaria por categoria */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Onde concentra a perda</CardTitle>
+                <CardTitle className="text-base">Perda por categoria</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Por categoria</p>
-                  {dados.avariaCategorias.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Sem dados.</p>
-                  ) : (
-                    <div className="space-y-1.5">
-                      {dados.avariaCategorias.map((c) => (
-                        <div key={c.categoria} className="space-y-0.5">
-                          <div className="flex justify-between text-xs">
-                            <span>{c.categoria}</span>
-                            <span className="text-muted-foreground">{fmtQtd(c.quantidade)} un</span>
-                          </div>
-                          <Barra valor={c.quantidade} max={maxAvariaCategoria} cor="bg-red-400" />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Por dia da semana</p>
+              <CardContent>
+                {dados.avariaCategorias.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Sem dados.</p>
+                ) : (
                   <div className="space-y-1.5">
-                    {dados.avariaDias.map((d) => (
-                      <div key={d.dia} className="flex items-center gap-2">
-                        <span className="w-16 shrink-0 text-xs text-muted-foreground">{d.dia}</span>
-                        <Barra valor={d.quantidade} max={maxAvariaDia} cor="bg-amber-400" />
-                        <span className="w-10 shrink-0 text-right text-xs text-muted-foreground">
-                          {fmtQtd(d.quantidade)}
-                        </span>
+                    {dados.avariaCategorias.map((c) => (
+                      <div key={c.categoria} className="space-y-0.5">
+                        <div className="flex justify-between text-xs">
+                          <span>{c.categoria}</span>
+                          <span className="text-muted-foreground">{fmtQtd(c.quantidade)} un</span>
+                        </div>
+                        <Barra valor={c.quantidade} max={maxAvariaCategoria} cor="bg-red-400" />
                       </div>
                     ))}
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>
