@@ -5,6 +5,7 @@ import { comercialProcedure, comercialRequirePerfis, router } from "../../_core/
 import { GO_LIVE_PEDIDOS, inicioSemana, rotuloSemana } from "../lib/semana.js";
 
 const editorComercial = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL", "COMERCIAL", "OPERACOES");
+const OBS_PEDIDO_AVARIA_AUTOMATICO = "Registro criado automaticamente por lançamento de avaria em campo.";
 
 async function registrarAuditoriaPedido(
   prisma: Prisma.TransactionClient,
@@ -215,7 +216,7 @@ export const varejoRouter = router({
               dataEntrega,
               diaSemana: dataEntrega.getDay(),
               tipoVenda: "AVULSO",
-              observacoes: "Registro criado automaticamente por lançamento de avaria em campo.",
+              observacoes: OBS_PEDIDO_AVARIA_AUTOMATICO,
               criadoPorId: usuario.id,
               editadoPorId: usuario.id,
             },
@@ -266,6 +267,66 @@ export const varejoRouter = router({
           numeroVenda: pedido.pedidoContaAzul?.numeroVenda ?? null,
         };
       });
+    }),
+
+  excluirAvariaCampo: comercialProcedure
+    .input(z.object({ avariaId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const usuario = ctx.comercialUsuario;
+      if (!usuario) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      }
+
+      const avaria = await ctx.prisma!.pedidoOperacionalAvaria.findUnique({
+        where: { id: input.avariaId },
+        include: {
+          pedido: { include: { itens: true, avarias: true } },
+        },
+      });
+      if (!avaria) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Avaria não encontrada." });
+      }
+
+      const podeExcluirQualquer =
+        usuario.perfil === "ADMIN" ||
+        usuario.perfil === "GERENTE_COMERCIAL" ||
+        usuario.perfil === "COMERCIAL" ||
+        usuario.perfil === "OPERACOES";
+      if (!podeExcluirQualquer && avaria.criadoPorId !== usuario.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Você só pode excluir avarias lançadas por você.",
+        });
+      }
+
+      const removerPedidoAutomatico =
+        avaria.pedido.itens.length === 0 &&
+        avaria.pedido.avarias.length === 1 &&
+        avaria.pedido.observacoes === OBS_PEDIDO_AVARIA_AUTOMATICO;
+
+      await ctx.prisma!.$transaction(async (tx) => {
+        await registrarAuditoriaPedido(
+          tx,
+          avaria.pedidoId,
+          { id: usuario.id, nome: usuario.nome },
+          "avaria_campo_excluida",
+          {
+            avariaId: avaria.id,
+            produtoId: avaria.produtoId,
+            produtoNome: avaria.produtoNome,
+            quantidade: num(avaria.quantidade),
+            dataEntrega: avaria.dataEntrega,
+            observacoes: avaria.observacoes,
+          },
+          { removida: true, pedidoAutomaticoRemovido: removerPedidoAutomatico },
+        );
+        await tx.pedidoOperacionalAvaria.delete({ where: { id: avaria.id } });
+        if (removerPedidoAutomatico) {
+          await tx.pedidoOperacional.delete({ where: { id: avaria.pedidoId } });
+        }
+      });
+
+      return { success: true, pedidoAutomaticoRemovido: removerPedidoAutomatico };
     }),
 
   // ---------------- Relatório de varejo (vendas + avarias) ----------------
@@ -581,6 +642,7 @@ export const varejoRouter = router({
             quantidade: num(a.quantidade),
             observacoes: a.observacoes,
             criadoEm: a.criadoEm,
+            criadoPorId: a.criadoPorId,
             criadoPorNome: a.criadoPor?.nome ?? a.criadoPor?.email ?? null,
             statusPedido: a.pedido.status,
           })),

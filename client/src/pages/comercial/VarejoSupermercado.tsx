@@ -188,6 +188,22 @@ export function AcompanhamentoAvarias() {
     },
     onError: (err) => toast.error(err.message),
   });
+  const excluirAvariaCampo = trpc.comercial.varejo.excluirAvariaCampo.useMutation({
+    onSuccess: async (result) => {
+      toast.success(
+        result.pedidoAutomaticoRemovido
+          ? "Avaria excluída e pedido automático removido."
+          : "Avaria excluída.",
+      );
+      await Promise.all([
+        utils.comercial.varejo.relatorio.invalidate(),
+        utils.comercial.pedidos.agenda.invalidate(),
+        utils.comercial.pedidos.dashboard.invalidate(),
+        utils.comercial.pedidos.relatorioHistorico.invalidate(),
+      ]);
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   const dados = relatorio.data;
 
@@ -207,6 +223,14 @@ export function AcompanhamentoAvarias() {
       quantidade,
       observacoes: avariaObservacoes,
     });
+  }
+
+  function confirmarExclusaoAvaria(lancamento: any) {
+    const ok = window.confirm(
+      `Excluir a avaria de ${fmtQtd(lancamento.quantidade)} × ${lancamento.produtoNome} em ${lancamento.unidade}?\n\nEssa ação remove o lançamento dos relatórios e mantém auditoria no pedido.`,
+    );
+    if (!ok) return;
+    excluirAvariaCampo.mutate({ avariaId: lancamento.id });
   }
 
   function exportarCsv() {
@@ -695,9 +719,21 @@ export function AcompanhamentoAvarias() {
                           {l.unidade} · aparece em Pedidos em {fmtDate(l.dataEntrega)} · pedido {l.pedidoId}
                         </p>
                       </div>
-                      <span className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">
-                        {l.statusPedido?.toLowerCase?.() ?? l.statusPedido}
-                      </span>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">
+                          {l.statusPedido?.toLowerCase?.() ?? l.statusPedido}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          disabled={excluirAvariaCampo.isPending}
+                          onClick={() => confirmarExclusaoAvaria(l)}
+                        >
+                          <Trash2 className="mr-1 h-3.5 w-3.5" />
+                          Excluir
+                        </Button>
+                      </div>
                     </div>
                     {l.observacoes ? <p className="mt-2 text-xs text-muted-foreground">{l.observacoes}</p> : null}
                     <p className="mt-2 text-[11px] text-muted-foreground">
