@@ -851,7 +851,13 @@ export const pedidosRouter = router({
     }),
 
   alterarDataPedido: comercialProcedure
-    .input(z.object({ pedidoId: z.string().min(1), dataEntrega: z.coerce.date() }))
+    .input(
+      z.object({
+        pedidoId: z.string().min(1),
+        dataEntrega: z.coerce.date(),
+        moverClienteDia: z.boolean().optional().default(true),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
       if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
@@ -874,9 +880,22 @@ export const pedidosRouter = router({
 
       await assertSemanaAnteriorFechada(ctx.prisma!, novaData);
 
+      const dataAtual = inicioDia(pedido.dataEntrega);
+      const pedidosAlvo = input.moverClienteDia
+        ? await ctx.prisma!.pedidoOperacional.findMany({
+            where: {
+              contaAzulCustomerId: pedido.contaAzulCustomerId,
+              dataEntrega: { gte: dataAtual, lte: fimDia(dataAtual) },
+              status: { not: "CANCELADO" },
+            },
+            select: { id: true, dataEntrega: true, diaSemana: true },
+          })
+        : [{ id: pedido.id, dataEntrega: pedido.dataEntrega, diaSemana: pedido.diaSemana }];
+      const pedidosAlvoIds = pedidosAlvo.map((p) => p.id);
+
       await ctx.prisma!.$transaction(async (tx) => {
-        await tx.pedidoOperacional.update({
-          where: { id: pedido.id },
+        await tx.pedidoOperacional.updateMany({
+          where: { id: { in: pedidosAlvoIds } },
           data: {
             dataEntrega: novaData,
             diaSemana: diaSemana(novaData),
@@ -884,20 +903,22 @@ export const pedidosRouter = router({
           },
         });
         await tx.pedidoOperacionalAvaria.updateMany({
-          where: { pedidoId: pedido.id },
+          where: { pedidoId: { in: pedidosAlvoIds } },
           data: { dataEntrega: novaData },
         });
-        await registrarAuditoria(
-          tx as any,
-          pedido.id,
-          { id: usuario.id, nome: usuario.nome },
-          "data_pedido_alterada",
-          { dataEntrega: pedido.dataEntrega, diaSemana: pedido.diaSemana },
-          { dataEntrega: novaData, diaSemana: diaSemana(novaData) },
-        );
+        for (const pedidoAlvo of pedidosAlvo) {
+          await registrarAuditoria(
+            tx as any,
+            pedidoAlvo.id,
+            { id: usuario.id, nome: usuario.nome },
+            "data_pedido_alterada",
+            { dataEntrega: pedidoAlvo.dataEntrega, diaSemana: pedidoAlvo.diaSemana },
+            { dataEntrega: novaData, diaSemana: diaSemana(novaData) },
+          );
+        }
       });
 
-      return { success: true, unchanged: false };
+      return { success: true, unchanged: false, pedidosMovidos: pedidosAlvoIds.length };
     }),
 
   copiarSemanaAnterior: comercialProcedure

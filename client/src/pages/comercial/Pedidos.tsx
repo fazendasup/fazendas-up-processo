@@ -277,7 +277,13 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
   });
   const alterarDataPedido = trpc.comercial.pedidos.alterarDataPedido.useMutation({
     onSuccess: async (result) => {
-      toast.success(result.unchanged ? "Pedido já estava nesta data." : "Data do pedido alterada.");
+      toast.success(
+        result.unchanged
+          ? "Pedido já estava nesta data."
+          : result.pedidosMovidos && result.pedidosMovidos > 1
+            ? `${result.pedidosMovidos} pedidos do cliente foram movidos para a nova data.`
+            : "Data do pedido alterada.",
+      );
       await Promise.all([
         utils.comercial.pedidos.agenda.invalidate(),
         utils.comercial.pedidos.dashboard.invalidate(),
@@ -468,12 +474,13 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
     if (!novaData) return toast.error("Informe a nova data do pedido.");
     if (novaData === dataAtual) return toast.message("Pedido já está nesta data.");
     const ok = window.confirm(
-      `Mover o pedido de ${pedido.cliente?.nome ?? pedido.contaAzulCustomerId} de ${fmtDate(pedido.dataEntrega)} para ${fmtDate(`${novaData}T12:00:00`)}?`,
+      `Mover todos os pedidos de ${pedido.cliente?.nome ?? pedido.contaAzulCustomerId} neste dia de ${fmtDate(pedido.dataEntrega)} para ${fmtDate(`${novaData}T12:00:00`)}?`,
     );
     if (!ok) return;
     alterarDataPedido.mutate({
       pedidoId: pedido.id,
       dataEntrega: new Date(`${novaData}T12:00:00`),
+      moverClienteDia: true,
     });
   }
 
