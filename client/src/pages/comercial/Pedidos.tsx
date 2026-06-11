@@ -1211,7 +1211,7 @@ function AlertaAvariasPedidoCopiado({ alertas, className = "" }: { alertas: any[
 function PedidosKpiDashboard({ kpis }: { kpis: any }) {
   const totalStatus = Math.max(1, Object.values(kpis.status ?? {}).reduce((sum: number, n: any) => sum + Number(n ?? 0), 0));
   const produtosPorVariedade = kpis.produtos ?? [];
-  const topCategorias = (kpis.categorias ?? []).slice(0, 5);
+  const categorias = kpis.categorias ?? [];
 
   return (
     <div className="space-y-3">
@@ -1254,7 +1254,47 @@ function PedidosKpiDashboard({ kpis }: { kpis: any }) {
         </div>
       </section>
 
-      <div className="grid gap-3 lg:grid-cols-[0.9fr_1.1fr]">
+      <Card className="border bg-card/80">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <ShoppingBasket className="h-4 w-4" /> Produtos por variedade
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {produtosPorVariedade.length === 0 ? (
+            <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">Sem produtos no dia.</p>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {produtosPorVariedade.map((produto: any, index: number) => {
+                const max = Math.max(1, Number(produtosPorVariedade[0]?.quantidade ?? 0));
+                const pct = Math.max(4, Math.round((Number(produto.quantidade ?? 0) / max) * 100));
+                return (
+                  <div key={produto.nome} className="rounded-lg border bg-muted/20 p-2">
+                    <div className="mb-1 flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-semibold" title={produto.nome}>
+                          {index + 1}. {produto.nome}
+                        </p>
+                        <p className="truncate text-[10px] text-muted-foreground">
+                          {produto.categoria} · {produto.clientes} cliente(s)
+                        </p>
+                      </div>
+                      <span className="shrink-0 rounded-full bg-background px-2 py-0.5 text-[11px] font-bold">
+                        {formatQuantidade(produto.quantidade)}
+                      </span>
+                    </div>
+                    <div className="h-1 overflow-hidden rounded-full bg-background">
+                      <div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-3 lg:grid-cols-2">
         <Card className="border bg-card/80">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm">
@@ -1293,53 +1333,18 @@ function PedidosKpiDashboard({ kpis }: { kpis: any }) {
         <Card className="border bg-card/80">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm">
-              <ShoppingBasket className="h-4 w-4" /> Produtos por variedade
+              <ShoppingBasket className="h-4 w-4" /> Por categoria
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-3 lg:grid-cols-[1.35fr_0.8fr]">
-            <div className="max-h-[360px] overflow-y-auto pr-1">
-              {produtosPorVariedade.length === 0 ? (
-                <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">Sem produtos no dia.</p>
-              ) : (
-                <div className="grid gap-2 xl:grid-cols-2">
-                  {produtosPorVariedade.map((produto: any, index: number) => {
-                    const max = Math.max(1, Number(produtosPorVariedade[0]?.quantidade ?? 0));
-                    const pct = Math.max(4, Math.round((Number(produto.quantidade ?? 0) / max) * 100));
-                    return (
-                      <div key={produto.nome} className="rounded-lg border bg-muted/20 p-2">
-                        <div className="mb-1 flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="truncate text-xs font-semibold" title={produto.nome}>
-                              {index + 1}. {produto.nome}
-                            </p>
-                            <p className="truncate text-[10px] text-muted-foreground">
-                              {produto.categoria} · {produto.clientes} cliente(s)
-                            </p>
-                          </div>
-                          <span className="shrink-0 rounded-full bg-background px-2 py-0.5 text-[11px] font-bold">
-                            {formatQuantidade(produto.quantidade)}
-                          </span>
-                        </div>
-                        <div className="h-1 overflow-hidden rounded-full bg-background">
-                          <div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} />
-                        </div>
-                      </div>
-                    );
-                  })}
+          <CardContent>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {categorias.map((categoria: any) => (
+                <div key={categoria.nome} className="flex items-center justify-between gap-2 rounded-lg border bg-muted/20 px-3 py-2 text-sm">
+                  <span className="truncate font-medium">{categoria.nome}</span>
+                  <span className="font-bold">{formatQuantidade(categoria.quantidade)}</span>
                 </div>
-              )}
-            </div>
-            <div className="rounded-xl border bg-muted/20 p-3">
-              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Por categoria</p>
-              <div className="space-y-2">
-                {topCategorias.map((categoria: any) => (
-                  <div key={categoria.nome} className="flex items-center justify-between gap-2 rounded-lg bg-background/70 px-2 py-1.5 text-sm">
-                    <span className="truncate font-medium">{categoria.nome}</span>
-                    <span className="font-bold">{formatQuantidade(categoria.quantidade)}</span>
-                  </div>
-                ))}
-                {topCategorias.length === 0 ? <p className="text-xs text-muted-foreground">Sem categorias no dia.</p> : null}
-              </div>
+              ))}
+              {categorias.length === 0 ? <p className="text-xs text-muted-foreground">Sem categorias no dia.</p> : null}
             </div>
           </CardContent>
         </Card>
