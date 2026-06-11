@@ -1210,7 +1210,7 @@ function AlertaAvariasPedidoCopiado({ alertas, className = "" }: { alertas: any[
 
 function PedidosKpiDashboard({ kpis }: { kpis: any }) {
   const totalStatus = Math.max(1, Object.values(kpis.status ?? {}).reduce((sum: number, n: any) => sum + Number(n ?? 0), 0));
-  const topProdutos = (kpis.produtos ?? []).slice(0, 8);
+  const produtosPorVariedade = kpis.produtos ?? [];
   const topCategorias = (kpis.categorias ?? []).slice(0, 5);
 
   return (
@@ -1298,11 +1298,11 @@ function PedidosKpiDashboard({ kpis }: { kpis: any }) {
           </CardHeader>
           <CardContent className="grid gap-3 lg:grid-cols-[1.3fr_0.9fr]">
             <div className="space-y-2">
-              {topProdutos.length === 0 ? (
+              {produtosPorVariedade.length === 0 ? (
                 <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">Sem produtos no dia.</p>
               ) : (
-                topProdutos.map((produto: any, index: number) => {
-                  const max = Math.max(1, Number(topProdutos[0]?.quantidade ?? 0));
+                produtosPorVariedade.map((produto: any, index: number) => {
+                  const max = Math.max(1, Number(produtosPorVariedade[0]?.quantidade ?? 0));
                   const pct = Math.max(4, Math.round((Number(produto.quantidade ?? 0) / max) * 100));
                   return (
                     <div key={produto.nome} className="rounded-lg border bg-muted/20 p-2">
