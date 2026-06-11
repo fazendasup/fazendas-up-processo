@@ -1296,35 +1296,37 @@ function PedidosKpiDashboard({ kpis }: { kpis: any }) {
               <ShoppingBasket className="h-4 w-4" /> Produtos por variedade
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-3 lg:grid-cols-[1.3fr_0.9fr]">
-            <div className="space-y-2">
+          <CardContent className="grid gap-3 lg:grid-cols-[1.35fr_0.8fr]">
+            <div className="max-h-[360px] overflow-y-auto pr-1">
               {produtosPorVariedade.length === 0 ? (
                 <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">Sem produtos no dia.</p>
               ) : (
-                produtosPorVariedade.map((produto: any, index: number) => {
-                  const max = Math.max(1, Number(produtosPorVariedade[0]?.quantidade ?? 0));
-                  const pct = Math.max(4, Math.round((Number(produto.quantidade ?? 0) / max) * 100));
-                  return (
-                    <div key={produto.nome} className="rounded-lg border bg-muted/20 p-2">
-                      <div className="mb-1 flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold">
-                            {index + 1}. {produto.nome}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground">
-                            {produto.categoria} · {produto.clientes} cliente(s)
-                          </p>
+                <div className="grid gap-2 xl:grid-cols-2">
+                  {produtosPorVariedade.map((produto: any, index: number) => {
+                    const max = Math.max(1, Number(produtosPorVariedade[0]?.quantidade ?? 0));
+                    const pct = Math.max(4, Math.round((Number(produto.quantidade ?? 0) / max) * 100));
+                    return (
+                      <div key={produto.nome} className="rounded-lg border bg-muted/20 p-2">
+                        <div className="mb-1 flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate text-xs font-semibold" title={produto.nome}>
+                              {index + 1}. {produto.nome}
+                            </p>
+                            <p className="truncate text-[10px] text-muted-foreground">
+                              {produto.categoria} · {produto.clientes} cliente(s)
+                            </p>
+                          </div>
+                          <span className="shrink-0 rounded-full bg-background px-2 py-0.5 text-[11px] font-bold">
+                            {formatQuantidade(produto.quantidade)}
+                          </span>
                         </div>
-                        <span className="shrink-0 rounded-full bg-background px-2 py-1 text-xs font-bold">
-                          {formatQuantidade(produto.quantidade)}
-                        </span>
+                        <div className="h-1 overflow-hidden rounded-full bg-background">
+                          <div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} />
+                        </div>
                       </div>
-                      <div className="h-1.5 overflow-hidden rounded-full bg-background">
-                        <div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} />
-                      </div>
-                    </div>
-                  );
-                })
+                    );
+                  })}
+                </div>
               )}
             </div>
             <div className="rounded-xl border bg-muted/20 p-3">
