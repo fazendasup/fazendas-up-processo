@@ -1786,6 +1786,7 @@ export const pedidosRouter = router({
         .filter((op) => op.statusConciliacao === "VINCULO_SUGERIDO" && op.sugestaoPedidoContaAzulId)
         .map((op) => {
           const venda = documentosConciliaveis.find((v) => v.id === op.sugestaoPedidoContaAzulId);
+          const score = venda ? scoreSugestaoVinculo(op, venda, resolverChaveConciliacao) : 0;
           const divergencias = venda
             ? calcularDivergencias(op, venda, resolverChaveConciliacao, opcoesCalcularDivergencias(op))
             : [];
@@ -1793,9 +1794,11 @@ export const pedidosRouter = router({
             operacional: op,
             venda,
             divergencias,
+            score,
           };
         })
-        .filter((s) => s.venda);
+        .filter((s) => s.venda && s.score >= 70);
+      const vendasComSugestaoValida = new Set(sugestoes.map((s) => s.venda!.id));
 
       const semVenda = operacionais.filter(
         (op) => !op.pedidoContaAzulId && op.statusConciliacao !== "VENDA_ERRADA",
@@ -1805,7 +1808,8 @@ export const pedidosRouter = router({
           !v.pedidoOperacionalVinculo &&
           v.statusConciliacao !== "IGNORADA" &&
           v.statusConciliacao !== "VENDA_ERRADA" &&
-          v.statusConciliacao !== "CONCILIADA",
+          v.statusConciliacao !== "CONCILIADA" &&
+          (v.statusConciliacao !== "SUGERIDA" || !vendasComSugestaoValida.has(v.id)),
       );
       const conciliados = operacionais.filter((op) => op.statusConciliacao === "CONCILIADO" && op.pedidoContaAzul);
       const divergentes = operacionais
@@ -1930,8 +1934,8 @@ export const pedidosRouter = router({
         return { venda, candidatos: [] };
       }
 
-      const janelaMs = input.janelaDias * 86_400_000;
-      const inicioJanela = inicioComCortePedidos(new Date(venda.dataPedido.getTime() - janelaMs));
+      const inicioJanela = inicioComCortePedidos(inicioSemana(venda.dataPedido));
+      const fimJanela = fimSemana(venda.dataPedido);
       const candidatos = await ctx.prisma!.pedidoOperacional.findMany({
         where: {
           contaAzulCustomerId: venda.cliente.externalId,
@@ -1939,7 +1943,7 @@ export const pedidosRouter = router({
           OR: [{ pedidoContaAzulId: null }, { pedidoContaAzulId: venda.id }],
           dataEntrega: {
             gte: inicioJanela,
-            lte: fimDia(new Date(venda.dataPedido.getTime() + janelaMs)),
+            lte: fimJanela,
           },
         },
         include: {
@@ -1968,13 +1972,17 @@ export const pedidosRouter = router({
       return {
         venda,
         candidatos: candidatos
-          .map((op) => ({
-            pedido: op,
-            score: scoreSugestaoVinculo(op, venda, resolverChave),
-            diasDistancia: diasEntrePedidos(op, venda),
-            divergencias: calcularDivergencias(op, venda, resolverChave, opcoesCalcularDivergencias(op)),
-            vinculadoNestaVenda: op.pedidoContaAzulId === venda.id,
-          }))
+          .map((op) => {
+            const score = scoreSugestaoVinculo(op, venda, resolverChave);
+            return {
+              pedido: op,
+              score,
+              diasDistancia: diasEntrePedidos(op, venda),
+              divergencias: calcularDivergencias(op, venda, resolverChave, opcoesCalcularDivergencias(op)),
+              vinculadoNestaVenda: op.pedidoContaAzulId === venda.id,
+            };
+          })
+          .filter((c) => c.score > 0)
           .sort((a, b) => b.score - a.score || a.diasDistancia - b.diasDistancia),
       };
     }),

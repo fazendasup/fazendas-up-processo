@@ -6,7 +6,7 @@ import {
   resolverProdutoOperacional,
   type ProdutoOperacionalLookup,
 } from "./produto-operacional.js";
-import { GO_LIVE_PEDIDOS } from "./semana.js";
+import { GO_LIVE_PEDIDOS, inicioSemana } from "./semana.js";
 import { ymdInTimeZone } from "../../zoned-day.js";
 
 type PedidoOperacionalComItens = Prisma.PedidoOperacionalGetPayload<{
@@ -139,6 +139,10 @@ function diffDias(a: Date, b: Date): number {
   return Math.abs(inicioDia(a).getTime() - inicioDia(b).getTime()) / 86_400_000;
 }
 
+function mesmaSemanaOperacional(a: Date, b: Date): boolean {
+  return inicioSemana(a).getTime() === inicioSemana(b).getTime();
+}
+
 function normalizarNome(s: string): string {
   return s
     .normalize("NFD")
@@ -260,12 +264,12 @@ export function scoreSugestaoVinculo(
   const extOp = operacional.contaAzulCustomerId;
   const extCa = contaAzul.cliente.externalId;
   if (!extOp || !extCa || extOp !== extCa) return 0;
+  if (!mesmaSemanaOperacional(operacional.dataEntrega, contaAzul.dataPedido)) return 0;
 
   let score = 40;
   const dias = diffDias(operacional.dataEntrega, contaAzul.dataPedido);
   if (dias === 0) score += 35;
   else if (dias <= 2) score += 20;
-  else if (dias <= 7) score += 8;
   else return 0;
 
   const chavesOp = new Set(
@@ -427,8 +431,8 @@ export async function processarConciliacaoAposSyncVenda(
       pedidoContaAzulId: null,
       statusConciliacao: { in: ["PLANEJADO", "VINCULO_SUGERIDO"] },
       dataEntrega: {
-        gte: inicioDia(new Date(contaAzul.dataPedido.getTime() - 7 * 86_400_000)),
-        lte: fimDia(new Date(contaAzul.dataPedido.getTime() + 7 * 86_400_000)),
+        gte: inicioSemana(contaAzul.dataPedido),
+        lte: fimDia(new Date(inicioSemana(contaAzul.dataPedido).getTime() + 6 * 86_400_000)),
       },
     },
     include: { itens: true, cliente: { select: { externalId: true, nome: true } } },
