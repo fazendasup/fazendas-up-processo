@@ -349,7 +349,10 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
     let clientesComTaxa = 0;
 
     for (const grupo of grupos as any[]) {
+      const cancelado = grupo.status === "CANCELADO";
       status[grupo.status] = (status[grupo.status] ?? 0) + 1;
+      if (cancelado) continue;
+
       pedidos += grupo.pedidos?.length ?? 0;
       if (!grupo.regras) clientesSemRegras++;
       if (grupo.regras?.cobraTaxaEntrega) clientesComTaxa++;
@@ -380,7 +383,8 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
     return {
       pedidos,
       unidades,
-      clientes: grupos.length,
+      clientes: (grupos as any[]).filter((grupo) => grupo.status !== "CANCELADO").length,
+      cancelados: (grupos as any[]).filter((grupo) => grupo.status === "CANCELADO").reduce((sum, grupo) => sum + (grupo.pedidos?.length ?? 0), 0),
       produtosDistintos: produtos.length,
       linhas,
       observacoes,
@@ -391,6 +395,12 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
       categorias,
     };
   }, [dashboard.data]);
+  const gruposDashboard = (dashboard.data ?? []) as any[];
+  const gruposAtivosDashboard = gruposDashboard.filter((grupo) => grupo.status !== "CANCELADO");
+  const gruposCanceladosDashboard = gruposDashboard.filter((grupo) => grupo.status === "CANCELADO");
+  const pedidosAgenda = (agenda.data ?? []) as any[];
+  const pedidosAtivosAgenda = pedidosAgenda.filter((pedido) => pedido.status !== "CANCELADO");
+  const pedidosCanceladosAgenda = pedidosAgenda.filter((pedido) => pedido.status === "CANCELADO");
 
   function salvarPedidoAtual() {
     if (!pedidoEditId && !podeCriarPedidos && bloqueioSemana) {
@@ -652,13 +662,13 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
             </CardHeader>
             <CardContent className="space-y-4">
               <PedidosKpiDashboard kpis={dashboardKpis} />
-              {(dashboard.data ?? []).length === 0 ? (
+              {gruposAtivosDashboard.length === 0 ? (
                 <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                  Nenhuma entrega para o dia selecionado.
+                  Nenhum pedido ativo para o dia selecionado.
                 </p>
               ) : (
                 <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
-                  {dashboard.data?.map((grupo: any) => (
+                  {gruposAtivosDashboard.map((grupo: any) => (
                     <Card key={grupo.contaAzulCustomerId} className={`border-l-4 ${statusAccentClass(grupo.status)}`}>
                     <CardContent className="space-y-3 p-3">
                       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -741,6 +751,43 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
                   ))}
                 </div>
               )}
+              {gruposCanceladosDashboard.length > 0 ? (
+                <div className="rounded-xl border border-dashed bg-muted/20 p-3">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-bold">Pedidos cancelados</p>
+                      <p className="text-xs text-muted-foreground">
+                        Separados no histórico. Não entram no total de produtos do dia nem na referência da produção.
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-background px-2 py-1 text-xs font-bold text-muted-foreground">
+                      {dashboardKpis.cancelados} pedido(s)
+                    </span>
+                  </div>
+                  <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                    {gruposCanceladosDashboard.map((grupo: any) => (
+                      <div key={`${grupo.contaAzulCustomerId}-cancelado`} className="rounded-lg border bg-background/70 p-3 opacity-80">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold">{grupo.cliente?.nome ?? grupo.contaAzulCustomerId}</p>
+                            <p className="text-xs text-muted-foreground">{grupo.pedidos.length} pedido(s) cancelado(s)</p>
+                          </div>
+                          <span className={`shrink-0 rounded-full border px-2 py-1 text-[11px] font-semibold ${statusSelectClass("CANCELADO")}`}>
+                            Cancelado
+                          </span>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {grupo.itens.map((item: any) => (
+                            <span key={item.id} className="rounded-full bg-muted px-2 py-1 text-[11px] line-through">
+                              {fmtQtd(item.quantidade)} × {item.produtoNome}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </CardContent>
           </Card>
         </TabsContent>
@@ -913,7 +960,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
                 </select>
               </div>
               <div className="space-y-2">
-                {(agenda.data ?? []).map((p: any) => (
+                {pedidosAtivosAgenda.map((p: any) => (
                   <div key={p.id} className="rounded-lg border p-3">
                     <div className="flex flex-wrap justify-between gap-2">
                       <div>
@@ -1025,6 +1072,43 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
                     </div>
                   </div>
                 ))}
+                {pedidosAtivosAgenda.length === 0 ? (
+                  <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+                    Nenhum pedido ativo na agenda deste dia.
+                  </p>
+                ) : null}
+                {pedidosCanceladosAgenda.length > 0 ? (
+                  <div className="mt-4 rounded-xl border border-dashed bg-muted/20 p-3">
+                    <div className="mb-2">
+                      <p className="text-sm font-bold">Pedidos cancelados</p>
+                      <p className="text-xs text-muted-foreground">
+                        Mantidos no histórico e fora dos totais de produção.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      {pedidosCanceladosAgenda.map((p: any) => (
+                        <div key={p.id} className="rounded-lg border bg-background/70 p-3 opacity-80">
+                          <div className="flex flex-wrap justify-between gap-2">
+                            <div>
+                              <p className="font-semibold">{p.cliente?.nome ?? p.contaAzulCustomerId}</p>
+                              <p className="text-xs text-muted-foreground">{TIPOS.find(([v]) => v === p.tipoVenda)?.[1]} · Cancelado</p>
+                            </div>
+                            <Button size="sm" variant="ghost" onClick={() => setPedidoAuditoriaId(p.id)}>
+                              Rastreabilidade
+                            </Button>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {p.itens.map((i: any) => (
+                              <span key={i.id} className="rounded-full bg-muted px-2 py-1 text-xs line-through">
+                                {Number(i.quantidade)} × {i.produtoNome}{i.categoria ? ` · ${i.categoria}` : ""}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
               {pedidoAuditoriaId && (
                 <div className="rounded-lg border bg-muted/20 p-3">
@@ -1225,9 +1309,9 @@ function PedidosKpiDashboard({ kpis }: { kpis: any }) {
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <KpiResumoCard
             icon={<ClipboardList className="h-4 w-4 text-cyan-700 dark:text-cyan-300" />}
-            label="Pedidos do dia"
+            label="Pedidos ativos"
             value={kpis.pedidos}
-            hint={`${kpis.linhas} linha(s) de produto`}
+            hint={`${kpis.linhas} linha(s) de produto${kpis.cancelados ? ` · ${kpis.cancelados} cancelado(s) fora da produção` : ""}`}
             className="bg-cyan-500/[0.07] dark:bg-cyan-500/15"
           />
           <KpiResumoCard

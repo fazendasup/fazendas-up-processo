@@ -1060,9 +1060,9 @@ export const pedidosRouter = router({
       const grupos = new Map<string, { contaAzulCustomerId: string; cliente: unknown; regras: unknown; status: string; prioridadeEntrega: number; pedidos: typeof pedidos; itens: unknown[]; avarias: unknown[]; alertasAvariasPendentes: unknown[] }>();
       for (const p of pedidos) {
         const pedido = deveOcultarValores(ctx) ? ocultarValoresPedido(p) : p;
-        const key = p.contaAzulCustomerId;
+        const key = `${p.contaAzulCustomerId}:${p.status === "CANCELADO" ? "CANCELADO" : "ATIVO"}`;
         const atual = grupos.get(key) ?? {
-          contaAzulCustomerId: key,
+          contaAzulCustomerId: p.contaAzulCustomerId,
           cliente: pedido.cliente,
           regras: pedido.cliente?.regraComercial ?? null,
           status: p.status,
