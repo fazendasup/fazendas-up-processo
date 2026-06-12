@@ -7,7 +7,6 @@ import {
   type ProdutoOperacionalLookup,
 } from "./produto-operacional.js";
 import { GO_LIVE_PEDIDOS, inicioSemana } from "./semana.js";
-import { ymdInTimeZone } from "../../zoned-day.js";
 
 type PedidoOperacionalComItens = Prisma.PedidoOperacionalGetPayload<{
   include: { itens: true; cliente: { select: { externalId: true; nome: true } } };
@@ -132,7 +131,11 @@ function antesDoCortePedidos(d: Date): boolean {
 }
 
 function mesmoDia(a: Date, b: Date): boolean {
-  return ymdInTimeZone(a, "America/Sao_Paulo") === ymdInTimeZone(b, "America/Sao_Paulo");
+  return ymdOperacional(a) === ymdOperacional(b);
+}
+
+function ymdOperacional(d: Date): string {
+  return d.toISOString().slice(0, 10);
 }
 
 function diffDias(a: Date, b: Date): number {
@@ -202,8 +205,8 @@ export function calcularDivergencias(
   if (compararData && !mesmoDia(operacional.dataEntrega, contaAzul.dataPedido)) {
     divergencias.push({
       campo: "data",
-      operacional: ymdInTimeZone(operacional.dataEntrega, "America/Sao_Paulo"),
-      contaAzul: ymdInTimeZone(contaAzul.dataPedido, "America/Sao_Paulo"),
+      operacional: ymdOperacional(operacional.dataEntrega),
+      contaAzul: ymdOperacional(contaAzul.dataPedido),
     });
   }
 
