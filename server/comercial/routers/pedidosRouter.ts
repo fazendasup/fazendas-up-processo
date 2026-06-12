@@ -18,7 +18,11 @@ import {
 } from "../lib/fechamento.js";
 import { calcularConciliacaoSemanal } from "../lib/conciliacao-semanal.js";
 import { fimSemana, GO_LIVE_PEDIDOS, inicioSemana } from "../lib/semana.js";
-import { comercialProcedure, comercialRequirePerfis, router } from "../../_core/trpc";
+import {
+  comercialProcedure,
+  comercialRequirePerfis,
+  router,
+} from "../../_core/trpc";
 import {
   aplicarCorrecaoConciliacao,
   calcularDivergencias,
@@ -44,15 +48,27 @@ import {
   iniciarSincronizacaoCatalogoProdutosEmBackground,
 } from "../integrations/conta-azul/produtos-sync.service.js";
 
-const podeConfigurarEstoqueVivo = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL", "COMERCIAL", "OPERACOES");
+const podeConfigurarEstoqueVivo = comercialRequirePerfis(
+  "ADMIN",
+  "GERENTE_COMERCIAL",
+  "COMERCIAL",
+  "OPERACOES"
+);
 
 const STATUS_PEDIDO = ["PENDENTE", "PRONTO", "ENTREGUE", "CANCELADO"] as const;
 const statusSchema = z.enum(["PENDENTE", "PRONTO", "ENTREGUE", "CANCELADO"]);
-const tipoVendaSchema = z.enum(["RECORRENTE_SEMANAL", "RECORRENTE_QUINZENAL", "PLANO", "AVULSO"]);
+const tipoVendaSchema = z.enum([
+  "RECORRENTE_SEMANAL",
+  "RECORRENTE_QUINZENAL",
+  "PLANO",
+  "AVULSO",
+]);
 const periodoEntregaSchema = z.enum(["MANHA", "TARDE"]).nullable().optional();
 const modoCompraSchema = z.enum(["UNIDADE", "KG"]);
 
-function deveOcultarValores(ctx: { comercialUsuario?: { perfil?: string } | null }): boolean {
+function deveOcultarValores(ctx: {
+  comercialUsuario?: { perfil?: string } | null;
+}): boolean {
   return ctx.comercialUsuario?.perfil === "LIDER_COLHEITA";
 }
 
@@ -62,7 +78,9 @@ function ocultarValoresPedido<T extends Record<string, any>>(pedido: T): T {
     itens: (pedido.itens ?? []).map((item: any) => ({
       ...item,
       precoUnit: null,
-      produto: item.produto ? { ...item.produto, precoBase: null } : item.produto,
+      produto: item.produto
+        ? { ...item.produto, precoBase: null }
+        : item.produto,
     })),
     cliente: pedido.cliente?.regraComercial
       ? {
@@ -81,11 +99,22 @@ function ocultarValoresPedido<T extends Record<string, any>>(pedido: T): T {
   };
 }
 
-function ocultarValoresConciliacaoCliente<T extends Record<string, any>>(row: T): T {
+function ocultarValoresConciliacaoCliente<T extends Record<string, any>>(
+  row: T
+): T {
   return {
     ...row,
-    operacional: row.operacional ? { ...row.operacional, valorEstimado: null } : row.operacional,
-    contaAzul: row.contaAzul ? { ...row.contaAzul, valorLiquido: null, valorGerencial: null, descontoBoletoValor: null } : row.contaAzul,
+    operacional: row.operacional
+      ? { ...row.operacional, valorEstimado: null }
+      : row.operacional,
+    contaAzul: row.contaAzul
+      ? {
+          ...row.contaAzul,
+          valorLiquido: null,
+          valorGerencial: null,
+          descontoBoletoValor: null,
+        }
+      : row.contaAzul,
     diffValor: null,
   };
 }
@@ -101,13 +130,22 @@ function minutosDoHorario(horario: string | null | undefined): number | null {
   if (!match) return null;
   const horas = Number(match[1]);
   const minutos = Number(match[2]);
-  if (!Number.isInteger(horas) || !Number.isInteger(minutos) || horas < 0 || horas > 23 || minutos < 0 || minutos > 59) {
+  if (
+    !Number.isInteger(horas) ||
+    !Number.isInteger(minutos) ||
+    horas < 0 ||
+    horas > 23 ||
+    minutos < 0 ||
+    minutos > 59
+  ) {
     return null;
   }
   return horas * 60 + minutos;
 }
 
-function prioridadeEntregaAutomatica(regra: RegraOrdenacaoEntrega | null | undefined): number {
+function prioridadeEntregaAutomatica(
+  regra: RegraOrdenacaoEntrega | null | undefined
+): number {
   const periodoBase =
     regra?.periodoEntrega === "MANHA"
       ? 0
@@ -118,8 +156,20 @@ function prioridadeEntregaAutomatica(regra: RegraOrdenacaoEntrega | null | undef
 }
 
 function compararEntregaPorRegra(
-  a: { cliente?: { nome?: string | null; regraComercial?: RegraOrdenacaoEntrega | null } | null; criadoEm?: Date },
-  b: { cliente?: { nome?: string | null; regraComercial?: RegraOrdenacaoEntrega | null } | null; criadoEm?: Date },
+  a: {
+    cliente?: {
+      nome?: string | null;
+      regraComercial?: RegraOrdenacaoEntrega | null;
+    } | null;
+    criadoEm?: Date;
+  },
+  b: {
+    cliente?: {
+      nome?: string | null;
+      regraComercial?: RegraOrdenacaoEntrega | null;
+    } | null;
+    criadoEm?: Date;
+  }
 ): number {
   const prioridadeA = prioridadeEntregaAutomatica(a.cliente?.regraComercial);
   const prioridadeB = prioridadeEntregaAutomatica(b.cliente?.regraComercial);
@@ -151,13 +201,22 @@ function antesDoCortePedidos(d: Date): boolean {
 
 function inicioComCortePedidos(d: Date): Date {
   const inicio = inicioDia(d);
-  return inicio.getTime() < CORTE_INICIO_PEDIDOS.getTime() ? new Date(CORTE_INICIO_PEDIDOS) : inicio;
+  return inicio.getTime() < CORTE_INICIO_PEDIDOS.getTime()
+    ? new Date(CORTE_INICIO_PEDIDOS)
+    : inicio;
 }
 
-function intervaloComCortePedidos(inicio: Date, fim: Date): { inicio: Date; fim: Date; vazio: boolean } {
+function intervaloComCortePedidos(
+  inicio: Date,
+  fim: Date
+): { inicio: Date; fim: Date; vazio: boolean } {
   const outInicio = inicioComCortePedidos(inicio);
   const outFim = fimDia(fim);
-  return { inicio: outInicio, fim: outFim, vazio: outFim.getTime() < outInicio.getTime() };
+  return {
+    inicio: outInicio,
+    fim: outFim,
+    vazio: outFim.getTime() < outInicio.getTime(),
+  };
 }
 
 function adicionarDias(d: Date, dias: number): Date {
@@ -182,7 +241,7 @@ async function registrarAuditoria(
   usuario: { id: string; nome: string },
   acao: string,
   antes: unknown,
-  depois: unknown,
+  depois: unknown
 ) {
   await prisma.pedidoOperacionalAuditoria.create({
     data: {
@@ -197,18 +256,25 @@ async function registrarAuditoria(
 }
 
 function jsonObject(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
 }
 
 async function alertasAvariasDepoisPedidoOrigem(
   prisma: PrismaClient,
-  pedidos: Array<{ id: string; contaAzulCustomerId: string; dataEntrega: Date; criadoEm: Date }>,
+  pedidos: Array<{
+    id: string;
+    contaAzulCustomerId: string;
+    dataEntrega: Date;
+    criadoEm: Date;
+  }>
 ) {
   if (pedidos.length === 0) return new Map<string, unknown>();
 
   const auditoriasCopia = await prisma.pedidoOperacionalAuditoria.findMany({
     where: {
-      pedidoId: { in: pedidos.map((p) => p.id) },
+      pedidoId: { in: pedidos.map(p => p.id) },
       acao: "pedido_copiado_semana_anterior",
     },
     select: { pedidoId: true, depois: true },
@@ -219,26 +285,35 @@ async function alertasAvariasDepoisPedidoOrigem(
   for (const auditoria of auditoriasCopia) {
     if (origemPorPedido.has(auditoria.pedidoId)) continue;
     const depois = jsonObject(auditoria.depois);
-    const pedidoOrigemId = typeof depois?.pedidoOrigemId === "string" ? depois.pedidoOrigemId : null;
+    const pedidoOrigemId =
+      typeof depois?.pedidoOrigemId === "string" ? depois.pedidoOrigemId : null;
     if (pedidoOrigemId) origemPorPedido.set(auditoria.pedidoId, pedidoOrigemId);
   }
   if (origemPorPedido.size === 0) return new Map<string, unknown>();
 
   const pedidosOrigem = await prisma.pedidoOperacional.findMany({
     where: { id: { in: Array.from(origemPorPedido.values()) } },
-    select: { id: true, contaAzulCustomerId: true, dataEntrega: true, criadoEm: true },
+    select: {
+      id: true,
+      contaAzulCustomerId: true,
+      dataEntrega: true,
+      criadoEm: true,
+    },
   });
-  const origemPorId = new Map(pedidosOrigem.map((p) => [p.id, p]));
+  const origemPorId = new Map(pedidosOrigem.map(p => [p.id, p]));
 
   const criterios = pedidos
-    .map((pedido) => {
+    .map(pedido => {
       const origemId = origemPorPedido.get(pedido.id);
       const origem = origemId ? origemPorId.get(origemId) : null;
       if (!origem) return null;
       return {
         contaAzulCustomerId: pedido.contaAzulCustomerId,
         criadoEm: { gt: origem.criadoEm },
-        dataEntrega: { gte: inicioDia(origem.dataEntrega), lte: fimDia(pedido.dataEntrega) },
+        dataEntrega: {
+          gte: inicioDia(origem.dataEntrega),
+          lte: fimDia(pedido.dataEntrega),
+        },
       };
     })
     .filter(Boolean) as Prisma.PedidoOperacionalAvariaWhereInput[];
@@ -256,21 +331,24 @@ async function alertasAvariasDepoisPedidoOrigem(
     const origem = origemId ? origemPorId.get(origemId) : null;
     if (!origem) continue;
     const avariasPedido = avarias.filter(
-      (a) =>
+      a =>
         a.contaAzulCustomerId === pedido.contaAzulCustomerId &&
         a.criadoEm > origem.criadoEm &&
         a.dataEntrega >= inicioDia(origem.dataEntrega) &&
-        a.dataEntrega <= fimDia(pedido.dataEntrega),
+        a.dataEntrega <= fimDia(pedido.dataEntrega)
     );
     if (avariasPedido.length === 0) continue;
 
-    const quantidadeTotal = avariasPedido.reduce((sum, a) => sum + (Number(a.quantidade ?? 0) || 0), 0);
+    const quantidadeTotal = avariasPedido.reduce(
+      (sum, a) => sum + (Number(a.quantidade ?? 0) || 0),
+      0
+    );
     alertas.set(pedido.id, {
       pedidoOrigemId: origem.id,
       dataPedidoBase: origem.dataEntrega,
       criadoEmPedidoBase: origem.criadoEm,
       quantidadeTotal,
-      lancamentos: avariasPedido.slice(0, 5).map((a) => ({
+      lancamentos: avariasPedido.slice(0, 5).map(a => ({
         id: a.id,
         dataEntrega: a.dataEntrega,
         produtoId: a.produtoId,
@@ -294,7 +372,9 @@ const itemPedidoInput = z.object({
 
 const avariaPedidoInput = z.object({
   produtoId: z.string().min(1, "Variedade da avaria é obrigatória"),
-  quantidade: z.number().positive("Quantidade de avaria deve ser maior que zero"),
+  quantidade: z
+    .number()
+    .positive("Quantidade de avaria deve ser maior que zero"),
   observacoes: z.string().optional(),
 });
 
@@ -333,7 +413,13 @@ export const pedidosRouter = router({
   })),
 
   clientes: comercialProcedure
-    .input(z.object({ busca: z.string().optional(), dia: z.coerce.date().optional(), limite: z.number().min(1).max(100).default(50) }))
+    .input(
+      z.object({
+        busca: z.string().optional(),
+        dia: z.coerce.date().optional(),
+        limite: z.number().min(1).max(100).default(50),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const whereBusca = input.busca?.trim()
         ? {
@@ -345,19 +431,27 @@ export const pedidosRouter = router({
             ],
           }
         : {};
-      const idsNoDia = input.dia && !antesDoCortePedidos(input.dia)
-        ? await ctx.prisma!.pedidoOperacional.findMany({
-            where: { dataEntrega: { gte: inicioComCortePedidos(input.dia), lte: fimDia(input.dia) } },
-            select: { contaAzulCustomerId: true },
-            distinct: ["contaAzulCustomerId"],
-          })
-        : null;
+      const idsNoDia =
+        input.dia && !antesDoCortePedidos(input.dia)
+          ? await ctx.prisma!.pedidoOperacional.findMany({
+              where: {
+                dataEntrega: {
+                  gte: inicioComCortePedidos(input.dia),
+                  lte: fimDia(input.dia),
+                },
+              },
+              select: { contaAzulCustomerId: true },
+              distinct: ["contaAzulCustomerId"],
+            })
+          : null;
 
       return ctx.prisma!.cliente.findMany({
         where: {
           externalId: {
             not: null,
-            ...(idsNoDia ? { in: idsNoDia.map((r) => r.contaAzulCustomerId) } : {}),
+            ...(idsNoDia
+              ? { in: idsNoDia.map(r => r.contaAzulCustomerId) }
+              : {}),
           },
           ...whereBusca,
         },
@@ -390,7 +484,11 @@ export const pedidosRouter = router({
           telefoneWhatsapp: true,
         },
       });
-      if (!cliente) throw new TRPCError({ code: "NOT_FOUND", message: "Cliente Conta Azul não encontrado" });
+      if (!cliente)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Cliente Conta Azul não encontrado",
+        });
       const regra = await ctx.prisma!.regraComercialCliente.findUnique({
         where: { contaAzulCustomerId: input.contaAzulCustomerId },
         include: { precosEspeciais: { include: { produto: true } } },
@@ -415,11 +513,13 @@ export const pedidosRouter = router({
         contaAzulCustomerId: z.string().min(1),
         dia: z.coerce.date(),
         janelaDias: z.number().int().min(1).max(60).default(14),
-      }),
+      })
     )
     .query(async ({ ctx, input }) => {
       const fim = fimDia(input.dia);
-      const inicio = inicioDia(adicionarDias(input.dia, -(input.janelaDias - 1)));
+      const inicio = inicioDia(
+        adicionarDias(input.dia, -(input.janelaDias - 1))
+      );
       const dataPedidoBase = inicioDia(adicionarDias(input.dia, -7));
       const pedidoBase = await ctx.prisma!.pedidoOperacional.findFirst({
         where: {
@@ -433,7 +533,10 @@ export const pedidosRouter = router({
       const avarias = await ctx.prisma!.pedidoOperacionalAvaria.findMany({
         where: {
           contaAzulCustomerId: input.contaAzulCustomerId,
-          dataEntrega: { gte: pedidoBase ? inicioDia(pedidoBase.dataEntrega) : inicio, lte: fim },
+          dataEntrega: {
+            gte: pedidoBase ? inicioDia(pedidoBase.dataEntrega) : inicio,
+            lte: fim,
+          },
           ...(pedidoBase ? { criadoEm: { gt: pedidoBase.criadoEm } } : {}),
         },
         include: {
@@ -443,7 +546,15 @@ export const pedidosRouter = router({
         orderBy: [{ dataEntrega: "desc" }, { criadoEm: "desc" }],
       });
 
-      const resumoPorProduto = new Map<string, { produtoId: string; produtoNome: string; categoria: string | null; quantidade: number }>();
+      const resumoPorProduto = new Map<
+        string,
+        {
+          produtoId: string;
+          produtoNome: string;
+          categoria: string | null;
+          quantidade: number;
+        }
+      >();
       let quantidadeTotal = 0;
       for (const avaria of avarias) {
         const quantidade = Number(avaria.quantidade ?? 0) || 0;
@@ -466,8 +577,12 @@ export const pedidosRouter = router({
         pedidoBase,
         possuiAvarias: avarias.length > 0,
         quantidadeTotal,
-        produtos: Array.from(resumoPorProduto.values()).sort((a, b) => b.quantidade - a.quantidade || a.produtoNome.localeCompare(b.produtoNome, "pt-BR")),
-        lancamentos: avarias.map((a) => ({
+        produtos: Array.from(resumoPorProduto.values()).sort(
+          (a, b) =>
+            b.quantidade - a.quantidade ||
+            a.produtoNome.localeCompare(b.produtoNome, "pt-BR")
+        ),
+        lancamentos: avarias.map(a => ({
           id: a.id,
           pedidoId: a.pedidoId,
           dataEntrega: a.dataEntrega,
@@ -490,7 +605,7 @@ export const pedidosRouter = router({
           apenasOperacao: z.boolean().default(true),
           busca: z.string().optional(),
         })
-        .default({ incluirInativos: false, apenasOperacao: true }),
+        .default({ incluirInativos: false, apenasOperacao: true })
     )
     .query(async ({ ctx, input }) => {
       const produtos = await ctx.prisma!.produtoComercial.findMany({
@@ -504,12 +619,14 @@ export const pedidosRouter = router({
             : input.incluirInativos
               ? { contaAzulProdutoId: { not: null } }
               : { contaAzulProdutoId: { not: null }, ativo: true }),
-          ...(input.busca?.trim() ? { nome: { contains: input.busca.trim() } } : {}),
+          ...(input.busca?.trim()
+            ? { nome: { contains: input.busca.trim() } }
+            : {}),
         },
         orderBy: [{ ativo: "desc" }, { nome: "asc" }],
         include: { _count: { select: { itensPedido: true } } },
       });
-      return produtos.map((p) => ({
+      return produtos.map(p => ({
         ...p,
         precoBase: deveOcultarValores(ctx) ? null : p.precoBase,
         usoPedidos: p._count.itensPedido,
@@ -525,7 +642,7 @@ export const pedidosRouter = router({
           apenasDisponiveis: z.boolean().default(true),
           somenteAtivosContaAzul: z.boolean().default(true),
         })
-        .default({ apenasDisponiveis: true, somenteAtivosContaAzul: true }),
+        .default({ apenasDisponiveis: true, somenteAtivosContaAzul: true })
     )
     .query(async ({ ctx, input }) => {
       const produtos = await ctx.prisma!.produtoComercial.findMany({
@@ -533,7 +650,9 @@ export const pedidosRouter = router({
           contaAzulProdutoId: { not: null },
           ...(input.apenasDisponiveis ? { importadoOperacao: false } : {}),
           ...(input.somenteAtivosContaAzul ? { statusContaAzul: "ATIVO" } : {}),
-          ...(input.busca?.trim() ? { nome: { contains: input.busca.trim() } } : {}),
+          ...(input.busca?.trim()
+            ? { nome: { contains: input.busca.trim() } }
+            : {}),
         },
         orderBy: [{ nome: "asc" }],
       });
@@ -544,9 +663,15 @@ export const pedidosRouter = router({
     .use(podeConfigurarEstoqueVivo)
     .mutation(async ({ ctx }) => {
       if (!ctx.comercialEnv) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Ambiente comercial indisponível." });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Ambiente comercial indisponível.",
+        });
       }
-      const r = iniciarSincronizacaoCatalogoProdutosEmBackground(ctx.prisma!, ctx.comercialEnv);
+      const r = iniciarSincronizacaoCatalogoProdutosEmBackground(
+        ctx.prisma!,
+        ctx.comercialEnv
+      );
       if (r.status === "already_running") {
         return r;
       }
@@ -556,7 +681,9 @@ export const pedidosRouter = router({
   importarProdutosContaAzul: comercialProcedure
     .use(podeConfigurarEstoqueVivo)
     .input(z.object({ produtoIds: z.array(z.string().min(1)).min(1) }))
-    .mutation(async ({ ctx, input }) => importarProdutosParaOperacao(ctx.prisma!, input.produtoIds)),
+    .mutation(async ({ ctx, input }) =>
+      importarProdutosParaOperacao(ctx.prisma!, input.produtoIds)
+    ),
 
   salvarProduto: comercialProcedure
     .use(podeConfigurarEstoqueVivo)
@@ -565,41 +692,66 @@ export const pedidosRouter = router({
       if (!input.id) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Produtos devem ser importados do catálogo Conta Azul. Sincronize e selecione os itens na aba Produtos.",
+          message:
+            "Produtos devem ser importados do catálogo Conta Azul. Sincronize e selecione os itens na aba Produtos.",
         });
       }
-      const existente = await ctx.prisma!.produtoComercial.findUnique({ where: { id: input.id } });
-      if (!existente) throw new TRPCError({ code: "NOT_FOUND", message: "Produto não encontrado." });
+      const existente = await ctx.prisma!.produtoComercial.findUnique({
+        where: { id: input.id },
+      });
+      if (!existente)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Produto não encontrado.",
+        });
       if (!existente.contaAzulProdutoId) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Este produto não veio do Conta Azul e não pode ser usado na operação.",
+          message:
+            "Este produto não veio do Conta Azul e não pode ser usado na operação.",
         });
       }
       const data = {
         nome: existente.nome,
-        precoBase: input.precoBase == null ? null : new Prisma.Decimal(input.precoBase),
+        precoBase:
+          input.precoBase == null ? null : new Prisma.Decimal(input.precoBase),
         categoria: input.categoria?.trim() || null,
         ativo: input.ativo,
         modoCompra: input.modoCompra,
-        fatorCompraUnidade: input.fatorCompraUnidade == null ? null : new Prisma.Decimal(input.fatorCompraUnidade),
-        rendimentoPorKg: input.rendimentoPorKg == null ? null : new Prisma.Decimal(input.rendimentoPorKg),
+        fatorCompraUnidade:
+          input.fatorCompraUnidade == null
+            ? null
+            : new Prisma.Decimal(input.fatorCompraUnidade),
+        rendimentoPorKg:
+          input.rendimentoPorKg == null
+            ? null
+            : new Prisma.Decimal(input.rendimentoPorKg),
         ocultoListaCompra: input.ocultoListaCompra,
         mixAtivo: input.mixAtivo,
         mixFolhaLeve: input.mixFolhaLeve,
         mixProdutoReferenciaId: input.mixProdutoReferenciaId || null,
-        mixVariedades: input.mixVariedades ? (input.mixVariedades as Prisma.InputJsonValue) : Prisma.JsonNull,
+        mixVariedades: input.mixVariedades
+          ? (input.mixVariedades as Prisma.InputJsonValue)
+          : Prisma.JsonNull,
       };
-      return ctx.prisma!.produtoComercial.update({ where: { id: input.id }, data });
+      return ctx.prisma!.produtoComercial.update({
+        where: { id: input.id },
+        data,
+      });
     }),
 
   excluirProduto: comercialProcedure
     .use(podeConfigurarEstoqueVivo)
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const usos = await ctx.prisma!.pedidoOperacionalItem.count({ where: { produtoId: input.id } });
+      const usos = await ctx.prisma!.pedidoOperacionalItem.count({
+        where: { produtoId: input.id },
+      });
       if (usos > 0) {
-        return ctx.prisma!.produtoComercial.update({ where: { id: input.id }, data: { ativo: false } });
+        return ctx.prisma!.produtoComercial.update({
+          where: { id: input.id },
+          data: { ativo: false },
+        });
       }
       return ctx.prisma!.produtoComercial.delete({ where: { id: input.id } });
     }),
@@ -615,19 +767,43 @@ export const pedidosRouter = router({
         cobraTaxaEntrega: z.boolean().default(false),
         valorTaxaEntrega: z.number().nonnegative().nullable().optional(),
         prazoBoletoDias: z.number().int().nonnegative().nullable().optional(),
-        descontoBoletoPercentual: z.number().min(0).max(100).nullable().optional(),
+        descontoBoletoPercentual: z
+          .number()
+          .min(0)
+          .max(100)
+          .nullable()
+          .optional(),
         acumulaPedidos: z.boolean().default(false),
         diasAcumulo: z.number().int().nonnegative().nullable().optional(),
-        prazoBoletoAcumuloDias: z.number().int().nonnegative().nullable().optional(),
-        precosEspeciais: z.array(z.object({ produtoId: z.string(), preco: z.number().nonnegative() })).default([]),
-      }),
+        prazoBoletoAcumuloDias: z
+          .number()
+          .int()
+          .nonnegative()
+          .nullable()
+          .optional(),
+        precosEspeciais: z
+          .array(
+            z.object({ produtoId: z.string(), preco: z.number().nonnegative() })
+          )
+          .default([]),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
-      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
-      const cliente = await ctx.prisma!.cliente.findUnique({ where: { externalId: input.contaAzulCustomerId } });
-      if (!cliente) throw new TRPCError({ code: "NOT_FOUND", message: "Cliente Conta Azul não encontrado" });
-      return ctx.prisma!.$transaction(async (tx) => {
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
+      const cliente = await ctx.prisma!.cliente.findUnique({
+        where: { externalId: input.contaAzulCustomerId },
+      });
+      if (!cliente)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Cliente Conta Azul não encontrado",
+        });
+      return ctx.prisma!.$transaction(async tx => {
         const regra = await tx.regraComercialCliente.upsert({
           where: { contaAzulCustomerId: input.contaAzulCustomerId },
           create: {
@@ -642,7 +818,9 @@ export const pedidosRouter = router({
                 : null,
             prazoBoletoDias: input.prazoBoletoDias ?? null,
             descontoBoletoPercentual:
-              input.descontoBoletoPercentual == null ? null : new Prisma.Decimal(input.descontoBoletoPercentual),
+              input.descontoBoletoPercentual == null
+                ? null
+                : new Prisma.Decimal(input.descontoBoletoPercentual),
             acumulaPedidos: input.acumulaPedidos,
             diasAcumulo: input.diasAcumulo ?? null,
             prazoBoletoAcumuloDias: input.prazoBoletoAcumuloDias ?? null,
@@ -658,16 +836,20 @@ export const pedidosRouter = router({
                 : null,
             prazoBoletoDias: input.prazoBoletoDias ?? null,
             descontoBoletoPercentual:
-              input.descontoBoletoPercentual == null ? null : new Prisma.Decimal(input.descontoBoletoPercentual),
+              input.descontoBoletoPercentual == null
+                ? null
+                : new Prisma.Decimal(input.descontoBoletoPercentual),
             acumulaPedidos: input.acumulaPedidos,
             diasAcumulo: input.diasAcumulo ?? null,
             prazoBoletoAcumuloDias: input.prazoBoletoAcumuloDias ?? null,
           },
         });
-        await tx.precoEspecialCliente.deleteMany({ where: { regraId: regra.id } });
+        await tx.precoEspecialCliente.deleteMany({
+          where: { regraId: regra.id },
+        });
         if (input.precosEspeciais.length > 0) {
           await tx.precoEspecialCliente.createMany({
-            data: input.precosEspeciais.map((p) => ({
+            data: input.precosEspeciais.map(p => ({
               regraId: regra.id,
               produtoId: p.produtoId,
               preco: new Prisma.Decimal(p.preco),
@@ -687,18 +869,25 @@ export const pedidosRouter = router({
         dia: z.coerce.date().optional(),
         contaAzulCustomerId: z.string().optional(),
         busca: z.string().optional(),
-      }),
+      })
     )
     .query(async ({ ctx, input }) => {
       if (input.dia && antesDoCortePedidos(input.dia)) return [];
       const whereDia = input.dia
-        ? { dataEntrega: { gte: inicioComCortePedidos(input.dia), lte: fimDia(input.dia) } }
+        ? {
+            dataEntrega: {
+              gte: inicioComCortePedidos(input.dia),
+              lte: fimDia(input.dia),
+            },
+          }
         : { dataEntrega: { gte: CORTE_INICIO_PEDIDOS } };
       const busca = input.busca?.trim();
       const pedidos = await ctx.prisma!.pedidoOperacional.findMany({
         where: {
           ...whereDia,
-          ...(input.contaAzulCustomerId ? { contaAzulCustomerId: input.contaAzulCustomerId } : {}),
+          ...(input.contaAzulCustomerId
+            ? { contaAzulCustomerId: input.contaAzulCustomerId }
+            : {}),
           ...(busca
             ? {
                 OR: [
@@ -710,17 +899,29 @@ export const pedidosRouter = router({
               }
             : {}),
         },
-        orderBy: [{ dataEntrega: "asc" }, { cliente: { nome: "asc" } }, { criadoEm: "desc" }],
+        orderBy: [
+          { dataEntrega: "asc" },
+          { cliente: { nome: "asc" } },
+          { criadoEm: "desc" },
+        ],
         include: {
           cliente: { include: { regraComercial: true } },
           itens: { include: { produto: true } },
-          avarias: { include: { produto: true, criadoPor: { select: { nome: true, email: true } } } },
+          avarias: {
+            include: {
+              produto: true,
+              criadoPor: { select: { nome: true, email: true } },
+            },
+          },
           criadoPor: { select: { nome: true, email: true } },
           editadoPor: { select: { nome: true, email: true } },
         },
       });
-      const alertas = await alertasAvariasDepoisPedidoOrigem(ctx.prisma!, pedidos);
-      return pedidos.sort(compararEntregaPorRegra).map((pedido) => ({
+      const alertas = await alertasAvariasDepoisPedidoOrigem(
+        ctx.prisma!,
+        pedidos
+      );
+      return pedidos.sort(compararEntregaPorRegra).map(pedido => ({
         ...(deveOcultarValores(ctx) ? ocultarValoresPedido(pedido) : pedido),
         alertaAvariasPendentes: alertas.get(pedido.id) ?? null,
       }));
@@ -736,25 +937,46 @@ export const pedidosRouter = router({
         observacoes: z.string().optional(),
         itens: z.array(itemPedidoInput).default([]),
         avarias: z.array(avariaPedidoInput).default([]),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
-      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
       if (antesDoCortePedidos(input.dataEntrega)) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Pedidos operacionais começam em 01/06/2026." });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Pedidos operacionais começam em 01/06/2026.",
+        });
       }
-      const cliente = await ctx.prisma!.cliente.findUnique({ where: { externalId: input.contaAzulCustomerId } });
-      if (!cliente) throw new TRPCError({ code: "NOT_FOUND", message: "Cliente Conta Azul não encontrado" });
+      const cliente = await ctx.prisma!.cliente.findUnique({
+        where: { externalId: input.contaAzulCustomerId },
+      });
+      if (!cliente)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Cliente Conta Azul não encontrado",
+        });
       // Gate de fechamento semanal: bloqueia a criação de novos pedidos enquanto a semana anterior
       // não estiver revisada e fechada. Edições de pedidos já existentes não são bloqueadas.
       if (!input.id) {
         await assertSemanaAnteriorFechada(ctx.prisma!, input.dataEntrega);
       }
       if (input.itens.length === 0 && input.avarias.length === 0) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Informe pelo menos um produto ou uma avaria" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Informe pelo menos um produto ou uma avaria",
+        });
       }
-      const produtoIds = Array.from(new Set([...input.itens.map((i) => i.produtoId), ...input.avarias.map((a) => a.produtoId)]));
+      const produtoIds = Array.from(
+        new Set([
+          ...input.itens.map(i => i.produtoId),
+          ...input.avarias.map(a => a.produtoId),
+        ])
+      );
       const produtos = await ctx.prisma!.produtoComercial.findMany({
         where: {
           id: { in: produtoIds },
@@ -766,19 +988,25 @@ export const pedidosRouter = router({
       if (produtos.length !== produtoIds.length) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Um ou mais produtos não existem, não estão ativos na operação ou não foram importados do Conta Azul.",
+          message:
+            "Um ou mais produtos não existem, não estão ativos na operação ou não foram importados do Conta Azul.",
         });
       }
-      const produtoMap = new Map(produtos.map((p) => [p.id, p]));
+      const produtoMap = new Map(produtos.map(p => [p.id, p]));
       const regra = await ctx.prisma!.regraComercialCliente.findUnique({
         where: { contaAzulCustomerId: input.contaAzulCustomerId },
         include: { precosEspeciais: true },
       });
-      const precoEspecial = new Map((regra?.precosEspeciais ?? []).map((p) => [p.produtoId, p.preco]));
+      const precoEspecial = new Map(
+        (regra?.precosEspeciais ?? []).map(p => [p.produtoId, p.preco])
+      );
 
-      return ctx.prisma!.$transaction(async (tx) => {
+      return ctx.prisma!.$transaction(async tx => {
         const antes = input.id
-          ? await tx.pedidoOperacional.findUnique({ where: { id: input.id }, include: { itens: true, avarias: true } })
+          ? await tx.pedidoOperacional.findUnique({
+              where: { id: input.id },
+              include: { itens: true, avarias: true },
+            })
           : null;
         const baseData = {
           clienteId: cliente.id,
@@ -790,17 +1018,24 @@ export const pedidosRouter = router({
           editadoPorId: usuario.id,
         };
         const pedido = input.id
-          ? await tx.pedidoOperacional.update({ where: { id: input.id }, data: baseData })
+          ? await tx.pedidoOperacional.update({
+              where: { id: input.id },
+              data: baseData,
+            })
           : await tx.pedidoOperacional.create({
               data: { ...baseData, criadoPorId: usuario.id },
             });
         if (input.id) {
-          await tx.pedidoOperacionalItem.deleteMany({ where: { pedidoId: pedido.id } });
-          await tx.pedidoOperacionalAvaria.deleteMany({ where: { pedidoId: pedido.id } });
+          await tx.pedidoOperacionalItem.deleteMany({
+            where: { pedidoId: pedido.id },
+          });
+          await tx.pedidoOperacionalAvaria.deleteMany({
+            where: { pedidoId: pedido.id },
+          });
         }
         if (input.itens.length > 0) {
           await tx.pedidoOperacionalItem.createMany({
-            data: input.itens.map((item) => {
+            data: input.itens.map(item => {
               const produto = produtoMap.get(item.produtoId)!;
               const especial = precoEspecial.get(item.produtoId);
               const preco = especial ?? produto.precoBase;
@@ -819,7 +1054,7 @@ export const pedidosRouter = router({
         }
         if (input.avarias.length > 0) {
           await tx.pedidoOperacionalAvaria.createMany({
-            data: input.avarias.map((avaria) => {
+            data: input.avarias.map(avaria => {
               const produto = produtoMap.get(avaria.produtoId)!;
               return {
                 pedidoId: pedido.id,
@@ -842,7 +1077,7 @@ export const pedidosRouter = router({
           { id: usuario.id, nome: usuario.nome },
           input.id ? "pedido_editado" : "pedido_criado",
           antes,
-          { ...pedido, itens: input.itens, avarias: input.avarias },
+          { ...pedido, itens: input.itens, avarias: input.avarias }
         );
         return tx.pedidoOperacional.findUnique({
           where: { id: pedido.id },
@@ -857,13 +1092,20 @@ export const pedidosRouter = router({
         pedidoId: z.string().min(1),
         dataEntrega: z.coerce.date(),
         moverClienteDia: z.boolean().optional().default(true),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
-      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
       if (antesDoCortePedidos(input.dataEntrega)) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Pedidos operacionais começam em 01/06/2026." });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Pedidos operacionais começam em 01/06/2026.",
+        });
       }
 
       const novaData = inicioDia(input.dataEntrega);
@@ -871,9 +1113,16 @@ export const pedidosRouter = router({
         where: { id: input.pedidoId },
         include: { avarias: true },
       });
-      if (!pedido) throw new TRPCError({ code: "NOT_FOUND", message: "Pedido não encontrado" });
+      if (!pedido)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Pedido não encontrado",
+        });
       if (pedido.status === "CANCELADO") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Não é possível alterar a data de pedido cancelado." });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Não é possível alterar a data de pedido cancelado.",
+        });
       }
       if (inicioDia(pedido.dataEntrega).getTime() === novaData.getTime()) {
         return { success: true, unchanged: true };
@@ -891,10 +1140,16 @@ export const pedidosRouter = router({
             },
             select: { id: true, dataEntrega: true, diaSemana: true },
           })
-        : [{ id: pedido.id, dataEntrega: pedido.dataEntrega, diaSemana: pedido.diaSemana }];
-      const pedidosAlvoIds = pedidosAlvo.map((p) => p.id);
+        : [
+            {
+              id: pedido.id,
+              dataEntrega: pedido.dataEntrega,
+              diaSemana: pedido.diaSemana,
+            },
+          ];
+      const pedidosAlvoIds = pedidosAlvo.map(p => p.id);
 
-      await ctx.prisma!.$transaction(async (tx) => {
+      await ctx.prisma!.$transaction(async tx => {
         await tx.pedidoOperacional.updateMany({
           where: { id: { in: pedidosAlvoIds } },
           data: {
@@ -913,24 +1168,38 @@ export const pedidosRouter = router({
             pedidoAlvo.id,
             { id: usuario.id, nome: usuario.nome },
             "data_pedido_alterada",
-            { dataEntrega: pedidoAlvo.dataEntrega, diaSemana: pedidoAlvo.diaSemana },
-            { dataEntrega: novaData, diaSemana: diaSemana(novaData) },
+            {
+              dataEntrega: pedidoAlvo.dataEntrega,
+              diaSemana: pedidoAlvo.diaSemana,
+            },
+            { dataEntrega: novaData, diaSemana: diaSemana(novaData) }
           );
         }
       });
 
-      return { success: true, unchanged: false, pedidosMovidos: pedidosAlvoIds.length, dataEntrega: novaData };
+      return {
+        success: true,
+        unchanged: false,
+        pedidosMovidos: pedidosAlvoIds.length,
+        dataEntrega: novaData,
+      };
     }),
 
   copiarSemanaAnterior: comercialProcedure
     .input(z.object({ dia: z.coerce.date() }))
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
-      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
 
       const semanaDestinoInicio = inicioSemana(input.dia);
       const semanaDestinoFim = fimSemana(input.dia);
-      const semanaOrigemInicio = inicioSemana(adicionarDias(semanaDestinoInicio, -7));
+      const semanaOrigemInicio = inicioSemana(
+        adicionarDias(semanaDestinoInicio, -7)
+      );
       const semanaOrigemFim = fimSemana(semanaOrigemInicio);
 
       if (semanaOrigemFim.getTime() < CORTE_INICIO_PEDIDOS.getTime()) {
@@ -939,7 +1208,8 @@ export const pedidosRouter = router({
           ignorados: 0,
           origem: semanaOrigemInicio,
           destino: semanaDestinoInicio,
-          mensagem: "A semana anterior está antes do início operacional (01/06/2026).",
+          mensagem:
+            "A semana anterior está antes do início operacional (01/06/2026).",
         };
       }
 
@@ -951,13 +1221,21 @@ export const pedidosRouter = router({
           where: {
             dataEntrega: { gte: semanaOrigemInicio, lte: semanaOrigemFim },
             status: { not: "CANCELADO" },
-            tipoVenda: { in: ["PLANO", "RECORRENTE_SEMANAL", "RECORRENTE_QUINZENAL"] },
+            tipoVenda: {
+              in: ["PLANO", "RECORRENTE_SEMANAL", "RECORRENTE_QUINZENAL"],
+            },
           },
           include: { itens: true },
-          orderBy: [{ dataEntrega: "asc" }, { prioridadeEntrega: "asc" }, { criadoEm: "asc" }],
+          orderBy: [
+            { dataEntrega: "asc" },
+            { prioridadeEntrega: "asc" },
+            { criadoEm: "asc" },
+          ],
         }),
         ctx.prisma!.pedidoOperacional.findMany({
-          where: { dataEntrega: { gte: semanaDestinoInicio, lte: semanaDestinoFim } },
+          where: {
+            dataEntrega: { gte: semanaDestinoInicio, lte: semanaDestinoFim },
+          },
           select: { contaAzulCustomerId: true, dataEntrega: true },
         }),
       ]);
@@ -968,20 +1246,30 @@ export const pedidosRouter = router({
           ignorados: 0,
           origem: semanaOrigemInicio,
           destino: semanaDestinoInicio,
-          mensagem: "Nenhum pedido de plano ou recorrente encontrado na semana anterior.",
+          mensagem:
+            "Nenhum pedido de plano ou recorrente encontrado na semana anterior.",
         };
       }
 
       const destinoKey = (contaAzulCustomerId: string, data: Date) =>
         `${contaAzulCustomerId}:${inicioDia(data).toISOString().slice(0, 10)}`;
-      const clientesJaNoDestino = new Set(clientesDestino.map((p) => destinoKey(p.contaAzulCustomerId, p.dataEntrega)));
+      const clientesJaNoDestino = new Set(
+        clientesDestino.map(p =>
+          destinoKey(p.contaAzulCustomerId, p.dataEntrega)
+        )
+      );
       let criados = 0;
       let ignorados = 0;
 
-      await ctx.prisma!.$transaction(async (tx) => {
+      await ctx.prisma!.$transaction(async tx => {
         for (const pedidoOrigem of pedidosOrigem) {
-          const dataDestino = inicioDia(adicionarDias(pedidoOrigem.dataEntrega, 7));
-          const keyDestino = destinoKey(pedidoOrigem.contaAzulCustomerId, dataDestino);
+          const dataDestino = inicioDia(
+            adicionarDias(pedidoOrigem.dataEntrega, 7)
+          );
+          const keyDestino = destinoKey(
+            pedidoOrigem.contaAzulCustomerId,
+            dataDestino
+          );
           if (clientesJaNoDestino.has(keyDestino)) {
             ignorados++;
             continue;
@@ -1010,7 +1298,7 @@ export const pedidosRouter = router({
           // Cópia semanal replica apenas o pedido tradicional; avarias ficam rastreadas no histórico
           // e aparecem como alerta separado para o vendedor.
           await tx.pedidoOperacionalItem.createMany({
-            data: pedidoOrigem.itens.map((item) => ({
+            data: pedidoOrigem.itens.map(item => ({
               pedidoId: novoPedido.id,
               produtoId: item.produtoId,
               produtoNome: item.produtoNome,
@@ -1034,14 +1322,19 @@ export const pedidosRouter = router({
               dataDestino: dataDestino.toISOString(),
               semanaOrigem: semanaOrigemInicio.toISOString(),
               semanaDestino: semanaDestinoInicio.toISOString(),
-            },
+            }
           );
           clientesJaNoDestino.add(keyDestino);
           criados++;
         }
       });
 
-      return { criados, ignorados, origem: semanaOrigemInicio, destino: semanaDestinoInicio };
+      return {
+        criados,
+        ignorados,
+        origem: semanaOrigemInicio,
+        destino: semanaDestinoInicio,
+      };
     }),
 
   dashboard: comercialProcedure
@@ -1049,56 +1342,125 @@ export const pedidosRouter = router({
     .query(async ({ ctx, input }) => {
       if (antesDoCortePedidos(input.dia)) return [];
       const pedidos = await ctx.prisma!.pedidoOperacional.findMany({
-        where: { dataEntrega: { gte: inicioComCortePedidos(input.dia), lte: fimDia(input.dia) } },
+        where: {
+          dataEntrega: {
+            gte: inicioComCortePedidos(input.dia),
+            lte: fimDia(input.dia),
+          },
+        },
         include: {
-          cliente: { include: { regraComercial: { include: { precosEspeciais: { include: { produto: true } } } } } },
+          cliente: {
+            include: {
+              regraComercial: {
+                include: { precosEspeciais: { include: { produto: true } } },
+              },
+            },
+          },
           itens: true,
-          avarias: { include: { criadoPor: { select: { nome: true, email: true } } } },
+          avarias: {
+            include: { criadoPor: { select: { nome: true, email: true } } },
+          },
         },
         orderBy: [{ cliente: { nome: "asc" } }, { criadoEm: "asc" }],
       });
       pedidos.sort(compararEntregaPorRegra);
-      const alertas = await alertasAvariasDepoisPedidoOrigem(ctx.prisma!, pedidos);
-      const grupos = new Map<string, { contaAzulCustomerId: string; cliente: unknown; regras: unknown; status: string; prioridadeEntrega: number; pedidos: typeof pedidos; itens: unknown[]; avarias: unknown[]; alertasAvariasPendentes: unknown[] }>();
+      const alertas = await alertasAvariasDepoisPedidoOrigem(
+        ctx.prisma!,
+        pedidos
+      );
+      const grupos = new Map<
+        string,
+        {
+          contaAzulCustomerId: string;
+          cliente: unknown;
+          regras: unknown;
+          status: string;
+          prioridadeEntrega: number;
+          pedidos: typeof pedidos;
+          itens: unknown[];
+          avarias: unknown[];
+          alertasAvariasPendentes: unknown[];
+        }
+      >();
       for (const p of pedidos) {
         const pedido = deveOcultarValores(ctx) ? ocultarValoresPedido(p) : p;
-        const key = `${p.contaAzulCustomerId}:${p.status === "CANCELADO" ? "CANCELADO" : "ATIVO"}`;
+        const key = `${p.contaAzulCustomerId}:${p.status}`;
         const atual = grupos.get(key) ?? {
           contaAzulCustomerId: p.contaAzulCustomerId,
           cliente: pedido.cliente,
           regras: pedido.cliente?.regraComercial ?? null,
           status: p.status,
-          prioridadeEntrega: prioridadeEntregaAutomatica(p.cliente?.regraComercial),
+          prioridadeEntrega: prioridadeEntregaAutomatica(
+            p.cliente?.regraComercial
+          ),
           pedidos: [],
           itens: [],
           avarias: [],
           alertasAvariasPendentes: [],
         };
         atual.pedidos.push(pedido);
-        atual.itens.push(...pedido.itens.map((i: any) => ({ ...i, pedidoObservacoes: p.observacoes, tipoVenda: p.tipoVenda })));
-        atual.avarias.push(...pedido.avarias.map((a: any) => ({ ...a, pedidoObservacoes: p.observacoes, tipoVenda: p.tipoVenda })));
+        atual.itens.push(
+          ...pedido.itens.map((i: any) => ({
+            ...i,
+            pedidoObservacoes: p.observacoes,
+            tipoVenda: p.tipoVenda,
+          }))
+        );
+        atual.avarias.push(
+          ...pedido.avarias.map((a: any) => ({
+            ...a,
+            pedidoObservacoes: p.observacoes,
+            tipoVenda: p.tipoVenda,
+          }))
+        );
         const alerta = alertas.get(p.id);
         if (alerta) atual.alertasAvariasPendentes.push(alerta);
         grupos.set(key, atual);
       }
-      return Array.from(grupos.values()).sort((a, b) => a.prioridadeEntrega - b.prioridadeEntrega);
+      return Array.from(grupos.values()).sort(
+        (a, b) => a.prioridadeEntrega - b.prioridadeEntrega
+      );
     }),
 
   atualizarStatusClienteDia: comercialProcedure
-    .input(z.object({ contaAzulCustomerId: z.string(), dia: z.coerce.date(), status: statusSchema }))
+    .input(
+      z.object({
+        contaAzulCustomerId: z.string(),
+        dia: z.coerce.date(),
+        status: statusSchema,
+        statusAtual: statusSchema.optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
-      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
       if (antesDoCortePedidos(input.dia)) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Pedidos operacionais começam em 01/06/2026." });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Pedidos operacionais começam em 01/06/2026.",
+        });
       }
       const where = {
         contaAzulCustomerId: input.contaAzulCustomerId,
-        dataEntrega: { gte: inicioComCortePedidos(input.dia), lte: fimDia(input.dia) },
+        dataEntrega: {
+          gte: inicioComCortePedidos(input.dia),
+          lte: fimDia(input.dia),
+        },
+        ...(input.statusAtual ? { status: input.statusAtual } : {}),
       };
-      const pedidos = await ctx.prisma!.pedidoOperacional.findMany({ where, select: { id: true, status: true } });
-      await ctx.prisma!.$transaction(async (tx) => {
-        await tx.pedidoOperacional.updateMany({ where, data: { status: input.status, editadoPorId: usuario.id } });
+      const pedidos = await ctx.prisma!.pedidoOperacional.findMany({
+        where,
+        select: { id: true, status: true },
+      });
+      await ctx.prisma!.$transaction(async tx => {
+        await tx.pedidoOperacional.updateMany({
+          where,
+          data: { status: input.status, editadoPorId: usuario.id },
+        });
         for (const p of pedidos) {
           await registrarAuditoria(
             tx as any,
@@ -1106,7 +1468,7 @@ export const pedidosRouter = router({
             { id: usuario.id, nome: usuario.nome },
             "status_cliente_dia",
             { status: p.status },
-            { status: input.status },
+            { status: input.status }
           );
         }
       });
@@ -1115,19 +1477,38 @@ export const pedidosRouter = router({
 
   atualizarPrioridadeClienteDia: comercialProcedure
     .use(podeConfigurarEstoqueVivo)
-    .input(z.object({ contaAzulCustomerId: z.string(), dia: z.coerce.date(), prioridadeEntrega: z.number().int().nullable() }))
+    .input(
+      z.object({
+        contaAzulCustomerId: z.string(),
+        dia: z.coerce.date(),
+        prioridadeEntrega: z.number().int().nullable(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
-      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
       if (antesDoCortePedidos(input.dia)) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Pedidos operacionais começam em 01/06/2026." });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Pedidos operacionais começam em 01/06/2026.",
+        });
       }
       await ctx.prisma!.pedidoOperacional.updateMany({
         where: {
           contaAzulCustomerId: input.contaAzulCustomerId,
-          dataEntrega: { gte: inicioComCortePedidos(input.dia), lte: fimDia(input.dia) },
+          dataEntrega: {
+            gte: inicioComCortePedidos(input.dia),
+            lte: fimDia(input.dia),
+          },
         },
-        data: { prioridadeEntrega: input.prioridadeEntrega, editadoPorId: usuario.id },
+        data: {
+          prioridadeEntrega: input.prioridadeEntrega,
+          editadoPorId: usuario.id,
+        },
       });
       return { success: true };
     }),
@@ -1136,15 +1517,24 @@ export const pedidosRouter = router({
     .input(z.object({ pedidoId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
-      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
       const pedido = await ctx.prisma!.pedidoOperacional.findUnique({
         where: { id: input.pedidoId },
         include: { itens: true, avarias: true },
       });
-      if (!pedido) throw new TRPCError({ code: "NOT_FOUND", message: "Pedido não encontrado" });
-      if (pedido.status === "CANCELADO") return { success: true, alreadyCancelled: true };
+      if (!pedido)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Pedido não encontrado",
+        });
+      if (pedido.status === "CANCELADO")
+        return { success: true, alreadyCancelled: true };
 
-      await ctx.prisma!.$transaction(async (tx) => {
+      await ctx.prisma!.$transaction(async tx => {
         await tx.pedidoOperacional.update({
           where: { id: input.pedidoId },
           data: { status: "CANCELADO", editadoPorId: usuario.id },
@@ -1154,12 +1544,52 @@ export const pedidosRouter = router({
           input.pedidoId,
           { id: usuario.id, nome: usuario.nome },
           "pedido_cancelado",
-          { status: pedido.status, itens: pedido.itens, avarias: pedido.avarias },
-          { status: "CANCELADO" },
+          {
+            status: pedido.status,
+            itens: pedido.itens,
+            avarias: pedido.avarias,
+          },
+          { status: "CANCELADO" }
         );
       });
 
       return { success: true, alreadyCancelled: false };
+    }),
+
+  reativarPedidosCancelados: comercialProcedure
+    .input(z.object({ pedidoIds: z.array(z.string().min(1)).min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const usuario = ctx.comercialUsuario;
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
+      const pedidos = await ctx.prisma!.pedidoOperacional.findMany({
+        where: { id: { in: input.pedidoIds } },
+        select: { id: true, status: true },
+      });
+      const cancelados = pedidos.filter(p => p.status === "CANCELADO");
+      if (cancelados.length === 0) return { success: true, count: 0 };
+
+      await ctx.prisma!.$transaction(async tx => {
+        await tx.pedidoOperacional.updateMany({
+          where: { id: { in: cancelados.map(p => p.id) }, status: "CANCELADO" },
+          data: { status: "PENDENTE", editadoPorId: usuario.id },
+        });
+        for (const pedido of cancelados) {
+          await registrarAuditoria(
+            tx as any,
+            pedido.id,
+            { id: usuario.id, nome: usuario.nome },
+            "pedido_reativado",
+            { status: pedido.status },
+            { status: "PENDENTE" }
+          );
+        }
+      });
+
+      return { success: true, count: cancelados.length };
     }),
 
   auditoriaPedido: comercialProcedure
@@ -1168,7 +1598,7 @@ export const pedidosRouter = router({
       ctx.prisma!.pedidoOperacionalAuditoria.findMany({
         where: { pedidoId: input.pedidoId },
         orderBy: { criadoEm: "desc" },
-      }),
+      })
     ),
 
   relatorioHistorico: comercialProcedure
@@ -1179,7 +1609,7 @@ export const pedidosRouter = router({
         contaAzulCustomerId: z.string().optional(),
         status: statusSchema.optional(),
         busca: z.string().optional(),
-      }),
+      })
     )
     .query(async ({ ctx, input }) => {
       const busca = input.busca?.trim();
@@ -1192,7 +1622,10 @@ export const pedidosRouter = router({
             unidades: 0,
             produtos: 0,
             valorEstimado: 0,
-            status: STATUS_PEDIDO.reduce<Record<string, number>>((acc, s) => ({ ...acc, [s]: 0 }), {}),
+            status: STATUS_PEDIDO.reduce<Record<string, number>>(
+              (acc, s) => ({ ...acc, [s]: 0 }),
+              {}
+            ),
             contaAzulPedidos: 0,
             contaAzulUnidades: 0,
             contaAzulValor: 0,
@@ -1210,7 +1643,9 @@ export const pedidosRouter = router({
       const pedidos = await ctx.prisma!.pedidoOperacional.findMany({
         where: {
           dataEntrega: { gte: intervalo.inicio, lte: intervalo.fim },
-          ...(input.contaAzulCustomerId ? { contaAzulCustomerId: input.contaAzulCustomerId } : {}),
+          ...(input.contaAzulCustomerId
+            ? { contaAzulCustomerId: input.contaAzulCustomerId }
+            : {}),
           ...(input.status ? { status: input.status } : {}),
           ...(busca
             ? {
@@ -1226,20 +1661,41 @@ export const pedidosRouter = router({
         include: {
           cliente: true,
           itens: { include: { produto: true } },
-          avarias: { include: { produto: true, criadoPor: { select: { nome: true, email: true } } } },
+          avarias: {
+            include: {
+              produto: true,
+              criadoPor: { select: { nome: true, email: true } },
+            },
+          },
           criadoPor: { select: { nome: true, email: true } },
           editadoPor: { select: { nome: true, email: true } },
           auditoria: { orderBy: { criadoEm: "desc" }, take: 5 },
-          pedidoContaAzul: { select: { id: true, externalId: true, numeroVenda: true, dataPedido: true, statusPedido: true, valorLiquido: true, valorTotal: true } },
+          pedidoContaAzul: {
+            select: {
+              id: true,
+              externalId: true,
+              numeroVenda: true,
+              dataPedido: true,
+              statusPedido: true,
+              valorLiquido: true,
+              valorTotal: true,
+            },
+          },
         },
-        orderBy: [{ dataEntrega: "desc" }, { cliente: { nome: "asc" } }, { criadoEm: "desc" }],
+        orderBy: [
+          { dataEntrega: "desc" },
+          { cliente: { nome: "asc" } },
+          { criadoEm: "desc" },
+        ],
         take: 500,
       });
       const vendasContaAzulRaw = await ctx.prisma!.pedido.findMany({
         where: {
           origemPedido: OrigemPedido.CONTA_AZUL,
           dataPedido: { gte: intervalo.inicio, lte: intervalo.fim },
-          ...(input.contaAzulCustomerId ? { cliente: { externalId: input.contaAzulCustomerId } } : {}),
+          ...(input.contaAzulCustomerId
+            ? { cliente: { externalId: input.contaAzulCustomerId } }
+            : {}),
           ...(busca
             ? {
                 OR: [
@@ -1252,17 +1708,32 @@ export const pedidosRouter = router({
             : {}),
         },
         include: {
-          cliente: { select: { id: true, externalId: true, nome: true, cnpjCpf: true } },
+          cliente: {
+            select: { id: true, externalId: true, nome: true, cnpjCpf: true },
+          },
           itens: true,
         },
         orderBy: [{ dataPedido: "desc" }, { cliente: { nome: "asc" } }],
         take: 500,
       });
-      const vendasContaAzul = vendasContaAzulRaw.filter((p) => classificarStatusPedido(p.statusPedido) === "venda");
+      const vendasContaAzul = vendasContaAzulRaw.filter(
+        p => classificarStatusPedido(p.statusPedido) === "venda"
+      );
 
-      const statusResumo = STATUS_PEDIDO.reduce<Record<string, number>>((acc, s) => ({ ...acc, [s]: 0 }), {});
+      const statusResumo = STATUS_PEDIDO.reduce<Record<string, number>>(
+        (acc, s) => ({ ...acc, [s]: 0 }),
+        {}
+      );
       const clientes = new Set<string>();
-      const produtos = new Map<string, { nome: string; categoria: string | null; quantidade: number; pedidos: number }>();
+      const produtos = new Map<
+        string,
+        {
+          nome: string;
+          categoria: string | null;
+          quantidade: number;
+          pedidos: number;
+        }
+      >();
       let unidades = 0;
       let valorEstimado = 0;
 
@@ -1275,7 +1746,12 @@ export const pedidosRouter = router({
           const valorItem = quantidade * (money(item.precoUnit) ?? 0);
           valorEstimado += valorItem;
           const key = item.produtoNome;
-          const atual = produtos.get(key) ?? { nome: item.produtoNome, categoria: item.categoria, quantidade: 0, pedidos: 0 };
+          const atual = produtos.get(key) ?? {
+            nome: item.produtoNome,
+            categoria: item.categoria,
+            quantidade: 0,
+            pedidos: 0,
+          };
           atual.quantidade += quantidade;
           atual.pedidos += 1;
           produtos.set(key, atual);
@@ -1285,7 +1761,7 @@ export const pedidosRouter = router({
       const conciliacao = await calcularConciliacaoSemanal(
         ctx.prisma!,
         intervalo.inicio,
-        intervalo.fim,
+        intervalo.fim
       );
       const ocultarValores = deveOcultarValores(ctx);
       const conciliacaoContaAzul = ocultarValores
@@ -1302,26 +1778,45 @@ export const pedidosRouter = router({
           status: statusResumo,
           contaAzulPedidos: conciliacao.resumo.contaAzulPedidos,
           contaAzulUnidades: conciliacao.resumo.contaAzulUnidades,
-          contaAzulValor: ocultarValores ? null : conciliacao.resumo.contaAzulValor,
-          contaAzulValorGerencial: ocultarValores ? null : conciliacao.resumo.contaAzulValorGerencial,
-          descontoBoletoTotal: ocultarValores ? null : conciliacao.resumo.descontoBoletoTotal,
-          diferencaValorContaAzul: ocultarValores ? null : conciliacao.resumo.operacionalValor - conciliacao.resumo.contaAzulValor,
+          contaAzulValor: ocultarValores
+            ? null
+            : conciliacao.resumo.contaAzulValor,
+          contaAzulValorGerencial: ocultarValores
+            ? null
+            : conciliacao.resumo.contaAzulValorGerencial,
+          descontoBoletoTotal: ocultarValores
+            ? null
+            : conciliacao.resumo.descontoBoletoTotal,
+          diferencaValorContaAzul: ocultarValores
+            ? null
+            : conciliacao.resumo.operacionalValor -
+              conciliacao.resumo.contaAzulValor,
           clientesDivergentesContaAzul: conciliacao.resumo.clientesDivergentes,
-          clientesAguardandoVendaContaAzul: conciliacao.resumo.clientesAguardandoVenda,
-          clientesVendaSemPedidoContaAzul: conciliacao.resumo.clientesVendaSemPedido,
-          ultimaSincronizacaoContaAzul: conciliacao.ultimaSincronizacaoContaAzul,
+          clientesAguardandoVendaContaAzul:
+            conciliacao.resumo.clientesAguardandoVenda,
+          clientesVendaSemPedidoContaAzul:
+            conciliacao.resumo.clientesVendaSemPedido,
+          ultimaSincronizacaoContaAzul:
+            conciliacao.ultimaSincronizacaoContaAzul,
         },
-        produtos: Array.from(produtos.values()).sort((a, b) => b.quantidade - a.quantidade || a.nome.localeCompare(b.nome, "pt-BR")),
+        produtos: Array.from(produtos.values()).sort(
+          (a, b) =>
+            b.quantidade - a.quantidade || a.nome.localeCompare(b.nome, "pt-BR")
+        ),
         pedidos: ocultarValores ? pedidos.map(ocultarValoresPedido) : pedidos,
         contaAzul: {
-          vendas: vendasContaAzul.map((p) => ({
+          vendas: vendasContaAzul.map(p => ({
             ...p,
             valorTotal: ocultarValores ? null : p.valorTotal,
             valorLiquido: ocultarValores ? null : p.valorLiquido,
             valorFrete: ocultarValores ? null : p.valorFrete,
             valorDesconto: ocultarValores ? null : p.valorDesconto,
-            valorLiquidoDashboard: ocultarValores ? null : composicaoDoPedidoParaDashboard(p).valorLiquido,
-            itens: ocultarValores ? p.itens.map((i) => ({ ...i, precoUnit: null, custoUnit: null })) : p.itens,
+            valorLiquidoDashboard: ocultarValores
+              ? null
+              : composicaoDoPedidoParaDashboard(p).valorLiquido,
+            itens: ocultarValores
+              ? p.itens.map(i => ({ ...i, precoUnit: null, custoUnit: null }))
+              : p.itens,
           })),
           conciliacao: conciliacaoContaAzul,
         },
@@ -1335,18 +1830,24 @@ export const pedidosRouter = router({
         fim: z.coerce.date(),
         contaAzulCustomerId: z.string().optional(),
         busca: z.string().optional(),
-      }),
+      })
     )
     .query(async ({ ctx, input }) => {
       const busca = input.busca?.trim();
       const intervalo = intervaloComCortePedidos(input.inicio, input.fim);
       if (intervalo.vazio) {
-        return { resumo: { registros: 0, quantidade: 0, clientes: 0, produtos: 0 }, produtos: [], avarias: [] };
+        return {
+          resumo: { registros: 0, quantidade: 0, clientes: 0, produtos: 0 },
+          produtos: [],
+          avarias: [],
+        };
       }
       const avarias = await ctx.prisma!.pedidoOperacionalAvaria.findMany({
         where: {
           dataEntrega: { gte: intervalo.inicio, lte: intervalo.fim },
-          ...(input.contaAzulCustomerId ? { contaAzulCustomerId: input.contaAzulCustomerId } : {}),
+          ...(input.contaAzulCustomerId
+            ? { contaAzulCustomerId: input.contaAzulCustomerId }
+            : {}),
           ...(busca
             ? {
                 OR: [
@@ -1361,15 +1862,34 @@ export const pedidosRouter = router({
         include: {
           cliente: true,
           produto: true,
-          pedido: { select: { id: true, status: true, tipoVenda: true, observacoes: true } },
+          pedido: {
+            select: {
+              id: true,
+              status: true,
+              tipoVenda: true,
+              observacoes: true,
+            },
+          },
           criadoPor: { select: { nome: true, email: true } },
         },
-        orderBy: [{ dataEntrega: "desc" }, { cliente: { nome: "asc" } }, { produtoNome: "asc" }],
+        orderBy: [
+          { dataEntrega: "desc" },
+          { cliente: { nome: "asc" } },
+          { produtoNome: "asc" },
+        ],
         take: 1000,
       });
 
       const clientes = new Set<string>();
-      const produtos = new Map<string, { nome: string; categoria: string | null; quantidade: number; linhas: number }>();
+      const produtos = new Map<
+        string,
+        {
+          nome: string;
+          categoria: string | null;
+          quantidade: number;
+          linhas: number;
+        }
+      >();
       let quantidadeTotal = 0;
 
       for (const avaria of avarias) {
@@ -1394,32 +1914,51 @@ export const pedidosRouter = router({
           clientes: clientes.size,
           produtos: produtos.size,
         },
-        produtos: Array.from(produtos.values()).sort((a, b) => b.quantidade - a.quantidade || a.nome.localeCompare(b.nome, "pt-BR")),
+        produtos: Array.from(produtos.values()).sort(
+          (a, b) =>
+            b.quantidade - a.quantidade || a.nome.localeCompare(b.nome, "pt-BR")
+        ),
         avarias,
       };
     }),
 
   compras: comercialProcedure
-    .input(z.object({ dia: z.coerce.date(), incluirOcultos: z.boolean().default(false) }))
+    .input(
+      z.object({
+        dia: z.coerce.date(),
+        incluirOcultos: z.boolean().default(false),
+      })
+    )
     .query(async ({ ctx, input }) => {
       if (antesDoCortePedidos(input.dia)) {
         return {
           linhas: [],
           desativados: [],
           totais: { sumNec: 0, sumUn: 0, sumKg: 0 },
-          cfgMix: { ...ESTOQUE_MIX_FOLHA_PADRAO, qtdReferencia: 0, partePorVariedade: 0 },
+          cfgMix: {
+            ...ESTOQUE_MIX_FOLHA_PADRAO,
+            qtdReferencia: 0,
+            partePorVariedade: 0,
+          },
         };
       }
       const [pedidosDb, produtosDb, cfgRow] = await Promise.all([
         ctx.prisma!.pedidoOperacional.findMany({
           where: {
-            dataEntrega: { gte: inicioComCortePedidos(input.dia), lte: fimDia(input.dia) },
+            dataEntrega: {
+              gte: inicioComCortePedidos(input.dia),
+              lte: fimDia(input.dia),
+            },
             status: { not: "CANCELADO" },
           },
           include: { itens: { include: { produto: true } } },
         }),
         ctx.prisma!.produtoComercial.findMany({
-          where: { contaAzulProdutoId: { not: null }, importadoOperacao: true, ativo: true },
+          where: {
+            contaAzulProdutoId: { not: null },
+            importadoOperacao: true,
+            ativo: true,
+          },
           orderBy: { nome: "asc" },
         }),
         ctx.prisma!.estoqueVivoConfig.findUnique({ where: { id: "default" } }),
@@ -1437,11 +1976,14 @@ export const pedidosRouter = router({
 
       const cfgMix = normalizeEstoqueMixFolhaLeve(
         cfgRow
-          ? { referenciaProduto: cfgRow.mixReferenciaNome, variedades: cfgRow.mixVariedades }
-          : ESTOQUE_MIX_FOLHA_PADRAO,
+          ? {
+              referenciaProduto: cfgRow.mixReferenciaNome,
+              variedades: cfgRow.mixVariedades,
+            }
+          : ESTOQUE_MIX_FOLHA_PADRAO
       );
 
-      const produtosCfg: ConfigProdutoEstoque[] = produtosDb.map((p) => {
+      const produtosCfg: ConfigProdutoEstoque[] = produtosDb.map(p => {
         const fatorN = money(p.fatorCompraUnidade);
         const rendN = money(p.rendimentoPorKg);
         return {
@@ -1455,22 +1997,30 @@ export const pedidosRouter = router({
         };
       });
 
-      const resultado = buildEstoqueVivoDia(pedidosLinhas, produtosCfg, cfgMix, {
-        incluirOcultos: input.incluirOcultos,
-      });
+      const resultado = buildEstoqueVivoDia(
+        pedidosLinhas,
+        produtosCfg,
+        cfgMix,
+        {
+          incluirOcultos: input.incluirOcultos,
+        }
+      );
 
-      const produtoPorId = new Map(produtosDb.map((p) => [p.id, p]));
+      const produtoPorId = new Map(produtosDb.map(p => [p.id, p]));
 
       return {
         ...resultado,
         linhas: resultado.linhas
-          .map((linha) => ({
+          .map(linha => ({
             ...linha,
-            produto: linha.produtoId ? produtoPorId.get(linha.produtoId) ?? null : null,
+            produto: linha.produtoId
+              ? (produtoPorId.get(linha.produtoId) ?? null)
+              : null,
           }))
           .sort(
             (a, b) =>
-              b.quantidadePedido - a.quantidadePedido || a.nome.localeCompare(b.nome, "pt-BR"),
+              b.quantidadePedido - a.quantidadePedido ||
+              a.nome.localeCompare(b.nome, "pt-BR")
           ),
       };
     }),
@@ -1481,7 +2031,7 @@ export const pedidosRouter = router({
       z.object({
         referenciaProduto: z.string().min(1),
         variedades: z.array(z.string().min(1)).min(1),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       const cfg = normalizeEstoqueMixFolhaLeve({
@@ -1516,34 +2066,34 @@ export const pedidosRouter = router({
         mixFolhaLeve: z.boolean().optional(),
         mixProdutoReferenciaId: z.string().nullable().optional(),
         mixVariedades: nullableStringArray,
-      }),
+      })
     )
     .mutation(({ ctx, input }) => {
       const data = {
-          modoCompra: input.modoCompra,
-          fatorCompraUnidade:
-            input.fatorCompraUnidade === undefined
-              ? undefined
-              : input.fatorCompraUnidade == null
-                ? null
-                : new Prisma.Decimal(input.fatorCompraUnidade),
-          rendimentoPorKg:
-            input.rendimentoPorKg === undefined
-              ? undefined
-              : input.rendimentoPorKg == null
-                ? null
-                : new Prisma.Decimal(input.rendimentoPorKg),
-          ocultoListaCompra: input.ocultoListaCompra,
-          mixAtivo: input.mixAtivo,
-          mixFolhaLeve: input.mixFolhaLeve,
-          mixProdutoReferenciaId: input.mixProdutoReferenciaId,
-          mixVariedades:
-            input.mixVariedades === undefined
-              ? undefined
-              : input.mixVariedades == null
-                ? Prisma.JsonNull
-                : (input.mixVariedades as Prisma.InputJsonValue),
-        };
+        modoCompra: input.modoCompra,
+        fatorCompraUnidade:
+          input.fatorCompraUnidade === undefined
+            ? undefined
+            : input.fatorCompraUnidade == null
+              ? null
+              : new Prisma.Decimal(input.fatorCompraUnidade),
+        rendimentoPorKg:
+          input.rendimentoPorKg === undefined
+            ? undefined
+            : input.rendimentoPorKg == null
+              ? null
+              : new Prisma.Decimal(input.rendimentoPorKg),
+        ocultoListaCompra: input.ocultoListaCompra,
+        mixAtivo: input.mixAtivo,
+        mixFolhaLeve: input.mixFolhaLeve,
+        mixProdutoReferenciaId: input.mixProdutoReferenciaId,
+        mixVariedades:
+          input.mixVariedades === undefined
+            ? undefined
+            : input.mixVariedades == null
+              ? Prisma.JsonNull
+              : (input.mixVariedades as Prisma.InputJsonValue),
+      };
       if (input.produtoId) {
         return ctx.prisma!.produtoComercial.update({
           where: { id: input.produtoId },
@@ -1579,18 +2129,25 @@ export const pedidosRouter = router({
       const [conciliacaoAtual, conciliacaoBloqueio] = await Promise.all([
         calcularConciliacaoSemanal(ctx.prisma!, semanaInicio, semanaFim),
         bloqueio
-          ? calcularConciliacaoSemanal(ctx.prisma!, bloqueio.inicio, bloqueio.fim)
+          ? calcularConciliacaoSemanal(
+              ctx.prisma!,
+              bloqueio.inicio,
+              bloqueio.fim
+            )
           : Promise.resolve(null),
       ]);
       const podeFecharOperacional =
-        semanaAtual.totalPedidos > 0 && semanaAtual.pendentes === 0 && !semanaAtual.fechada;
+        semanaAtual.totalPedidos > 0 &&
+        semanaAtual.pendentes === 0 &&
+        !semanaAtual.fechada;
       return {
         semanaAtual,
         bloqueio,
         conciliacaoContaAzul: conciliacaoAtual,
         conciliacaoBloqueio,
         podeCriarPedidos: bloqueio == null,
-        podeFecharSemanaAtual: podeFecharOperacional && conciliacaoAtual.conciliado,
+        podeFecharSemanaAtual:
+          podeFecharOperacional && conciliacaoAtual.conciliado,
       };
     }),
 
@@ -1600,13 +2157,20 @@ export const pedidosRouter = router({
     .input(z.object({ dia: z.coerce.date() }))
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
-      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
 
       const semanaInicio = inicioSemana(input.dia);
       const semanaFim = fimSemana(input.dia);
 
       if (semanaInicio.getTime() > inicioSemana(new Date()).getTime()) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Não é possível fechar uma semana futura." });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Não é possível fechar uma semana futura.",
+        });
       }
 
       const pedidos = await ctx.prisma!.pedidoOperacional.findMany({
@@ -1614,7 +2178,9 @@ export const pedidosRouter = router({
         include: { itens: true },
       });
 
-      const pendentes = pedidos.filter((p) => p.status !== "ENTREGUE" && p.status !== "CANCELADO");
+      const pendentes = pedidos.filter(
+        p => p.status !== "ENTREGUE" && p.status !== "CANCELADO"
+      );
       if (pendentes.length > 0) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -1622,7 +2188,11 @@ export const pedidosRouter = router({
         });
       }
 
-      const conciliacao = await calcularConciliacaoSemanal(ctx.prisma!, semanaInicio, semanaFim);
+      const conciliacao = await calcularConciliacaoSemanal(
+        ctx.prisma!,
+        semanaInicio,
+        semanaFim
+      );
       if (!conciliacao.conciliado) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -1638,7 +2208,9 @@ export const pedidosRouter = router({
           totalEntregues++;
           for (const item of p.itens) {
             if (item.precoUnit != null) {
-              valorEntregue = valorEntregue.plus(new Prisma.Decimal(item.quantidade).times(item.precoUnit));
+              valorEntregue = valorEntregue.plus(
+                new Prisma.Decimal(item.quantidade).times(item.precoUnit)
+              );
             }
           }
         } else if (p.status === "CANCELADO") {
@@ -1685,12 +2257,21 @@ export const pedidosRouter = router({
     .input(z.object({ dia: z.coerce.date() }))
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
-      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
 
       const semanaInicio = inicioSemana(input.dia);
-      const existente = await ctx.prisma!.fechamentoSemanal.findUnique({ where: { semanaInicio } });
+      const existente = await ctx.prisma!.fechamentoSemanal.findUnique({
+        where: { semanaInicio },
+      });
       if (!existente) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Essa semana não está fechada." });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Essa semana não está fechada.",
+        });
       }
 
       const fechamento = await ctx.prisma!.fechamentoSemanal.update({
@@ -1711,7 +2292,13 @@ export const pedidosRouter = router({
       const intervalo = intervaloComCortePedidos(input.inicio, input.fim);
       if (intervalo.vazio) {
         return {
-          resumo: { semVenda: 0, vendasSemPedido: 0, sugestoes: 0, conciliados: 0, divergentes: 0 },
+          resumo: {
+            semVenda: 0,
+            vendasSemPedido: 0,
+            sugestoes: 0,
+            conciliados: 0,
+            divergentes: 0,
+          },
           semVenda: [],
           vendasSemPedido: [],
           sugestoes: [],
@@ -1737,7 +2324,12 @@ export const pedidosRouter = router({
                   select: {
                     externalId: true,
                     nome: true,
-                    regraComercial: { select: { acumulaPedidos: true, ...REGRA_ENTREGA_CONCILIACAO_SELECT } },
+                    regraComercial: {
+                      select: {
+                        acumulaPedidos: true,
+                        ...REGRA_ENTREGA_CONCILIACAO_SELECT,
+                      },
+                    },
                   },
                 },
               },
@@ -1747,18 +2339,28 @@ export const pedidosRouter = router({
           take: 300,
         }),
         prisma.pedido.findMany({
-          where: { origemPedido: OrigemPedido.CONTA_AZUL, dataPedido: { gte: inicio, lte: fim } },
+          where: {
+            origemPedido: OrigemPedido.CONTA_AZUL,
+            dataPedido: { gte: inicio, lte: fim },
+          },
           include: {
             cliente: {
               select: {
                 id: true,
                 externalId: true,
                 nome: true,
-                regraComercial: { select: { acumulaPedidos: true, ...REGRA_ENTREGA_CONCILIACAO_SELECT } },
+                regraComercial: {
+                  select: {
+                    acumulaPedidos: true,
+                    ...REGRA_ENTREGA_CONCILIACAO_SELECT,
+                  },
+                },
               },
             },
             itens: true,
-            pedidoOperacionalVinculo: { select: { id: true, statusConciliacao: true } },
+            pedidoOperacionalVinculo: {
+              select: { id: true, statusConciliacao: true },
+            },
           },
           orderBy: { dataPedido: "desc" },
           take: 300,
@@ -1770,7 +2372,9 @@ export const pedidosRouter = router({
         }),
       ]);
 
-      const documentosConciliaveis = vendas.filter((v) => documentoContaAzulConciliavel(v));
+      const documentosConciliaveis = vendas.filter(v =>
+        documentoContaAzulConciliavel(v)
+      );
       const produtosConciliacao = await prisma.produtoComercial.findMany({
         where: { contaAzulProdutoId: { not: null } },
         select: {
@@ -1783,14 +2387,28 @@ export const pedidosRouter = router({
           categoria: true,
         },
       });
-      const resolverChaveConciliacao = criarResolverChaveItemConciliacao(produtosConciliacao);
+      const resolverChaveConciliacao =
+        criarResolverChaveItemConciliacao(produtosConciliacao);
       const sugestoes = operacionais
-        .filter((op) => op.statusConciliacao === "VINCULO_SUGERIDO" && op.sugestaoPedidoContaAzulId)
-        .map((op) => {
-          const venda = documentosConciliaveis.find((v) => v.id === op.sugestaoPedidoContaAzulId);
-          const score = venda ? scoreSugestaoVinculo(op, venda, resolverChaveConciliacao) : 0;
+        .filter(
+          op =>
+            op.statusConciliacao === "VINCULO_SUGERIDO" &&
+            op.sugestaoPedidoContaAzulId
+        )
+        .map(op => {
+          const venda = documentosConciliaveis.find(
+            v => v.id === op.sugestaoPedidoContaAzulId
+          );
+          const score = venda
+            ? scoreSugestaoVinculo(op, venda, resolverChaveConciliacao)
+            : 0;
           const divergencias = venda
-            ? calcularDivergencias(op, venda, resolverChaveConciliacao, opcoesCalcularDivergencias(op))
+            ? calcularDivergencias(
+                op,
+                venda,
+                resolverChaveConciliacao,
+                opcoesCalcularDivergencias(op)
+              )
             : [];
           return {
             operacional: op,
@@ -1799,33 +2417,41 @@ export const pedidosRouter = router({
             score,
           };
         })
-        .filter((s) => s.venda && s.score >= 70);
-      const vendasComSugestaoValida = new Set(sugestoes.map((s) => s.venda!.id));
+        .filter(s => s.venda && s.score >= 70);
+      const vendasComSugestaoValida = new Set(sugestoes.map(s => s.venda!.id));
 
       const semVenda = operacionais.filter(
-        (op) => !op.pedidoContaAzulId && op.statusConciliacao !== "VENDA_ERRADA",
+        op => !op.pedidoContaAzulId && op.statusConciliacao !== "VENDA_ERRADA"
       );
       const vendasSemPedido = documentosConciliaveis.filter(
-        (v) =>
+        v =>
           !v.pedidoOperacionalVinculo &&
           v.statusConciliacao !== "IGNORADA" &&
           v.statusConciliacao !== "VENDA_ERRADA" &&
           v.statusConciliacao !== "CONCILIADA" &&
-          (v.statusConciliacao !== "SUGERIDA" || !vendasComSugestaoValida.has(v.id)),
+          (v.statusConciliacao !== "SUGERIDA" ||
+            !vendasComSugestaoValida.has(v.id))
       );
-      const conciliados = operacionais.filter((op) => op.statusConciliacao === "CONCILIADO" && op.pedidoContaAzul);
+      const conciliados = operacionais.filter(
+        op => op.statusConciliacao === "CONCILIADO" && op.pedidoContaAzul
+      );
       const divergentes = operacionais
-        .filter((op) => op.statusConciliacao === "DIVERGENTE")
-        .map((op) => {
+        .filter(op => op.statusConciliacao === "DIVERGENTE")
+        .map(op => {
           const divergencias = op.pedidoContaAzul
-            ? calcularDivergencias(op, op.pedidoContaAzul, resolverChaveConciliacao, opcoesCalcularDivergencias(op))
+            ? calcularDivergencias(
+                op,
+                op.pedidoContaAzul,
+                resolverChaveConciliacao,
+                opcoesCalcularDivergencias(op)
+              )
             : [];
           return {
             ...(deveOcultarValores(ctx) ? ocultarValoresPedido(op) : op),
             divergencias,
           };
         })
-        .filter((op) => op.divergencias.length > 0);
+        .filter(op => op.divergencias.length > 0);
       const limparVenda = (v: any) =>
         deveOcultarValores(ctx)
           ? {
@@ -1834,7 +2460,11 @@ export const pedidosRouter = router({
               valorLiquido: null,
               valorFrete: null,
               valorDesconto: null,
-              itens: (v.itens ?? []).map((i: any) => ({ ...i, precoUnit: null, custoUnit: null })),
+              itens: (v.itens ?? []).map((i: any) => ({
+                ...i,
+                precoUnit: null,
+                custoUnit: null,
+              })),
             }
           : v;
 
@@ -1846,10 +2476,14 @@ export const pedidosRouter = router({
           conciliados: conciliados.length,
           divergentes: divergentes.length,
         },
-        semVenda: deveOcultarValores(ctx) ? semVenda.map(ocultarValoresPedido) : semVenda,
+        semVenda: deveOcultarValores(ctx)
+          ? semVenda.map(ocultarValoresPedido)
+          : semVenda,
         vendasSemPedido: vendasSemPedido.map(limparVenda),
         sugestoes,
-        conciliados: deveOcultarValores(ctx) ? conciliados.map(ocultarValoresPedido) : conciliados,
+        conciliados: deveOcultarValores(ctx)
+          ? conciliados.map(ocultarValoresPedido)
+          : conciliados,
         divergentes,
         eventos,
       };
@@ -1861,9 +2495,14 @@ export const pedidosRouter = router({
       if (antesDoCortePedidos(input.dataEntrega)) {
         return { operacionais: [], vendas: [] };
       }
-      const cliente = await ctx.prisma!.cliente.findUnique({ where: { id: input.clienteId } });
+      const cliente = await ctx.prisma!.cliente.findUnique({
+        where: { id: input.clienteId },
+      });
       if (!cliente?.externalId) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Unidade sem vínculo Conta Azul." });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Unidade sem vínculo Conta Azul.",
+        });
       }
       const diaIni = inicioDia(input.dataEntrega);
       const diaFim = fimDia(input.dataEntrega);
@@ -1876,7 +2515,9 @@ export const pedidosRouter = router({
           },
           include: {
             itens: { select: { produtoNome: true, quantidade: true } },
-            pedidoContaAzul: { select: { id: true, numeroVenda: true, externalId: true } },
+            pedidoContaAzul: {
+              select: { id: true, numeroVenda: true, externalId: true },
+            },
           },
           orderBy: { criadoEm: "asc" },
         }),
@@ -1890,9 +2531,11 @@ export const pedidosRouter = router({
           orderBy: { dataPedido: "asc" },
         }),
       ]);
-      const vendasFiltradas = vendas.filter((v) => classificarStatusPedido(v.statusPedido) === "venda");
+      const vendasFiltradas = vendas.filter(
+        v => classificarStatusPedido(v.statusPedido) === "venda"
+      );
       return {
-        operacionais: operacionais.map((op) => ({
+        operacionais: operacionais.map(op => ({
           id: op.id,
           status: op.status,
           statusConciliacao: op.statusConciliacao,
@@ -1901,7 +2544,7 @@ export const pedidosRouter = router({
           numeroVenda: op.pedidoContaAzul?.numeroVenda ?? null,
           pedidoContaAzulId: op.pedidoContaAzulId,
         })),
-        vendas: vendasFiltradas.map((v) => ({
+        vendas: vendasFiltradas.map(v => ({
           id: v.id,
           numeroVenda: v.numeroVenda,
           externalId: v.externalId,
@@ -1913,7 +2556,12 @@ export const pedidosRouter = router({
     }),
 
   conciliacaoCandidatosVenda: comercialProcedure
-    .input(z.object({ pedidoContaAzulId: z.string(), janelaDias: z.number().int().min(0).max(30).default(14) }))
+    .input(
+      z.object({
+        pedidoContaAzulId: z.string(),
+        janelaDias: z.number().int().min(0).max(30).default(14),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const venda = await ctx.prisma!.pedido.findUnique({
         where: { id: input.pedidoContaAzulId },
@@ -1924,19 +2572,29 @@ export const pedidosRouter = router({
               id: true,
               externalId: true,
               nome: true,
-              regraComercial: { select: { acumulaPedidos: true, ...REGRA_ENTREGA_CONCILIACAO_SELECT } },
+              regraComercial: {
+                select: {
+                  acumulaPedidos: true,
+                  ...REGRA_ENTREGA_CONCILIACAO_SELECT,
+                },
+              },
             },
           },
         },
       });
       if (!venda?.cliente.externalId) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Venda Conta Azul não encontrada ou sem cliente vinculado." });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Venda Conta Azul não encontrada ou sem cliente vinculado.",
+        });
       }
       if (antesDoCortePedidos(venda.dataPedido)) {
         return { venda, candidatos: [] };
       }
 
-      const inicioJanela = inicioComCortePedidos(inicioSemana(venda.dataPedido));
+      const inicioJanela = inicioComCortePedidos(
+        inicioSemana(venda.dataPedido)
+      );
       const fimJanela = fimSemana(venda.dataPedido);
       const candidatos = await ctx.prisma!.pedidoOperacional.findMany({
         where: {
@@ -1951,7 +2609,9 @@ export const pedidosRouter = router({
         include: {
           cliente: { select: { nome: true, externalId: true } },
           itens: true,
-          pedidoContaAzul: { select: { id: true, numeroVenda: true, externalId: true } },
+          pedidoContaAzul: {
+            select: { id: true, numeroVenda: true, externalId: true },
+          },
         },
         orderBy: [{ dataEntrega: "asc" }, { criadoEm: "asc" }],
         take: 80,
@@ -1969,23 +2629,31 @@ export const pedidosRouter = router({
           categoria: true,
         },
       });
-      const resolverChave = criarResolverChaveItemConciliacao(produtosConciliacao);
+      const resolverChave =
+        criarResolverChaveItemConciliacao(produtosConciliacao);
 
       return {
         venda,
         candidatos: candidatos
-          .map((op) => {
+          .map(op => {
             const score = scoreSugestaoVinculo(op, venda, resolverChave);
             return {
               pedido: op,
               score,
               diasDistancia: diasEntrePedidos(op, venda),
-              divergencias: calcularDivergencias(op, venda, resolverChave, opcoesCalcularDivergencias(op)),
+              divergencias: calcularDivergencias(
+                op,
+                venda,
+                resolverChave,
+                opcoesCalcularDivergencias(op)
+              ),
               vinculadoNestaVenda: op.pedidoContaAzulId === venda.id,
             };
           })
-          .filter((c) => c.score > 0)
-          .sort((a, b) => b.score - a.score || a.diasDistancia - b.diasDistancia),
+          .filter(c => c.score > 0)
+          .sort(
+            (a, b) => b.score - a.score || a.diasDistancia - b.diasDistancia
+          ),
       };
     }),
 
@@ -1996,11 +2664,19 @@ export const pedidosRouter = router({
         where: { id: input.pedidoContaAzulId },
         include: { itens: true },
       });
-      if (!venda) throw new TRPCError({ code: "NOT_FOUND", message: "Venda não encontrada." });
+      if (!venda)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Venda não encontrada.",
+        });
 
       const [ativos, catalogo] = await Promise.all([
         ctx.prisma!.produtoComercial.findMany({
-          where: { contaAzulProdutoId: { not: null }, ativo: true, importadoOperacao: true },
+          where: {
+            contaAzulProdutoId: { not: null },
+            ativo: true,
+            importadoOperacao: true,
+          },
           select: {
             id: true,
             nome: true,
@@ -2028,8 +2704,8 @@ export const pedidosRouter = router({
       const indice = criarIndiceProdutosOperacionais(ativos);
       const faltantes = listarProdutosFaltantesVenda(
         indice,
-        venda.itens.map((i) => ({ produto: i.produto, sku: i.sku })),
-        catalogo,
+        venda.itens.map(i => ({ produto: i.produto, sku: i.sku })),
+        catalogo
       );
       return { faltantes };
     }),
@@ -2041,11 +2717,15 @@ export const pedidosRouter = router({
         pedidoOperacionalId: z.string(),
         pedidoContaAzulId: z.string(),
         observacoes: z.string().optional(),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
-      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
       return confirmarVinculoConciliacao(ctx.prisma!, {
         ...input,
         usuario: { id: usuario.id, nome: usuario.nome },
@@ -2059,51 +2739,107 @@ export const pedidosRouter = router({
         pedidoContaAzulId: z.string(),
         pedidoOperacionalId: z.string().optional(),
         observacoes: z.string().optional(),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
-      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
-      await marcarVendaErrada(ctx.prisma!, { ...input, usuario: { id: usuario.id, nome: usuario.nome } });
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
+      await marcarVendaErrada(ctx.prisma!, {
+        ...input,
+        usuario: { id: usuario.id, nome: usuario.nome },
+      });
       return { success: true };
     }),
 
   conciliacaoIgnorarVenda: comercialProcedure
     .use(podeConfigurarEstoqueVivo)
-    .input(z.object({ pedidoContaAzulId: z.string(), observacoes: z.string().optional() }))
+    .input(
+      z.object({
+        pedidoContaAzulId: z.string(),
+        observacoes: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
-      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
-      await ignorarVendaContaAzul(ctx.prisma!, { ...input, usuario: { id: usuario.id, nome: usuario.nome } });
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
+      await ignorarVendaContaAzul(ctx.prisma!, {
+        ...input,
+        usuario: { id: usuario.id, nome: usuario.nome },
+      });
       return { success: true };
     }),
 
   conciliacaoManterOperacional: comercialProcedure
     .use(podeConfigurarEstoqueVivo)
-    .input(z.object({ pedidoOperacionalId: z.string(), observacoes: z.string().optional() }))
+    .input(
+      z.object({
+        pedidoOperacionalId: z.string(),
+        observacoes: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
-      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
-      await manterOperacionalComoVerdade(ctx.prisma!, { ...input, usuario: { id: usuario.id, nome: usuario.nome } });
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
+      await manterOperacionalComoVerdade(ctx.prisma!, {
+        ...input,
+        usuario: { id: usuario.id, nome: usuario.nome },
+      });
       return { success: true };
     }),
 
   conciliacaoCriarOperacionalDeVenda: comercialProcedure
     .use(podeConfigurarEstoqueVivo)
-    .input(z.object({ pedidoContaAzulId: z.string(), tipoVenda: tipoVendaSchema, observacoes: z.string().optional() }))
+    .input(
+      z.object({
+        pedidoContaAzulId: z.string(),
+        tipoVenda: tipoVendaSchema,
+        observacoes: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
-      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
-      return criarOperacionalDeVenda(ctx.prisma!, { ...input, usuario: { id: usuario.id, nome: usuario.nome } });
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
+      return criarOperacionalDeVenda(ctx.prisma!, {
+        ...input,
+        usuario: { id: usuario.id, nome: usuario.nome },
+      });
     }),
 
   conciliacaoDesvincular: comercialProcedure
     .use(podeConfigurarEstoqueVivo)
-    .input(z.object({ pedidoOperacionalId: z.string(), observacoes: z.string().optional() }))
+    .input(
+      z.object({
+        pedidoOperacionalId: z.string(),
+        observacoes: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
-      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
-      await desvincularConciliacao(ctx.prisma!, { ...input, usuario: { id: usuario.id, nome: usuario.nome } });
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
+      await desvincularConciliacao(ctx.prisma!, {
+        ...input,
+        usuario: { id: usuario.id, nome: usuario.nome },
+      });
       return { success: true };
     }),
 
@@ -2115,11 +2851,15 @@ export const pedidosRouter = router({
         pedidoContaAzulId: z.string(),
         campos: z.array(z.string()).optional(),
         observacoes: z.string().optional(),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
-      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
       try {
         return await aplicarCorrecaoConciliacao(ctx.prisma!, {
           ...input,
@@ -2128,7 +2868,10 @@ export const pedidosRouter = router({
       } catch (error) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: error instanceof Error ? error.message : "Não foi possível aplicar a correção.",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Não foi possível aplicar a correção.",
         });
       }
     }),
