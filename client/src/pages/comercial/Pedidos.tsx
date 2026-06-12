@@ -520,7 +520,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
             disabled={copiarSemanaAnterior.isPending || !podeCriarPedidos}
             onClick={trazerSemanaAnterior}
           >
-            {copiarSemanaAnterior.isPending ? "Copiando..." : "Trazer semana anterior inteira"}
+            {copiarSemanaAnterior.isPending ? "Copiando..." : "Trazer planos/recorrentes da semana anterior"}
           </Button>
           <Button variant="outline" asChild>
             <Link href="/comercial/pedidos-historico">Histórico</Link>

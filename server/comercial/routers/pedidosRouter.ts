@@ -951,6 +951,7 @@ export const pedidosRouter = router({
           where: {
             dataEntrega: { gte: semanaOrigemInicio, lte: semanaOrigemFim },
             status: { not: "CANCELADO" },
+            tipoVenda: { in: ["PLANO", "RECORRENTE_SEMANAL", "RECORRENTE_QUINZENAL"] },
           },
           include: { itens: true },
           orderBy: [{ dataEntrega: "asc" }, { prioridadeEntrega: "asc" }, { criadoEm: "asc" }],
@@ -967,7 +968,7 @@ export const pedidosRouter = router({
           ignorados: 0,
           origem: semanaOrigemInicio,
           destino: semanaDestinoInicio,
-          mensagem: "Nenhum pedido encontrado na semana anterior.",
+          mensagem: "Nenhum pedido de plano ou recorrente encontrado na semana anterior.",
         };
       }
 
