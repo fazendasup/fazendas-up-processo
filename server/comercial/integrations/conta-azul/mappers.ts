@@ -207,6 +207,25 @@ export function extrairNumeroVendaContaAzul(raw: unknown): string | null {
   return null;
 }
 
+function extrairDataOperacionalVendaContaAzul(raw: Record<string, unknown>): string | undefined {
+  const candidatos = [
+    raw.data_entrega,
+    raw.dataEntrega,
+    raw.previsao_entrega,
+    raw.previsaoEntrega,
+    raw.data_previsao_entrega,
+    raw.dataPrevisaoEntrega,
+    raw.data_saida,
+    raw.dataSaida,
+    raw.data_execucao,
+    raw.dataExecucao,
+  ];
+  for (const valor of candidatos) {
+    if (typeof valor === "string" && valor.trim()) return valor.trim();
+  }
+  return undefined;
+}
+
 function normalizarProdutoNome(s: string): string {
   return s
     .normalize("NFD")
@@ -359,7 +378,8 @@ export function mapVendaBuscaItem(raw: unknown): {
       break;
     }
   }
-  const data = typeof o.data === "string" ? o.data : undefined;
+  const dataOperacional = extrairDataOperacionalVendaContaAzul(o);
+  const data = dataOperacional ?? (typeof o.data === "string" ? o.data : undefined);
   const cliente = o.cliente;
   let clienteExternalId: string | null = null;
   if (cliente && typeof cliente === "object") {

@@ -32,8 +32,8 @@ function detalheDivergencia(d: any) {
   if (campo === "data") {
     return {
       titulo: "Data diferente",
-      acao: `Corrija a data de entrega do pedido operacional (${d.operacional}) ou a data da venda no Conta Azul (${d.contaAzul}).`,
-      valores: `Operacional ${d.operacional} × Conta Azul ${d.contaAzul}`,
+      acao: `Corrija a data de entrega do pedido operacional (${d.operacional}) ou a data de execução/entrega da venda no Conta Azul (${d.contaAzul}).`,
+      valores: `Operacional ${d.operacional} × Conta Azul/execução ${d.contaAzul}`,
     };
   }
   if (campo === "valor_estimado") {
