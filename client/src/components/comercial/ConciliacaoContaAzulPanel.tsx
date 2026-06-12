@@ -89,6 +89,15 @@ function tipoDocumentoContaAzul(status: string | null | undefined) {
   return "Venda";
 }
 
+const TIPOS_VENDA = [
+  ["RECORRENTE_SEMANAL", "Recorrente Semanal"],
+  ["RECORRENTE_QUINZENAL", "Recorrente Quinzenal"],
+  ["PLANO", "Plano"],
+  ["AVULSO", "Avulso"],
+] as const;
+
+type TipoVenda = (typeof TIPOS_VENDA)[number][0];
+
 export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: Date }) {
   const utils = trpc.useUtils();
   const painel = trpc.comercial.pedidos.conciliacaoPainel.useQuery({ inicio, fim });
@@ -575,7 +584,7 @@ function VendaSemPedidoCard({
   onConfirmarVinculo,
 }: {
   venda: any;
-  criarDeVenda: { isPending: boolean; mutate: (input: { pedidoContaAzulId: string }) => void };
+  criarDeVenda: { isPending: boolean; mutate: (input: { pedidoContaAzulId: string; tipoVenda: TipoVenda }) => void };
   ignorar: { isPending: boolean; mutate: (input: { pedidoContaAzulId: string }) => void };
   marcarErrada: { isPending: boolean; mutate: (input: { pedidoContaAzulId: string }) => void };
   importarProdutos: { isPending: boolean; mutate: (input: { produtoIds: string[] }) => void };
@@ -584,17 +593,38 @@ function VendaSemPedidoCard({
   candidatos: { isLoading: boolean; data?: { candidatos: any[] } };
   onConfirmarVinculo: (pedidoOperacionalId: string) => void;
 }) {
+  const [tipoVenda, setTipoVenda] = useState<TipoVenda | "">("");
   const faltantes = trpc.comercial.pedidos.conciliacaoProdutosFaltantesVenda.useQuery({ pedidoContaAzulId: venda.id });
   const idsAtivacao = (faltantes.data?.faltantes ?? [])
     .filter((f) => f.podeAtivar && f.produtoCatalogoId)
     .map((f) => f.produtoCatalogoId as string);
 
+  const criarPedidoOperacional = () => {
+    if (!tipoVenda) {
+      toast.error("Escolha se a venda é plano, recorrente ou avulsa antes de criar o pedido.");
+      return;
+    }
+    criarDeVenda.mutate({ pedidoContaAzulId: venda.id, tipoVenda });
+  };
+
   return (
     <Card>
       <CardContent className="flex flex-wrap items-start justify-between gap-3 p-4">
         <BlocoVenda titulo="Venda" venda={venda} />
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" disabled={criarDeVenda.isPending} onClick={() => criarDeVenda.mutate({ pedidoContaAzulId: venda.id })}>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            className="h-8 rounded-md border bg-background px-2 text-xs"
+            value={tipoVenda}
+            onChange={(e) => setTipoVenda(e.target.value as TipoVenda | "")}
+          >
+            <option value="" disabled>
+              Tipo da venda...
+            </option>
+            {TIPOS_VENDA.map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+          <Button size="sm" disabled={criarDeVenda.isPending} onClick={criarPedidoOperacional}>
             Criar pedido operacional
           </Button>
           <Button size="sm" variant="outline" onClick={() => setVendaCandidatosId(vendaCandidatosId === venda.id ? null : venda.id)}>

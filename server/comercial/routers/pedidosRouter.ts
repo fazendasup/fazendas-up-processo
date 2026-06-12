@@ -2090,7 +2090,7 @@ export const pedidosRouter = router({
 
   conciliacaoCriarOperacionalDeVenda: comercialProcedure
     .use(podeConfigurarEstoqueVivo)
-    .input(z.object({ pedidoContaAzulId: z.string(), observacoes: z.string().optional() }))
+    .input(z.object({ pedidoContaAzulId: z.string(), tipoVenda: tipoVendaSchema, observacoes: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
       if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });

@@ -198,6 +198,7 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
     onSuccess: async () => {
       toast.success("Pedido salvo e agenda atualizada.");
       setPedidoEditId(null);
+      setTipoVenda("");
       setObsPedido("");
       setLinhas([{ produtoId: "", quantidade: "1", observacoes: "" }]);
       setAvarias([]);
@@ -829,8 +830,15 @@ export function Pedidos({ abaInicial = "operacional" }: { abaInicial?: PedidosTa
               <PainelRegrasVenda regra={regra} precos={regra?.precosEspeciais ?? []} />
               <div>
                 <Label className="text-xs">Tipo de venda *</Label>
-                <select className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={tipoVenda} onChange={(e) => setTipoVenda(e.target.value)}>
-                  <option value="">Selecione...</option>
+                <select
+                  className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                  value={tipoVenda}
+                  required
+                  onChange={(e) => setTipoVenda(e.target.value)}
+                >
+                  <option value="" disabled>
+                    Selecione o tipo da venda...
+                  </option>
                   {TIPOS.map(([value, label]) => (
                     <option key={value} value={value}>{label}</option>
                   ))}

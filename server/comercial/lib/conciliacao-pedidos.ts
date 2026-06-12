@@ -740,6 +740,7 @@ export async function criarOperacionalDeVenda(
   prisma: PrismaClient,
   input: {
     pedidoContaAzulId: string;
+    tipoVenda: "RECORRENTE_SEMANAL" | "RECORRENTE_QUINZENAL" | "PLANO" | "AVULSO";
     usuario: { id: string; nome: string };
     observacoes?: string;
   },
@@ -800,7 +801,7 @@ export async function criarOperacionalDeVenda(
         contaAzulCustomerId: contaAzul.cliente.externalId!,
         dataEntrega: contaAzul.dataPedido,
         diaSemana: contaAzul.dataPedido.getUTCDay(),
-        tipoVenda: "AVULSO",
+        tipoVenda: input.tipoVenda,
         status: "PENDENTE",
         statusConciliacao: "CONCILIADO",
         pedidoContaAzulId: contaAzul.id,
