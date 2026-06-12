@@ -43,7 +43,7 @@ const DIAS = [
   "Sábado",
 ];
 const STATUS = ["PENDENTE", "PRONTO", "ENTREGUE", "CANCELADO"] as const;
-const STATUS_ATIVOS = ["PENDENTE", "PRONTO", "ENTREGUE"] as const;
+const STATUS_ATIVOS = ["PRONTO", "PENDENTE", "ENTREGUE"] as const;
 const STATUS_BLOCOS: Record<
   (typeof STATUS_ATIVOS)[number],
   { titulo: string; descricao: string }
