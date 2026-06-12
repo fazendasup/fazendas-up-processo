@@ -51,9 +51,9 @@ function detalheDivergencia(d: any) {
     };
   }
   if (campo.startsWith("item:")) {
-    const produto = campo.replace(/^item:/, "");
+    const produto = campo.replace(/^item:/, "").replace(/^(pid|nome):/, "") || "produto";
     return {
-      titulo: `Quantidade/produto diferente: ${produto}`,
+      titulo: `Quantidade diferente: ${produto}`,
       acao: "Ajuste a quantidade no pedido operacional ou corrija os itens da venda no Conta Azul e sincronize novamente.",
       valores: `Operacional ${Number(d.operacional ?? 0).toLocaleString("pt-BR")} un × Conta Azul ${Number(d.contaAzul ?? 0).toLocaleString("pt-BR")} un`,
     };
@@ -195,6 +195,21 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
 
       {(painel.data?.sugestoes ?? []).length > 0 && (
         <Section title="Sugestões de vínculo" icon={<Link2 className="h-4 w-4" />}>
+          <div className="rounded-lg border border-cyan-200 bg-cyan-50/50 p-3 text-xs text-cyan-950 dark:border-cyan-900 dark:bg-cyan-950/20 dark:text-cyan-100">
+            <p className="font-semibold">Como decidir rápido:</p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-4">
+              <li>
+                <strong>Confirmar vínculo</strong> — junta os dois registros. O <strong>valor que vale para faturamento é o da Conta Azul</strong>;
+                o pedido operacional continua valendo para produção/colheita. Diferenças listadas continuam visíveis até serem corrigidas.
+              </li>
+              <li>
+                <strong>Manter operacional</strong> — o pedido operacional está certo e essa venda não é dele.
+              </li>
+              <li>
+                <strong>Venda CA errada</strong> — a venda foi lançada errada na Conta Azul (corrigir lá e sincronizar).
+              </li>
+            </ul>
+          </div>
           {painel.data!.sugestoes.map((s: any) => (
             <Card key={`${s.operacional.id}-${s.venda.id}`} className="border-amber-200/80">
               <CardContent className="space-y-3 p-4">

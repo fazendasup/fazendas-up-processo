@@ -208,12 +208,14 @@ export function calcularDivergencias(
   }
 
   if (compararItens) {
+    const nomePorChave = new Map<string, string>();
     const mapOp = new Map<string, number>();
     for (const item of operacional.itens) {
       const key = resolverChave
         ? resolverChave("operacional", { produtoId: item.produtoId, produtoNome: item.produtoNome })
         : `nome:${normalizarNome(item.produtoNome)}`;
       mapOp.set(key, (mapOp.get(key) ?? 0) + num(item.quantidade));
+      if (item.produtoNome && !nomePorChave.has(key)) nomePorChave.set(key, item.produtoNome);
     }
     const mapCa = new Map<string, number>();
     for (const item of contaAzul.itens) {
@@ -221,6 +223,7 @@ export function calcularDivergencias(
         ? resolverChave("contaAzul", { produto: item.produto, sku: item.sku })
         : `nome:${normalizarNome(item.produto)}`;
       mapCa.set(key, (mapCa.get(key) ?? 0) + num(item.quantidade));
+      if (item.produto && !nomePorChave.has(key)) nomePorChave.set(key, item.produto);
     }
 
     const nomes = new Set([...Array.from(mapOp.keys()), ...Array.from(mapCa.keys())]);
@@ -229,7 +232,7 @@ export function calcularDivergencias(
       const qCa = mapCa.get(nome) ?? 0;
       if (Math.abs(qOp - qCa) > 0.001) {
         divergencias.push({
-          campo: `item:${nome || "sem_nome"}`,
+          campo: `item:${nomePorChave.get(nome) ?? nome.replace(/^nome:/, "") ?? "sem_nome"}`,
           operacional: qOp,
           contaAzul: qCa,
         });
