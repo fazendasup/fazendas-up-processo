@@ -272,7 +272,6 @@ export function scoreSugestaoVinculo(
   let score = 40;
   const dias = diffDias(operacional.dataEntrega, contaAzul.dataPedido);
   if (dias === 0) score += 35;
-  else if (dias <= 2) score += 20;
   else return 0;
 
   const chavesOp = new Set(

@@ -199,6 +199,10 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
             <p className="font-semibold">Como decidir rápido:</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-4">
               <li>
+                A sugestão automática só deve aparecer quando o pedido operacional e a venda Conta Azul forem do <strong>mesmo dia</strong>.
+                Se a data for diferente, trate como registros separados ou corrija a data antes de vincular.
+              </li>
+              <li>
                 <strong>Confirmar vínculo</strong> — junta os dois registros. O <strong>valor que vale para faturamento é o da Conta Azul</strong>;
                 o pedido operacional continua valendo para produção/colheita. Diferenças listadas continuam visíveis até serem corrigidas.
               </li>
