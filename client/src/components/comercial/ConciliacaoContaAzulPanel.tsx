@@ -158,6 +158,35 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
     },
     onError: (e) => toast.error(e.message),
   });
+  const aplicarCorrecao = trpc.comercial.pedidos.conciliacaoAplicarCorrecao.useMutation({
+    onSuccess: (r) => {
+      toast.success(
+        r.conciliado
+          ? "Correção aplicada. Pedido alinhado com a Conta Azul."
+          : "Correção aplicada. Ainda há divergências para revisar.",
+      );
+      void utils.comercial.pedidos.conciliacaoPainel.invalidate();
+      void utils.comercial.pedidos.agenda.invalidate();
+      void utils.comercial.pedidos.dashboard.invalidate();
+      void utils.comercial.pedidos.relatorioHistorico.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const solicitarAplicarCorrecao = (
+    pedidoOperacionalId: string,
+    pedidoContaAzulId: string,
+    campos?: string[],
+    mensagem?: string,
+  ) => {
+    const texto =
+      mensagem ??
+      (campos?.length
+        ? "A Conta Azul será usada como referência para esta divergência. O pedido operacional será atualizado em todo o sistema."
+        : "Todas as divergências serão corrigidas no pedido operacional com base na venda Conta Azul. Confirma?");
+    if (!window.confirm(texto)) return;
+    aplicarCorrecao.mutate({ pedidoOperacionalId, pedidoContaAzulId, campos });
+  };
 
   const resumo = painel.data?.resumo;
   const alertas = useMemo(() => {
@@ -174,8 +203,8 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
     <div className="space-y-4">
       <div className="rounded-lg border border-cyan-200 bg-cyan-50/50 p-3 text-sm text-cyan-950 dark:border-cyan-900 dark:bg-cyan-950/20 dark:text-cyan-100">
         A sincronização importa vendas e orçamentos conciliáveis do Conta Azul e sugere vínculos, mas{" "}
-        <strong>não substitui</strong> pedidos operacionais automaticamente. Confirme manualmente ou marque
-        divergências para preservar a rastreabilidade.
+        <strong>não substitui</strong> pedidos operacionais automaticamente. Em cada divergência você pode{" "}
+        <strong>aplicar a correção da Conta Azul</strong> direto nesta tela (com confirmação), sem ir à emissão.
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
@@ -222,7 +251,13 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
                   <BlocoVenda titulo="Venda Conta Azul" venda={s.venda} />
                 </div>
                 {s.divergencias?.length > 0 && (
-                  <DivergenciasLista divergencias={s.divergencias} />
+                  <DivergenciasLista
+                    divergencias={s.divergencias}
+                    pedidoOperacionalId={s.operacional.id}
+                    pedidoContaAzulId={s.venda.id}
+                    aplicando={aplicarCorrecao.isPending}
+                    onAplicarCorrecao={solicitarAplicarCorrecao}
+                  />
                 )}
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -297,7 +332,13 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
               <CardContent className="space-y-2 p-4">
                 <BlocoPedido titulo="Pedido operacional (referência)" pedido={op} />
                 {op.pedidoContaAzul && <BlocoVenda titulo="Venda Conta Azul atual" venda={op.pedidoContaAzul} />}
-                <DivergenciasLista divergencias={op.divergencias ?? []} />
+                <DivergenciasLista
+                  divergencias={op.divergencias ?? []}
+                  pedidoOperacionalId={op.id}
+                  pedidoContaAzulId={op.pedidoContaAzulId ?? op.pedidoContaAzul?.id}
+                  aplicando={aplicarCorrecao.isPending}
+                  onAplicarCorrecao={solicitarAplicarCorrecao}
+                />
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" disabled={manterOp.isPending} onClick={() => manterOp.mutate({ pedidoOperacionalId: op.id })}>
                     Manter operacional como verdade
@@ -605,7 +646,35 @@ function VendaSemPedidoCard({
   );
 }
 
-function DivergenciasLista({ divergencias }: { divergencias: any[] }) {
+function labelBotaoCorrecao(d: any) {
+  const campo = String(d?.campo ?? "");
+  if (campo === "data") {
+    return `Usar data da Conta Azul (${fmtDate(String(d.contaAzul))})`;
+  }
+  if (campo === "valor_estimado") {
+    return "Sincronizar itens e preços da Conta Azul";
+  }
+  if (campo.startsWith("item:")) {
+    return `Usar quantidade da Conta Azul (${Number(d.contaAzul ?? 0).toLocaleString("pt-BR")} un)`;
+  }
+  return "Aplicar valor da Conta Azul";
+}
+
+function DivergenciasLista({
+  divergencias,
+  pedidoOperacionalId,
+  pedidoContaAzulId,
+  aplicando,
+  onAplicarCorrecao,
+}: {
+  divergencias: any[];
+  pedidoOperacionalId?: string;
+  pedidoContaAzulId?: string;
+  aplicando?: boolean;
+  onAplicarCorrecao?: (pedidoOperacionalId: string, pedidoContaAzulId: string, campos?: string[], mensagem?: string) => void;
+}) {
+  const podeCorrigir = Boolean(pedidoOperacionalId && pedidoContaAzulId && onAplicarCorrecao);
+
   if (!divergencias.length) {
     return (
       <div className="rounded-md border border-emerald-200 bg-emerald-50/70 p-2 text-xs text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
@@ -615,7 +684,26 @@ function DivergenciasLista({ divergencias }: { divergencias: any[] }) {
   }
   return (
     <div className="rounded-md border border-amber-200 bg-amber-50/70 p-2 text-xs dark:border-amber-900 dark:bg-amber-950/30">
-      <p className="mb-2 font-semibold text-amber-900 dark:text-amber-100">Onde corrigir</p>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <p className="font-semibold text-amber-900 dark:text-amber-100">Onde corrigir</p>
+        {podeCorrigir && divergencias.length > 1 ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={aplicando}
+            onClick={() =>
+              onAplicarCorrecao!(
+                pedidoOperacionalId!,
+                pedidoContaAzulId!,
+                undefined,
+                "Todas as divergências serão corrigidas no pedido operacional com base na venda Conta Azul. Confirma?",
+              )
+            }
+          >
+            Aplicar todas da Conta Azul
+          </Button>
+        ) : null}
+      </div>
       <ul className="space-y-2">
         {divergencias.map((d: any) => {
           const detalhe = detalheDivergencia(d);
@@ -624,6 +712,24 @@ function DivergenciasLista({ divergencias }: { divergencias: any[] }) {
               <p className="font-semibold text-foreground">{detalhe.titulo}</p>
               <p className="text-muted-foreground">{detalhe.valores}</p>
               <p className="mt-1 text-amber-900 dark:text-amber-100">{detalhe.acao}</p>
+              {podeCorrigir ? (
+                <Button
+                  size="sm"
+                  className="mt-2"
+                  variant="secondary"
+                  disabled={aplicando}
+                  onClick={() =>
+                    onAplicarCorrecao!(
+                      pedidoOperacionalId!,
+                      pedidoContaAzulId!,
+                      [String(d.campo)],
+                      `A Conta Azul será usada como referência para "${detalhe.titulo}". O pedido operacional será atualizado em todo o sistema. Confirma?`,
+                    )
+                  }
+                >
+                  {labelBotaoCorrecao(d)}
+                </Button>
+              ) : null}
             </li>
           );
         })}

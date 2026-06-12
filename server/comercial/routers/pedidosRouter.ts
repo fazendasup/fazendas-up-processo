@@ -20,6 +20,7 @@ import { calcularConciliacaoSemanal } from "../lib/conciliacao-semanal.js";
 import { fimSemana, GO_LIVE_PEDIDOS, inicioSemana } from "../lib/semana.js";
 import { comercialProcedure, comercialRequirePerfis, router } from "../../_core/trpc";
 import {
+  aplicarCorrecaoConciliacao,
   calcularDivergencias,
   confirmarVinculoConciliacao,
   opcoesCalcularDivergencias,
@@ -2103,5 +2104,31 @@ export const pedidosRouter = router({
       if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
       await desvincularConciliacao(ctx.prisma!, { ...input, usuario: { id: usuario.id, nome: usuario.nome } });
       return { success: true };
+    }),
+
+  conciliacaoAplicarCorrecao: comercialProcedure
+    .use(podeConfigurarEstoqueVivo)
+    .input(
+      z.object({
+        pedidoOperacionalId: z.string(),
+        pedidoContaAzulId: z.string(),
+        campos: z.array(z.string()).optional(),
+        observacoes: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const usuario = ctx.comercialUsuario;
+      if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário comercial não identificado" });
+      try {
+        return await aplicarCorrecaoConciliacao(ctx.prisma!, {
+          ...input,
+          usuario: { id: usuario.id, nome: usuario.nome },
+        });
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error instanceof Error ? error.message : "Não foi possível aplicar a correção.",
+        });
+      }
     }),
 });

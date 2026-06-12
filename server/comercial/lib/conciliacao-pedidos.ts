@@ -6,6 +6,7 @@ import {
   resolverProdutoOperacional,
   type ProdutoOperacionalLookup,
 } from "./produto-operacional.js";
+import { assertSemanaAnteriorFechada } from "./fechamento.js";
 import { GO_LIVE_PEDIDOS, inicioSemana } from "./semana.js";
 
 type PedidoOperacionalComItens = Prisma.PedidoOperacionalGetPayload<{
@@ -136,6 +137,93 @@ function mesmoDia(a: Date, b: Date): boolean {
 
 function ymdOperacional(d: Date): string {
   return d.toISOString().slice(0, 10);
+}
+
+function diaSemanaOperacional(d: Date): number {
+  return d.getUTCDay();
+}
+
+function buildNomePorChaveItem(
+  operacional: PedidoOperacionalComItens,
+  contaAzul: PedidoContaAzulComItens,
+  resolverChave: ResolverChaveItem,
+): Map<string, string> {
+  const nomePorChave = new Map<string, string>();
+  for (const item of operacional.itens) {
+    const key = resolverChave("operacional", { produtoId: item.produtoId, produtoNome: item.produtoNome });
+    if (item.produtoNome && !nomePorChave.has(key)) nomePorChave.set(key, item.produtoNome);
+  }
+  for (const item of contaAzul.itens) {
+    const key = resolverChave("contaAzul", { produto: item.produto, sku: item.sku });
+    if (item.produto && !nomePorChave.has(key)) nomePorChave.set(key, item.produto);
+  }
+  return nomePorChave;
+}
+
+function chavePorCampoItem(
+  campo: string,
+  operacional: PedidoOperacionalComItens,
+  contaAzul: PedidoContaAzulComItens,
+  resolverChave: ResolverChaveItem,
+): string | null {
+  const nomeDisplay = campo.replace(/^item:/, "").trim();
+  const nomePorChave = buildNomePorChaveItem(operacional, contaAzul, resolverChave);
+  for (const [key, nome] of Array.from(nomePorChave.entries())) {
+    if (nome === nomeDisplay) return key;
+  }
+  const alvo = normalizarNome(nomeDisplay);
+  for (const [key, nome] of Array.from(nomePorChave.entries())) {
+    if (normalizarNome(nome) === alvo) return key;
+  }
+  for (const item of operacional.itens) {
+    if (normalizarNome(item.produtoNome) === alvo) {
+      return resolverChave("operacional", { produtoId: item.produtoId, produtoNome: item.produtoNome });
+    }
+  }
+  for (const item of contaAzul.itens) {
+    if (normalizarNome(item.produto) === alvo) {
+      return resolverChave("contaAzul", { produto: item.produto, sku: item.sku });
+    }
+  }
+  return null;
+}
+
+function quantidadePorChaveOperacional(
+  operacional: PedidoOperacionalComItens,
+  resolverChave: ResolverChaveItem,
+): Map<string, { ids: string[]; quantidade: number }> {
+  const map = new Map<string, { ids: string[]; quantidade: number }>();
+  for (const item of operacional.itens) {
+    const key = resolverChave("operacional", { produtoId: item.produtoId, produtoNome: item.produtoNome });
+    const atual = map.get(key) ?? { ids: [], quantidade: 0 };
+    atual.ids.push(item.id);
+    atual.quantidade += num(item.quantidade);
+    map.set(key, atual);
+  }
+  return map;
+}
+
+function quantidadePorChaveContaAzul(
+  contaAzul: PedidoContaAzulComItens,
+  resolverChave: ResolverChaveItem,
+): Map<string, { quantidade: number; precoUnit: number; produto: string; sku: string | null; categoria: string | null }> {
+  const map = new Map<
+    string,
+    { quantidade: number; precoUnit: number; produto: string; sku: string | null; categoria: string | null }
+  >();
+  for (const item of contaAzul.itens) {
+    const key = resolverChave("contaAzul", { produto: item.produto, sku: item.sku });
+    const atual = map.get(key) ?? {
+      quantidade: 0,
+      precoUnit: num(item.precoUnit),
+      produto: item.produto,
+      sku: item.sku ?? null,
+      categoria: item.categoria ?? null,
+    };
+    atual.quantidade += num(item.quantidade);
+    map.set(key, atual);
+  }
+  return map;
 }
 
 function diffDias(a: Date, b: Date): number {
@@ -758,6 +846,220 @@ export async function criarOperacionalDeVenda(
   });
 
   return { pedidoOperacionalId: operacional.id };
+}
+
+export async function aplicarCorrecaoConciliacao(
+  prisma: PrismaClient,
+  input: {
+    pedidoOperacionalId: string;
+    pedidoContaAzulId: string;
+    campos?: string[];
+    usuario: { id: string; nome: string };
+    observacoes?: string;
+  },
+) {
+  const [operacional, contaAzul] = await Promise.all([
+    prisma.pedidoOperacional.findUnique({
+      where: { id: input.pedidoOperacionalId },
+      include: { itens: true, cliente: { select: { externalId: true, nome: true } } },
+    }),
+    prisma.pedido.findUnique({
+      where: { id: input.pedidoContaAzulId },
+      include: {
+        itens: true,
+        cliente: {
+          select: {
+            externalId: true,
+            nome: true,
+            regraComercial: { select: { acumulaPedidos: true, ...REGRA_ENTREGA_CONCILIACAO_SELECT } },
+          },
+        },
+      },
+    }),
+  ]);
+  if (!operacional || !contaAzul) throw new Error("Pedido operacional ou venda Conta Azul não encontrado.");
+  if (operacional.status === "CANCELADO") throw new Error("Não é possível corrigir pedido cancelado.");
+  const vinculoValido =
+    operacional.pedidoContaAzulId === contaAzul.id || operacional.sugestaoPedidoContaAzulId === contaAzul.id;
+  if (!vinculoValido) {
+    throw new Error("Esta venda não está vinculada ou sugerida para este pedido operacional.");
+  }
+  if (operacional.contaAzulCustomerId && contaAzul.cliente.externalId !== operacional.contaAzulCustomerId) {
+    throw new Error("Cliente do pedido operacional não corresponde à venda Conta Azul.");
+  }
+
+  const produtosConciliacao = await carregarProdutosConciliacao(prisma);
+  const produtosAtivos = produtosConciliacao.filter((p) => p.ativo && p.importadoOperacao);
+  const indice = criarIndiceProdutosOperacionais(produtosAtivos);
+  const resolverChave = criarResolverChaveItemConciliacao(produtosConciliacao);
+  const divergenciasAtuais = calcularDivergencias(operacional, contaAzul, resolverChave, opcoesCalcularDivergencias(operacional));
+  const camposAlvo = input.campos?.length
+    ? input.campos
+    : divergenciasAtuais.map((d) => d.campo);
+  if (camposAlvo.length === 0) throw new Error("Não há divergências para corrigir.");
+
+  const divergenciasCorrigir = divergenciasAtuais.filter((d) => camposAlvo.includes(d.campo));
+  if (divergenciasCorrigir.length === 0) {
+    throw new Error("As divergências informadas não existem mais. Atualize a página.");
+  }
+
+  const antes = snapshotOperacional(operacional);
+  let novaData: Date | null = null;
+
+  await prisma.$transaction(async (tx) => {
+    if (divergenciasCorrigir.some((d) => d.campo === "data")) {
+      novaData = inicioDia(contaAzul.dataPedido);
+      if (antesDoCortePedidos(novaData)) throw new Error("Pedidos operacionais começam em 01/06/2026.");
+      await assertSemanaAnteriorFechada(tx as PrismaClient, novaData);
+      await tx.pedidoOperacional.update({
+        where: { id: operacional.id },
+        data: {
+          dataEntrega: novaData,
+          diaSemana: diaSemanaOperacional(novaData),
+          editadoPorId: input.usuario.id,
+        },
+      });
+      await tx.pedidoOperacionalAvaria.updateMany({
+        where: { pedidoId: operacional.id },
+        data: { dataEntrega: novaData },
+      });
+    }
+
+    const sincronizarItens =
+      divergenciasCorrigir.some((d) => d.campo === "valor_estimado") ||
+      divergenciasCorrigir.some((d) => d.campo.startsWith("item:"));
+    if (sincronizarItens) {
+      const sincronizarTodos = divergenciasCorrigir.some((d) => d.campo === "valor_estimado");
+      const chavesAlvo = new Set<string>();
+      if (!sincronizarTodos) {
+        for (const d of divergenciasCorrigir) {
+          if (!d.campo.startsWith("item:")) continue;
+          const chave = chavePorCampoItem(d.campo, operacional, contaAzul, resolverChave);
+          if (chave) chavesAlvo.add(chave);
+        }
+      }
+
+      const mapCa = quantidadePorChaveContaAzul(contaAzul, resolverChave);
+      const mapOp = quantidadePorChaveOperacional(operacional, resolverChave);
+      const chavesProcessar = sincronizarTodos
+        ? new Set([...Array.from(mapCa.keys()), ...Array.from(mapOp.keys())])
+        : chavesAlvo;
+
+      for (const chave of Array.from(chavesProcessar)) {
+        const ca = mapCa.get(chave);
+        const op = mapOp.get(chave);
+        const qCa = ca?.quantidade ?? 0;
+
+        if (qCa <= 0) {
+          if (op?.ids.length) {
+            await tx.pedidoOperacionalItem.deleteMany({ where: { id: { in: op.ids } } });
+          }
+          continue;
+        }
+
+        const produtoCa = ca
+          ? resolverProdutoOperacional(indice, { produto: ca.produto, sku: ca.sku })
+          : null;
+        if (!produtoCa) {
+          throw new Error(
+            `Produto "${ca?.produto ?? chave}" não está ativo na operação. Ative no catálogo antes de aplicar a correção.`,
+          );
+        }
+
+        if (op?.ids.length) {
+          const [primeiro, ...restantes] = op.ids;
+          if (restantes.length > 0) {
+            await tx.pedidoOperacionalItem.deleteMany({ where: { id: { in: restantes } } });
+          }
+          await tx.pedidoOperacionalItem.update({
+            where: { id: primeiro },
+            data: {
+              produtoId: produtoCa.id,
+              produtoNome: produtoCa.nome,
+              categoria: ca?.categoria ?? produtoCa.categoria,
+              quantidade: new Prisma.Decimal(qCa),
+              precoUnit: ca?.precoUnit ?? null,
+            },
+          });
+        } else {
+          await tx.pedidoOperacionalItem.create({
+            data: {
+              pedidoId: operacional.id,
+              produtoId: produtoCa.id,
+              produtoNome: produtoCa.nome,
+              categoria: ca?.categoria ?? produtoCa.categoria,
+              quantidade: new Prisma.Decimal(qCa),
+              precoUnit: ca?.precoUnit ?? null,
+            },
+          });
+        }
+      }
+    }
+
+    const operacionalAtualizado = await tx.pedidoOperacional.findUnique({
+      where: { id: operacional.id },
+      include: { itens: true, cliente: { select: { externalId: true, nome: true } } },
+    });
+    if (!operacionalAtualizado) throw new Error("Pedido operacional não encontrado após correção.");
+
+    const divergenciasDepois = calcularDivergencias(
+      operacionalAtualizado,
+      contaAzul,
+      resolverChave,
+      opcoesCalcularDivergencias(operacionalAtualizado),
+    );
+    const snapshot: SnapshotConciliacao = {
+      operacional: snapshotOperacional(operacionalAtualizado),
+      contaAzul: snapshotContaAzul(contaAzul),
+    };
+    const conciliado = divergenciasDepois.length === 0;
+
+    if (operacional.pedidoContaAzulId) {
+      await tx.pedidoOperacional.update({
+        where: { id: operacional.id },
+        data: {
+          statusConciliacao: conciliado ? "CONCILIADO" : "DIVERGENTE",
+          snapshotConciliacao: snapshot as Prisma.InputJsonValue,
+          editadoPorId: input.usuario.id,
+        },
+      });
+      await tx.pedido.update({
+        where: { id: contaAzul.id },
+        data: { statusConciliacao: conciliado ? "CONCILIADA" : "DIVERGENTE" },
+      });
+    } else {
+      await tx.pedidoOperacional.update({
+        where: { id: operacional.id },
+        data: { editadoPorId: input.usuario.id },
+      });
+    }
+
+    await registrarEvento(tx, {
+      pedidoOperacionalId: operacional.id,
+      pedidoContaAzulId: contaAzul.id,
+      tipo: "CORRECAO_APLICADA_CA",
+      antes,
+      depois: snapshot,
+      divergencias: divergenciasCorrigir,
+      usuarioId: input.usuario.id,
+      usuarioNome: input.usuario.nome,
+      observacoes: input.observacoes,
+    });
+  });
+
+  const operacionalFinal = await prisma.pedidoOperacional.findUnique({
+    where: { id: operacional.id },
+    include: { itens: true, cliente: { select: { externalId: true, nome: true } } },
+  });
+  const divergenciasRestantes = operacionalFinal
+    ? calcularDivergencias(operacionalFinal, contaAzul, resolverChave, opcoesCalcularDivergencias(operacionalFinal))
+    : [];
+
+  return {
+    dataEntrega: novaData,
+    divergenciasRestantes,
+    conciliado: divergenciasRestantes.length === 0,
+  };
 }
 
 export async function desvincularConciliacao(
