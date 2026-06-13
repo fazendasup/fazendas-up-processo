@@ -107,6 +107,14 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
     { enabled: Boolean(vendaCandidatosId) },
   );
 
+  const invalidarCachesConciliacao = () => {
+    void utils.comercial.pedidos.conciliacaoPainel.invalidate();
+    void utils.comercial.pedidos.agenda.invalidate();
+    void utils.comercial.pedidos.dashboard.invalidate();
+    void utils.comercial.pedidos.relatorioHistorico.invalidate();
+    void utils.comercial.pedidos.statusSemana.invalidate();
+  };
+
   const confirmar = trpc.comercial.pedidos.conciliacaoConfirmarVinculo.useMutation({
     onSuccess: (r) => {
       setVendaCandidatosId(null);
@@ -115,39 +123,37 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
           ? "Vínculo confirmado com divergências registradas."
           : "Vínculo confirmado com sucesso.",
       );
-      void utils.comercial.pedidos.conciliacaoPainel.invalidate();
-      void utils.comercial.pedidos.agenda.invalidate();
-      void utils.comercial.pedidos.relatorioHistorico.invalidate();
+      invalidarCachesConciliacao();
     },
     onError: (e) => toast.error(e.message),
   });
   const marcarErrada = trpc.comercial.pedidos.conciliacaoMarcarVendaErrada.useMutation({
     onSuccess: () => {
       toast.success("Venda marcada como incorreta.");
-      void utils.comercial.pedidos.conciliacaoPainel.invalidate();
+      invalidarCachesConciliacao();
     },
     onError: (e) => toast.error(e.message),
   });
   const ignorar = trpc.comercial.pedidos.conciliacaoIgnorarVenda.useMutation({
     onSuccess: () => {
       toast.message("Venda ignorada na conciliação.");
-      void utils.comercial.pedidos.conciliacaoPainel.invalidate();
+      invalidarCachesConciliacao();
     },
     onError: (e) => toast.error(e.message),
   });
   const manterOp = trpc.comercial.pedidos.conciliacaoManterOperacional.useMutation({
     onSuccess: () => {
       toast.success("Pedido operacional mantido como referência.");
-      void utils.comercial.pedidos.conciliacaoPainel.invalidate();
+      invalidarCachesConciliacao();
     },
     onError: (e) => toast.error(e.message),
   });
   const criarDeVenda = trpc.comercial.pedidos.conciliacaoCriarOperacionalDeVenda.useMutation({
     onSuccess: () => {
       toast.success("Pedido operacional criado a partir da venda.");
-      void utils.comercial.pedidos.conciliacaoPainel.invalidate();
-      void utils.comercial.pedidos.agenda.invalidate();
+      invalidarCachesConciliacao();
       void utils.comercial.pedidos.conciliacaoProdutosFaltantesVenda.invalidate();
+      void utils.comercial.pedidos.compras.invalidate();
     },
     onError: (e) => toast.error(e.message),
   });
@@ -163,7 +169,7 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
   const desvincular = trpc.comercial.pedidos.conciliacaoDesvincular.useMutation({
     onSuccess: () => {
       toast.success("Vínculo removido.");
-      void utils.comercial.pedidos.conciliacaoPainel.invalidate();
+      invalidarCachesConciliacao();
     },
     onError: (e) => toast.error(e.message),
   });
@@ -174,10 +180,7 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
           ? "Correção aplicada. Pedido alinhado com a Conta Azul."
           : "Correção aplicada. Ainda há divergências para revisar.",
       );
-      void utils.comercial.pedidos.conciliacaoPainel.invalidate();
-      void utils.comercial.pedidos.agenda.invalidate();
-      void utils.comercial.pedidos.dashboard.invalidate();
-      void utils.comercial.pedidos.relatorioHistorico.invalidate();
+      invalidarCachesConciliacao();
     },
     onError: (e) => toast.error(e.message),
   });

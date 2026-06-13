@@ -40,6 +40,7 @@ export function Mensagens() {
   const [aba, setAba] = useState<Aba>("pendentes");
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectText, setRejectText] = useState("");
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
 
   const q = trpc.comercial.mensagens.fila.useQuery({ aba });
   const nPendentes = trpc.comercial.mensagens.fila.useQuery({ aba: "pendentes" }, { select: (d) => d.length, staleTime: 20_000 });
@@ -166,7 +167,10 @@ export function Mensagens() {
               <label className="mt-3 block text-xs font-semibold uppercase tracking-wide text-[#6B7280]">Conteúdo</label>
               <textarea
                 className="mt-1 min-h-[120px] w-full rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-sm text-[#111827] outline-none transition duration-200 focus:border-[#10B981] focus:bg-white focus:ring-2 focus:ring-[#10B981]/25"
-                defaultValue={m.conteudoFinal ?? m.conteudoSugerido}
+                value={drafts[m.id] ?? (m.conteudoFinal ?? m.conteudoSugerido)}
+                onChange={(e) =>
+                  setDrafts((prev) => ({ ...prev, [m.id]: e.target.value }))
+                }
                 onBlur={(e) => {
                   const text = e.target.value.trim();
                   if (text && text !== (m.conteudoFinal ?? m.conteudoSugerido)) {
@@ -182,7 +186,14 @@ export function Mensagens() {
                     type="button"
                     className="inline-flex items-center gap-2 rounded-lg bg-[#10B981] px-4 py-2 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-[#059669] hover:shadow-[0_4px_12px_#00000020] disabled:opacity-50"
                     disabled={aprovar.isPending}
-                    onClick={() => aprovar.mutate({ id: m.id })}
+                    onClick={() => {
+                      const text = (drafts[m.id] ?? m.conteudoFinal ?? m.conteudoSugerido).trim();
+                      if (!text) {
+                        toast.error("Informe o texto da mensagem antes de aprovar.");
+                        return;
+                      }
+                      aprovar.mutate({ id: m.id, texto: text });
+                    }}
                   >
                     <Check className="h-4 w-4" />
                     Aprovar e enviar

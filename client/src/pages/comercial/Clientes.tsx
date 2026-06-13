@@ -188,7 +188,7 @@ export function Clientes() {
             teste
           </Link>{" "}
           ou{" "}
-          <Link className="font-bold text-[#10B981] underline" href="/clientes?busca=Mercado">
+          <Link className="font-bold text-[#10B981] underline" href={comercialPath("/clientes", { busca: "Mercado" })}>
             Mercado
           </Link>
           . Rode o seed se a lista vier vazia:{" "}

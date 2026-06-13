@@ -267,12 +267,12 @@ function rotaParaResposta(rota: RotaCarregada) {
   };
 }
 
-async function idsClientesEmRotasAtivas(prisma: ReturnType<typeof getComercialPrisma>, dia: Date) {
+async function idsClientesEmRotasDoDia(prisma: ReturnType<typeof getComercialPrisma>, dia: Date) {
   const paradas = await prisma.paradaEntrega.findMany({
     where: {
       rota: {
         dataEntrega: { gte: inicioDia(dia), lte: fimDia(dia) },
-        status: { in: ["PLANEJADA", "EM_ROTA"] },
+        status: { in: ["PLANEJADA", "EM_ROTA", "CONCLUIDA"] },
       },
     },
     select: { contaAzulCustomerId: true },
@@ -295,7 +295,7 @@ async function carregarRoteiro(
       orderBy: [{ status: "asc" }, { criadoEm: "asc" }],
     }),
     clientesPlanejados(prisma, dia),
-    idsClientesEmRotasAtivas(prisma, dia),
+    idsClientesEmRotasDoDia(prisma, dia),
   ]);
 
   const rotas = rotasDb.map((r) => rotaParaResposta(r as RotaCarregada));
@@ -539,7 +539,7 @@ export const entregasRouter = router({
       const usuario = ctx.comercialUsuario;
       if (!usuario) throw new TRPCError({ code: "UNAUTHORIZED" });
 
-      const idsEmRotasAtivas = await idsClientesEmRotasAtivas(ctx.prisma!, input.dia);
+      const idsEmRotasAtivas = await idsClientesEmRotasDoDia(ctx.prisma!, input.dia);
       const planejadas = (await clientesPlanejados(ctx.prisma!, input.dia)).filter(
         (p) => !idsEmRotasAtivas.has(p.contaAzulCustomerId),
       );
@@ -703,6 +703,23 @@ export const entregasRouter = router({
     .use(podeUsarModoEntregador)
     .input(z.object({ rotaId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      const rota = await ctx.prisma!.rotaEntrega.findUnique({
+        where: { id: input.rotaId },
+        include: { paradas: true },
+      });
+      if (!rota) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Rota não encontrada." });
+      }
+      const paradasAbertas = rota.paradas.filter((p) =>
+        p.status === "PENDENTE" || p.status === "EM_ROTA",
+      );
+      if (paradasAbertas.length > 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Não é possível encerrar a rota com ${paradasAbertas.length} parada(s) pendente(s). Finalize ou marque como problema/pulada.`,
+        });
+      }
+
       await ctx.prisma!.rotaEntrega.update({
         where: { id: input.rotaId },
         data: {

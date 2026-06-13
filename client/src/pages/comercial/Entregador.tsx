@@ -197,7 +197,14 @@ export function Entregador() {
   const atualizarLocalizacao = trpc.comercial.entregas.atualizarLocalizacao.useMutation();
   const atualizarParada = trpc.comercial.entregas.atualizarParada.useMutation({
     onSuccess: async () => {
-      await utils.comercial.entregas.roteiro.invalidate();
+      await Promise.all([
+        utils.comercial.entregas.roteiro.invalidate(),
+        utils.comercial.pedidos.dashboard.invalidate(),
+        utils.comercial.pedidos.agenda.invalidate(),
+        utils.comercial.pedidos.statusSemana.invalidate(),
+        utils.comercial.pedidos.compras.invalidate(),
+        utils.comercial.pedidos.relatorioHistorico.invalidate(),
+      ]);
     },
     onError: (err) => toast.error(err.message),
   });

@@ -127,12 +127,17 @@ export function Cliente360() {
 
   const [tab, setTab] = useState<Tab>("resumo");
 
+  const utils = trpc.useUtils();
   const q = trpc.comercial.clientes.obter360.useQuery({ id: clienteId }, { enabled: Boolean(clienteId) });
 
   const recalc = trpc.comercial.clientes.recalcularScore.useMutation({
     onSuccess: () => {
       toast.success("Score recalculado com base nos pedidos.");
       void q.refetch();
+      void utils.comercial.clientes.obter360.invalidate({ id: clienteId });
+      void utils.comercial.clientes.listarCarteira.invalidate();
+      void utils.comercial.clientes.listar.invalidate();
+      void utils.comercial.dashboard.resumo.invalidate();
     },
     onError: (e) => toast.error(e.message),
   });

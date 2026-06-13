@@ -28,6 +28,11 @@ export function useSyncContaAzul(callbacks?: SyncContaAzulCallbacks) {
       utils.comercial.oportunidades.listar.invalidate(),
       utils.comercial.execucoes.resumo.invalidate(),
       utils.comercial.execucoes.listar.invalidate(),
+      utils.comercial.pedidos.relatorioHistorico.invalidate(),
+      utils.comercial.pedidos.conciliacaoPainel.invalidate(),
+      utils.comercial.pedidos.statusSemana.invalidate(),
+      utils.comercial.pedidos.dashboard.invalidate(),
+      utils.comercial.pedidos.agenda.invalidate(),
     ]);
   };
 

@@ -77,10 +77,23 @@ export const mensagensRouter = router({
     }),
 
   aprovarEEnviar: comercialProcedure
-    .input(z.object({ id: z.string(), agendarPara: z.coerce.date().optional() }))
+    .input(
+      z.object({
+        id: z.string(),
+        agendarPara: z.coerce.date().optional(),
+        texto: z.string().min(1).optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       if (!podeAprovarMensagens(ctx.comercialUsuario!.perfil)) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Sem permissão para aprovar" });
+      }
+
+      if (input.texto) {
+        await ctx.prisma!.mensagem.update({
+          where: { id: input.id },
+          data: { conteudoFinal: input.texto },
+        });
       }
 
       const msg = await ctx.prisma!.mensagem.findUnique({
@@ -90,7 +103,7 @@ export const mensagensRouter = router({
       if (!msg) throw new TRPCError({ code: "NOT_FOUND", message: "Mensagem não encontrada" });
 
       const started = Date.now();
-      const textoFinal = msg.conteudoFinal ?? msg.conteudoSugerido;
+      const textoFinal = input.texto ?? msg.conteudoFinal ?? msg.conteudoSugerido;
 
       if (input.agendarPara) {
         await ctx.prisma!.mensagem.update({
