@@ -762,6 +762,9 @@ export function Pedidos({
                 <p className="text-sm text-red-700 dark:text-red-300">
                   {bloqueioSemana.pendentes > 0
                     ? `Há ${bloqueioSemana.pendentes} pedido(s) sem definição de entregue/cancelado. Revise e feche a semana para liberar novos pedidos.`
+                    : statusSemana.data?.conciliacaoBloqueio?.conciliado ===
+                        false
+                      ? "Há conciliações pendentes com a Conta Azul. Corrija as divergências e feche novamente a semana anterior para liberar novos pedidos."
                     : "Os pedidos já estão revisados, mas a semana ainda não foi fechada. Finalize o fechamento para liberar novos pedidos."}
                 </p>
                 {!canEditarComercial && (

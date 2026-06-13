@@ -1,8 +1,12 @@
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "../generated/prisma/index.js";
+import { calcularConciliacaoSemanal } from "./conciliacao-semanal.js";
 import { fimSemana, inicioSemana, inicioSemanaGoLive, rotuloSemana } from "./semana.js";
 
-type PrismaLike = Pick<PrismaClient, "pedidoOperacional" | "fechamentoSemanal">;
+type PrismaLike = Pick<
+  PrismaClient,
+  "pedidoOperacional" | "fechamentoSemanal" | "pedido" | "execucaoApi" | "regraComercialCliente"
+>;
 
 export type SemanaStatus = {
   inicio: Date;
@@ -14,6 +18,7 @@ export type SemanaStatus = {
   cancelados: number;
   fechada: boolean;
   reaberta: boolean;
+  conciliacaoPendente?: boolean;
   fechadoPorNome: string | null;
   fechadoEm: Date | null;
 };
@@ -57,8 +62,8 @@ export async function calcularStatusSemana(prisma: PrismaLike, dia: Date): Promi
 
 /**
  * Primeira semana anterior à `semanaAlvoInicio` (a partir do go-live) que bloqueia
- * a criação de novos pedidos: contém pedidos e ainda tem pendência (não ENTREGUE/CANCELADO)
- * ou não foi explicitamente fechada.
+ * a criação de novos pedidos: contém pedidos e ainda tem pendência (não ENTREGUE/CANCELADO),
+ * não foi explicitamente fechada ou voltou a ter conciliação pendente.
  */
 export async function primeiraSemanaBloqueante(
   prisma: PrismaLike,
@@ -99,6 +104,20 @@ export async function primeiraSemanaBloqueante(
     if (acc.total > 0 && (acc.pendentes > 0 || !fechada)) {
       return calcularStatusSemana(prisma, new Date(k));
     }
+    if (acc.total > 0) {
+      const semanaInicio = new Date(k);
+      const conciliacao = await calcularConciliacaoSemanal(
+        prisma,
+        semanaInicio,
+        fimSemana(semanaInicio),
+      );
+      if (!conciliacao.conciliado) {
+        return {
+          ...(await calcularStatusSemana(prisma, semanaInicio)),
+          conciliacaoPendente: true,
+        };
+      }
+    }
   }
   return null;
 }
@@ -112,10 +131,12 @@ export async function assertSemanaAnteriorFechada(prisma: PrismaLike, dataEntreg
   const motivo =
     bloqueante.pendentes > 0
       ? `Há ${bloqueante.pendentes} pedido(s) sem revisão (marque como entregue ou cancelado) e finalize o fechamento.`
+      : bloqueante.conciliacaoPendente
+        ? "Há conciliações pendentes com a Conta Azul. Corrija as divergências e feche novamente a semana."
       : "Os pedidos já estão revisados, mas a semana ainda não foi fechada. Finalize o fechamento para liberar.";
 
   throw new TRPCError({
     code: "BAD_REQUEST",
-    message: `Feche a semana de ${bloqueante.rotulo} antes de criar pedidos de semanas seguintes. ${motivo}`,
+    message: `Feche a semana de ${bloqueante.rotulo} antes de criar ou copiar pedidos de semanas seguintes. ${motivo}`,
   });
 }
