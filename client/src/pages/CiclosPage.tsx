@@ -5,6 +5,10 @@ import Header from '@/components/Header';
 import { useFazenda } from '@/contexts/FazendaContext';
 import type { CicloAplicacao, Fase } from '@/lib/types';
 import { FASES_CONFIG } from '@/lib/types';
+
+type FrequenciaCiclo = "diaria" | "semanal" | "quinzenal" | "mensal" | "personalizada";
+type AlvoCiclo = "ambos" | "caixa" | "andar";
+
 import { cicloPendenteHoje, formatarDataHora, DIAS_SEMANA } from '@/lib/utils-farm';
 import { useFazendaMutations } from '@/hooks/useFazendaMutations';
 import { useDbIdResolver } from '@/hooks/useDbIdResolver';
@@ -76,8 +80,8 @@ export default function CiclosPage() {
   const [intervaloDiasStr, setIntervaloDiasStr] = useState('');
 
   // Controlled form state
-  const [frequencia, setFrequencia] = useState<string>('');
-  const [alvo, setAlvo] = useState<string>('ambos');
+  const [frequencia, setFrequencia] = useState<FrequenciaCiclo | ''>('');
+  const [alvo, setAlvo] = useState<AlvoCiclo>('ambos');
   const [diasSelecionados, setDiasSelecionados] = useState<number[]>([]);
   const [fasesSelecionadas, setFasesSelecionadas] = useState<Fase[]>(['mudas', 'vegetativa', 'maturacao']);
   const [dataInicio, setDataInicio] = useState<string>(hojeYmdLocal());
@@ -259,7 +263,7 @@ export default function CiclosPage() {
       mutations.updateCiclo.mutate({
         id: dbId,
         nome,
-        frequencia: modoData === 'frequencia' ? frequencia : 'personalizada',
+        frequencia: (modoData === 'frequencia' ? frequencia : 'personalizada') as FrequenciaCiclo,
         diasSemana: frequencia === 'semanal' ? diasSelecionados : undefined,
         intervaloDias: frequencia === 'personalizada' ? intervaloDias : undefined,
         produto,
@@ -272,7 +276,7 @@ export default function CiclosPage() {
     } else {
       mutations.createCiclo.mutate({
         nome,
-        frequencia: modoData === 'frequencia' ? frequencia : 'personalizada',
+        frequencia: (modoData === 'frequencia' ? frequencia : 'personalizada') as FrequenciaCiclo,
         diasSemana: frequencia === 'semanal' ? diasSelecionados : undefined,
         intervaloDias: frequencia === 'personalizada' ? intervaloDias : undefined,
         produto,
@@ -415,7 +419,7 @@ export default function CiclosPage() {
                 {!isHidroponia && (
                   <div>
                     <Label className="text-xs">Aplicar em</Label>
-                    <Select value={alvo} onValueChange={setAlvo}>
+                    <Select value={alvo} onValueChange={(v) => setAlvo(v as AlvoCiclo)}>
                       <SelectTrigger className="h-9 text-sm">
                         <SelectValue placeholder="Ambos" />
                       </SelectTrigger>
@@ -501,7 +505,7 @@ export default function CiclosPage() {
                     <>
                       <div>
                         <Label className="text-xs">Frequência *</Label>
-                        <Select value={frequencia} onValueChange={setFrequencia}>
+                        <Select value={frequencia} onValueChange={(v) => setFrequencia(v as FrequenciaCiclo)}>
                           <SelectTrigger className="h-9 text-sm">
                             <SelectValue placeholder="Selecione a frequência..." />
                           </SelectTrigger>

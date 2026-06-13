@@ -6,6 +6,33 @@ import * as db from "../db";
 import { syncPlanoAposContagemGerminacao } from "../planoOperacaoSync";
 import type { InsertPlanoPlantio } from "../../drizzle/schema";
 
+const datasPlanoOrdemSchema = z
+  .object({
+    dataInicioGerminacao: z.coerce.date(),
+    dataTransplantioMudas: z.coerce.date(),
+    dataTransplantioVeg: z.coerce.date(),
+    dataTransplantioMat: z.coerce.date(),
+    dataColheitaPrevista: z.coerce.date(),
+  })
+  .superRefine((d, ctx) => {
+    const ordem = [
+      d.dataInicioGerminacao,
+      d.dataTransplantioMudas,
+      d.dataTransplantioVeg,
+      d.dataTransplantioMat,
+      d.dataColheitaPrevista,
+    ];
+    for (let i = 1; i < ordem.length; i++) {
+      if (ordem[i]! < ordem[i - 1]!) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Datas do plano devem seguir ordem cronológica (germinação → colheita).",
+        });
+        return;
+      }
+    }
+  });
+
 export const planosPlantioRouter = router({
     list: projectProcedure.query(async ({ ctx }) => {
       return db.getAllPlanosPlantio(projetoIdFromCtx(ctx));
@@ -13,10 +40,10 @@ export const planosPlantioRouter = router({
     create: adminProjectProcedure
       .input(z.object({
         receitaId: z.coerce.number(),
-        receitaNome: z.string(),
+        receitaNome: z.string().min(1),
         variedadeId: z.coerce.number(),
-        variedadeNome: z.string(),
-        quantidadePlantas: z.coerce.number(),
+        variedadeNome: z.string().min(1),
+        quantidadePlantas: z.coerce.number().int().positive(),
         dataInicioGerminacao: z.coerce.date(),
         dataTransplantioMudas: z.coerce.date(),
         dataTransplantioVeg: z.coerce.date(),
@@ -31,7 +58,7 @@ export const planosPlantioRouter = router({
         intervaloDiasPersonalizado: z.number().int().min(1).max(365).optional(),
         /** Quantidade de ciclos (>=1). Com recorrência "nenhuma" vale 1. Máx. 52. */
         repeticoes: z.coerce.number().int().min(1).max(52).optional().default(1),
-      }))
+      }).and(datasPlanoOrdemSchema))
       .mutation(async ({ ctx, input }) => {
         const {
           recorrencia,
@@ -125,7 +152,7 @@ export const planosPlantioRouter = router({
     update: adminProjectProcedure
       .input(z.object({
         id: z.number(),
-        quantidadePlantas: z.number().optional(),
+        quantidadePlantas: z.number().int().positive().optional(),
         dataInicioGerminacao: z.date().optional(),
         dataTransplantioMudas: z.date().optional(),
         dataTransplantioVeg: z.date().optional(),
@@ -139,6 +166,23 @@ export const planosPlantioRouter = router({
         naoGerminadas: z.number().int().min(0).optional(),
         transplantadasGerminacao: z.number().int().min(0).optional(),
         germinacaoFase: z.enum(['pendente', 'germinando', 'pronto_mudas']).optional(),
+      }).superRefine((input, ctx) => {
+        const datas = [
+          input.dataInicioGerminacao,
+          input.dataTransplantioMudas,
+          input.dataTransplantioVeg,
+          input.dataTransplantioMat,
+          input.dataColheitaPrevista,
+        ].filter((d): d is Date => d instanceof Date);
+        for (let i = 1; i < datas.length; i++) {
+          if (datas[i]! < datas[i - 1]!) {
+            ctx.addIssue({
+              code: "custom",
+              message: "Datas informadas devem manter ordem cronológica.",
+            });
+            return;
+          }
+        }
       }))
       .mutation(async ({ ctx, input }) => {
         const { id, ...data } = input;

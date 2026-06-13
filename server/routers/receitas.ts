@@ -2,6 +2,38 @@ import { projetoIdFromCtx, commercialEditorProjectProcedure, projectProcedure, r
 import { z } from "zod";
 import * as db from "../db";
 
+const diasReceitaSchema = z.number().int().min(0).max(365).optional();
+const phReceitaSchema = z.number().min(0).max(14).nullable().optional();
+const percentualSchema = z.number().min(0).max(100).nullable().optional();
+const temperaturaSchema = z.number().min(-10).max(60).nullable().optional();
+const horasLuzSchema = z.number().min(0).max(24).nullable().optional();
+const densidadeSchema = z.number().min(0).max(10_000).nullable().optional();
+const yieldSchema = z.number().min(0).max(1_000_000).nullable().optional();
+
+const receitaInputSchema = z.object({
+  nome: z.string().min(1),
+  variedadeId: z.number(),
+  metodoColheita: z.string().optional(),
+  diasGerminacao: diasReceitaSchema,
+  diasMudas: diasReceitaSchema,
+  diasVegetativa: diasReceitaSchema,
+  diasMaturacao: diasReceitaSchema,
+  ecPorFase: z.any().optional(),
+  phPorFase: z.any().optional().nullable(),
+  ph: phReceitaSchema,
+  temperaturaMedia: temperaturaSchema,
+  temperaturaMin: temperaturaSchema,
+  temperaturaMax: temperaturaSchema,
+  umidadeMedia: percentualSchema,
+  umidadeMin: percentualSchema,
+  umidadeMax: percentualSchema,
+  horasLuz: horasLuzSchema,
+  horasLuzPorFase: z.any().optional().nullable(),
+  densidadePorPerfil: densidadeSchema,
+  yieldEsperadoGramas: yieldSchema,
+  observacoes: z.string().nullable().optional(),
+});
+
 export const receitasRouter = router({
   list: projectProcedure.query(async ({ ctx }) => {
     return db.getAllReceitas(projetoIdFromCtx(ctx));
@@ -17,31 +49,7 @@ export const receitasRouter = router({
       return db.getReceitasByVariedadeId(projetoIdFromCtx(ctx), input.variedadeId);
     }),
   create: commercialEditorProjectProcedure
-    .input(
-      z.object({
-        nome: z.string(),
-        variedadeId: z.number(),
-        metodoColheita: z.string().optional(),
-        diasGerminacao: z.number().optional(),
-        diasMudas: z.number().optional(),
-        diasVegetativa: z.number().optional(),
-        diasMaturacao: z.number().optional(),
-        ecPorFase: z.any().optional(),
-        phPorFase: z.any().optional().nullable(),
-        ph: z.number().nullable().optional(),
-        temperaturaMedia: z.number().nullable().optional(),
-        temperaturaMin: z.number().nullable().optional(),
-        temperaturaMax: z.number().nullable().optional(),
-        umidadeMedia: z.number().nullable().optional(),
-        umidadeMin: z.number().nullable().optional(),
-        umidadeMax: z.number().nullable().optional(),
-        horasLuz: z.number().nullable().optional(),
-        horasLuzPorFase: z.any().optional().nullable(),
-        densidadePorPerfil: z.number().nullable().optional(),
-        yieldEsperadoGramas: z.number().nullable().optional(),
-        observacoes: z.string().nullable().optional(),
-      }),
-    )
+    .input(receitaInputSchema)
     .mutation(async ({ input, ctx }) => {
       const projetoId = projetoIdFromCtx(ctx);
       const out = await db.createReceita({
@@ -56,29 +64,8 @@ export const receitasRouter = router({
     }),
   update: commercialEditorProjectProcedure
     .input(
-      z.object({
+      receitaInputSchema.partial().extend({
         id: z.number(),
-        nome: z.string().optional(),
-        variedadeId: z.number().optional(),
-        metodoColheita: z.string().optional(),
-        diasGerminacao: z.number().optional(),
-        diasMudas: z.number().optional(),
-        diasVegetativa: z.number().optional(),
-        diasMaturacao: z.number().optional(),
-        ecPorFase: z.any().optional(),
-        phPorFase: z.any().optional().nullable(),
-        ph: z.number().nullable().optional(),
-        temperaturaMedia: z.number().nullable().optional(),
-        temperaturaMin: z.number().nullable().optional(),
-        temperaturaMax: z.number().nullable().optional(),
-        umidadeMedia: z.number().nullable().optional(),
-        umidadeMin: z.number().nullable().optional(),
-        umidadeMax: z.number().nullable().optional(),
-        horasLuz: z.number().nullable().optional(),
-        horasLuzPorFase: z.any().optional().nullable(),
-        densidadePorPerfil: z.number().nullable().optional(),
-        yieldEsperadoGramas: z.number().nullable().optional(),
-        observacoes: z.string().nullable().optional(),
         ativa: z.boolean().optional(),
       }),
     )

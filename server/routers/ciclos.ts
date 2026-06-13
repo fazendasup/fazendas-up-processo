@@ -2,42 +2,39 @@ import { projetoIdFromCtx, commercialEditorProjectProcedure, projectProcedure, r
 import { z } from "zod";
 import * as db from "../db";
 
+const frequenciaCicloSchema = z.enum(["diaria", "semanal", "quinzenal", "mensal", "personalizada"]);
+const alvoCicloSchema = z.enum(["ambos", "caixa", "andar"]);
+const faseCicloSchema = z.enum(["mudas", "vegetativa", "maturacao"]);
+
+const cicloBaseSchema = z.object({
+  nome: z.string().min(1),
+  frequencia: frequenciaCicloSchema,
+  diasSemana: z.array(z.number().int().min(0).max(6)).optional(),
+  intervaloDias: z.number().int().min(1).max(365).optional(),
+  produto: z.string().min(1),
+  tipo: z.string().min(1),
+  dosagem: z.string().optional(),
+  fasesAplicaveis: z.array(faseCicloSchema).min(1),
+  alvo: alvoCicloSchema.default("ambos"),
+  ativo: z.boolean().default(true),
+});
+
 export const ciclosRouter = router({
   list: projectProcedure.query(async ({ ctx }) => {
     return db.getAllCiclos(projetoIdFromCtx(ctx));
   }),
   create: commercialEditorProjectProcedure
-    .input(
-      z.object({
-        nome: z.string(),
-        frequencia: z.string(),
-        diasSemana: z.array(z.number()).optional(),
-        intervaloDias: z.number().optional(),
-        produto: z.string(),
-        tipo: z.string(),
-        dosagem: z.string().optional(),
-        fasesAplicaveis: z.array(z.string()),
-        alvo: z.string().default("caixa"),
-        ativo: z.boolean().default(true),
-      }),
-    )
+    .input(cicloBaseSchema)
     .mutation(async ({ ctx, input }) => {
       return db.createCiclo({ ...input, projetoId: projetoIdFromCtx(ctx) });
     }),
   update: commercialEditorProjectProcedure
     .input(
-      z.object({
+      cicloBaseSchema.partial().extend({
         id: z.number(),
-        nome: z.string().optional(),
-        frequencia: z.string().optional(),
-        diasSemana: z.array(z.number()).nullable().optional(),
-        intervaloDias: z.number().nullable().optional(),
-        produto: z.string().optional(),
-        tipo: z.string().optional(),
+        diasSemana: z.array(z.number().int().min(0).max(6)).nullable().optional(),
+        intervaloDias: z.number().int().min(1).max(365).nullable().optional(),
         dosagem: z.string().nullable().optional(),
-        fasesAplicaveis: z.array(z.string()).optional(),
-        alvo: z.string().optional(),
-        ativo: z.boolean().optional(),
         ultimaExecucao: z.coerce.date().nullable().optional(),
       }),
     )
