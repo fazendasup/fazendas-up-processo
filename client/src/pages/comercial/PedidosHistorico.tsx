@@ -7,17 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchSelect } from "@/components/ui/search-select";
+import { hojeIsoLocal } from "@/lib/comercial/periodo";
 
 const STATUS = ["PENDENTE", "PRONTO", "ENTREGUE", "CANCELADO"] as const;
 
-function hojeIso() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function inicioMesIso() {
   const d = new Date();
-  d.setDate(1);
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}-01`;
 }
 
 function labelStatus(status: string) {
@@ -123,7 +122,7 @@ function exportAvariasCsv(rows: any[], filename: string) {
 
 export function PedidosHistorico() {
   const [inicio, setInicio] = useState(inicioMesIso());
-  const [fim, setFim] = useState(hojeIso());
+  const [fim, setFim] = useState(hojeIsoLocal());
   const [clienteBusca, setClienteBusca] = useState("");
   const [contaAzulCustomerId, setContaAzulCustomerId] = useState("");
   const [status, setStatus] = useState("");
@@ -200,19 +199,21 @@ export function PedidosHistorico() {
           </div>
           <div className="xl:col-span-2">
             <Label className="text-xs">Cliente</Label>
-            <Input placeholder="Buscar cliente..." value={clienteBusca} onChange={(e) => setClienteBusca(e.target.value)} />
-            <select
-              className="mt-2 h-9 w-full rounded-md border bg-background px-2 text-sm"
+            <SearchSelect
               value={contaAzulCustomerId}
-              onChange={(e) => setContaAzulCustomerId(e.target.value)}
-            >
-              <option value="">Todos os clientes</option>
-              {(clientes.data ?? []).map((c: any) => (
-                <option key={c.externalId} value={c.externalId}>
-                  {c.nome}
-                </option>
-              ))}
-            </select>
+              onValueChange={setContaAzulCustomerId}
+              options={(clientes.data ?? []).map((c: any) => ({
+                value: c.externalId,
+                label: c.nome,
+                description: c.cnpjCpf || undefined,
+              }))}
+              placeholder="Todos os clientes"
+              searchPlaceholder="Buscar cliente..."
+              emptyText="Nenhum cliente encontrado."
+              clearLabel="Todos os clientes"
+              searchValue={clienteBusca}
+              onSearchChange={setClienteBusca}
+            />
           </div>
           <div>
             <Label className="text-xs">Status</Label>

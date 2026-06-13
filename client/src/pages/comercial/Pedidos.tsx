@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConciliacaoContaAzulPanel } from "@/components/comercial/ConciliacaoContaAzulPanel";
+import { SearchSelect } from "@/components/ui/search-select";
 
 const DIAS = [
   "Domingo",
@@ -175,6 +176,7 @@ export function Pedidos({
   const [aba, setAba] = useState<PedidosTab>(abaInicial);
   const [dia, setDia] = useState(diaOperacionalInicial);
   const [busca, setBusca] = useState("");
+  const [agendaClienteFiltro, setAgendaClienteFiltro] = useState("");
   const [clienteBusca, setClienteBusca] = useState("");
   const [clienteId, setClienteId] = useState("");
   const [pedidoEditId, setPedidoEditId] = useState<string | null>(null);
@@ -250,7 +252,7 @@ export function Pedidos({
   );
   const agenda = trpc.comercial.pedidos.agenda.useQuery({
     dia: diaDate,
-    contaAzulCustomerId: clienteId || undefined,
+    contaAzulCustomerId: agendaClienteFiltro || undefined,
     busca: busca || undefined,
   });
   const auditoriaPedido = trpc.comercial.pedidos.auditoriaPedido.useQuery(
@@ -284,6 +286,7 @@ export function Pedidos({
         utils.comercial.pedidos.compras.invalidate(),
         utils.comercial.pedidos.statusSemana.invalidate(),
         utils.comercial.pedidos.avisoAvariasCliente.invalidate(),
+        utils.comercial.entregas.roteiro.invalidate(),
       ]);
     },
     onError: err =>
@@ -310,6 +313,7 @@ export function Pedidos({
         void utils.comercial.pedidos.agenda.invalidate();
         void utils.comercial.pedidos.statusSemana.invalidate();
         void utils.comercial.pedidos.compras.invalidate();
+        void utils.comercial.entregas.roteiro.invalidate();
       },
       onError: err => toast.error(err.message),
     });
@@ -338,6 +342,7 @@ export function Pedidos({
           utils.comercial.pedidos.compras.invalidate(),
           utils.comercial.pedidos.clientes.invalidate(),
           utils.comercial.pedidos.relatorioHistorico.invalidate(),
+          utils.comercial.entregas.roteiro.invalidate(),
         ]);
       },
       onError: err =>
@@ -384,6 +389,7 @@ export function Pedidos({
         utils.comercial.pedidos.compras.invalidate(),
         utils.comercial.pedidos.relatorioHistorico.invalidate(),
         utils.comercial.pedidos.statusSemana.invalidate(),
+        utils.comercial.entregas.roteiro.invalidate(),
       ]);
     },
     onError: err =>
@@ -1436,18 +1442,18 @@ export function Pedidos({
                   value={busca}
                   onChange={e => setBusca(e.target.value)}
                 />
-                <select
-                  className="h-9 rounded-md border bg-background px-2 text-sm"
-                  value={clienteId}
-                  onChange={e => setClienteId(e.target.value)}
-                >
-                  <option value="">Clientes com pedido no dia...</option>
-                  {(clientesDoDia.data ?? []).map((c: any) => (
-                    <option key={c.externalId} value={c.externalId}>
-                      {c.nome}
-                    </option>
-                  ))}
-                </select>
+                <SearchSelect
+                  value={agendaClienteFiltro}
+                  onValueChange={setAgendaClienteFiltro}
+                  options={(clientesDoDia.data ?? []).map((c: any) => ({
+                    value: c.externalId,
+                    label: c.nome,
+                    description: c.cnpjCpf || undefined,
+                  }))}
+                  placeholder="Clientes com pedido no dia..."
+                  searchPlaceholder="Filtrar cliente..."
+                  emptyText="Nenhum cliente com pedido neste dia."
+                />
               </div>
               <div className="space-y-2">
                 {pedidosAtivosPorStatus.map(bloco => (
@@ -1785,27 +1791,38 @@ export function Pedidos({
   );
 }
 
-function ClientePicker({ busca, setBusca, clientes, value, onChange }: any) {
+function ClientePicker({
+  busca,
+  setBusca,
+  clientes,
+  value,
+  onChange,
+  disabled,
+}: any) {
+  const options = useMemo(
+    () =>
+      clientes.map((c: any) => ({
+        value: c.externalId,
+        label: c.nome,
+        description: c.cnpjCpf || undefined,
+      })),
+    [clientes]
+  );
+
   return (
     <div className="space-y-2">
       <Label className="text-xs">Cliente Conta Azul *</Label>
-      <Input
-        placeholder="Buscar cliente Conta Azul..."
-        value={busca}
-        onChange={e => setBusca(e.target.value)}
-      />
-      <select
-        className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+      <SearchSelect
         value={value}
-        onChange={e => onChange(e.target.value)}
-      >
-        <option value="">Selecione cliente...</option>
-        {clientes.map((c: any) => (
-          <option key={c.externalId} value={c.externalId}>
-            {c.nome} {c.cnpjCpf ? `· ${c.cnpjCpf}` : ""}
-          </option>
-        ))}
-      </select>
+        onValueChange={onChange}
+        options={options}
+        placeholder="Selecione cliente..."
+        searchPlaceholder="Buscar cliente Conta Azul..."
+        emptyText="Nenhum cliente encontrado."
+        searchValue={busca}
+        onSearchChange={setBusca}
+        disabled={disabled}
+      />
     </div>
   );
 }

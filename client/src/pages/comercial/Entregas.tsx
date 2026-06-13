@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchSelect } from "@/components/ui/search-select";
 import { Badge } from "@/components/ui/badge";
 import { MapView } from "@/components/Map";
 import { createMapMarker } from "@/lib/googleMapsLoader";
@@ -63,7 +64,6 @@ export function Entregas() {
   const [dia, setDia] = useState(diaOperacionalInicial());
   const diaDate = useMemo(() => new Date(`${dia}T12:00:00`), [dia]);
   const [nomeRota, setNomeRota] = useState("");
-  const [buscaCliente, setBuscaCliente] = useState("");
   const [clienteManualId, setClienteManualId] = useState("");
   const [rotaSelecionadaId, setRotaSelecionadaId] = useState<string | null>(null);
 
@@ -163,13 +163,8 @@ export function Entregas() {
   const rotaMapsUrl = linkGoogleMapsRota(paradas);
   const clientesProgramadosDisponiveis = useMemo(() => {
     const idsNaRota = new Set(paradas.map((p) => p.contaAzulCustomerId));
-    const termo = buscaCliente.trim().toLocaleLowerCase("pt-BR");
-    return planejadas.filter((item) => {
-      if (idsNaRota.has(item.contaAzulCustomerId)) return false;
-      if (!termo) return true;
-      return item.clienteNome.toLocaleLowerCase("pt-BR").includes(termo);
-    });
-  }, [buscaCliente, paradas, planejadas]);
+    return planejadas.filter((item) => !idsNaRota.has(item.contaAzulCustomerId));
+  }, [paradas, planejadas]);
 
   const moverParada = (index: number, direcao: -1 | 1) => {
     if (!rota) return;
@@ -528,29 +523,18 @@ export function Entregas() {
                 <CardTitle className="text-lg">Adicionar cliente</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="space-y-2">
-                  <Label htmlFor="busca-cliente-rota">Buscar cliente programado</Label>
-                  <Input
-                    id="busca-cliente-rota"
-                    value={buscaCliente}
-                    onChange={(e) => setBuscaCliente(e.target.value)}
-                    placeholder="Nome do cliente com entrega no dia"
-                    disabled={!rotaEditavel}
-                  />
-                </div>
-                <select
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                <SearchSelect
                   value={clienteManualId}
-                  onChange={(e) => setClienteManualId(e.target.value)}
+                  onValueChange={setClienteManualId}
+                  options={clientesProgramadosDisponiveis.map((cliente) => ({
+                    value: cliente.contaAzulCustomerId,
+                    label: cliente.clienteNome,
+                  }))}
+                  placeholder="Selecionar cliente"
+                  searchPlaceholder="Buscar cliente programado..."
+                  emptyText="Nenhum cliente programado disponível para adicionar."
                   disabled={!rotaEditavel}
-                >
-                  <option value="">Selecionar cliente</option>
-                  {clientesProgramadosDisponiveis.map((cliente) => (
-                    <option key={cliente.contaAzulCustomerId} value={cliente.contaAzulCustomerId}>
-                      {cliente.clienteNome}
-                    </option>
-                  ))}
-                </select>
+                />
                 {clientesProgramadosDisponiveis.length === 0 ? (
                   <p className="text-xs text-muted-foreground">
                     Nenhum cliente programado para este dia disponível para adicionar.
