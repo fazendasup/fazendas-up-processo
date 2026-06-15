@@ -186,6 +186,7 @@ export function Pedidos({
   const [datasPedidos, setDatasPedidos] = useState<Record<string, string>>({});
   const [tipoVenda, setTipoVenda] = useState("");
   const [obsPedido, setObsPedido] = useState("");
+  const [freteCortesia, setFreteCortesia] = useState(false);
   const [linhas, setLinhas] = useState<ProdutoLinha[]>([
     { produtoId: "", quantidade: "1", observacoes: "" },
   ]);
@@ -278,6 +279,7 @@ export function Pedidos({
       setPedidoEditId(null);
       setTipoVenda("");
       setObsPedido("");
+      setFreteCortesia(false);
       setLinhas([{ produtoId: "", quantidade: "1", observacoes: "" }]);
       setAvarias([]);
       await Promise.all([
@@ -612,6 +614,7 @@ export function Pedidos({
       dataEntrega: diaDate,
       tipoVenda: tipoVenda as any,
       observacoes: obsPedido,
+      freteCortesia,
       itens: itens.map(i => ({
         produtoId: i.produtoId,
         quantidade: i.quantidadeNum,
@@ -1218,6 +1221,21 @@ export function Pedidos({
                   placeholder="Observação deste pedido (não altera a regra do cliente)"
                 />
               </div>
+              <label className="flex items-start gap-2 rounded-md border bg-muted/30 p-3 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={freteCortesia}
+                  onChange={e => setFreteCortesia(e.target.checked)}
+                />
+                <span>
+                  <span className="font-medium">Frete cortesia neste pedido</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Use quando o cliente normalmente cobra frete, mas esta entrega específica foi sem cobrança.
+                    A regra do cliente não muda.
+                  </span>
+                </span>
+              </label>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs">Produtos vendidos</Label>
@@ -1504,6 +1522,11 @@ export function Pedidos({
                               </p>
                             </div>
                             <div className="mt-2 flex flex-wrap gap-2">
+                              {p.freteCortesia ? (
+                                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
+                                  Frete cortesia
+                                </span>
+                              ) : null}
                               {p.itens.map((i: any) => (
                                 <span
                                   key={i.id}
@@ -1609,6 +1632,7 @@ export function Pedidos({
                                   setClienteId(p.contaAzulCustomerId);
                                   setTipoVenda(p.tipoVenda);
                                   setObsPedido(p.observacoes ?? "");
+                                  setFreteCortesia(Boolean(p.freteCortesia));
                                   setLinhas(
                                     p.itens.map((i: any) => ({
                                       produtoId: i.produtoId,

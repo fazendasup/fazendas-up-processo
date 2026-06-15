@@ -249,6 +249,7 @@ exports.Prisma.PedidoOperacionalScalarFieldEnum = {
   sugestaoPedidoContaAzulId: 'sugestaoPedidoContaAzulId',
   snapshotConciliacao: 'snapshotConciliacao',
   observacoes: 'observacoes',
+  freteCortesia: 'freteCortesia',
   prioridadeEntrega: 'prioridadeEntrega',
   criadoPorId: 'criadoPorId',
   editadoPorId: 'editadoPorId',

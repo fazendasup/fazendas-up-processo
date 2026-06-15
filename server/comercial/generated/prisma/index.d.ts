@@ -13780,6 +13780,7 @@ export namespace Prisma {
     pedidoContaAzulId: string | null
     sugestaoPedidoContaAzulId: string | null
     observacoes: string | null
+    freteCortesia: boolean | null
     prioridadeEntrega: number | null
     criadoPorId: string | null
     editadoPorId: string | null
@@ -13799,6 +13800,7 @@ export namespace Prisma {
     pedidoContaAzulId: string | null
     sugestaoPedidoContaAzulId: string | null
     observacoes: string | null
+    freteCortesia: boolean | null
     prioridadeEntrega: number | null
     criadoPorId: string | null
     editadoPorId: string | null
@@ -13819,6 +13821,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId: number
     snapshotConciliacao: number
     observacoes: number
+    freteCortesia: number
     prioridadeEntrega: number
     criadoPorId: number
     editadoPorId: number
@@ -13850,6 +13853,7 @@ export namespace Prisma {
     pedidoContaAzulId?: true
     sugestaoPedidoContaAzulId?: true
     observacoes?: true
+    freteCortesia?: true
     prioridadeEntrega?: true
     criadoPorId?: true
     editadoPorId?: true
@@ -13869,6 +13873,7 @@ export namespace Prisma {
     pedidoContaAzulId?: true
     sugestaoPedidoContaAzulId?: true
     observacoes?: true
+    freteCortesia?: true
     prioridadeEntrega?: true
     criadoPorId?: true
     editadoPorId?: true
@@ -13889,6 +13894,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: true
     snapshotConciliacao?: true
     observacoes?: true
+    freteCortesia?: true
     prioridadeEntrega?: true
     criadoPorId?: true
     editadoPorId?: true
@@ -13996,6 +14002,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId: string | null
     snapshotConciliacao: JsonValue | null
     observacoes: string | null
+    freteCortesia: boolean
     prioridadeEntrega: number | null
     criadoPorId: string | null
     editadoPorId: string | null
@@ -14035,6 +14042,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: boolean
     snapshotConciliacao?: boolean
     observacoes?: boolean
+    freteCortesia?: boolean
     prioridadeEntrega?: boolean
     criadoPorId?: boolean
     editadoPorId?: boolean
@@ -14066,6 +14074,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: boolean
     snapshotConciliacao?: boolean
     observacoes?: boolean
+    freteCortesia?: boolean
     prioridadeEntrega?: boolean
     criadoPorId?: boolean
     editadoPorId?: boolean
@@ -14073,7 +14082,7 @@ export namespace Prisma {
     atualizadoEm?: boolean
   }
 
-  export type PedidoOperacionalOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "clienteId" | "contaAzulCustomerId" | "dataEntrega" | "diaSemana" | "tipoVenda" | "status" | "statusConciliacao" | "pedidoContaAzulId" | "sugestaoPedidoContaAzulId" | "snapshotConciliacao" | "observacoes" | "prioridadeEntrega" | "criadoPorId" | "editadoPorId" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["pedidoOperacional"]>
+  export type PedidoOperacionalOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "clienteId" | "contaAzulCustomerId" | "dataEntrega" | "diaSemana" | "tipoVenda" | "status" | "statusConciliacao" | "pedidoContaAzulId" | "sugestaoPedidoContaAzulId" | "snapshotConciliacao" | "observacoes" | "freteCortesia" | "prioridadeEntrega" | "criadoPorId" | "editadoPorId" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["pedidoOperacional"]>
   export type PedidoOperacionalInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     cliente?: boolean | PedidoOperacional$clienteArgs<ExtArgs>
     criadoPor?: boolean | PedidoOperacional$criadoPorArgs<ExtArgs>
@@ -14111,6 +14120,7 @@ export namespace Prisma {
       sugestaoPedidoContaAzulId: string | null
       snapshotConciliacao: Prisma.JsonValue | null
       observacoes: string | null
+      freteCortesia: boolean
       prioridadeEntrega: number | null
       criadoPorId: string | null
       editadoPorId: string | null
@@ -14505,6 +14515,7 @@ export namespace Prisma {
     readonly sugestaoPedidoContaAzulId: FieldRef<"PedidoOperacional", 'String'>
     readonly snapshotConciliacao: FieldRef<"PedidoOperacional", 'Json'>
     readonly observacoes: FieldRef<"PedidoOperacional", 'String'>
+    readonly freteCortesia: FieldRef<"PedidoOperacional", 'Boolean'>
     readonly prioridadeEntrega: FieldRef<"PedidoOperacional", 'Int'>
     readonly criadoPorId: FieldRef<"PedidoOperacional", 'String'>
     readonly editadoPorId: FieldRef<"PedidoOperacional", 'String'>
@@ -34400,6 +34411,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId: 'sugestaoPedidoContaAzulId',
     snapshotConciliacao: 'snapshotConciliacao',
     observacoes: 'observacoes',
+    freteCortesia: 'freteCortesia',
     prioridadeEntrega: 'prioridadeEntrega',
     criadoPorId: 'criadoPorId',
     editadoPorId: 'editadoPorId',
@@ -36113,6 +36125,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: StringNullableFilter<"PedidoOperacional"> | string | null
     snapshotConciliacao?: JsonNullableFilter<"PedidoOperacional">
     observacoes?: StringNullableFilter<"PedidoOperacional"> | string | null
+    freteCortesia?: BoolFilter<"PedidoOperacional"> | boolean
     prioridadeEntrega?: IntNullableFilter<"PedidoOperacional"> | number | null
     criadoPorId?: StringNullableFilter<"PedidoOperacional"> | string | null
     editadoPorId?: StringNullableFilter<"PedidoOperacional"> | string | null
@@ -36141,6 +36154,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: SortOrderInput | SortOrder
     snapshotConciliacao?: SortOrderInput | SortOrder
     observacoes?: SortOrderInput | SortOrder
+    freteCortesia?: SortOrder
     prioridadeEntrega?: SortOrderInput | SortOrder
     criadoPorId?: SortOrderInput | SortOrder
     editadoPorId?: SortOrderInput | SortOrder
@@ -36173,6 +36187,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: StringNullableFilter<"PedidoOperacional"> | string | null
     snapshotConciliacao?: JsonNullableFilter<"PedidoOperacional">
     observacoes?: StringNullableFilter<"PedidoOperacional"> | string | null
+    freteCortesia?: BoolFilter<"PedidoOperacional"> | boolean
     prioridadeEntrega?: IntNullableFilter<"PedidoOperacional"> | number | null
     criadoPorId?: StringNullableFilter<"PedidoOperacional"> | string | null
     editadoPorId?: StringNullableFilter<"PedidoOperacional"> | string | null
@@ -36201,6 +36216,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: SortOrderInput | SortOrder
     snapshotConciliacao?: SortOrderInput | SortOrder
     observacoes?: SortOrderInput | SortOrder
+    freteCortesia?: SortOrder
     prioridadeEntrega?: SortOrderInput | SortOrder
     criadoPorId?: SortOrderInput | SortOrder
     editadoPorId?: SortOrderInput | SortOrder
@@ -36229,6 +36245,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: StringNullableWithAggregatesFilter<"PedidoOperacional"> | string | null
     snapshotConciliacao?: JsonNullableWithAggregatesFilter<"PedidoOperacional">
     observacoes?: StringNullableWithAggregatesFilter<"PedidoOperacional"> | string | null
+    freteCortesia?: BoolWithAggregatesFilter<"PedidoOperacional"> | boolean
     prioridadeEntrega?: IntNullableWithAggregatesFilter<"PedidoOperacional"> | number | null
     criadoPorId?: StringNullableWithAggregatesFilter<"PedidoOperacional"> | string | null
     editadoPorId?: StringNullableWithAggregatesFilter<"PedidoOperacional"> | string | null
@@ -38721,6 +38738,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -38747,6 +38765,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     criadoPorId?: string | null
     editadoPorId?: string | null
@@ -38769,6 +38788,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -38795,6 +38815,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -38819,6 +38840,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     criadoPorId?: string | null
     editadoPorId?: string | null
@@ -38837,6 +38859,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -38855,6 +38878,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -41696,6 +41720,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: SortOrder
     snapshotConciliacao?: SortOrder
     observacoes?: SortOrder
+    freteCortesia?: SortOrder
     prioridadeEntrega?: SortOrder
     criadoPorId?: SortOrder
     editadoPorId?: SortOrder
@@ -41720,6 +41745,7 @@ export namespace Prisma {
     pedidoContaAzulId?: SortOrder
     sugestaoPedidoContaAzulId?: SortOrder
     observacoes?: SortOrder
+    freteCortesia?: SortOrder
     prioridadeEntrega?: SortOrder
     criadoPorId?: SortOrder
     editadoPorId?: SortOrder
@@ -41739,6 +41765,7 @@ export namespace Prisma {
     pedidoContaAzulId?: SortOrder
     sugestaoPedidoContaAzulId?: SortOrder
     observacoes?: SortOrder
+    freteCortesia?: SortOrder
     prioridadeEntrega?: SortOrder
     criadoPorId?: SortOrder
     editadoPorId?: SortOrder
@@ -45950,6 +45977,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -45975,6 +46003,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     editadoPorId?: string | null
     criadoEm?: Date | string
@@ -46006,6 +46035,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -46031,6 +46061,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     criadoPorId?: string | null
     criadoEm?: Date | string
@@ -46409,6 +46440,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: StringNullableFilter<"PedidoOperacional"> | string | null
     snapshotConciliacao?: JsonNullableFilter<"PedidoOperacional">
     observacoes?: StringNullableFilter<"PedidoOperacional"> | string | null
+    freteCortesia?: BoolFilter<"PedidoOperacional"> | boolean
     prioridadeEntrega?: IntNullableFilter<"PedidoOperacional"> | number | null
     criadoPorId?: StringNullableFilter<"PedidoOperacional"> | string | null
     editadoPorId?: StringNullableFilter<"PedidoOperacional"> | string | null
@@ -47030,6 +47062,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -47054,6 +47087,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     criadoPorId?: string | null
     editadoPorId?: string | null
@@ -49761,6 +49795,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -49786,6 +49821,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     criadoPorId?: string | null
     editadoPorId?: string | null
@@ -49880,6 +49916,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -49905,6 +49942,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -49989,6 +50027,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -50014,6 +50053,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     criadoPorId?: string | null
     editadoPorId?: string | null
@@ -50214,6 +50254,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -50239,6 +50280,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -50441,6 +50483,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -50466,6 +50509,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     criadoPorId?: string | null
     editadoPorId?: string | null
@@ -50546,6 +50590,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -50571,6 +50616,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -50734,6 +50780,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -50758,6 +50805,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     criadoPorId?: string | null
     editadoPorId?: string | null
@@ -50931,6 +50979,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -50955,6 +51004,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -50993,6 +51043,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -51018,6 +51069,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     criadoPorId?: string | null
     editadoPorId?: string | null
@@ -51100,6 +51152,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -51125,6 +51178,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -52043,6 +52097,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     editadoPorId?: string | null
     criadoEm?: Date | string
@@ -52062,6 +52117,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     criadoPorId?: string | null
     criadoEm?: Date | string
@@ -52271,6 +52327,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -52296,6 +52353,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -52319,6 +52377,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -52336,6 +52395,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -52361,6 +52421,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -52384,6 +52445,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -52829,6 +52891,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: string | null
+    freteCortesia?: boolean
     prioridadeEntrega?: number | null
     criadoPorId?: string | null
     editadoPorId?: string | null
@@ -53095,6 +53158,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -53119,6 +53183,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -53142,6 +53207,7 @@ export namespace Prisma {
     sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null

@@ -935,6 +935,7 @@ export const pedidosRouter = router({
         dataEntrega: z.coerce.date(),
         tipoVenda: tipoVendaSchema,
         observacoes: z.string().optional(),
+        freteCortesia: z.boolean().optional(),
         itens: z.array(itemPedidoInput).default([]),
         avarias: z.array(avariaPedidoInput).default([]),
       })
@@ -1015,6 +1016,7 @@ export const pedidosRouter = router({
           diaSemana: diaSemana(input.dataEntrega),
           tipoVenda: input.tipoVenda,
           observacoes: input.observacoes?.trim() || null,
+          freteCortesia: input.freteCortesia ?? false,
           editadoPorId: usuario.id,
         };
         const pedido = input.id
@@ -1289,6 +1291,7 @@ export const pedidosRouter = router({
               status: "PENDENTE",
               statusConciliacao: "PLANEJADO",
               observacoes: pedidoOrigem.observacoes,
+              freteCortesia: pedidoOrigem.freteCortesia,
               prioridadeEntrega: pedidoOrigem.prioridadeEntrega,
               criadoPorId: usuario.id,
               editadoPorId: usuario.id,

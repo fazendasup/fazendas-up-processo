@@ -363,6 +363,7 @@ model PedidoOperacional {
   sugestaoPedidoContaAzulId String?                     @map("sugestao_pedido_conta_azul_id")
   snapshotConciliacao      Json?                        @map("snapshot_conciliacao")
   observacoes              String?                      @db.Text
+  freteCortesia            Boolean                      @default(false) @map("frete_cortesia")
   prioridadeEntrega        Int?                         @map("prioridade_entrega")
   criadoPorId              String?                      @map("criado_por_id")
   editadoPorId             String?                      @map("editado_por_id")

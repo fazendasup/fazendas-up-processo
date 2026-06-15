@@ -65,6 +65,7 @@ type PrismaConciliacao = Pick<
 type OperacionalSemanal = {
   contaAzulCustomerId: string;
   status: string;
+  freteCortesia: boolean;
   snapshotConciliacao: unknown;
   cliente: { nome: string } | null;
   pedidoContaAzul: { valorLiquido: unknown; valorTotal: unknown } | null;
@@ -113,6 +114,7 @@ export async function calcularConciliacaoSemanal(
       select: {
         contaAzulCustomerId: true,
         status: true,
+        freteCortesia: true,
         snapshotConciliacao: true,
         cliente: { select: { nome: true } },
         pedidoContaAzul: { select: { valorLiquido: true, valorTotal: true } },
@@ -227,8 +229,8 @@ export async function calcularConciliacaoSemanal(
       const freteCliente = contaAzulPorCliente.get(pedido.contaAzulCustomerId);
       const freteReferencia =
         freteCliente && freteCliente.pedidos > 0 ? freteCliente.valorFrete / freteCliente.pedidos : 0;
-      const valorPedido =
-        valorItensPedido(pedido.itens) + taxaEntregaParaConciliacao(regra, freteReferencia);
+      const taxaEntrega = pedido.freteCortesia ? 0 : taxaEntregaParaConciliacao(regra, freteReferencia);
+      const valorPedido = valorItensPedido(pedido.itens) + taxaEntrega;
       operacionalValor += valorPedido;
       opCliente.valorEstimado += valorPedido;
     }

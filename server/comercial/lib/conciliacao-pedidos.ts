@@ -360,7 +360,9 @@ export function calcularDivergencias(
 
   if (compararValorEstimado) {
     const regraEntrega = opcoes.regraEntrega ?? contaAzul.cliente.regraComercial ?? null;
-    const taxaEntrega = taxaEntregaParaConciliacao(regraEntrega, contaAzul.valorFrete);
+    const taxaEntrega = operacional.freteCortesia
+      ? 0
+      : taxaEntregaParaConciliacao(regraEntrega, contaAzul.valorFrete);
     const valorItens = operacional.itens.reduce((s, i) => s + num(i.quantidade) * (num(i.precoUnit) || 0), 0);
     const valorOp = valorItens + taxaEntrega;
     const valorCa = num(contaAzul.valorLiquido ?? contaAzul.valorTotal);
