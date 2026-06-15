@@ -693,6 +693,28 @@ function labelBotaoCorrecao(d: any) {
   return "Aplicar valor da Conta Azul";
 }
 
+function normalizarDivergenciasItens(divergencias: any[]) {
+  const agrupadas = new Map<string, any>();
+  const outras: any[] = [];
+
+  for (const d of divergencias) {
+    const campo = String(d?.campo ?? "");
+    if (!campo.startsWith("item:")) {
+      outras.push(d);
+      continue;
+    }
+    const atual = agrupadas.get(campo) ?? { ...d, operacional: 0, contaAzul: 0 };
+    atual.operacional = Number(atual.operacional ?? 0) + Number(d.operacional ?? 0);
+    atual.contaAzul = Number(atual.contaAzul ?? 0) + Number(d.contaAzul ?? 0);
+    agrupadas.set(campo, atual);
+  }
+
+  const itens = Array.from(agrupadas.values()).filter(
+    (d) => Math.abs(Number(d.operacional ?? 0) - Number(d.contaAzul ?? 0)) > 0.001,
+  );
+  return [...outras, ...itens];
+}
+
 function DivergenciasLista({
   divergencias,
   pedidoOperacionalId,
@@ -707,8 +729,9 @@ function DivergenciasLista({
   onAplicarCorrecao?: (pedidoOperacionalId: string, pedidoContaAzulId: string, campos?: string[], mensagem?: string) => void;
 }) {
   const podeCorrigir = Boolean(pedidoOperacionalId && pedidoContaAzulId && onAplicarCorrecao);
+  const divergenciasExibidas = normalizarDivergenciasItens(divergencias);
 
-  if (!divergencias.length) {
+  if (!divergenciasExibidas.length) {
     return (
       <div className="rounded-md border border-emerald-200 bg-emerald-50/70 p-2 text-xs text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
         Nenhuma divergência recalculada. Sincronize novamente; se persistir, o status antigo será normalizado no próximo processamento.
@@ -719,7 +742,7 @@ function DivergenciasLista({
     <div className="rounded-md border border-amber-200 bg-amber-50/70 p-2 text-xs dark:border-amber-900 dark:bg-amber-950/30">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <p className="font-semibold text-amber-900 dark:text-amber-100">Onde corrigir</p>
-        {podeCorrigir && divergencias.length > 1 ? (
+        {podeCorrigir && divergenciasExibidas.length > 1 ? (
           <Button
             size="sm"
             variant="outline"
@@ -738,7 +761,7 @@ function DivergenciasLista({
         ) : null}
       </div>
       <ul className="space-y-2">
-        {divergencias.map((d: any) => {
+        {divergenciasExibidas.map((d: any) => {
           const detalhe = detalheDivergencia(d);
           return (
             <li key={`${d.campo}-${detalhe.valores}`} className="rounded border border-amber-200/70 bg-background/70 p-2">

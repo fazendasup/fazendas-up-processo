@@ -69,6 +69,8 @@ export function criarResolverChaveItemConciliacao(produtos: ProdutoOperacionalLo
         const porSku = indice.porSku.get(sku);
         if (porSku) return `pid:${porSku.id}`;
       }
+      const porNome = indice.porNome.get(normalizarNome(item.produto ?? ""));
+      if (porNome) return `pid:${porNome.id}`;
     }
     const nome = item.produtoNome ?? item.produto ?? "";
     return `nome:${normalizarNome(nome) || "sem_nome"}`;
