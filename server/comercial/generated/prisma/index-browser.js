@@ -201,6 +201,7 @@ exports.Prisma.RegraComercialClienteScalarFieldEnum = {
   id: 'id',
   contaAzulCustomerId: 'contaAzulCustomerId',
   observacoesGerais: 'observacoesGerais',
+  tipoVendaPadrao: 'tipoVendaPadrao',
   periodoEntrega: 'periodoEntrega',
   horarioMaximoEntrega: 'horarioMaximoEntrega',
   cobraTaxaEntrega: 'cobraTaxaEntrega',
@@ -792,16 +793,16 @@ exports.ModoCompraProduto = exports.$Enums.ModoCompraProduto = {
   KG: 'KG'
 };
 
-exports.PeriodoEntregaCliente = exports.$Enums.PeriodoEntregaCliente = {
-  MANHA: 'MANHA',
-  TARDE: 'TARDE'
-};
-
 exports.TipoVendaPedido = exports.$Enums.TipoVendaPedido = {
   RECORRENTE_SEMANAL: 'RECORRENTE_SEMANAL',
   RECORRENTE_QUINZENAL: 'RECORRENTE_QUINZENAL',
   PLANO: 'PLANO',
   AVULSO: 'AVULSO'
+};
+
+exports.PeriodoEntregaCliente = exports.$Enums.PeriodoEntregaCliente = {
+  MANHA: 'MANHA',
+  TARDE: 'TARDE'
 };
 
 exports.PedidoOperacionalStatus = exports.$Enums.PedidoOperacionalStatus = {

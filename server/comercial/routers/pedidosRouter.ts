@@ -762,6 +762,7 @@ export const pedidosRouter = router({
       z.object({
         contaAzulCustomerId: z.string().min(1),
         observacoesGerais: z.string().nullable().optional(),
+        tipoVendaPadrao: tipoVendaSchema.nullable().optional(),
         periodoEntrega: periodoEntregaSchema,
         horarioMaximoEntrega: z.string().nullable().optional(),
         cobraTaxaEntrega: z.boolean().default(false),
@@ -809,6 +810,7 @@ export const pedidosRouter = router({
           create: {
             contaAzulCustomerId: input.contaAzulCustomerId,
             observacoesGerais: input.observacoesGerais?.trim() || null,
+            tipoVendaPadrao: input.tipoVendaPadrao ?? null,
             periodoEntrega: input.periodoEntrega ?? null,
             horarioMaximoEntrega: input.horarioMaximoEntrega || null,
             cobraTaxaEntrega: input.cobraTaxaEntrega,
@@ -827,6 +829,7 @@ export const pedidosRouter = router({
           },
           update: {
             observacoesGerais: input.observacoesGerais?.trim() || null,
+            tipoVendaPadrao: input.tipoVendaPadrao ?? null,
             periodoEntrega: input.periodoEntrega ?? null,
             horarioMaximoEntrega: input.horarioMaximoEntrega || null,
             cobraTaxaEntrega: input.cobraTaxaEntrega,
@@ -1218,14 +1221,11 @@ export const pedidosRouter = router({
       // Gate de fechamento: não permite copiar/criar pedidos no destino se houver semana anterior pendente.
       await assertSemanaAnteriorFechada(ctx.prisma!, semanaDestinoInicio);
 
-      const [pedidosOrigem, clientesDestino] = await Promise.all([
+      const [pedidosOrigem, clientesDestino, regrasOrigem] = await Promise.all([
         ctx.prisma!.pedidoOperacional.findMany({
           where: {
             dataEntrega: { gte: semanaOrigemInicio, lte: semanaOrigemFim },
             status: { not: "CANCELADO" },
-            tipoVenda: {
-              in: ["PLANO", "RECORRENTE_SEMANAL", "RECORRENTE_QUINZENAL"],
-            },
           },
           include: { itens: true },
           orderBy: [
@@ -1240,7 +1240,13 @@ export const pedidosRouter = router({
           },
           select: { contaAzulCustomerId: true, dataEntrega: true },
         }),
+        ctx.prisma!.regraComercialCliente.findMany({
+          select: { contaAzulCustomerId: true, tipoVendaPadrao: true },
+        }),
       ]);
+      const tipoVendaPadraoPorCliente = new Map(
+        regrasOrigem.map(regra => [regra.contaAzulCustomerId, regra.tipoVendaPadrao])
+      );
 
       if (pedidosOrigem.length === 0) {
         return {
@@ -1265,6 +1271,13 @@ export const pedidosRouter = router({
 
       await ctx.prisma!.$transaction(async tx => {
         for (const pedidoOrigem of pedidosOrigem) {
+          const tipoVendaDestino =
+            tipoVendaPadraoPorCliente.get(pedidoOrigem.contaAzulCustomerId) ??
+            pedidoOrigem.tipoVenda;
+          if (tipoVendaDestino === "AVULSO") {
+            ignorados++;
+            continue;
+          }
           const dataDestino = inicioDia(
             adicionarDias(pedidoOrigem.dataEntrega, 7)
           );
@@ -1287,7 +1300,7 @@ export const pedidosRouter = router({
               contaAzulCustomerId: pedidoOrigem.contaAzulCustomerId,
               dataEntrega: dataDestino,
               diaSemana: diaSemana(dataDestino),
-              tipoVenda: pedidoOrigem.tipoVenda,
+              tipoVenda: tipoVendaDestino,
               status: "PENDENTE",
               statusConciliacao: "PLANEJADO",
               observacoes: pedidoOrigem.observacoes,

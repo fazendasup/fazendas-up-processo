@@ -297,6 +297,7 @@ model RegraComercialCliente {
   id                       String                 @id @default(cuid())
   contaAzulCustomerId      String                 @unique @map("conta_azul_customer_id")
   observacoesGerais        String?                @map("observacoes_gerais") @db.Text
+  tipoVendaPadrao          TipoVendaPedido?       @map("tipo_venda_padrao")
   periodoEntrega           PeriodoEntregaCliente? @map("periodo_entrega")
   horarioMaximoEntrega     String?                @map("horario_maximo_entrega")
   cobraTaxaEntrega         Boolean                @default(false) @map("cobra_taxa_entrega")

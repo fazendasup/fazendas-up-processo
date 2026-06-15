@@ -469,6 +469,11 @@ export function Pedidos({
   const precosEspeciais = new Map(
     (regra?.precosEspeciais ?? []).map((p: any) => [p.produtoId, p.preco])
   );
+  useEffect(() => {
+    if (!pedidoEditId && regra?.tipoVendaPadrao) {
+      setTipoVenda(regra.tipoVendaPadrao);
+    }
+  }, [pedidoEditId, regra?.tipoVendaPadrao]);
   const dashboardKpis = useMemo(() => {
     const grupos = dashboard.data ?? [];
     const status = STATUS.reduce<Record<string, number>>(
@@ -1175,7 +1180,10 @@ export function Pedidos({
                 setBusca={setClienteBusca}
                 clientes={clientes.data ?? []}
                 value={clienteId}
-                onChange={setClienteId}
+                onChange={(v: string) => {
+                  setClienteId(v);
+                  setTipoVenda("");
+                }}
               />
               {clienteSelecionado && (
                 <div className="rounded-lg border bg-muted/25 p-3">
@@ -2491,6 +2499,9 @@ function RegrasResumo({ regra }: { regra: any }) {
     );
   }
   const entrega = `${regra.periodoEntrega || "Sem período"}${regra.horarioMaximoEntrega ? ` até ${regra.horarioMaximoEntrega}` : ""}`;
+  const tipoPadrao =
+    TIPOS.find(([value]) => value === regra.tipoVendaPadrao)?.[1] ??
+    "Definir no pedido";
   const boleto =
     regra.prazoBoletoDias == null ? "Padrão" : `${regra.prazoBoletoDias} dias`;
   const descontoBoleto =
@@ -2517,6 +2528,11 @@ function RegrasResumo({ regra }: { regra: any }) {
           label="Entrega"
           value={entrega}
           className="border-sky-200 bg-sky-50 text-sky-900 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-100"
+        />
+        <RegraChip
+          label="Tipo padrão"
+          value={tipoPadrao}
+          className="border-indigo-200 bg-indigo-50 text-indigo-900 dark:border-indigo-900 dark:bg-indigo-950/30 dark:text-indigo-100"
         />
         <RegraChip
           label="Boleto"
@@ -2653,6 +2669,29 @@ function RegrasClienteArea({
                 />
               </div>
               <div>
+                <Label className="text-xs">Tipo padrão de venda</Label>
+                <select
+                  className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                  value={merged.tipoVendaPadrao ?? ""}
+                  onChange={e =>
+                    setForm((f: any) => ({
+                      ...f,
+                      tipoVendaPadrao: e.target.value || null,
+                    }))
+                  }
+                >
+                  <option value="">Definir a cada pedido</option>
+                  {TIPOS.map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  Usado como padrão ao criar pedido e para decidir a cópia semanal. Avulso não copia.
+                </p>
+              </div>
+              <div>
                 <Label className="text-xs">Período de entrega</Label>
                 <select
                   className="h-9 w-full rounded-md border bg-background px-2 text-sm"
@@ -2785,6 +2824,7 @@ function RegrasClienteArea({
                 onSalvar({
                   contaAzulCustomerId: clienteId,
                   observacoesGerais: merged.observacoesGerais ?? null,
+                  tipoVendaPadrao: merged.tipoVendaPadrao ?? null,
                   periodoEntrega: merged.periodoEntrega ?? null,
                   horarioMaximoEntrega: merged.horarioMaximoEntrega ?? null,
                   cobraTaxaEntrega: Boolean(merged.cobraTaxaEntrega),

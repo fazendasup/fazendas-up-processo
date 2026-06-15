@@ -10636,6 +10636,7 @@ export namespace Prisma {
     id: string | null
     contaAzulCustomerId: string | null
     observacoesGerais: string | null
+    tipoVendaPadrao: $Enums.TipoVendaPedido | null
     periodoEntrega: $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega: string | null
     cobraTaxaEntrega: boolean | null
@@ -10653,6 +10654,7 @@ export namespace Prisma {
     id: string | null
     contaAzulCustomerId: string | null
     observacoesGerais: string | null
+    tipoVendaPadrao: $Enums.TipoVendaPedido | null
     periodoEntrega: $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega: string | null
     cobraTaxaEntrega: boolean | null
@@ -10670,6 +10672,7 @@ export namespace Prisma {
     id: number
     contaAzulCustomerId: number
     observacoesGerais: number
+    tipoVendaPadrao: number
     periodoEntrega: number
     horarioMaximoEntrega: number
     cobraTaxaEntrega: number
@@ -10705,6 +10708,7 @@ export namespace Prisma {
     id?: true
     contaAzulCustomerId?: true
     observacoesGerais?: true
+    tipoVendaPadrao?: true
     periodoEntrega?: true
     horarioMaximoEntrega?: true
     cobraTaxaEntrega?: true
@@ -10722,6 +10726,7 @@ export namespace Prisma {
     id?: true
     contaAzulCustomerId?: true
     observacoesGerais?: true
+    tipoVendaPadrao?: true
     periodoEntrega?: true
     horarioMaximoEntrega?: true
     cobraTaxaEntrega?: true
@@ -10739,6 +10744,7 @@ export namespace Prisma {
     id?: true
     contaAzulCustomerId?: true
     observacoesGerais?: true
+    tipoVendaPadrao?: true
     periodoEntrega?: true
     horarioMaximoEntrega?: true
     cobraTaxaEntrega?: true
@@ -10843,6 +10849,7 @@ export namespace Prisma {
     id: string
     contaAzulCustomerId: string
     observacoesGerais: string | null
+    tipoVendaPadrao: $Enums.TipoVendaPedido | null
     periodoEntrega: $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega: string | null
     cobraTaxaEntrega: boolean
@@ -10879,6 +10886,7 @@ export namespace Prisma {
     id?: boolean
     contaAzulCustomerId?: boolean
     observacoesGerais?: boolean
+    tipoVendaPadrao?: boolean
     periodoEntrega?: boolean
     horarioMaximoEntrega?: boolean
     cobraTaxaEntrega?: boolean
@@ -10901,6 +10909,7 @@ export namespace Prisma {
     id?: boolean
     contaAzulCustomerId?: boolean
     observacoesGerais?: boolean
+    tipoVendaPadrao?: boolean
     periodoEntrega?: boolean
     horarioMaximoEntrega?: boolean
     cobraTaxaEntrega?: boolean
@@ -10914,7 +10923,7 @@ export namespace Prisma {
     atualizadoEm?: boolean
   }
 
-  export type RegraComercialClienteOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "contaAzulCustomerId" | "observacoesGerais" | "periodoEntrega" | "horarioMaximoEntrega" | "cobraTaxaEntrega" | "valorTaxaEntrega" | "prazoBoletoDias" | "descontoBoletoPercentual" | "acumulaPedidos" | "diasAcumulo" | "prazoBoletoAcumuloDias" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["regraComercialCliente"]>
+  export type RegraComercialClienteOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "contaAzulCustomerId" | "observacoesGerais" | "tipoVendaPadrao" | "periodoEntrega" | "horarioMaximoEntrega" | "cobraTaxaEntrega" | "valorTaxaEntrega" | "prazoBoletoDias" | "descontoBoletoPercentual" | "acumulaPedidos" | "diasAcumulo" | "prazoBoletoAcumuloDias" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["regraComercialCliente"]>
   export type RegraComercialClienteInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     cliente?: boolean | RegraComercialCliente$clienteArgs<ExtArgs>
     precosEspeciais?: boolean | RegraComercialCliente$precosEspeciaisArgs<ExtArgs>
@@ -10931,6 +10940,7 @@ export namespace Prisma {
       id: string
       contaAzulCustomerId: string
       observacoesGerais: string | null
+      tipoVendaPadrao: $Enums.TipoVendaPedido | null
       periodoEntrega: $Enums.PeriodoEntregaCliente | null
       horarioMaximoEntrega: string | null
       cobraTaxaEntrega: boolean
@@ -11316,6 +11326,7 @@ export namespace Prisma {
     readonly id: FieldRef<"RegraComercialCliente", 'String'>
     readonly contaAzulCustomerId: FieldRef<"RegraComercialCliente", 'String'>
     readonly observacoesGerais: FieldRef<"RegraComercialCliente", 'String'>
+    readonly tipoVendaPadrao: FieldRef<"RegraComercialCliente", 'TipoVendaPedido'>
     readonly periodoEntrega: FieldRef<"RegraComercialCliente", 'PeriodoEntregaCliente'>
     readonly horarioMaximoEntrega: FieldRef<"RegraComercialCliente", 'String'>
     readonly cobraTaxaEntrega: FieldRef<"RegraComercialCliente", 'Boolean'>
@@ -34354,6 +34365,7 @@ export namespace Prisma {
     id: 'id',
     contaAzulCustomerId: 'contaAzulCustomerId',
     observacoesGerais: 'observacoesGerais',
+    tipoVendaPadrao: 'tipoVendaPadrao',
     periodoEntrega: 'periodoEntrega',
     horarioMaximoEntrega: 'horarioMaximoEntrega',
     cobraTaxaEntrega: 'cobraTaxaEntrega',
@@ -35167,6 +35179,13 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'TipoVendaPedido'
+   */
+  export type EnumTipoVendaPedidoFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TipoVendaPedido'>
+    
+
+
+  /**
    * Reference to a field of type 'PeriodoEntregaCliente'
    */
   export type EnumPeriodoEntregaClienteFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PeriodoEntregaCliente'>
@@ -35177,13 +35196,6 @@ export namespace Prisma {
    * Reference to a field of type 'Int'
    */
   export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
-    
-
-
-  /**
-   * Reference to a field of type 'TipoVendaPedido'
-   */
-  export type EnumTipoVendaPedidoFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TipoVendaPedido'>
     
 
 
@@ -35860,6 +35872,7 @@ export namespace Prisma {
     id?: StringFilter<"RegraComercialCliente"> | string
     contaAzulCustomerId?: StringFilter<"RegraComercialCliente"> | string
     observacoesGerais?: StringNullableFilter<"RegraComercialCliente"> | string | null
+    tipoVendaPadrao?: EnumTipoVendaPedidoNullableFilter<"RegraComercialCliente"> | $Enums.TipoVendaPedido | null
     periodoEntrega?: EnumPeriodoEntregaClienteNullableFilter<"RegraComercialCliente"> | $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega?: StringNullableFilter<"RegraComercialCliente"> | string | null
     cobraTaxaEntrega?: BoolFilter<"RegraComercialCliente"> | boolean
@@ -35879,6 +35892,7 @@ export namespace Prisma {
     id?: SortOrder
     contaAzulCustomerId?: SortOrder
     observacoesGerais?: SortOrderInput | SortOrder
+    tipoVendaPadrao?: SortOrderInput | SortOrder
     periodoEntrega?: SortOrderInput | SortOrder
     horarioMaximoEntrega?: SortOrderInput | SortOrder
     cobraTaxaEntrega?: SortOrder
@@ -35902,6 +35916,7 @@ export namespace Prisma {
     OR?: RegraComercialClienteWhereInput[]
     NOT?: RegraComercialClienteWhereInput | RegraComercialClienteWhereInput[]
     observacoesGerais?: StringNullableFilter<"RegraComercialCliente"> | string | null
+    tipoVendaPadrao?: EnumTipoVendaPedidoNullableFilter<"RegraComercialCliente"> | $Enums.TipoVendaPedido | null
     periodoEntrega?: EnumPeriodoEntregaClienteNullableFilter<"RegraComercialCliente"> | $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega?: StringNullableFilter<"RegraComercialCliente"> | string | null
     cobraTaxaEntrega?: BoolFilter<"RegraComercialCliente"> | boolean
@@ -35921,6 +35936,7 @@ export namespace Prisma {
     id?: SortOrder
     contaAzulCustomerId?: SortOrder
     observacoesGerais?: SortOrderInput | SortOrder
+    tipoVendaPadrao?: SortOrderInput | SortOrder
     periodoEntrega?: SortOrderInput | SortOrder
     horarioMaximoEntrega?: SortOrderInput | SortOrder
     cobraTaxaEntrega?: SortOrder
@@ -35946,6 +35962,7 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"RegraComercialCliente"> | string
     contaAzulCustomerId?: StringWithAggregatesFilter<"RegraComercialCliente"> | string
     observacoesGerais?: StringNullableWithAggregatesFilter<"RegraComercialCliente"> | string | null
+    tipoVendaPadrao?: EnumTipoVendaPedidoNullableWithAggregatesFilter<"RegraComercialCliente"> | $Enums.TipoVendaPedido | null
     periodoEntrega?: EnumPeriodoEntregaClienteNullableWithAggregatesFilter<"RegraComercialCliente"> | $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega?: StringNullableWithAggregatesFilter<"RegraComercialCliente"> | string | null
     cobraTaxaEntrega?: BoolWithAggregatesFilter<"RegraComercialCliente"> | boolean
@@ -38457,6 +38474,7 @@ export namespace Prisma {
   export type RegraComercialClienteCreateInput = {
     id?: string
     observacoesGerais?: string | null
+    tipoVendaPadrao?: $Enums.TipoVendaPedido | null
     periodoEntrega?: $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega?: string | null
     cobraTaxaEntrega?: boolean
@@ -38476,6 +38494,7 @@ export namespace Prisma {
     id?: string
     contaAzulCustomerId: string
     observacoesGerais?: string | null
+    tipoVendaPadrao?: $Enums.TipoVendaPedido | null
     periodoEntrega?: $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega?: string | null
     cobraTaxaEntrega?: boolean
@@ -38493,6 +38512,7 @@ export namespace Prisma {
   export type RegraComercialClienteUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
+    tipoVendaPadrao?: NullableEnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido | null
     periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
     cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
@@ -38512,6 +38532,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
     observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
+    tipoVendaPadrao?: NullableEnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido | null
     periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
     cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
@@ -38530,6 +38551,7 @@ export namespace Prisma {
     id?: string
     contaAzulCustomerId: string
     observacoesGerais?: string | null
+    tipoVendaPadrao?: $Enums.TipoVendaPedido | null
     periodoEntrega?: $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega?: string | null
     cobraTaxaEntrega?: boolean
@@ -38546,6 +38568,7 @@ export namespace Prisma {
   export type RegraComercialClienteUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
+    tipoVendaPadrao?: NullableEnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido | null
     periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
     cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
@@ -38563,6 +38586,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
     observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
+    tipoVendaPadrao?: NullableEnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido | null
     periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
     cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
@@ -41391,6 +41415,13 @@ export namespace Prisma {
     _max?: NestedJsonNullableFilter<$PrismaModel>
   }
 
+  export type EnumTipoVendaPedidoNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.TipoVendaPedido | EnumTipoVendaPedidoFieldRefInput<$PrismaModel> | null
+    in?: $Enums.TipoVendaPedido[] | null
+    notIn?: $Enums.TipoVendaPedido[] | null
+    not?: NestedEnumTipoVendaPedidoNullableFilter<$PrismaModel> | $Enums.TipoVendaPedido | null
+  }
+
   export type EnumPeriodoEntregaClienteNullableFilter<$PrismaModel = never> = {
     equals?: $Enums.PeriodoEntregaCliente | EnumPeriodoEntregaClienteFieldRefInput<$PrismaModel> | null
     in?: $Enums.PeriodoEntregaCliente[] | null
@@ -41424,6 +41455,7 @@ export namespace Prisma {
     id?: SortOrder
     contaAzulCustomerId?: SortOrder
     observacoesGerais?: SortOrder
+    tipoVendaPadrao?: SortOrder
     periodoEntrega?: SortOrder
     horarioMaximoEntrega?: SortOrder
     cobraTaxaEntrega?: SortOrder
@@ -41449,6 +41481,7 @@ export namespace Prisma {
     id?: SortOrder
     contaAzulCustomerId?: SortOrder
     observacoesGerais?: SortOrder
+    tipoVendaPadrao?: SortOrder
     periodoEntrega?: SortOrder
     horarioMaximoEntrega?: SortOrder
     cobraTaxaEntrega?: SortOrder
@@ -41466,6 +41499,7 @@ export namespace Prisma {
     id?: SortOrder
     contaAzulCustomerId?: SortOrder
     observacoesGerais?: SortOrder
+    tipoVendaPadrao?: SortOrder
     periodoEntrega?: SortOrder
     horarioMaximoEntrega?: SortOrder
     cobraTaxaEntrega?: SortOrder
@@ -41485,6 +41519,16 @@ export namespace Prisma {
     descontoBoletoPercentual?: SortOrder
     diasAcumulo?: SortOrder
     prazoBoletoAcumuloDias?: SortOrder
+  }
+
+  export type EnumTipoVendaPedidoNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.TipoVendaPedido | EnumTipoVendaPedidoFieldRefInput<$PrismaModel> | null
+    in?: $Enums.TipoVendaPedido[] | null
+    notIn?: $Enums.TipoVendaPedido[] | null
+    not?: NestedEnumTipoVendaPedidoNullableWithAggregatesFilter<$PrismaModel> | $Enums.TipoVendaPedido | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumTipoVendaPedidoNullableFilter<$PrismaModel>
+    _max?: NestedEnumTipoVendaPedidoNullableFilter<$PrismaModel>
   }
 
   export type EnumPeriodoEntregaClienteNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -44202,6 +44246,10 @@ export namespace Prisma {
     connect?: PrecoEspecialClienteWhereUniqueInput | PrecoEspecialClienteWhereUniqueInput[]
   }
 
+  export type NullableEnumTipoVendaPedidoFieldUpdateOperationsInput = {
+    set?: $Enums.TipoVendaPedido | null
+  }
+
   export type NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput = {
     set?: $Enums.PeriodoEntregaCliente | null
   }
@@ -45494,11 +45542,28 @@ export namespace Prisma {
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
+  export type NestedEnumTipoVendaPedidoNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.TipoVendaPedido | EnumTipoVendaPedidoFieldRefInput<$PrismaModel> | null
+    in?: $Enums.TipoVendaPedido[] | null
+    notIn?: $Enums.TipoVendaPedido[] | null
+    not?: NestedEnumTipoVendaPedidoNullableFilter<$PrismaModel> | $Enums.TipoVendaPedido | null
+  }
+
   export type NestedEnumPeriodoEntregaClienteNullableFilter<$PrismaModel = never> = {
     equals?: $Enums.PeriodoEntregaCliente | EnumPeriodoEntregaClienteFieldRefInput<$PrismaModel> | null
     in?: $Enums.PeriodoEntregaCliente[] | null
     notIn?: $Enums.PeriodoEntregaCliente[] | null
     not?: NestedEnumPeriodoEntregaClienteNullableFilter<$PrismaModel> | $Enums.PeriodoEntregaCliente | null
+  }
+
+  export type NestedEnumTipoVendaPedidoNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.TipoVendaPedido | EnumTipoVendaPedidoFieldRefInput<$PrismaModel> | null
+    in?: $Enums.TipoVendaPedido[] | null
+    notIn?: $Enums.TipoVendaPedido[] | null
+    not?: NestedEnumTipoVendaPedidoNullableWithAggregatesFilter<$PrismaModel> | $Enums.TipoVendaPedido | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumTipoVendaPedidoNullableFilter<$PrismaModel>
+    _max?: NestedEnumTipoVendaPedidoNullableFilter<$PrismaModel>
   }
 
   export type NestedEnumPeriodoEntregaClienteNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -47015,6 +47080,7 @@ export namespace Prisma {
   export type RegraComercialClienteCreateWithoutClienteInput = {
     id?: string
     observacoesGerais?: string | null
+    tipoVendaPadrao?: $Enums.TipoVendaPedido | null
     periodoEntrega?: $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega?: string | null
     cobraTaxaEntrega?: boolean
@@ -47032,6 +47098,7 @@ export namespace Prisma {
   export type RegraComercialClienteUncheckedCreateWithoutClienteInput = {
     id?: string
     observacoesGerais?: string | null
+    tipoVendaPadrao?: $Enums.TipoVendaPedido | null
     periodoEntrega?: $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega?: string | null
     cobraTaxaEntrega?: boolean
@@ -47394,6 +47461,7 @@ export namespace Prisma {
   export type RegraComercialClienteUpdateWithoutClienteInput = {
     id?: StringFieldUpdateOperationsInput | string
     observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
+    tipoVendaPadrao?: NullableEnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido | null
     periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
     cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
@@ -47411,6 +47479,7 @@ export namespace Prisma {
   export type RegraComercialClienteUncheckedUpdateWithoutClienteInput = {
     id?: StringFieldUpdateOperationsInput | string
     observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
+    tipoVendaPadrao?: NullableEnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido | null
     periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
     cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
@@ -48228,6 +48297,7 @@ export namespace Prisma {
   export type RegraComercialClienteCreateWithoutPrecosEspeciaisInput = {
     id?: string
     observacoesGerais?: string | null
+    tipoVendaPadrao?: $Enums.TipoVendaPedido | null
     periodoEntrega?: $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega?: string | null
     cobraTaxaEntrega?: boolean
@@ -48246,6 +48316,7 @@ export namespace Prisma {
     id?: string
     contaAzulCustomerId: string
     observacoesGerais?: string | null
+    tipoVendaPadrao?: $Enums.TipoVendaPedido | null
     periodoEntrega?: $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega?: string | null
     cobraTaxaEntrega?: boolean
@@ -48335,6 +48406,7 @@ export namespace Prisma {
   export type RegraComercialClienteUpdateWithoutPrecosEspeciaisInput = {
     id?: StringFieldUpdateOperationsInput | string
     observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
+    tipoVendaPadrao?: NullableEnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido | null
     periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
     cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
@@ -48353,6 +48425,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
     observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
+    tipoVendaPadrao?: NullableEnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido | null
     periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
     horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
     cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
