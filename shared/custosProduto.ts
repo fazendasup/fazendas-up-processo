@@ -116,6 +116,7 @@ export type PrecoVendaMargem = {
 };
 
 export type ResultadoCustoProduto = {
+  unidadeVenda: UnidadeVendaProduto;
   custoMaterial: number;
   custoProcesso: number;
   custoTotal: number;
@@ -305,12 +306,17 @@ export function calcularCustoProduto(input: FichaCalculoInput): ResultadoCustoPr
   detalhes.push(...proc.detalhes);
 
   const custoTotal = custoMaterial + custoProcesso;
-  const custoPorUnidade = custoTotal > 0 ? custoTotal : null;
   const custoPorKg =
-    custoPorUnidade != null && kgLiquidoPorUnidade != null && kgLiquidoPorUnidade > 0
-      ? custoPorUnidade / kgLiquidoPorUnidade
-      : input.unidadeVenda === "kg" && custoPorUnidade != null
-        ? custoPorUnidade
+    custoTotal > 0 && kgLiquidoPorUnidade != null && kgLiquidoPorUnidade > 0
+      ? custoTotal / kgLiquidoPorUnidade
+      : input.unidadeVenda === "kg" && custoTotal > 0
+        ? custoTotal
+        : null;
+  const custoPorUnidade =
+    input.unidadeVenda === "kg"
+      ? custoPorKg
+      : custoTotal > 0
+        ? custoTotal
         : null;
 
   const preco = toNum(input.precoVendaReferencia);
@@ -331,6 +337,7 @@ export function calcularCustoProduto(input: FichaCalculoInput): ResultadoCustoPr
   }
 
   return {
+    unidadeVenda: input.unidadeVenda,
     custoMaterial,
     custoProcesso,
     custoTotal,

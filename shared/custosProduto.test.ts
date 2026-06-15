@@ -121,6 +121,24 @@ describe("calcularCustoProduto", () => {
     expect(precoVendaParaMargem(10, 20)).toBeCloseTo(12.5);
     expect(r.precosVendaPorMargem.find((p) => p.margemPct === 20)?.precoVenda).toBeCloseTo(12.5);
   });
+
+  it("usa custo por kg vendido como base quando a unidade de venda é kg", () => {
+    const r = calcularCustoProduto({
+      tipo: "revenda_processada",
+      unidadeVenda: "kg",
+      precoCompraKg: 8,
+      kgBrutoPorUnidade: 1,
+      perdaLavagemPct: 10,
+      perdaDescasquePct: 10,
+      componentes: [],
+      etapas: [],
+    });
+    expect(r.custoPorKg).toBeCloseTo(8 / 0.81);
+    expect(r.custoPorUnidade).toBeCloseTo(r.custoPorKg!);
+    expect(r.precosVendaPorMargem.find((p) => p.margemPct === 20)?.precoVenda).toBeCloseTo(
+      (8 / 0.81) / 0.8,
+    );
+  });
 });
 
 describe("kgBrutoParaLiquido", () => {

@@ -694,25 +694,31 @@ function labelBotaoCorrecao(d: any) {
 }
 
 function normalizarDivergenciasItens(divergencias: any[]) {
-  const agrupadas = new Map<string, any>();
-  const outras: any[] = [];
+  const outras = divergencias.filter((d) => !String(d?.campo ?? "").startsWith("item:"));
+  const itens = divergencias.filter((d) => String(d?.campo ?? "").startsWith("item:"));
+  const soOp = itens.filter((d) => Number(d.operacional) > 0 && Number(d.contaAzul) === 0);
+  const soCa = itens.filter((d) => Number(d.operacional) === 0 && Number(d.contaAzul) > 0);
+  const mistos = itens.filter((d) => !soOp.includes(d) && !soCa.includes(d));
+  const usadosOp = new Set<any>();
+  const resultado = [...mistos];
 
-  for (const d of divergencias) {
-    const campo = String(d?.campo ?? "");
-    if (!campo.startsWith("item:")) {
-      outras.push(d);
+  for (const ca of soCa) {
+    const qCa = Number(ca.contaAzul);
+    const par = soOp.find((op) => !usadosOp.has(op) && Number(op.operacional) === qCa);
+    if (par) {
+      usadosOp.add(par);
       continue;
     }
-    const atual = agrupadas.get(campo) ?? { ...d, operacional: 0, contaAzul: 0 };
-    atual.operacional = Number(atual.operacional ?? 0) + Number(d.operacional ?? 0);
-    atual.contaAzul = Number(atual.contaAzul ?? 0) + Number(d.contaAzul ?? 0);
-    agrupadas.set(campo, atual);
+    resultado.push(ca);
+  }
+  for (const op of soOp) {
+    if (!usadosOp.has(op)) resultado.push(op);
   }
 
-  const itens = Array.from(agrupadas.values()).filter(
+  const finais = resultado.filter(
     (d) => Math.abs(Number(d.operacional ?? 0) - Number(d.contaAzul ?? 0)) > 0.001,
   );
-  return [...outras, ...itens];
+  return [...outras, ...finais];
 }
 
 function DivergenciasLista({

@@ -178,6 +178,7 @@ function buildPayload(form: FichaForm, id?: number) {
 
 function ResultadoCustoCard({ resultado }: { resultado: any }) {
   if (!resultado) return null;
+  const vendePorKg = resultado.unidadeVenda === "kg";
   return (
     <Card className="border-emerald-200 bg-emerald-50/40 dark:border-emerald-900 dark:bg-emerald-950/20">
       <CardHeader className="pb-2">
@@ -186,19 +187,30 @@ function ResultadoCustoCard({ resultado }: { resultado: any }) {
           Resultado do cálculo
         </CardTitle>
         <CardDescription>
-          Estes valores são custo, não preço de venda. O preço de venda vem do campo de referência ou da margem desejada.
+          {vendePorKg
+            ? "Use o custo por kg vendido para formar o preço. As projeções abaixo já usam esse custo como base."
+            : "Use o custo por unidade vendida para formar o preço. O custo por kg serve só para comparação operacional."}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
         <div className="grid gap-2 sm:grid-cols-4">
-          <div>
-            <p className="text-muted-foreground text-xs">Custo calculado / unidade</p>
-            <p className="text-lg font-bold tabular-nums">{fmtMoney(resultado.custoPorUnidade)}</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground text-xs">Custo calculado / kg</p>
-            <p className="font-semibold tabular-nums">{fmtMoney(resultado.custoPorKg)}</p>
-          </div>
+          {vendePorKg ? (
+            <div>
+              <p className="text-muted-foreground text-xs">Custo calculado / kg vendido</p>
+              <p className="text-lg font-bold tabular-nums">{fmtMoney(resultado.custoPorKg)}</p>
+            </div>
+          ) : (
+            <>
+              <div>
+                <p className="text-muted-foreground text-xs">Custo calculado / unidade vendida</p>
+                <p className="text-lg font-bold tabular-nums">{fmtMoney(resultado.custoPorUnidade)}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">Custo calculado / kg</p>
+                <p className="font-semibold tabular-nums">{fmtMoney(resultado.custoPorKg)}</p>
+              </div>
+            </>
+          )}
           <div>
             <p className="text-muted-foreground text-xs">Preço venda referência</p>
             <p className="font-semibold tabular-nums">{fmtMoney(resultado.precoVendaReferencia)}</p>

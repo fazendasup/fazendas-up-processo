@@ -279,6 +279,33 @@ export function snapshotContaAzul(pedido: PedidoContaAzulComItens): SnapshotConc
   };
 }
 
+/** Remove pares espelhados (op 10×ca 0 + op 0×ca 10 do mesmo volume) causados por nomes/chaves diferentes. */
+export function consolidarDivergenciasEspelhadas(divs: DivergenciaConciliacao[]): DivergenciaConciliacao[] {
+  const itens = divs.filter((d) => d.campo.startsWith("item:"));
+  const outros = divs.filter((d) => !d.campo.startsWith("item:"));
+  const soOp = itens.filter((d) => num(d.operacional) > 0 && num(d.contaAzul) === 0);
+  const soCa = itens.filter((d) => num(d.operacional) === 0 && num(d.contaAzul) > 0);
+  const mistos = itens.filter((d) => !soOp.includes(d) && !soCa.includes(d));
+  const usadosOp = new Set<DivergenciaConciliacao>();
+  const usadosCa = new Set<DivergenciaConciliacao>();
+  const resultado: DivergenciaConciliacao[] = [...mistos];
+
+  for (const ca of soCa) {
+    const qCa = num(ca.contaAzul);
+    const par = soOp.find((op) => !usadosOp.has(op) && Math.abs(num(op.operacional) - qCa) < 0.001);
+    if (par) {
+      usadosOp.add(par);
+      usadosCa.add(ca);
+      continue;
+    }
+    resultado.push(ca);
+  }
+  for (const op of soOp) {
+    if (!usadosOp.has(op)) resultado.push(op);
+  }
+  return [...outros, ...resultado];
+}
+
 export function calcularDivergencias(
   operacional: PedidoOperacionalComItens,
   contaAzul: PedidoContaAzulComItens,
@@ -346,7 +373,7 @@ export function calcularDivergencias(
     }
   }
 
-  return divergencias;
+  return consolidarDivergenciasEspelhadas(divergencias);
 }
 
 export function scoreSugestaoVinculo(
@@ -930,21 +957,9 @@ export async function aplicarCorrecaoConciliacao(
       divergenciasCorrigir.some((d) => d.campo === "valor_estimado") ||
       divergenciasCorrigir.some((d) => d.campo.startsWith("item:"));
     if (sincronizarItens) {
-      const sincronizarTodos = divergenciasCorrigir.some((d) => d.campo === "valor_estimado");
-      const chavesAlvo = new Set<string>();
-      if (!sincronizarTodos) {
-        for (const d of divergenciasCorrigir) {
-          if (!d.campo.startsWith("item:")) continue;
-          const chave = chavePorCampoItem(d.campo, operacional, contaAzul, resolverChave);
-          if (chave) chavesAlvo.add(chave);
-        }
-      }
-
       const mapCa = quantidadePorChaveContaAzul(contaAzul, resolverChave);
       const mapOp = quantidadePorChaveOperacional(operacional, resolverChave);
-      const chavesProcessar = sincronizarTodos
-        ? new Set([...Array.from(mapCa.keys()), ...Array.from(mapOp.keys())])
-        : chavesAlvo;
+      const chavesProcessar = new Set([...Array.from(mapCa.keys()), ...Array.from(mapOp.keys())]);
 
       for (const chave of Array.from(chavesProcessar)) {
         const ca = mapCa.get(chave);
@@ -1014,11 +1029,16 @@ export async function aplicarCorrecaoConciliacao(
       contaAzul: snapshotContaAzul(contaAzul),
     };
     const conciliado = divergenciasDepois.length === 0;
+    const podeVincular =
+      operacional.pedidoContaAzulId === contaAzul.id ||
+      operacional.sugestaoPedidoContaAzulId === contaAzul.id;
 
-    if (operacional.pedidoContaAzulId) {
+    if (podeVincular) {
       await tx.pedidoOperacional.update({
         where: { id: operacional.id },
         data: {
+          pedidoContaAzulId: contaAzul.id,
+          sugestaoPedidoContaAzulId: null,
           statusConciliacao: conciliado ? "CONCILIADO" : "DIVERGENTE",
           snapshotConciliacao: snapshot as Prisma.InputJsonValue,
           editadoPorId: input.usuario.id,
@@ -1026,7 +1046,10 @@ export async function aplicarCorrecaoConciliacao(
       });
       await tx.pedido.update({
         where: { id: contaAzul.id },
-        data: { statusConciliacao: conciliado ? "CONCILIADA" : "DIVERGENTE" },
+        data: {
+          sugestaoPedidoOperacionalId: null,
+          statusConciliacao: conciliado ? "CONCILIADA" : "DIVERGENTE",
+        },
       });
     } else {
       await tx.pedidoOperacional.update({
