@@ -358,7 +358,16 @@ function FichaEditor({
         </div>
         <div className="space-y-2">
           <Label>Unidade de venda</Label>
-          <Select value={form.unidadeVenda} onValueChange={(v) => setForm((f) => ({ ...f, unidadeVenda: v }))}>
+          <Select
+            value={form.unidadeVenda}
+            onValueChange={(v) =>
+              setForm((f) => ({
+                ...f,
+                unidadeVenda: v,
+                kgBrutoPorUnidade: v === "kg" && !f.kgBrutoPorUnidade ? "1" : f.kgBrutoPorUnidade,
+              }))
+            }
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -385,7 +394,10 @@ function FichaEditor({
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Matéria-prima (revenda)</CardTitle>
-            <CardDescription>Compra por kg, perdas de lavagem/descasque/seleção.</CardDescription>
+            <CardDescription>
+              Informe o preço de compra e quanto produto pronto você vende. As perdas calculam automaticamente quanto
+              precisa comprar bruto.
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-3">
             <div className="space-y-2">
@@ -397,12 +409,16 @@ function FichaEditor({
               />
             </div>
             <div className="space-y-2">
-              <Label>Kg bruto / unidade vendida</Label>
+              <Label>Kg final vendido / unidade</Label>
               <Input
                 inputMode="decimal"
+                placeholder={form.unidadeVenda === "kg" ? "1" : "Ex.: 0,5 para pacote de 500g"}
                 value={form.kgBrutoPorUnidade}
                 onChange={(e) => setForm((f) => ({ ...f, kgBrutoPorUnidade: e.target.value }))}
               />
+              <p className="text-[10px] text-muted-foreground">
+                Ex.: venda por kg = 1. Pacote de 500g = 0,5. Não some perdas aqui; preencha as perdas abaixo.
+              </p>
             </div>
             <div className="space-y-2">
               <Label>Perda lavagem (%)</Label>

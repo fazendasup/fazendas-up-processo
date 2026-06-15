@@ -89,7 +89,11 @@ export type FichaCalculoInput = {
   precoVendaReferencia?: number | null;
   /** Revenda: preço de compra por kg */
   precoCompraKg?: number | null;
-  /** Kg de matéria-prima bruta necessários por unidade vendida (antes de perdas) */
+  /**
+   * Peso final vendido por unidade.
+   * O nome histórico do campo ficou como "bruto", mas o cálculo usa este valor como kg líquido/alvo
+   * e calcula automaticamente a compra bruta a partir das perdas.
+   */
   kgBrutoPorUnidade?: number | null;
   perdaLavagemPct?: number;
   perdaDescasquePct?: number;
@@ -174,14 +178,18 @@ export function custoMaterialRevenda(input: {
 }): { custo: number; kgLiquido: number; alertas: string[] } {
   const alertas: string[] = [];
   const preco = input.precoCompraKg;
-  const kgBruto = input.kgBrutoPorUnidade;
-  if (!(preco > 0) || !(kgBruto > 0)) {
-    alertas.push("Informe preço de compra (R$/kg) e kg bruto por unidade vendida.");
+  const kgLiquido = input.kgBrutoPorUnidade;
+  if (!(preco > 0) || !(kgLiquido > 0)) {
+    alertas.push("Informe preço de compra (R$/kg) e kg final vendido por unidade.");
     return { custo: 0, kgLiquido: 0, alertas };
   }
-  const f = fatorAproveitamento(input.perdasPct ?? []);
-  const kgLiquido = kgBruto * f;
+  const kgBruto = kgBrutoParaLiquido(kgLiquido, input.perdasPct ?? []);
+  if (kgBruto == null) {
+    alertas.push("Perdas acumuladas impedem calcular a compra bruta necessária.");
+    return { custo: 0, kgLiquido: 0, alertas };
+  }
   const custo = preco * kgBruto;
+  const f = fatorAproveitamento(input.perdasPct ?? []);
   if (f < 0.5) alertas.push("Perdas acumuladas > 50% — confira os percentuais.");
   return { custo, kgLiquido, alertas };
 }

@@ -20,8 +20,8 @@ describe("custoMaterialRevenda", () => {
       kgBrutoPorUnidade: 1.2,
       perdasPct: [10, 5],
     });
-    expect(r.custo).toBeCloseTo(12);
-    expect(r.kgLiquido).toBeCloseTo(1.2 * 0.855);
+    expect(r.custo).toBeCloseTo((1.2 / 0.855) * 10);
+    expect(r.kgLiquido).toBeCloseTo(1.2);
   });
 });
 
@@ -42,10 +42,10 @@ describe("calcularCustoProduto", () => {
         { tipo: "embalagem", nome: "Embalagem", custoPorUnidadeFinal: 1.2 },
       ],
     });
-    expect(r.custoMaterial).toBeCloseTo(8);
+    expect(r.custoMaterial).toBeCloseTo(8 / 0.855);
     expect(r.custoProcesso).toBeCloseTo(1.7);
-    expect(r.custoPorUnidade).toBeCloseTo(9.7);
-    expect(r.margemBruta).toBeCloseTo(5.3);
+    expect(r.custoPorUnidade).toBeCloseTo(8 / 0.855 + 1.7);
+    expect(r.margemBruta).toBeCloseTo(15 - (8 / 0.855 + 1.7));
   });
 
   it("produção própria converte R$/planta em R$/unidade", () => {
