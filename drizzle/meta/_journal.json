@@ -197,6 +197,13 @@
       "when": 1776900000000,
       "tag": "0031_custos_produtos_fichas",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "5",
+      "when": 1777000000000,
+      "tag": "0038_custos_produtos_etapas_percentual",
+      "breakpoints": true
     }
   ]
 }

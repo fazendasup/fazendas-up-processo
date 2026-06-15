@@ -4,6 +4,7 @@ import {
   custoMaterialRevenda,
   fatorAproveitamento,
   kgBrutoParaLiquido,
+  precoVendaParaMargem,
 } from "./custosProduto";
 
 describe("fatorAproveitamento", () => {
@@ -89,6 +90,36 @@ describe("calcularCustoProduto", () => {
     expect(r.custoMaterial).toBeCloseTo(2.75);
     expect(r.custoProcesso).toBeCloseTo(0.8);
     expect(r.custoPorUnidade).toBeCloseTo(3.55);
+  });
+
+  it("aplica logística percentual sobre subtotal acumulado", () => {
+    const r = calcularCustoProduto({
+      tipo: "revenda_processada",
+      unidadeVenda: "pacote",
+      precoCompraKg: 10,
+      kgBrutoPorUnidade: 1,
+      componentes: [],
+      etapas: [
+        { tipo: "embalagem", nome: "Embalagem", custoPorUnidadeFinal: 2 },
+        { tipo: "logistica", nome: "Logística", custoPorUnidadeFinal: 0, custoPercentual: 10 },
+      ],
+    });
+    expect(r.custoMaterial).toBeCloseTo(10);
+    expect(r.custoProcesso).toBeCloseTo(3.2);
+    expect(r.custoPorUnidade).toBeCloseTo(13.2);
+  });
+
+  it("projeta preços finais por margem desejada", () => {
+    const r = calcularCustoProduto({
+      tipo: "manual",
+      unidadeVenda: "unidade",
+      precoCompraKg: 10,
+      kgBrutoPorUnidade: 1,
+      componentes: [],
+      etapas: [],
+    });
+    expect(precoVendaParaMargem(10, 20)).toBeCloseTo(12.5);
+    expect(r.precosVendaPorMargem.find((p) => p.margemPct === 20)?.precoVenda).toBeCloseTo(12.5);
   });
 });
 

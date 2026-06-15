@@ -58,6 +58,7 @@ type EtapaForm = {
   nome: string;
   custoPorUnidade: string;
   custoPorKgProcessado: string;
+  custoPercentual: string;
 };
 
 type FichaForm = {
@@ -99,6 +100,7 @@ function emptyEtapa(tipo: TipoEtapaProcesso = "lavagem"): EtapaForm {
     nome: LABEL_ETAPA_PROCESSO[tipo],
     custoPorUnidade: "",
     custoPorKgProcessado: "",
+    custoPercentual: "",
   };
 }
 
@@ -169,6 +171,7 @@ function buildPayload(form: FichaForm, id?: number) {
       nome: e.nome.trim() || LABEL_ETAPA_PROCESSO[e.tipo],
       custoPorUnidade: parseOpt(e.custoPorUnidade) ?? 0,
       custoPorKgProcessado: parseOpt(e.custoPorKgProcessado),
+      custoPercentual: parseOpt(e.custoPercentual),
     })),
   };
 }
@@ -182,16 +185,23 @@ function ResultadoCustoCard({ resultado }: { resultado: any }) {
           <Calculator className="h-4 w-4" />
           Resultado do cálculo
         </CardTitle>
+        <CardDescription>
+          Estes valores são custo, não preço de venda. O preço de venda vem do campo de referência ou da margem desejada.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-4">
           <div>
-            <p className="text-muted-foreground text-xs">Custo / unidade</p>
+            <p className="text-muted-foreground text-xs">Custo calculado / unidade</p>
             <p className="text-lg font-bold tabular-nums">{fmtMoney(resultado.custoPorUnidade)}</p>
           </div>
           <div>
-            <p className="text-muted-foreground text-xs">Custo / kg</p>
+            <p className="text-muted-foreground text-xs">Custo calculado / kg</p>
             <p className="font-semibold tabular-nums">{fmtMoney(resultado.custoPorKg)}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground text-xs">Preço venda referência</p>
+            <p className="font-semibold tabular-nums">{fmtMoney(resultado.precoVendaReferencia)}</p>
           </div>
           <div>
             <p className="text-muted-foreground text-xs">Margem bruta</p>
@@ -201,6 +211,24 @@ function ResultadoCustoCard({ resultado }: { resultado: any }) {
             </p>
           </div>
         </div>
+        {resultado.precosVendaPorMargem?.length > 0 && (
+          <div className="rounded-lg border bg-background/60 p-3">
+            <p className="text-xs font-medium text-muted-foreground mb-2">
+              Preço final sugerido por margem desejada
+            </p>
+            <div className="grid gap-2 sm:grid-cols-4">
+              {resultado.precosVendaPorMargem.map((p: { margemPct: number; precoVenda: number }) => (
+                <div key={p.margemPct} className="rounded-md bg-muted/40 px-3 py-2">
+                  <p className="text-[11px] text-muted-foreground">Margem {p.margemPct}%</p>
+                  <p className="font-semibold tabular-nums">{fmtMoney(p.precoVenda)}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              Margem calculada sobre o preço final: preço = custo / (1 - margem).
+            </p>
+          </div>
+        )}
         {resultado.alertas?.length > 0 && (
           <ul className="text-xs text-amber-800 dark:text-amber-200 space-y-1">
             {resultado.alertas.map((a: string, i: number) => (
@@ -523,7 +551,9 @@ function FichaEditor({
         <CardHeader className="pb-2 flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-sm">Processo industrial</CardTitle>
-            <CardDescription>Lavagem, corte, embalagem, adesivo, mão de obra.</CardDescription>
+            <CardDescription>
+              Lavagem, corte, embalagem, adesivo, mão de obra e logística. Use percentual para custos proporcionais.
+            </CardDescription>
           </div>
           <Button size="sm" variant="outline" onClick={() => setForm((f) => ({ ...f, etapas: [...f.etapas, emptyEtapa()] }))}>
             <Plus className="h-4 w-4 mr-1" /> Etapa
@@ -531,7 +561,7 @@ function FichaEditor({
         </CardHeader>
         <CardContent className="space-y-3">
           {form.etapas.map((e, idx) => (
-            <div key={idx} className="grid gap-2 rounded-lg border p-3 md:grid-cols-5">
+            <div key={idx} className="grid gap-2 rounded-lg border p-3 md:grid-cols-6">
               <Select
                 value={e.tipo}
                 onValueChange={(v) => updateEtapa(idx, { tipo: v as TipoEtapaProcesso, nome: LABEL_ETAPA_PROCESSO[v as TipoEtapaProcesso] })}
@@ -559,6 +589,12 @@ function FichaEditor({
                 inputMode="decimal"
                 value={e.custoPorKgProcessado}
                 onChange={(ev) => updateEtapa(idx, { custoPorKgProcessado: ev.target.value })}
+              />
+              <Input
+                placeholder="% sobre subtotal"
+                inputMode="decimal"
+                value={e.custoPercentual}
+                onChange={(ev) => updateEtapa(idx, { custoPercentual: ev.target.value })}
               />
               <Button variant="ghost" size="icon" onClick={() => setForm((f) => ({ ...f, etapas: f.etapas.filter((_, i) => i !== idx) }))}>
                 <Trash2 className="h-4 w-4" />
@@ -710,6 +746,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                                 nome: e.nome,
                                 custoPorUnidade: String(e.custoPorUnidade),
                                 custoPorKgProcessado: e.custoPorKgProcessado != null ? String(e.custoPorKgProcessado) : "",
+                                custoPercentual: e.custoPercentual != null ? String(e.custoPercentual) : "",
                               })),
                             });
                             setSimResult(row.resultado);

@@ -79,6 +79,8 @@ export type EtapaCalculoInput = {
   nome: string;
   custoPorUnidadeFinal: number;
   custoPorKgProcessado?: number | null;
+  /** Percentual aplicado sobre o subtotal acumulado antes desta etapa. */
+  custoPercentual?: number | null;
 };
 
 export type FichaCalculoInput = {
@@ -108,6 +110,11 @@ export type DetalheCustoLinha = {
   valor: number;
 };
 
+export type PrecoVendaMargem = {
+  margemPct: number;
+  precoVenda: number;
+};
+
 export type ResultadoCustoProduto = {
   custoMaterial: number;
   custoProcesso: number;
@@ -115,8 +122,10 @@ export type ResultadoCustoProduto = {
   custoPorUnidade: number | null;
   custoPorKg: number | null;
   kgLiquidoPorUnidade: number | null;
+  precoVendaReferencia: number | null;
   margemBruta: number | null;
   margemPct: number | null;
+  precosVendaPorMargem: PrecoVendaMargem[];
   alertas: string[];
   detalhes: DetalheCustoLinha[];
 };
@@ -129,6 +138,15 @@ function toNum(v: unknown): number | null {
 
 function clampPct(v: number): number {
   return Math.min(100, Math.max(0, v));
+}
+
+export const MARGENS_ALVO_PRECO_VENDA = [5, 10, 20, 30] as const;
+
+export function precoVendaParaMargem(custo: number | null | undefined, margemPct: number): number | null {
+  const c = toNum(custo);
+  const m = clampPct(margemPct);
+  if (c == null || c <= 0 || m >= 100) return null;
+  return c / (1 - m / 100);
 }
 
 /** Fator de aproveitamento acumulado (0–1) a partir das perdas em %. */
@@ -212,14 +230,17 @@ export function custoComponentesMix(
 export function custoEtapasProcesso(
   etapas: EtapaCalculoInput[],
   kgLiquidoPorUnidade: number | null,
+  custoBase = 0,
 ): { custo: number; detalhes: DetalheCustoLinha[] } {
   const detalhes: DetalheCustoLinha[] = [];
   let custo = 0;
   for (const e of etapas) {
     const fixo = toNum(e.custoPorUnidadeFinal) ?? 0;
     const porKg = toNum(e.custoPorKgProcessado) ?? 0;
+    const pct = clampPct(toNum(e.custoPercentual) ?? 0);
     const variavel = kgLiquidoPorUnidade != null && kgLiquidoPorUnidade > 0 ? porKg * kgLiquidoPorUnidade : 0;
-    const linha = fixo + variavel;
+    const percentual = ((custoBase + custo) * pct) / 100;
+    const linha = fixo + variavel + percentual;
     if (linha > 0) {
       custo += linha;
       detalhes.push({ grupo: "processo", label: e.nome, valor: linha });
@@ -279,7 +300,7 @@ export function calcularCustoProduto(input: FichaCalculoInput): ResultadoCustoPr
     }
   }
 
-  const proc = custoEtapasProcesso(input.etapas, kgLiquidoPorUnidade);
+  const proc = custoEtapasProcesso(input.etapas, kgLiquidoPorUnidade, custoMaterial);
   const custoProcesso = proc.custo;
   detalhes.push(...proc.detalhes);
 
@@ -297,6 +318,13 @@ export function calcularCustoProduto(input: FichaCalculoInput): ResultadoCustoPr
     preco != null && custoPorUnidade != null && preco > 0 ? preco - custoPorUnidade : null;
   const margemPct =
     margemBruta != null && preco != null && preco > 0 ? (margemBruta / preco) * 100 : null;
+  const precosVendaPorMargem =
+    custoPorUnidade != null
+      ? MARGENS_ALVO_PRECO_VENDA.map((m) => ({
+          margemPct: m,
+          precoVenda: precoVendaParaMargem(custoPorUnidade, m) ?? 0,
+        }))
+      : [];
 
   if (custoPorUnidade == null) {
     alertas.push("Não foi possível calcular custo por unidade — complete os campos obrigatórios.");
@@ -309,8 +337,10 @@ export function calcularCustoProduto(input: FichaCalculoInput): ResultadoCustoPr
     custoPorUnidade,
     custoPorKg,
     kgLiquidoPorUnidade,
+    precoVendaReferencia: preco,
     margemBruta,
     margemPct,
+    precosVendaPorMargem,
     alertas,
     detalhes,
   };

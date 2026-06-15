@@ -868,6 +868,7 @@ export const custosProdutosEtapas = mysqlTable("custos_produtos_etapas", {
   nome: varchar("nome", { length: 160 }).notNull(),
   custoPorUnidade: decimal("custoPorUnidade", { precision: 14, scale: 6 }).notNull().default("0"),
   custoPorKgProcessado: decimal("custoPorKgProcessado", { precision: 18, scale: 8 }),
+  custoPercentual: decimal("custoPercentual", { precision: 8, scale: 4 }),
   ordem: int("ordem").notNull().default(0),
 });
 

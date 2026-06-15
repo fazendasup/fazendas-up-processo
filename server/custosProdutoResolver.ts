@@ -132,6 +132,7 @@ export async function fichaParaCalculoInput(
     nome: e.nome,
     custoPorUnidadeFinal: num(e.custoPorUnidade) ?? 0,
     custoPorKgProcessado: num(e.custoPorKgProcessado),
+    custoPercentual: num(e.custoPercentual),
   }));
 
   const variedadeId = ficha.variedadeId;

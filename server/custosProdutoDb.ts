@@ -70,6 +70,7 @@ export async function ensureCustosProdutosTables(): Promise<void> {
   \`nome\` varchar(160) NOT NULL,
   \`custoPorUnidade\` decimal(14,6) NOT NULL DEFAULT 0,
   \`custoPorKgProcessado\` decimal(18,8) NULL,
+  \`custoPercentual\` decimal(8,4) NULL,
   \`ordem\` int NOT NULL DEFAULT 0,
   CONSTRAINT \`custos_produtos_etapas_id\` PRIMARY KEY(\`id\`),
   KEY \`idx_custos_prod_etapas_ficha\` (\`fichaId\`)
@@ -83,6 +84,16 @@ export async function ensureCustosProdutosTables(): Promise<void> {
       if (!/already exists/i.test(msg) && !/ER_TABLE_EXISTS_ERROR/i.test(msg)) {
         console.warn("[custosProdutoDb] ensure:", msg.slice(0, 160));
       }
+    }
+  }
+  try {
+    await db.execute(
+      sql.raw("ALTER TABLE `custos_produtos_etapas` ADD COLUMN `custoPercentual` decimal(8,4) NULL"),
+    );
+  } catch (err: unknown) {
+    if (!isMysqlDuplicateColumnError(err)) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn("[custosProdutoDb] ensure custoPercentual:", msg.slice(0, 160));
     }
   }
 }

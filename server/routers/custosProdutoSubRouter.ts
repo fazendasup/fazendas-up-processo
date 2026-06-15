@@ -53,6 +53,7 @@ const etapaInput = z.object({
   nome: z.string().min(1).max(160),
   custoPorUnidade: z.number().nonnegative().default(0),
   custoPorKgProcessado: z.number().nonnegative().optional().nullable(),
+  custoPercentual: z.number().min(0).max(100).optional().nullable(),
   ordem: z.number().int().optional(),
 });
 
@@ -211,6 +212,8 @@ export const custosProdutoSubRouter = router({
           custoPorUnidade: String(e.custoPorUnidade),
           custoPorKgProcessado:
             e.custoPorKgProcessado != null ? String(e.custoPorKgProcessado) : null,
+          custoPercentual:
+            e.custoPercentual != null ? String(e.custoPercentual) : null,
           ordem: e.ordem ?? i,
         })),
       );
@@ -278,6 +281,8 @@ export const custosProdutoSubRouter = router({
         custoPorUnidade: String(e.custoPorUnidade),
         custoPorKgProcessado:
           e.custoPorKgProcessado != null ? String(e.custoPorKgProcessado) : null,
+        custoPercentual:
+          e.custoPercentual != null ? String(e.custoPercentual) : null,
         ordem: e.ordem ?? i,
       }));
       const calcInput = await fichaParaCalculoInput(pid, fichaFake, componentes, etapas);
