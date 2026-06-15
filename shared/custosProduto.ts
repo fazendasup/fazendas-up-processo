@@ -1,0 +1,317 @@
+/** Fichas de custo por produto/SKU vendido — produção própria, revenda processada e mix. */
+
+export const TIPOS_FICHA_CUSTO_PRODUTO = [
+  "producao_propria",
+  "revenda_processada",
+  "mix",
+  "manual",
+] as const;
+export type TipoFichaCustoProduto = (typeof TIPOS_FICHA_CUSTO_PRODUTO)[number];
+
+export const LABEL_TIPO_FICHA_CUSTO_PRODUTO: Record<TipoFichaCustoProduto, string> = {
+  producao_propria: "Produção própria",
+  revenda_processada: "Revenda processada",
+  mix: "Mix (produção + revenda)",
+  manual: "Manual / referência",
+};
+
+export const CATEGORIAS_PRODUTO_CUSTO = [
+  "alface",
+  "microverde",
+  "revenda",
+  "mix",
+  "outros",
+] as const;
+export type CategoriaProdutoCusto = (typeof CATEGORIAS_PRODUTO_CUSTO)[number];
+
+export const LABEL_CATEGORIA_PRODUTO_CUSTO: Record<CategoriaProdutoCusto, string> = {
+  alface: "Alface / folhosas",
+  microverde: "Microverdes",
+  revenda: "Revenda",
+  mix: "Mix",
+  outros: "Outros",
+};
+
+export const UNIDADES_VENDA_PRODUTO = ["unidade", "kg", "bandeja", "pacote", "maco"] as const;
+export type UnidadeVendaProduto = (typeof UNIDADES_VENDA_PRODUTO)[number];
+
+export const TIPOS_COMPONENTE_CUSTO = [
+  "variedade",
+  "estoque",
+  "produto_comercial",
+  "manual",
+  "ficha",
+] as const;
+export type TipoComponenteCusto = (typeof TIPOS_COMPONENTE_CUSTO)[number];
+
+export const TIPOS_ETAPA_PROCESSO = [
+  "lavagem",
+  "descasque_corte",
+  "embalagem",
+  "adesivo",
+  "mao_de_obra",
+  "logistica",
+  "outros",
+] as const;
+export type TipoEtapaProcesso = (typeof TIPOS_ETAPA_PROCESSO)[number];
+
+export const LABEL_ETAPA_PROCESSO: Record<TipoEtapaProcesso, string> = {
+  lavagem: "Lavagem industrial",
+  descasque_corte: "Descasque / corte",
+  embalagem: "Embalagem",
+  adesivo: "Adesivo / rótulo",
+  mao_de_obra: "Mão de obra",
+  logistica: "Logística",
+  outros: "Outros",
+};
+
+export type ComponenteCalculoInput = {
+  tipo: TipoComponenteCusto;
+  nome: string;
+  quantidadePorUnidadeFinal: number;
+  unidadeComponente: string;
+  /** Custo resolvido por unidade do componente (kg, un, etc.) */
+  custoUnitario?: number | null;
+};
+
+export type EtapaCalculoInput = {
+  tipo: TipoEtapaProcesso;
+  nome: string;
+  custoPorUnidadeFinal: number;
+  custoPorKgProcessado?: number | null;
+};
+
+export type FichaCalculoInput = {
+  tipo: TipoFichaCustoProduto;
+  unidadeVenda: UnidadeVendaProduto;
+  precoVendaReferencia?: number | null;
+  /** Revenda: preço de compra por kg */
+  precoCompraKg?: number | null;
+  /** Kg de matéria-prima bruta necessários por unidade vendida (antes de perdas) */
+  kgBrutoPorUnidade?: number | null;
+  perdaLavagemPct?: number;
+  perdaDescasquePct?: number;
+  perdaSelecaoPct?: number;
+  /** Produção própria: custo R$/planta da variedade */
+  custoVariedadePorPlanta?: number | null;
+  /** Kg colhidos por planta (rendimento agrícola) */
+  kgColhidoPorPlanta?: number | null;
+  /** Kg da produção própria usados por unidade vendida */
+  kgProducaoPorUnidade?: number | null;
+  componentes: ComponenteCalculoInput[];
+  etapas: EtapaCalculoInput[];
+};
+
+export type DetalheCustoLinha = {
+  grupo: "material" | "processo" | "componente";
+  label: string;
+  valor: number;
+};
+
+export type ResultadoCustoProduto = {
+  custoMaterial: number;
+  custoProcesso: number;
+  custoTotal: number;
+  custoPorUnidade: number | null;
+  custoPorKg: number | null;
+  kgLiquidoPorUnidade: number | null;
+  margemBruta: number | null;
+  margemPct: number | null;
+  alertas: string[];
+  detalhes: DetalheCustoLinha[];
+};
+
+function toNum(v: unknown): number | null {
+  if (v == null) return null;
+  const n = typeof v === "number" ? v : Number(String(v).replace(",", "."));
+  return Number.isFinite(n) ? n : null;
+}
+
+function clampPct(v: number): number {
+  return Math.min(100, Math.max(0, v));
+}
+
+/** Fator de aproveitamento acumulado (0–1) a partir das perdas em %. */
+export function fatorAproveitamento(perdasPct: number[]): number {
+  let f = 1;
+  for (const p of perdasPct) {
+    f *= 1 - clampPct(p) / 100;
+  }
+  return f;
+}
+
+/** Kg bruto necessário para obter `kgLiquido` após perdas. */
+export function kgBrutoParaLiquido(kgLiquido: number, perdasPct: number[]): number | null {
+  if (kgLiquido <= 0) return null;
+  const f = fatorAproveitamento(perdasPct);
+  if (f <= 0) return null;
+  return kgLiquido / f;
+}
+
+export function custoMaterialRevenda(input: {
+  precoCompraKg: number;
+  kgBrutoPorUnidade: number;
+  perdasPct?: number[];
+}): { custo: number; kgLiquido: number; alertas: string[] } {
+  const alertas: string[] = [];
+  const preco = input.precoCompraKg;
+  const kgBruto = input.kgBrutoPorUnidade;
+  if (!(preco > 0) || !(kgBruto > 0)) {
+    alertas.push("Informe preço de compra (R$/kg) e kg bruto por unidade vendida.");
+    return { custo: 0, kgLiquido: 0, alertas };
+  }
+  const f = fatorAproveitamento(input.perdasPct ?? []);
+  const kgLiquido = kgBruto * f;
+  const custo = preco * kgBruto;
+  if (f < 0.5) alertas.push("Perdas acumuladas > 50% — confira os percentuais.");
+  return { custo, kgLiquido, alertas };
+}
+
+export function custoMaterialProducaoPropria(input: {
+  custoVariedadePorPlanta: number | null | undefined;
+  kgColhidoPorPlanta: number | null | undefined;
+  kgProducaoPorUnidade: number | null | undefined;
+}): { custo: number; alertas: string[] } {
+  const alertas: string[] = [];
+  const cpp = toNum(input.custoVariedadePorPlanta);
+  const kgp = toNum(input.kgColhidoPorPlanta);
+  const kgUso = toNum(input.kgProducaoPorUnidade);
+  if (cpp == null || kgp == null || kgUso == null) {
+    alertas.push("Informe custo/planta, kg colhido/planta e kg usado por unidade vendida.");
+    return { custo: 0, alertas };
+  }
+  if (cpp <= 0 || kgp <= 0 || kgUso <= 0) {
+    alertas.push("Custos e rendimentos devem ser maiores que zero.");
+    return { custo: 0, alertas };
+  }
+  const custoPorKg = cpp / kgp;
+  return { custo: custoPorKg * kgUso, alertas };
+}
+
+export function custoComponentesMix(
+  componentes: ComponenteCalculoInput[],
+): { custo: number; detalhes: DetalheCustoLinha[]; alertas: string[] } {
+  const detalhes: DetalheCustoLinha[] = [];
+  const alertas: string[] = [];
+  let custo = 0;
+  for (const c of componentes) {
+    const q = toNum(c.quantidadePorUnidadeFinal);
+    const cu = toNum(c.custoUnitario);
+    if (q == null || q <= 0) continue;
+    if (cu == null) {
+      alertas.push(`Componente «${c.nome}» sem custo unitário resolvido.`);
+      continue;
+    }
+    const linha = q * cu;
+    custo += linha;
+    detalhes.push({ grupo: "componente", label: c.nome, valor: linha });
+  }
+  return { custo, detalhes, alertas };
+}
+
+export function custoEtapasProcesso(
+  etapas: EtapaCalculoInput[],
+  kgLiquidoPorUnidade: number | null,
+): { custo: number; detalhes: DetalheCustoLinha[] } {
+  const detalhes: DetalheCustoLinha[] = [];
+  let custo = 0;
+  for (const e of etapas) {
+    const fixo = toNum(e.custoPorUnidadeFinal) ?? 0;
+    const porKg = toNum(e.custoPorKgProcessado) ?? 0;
+    const variavel = kgLiquidoPorUnidade != null && kgLiquidoPorUnidade > 0 ? porKg * kgLiquidoPorUnidade : 0;
+    const linha = fixo + variavel;
+    if (linha > 0) {
+      custo += linha;
+      detalhes.push({ grupo: "processo", label: e.nome, valor: linha });
+    }
+  }
+  return { custo, detalhes };
+}
+
+/** Calcula custo total de uma ficha de produto. */
+export function calcularCustoProduto(input: FichaCalculoInput): ResultadoCustoProduto {
+  const alertas: string[] = [];
+  const detalhes: DetalheCustoLinha[] = [];
+  let custoMaterial = 0;
+  let kgLiquidoPorUnidade: number | null = null;
+
+  const perdas = [
+    input.perdaLavagemPct ?? 0,
+    input.perdaDescasquePct ?? 0,
+    input.perdaSelecaoPct ?? 0,
+  ];
+
+  if (input.tipo === "revenda_processada" || input.tipo === "manual") {
+    const rev = custoMaterialRevenda({
+      precoCompraKg: toNum(input.precoCompraKg) ?? 0,
+      kgBrutoPorUnidade: toNum(input.kgBrutoPorUnidade) ?? 0,
+      perdasPct: perdas,
+    });
+    custoMaterial += rev.custo;
+    kgLiquidoPorUnidade = rev.kgLiquido;
+    alertas.push(...rev.alertas);
+    if (rev.custo > 0) {
+      detalhes.push({ grupo: "material", label: "Matéria-prima (revenda)", valor: rev.custo });
+    }
+  }
+
+  if (input.tipo === "producao_propria") {
+    const prod = custoMaterialProducaoPropria({
+      custoVariedadePorPlanta: input.custoVariedadePorPlanta,
+      kgColhidoPorPlanta: input.kgColhidoPorPlanta,
+      kgProducaoPorUnidade: input.kgProducaoPorUnidade,
+    });
+    custoMaterial += prod.custo;
+    alertas.push(...prod.alertas);
+    if (prod.custo > 0) {
+      detalhes.push({ grupo: "material", label: "Produção própria", valor: prod.custo });
+      kgLiquidoPorUnidade = toNum(input.kgProducaoPorUnidade);
+    }
+  }
+
+  if (input.tipo === "mix" || input.componentes.length > 0) {
+    const mix = custoComponentesMix(input.componentes);
+    custoMaterial += mix.custo;
+    detalhes.push(...mix.detalhes);
+    alertas.push(...mix.alertas);
+    if (input.tipo === "mix" && input.componentes.length < 2) {
+      alertas.push("Mix deve ter ao menos 2 componentes.");
+    }
+  }
+
+  const proc = custoEtapasProcesso(input.etapas, kgLiquidoPorUnidade);
+  const custoProcesso = proc.custo;
+  detalhes.push(...proc.detalhes);
+
+  const custoTotal = custoMaterial + custoProcesso;
+  const custoPorUnidade = custoTotal > 0 ? custoTotal : null;
+  const custoPorKg =
+    custoPorUnidade != null && kgLiquidoPorUnidade != null && kgLiquidoPorUnidade > 0
+      ? custoPorUnidade / kgLiquidoPorUnidade
+      : input.unidadeVenda === "kg" && custoPorUnidade != null
+        ? custoPorUnidade
+        : null;
+
+  const preco = toNum(input.precoVendaReferencia);
+  const margemBruta =
+    preco != null && custoPorUnidade != null && preco > 0 ? preco - custoPorUnidade : null;
+  const margemPct =
+    margemBruta != null && preco != null && preco > 0 ? (margemBruta / preco) * 100 : null;
+
+  if (custoPorUnidade == null) {
+    alertas.push("Não foi possível calcular custo por unidade — complete os campos obrigatórios.");
+  }
+
+  return {
+    custoMaterial,
+    custoProcesso,
+    custoTotal,
+    custoPorUnidade,
+    custoPorKg,
+    kgLiquidoPorUnidade,
+    margemBruta,
+    margemPct,
+    alertas,
+    detalhes,
+  };
+}

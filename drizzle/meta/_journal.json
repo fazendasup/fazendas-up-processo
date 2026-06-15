@@ -190,6 +190,13 @@
       "when": 1776800000000,
       "tag": "0030_custos_producao_rateio",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "5",
+      "when": 1776900000000,
+      "tag": "0031_custos_produtos_fichas",
+      "breakpoints": true
     }
   ]
 }

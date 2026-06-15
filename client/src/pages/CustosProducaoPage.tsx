@@ -51,15 +51,18 @@ import {
 import {
   AlertCircle,
   ArrowRight,
+  Calculator,
   Coins,
   Layers,
   Lightbulb,
   LineChart,
+  Package,
   Pencil,
   Plus,
   Sprout,
   Trash2,
 } from "lucide-react";
+import { CustosProdutosPainelResumo, CustosProdutosTab } from "@/components/custos/CustosProdutosPanel";
 import { useProjeto } from "@/contexts/ProjetoContext";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -352,9 +355,9 @@ export default function CustosProducaoPage() {
               Custos de produção
             </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
-              Custos <strong>por variedade</strong> (diretos) e rubricas do <strong>projeto</strong> — com ou sem rateio
-              entre variedades. Só entram no total de cada cultura as linhas marcadas para ratear. O painel sugere onde
-              agir como num olhar de CFO.
+              Custos <strong>por cultura</strong> (R$/planta), rubricas <strong>compartilhadas</strong> do projeto e
+              fichas por <strong>produto vendido</strong> (produção própria, revenda processada e mix). O painel sugere
+              onde agir como num olhar de CFO.
             </p>
           </div>
 
@@ -364,13 +367,21 @@ export default function CustosProducaoPage() {
                 <LineChart className="h-3.5 w-3.5" />
                 Painel &amp; insights
               </TabsTrigger>
-              <TabsTrigger value="comuns" className="gap-1.5">
-                <Layers className="h-3.5 w-3.5" />
-                Do projeto
-              </TabsTrigger>
               <TabsTrigger value="variedade" className="gap-1.5">
                 <Sprout className="h-3.5 w-3.5" />
-                Por variedade
+                Por cultura
+              </TabsTrigger>
+              <TabsTrigger value="produtos" className="gap-1.5">
+                <Package className="h-3.5 w-3.5" />
+                Produtos vendidos
+              </TabsTrigger>
+              <TabsTrigger value="comuns" className="gap-1.5">
+                <Layers className="h-3.5 w-3.5" />
+                Compartilhados
+              </TabsTrigger>
+              <TabsTrigger value="simulador" className="gap-1.5">
+                <Calculator className="h-3.5 w-3.5" />
+                Simulador
               </TabsTrigger>
             </TabsList>
 
@@ -511,6 +522,16 @@ export default function CustosProducaoPage() {
                   </Table>
                 </CardContent>
               </Card>
+
+              <CustosProdutosPainelResumo />
+            </TabsContent>
+
+            <TabsContent value="produtos">
+              <CustosProdutosTab modo="lista" />
+            </TabsContent>
+
+            <TabsContent value="simulador">
+              <CustosProdutosTab modo="simulador" />
             </TabsContent>
 
             <TabsContent value="comuns" className="space-y-4 mt-4">

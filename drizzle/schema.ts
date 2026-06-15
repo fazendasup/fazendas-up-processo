@@ -801,6 +801,79 @@ export const custosProducaoItens = mysqlTable("custos_producao_itens", {
 export type CustoProducaoItemRow = typeof custosProducaoItens.$inferSelect;
 export type InsertCustoProducaoItem = typeof custosProducaoItens.$inferInsert;
 
+/** Ficha de custo por produto/SKU vendido. */
+export const custosProdutosFichas = mysqlTable("custos_produtos_fichas", {
+  id: int("id").autoincrement().primaryKey(),
+  projetoId: int("projetoId").notNull(),
+  tipo: mysqlEnum("tipo", ["producao_propria", "revenda_processada", "mix", "manual"])
+    .notNull()
+    .default("manual"),
+  categoria: varchar("categoria", { length: 32 }).notNull().default("outros"),
+  nome: varchar("nome", { length: 200 }).notNull(),
+  produtoComercialId: varchar("produtoComercialId", { length: 64 }),
+  unidadeVenda: varchar("unidadeVenda", { length: 32 }).notNull().default("unidade"),
+  precoVendaReferencia: decimal("precoVendaReferencia", { precision: 14, scale: 2 }),
+  precoCompraKg: decimal("precoCompraKg", { precision: 18, scale: 8 }),
+  kgBrutoPorUnidade: decimal("kgBrutoPorUnidade", { precision: 20, scale: 10 }),
+  perdaLavagemPct: decimal("perdaLavagemPct", { precision: 8, scale: 4 }),
+  perdaDescasquePct: decimal("perdaDescasquePct", { precision: 8, scale: 4 }),
+  perdaSelecaoPct: decimal("perdaSelecaoPct", { precision: 8, scale: 4 }),
+  variedadeId: int("variedadeId"),
+  kgColhidoPorPlanta: decimal("kgColhidoPorPlanta", { precision: 20, scale: 10 }),
+  kgProducaoPorUnidade: decimal("kgProducaoPorUnidade", { precision: 20, scale: 10 }),
+  observacoes: text("observacoes"),
+  ordem: int("ordem").notNull().default(0),
+  ativo: boolean("ativo").notNull().default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CustoProdutoFichaRow = typeof custosProdutosFichas.$inferSelect;
+export type InsertCustoProdutoFicha = typeof custosProdutosFichas.$inferInsert;
+
+export const custosProdutosComponentes = mysqlTable("custos_produtos_componentes", {
+  id: int("id").autoincrement().primaryKey(),
+  fichaId: int("fichaId").notNull(),
+  tipo: mysqlEnum("tipo", ["variedade", "estoque", "produto_comercial", "manual", "ficha"])
+    .notNull()
+    .default("manual"),
+  variedadeId: int("variedadeId"),
+  estoqueItemId: int("estoqueItemId"),
+  produtoComercialId: varchar("produtoComercialId", { length: 64 }),
+  componenteFichaId: int("componenteFichaId"),
+  nomeManual: varchar("nomeManual", { length: 200 }),
+  quantidadePorUnidade: decimal("quantidadePorUnidade", { precision: 20, scale: 10 }).notNull(),
+  unidadeComponente: varchar("unidadeComponente", { length: 32 }).notNull().default("kg"),
+  custoUnitarioManual: decimal("custoUnitarioManual", { precision: 18, scale: 8 }),
+  ordem: int("ordem").notNull().default(0),
+});
+
+export type CustoProdutoComponenteRow = typeof custosProdutosComponentes.$inferSelect;
+export type InsertCustoProdutoComponente = typeof custosProdutosComponentes.$inferInsert;
+
+export const custosProdutosEtapas = mysqlTable("custos_produtos_etapas", {
+  id: int("id").autoincrement().primaryKey(),
+  fichaId: int("fichaId").notNull(),
+  tipo: mysqlEnum("tipo", [
+    "lavagem",
+    "descasque_corte",
+    "embalagem",
+    "adesivo",
+    "mao_de_obra",
+    "logistica",
+    "outros",
+  ])
+    .notNull()
+    .default("outros"),
+  nome: varchar("nome", { length: 160 }).notNull(),
+  custoPorUnidade: decimal("custoPorUnidade", { precision: 14, scale: 6 }).notNull().default("0"),
+  custoPorKgProcessado: decimal("custoPorKgProcessado", { precision: 18, scale: 8 }),
+  ordem: int("ordem").notNull().default(0),
+});
+
+export type CustoProdutoEtapaRow = typeof custosProdutosEtapas.$inferSelect;
+export type InsertCustoProdutoEtapa = typeof custosProdutosEtapas.$inferInsert;
+
 /** Análises de imagens do cultivo (visão computacional). */
 export const visionCultivoAnalyses = mysqlTable("vision_cultivo_analyses", {
   id: int("id").autoincrement().primaryKey(),
