@@ -131,8 +131,16 @@ export function Entregas() {
 
   const gerar = trpc.comercial.entregas.gerarRoteiro.useMutation({
     onSuccess: async (data) => {
-      toast.success("Nova rota gerada.");
+      toast.success("Rota gerada com ordem otimizada.");
       if (data.rota?.id) setRotaSelecionadaId(data.rota.id);
+      await utils.comercial.entregas.roteiro.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const otimizar = trpc.comercial.entregas.otimizarRota.useMutation({
+    onSuccess: async () => {
+      toast.success("Ordem da rota otimizada.");
       await utils.comercial.entregas.roteiro.invalidate();
     },
     onError: (err) => toast.error(err.message),
@@ -190,7 +198,7 @@ export function Entregas() {
       <PageHeader
         kicker="Logística"
         title="Roteiro do dia"
-        subtitle="Monte a rota de entregas, priorize paradas e compartilhe o rastreamento com clientes."
+        subtitle="Monte a rota de entregas com ordem otimizada por distância e janela de entrega."
         actions={
           <>
             <Input type="date" value={dia} onChange={(e) => setDia(e.target.value)} className="w-auto" />
@@ -485,6 +493,20 @@ export function Entregas() {
                     ))}
                   </select>
                 </div>
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  disabled={
+                    !rotaEditavel ||
+                    paradas.length < 2 ||
+                    otimizar.isPending ||
+                    salvarOrdem.isPending
+                  }
+                  onClick={() => otimizar.mutate({ rotaId: rota.id })}
+                >
+                  <Route className="h-4 w-4" />
+                  Otimizar ordem
+                </Button>
                 <Button
                   className="w-full"
                   variant="secondary"

@@ -3,6 +3,10 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { comercialProcedure, comercialRequirePerfis, publicProcedure, router } from "../../_core/trpc";
 import { getComercialPrisma } from "../db";
+import {
+  ordenarParadasOtimizadas,
+  type ParadaParaOtimizar,
+} from "../lib/otimizar-rota-entrega";
 
 const podeGerenciarEntregas = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL", "COMERCIAL", "OPERACOES", "LOGISTICA");
 const podeUsarModoEntregador = comercialRequirePerfis(
@@ -556,6 +560,19 @@ export const entregasRouter = router({
         where: { dataEntrega: { gte: inicioDia(input.dia), lte: fimDia(input.dia) } },
       });
 
+      const paradasOtimizadas = await ordenarParadasOtimizadas(
+        planejadas.map(
+          (p): ParadaParaOtimizar => ({
+            contaAzulCustomerId: p.contaAzulCustomerId,
+            clienteId: p.clienteId,
+            clienteNome: p.clienteNome,
+            endereco: p.endereco,
+            prioridade: p.prioridade,
+            periodoEntrega: p.periodoEntrega,
+          }),
+        ),
+      );
+
       const rota = await ctx.prisma!.rotaEntrega.create({
         data: {
           dataEntrega,
@@ -570,8 +587,8 @@ export const entregasRouter = router({
         },
       });
 
-      for (let index = 0; index < planejadas.length; index++) {
-        const planejada = planejadas[index]!;
+      for (let index = 0; index < paradasOtimizadas.length; index++) {
+        const planejada = paradasOtimizadas[index]!;
         await ctx.prisma!.paradaEntrega.create({
           data: {
             rotaId: rota.id,
@@ -584,6 +601,70 @@ export const entregasRouter = router({
       }
 
       return carregarRoteiro(ctx.prisma!, input.dia, { rotaId: rota.id });
+    }),
+
+  otimizarRota: comercialProcedure
+    .use(podeGerenciarEntregas)
+    .input(z.object({ rotaId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const rota = await ctx.prisma!.rotaEntrega.findUnique({
+        where: { id: input.rotaId },
+        include: {
+          paradas: {
+            orderBy: [{ ordem: "asc" }, { criadoEm: "asc" }],
+            include: {
+              cliente: { include: { regraComercial: true } },
+            },
+          },
+        },
+      });
+      if (!rota) throw new TRPCError({ code: "NOT_FOUND", message: "Rota não encontrada." });
+      if (rota.status === "EM_ROTA") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Não é possível otimizar rota em andamento.",
+        });
+      }
+      if (rota.paradas.length < 2) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "A rota precisa de ao menos 2 paradas para otimizar.",
+        });
+      }
+
+      const paradasOtimizadas = await ordenarParadasOtimizadas(
+        rota.paradas.map(
+          (parada): ParadaParaOtimizar => ({
+            contaAzulCustomerId: parada.contaAzulCustomerId,
+            clienteId: parada.clienteId,
+            clienteNome: parada.cliente?.nome ?? null,
+            endereco: parada.cliente?.endereco ?? null,
+            prioridade:
+              minutosDoHorario(parada.cliente?.regraComercial?.horarioMaximoEntrega) ??
+              (parada.cliente?.regraComercial?.periodoEntrega === "MANHA"
+                ? 0
+                : parada.cliente?.regraComercial?.periodoEntrega === "TARDE"
+                  ? 12 * 60
+                  : 24 * 60),
+            periodoEntrega: parada.cliente?.regraComercial?.periodoEntrega ?? null,
+          }),
+        ),
+      );
+
+      const ordemPorCliente = new Map(
+        paradasOtimizadas.map((p, index) => [p.contaAzulCustomerId, index + 1]),
+      );
+
+      await ctx.prisma!.$transaction(
+        rota.paradas.map((parada) =>
+          ctx.prisma!.paradaEntrega.update({
+            where: { id: parada.id },
+            data: { ordem: ordemPorCliente.get(parada.contaAzulCustomerId) ?? parada.ordem },
+          }),
+        ),
+      );
+
+      return carregarRoteiro(ctx.prisma!, rota.dataEntrega, { rotaId: rota.id });
     }),
 
   salvarOrdem: comercialProcedure
