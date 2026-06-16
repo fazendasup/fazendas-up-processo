@@ -35,12 +35,42 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Plus, Trash2, Calculator, Package, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Calculator, Package, AlertTriangle, Copy, Download } from "lucide-react";
 
 const fmtMoney = (n: number | null | undefined) =>
   n == null || !Number.isFinite(n)
     ? "—"
     : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
+
+const fmtDecimalInput = (value: unknown, maximumFractionDigits = 4) => {
+  if (value == null || value === "") return "";
+  const n = Number(String(value).replace(",", "."));
+  if (!Number.isFinite(n)) return String(value);
+  return new Intl.NumberFormat("pt-BR", { maximumFractionDigits }).format(n);
+};
+
+const margemTabelaClienteOptions = [5, 10, 20, 30] as const;
+
+function csvEscape(value: string): string {
+  return `"${value.replace(/"/g, '""')}"`;
+}
+
+function downloadTextFile(filename: string, content: string, type: string) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function precoVendaPorMargem(row: any, margemPct: number): number | null {
+  const match = row.resultado.precosVendaPorMargem?.find(
+    (p: { margemPct: number; precoVenda: number }) => p.margemPct === margemPct,
+  );
+  return match?.precoVenda ?? null;
+}
 
 type ComponenteForm = {
   tipo: TipoComponenteCusto;
@@ -184,15 +214,15 @@ function rowToFichaForm(row: any, patch: Partial<FichaForm> = {}): FichaForm {
     nome: row.ficha.nome,
     produtoComercialId: row.ficha.produtoComercialId ?? "",
     unidadeVenda: row.ficha.unidadeVenda,
-    precoVendaReferencia: row.ficha.precoVendaReferencia != null ? String(row.ficha.precoVendaReferencia) : "",
-    precoCompraKg: row.ficha.precoCompraKg != null ? String(row.ficha.precoCompraKg) : "",
-    kgBrutoPorUnidade: row.ficha.kgBrutoPorUnidade != null ? String(row.ficha.kgBrutoPorUnidade) : "",
-    perdaLavagemPct: row.ficha.perdaLavagemPct != null ? String(row.ficha.perdaLavagemPct) : "",
-    perdaDescasquePct: row.ficha.perdaDescasquePct != null ? String(row.ficha.perdaDescasquePct) : "",
-    perdaSelecaoPct: row.ficha.perdaSelecaoPct != null ? String(row.ficha.perdaSelecaoPct) : "",
+    precoVendaReferencia: fmtDecimalInput(row.ficha.precoVendaReferencia, 2),
+    precoCompraKg: fmtDecimalInput(row.ficha.precoCompraKg, 4),
+    kgBrutoPorUnidade: fmtDecimalInput(row.ficha.kgBrutoPorUnidade, 4),
+    perdaLavagemPct: fmtDecimalInput(row.ficha.perdaLavagemPct, 2),
+    perdaDescasquePct: fmtDecimalInput(row.ficha.perdaDescasquePct, 2),
+    perdaSelecaoPct: fmtDecimalInput(row.ficha.perdaSelecaoPct, 2),
     variedadeId: row.ficha.variedadeId != null ? String(row.ficha.variedadeId) : "",
-    kgColhidoPorPlanta: row.ficha.kgColhidoPorPlanta != null ? String(row.ficha.kgColhidoPorPlanta) : "",
-    kgProducaoPorUnidade: row.ficha.kgProducaoPorUnidade != null ? String(row.ficha.kgProducaoPorUnidade) : "",
+    kgColhidoPorPlanta: fmtDecimalInput(row.ficha.kgColhidoPorPlanta, 4),
+    kgProducaoPorUnidade: fmtDecimalInput(row.ficha.kgProducaoPorUnidade, 4),
     observacoes: row.ficha.observacoes ?? "",
     componentes: row.componentes.map((c: any) => ({
       tipo: c.tipo,
@@ -200,16 +230,16 @@ function rowToFichaForm(row: any, patch: Partial<FichaForm> = {}): FichaForm {
       estoqueItemId: c.estoqueItemId != null ? String(c.estoqueItemId) : "",
       produtoComercialId: c.produtoComercialId ?? "",
       nomeManual: c.nomeManual ?? "",
-      quantidadePorUnidade: String(c.quantidadePorUnidade),
+      quantidadePorUnidade: fmtDecimalInput(c.quantidadePorUnidade, 4),
       unidadeComponente: c.unidadeComponente,
-      custoUnitarioManual: c.custoUnitarioManual != null ? String(c.custoUnitarioManual) : "",
+      custoUnitarioManual: fmtDecimalInput(c.custoUnitarioManual, 4),
     })),
     etapas: row.etapas.map((e: any) => ({
       tipo: e.tipo,
       nome: e.nome,
-      custoPorUnidade: String(e.custoPorUnidade),
-      custoPorKgProcessado: e.custoPorKgProcessado != null ? String(e.custoPorKgProcessado) : "",
-      custoPercentual: e.custoPercentual != null ? String(e.custoPercentual) : "",
+      custoPorUnidade: fmtDecimalInput(e.custoPorUnidade, 4),
+      custoPorKgProcessado: fmtDecimalInput(e.custoPorKgProcessado, 4),
+      custoPercentual: fmtDecimalInput(e.custoPercentual, 2),
     })),
     ...patch,
   };
@@ -696,6 +726,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
   const [form, setForm] = useState<FichaForm>(emptyFicha());
   const [simResult, setSimResult] = useState<any>(null);
   const [compraDraft, setCompraDraft] = useState<Record<number, string>>({});
+  const [margemTabelaCliente, setMargemTabelaCliente] = useState<string>("20");
 
   const simular = trpc.custosProducao.produtos.simularCusto.useMutation({
     onSuccess: (r) => setSimResult(r),
@@ -729,6 +760,33 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
   });
 
   const resumoProdutos = useMemo(() => fichas.data ?? [], [fichas.data]);
+  const tabelaClienteRows = useMemo(() => {
+    const margem = Number(margemTabelaCliente);
+    return resumoProdutos
+      .map((row) => ({
+        id: row.ficha.id,
+        produto: row.ficha.nome,
+        unidade: row.ficha.unidadeVenda,
+        preco: precoVendaPorMargem(row, margem),
+      }))
+      .filter((row) => row.preco != null);
+  }, [margemTabelaCliente, resumoProdutos]);
+
+  const tabelaClienteTexto = useMemo(() => {
+    const linhas = [`Tabela de preços - margem ${margemTabelaCliente}%`, "Produto\tUnidade\tPreço"];
+    for (const row of tabelaClienteRows) {
+      linhas.push(`${row.produto}\t${row.unidade}\t${fmtMoney(row.preco)}`);
+    }
+    return linhas.join("\n");
+  }, [margemTabelaCliente, tabelaClienteRows]);
+
+  const tabelaClienteCsv = useMemo(() => {
+    const linhas = [["Produto", "Unidade", `Preço margem ${margemTabelaCliente}%`].map(csvEscape).join(",")];
+    for (const row of tabelaClienteRows) {
+      linhas.push([row.produto, row.unidade, fmtMoney(row.preco)].map(csvEscape).join(","));
+    }
+    return linhas.join("\n");
+  }, [margemTabelaCliente, tabelaClienteRows]);
 
   if (modo === "lista") {
     return (
@@ -748,6 +806,90 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
           </Button>
         </div>
 
+        {editingId == null && form.nome === "" && resumoProdutos.length > 0 && (
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <CardTitle className="text-base">Tabela de preços para clientes</CardTitle>
+                  <CardDescription>
+                    Gera uma tabela sem custo de compra, custo interno ou margem. Escolha a margem usada para formar o preço final.
+                  </CardDescription>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="w-36">
+                    <Select value={margemTabelaCliente} onValueChange={setMargemTabelaCliente}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {margemTabelaClienteOptions.map((m) => (
+                          <SelectItem key={m} value={String(m)}>
+                            Margem {m}%
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={tabelaClienteRows.length === 0}
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(tabelaClienteTexto);
+                      toast.success("Tabela copiada");
+                    }}
+                  >
+                    <Copy className="h-4 w-4 mr-1" /> Copiar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={tabelaClienteRows.length === 0}
+                    onClick={() =>
+                      downloadTextFile(
+                        `tabela-precos-margem-${margemTabelaCliente}.csv`,
+                        tabelaClienteCsv,
+                        "text/csv;charset=utf-8;",
+                      )
+                    }
+                  >
+                    <Download className="h-4 w-4 mr-1" /> CSV
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Produto</TableHead>
+                    <TableHead>Unidade</TableHead>
+                    <TableHead className="text-right">Preço cliente</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {tabelaClienteRows.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-muted-foreground text-center py-4">
+                        Nenhum produto tem preço calculado para essa margem.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    tabelaClienteRows.map((row) => (
+                      <TableRow key={row.id}>
+                        <TableCell className="font-medium">{row.produto}</TableCell>
+                        <TableCell>{row.unidade}</TableCell>
+                        <TableCell className="text-right font-semibold tabular-nums">{fmtMoney(row.preco)}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
         {editingId == null && form.nome === "" && (
           <div className="overflow-x-auto rounded-md border">
             <Table>
@@ -758,22 +900,25 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                   <TableHead>Categoria</TableHead>
                   <TableHead>Compra R$/kg</TableHead>
                   <TableHead className="text-right">Custo/un</TableHead>
-                  <TableHead className="text-right">Margem</TableHead>
+                  <TableHead className="text-right">Venda ref.</TableHead>
+                  <TableHead>Venda por margem</TableHead>
+                  <TableHead className="text-right">Margem ref.</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {resumoProdutos.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-muted-foreground text-center py-8">
+                    <TableCell colSpan={9} className="text-muted-foreground text-center py-8">
                       Nenhuma ficha cadastrada. Crie uma para alface, microverde, revenda ou mix.
                     </TableCell>
                   </TableRow>
                 ) : (
                   resumoProdutos.map((row) => {
-                    const precoCompraAtual = row.ficha.precoCompraKg != null ? String(row.ficha.precoCompraKg) : "";
+                    const precoCompraAtual = fmtDecimalInput(row.ficha.precoCompraKg, 4);
                     const precoCompraValue = compraDraft[row.ficha.id] ?? precoCompraAtual;
                     const podeEditarCompra = row.ficha.tipo === "revenda_processada" || row.ficha.tipo === "manual";
+                    const precosMargem = row.resultado.precosVendaPorMargem ?? [];
                     return (
                       <TableRow key={row.ficha.id}>
                         <TableCell className="font-medium">{row.ficha.nome}</TableCell>
@@ -815,6 +960,22 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                         </TableCell>
                         <TableCell className="text-right tabular-nums font-semibold">
                           {fmtMoney(row.resultado.custoPorUnidade)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {fmtMoney(row.resultado.precoVendaReferencia)}
+                        </TableCell>
+                        <TableCell>
+                          {precosMargem.length > 0 ? (
+                            <div className="flex min-w-56 flex-wrap gap-1">
+                              {precosMargem.map((p: { margemPct: number; precoVenda: number }) => (
+                                <Badge key={p.margemPct} variant="outline" className="font-normal tabular-nums">
+                                  {p.margemPct}%: {fmtMoney(p.precoVenda)}
+                                </Badge>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {row.resultado.margemPct != null ? `${row.resultado.margemPct.toFixed(1)}%` : "—"}
