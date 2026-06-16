@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConciliacaoContaAzulPanel } from "@/components/comercial/ConciliacaoContaAzulPanel";
 import { SearchSelect } from "@/components/ui/search-select";
@@ -103,6 +104,44 @@ function observacaoOperacional(obs: unknown) {
   if (!texto) return null;
   if (/^Criado a partir da venda Conta Azul\.?$/i.test(texto)) return null;
   return texto;
+}
+
+function observacoesPedidoUnicas(pedidos: { observacoes?: unknown }[]) {
+  return Array.from(
+    new Set(
+      (pedidos ?? [])
+        .map(p => observacaoOperacional(p.observacoes))
+        .filter((t): t is string => Boolean(t))
+    )
+  );
+}
+
+function DestaqueObservacaoPedido({
+  pedidos,
+  className = "",
+}: {
+  pedidos: { observacoes?: unknown }[];
+  className?: string;
+}) {
+  const textos = observacoesPedidoUnicas(pedidos);
+  if (textos.length === 0) return null;
+  return (
+    <div
+      className={`rounded-lg border border-indigo-200 bg-indigo-50/80 px-3 py-2.5 dark:border-indigo-900/60 dark:bg-indigo-950/25 ${className}`}
+    >
+      <p className="text-[11px] font-bold uppercase tracking-wide text-indigo-800 dark:text-indigo-200">
+        Observação do pedido
+      </p>
+      {textos.map((texto, idx) => (
+        <p
+          key={idx}
+          className="mt-1 text-sm font-medium leading-snug text-indigo-950 dark:text-indigo-100"
+        >
+          {texto}
+        </p>
+      ))}
+    </div>
+  );
 }
 
 function fmtDate(v: string | Date) {
@@ -497,6 +536,7 @@ export function Pedidos({
     let observacoes = 0;
     let clientesSemRegras = 0;
     let clientesComTaxa = 0;
+    const pedidosComObs = new Set<string>();
 
     for (const grupo of grupos as any[]) {
       const cancelado = grupo.status === "CANCELADO";
@@ -506,6 +546,11 @@ export function Pedidos({
       pedidos += grupo.pedidos?.length ?? 0;
       if (!grupo.regras) clientesSemRegras++;
       if (grupo.regras?.cobraTaxaEntrega) clientesComTaxa++;
+      for (const pedido of grupo.pedidos ?? []) {
+        if (observacaoOperacional(pedido.observacoes)) {
+          pedidosComObs.add(pedido.id);
+        }
+      }
 
       for (const item of grupo.itens ?? []) {
         const quantidade = Number(item.quantidade ?? 0) || 0;
@@ -528,9 +573,9 @@ export function Pedidos({
         );
         unidades += quantidade;
         linhas += 1;
-        if (item.pedidoObservacoes) observacoes += 1;
       }
     }
+    observacoes = pedidosComObs.size;
 
     const produtos = Array.from(produtosMap.values())
       .map(p => ({ ...p, clientes: p.clientes.size }))
@@ -999,10 +1044,13 @@ export function Pedidos({
                                 <AlertaAvariasPedidoCopiado
                                   alertas={grupo.alertasAvariasPendentes}
                                 />
+                                <DestaqueObservacaoPedido
+                                  pedidos={grupo.pedidos ?? []}
+                                />
                                 <div className="grid gap-2">
                                   {grupo.itens.map((item: any) => {
-                                    const obs = observacaoOperacional(
-                                      item.pedidoObservacoes
+                                    const obsItem = observacaoOperacional(
+                                      item.observacoes
                                     );
                                     return (
                                       <div
@@ -1027,9 +1075,18 @@ export function Pedidos({
                                                 {item.categoria}
                                               </span>
                                             ) : null}
-                                            {obs ? (
+                                            {podeVerValores &&
+                                            item.precoUnit != null ? (
+                                              <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 ring-1 ring-emerald-100 dark:bg-slate-950/70 dark:text-emerald-200 dark:ring-emerald-900">
+                                                {fmtMoney(item.precoUnit)}
+                                                {item.precoEspecial
+                                                  ? " · especial"
+                                                  : ""}
+                                              </span>
+                                            ) : null}
+                                            {obsItem ? (
                                               <span className="text-xs text-muted-foreground">
-                                                Obs.: {obs}
+                                                Obs. item: {obsItem}
                                               </span>
                                             ) : null}
                                           </div>
@@ -1221,12 +1278,20 @@ export function Pedidos({
                   ))}
                 </select>
               </div>
-              <div>
-                <Label className="text-xs">Observações do pedido</Label>
-                <Input
+              <div className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-3 dark:border-indigo-900/60 dark:bg-indigo-950/15">
+                <Label className="text-xs font-semibold text-indigo-900 dark:text-indigo-100">
+                  Observação do pedido (dia)
+                </Label>
+                <p className="mb-2 text-xs text-muted-foreground">
+                  Vale para a entrega inteira. Aparece uma vez no painel
+                  operacional — não repete em cada produto.
+                </p>
+                <Textarea
                   value={obsPedido}
                   onChange={e => setObsPedido(e.target.value)}
-                  placeholder="Observação deste pedido (não altera a regra do cliente)"
+                  placeholder="Ex.: entregar pela porta dos fundos, cliente pediu folha maior..."
+                  rows={2}
+                  className="bg-background"
                 />
               </div>
               <label className="flex items-start gap-2 rounded-md border bg-muted/30 p-3 text-sm">
@@ -1318,6 +1383,21 @@ export function Pedidos({
                       >
                         Remover
                       </Button>
+                      <Input
+                        className="sm:col-span-3"
+                        value={linha.observacoes}
+                        onChange={e =>
+                          setLinhas(prev =>
+                            prev.map((l, i) =>
+                              i === idx
+                                ? { ...l, observacoes: e.target.value }
+                                : l
+                            )
+                          )
+                        }
+                        placeholder="Obs. deste item (preço acordado, corte, substituição...)"
+                        aria-label="Observação do item"
+                      />
                       {produto && (
                         <p className="text-xs text-muted-foreground sm:col-span-3">
                           Categoria: {produto.categoria || "sem categoria"}
@@ -1542,6 +1622,9 @@ export function Pedidos({
                                 >
                                   {Number(i.quantidade)} × {i.produtoNome}
                                   {i.categoria ? ` · ${i.categoria}` : ""}
+                                  {i.observacoes
+                                    ? ` · ${i.observacoes}`
+                                    : ""}
                                 </span>
                               ))}
                             </div>
@@ -1551,6 +1634,10 @@ export function Pedidos({
                                   ? [p.alertaAvariasPendentes]
                                   : []
                               }
+                              className="mt-2"
+                            />
+                            <DestaqueObservacaoPedido
+                              pedidos={[p]}
                               className="mt-2"
                             />
                             {p.avarias?.length ? (
@@ -1586,11 +1673,6 @@ export function Pedidos({
                                 </div>
                               </div>
                             ) : null}
-                            {p.observacoes && (
-                              <p className="mt-2 text-sm text-muted-foreground">
-                                {p.observacoes}
-                              </p>
-                            )}
                             <div className="mt-3 flex flex-wrap items-end gap-2 rounded-lg border bg-muted/20 p-2">
                               <div>
                                 <Label className="text-xs">

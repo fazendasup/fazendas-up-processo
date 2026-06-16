@@ -1418,14 +1418,12 @@ export const pedidosRouter = router({
         atual.itens.push(
           ...pedido.itens.map((i: any) => ({
             ...i,
-            pedidoObservacoes: p.observacoes,
             tipoVenda: p.tipoVenda,
           }))
         );
         atual.avarias.push(
           ...pedido.avarias.map((a: any) => ({
             ...a,
-            pedidoObservacoes: p.observacoes,
             tipoVenda: p.tipoVenda,
           }))
         );

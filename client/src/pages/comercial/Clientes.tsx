@@ -177,25 +177,6 @@ export function Clientes() {
         </div>
       ) : null}
 
-      {!filtroRisco ? (
-        <div className="rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-sm text-[#1E3A8A]">
-          <span className="font-semibold">10 clientes de teste</span> (histórico ~3 meses, compras semanais) — busque{" "}
-          <Link className="font-bold text-[#10B981] underline" href={comercialPath("/clientes", { busca: "carteira" })}>
-            carteira
-          </Link>
-          ,{" "}
-          <Link className="font-bold text-[#10B981] underline" href={comercialPath("/clientes", { busca: "teste" })}>
-            teste
-          </Link>{" "}
-          ou{" "}
-          <Link className="font-bold text-[#10B981] underline" href={comercialPath("/clientes", { busca: "Mercado" })}>
-            Mercado
-          </Link>
-          . Rode o seed se a lista vier vazia:{" "}
-          <code className="rounded bg-white px-1.5 py-0.5 text-xs text-[#111827]">pnpm comercial:seed</code>
-        </div>
-      ) : null}
-
       <div className="flex flex-col gap-4 rounded-lg border border-[#E5E7EB] bg-white p-4 shadow-[0_1px_3px_#00000014] lg:flex-row lg:flex-wrap lg:items-end">
         <div className="relative min-w-[200px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1E40AF]/60" />
