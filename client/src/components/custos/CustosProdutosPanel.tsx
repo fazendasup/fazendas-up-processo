@@ -200,9 +200,6 @@ function gerarTabelaClientePdf(rows: Array<{ produto: string; unidade: string; p
         Preços finais ao cliente
       </div>
     </header>
-    <p class="intro">
-      Produtos disponíveis para compra. Esta lista apresenta apenas os preços comerciais finais e não inclui custos internos de produção, compra ou operação.
-    </p>
     <table>
       <thead>
         <tr>
