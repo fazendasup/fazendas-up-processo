@@ -176,6 +176,45 @@ function buildPayload(form: FichaForm, id?: number) {
   };
 }
 
+function rowToFichaForm(row: any, patch: Partial<FichaForm> = {}): FichaForm {
+  return {
+    ...emptyFicha(row.ficha.tipo as TipoFichaCustoProduto),
+    tipo: row.ficha.tipo as TipoFichaCustoProduto,
+    categoria: row.ficha.categoria,
+    nome: row.ficha.nome,
+    produtoComercialId: row.ficha.produtoComercialId ?? "",
+    unidadeVenda: row.ficha.unidadeVenda,
+    precoVendaReferencia: row.ficha.precoVendaReferencia != null ? String(row.ficha.precoVendaReferencia) : "",
+    precoCompraKg: row.ficha.precoCompraKg != null ? String(row.ficha.precoCompraKg) : "",
+    kgBrutoPorUnidade: row.ficha.kgBrutoPorUnidade != null ? String(row.ficha.kgBrutoPorUnidade) : "",
+    perdaLavagemPct: row.ficha.perdaLavagemPct != null ? String(row.ficha.perdaLavagemPct) : "",
+    perdaDescasquePct: row.ficha.perdaDescasquePct != null ? String(row.ficha.perdaDescasquePct) : "",
+    perdaSelecaoPct: row.ficha.perdaSelecaoPct != null ? String(row.ficha.perdaSelecaoPct) : "",
+    variedadeId: row.ficha.variedadeId != null ? String(row.ficha.variedadeId) : "",
+    kgColhidoPorPlanta: row.ficha.kgColhidoPorPlanta != null ? String(row.ficha.kgColhidoPorPlanta) : "",
+    kgProducaoPorUnidade: row.ficha.kgProducaoPorUnidade != null ? String(row.ficha.kgProducaoPorUnidade) : "",
+    observacoes: row.ficha.observacoes ?? "",
+    componentes: row.componentes.map((c: any) => ({
+      tipo: c.tipo,
+      variedadeId: c.variedadeId != null ? String(c.variedadeId) : "",
+      estoqueItemId: c.estoqueItemId != null ? String(c.estoqueItemId) : "",
+      produtoComercialId: c.produtoComercialId ?? "",
+      nomeManual: c.nomeManual ?? "",
+      quantidadePorUnidade: String(c.quantidadePorUnidade),
+      unidadeComponente: c.unidadeComponente,
+      custoUnitarioManual: c.custoUnitarioManual != null ? String(c.custoUnitarioManual) : "",
+    })),
+    etapas: row.etapas.map((e: any) => ({
+      tipo: e.tipo,
+      nome: e.nome,
+      custoPorUnidade: String(e.custoPorUnidade),
+      custoPorKgProcessado: e.custoPorKgProcessado != null ? String(e.custoPorKgProcessado) : "",
+      custoPercentual: e.custoPercentual != null ? String(e.custoPercentual) : "",
+    })),
+    ...patch,
+  };
+}
+
 function ResultadoCustoCard({ resultado }: { resultado: any }) {
   if (!resultado) return null;
   const vendePorKg = resultado.unidadeVenda === "kg";
@@ -656,6 +695,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<FichaForm>(emptyFicha());
   const [simResult, setSimResult] = useState<any>(null);
+  const [compraDraft, setCompraDraft] = useState<Record<number, string>>({});
 
   const simular = trpc.custosProducao.produtos.simularCusto.useMutation({
     onSuccess: (r) => setSimResult(r),
@@ -667,6 +707,14 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
       setSimResult(r.resultado);
       await utils.custosProducao.produtos.listarFichas.invalidate();
       setEditingId(r.id);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const salvarCompraRapida = trpc.custosProducao.produtos.salvarFicha.useMutation({
+    onSuccess: async () => {
+      toast.success("Custo de compra atualizado");
+      setCompraDraft({});
+      await utils.custosProducao.produtos.listarFichas.invalidate();
     },
     onError: (e) => toast.error(e.message),
   });
@@ -708,6 +756,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                   <TableHead>Produto</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Categoria</TableHead>
+                  <TableHead>Compra R$/kg</TableHead>
                   <TableHead className="text-right">Custo/un</TableHead>
                   <TableHead className="text-right">Margem</TableHead>
                   <TableHead />
@@ -716,75 +765,76 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
               <TableBody>
                 {resumoProdutos.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-muted-foreground text-center py-8">
+                    <TableCell colSpan={7} className="text-muted-foreground text-center py-8">
                       Nenhuma ficha cadastrada. Crie uma para alface, microverde, revenda ou mix.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  resumoProdutos.map((row) => (
-                    <TableRow key={row.ficha.id}>
-                      <TableCell className="font-medium">{row.ficha.nome}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">
-                          {LABEL_TIPO_FICHA_CUSTO_PRODUTO[row.ficha.tipo as TipoFichaCustoProduto]}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{LABEL_CATEGORIA_PRODUTO_CUSTO[row.ficha.categoria as keyof typeof LABEL_CATEGORIA_PRODUTO_CUSTO] ?? row.ficha.categoria}</TableCell>
-                      <TableCell className="text-right tabular-nums font-semibold">
-                        {fmtMoney(row.resultado.custoPorUnidade)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {row.resultado.margemPct != null ? `${row.resultado.margemPct.toFixed(1)}%` : "—"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setEditingId(row.ficha.id);
-                            setForm({
-                              ...emptyFicha(row.ficha.tipo as TipoFichaCustoProduto),
-                              tipo: row.ficha.tipo as TipoFichaCustoProduto,
-                              categoria: row.ficha.categoria,
-                              nome: row.ficha.nome,
-                              produtoComercialId: row.ficha.produtoComercialId ?? "",
-                              unidadeVenda: row.ficha.unidadeVenda,
-                              precoVendaReferencia: row.ficha.precoVendaReferencia != null ? String(row.ficha.precoVendaReferencia) : "",
-                              precoCompraKg: row.ficha.precoCompraKg != null ? String(row.ficha.precoCompraKg) : "",
-                              kgBrutoPorUnidade: row.ficha.kgBrutoPorUnidade != null ? String(row.ficha.kgBrutoPorUnidade) : "",
-                              perdaLavagemPct: row.ficha.perdaLavagemPct != null ? String(row.ficha.perdaLavagemPct) : "",
-                              perdaDescasquePct: row.ficha.perdaDescasquePct != null ? String(row.ficha.perdaDescasquePct) : "",
-                              perdaSelecaoPct: row.ficha.perdaSelecaoPct != null ? String(row.ficha.perdaSelecaoPct) : "",
-                              variedadeId: row.ficha.variedadeId != null ? String(row.ficha.variedadeId) : "",
-                              kgColhidoPorPlanta: row.ficha.kgColhidoPorPlanta != null ? String(row.ficha.kgColhidoPorPlanta) : "",
-                              kgProducaoPorUnidade: row.ficha.kgProducaoPorUnidade != null ? String(row.ficha.kgProducaoPorUnidade) : "",
-                              observacoes: row.ficha.observacoes ?? "",
-                              componentes: row.componentes.map((c: any) => ({
-                                tipo: c.tipo,
-                                variedadeId: c.variedadeId != null ? String(c.variedadeId) : "",
-                                estoqueItemId: c.estoqueItemId != null ? String(c.estoqueItemId) : "",
-                                produtoComercialId: c.produtoComercialId ?? "",
-                                nomeManual: c.nomeManual ?? "",
-                                quantidadePorUnidade: String(c.quantidadePorUnidade),
-                                unidadeComponente: c.unidadeComponente,
-                                custoUnitarioManual: c.custoUnitarioManual != null ? String(c.custoUnitarioManual) : "",
-                              })),
-                              etapas: row.etapas.map((e: any) => ({
-                                tipo: e.tipo,
-                                nome: e.nome,
-                                custoPorUnidade: String(e.custoPorUnidade),
-                                custoPorKgProcessado: e.custoPorKgProcessado != null ? String(e.custoPorKgProcessado) : "",
-                                custoPercentual: e.custoPercentual != null ? String(e.custoPercentual) : "",
-                              })),
-                            });
-                            setSimResult(row.resultado);
-                          }}
-                        >
-                          Editar
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  resumoProdutos.map((row) => {
+                    const precoCompraAtual = row.ficha.precoCompraKg != null ? String(row.ficha.precoCompraKg) : "";
+                    const precoCompraValue = compraDraft[row.ficha.id] ?? precoCompraAtual;
+                    const podeEditarCompra = row.ficha.tipo === "revenda_processada" || row.ficha.tipo === "manual";
+                    return (
+                      <TableRow key={row.ficha.id}>
+                        <TableCell className="font-medium">{row.ficha.nome}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">
+                            {LABEL_TIPO_FICHA_CUSTO_PRODUTO[row.ficha.tipo as TipoFichaCustoProduto]}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{LABEL_CATEGORIA_PRODUTO_CUSTO[row.ficha.categoria as keyof typeof LABEL_CATEGORIA_PRODUTO_CUSTO] ?? row.ficha.categoria}</TableCell>
+                        <TableCell>
+                          {podeEditarCompra ? (
+                            <div className="flex min-w-48 items-center gap-2">
+                              <Input
+                                className="h-8 w-28"
+                                inputMode="decimal"
+                                value={precoCompraValue}
+                                onChange={(e) =>
+                                  setCompraDraft((drafts) => ({ ...drafts, [row.ficha.id]: e.target.value }))
+                                }
+                              />
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={salvarCompraRapida.isPending || precoCompraValue === precoCompraAtual}
+                                onClick={() => {
+                                  const p = buildPayload(
+                                    rowToFichaForm(row, { precoCompraKg: precoCompraValue }),
+                                    row.ficha.id,
+                                  );
+                                  salvarCompraRapida.mutate(p as any);
+                                }}
+                              >
+                                Atualizar
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums font-semibold">
+                          {fmtMoney(row.resultado.custoPorUnidade)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {row.resultado.margemPct != null ? `${row.resultado.margemPct.toFixed(1)}%` : "—"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setEditingId(row.ficha.id);
+                              setForm(rowToFichaForm(row));
+                              setSimResult(row.resultado);
+                            }}
+                          >
+                            Editar
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
@@ -830,18 +880,22 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Simulador rápido</AlertTitle>
         <AlertDescription>
-          Teste rendimentos, perdas e preço de venda sem salvar. Use para calibrar revenda processada e mix.
+          Teste rendimentos, perdas e margens antes de salvar. Simule quantas vezes quiser; quando estiver satisfeito, use &quot;Salvar ficha&quot; para cadastrar na aba Produtos vendidos.
         </AlertDescription>
       </Alert>
       <FichaEditor
         form={form}
         setForm={setForm}
         catalogos={catalogos.data}
-        editingId={null}
+        editingId={editingId}
         simulando={simular.isPending}
-        salvando={false}
+        salvando={salvar.isPending}
         onSimular={() => simular.mutate(buildPayload(form) as any)}
-        onSalvar={() => toast.message("Use a aba Produtos vendidos para salvar fichas.")}
+        onSalvar={() => {
+          const p = buildPayload(form, editingId ?? undefined);
+          if (!p.nome) return toast.error("Informe o nome do produto.");
+          salvar.mutate(p as any);
+        }}
       />
       <ResultadoCustoCard resultado={simResult} />
     </div>
