@@ -200,6 +200,9 @@ function gerarTabelaClientePdf(rows: Array<{ produto: string; unidade: string; p
         Preços finais ao cliente
       </div>
     </header>
+    <p class="intro">
+      Produtos FLV não regionais selecionados e higienizados pela Fazendas Up.
+    </p>
     <table>
       <thead>
         <tr>
