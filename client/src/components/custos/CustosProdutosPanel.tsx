@@ -85,10 +85,14 @@ function gerarTabelaClientePdf(rows: Array<{ produto: string; unidade: string; p
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <title>Tabela de preços</title>
+  <title>Tabela de valores</title>
   <style>
     @page { size: A4; margin: 14mm; }
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
     body {
       margin: 0;
       color: #15392f;
@@ -193,12 +197,12 @@ function gerarTabelaClientePdf(rows: Array<{ produto: string; unidade: string; p
     <header>
       <div>
         <div class="brand">Fazendas UP</div>
-        <h1>Tabela de preços</h1>
+        <h1>Tabela de valores</h1>
       </div>
       <div class="meta">
         <strong>${htmlEscape(dataHoje)}</strong><br />
         Lista comercial<br />
-        Preços finais ao cliente
+        Valores finais ao cliente
       </div>
     </header>
     <p class="intro">
@@ -209,7 +213,7 @@ function gerarTabelaClientePdf(rows: Array<{ produto: string; unidade: string; p
         <tr>
           <th>Produto</th>
           <th class="unit">Unidade</th>
-          <th class="price">Preço</th>
+          <th class="price">Valor</th>
         </tr>
       </thead>
       <tbody>${linhasProdutos}</tbody>
@@ -952,7 +956,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
   }, [margemTabelaCliente, resumoProdutos]);
 
   const tabelaClienteTexto = useMemo(() => {
-    const linhas = [`Tabela de preços - margem ${margemTabelaCliente}%`, "Produto\tUnidade\tPreço"];
+    const linhas = [`Tabela de valores - margem ${margemTabelaCliente}%`, "Produto\tUnidade\tValor"];
     for (const row of tabelaClienteRows) {
       linhas.push(`${row.produto}\t${row.unidade}\t${fmtMoney(row.preco)}`);
     }
@@ -982,9 +986,9 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
             <CardHeader className="pb-2">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <CardTitle className="text-base">Tabela de preços para clientes</CardTitle>
+                  <CardTitle className="text-base">Tabela de valores para clientes</CardTitle>
                   <CardDescription>
-                    Gera uma tabela sem custo de compra, custo interno ou margem. Escolha a margem usada para formar o preço final.
+                    Gera uma tabela sem custo de compra, custo interno ou margem. Escolha a margem usada para formar o valor final.
                   </CardDescription>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -1029,14 +1033,14 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                   <TableRow>
                     <TableHead>Produto</TableHead>
                     <TableHead>Unidade</TableHead>
-                    <TableHead className="text-right">Preço cliente</TableHead>
+                    <TableHead className="text-right">Valor cliente</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {tabelaClienteRows.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={3} className="text-muted-foreground text-center py-4">
-                        Nenhum produto tem preço calculado para essa margem.
+                        Nenhum produto tem valor calculado para essa margem.
                       </TableCell>
                     </TableRow>
                   ) : (
