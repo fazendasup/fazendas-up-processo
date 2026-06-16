@@ -18,6 +18,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -232,6 +233,10 @@ function precoVendaPorMargem(row: any, margemPct: number): number | null {
   return match?.precoVenda ?? null;
 }
 
+function fichaAtiva(row: any): boolean {
+  return row.ficha.ativo !== false && row.ficha.ativo !== 0;
+}
+
 type ComponenteForm = {
   tipo: TipoComponenteCusto;
   variedadeId: string;
@@ -267,6 +272,7 @@ type FichaForm = {
   kgColhidoPorPlanta: string;
   kgProducaoPorUnidade: string;
   observacoes: string;
+  ativo: boolean;
   componentes: ComponenteForm[];
   etapas: EtapaForm[];
 };
@@ -311,6 +317,7 @@ function emptyFicha(tipo: TipoFichaCustoProduto = "revenda_processada"): FichaFo
     kgColhidoPorPlanta: "",
     kgProducaoPorUnidade: "",
     observacoes: "",
+    ativo: true,
     componentes: tipo === "mix" ? [emptyComponente(), emptyComponente()] : [],
     etapas:
       tipo === "revenda_processada"
@@ -344,6 +351,7 @@ function buildPayload(form: FichaForm, id?: number) {
     kgColhidoPorPlanta: parseOpt(form.kgColhidoPorPlanta),
     kgProducaoPorUnidade: parseOpt(form.kgProducaoPorUnidade),
     observacoes: form.observacoes.trim() || null,
+    ativo: form.ativo,
     componentes: form.componentes
       .filter((c) => parseOpt(c.quantidadePorUnidade))
       .map((c) => ({
@@ -384,6 +392,7 @@ function rowToFichaForm(row: any, patch: Partial<FichaForm> = {}): FichaForm {
     kgColhidoPorPlanta: fmtDecimalInput(row.ficha.kgColhidoPorPlanta, 4),
     kgProducaoPorUnidade: fmtDecimalInput(row.ficha.kgProducaoPorUnidade, 4),
     observacoes: row.ficha.observacoes ?? "",
+    ativo: fichaAtiva(row),
     componentes: row.componentes.map((c: any) => ({
       tipo: c.tipo,
       variedadeId: c.variedadeId != null ? String(c.variedadeId) : "",
@@ -616,6 +625,15 @@ function FichaEditor({
             value={form.precoVendaReferencia}
             onChange={(e) => setForm((f) => ({ ...f, precoVendaReferencia: e.target.value }))}
           />
+        </div>
+        <div className="flex items-center justify-between gap-3 rounded-lg border p-3 md:col-span-2">
+          <div>
+            <Label>Ficha ativa</Label>
+            <p className="text-xs text-muted-foreground">
+              Fichas inativas ficam cadastradas, mas não entram na tabela/PDF para clientes.
+            </p>
+          </div>
+          <Switch checked={form.ativo} onCheckedChange={(ativo) => setForm((f) => ({ ...f, ativo }))} />
         </div>
       </div>
 
@@ -901,9 +919,9 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
     },
     onError: (e) => toast.error(e.message),
   });
-  const salvarCompraRapida = trpc.custosProducao.produtos.salvarFicha.useMutation({
+  const salvarFichaRapida = trpc.custosProducao.produtos.salvarFicha.useMutation({
     onSuccess: async () => {
-      toast.success("Custo de compra atualizado");
+      toast.success("Ficha atualizada");
       setCompraDraft({});
       await utils.custosProducao.produtos.listarFichas.invalidate();
     },
@@ -923,6 +941,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
   const tabelaClienteRows = useMemo(() => {
     const margem = Number(margemTabelaCliente);
     return resumoProdutos
+      .filter(fichaAtiva)
       .map((row) => ({
         id: row.ficha.id,
         produto: row.ficha.nome,
@@ -1043,6 +1062,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                   <TableHead>Produto</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Categoria</TableHead>
+                  <TableHead>Ativo</TableHead>
                   <TableHead>Compra R$/kg</TableHead>
                   <TableHead className="text-right">Custo/un</TableHead>
                   <TableHead className="text-right">Venda ref.</TableHead>
@@ -1054,7 +1074,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
               <TableBody>
                 {resumoProdutos.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-muted-foreground text-center py-8">
+                    <TableCell colSpan={10} className="text-muted-foreground text-center py-8">
                       Nenhuma ficha cadastrada. Crie uma para alface, microverde, revenda ou mix.
                     </TableCell>
                   </TableRow>
@@ -1064,15 +1084,34 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                     const precoCompraValue = compraDraft[row.ficha.id] ?? precoCompraAtual;
                     const podeEditarCompra = row.ficha.tipo === "revenda_processada" || row.ficha.tipo === "manual";
                     const precosMargem = row.resultado.precosVendaPorMargem ?? [];
+                    const ativo = fichaAtiva(row);
                     return (
-                      <TableRow key={row.ficha.id}>
-                        <TableCell className="font-medium">{row.ficha.nome}</TableCell>
+                      <TableRow key={row.ficha.id} className={!ativo ? "opacity-60" : undefined}>
+                        <TableCell className="font-medium">
+                          <div className="flex flex-col gap-1">
+                            <span>{row.ficha.nome}</span>
+                            {!ativo && <Badge variant="outline" className="w-fit">Inativo no PDF</Badge>}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <Badge variant="secondary">
                             {LABEL_TIPO_FICHA_CUSTO_PRODUTO[row.ficha.tipo as TipoFichaCustoProduto]}
                           </Badge>
                         </TableCell>
                         <TableCell>{LABEL_CATEGORIA_PRODUTO_CUSTO[row.ficha.categoria as keyof typeof LABEL_CATEGORIA_PRODUTO_CUSTO] ?? row.ficha.categoria}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={ativo}
+                              disabled={salvarFichaRapida.isPending}
+                              onCheckedChange={(nextAtivo) => {
+                                const p = buildPayload(rowToFichaForm(row, { ativo: nextAtivo }), row.ficha.id);
+                                salvarFichaRapida.mutate(p as any);
+                              }}
+                            />
+                            <span className="text-xs text-muted-foreground">{ativo ? "Sim" : "Não"}</span>
+                          </div>
+                        </TableCell>
                         <TableCell>
                           {podeEditarCompra ? (
                             <div className="flex min-w-48 items-center gap-2">
@@ -1087,13 +1126,13 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                disabled={salvarCompraRapida.isPending || precoCompraValue === precoCompraAtual}
+                                disabled={salvarFichaRapida.isPending || precoCompraValue === precoCompraAtual}
                                 onClick={() => {
                                   const p = buildPayload(
                                     rowToFichaForm(row, { precoCompraKg: precoCompraValue }),
                                     row.ficha.id,
                                   );
-                                  salvarCompraRapida.mutate(p as any);
+                                  salvarFichaRapida.mutate(p as any);
                                 }}
                               >
                                 Atualizar
