@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Plus, Trash2, Calculator, Package, AlertTriangle, Copy, Download } from "lucide-react";
+import { Plus, Trash2, Calculator, Package, AlertTriangle, Copy, FileText } from "lucide-react";
 
 const fmtMoney = (n: number | null | undefined) =>
   n == null || !Number.isFinite(n)
@@ -51,18 +51,178 @@ const fmtDecimalInput = (value: unknown, maximumFractionDigits = 4) => {
 
 const margemTabelaClienteOptions = [5, 10, 20, 30] as const;
 
-function csvEscape(value: string): string {
-  return `"${value.replace(/"/g, '""')}"`;
+function htmlEscape(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
-function downloadTextFile(filename: string, content: string, type: string) {
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+function gerarTabelaClientePdf(rows: Array<{ produto: string; unidade: string; preco: number | null }>) {
+  const win = window.open("", "_blank");
+  if (!win) {
+    toast.error("Não foi possível abrir a janela do PDF. Verifique o bloqueador de pop-ups.");
+    return;
+  }
+
+  const dataHoje = new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(new Date());
+  const linhasProdutos = rows
+    .map(
+      (row) => `
+        <tr>
+          <td>${htmlEscape(row.produto)}</td>
+          <td>${htmlEscape(row.unidade)}</td>
+          <td class="price">${htmlEscape(fmtMoney(row.preco))}</td>
+        </tr>
+      `,
+    )
+    .join("");
+
+  win.document.write(`<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Tabela de preços</title>
+  <style>
+    @page { size: A4; margin: 14mm; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: #15392f;
+      background: #f6fbf8;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .page {
+      min-height: 100vh;
+      padding: 28px;
+      background: #ffffff;
+      border: 1px solid #dcebe4;
+      border-radius: 24px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 28px;
+      color: white;
+      background: linear-gradient(135deg, #047857 0%, #0f766e 58%, #134e4a 100%);
+      border-radius: 22px;
+    }
+    .brand {
+      font-size: 13px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      opacity: .86;
+    }
+    h1 {
+      margin: 8px 0 0;
+      font-size: 34px;
+      line-height: 1.05;
+    }
+    .meta {
+      min-width: 190px;
+      align-self: flex-end;
+      padding: 14px 16px;
+      background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 16px;
+      font-size: 13px;
+      line-height: 1.45;
+      text-align: right;
+    }
+    .intro {
+      margin: 24px 4px 18px;
+      color: #4b635b;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      overflow: hidden;
+      border: 1px solid #dcebe4;
+      border-radius: 18px;
+      background: white;
+    }
+    thead th {
+      padding: 14px 16px;
+      color: #285446;
+      background: #eaf7f0;
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-align: left;
+      text-transform: uppercase;
+    }
+    tbody td {
+      padding: 15px 16px;
+      border-top: 1px solid #e6f0eb;
+      color: #173b31;
+      font-size: 14px;
+    }
+    tbody tr:nth-child(even) td { background: #f8fcfa; }
+    .price {
+      color: #03543f;
+      font-size: 16px;
+      font-weight: 800;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .unit { width: 120px; }
+    footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 28px;
+      padding-top: 18px;
+      border-top: 1px solid #e2eee8;
+      color: #6b8077;
+      font-size: 12px;
+    }
+    @media print {
+      body { background: #ffffff; }
+      .page { min-height: auto; padding: 0; border: 0; border-radius: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div>
+        <div class="brand">Fazendas UP</div>
+        <h1>Tabela de preços</h1>
+      </div>
+      <div class="meta">
+        <strong>${htmlEscape(dataHoje)}</strong><br />
+        Lista comercial<br />
+        Preços finais ao cliente
+      </div>
+    </header>
+    <p class="intro">
+      Produtos disponíveis para compra. Esta lista apresenta apenas os preços comerciais finais e não inclui custos internos de produção, compra ou operação.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th class="unit">Unidade</th>
+          <th class="price">Preço</th>
+        </tr>
+      </thead>
+      <tbody>${linhasProdutos}</tbody>
+    </table>
+    <footer>
+      <span>Valores sujeitos a disponibilidade e confirmação no pedido.</span>
+      <span>Gerado automaticamente</span>
+    </footer>
+  </main>
+</body>
+</html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 300);
 }
 
 function precoVendaPorMargem(row: any, margemPct: number): number | null {
@@ -780,14 +940,6 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
     return linhas.join("\n");
   }, [margemTabelaCliente, tabelaClienteRows]);
 
-  const tabelaClienteCsv = useMemo(() => {
-    const linhas = [["Produto", "Unidade", `Preço margem ${margemTabelaCliente}%`].map(csvEscape).join(",")];
-    for (const row of tabelaClienteRows) {
-      linhas.push([row.produto, row.unidade, fmtMoney(row.preco)].map(csvEscape).join(","));
-    }
-    return linhas.join("\n");
-  }, [margemTabelaCliente, tabelaClienteRows]);
-
   if (modo === "lista") {
     return (
       <div className="space-y-4 mt-4">
@@ -844,17 +996,10 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                   </Button>
                   <Button
                     size="sm"
-                    variant="outline"
                     disabled={tabelaClienteRows.length === 0}
-                    onClick={() =>
-                      downloadTextFile(
-                        `tabela-precos-margem-${margemTabelaCliente}.csv`,
-                        tabelaClienteCsv,
-                        "text/csv;charset=utf-8;",
-                      )
-                    }
+                    onClick={() => gerarTabelaClientePdf(tabelaClienteRows)}
                   >
-                    <Download className="h-4 w-4 mr-1" /> CSV
+                    <FileText className="h-4 w-4 mr-1" /> Gerar PDF
                   </Button>
                 </div>
               </div>
