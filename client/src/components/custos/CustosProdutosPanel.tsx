@@ -418,6 +418,34 @@ function rowToFichaForm(row: any, patch: Partial<FichaForm> = {}): FichaForm {
   };
 }
 
+function nomeFichaCopia(nome: string): string {
+  const base = nome.trim();
+  const match = /\(cópia(?:\s+(\d+))?\)$/i.exec(base);
+  if (!match) return `${base} (cópia)`;
+  const proximo = match[1] ? Number(match[1]) + 1 : 2;
+  return base.replace(/\(cópia(?:\s+\d+)?\)$/i, `(cópia ${proximo})`);
+}
+
+function duplicarFichaForm(form: FichaForm): FichaForm {
+  return {
+    ...form,
+    nome: nomeFichaCopia(form.nome),
+    ativo: true,
+  };
+}
+
+function abrirCopiaFicha(
+  row: any,
+  setEditingId: (id: number | null) => void,
+  setForm: (form: FichaForm) => void,
+  setSimResult: (result: any) => void,
+) {
+  setEditingId(null);
+  setForm(duplicarFichaForm(rowToFichaForm(row)));
+  setSimResult(row.resultado);
+  toast.success("Ficha copiada — ajuste o que precisar e salve como nova.");
+}
+
 function ResultadoCustoCard({ resultado }: { resultado: any }) {
   if (!resultado) return null;
   const vendePorKg = resultado.unidadeVenda === "kg";
@@ -1169,17 +1197,29 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                           {row.resultado.margemPct != null ? `${row.resultado.margemPct.toFixed(1)}%` : "—"}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setEditingId(row.ficha.id);
-                              setForm(rowToFichaForm(row));
-                              setSimResult(row.resultado);
-                            }}
-                          >
-                            Editar
-                          </Button>
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              title="Copiar como nova ficha"
+                              onClick={() =>
+                                abrirCopiaFicha(row, setEditingId, setForm, setSimResult)
+                              }
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingId(row.ficha.id);
+                                setForm(rowToFichaForm(row));
+                                setSimResult(row.resultado);
+                              }}
+                            >
+                              Editar
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -1193,7 +1233,19 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
         {(editingId != null || form.nome !== "") && (
           <>
             {editingId != null && (
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEditingId(null);
+                    setForm(duplicarFichaForm(form));
+                    toast.success("Ficha copiada — ajuste o que precisar e salve como nova.");
+                  }}
+                >
+                  <Copy className="h-4 w-4 mr-1" />
+                  Copiar como nova
+                </Button>
                 <Button variant="destructive" size="sm" onClick={() => excluir.mutate({ id: editingId })}>
                   Excluir ficha
                 </Button>
