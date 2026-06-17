@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Plus, Trash2, Calculator, Package, AlertTriangle, Copy, FileText } from "lucide-react";
+import { Plus, Trash2, Calculator, Package, AlertTriangle, Copy, FileText, Save, Pencil } from "lucide-react";
 
 const fmtMoney = (n: number | null | undefined) =>
   n == null || !Number.isFinite(n)
@@ -1087,26 +1087,21 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
         )}
 
         {editingId == null && form.nome === "" && (
-          <div className="overflow-x-auto rounded-md border">
-            <Table>
+          <div className="rounded-md border [&_[data-slot=table-container]]:overflow-x-hidden">
+            <Table className="w-full table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Produto</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Ativo</TableHead>
-                  <TableHead>Compra R$/kg</TableHead>
-                  <TableHead className="text-right">Custo/un</TableHead>
-                  <TableHead className="text-right">Venda ref.</TableHead>
-                  <TableHead>Venda por margem</TableHead>
-                  <TableHead className="text-right">Margem ref.</TableHead>
-                  <TableHead />
+                  <TableHead className="w-[34%] whitespace-normal">Produto</TableHead>
+                  <TableHead className="w-[16%] whitespace-normal">Compra R$/kg</TableHead>
+                  <TableHead className="w-[16%] whitespace-normal text-right">Custos e venda</TableHead>
+                  <TableHead className="w-[26%] whitespace-normal">Venda por margem</TableHead>
+                  <TableHead className="w-[8%]" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {resumoProdutos.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-muted-foreground text-center py-8">
+                    <TableCell colSpan={5} className="text-muted-foreground text-center py-8">
                       Nenhuma ficha cadastrada. Crie uma para alface, microverde, revenda ou mix.
                     </TableCell>
                   </TableRow>
@@ -1117,47 +1112,63 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                     const podeEditarCompra = row.ficha.tipo === "revenda_processada" || row.ficha.tipo === "manual";
                     const precosMargem = row.resultado.precosVendaPorMargem ?? [];
                     const ativo = fichaAtiva(row);
+                    const categoriaLabel =
+                      LABEL_CATEGORIA_PRODUTO_CUSTO[row.ficha.categoria as keyof typeof LABEL_CATEGORIA_PRODUTO_CUSTO] ??
+                      row.ficha.categoria;
                     return (
                       <TableRow key={row.ficha.id} className={!ativo ? "opacity-60" : undefined}>
-                        <TableCell className="font-medium">
-                          <div className="flex flex-col gap-1">
-                            <span>{row.ficha.nome}</span>
-                            {!ativo && <Badge variant="outline" className="w-fit">Inativo no PDF</Badge>}
+                        <TableCell className="align-top whitespace-normal">
+                          <div className="space-y-1.5">
+                            <p className="font-medium leading-snug break-words">{row.ficha.nome}</p>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <Badge variant="secondary" className="text-[10px] font-normal">
+                                {LABEL_TIPO_FICHA_CUSTO_PRODUTO[row.ficha.tipo as TipoFichaCustoProduto]}
+                              </Badge>
+                              <span className="text-[11px] text-muted-foreground">{categoriaLabel}</span>
+                              {!ativo && (
+                                <Badge variant="outline" className="text-[10px]">
+                                  Inativo
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={ativo}
+                                disabled={salvarFichaRapida.isPending}
+                                onCheckedChange={(nextAtivo) => {
+                                  const p = buildPayload(rowToFichaForm(row, { ativo: nextAtivo }), row.ficha.id);
+                                  salvarFichaRapida.mutate(p as any);
+                                }}
+                              />
+                              <span className="text-[11px] text-muted-foreground">Ativo</span>
+                            </div>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">
-                            {LABEL_TIPO_FICHA_CUSTO_PRODUTO[row.ficha.tipo as TipoFichaCustoProduto]}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{LABEL_CATEGORIA_PRODUTO_CUSTO[row.ficha.categoria as keyof typeof LABEL_CATEGORIA_PRODUTO_CUSTO] ?? row.ficha.categoria}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              checked={ativo}
-                              disabled={salvarFichaRapida.isPending}
-                              onCheckedChange={(nextAtivo) => {
-                                const p = buildPayload(rowToFichaForm(row, { ativo: nextAtivo }), row.ficha.id);
-                                salvarFichaRapida.mutate(p as any);
-                              }}
-                            />
-                            <span className="text-xs text-muted-foreground">{ativo ? "Sim" : "Não"}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
+                        <TableCell className="align-top whitespace-normal">
                           {podeEditarCompra ? (
-                            <div className="flex min-w-48 items-center gap-2">
+                            <div className="flex items-center gap-1">
                               <Input
-                                className="h-8 w-28"
+                                className="h-8 min-w-0 flex-1 px-2 text-xs"
                                 inputMode="decimal"
                                 value={precoCompraValue}
                                 onChange={(e) =>
                                   setCompraDraft((drafts) => ({ ...drafts, [row.ficha.id]: e.target.value }))
                                 }
+                                onKeyDown={(e) => {
+                                  if (e.key !== "Enter") return;
+                                  if (precoCompraValue === precoCompraAtual) return;
+                                  const p = buildPayload(
+                                    rowToFichaForm(row, { precoCompraKg: precoCompraValue }),
+                                    row.ficha.id,
+                                  );
+                                  salvarFichaRapida.mutate(p as any);
+                                }}
                               />
                               <Button
-                                size="sm"
+                                size="icon"
                                 variant="outline"
+                                className="h-8 w-8 shrink-0"
+                                title="Atualizar compra"
                                 disabled={salvarFichaRapida.isPending || precoCompraValue === precoCompraAtual}
                                 onClick={() => {
                                   const p = buildPayload(
@@ -1167,57 +1178,68 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                                   salvarFichaRapida.mutate(p as any);
                                 }}
                               >
-                                Atualizar
+                                <Save className="h-3.5 w-3.5" />
                               </Button>
                             </div>
                           ) : (
                             <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-right tabular-nums font-semibold">
-                          {fmtMoney(row.resultado.custoPorUnidade)}
+                        <TableCell className="align-top text-right whitespace-normal">
+                          <div className="space-y-0.5 text-xs tabular-nums">
+                            <p>
+                              <span className="text-muted-foreground">Custo </span>
+                              <span className="font-semibold">{fmtMoney(row.resultado.custoPorUnidade)}</span>
+                            </p>
+                            <p>
+                              <span className="text-muted-foreground">Venda </span>
+                              {fmtMoney(row.resultado.precoVendaReferencia)}
+                            </p>
+                            <p>
+                              <span className="text-muted-foreground">Margem </span>
+                              {row.resultado.margemPct != null ? `${row.resultado.margemPct.toFixed(1)}%` : "—"}
+                            </p>
+                          </div>
                         </TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          {fmtMoney(row.resultado.precoVendaReferencia)}
-                        </TableCell>
-                        <TableCell>
+                        <TableCell className="align-top whitespace-normal">
                           {precosMargem.length > 0 ? (
-                            <div className="flex min-w-56 flex-wrap gap-1">
+                            <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[11px] leading-tight tabular-nums">
                               {precosMargem.map((p: { margemPct: number; precoVenda: number }) => (
-                                <Badge key={p.margemPct} variant="outline" className="font-normal tabular-nums">
-                                  {p.margemPct}%: {fmtMoney(p.precoVenda)}
-                                </Badge>
+                                <span key={p.margemPct} className="text-muted-foreground">
+                                  <span className="font-medium text-foreground">{p.margemPct}%</span>{" "}
+                                  {fmtMoney(p.precoVenda)}
+                                </span>
                               ))}
                             </div>
                           ) : (
                             <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          {row.resultado.margemPct != null ? `${row.resultado.margemPct.toFixed(1)}%` : "—"}
-                        </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="align-top text-right whitespace-normal">
                           <div className="flex justify-end gap-1">
                             <Button
-                              size="sm"
+                              size="icon"
                               variant="outline"
+                              className="h-8 w-8"
                               title="Copiar como nova ficha"
                               onClick={() =>
                                 abrirCopiaFicha(row, setEditingId, setForm, setSimResult)
                               }
                             >
-                              <Copy className="h-4 w-4" />
+                              <Copy className="h-3.5 w-3.5" />
                             </Button>
                             <Button
-                              size="sm"
+                              size="icon"
                               variant="outline"
+                              className="h-8 w-8"
+                              title="Editar ficha"
                               onClick={() => {
                                 setEditingId(row.ficha.id);
                                 setForm(rowToFichaForm(row));
                                 setSimResult(row.resultado);
                               }}
                             >
-                              Editar
+                              <Pencil className="h-3.5 w-3.5" />
                             </Button>
                           </div>
                         </TableCell>
