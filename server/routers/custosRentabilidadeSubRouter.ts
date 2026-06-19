@@ -14,6 +14,8 @@ import * as rentabilidadeDb from "../custosRentabilidadeDb";
 import * as custosProdutoDb from "../custosProdutoDb";
 import { calcularFichaCompleta } from "../custosProdutoResolver";
 import { buscarVendasContaAzulPorPeriodo } from "../custosRentabilidadeContaAzul";
+import * as moEquipeDb from "../custosMoEquipeDb";
+import { somarMoOverheadEquipes } from "@shared/custosMoEquipe";
 
 const linhaInput = z.object({
   id: z.number().int().positive().optional(),
@@ -63,6 +65,32 @@ async function custoUnitarioPorFicha(projetoId: number, fichaIds: number[]) {
   return map;
 }
 
+async function custoOperacionalSugeridoProjeto(projetoId: number) {
+  const compartilhados = await db.getCustosProducaoCompartilhados(projetoId);
+  const rubricasCompartilhados = somarCustoOperacionalSugerido(compartilhados);
+  const equipes = await moEquipeDb.listMoEquipes(projetoId);
+  const moOverhead = somarMoOverheadEquipes(
+    equipes.map((r) => ({
+      nome: r.nome,
+      regime: r.regime as "clt" | "pj",
+      finalidade: r.finalidade as "processamento" | "overhead",
+      numPessoas: r.numPessoas,
+      horasMes: num(r.horasMes) ?? 0,
+      custoMensalBase: num(r.custoMensalBase),
+      encargosPct: num(r.encargosPct),
+      custoMensalTotal: num(r.custoMensalTotal),
+      ativo: r.ativo,
+    })),
+  );
+  return {
+    total: rubricasCompartilhados + moOverhead,
+    rubricasCompartilhados,
+    moOverhead,
+    compartilhados,
+    equipes,
+  };
+}
+
 async function montarResultado(
   projetoId: number,
   periodo: {
@@ -76,8 +104,8 @@ async function montarResultado(
   },
   linhasDb: Awaited<ReturnType<typeof rentabilidadeDb.listRentabilidadeLinhas>>,
 ) {
-  const compartilhados = await db.getCustosProducaoCompartilhados(projetoId);
-  const custoSugerido = somarCustoOperacionalSugerido(compartilhados);
+  const sugerido = await custoOperacionalSugeridoProjeto(projetoId);
+  const custoSugerido = sugerido.total;
   const custoOperacional = periodo.usarCustoSugerido
     ? custoSugerido
     : num(periodo.custoOperacionalTotal) ?? custoSugerido;
@@ -106,6 +134,8 @@ async function montarResultado(
       fim: periodo.fim,
       custoOperacionalTotal: custoOperacional,
       custoOperacionalSugerido: custoSugerido,
+      custoOperacionalCompartilhados: sugerido.rubricasCompartilhados,
+      custoOperacionalMoFixa: sugerido.moOverhead,
       usarCustoSugerido: periodo.usarCustoSugerido,
       observacoes: periodo.observacoes,
     },
@@ -117,6 +147,7 @@ async function montarResultado(
       resultado: calculo.linhas[idx],
     })),
     totais: calculo.totais,
+    viabilidade: calculo.viabilidade,
   };
 }
 
@@ -152,11 +183,12 @@ export const custosRentabilidadeSubRouter = router({
 
   sugestaoCustoOperacional: custosProducaoModuleProcedure.query(async ({ ctx }) => {
     const pid = projetoIdFromCtx(ctx);
-    const compartilhados = await db.getCustosProducaoCompartilhados(pid);
-    const total = somarCustoOperacionalSugerido(compartilhados);
+    const sugerido = await custoOperacionalSugeridoProjeto(pid);
     return {
-      total,
-      rubricas: compartilhados
+      total: sugerido.total,
+      rubricasCompartilhados: sugerido.rubricasCompartilhados,
+      moOverhead: sugerido.moOverhead,
+      rubricas: sugerido.compartilhados
         .filter((r) => r.ativo !== false && r.modo !== "rateio_projeto")
         .map((r) => ({
           id: r.id,
@@ -165,6 +197,14 @@ export const custosRentabilidadeSubRouter = router({
           valorMensal: num(r.valorMensal),
         }))
         .filter((r) => (r.valorMensal ?? 0) > 0),
+      equipesOverhead: sugerido.equipes
+        .filter((e) => e.ativo && e.finalidade === "overhead")
+        .map((e) => ({
+          id: e.id,
+          nome: e.nome,
+          regime: e.regime,
+          custoMensal: num(e.custoMensalTotal) ?? num(e.custoMensalBase),
+        })),
     };
   }),
 

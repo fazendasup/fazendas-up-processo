@@ -417,17 +417,12 @@ export function CustosRentabilidadePanel() {
               efetivadas do mês).
             </li>
             <li>
-              <strong className="text-foreground">CMV por unidade (ficha)</strong> — custo direto de
-              produzir/processar/vender aquele SKU: matéria-prima + etapas (lavagem, embalagem, MO
-              da linha, etc.). Cadastre em <strong>Produtos vendidos</strong>. Para produção própria,
-              o custo da planta já inclui rubricas <em>rateio entre variedades</em> de{" "}
-              <strong>Compartilhados</strong>.
+              <strong className="text-foreground">CMV por unidade (ficha)</strong> — matéria-prima + etapas com{" "}
+              <strong>minutos/unidade</strong> × R$/h das equipes CLT/PJ em <strong>Equipes MO</strong>.
             </li>
             <li>
-              <strong className="text-foreground">Custo operacional do mês</strong> — overhead fixo
-              (energia geral, admin, depreciação, logística fixa…): rubricas em{" "}
-              <strong>Compartilhados</strong> com valor mensal <em>sem</em> rateio entre variedades.
-              Reparte entre SKUs pela participação na receita.
+              <strong className="text-foreground">Overhead do mês</strong> — rubricas em{" "}
+              <strong>Compartilhados</strong> + equipes MO <em>fixas</em> (supervisão/admin). Rateio pela receita.
             </li>
           </ol>
           <p className="rounded-md border bg-background/80 px-3 py-2 font-mono text-xs">
@@ -483,7 +478,7 @@ export function CustosRentabilidadePanel() {
           <CardTitle className="text-base">Período e custos da operação</CardTitle>
           <CardDescription>
             {usarCustoSugerido
-              ? `Soma automática: ${fmtMoney(sugestao.data?.total ?? 0)}/mês das rubricas compartilhadas abaixo (exclui rateio entre variedades, que já entra no CMV via planta).`
+              ? `Soma automática: ${fmtMoney(sugestao.data?.total ?? 0)}/mês (Compartilhados ${fmtMoney(sugestao.data?.rubricasCompartilhados ?? 0)} + MO fixa ${fmtMoney(sugestao.data?.moOverhead ?? 0)}).`
               : "Informe o total mensal de overhead (tudo que não está no CMV unitário das fichas)."}
           </CardDescription>
         </CardHeader>
@@ -519,7 +514,7 @@ export function CustosRentabilidadePanel() {
           <div className="flex items-center gap-3 md:col-span-2">
             <Switch checked={usarCustoSugerido} onCheckedChange={setUsarCustoSugerido} />
             <Label className="font-normal">
-              Usar custo operacional sugerido das rubricas compartilhadas
+              Usar overhead sugerido (Compartilhados + MO fixa CLT/PJ)
             </Label>
           </div>
           {!usarCustoSugerido ? (
@@ -532,30 +527,43 @@ export function CustosRentabilidadePanel() {
                 placeholder="Overhead total do mês: admin, energia fixa, frete fixo..."
               />
             </div>
-          ) : (sugestao.data?.rubricas.length ?? 0) > 0 ? (
+          ) : (sugestao.data?.rubricas.length ?? 0) > 0 ||
+            (sugestao.data?.equipesOverhead?.length ?? 0) > 0 ? (
             <div className="md:col-span-2 rounded-md border overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Grupo</TableHead>
-                    <TableHead>Rubrica (Compartilhados)</TableHead>
+                    <TableHead>Origem</TableHead>
+                    <TableHead>Descrição</TableHead>
                     <TableHead className="text-right">R$/mês</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {(sugestao.data?.rubricas ?? []).map((r) => (
-                    <TableRow key={r.id}>
-                      <TableCell className="text-xs">
-                        {LABEL_GRUPO_CUSTO_PRODUCAO[r.grupo as GrupoCustoProducao] ?? r.grupo}
+                    <TableRow key={`r-${r.id}`}>
+                      <TableCell className="text-xs">Compartilhados</TableCell>
+                      <TableCell>
+                        <span className="text-[11px] text-muted-foreground block">
+                          {LABEL_GRUPO_CUSTO_PRODUCAO[r.grupo as GrupoCustoProducao] ?? r.grupo}
+                        </span>
+                        {r.rubrica}
                       </TableCell>
-                      <TableCell>{r.rubrica}</TableCell>
                       <TableCell className="text-right tabular-nums">
                         {fmtMoney(r.valorMensal)}
                       </TableCell>
                     </TableRow>
                   ))}
+                  {(sugestao.data?.equipesOverhead ?? []).map((e) => (
+                    <TableRow key={`e-${e.id}`}>
+                      <TableCell className="text-xs">MO fixa ({e.regime.toUpperCase()})</TableCell>
+                      <TableCell>{e.nome}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {fmtMoney(e.custoMensal)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
                   <TableRow className="bg-muted/40 font-semibold">
-                    <TableCell colSpan={2}>Total operacional sugerido</TableCell>
+                    <TableCell colSpan={2}>Total overhead sugerido</TableCell>
                     <TableCell className="text-right tabular-nums">
                       {fmtMoney(sugestao.data?.total ?? 0)}
                     </TableCell>
@@ -568,7 +576,9 @@ export function CustosRentabilidadePanel() {
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
                 Nenhuma rubrica mensal em <strong>Compartilhados</strong> (modo diferente de rateio
-                entre variedades). Cadastre lá ou desligue a sugestão e digite o total manualmente.
+                entre variedades) e nenhuma equipe MO com finalidade <strong>overhead</strong>.
+                Cadastre em Compartilhados ou Equipes MO, ou desligue a sugestão e digite o total
+                manualmente.
               </AlertDescription>
             </Alert>
           )}
@@ -855,7 +865,7 @@ export function CustosRentabilidadePanel() {
                 {fmtMoney(calculoAtual.totais.custoOperacional)}
               </p>
               {usarCustoSugerido ? (
-                <p className="text-xs text-muted-foreground">Sugerido (Compartilhados)</p>
+                <p className="text-xs text-muted-foreground">Compartilhados + MO fixa</p>
               ) : null}
             </CardContent>
           </Card>
@@ -885,6 +895,56 @@ export function CustosRentabilidadePanel() {
             </CardContent>
           </Card>
         </div>
+      ) : null}
+
+      {calculoAtual?.viabilidade ? (
+        <Card className="border-amber-200/60 dark:border-amber-900">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Viabilidade — ponto de equilíbrio do mês</CardTitle>
+            <CardDescription>
+              Com o mix e preços atuais, quanto falta vender para cobrir o overhead fixo do período.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <p className="text-xs text-muted-foreground">Contribuição média / unidade</p>
+              <p className="text-lg font-bold tabular-nums">
+                {fmtMoney(calculoAtual.viabilidade.contribuicaoMediaPorUnidade)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Equilíbrio (unidades no mix)</p>
+              <p className="text-lg font-bold tabular-nums">
+                {calculoAtual.viabilidade.pontoEquilibrioUnidades ?? "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Já vendido no período</p>
+              <p className="text-lg font-bold tabular-nums">
+                {calculoAtual.viabilidade.quantidadeVendida}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Faltam p/ equilíbrio</p>
+              <p
+                className={`text-lg font-bold tabular-nums ${
+                  (calculoAtual.viabilidade.unidadesFaltamEquilibrio ?? 0) > 0
+                    ? "text-rose-600"
+                    : "text-emerald-600"
+                }`}
+              >
+                {calculoAtual.viabilidade.unidadesFaltamEquilibrio ?? 0} un.
+              </p>
+              {(calculoAtual.viabilidade.receitaFaltaEquilibrio ?? 0) > 0 ? (
+                <p className="text-[11px] text-muted-foreground">
+                  ≈ {fmtMoney(calculoAtual.viabilidade.receitaFaltaEquilibrio)} receita
+                </p>
+              ) : (
+                <p className="text-[11px] text-emerald-600">Overhead coberto pelo mix atual</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       ) : null}
 
       {calculoAtual && calculoAtual.linhas.length > 0 ? (

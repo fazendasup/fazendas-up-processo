@@ -36,6 +36,15 @@ export type RentabilidadeTotais = {
   linhasIncompletas: number;
 };
 
+export type RentabilidadeViabilidade = {
+  quantidadeVendida: number;
+  contribuicaoMediaPorUnidade: number | null;
+  pontoEquilibrioUnidades: number | null;
+  pontoEquilibrioReceita: number | null;
+  unidadesFaltamEquilibrio: number | null;
+  receitaFaltaEquilibrio: number | null;
+};
+
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
@@ -43,7 +52,11 @@ function round2(n: number): number {
 export function calcularRentabilidade(input: {
   linhas: LinhaRentabilidadeCalculo[];
   custoOperacionalTotal: number;
-}): { linhas: LinhaRentabilidadeResultado[]; totais: RentabilidadeTotais } {
+}): {
+  linhas: LinhaRentabilidadeResultado[];
+  totais: RentabilidadeTotais;
+  viabilidade: RentabilidadeViabilidade;
+} {
   const receitaTotal = input.linhas.reduce((s, l) => s + Math.max(0, l.receitaTotal), 0);
   const custoOp = Math.max(0, input.custoOperacionalTotal);
 
@@ -95,6 +108,23 @@ export function calcularRentabilidade(input: {
   const cmv = round2(linhas.reduce((s, l) => s + (l.cmv ?? 0), 0));
   const lucroBruto = round2(receitaTotal - cmv);
   const resultado = round2(lucroBruto - custoOp);
+  const quantidadeVendida = round2(linhas.reduce((s, l) => s + l.quantidade, 0));
+  const contribuicaoMediaPorUnidade =
+    quantidadeVendida > 0 && lucroBruto > 0 ? round2(lucroBruto / quantidadeVendida) : null;
+  const pontoEquilibrioUnidades =
+    contribuicaoMediaPorUnidade != null && contribuicaoMediaPorUnidade > 0
+      ? Math.ceil(custoOp / contribuicaoMediaPorUnidade)
+      : null;
+  const pontoEquilibrioReceita =
+    lucroBruto > 0 && receitaTotal > 0
+      ? round2((custoOp * receitaTotal) / lucroBruto)
+      : null;
+  const unidadesFaltamEquilibrio =
+    pontoEquilibrioUnidades != null
+      ? Math.max(0, pontoEquilibrioUnidades - quantidadeVendida)
+      : null;
+  const receitaFaltaEquilibrio =
+    pontoEquilibrioReceita != null ? round2(Math.max(0, pontoEquilibrioReceita - receitaTotal)) : null;
 
   return {
     linhas,
@@ -108,6 +138,14 @@ export function calcularRentabilidade(input: {
       linhasLucro: linhas.filter((l) => l.status === "lucro").length,
       linhasPrejuizo: linhas.filter((l) => l.status === "prejuizo").length,
       linhasIncompletas: linhas.filter((l) => l.status === "incompleto").length,
+    },
+    viabilidade: {
+      quantidadeVendida,
+      contribuicaoMediaPorUnidade,
+      pontoEquilibrioUnidades,
+      pontoEquilibrioReceita,
+      unidadesFaltamEquilibrio,
+      receitaFaltaEquilibrio,
     },
   };
 }

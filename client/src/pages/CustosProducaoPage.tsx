@@ -61,9 +61,11 @@ import {
   Plus,
   Sprout,
   Trash2,
+  Users,
   Wallet,
 } from "lucide-react";
 import { CustosProdutosPainelResumo, CustosProdutosTab } from "@/components/custos/CustosProdutosPanel";
+import { CustosMoEquipesPanel } from "@/components/custos/CustosMoEquipesPanel";
 import { CustosRentabilidadePanel } from "@/components/custos/CustosRentabilidadePanel";
 import { useProjeto } from "@/contexts/ProjetoContext";
 import { useEffect, useMemo, useState } from "react";
@@ -381,6 +383,10 @@ export default function CustosProducaoPage() {
                 <Layers className="h-3.5 w-3.5" />
                 Compartilhados
               </TabsTrigger>
+              <TabsTrigger value="mo-equipes" className="gap-1.5">
+                <Users className="h-3.5 w-3.5" />
+                Equipes MO
+              </TabsTrigger>
               <TabsTrigger value="rentabilidade" className="gap-1.5">
                 <Wallet className="h-3.5 w-3.5" />
                 Rentabilidade
@@ -534,6 +540,10 @@ export default function CustosProducaoPage() {
 
             <TabsContent value="produtos">
               <CustosProdutosTab modo="lista" />
+            </TabsContent>
+
+            <TabsContent value="mo-equipes">
+              <CustosMoEquipesPanel />
             </TabsContent>
 
             <TabsContent value="rentabilidade">

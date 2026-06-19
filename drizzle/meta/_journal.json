@@ -204,6 +204,13 @@
       "when": 1777100000000,
       "tag": "0039_custos_rentabilidade",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "5",
+      "when": 1777200000000,
+      "tag": "0040_mo_equipes_etapas_tempo",
+      "breakpoints": true
     }
   ]
 }

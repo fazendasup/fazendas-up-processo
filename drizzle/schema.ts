@@ -802,6 +802,28 @@ export const custosProducaoItens = mysqlTable("custos_producao_itens", {
 export type CustoProducaoItemRow = typeof custosProducaoItens.$inferSelect;
 export type InsertCustoProducaoItem = typeof custosProducaoItens.$inferInsert;
 
+/** Equipes de mão de obra — CLT vs PJ, processamento ou overhead fixo. */
+export const custosMoEquipes = mysqlTable("custos_mo_equipes", {
+  id: int("id").autoincrement().primaryKey(),
+  projetoId: int("projetoId").notNull(),
+  nome: varchar("nome", { length: 160 }).notNull(),
+  regime: mysqlEnum("regime", ["clt", "pj"]).notNull(),
+  finalidade: mysqlEnum("finalidade", ["processamento", "overhead"]).notNull().default("processamento"),
+  numPessoas: int("numPessoas").notNull().default(1),
+  horasMes: decimal("horasMes", { precision: 10, scale: 2 }).notNull().default("0"),
+  custoMensalBase: decimal("custoMensalBase", { precision: 14, scale: 2 }),
+  encargosPct: decimal("encargosPct", { precision: 8, scale: 4 }),
+  custoMensalTotal: decimal("custoMensalTotal", { precision: 14, scale: 2 }),
+  observacoes: text("observacoes"),
+  ordem: int("ordem").notNull().default(0),
+  ativo: boolean("ativo").notNull().default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CustoMoEquipeRow = typeof custosMoEquipes.$inferSelect;
+export type InsertCustoMoEquipe = typeof custosMoEquipes.$inferInsert;
+
 /** Ficha de custo por produto/SKU vendido. */
 export const custosProdutosFichas = mysqlTable("custos_produtos_fichas", {
   id: int("id").autoincrement().primaryKey(),
@@ -870,6 +892,8 @@ export const custosProdutosEtapas = mysqlTable("custos_produtos_etapas", {
   custoPorUnidade: decimal("custoPorUnidade", { precision: 14, scale: 6 }).notNull().default("0"),
   custoPorKgProcessado: decimal("custoPorKgProcessado", { precision: 18, scale: 8 }),
   custoPercentual: decimal("custoPercentual", { precision: 8, scale: 4 }),
+  minutosPorUnidade: decimal("minutosPorUnidade", { precision: 10, scale: 4 }),
+  regimeMo: mysqlEnum("regimeMo", ["clt", "pj", "qualquer"]).notNull().default("qualquer"),
   ordem: int("ordem").notNull().default(0),
 });
 

@@ -13,6 +13,11 @@ import {
   type TipoEtapaProcesso,
   type TipoFichaCustoProduto,
 } from "@shared/custosProduto";
+import {
+  LABEL_REGIME_MO_ETAPA,
+  REGIMES_MO_ETAPA,
+  type RegimeMoEtapa,
+} from "@shared/custosMoEquipe";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -255,6 +260,8 @@ type ComponenteForm = {
 type EtapaForm = {
   tipo: TipoEtapaProcesso;
   nome: string;
+  minutosPorUnidade: string;
+  regimeMo: RegimeMoEtapa;
   custoPorUnidade: string;
   custoPorKgProcessado: string;
   custoPercentual: string;
@@ -298,6 +305,8 @@ function emptyEtapa(tipo: TipoEtapaProcesso = "lavagem"): EtapaForm {
   return {
     tipo,
     nome: LABEL_ETAPA_PROCESSO[tipo],
+    minutosPorUnidade: "",
+    regimeMo: "qualquer",
     custoPorUnidade: "",
     custoPorKgProcessado: "",
     custoPercentual: "",
@@ -371,6 +380,8 @@ function buildPayload(form: FichaForm, id?: number) {
     etapas: form.etapas.map((e) => ({
       tipo: e.tipo,
       nome: e.nome.trim() || LABEL_ETAPA_PROCESSO[e.tipo],
+      minutosPorUnidade: parseOpt(e.minutosPorUnidade),
+      regimeMo: e.regimeMo,
       custoPorUnidade: parseOpt(e.custoPorUnidade) ?? 0,
       custoPorKgProcessado: parseOpt(e.custoPorKgProcessado),
       custoPercentual: parseOpt(e.custoPercentual),
@@ -410,6 +421,8 @@ function rowToFichaForm(row: any, patch: Partial<FichaForm> = {}): FichaForm {
     etapas: row.etapas.map((e: any) => ({
       tipo: e.tipo,
       nome: e.nome,
+      minutosPorUnidade: fmtDecimalInput(e.minutosPorUnidade, 2),
+      regimeMo: (e.regimeMo ?? "qualquer") as RegimeMoEtapa,
       custoPorUnidade: fmtDecimalInput(e.custoPorUnidade, 4),
       custoPorKgProcessado: fmtDecimalInput(e.custoPorKgProcessado, 4),
       custoPercentual: fmtDecimalInput(e.custoPercentual, 2),
@@ -859,7 +872,8 @@ function FichaEditor({
           <div>
             <CardTitle className="text-sm">Processo industrial</CardTitle>
             <CardDescription>
-              Lavagem, corte, embalagem, adesivo, mão de obra e logística. Use percentual para custos proporcionais.
+              Informe <strong>minutos/unidade</strong> para MO automática (CLT/PJ em Equipes MO). R$/unidade
+              só para custos fixos extras ou embalagem conhecida.
             </CardDescription>
           </div>
           <Button size="sm" variant="outline" onClick={() => setForm((f) => ({ ...f, etapas: [...f.etapas, emptyEtapa()] }))}>
@@ -868,10 +882,18 @@ function FichaEditor({
         </CardHeader>
         <CardContent className="space-y-3">
           {form.etapas.map((e, idx) => (
-            <div key={idx} className="grid gap-2 rounded-lg border p-3 md:grid-cols-6">
+            <div
+              key={idx}
+              className="grid gap-2 rounded-lg border p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_5rem_7rem_5rem_5rem_5rem_auto]"
+            >
               <Select
                 value={e.tipo}
-                onValueChange={(v) => updateEtapa(idx, { tipo: v as TipoEtapaProcesso, nome: LABEL_ETAPA_PROCESSO[v as TipoEtapaProcesso] })}
+                onValueChange={(v) =>
+                  updateEtapa(idx, {
+                    tipo: v as TipoEtapaProcesso,
+                    nome: LABEL_ETAPA_PROCESSO[v as TipoEtapaProcesso],
+                  })
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -886,24 +908,50 @@ function FichaEditor({
               </Select>
               <Input value={e.nome} onChange={(ev) => updateEtapa(idx, { nome: ev.target.value })} />
               <Input
-                placeholder="R$/unidade"
+                placeholder="Min/un"
+                inputMode="decimal"
+                title="Minutos por unidade vendida"
+                value={e.minutosPorUnidade}
+                onChange={(ev) => updateEtapa(idx, { minutosPorUnidade: ev.target.value })}
+              />
+              <Select
+                value={e.regimeMo}
+                onValueChange={(v) => updateEtapa(idx, { regimeMo: v as RegimeMoEtapa })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {REGIMES_MO_ETAPA.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {LABEL_REGIME_MO_ETAPA[r]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="R$/un fixo"
                 inputMode="decimal"
                 value={e.custoPorUnidade}
                 onChange={(ev) => updateEtapa(idx, { custoPorUnidade: ev.target.value })}
               />
               <Input
-                placeholder="R$/kg proc."
+                placeholder="R$/kg"
                 inputMode="decimal"
                 value={e.custoPorKgProcessado}
                 onChange={(ev) => updateEtapa(idx, { custoPorKgProcessado: ev.target.value })}
               />
               <Input
-                placeholder="% sobre subtotal"
+                placeholder="%"
                 inputMode="decimal"
                 value={e.custoPercentual}
                 onChange={(ev) => updateEtapa(idx, { custoPercentual: ev.target.value })}
               />
-              <Button variant="ghost" size="icon" onClick={() => setForm((f) => ({ ...f, etapas: f.etapas.filter((_, i) => i !== idx) }))}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setForm((f) => ({ ...f, etapas: f.etapas.filter((_, i) => i !== idx) }))}
+              >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>

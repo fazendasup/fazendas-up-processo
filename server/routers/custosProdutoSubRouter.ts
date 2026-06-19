@@ -10,6 +10,7 @@ import {
   type TipoEtapaProcesso,
   type TipoFichaCustoProduto,
 } from "@shared/custosProduto";
+import { REGIMES_MO_ETAPA, type RegimeMoEtapa } from "@shared/custosMoEquipe";
 import {
   commercialEditorCustosProducaoProjectProcedure,
   custosProducaoModuleProcedure,
@@ -34,6 +35,7 @@ const categoriaZ = z.enum(CATEGORIAS_PRODUTO_CUSTO);
 const unidadeZ = z.enum(UNIDADES_VENDA_PRODUTO);
 const tipoCompZ = z.enum(TIPOS_COMPONENTE_CUSTO);
 const tipoEtapaZ = z.enum(TIPOS_ETAPA_PROCESSO);
+const regimeMoZ = z.enum(REGIMES_MO_ETAPA);
 
 const componenteInput = z.object({
   tipo: tipoCompZ,
@@ -54,6 +56,8 @@ const etapaInput = z.object({
   custoPorUnidade: z.number().nonnegative().default(0),
   custoPorKgProcessado: z.number().nonnegative().optional().nullable(),
   custoPercentual: z.number().min(0).max(100).optional().nullable(),
+  minutosPorUnidade: z.number().nonnegative().optional().nullable(),
+  regimeMo: regimeMoZ.optional().default("qualquer"),
   ordem: z.number().int().optional(),
 });
 
@@ -214,6 +218,9 @@ export const custosProdutoSubRouter = router({
             e.custoPorKgProcessado != null ? String(e.custoPorKgProcessado) : null,
           custoPercentual:
             e.custoPercentual != null ? String(e.custoPercentual) : null,
+          minutosPorUnidade:
+            e.minutosPorUnidade != null ? String(e.minutosPorUnidade) : null,
+          regimeMo: (e.regimeMo ?? "qualquer") as RegimeMoEtapa,
           ordem: e.ordem ?? i,
         })),
       );
@@ -283,9 +290,28 @@ export const custosProdutoSubRouter = router({
           e.custoPorKgProcessado != null ? String(e.custoPorKgProcessado) : null,
         custoPercentual:
           e.custoPercentual != null ? String(e.custoPercentual) : null,
+        minutosPorUnidade:
+          e.minutosPorUnidade != null ? String(e.minutosPorUnidade) : null,
+        regimeMo: (e.regimeMo ?? "qualquer") as RegimeMoEtapa,
         ordem: e.ordem ?? i,
       }));
       const calcInput = await fichaParaCalculoInput(pid, fichaFake, componentes, etapas);
+      const moEquipeDb = await import("../custosMoEquipeDb");
+      const { mapaCustoHoraProcessamento } = await import("@shared/custosMoEquipe");
+      const equipesRows = await moEquipeDb.listMoEquipes(pid);
+      calcInput.custoHoraMo = mapaCustoHoraProcessamento(
+        equipesRows.map((r) => ({
+          nome: r.nome,
+          regime: r.regime as "clt" | "pj",
+          finalidade: r.finalidade as "processamento" | "overhead",
+          numPessoas: r.numPessoas,
+          horasMes: Number(r.horasMes),
+          custoMensalBase: r.custoMensalBase != null ? Number(r.custoMensalBase) : null,
+          encargosPct: r.encargosPct != null ? Number(r.encargosPct) : null,
+          custoMensalTotal: r.custoMensalTotal != null ? Number(r.custoMensalTotal) : null,
+          ativo: r.ativo,
+        })),
+      );
       return calcularCustoProduto(calcInput);
     }),
 });

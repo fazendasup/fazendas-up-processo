@@ -25,6 +25,7 @@ import {
 import type { InsertCustoProducaoItem } from "../../drizzle/schema";
 import { custosProdutoSubRouter } from "./custosProdutoSubRouter";
 import { custosRentabilidadeSubRouter } from "./custosRentabilidadeSubRouter";
+import { custosMoEquipeSubRouter } from "./custosMoEquipeSubRouter";
 
 const grupoZ = z.enum(GRUPOS_CUSTO_PRODUCAO as unknown as [GrupoCustoProducao, ...GrupoCustoProducao[]]);
 const modoZ = z.enum(MODOS_CUSTO_PRODUCAO as unknown as [ModoCustoProducao, ...ModoCustoProducao[]]);
@@ -488,5 +489,6 @@ export const custosProducaoRouter = router({
     }),
 
   produtos: custosProdutoSubRouter,
+  moEquipes: custosMoEquipeSubRouter,
   rentabilidade: custosRentabilidadeSubRouter,
 });

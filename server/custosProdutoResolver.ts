@@ -1,5 +1,6 @@
 import type { ComponenteCalculoInput, EtapaCalculoInput, FichaCalculoInput } from "@shared/custosProduto";
 import { calcularCustoProduto } from "@shared/custosProduto";
+import { mapaCustoHoraProcessamento, type MoEquipeInput } from "@shared/custosMoEquipe";
 import type {
   CustoProdutoComponenteRow,
   CustoProdutoEtapaRow,
@@ -133,6 +134,8 @@ export async function fichaParaCalculoInput(
     custoPorUnidadeFinal: num(e.custoPorUnidade) ?? 0,
     custoPorKgProcessado: num(e.custoPorKgProcessado),
     custoPercentual: num(e.custoPercentual),
+    minutosPorUnidade: num(e.minutosPorUnidade),
+    regimeMo: (e.regimeMo ?? "qualquer") as EtapaCalculoInput["regimeMo"],
   }));
 
   const variedadeId = ficha.variedadeId;
@@ -158,11 +161,26 @@ export async function fichaParaCalculoInput(
 
 export async function calcularFichaCompleta(projetoId: number, ficha: CustoProdutoFichaRow) {
   const { listComponentesByFichaIds, listEtapasByFichaIds } = await import("./custosProdutoDb");
-  const [componentes, etapas] = await Promise.all([
+  const moEquipeDb = await import("./custosMoEquipeDb");
+  const [componentes, etapas, equipesRows] = await Promise.all([
     listComponentesByFichaIds([ficha.id]),
     listEtapasByFichaIds([ficha.id]),
+    moEquipeDb.listMoEquipes(projetoId),
   ]);
+  const equipes: MoEquipeInput[] = equipesRows.map((r) => ({
+    id: r.id,
+    nome: r.nome,
+    regime: r.regime as MoEquipeInput["regime"],
+    finalidade: r.finalidade as MoEquipeInput["finalidade"],
+    numPessoas: r.numPessoas,
+    horasMes: num(r.horasMes) ?? 0,
+    custoMensalBase: num(r.custoMensalBase),
+    encargosPct: num(r.encargosPct),
+    custoMensalTotal: num(r.custoMensalTotal),
+    ativo: r.ativo,
+  }));
   const input = await fichaParaCalculoInput(projetoId, ficha, componentes, etapas);
+  input.custoHoraMo = mapaCustoHoraProcessamento(equipes);
   return calcularCustoProduto(input);
 }
 

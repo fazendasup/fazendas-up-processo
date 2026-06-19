@@ -1,4 +1,5 @@
-/** Fichas de custo por produto/SKU vendido — produção própria, revenda processada e mix. */
+import type { CustoHoraPorRegime, RegimeMoEtapa } from "./custosMoEquipe";
+import { custoMoPorMinutos } from "./custosMoEquipe";
 
 export const TIPOS_FICHA_CUSTO_PRODUTO = [
   "producao_propria",
@@ -81,6 +82,9 @@ export type EtapaCalculoInput = {
   custoPorKgProcessado?: number | null;
   /** Percentual aplicado sobre o subtotal acumulado antes desta etapa. */
   custoPercentual?: number | null;
+  /** Tempo padrão por unidade vendida (min) — MO calculada via R$/h das equipes. */
+  minutosPorUnidade?: number | null;
+  regimeMo?: RegimeMoEtapa;
 };
 
 export type FichaCalculoInput = {
@@ -106,6 +110,8 @@ export type FichaCalculoInput = {
   kgProducaoPorUnidade?: number | null;
   componentes: ComponenteCalculoInput[];
   etapas: EtapaCalculoInput[];
+  /** R$/h das equipes de processamento (CLT, PJ, misto). */
+  custoHoraMo?: CustoHoraPorRegime | null;
 };
 
 export type DetalheCustoLinha = {
@@ -240,6 +246,7 @@ export function custoEtapasProcesso(
   etapas: EtapaCalculoInput[],
   kgLiquidoPorUnidade: number | null,
   custoBase = 0,
+  custoHoraMo?: CustoHoraPorRegime | null,
 ): { custo: number; detalhes: DetalheCustoLinha[] } {
   const detalhes: DetalheCustoLinha[] = [];
   let custo = 0;
@@ -247,12 +254,21 @@ export function custoEtapasProcesso(
     const fixo = toNum(e.custoPorUnidadeFinal) ?? 0;
     const porKg = toNum(e.custoPorKgProcessado) ?? 0;
     const pct = clampPct(toNum(e.custoPercentual) ?? 0);
+    const minutos = toNum(e.minutosPorUnidade) ?? 0;
+    const moTempo =
+      minutos > 0 && custoHoraMo
+        ? custoMoPorMinutos(minutos, e.regimeMo, custoHoraMo)
+        : 0;
     const variavel = kgLiquidoPorUnidade != null && kgLiquidoPorUnidade > 0 ? porKg * kgLiquidoPorUnidade : 0;
     const percentual = ((custoBase + custo) * pct) / 100;
-    const linha = fixo + variavel + percentual;
+    const linha = fixo + variavel + percentual + moTempo;
     if (linha > 0) {
       custo += linha;
-      detalhes.push({ grupo: "processo", label: e.nome, valor: linha });
+      const suffix =
+        moTempo > 0 && minutos > 0
+          ? ` (${minutos} min${e.regimeMo && e.regimeMo !== "qualquer" ? ` · ${e.regimeMo.toUpperCase()}` : ""})`
+          : "";
+      detalhes.push({ grupo: "processo", label: `${e.nome}${suffix}`, valor: linha });
     }
   }
   return { custo, detalhes };
@@ -309,7 +325,7 @@ export function calcularCustoProduto(input: FichaCalculoInput): ResultadoCustoPr
     }
   }
 
-  const proc = custoEtapasProcesso(input.etapas, kgLiquidoPorUnidade, custoMaterial);
+  const proc = custoEtapasProcesso(input.etapas, kgLiquidoPorUnidade, custoMaterial, input.custoHoraMo);
   const custoProcesso = proc.custo;
   detalhes.push(...proc.detalhes);
 

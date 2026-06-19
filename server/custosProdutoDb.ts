@@ -71,6 +71,8 @@ export async function ensureCustosProdutosTables(): Promise<void> {
   \`custoPorUnidade\` decimal(14,6) NOT NULL DEFAULT 0,
   \`custoPorKgProcessado\` decimal(18,8) NULL,
   \`custoPercentual\` decimal(8,4) NULL,
+  \`minutosPorUnidade\` decimal(10,4) NULL,
+  \`regimeMo\` enum('clt','pj','qualquer') NOT NULL DEFAULT 'qualquer',
   \`ordem\` int NOT NULL DEFAULT 0,
   CONSTRAINT \`custos_produtos_etapas_id\` PRIMARY KEY(\`id\`),
   KEY \`idx_custos_prod_etapas_ficha\` (\`fichaId\`)
@@ -94,6 +96,19 @@ export async function ensureCustosProdutosTables(): Promise<void> {
     if (!isMysqlDuplicateColumnError(err)) {
       const msg = err instanceof Error ? err.message : String(err);
       console.warn("[custosProdutoDb] ensure custoPercentual:", msg.slice(0, 160));
+    }
+  }
+  for (const stmt of [
+    "ALTER TABLE `custos_produtos_etapas` ADD COLUMN `minutosPorUnidade` decimal(10,4) NULL",
+    "ALTER TABLE `custos_produtos_etapas` ADD COLUMN `regimeMo` enum('clt','pj','qualquer') NOT NULL DEFAULT 'qualquer'",
+  ]) {
+    try {
+      await db.execute(sql.raw(stmt));
+    } catch (err: unknown) {
+      if (!isMysqlDuplicateColumnError(err)) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn("[custosProdutoDb] ensure etapa mo:", msg.slice(0, 160));
+      }
     }
   }
 }
