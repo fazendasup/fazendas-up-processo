@@ -199,10 +199,10 @@
       "breakpoints": true
     },
     {
-      "idx": 38,
+      "idx": 39,
       "version": "5",
-      "when": 1777000000000,
-      "tag": "0038_custos_produtos_etapas_percentual",
+      "when": 1777100000000,
+      "tag": "0039_custos_rentabilidade",
       "breakpoints": true
     }
   ]

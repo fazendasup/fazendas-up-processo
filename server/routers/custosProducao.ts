@@ -24,6 +24,7 @@ import {
 } from "../_core/trpc";
 import type { InsertCustoProducaoItem } from "../../drizzle/schema";
 import { custosProdutoSubRouter } from "./custosProdutoSubRouter";
+import { custosRentabilidadeSubRouter } from "./custosRentabilidadeSubRouter";
 
 const grupoZ = z.enum(GRUPOS_CUSTO_PRODUCAO as unknown as [GrupoCustoProducao, ...GrupoCustoProducao[]]);
 const modoZ = z.enum(MODOS_CUSTO_PRODUCAO as unknown as [ModoCustoProducao, ...ModoCustoProducao[]]);
@@ -487,4 +488,5 @@ export const custosProducaoRouter = router({
     }),
 
   produtos: custosProdutoSubRouter,
+  rentabilidade: custosRentabilidadeSubRouter,
 });

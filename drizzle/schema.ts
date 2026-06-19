@@ -10,6 +10,7 @@ import {
   json,
   decimal,
   uniqueIndex,
+  date,
 } from "drizzle-orm/mysql-core";
 
 // ============================================================
@@ -874,6 +875,37 @@ export const custosProdutosEtapas = mysqlTable("custos_produtos_etapas", {
 
 export type CustoProdutoEtapaRow = typeof custosProdutosEtapas.$inferSelect;
 export type InsertCustoProdutoEtapa = typeof custosProdutosEtapas.$inferInsert;
+
+export const custosRentabilidadePeriodos = mysqlTable("custos_rentabilidade_periodos", {
+  id: int("id").autoincrement().primaryKey(),
+  projetoId: int("projetoId").notNull(),
+  titulo: varchar("titulo", { length: 160 }).notNull(),
+  inicio: date("inicio").notNull(),
+  fim: date("fim").notNull(),
+  custoOperacionalTotal: decimal("custoOperacionalTotal", { precision: 14, scale: 2 }),
+  usarCustoSugerido: boolean("usarCustoSugerido").notNull().default(true),
+  observacoes: text("observacoes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CustoRentabilidadePeriodoRow = typeof custosRentabilidadePeriodos.$inferSelect;
+export type InsertCustoRentabilidadePeriodo = typeof custosRentabilidadePeriodos.$inferInsert;
+
+export const custosRentabilidadeLinhas = mysqlTable("custos_rentabilidade_linhas", {
+  id: int("id").autoincrement().primaryKey(),
+  periodoId: int("periodoId").notNull(),
+  fichaId: int("fichaId"),
+  nomeProduto: varchar("nomeProduto", { length: 200 }).notNull(),
+  quantidade: decimal("quantidade", { precision: 20, scale: 6 }).notNull().default("0"),
+  receitaTotal: decimal("receitaTotal", { precision: 14, scale: 2 }).notNull().default("0"),
+  custoUnitarioManual: decimal("custoUnitarioManual", { precision: 18, scale: 8 }),
+  observacoes: text("observacoes"),
+  ordem: int("ordem").notNull().default(0),
+});
+
+export type CustoRentabilidadeLinhaRow = typeof custosRentabilidadeLinhas.$inferSelect;
+export type InsertCustoRentabilidadeLinha = typeof custosRentabilidadeLinhas.$inferInsert;
 
 /** Análises de imagens do cultivo (visão computacional). */
 export const visionCultivoAnalyses = mysqlTable("vision_cultivo_analyses", {
