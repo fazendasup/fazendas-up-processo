@@ -32,6 +32,7 @@ import { calcularRentabilidade } from "@shared/custosRentabilidade";
 import { downloadCsvUtf8Bom } from "@/lib/estoqueRelatorio";
 import {
   AlertTriangle,
+  CloudDownload,
   Download,
   Plus,
   Save,
@@ -59,6 +60,33 @@ function isoLocal(d: Date) {
 function inicioMesAtual() {
   const d = new Date();
   return isoLocal(new Date(d.getFullYear(), d.getMonth(), 1));
+}
+
+function mesReferenciaDeInicio(inicioStr: string) {
+  return inicioStr.slice(0, 7);
+}
+
+function aplicarMesReferencia(mesRef: string) {
+  const [y, m] = mesRef.split("-").map(Number);
+  if (!y || !m) return null;
+  const inicioMes = isoLocal(new Date(y, m - 1, 1));
+  const fimMes = isoLocal(new Date(y, m, 0));
+  const tituloMes = new Date(y, m - 1, 1).toLocaleDateString("pt-BR", {
+    month: "short",
+    year: "numeric",
+  });
+  return { inicioMes, fimMes, tituloMes };
+}
+
+function fmtDataHora(d: Date | string | null | undefined) {
+  if (!d) return "—";
+  return new Date(d).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 type LinhaForm = {
@@ -169,6 +197,18 @@ export function CustosRentabilidadePanel() {
     { id: periodoId! },
     { enabled: periodoId != null },
   );
+
+  const periodoContaAzul = useMemo(
+    () => ({
+      inicio: new Date(`${inicio}T00:00:00`),
+      fim: new Date(`${fim}T23:59:59`),
+    }),
+    [inicio, fim],
+  );
+
+  const vendasContaAzul = trpc.custosProducao.rentabilidade.vendasContaAzul.useQuery(periodoContaAzul, {
+    staleTime: 60_000,
+  });
 
   const salvar = trpc.custosProducao.rentabilidade.salvarPeriodo.useMutation({
     onSuccess: async (data) => {
@@ -284,6 +324,25 @@ export function CustosRentabilidadePanel() {
 
   const tituloExibicao = titulo.trim() || `Período ${inicio}`;
 
+  const importarVendasContaAzul = () => {
+    const produtos = vendasContaAzul.data?.produtos ?? [];
+    if (produtos.length === 0) {
+      toast.error("Nenhuma venda efetivada do Conta Azul neste período.");
+      return;
+    }
+    setLinhas(
+      produtos.map((p) => ({
+        key: crypto.randomUUID(),
+        fichaId: p.fichaId != null ? String(p.fichaId) : "",
+        nomeProduto: p.produtoNome,
+        quantidade: String(p.quantidade),
+        receitaTotal: String(p.receitaTotal),
+        custoUnitarioManual: "",
+      })),
+    );
+    toast.success(`${produtos.length} produto(s) importados das vendas Conta Azul.`);
+  };
+
   const handleSalvar = () => {
     const linhasValidas = linhas.filter(
       (l) => l.nomeProduto.trim() && (parseNum(l.quantidade) > 0 || parseNum(l.receitaTotal) > 0),
@@ -335,12 +394,11 @@ export function CustosRentabilidadePanel() {
     <div className="space-y-4 mt-4">
       <Alert>
         <Wallet className="h-4 w-4" />
-        <AlertTitle>Lucro e prejuízo por SKU — lançamento manual</AlertTitle>
+        <AlertTitle>Lucro e prejuízo por SKU — vendas Conta Azul + CMV das fichas</AlertTitle>
         <AlertDescription>
-          Informe as vendas do período (quantidade e receita). O CMV vem da ficha em{" "}
-          <strong>Produtos vendidos</strong>, ou você pode sobrescrever o custo unitário na linha.
-          O custo operacional do mês pode vir das rubricas em <strong>Compartilhados</strong> ou ser
-          digitado manualmente.
+          Escolha o mês e importe as vendas reais sincronizadas do Conta Azul. O CMV vem da ficha em{" "}
+          <strong>Produtos vendidos</strong> (vínculo por produto comercial ou nome). Custos
+          operacionais podem vir de <strong>Compartilhados</strong> ou ser digitados manualmente.
         </AlertDescription>
       </Alert>
 
@@ -394,6 +452,20 @@ export function CustosRentabilidadePanel() {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2 md:col-span-2">
+            <Label>Mês de referência</Label>
+            <Input
+              type="month"
+              value={mesReferenciaDeInicio(inicio)}
+              onChange={(e) => {
+                const parsed = aplicarMesReferencia(e.target.value);
+                if (!parsed) return;
+                setInicio(parsed.inicioMes);
+                setFim(parsed.fimMes);
+                if (!titulo.trim() || periodoId == null) setTitulo(parsed.tituloMes);
+              }}
+            />
+          </div>
           <div className="space-y-2">
             <Label>Título</Label>
             <Input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ex.: Jun/2026" />
@@ -438,11 +510,111 @@ export function CustosRentabilidadePanel() {
       </Card>
 
       <Card>
+        <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2">
+          <div>
+            <CardTitle className="text-base">Vendas Conta Azul no período</CardTitle>
+            <CardDescription>
+              {vendasContaAzul.isLoading
+                ? "Carregando vendas sincronizadas..."
+                : vendasContaAzul.data
+                  ? `${vendasContaAzul.data.pedidosVenda} pedido(s) · ${vendasContaAzul.data.produtos.length} produto(s) · receita ${fmtMoney(vendasContaAzul.data.receitaTotal)}`
+                  : "Selecione o mês para ver as vendas reais."}
+            </CardDescription>
+            {vendasContaAzul.data?.ultimaSyncContaAzul ? (
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Última sync Conta Azul: {fmtDataHora(vendasContaAzul.data.ultimaSyncContaAzul)}
+                {vendasContaAzul.data.ultimaSyncStatus
+                  ? ` (${vendasContaAzul.data.ultimaSyncStatus})`
+                  : ""}
+              </p>
+            ) : null}
+          </div>
+          <Button
+            size="sm"
+            onClick={importarVendasContaAzul}
+            disabled={
+              vendasContaAzul.isLoading || (vendasContaAzul.data?.produtos.length ?? 0) === 0
+            }
+          >
+            <CloudDownload className="h-4 w-4 mr-1" />
+            Importar vendas
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {vendasContaAzul.isError ? (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Erro ao carregar vendas</AlertTitle>
+              <AlertDescription>{vendasContaAzul.error.message}</AlertDescription>
+            </Alert>
+          ) : vendasContaAzul.isLoading ? (
+            <p className="text-sm text-muted-foreground">Consultando vendas do Conta Azul...</p>
+          ) : (vendasContaAzul.data?.produtos.length ?? 0) === 0 ? (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Sem vendas no período</AlertTitle>
+              <AlertDescription>
+                Não há vendas efetivadas do Conta Azul entre {inicio} e {fim}. Verifique se a sync
+                comercial está atualizada ou ajuste o mês.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <div className="space-y-3">
+              {vendasContaAzul.data!.produtosSemFicha > 0 ? (
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    {vendasContaAzul.data!.produtosSemFicha} produto(s) vendido(s) sem ficha de
+                    custo vinculada — o CMV ficará incompleto até cadastrar em Produtos vendidos.
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Produto vendido</TableHead>
+                    <TableHead className="text-right">Qtd.</TableHead>
+                    <TableHead className="text-right">Receita</TableHead>
+                    <TableHead>Ficha CMV</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {vendasContaAzul.data!.produtos.map((p) => (
+                    <TableRow key={p.chave}>
+                      <TableCell>
+                        <div className="font-medium">{p.produtoNome}</div>
+                        {p.sku ? (
+                          <span className="text-[11px] text-muted-foreground">SKU {p.sku}</span>
+                        ) : null}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{p.quantidade}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {fmtMoney(p.receitaTotal)}
+                      </TableCell>
+                      <TableCell>
+                        {p.fichaId ? (
+                          <Badge variant="secondary" className="font-normal">
+                            {p.fichaNome ?? `Ficha #${p.fichaId}`}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline">Sem ficha</Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
           <div>
-            <CardTitle className="text-base">Vendas do período (manual)</CardTitle>
+            <CardTitle className="text-base">Linhas para análise</CardTitle>
             <CardDescription>
-              Vincule à ficha para puxar o CMV automaticamente, ou informe o custo unitário na linha.
+              Importe do Conta Azul ou ajuste manualmente. Vincule à ficha para CMV automático.
             </CardDescription>
           </div>
           <Button size="sm" variant="outline" onClick={() => setLinhas((p) => [...p, emptyLinha()])}>

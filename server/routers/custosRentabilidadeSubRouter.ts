@@ -13,6 +13,7 @@ import * as db from "../db";
 import * as rentabilidadeDb from "../custosRentabilidadeDb";
 import * as custosProdutoDb from "../custosProdutoDb";
 import { calcularFichaCompleta } from "../custosProdutoResolver";
+import { buscarVendasContaAzulPorPeriodo } from "../custosRentabilidadeContaAzul";
 
 const linhaInput = z.object({
   id: z.number().int().positive().optional(),
@@ -140,6 +141,13 @@ export const custosRentabilidadeSubRouter = router({
       if (!periodo) return null;
       const linhas = await rentabilidadeDb.listRentabilidadeLinhas(periodo.id);
       return montarResultado(pid, periodo, linhas);
+    }),
+
+  vendasContaAzul: custosProducaoModuleProcedure
+    .input(z.object({ inicio: z.coerce.date(), fim: z.coerce.date() }))
+    .query(async ({ ctx, input }) => {
+      const pid = projetoIdFromCtx(ctx);
+      return buscarVendasContaAzulPorPeriodo(pid, input.inicio, input.fim);
     }),
 
   sugestaoCustoOperacional: custosProducaoModuleProcedure.query(async ({ ctx }) => {
