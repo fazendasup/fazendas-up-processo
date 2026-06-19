@@ -28,6 +28,7 @@ import {
   LABEL_TIPO_FICHA_CUSTO_PRODUTO,
   type TipoFichaCustoProduto,
 } from "@shared/custosProduto";
+import { LABEL_GRUPO_CUSTO_PRODUCAO, type GrupoCustoProducao } from "@shared/custosProducao";
 import { calcularRentabilidade } from "@shared/custosRentabilidade";
 import { downloadCsvUtf8Bom } from "@/lib/estoqueRelatorio";
 import {
@@ -232,6 +233,12 @@ export function CustosRentabilidadePanel() {
 
   const fichaOptions = useMemo(() => fichas.data ?? [], [fichas.data]);
 
+  const fichaPorId = useMemo(() => {
+    const map = new Map<number, (typeof fichaOptions)[number]>();
+    for (const f of fichaOptions) map.set(f.ficha.id, f);
+    return map;
+  }, [fichaOptions]);
+
   const custoPorFicha = useMemo(() => {
     const map = new Map<number, number | null>();
     for (const row of fichaOptions) {
@@ -392,15 +399,43 @@ export function CustosRentabilidadePanel() {
 
   return (
     <div className="space-y-4 mt-4">
-      <Alert>
-        <Wallet className="h-4 w-4" />
-        <AlertTitle>Lucro e prejuízo por SKU — vendas Conta Azul + CMV das fichas</AlertTitle>
-        <AlertDescription>
-          Escolha o mês e importe as vendas reais sincronizadas do Conta Azul. O CMV vem da ficha em{" "}
-          <strong>Produtos vendidos</strong> (vínculo por produto comercial ou nome). Custos
-          operacionais podem vir de <strong>Compartilhados</strong> ou ser digitados manualmente.
-        </AlertDescription>
-      </Alert>
+      <Card className="border-indigo-200/60 bg-indigo-50/30 dark:border-indigo-900 dark:bg-indigo-950/20">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Wallet className="h-4 w-4" />
+            Como funciona o custo total
+          </CardTitle>
+          <CardDescription>
+            O lucro real junta <strong>três peças</strong>. Você não preenche tudo na Rentabilidade — a
+            maior parte vem de outras abas.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
+            <li>
+              <strong className="text-foreground">Receita</strong> — importada do Conta Azul (vendas
+              efetivadas do mês).
+            </li>
+            <li>
+              <strong className="text-foreground">CMV por unidade (ficha)</strong> — custo direto de
+              produzir/processar/vender aquele SKU: matéria-prima + etapas (lavagem, embalagem, MO
+              da linha, etc.). Cadastre em <strong>Produtos vendidos</strong>. Para produção própria,
+              o custo da planta já inclui rubricas <em>rateio entre variedades</em> de{" "}
+              <strong>Compartilhados</strong>.
+            </li>
+            <li>
+              <strong className="text-foreground">Custo operacional do mês</strong> — overhead fixo
+              (energia geral, admin, depreciação, logística fixa…): rubricas em{" "}
+              <strong>Compartilhados</strong> com valor mensal <em>sem</em> rateio entre variedades.
+              Reparte entre SKUs pela participação na receita.
+            </li>
+          </ol>
+          <p className="rounded-md border bg-background/80 px-3 py-2 font-mono text-xs">
+            Lucro bruto = Receita − CMV · Contribuição = Lucro bruto − rateio operacional · Resultado
+            do mês = Lucro bruto − custo operacional total
+          </p>
+        </CardContent>
+      </Card>
 
       <div className="flex flex-wrap items-center gap-2">
         <Select
@@ -447,8 +482,9 @@ export function CustosRentabilidadePanel() {
         <CardHeader>
           <CardTitle className="text-base">Período e custos da operação</CardTitle>
           <CardDescription>
-            Sugestão de custo operacional: {fmtMoney(sugestao.data?.total ?? 0)} (soma das rubricas
-            mensais em Compartilhados)
+            {usarCustoSugerido
+              ? `Soma automática: ${fmtMoney(sugestao.data?.total ?? 0)}/mês das rubricas compartilhadas abaixo (exclui rateio entre variedades, que já entra no CMV via planta).`
+              : "Informe o total mensal de overhead (tudo que não está no CMV unitário das fichas)."}
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
@@ -493,10 +529,49 @@ export function CustosRentabilidadePanel() {
                 inputMode="decimal"
                 value={custoOperacional}
                 onChange={(e) => setCustoOperacional(e.target.value)}
-                placeholder="Frete, mão de obra, overhead..."
+                placeholder="Overhead total do mês: admin, energia fixa, frete fixo..."
               />
             </div>
-          ) : null}
+          ) : (sugestao.data?.rubricas.length ?? 0) > 0 ? (
+            <div className="md:col-span-2 rounded-md border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Grupo</TableHead>
+                    <TableHead>Rubrica (Compartilhados)</TableHead>
+                    <TableHead className="text-right">R$/mês</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(sugestao.data?.rubricas ?? []).map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell className="text-xs">
+                        {LABEL_GRUPO_CUSTO_PRODUCAO[r.grupo as GrupoCustoProducao] ?? r.grupo}
+                      </TableCell>
+                      <TableCell>{r.rubrica}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {fmtMoney(r.valorMensal)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow className="bg-muted/40 font-semibold">
+                    <TableCell colSpan={2}>Total operacional sugerido</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {fmtMoney(sugestao.data?.total ?? 0)}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <Alert className="md:col-span-2">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Nenhuma rubrica mensal em <strong>Compartilhados</strong> (modo diferente de rateio
+                entre variedades). Cadastre lá ou desligue a sugestão e digite o total manualmente.
+              </AlertDescription>
+            </Alert>
+          )}
           <div className="space-y-2 md:col-span-2">
             <Label>Observações</Label>
             <Textarea
@@ -624,6 +699,8 @@ export function CustosRentabilidadePanel() {
         </CardHeader>
         <CardContent className="space-y-3">
           {linhas.map((linha) => {
+            const fichaRow =
+              linha.fichaId ? fichaPorId.get(Number(linha.fichaId)) : undefined;
             const custoFicha =
               linha.fichaId && custoPorFicha.get(Number(linha.fichaId)) != null
                 ? custoPorFicha.get(Number(linha.fichaId))
@@ -681,7 +758,7 @@ export function CustosRentabilidadePanel() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Custo un. (opc.)</Label>
+                  <Label className="text-xs">Custo un. manual</Label>
                   <Input
                     className="h-9"
                     inputMode="decimal"
@@ -689,7 +766,7 @@ export function CustosRentabilidadePanel() {
                     onChange={(e) =>
                       updateLinha(linha.key, { custoUnitarioManual: e.target.value })
                     }
-                    placeholder={custoFicha != null ? String(custoFicha) : ""}
+                    placeholder={custoFicha != null ? String(custoFicha) : "Só se não usar ficha"}
                   />
                 </div>
                 <div className="flex items-end">
@@ -703,10 +780,27 @@ export function CustosRentabilidadePanel() {
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
-                {custoFicha != null && !linha.custoUnitarioManual ? (
-                  <p className="text-[11px] text-muted-foreground md:col-span-full">
-                    CMV da ficha: {fmtMoney(custoFicha)}/un
-                  </p>
+                {fichaRow && !linha.custoUnitarioManual ? (
+                  <div className="md:col-span-full space-y-1">
+                    {custoFicha != null ? (
+                      <p className="text-[11px] text-muted-foreground">
+                        CMV ficha: {fmtMoney(custoFicha)}/un · material{" "}
+                        {fmtMoney(fichaRow.resultado.custoMaterial)} + processo{" "}
+                        {fmtMoney(fichaRow.resultado.custoProcesso)}
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-amber-700 dark:text-amber-300">
+                        Ficha incompleta — CMV não calculável.
+                      </p>
+                    )}
+                    {fichaRow.resultado.alertas.length > 0 ? (
+                      <ul className="text-[11px] text-amber-700 dark:text-amber-300 list-disc list-inside">
+                        {fichaRow.resultado.alertas.slice(0, 3).map((a) => (
+                          <li key={a}>{a}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
                 ) : null}
               </div>
             );
@@ -733,7 +827,7 @@ export function CustosRentabilidadePanel() {
           </Card>
           <Card>
             <CardHeader className="pb-1">
-              <CardTitle className="text-xs text-muted-foreground">CMV</CardTitle>
+              <CardTitle className="text-xs text-muted-foreground">CMV (fichas)</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xl font-bold tabular-nums">{fmtMoney(calculoAtual.totais.cmv)}</p>
@@ -754,7 +848,7 @@ export function CustosRentabilidadePanel() {
           </Card>
           <Card>
             <CardHeader className="pb-1">
-              <CardTitle className="text-xs text-muted-foreground">Custo operacional</CardTitle>
+              <CardTitle className="text-xs text-muted-foreground">Overhead do mês</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xl font-bold tabular-nums">
@@ -815,9 +909,9 @@ export function CustosRentabilidadePanel() {
                   <TableHead>Produto</TableHead>
                   <TableHead className="text-right">Qtd.</TableHead>
                   <TableHead className="text-right">Receita</TableHead>
-                  <TableHead className="text-right">CMV</TableHead>
+                  <TableHead className="text-right">CMV (ficha)</TableHead>
                   <TableHead className="text-right">Lucro bruto</TableHead>
-                  <TableHead className="text-right">Rateio op.</TableHead>
+                  <TableHead className="text-right">Rateio overhead</TableHead>
                   <TableHead className="text-right">Contribuição</TableHead>
                   <TableHead />
                 </TableRow>
