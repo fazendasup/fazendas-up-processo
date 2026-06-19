@@ -28,8 +28,11 @@ import {
   LABEL_TIPO_FICHA_CUSTO_PRODUTO,
   type TipoFichaCustoProduto,
 } from "@shared/custosProduto";
+import { calcularRentabilidade } from "@shared/custosRentabilidade";
+import { downloadCsvUtf8Bom } from "@/lib/estoqueRelatorio";
 import {
   AlertTriangle,
+  Download,
   Plus,
   Save,
   Trash2,
@@ -83,6 +86,68 @@ function parseNum(s: string): number {
   if (!t) return 0;
   const n = Number(t);
   return Number.isFinite(n) ? n : 0;
+}
+
+function csvCell(v: string | number | null | undefined): string {
+  if (v == null) return "";
+  const s = String(v);
+  if (/[",\n\r;]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function exportarCsvRentabilidade(
+  tituloPeriodo: string,
+  inicioStr: string,
+  fimStr: string,
+  calculo: ReturnType<typeof calcularRentabilidade>,
+) {
+  const headers = [
+    "Produto",
+    "Ficha ID",
+    "Quantidade",
+    "Receita (R$)",
+    "Custo unit. (R$)",
+    "Fonte custo",
+    "CMV (R$)",
+    "Lucro bruto (R$)",
+    "Margem bruta (%)",
+    "Rateio operacional (R$)",
+    "Contribuição (R$)",
+    "Status",
+  ];
+  const linhas = calculo.linhas.map((l) =>
+    [
+      csvCell(l.nomeProduto),
+      csvCell(l.fichaId),
+      csvCell(l.quantidade),
+      csvCell(l.receitaTotal),
+      csvCell(l.custoUnitario),
+      csvCell(l.custoUnitarioFonte ?? ""),
+      csvCell(l.cmv),
+      csvCell(l.lucroBruto),
+      csvCell(l.margemBrutaPct),
+      csvCell(l.rateioOperacional),
+      csvCell(l.contribuicao),
+      csvCell(l.status),
+    ].join(";"),
+  );
+  const resumo = [
+    "",
+    "",
+    "",
+    csvCell(calculo.totais.receita),
+    "",
+    "",
+    csvCell(calculo.totais.cmv),
+    csvCell(calculo.totais.lucroBruto),
+    csvCell(calculo.totais.margemBrutaPct),
+    csvCell(calculo.totais.custoOperacional),
+    csvCell(calculo.totais.resultado),
+    "TOTAL",
+  ].join(";");
+  const content = [headers.join(";"), ...linhas, resumo].join("\r\n");
+  const slug = (tituloPeriodo.trim() || `${inicioStr}_${fimStr}`).replace(/[^\w.-]+/g, "_");
+  downloadCsvUtf8Bom(content, `rentabilidade_${slug}.csv`);
 }
 
 export function CustosRentabilidadePanel() {
@@ -151,10 +216,6 @@ export function CustosRentabilidadePanel() {
   }
 
   useEffect(() => {
-    if (periodoId != null || !detalhe.data) return;
-  }, [periodoId, detalhe.data]);
-
-  useEffect(() => {
     if (!detalhe.data || periodoId == null) return;
     const p = detalhe.data.periodo;
     setTitulo(p.titulo);
@@ -185,7 +246,43 @@ export function CustosRentabilidadePanel() {
     }
   }, [usarCustoSugerido, sugestao.data?.total, custoOperacional]);
 
-  const resultado = detalhe.data;
+  const custoOpAtual = useMemo(() => {
+    if (usarCustoSugerido) return sugestao.data?.total ?? 0;
+    return parseNum(custoOperacional);
+  }, [usarCustoSugerido, sugestao.data?.total, custoOperacional]);
+
+  const linhasCalculo = useMemo(
+    () =>
+      linhas
+        .filter(
+          (l) =>
+            l.nomeProduto.trim() &&
+            (parseNum(l.quantidade) > 0 || parseNum(l.receitaTotal) > 0),
+        )
+        .map((l) => ({
+          fichaId: l.fichaId ? Number(l.fichaId) : null,
+          nomeProduto: l.nomeProduto.trim(),
+          quantidade: parseNum(l.quantidade),
+          receitaTotal: parseNum(l.receitaTotal),
+          custoUnitarioManual: l.custoUnitarioManual.trim()
+            ? parseNum(l.custoUnitarioManual)
+            : null,
+          custoUnitarioFicha: l.fichaId
+            ? (custoPorFicha.get(Number(l.fichaId)) ?? null)
+            : null,
+        })),
+    [linhas, custoPorFicha],
+  );
+
+  const calculoAtual = useMemo(() => {
+    if (linhasCalculo.length === 0) return null;
+    return calcularRentabilidade({
+      linhas: linhasCalculo,
+      custoOperacionalTotal: custoOpAtual,
+    });
+  }, [linhasCalculo, custoOpAtual]);
+
+  const tituloExibicao = titulo.trim() || `Período ${inicio}`;
 
   const handleSalvar = () => {
     const linhasValidas = linhas.filter(
@@ -287,65 +384,6 @@ export function CustosRentabilidadePanel() {
           </Button>
         ) : null}
       </div>
-
-      {resultado ? (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="pb-1">
-              <CardTitle className="text-xs text-muted-foreground">Receita</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xl font-bold tabular-nums">{fmtMoney(resultado.totais.receita)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-1">
-              <CardTitle className="text-xs text-muted-foreground">CMV</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xl font-bold tabular-nums">{fmtMoney(resultado.totais.cmv)}</p>
-              <p className="text-xs text-muted-foreground">
-                Margem bruta {fmtPct(resultado.totais.margemBrutaPct)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-1">
-              <CardTitle className="text-xs text-muted-foreground">Custo operacional</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xl font-bold tabular-nums">
-                {fmtMoney(resultado.periodo.custoOperacionalTotal)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card
-            className={
-              resultado.totais.resultado >= 0
-                ? "border-emerald-200 bg-emerald-50/40 dark:border-emerald-900 dark:bg-emerald-950/20"
-                : "border-rose-200 bg-rose-50/40 dark:border-rose-900 dark:bg-rose-950/20"
-            }
-          >
-            <CardHeader className="pb-1">
-              <CardTitle className="text-xs">Resultado do período</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xl font-bold tabular-nums flex items-center gap-2">
-                {resultado.totais.resultado >= 0 ? (
-                  <TrendingUp className="h-5 w-5 text-emerald-600" />
-                ) : (
-                  <TrendingDown className="h-5 w-5 text-rose-600" />
-                )}
-                {fmtMoney(resultado.totais.resultado)}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {resultado.totais.linhasLucro} lucro · {resultado.totais.linhasPrejuizo} prejuízo ·{" "}
-                {resultado.totais.linhasIncompletas} incompleto(s)
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
 
       <Card>
         <CardHeader>
@@ -508,10 +546,95 @@ export function CustosRentabilidadePanel() {
         </CardContent>
       </Card>
 
-      {resultado && resultado.linhas.length > 0 ? (
+      {calculoAtual ? (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <Card>
+            <CardHeader className="pb-1">
+              <CardTitle className="text-xs text-muted-foreground">Receita</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xl font-bold tabular-nums">{fmtMoney(calculoAtual.totais.receita)}</p>
+              <p className="text-xs text-muted-foreground">
+                {linhasCalculo.length} produto(s)
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-1">
+              <CardTitle className="text-xs text-muted-foreground">CMV</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xl font-bold tabular-nums">{fmtMoney(calculoAtual.totais.cmv)}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-1">
+              <CardTitle className="text-xs text-muted-foreground">Lucro bruto</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xl font-bold tabular-nums">
+                {fmtMoney(calculoAtual.totais.lucroBruto)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Margem {fmtPct(calculoAtual.totais.margemBrutaPct)}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-1">
+              <CardTitle className="text-xs text-muted-foreground">Custo operacional</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xl font-bold tabular-nums">
+                {fmtMoney(calculoAtual.totais.custoOperacional)}
+              </p>
+              {usarCustoSugerido ? (
+                <p className="text-xs text-muted-foreground">Sugerido (Compartilhados)</p>
+              ) : null}
+            </CardContent>
+          </Card>
+          <Card
+            className={
+              calculoAtual.totais.resultado >= 0
+                ? "border-emerald-200 bg-emerald-50/40 dark:border-emerald-900 dark:bg-emerald-950/20"
+                : "border-rose-200 bg-rose-50/40 dark:border-rose-900 dark:bg-rose-950/20"
+            }
+          >
+            <CardHeader className="pb-1">
+              <CardTitle className="text-xs">Resultado do período</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xl font-bold tabular-nums flex items-center gap-2">
+                {calculoAtual.totais.resultado >= 0 ? (
+                  <TrendingUp className="h-5 w-5 text-emerald-600" />
+                ) : (
+                  <TrendingDown className="h-5 w-5 text-rose-600" />
+                )}
+                {fmtMoney(calculoAtual.totais.resultado)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {calculoAtual.totais.linhasLucro} lucro · {calculoAtual.totais.linhasPrejuizo}{" "}
+                prejuízo · {calculoAtual.totais.linhasIncompletas} incompleto(s)
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
+
+      {calculoAtual && calculoAtual.linhas.length > 0 ? (
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
             <CardTitle className="text-base">Resultado por produto</CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                exportarCsvRentabilidade(tituloExibicao, inicio, fim, calculoAtual)
+              }
+            >
+              <Download className="h-4 w-4 mr-1" />
+              Exportar CSV
+            </Button>
           </CardHeader>
           <CardContent>
             <Table>
@@ -528,52 +651,68 @@ export function CustosRentabilidadePanel() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {resultado.linhas.map((l) => {
-                  const r = l.resultado;
-                  if (!r) return null;
-                  return (
-                    <TableRow key={l.id}>
-                      <TableCell>
-                        <div className="font-medium">{l.nomeProduto}</div>
-                        {l.fichaId ? (
-                          <span className="text-[11px] text-muted-foreground">
-                            Ficha #{l.fichaId}
-                            {r.custoUnitarioFonte === "manual" ? " · custo manual" : ""}
-                          </span>
-                        ) : null}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">{l.quantidade}</TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {fmtMoney(l.receitaTotal)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">{fmtMoney(r.cmv)}</TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {fmtMoney(r.lucroBruto)}
-                        <span className="block text-[10px] text-muted-foreground">
-                          {fmtPct(r.margemBrutaPct)}
+                {calculoAtual.linhas.map((r, idx) => (
+                  <TableRow key={`${r.nomeProduto}-${idx}`}>
+                    <TableCell>
+                      <div className="font-medium">{r.nomeProduto}</div>
+                      {r.fichaId ? (
+                        <span className="text-[11px] text-muted-foreground">
+                          Ficha #{r.fichaId}
+                          {r.custoUnitarioFonte === "manual" ? " · custo manual" : ""}
                         </span>
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {fmtMoney(r.rateioOperacional)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums font-semibold">
-                        {fmtMoney(r.contribuicao)}
-                      </TableCell>
-                      <TableCell>
-                        {r.status === "lucro" ? (
-                          <Badge className="bg-emerald-600">Lucro</Badge>
-                        ) : r.status === "prejuizo" ? (
-                          <Badge variant="destructive">Prejuízo</Badge>
-                        ) : (
-                          <Badge variant="outline">
-                            <AlertTriangle className="h-3 w-3 mr-1" />
-                            Incompleto
-                          </Badge>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                      ) : null}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{r.quantidade}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {fmtMoney(r.receitaTotal)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{fmtMoney(r.cmv)}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {fmtMoney(r.lucroBruto)}
+                      <span className="block text-[10px] text-muted-foreground">
+                        {fmtPct(r.margemBrutaPct)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {fmtMoney(r.rateioOperacional)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums font-semibold">
+                      {fmtMoney(r.contribuicao)}
+                    </TableCell>
+                    <TableCell>
+                      {r.status === "lucro" ? (
+                        <Badge className="bg-emerald-600">Lucro</Badge>
+                      ) : r.status === "prejuizo" ? (
+                        <Badge variant="destructive">Prejuízo</Badge>
+                      ) : (
+                        <Badge variant="outline">
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          Incompleto
+                        </Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                <TableRow className="bg-muted/40 font-semibold">
+                  <TableCell>Total do período</TableCell>
+                  <TableCell />
+                  <TableCell className="text-right tabular-nums">
+                    {fmtMoney(calculoAtual.totais.receita)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {fmtMoney(calculoAtual.totais.cmv)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {fmtMoney(calculoAtual.totais.lucroBruto)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {fmtMoney(calculoAtual.totais.custoOperacional)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {fmtMoney(calculoAtual.totais.resultado)}
+                  </TableCell>
+                  <TableCell />
+                </TableRow>
               </TableBody>
             </Table>
           </CardContent>
