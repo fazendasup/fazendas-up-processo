@@ -31,9 +31,9 @@ describe("calcularLinhaProcessoIndustrial", () => {
     });
     const umOp = calcularLinhaProcessoIndustrial({
       ...LINHA_PROCESSO_INDUSTRIAL_PADRAO,
-      preLavagemOperadorId: "1",
-      enxagueOperadorId: "1",
-      secagemOperadorId: "2",
+      preLavagemOperadorIds: ["1"],
+      enxagueOperadorIds: ["1"],
+      secagemOperadorIds: ["2"],
       operadores: [
         { id: "1", nome: "Maria", regimeMo: "qualquer" },
         { id: "2", nome: "João", regimeMo: "qualquer" },
@@ -43,11 +43,33 @@ describe("calcularLinhaProcessoIndustrial", () => {
     });
     const pre = umOp.etapas.find((e) => e.nome === "Pré-lavagem");
     const enx = umOp.etapas.find((e) => e.nome === "Enxague");
-    expect(pre?.operadorId).toBe("1");
-    expect(enx?.operadorId).toBe("1");
+    expect(pre?.operadorIds).toEqual(["1"]);
+    expect(enx?.operadorIds).toEqual(["1"]);
     expect(umOp.resumoCapacidade.operadores.find((o) => o.id === "1")?.etapas.length).toBeGreaterThan(1);
     expect(umOp.processamentoMoReaisKg).toBeGreaterThan(0);
     expect(umOp.processamentoMoReaisKg).toBeCloseTo(base.processamentoMoReaisKg, 1);
+  });
+
+  it("dois operadores na mesma etapa — MO dobra (paralelo)", () => {
+    const base = calcularLinhaProcessoIndustrial({
+      ...LINHA_PROCESSO_INDUSTRIAL_PADRAO,
+      lavagemMaquina: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO.lavagemMaquina, ativo: false },
+      secagemMaquina: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO.secagemMaquina, ativo: false },
+    });
+    const duas = calcularLinhaProcessoIndustrial({
+      ...LINHA_PROCESSO_INDUSTRIAL_PADRAO,
+      preLavagemOperadorIds: ["1", "2"],
+      operadores: [
+        { id: "1", nome: "Maria", regimeMo: "qualquer" },
+        { id: "2", nome: "João", regimeMo: "qualquer" },
+      ],
+      lavagemMaquina: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO.lavagemMaquina, ativo: false },
+      secagemMaquina: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO.secagemMaquina, ativo: false },
+    });
+    const preBase = base.etapas.find((e) => e.nome === "Pré-lavagem")?.moReaisPorKg ?? 0;
+    const preDuas = duas.etapas.find((e) => e.nome === "Pré-lavagem")?.moReaisPorKg ?? 0;
+    expect(preDuas).toBeCloseTo(preBase * 2);
+    expect(duas.processamentoMoReaisKg).toBeCloseTo(base.processamentoMoReaisKg + preBase);
   });
 
   it("consumíveis entram em pré-lavagem e enxague", () => {

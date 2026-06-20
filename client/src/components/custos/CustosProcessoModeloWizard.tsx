@@ -31,6 +31,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   CATEGORIAS_PRODUTO_CUSTO,
   LABEL_CATEGORIA_PRODUTO_CUSTO,
@@ -68,6 +70,7 @@ import {
   type RegimeMoEtapa,
 } from "@shared/custosMoEquipe";
 import {
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Copy,
@@ -122,6 +125,70 @@ type ModeloDraft = {
   incluirAdesivo: boolean;
   linha: LinhaProcessoIndustrialInput;
 };
+
+function OperadoresEtapaPicker({
+  operadores,
+  selecionados,
+  onChange,
+}: {
+  operadores: OperadorLinhaProcesso[];
+  selecionados: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  const label =
+    selecionados.length === 0
+      ? "Selecione…"
+      : selecionados.length === 1
+        ? (operadores.find((o) => o.id === selecionados[0])?.nome ?? selecionados[0])
+        : selecionados
+            .map((id) => operadores.find((o) => o.id === id)?.nome ?? id)
+            .join(" + ");
+
+  function toggle(id: string) {
+    const has = selecionados.includes(id);
+    if (has) {
+      if (selecionados.length <= 1) return;
+      onChange(selecionados.filter((x) => x !== id));
+    } else {
+      onChange([...selecionados, id]);
+    }
+  }
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 min-w-[9rem] max-w-[12rem] justify-between gap-1 font-normal px-2"
+        >
+          <span className="truncate text-left">{label}</span>
+          <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-2" align="start">
+        <p className="text-[11px] text-muted-foreground px-1 pb-2">
+          Marque um ou mais — trabalho em paralelo (MO soma).
+        </p>
+        <div className="space-y-1">
+          {operadores.map((op) => (
+            <label
+              key={op.id}
+              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/60 cursor-pointer"
+            >
+              <Checkbox
+                checked={selecionados.includes(op.id)}
+                onCheckedChange={() => toggle(op.id)}
+              />
+              <span className="truncate">{op.nome}</span>
+            </label>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 function EtapaMoSection({
   title,
@@ -370,19 +437,23 @@ export function CustosProcessoModeloWizard() {
     });
   }
 
+  function remapOperadorIds(ids: string[], removedId: string, fallback: string): string[] {
+    const next = ids.filter((id) => id !== removedId);
+    return next.length ? next : [fallback];
+  }
+
   function removerOperador(id: string) {
     if (draft.linha.operadores.length <= 1) return;
     const fallback = draft.linha.operadores.find((o) => o.id !== id)?.id ?? "1";
-    const remap = (v: string) => (v === id ? fallback : v);
     patchLinha({
       operadores: draft.linha.operadores.filter((o) => o.id !== id),
-      desfolhagemOperadorId: remap(draft.linha.desfolhagemOperadorId),
-      preLavagemOperadorId: remap(draft.linha.preLavagemOperadorId),
-      lavagemOperadorId: remap(draft.linha.lavagemOperadorId),
-      enxagueOperadorId: remap(draft.linha.enxagueOperadorId),
-      secagemOperadorId: remap(draft.linha.secagemOperadorId),
-      embalagemOperadorId: remap(draft.linha.embalagemOperadorId),
-      selagemOperadorId: remap(draft.linha.selagemOperadorId),
+      desfolhagemOperadorIds: remapOperadorIds(draft.linha.desfolhagemOperadorIds, id, fallback),
+      preLavagemOperadorIds: remapOperadorIds(draft.linha.preLavagemOperadorIds, id, fallback),
+      lavagemOperadorIds: remapOperadorIds(draft.linha.lavagemOperadorIds, id, fallback),
+      enxagueOperadorIds: remapOperadorIds(draft.linha.enxagueOperadorIds, id, fallback),
+      secagemOperadorIds: remapOperadorIds(draft.linha.secagemOperadorIds, id, fallback),
+      embalagemOperadorIds: remapOperadorIds(draft.linha.embalagemOperadorIds, id, fallback),
+      selagemOperadorIds: remapOperadorIds(draft.linha.selagemOperadorIds, id, fallback),
     });
   }
 
@@ -597,8 +668,8 @@ export function CustosProcessoModeloWizard() {
                   <div>
                     <p className="text-sm font-medium">Operadores do modelo</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Escolha quem faz cada etapa abaixo. O mesmo operador pode aparecer em duas ou mais
-                      funções — o custo soma os tempos dele, sem duplicar pessoas.
+                      Cadastre os operadores e, na tabela abaixo, marque quem faz cada etapa. Pode
+                      escolher mais de um na mesma etapa (paralelo — o custo MO soma).
                     </p>
                   </div>
                   <Button type="button" variant="outline" size="sm" onClick={adicionarOperador}>
@@ -837,21 +908,11 @@ export function CustosProcessoModeloWizard() {
                             <TableCell className="text-sm">{e.nome}</TableCell>
                             <TableCell>
                               {co ? (
-                                <Select
-                                  value={String(draft.linha[co])}
-                                  onValueChange={(v) => patchLinha({ [co]: v } as never)}
-                                >
-                                  <SelectTrigger className="h-8 min-w-[9rem]">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {draft.linha.operadores.map((op) => (
-                                      <SelectItem key={op.id} value={op.id}>
-                                        {op.nome}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                <OperadoresEtapaPicker
+                                  operadores={draft.linha.operadores}
+                                  selecionados={draft.linha[co]}
+                                  onChange={(ids) => patchLinha({ [co]: ids } as never)}
+                                />
                               ) : (
                                 "—"
                               )}
