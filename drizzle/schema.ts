@@ -10,6 +10,7 @@ import {
   json,
   decimal,
   uniqueIndex,
+  primaryKey,
   date,
 } from "drizzle-orm/mysql-core";
 
@@ -846,6 +847,7 @@ export const custosProdutosProcessoConfig = mysqlTable("custos_produtos_processo
   embalagemOutrosUn: decimal("embalagemOutrosUn", { precision: 14, scale: 6 })
     .notNull()
     .default("0.60"),
+  lavagemReaisKg: decimal("lavagemReaisKg", { precision: 18, scale: 8 }),
   lavagemMinutosUn: decimal("lavagemMinutosUn", { precision: 10, scale: 4 }),
   embalagemMinutosUn: decimal("embalagemMinutosUn", { precision: 10, scale: 4 }),
   corteMinutosUn: decimal("corteMinutosUn", { precision: 10, scale: 4 }),
@@ -861,6 +863,25 @@ export const custosProdutosProcessoConfig = mysqlTable("custos_produtos_processo
 
 export type CustoProdutoProcessoConfigRow = typeof custosProdutosProcessoConfig.$inferSelect;
 export type InsertCustoProdutoProcessoConfig = typeof custosProdutosProcessoConfig.$inferInsert;
+
+/** Classificação manual por produto comercial (perfil de processo, kg/un). */
+export const custosProdutosComercialMap = mysqlTable(
+  "custos_produtos_comercial_map",
+  {
+    projetoId: int("projetoId").notNull(),
+    produtoComercialId: varchar("produtoComercialId", { length: 64 }).notNull(),
+    categoriaCusto: varchar("categoriaCusto", { length: 32 }).notNull().default("outros"),
+    perfilProcesso: varchar("perfilProcesso", { length: 48 }).notNull().default("colheita_embalagem"),
+    kgPorUnidade: decimal("kgPorUnidade", { precision: 20, scale: 10 }),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.projetoId, t.produtoComercialId] }),
+  }),
+);
+
+export type CustoProdutoComercialMapRow = typeof custosProdutosComercialMap.$inferSelect;
+export type InsertCustoProdutoComercialMap = typeof custosProdutosComercialMap.$inferInsert;
 
 /** Ficha de custo por produto/SKU vendido. */
 export const custosProdutosFichas = mysqlTable("custos_produtos_fichas", {

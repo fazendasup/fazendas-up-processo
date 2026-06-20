@@ -239,6 +239,13 @@
       "when": 1777600000000,
       "tag": "0044_custos_produtos_processo_config",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "5",
+      "when": 1777700000000,
+      "tag": "0045_custos_produtos_comercial_map",
+      "breakpoints": true
     }
   ]
 }

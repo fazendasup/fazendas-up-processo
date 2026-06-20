@@ -12,10 +12,14 @@ import {
 } from "@shared/custosProduto";
 import { REGIMES_MO_ETAPA, type RegimeMoEtapa } from "@shared/custosMoEquipe";
 import {
-  etapasProcessoPadraoParaProduto,
+  etapasProcessoPadraoParaPerfil,
   inferirCategoriaProdutoCusto,
+  inferirPerfilProcessoSugerido,
+  PERFIS_PROCESSO_PRODUTO,
+  sugerirMapeamentoProduto,
   type CustosProdutoProcessoConfig,
   type EtapaProcessoPadrao,
+  type MapeamentoProdutoComercial,
 } from "@shared/custosProdutoProcessoPadrao";
 import {
   commercialEditorCustosProducaoProjectProcedure,
@@ -25,6 +29,7 @@ import {
 } from "../_core/trpc";
 import * as custosProdutoDb from "../custosProdutoDb";
 import * as processoDb from "../custosProdutoProcessoDb";
+import * as mapDb from "../custosProdutoComercialMapDb";
 import { getComercialPrisma } from "../comercial/db";
 import type {
   CustoProdutoComponenteRow,
@@ -45,17 +50,25 @@ const tipoCompZ = z.enum(TIPOS_COMPONENTE_CUSTO);
 const tipoEtapaZ = z.enum(TIPOS_ETAPA_PROCESSO);
 const regimeMoZ = z.enum(REGIMES_MO_ETAPA);
 
+const perfilZ = z.enum(PERFIS_PROCESSO_PRODUTO);
+
 const processoConfigInput = z.object({
   embalagemMicroverdeUn: z.number().nonnegative(),
   embalagemOutrosUn: z.number().nonnegative(),
+  lavagemReaisKg: z.number().nonnegative().nullable().optional(),
   lavagemMinutosUn: z.number().nonnegative().nullable().optional(),
   embalagemMinutosUn: z.number().nonnegative().nullable().optional(),
   corteMinutosUn: z.number().nonnegative().nullable().optional(),
   adesivoCustoUn: z.number().nonnegative().nullable().optional(),
   regimeMoPadrao: regimeMoZ.default("qualquer"),
-  incluirLavagem: z.boolean().default(true),
-  incluirCorte: z.boolean().default(false),
   incluirAdesivo: z.boolean().default(true),
+});
+
+const mapeamentoInput = z.object({
+  produtoComercialId: z.string().min(1).max(64),
+  categoriaCusto: categoriaZ,
+  perfilProcesso: perfilZ,
+  kgPorUnidade: z.number().positive().nullable().optional(),
 });
 
 function etapasPadraoParaDb(etapas: EtapaProcessoPadrao[]) {
@@ -73,9 +86,24 @@ function etapasPadraoParaDb(etapas: EtapaProcessoPadrao[]) {
 
 function previewProcesso(config: CustosProdutoProcessoConfig) {
   return {
-    microverde: etapasProcessoPadraoParaProduto("microverde", config),
-    outros: etapasProcessoPadraoParaProduto("outros", config),
+    microverde_embalagem: etapasProcessoPadraoParaPerfil("microverde_embalagem", "microverde", config),
+    colheita_embalagem: etapasProcessoPadraoParaPerfil("colheita_embalagem", "outros", config),
+    lavagem_embalagem: etapasProcessoPadraoParaPerfil("lavagem_embalagem", "alface", config),
+    lavagem_corte_embalagem: etapasProcessoPadraoParaPerfil(
+      "lavagem_corte_embalagem",
+      "alface",
+      config,
+    ),
   };
+}
+
+function resolverMapeamentoProduto(
+  produtoComercialId: string,
+  nome: string,
+  categoriaComercial: string | null,
+  map: Map<string, MapeamentoProdutoComercial>,
+): MapeamentoProdutoComercial {
+  return map.get(produtoComercialId) ?? sugerirMapeamentoProduto(produtoComercialId, nome, categoriaComercial);
 }
 
 const componenteInput = z.object({
@@ -362,21 +390,24 @@ export const custosProdutoSubRouter = router({
       const config = await processoDb.setProcessoConfig(projetoIdFromCtx(ctx), {
         embalagemMicroverdeUn: input.embalagemMicroverdeUn,
         embalagemOutrosUn: input.embalagemOutrosUn,
+        lavagemReaisKg: input.lavagemReaisKg ?? null,
         lavagemMinutosUn: input.lavagemMinutosUn ?? null,
         embalagemMinutosUn: input.embalagemMinutosUn ?? null,
         corteMinutosUn: input.corteMinutosUn ?? null,
         adesivoCustoUn: input.adesivoCustoUn ?? null,
         regimeMoPadrao: input.regimeMoPadrao,
-        incluirLavagem: input.incluirLavagem,
-        incluirCorte: input.incluirCorte,
         incluirAdesivo: input.incluirAdesivo,
       });
       return { config, preview: previewProcesso(config) };
     }),
 
-  produtosSemFicha: custosProducaoModuleProcedure.query(async ({ ctx }) => {
+  listarProdutosComercial: custosProducaoModuleProcedure.query(async ({ ctx }) => {
     const pid = projetoIdFromCtx(ctx);
-    const fichas = await custosProdutoDb.listCustosProdutoFichas(pid);
+    const [fichas, mapRows] = await Promise.all([
+      custosProdutoDb.listCustosProdutoFichas(pid),
+      mapDb.listComercialMap(pid),
+    ]);
+    const map = new Map(mapRows.map((m) => [m.produtoComercialId, m]));
     const comFicha = new Set(
       fichas.filter((f) => f.produtoComercialId).map((f) => f.produtoComercialId as string),
     );
@@ -387,16 +418,72 @@ export const custosProdutoSubRouter = router({
         select: { id: true, nome: true, sku: true, precoBase: true, categoria: true },
         orderBy: { nome: "asc" },
       });
-      return produtos
-        .filter((p) => !comFicha.has(p.id))
-        .map((p) => ({
+      return produtos.map((p) => {
+        const mapeamento = resolverMapeamentoProduto(p.id, p.nome, p.categoria, map);
+        return {
           id: p.id,
           nome: p.nome,
           sku: p.sku,
           precoBase: p.precoBase != null ? Number(p.precoBase) : null,
           categoria: p.categoria,
-          categoriaCusto: inferirCategoriaProdutoCusto(p.nome, p.categoria),
-        }));
+          semFicha: !comFicha.has(p.id),
+          fichaId: fichas.find((f) => f.produtoComercialId === p.id)?.id ?? null,
+          mapeamento,
+          perfilSugerido: inferirPerfilProcessoSugerido(p.nome, p.categoria),
+          categoriaSugerida: inferirCategoriaProdutoCusto(p.nome, p.categoria),
+        };
+      });
+    } catch {
+      return [];
+    }
+  }),
+
+  salvarMapeamentos: commercialEditorCustosProducaoProjectProcedure
+    .input(z.object({ itens: z.array(mapeamentoInput).min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const pid = projetoIdFromCtx(ctx);
+      await mapDb.upsertComercialMap(
+        pid,
+        input.itens.map((i) => ({
+          produtoComercialId: i.produtoComercialId,
+          categoriaCusto: i.categoriaCusto,
+          perfilProcesso: i.perfilProcesso,
+          kgPorUnidade: i.kgPorUnidade ?? null,
+        })),
+      );
+      return { success: true, total: input.itens.length };
+    }),
+
+  produtosSemFicha: custosProducaoModuleProcedure.query(async ({ ctx }) => {
+    const pid = projetoIdFromCtx(ctx);
+    const fichas = await custosProdutoDb.listCustosProdutoFichas(pid);
+    const comFicha = new Set(
+      fichas.filter((f) => f.produtoComercialId).map((f) => f.produtoComercialId as string),
+    );
+    const mapRows = await mapDb.listComercialMap(pid);
+    const map = new Map(mapRows.map((m) => [m.produtoComercialId, m]));
+    try {
+      const prisma = getComercialPrisma();
+      const produtos = await prisma.produtoComercial.findMany({
+        where: { ativo: true, importadoOperacao: true },
+        select: { id: true, nome: true, sku: true, precoBase: true, categoria: true },
+        orderBy: { nome: "asc" },
+      });
+      return produtos
+        .filter((p) => !comFicha.has(p.id))
+        .map((p) => {
+          const m = resolverMapeamentoProduto(p.id, p.nome, p.categoria, map);
+          return {
+            id: p.id,
+            nome: p.nome,
+            sku: p.sku,
+            precoBase: p.precoBase != null ? Number(p.precoBase) : null,
+            categoria: p.categoria,
+            categoriaCusto: m.categoriaCusto,
+            perfilProcesso: m.perfilProcesso,
+            kgPorUnidade: m.kgPorUnidade,
+          };
+        });
     } catch {
       return [];
     }
@@ -412,6 +499,8 @@ export const custosProdutoSubRouter = router({
     .mutation(async ({ ctx, input }) => {
       const pid = projetoIdFromCtx(ctx);
       const config = await processoDb.getProcessoConfig(pid);
+      const mapRows = await mapDb.listComercialMap(pid);
+      const map = new Map(mapRows.map((m) => [m.produtoComercialId, m]));
       const prisma = getComercialPrisma();
       const [produtos, fichas] = await Promise.all([
         prisma.produtoComercial.findMany({
@@ -434,13 +523,23 @@ export const custosProdutoSubRouter = router({
       const nomes: string[] = [];
 
       for (const p of alvo) {
-        const categoria = inferirCategoriaProdutoCusto(p.nome, p.categoria);
-        const etapas = etapasPadraoParaDb(etapasProcessoPadraoParaProduto(categoria, config));
+        const m = resolverMapeamentoProduto(p.id, p.nome, p.categoria, map);
+        const etapas = etapasPadraoParaDb(
+          etapasProcessoPadraoParaPerfil(m.perfilProcesso, m.categoriaCusto, config),
+        );
         const prev = fichaPorProduto.get(p.id);
+        const kgBruto =
+          m.kgPorUnidade != null && m.kgPorUnidade > 0 ? String(m.kgPorUnidade) : null;
 
         if (prev) {
           if (!input.sobrescreverEtapas) continue;
           await custosProdutoDb.replaceComponentesEtapas(prev.id, [], etapas);
+          if (kgBruto) {
+            await custosProdutoDb.updateCustoProdutoFicha(pid, prev.id, {
+              categoria: m.categoriaCusto,
+              kgBrutoPorUnidade: kgBruto,
+            });
+          }
           atualizados += 1;
           nomes.push(p.nome);
           continue;
@@ -449,13 +548,16 @@ export const custosProdutoSubRouter = router({
         const fichaId = await custosProdutoDb.insertCustoProdutoFicha({
           projetoId: pid,
           tipo: "manual",
-          categoria,
+          categoria: m.categoriaCusto,
           nome: p.nome.trim(),
           produtoComercialId: p.id,
           unidadeVenda: "unidade",
           precoVendaReferencia: p.precoBase != null ? String(p.precoBase) : null,
+          kgBrutoPorUnidade: kgBruto,
           observacoes:
-            "Ficha gerada do Conta Azul. Complete matéria-prima (produção própria ou revenda) — processo industrial veio do modelo comum.",
+            "Ficha gerada do Conta Azul. Perfil: " +
+            m.perfilProcesso +
+            ". Complete matéria-prima (produção ou revenda). Lavagem usa R$/kg × kg/un quando informado.",
           ordem: 0,
           ativo: true,
         });

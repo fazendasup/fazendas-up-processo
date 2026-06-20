@@ -18,13 +18,12 @@ function rowToConfig(row: typeof custosProdutosProcessoConfig.$inferSelect): Cus
   return {
     embalagemMicroverdeUn: num(row.embalagemMicroverdeUn) ?? CUSTOS_PRODUTO_PROCESSO_CONFIG_PADRAO.embalagemMicroverdeUn,
     embalagemOutrosUn: num(row.embalagemOutrosUn) ?? CUSTOS_PRODUTO_PROCESSO_CONFIG_PADRAO.embalagemOutrosUn,
+    lavagemReaisKg: num(row.lavagemReaisKg),
     lavagemMinutosUn: num(row.lavagemMinutosUn),
     embalagemMinutosUn: num(row.embalagemMinutosUn),
     corteMinutosUn: num(row.corteMinutosUn),
     adesivoCustoUn: num(row.adesivoCustoUn),
     regimeMoPadrao: (row.regimeMoPadrao ?? "qualquer") as RegimeMoEtapa,
-    incluirLavagem: row.incluirLavagem !== false,
-    incluirCorte: row.incluirCorte === true,
     incluirAdesivo: row.incluirAdesivo !== false,
   };
 }
@@ -38,6 +37,7 @@ CREATE TABLE IF NOT EXISTS \`custos_produtos_processo_config\` (
   \`projetoId\` int NOT NULL,
   \`embalagemMicroverdeUn\` decimal(14,6) NOT NULL DEFAULT 0.95,
   \`embalagemOutrosUn\` decimal(14,6) NOT NULL DEFAULT 0.60,
+  \`lavagemReaisKg\` decimal(18,8) NULL,
   \`lavagemMinutosUn\` decimal(10,4) NULL,
   \`embalagemMinutosUn\` decimal(10,4) NULL,
   \`corteMinutosUn\` decimal(10,4) NULL,
@@ -49,9 +49,14 @@ CREATE TABLE IF NOT EXISTS \`custos_produtos_processo_config\` (
   \`updatedAt\` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY(\`projetoId\`)
 )`));
+    await db.execute(
+      sql.raw("ALTER TABLE `custos_produtos_processo_config` ADD COLUMN `lavagemReaisKg` decimal(18,8) NULL"),
+    );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.warn("[custosProdutoProcessoDb] ensure:", msg.slice(0, 160));
+    if (!/Duplicate column name/i.test(msg)) {
+      console.warn("[custosProdutoProcessoDb] ensure:", msg.slice(0, 160));
+    }
   }
 }
 
@@ -80,13 +85,12 @@ export async function setProcessoConfig(
     projetoId,
     embalagemMicroverdeUn: String(config.embalagemMicroverdeUn),
     embalagemOutrosUn: String(config.embalagemOutrosUn),
+    lavagemReaisKg: config.lavagemReaisKg != null ? String(config.lavagemReaisKg) : null,
     lavagemMinutosUn: config.lavagemMinutosUn != null ? String(config.lavagemMinutosUn) : null,
     embalagemMinutosUn: config.embalagemMinutosUn != null ? String(config.embalagemMinutosUn) : null,
     corteMinutosUn: config.corteMinutosUn != null ? String(config.corteMinutosUn) : null,
     adesivoCustoUn: config.adesivoCustoUn != null ? String(config.adesivoCustoUn) : null,
     regimeMoPadrao: config.regimeMoPadrao,
-    incluirLavagem: config.incluirLavagem,
-    incluirCorte: config.incluirCorte,
     incluirAdesivo: config.incluirAdesivo,
   };
   await db
@@ -96,13 +100,12 @@ export async function setProcessoConfig(
       set: {
         embalagemMicroverdeUn: payload.embalagemMicroverdeUn,
         embalagemOutrosUn: payload.embalagemOutrosUn,
+        lavagemReaisKg: payload.lavagemReaisKg,
         lavagemMinutosUn: payload.lavagemMinutosUn,
         embalagemMinutosUn: payload.embalagemMinutosUn,
         corteMinutosUn: payload.corteMinutosUn,
         adesivoCustoUn: payload.adesivoCustoUn,
         regimeMoPadrao: payload.regimeMoPadrao,
-        incluirLavagem: payload.incluirLavagem,
-        incluirCorte: payload.incluirCorte,
         incluirAdesivo: payload.incluirAdesivo,
       },
     });

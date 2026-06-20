@@ -14,18 +14,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
-  LABEL_ETAPA_PROCESSO,
+  CATEGORIAS_PRODUTO_CUSTO,
   LABEL_CATEGORIA_PRODUTO_CUSTO,
+  LABEL_ETAPA_PROCESSO,
 } from "@shared/custosProduto";
 import {
   LABEL_REGIME_MO_ETAPA,
   REGIMES_MO_ETAPA,
   type RegimeMoEtapa,
 } from "@shared/custosMoEquipe";
-import type { CustosProdutoProcessoConfig } from "@shared/custosProdutoProcessoPadrao";
-import { Cog, Factory, PackagePlus, Save } from "lucide-react";
+import {
+  calcularLavagemReaisKgDeLote,
+  DESCRICAO_PERFIL_PROCESSO,
+  LABEL_PERFIL_PROCESSO_PRODUTO,
+  PERFIS_PROCESSO_PRODUTO,
+  type CustosProdutoProcessoConfig,
+  type PerfilProcessoProduto,
+} from "@shared/custosProdutoProcessoPadrao";
+import type { CategoriaProdutoCusto } from "@shared/custosProduto";
+import { Cog, Factory, PackagePlus, Save, TableProperties } from "lucide-react";
 
 const fmtMoney = (n: number | null | undefined) =>
   n == null || !Number.isFinite(n)
@@ -35,28 +52,42 @@ const fmtMoney = (n: number | null | undefined) =>
 type FormState = {
   embalagemMicroverdeUn: string;
   embalagemOutrosUn: string;
+  lavagemReaisKg: string;
   lavagemMinutosUn: string;
   embalagemMinutosUn: string;
   corteMinutosUn: string;
   adesivoCustoUn: string;
   regimeMoPadrao: RegimeMoEtapa;
-  incluirLavagem: boolean;
-  incluirCorte: boolean;
   incluirAdesivo: boolean;
+  loteMinutos: string;
+  loteKg: string;
+  loteCustoHora: string;
+};
+
+type LinhaMap = {
+  produtoComercialId: string;
+  nome: string;
+  semFicha: boolean;
+  categoriaCusto: CategoriaProdutoCusto;
+  perfilProcesso: PerfilProcessoProduto;
+  kgPorUnidade: string;
+  perfilSugerido: PerfilProcessoProduto;
 };
 
 function configToForm(config: CustosProdutoProcessoConfig): FormState {
   return {
     embalagemMicroverdeUn: String(config.embalagemMicroverdeUn),
     embalagemOutrosUn: String(config.embalagemOutrosUn),
+    lavagemReaisKg: config.lavagemReaisKg != null ? String(config.lavagemReaisKg) : "",
     lavagemMinutosUn: config.lavagemMinutosUn != null ? String(config.lavagemMinutosUn) : "",
     embalagemMinutosUn: config.embalagemMinutosUn != null ? String(config.embalagemMinutosUn) : "",
     corteMinutosUn: config.corteMinutosUn != null ? String(config.corteMinutosUn) : "",
     adesivoCustoUn: config.adesivoCustoUn != null ? String(config.adesivoCustoUn) : "",
     regimeMoPadrao: config.regimeMoPadrao,
-    incluirLavagem: config.incluirLavagem,
-    incluirCorte: config.incluirCorte,
     incluirAdesivo: config.incluirAdesivo,
+    loteMinutos: "",
+    loteKg: "",
+    loteCustoHora: "30",
   };
 }
 
@@ -71,13 +102,12 @@ function formToPayload(form: FormState) {
   return {
     embalagemMicroverdeUn: parseOpt(form.embalagemMicroverdeUn) ?? 0.95,
     embalagemOutrosUn: parseOpt(form.embalagemOutrosUn) ?? 0.6,
+    lavagemReaisKg: parseOpt(form.lavagemReaisKg),
     lavagemMinutosUn: parseOpt(form.lavagemMinutosUn),
     embalagemMinutosUn: parseOpt(form.embalagemMinutosUn),
     corteMinutosUn: parseOpt(form.corteMinutosUn),
     adesivoCustoUn: parseOpt(form.adesivoCustoUn),
     regimeMoPadrao: form.regimeMoPadrao,
-    incluirLavagem: form.incluirLavagem,
-    incluirCorte: form.incluirCorte,
     incluirAdesivo: form.incluirAdesivo,
   };
 }
@@ -91,28 +121,28 @@ function PreviewEtapas({
     tipo: string;
     nome: string;
     custoPorUnidade: number;
+    custoPorKgProcessado: number | null;
     minutosPorUnidade: number | null;
   }>;
 }) {
   if (etapas.length === 0) {
-    return (
-      <p className="text-xs text-muted-foreground">
-        {titulo}: nenhuma etapa ativa — ajuste os toggles ou minutos acima.
-      </p>
-    );
+    return <p className="text-xs text-muted-foreground">{titulo}: nenhuma etapa.</p>;
   }
   return (
     <div className="space-y-1">
       <p className="text-xs font-medium text-muted-foreground">{titulo}</p>
       <ul className="text-xs space-y-0.5">
         {etapas.map((e, i) => (
-          <li key={i} className="flex flex-wrap gap-x-2 gap-y-0.5">
+          <li key={i} className="flex flex-wrap gap-x-2">
             <span>{e.nome || LABEL_ETAPA_PROCESSO[e.tipo as keyof typeof LABEL_ETAPA_PROCESSO]}</span>
             {e.custoPorUnidade > 0 ? (
               <span className="text-emerald-700 dark:text-emerald-400">{fmtMoney(e.custoPorUnidade)}/un</span>
             ) : null}
+            {e.custoPorKgProcessado != null && e.custoPorKgProcessado > 0 ? (
+              <span className="text-blue-700 dark:text-blue-400">{fmtMoney(e.custoPorKgProcessado)}/kg</span>
+            ) : null}
             {e.minutosPorUnidade != null && e.minutosPorUnidade > 0 ? (
-              <span className="text-muted-foreground">{e.minutosPorUnidade} min/un (MO)</span>
+              <span className="text-muted-foreground">{e.minutosPorUnidade} min/un</span>
             ) : null}
           </li>
         ))}
@@ -124,14 +154,31 @@ function PreviewEtapas({
 export function CustosProdutoProcessoSection() {
   const utils = trpc.useUtils();
   const configQuery = trpc.custosProducao.produtos.processoConfig.useQuery();
-  const semFicha = trpc.custosProducao.produtos.produtosSemFicha.useQuery();
+  const produtosQuery = trpc.custosProducao.produtos.listarProdutosComercial.useQuery();
   const [form, setForm] = useState<FormState | null>(null);
+  const [linhas, setLinhas] = useState<LinhaMap[]>([]);
+  const [filtroSemFicha, setFiltroSemFicha] = useState(true);
 
   useEffect(() => {
     if (configQuery.data?.config && !form) {
       setForm(configToForm(configQuery.data.config));
     }
   }, [configQuery.data?.config, form]);
+
+  useEffect(() => {
+    if (!produtosQuery.data) return;
+    setLinhas(
+      produtosQuery.data.map((p) => ({
+        produtoComercialId: p.id,
+        nome: p.nome,
+        semFicha: p.semFicha,
+        categoriaCusto: p.mapeamento.categoriaCusto,
+        perfilProcesso: p.mapeamento.perfilProcesso,
+        kgPorUnidade: p.mapeamento.kgPorUnidade != null ? String(p.mapeamento.kgPorUnidade) : "",
+        perfilSugerido: p.perfilSugerido,
+      })),
+    );
+  }, [produtosQuery.data]);
 
   const salvar = trpc.custosProducao.produtos.salvarProcessoConfig.useMutation({
     onSuccess: async (data) => {
@@ -142,80 +189,81 @@ export function CustosProdutoProcessoSection() {
     onError: (e) => toast.error(e.message),
   });
 
+  const salvarMap = trpc.custosProducao.produtos.salvarMapeamentos.useMutation({
+    onSuccess: async () => {
+      toast.success("Classificação dos produtos salva");
+      await utils.custosProducao.produtos.listarProdutosComercial.invalidate();
+      await utils.custosProducao.produtos.produtosSemFicha.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   const gerar = trpc.custosProducao.produtos.gerarFichasContaAzul.useMutation({
     onSuccess: async (data) => {
       if (data.inseridos === 0 && data.atualizados === 0) {
-        toast.info("Nenhuma ficha nova criada — todos os produtos já tinham ficha.");
+        toast.info("Nenhuma ficha nova criada.");
       } else {
         toast.success(
           `${data.inseridos} ficha(s) criada(s)${data.atualizados ? `, ${data.atualizados} atualizada(s)` : ""}.`,
         );
       }
       await utils.custosProducao.produtos.listarFichas.invalidate();
+      await utils.custosProducao.produtos.listarProdutosComercial.invalidate();
       await utils.custosProducao.produtos.produtosSemFicha.invalidate();
       await utils.custosProducao.rentabilidade.sugestaoCustoOperacional.invalidate();
     },
     onError: (e) => toast.error(e.message),
   });
 
-  const preview = useMemo(() => {
-    if (!form) return configQuery.data?.preview;
-    const payload = formToPayload(form);
-    return {
-      microverde: payload.embalagemMicroverdeUn
-        ? [
-            ...(payload.incluirLavagem && payload.lavagemMinutosUn
-              ? [{ tipo: "lavagem", nome: "Lavagem industrial", custoPorUnidade: 0, minutosPorUnidade: payload.lavagemMinutosUn }]
-              : []),
-            {
-              tipo: "embalagem",
-              nome: "Embalagem",
-              custoPorUnidade: payload.embalagemMicroverdeUn,
-              minutosPorUnidade: payload.embalagemMinutosUn,
-            },
-            ...(payload.incluirAdesivo && payload.adesivoCustoUn
-              ? [{ tipo: "adesivo", nome: "Adesivo / rótulo", custoPorUnidade: payload.adesivoCustoUn, minutosPorUnidade: null }]
-              : []),
-          ]
-        : [],
-      outros: [
-        ...(payload.incluirLavagem && payload.lavagemMinutosUn
-          ? [{ tipo: "lavagem", nome: "Lavagem industrial", custoPorUnidade: 0, minutosPorUnidade: payload.lavagemMinutosUn }]
-          : []),
-        ...(payload.incluirCorte && payload.corteMinutosUn
-          ? [{ tipo: "descasque_corte", nome: "Descasque / corte", custoPorUnidade: 0, minutosPorUnidade: payload.corteMinutosUn }]
-          : []),
-        {
-          tipo: "embalagem",
-          nome: "Embalagem",
-          custoPorUnidade: payload.embalagemOutrosUn,
-          minutosPorUnidade: payload.embalagemMinutosUn,
-        },
-        ...(payload.incluirAdesivo && payload.adesivoCustoUn
-          ? [{ tipo: "adesivo", nome: "Adesivo / rótulo", custoPorUnidade: payload.adesivoCustoUn, minutosPorUnidade: null }]
-          : []),
-      ],
-    };
-  }, [form, configQuery.data?.preview]);
+  const preview = configQuery.data?.preview;
+  const linhasVisiveis = useMemo(
+    () => (filtroSemFicha ? linhas.filter((l) => l.semFicha) : linhas),
+    [filtroSemFicha, linhas],
+  );
+  const pendentes = linhas.filter((l) => l.semFicha).length;
+
+  const lavagemCalc = useMemo(() => {
+    if (!form) return null;
+    return calcularLavagemReaisKgDeLote({
+      minutosLote: parseOpt(form.loteMinutos) ?? 0,
+      kgTotalLote: parseOpt(form.loteKg) ?? 0,
+      custoHoraMo: parseOpt(form.loteCustoHora) ?? 0,
+    });
+  }, [form]);
 
   if (!form) return null;
 
-  const pendentes = semFicha.data?.length ?? 0;
+  function updateLinha(id: string, patch: Partial<LinhaMap>) {
+    setLinhas((prev) => prev.map((l) => (l.produtoComercialId === id ? { ...l, ...patch } : l)));
+  }
+
+  function salvarClassificacao() {
+    const alvo = filtroSemFicha ? linhas.filter((l) => l.semFicha) : linhas;
+    if (alvo.length === 0) return toast.error("Nenhum produto para salvar.");
+    salvarMap.mutate({
+      itens: alvo.map((l) => ({
+        produtoComercialId: l.produtoComercialId,
+        categoriaCusto: l.categoriaCusto,
+        perfilProcesso: l.perfilProcesso,
+        kgPorUnidade: parseOpt(l.kgPorUnidade),
+      })),
+    });
+  }
 
   return (
     <div className="space-y-4">
       <Alert>
         <Factory className="h-4 w-4" />
-        <AlertTitle>Modelo comum de processo (antes das fichas)</AlertTitle>
-        <AlertDescription className="space-y-1">
+        <AlertTitle>Processo real ≠ um tempo fixo por SKU</AlertTitle>
+        <AlertDescription className="space-y-2">
           <p>
-            <strong>Embalagem</strong> (R$ 0,95 microverdes · R$ 0,60 demais) é insumo, não salário.
-            <strong> MO variável</strong> entra só via <em>minutos/unidade</em> × R$/h das equipes de
-            processamento.
+            Classifique <strong>cada produto</strong> (microverde sem nome, só colheita+emb, lavagem
+            em lote…). A lavagem industrial usa <strong>R$/kg médio do lote</strong>, não min/un —
+            porque vários produtos entram juntos na máquina.
           </p>
           <p>
-            <strong>MO fixa</strong> (ADM, supervisão, pró-labore) fica na Rentabilidade — não repita
-            nas fichas nem use etapa &quot;Mão de obra&quot; com valor fixo.
+            Desvios mês a mês (mesma alface com kg diferente na lavagem) entram como{" "}
+            <strong>custo padrão revisável</strong> na ficha; o fechamento real fica na Rentabilidade.
           </p>
         </AlertDescription>
       </Alert>
@@ -226,9 +274,6 @@ export function CustosProdutoProcessoSection() {
             <Cog className="h-4 w-4" />
             Valores comuns de processo
           </CardTitle>
-          <CardDescription>
-            Usados ao gerar fichas do Conta Azul e como ponto de partida em fichas novas.
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -241,7 +286,7 @@ export function CustosProdutoProcessoSection() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Embalagem demais produtos (R$/un)</Label>
+              <Label>Embalagem demais (R$/un)</Label>
               <Input
                 inputMode="decimal"
                 value={form.embalagemOutrosUn}
@@ -249,16 +294,16 @@ export function CustosProdutoProcessoSection() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Adesivo / rótulo (R$/un)</Label>
+              <Label>Lavagem — R$/kg médio (lote)</Label>
               <Input
                 inputMode="decimal"
-                value={form.adesivoCustoUn}
-                placeholder="Opcional"
-                onChange={(e) => setForm((f) => f && { ...f, adesivoCustoUn: e.target.value })}
+                value={form.lavagemReaisKg}
+                placeholder="Ex.: 0,25"
+                onChange={(e) => setForm((f) => f && { ...f, lavagemReaisKg: e.target.value })}
               />
             </div>
             <div className="space-y-2">
-              <Label>Regime MO padrão (minutos)</Label>
+              <Label>Regime MO (minutos embalagem)</Label>
               <Select
                 value={form.regimeMoPadrao}
                 onValueChange={(v) =>
@@ -279,25 +324,51 @@ export function CustosProdutoProcessoSection() {
             </div>
           </div>
 
+          <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+            <p className="text-xs font-medium">Calculadora de lote (lavagem)</p>
+            <div className="grid gap-2 sm:grid-cols-4">
+              <Input
+                placeholder="Minutos do lote"
+                inputMode="decimal"
+                value={form.loteMinutos}
+                onChange={(e) => setForm((f) => f && { ...f, loteMinutos: e.target.value })}
+              />
+              <Input
+                placeholder="Kg total lavados"
+                inputMode="decimal"
+                value={form.loteKg}
+                onChange={(e) => setForm((f) => f && { ...f, loteKg: e.target.value })}
+              />
+              <Input
+                placeholder="R$/h MO"
+                inputMode="decimal"
+                value={form.loteCustoHora}
+                onChange={(e) => setForm((f) => f && { ...f, loteCustoHora: e.target.value })}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={lavagemCalc == null}
+                onClick={() => {
+                  if (lavagemCalc == null) return;
+                  setForm((f) =>
+                    f ? { ...f, lavagemReaisKg: String(lavagemCalc) } : f,
+                  );
+                  toast.success(`R$/kg aplicado: ${lavagemCalc.toFixed(4)}`);
+                }}
+              >
+                Usar {lavagemCalc != null ? lavagemCalc.toFixed(4) : "—"} R$/kg
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Fórmula: (minutos ÷ 60 × R$/h) ÷ kg do lote. Revise mensalmente conforme lotes reais.
+            </p>
+          </div>
+
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-2">
-              <Label>Lavagem (min/un)</Label>
-              <Input
-                inputMode="decimal"
-                value={form.lavagemMinutosUn}
-                placeholder="Ex.: 2"
-                onChange={(e) => setForm((f) => f && { ...f, lavagemMinutosUn: e.target.value })}
-              />
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={form.incluirLavagem}
-                  onCheckedChange={(v) => setForm((f) => f && { ...f, incluirLavagem: v })}
-                />
-                <Label className="font-normal text-xs">Incluir lavagem</Label>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Embalagem (min/un — MO)</Label>
+              <Label>Embalagem MO (min/un)</Label>
               <Input
                 inputMode="decimal"
                 value={form.embalagemMinutosUn}
@@ -310,16 +381,18 @@ export function CustosProdutoProcessoSection() {
               <Input
                 inputMode="decimal"
                 value={form.corteMinutosUn}
-                placeholder="Opcional"
+                placeholder="Só perfil corte+lavagem"
                 onChange={(e) => setForm((f) => f && { ...f, corteMinutosUn: e.target.value })}
               />
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={form.incluirCorte}
-                  onCheckedChange={(v) => setForm((f) => f && { ...f, incluirCorte: v })}
-                />
-                <Label className="font-normal text-xs">Incluir corte</Label>
-              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Adesivo (R$/un)</Label>
+              <Input
+                inputMode="decimal"
+                value={form.adesivoCustoUn}
+                placeholder="Opcional"
+                onChange={(e) => setForm((f) => f && { ...f, adesivoCustoUn: e.target.value })}
+              />
             </div>
           </div>
 
@@ -328,28 +401,144 @@ export function CustosProdutoProcessoSection() {
               checked={form.incluirAdesivo}
               onCheckedChange={(v) => setForm((f) => f && { ...f, incluirAdesivo: v })}
             />
-            <Label className="font-normal text-sm">Incluir etapa de adesivo quando houver valor</Label>
+            <Label className="font-normal text-sm">Incluir adesivo quando houver valor</Label>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 rounded-lg border bg-muted/30 p-3">
-            <PreviewEtapas
-              titulo={`Prévia · ${LABEL_CATEGORIA_PRODUTO_CUSTO.microverde}`}
-              etapas={preview?.microverde ?? []}
-            />
-            <PreviewEtapas
-              titulo={`Prévia · demais (${LABEL_CATEGORIA_PRODUTO_CUSTO.outros})`}
-              etapas={preview?.outros ?? []}
-            />
+          {preview ? (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 rounded-lg border bg-muted/20 p-3">
+              {(Object.keys(preview) as Array<keyof typeof preview>).map((k) => (
+                <PreviewEtapas
+                  key={k}
+                  titulo={LABEL_PERFIL_PROCESSO_PRODUTO[k as PerfilProcessoProduto]}
+                  etapas={preview[k]}
+                />
+              ))}
+            </div>
+          ) : null}
+
+          <Button size="sm" disabled={salvar.isPending} onClick={() => salvar.mutate(formToPayload(form))}>
+            <Save className="h-4 w-4 mr-1" />
+            Salvar modelo
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <TableProperties className="h-4 w-4" />
+                Classificar produtos do Conta Azul
+              </CardTitle>
+              <CardDescription>
+                Ajuste perfil e kg/un antes de gerar fichas. Sugestão automática pode errar — confira
+                microverdes sem nome e itens sem lavagem.
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={filtroSemFicha} onCheckedChange={setFiltroSemFicha} />
+              <Label className="font-normal text-sm">Só sem ficha ({pendentes})</Label>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="overflow-x-auto max-h-[420px] border rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Produto</TableHead>
+                  <TableHead>Categoria</TableHead>
+                  <TableHead>Perfil de processo</TableHead>
+                  <TableHead className="w-24">Kg/un</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {linhasVisiveis.map((l) => (
+                  <TableRow key={l.produtoComercialId}>
+                    <TableCell className="max-w-[200px]">
+                      <p className="text-sm font-medium truncate">{l.nome}</p>
+                      {l.perfilProcesso !== l.perfilSugerido ? (
+                        <p className="text-[10px] text-amber-700 dark:text-amber-400">
+                          Sugestão: {LABEL_PERFIL_PROCESSO_PRODUTO[l.perfilSugerido]}
+                        </p>
+                      ) : null}
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={l.categoriaCusto}
+                        onValueChange={(v) =>
+                          updateLinha(l.produtoComercialId, {
+                            categoriaCusto: v as CategoriaProdutoCusto,
+                          })
+                        }
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CATEGORIAS_PRODUTO_CUSTO.map((c) => (
+                            <SelectItem key={c} value={c}>
+                              {LABEL_CATEGORIA_PRODUTO_CUSTO[c]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={l.perfilProcesso}
+                        onValueChange={(v) =>
+                          updateLinha(l.produtoComercialId, {
+                            perfilProcesso: v as PerfilProcessoProduto,
+                          })
+                        }
+                      >
+                        <SelectTrigger className="h-8 text-xs max-w-[220px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PERFIS_PROCESSO_PRODUTO.map((p) => (
+                            <SelectItem key={p} value={p} title={DESCRICAO_PERFIL_PROCESSO[p]}>
+                              {LABEL_PERFIL_PROCESSO_PRODUTO[p]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        className="h-8 text-xs"
+                        inputMode="decimal"
+                        placeholder="0,24"
+                        value={l.kgPorUnidade}
+                        onChange={(e) =>
+                          updateLinha(l.produtoComercialId, { kgPorUnidade: e.target.value })
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {l.semFicha ? (
+                        <Badge variant="outline" className="text-[10px]">
+                          Sem ficha
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-[10px]">
+                          OK
+                        </Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              disabled={salvar.isPending}
-              onClick={() => salvar.mutate(formToPayload(form))}
-            >
+            <Button size="sm" variant="outline" disabled={salvarMap.isPending} onClick={salvarClassificacao}>
               <Save className="h-4 w-4 mr-1" />
-              Salvar modelo
+              Salvar classificação
             </Button>
             <Button
               size="sm"
@@ -358,11 +547,7 @@ export function CustosProdutoProcessoSection() {
               onClick={() => {
                 if (
                   !window.confirm(
-                    `Gerar fichas para ${pendentes} produto(s) do Conta Azul sem ficha?\n\n` +
-                      "• Vincula produtoComercialId\n" +
-                      "• Aplica etapas do modelo comum (embalagem + minutos MO)\n" +
-                      "• Matéria-prima fica pendente — complete depois em cada ficha\n\n" +
-                      "Salve o modelo antes se alterou algo acima.",
+                    `Gerar fichas para ${pendentes} produto(s)?\n\nSalve a classificação antes. Produtos com lavagem precisam de kg/un para calcular R$/kg.`,
                   )
                 ) {
                   return;
@@ -371,27 +556,9 @@ export function CustosProdutoProcessoSection() {
               }}
             >
               <PackagePlus className="h-4 w-4 mr-1" />
-              Gerar fichas do Conta Azul ({pendentes})
+              Gerar fichas ({pendentes})
             </Button>
           </div>
-
-          {pendentes > 0 && semFicha.data ? (
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {semFicha.data.slice(0, 12).map((p) => (
-                <Badge key={p.id} variant="outline" className="font-normal text-[11px]">
-                  {p.nome}
-                  <span className="ml-1 text-muted-foreground">
-                    ({LABEL_CATEGORIA_PRODUTO_CUSTO[p.categoriaCusto]})
-                  </span>
-                </Badge>
-              ))}
-              {pendentes > 12 ? (
-                <Badge variant="secondary" className="font-normal text-[11px]">
-                  +{pendentes - 12} produtos
-                </Badge>
-              ) : null}
-            </div>
-          ) : null}
         </CardContent>
       </Card>
     </div>
