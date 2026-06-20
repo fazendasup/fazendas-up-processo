@@ -331,8 +331,8 @@ function emptyFicha(tipo: TipoFichaCustoProduto = "revenda_processada"): FichaFo
     custoCompraUn: "",
     modoCompraMp: "kg",
     kgBrutoPorUnidade: "",
-    perdaLavagemPct: "10",
-    perdaDescasquePct: "5",
+    perdaLavagemPct: "0",
+    perdaDescasquePct: "0",
     perdaSelecaoPct: "0",
     variedadeId: "",
     kgColhidoPorPlanta: "",
@@ -340,10 +340,7 @@ function emptyFicha(tipo: TipoFichaCustoProduto = "revenda_processada"): FichaFo
     observacoes: "",
     ativo: true,
     componentes: tipo === "mix" ? [emptyComponente(), emptyComponente()] : [],
-    etapas:
-      tipo === "revenda_processada"
-        ? [emptyEtapa("lavagem"), emptyEtapa("embalagem"), emptyEtapa("adesivo")]
-        : [],
+    etapas: [],
   };
 }
 
@@ -710,7 +707,13 @@ function FichaEditor({
               <Select
                 value={form.modoCompraMp}
                 onValueChange={(v) =>
-                  setForm((f) => ({ ...f, modoCompraMp: v as ModoCompraMp }))
+                  setForm((f) => ({
+                    ...f,
+                    modoCompraMp: v as ModoCompraMp,
+                    ...(v === "unidade"
+                      ? { perdaLavagemPct: "0", perdaDescasquePct: "0", perdaSelecaoPct: "0" }
+                      : {}),
+                  }))
                 }
               >
                 <SelectTrigger className="max-w-md">
@@ -747,33 +750,41 @@ function FichaEditor({
                     onChange={(e) => setForm((f) => ({ ...f, kgBrutoPorUnidade: e.target.value }))}
                   />
                   <p className="text-[10px] text-muted-foreground">
-                    Ex.: venda por kg = 1. Pacote de 500g = 0,5. Não some perdas aqui; preencha as perdas abaixo.
+                    Peso <strong>líquido</strong> que o cliente recebe — o sistema calcula a compra bruta pelas perdas.
                   </p>
                 </div>
-                <div className="space-y-2">
-                  <Label>Perda lavagem (%)</Label>
-                  <Input
-                    inputMode="decimal"
-                    value={form.perdaLavagemPct}
-                    onChange={(e) => setForm((f) => ({ ...f, perdaLavagemPct: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Perda descasque/corte (%)</Label>
-                  <Input
-                    inputMode="decimal"
-                    value={form.perdaDescasquePct}
-                    onChange={(e) => setForm((f) => ({ ...f, perdaDescasquePct: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Perda seleção (%)</Label>
-                  <Input
-                    inputMode="decimal"
-                    value={form.perdaSelecaoPct}
-                    onChange={(e) => setForm((f) => ({ ...f, perdaSelecaoPct: e.target.value }))}
-                  />
-                </div>
+                {form.etapas.some((e) => e.tipo === "lavagem" || e.tipo === "descasque_corte") ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Perda lavagem (%)</Label>
+                      <Input
+                        inputMode="decimal"
+                        value={form.perdaLavagemPct}
+                        onChange={(e) => setForm((f) => ({ ...f, perdaLavagemPct: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Perda descasque/corte (%)</Label>
+                      <Input
+                        inputMode="decimal"
+                        value={form.perdaDescasquePct}
+                        onChange={(e) => setForm((f) => ({ ...f, perdaDescasquePct: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Perda seleção (%)</Label>
+                      <Input
+                        inputMode="decimal"
+                        value={form.perdaSelecaoPct}
+                        onChange={(e) => setForm((f) => ({ ...f, perdaSelecaoPct: e.target.value }))}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground md:col-span-2">
+                    Perdas de kg só aparecem quando a ficha tem etapa de lavagem ou corte.
+                  </p>
+                )}
               </>
             ) : (
               <>
@@ -902,6 +913,25 @@ function FichaEditor({
                     </SelectContent>
                   </Select>
                 )}
+                {c.tipo === "produto_comercial" && (
+                  <Select
+                    value={c.produtoComercialId || "__none__"}
+                    onValueChange={(v) =>
+                      updateComp(idx, { produtoComercialId: v === "__none__" ? "" : v })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Produto CA" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(catalogos?.produtosComerciais ?? []).map((p: any) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 {c.tipo === "manual" && (
                   <Input placeholder="Nome" value={c.nomeManual} onChange={(e) => updateComp(idx, { nomeManual: e.target.value })} />
                 )}
@@ -938,8 +968,8 @@ function FichaEditor({
           <div>
             <CardTitle className="text-sm">Processo industrial</CardTitle>
             <CardDescription>
-              Informe <strong>minutos/unidade</strong> para MO automática (CLT/PJ em Equipes MO). R$/unidade
-              só para custos fixos extras ou embalagem conhecida.
+              MO variável = min/un × R$/h (Equipes MO). Lavagem = só <strong>R$/kg</strong> do lote.
+              Embalagem/adesivo = R$/un. Overhead fixo → Rentabilidade, não repita aqui.
             </CardDescription>
           </div>
           <Button size="sm" variant="outline" onClick={() => setForm((f) => ({ ...f, etapas: [...f.etapas, emptyEtapa()] }))}>
@@ -947,7 +977,20 @@ function FichaEditor({
           </Button>
         </CardHeader>
         <CardContent className="space-y-3">
-          {form.etapas.map((e, idx) => (
+          <div className="hidden md:grid gap-2 px-3 text-[10px] font-medium text-muted-foreground md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_5rem_7rem_5rem_5rem_5rem_auto]">
+            <span>Tipo</span>
+            <span>Nome</span>
+            <span>Min/un</span>
+            <span>Regime MO</span>
+            <span>R$/un</span>
+            <span>R$/kg</span>
+            <span>%</span>
+            <span />
+          </div>
+          {form.etapas.map((e, idx) => {
+            const isLavagem = e.tipo === "lavagem";
+            const isLogistica = e.tipo === "logistica";
+            return (
             <div
               key={idx}
               className="grid gap-2 rounded-lg border p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_5rem_7rem_5rem_5rem_5rem_auto]"
@@ -973,46 +1016,62 @@ function FichaEditor({
                 </SelectContent>
               </Select>
               <Input value={e.nome} onChange={(ev) => updateEtapa(idx, { nome: ev.target.value })} />
+              {!isLavagem ? (
+                <Input
+                  placeholder="Min/un"
+                  inputMode="decimal"
+                  title="Minutos por unidade vendida"
+                  value={e.minutosPorUnidade}
+                  onChange={(ev) => updateEtapa(idx, { minutosPorUnidade: ev.target.value })}
+                />
+              ) : (
+                <span className="text-[10px] text-muted-foreground self-center px-1">—</span>
+              )}
+              {!isLavagem ? (
+                <Select
+                  value={e.regimeMo}
+                  onValueChange={(v) => updateEtapa(idx, { regimeMo: v as RegimeMoEtapa })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REGIMES_MO_ETAPA.map((r) => (
+                      <SelectItem key={r} value={r}>
+                        {LABEL_REGIME_MO_ETAPA[r]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <span className="text-[10px] text-muted-foreground self-center px-1">—</span>
+              )}
+              {!isLavagem ? (
+                <Input
+                  placeholder="R$/un fixo"
+                  inputMode="decimal"
+                  value={e.custoPorUnidade}
+                  onChange={(ev) => updateEtapa(idx, { custoPorUnidade: ev.target.value })}
+                />
+              ) : (
+                <span className="text-[10px] text-muted-foreground self-center px-1">—</span>
+              )}
               <Input
-                placeholder="Min/un"
-                inputMode="decimal"
-                title="Minutos por unidade vendida"
-                value={e.minutosPorUnidade}
-                onChange={(ev) => updateEtapa(idx, { minutosPorUnidade: ev.target.value })}
-              />
-              <Select
-                value={e.regimeMo}
-                onValueChange={(v) => updateEtapa(idx, { regimeMo: v as RegimeMoEtapa })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {REGIMES_MO_ETAPA.map((r) => (
-                    <SelectItem key={r} value={r}>
-                      {LABEL_REGIME_MO_ETAPA[r]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input
-                placeholder="R$/un fixo"
-                inputMode="decimal"
-                value={e.custoPorUnidade}
-                onChange={(ev) => updateEtapa(idx, { custoPorUnidade: ev.target.value })}
-              />
-              <Input
-                placeholder="R$/kg"
+                placeholder={isLavagem ? "R$/kg lote" : "R$/kg"}
                 inputMode="decimal"
                 value={e.custoPorKgProcessado}
                 onChange={(ev) => updateEtapa(idx, { custoPorKgProcessado: ev.target.value })}
               />
-              <Input
-                placeholder="%"
-                inputMode="decimal"
-                value={e.custoPercentual}
-                onChange={(ev) => updateEtapa(idx, { custoPercentual: ev.target.value })}
-              />
+              {isLogistica ? (
+                <Input
+                  placeholder="%"
+                  inputMode="decimal"
+                  value={e.custoPercentual}
+                  onChange={(ev) => updateEtapa(idx, { custoPercentual: ev.target.value })}
+                />
+              ) : (
+                <span className="text-[10px] text-muted-foreground self-center px-1">—</span>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
@@ -1021,7 +1080,8 @@ function FichaEditor({
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
-          ))}
+            );
+          })}
         </CardContent>
       </Card>
 
@@ -1232,6 +1292,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                     const podeEditarCompra = row.ficha.tipo === "revenda_processada" || row.ficha.tipo === "manual";
                     const precosMargem = row.resultado.precosVendaPorMargem ?? [];
                     const ativo = fichaAtiva(row);
+                    const incompleta = (row.resultado.alertas?.length ?? 0) > 0;
                     const categoriaLabel =
                       LABEL_CATEGORIA_PRODUTO_CUSTO[row.ficha.categoria as keyof typeof LABEL_CATEGORIA_PRODUTO_CUSTO] ??
                       row.ficha.categoria;
@@ -1248,6 +1309,11 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                               {!ativo && (
                                 <Badge variant="outline" className="text-[10px]">
                                   Inativo
+                                </Badge>
+                              )}
+                              {incompleta && (
+                                <Badge variant="destructive" className="text-[10px]">
+                                  Incompleta
                                 </Badge>
                               )}
                             </div>
@@ -1267,6 +1333,28 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                         <TableCell className="align-top whitespace-normal">
                           {podeEditarCompra ? (
                             <div className="space-y-1">
+                              <Select
+                                value={modoCompra}
+                                disabled={salvarFichaRapida.isPending}
+                                onValueChange={(v) => {
+                                  const p = buildPayload(
+                                    rowToFichaForm(row, { modoCompraMp: v as ModoCompraMp }),
+                                    row.ficha.id,
+                                  );
+                                  salvarFichaRapida.mutate(p as any);
+                                }}
+                              >
+                                <SelectTrigger className="h-7 text-[10px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {MODOS_COMPRA_MP.map((m) => (
+                                    <SelectItem key={m} value={m}>
+                                      {LABEL_MODO_COMPRA_MP[m]}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                               <span className="text-[10px] text-muted-foreground">
                                 {modoCompra === "unidade" ? "R$/un" : "R$/kg"}
                               </span>

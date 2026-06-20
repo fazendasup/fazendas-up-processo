@@ -278,14 +278,28 @@ export function custoEtapasProcesso(
   kgLiquidoPorUnidade: number | null,
   custoBase = 0,
   custoHoraMo?: CustoHoraPorRegime | null,
-): { custo: number; detalhes: DetalheCustoLinha[] } {
+): { custo: number; detalhes: DetalheCustoLinha[]; alertas: string[] } {
   const detalhes: DetalheCustoLinha[] = [];
+  const alertas: string[] = [];
   let custo = 0;
   for (const e of etapas) {
     const fixo = toNum(e.custoPorUnidadeFinal) ?? 0;
     const porKg = toNum(e.custoPorKgProcessado) ?? 0;
     const pct = clampPct(toNum(e.custoPercentual) ?? 0);
     const minutos = toNum(e.minutosPorUnidade) ?? 0;
+    if (e.tipo === "lavagem") {
+      if (porKg > 0 && (kgLiquidoPorUnidade == null || kgLiquidoPorUnidade <= 0)) {
+        alertas.push(
+          `Lavagem «${e.nome}» (${porKg} R$/kg) zerada — informe kg vendido/un ou kg/un na classificação.`,
+        );
+      }
+      if (fixo > 0) {
+        alertas.push(`Lavagem «${e.nome}» com R$/un fixo — prefira rateio R$/kg do lote.`);
+      }
+      if (minutos > 0) {
+        alertas.push(`Lavagem «${e.nome}» com min/un — use R$/kg médio do lote, não tempo por SKU.`);
+      }
+    }
     const moTempo =
       minutos > 0 && custoHoraMo
         ? custoMoPorMinutos(minutos, e.regimeMo, custoHoraMo)
@@ -302,7 +316,7 @@ export function custoEtapasProcesso(
       detalhes.push({ grupo: "processo", label: `${e.nome}${suffix}`, valor: linha });
     }
   }
-  return { custo, detalhes };
+  return { custo, detalhes, alertas };
 }
 
 /** Calcula custo total de uma ficha de produto. */
@@ -377,6 +391,7 @@ export function calcularCustoProduto(input: FichaCalculoInput): ResultadoCustoPr
   const proc = custoEtapasProcesso(input.etapas, kgLiquidoPorUnidade, custoMaterial, input.custoHoraMo);
   const custoProcesso = proc.custo;
   detalhes.push(...proc.detalhes);
+  alertas.push(...proc.alertas);
 
   const custoTotal = custoMaterial + custoProcesso;
   const custoPorKg =

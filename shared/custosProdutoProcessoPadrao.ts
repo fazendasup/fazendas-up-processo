@@ -1,4 +1,4 @@
-import type { CategoriaProdutoCusto } from "./custosProduto";
+import type { CategoriaProdutoCusto, ModoCompraMp } from "./custosProduto";
 import { LABEL_ETAPA_PROCESSO, type TipoEtapaProcesso } from "./custosProduto";
 import type { RegimeMoEtapa } from "./custosMoEquipe";
 
@@ -70,7 +70,43 @@ export type MapeamentoProdutoComercial = {
   perfilProcesso: PerfilProcessoProduto;
   /** Kg por unidade vendida — necessário para lavagem R$/kg e margem por kg. */
   kgPorUnidade: number | null;
+  /** Como a matéria-prima deste SKU costuma ser comprada (fornecedor padrão). */
+  modoCompraMp: ModoCompraMp;
 };
+
+export function perfilUsaLavagemKg(perfil: PerfilProcessoProduto): boolean {
+  return perfil === "lavagem_embalagem" || perfil === "lavagem_corte_embalagem";
+}
+
+/** Avisos antes de gerar ficha — não bloqueia (nem tudo é pesado na entrada). */
+export function avisosMapeamentoProduto(
+  m: Pick<MapeamentoProdutoComercial, "perfilProcesso" | "kgPorUnidade" | "modoCompraMp">,
+  config: Pick<CustosProdutoProcessoConfig, "lavagemReaisKg">,
+): string[] {
+  const avisos: string[] = [];
+  if (perfilUsaLavagemKg(m.perfilProcesso)) {
+    if (!(config.lavagemReaisKg != null && config.lavagemReaisKg > 0)) {
+      avisos.push("Modelo sem R$/kg de lavagem — etapa ficará zerada.");
+    }
+    if (!(m.kgPorUnidade != null && m.kgPorUnidade > 0)) {
+      avisos.push("Kg/un vazio — lavagem R$/kg ficará zerada (ok se não souber o peso).");
+    }
+  }
+  if (m.modoCompraMp === "kg" && perfilUsaLavagemKg(m.perfilProcesso)) {
+    avisos.push("Compra/kg: complete preço R$/kg e perdas na ficha depois de gerar.");
+  }
+  if (m.modoCompraMp === "unidade") {
+    avisos.push("Compra/un: informe R$/un de matéria-prima na ficha após gerar.");
+  }
+  return avisos;
+}
+
+/** Nome genérico no CA — revisar categoria/perfil manualmente. */
+export function nomeProdutoComercialGenerico(nome: string): boolean {
+  const n = normalizarNomeProduto(nome);
+  if (n.length < 5) return true;
+  return /^(bandeja|pacote|mix|salada|folha|folhas|verde|maco|200g|100g|150g|300g|500g)\b/.test(n);
+}
 
 function normalizarNomeProduto(s: string): string {
   return s
@@ -87,7 +123,6 @@ const MICROVERDE_KEYWORDS = [
   "broto",
   "brocolis broto",
   "rabanete broto",
-  "acelga", // often microverde tray in their catalog
   "kale baby",
   "mustard",
   "mostarda",
@@ -143,6 +178,7 @@ export function sugerirMapeamentoProduto(
     categoriaCusto: inferirCategoriaProdutoCusto(nome, categoriaComercial),
     perfilProcesso: inferirPerfilProcessoSugerido(nome, categoriaComercial),
     kgPorUnidade: null,
+    modoCompraMp: "kg",
   };
 }
 
@@ -201,17 +237,10 @@ export function etapasProcessoPadraoParaPerfil(
           custoPorKgProcessado: config.lavagemReaisKg,
         }),
       );
-    } else if (config.lavagemMinutosUn != null && config.lavagemMinutosUn > 0) {
-      etapas.push(
-        etapa("lavagem", {
-          minutosPorUnidade: config.lavagemMinutosUn,
-          regimeMo: regime,
-        }),
-      );
     } else {
       etapas.push(
         etapa("lavagem", {
-          nome: "Lavagem (informe R$/kg médio no modelo)",
+          nome: "Lavagem (informe R$/kg médio no modelo comum)",
           custoPorKgProcessado: 0,
         }),
       );

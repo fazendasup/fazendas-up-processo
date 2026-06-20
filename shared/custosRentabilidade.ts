@@ -66,10 +66,10 @@ export function calcularRentabilidade(input: {
     let custoUnit: number | null = null;
     let fonte: "manual" | "ficha" | null = null;
 
-    if (l.custoUnitarioManual != null && l.custoUnitarioManual >= 0) {
+    if (l.custoUnitarioManual != null && l.custoUnitarioManual > 0) {
       custoUnit = l.custoUnitarioManual;
       fonte = "manual";
-    } else if (l.custoUnitarioFicha != null && l.custoUnitarioFicha >= 0) {
+    } else if (l.custoUnitarioFicha != null && l.custoUnitarioFicha > 0) {
       custoUnit = l.custoUnitarioFicha;
       fonte = "ficha";
     }

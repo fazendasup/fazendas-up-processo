@@ -873,6 +873,7 @@ export const custosProdutosComercialMap = mysqlTable(
     categoriaCusto: varchar("categoriaCusto", { length: 32 }).notNull().default("outros"),
     perfilProcesso: varchar("perfilProcesso", { length: 48 }).notNull().default("colheita_embalagem"),
     kgPorUnidade: decimal("kgPorUnidade", { precision: 20, scale: 10 }),
+    modoCompraMp: mysqlEnum("modoCompraMp", ["kg", "unidade"]).default("kg"),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
   (t) => ({

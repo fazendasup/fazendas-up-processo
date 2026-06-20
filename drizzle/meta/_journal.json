@@ -253,6 +253,13 @@
       "when": 1777800000000,
       "tag": "0046_fichas_modo_compra_mp",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "5",
+      "when": 1777900000000,
+      "tag": "0047_comercial_map_modo_compra_mp",
+      "breakpoints": true
     }
   ]
 }

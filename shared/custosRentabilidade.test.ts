@@ -34,6 +34,24 @@ describe("calcularRentabilidade", () => {
     expect(r.linhas[0]?.custoUnitarioFonte).toBe("ficha");
     expect(r.linhas[1]?.custoUnitarioFonte).toBe("manual");
   });
+
+  it("ignora custo manual zero e usa ficha", () => {
+    const r = calcularRentabilidade({
+      custoOperacionalTotal: 0,
+      linhas: [
+        {
+          fichaId: 1,
+          nomeProduto: "Alface",
+          quantidade: 1,
+          receitaTotal: 10,
+          custoUnitarioManual: 0,
+          custoUnitarioFicha: 4,
+        },
+      ],
+    });
+    expect(r.linhas[0]?.custoUnitario).toBe(4);
+    expect(r.linhas[0]?.custoUnitarioFonte).toBe("ficha");
+  });
 });
 
 describe("somarCustoOperacionalSugerido", () => {

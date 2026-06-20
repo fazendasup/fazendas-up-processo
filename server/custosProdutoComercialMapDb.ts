@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
-import type { CategoriaProdutoCusto } from "@shared/custosProduto";
+import type { CategoriaProdutoCusto, ModoCompraMp } from "@shared/custosProduto";
 import {
   type MapeamentoProdutoComercial,
   type PerfilProcessoProduto,
@@ -26,12 +26,22 @@ CREATE TABLE IF NOT EXISTS \`custos_produtos_comercial_map\` (
   \`categoriaCusto\` varchar(32) NOT NULL DEFAULT 'outros',
   \`perfilProcesso\` varchar(48) NOT NULL DEFAULT 'colheita_embalagem',
   \`kgPorUnidade\` decimal(20,10) NULL,
+  \`modoCompraMp\` enum('kg','unidade') NULL DEFAULT 'kg',
   \`updatedAt\` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY(\`projetoId\`, \`produtoComercialId\`)
 )`));
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.warn("[custosProdutoComercialMapDb] ensure:", msg.slice(0, 160));
+  }
+  try {
+    await db.execute(
+      sql.raw(
+        "ALTER TABLE `custos_produtos_comercial_map` ADD COLUMN `modoCompraMp` enum('kg','unidade') NULL DEFAULT 'kg'",
+      ),
+    );
+  } catch {
+    /* coluna já existe */
   }
 }
 
@@ -50,6 +60,7 @@ export async function listComercialMap(projetoId: number): Promise<MapeamentoPro
       ? r.perfilProcesso
       : "colheita_embalagem") as PerfilProcessoProduto,
     kgPorUnidade: num(r.kgPorUnidade),
+    modoCompraMp: (r.modoCompraMp ?? "kg") as ModoCompraMp,
   }));
 }
 
@@ -69,12 +80,14 @@ export async function upsertComercialMap(
         categoriaCusto: item.categoriaCusto,
         perfilProcesso: item.perfilProcesso,
         kgPorUnidade: item.kgPorUnidade != null ? String(item.kgPorUnidade) : null,
+        modoCompraMp: item.modoCompraMp ?? "kg",
       })
       .onDuplicateKeyUpdate({
         set: {
           categoriaCusto: item.categoriaCusto,
           perfilProcesso: item.perfilProcesso,
           kgPorUnidade: item.kgPorUnidade != null ? String(item.kgPorUnidade) : null,
+          modoCompraMp: item.modoCompraMp ?? "kg",
         },
       });
   }

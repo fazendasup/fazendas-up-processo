@@ -27,22 +27,27 @@ import {
   CATEGORIAS_PRODUTO_CUSTO,
   LABEL_CATEGORIA_PRODUTO_CUSTO,
   LABEL_ETAPA_PROCESSO,
+  LABEL_MODO_COMPRA_MP,
+  MODOS_COMPRA_MP,
+  type CategoriaProdutoCusto,
+  type ModoCompraMp,
 } from "@shared/custosProduto";
+import {
+  calcularLavagemReaisKgDeLote,
+  DESCRICAO_PERFIL_PROCESSO,
+  LABEL_PERFIL_PROCESSO_PRODUTO,
+  nomeProdutoComercialGenerico,
+  PERFIS_PROCESSO_PRODUTO,
+  perfilUsaLavagemKg,
+  type CustosProdutoProcessoConfig,
+  type PerfilProcessoProduto,
+} from "@shared/custosProdutoProcessoPadrao";
+import { Cog, Factory, PackagePlus, Save, TableProperties } from "lucide-react";
 import {
   LABEL_REGIME_MO_ETAPA,
   REGIMES_MO_ETAPA,
   type RegimeMoEtapa,
 } from "@shared/custosMoEquipe";
-import {
-  calcularLavagemReaisKgDeLote,
-  DESCRICAO_PERFIL_PROCESSO,
-  LABEL_PERFIL_PROCESSO_PRODUTO,
-  PERFIS_PROCESSO_PRODUTO,
-  type CustosProdutoProcessoConfig,
-  type PerfilProcessoProduto,
-} from "@shared/custosProdutoProcessoPadrao";
-import type { CategoriaProdutoCusto } from "@shared/custosProduto";
-import { Cog, Factory, PackagePlus, Save, TableProperties } from "lucide-react";
 
 const fmtMoney = (n: number | null | undefined) =>
   n == null || !Number.isFinite(n)
@@ -71,6 +76,7 @@ type LinhaMap = {
   categoriaCusto: CategoriaProdutoCusto;
   perfilProcesso: PerfilProcessoProduto;
   kgPorUnidade: string;
+  modoCompraMp: ModoCompraMp;
   perfilSugerido: PerfilProcessoProduto;
 };
 
@@ -175,6 +181,7 @@ export function CustosProdutoProcessoSection() {
         categoriaCusto: p.mapeamento.categoriaCusto,
         perfilProcesso: p.mapeamento.perfilProcesso,
         kgPorUnidade: p.mapeamento.kgPorUnidade != null ? String(p.mapeamento.kgPorUnidade) : "",
+        modoCompraMp: (p.mapeamento.modoCompraMp ?? "kg") as ModoCompraMp,
         perfilSugerido: p.perfilSugerido,
       })),
     );
@@ -190,8 +197,8 @@ export function CustosProdutoProcessoSection() {
   });
 
   const salvarMap = trpc.custosProducao.produtos.salvarMapeamentos.useMutation({
-    onSuccess: async () => {
-      toast.success("Classificação dos produtos salva");
+    onSuccess: async (_data, variables) => {
+      toast.success(`Classificação salva (${variables.itens.length} produto(s))`);
       await utils.custosProducao.produtos.listarProdutosComercial.invalidate();
       await utils.custosProducao.produtos.produtosSemFicha.invalidate();
     },
@@ -205,6 +212,12 @@ export function CustosProdutoProcessoSection() {
       } else {
         toast.success(
           `${data.inseridos} ficha(s) criada(s)${data.atualizados ? `, ${data.atualizados} atualizada(s)` : ""}.`,
+        );
+      }
+      if (data.avisos?.length) {
+        toast.warning(
+          `${data.avisos.length} aviso(s) — revise kg/un, R$/kg lavagem e matéria-prima nas fichas.`,
+          { description: data.avisos.slice(0, 3).join(" · ") },
         );
       }
       await utils.custosProducao.produtos.listarFichas.invalidate();
@@ -237,17 +250,47 @@ export function CustosProdutoProcessoSection() {
     setLinhas((prev) => prev.map((l) => (l.produtoComercialId === id ? { ...l, ...patch } : l)));
   }
 
+  function mapItensSalvar(alvo: LinhaMap[]) {
+    return alvo.map((l) => ({
+      produtoComercialId: l.produtoComercialId,
+      categoriaCusto: l.categoriaCusto,
+      perfilProcesso: l.perfilProcesso,
+      kgPorUnidade: parseOpt(l.kgPorUnidade),
+      modoCompraMp: l.modoCompraMp,
+    }));
+  }
+
   function salvarClassificacao() {
     const alvo = filtroSemFicha ? linhas.filter((l) => l.semFicha) : linhas;
     if (alvo.length === 0) return toast.error("Nenhum produto para salvar.");
-    salvarMap.mutate({
-      itens: alvo.map((l) => ({
-        produtoComercialId: l.produtoComercialId,
-        categoriaCusto: l.categoriaCusto,
-        perfilProcesso: l.perfilProcesso,
-        kgPorUnidade: parseOpt(l.kgPorUnidade),
-      })),
-    });
+    salvarMap.mutate({ itens: mapItensSalvar(alvo) });
+  }
+
+  async function gerarFichasComClassificacao() {
+    const alvo = linhas.filter((l) => l.semFicha);
+    if (alvo.length === 0) return toast.info("Nenhum produto pendente.");
+    const config = configQuery.data?.config;
+    const faltamLavagem =
+      config && !(config.lavagemReaisKg != null && config.lavagemReaisKg > 0)
+        ? alvo.filter((l) => perfilUsaLavagemKg(l.perfilProcesso)).length
+        : 0;
+    const msg = [
+      `Gerar fichas para ${alvo.length} produto(s)?`,
+      "",
+      "A classificação visível será salva antes de gerar.",
+      faltamLavagem > 0
+        ? `⚠ ${faltamLavagem} produto(s) com lavagem, mas modelo sem R$/kg — lavagem ficará zerada.`
+        : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+    if (!window.confirm(msg)) return;
+    try {
+      await salvarMap.mutateAsync({ itens: mapItensSalvar(alvo) });
+      gerar.mutate({});
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar classificação.");
+    }
   }
 
   return (
@@ -451,14 +494,24 @@ export function CustosProdutoProcessoSection() {
                   <TableHead>Categoria</TableHead>
                   <TableHead>Perfil de processo</TableHead>
                   <TableHead className="w-24">Kg/un</TableHead>
+                  <TableHead className="w-28">Compra MP</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {linhasVisiveis.map((l) => (
-                  <TableRow key={l.produtoComercialId}>
+                {linhasVisiveis.map((l) => {
+                  const kgFaltando =
+                    perfilUsaLavagemKg(l.perfilProcesso) && !parseOpt(l.kgPorUnidade);
+                  const nomeGenerico = nomeProdutoComercialGenerico(l.nome);
+                  return (
+                  <TableRow key={l.produtoComercialId} className={kgFaltando ? "bg-amber-50/50 dark:bg-amber-950/20" : undefined}>
                     <TableCell className="max-w-[200px]">
                       <p className="text-sm font-medium truncate">{l.nome}</p>
+                      {nomeGenerico ? (
+                        <p className="text-[10px] text-amber-700 dark:text-amber-400">
+                          Nome genérico — confira categoria/perfil
+                        </p>
+                      ) : null}
                       {l.perfilProcesso !== l.perfilSugerido ? (
                         <p className="text-[10px] text-amber-700 dark:text-amber-400">
                           Sugestão: {LABEL_PERFIL_PROCESSO_PRODUTO[l.perfilSugerido]}
@@ -509,14 +562,38 @@ export function CustosProdutoProcessoSection() {
                     </TableCell>
                     <TableCell>
                       <Input
-                        className="h-8 text-xs"
+                        className={`h-8 text-xs ${kgFaltando ? "border-amber-500" : ""}`}
                         inputMode="decimal"
-                        placeholder="0,24"
+                        placeholder={perfilUsaLavagemKg(l.perfilProcesso) ? "obrig. lavagem" : "opcional"}
+                        title={
+                          perfilUsaLavagemKg(l.perfilProcesso)
+                            ? "Necessário para ratear lavagem R$/kg — deixe vazio só se não souber"
+                            : "Opcional — para margem por kg"
+                        }
                         value={l.kgPorUnidade}
                         onChange={(e) =>
                           updateLinha(l.produtoComercialId, { kgPorUnidade: e.target.value })
                         }
                       />
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={l.modoCompraMp}
+                        onValueChange={(v) =>
+                          updateLinha(l.produtoComercialId, { modoCompraMp: v as ModoCompraMp })
+                        }
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {MODOS_COMPRA_MP.map((m) => (
+                            <SelectItem key={m} value={m}>
+                              {m === "kg" ? "R$/kg" : "R$/un"}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell>
                       {l.semFicha ? (
@@ -530,7 +607,8 @@ export function CustosProdutoProcessoSection() {
                       )}
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
@@ -543,17 +621,8 @@ export function CustosProdutoProcessoSection() {
             <Button
               size="sm"
               variant="secondary"
-              disabled={gerar.isPending || pendentes === 0}
-              onClick={() => {
-                if (
-                  !window.confirm(
-                    `Gerar fichas para ${pendentes} produto(s)?\n\nSalve a classificação antes. Produtos com lavagem precisam de kg/un para calcular R$/kg.`,
-                  )
-                ) {
-                  return;
-                }
-                gerar.mutate({});
-              }}
+              disabled={gerar.isPending || salvarMap.isPending || pendentes === 0}
+              onClick={() => void gerarFichasComClassificacao()}
             >
               <PackagePlus className="h-4 w-4 mr-1" />
               Gerar fichas ({pendentes})

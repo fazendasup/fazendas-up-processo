@@ -14,6 +14,7 @@ import {
 } from "@shared/custosProduto";
 import { REGIMES_MO_ETAPA, type RegimeMoEtapa } from "@shared/custosMoEquipe";
 import {
+  avisosMapeamentoProduto,
   etapasProcessoPadraoParaPerfil,
   inferirCategoriaProdutoCusto,
   inferirPerfilProcessoSugerido,
@@ -72,6 +73,7 @@ const mapeamentoInput = z.object({
   categoriaCusto: categoriaZ,
   perfilProcesso: perfilZ,
   kgPorUnidade: z.number().positive().nullable().optional(),
+  modoCompraMp: modoCompraMpZ.optional().default("kg"),
 });
 
 function etapasPadraoParaDb(etapas: EtapaProcessoPadrao[]) {
@@ -162,7 +164,10 @@ const fichaInput = z
     if (val.tipo === "mix" && val.componentes.length < 2) {
       ctx.addIssue({ code: "custom", message: "Mix exige ao menos 2 componentes." });
     }
-    if (val.tipo === "revenda_processada") {
+    const precisaMp =
+      val.tipo === "revenda_processada" ||
+      (val.tipo === "manual" && val.produtoComercialId);
+    if (precisaMp) {
       const modo = val.modoCompraMp ?? "kg";
       if (modo === "unidade") {
         if (val.custoCompraUn == null || val.custoCompraUn <= 0) {
@@ -171,10 +176,10 @@ const fichaInput = z
             message: "Revenda (compra/un): informe o preço por unidade de matéria-prima.",
           });
         }
-      } else if (val.precoCompraKg == null || val.kgBrutoPorUnidade == null) {
+      } else if (val.precoCompraKg == null || val.precoCompraKg <= 0 || val.kgBrutoPorUnidade == null) {
         ctx.addIssue({
           code: "custom",
-          message: "Revenda (compra/kg): informe preço R$/kg e kg final vendido por unidade.",
+          message: "Revenda (compra/kg): informe preço R$/kg (> 0) e kg final vendido por unidade.",
         });
       }
     }
@@ -466,6 +471,7 @@ export const custosProdutoSubRouter = router({
           categoriaCusto: i.categoriaCusto,
           perfilProcesso: i.perfilProcesso,
           kgPorUnidade: i.kgPorUnidade ?? null,
+          modoCompraMp: (i.modoCompraMp ?? "kg") as ModoCompraMp,
         })),
       );
       return { success: true, total: input.itens.length };
@@ -538,25 +544,30 @@ export const custosProdutoSubRouter = router({
       let inseridos = 0;
       let atualizados = 0;
       const nomes: string[] = [];
+      const avisos: string[] = [];
 
       for (const p of alvo) {
         const m = resolverMapeamentoProduto(p.id, p.nome, p.categoria, map);
+        for (const av of avisosMapeamentoProduto(m, config)) {
+          const msg = `${p.nome}: ${av}`;
+          if (!avisos.includes(msg)) avisos.push(msg);
+        }
         const etapas = etapasPadraoParaDb(
           etapasProcessoPadraoParaPerfil(m.perfilProcesso, m.categoriaCusto, config),
         );
         const prev = fichaPorProduto.get(p.id);
         const kgBruto =
           m.kgPorUnidade != null && m.kgPorUnidade > 0 ? String(m.kgPorUnidade) : null;
+        const modoMp = m.modoCompraMp ?? "kg";
 
         if (prev) {
           if (!input.sobrescreverEtapas) continue;
           await custosProdutoDb.replaceComponentesEtapas(prev.id, [], etapas);
-          if (kgBruto) {
-            await custosProdutoDb.updateCustoProdutoFicha(pid, prev.id, {
-              categoria: m.categoriaCusto,
-              kgBrutoPorUnidade: kgBruto,
-            });
-          }
+          await custosProdutoDb.updateCustoProdutoFicha(pid, prev.id, {
+            categoria: m.categoriaCusto,
+            kgBrutoPorUnidade: kgBruto,
+            modoCompraMp: modoMp,
+          });
           atualizados += 1;
           nomes.push(p.nome);
           continue;
@@ -564,17 +575,23 @@ export const custosProdutoSubRouter = router({
 
         const fichaId = await custosProdutoDb.insertCustoProdutoFicha({
           projetoId: pid,
-          tipo: "manual",
+          tipo: "revenda_processada",
           categoria: m.categoriaCusto,
           nome: p.nome.trim(),
           produtoComercialId: p.id,
           unidadeVenda: "unidade",
           precoVendaReferencia: p.precoBase != null ? String(p.precoBase) : null,
           kgBrutoPorUnidade: kgBruto,
+          modoCompraMp: modoMp,
+          perdaLavagemPct: "0",
+          perdaDescasquePct: "0",
+          perdaSelecaoPct: "0",
           observacoes:
             "Ficha gerada do Conta Azul. Perfil: " +
             m.perfilProcesso +
-            ". Complete matéria-prima (produção ou revenda). Lavagem usa R$/kg × kg/un quando informado.",
+            ". Complete matéria-prima (" +
+            (modoMp === "unidade" ? "R$/un" : "R$/kg") +
+            "). Lavagem = R$/kg × kg/un quando informado.",
           ordem: 0,
           ativo: true,
         });
@@ -584,6 +601,6 @@ export const custosProdutoSubRouter = router({
         nomes.push(p.nome);
       }
 
-      return { inseridos, atualizados, nomes, totalAlvo: alvo.length };
+      return { inseridos, atualizados, nomes, totalAlvo: alvo.length, avisos };
     }),
 });

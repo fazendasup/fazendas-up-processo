@@ -164,6 +164,20 @@ describe("calcularCustoProduto", () => {
     expect(r.custoProcesso).toBeCloseTo(1);
     expect(r.custoPorUnidade).toBeCloseTo(16);
   });
+
+  it("alerta quando lavagem R$/kg sem kg vendido", () => {
+    const r = calcularCustoProduto({
+      tipo: "revenda_processada",
+      unidadeVenda: "unidade",
+      modoCompraMp: "unidade",
+      custoCompraUn: 10,
+      componentes: [],
+      etapas: [{ tipo: "lavagem", nome: "Lavagem", custoPorKgProcessado: 2 }],
+    });
+    expect(r.custoMaterial).toBeCloseTo(10);
+    expect(r.custoProcesso).toBeCloseTo(0);
+    expect(r.alertas.some((a) => a.includes("Lavagem"))).toBe(true);
+  });
 });
 
 describe("kgBrutoParaLiquido", () => {

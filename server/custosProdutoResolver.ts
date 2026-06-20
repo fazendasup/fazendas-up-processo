@@ -83,13 +83,22 @@ async function resolveCustoUnitarioComponente(
   }
   if (row.tipo === "produto_comercial" && row.produtoComercialId) {
     try {
+      const custosDb = await import("./custosProdutoDb");
+      const fichas = await custosDb.listCustosProdutoFichas(projetoId);
+      const linked = fichas.find((f) => f.produtoComercialId === row.produtoComercialId);
+      if (linked) {
+        const calc = await calcularFichaCompleta(projetoId, linked);
+        return {
+          nome: linked.nome,
+          custoUnitario: calc.custoPorUnidade,
+        };
+      }
       const prisma = getComercialPrisma();
       const p = await prisma.produtoComercial.findUnique({
         where: { id: row.produtoComercialId },
-        select: { nome: true, precoBase: true },
+        select: { nome: true },
       });
-      if (!p) return { nome, custoUnitario: null };
-      return { nome: p.nome, custoUnitario: p.precoBase != null ? Number(p.precoBase) : null };
+      return { nome: p?.nome ?? nome, custoUnitario: null };
     } catch {
       return { nome, custoUnitario: null };
     }
