@@ -545,6 +545,189 @@ function ResultadoCustoCard({ resultado }: { resultado: any }) {
   );
 }
 
+function EtapaProcessoEditor({
+  etapa,
+  idx,
+  kgVendidoPorUn,
+  lavagemModeloKg,
+  updateEtapa,
+  onRemove,
+}: {
+  etapa: EtapaForm;
+  idx: number;
+  kgVendidoPorUn: number | null;
+  lavagemModeloKg: number | null;
+  updateEtapa: (idx: number, patch: Partial<EtapaForm>) => void;
+  onRemove: () => void;
+}) {
+  const isLavagem = etapa.tipo === "lavagem";
+  const isLogistica = etapa.tipo === "logistica";
+  const isInsumoFixo = etapa.tipo === "embalagem" || etapa.tipo === "adesivo";
+  const rKg = parseOpt(etapa.custoPorKgProcessado);
+  const previewLavagem =
+    isLavagem && rKg != null && rKg > 0 && kgVendidoPorUn != null && kgVendidoPorUn > 0
+      ? rKg * kgVendidoPorUn
+      : null;
+
+  return (
+    <div className="rounded-lg border p-3 space-y-3">
+      <div className="flex flex-wrap items-start gap-2">
+        <div className="space-y-1 w-full sm:w-[190px]">
+          <Label className="text-xs text-muted-foreground">Tipo</Label>
+          <Select
+            value={etapa.tipo}
+            onValueChange={(v) =>
+              updateEtapa(idx, {
+                tipo: v as TipoEtapaProcesso,
+                nome: LABEL_ETAPA_PROCESSO[v as TipoEtapaProcesso],
+              })
+            }
+          >
+            <SelectTrigger className="h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TIPOS_ETAPA_PROCESSO.map((t) => (
+                <SelectItem key={t} value={t}>
+                  {LABEL_ETAPA_PROCESSO[t]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1 flex-1 min-w-[140px]">
+          <Label className="text-xs text-muted-foreground">Nome</Label>
+          <Input className="h-9" value={etapa.nome} onChange={(ev) => updateEtapa(idx, { nome: ev.target.value })} />
+        </div>
+        <Button variant="ghost" size="icon" className="mt-6 shrink-0" onClick={onRemove}>
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {isLavagem ? (
+        <div className="rounded-md border border-blue-200 bg-blue-50/50 dark:border-blue-900 dark:bg-blue-950/20 p-3 space-y-3">
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            A lavagem industrial é rateada por <strong>peso</strong>, não por min/un por produto. Informe o{" "}
+            <strong>R$/kg médio do lote</strong> (calculado em{" "}
+            <em>Valores comuns de processo → Lavagem industrial</em>). O custo desta ficha será:
+          </p>
+          <p className="text-xs font-medium">
+            Custo lavagem/un = R$/kg do lote × kg vendido/un (campo Matéria-prima)
+          </p>
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="space-y-1">
+              <Label className="text-xs">R$/kg lavagem (média do lote)</Label>
+              <Input
+                className="h-9 w-32"
+                inputMode="decimal"
+                placeholder="0,25"
+                value={etapa.custoPorKgProcessado}
+                onChange={(ev) => updateEtapa(idx, { custoPorKgProcessado: ev.target.value })}
+              />
+            </div>
+            {lavagemModeloKg != null && lavagemModeloKg > 0 ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  updateEtapa(idx, { custoPorKgProcessado: fmtDecimalInput(lavagemModeloKg, 4) })
+                }
+              >
+                Usar do modelo ({fmtMoney(lavagemModeloKg)}/kg)
+              </Button>
+            ) : (
+              <p className="text-[11px] text-amber-700 dark:text-amber-400 pb-2">
+                Modelo comum ainda sem R$/kg — calcule na seção de processo acima.
+              </p>
+            )}
+          </div>
+          {previewLavagem != null ? (
+            <p className="text-xs text-emerald-800 dark:text-emerald-300">
+              Prévia: {fmtMoney(previewLavagem)}/un vendida ({fmtMoney(rKg!)}/kg × {kgVendidoPorUn} kg)
+            </p>
+          ) : kgVendidoPorUn == null || kgVendidoPorUn <= 0 ? (
+            <p className="text-[11px] text-amber-700 dark:text-amber-400">
+              Informe kg vendido/un em Matéria-prima para ver o custo de lavagem desta ficha.
+            </p>
+          ) : null}
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {isInsumoFixo ? (
+            <div className="space-y-1">
+              <Label className="text-xs">Insumo (R$/un)</Label>
+              <Input
+                className="h-9"
+                inputMode="decimal"
+                placeholder="0,60"
+                value={etapa.custoPorUnidade}
+                onChange={(ev) => updateEtapa(idx, { custoPorUnidade: ev.target.value })}
+              />
+            </div>
+          ) : null}
+          {!isLogistica ? (
+            <>
+              <div className="space-y-1">
+                <Label className="text-xs">MO — min/un</Label>
+                <Input
+                  className="h-9"
+                  inputMode="decimal"
+                  placeholder="opcional"
+                  value={etapa.minutosPorUnidade}
+                  onChange={(ev) => updateEtapa(idx, { minutosPorUnidade: ev.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Regime MO</Label>
+                <Select
+                  value={etapa.regimeMo}
+                  onValueChange={(v) => updateEtapa(idx, { regimeMo: v as RegimeMoEtapa })}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REGIMES_MO_ETAPA.map((r) => (
+                      <SelectItem key={r} value={r}>
+                        {LABEL_REGIME_MO_ETAPA[r]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          ) : null}
+          {!isInsumoFixo && !isLogistica ? (
+            <div className="space-y-1">
+              <Label className="text-xs">Extra fixo (R$/un)</Label>
+              <Input
+                className="h-9"
+                inputMode="decimal"
+                placeholder="0"
+                value={etapa.custoPorUnidade}
+                onChange={(ev) => updateEtapa(idx, { custoPorUnidade: ev.target.value })}
+              />
+            </div>
+          ) : null}
+          {isLogistica ? (
+            <div className="space-y-1 sm:col-span-2">
+              <Label className="text-xs">Percentual sobre subtotal (%)</Label>
+              <Input
+                className="h-9 w-28"
+                inputMode="decimal"
+                placeholder="10"
+                value={etapa.custoPercentual}
+                onChange={(ev) => updateEtapa(idx, { custoPercentual: ev.target.value })}
+              />
+            </div>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function FichaEditor({
   form,
   setForm,
@@ -564,6 +747,10 @@ function FichaEditor({
   salvando: boolean;
   editingId: number | null;
 }) {
+  const processoConfig = trpc.custosProducao.produtos.processoConfig.useQuery();
+  const lavagemModeloKg = processoConfig.data?.config.lavagemReaisKg ?? null;
+  const kgVendidoPorUn = parseOpt(form.kgBrutoPorUnidade);
+
   const updateComp = (idx: number, patch: Partial<ComponenteForm>) => {
     setForm((f) => {
       const next = [...f.componentes];
@@ -964,12 +1151,18 @@ function FichaEditor({
       )}
 
       <Card>
-        <CardHeader className="pb-2 flex flex-row items-center justify-between">
+        <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2">
           <div>
             <CardTitle className="text-sm">Processo industrial</CardTitle>
-            <CardDescription>
-              MO variável = min/un × R$/h (Equipes MO). Lavagem = só <strong>R$/kg</strong> do lote.
-              Embalagem/adesivo = R$/un. Overhead fixo → Rentabilidade, não repita aqui.
+            <CardDescription className="space-y-1">
+              <span className="block">
+                <strong>Lavagem:</strong> R$/kg médio do lote × kg vendido/un — calcule o R$/kg em{" "}
+                <em>Valores comuns de processo</em>.
+              </span>
+              <span className="block">
+                <strong>Embalagem/adesivo:</strong> R$/un de insumo. <strong>MO:</strong> min/un × R$/h das equipes.
+                Overhead fixo fica na Rentabilidade.
+              </span>
             </CardDescription>
           </div>
           <Button size="sm" variant="outline" onClick={() => setForm((f) => ({ ...f, etapas: [...f.etapas, emptyEtapa()] }))}>
@@ -977,111 +1170,22 @@ function FichaEditor({
           </Button>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="hidden md:grid gap-2 px-3 text-[10px] font-medium text-muted-foreground md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_5rem_7rem_5rem_5rem_5rem_auto]">
-            <span>Tipo</span>
-            <span>Nome</span>
-            <span>Min/un</span>
-            <span>Regime MO</span>
-            <span>R$/un</span>
-            <span>R$/kg</span>
-            <span>%</span>
-            <span />
-          </div>
-          {form.etapas.map((e, idx) => {
-            const isLavagem = e.tipo === "lavagem";
-            const isLogistica = e.tipo === "logistica";
-            return (
-            <div
+          {form.etapas.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Nenhuma etapa. Gere a ficha pelo Conta Azul ou adicione etapas manualmente.
+            </p>
+          ) : null}
+          {form.etapas.map((e, idx) => (
+            <EtapaProcessoEditor
               key={idx}
-              className="grid gap-2 rounded-lg border p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_5rem_7rem_5rem_5rem_5rem_auto]"
-            >
-              <Select
-                value={e.tipo}
-                onValueChange={(v) =>
-                  updateEtapa(idx, {
-                    tipo: v as TipoEtapaProcesso,
-                    nome: LABEL_ETAPA_PROCESSO[v as TipoEtapaProcesso],
-                  })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TIPOS_ETAPA_PROCESSO.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {LABEL_ETAPA_PROCESSO[t]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input value={e.nome} onChange={(ev) => updateEtapa(idx, { nome: ev.target.value })} />
-              {!isLavagem ? (
-                <Input
-                  placeholder="Min/un"
-                  inputMode="decimal"
-                  title="Minutos por unidade vendida"
-                  value={e.minutosPorUnidade}
-                  onChange={(ev) => updateEtapa(idx, { minutosPorUnidade: ev.target.value })}
-                />
-              ) : (
-                <span className="text-[10px] text-muted-foreground self-center px-1">—</span>
-              )}
-              {!isLavagem ? (
-                <Select
-                  value={e.regimeMo}
-                  onValueChange={(v) => updateEtapa(idx, { regimeMo: v as RegimeMoEtapa })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {REGIMES_MO_ETAPA.map((r) => (
-                      <SelectItem key={r} value={r}>
-                        {LABEL_REGIME_MO_ETAPA[r]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <span className="text-[10px] text-muted-foreground self-center px-1">—</span>
-              )}
-              {!isLavagem ? (
-                <Input
-                  placeholder="R$/un fixo"
-                  inputMode="decimal"
-                  value={e.custoPorUnidade}
-                  onChange={(ev) => updateEtapa(idx, { custoPorUnidade: ev.target.value })}
-                />
-              ) : (
-                <span className="text-[10px] text-muted-foreground self-center px-1">—</span>
-              )}
-              <Input
-                placeholder={isLavagem ? "R$/kg lote" : "R$/kg"}
-                inputMode="decimal"
-                value={e.custoPorKgProcessado}
-                onChange={(ev) => updateEtapa(idx, { custoPorKgProcessado: ev.target.value })}
-              />
-              {isLogistica ? (
-                <Input
-                  placeholder="%"
-                  inputMode="decimal"
-                  value={e.custoPercentual}
-                  onChange={(ev) => updateEtapa(idx, { custoPercentual: ev.target.value })}
-                />
-              ) : (
-                <span className="text-[10px] text-muted-foreground self-center px-1">—</span>
-              )}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setForm((f) => ({ ...f, etapas: f.etapas.filter((_, i) => i !== idx) }))}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-            );
-          })}
+              etapa={e}
+              idx={idx}
+              kgVendidoPorUn={kgVendidoPorUn}
+              lavagemModeloKg={lavagemModeloKg}
+              updateEtapa={updateEtapa}
+              onRemove={() => setForm((f) => ({ ...f, etapas: f.etapas.filter((_, i) => i !== idx) }))}
+            />
+          ))}
         </CardContent>
       </Card>
 
