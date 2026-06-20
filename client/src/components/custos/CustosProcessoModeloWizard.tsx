@@ -8,8 +8,10 @@ import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DecimalInput } from "@/components/custos/DecimalInput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { parseOptDecimal } from "@/lib/decimalInput";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -125,13 +127,6 @@ type ModeloDraft = {
   linha: LinhaProcessoIndustrialInput;
 };
 
-function parseOpt(s: string): number | null {
-  const t = s.trim().replace(",", ".");
-  if (!t) return null;
-  const n = Number(t);
-  return Number.isFinite(n) ? n : null;
-}
-
 function modeloToDraft(m: ProcessoModeloRecord): ModeloDraft {
   return {
     id: m.id,
@@ -172,10 +167,10 @@ function draftToPayload(d: ModeloDraft) {
     descricao: d.descricao.trim() || null,
     familia: d.familia,
     isDefault: d.isDefault,
-    kgReferenciaMes: parseOpt(d.kgReferenciaMes),
-    embalagemMicroverdeUn: parseOpt(d.embalagemMicroverdeUn) ?? 0.95,
-    embalagemOutrosUn: parseOpt(d.embalagemOutrosUn) ?? 0.6,
-    adesivoCustoUn: parseOpt(d.adesivoCustoUn),
+    kgReferenciaMes: parseOptDecimal(d.kgReferenciaMes),
+    embalagemMicroverdeUn: parseOptDecimal(d.embalagemMicroverdeUn) ?? 0.95,
+    embalagemOutrosUn: parseOptDecimal(d.embalagemOutrosUn) ?? 0.6,
+    adesivoCustoUn: parseOptDecimal(d.adesivoCustoUn),
     regimeMoPadrao: d.regimeMoPadrao,
     incluirAdesivo: d.incluirAdesivo,
     linhaProcesso: normalizarLinhaProcessoInput(d.linha),
@@ -205,10 +200,9 @@ function MaquinaFields({
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-1">
             <Label className="text-xs">Potência (kW)</Label>
-            <Input
-              inputMode="decimal"
-              value={String(maquina.potenciaKw)}
-              onChange={(e) => onChange({ ...maquina, potenciaKw: parseOpt(e.target.value) ?? 0 })}
+            <DecimalInput
+              value={maquina.potenciaKw}
+              onChange={(v) => onChange({ ...maquina, potenciaKw: v })}
             />
           </div>
           {showContinuo ? (
@@ -224,40 +218,33 @@ function MaquinaFields({
             <>
               <div className="space-y-1">
                 <Label className="text-xs">Ciclo (min)</Label>
-                <Input
-                  inputMode="decimal"
-                  value={String(maquina.minutosCiclo)}
-                  onChange={(e) => onChange({ ...maquina, minutosCiclo: parseOpt(e.target.value) ?? 0 })}
+                <DecimalInput
+                  value={maquina.minutosCiclo}
+                  onChange={(v) => onChange({ ...maquina, minutosCiclo: v })}
                 />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Kg por carga</Label>
-                <Input
-                  inputMode="decimal"
-                  value={String(maquina.kgPorCiclo)}
-                  onChange={(e) => onChange({ ...maquina, kgPorCiclo: parseOpt(e.target.value) ?? 1 })}
+                <DecimalInput
+                  value={maquina.kgPorCiclo}
+                  fallback={1}
+                  onChange={(v) => onChange({ ...maquina, kgPorCiclo: v })}
                 />
               </div>
             </>
           )}
           <div className="space-y-1">
             <Label className="text-xs">Depreciação (R$/kg)</Label>
-            <Input
-              inputMode="decimal"
-              value={String(maquina.depreciacaoReaisKg)}
-              onChange={(e) =>
-                onChange({ ...maquina, depreciacaoReaisKg: parseOpt(e.target.value) ?? 0 })
-              }
+            <DecimalInput
+              value={maquina.depreciacaoReaisKg}
+              onChange={(v) => onChange({ ...maquina, depreciacaoReaisKg: v })}
             />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">Consumíveis (R$/kg)</Label>
-            <Input
-              inputMode="decimal"
-              value={String(maquina.consumiveisReaisKg)}
-              onChange={(e) =>
-                onChange({ ...maquina, consumiveisReaisKg: parseOpt(e.target.value) ?? 0 })
-              }
+            <DecimalInput
+              value={maquina.consumiveisReaisKg}
+              onChange={(v) => onChange({ ...maquina, consumiveisReaisKg: v })}
             />
           </div>
         </div>
@@ -349,7 +336,7 @@ export function CustosProcessoModeloWizard() {
   }
 
   function aplicarDepreciacaoLavagem(valor: number, meses: number) {
-    const kg = parseOpt(draft.kgReferenciaMes);
+    const kg = parseOptDecimal(draft.kgReferenciaMes);
     if (kg == null) {
       toast.error("Informe kg/mês de referência no passo Base");
       return;
@@ -517,18 +504,19 @@ export function CustosProcessoModeloWizard() {
               </div>
               <div className="space-y-1">
                 <Label>R$/h manual (fallback)</Label>
-                <Input
-                  inputMode="decimal"
-                  value={String(draft.linha.custoHoraMo)}
-                  onChange={(e) => patchLinha({ custoHoraMo: parseOpt(e.target.value) ?? 0 })}
+                <DecimalInput
+                  value={draft.linha.custoHoraMo}
+                  fractionDigits={2}
+                  onChange={(v) => patchLinha({ custoHoraMo: v })}
                 />
               </div>
               <div className="space-y-1">
                 <Label>Tarifa energia (R$/kWh)</Label>
-                <Input
-                  inputMode="decimal"
-                  value={String(draft.linha.tarifaKwh)}
-                  onChange={(e) => patchLinha({ tarifaKwh: parseOpt(e.target.value) ?? 0.75 })}
+                <DecimalInput
+                  value={draft.linha.tarifaKwh}
+                  fallback={0.75}
+                  fractionDigits={4}
+                  onChange={(v) => patchLinha({ tarifaKwh: v })}
                 />
               </div>
               <div className="space-y-1">
@@ -542,10 +530,10 @@ export function CustosProcessoModeloWizard() {
               </div>
               <div className="space-y-1">
                 <Label>Pés/un vendida (ref. desfolhagem)</Label>
-                <Input
-                  inputMode="decimal"
-                  value={String(draft.linha.pesPorUnidadeRef)}
-                  onChange={(e) => patchLinha({ pesPorUnidadeRef: parseOpt(e.target.value) ?? 1 })}
+                <DecimalInput
+                  value={draft.linha.pesPorUnidadeRef}
+                  fallback={1}
+                  onChange={(v) => patchLinha({ pesPorUnidadeRef: v })}
                 />
               </div>
             </div>
@@ -584,13 +572,12 @@ export function CustosProcessoModeloWizard() {
                   {draft.linha.modoPessoasProcessamento === "equipe_linha" ? (
                     <div className="space-y-1">
                       <Label className="text-xs">Operadores na sequência da linha</Label>
-                      <Input
-                        inputMode="numeric"
-                        value={String(draft.linha.pessoasLinhaProcessamento)}
-                        onChange={(e) =>
-                          patchLinha({
-                            pessoasLinhaProcessamento: parseOpt(e.target.value) ?? 1,
-                          })
+                      <DecimalInput
+                        integersOnly
+                        fallback={1}
+                        value={draft.linha.pessoasLinhaProcessamento}
+                        onChange={(v) =>
+                          patchLinha({ pessoasLinhaProcessamento: Math.max(1, v) })
                         }
                       />
                     </div>
@@ -604,47 +591,42 @@ export function CustosProcessoModeloWizard() {
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="space-y-1">
                   <Label className="text-xs">Desfolhagem (s/pé)</Label>
-                  <Input
-                    inputMode="decimal"
-                    value={String(draft.linha.desfolhagemSegPorPe)}
-                    onChange={(e) => patchLinha({ desfolhagemSegPorPe: parseOpt(e.target.value) ?? 0 })}
+                  <DecimalInput
+                    value={draft.linha.desfolhagemSegPorPe}
+                    onChange={(v) => patchLinha({ desfolhagemSegPorPe: v })}
                   />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Pré-lavagem kg/h</Label>
-                  <Input
-                    inputMode="decimal"
-                    value={String(draft.linha.preLavagemKgHora)}
-                    onChange={(e) => patchLinha({ preLavagemKgHora: parseOpt(e.target.value) ?? 300 })}
+                  <DecimalInput
+                    value={draft.linha.preLavagemKgHora}
+                    fallback={300}
+                    onChange={(v) => patchLinha({ preLavagemKgHora: v })}
                   />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Pré-lavagem eficiência %</Label>
-                  <Input
-                    inputMode="decimal"
-                    value={String(draft.linha.preLavagemEficienciaPct)}
-                    onChange={(e) =>
-                      patchLinha({ preLavagemEficienciaPct: parseOpt(e.target.value) ?? 70 })
-                    }
+                  <DecimalInput
+                    value={draft.linha.preLavagemEficienciaPct}
+                    fallback={70}
+                    onChange={(v) => patchLinha({ preLavagemEficienciaPct: v })}
                   />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Pré-lavagem consumíveis (R$/kg)</Label>
-                  <Input
-                    inputMode="decimal"
-                    value={String(draft.linha.preLavagemConsumiveisReaisKg)}
-                    onChange={(e) =>
-                      patchLinha({ preLavagemConsumiveisReaisKg: parseOpt(e.target.value) ?? 0 })
-                    }
+                  <DecimalInput
+                    value={draft.linha.preLavagemConsumiveisReaisKg}
+                    fractionDigits={4}
+                    onChange={(v) => patchLinha({ preLavagemConsumiveisReaisKg: v })}
                     placeholder="Sanitizante, detergente…"
                   />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Lavagem kg/h</Label>
-                  <Input
-                    inputMode="decimal"
-                    value={String(draft.linha.lavagemKgHora)}
-                    onChange={(e) => patchLinha({ lavagemKgHora: parseOpt(e.target.value) ?? 300 })}
+                  <DecimalInput
+                    value={draft.linha.lavagemKgHora}
+                    fallback={300}
+                    onChange={(v) => patchLinha({ lavagemKgHora: v })}
                   />
                 </div>
                 <div className="space-y-1 flex items-end gap-2 pb-1 sm:col-span-2">
@@ -662,70 +644,65 @@ export function CustosProcessoModeloWizard() {
                 <div className="space-y-1">
                   <Label className="text-xs">Enxague (s / kg)</Label>
                   <div className="flex gap-1">
-                    <Input
+                    <DecimalInput
                       className="w-16"
-                      value={String(draft.linha.enxagueSeg)}
-                      onChange={(e) => patchLinha({ enxagueSeg: parseOpt(e.target.value) ?? 0 })}
+                      value={draft.linha.enxagueSeg}
+                      onChange={(v) => patchLinha({ enxagueSeg: v })}
                     />
-                    <Input
+                    <DecimalInput
                       className="flex-1"
-                      value={String(draft.linha.enxagueKg)}
-                      onChange={(e) => patchLinha({ enxagueKg: parseOpt(e.target.value) ?? 1 })}
+                      value={draft.linha.enxagueKg}
+                      fallback={1}
+                      onChange={(v) => patchLinha({ enxagueKg: v })}
                     />
                   </div>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Enxague consumíveis (R$/kg)</Label>
-                  <Input
-                    inputMode="decimal"
-                    value={String(draft.linha.enxagueConsumiveisReaisKg)}
-                    onChange={(e) =>
-                      patchLinha({ enxagueConsumiveisReaisKg: parseOpt(e.target.value) ?? 0 })
-                    }
+                  <DecimalInput
+                    value={draft.linha.enxagueConsumiveisReaisKg}
+                    fractionDigits={4}
+                    onChange={(v) => patchLinha({ enxagueConsumiveisReaisKg: v })}
                     placeholder="Ácido, cloro…"
                   />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Secagem abastec. (s / kg)</Label>
                   <div className="flex gap-1">
-                    <Input
+                    <DecimalInput
                       className="w-16"
-                      value={String(draft.linha.secagemSegOperador)}
-                      onChange={(e) =>
-                        patchLinha({ secagemSegOperador: parseOpt(e.target.value) ?? 30 })
-                      }
+                      value={draft.linha.secagemSegOperador}
+                      fallback={30}
+                      onChange={(v) => patchLinha({ secagemSegOperador: v })}
                     />
-                    <Input
+                    <DecimalInput
                       className="flex-1"
-                      value={String(draft.linha.secagemKg)}
-                      onChange={(e) => patchLinha({ secagemKg: parseOpt(e.target.value) ?? 1 })}
+                      value={draft.linha.secagemKg}
+                      fallback={1}
+                      onChange={(v) => patchLinha({ secagemKg: v })}
                     />
                   </div>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Embalagem min/un</Label>
-                  <Input
-                    inputMode="decimal"
-                    value={String(draft.linha.embalagemMinPorUn)}
-                    onChange={(e) => patchLinha({ embalagemMinPorUn: parseOpt(e.target.value) ?? 0 })}
+                  <DecimalInput
+                    value={draft.linha.embalagemMinPorUn}
+                    onChange={(v) => patchLinha({ embalagemMinPorUn: v })}
                   />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Selagem min / N un</Label>
                   <div className="flex gap-1">
-                    <Input
+                    <DecimalInput
                       className="w-16"
-                      value={String(draft.linha.selagemMinPorCiclo)}
-                      onChange={(e) =>
-                        patchLinha({ selagemMinPorCiclo: parseOpt(e.target.value) ?? 0 })
-                      }
+                      value={draft.linha.selagemMinPorCiclo}
+                      onChange={(v) => patchLinha({ selagemMinPorCiclo: v })}
                     />
-                    <Input
+                    <DecimalInput
                       className="w-16"
-                      value={String(draft.linha.selagemUnPorCiclo)}
-                      onChange={(e) =>
-                        patchLinha({ selagemUnPorCiclo: parseOpt(e.target.value) ?? 1 })
-                      }
+                      value={draft.linha.selagemUnPorCiclo}
+                      fallback={1}
+                      onChange={(v) => patchLinha({ selagemUnPorCiclo: v })}
                     />
                   </div>
                 </div>
@@ -758,11 +735,13 @@ export function CustosProcessoModeloWizard() {
                                   equipe {draft.linha.pessoasLinhaProcessamento}
                                 </span>
                               ) : cp ? (
-                                <Input
+                                <DecimalInput
                                   className="h-8 w-14 text-center"
-                                  value={String(draft.linha[cp])}
-                                  onChange={(ev) =>
-                                    patchLinha({ [cp]: parseOpt(ev.target.value) ?? 1 } as never)
+                                  integersOnly
+                                  fallback={1}
+                                  value={draft.linha[cp] as number}
+                                  onChange={(v) =>
+                                    patchLinha({ [cp]: Math.max(1, v) } as never)
                                   }
                                 />
                               ) : (
@@ -834,8 +813,8 @@ export function CustosProcessoModeloWizard() {
                   variant="secondary"
                   size="sm"
                   onClick={() => {
-                    const v = parseOpt((document.getElementById("val-lav") as HTMLInputElement)?.value ?? "");
-                    const m = parseOpt((document.getElementById("mes-lav") as HTMLInputElement)?.value ?? "");
+                    const v = parseOptDecimal((document.getElementById("val-lav") as HTMLInputElement)?.value ?? "");
+                    const m = parseOptDecimal((document.getElementById("mes-lav") as HTMLInputElement)?.value ?? "");
                     if (v != null && m != null) aplicarDepreciacaoLavagem(v, m);
                   }}
                 >
@@ -1139,7 +1118,7 @@ export function CustosProcessoModeloWizard() {
                           produtoComercialId: l.produtoComercialId,
                           categoriaCusto: l.categoriaCusto,
                           perfilProcesso: l.perfilProcesso,
-                          kgPorUnidade: parseOpt(l.kgPorUnidade),
+                          kgPorUnidade: parseOptDecimal(l.kgPorUnidade),
                           modoCompraMp: l.modoCompraMp,
                           processoModeloId: l.processoModeloId
                             ? Number(l.processoModeloId)
