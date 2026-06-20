@@ -35,11 +35,16 @@ import {
   FINALIDADES_MO_EQUIPE,
   LABEL_FINALIDADE_MO_EQUIPE,
   LABEL_REGIME_MO_EQUIPE,
+  LABEL_MODO_CUSTO_MO_EQUIPE,
   REGIMES_MO_EQUIPE,
   type FinalidadeMoEquipe,
   type RegimeMoEquipe,
 } from "@shared/custosMoEquipe";
-import { AlertTriangle, Pencil, Plus, Trash2, Users } from "lucide-react";
+import {
+  CUSTO_MENSAL_TOTAL_OPERADOR_PJ,
+  HORAS_MES_40H_SEMANA,
+} from "@shared/custosMoEquipeOperadoresPj";
+import { AlertTriangle, FileSpreadsheet, Pencil, Plus, Trash2, Users, UserPlus } from "lucide-react";
 
 const fmtMoney = (n: number | null | undefined) =>
   n == null || !Number.isFinite(n)
@@ -49,6 +54,8 @@ const fmtMoney = (n: number | null | undefined) =>
 type EquipeForm = {
   id?: number;
   nome: string;
+  cargo: string;
+  codigoFolha: string;
   regime: RegimeMoEquipe;
   finalidade: FinalidadeMoEquipe;
   numPessoas: string;
@@ -56,6 +63,7 @@ type EquipeForm = {
   custoMensalBase: string;
   encargosPct: string;
   custoMensalTotal: string;
+  liquidoMensal: string;
   observacoes: string;
   ativo: boolean;
 };
@@ -63,6 +71,8 @@ type EquipeForm = {
 function emptyForm(regime: RegimeMoEquipe = "clt"): EquipeForm {
   return {
     nome: "",
+    cargo: "",
+    codigoFolha: "",
     regime,
     finalidade: "processamento",
     numPessoas: "1",
@@ -70,6 +80,7 @@ function emptyForm(regime: RegimeMoEquipe = "clt"): EquipeForm {
     custoMensalBase: "",
     encargosPct: regime === "clt" ? "80" : "",
     custoMensalTotal: "",
+    liquidoMensal: "",
     observacoes: "",
     ativo: true,
   };
@@ -109,8 +120,47 @@ export function CustosMoEquipesPanel() {
     onError: (e) => toast.error(e.message),
   });
 
+  const cadastrarOperadoresPj = trpc.custosProducao.moEquipes.cadastrarOperadoresPjPadrao.useMutation({
+    onSuccess: async (data) => {
+      if (data.inseridos === 0) {
+        toast.info("Os 7 operadores PJ já estavam cadastrados.");
+      } else {
+        toast.success(
+          `${data.inseridos} operador(es) PJ cadastrados (${fmtMoney(data.custoMensalPorOperador)}/mês cada).`,
+        );
+      }
+      await utils.custosProducao.moEquipes.listar.invalidate();
+      await utils.custosProducao.rentabilidade.sugestaoCustoOperacional.invalidate();
+      await utils.custosProducao.produtos.listarFichas.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const importarFolha = trpc.custosProducao.moEquipes.importarFolha052026.useMutation({
+    onSuccess: async (data) => {
+      toast.success(
+        `Folha 05/2026: ${data.inseridos} novo(s), ${data.atualizados} atualizado(s).`,
+      );
+      await utils.custosProducao.moEquipes.listar.invalidate();
+      await utils.custosProducao.rentabilidade.sugestaoCustoOperacional.invalidate();
+      await utils.custosProducao.produtos.listarFichas.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const salvarConfig = trpc.custosProducao.moEquipes.salvarConfig.useMutation({
+    onSuccess: async () => {
+      await utils.custosProducao.moEquipes.listar.invalidate();
+      await utils.custosProducao.rentabilidade.sugestaoCustoOperacional.invalidate();
+      await utils.custosProducao.produtos.listarFichas.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   const mapa = query.data?.mapaCustoHora;
   const equipes = query.data?.equipes ?? [];
+  const usarLiquido = query.data?.config?.usarLiquidoDesembolso ?? false;
+  const modoCusto = query.data?.modoCusto ?? "empregador";
 
   const resumo = useMemo(() => {
     const procClt = equipes.filter(
@@ -131,6 +181,8 @@ export function CustosMoEquipesPanel() {
     setForm({
       id: e.id,
       nome: e.nome,
+      cargo: e.cargo ?? "",
+      codigoFolha: e.codigoFolha ?? "",
       regime: e.regime,
       finalidade: e.finalidade,
       numPessoas: String(e.numPessoas),
@@ -138,6 +190,7 @@ export function CustosMoEquipesPanel() {
       custoMensalBase: e.custoMensalBase != null ? String(e.custoMensalBase) : "",
       encargosPct: e.encargosPct != null ? String(e.encargosPct) : "",
       custoMensalTotal: e.custoMensalTotal != null ? String(e.custoMensalTotal) : "",
+      liquidoMensal: e.liquidoMensal != null ? String(e.liquidoMensal) : "",
       observacoes: e.observacoes ?? "",
       ativo: e.ativo !== false,
     });
@@ -148,6 +201,8 @@ export function CustosMoEquipesPanel() {
     salvar.mutate({
       id: form.id,
       nome: form.nome.trim(),
+      cargo: form.cargo.trim() || null,
+      codigoFolha: form.codigoFolha.trim() || null,
       regime: form.regime,
       finalidade: form.finalidade,
       numPessoas: parseNum(form.numPessoas) ?? 1,
@@ -155,6 +210,7 @@ export function CustosMoEquipesPanel() {
       custoMensalBase: parseNum(form.custoMensalBase),
       encargosPct: parseNum(form.encargosPct),
       custoMensalTotal: parseNum(form.custoMensalTotal),
+      liquidoMensal: parseNum(form.liquidoMensal),
       observacoes: form.observacoes.trim() || null,
       ativo: form.ativo,
     });
@@ -172,6 +228,29 @@ export function CustosMoEquipesPanel() {
           da Rentabilidade.
         </AlertDescription>
       </Alert>
+
+      <Card>
+        <CardContent className="pt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Desembolso líquido (sem encargos patronais)</p>
+            <p className="text-xs text-muted-foreground max-w-xl">
+              {LABEL_MODO_CUSTO_MO_EQUIPE.liquido}. R$/h do CMV, overhead MO e sugestão da
+              Rentabilidade passam a usar o valor líquido de cada pessoa. Sem líquido cadastrado,
+              mantém o custo empregador.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Switch
+              checked={usarLiquido}
+              disabled={salvarConfig.isPending}
+              onCheckedChange={(v) => salvarConfig.mutate({ usarLiquidoDesembolso: v })}
+            />
+            <Label className="font-normal text-sm">
+              {usarLiquido ? "Ativo" : "Inativo"}
+            </Label>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Card>
@@ -198,13 +277,21 @@ export function CustosMoEquipesPanel() {
         </Card>
         <Card>
           <CardHeader className="pb-1">
-            <CardTitle className="text-xs text-muted-foreground">MO fixa (overhead/mês)</CardTitle>
+            <CardTitle className="text-xs text-muted-foreground">
+              MO fixa (overhead/mês)
+              {usarLiquido ? " · líquido" : " · empregador"}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xl font-bold tabular-nums">
               {fmtMoney(query.data?.overheadMoMensal ?? 0)}
             </p>
-            <p className="text-[11px] text-muted-foreground">Supervisão, admin produção…</p>
+            <p className="text-[11px] text-muted-foreground">
+              Supervisão, admin produção…
+              {usarLiquido && query.data?.overheadMoEmpregador != null ? (
+                <> · empregador: {fmtMoney(query.data.overheadMoEmpregador)}</>
+              ) : null}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -217,6 +304,47 @@ export function CustosMoEquipesPanel() {
         <Button size="sm" variant="outline" onClick={() => abrirNova("pj")}>
           <Plus className="h-4 w-4 mr-1" />
           Equipe PJ
+        </Button>
+        <Button
+          size="sm"
+          disabled={cadastrarOperadoresPj.isPending}
+          onClick={() => {
+            if (
+              window.confirm(
+                `Cadastrar Operador 1 a 7 como PJ?\n\n` +
+                  `• Operadores 1–5: processamento (R$/h no CMV)\n` +
+                  `• Operadores 6–7: ADM/supervisão (overhead mensal)\n` +
+                  `• Honorários: ${fmtMoney(2500)} (40 h/semana)\n` +
+                  `• VT: R$ 10/dia × 5 dias úteis\n` +
+                  `• VA: R$ 20/dia × 5 dias úteis\n` +
+                  `• Total: ${fmtMoney(CUSTO_MENSAL_TOTAL_OPERADOR_PJ)}/mês · ${HORAS_MES_40H_SEMANA} h/mês\n\n` +
+                  `Nomes já existentes serão ignorados.`,
+              )
+            ) {
+              cadastrarOperadoresPj.mutate();
+            }
+          }}
+        >
+          <UserPlus className="h-4 w-4 mr-1" />
+          Cadastrar 7 operadores PJ
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={importarFolha.isPending}
+          onClick={() => {
+            if (
+              window.confirm(
+                "Importar folha 05/2026 (6 colaboradores CLT + pró-labore)?\n\n" +
+                  "Atualiza quem já existir pelo código da folha.",
+              )
+            ) {
+              importarFolha.mutate();
+            }
+          }}
+        >
+          <FileSpreadsheet className="h-4 w-4 mr-1" />
+          Folha 05/2026
         </Button>
       </div>
 
@@ -237,11 +365,17 @@ export function CustosMoEquipesPanel() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
+                  <TableHead>Cargo</TableHead>
                   <TableHead>Vínculo</TableHead>
                   <TableHead>Finalidade</TableHead>
                   <TableHead className="text-right">Pessoas</TableHead>
                   <TableHead className="text-right">h/mês</TableHead>
-                  <TableHead className="text-right">Custo/mês</TableHead>
+                  <TableHead className="text-right">
+                    {modoCusto === "liquido" ? "Líquido/mês" : "Custo/mês"}
+                  </TableHead>
+                  {modoCusto === "liquido" ? (
+                    <TableHead className="text-right text-muted-foreground">Empregador</TableHead>
+                  ) : null}
                   <TableHead className="text-right">R$/h</TableHead>
                   <TableHead />
                 </TableRow>
@@ -250,8 +384,19 @@ export function CustosMoEquipesPanel() {
                 {equipes.map((e) => (
                   <TableRow key={e.id} className={e.ativo ? undefined : "opacity-50"}>
                     <TableCell className="font-medium">{e.nome}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {e.cargo ?? "—"}
+                    </TableCell>
                     <TableCell>
-                      <Badge variant={e.regime === "clt" ? "default" : "secondary"}>
+                      <Badge
+                        variant={
+                          e.regime === "clt"
+                            ? "default"
+                            : e.regime === "prolabore"
+                              ? "outline"
+                              : "secondary"
+                        }
+                      >
                         {LABEL_REGIME_MO_EQUIPE[e.regime]}
                       </Badge>
                     </TableCell>
@@ -263,6 +408,11 @@ export function CustosMoEquipesPanel() {
                     <TableCell className="text-right tabular-nums">
                       {fmtMoney(e.calculo.custoMensalEfetivo)}
                     </TableCell>
+                    {modoCusto === "liquido" ? (
+                      <TableCell className="text-right tabular-nums text-muted-foreground text-xs">
+                        {fmtMoney(e.calculo.custoMensalEmpregador)}
+                      </TableCell>
+                    ) : null}
                     <TableCell className="text-right tabular-nums">
                       {e.calculo.custoHora != null ? fmtMoney(e.calculo.custoHora) : "—"}
                     </TableCell>
@@ -302,8 +452,26 @@ export function CustosMoEquipesPanel() {
               <Input
                 value={form.nome}
                 onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
-                placeholder="Ex.: Embalagem CLT"
+                placeholder="Ex.: Kailany Barros Soares"
               />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-2">
+                <Label>Cargo / função</Label>
+                <Input
+                  value={form.cargo}
+                  onChange={(e) => setForm((f) => ({ ...f, cargo: e.target.value }))}
+                  placeholder="Ex.: AUXILIAR DE PROCESSO"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Cód. folha</Label>
+                <Input
+                  value={form.codigoFolha}
+                  onChange={(e) => setForm((f) => ({ ...f, codigoFolha: e.target.value }))}
+                  placeholder="Ex.: 000009"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-2">
@@ -390,6 +558,15 @@ export function CustosMoEquipesPanel() {
                   />
                 </div>
               </div>
+            ) : form.regime === "prolabore" ? (
+              <div className="space-y-2">
+                <Label>Pró-labore mensal (R$)</Label>
+                <Input
+                  inputMode="decimal"
+                  value={form.custoMensalBase}
+                  onChange={(e) => setForm((f) => ({ ...f, custoMensalBase: e.target.value }))}
+                />
+              </div>
             ) : (
               <div className="space-y-2">
                 <Label>Valor contrato PJ / mês (R$)</Label>
@@ -406,8 +583,21 @@ export function CustosMoEquipesPanel() {
                 inputMode="decimal"
                 value={form.custoMensalTotal}
                 onChange={(e) => setForm((f) => ({ ...f, custoMensalTotal: e.target.value }))}
-                placeholder="Use se já souber o total carregado"
+                placeholder="Use se já souber o total carregado (empregador)"
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Líquido desembolsado / mês (R$)</Label>
+              <Input
+                inputMode="decimal"
+                value={form.liquidoMensal}
+                onChange={(e) => setForm((f) => ({ ...f, liquidoMensal: e.target.value }))}
+                placeholder="Valor que sai na conta (folha ou PIX PJ)"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Usado quando a opção &quot;Desembolso líquido&quot; está ativa. Folha 05/2026 e
+                operadores PJ já trazem esse valor preenchido.
+              </p>
             </div>
             <div className="space-y-2">
               <Label>Observações</Label>

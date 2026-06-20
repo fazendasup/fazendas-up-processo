@@ -9,6 +9,8 @@ import type {
 import { getComercialPrisma } from "./comercial/db";
 import * as db from "./db";
 import { custoDiretoPorPlantaPorVariedade } from "./custosProducaoRateio";
+import * as moEquipeDb from "./custosMoEquipeDb";
+import { mapMoEquipeRowToInput } from "./moEquipeMapper";
 
 function num(v: unknown): number | null {
   if (v == null) return null;
@@ -162,25 +164,15 @@ export async function fichaParaCalculoInput(
 export async function calcularFichaCompleta(projetoId: number, ficha: CustoProdutoFichaRow) {
   const { listComponentesByFichaIds, listEtapasByFichaIds } = await import("./custosProdutoDb");
   const moEquipeDb = await import("./custosMoEquipeDb");
-  const [componentes, etapas, equipesRows] = await Promise.all([
+  const [componentes, etapas, equipesRows, modoMo] = await Promise.all([
     listComponentesByFichaIds([ficha.id]),
     listEtapasByFichaIds([ficha.id]),
     moEquipeDb.listMoEquipes(projetoId),
+    moEquipeDb.getModoCustoMoEquipe(projetoId),
   ]);
-  const equipes: MoEquipeInput[] = equipesRows.map((r) => ({
-    id: r.id,
-    nome: r.nome,
-    regime: r.regime as MoEquipeInput["regime"],
-    finalidade: r.finalidade as MoEquipeInput["finalidade"],
-    numPessoas: r.numPessoas,
-    horasMes: num(r.horasMes) ?? 0,
-    custoMensalBase: num(r.custoMensalBase),
-    encargosPct: num(r.encargosPct),
-    custoMensalTotal: num(r.custoMensalTotal),
-    ativo: r.ativo,
-  }));
+  const equipes: MoEquipeInput[] = equipesRows.map(mapMoEquipeRowToInput);
   const input = await fichaParaCalculoInput(projetoId, ficha, componentes, etapas);
-  input.custoHoraMo = mapaCustoHoraProcessamento(equipes);
+  input.custoHoraMo = mapaCustoHoraProcessamento(equipes, modoMo);
   return calcularCustoProduto(input);
 }
 

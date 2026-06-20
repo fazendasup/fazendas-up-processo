@@ -81,4 +81,47 @@ describe("custosMoEquipe", () => {
       ]),
     ).toBe(9000);
   });
+
+  it("modo liquido usa liquidoMensal e fallback para empregador", () => {
+    const equipe = {
+      nome: "CLT",
+      regime: "clt" as const,
+      finalidade: "processamento" as const,
+      numPessoas: 1,
+      horasMes: 100,
+      custoMensalTotal: 5000,
+      liquidoMensal: 3800,
+    };
+    expect(calcularCustoMensalEquipe(equipe, "empregador")).toBe(5000);
+    expect(calcularCustoMensalEquipe(equipe, "liquido")).toBe(3800);
+    expect(calcularEquipeCompleta(equipe, "liquido").custoHora).toBe(38);
+
+    const semLiquido = { ...equipe, liquidoMensal: null };
+    expect(calcularCustoMensalEquipe(semLiquido, "liquido")).toBe(5000);
+  });
+
+  it("mapa e overhead respeitam modo liquido", () => {
+    const equipes = [
+      {
+        nome: "Overhead",
+        regime: "clt" as const,
+        finalidade: "overhead" as const,
+        numPessoas: 1,
+        horasMes: 0,
+        custoMensalTotal: 9000,
+        liquidoMensal: 6500,
+      },
+      {
+        nome: "Proc",
+        regime: "pj" as const,
+        finalidade: "processamento" as const,
+        numPessoas: 1,
+        horasMes: 100,
+        custoMensalTotal: 8000,
+        liquidoMensal: 6000,
+      },
+    ];
+    expect(somarMoOverheadEquipes(equipes, "liquido")).toBe(6500);
+    expect(mapaCustoHoraProcessamento(equipes, "liquido").pj).toBe(60);
+  });
 });

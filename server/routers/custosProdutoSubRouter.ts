@@ -296,21 +296,16 @@ export const custosProdutoSubRouter = router({
         ordem: e.ordem ?? i,
       }));
       const calcInput = await fichaParaCalculoInput(pid, fichaFake, componentes, etapas);
-      const moEquipeDb = await import("../custosMoEquipeDb");
+      const moEquipeDbMod = await import("../custosMoEquipeDb");
+      const { mapMoEquipeRowToInput } = await import("../moEquipeMapper");
       const { mapaCustoHoraProcessamento } = await import("@shared/custosMoEquipe");
-      const equipesRows = await moEquipeDb.listMoEquipes(pid);
+      const [equipesRows, modoMo] = await Promise.all([
+        moEquipeDbMod.listMoEquipes(pid),
+        moEquipeDbMod.getModoCustoMoEquipe(pid),
+      ]);
       calcInput.custoHoraMo = mapaCustoHoraProcessamento(
-        equipesRows.map((r) => ({
-          nome: r.nome,
-          regime: r.regime as "clt" | "pj",
-          finalidade: r.finalidade as "processamento" | "overhead",
-          numPessoas: r.numPessoas,
-          horasMes: Number(r.horasMes),
-          custoMensalBase: r.custoMensalBase != null ? Number(r.custoMensalBase) : null,
-          encargosPct: r.encargosPct != null ? Number(r.encargosPct) : null,
-          custoMensalTotal: r.custoMensalTotal != null ? Number(r.custoMensalTotal) : null,
-          ativo: r.ativo,
-        })),
+        equipesRows.map(mapMoEquipeRowToInput),
+        modoMo,
       );
       return calcularCustoProduto(calcInput);
     }),

@@ -211,6 +211,27 @@
       "when": 1777200000000,
       "tag": "0040_mo_equipes_etapas_tempo",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "5",
+      "when": 1777300000000,
+      "tag": "0041_rentabilidade_overhead_itens",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "5",
+      "when": 1777400000000,
+      "tag": "0042_mo_equipes_prolabore_cargo",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "5",
+      "when": 1777500000000,
+      "tag": "0043_mo_equipes_liquido_config",
+      "breakpoints": true
     }
   ]
 }

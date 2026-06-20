@@ -807,13 +807,16 @@ export const custosMoEquipes = mysqlTable("custos_mo_equipes", {
   id: int("id").autoincrement().primaryKey(),
   projetoId: int("projetoId").notNull(),
   nome: varchar("nome", { length: 160 }).notNull(),
-  regime: mysqlEnum("regime", ["clt", "pj"]).notNull(),
+  cargo: varchar("cargo", { length: 120 }),
+  codigoFolha: varchar("codigoFolha", { length: 32 }),
+  regime: mysqlEnum("regime", ["clt", "pj", "prolabore"]).notNull(),
   finalidade: mysqlEnum("finalidade", ["processamento", "overhead"]).notNull().default("processamento"),
   numPessoas: int("numPessoas").notNull().default(1),
   horasMes: decimal("horasMes", { precision: 10, scale: 2 }).notNull().default("0"),
   custoMensalBase: decimal("custoMensalBase", { precision: 14, scale: 2 }),
   encargosPct: decimal("encargosPct", { precision: 8, scale: 4 }),
   custoMensalTotal: decimal("custoMensalTotal", { precision: 14, scale: 2 }),
+  liquidoMensal: decimal("liquidoMensal", { precision: 14, scale: 2 }),
   observacoes: text("observacoes"),
   ordem: int("ordem").notNull().default(0),
   ativo: boolean("ativo").notNull().default(true),
@@ -823,6 +826,16 @@ export const custosMoEquipes = mysqlTable("custos_mo_equipes", {
 
 export type CustoMoEquipeRow = typeof custosMoEquipes.$inferSelect;
 export type InsertCustoMoEquipe = typeof custosMoEquipes.$inferInsert;
+
+/** Preferências de cálculo MO por projeto. */
+export const custosMoConfig = mysqlTable("custos_mo_config", {
+  projetoId: int("projetoId").primaryKey(),
+  usarLiquidoDesembolso: boolean("usarLiquidoDesembolso").notNull().default(false),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CustoMoConfigRow = typeof custosMoConfig.$inferSelect;
+export type InsertCustoMoConfig = typeof custosMoConfig.$inferInsert;
 
 /** Ficha de custo por produto/SKU vendido. */
 export const custosProdutosFichas = mysqlTable("custos_produtos_fichas", {
@@ -908,6 +921,7 @@ export const custosRentabilidadePeriodos = mysqlTable("custos_rentabilidade_peri
   fim: date("fim").notNull(),
   custoOperacionalTotal: decimal("custoOperacionalTotal", { precision: 14, scale: 2 }),
   usarCustoSugerido: boolean("usarCustoSugerido").notNull().default(true),
+  modoOverhead: mysqlEnum("modoOverhead", ["itens", "sugerido", "manual"]).notNull().default("itens"),
   observacoes: text("observacoes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -930,6 +944,27 @@ export const custosRentabilidadeLinhas = mysqlTable("custos_rentabilidade_linhas
 
 export type CustoRentabilidadeLinhaRow = typeof custosRentabilidadeLinhas.$inferSelect;
 export type InsertCustoRentabilidadeLinha = typeof custosRentabilidadeLinhas.$inferInsert;
+
+/** Itens de overhead curados por período (import CA, modelos, manual). */
+export const custosRentabilidadeOverheadItens = mysqlTable("custos_rentabilidade_overhead_itens", {
+  id: int("id").autoincrement().primaryKey(),
+  periodoId: int("periodoId").notNull(),
+  origem: mysqlEnum("origem", ["manual", "conta_azul", "modelo_compartilhados", "modelo_mo"])
+    .notNull()
+    .default("manual"),
+  contaAzulParcelaId: varchar("contaAzulParcelaId", { length: 64 }),
+  refModeloId: int("refModeloId"),
+  grupo: varchar("grupo", { length: 64 }).notNull(),
+  rubrica: varchar("rubrica", { length: 160 }).notNull(),
+  descricao: text("descricao"),
+  valorOriginal: decimal("valorOriginal", { precision: 14, scale: 2 }),
+  valor: decimal("valor", { precision: 14, scale: 2 }).notNull(),
+  incluido: boolean("incluido").notNull().default(true),
+  ordem: int("ordem").notNull().default(0),
+});
+
+export type CustoRentabilidadeOverheadItemRow = typeof custosRentabilidadeOverheadItens.$inferSelect;
+export type InsertCustoRentabilidadeOverheadItem = typeof custosRentabilidadeOverheadItens.$inferInsert;
 
 /** Análises de imagens do cultivo (visão computacional). */
 export const visionCultivoAnalyses = mysqlTable("vision_cultivo_analyses", {

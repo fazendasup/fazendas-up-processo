@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -28,9 +27,17 @@ import {
   LABEL_TIPO_FICHA_CUSTO_PRODUTO,
   type TipoFichaCustoProduto,
 } from "@shared/custosProduto";
-import { LABEL_GRUPO_CUSTO_PRODUCAO, type GrupoCustoProducao } from "@shared/custosProducao";
 import { calcularRentabilidade } from "@shared/custosRentabilidade";
+import {
+  somarOverheadItensIncluidos,
+  type ModoOverheadRentabilidade,
+} from "@shared/custosRentabilidadeOverhead";
 import { downloadCsvUtf8Bom } from "@/lib/estoqueRelatorio";
+import {
+  CustosRentabilidadeOverheadSection,
+  emptyOverheadItem,
+  type OverheadItemForm,
+} from "@/components/custos/CustosRentabilidadeOverheadSection";
 import {
   AlertTriangle,
   CloudDownload,
@@ -189,8 +196,10 @@ export function CustosRentabilidadePanel() {
   const [titulo, setTitulo] = useState("");
   const [inicio, setInicio] = useState(inicioMesAtual());
   const [fim, setFim] = useState(isoLocal(new Date()));
+  const [modoOverhead, setModoOverhead] = useState<ModoOverheadRentabilidade>("itens");
   const [usarCustoSugerido, setUsarCustoSugerido] = useState(true);
   const [custoOperacional, setCustoOperacional] = useState("");
+  const [overheadItens, setOverheadItens] = useState<OverheadItemForm[]>([]);
   const [observacoes, setObservacoes] = useState("");
   const [linhas, setLinhas] = useState<LinhaForm[]>([emptyLinha()]);
 
@@ -251,8 +260,10 @@ export function CustosRentabilidadePanel() {
     setTitulo("");
     setInicio(inicioMesAtual());
     setFim(isoLocal(new Date()));
-    setUsarCustoSugerido(true);
+    setModoOverhead("itens");
+    setUsarCustoSugerido(false);
     setCustoOperacional("");
+    setOverheadItens([]);
     setObservacoes("");
     setLinhas([emptyLinha()]);
   }
@@ -268,9 +279,30 @@ export function CustosRentabilidadePanel() {
     setTitulo(p.titulo);
     setInicio(isoLocal(new Date(p.inicio)));
     setFim(isoLocal(new Date(p.fim)));
+    const modo =
+      (p as { modoOverhead?: ModoOverheadRentabilidade }).modoOverhead ??
+      (p.usarCustoSugerido ? "sugerido" : "manual");
+    setModoOverhead(modo);
     setUsarCustoSugerido(p.usarCustoSugerido);
     setCustoOperacional(String(p.custoOperacionalTotal ?? ""));
     setObservacoes(p.observacoes ?? "");
+    setOverheadItens(
+      (detalhe.data.overheadItens ?? []).length > 0
+        ? detalhe.data.overheadItens.map((i) => ({
+            key: String(i.id ?? crypto.randomUUID()),
+            id: i.id,
+            origem: i.origem as OverheadItemForm["origem"],
+            contaAzulParcelaId: i.contaAzulParcelaId ?? undefined,
+            refModeloId: i.refModeloId ?? undefined,
+            grupo: i.grupo,
+            rubrica: i.rubrica,
+            descricao: i.descricao ?? "",
+            valorOriginal: i.valorOriginal != null ? String(i.valorOriginal) : "",
+            valor: String(i.valor),
+            incluido: i.incluido,
+          }))
+        : [],
+    );
     setLinhas(
       detalhe.data.linhas.length > 0
         ? detalhe.data.linhas.map((l) => ({
@@ -287,16 +319,19 @@ export function CustosRentabilidadePanel() {
   }, [detalhe.data, periodoId]);
 
   useEffect(() => {
-    if (!usarCustoSugerido || custoOperacional) return;
+    if (modoOverhead !== "manual" || custoOperacional) return;
     if (sugestao.data?.total != null) {
       setCustoOperacional(String(sugestao.data.total));
     }
-  }, [usarCustoSugerido, sugestao.data?.total, custoOperacional]);
+  }, [modoOverhead, sugestao.data?.total, custoOperacional]);
 
   const custoOpAtual = useMemo(() => {
-    if (usarCustoSugerido) return sugestao.data?.total ?? 0;
-    return parseNum(custoOperacional);
-  }, [usarCustoSugerido, sugestao.data?.total, custoOperacional]);
+    if (modoOverhead === "sugerido") return sugestao.data?.total ?? 0;
+    if (modoOverhead === "manual") return parseNum(custoOperacional);
+    return somarOverheadItensIncluidos(
+      overheadItens.map((i) => ({ valor: parseNum(i.valor), incluido: i.incluido })),
+    );
+  }, [modoOverhead, sugestao.data?.total, custoOperacional, overheadItens]);
 
   const linhasCalculo = useMemo(
     () =>
@@ -363,10 +398,10 @@ export function CustosRentabilidadePanel() {
       titulo: titulo.trim() || `Período ${inicio}`,
       inicio: new Date(`${inicio}T12:00:00`),
       fim: new Date(`${fim}T12:00:00`),
-      usarCustoSugerido,
-      custoOperacionalTotal: usarCustoSugerido
-        ? null
-        : parseNum(custoOperacional) || null,
+      modoOverhead,
+      usarCustoSugerido: modoOverhead === "sugerido",
+      custoOperacionalTotal:
+        modoOverhead === "manual" ? parseNum(custoOperacional) || null : null,
       observacoes: observacoes.trim() || null,
       linhas: linhasValidas.map((l, idx) => ({
         fichaId: l.fichaId ? Number(l.fichaId) : null,
@@ -378,6 +413,21 @@ export function CustosRentabilidadePanel() {
           : null,
         ordem: idx,
       })),
+      overheadItens: overheadItens
+        .filter((i) => i.rubrica.trim() && parseNum(i.valor) >= 0)
+        .map((i, idx) => ({
+          id: i.id,
+          origem: i.origem,
+          contaAzulParcelaId: i.contaAzulParcelaId ?? null,
+          refModeloId: i.refModeloId ?? null,
+          grupo: i.grupo,
+          rubrica: i.rubrica.trim(),
+          descricao: i.descricao.trim() || null,
+          valorOriginal: i.valorOriginal.trim() ? parseNum(i.valorOriginal) : null,
+          valor: parseNum(i.valor),
+          incluido: i.incluido,
+          ordem: idx,
+        })),
     });
   };
 
@@ -421,8 +471,9 @@ export function CustosRentabilidadePanel() {
               <strong>minutos/unidade</strong> × R$/h das equipes CLT/PJ em <strong>Equipes MO</strong>.
             </li>
             <li>
-              <strong className="text-foreground">Overhead do mês</strong> — rubricas em{" "}
-              <strong>Compartilhados</strong> + equipes MO <em>fixas</em> (supervisão/admin). Rateio pela receita.
+              <strong className="text-foreground">Overhead do mês</strong> — importe pagamentos reais
+              do Conta Azul, ajuste rubricas (admin, combustível, BPO, consultorias) e exclua o que
+              já está no CMV ou duplicaria folha/MO.
             </li>
           </ol>
           <p className="rounded-md border bg-background/80 px-3 py-2 font-mono text-xs">
@@ -477,9 +528,11 @@ export function CustosRentabilidadePanel() {
         <CardHeader>
           <CardTitle className="text-base">Período e custos da operação</CardTitle>
           <CardDescription>
-            {usarCustoSugerido
-              ? `Soma automática: ${fmtMoney(sugestao.data?.total ?? 0)}/mês (Compartilhados ${fmtMoney(sugestao.data?.rubricasCompartilhados ?? 0)} + MO fixa ${fmtMoney(sugestao.data?.moOverhead ?? 0)}).`
-              : "Informe o total mensal de overhead (tudo que não está no CMV unitário das fichas)."}
+            {modoOverhead === "itens"
+              ? `Overhead curado: ${fmtMoney(custoOpAtual)} (${overheadItens.filter((i) => i.incluido).length} item(ns) incluídos).`
+              : modoOverhead === "sugerido"
+                ? `Soma do cadastro: ${fmtMoney(sugestao.data?.total ?? 0)}/mês.`
+                : "Total manual de overhead do período."}
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
@@ -511,77 +564,24 @@ export function CustosRentabilidadePanel() {
               <Input type="date" value={fim} onChange={(e) => setFim(e.target.value)} />
             </div>
           </div>
-          <div className="flex items-center gap-3 md:col-span-2">
-            <Switch checked={usarCustoSugerido} onCheckedChange={setUsarCustoSugerido} />
-            <Label className="font-normal">
-              Usar overhead sugerido (Compartilhados + MO fixa CLT/PJ)
-            </Label>
-          </div>
-          {!usarCustoSugerido ? (
-            <div className="space-y-2 md:col-span-2">
-              <Label>Custo operacional do período (R$)</Label>
-              <Input
-                inputMode="decimal"
-                value={custoOperacional}
-                onChange={(e) => setCustoOperacional(e.target.value)}
-                placeholder="Overhead total do mês: admin, energia fixa, frete fixo..."
-              />
-            </div>
-          ) : (sugestao.data?.rubricas.length ?? 0) > 0 ||
-            (sugestao.data?.equipesOverhead?.length ?? 0) > 0 ? (
-            <div className="md:col-span-2 rounded-md border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Origem</TableHead>
-                    <TableHead>Descrição</TableHead>
-                    <TableHead className="text-right">R$/mês</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(sugestao.data?.rubricas ?? []).map((r) => (
-                    <TableRow key={`r-${r.id}`}>
-                      <TableCell className="text-xs">Compartilhados</TableCell>
-                      <TableCell>
-                        <span className="text-[11px] text-muted-foreground block">
-                          {LABEL_GRUPO_CUSTO_PRODUCAO[r.grupo as GrupoCustoProducao] ?? r.grupo}
-                        </span>
-                        {r.rubrica}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {fmtMoney(r.valorMensal)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {(sugestao.data?.equipesOverhead ?? []).map((e) => (
-                    <TableRow key={`e-${e.id}`}>
-                      <TableCell className="text-xs">MO fixa ({e.regime.toUpperCase()})</TableCell>
-                      <TableCell>{e.nome}</TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {fmtMoney(e.custoMensal)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  <TableRow className="bg-muted/40 font-semibold">
-                    <TableCell colSpan={2}>Total overhead sugerido</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {fmtMoney(sugestao.data?.total ?? 0)}
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <Alert className="md:col-span-2">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                Nenhuma rubrica mensal em <strong>Compartilhados</strong> (modo diferente de rateio
-                entre variedades) e nenhuma equipe MO com finalidade <strong>overhead</strong>.
-                Cadastre em Compartilhados ou Equipes MO, ou desligue a sugestão e digite o total
-                manualmente.
-              </AlertDescription>
-            </Alert>
-          )}
+          <CustosRentabilidadeOverheadSection
+            inicio={inicio}
+            fim={fim}
+            modoOverhead={modoOverhead}
+            onModoOverheadChange={(m) => {
+              setModoOverhead(m);
+              setUsarCustoSugerido(m === "sugerido");
+            }}
+            custoOperacionalManual={custoOperacional}
+            onCustoOperacionalManualChange={setCustoOperacional}
+            itens={overheadItens}
+            onItensChange={setOverheadItens}
+            sugestaoTotal={sugestao.data?.total ?? 0}
+            sugestaoCompartilhados={sugestao.data?.rubricasCompartilhados ?? 0}
+            sugestaoMo={sugestao.data?.moOverhead ?? 0}
+            sugestaoRubricas={sugestao.data?.rubricas ?? []}
+            sugestaoEquipes={sugestao.data?.equipesOverhead ?? []}
+          />
           <div className="space-y-2 md:col-span-2">
             <Label>Observações</Label>
             <Textarea
@@ -864,8 +864,12 @@ export function CustosRentabilidadePanel() {
               <p className="text-xl font-bold tabular-nums">
                 {fmtMoney(calculoAtual.totais.custoOperacional)}
               </p>
-              {usarCustoSugerido ? (
-                <p className="text-xs text-muted-foreground">Compartilhados + MO fixa</p>
+              {modoOverhead === "sugerido" ? (
+                <p className="text-xs text-muted-foreground">Cadastro Compartilhados + MO fixa</p>
+              ) : modoOverhead === "itens" ? (
+                <p className="text-xs text-muted-foreground">
+                  {overheadItens.filter((i) => i.incluido).length} rubrica(s) curadas
+                </p>
               ) : null}
             </CardContent>
           </Card>

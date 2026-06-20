@@ -1,10 +1,13 @@
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import {
   custosRentabilidadeLinhas,
+  custosRentabilidadeOverheadItens,
   custosRentabilidadePeriodos,
   type CustoRentabilidadeLinhaRow,
+  type CustoRentabilidadeOverheadItemRow,
   type CustoRentabilidadePeriodoRow,
   type InsertCustoRentabilidadeLinha,
+  type InsertCustoRentabilidadeOverheadItem,
   type InsertCustoRentabilidadePeriodo,
 } from "../drizzle/schema";
 import { getDb } from "./db";
@@ -41,6 +44,24 @@ export async function ensureCustosRentabilidadeTables(): Promise<void> {
   CONSTRAINT \`custos_rentabilidade_linhas_id\` PRIMARY KEY(\`id\`),
   KEY \`idx_rentab_linha_periodo\` (\`periodoId\`)
 )`,
+    `CREATE TABLE IF NOT EXISTS \`custos_rentabilidade_overhead_itens\` (
+  \`id\` int AUTO_INCREMENT NOT NULL,
+  \`periodoId\` int NOT NULL,
+  \`origem\` enum('manual','conta_azul','modelo_compartilhados','modelo_mo') NOT NULL DEFAULT 'manual',
+  \`contaAzulParcelaId\` varchar(64) NULL,
+  \`refModeloId\` int NULL,
+  \`grupo\` varchar(64) NOT NULL,
+  \`rubrica\` varchar(160) NOT NULL,
+  \`descricao\` text NULL,
+  \`valorOriginal\` decimal(14,2) NULL,
+  \`valor\` decimal(14,2) NOT NULL,
+  \`incluido\` tinyint(1) NOT NULL DEFAULT 1,
+  \`ordem\` int NOT NULL DEFAULT 0,
+  CONSTRAINT \`custos_rentabilidade_overhead_itens_id\` PRIMARY KEY(\`id\`),
+  KEY \`idx_rentab_overhead_periodo\` (\`periodoId\`),
+  UNIQUE KEY \`uq_rentab_overhead_ca\` (\`periodoId\`, \`contaAzulParcelaId\`),
+  UNIQUE KEY \`uq_rentab_overhead_modelo\` (\`periodoId\`, \`origem\`, \`refModeloId\`)
+)`,
   ];
   for (const stmt of stmts) {
     try {
@@ -49,6 +70,18 @@ export async function ensureCustosRentabilidadeTables(): Promise<void> {
       const msg = err instanceof Error ? err.message : String(err);
       if (!/already exists/i.test(msg) && !/ER_TABLE_EXISTS_ERROR/i.test(msg)) {
         console.warn("[custosRentabilidadeDb] ensure:", msg.slice(0, 160));
+      }
+    }
+  }
+  for (const alter of [
+    `ALTER TABLE \`custos_rentabilidade_periodos\` ADD COLUMN \`modoOverhead\` enum('itens','sugerido','manual') NOT NULL DEFAULT 'itens'`,
+  ]) {
+    try {
+      await db.execute(sql.raw(alter));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!/Duplicate column/i.test(msg)) {
+        console.warn("[custosRentabilidadeDb] alter:", msg.slice(0, 160));
       }
     }
   }
@@ -123,6 +156,7 @@ export async function updateRentabilidadePeriodo(
 export async function deleteRentabilidadePeriodo(projetoId: number, id: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  await db.delete(custosRentabilidadeOverheadItens).where(eq(custosRentabilidadeOverheadItens.periodoId, id));
   await db.delete(custosRentabilidadeLinhas).where(eq(custosRentabilidadeLinhas.periodoId, id));
   await db
     .delete(custosRentabilidadePeriodos)
@@ -140,4 +174,80 @@ export async function replaceRentabilidadeLinhas(
   await db.delete(custosRentabilidadeLinhas).where(eq(custosRentabilidadeLinhas.periodoId, periodoId));
   if (linhas.length === 0) return;
   await db.insert(custosRentabilidadeLinhas).values(linhas.map((l) => ({ ...l, periodoId })));
+}
+
+export async function listRentabilidadeOverheadItens(
+  periodoId: number,
+): Promise<CustoRentabilidadeOverheadItemRow[]> {
+  await ensureCustosRentabilidadeTables();
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(custosRentabilidadeOverheadItens)
+    .where(eq(custosRentabilidadeOverheadItens.periodoId, periodoId))
+    .orderBy(asc(custosRentabilidadeOverheadItens.ordem), asc(custosRentabilidadeOverheadItens.id));
+}
+
+export async function replaceRentabilidadeOverheadItens(
+  periodoId: number,
+  itens: Omit<InsertCustoRentabilidadeOverheadItem, "periodoId">[],
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .delete(custosRentabilidadeOverheadItens)
+    .where(eq(custosRentabilidadeOverheadItens.periodoId, periodoId));
+  if (itens.length === 0) return;
+  await db.insert(custosRentabilidadeOverheadItens).values(itens.map((i) => ({ ...i, periodoId })));
+}
+
+export async function mergeRentabilidadeOverheadItensContaAzul(
+  periodoId: number,
+  novos: Omit<InsertCustoRentabilidadeOverheadItem, "periodoId">[],
+): Promise<{ inseridos: number; ignorados: number; atualizados: number }> {
+  await ensureCustosRentabilidadeTables();
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existentes = await listRentabilidadeOverheadItens(periodoId);
+  const porCaId = new Map(
+    existentes
+      .filter((e) => e.contaAzulParcelaId)
+      .map((e) => [e.contaAzulParcelaId as string, e]),
+  );
+
+  let inseridos = 0;
+  let ignorados = 0;
+  let atualizados = 0;
+
+  for (const item of novos) {
+    const caId = item.contaAzulParcelaId;
+    if (!caId) continue;
+    const prev = porCaId.get(caId);
+    if (!prev) {
+      await db.insert(custosRentabilidadeOverheadItens).values({ ...item, periodoId });
+      inseridos += 1;
+      continue;
+    }
+    const valorPrev = Number(prev.valor);
+    const valorOrigPrev = prev.valorOriginal != null ? Number(prev.valorOriginal) : null;
+    const usuarioAjustou = valorOrigPrev != null && Math.abs(valorPrev - valorOrigPrev) > 0.009;
+    if (usuarioAjustou) {
+      ignorados += 1;
+      continue;
+    }
+    await db
+      .update(custosRentabilidadeOverheadItens)
+      .set({
+        valorOriginal: item.valorOriginal,
+        valor: item.valor,
+        rubrica: item.rubrica,
+        descricao: item.descricao,
+        grupo: item.grupo,
+      })
+      .where(eq(custosRentabilidadeOverheadItens.id, prev.id));
+    atualizados += 1;
+  }
+
+  return { inseridos, ignorados, atualizados };
 }
