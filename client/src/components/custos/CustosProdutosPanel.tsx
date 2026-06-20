@@ -42,6 +42,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Plus, Trash2, Calculator, Package, AlertTriangle, Copy, FileText, Save, Pencil } from "lucide-react";
+import { CustosProdutoProcessoSection } from "./CustosProdutoProcessoSection";
 
 const fmtMoney = (n: number | null | undefined) =>
   n == null || !Number.isFinite(n)
@@ -1042,6 +1043,8 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
   if (modo === "lista") {
     return (
       <div className="space-y-4 mt-4">
+        <CustosProdutoProcessoSection />
+
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm text-muted-foreground max-w-2xl">
             Fichas por produto vendido: produção própria, revenda processada (lavagem, corte, embalagem) e mix.

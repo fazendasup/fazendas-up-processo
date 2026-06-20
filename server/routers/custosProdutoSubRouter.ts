@@ -12,12 +12,20 @@ import {
 } from "@shared/custosProduto";
 import { REGIMES_MO_ETAPA, type RegimeMoEtapa } from "@shared/custosMoEquipe";
 import {
+  etapasProcessoPadraoParaProduto,
+  inferirCategoriaProdutoCusto,
+  type CustosProdutoProcessoConfig,
+  type EtapaProcessoPadrao,
+} from "@shared/custosProdutoProcessoPadrao";
+import {
   commercialEditorCustosProducaoProjectProcedure,
   custosProducaoModuleProcedure,
   projetoIdFromCtx,
   router,
 } from "../_core/trpc";
 import * as custosProdutoDb from "../custosProdutoDb";
+import * as processoDb from "../custosProdutoProcessoDb";
+import { getComercialPrisma } from "../comercial/db";
 import type {
   CustoProdutoComponenteRow,
   CustoProdutoEtapaRow,
@@ -36,6 +44,39 @@ const unidadeZ = z.enum(UNIDADES_VENDA_PRODUTO);
 const tipoCompZ = z.enum(TIPOS_COMPONENTE_CUSTO);
 const tipoEtapaZ = z.enum(TIPOS_ETAPA_PROCESSO);
 const regimeMoZ = z.enum(REGIMES_MO_ETAPA);
+
+const processoConfigInput = z.object({
+  embalagemMicroverdeUn: z.number().nonnegative(),
+  embalagemOutrosUn: z.number().nonnegative(),
+  lavagemMinutosUn: z.number().nonnegative().nullable().optional(),
+  embalagemMinutosUn: z.number().nonnegative().nullable().optional(),
+  corteMinutosUn: z.number().nonnegative().nullable().optional(),
+  adesivoCustoUn: z.number().nonnegative().nullable().optional(),
+  regimeMoPadrao: regimeMoZ.default("qualquer"),
+  incluirLavagem: z.boolean().default(true),
+  incluirCorte: z.boolean().default(false),
+  incluirAdesivo: z.boolean().default(true),
+});
+
+function etapasPadraoParaDb(etapas: EtapaProcessoPadrao[]) {
+  return etapas.map((e, i) => ({
+    tipo: e.tipo as TipoEtapaProcesso,
+    nome: e.nome,
+    custoPorUnidade: String(e.custoPorUnidade),
+    custoPorKgProcessado: e.custoPorKgProcessado != null ? String(e.custoPorKgProcessado) : null,
+    custoPercentual: e.custoPercentual != null ? String(e.custoPercentual) : null,
+    minutosPorUnidade: e.minutosPorUnidade != null ? String(e.minutosPorUnidade) : null,
+    regimeMo: e.regimeMo,
+    ordem: i,
+  }));
+}
+
+function previewProcesso(config: CustosProdutoProcessoConfig) {
+  return {
+    microverde: etapasProcessoPadraoParaProduto("microverde", config),
+    outros: etapasProcessoPadraoParaProduto("outros", config),
+  };
+}
 
 const componenteInput = z.object({
   tipo: tipoCompZ,
@@ -308,5 +349,122 @@ export const custosProdutoSubRouter = router({
         modoMo,
       );
       return calcularCustoProduto(calcInput);
+    }),
+
+  processoConfig: custosProducaoModuleProcedure.query(async ({ ctx }) => {
+    const config = await processoDb.getProcessoConfig(projetoIdFromCtx(ctx));
+    return { config, preview: previewProcesso(config) };
+  }),
+
+  salvarProcessoConfig: commercialEditorCustosProducaoProjectProcedure
+    .input(processoConfigInput)
+    .mutation(async ({ ctx, input }) => {
+      const config = await processoDb.setProcessoConfig(projetoIdFromCtx(ctx), {
+        embalagemMicroverdeUn: input.embalagemMicroverdeUn,
+        embalagemOutrosUn: input.embalagemOutrosUn,
+        lavagemMinutosUn: input.lavagemMinutosUn ?? null,
+        embalagemMinutosUn: input.embalagemMinutosUn ?? null,
+        corteMinutosUn: input.corteMinutosUn ?? null,
+        adesivoCustoUn: input.adesivoCustoUn ?? null,
+        regimeMoPadrao: input.regimeMoPadrao,
+        incluirLavagem: input.incluirLavagem,
+        incluirCorte: input.incluirCorte,
+        incluirAdesivo: input.incluirAdesivo,
+      });
+      return { config, preview: previewProcesso(config) };
+    }),
+
+  produtosSemFicha: custosProducaoModuleProcedure.query(async ({ ctx }) => {
+    const pid = projetoIdFromCtx(ctx);
+    const fichas = await custosProdutoDb.listCustosProdutoFichas(pid);
+    const comFicha = new Set(
+      fichas.filter((f) => f.produtoComercialId).map((f) => f.produtoComercialId as string),
+    );
+    try {
+      const prisma = getComercialPrisma();
+      const produtos = await prisma.produtoComercial.findMany({
+        where: { ativo: true, importadoOperacao: true },
+        select: { id: true, nome: true, sku: true, precoBase: true, categoria: true },
+        orderBy: { nome: "asc" },
+      });
+      return produtos
+        .filter((p) => !comFicha.has(p.id))
+        .map((p) => ({
+          id: p.id,
+          nome: p.nome,
+          sku: p.sku,
+          precoBase: p.precoBase != null ? Number(p.precoBase) : null,
+          categoria: p.categoria,
+          categoriaCusto: inferirCategoriaProdutoCusto(p.nome, p.categoria),
+        }));
+    } catch {
+      return [];
+    }
+  }),
+
+  gerarFichasContaAzul: commercialEditorCustosProducaoProjectProcedure
+    .input(
+      z.object({
+        produtoIds: z.array(z.string().min(1)).optional(),
+        sobrescreverEtapas: z.boolean().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const pid = projetoIdFromCtx(ctx);
+      const config = await processoDb.getProcessoConfig(pid);
+      const prisma = getComercialPrisma();
+      const [produtos, fichas] = await Promise.all([
+        prisma.produtoComercial.findMany({
+          where: { ativo: true, importadoOperacao: true },
+          select: { id: true, nome: true, sku: true, precoBase: true, categoria: true },
+          orderBy: { nome: "asc" },
+        }),
+        custosProdutoDb.listCustosProdutoFichas(pid),
+      ]);
+      const fichaPorProduto = new Map(
+        fichas.filter((f) => f.produtoComercialId).map((f) => [f.produtoComercialId as string, f]),
+      );
+      const alvo =
+        input.produtoIds && input.produtoIds.length > 0
+          ? produtos.filter((p) => input.produtoIds!.includes(p.id))
+          : produtos.filter((p) => !fichaPorProduto.has(p.id));
+
+      let inseridos = 0;
+      let atualizados = 0;
+      const nomes: string[] = [];
+
+      for (const p of alvo) {
+        const categoria = inferirCategoriaProdutoCusto(p.nome, p.categoria);
+        const etapas = etapasPadraoParaDb(etapasProcessoPadraoParaProduto(categoria, config));
+        const prev = fichaPorProduto.get(p.id);
+
+        if (prev) {
+          if (!input.sobrescreverEtapas) continue;
+          await custosProdutoDb.replaceComponentesEtapas(prev.id, [], etapas);
+          atualizados += 1;
+          nomes.push(p.nome);
+          continue;
+        }
+
+        const fichaId = await custosProdutoDb.insertCustoProdutoFicha({
+          projetoId: pid,
+          tipo: "manual",
+          categoria,
+          nome: p.nome.trim(),
+          produtoComercialId: p.id,
+          unidadeVenda: "unidade",
+          precoVendaReferencia: p.precoBase != null ? String(p.precoBase) : null,
+          observacoes:
+            "Ficha gerada do Conta Azul. Complete matéria-prima (produção própria ou revenda) — processo industrial veio do modelo comum.",
+          ordem: 0,
+          ativo: true,
+        });
+        await custosProdutoDb.replaceComponentesEtapas(fichaId, [], etapas);
+        fichaPorProduto.set(p.id, { id: fichaId } as (typeof fichas)[number]);
+        inseridos += 1;
+        nomes.push(p.nome);
+      }
+
+      return { inseridos, atualizados, nomes, totalAlvo: alvo.length };
     }),
 });

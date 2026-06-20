@@ -837,6 +837,31 @@ export const custosMoConfig = mysqlTable("custos_mo_config", {
 export type CustoMoConfigRow = typeof custosMoConfig.$inferSelect;
 export type InsertCustoMoConfig = typeof custosMoConfig.$inferInsert;
 
+/** Valores comuns de processo industrial (embalagem, minutos MO) por projeto. */
+export const custosProdutosProcessoConfig = mysqlTable("custos_produtos_processo_config", {
+  projetoId: int("projetoId").primaryKey(),
+  embalagemMicroverdeUn: decimal("embalagemMicroverdeUn", { precision: 14, scale: 6 })
+    .notNull()
+    .default("0.95"),
+  embalagemOutrosUn: decimal("embalagemOutrosUn", { precision: 14, scale: 6 })
+    .notNull()
+    .default("0.60"),
+  lavagemMinutosUn: decimal("lavagemMinutosUn", { precision: 10, scale: 4 }),
+  embalagemMinutosUn: decimal("embalagemMinutosUn", { precision: 10, scale: 4 }),
+  corteMinutosUn: decimal("corteMinutosUn", { precision: 10, scale: 4 }),
+  adesivoCustoUn: decimal("adesivoCustoUn", { precision: 14, scale: 6 }),
+  regimeMoPadrao: mysqlEnum("regimeMoPadrao", ["clt", "pj", "qualquer"])
+    .notNull()
+    .default("qualquer"),
+  incluirLavagem: boolean("incluirLavagem").notNull().default(true),
+  incluirCorte: boolean("incluirCorte").notNull().default(false),
+  incluirAdesivo: boolean("incluirAdesivo").notNull().default(true),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CustoProdutoProcessoConfigRow = typeof custosProdutosProcessoConfig.$inferSelect;
+export type InsertCustoProdutoProcessoConfig = typeof custosProdutosProcessoConfig.$inferInsert;
+
 /** Ficha de custo por produto/SKU vendido. */
 export const custosProdutosFichas = mysqlTable("custos_produtos_fichas", {
   id: int("id").autoincrement().primaryKey(),

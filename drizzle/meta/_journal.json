@@ -232,6 +232,13 @@
       "when": 1777500000000,
       "tag": "0043_mo_equipes_liquido_config",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "5",
+      "when": 1777600000000,
+      "tag": "0044_custos_produtos_processo_config",
+      "breakpoints": true
     }
   ]
 }
