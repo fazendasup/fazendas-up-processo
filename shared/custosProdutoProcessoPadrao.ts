@@ -333,6 +333,22 @@ export function etapasProcessoPadraoParaPerfil(
     }),
   );
 
+  const colheitaMo = minMoLinha(calc, "Colheita");
+  if (
+    colheitaMo != null &&
+    (perfil === "microverde_embalagem" || perfil === "colheita_embalagem")
+  ) {
+    etapas.splice(
+      etapas.length - 1,
+      0,
+      etapa("mao_de_obra", {
+        nome: "Colheita (MO)",
+        minutosPorUnidade: colheitaMo,
+        regimeMo: regime,
+      }),
+    );
+  }
+
   etapas.push(...etapasMoPorUn(calc, config, regime));
 
   if (config.incluirAdesivo && config.adesivoCustoUn != null && config.adesivoCustoUn > 0) {

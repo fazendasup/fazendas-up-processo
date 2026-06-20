@@ -45,10 +45,13 @@ import {
 import {
   calcularLinhaProcessoIndustrial,
   depreciacaoReaisKgDeEquipamento,
+  etapasLinhaComMoVisiveis,
   FAMILIAS_PROCESSO_MODELO,
   LABEL_FAMILIA_PROCESSO_MODELO,
+  linhaPresetParaFamilia,
   LINHA_ETAPA_CAMPO_OPERADOR,
   LINHA_PROCESSO_INDUSTRIAL_PADRAO,
+  LINHA_PROCESSO_MICROVERDES_PADRAO,
   normalizarLinhaProcessoInput,
   type CustoMaquinaInput,
   type FamiliaProcessoModelo,
@@ -227,19 +230,23 @@ function modeloToDraft(m: ProcessoModeloRecord): ModeloDraft {
   };
 }
 
-function draftVazio(nome = "Novo modelo"): ModeloDraft {
+function draftVazio(nome = "Novo modelo", familia: FamiliaProcessoModelo = "folhosas"): ModeloDraft {
+  const linha =
+    familia === "microverdes"
+      ? { ...LINHA_PROCESSO_MICROVERDES_PADRAO }
+      : { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO };
   return {
     nome,
     descricao: "",
-    familia: "folhosas",
+    familia,
     isDefault: false,
     kgReferenciaMes: "",
     embalagemMicroverdeUn: "0.95",
     embalagemOutrosUn: "0.60",
     adesivoCustoUn: "",
     regimeMoPadrao: "qualquer",
-    incluirAdesivo: true,
-    linha: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO },
+    incluirAdesivo: familia !== "microverdes",
+    linha,
   };
 }
 
@@ -381,6 +388,13 @@ export function CustosProcessoModeloWizard() {
     [draft.linha, mapaHora],
   );
 
+  const isMicroverdes = draft.familia === "microverdes";
+  const steps = useMemo(
+    () => (isMicroverdes ? STEPS.filter((s) => s.id !== "maquina") : [...STEPS]),
+    [isMicroverdes],
+  );
+  const etapasMoVisiveis = etapasLinhaComMoVisiveis(draft.familia);
+
   const salvarModelo = trpc.custosProducao.produtos.salvarProcessoModelo.useMutation({
     onSuccess: (data) => {
       toast.success(`Modelo «${data.modelo.nome}» salvo`);
@@ -447,6 +461,7 @@ export function CustosProcessoModeloWizard() {
     const fallback = draft.linha.operadores.find((o) => o.id !== id)?.id ?? "1";
     patchLinha({
       operadores: draft.linha.operadores.filter((o) => o.id !== id),
+      colheitaOperadorIds: remapOperadorIds(draft.linha.colheitaOperadorIds, id, fallback),
       desfolhagemOperadorIds: remapOperadorIds(draft.linha.desfolhagemOperadorIds, id, fallback),
       preLavagemOperadorIds: remapOperadorIds(draft.linha.preLavagemOperadorIds, id, fallback),
       lavagemOperadorIds: remapOperadorIds(draft.linha.lavagemOperadorIds, id, fallback),
@@ -470,8 +485,8 @@ export function CustosProcessoModeloWizard() {
     toast.success(`Depreciação lavagem: ${fmtMoney(dep)}/kg`);
   }
 
-  const step = STEPS[stepIdx];
-  const progress = ((stepIdx + 1) / STEPS.length) * 100;
+  const step = steps[stepIdx] ?? steps[0]!;
+  const progress = ((stepIdx + 1) / steps.length) * 100;
 
   const linhasVisiveis = filtroSemFicha ? linhas.filter((l) => l.semFicha) : linhas;
 
@@ -493,7 +508,7 @@ export function CustosProcessoModeloWizard() {
             <div>
               <CardTitle className="text-base flex items-center gap-2">
                 <Factory className="h-4 w-4" />
-                Passo {stepIdx + 1} de {STEPS.length}: {step.title}
+                Passo {stepIdx + 1} de {steps.length}: {step.title}
               </CardTitle>
               <CardDescription>{step.desc}</CardDescription>
             </div>
@@ -501,7 +516,7 @@ export function CustosProcessoModeloWizard() {
           </div>
           <Progress value={progress} className="h-1.5 mt-3" />
           <div className="flex flex-wrap gap-1 mt-2">
-            {STEPS.map((s, i) => (
+            {steps.map((s, i) => (
               <button
                 key={s.id}
                 type="button"
@@ -533,9 +548,19 @@ export function CustosProcessoModeloWizard() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => setDraft(draftVazio("Legumes"))}
+                  onClick={() => {
+                    setStepIdx(0);
+                    setDraft(draftVazio("Microverdes", "microverdes"));
+                  }}
                 >
-                  <Plus className="h-3 w-3 mr-1" /> Novo
+                  <Plus className="h-3 w-3 mr-1" /> Microverdes
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setDraft(draftVazio("Legumes", "legumes"))}
+                >
+                  <Plus className="h-3 w-3 mr-1" /> Folhosas/Legumes
                 </Button>
                 {draft.id ? (
                   <Button
@@ -556,7 +581,21 @@ export function CustosProcessoModeloWizard() {
                   <Label>Família</Label>
                   <Select
                     value={draft.familia}
-                    onValueChange={(v) => setDraft({ ...draft, familia: v as FamiliaProcessoModelo })}
+                    onValueChange={(v) => {
+                      const familia = v as FamiliaProcessoModelo;
+                      const eraMicroverdes = draft.familia === "microverdes";
+                      setDraft((d) => ({
+                        ...d,
+                        familia,
+                        incluirAdesivo: familia === "microverdes" ? false : d.incluirAdesivo,
+                        linha: linhaPresetParaFamilia(familia, d.linha),
+                      }));
+                      setStepIdx((idx) => {
+                        if (familia === "microverdes" && !eraMicroverdes && idx > 2) return idx - 1;
+                        if (familia !== "microverdes" && eraMicroverdes && idx >= 3) return idx + 1;
+                        return idx;
+                      });
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -586,6 +625,16 @@ export function CustosProcessoModeloWizard() {
                   <Label className="font-normal">Modelo padrão do projeto (fallback sem vínculo)</Label>
                 </div>
               </div>
+              {isMicroverdes ? (
+                <Alert className="border-emerald-200 bg-emerald-50/50">
+                  <AlertTitle className="text-sm">Rota microverdes</AlertTitle>
+                  <AlertDescription className="text-xs">
+                    Só <strong>colheita + embalagem</strong> (sem lavagem, selagem nem máquinas). Custo de{" "}
+                    <strong>cultivo</strong> (sementes, substrato, energia) cadastre em{" "}
+                    <strong>Custos → Por cultura</strong> ou em ficha <strong>Produção própria</strong>.
+                  </AlertDescription>
+                </Alert>
+              ) : null}
             </div>
           ) : null}
 
@@ -632,32 +681,41 @@ export function CustosProcessoModeloWizard() {
                   onChange={(v) => patchLinha({ custoHoraMo: v })}
                 />
               </div>
-              <div className="space-y-1">
-                <Label>Tarifa energia (R$/kWh)</Label>
-                <DecimalInput
-                  value={draft.linha.tarifaKwh}
-                  fallback={0.75}
-                  fractionDigits={4}
-                  onChange={(v) => patchLinha({ tarifaKwh: v })}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Kg processados / mês (referência depreciação)</Label>
-                <Input
-                  inputMode="decimal"
-                  value={draft.kgReferenciaMes}
-                  onChange={(e) => setDraft({ ...draft, kgReferenciaMes: e.target.value })}
-                  placeholder="Ex.: 30000"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Pés/un vendida (ref. desfolhagem)</Label>
-                <DecimalInput
-                  value={draft.linha.pesPorUnidadeRef}
-                  fallback={1}
-                  onChange={(v) => patchLinha({ pesPorUnidadeRef: v })}
-                />
-              </div>
+              {!isMicroverdes ? (
+                <>
+                  <div className="space-y-1">
+                    <Label>Tarifa energia (R$/kWh)</Label>
+                    <DecimalInput
+                      value={draft.linha.tarifaKwh}
+                      fallback={0.75}
+                      fractionDigits={4}
+                      onChange={(v) => patchLinha({ tarifaKwh: v })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Kg processados / mês (referência depreciação)</Label>
+                    <Input
+                      inputMode="decimal"
+                      value={draft.kgReferenciaMes}
+                      onChange={(e) => setDraft({ ...draft, kgReferenciaMes: e.target.value })}
+                      placeholder="Ex.: 30000"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Pés/un vendida (ref. desfolhagem)</Label>
+                    <DecimalInput
+                      value={draft.linha.pesPorUnidadeRef}
+                      fallback={1}
+                      onChange={(v) => patchLinha({ pesPorUnidadeRef: v })}
+                    />
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground sm:col-span-2">
+                  Microverdes não usam máquinas nem desfolhagem — só MO de colheita e embalagem nos passos
+                  seguintes.
+                </p>
+              )}
             </div>
           ) : null}
 
@@ -728,6 +786,34 @@ export function CustosProcessoModeloWizard() {
                 </div>
               </div>
 
+              {isMicroverdes ? (
+                <>
+                  <EtapaMoSection
+                    title="Colheita"
+                    hint="Corte da bandeja e pesagem — minutos por unidade vendida (tray/clamshell)."
+                  >
+                    <div className="space-y-1">
+                      <Label className="text-xs">Colheita (min/un)</Label>
+                      <DecimalInput
+                        value={draft.linha.colheitaMinPorUn}
+                        fallback={1.5}
+                        onChange={(v) => patchLinha({ colheitaMinPorUn: v })}
+                      />
+                    </div>
+                  </EtapaMoSection>
+                  <EtapaMoSection title="Embalagem" hint="Montagem do tray/clamshell — minutos por unidade vendida.">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Embalagem (min/un)</Label>
+                      <DecimalInput
+                        value={draft.linha.embalagemMinPorUn}
+                        fallback={1}
+                        onChange={(v) => patchLinha({ embalagemMinPorUn: v })}
+                      />
+                    </div>
+                  </EtapaMoSection>
+                </>
+              ) : (
+                <>
               <EtapaMoSection title="Desfolhagem" hint="Antes da linha kg — custo por unidade vendida.">
                 <div className="space-y-1">
                   <Label className="text-xs">Tempo (s/pé)</Label>
@@ -888,6 +974,8 @@ export function CustosProcessoModeloWizard() {
                   </div>
                 </div>
               </EtapaMoSection>
+                </>
+              )}
               <div className="overflow-x-auto rounded-lg border">
                 <Table>
                   <TableHeader>
@@ -901,6 +989,7 @@ export function CustosProcessoModeloWizard() {
                   <TableBody>
                     {linhaCalc.etapas
                       .filter((e) => e.temMo)
+                      .filter((e) => !etapasMoVisiveis || etapasMoVisiveis.has(e.nome))
                       .map((e) => {
                         const co = LINHA_ETAPA_CAMPO_OPERADOR[e.nome];
                         return (
@@ -977,27 +1066,36 @@ export function CustosProcessoModeloWizard() {
 
           {step.id === "insumos" ? (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="space-y-1">
+              <div className={`space-y-1 ${isMicroverdes ? "sm:col-span-2" : ""}`}>
                 <Label>Embalagem microverdes (R$/un)</Label>
                 <Input
                   value={draft.embalagemMicroverdeUn}
                   onChange={(e) => setDraft({ ...draft, embalagemMicroverdeUn: e.target.value })}
                 />
+                {isMicroverdes ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    Tray/clamshell — principal insumo de processo nesta rota.
+                  </p>
+                ) : null}
               </div>
-              <div className="space-y-1">
-                <Label>Embalagem demais (R$/un)</Label>
-                <Input
-                  value={draft.embalagemOutrosUn}
-                  onChange={(e) => setDraft({ ...draft, embalagemOutrosUn: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Adesivo (R$/un)</Label>
-                <Input
-                  value={draft.adesivoCustoUn}
-                  onChange={(e) => setDraft({ ...draft, adesivoCustoUn: e.target.value })}
-                />
-              </div>
+              {!isMicroverdes ? (
+                <>
+                  <div className="space-y-1">
+                    <Label>Embalagem demais (R$/un)</Label>
+                    <Input
+                      value={draft.embalagemOutrosUn}
+                      onChange={(e) => setDraft({ ...draft, embalagemOutrosUn: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Adesivo (R$/un)</Label>
+                    <Input
+                      value={draft.adesivoCustoUn}
+                      onChange={(e) => setDraft({ ...draft, adesivoCustoUn: e.target.value })}
+                    />
+                  </div>
+                </>
+              ) : null}
               <div className="space-y-1">
                 <Label>Regime MO padrão (fichas)</Label>
                 <Select
@@ -1016,19 +1114,21 @@ export function CustosProcessoModeloWizard() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center gap-2 sm:col-span-2">
-                <Switch
-                  checked={draft.incluirAdesivo}
-                  onCheckedChange={(v) => setDraft({ ...draft, incluirAdesivo: v })}
-                />
-                <Label className="font-normal text-sm">Incluir adesivo nas fichas</Label>
-              </div>
+              {!isMicroverdes ? (
+                <div className="flex items-center gap-2 sm:col-span-2">
+                  <Switch
+                    checked={draft.incluirAdesivo}
+                    onCheckedChange={(v) => setDraft({ ...draft, incluirAdesivo: v })}
+                  />
+                  <Label className="font-normal text-sm">Incluir adesivo nas fichas</Label>
+                </div>
+              ) : null}
             </div>
           ) : null}
 
           {step.id === "resultado" ? (
             <div className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className={`grid gap-3 sm:grid-cols-2 ${isMicroverdes ? "lg:grid-cols-2" : "lg:grid-cols-4"}`}>
                 <Card>
                   <CardHeader className="pb-1">
                     <CardTitle className="text-xs text-muted-foreground">Processamento MO</CardTitle>
@@ -1037,25 +1137,31 @@ export function CustosProcessoModeloWizard() {
                     {fmtMoney(linhaCalc.processamentoMoReaisKg)}/kg
                   </CardContent>
                 </Card>
+                {!isMicroverdes ? (
+                  <>
+                    <Card>
+                      <CardHeader className="pb-1">
+                        <CardTitle className="text-xs text-muted-foreground">Máquina (energia+deprec.)</CardTitle>
+                      </CardHeader>
+                      <CardContent className="text-lg font-semibold tabular-nums">
+                        {fmtMoney(linhaCalc.processamentoMaquinaReaisKg)}/kg
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-1">
+                        <CardTitle className="text-xs text-muted-foreground">Consumíveis (pré-lav/enxague)</CardTitle>
+                      </CardHeader>
+                      <CardContent className="text-lg font-semibold tabular-nums">
+                        {fmtMoney(linhaCalc.processamentoConsumiveisReaisKg)}/kg
+                      </CardContent>
+                    </Card>
+                  </>
+                ) : null}
                 <Card>
                   <CardHeader className="pb-1">
-                    <CardTitle className="text-xs text-muted-foreground">Máquina (energia+deprec.)</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-lg font-semibold tabular-nums">
-                    {fmtMoney(linhaCalc.processamentoMaquinaReaisKg)}/kg
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-1">
-                    <CardTitle className="text-xs text-muted-foreground">Consumíveis (pré-lav/enxague)</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-lg font-semibold tabular-nums">
-                    {fmtMoney(linhaCalc.processamentoConsumiveisReaisKg)}/kg
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-1">
-                    <CardTitle className="text-xs text-muted-foreground">Total R$/kg → ficha</CardTitle>
+                    <CardTitle className="text-xs text-muted-foreground">
+                      {isMicroverdes ? "MO colheita + embalagem → ficha" : "Total R$/kg → ficha"}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="text-lg font-semibold tabular-nums text-emerald-700">
                     {fmtMoney(linhaCalc.processamentoReaisKg)}/kg
@@ -1097,7 +1203,9 @@ export function CustosProcessoModeloWizard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {linhaCalc.etapas.map((e) => (
+                    {linhaCalc.etapas
+                      .filter((e) => !etapasMoVisiveis || etapasMoVisiveis.has(e.nome))
+                      .map((e) => (
                       <TableRow key={e.nome}>
                         <TableCell className="text-sm">
                           {e.nome}
@@ -1133,14 +1241,29 @@ export function CustosProcessoModeloWizard() {
                 </Table>
               </div>
               <div className="grid gap-2 sm:grid-cols-3 text-sm">
-                <div>
-                  <p className="text-muted-foreground text-xs">Desfolhagem min/un</p>
-                  <p className="font-semibold">{linhaCalc.desfolhagemMinPorUn}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground text-xs">Embalagem+selagem min/un</p>
-                  <p className="font-semibold">{linhaCalc.embalagemSelagemMinPorUn}</p>
-                </div>
+                {isMicroverdes ? (
+                  <>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Colheita min/un</p>
+                      <p className="font-semibold">{draft.linha.colheitaMinPorUn}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Embalagem min/un</p>
+                      <p className="font-semibold">{draft.linha.embalagemMinPorUn}</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Desfolhagem min/un</p>
+                      <p className="font-semibold">{linhaCalc.desfolhagemMinPorUn}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Embalagem+selagem min/un</p>
+                      <p className="font-semibold">{linhaCalc.embalagemSelagemMinPorUn}</p>
+                    </div>
+                  </>
+                )}
               </div>
               {linhaCalc.alertas.length > 0 ? (
                 <ul className="text-xs text-amber-700 list-disc pl-4">
@@ -1175,15 +1298,30 @@ export function CustosProcessoModeloWizard() {
                         <TableCell>
                           <Select
                             value={l.processoModeloId || "__padrao__"}
-                            onValueChange={(v) =>
+                            onValueChange={(v) => {
+                              const processoModeloId = v === "__padrao__" ? "" : v;
+                              const modeloSel =
+                                processoModeloId !== ""
+                                  ? modelos.find((m) => String(m.id) === processoModeloId)
+                                  : null;
+                              const vinculaMicroverdes =
+                                isMicroverdes &&
+                                (processoModeloId === String(draft.id) ||
+                                  modeloSel?.familia === "microverdes");
                               setLinhas((prev) =>
                                 prev.map((x) =>
                                   x.produtoComercialId === l.produtoComercialId
-                                    ? { ...x, processoModeloId: v === "__padrao__" ? "" : v }
+                                    ? {
+                                        ...x,
+                                        processoModeloId,
+                                        perfilProcesso: vinculaMicroverdes
+                                          ? "microverde_embalagem"
+                                          : x.perfilProcesso,
+                                      }
                                     : x,
                                 ),
-                              )
-                            }
+                              );
+                            }}
                           >
                             <SelectTrigger className="h-8 text-xs">
                               <SelectValue />
@@ -1308,8 +1446,8 @@ export function CustosProcessoModeloWizard() {
                     <Cog className="h-4 w-4 mr-1" /> Gerar fichas
                   </Button>
                 </>
-              ) : stepIdx < STEPS.length - 1 ? (
-                <Button onClick={() => setStepIdx((i) => Math.min(STEPS.length - 1, i + 1))}>
+              ) : stepIdx < steps.length - 1 ? (
+                <Button onClick={() => setStepIdx((i) => Math.min(steps.length - 1, i + 1))}>
                   Próximo <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               ) : null}

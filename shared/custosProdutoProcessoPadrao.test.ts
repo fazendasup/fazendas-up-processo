@@ -7,13 +7,29 @@ import {
   inferirPerfilProcessoSugerido,
   sugerirMapeamentoProduto,
 } from "./custosProdutoProcessoPadrao";
+import {
+  calcularLinhaProcessoIndustrial,
+  LINHA_PROCESSO_MICROVERDES_PADRAO,
+} from "./custosLinhaProcessoIndustrial";
 
 describe("custosProdutoProcessoPadrao", () => {
   it("infere microverde e perfil sem lavagem", () => {
     expect(inferirCategoriaProdutoCusto("Acelga / Microverdes")).toBe("microverde");
     expect(inferirPerfilProcessoSugerido("Acelga / Microverdes")).toBe("microverde_embalagem");
-    const etapas = etapasProcessoPadraoParaPerfil("microverde_embalagem", "microverde");
+    const calc = calcularLinhaProcessoIndustrial(LINHA_PROCESSO_MICROVERDES_PADRAO);
+    const etapas = etapasProcessoPadraoParaPerfil("microverde_embalagem", "microverde", {
+      embalagemMicroverdeUn: 0.95,
+      embalagemOutrosUn: 0.6,
+      lavagemReaisKg: 0,
+      lavagemMinutosUn: null,
+      embalagemMinutosUn: null,
+      corteMinutosUn: null,
+      adesivoCustoUn: null,
+      regimeMoPadrao: "qualquer",
+      incluirAdesivo: false,
+    }, calc);
     expect(etapas.some((e) => e.tipo === "lavagem")).toBe(false);
+    expect(etapas.find((e) => e.nome === "Colheita (MO)")?.minutosPorUnidade).toBe(1.5);
     expect(etapas.find((e) => e.tipo === "embalagem")?.custoPorUnidade).toBe(0.95);
   });
 

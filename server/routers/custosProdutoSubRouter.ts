@@ -91,6 +91,8 @@ const linhaProcessoInput = z.object({
     .min(1)
     .default([{ id: "1", nome: "Operador 1", regimeMo: "qualquer" }]),
   pesPorUnidadeRef: z.number().nonnegative(),
+  colheitaMinPorUn: z.number().nonnegative().default(0),
+  colheitaOperadorIds: z.array(z.string().min(1)).min(1).default(["1"]),
   desfolhagemSegPorPe: z.number().nonnegative(),
   desfolhagemOperadorIds: z.array(z.string().min(1)).min(1).default(["1"]),
   preLavagemKgHora: z.number().positive(),

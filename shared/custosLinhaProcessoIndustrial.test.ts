@@ -3,6 +3,8 @@ import {
   calcularLinhaProcessoIndustrial,
   calcularMaquinaReaisKg,
   LINHA_PROCESSO_INDUSTRIAL_PADRAO,
+  LINHA_PROCESSO_MICROVERDES_PADRAO,
+  linhaPresetParaFamilia,
   modeloComumDeLinhaProcesso,
 } from "./custosLinhaProcessoIndustrial";
 
@@ -113,5 +115,26 @@ describe("calcularLinhaProcessoIndustrial", () => {
       0.75,
     );
     expect(v).toBeCloseTo(3 * (2 / 60 / 3) * 0.75);
+  });
+
+  it("preset microverdes — colheita + embalagem, sem lavagem", () => {
+    const r = calcularLinhaProcessoIndustrial(LINHA_PROCESSO_MICROVERDES_PADRAO, {
+      clt: 28,
+      pj: 18,
+      misto: 22,
+    });
+    expect(r.etapas.map((e) => e.nome)).toEqual(["Colheita", "Embalagem"]);
+    const col = r.etapas.find((e) => e.nome === "Colheita");
+    expect(col?.reaisPorUn).toBeGreaterThan(0);
+    expect(col?.minPorUn).toBe(1.5);
+    expect(r.processamentoMaquinaReaisKg).toBe(0);
+    expect(r.processamentoConsumiveisReaisKg).toBe(0);
+  });
+
+  it("linhaPresetParaFamilia aplica defaults microverdes", () => {
+    const linha = linhaPresetParaFamilia("microverdes", LINHA_PROCESSO_INDUSTRIAL_PADRAO);
+    expect(linha.colheitaMinPorUn).toBe(1.5);
+    expect(linha.desfolhagemSegPorPe).toBe(0);
+    expect(linha.lavagemMaquina.ativo).toBe(false);
   });
 });
