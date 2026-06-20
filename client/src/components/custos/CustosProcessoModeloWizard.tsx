@@ -3,7 +3,7 @@
  * MO (CLT/PJ via equipes) + máquina (energia, deprec., consumíveis).
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -44,18 +44,14 @@ import {
   calcularLinhaProcessoIndustrial,
   depreciacaoReaisKgDeEquipamento,
   FAMILIAS_PROCESSO_MODELO,
-  isEtapaLinhaProcessamento,
   LABEL_FAMILIA_PROCESSO_MODELO,
-  LABEL_MODO_PESSOAS_PROCESSAMENTO,
-  LINHA_ETAPA_CAMPO_PESSOAS,
-  LINHA_ETAPA_CAMPO_REGIME,
+  LINHA_ETAPA_CAMPO_OPERADOR,
   LINHA_PROCESSO_INDUSTRIAL_PADRAO,
-  MODOS_PESSOAS_PROCESSAMENTO,
   normalizarLinhaProcessoInput,
   type CustoMaquinaInput,
   type FamiliaProcessoModelo,
   type LinhaProcessoIndustrialInput,
-  type ModoPessoasProcessamento,
+  type OperadorLinhaProcesso,
   type ProcessoModeloRecord,
 } from "@shared/custosLinhaProcessoIndustrial";
 import {
@@ -91,7 +87,7 @@ const fmtMoney = (n: number | null | undefined) =>
 const STEPS = [
   { id: "modelo", title: "Modelo", desc: "Escolha ou crie um modelo de linha" },
   { id: "base", title: "Base", desc: "Equipes MO, tarifa kWh e volume de referência" },
-  { id: "mo", title: "Mão de obra", desc: "Tempos, pessoas e regime CLT/PJ por etapa" },
+  { id: "mo", title: "Mão de obra", desc: "Operadores, tempos e consumíveis por etapa" },
   { id: "maquina", title: "Máquinas", desc: "Energia, depreciação e consumíveis" },
   { id: "insumos", title: "Insumos", desc: "Embalagem, adesivo e regime padrão" },
   { id: "resultado", title: "Resultado", desc: "Conferir custo MO + máquina gerado" },
@@ -126,6 +122,26 @@ type ModeloDraft = {
   incluirAdesivo: boolean;
   linha: LinhaProcessoIndustrialInput;
 };
+
+function EtapaMoSection({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="rounded-lg border p-3 space-y-3">
+      <div>
+        <p className="text-sm font-medium">{title}</p>
+        {hint ? <p className="text-[11px] text-muted-foreground mt-0.5">{hint}</p> : null}
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
+    </div>
+  );
+}
 
 function modeloToDraft(m: ProcessoModeloRecord): ModeloDraft {
   return {
@@ -335,6 +351,41 @@ export function CustosProcessoModeloWizard() {
     setDraft((d) => ({ ...d, linha: { ...d.linha, ...patch } }));
   }
 
+  function atualizarOperador(idx: number, patch: Partial<OperadorLinhaProcesso>) {
+    patchLinha({
+      operadores: draft.linha.operadores.map((o, i) => (i === idx ? { ...o, ...patch } : o)),
+    });
+  }
+
+  function adicionarOperador() {
+    const nums = draft.linha.operadores
+      .map((o) => Number.parseInt(o.id, 10))
+      .filter((n) => Number.isFinite(n));
+    const next = String(Math.max(0, ...nums, draft.linha.operadores.length) + 1);
+    patchLinha({
+      operadores: [
+        ...draft.linha.operadores,
+        { id: next, nome: `Operador ${next}`, regimeMo: "qualquer" },
+      ],
+    });
+  }
+
+  function removerOperador(id: string) {
+    if (draft.linha.operadores.length <= 1) return;
+    const fallback = draft.linha.operadores.find((o) => o.id !== id)?.id ?? "1";
+    const remap = (v: string) => (v === id ? fallback : v);
+    patchLinha({
+      operadores: draft.linha.operadores.filter((o) => o.id !== id),
+      desfolhagemOperadorId: remap(draft.linha.desfolhagemOperadorId),
+      preLavagemOperadorId: remap(draft.linha.preLavagemOperadorId),
+      lavagemOperadorId: remap(draft.linha.lavagemOperadorId),
+      enxagueOperadorId: remap(draft.linha.enxagueOperadorId),
+      secagemOperadorId: remap(draft.linha.secagemOperadorId),
+      embalagemOperadorId: remap(draft.linha.embalagemOperadorId),
+      selagemOperadorId: remap(draft.linha.selagemOperadorId),
+    });
+  }
+
   function aplicarDepreciacaoLavagem(valor: number, meses: number) {
     const kg = parseOptDecimal(draft.kgReferenciaMes);
     if (kg == null) {
@@ -542,62 +593,86 @@ export function CustosProcessoModeloWizard() {
           {step.id === "mo" ? (
             <div className="space-y-4">
               <div className="rounded-lg border p-3 space-y-3 bg-muted/30">
-                <p className="text-sm font-medium">Como contar pessoas na linha de lavagem</p>
-                <p className="text-xs text-muted-foreground">
-                  O mesmo operador na sequência pré-lavagem → enxague → secagem: os tempos{" "}
-                  <strong>somam</strong> (trabalho em série). Use &quot;Equipe na linha&quot; e informe
-                  quantos operadores fazem essa sequência — não repita pessoas em cada etapa.
-                </p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Modo de apontamento (linha kg)</Label>
-                    <Select
-                      value={draft.linha.modoPessoasProcessamento}
-                      onValueChange={(v) =>
-                        patchLinha({ modoPessoasProcessamento: v as ModoPessoasProcessamento })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {MODOS_PESSOAS_PROCESSAMENTO.map((m) => (
-                          <SelectItem key={m} value={m}>
-                            {LABEL_MODO_PESSOAS_PROCESSAMENTO[m]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-medium">Operadores do modelo</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Escolha quem faz cada etapa abaixo. O mesmo operador pode aparecer em duas ou mais
+                      funções — o custo soma os tempos dele, sem duplicar pessoas.
+                    </p>
                   </div>
-                  {draft.linha.modoPessoasProcessamento === "equipe_linha" ? (
-                    <div className="space-y-1">
-                      <Label className="text-xs">Operadores na sequência da linha</Label>
-                      <DecimalInput
-                        integersOnly
-                        fallback={1}
-                        value={draft.linha.pessoasLinhaProcessamento}
-                        onChange={(v) =>
-                          patchLinha({ pessoasLinhaProcessamento: Math.max(1, v) })
-                        }
-                      />
+                  <Button type="button" variant="outline" size="sm" onClick={adicionarOperador}>
+                    <Plus className="h-3.5 w-3.5 mr-1" />
+                    Operador
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {draft.linha.operadores.map((op, idx) => (
+                    <div
+                      key={op.id}
+                      className="grid gap-2 sm:grid-cols-[1fr_140px_auto] items-end rounded-md border bg-background p-2"
+                    >
+                      <div className="space-y-1">
+                        <Label className="text-xs">Nome</Label>
+                        <Input
+                          value={op.nome}
+                          onChange={(e) => atualizarOperador(idx, { nome: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Regime MO</Label>
+                        <Select
+                          value={op.regimeMo}
+                          onValueChange={(v) =>
+                            atualizarOperador(idx, { regimeMo: v as RegimeMoEtapa })
+                          }
+                        >
+                          <SelectTrigger className="h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {REGIMES_MO_ETAPA.map((r) => (
+                              <SelectItem key={r} value={r}>
+                                {LABEL_REGIME_MO_ETAPA[r]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {draft.linha.operadores.length > 1 ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0"
+                          onClick={() => removerOperador(op.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <span className="w-9" />
+                      )}
                     </div>
-                  ) : null}
+                  ))}
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Lavagem automática = MO zero (máquina no passo Máquinas). Consumíveis = sanitizante,
-                detergente etc. (R$/kg).
-              </p>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+
+              <EtapaMoSection title="Desfolhagem" hint="Antes da linha kg — custo por unidade vendida.">
                 <div className="space-y-1">
-                  <Label className="text-xs">Desfolhagem (s/pé)</Label>
+                  <Label className="text-xs">Tempo (s/pé)</Label>
                   <DecimalInput
                     value={draft.linha.desfolhagemSegPorPe}
                     onChange={(v) => patchLinha({ desfolhagemSegPorPe: v })}
                   />
                 </div>
+              </EtapaMoSection>
+
+              <EtapaMoSection
+                title="Pré-lavagem"
+                hint="Banheira ou mesa de triagem com água/sanitizante — vazão nominal × eficiência."
+              >
                 <div className="space-y-1">
-                  <Label className="text-xs">Pré-lavagem kg/h</Label>
+                  <Label className="text-xs">Vazão nominal (kg/h)</Label>
                   <DecimalInput
                     value={draft.linha.preLavagemKgHora}
                     fallback={300}
@@ -605,7 +680,7 @@ export function CustosProcessoModeloWizard() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Pré-lavagem eficiência %</Label>
+                  <Label className="text-xs">Eficiência (%)</Label>
                   <DecimalInput
                     value={draft.linha.preLavagemEficienciaPct}
                     fallback={70}
@@ -613,7 +688,7 @@ export function CustosProcessoModeloWizard() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Pré-lavagem consumíveis (R$/kg)</Label>
+                  <Label className="text-xs">Consumíveis (R$/kg)</Label>
                   <DecimalInput
                     value={draft.linha.preLavagemConsumiveisReaisKg}
                     fractionDigits={4}
@@ -621,12 +696,26 @@ export function CustosProcessoModeloWizard() {
                     placeholder="Sanitizante, detergente…"
                   />
                 </div>
+              </EtapaMoSection>
+
+              <EtapaMoSection
+                title="Lavagem"
+                hint="Automática = MO zero (máquina no passo Máquinas). Consumíveis da lavadora também lá."
+              >
                 <div className="space-y-1">
-                  <Label className="text-xs">Lavagem kg/h</Label>
+                  <Label className="text-xs">Capacidade nominal (kg/h)</Label>
                   <DecimalInput
                     value={draft.linha.lavagemKgHora}
                     fallback={300}
                     onChange={(v) => patchLinha({ lavagemKgHora: v })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Eficiência (%)</Label>
+                  <DecimalInput
+                    value={draft.linha.lavagemEficienciaPct}
+                    fallback={70}
+                    onChange={(v) => patchLinha({ lavagemEficienciaPct: v })}
                   />
                 </div>
                 <div className="space-y-1 flex items-end gap-2 pb-1 sm:col-span-2">
@@ -639,26 +728,34 @@ export function CustosProcessoModeloWizard() {
                       })
                     }
                   />
-                  <Label className="text-xs">Lavagem com operador (senão só máquina)</Label>
+                  <Label className="text-xs">Com operador na máquina</Label>
                 </div>
+              </EtapaMoSection>
+
+              <EtapaMoSection
+                title="Enxague"
+                hint="Tempo do operador por lote: segundos ÷ kg do lote de referência."
+              >
                 <div className="space-y-1">
-                  <Label className="text-xs">Enxague (s / kg)</Label>
+                  <Label className="text-xs">Tempo operador (s / kg ref.)</Label>
                   <div className="flex gap-1">
                     <DecimalInput
-                      className="w-16"
+                      className="w-20"
                       value={draft.linha.enxagueSeg}
                       onChange={(v) => patchLinha({ enxagueSeg: v })}
                     />
+                    <span className="self-center text-xs text-muted-foreground shrink-0">s /</span>
                     <DecimalInput
                       className="flex-1"
                       value={draft.linha.enxagueKg}
                       fallback={1}
                       onChange={(v) => patchLinha({ enxagueKg: v })}
                     />
+                    <span className="self-center text-xs text-muted-foreground shrink-0">kg</span>
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Enxague consumíveis (R$/kg)</Label>
+                  <Label className="text-xs">Consumíveis (R$/kg)</Label>
                   <DecimalInput
                     value={draft.linha.enxagueConsumiveisReaisKg}
                     fractionDigits={4}
@@ -666,54 +763,66 @@ export function CustosProcessoModeloWizard() {
                     placeholder="Ácido, cloro…"
                   />
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Secagem abastec. (s / kg)</Label>
-                  <div className="flex gap-1">
+              </EtapaMoSection>
+
+              <EtapaMoSection
+                title="Secagem (abastecimento centrífuga)"
+                hint="Só o tempo do operador alimentando a centrífuga — ciclo da máquina no passo Máquinas."
+              >
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-xs">Tempo operador (s / kg ref.)</Label>
+                  <div className="flex gap-1 max-w-xs">
                     <DecimalInput
-                      className="w-16"
+                      className="w-20"
                       value={draft.linha.secagemSegOperador}
                       fallback={30}
                       onChange={(v) => patchLinha({ secagemSegOperador: v })}
                     />
+                    <span className="self-center text-xs text-muted-foreground shrink-0">s /</span>
                     <DecimalInput
                       className="flex-1"
                       value={draft.linha.secagemKg}
                       fallback={1}
                       onChange={(v) => patchLinha({ secagemKg: v })}
                     />
+                    <span className="self-center text-xs text-muted-foreground shrink-0">kg</span>
                   </div>
                 </div>
+              </EtapaMoSection>
+
+              <EtapaMoSection title="Embalagem e selagem" hint="Pós-lavagem — minutos por unidade vendida.">
                 <div className="space-y-1">
-                  <Label className="text-xs">Embalagem min/un</Label>
+                  <Label className="text-xs">Embalagem (min/un)</Label>
                   <DecimalInput
                     value={draft.linha.embalagemMinPorUn}
                     onChange={(v) => patchLinha({ embalagemMinPorUn: v })}
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Selagem min / N un</Label>
+                  <Label className="text-xs">Selagem (min / N un)</Label>
                   <div className="flex gap-1">
                     <DecimalInput
-                      className="w-16"
+                      className="w-20"
                       value={draft.linha.selagemMinPorCiclo}
                       onChange={(v) => patchLinha({ selagemMinPorCiclo: v })}
                     />
+                    <span className="self-center text-xs text-muted-foreground shrink-0">min /</span>
                     <DecimalInput
-                      className="w-16"
+                      className="flex-1"
                       value={draft.linha.selagemUnPorCiclo}
                       fallback={1}
                       onChange={(v) => patchLinha({ selagemUnPorCiclo: v })}
                     />
+                    <span className="self-center text-xs text-muted-foreground shrink-0">un</span>
                   </div>
                 </div>
-              </div>
+              </EtapaMoSection>
               <div className="overflow-x-auto rounded-lg border">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Etapa</TableHead>
-                      <TableHead>Pessoas</TableHead>
-                      <TableHead>Regime MO</TableHead>
+                      <TableHead>Operador</TableHead>
                       <TableHead>R$/h usado</TableHead>
                       <TableHead>MO</TableHead>
                     </TableRow>
@@ -722,47 +831,23 @@ export function CustosProcessoModeloWizard() {
                     {linhaCalc.etapas
                       .filter((e) => e.temMo)
                       .map((e) => {
-                        const cp = LINHA_ETAPA_CAMPO_PESSOAS[e.nome];
-                        const cr = LINHA_ETAPA_CAMPO_REGIME[e.nome];
+                        const co = LINHA_ETAPA_CAMPO_OPERADOR[e.nome];
                         return (
                           <TableRow key={e.nome}>
                             <TableCell className="text-sm">{e.nome}</TableCell>
                             <TableCell>
-                              {cp &&
-                              draft.linha.modoPessoasProcessamento === "equipe_linha" &&
-                              isEtapaLinhaProcessamento(e.nome) ? (
-                                <span className="text-xs text-muted-foreground tabular-nums">
-                                  equipe {draft.linha.pessoasLinhaProcessamento}
-                                </span>
-                              ) : cp ? (
-                                <DecimalInput
-                                  className="h-8 w-14 text-center"
-                                  integersOnly
-                                  fallback={1}
-                                  value={draft.linha[cp] as number}
-                                  onChange={(v) =>
-                                    patchLinha({ [cp]: Math.max(1, v) } as never)
-                                  }
-                                />
-                              ) : (
-                                "—"
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {cr ? (
+                              {co ? (
                                 <Select
-                                  value={String(draft.linha[cr])}
-                                  onValueChange={(v) =>
-                                    patchLinha({ [cr]: v as RegimeMoEtapa } as never)
-                                  }
+                                  value={String(draft.linha[co])}
+                                  onValueChange={(v) => patchLinha({ [co]: v } as never)}
                                 >
-                                  <SelectTrigger className="h-8">
+                                  <SelectTrigger className="h-8 min-w-[9rem]">
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {REGIMES_MO_ETAPA.map((r) => (
-                                      <SelectItem key={r} value={r}>
-                                        {LABEL_REGIME_MO_ETAPA[r]}
+                                    {draft.linha.operadores.map((op) => (
+                                      <SelectItem key={op.id} value={op.id}>
+                                        {op.nome}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -916,6 +1001,29 @@ export function CustosProcessoModeloWizard() {
                   </CardContent>
                 </Card>
               </div>
+              {linhaCalc.resumoCapacidade.kgHoraMaxMo != null ? (
+                <div className="rounded-lg border p-3 bg-muted/20 space-y-2">
+                  <p className="text-sm font-medium">Capacidade da linha (MO em série)</p>
+                  <div className="grid gap-3 sm:grid-cols-3 text-xs">
+                    <div>
+                      <p className="text-muted-foreground">Tempo MO total na sequência</p>
+                      <p className="font-semibold tabular-nums">
+                        {linhaCalc.resumoCapacidade.minMoPorKgLinha} min/kg
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Operador mais carregado</p>
+                      <p className="font-semibold">{linhaCalc.resumoCapacidade.operadorGargalo ?? "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Capacidade máx. da equipe</p>
+                      <p className="font-semibold tabular-nums">
+                        ~{linhaCalc.resumoCapacidade.kgHoraMaxMo} kg/h
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
               <div className="overflow-x-auto rounded-lg border">
                 <Table>
                   <TableHeader>

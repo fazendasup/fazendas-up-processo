@@ -23,20 +23,31 @@ describe("calcularLinhaProcessoIndustrial", () => {
     expect(lav?.maquinaReaisPorKg).toBeGreaterThan(0);
   });
 
-  it("equipe_linha: mesmo operador na sequência — MO soma tempos, pessoas aplicadas uma vez", () => {
+  it("mesmo operador em duas etapas — MO soma tempos, sem multiplicar pessoas", () => {
     const base = calcularLinhaProcessoIndustrial({
       ...LINHA_PROCESSO_INDUSTRIAL_PADRAO,
       lavagemMaquina: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO.lavagemMaquina, ativo: false },
       secagemMaquina: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO.secagemMaquina, ativo: false },
     });
-    const duas = calcularLinhaProcessoIndustrial({
+    const umOp = calcularLinhaProcessoIndustrial({
       ...LINHA_PROCESSO_INDUSTRIAL_PADRAO,
-      modoPessoasProcessamento: "equipe_linha",
-      pessoasLinhaProcessamento: 2,
+      preLavagemOperadorId: "1",
+      enxagueOperadorId: "1",
+      secagemOperadorId: "2",
+      operadores: [
+        { id: "1", nome: "Maria", regimeMo: "qualquer" },
+        { id: "2", nome: "João", regimeMo: "qualquer" },
+      ],
       lavagemMaquina: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO.lavagemMaquina, ativo: false },
       secagemMaquina: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO.secagemMaquina, ativo: false },
     });
-    expect(duas.processamentoMoReaisKg).toBeCloseTo(base.processamentoMoReaisKg * 2);
+    const pre = umOp.etapas.find((e) => e.nome === "Pré-lavagem");
+    const enx = umOp.etapas.find((e) => e.nome === "Enxague");
+    expect(pre?.operadorId).toBe("1");
+    expect(enx?.operadorId).toBe("1");
+    expect(umOp.resumoCapacidade.operadores.find((o) => o.id === "1")?.etapas.length).toBeGreaterThan(1);
+    expect(umOp.processamentoMoReaisKg).toBeGreaterThan(0);
+    expect(umOp.processamentoMoReaisKg).toBeCloseTo(base.processamentoMoReaisKg, 1);
   });
 
   it("consumíveis entram em pré-lavagem e enxague", () => {
@@ -52,6 +63,17 @@ describe("calcularLinhaProcessoIndustrial", () => {
     expect(pre?.consumiveisReaisPorKg).toBeCloseTo(0.05);
     const m = modeloComumDeLinhaProcesso(r);
     expect(m.lavagemReaisKg).toBe(r.processamentoReaisKg);
+  });
+
+  it("resumo capacidade: operador gargalo", () => {
+    const r = calcularLinhaProcessoIndustrial({
+      ...LINHA_PROCESSO_INDUSTRIAL_PADRAO,
+      lavagemMaquina: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO.lavagemMaquina, ativo: false },
+      secagemMaquina: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO.secagemMaquina, ativo: false },
+    });
+    expect(r.resumoCapacidade.minMoPorKgLinha).toBeGreaterThan(0);
+    expect(r.resumoCapacidade.operadorGargalo).toBeTruthy();
+    expect(r.resumoCapacidade.kgHoraMaxMo).toBeGreaterThan(0);
   });
 
   it("calcularMaquinaReaisKg — ciclo centrífuga", () => {

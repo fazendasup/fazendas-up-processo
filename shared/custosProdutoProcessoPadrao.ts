@@ -1,7 +1,12 @@
 import type { CategoriaProdutoCusto, ModoCompraMp } from "./custosProduto";
-import type { LinhaProcessoIndustrialInput } from "./custosLinhaProcessoIndustrial";
+import {
+  configFromProcessoModelo,
+  derivarProcessoModelo,
+  type LinhaProcessoIndustrialInput,
+  type ProcessoModeloRecord,
+} from "./custosLinhaProcessoIndustrial";
 import { LABEL_ETAPA_PROCESSO, type TipoEtapaProcesso } from "./custosProduto";
-import type { RegimeMoEtapa } from "./custosMoEquipe";
+import type { CustoHoraPorRegime, RegimeMoEtapa } from "./custosMoEquipe";
 
 /** Rotas de processo — escolha manual por produto (não inferir só pelo nome). */
 export const PERFIS_PROCESSO_PRODUTO = [
@@ -288,6 +293,36 @@ export function etapasProcessoPadraoParaPerfil(
   }
 
   return etapas.filter((e) => e.ativo);
+}
+
+/** Perfil sugerido a partir das etapas já gravadas na ficha. */
+export function inferirPerfilDeEtapas(
+  etapas: ReadonlyArray<{ tipo: TipoEtapaProcesso }>,
+): PerfilProcessoProduto {
+  const tipos = new Set(etapas.map((e) => e.tipo));
+  if (tipos.has("lavagem") && tipos.has("descasque_corte")) return "lavagem_corte_embalagem";
+  if (tipos.has("lavagem")) return "lavagem_embalagem";
+  if (tipos.has("embalagem") && !tipos.has("lavagem") && !tipos.has("descasque_corte")) {
+    return "colheita_embalagem";
+  }
+  return "colheita_embalagem";
+}
+
+export function perfilDefaultParaCategoria(categoria: CategoriaProdutoCusto): PerfilProcessoProduto {
+  if (categoria === "microverde") return "microverde_embalagem";
+  if (categoria === "alface") return "lavagem_embalagem";
+  return "colheita_embalagem";
+}
+
+/** Etapas de processo derivadas de um modelo industrial salvo + perfil do SKU. */
+export function etapasProcessoDeModelo(
+  perfil: PerfilProcessoProduto,
+  categoria: CategoriaProdutoCusto,
+  modelo: ProcessoModeloRecord,
+  mapaHora?: CustoHoraPorRegime | null,
+): EtapaProcessoPadrao[] {
+  const derived = derivarProcessoModelo(modelo, mapaHora);
+  return etapasProcessoPadraoParaPerfil(perfil, categoria, configFromProcessoModelo(derived));
 }
 
 /** @deprecated Use etapasProcessoPadraoParaPerfil com mapeamento manual. */

@@ -11,11 +11,25 @@ import {
   UNIDADES_VENDA_PRODUTO,
   LABEL_MODO_COMPRA_MP,
   MODOS_COMPRA_MP,
+  type CategoriaProdutoCusto,
   type ModoCompraMp,
   type TipoComponenteCusto,
   type TipoEtapaProcesso,
   type TipoFichaCustoProduto,
 } from "@shared/custosProduto";
+import {
+  DESCRICAO_PERFIL_PROCESSO,
+  LABEL_PERFIL_PROCESSO_PRODUTO,
+  PERFIS_PROCESSO_PRODUTO,
+  avisosMapeamentoProduto,
+  etapasProcessoDeModelo,
+  inferirPerfilDeEtapas,
+  perfilDefaultParaCategoria,
+  perfilUsaLavagemKg,
+  type EtapaProcessoPadrao,
+  type PerfilProcessoProduto,
+} from "@shared/custosProdutoProcessoPadrao";
+import { configFromProcessoModelo, derivarProcessoModelo, type ProcessoModeloRecord } from "@shared/custosLinhaProcessoIndustrial";
 import {
   LABEL_REGIME_MO_ETAPA,
   REGIMES_MO_ETAPA,
@@ -44,7 +58,24 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Plus, Trash2, Calculator, Package, AlertTriangle, Copy, FileText, Save, Pencil } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  Plus,
+  Trash2,
+  Calculator,
+  Package,
+  AlertTriangle,
+  Copy,
+  FileText,
+  Save,
+  Pencil,
+  RefreshCw,
+  ChevronDown,
+} from "lucide-react";
 import { CustosProdutoProcessoSection } from "./CustosProdutoProcessoSection";
 
 const fmtMoney = (n: number | null | undefined) =>
@@ -290,9 +321,55 @@ type FichaForm = {
   kgProducaoPorUnidade: string;
   observacoes: string;
   ativo: boolean;
+  /** Modelo industrial salvo — etapas derivadas dele quando etapasModoManual = false. */
+  processoModeloId: string;
+  perfilProcesso: PerfilProcessoProduto;
+  etapasModoManual: boolean;
   componentes: ComponenteForm[];
   etapas: EtapaForm[];
 };
+
+function etapaPadraoToForm(e: EtapaProcessoPadrao): EtapaForm {
+  return {
+    tipo: e.tipo,
+    nome: e.nome,
+    minutosPorUnidade: fmtDecimalInput(e.minutosPorUnidade, 2),
+    regimeMo: e.regimeMo,
+    custoPorUnidade: fmtDecimalInput(e.custoPorUnidade, 4),
+    custoPorKgProcessado: fmtDecimalInput(e.custoPorKgProcessado, 4),
+    custoPercentual: fmtDecimalInput(e.custoPercentual, 2),
+  };
+}
+
+function etapasFormDeModelo(
+  modelo: ProcessoModeloRecord,
+  perfil: PerfilProcessoProduto,
+  categoria: CategoriaProdutoCusto,
+  mapaHora: import("@shared/custosMoEquipe").CustoHoraPorRegime | null,
+): EtapaForm[] {
+  return etapasProcessoDeModelo(perfil, categoria, modelo, mapaHora).map(etapaPadraoToForm);
+}
+
+function resumoValorEtapa(e: EtapaForm): string {
+  if (e.tipo === "lavagem") {
+    const v = parseOpt(e.custoPorKgProcessado);
+    return v != null && v > 0 ? `${fmtMoney(v)}/kg` : "R$/kg pendente";
+  }
+  if (e.tipo === "logistica") {
+    const v = parseOpt(e.custoPercentual);
+    return v != null ? `${v}% subtotal` : "—";
+  }
+  if (e.tipo === "embalagem" || e.tipo === "adesivo") {
+    const v = parseOpt(e.custoPorUnidade);
+    return v != null ? `${fmtMoney(v)}/un` : "—";
+  }
+  const min = parseOpt(e.minutosPorUnidade);
+  const extra = parseOpt(e.custoPorUnidade);
+  const parts: string[] = [];
+  if (min != null && min > 0) parts.push(`${min} min/un`);
+  if (extra != null && extra > 0) parts.push(`${fmtMoney(extra)}/un fixo`);
+  return parts.length > 0 ? parts.join(" · ") : "—";
+}
 
 function emptyComponente(): ComponenteForm {
   return {
@@ -339,6 +416,11 @@ function emptyFicha(tipo: TipoFichaCustoProduto = "revenda_processada"): FichaFo
     kgProducaoPorUnidade: "",
     observacoes: "",
     ativo: true,
+    processoModeloId: "",
+    perfilProcesso: perfilDefaultParaCategoria(
+      (tipo === "mix" ? "mix" : tipo === "producao_propria" ? "alface" : "revenda") as CategoriaProdutoCusto,
+    ),
+    etapasModoManual: false,
     componentes: tipo === "mix" ? [emptyComponente(), emptyComponente()] : [],
     etapas: [],
   };
@@ -436,6 +518,9 @@ function rowToFichaForm(row: any, patch: Partial<FichaForm> = {}): FichaForm {
       custoPorKgProcessado: fmtDecimalInput(e.custoPorKgProcessado, 4),
       custoPercentual: fmtDecimalInput(e.custoPercentual, 2),
     })),
+    processoModeloId: "",
+    perfilProcesso: inferirPerfilDeEtapas(row.etapas),
+    etapasModoManual: true,
     ...patch,
   };
 }
@@ -747,9 +832,80 @@ function FichaEditor({
   salvando: boolean;
   editingId: number | null;
 }) {
-  const processoConfig = trpc.custosProducao.produtos.processoConfig.useQuery();
-  const lavagemModeloKg = processoConfig.data?.config.lavagemReaisKg ?? null;
+  const modelosQuery = trpc.custosProducao.produtos.listarProcessoModelos.useQuery();
+  const produtosComercialQuery = trpc.custosProducao.produtos.listarProdutosComercial.useQuery();
+  const modelos = modelosQuery.data?.modelos ?? [];
+  const mapaHora = modelosQuery.data?.mapaHora ?? null;
+
+  const modeloAtivo = useMemo(() => {
+    if (form.processoModeloId) {
+      return modelos.find((m) => String(m.id) === form.processoModeloId) ?? null;
+    }
+    return modelos.find((m) => m.isDefault) ?? modelos[0] ?? null;
+  }, [modelos, form.processoModeloId]);
+
+  const configModelo = useMemo(() => {
+    if (!modeloAtivo) return null;
+    return configFromProcessoModelo(derivarProcessoModelo(modeloAtivo, mapaHora));
+  }, [modeloAtivo, mapaHora]);
+
+  const lavagemModeloKg = configModelo?.lavagemReaisKg ?? null;
   const kgVendidoPorUn = parseOpt(form.kgBrutoPorUnidade);
+  const categoriaCusto = form.categoria as CategoriaProdutoCusto;
+
+  const avisosModelo = useMemo(() => {
+    if (!configModelo) return [];
+    return avisosMapeamentoProduto(
+      {
+        perfilProcesso: form.perfilProcesso,
+        kgPorUnidade: kgVendidoPorUn,
+        modoCompraMp: form.modoCompraMp,
+      },
+      configModelo,
+    );
+  }, [configModelo, form.perfilProcesso, form.modoCompraMp, kgVendidoPorUn]);
+
+  useEffect(() => {
+    if (!form.produtoComercialId || !produtosComercialQuery.data) return;
+    const p = produtosComercialQuery.data.find((x) => x.id === form.produtoComercialId);
+    if (!p?.mapeamento) return;
+    setForm((f) => {
+      if (f.processoModeloId) return f;
+      return {
+        ...f,
+        perfilProcesso: p.mapeamento.perfilProcesso,
+        processoModeloId:
+          p.mapeamento.processoModeloId != null ? String(p.mapeamento.processoModeloId) : f.processoModeloId,
+      };
+    });
+  }, [form.produtoComercialId, produtosComercialQuery.data, setForm]);
+
+  useEffect(() => {
+    if (form.etapasModoManual || !modeloAtivo) return;
+    const next = etapasFormDeModelo(modeloAtivo, form.perfilProcesso, categoriaCusto, mapaHora);
+    setForm((f) => {
+      if (f.etapasModoManual) return f;
+      const same =
+        f.etapas.length === next.length &&
+        f.etapas.every(
+          (e, i) =>
+            e.tipo === next[i]?.tipo &&
+            e.custoPorKgProcessado === next[i]?.custoPorKgProcessado &&
+            e.custoPorUnidade === next[i]?.custoPorUnidade &&
+            e.minutosPorUnidade === next[i]?.minutosPorUnidade,
+        );
+      return same ? f : { ...f, etapas: next };
+    });
+  }, [
+    form.etapasModoManual,
+    form.processoModeloId,
+    form.perfilProcesso,
+    form.categoria,
+    modeloAtivo,
+    mapaHora,
+    categoriaCusto,
+    setForm,
+  ]);
 
   const updateComp = (idx: number, patch: Partial<ComponenteForm>) => {
     setForm((f) => {
@@ -789,7 +945,18 @@ function FichaEditor({
         </div>
         <div className="space-y-2">
           <Label>Categoria</Label>
-          <Select value={form.categoria} onValueChange={(v) => setForm((f) => ({ ...f, categoria: v }))}>
+          <Select
+            value={form.categoria}
+            onValueChange={(v) =>
+              setForm((f) => ({
+                ...f,
+                categoria: v,
+                ...(f.etapasModoManual
+                  ? {}
+                  : { perfilProcesso: perfilDefaultParaCategoria(v as CategoriaProdutoCusto) }),
+              }))
+            }
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -812,13 +979,29 @@ function FichaEditor({
             value={form.produtoComercialId || "__none__"}
             onValueChange={(v) => {
               const id = v === "__none__" ? "" : v;
-              const p = catalogos?.produtosComerciais?.find((x: any) => x.id === id);
+              const p = produtosComercialQuery.data?.find((x) => x.id === id);
+              const m = p?.mapeamento;
               setForm((f) => ({
                 ...f,
                 produtoComercialId: id,
                 nome: f.nome || p?.nome || f.nome,
                 precoVendaReferencia:
-                  f.precoVendaReferencia || (p?.precoBase != null ? String(p.precoBase) : f.precoVendaReferencia),
+                  f.precoVendaReferencia ||
+                  (p?.precoBase != null ? fmtDecimalInput(p.precoBase, 2) : f.precoVendaReferencia),
+                ...(m
+                  ? {
+                      categoria: m.categoriaCusto,
+                      perfilProcesso: m.perfilProcesso,
+                      processoModeloId:
+                        m.processoModeloId != null ? String(m.processoModeloId) : f.processoModeloId,
+                      modoCompraMp: m.modoCompraMp ?? f.modoCompraMp,
+                      kgBrutoPorUnidade:
+                        m.kgPorUnidade != null
+                          ? fmtDecimalInput(m.kgPorUnidade, 4)
+                          : f.kgBrutoPorUnidade,
+                      etapasModoManual: false,
+                    }
+                  : {}),
               }));
             }}
           >
@@ -881,7 +1064,7 @@ function FichaEditor({
       {(form.tipo === "revenda_processada" || form.tipo === "manual") && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Matéria-prima (revenda)</CardTitle>
+            <CardTitle className="text-sm">Matéria-prima — específico desta variedade/SKU</CardTitle>
             <CardDescription>
               {form.modoCompraMp === "unidade"
                 ? "Informe o preço por unidade de compra (caixa, bandeja, pacote fechado). Kg/un é opcional — use só se a lavagem for rateada por peso."
@@ -1151,41 +1334,229 @@ function FichaEditor({
       )}
 
       <Card>
-        <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2">
-          <div>
-            <CardTitle className="text-sm">Processo industrial</CardTitle>
-            <CardDescription className="space-y-1">
-              <span className="block">
-                <strong>Lavagem:</strong> R$/kg médio do lote × kg vendido/un — calcule o R$/kg em{" "}
-                <em>Valores comuns de processo</em>.
-              </span>
-              <span className="block">
-                <strong>Embalagem/adesivo:</strong> R$/un de insumo. <strong>MO:</strong> min/un × R$/h das equipes.
-                Overhead fixo fica na Rentabilidade.
-              </span>
-            </CardDescription>
-          </div>
-          <Button size="sm" variant="outline" onClick={() => setForm((f) => ({ ...f, etapas: [...f.etapas, emptyEtapa()] }))}>
-            <Plus className="h-4 w-4 mr-1" /> Etapa
-          </Button>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Modelo de processo industrial</CardTitle>
+          <CardDescription>
+            Escolha o modelo salvo no wizard e o perfil da rota. As etapas (lavagem, corte, embalagem, MO) vêm do
+            modelo — nesta ficha você informa só matéria-prima, peso e perdas da variedade.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {form.etapas.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Nenhuma etapa. Gere a ficha pelo Conta Azul ou adicione etapas manualmente.
-            </p>
-          ) : null}
-          {form.etapas.map((e, idx) => (
-            <EtapaProcessoEditor
-              key={idx}
-              etapa={e}
-              idx={idx}
-              kgVendidoPorUn={kgVendidoPorUn}
-              lavagemModeloKg={lavagemModeloKg}
-              updateEtapa={updateEtapa}
-              onRemove={() => setForm((f) => ({ ...f, etapas: f.etapas.filter((_, i) => i !== idx) }))}
-            />
-          ))}
+        <CardContent className="space-y-4">
+          {modelos.length === 0 ? (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Nenhum modelo salvo</AlertTitle>
+              <AlertDescription>
+                Cadastre um modelo em <em>Valores comuns de processo → Modelos de linha</em> antes de montar a ficha.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Modelo de linha</Label>
+                  <Select
+                    value={form.processoModeloId || "__padrao__"}
+                    onValueChange={(v) =>
+                      setForm((f) => ({
+                        ...f,
+                        processoModeloId: v === "__padrao__" ? "" : v,
+                        etapasModoManual: false,
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__padrao__">
+                        Padrão do projeto
+                        {modelos.find((m) => m.isDefault)
+                          ? ` (${modelos.find((m) => m.isDefault)!.nome})`
+                          : ""}
+                      </SelectItem>
+                      {modelos.map((m) => (
+                        <SelectItem key={m.id} value={String(m.id)}>
+                          {m.nome}
+                          {m.isDefault ? " · padrão" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Perfil da rota</Label>
+                  <Select
+                    value={form.perfilProcesso}
+                    onValueChange={(v) =>
+                      setForm((f) => ({
+                        ...f,
+                        perfilProcesso: v as PerfilProcessoProduto,
+                        etapasModoManual: false,
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PERFIS_PROCESSO_PRODUTO.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {LABEL_PERFIL_PROCESSO_PRODUTO[p]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground">{DESCRICAO_PERFIL_PROCESSO[form.perfilProcesso]}</p>
+                </div>
+              </div>
+
+              {modeloAtivo && configModelo ? (
+                <div className="rounded-lg border bg-muted/30 p-3 text-xs space-y-1">
+                  <p>
+                    <strong>{modeloAtivo.nome}</strong>
+                    {configModelo.lavagemReaisKg != null && configModelo.lavagemReaisKg > 0
+                      ? ` · lavagem ${fmtMoney(configModelo.lavagemReaisKg)}/kg`
+                      : perfilUsaLavagemKg(form.perfilProcesso)
+                        ? " · lavagem R$/kg pendente no modelo"
+                        : ""}
+                    {configModelo.corteMinutosUn != null && configModelo.corteMinutosUn > 0
+                      ? ` · corte ${configModelo.corteMinutosUn} min/un`
+                      : ""}
+                    {configModelo.embalagemMinutosUn != null && configModelo.embalagemMinutosUn > 0
+                      ? ` · embalagem ${configModelo.embalagemMinutosUn} min/un`
+                      : ""}
+                  </p>
+                </div>
+              ) : null}
+
+              {avisosModelo.length > 0 ? (
+                <ul className="text-xs text-amber-800 dark:text-amber-200 space-y-1">
+                  {avisosModelo.map((a, i) => (
+                    <li key={i}>• {a}</li>
+                  ))}
+                </ul>
+              ) : null}
+
+              {!form.etapasModoManual ? (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-medium">Etapas derivadas do modelo</p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={!modeloAtivo}
+                        onClick={() => {
+                          if (!modeloAtivo) return;
+                          setForm((f) => ({
+                            ...f,
+                            etapas: etapasFormDeModelo(modeloAtivo, f.perfilProcesso, categoriaCusto, mapaHora),
+                          }));
+                          toast.success("Etapas recarregadas do modelo");
+                        }}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-1" /> Recarregar
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setForm((f) => ({ ...f, etapasModoManual: true }))}
+                      >
+                        <Pencil className="h-4 w-4 mr-1" /> Editar manualmente
+                      </Button>
+                    </div>
+                  </div>
+                  {form.etapas.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Selecione modelo e perfil para gerar as etapas.</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Etapa</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead>Parâmetro</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {form.etapas.map((e, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell className="font-medium">{e.nome}</TableCell>
+                            <TableCell>{LABEL_ETAPA_PROCESSO[e.tipo]}</TableCell>
+                            <TableCell className="tabular-nums">{resumoValorEtapa(e)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                  {(() => {
+                    const lavagemEtapa = form.etapas.find((e) => e.tipo === "lavagem");
+                    const rKgLavagem = parseOpt(lavagemEtapa?.custoPorKgProcessado ?? "");
+                    if (!lavagemEtapa || rKgLavagem == null || kgVendidoPorUn == null || kgVendidoPorUn <= 0) {
+                      return null;
+                    }
+                    return (
+                      <p className="text-xs text-muted-foreground">
+                        Lavagem/un ≈ {fmtMoney(rKgLavagem * kgVendidoPorUn)} ({fmtMoney(rKgLavagem)}/kg ×{" "}
+                        {kgVendidoPorUn} kg)
+                      </p>
+                    );
+                  })()}
+                </div>
+              ) : (
+                <Collapsible defaultOpen>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <CollapsibleTrigger asChild>
+                      <Button type="button" size="sm" variant="outline" className="gap-1">
+                        <ChevronDown className="h-4 w-4" /> Edição manual de etapas
+                      </Button>
+                    </CollapsibleTrigger>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      disabled={!modeloAtivo}
+                      onClick={() =>
+                        setForm((f) => ({
+                          ...f,
+                          etapasModoManual: false,
+                          etapas: modeloAtivo
+                            ? etapasFormDeModelo(modeloAtivo, f.perfilProcesso, categoriaCusto, mapaHora)
+                            : f.etapas,
+                        }))
+                      }
+                    >
+                      Voltar ao modelo
+                    </Button>
+                  </div>
+                  <CollapsibleContent className="space-y-3 pt-3">
+                    <div className="flex justify-end">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setForm((f) => ({ ...f, etapas: [...f.etapas, emptyEtapa()] }))}
+                      >
+                        <Plus className="h-4 w-4 mr-1" /> Etapa
+                      </Button>
+                    </div>
+                    {form.etapas.map((e, idx) => (
+                      <EtapaProcessoEditor
+                        key={idx}
+                        etapa={e}
+                        idx={idx}
+                        kgVendidoPorUn={kgVendidoPorUn}
+                        lavagemModeloKg={lavagemModeloKg}
+                        updateEtapa={updateEtapa}
+                        onRemove={() => setForm((f) => ({ ...f, etapas: f.etapas.filter((_, i) => i !== idx) }))}
+                      />
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
 
