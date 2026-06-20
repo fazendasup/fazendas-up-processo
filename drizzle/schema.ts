@@ -865,6 +865,45 @@ export const custosProdutosProcessoConfig = mysqlTable("custos_produtos_processo
 export type CustoProdutoProcessoConfigRow = typeof custosProdutosProcessoConfig.$inferSelect;
 export type InsertCustoProdutoProcessoConfig = typeof custosProdutosProcessoConfig.$inferInsert;
 
+/** Modelos de linha de processo (folhosas, legumes, etc.) — um projeto pode ter vários. */
+export const custosProdutosProcessoModelos = mysqlTable(
+  "custos_produtos_processo_modelos",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    projetoId: int("projetoId").notNull(),
+    nome: varchar("nome", { length: 120 }).notNull(),
+    slug: varchar("slug", { length: 64 }).notNull(),
+    descricao: text("descricao"),
+    familia: mysqlEnum("familia", ["folhosas", "legumes", "microverdes", "outros"])
+      .notNull()
+      .default("folhosas"),
+    isDefault: boolean("isDefault").notNull().default(false),
+    kgReferenciaMes: decimal("kgReferenciaMes", { precision: 14, scale: 4 }),
+    embalagemMicroverdeUn: decimal("embalagemMicroverdeUn", { precision: 14, scale: 6 })
+      .notNull()
+      .default("0.95"),
+    embalagemOutrosUn: decimal("embalagemOutrosUn", { precision: 14, scale: 6 })
+      .notNull()
+      .default("0.60"),
+    lavagemReaisKg: decimal("lavagemReaisKg", { precision: 18, scale: 8 }),
+    corteMinutosUn: decimal("corteMinutosUn", { precision: 10, scale: 4 }),
+    embalagemMinutosUn: decimal("embalagemMinutosUn", { precision: 10, scale: 4 }),
+    adesivoCustoUn: decimal("adesivoCustoUn", { precision: 14, scale: 6 }),
+    regimeMoPadrao: mysqlEnum("regimeMoPadrao", ["clt", "pj", "qualquer"])
+      .notNull()
+      .default("qualquer"),
+    incluirAdesivo: boolean("incluirAdesivo").notNull().default(true),
+    linhaProcessoJson: text("linhaProcessoJson"),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (t) => ({
+    uqSlug: uniqueIndex("uq_processo_modelo_slug").on(t.projetoId, t.slug),
+  }),
+);
+
+export type CustoProdutoProcessoModeloRow = typeof custosProdutosProcessoModelos.$inferSelect;
+export type InsertCustoProdutoProcessoModelo = typeof custosProdutosProcessoModelos.$inferInsert;
+
 /** Classificação manual por produto comercial (perfil de processo, kg/un). */
 export const custosProdutosComercialMap = mysqlTable(
   "custos_produtos_comercial_map",
@@ -875,6 +914,7 @@ export const custosProdutosComercialMap = mysqlTable(
     perfilProcesso: varchar("perfilProcesso", { length: 48 }).notNull().default("colheita_embalagem"),
     kgPorUnidade: decimal("kgPorUnidade", { precision: 20, scale: 10 }),
     modoCompraMp: mysqlEnum("modoCompraMp", ["kg", "unidade"]).default("kg"),
+    processoModeloId: int("processoModeloId"),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
   (t) => ({

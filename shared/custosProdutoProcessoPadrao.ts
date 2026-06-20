@@ -76,6 +76,8 @@ export type MapeamentoProdutoComercial = {
   kgPorUnidade: number | null;
   /** Como a matéria-prima deste SKU costuma ser comprada (fornecedor padrão). */
   modoCompraMp: ModoCompraMp;
+  /** Modelo de linha de processo (folhosas, legumes…). Null = padrão do projeto. */
+  processoModeloId: number | null;
 };
 
 export function perfilUsaLavagemKg(perfil: PerfilProcessoProduto): boolean {
@@ -183,6 +185,7 @@ export function sugerirMapeamentoProduto(
     perfilProcesso: inferirPerfilProcessoSugerido(nome, categoriaComercial),
     kgPorUnidade: null,
     modoCompraMp: "kg",
+    processoModeloId: null,
   };
 }
 

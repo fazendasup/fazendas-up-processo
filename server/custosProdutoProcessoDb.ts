@@ -4,7 +4,10 @@ import {
   CUSTOS_PRODUTO_PROCESSO_CONFIG_PADRAO,
   type CustosProdutoProcessoConfig,
 } from "@shared/custosProdutoProcessoPadrao";
-import type { LinhaProcessoIndustrialInput } from "@shared/custosLinhaProcessoIndustrial";
+import {
+  normalizarLinhaProcessoInput,
+  type LinhaProcessoIndustrialInput,
+} from "@shared/custosLinhaProcessoIndustrial";
 import type { RegimeMoEtapa } from "@shared/custosMoEquipe";
 import { custosProdutosProcessoConfig } from "../drizzle/schema";
 import { getDb } from "./db";
@@ -20,7 +23,7 @@ function parseLinhaProcessoJson(raw: unknown): LinhaProcessoIndustrialInput | nu
   try {
     const v = typeof raw === "string" ? JSON.parse(raw) : raw;
     if (!v || typeof v !== "object") return null;
-    return v as LinhaProcessoIndustrialInput;
+    return normalizarLinhaProcessoInput(v as Partial<LinhaProcessoIndustrialInput> & { secagemMin?: number });
   } catch {
     return null;
   }

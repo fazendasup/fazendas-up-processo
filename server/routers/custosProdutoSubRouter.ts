@@ -12,7 +12,13 @@ import {
   MODOS_COMPRA_MP,
   type ModoCompraMp,
 } from "@shared/custosProduto";
-import { REGIMES_MO_ETAPA, type RegimeMoEtapa } from "@shared/custosMoEquipe";
+import { REGIMES_MO_ETAPA, mapaCustoHoraProcessamento, type RegimeMoEtapa } from "@shared/custosMoEquipe";
+import {
+  calcularLinhaProcessoIndustrial,
+  configFromProcessoModelo,
+  FAMILIAS_PROCESSO_MODELO,
+  type FamiliaProcessoModelo,
+} from "@shared/custosLinhaProcessoIndustrial";
 import {
   avisosMapeamentoProduto,
   etapasProcessoPadraoParaPerfil,
@@ -32,6 +38,7 @@ import {
 } from "../_core/trpc";
 import * as custosProdutoDb from "../custosProdutoDb";
 import * as processoDb from "../custosProdutoProcessoDb";
+import * as modelosDb from "../custosProdutoProcessoModelosDb";
 import * as mapDb from "../custosProdutoComercialMapDb";
 import { getComercialPrisma } from "../comercial/db";
 import type {
@@ -55,22 +62,69 @@ const regimeMoZ = z.enum(REGIMES_MO_ETAPA);
 const modoCompraMpZ = z.enum(MODOS_COMPRA_MP);
 
 const perfilZ = z.enum(PERFIS_PROCESSO_PRODUTO);
+const familiaModeloZ = z.enum(FAMILIAS_PROCESSO_MODELO);
+
+const custoMaquinaInput = z.object({
+  ativo: z.boolean(),
+  potenciaKw: z.number().nonnegative(),
+  modoContinuo: z.boolean(),
+  minutosCiclo: z.number().nonnegative(),
+  kgPorCiclo: z.number().positive(),
+  tarifaKwh: z.number().nonnegative().nullable(),
+  depreciacaoReaisKg: z.number().nonnegative(),
+  consumiveisReaisKg: z.number().nonnegative(),
+});
 
 const linhaProcessoInput = z.object({
+  usarEquipesMo: z.boolean().default(true),
   custoHoraMo: z.number().nonnegative(),
+  tarifaKwh: z.number().positive().default(0.75),
   pesPorUnidadeRef: z.number().nonnegative(),
   desfolhagemSegPorPe: z.number().nonnegative(),
+  desfolhagemPessoas: z.number().int().min(1).default(1),
+  desfolhagemRegimeMo: regimeMoZ.default("qualquer"),
   preLavagemKgHora: z.number().positive(),
   preLavagemEficienciaPct: z.number().min(1).max(100),
+  preLavagemPessoas: z.number().int().min(1).default(1),
+  preLavagemRegimeMo: regimeMoZ.default("qualquer"),
   lavagemKgHora: z.number().positive(),
   lavagemEficienciaPct: z.number().min(1).max(100),
+  lavagemUsaMo: z.boolean().default(false),
+  lavagemPessoas: z.number().int().min(1).default(1),
+  lavagemRegimeMo: regimeMoZ.default("qualquer"),
+  lavagemMaquina: custoMaquinaInput,
   enxagueSeg: z.number().nonnegative(),
   enxagueKg: z.number().positive(),
-  secagemMin: z.number().nonnegative(),
+  enxaguePessoas: z.number().int().min(1).default(1),
+  enxagueRegimeMo: regimeMoZ.default("qualquer"),
+  secagemSegOperador: z.number().nonnegative(),
   secagemKg: z.number().positive(),
+  secagemPessoas: z.number().int().min(1).default(1),
+  secagemRegimeMo: regimeMoZ.default("qualquer"),
+  secagemMaquina: custoMaquinaInput,
   embalagemMinPorUn: z.number().nonnegative(),
+  embalagemPessoas: z.number().int().min(1).default(1),
+  embalagemRegimeMo: regimeMoZ.default("qualquer"),
   selagemMinPorCiclo: z.number().nonnegative(),
   selagemUnPorCiclo: z.number().positive(),
+  selagemPessoas: z.number().int().min(1).default(1),
+  selagemRegimeMo: regimeMoZ.default("qualquer"),
+});
+
+const processoModeloInput = z.object({
+  id: z.number().int().positive().optional(),
+  nome: z.string().min(1).max(120),
+  slug: z.string().max(64).optional(),
+  descricao: z.string().max(2000).nullable().optional(),
+  familia: familiaModeloZ.default("folhosas"),
+  isDefault: z.boolean().default(false),
+  kgReferenciaMes: z.number().positive().nullable().optional(),
+  embalagemMicroverdeUn: z.number().nonnegative(),
+  embalagemOutrosUn: z.number().nonnegative(),
+  adesivoCustoUn: z.number().nonnegative().nullable().optional(),
+  regimeMoPadrao: regimeMoZ.default("qualquer"),
+  incluirAdesivo: z.boolean().default(true),
+  linhaProcesso: linhaProcessoInput,
 });
 
 const processoConfigInput = z.object({
@@ -92,6 +146,7 @@ const mapeamentoInput = z.object({
   perfilProcesso: perfilZ,
   kgPorUnidade: z.number().positive().nullable().optional(),
   modoCompraMp: modoCompraMpZ.optional().default("kg"),
+  processoModeloId: z.number().int().positive().nullable().optional(),
 });
 
 function etapasPadraoParaDb(etapas: EtapaProcessoPadrao[]) {
@@ -118,6 +173,16 @@ function previewProcesso(config: CustosProdutoProcessoConfig) {
       config,
     ),
   };
+}
+
+async function mapaHoraProjeto(projetoId: number) {
+  const moEquipeDb = await import("../custosMoEquipeDb");
+  const { mapMoEquipeRowToInput } = await import("../moEquipeMapper");
+  const [equipesRows, modoMo] = await Promise.all([
+    moEquipeDb.listMoEquipes(projetoId),
+    moEquipeDb.getModoCustoMoEquipe(projetoId),
+  ]);
+  return mapaCustoHoraProcessamento(equipesRows.map(mapMoEquipeRowToInput), modoMo);
 }
 
 function resolverMapeamentoProduto(
@@ -420,9 +485,80 @@ export const custosProdutoSubRouter = router({
     }),
 
   processoConfig: custosProducaoModuleProcedure.query(async ({ ctx }) => {
-    const config = await processoDb.getProcessoConfig(projetoIdFromCtx(ctx));
-    return { config, preview: previewProcesso(config) };
+    const pid = projetoIdFromCtx(ctx);
+    const [config, modelos, mapaHora] = await Promise.all([
+      processoDb.getProcessoConfig(pid),
+      modelosDb.listProcessoModelos(pid),
+      mapaHoraProjeto(pid),
+    ]);
+    const padrao = modelos.find((m) => m.isDefault) ?? modelos[0] ?? null;
+    return {
+      config,
+      modelos,
+      mapaHora,
+      preview: previewProcesso(padrao ? configFromProcessoModelo(padrao) : config),
+    };
   }),
+
+  listarProcessoModelos: custosProducaoModuleProcedure.query(async ({ ctx }) => {
+    const pid = projetoIdFromCtx(ctx);
+    const [modelos, mapaHora] = await Promise.all([
+      modelosDb.listProcessoModelos(pid),
+      mapaHoraProjeto(pid),
+    ]);
+    return {
+      modelos: modelos.map((m) => ({
+        ...m,
+        calc: calcularLinhaProcessoIndustrial(m.linhaProcesso, mapaHora),
+      })),
+      mapaHora,
+    };
+  }),
+
+  salvarProcessoModelo: commercialEditorCustosProducaoProjectProcedure
+    .input(processoModeloInput)
+    .mutation(async ({ ctx, input }) => {
+      const pid = projetoIdFromCtx(ctx);
+      const mapaHora = await mapaHoraProjeto(pid);
+      const saved = await modelosDb.salvarProcessoModelo(
+        pid,
+        {
+          id: input.id,
+          nome: input.nome,
+          slug: input.slug ?? input.nome,
+          descricao: input.descricao ?? null,
+          familia: input.familia as FamiliaProcessoModelo,
+          isDefault: input.isDefault,
+          kgReferenciaMes: input.kgReferenciaMes ?? null,
+          embalagemMicroverdeUn: input.embalagemMicroverdeUn,
+          embalagemOutrosUn: input.embalagemOutrosUn,
+          adesivoCustoUn: input.adesivoCustoUn ?? null,
+          regimeMoPadrao: input.regimeMoPadrao,
+          incluirAdesivo: input.incluirAdesivo,
+          linhaProcesso: input.linhaProcesso,
+        },
+        mapaHora,
+      );
+      return {
+        modelo: saved,
+        calc: calcularLinhaProcessoIndustrial(saved.linhaProcesso, mapaHora),
+        preview: previewProcesso(configFromProcessoModelo(saved)),
+      };
+    }),
+
+  excluirProcessoModelo: commercialEditorCustosProducaoProjectProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      await modelosDb.excluirProcessoModelo(projetoIdFromCtx(ctx), input.id);
+      return { success: true };
+    }),
+
+  definirProcessoModeloPadrao: commercialEditorCustosProducaoProjectProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      const saved = await modelosDb.definirProcessoModeloPadrao(projetoIdFromCtx(ctx), input.id);
+      return { modelo: saved };
+    }),
 
   salvarProcessoConfig: commercialEditorCustosProducaoProjectProcedure
     .input(processoConfigInput)
@@ -491,6 +627,7 @@ export const custosProdutoSubRouter = router({
           perfilProcesso: i.perfilProcesso,
           kgPorUnidade: i.kgPorUnidade ?? null,
           modoCompraMp: (i.modoCompraMp ?? "kg") as ModoCompraMp,
+          processoModeloId: i.processoModeloId ?? null,
         })),
       );
       return { success: true, total: input.itens.length };
@@ -540,7 +677,7 @@ export const custosProdutoSubRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const pid = projetoIdFromCtx(ctx);
-      const config = await processoDb.getProcessoConfig(pid);
+      const mapaHora = await mapaHoraProjeto(pid);
       const mapRows = await mapDb.listComercialMap(pid);
       const map = new Map(mapRows.map((m) => [m.produtoComercialId, m]));
       const prisma = getComercialPrisma();
@@ -567,6 +704,11 @@ export const custosProdutoSubRouter = router({
 
       for (const p of alvo) {
         const m = resolverMapeamentoProduto(p.id, p.nome, p.categoria, map);
+        const config = await modelosDb.resolveProcessoConfigForModelo(
+          pid,
+          m.processoModeloId,
+          mapaHora,
+        );
         for (const av of avisosMapeamentoProduto(m, config)) {
           const msg = `${p.nome}: ${av}`;
           if (!avisos.includes(msg)) avisos.push(msg);

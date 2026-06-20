@@ -61,6 +61,7 @@ export async function listComercialMap(projetoId: number): Promise<MapeamentoPro
       : "colheita_embalagem") as PerfilProcessoProduto,
     kgPorUnidade: num(r.kgPorUnidade),
     modoCompraMp: (r.modoCompraMp ?? "kg") as ModoCompraMp,
+    processoModeloId: r.processoModeloId ?? null,
   }));
 }
 
@@ -81,6 +82,7 @@ export async function upsertComercialMap(
         perfilProcesso: item.perfilProcesso,
         kgPorUnidade: item.kgPorUnidade != null ? String(item.kgPorUnidade) : null,
         modoCompraMp: item.modoCompraMp ?? "kg",
+        processoModeloId: item.processoModeloId ?? null,
       })
       .onDuplicateKeyUpdate({
         set: {
@@ -88,6 +90,7 @@ export async function upsertComercialMap(
           perfilProcesso: item.perfilProcesso,
           kgPorUnidade: item.kgPorUnidade != null ? String(item.kgPorUnidade) : null,
           modoCompraMp: item.modoCompraMp ?? "kg",
+          processoModeloId: item.processoModeloId ?? null,
         },
       });
   }
