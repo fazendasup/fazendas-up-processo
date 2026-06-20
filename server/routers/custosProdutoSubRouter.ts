@@ -252,6 +252,7 @@ const fichaInput = z
     etapas: z.array(etapaInput).default([]),
   })
   .superRefine((val, ctx) => {
+    if (val.ativo === false) return;
     if (val.tipo === "mix" && val.componentes.length < 2) {
       ctx.addIssue({ code: "custom", message: "Mix exige ao menos 2 componentes." });
     }
