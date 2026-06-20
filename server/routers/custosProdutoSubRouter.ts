@@ -75,10 +75,14 @@ const custoMaquinaInput = z.object({
   consumiveisReaisKg: z.number().nonnegative(),
 });
 
+const modoPessoasProcessamentoZ = z.enum(["por_etapa", "equipe_linha"]);
+
 const linhaProcessoInput = z.object({
   usarEquipesMo: z.boolean().default(true),
   custoHoraMo: z.number().nonnegative(),
   tarifaKwh: z.number().positive().default(0.75),
+  modoPessoasProcessamento: modoPessoasProcessamentoZ.default("equipe_linha"),
+  pessoasLinhaProcessamento: z.number().int().min(1).default(1),
   pesPorUnidadeRef: z.number().nonnegative(),
   desfolhagemSegPorPe: z.number().nonnegative(),
   desfolhagemPessoas: z.number().int().min(1).default(1),
@@ -87,6 +91,7 @@ const linhaProcessoInput = z.object({
   preLavagemEficienciaPct: z.number().min(1).max(100),
   preLavagemPessoas: z.number().int().min(1).default(1),
   preLavagemRegimeMo: regimeMoZ.default("qualquer"),
+  preLavagemConsumiveisReaisKg: z.number().nonnegative().default(0),
   lavagemKgHora: z.number().positive(),
   lavagemEficienciaPct: z.number().min(1).max(100),
   lavagemUsaMo: z.boolean().default(false),
@@ -97,6 +102,7 @@ const linhaProcessoInput = z.object({
   enxagueKg: z.number().positive(),
   enxaguePessoas: z.number().int().min(1).default(1),
   enxagueRegimeMo: regimeMoZ.default("qualquer"),
+  enxagueConsumiveisReaisKg: z.number().nonnegative().default(0),
   secagemSegOperador: z.number().nonnegative(),
   secagemKg: z.number().positive(),
   secagemPessoas: z.number().int().min(1).default(1),

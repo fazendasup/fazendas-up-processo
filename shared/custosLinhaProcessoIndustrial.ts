@@ -31,12 +31,40 @@ export const CUSTO_MAQUINA_PADRAO: CustoMaquinaInput = {
   consumiveisReaisKg: 0,
 };
 
+export const MODOS_PESSOAS_PROCESSAMENTO = ["por_etapa", "equipe_linha"] as const;
+export type ModoPessoasProcessamento = (typeof MODOS_PESSOAS_PROCESSAMENTO)[number];
+
+export const LABEL_MODO_PESSOAS_PROCESSAMENTO: Record<ModoPessoasProcessamento, string> = {
+  por_etapa: "Por etapa (pessoas diferentes em cada posto)",
+  equipe_linha:
+    "Equipe na linha (mesmo operador ou turma fixa na sequência pré-lav → enxague → secagem)",
+};
+
+/** Etapas R$/kg em sequência na linha de lavagem — compartilham a mesma equipe. */
+export const NOMES_ETAPAS_LINHA_PROCESSAMENTO = new Set([
+  "Pré-lavagem",
+  "Lavagem",
+  "Enxague",
+  "Secagem (abastecimento)",
+]);
+
+export function isEtapaLinhaProcessamento(nome: string): boolean {
+  return NOMES_ETAPAS_LINHA_PROCESSAMENTO.has(nome);
+}
+
 export type LinhaProcessoIndustrialInput = {
   /** Se true, usa R$/h das equipes MO por regime; senão `custoHoraMo` manual. */
   usarEquipesMo: boolean;
   /** Fallback quando equipes não cadastradas ou etapa sem mapa. */
   custoHoraMo: number;
   tarifaKwh: number;
+  /**
+   * equipe_linha: soma MO sequencial por kg e aplica `pessoasLinhaProcessamento` na linha.
+   * por_etapa: pessoas independentes (desfolhagem/embalagem sempre por etapa).
+   */
+  modoPessoasProcessamento: ModoPessoasProcessamento;
+  /** Operadores na sequência da linha (pré-lav … secagem), quando modo = equipe_linha. */
+  pessoasLinhaProcessamento: number;
   pesPorUnidadeRef: number;
   desfolhagemSegPorPe: number;
   desfolhagemPessoas: number;
@@ -45,6 +73,8 @@ export type LinhaProcessoIndustrialInput = {
   preLavagemEficienciaPct: number;
   preLavagemPessoas: number;
   preLavagemRegimeMo: RegimeMoEtapa;
+  /** Sanitizante, detergente etc. (R$/kg processado). */
+  preLavagemConsumiveisReaisKg: number;
   lavagemKgHora: number;
   lavagemEficienciaPct: number;
   lavagemUsaMo: boolean;
@@ -55,6 +85,7 @@ export type LinhaProcessoIndustrialInput = {
   enxagueKg: number;
   enxaguePessoas: number;
   enxagueRegimeMo: RegimeMoEtapa;
+  enxagueConsumiveisReaisKg: number;
   secagemSegOperador: number;
   secagemKg: number;
   secagemPessoas: number;
@@ -73,6 +104,8 @@ export const LINHA_PROCESSO_INDUSTRIAL_PADRAO: LinhaProcessoIndustrialInput = {
   usarEquipesMo: true,
   custoHoraMo: 30,
   tarifaKwh: 0.75,
+  modoPessoasProcessamento: "equipe_linha",
+  pessoasLinhaProcessamento: 1,
   pesPorUnidadeRef: 1,
   desfolhagemSegPorPe: 30,
   desfolhagemPessoas: 1,
@@ -81,6 +114,7 @@ export const LINHA_PROCESSO_INDUSTRIAL_PADRAO: LinhaProcessoIndustrialInput = {
   preLavagemEficienciaPct: 70,
   preLavagemPessoas: 1,
   preLavagemRegimeMo: "qualquer",
+  preLavagemConsumiveisReaisKg: 0,
   lavagemKgHora: 300,
   lavagemEficienciaPct: 70,
   lavagemUsaMo: false,
@@ -100,6 +134,7 @@ export const LINHA_PROCESSO_INDUSTRIAL_PADRAO: LinhaProcessoIndustrialInput = {
   enxagueKg: 3,
   enxaguePessoas: 1,
   enxagueRegimeMo: "qualquer",
+  enxagueConsumiveisReaisKg: 0,
   secagemSegOperador: 30,
   secagemKg: 3,
   secagemPessoas: 1,
@@ -149,6 +184,11 @@ export function normalizarLinhaProcessoInput(
   if (raw.lavagemUsaMo == null) base.lavagemUsaMo = false;
   if (raw.tarifaKwh == null || !(raw.tarifaKwh > 0)) base.tarifaKwh = 0.75;
   if (raw.secagemSegOperador == null) base.secagemSegOperador = 30;
+  if (raw.modoPessoasProcessamento == null) base.modoPessoasProcessamento = "equipe_linha";
+  if (raw.pessoasLinhaProcessamento == null) base.pessoasLinhaProcessamento = 1;
+  if (raw.preLavagemConsumiveisReaisKg == null) base.preLavagemConsumiveisReaisKg = 0;
+  if (raw.enxagueConsumiveisReaisKg == null) base.enxagueConsumiveisReaisKg = 0;
+  base.pessoasLinhaProcessamento = pessoasEtapa(base.pessoasLinhaProcessamento);
   base.lavagemMaquina = normalizarMaquina(raw.lavagemMaquina, LINHA_PROCESSO_INDUSTRIAL_PADRAO.lavagemMaquina);
   base.secagemMaquina = normalizarMaquina(raw.secagemMaquina, LINHA_PROCESSO_INDUSTRIAL_PADRAO.secagemMaquina);
   if (!base.lavagemUsaMo && raw.lavagemMaquina == null) base.lavagemMaquina.ativo = true;
@@ -183,6 +223,7 @@ export type EtapaLinhaBreakdown = {
   minPorUn: number | null;
   moReaisPorKg: number | null;
   maquinaReaisPorKg: number | null;
+  consumiveisReaisPorKg: number | null;
   moReaisPorUn: number | null;
   reaisPorKg: number | null;
   reaisPorUn: number | null;
@@ -193,6 +234,7 @@ export type LinhaProcessoIndustrialResult = {
   processamentoReaisKg: number;
   processamentoMoReaisKg: number;
   processamentoMaquinaReaisKg: number;
+  processamentoConsumiveisReaisKg: number;
   desfolhagemMinPorUn: number;
   selagemMinPorUn: number;
   embalagemSelagemMinPorUn: number;
@@ -294,8 +336,62 @@ export function calcularMaquinaReaisKg(
 
 type EtapaBase = Omit<
   EtapaLinhaBreakdown,
-  "pessoas" | "moReaisPorKg" | "maquinaReaisPorKg" | "moReaisPorUn" | "reaisPorKg" | "reaisPorUn"
-> & { maquinaReaisPorKg?: number | null };
+  | "pessoas"
+  | "moReaisPorKg"
+  | "maquinaReaisPorKg"
+  | "consumiveisReaisPorKg"
+  | "moReaisPorUn"
+  | "reaisPorKg"
+  | "reaisPorUn"
+> & {
+  maquinaReaisPorKg?: number | null;
+  consumiveisReaisPorKg?: number | null;
+};
+
+function totalReaisPorKg(
+  mo: number | null,
+  maq: number | null,
+  consum: number | null,
+): number | null {
+  const t = (mo ?? 0) + (maq ?? 0) + (consum ?? 0);
+  return t > 0 || mo === 0 ? round4(t) : null;
+}
+
+function pessoasMoEtapa(
+  input: LinhaProcessoIndustrialInput,
+  nomeEtapa: string,
+  pessoasEtapaCampo: number,
+): number {
+  if (
+    input.modoPessoasProcessamento === "equipe_linha" &&
+    isEtapaLinhaProcessamento(nomeEtapa)
+  ) {
+    return 1;
+  }
+  return pessoasEtapa(pessoasEtapaCampo);
+}
+
+function aplicarEquipeLinhaProcessamento(
+  etapas: EtapaLinhaBreakdown[],
+  input: LinhaProcessoIndustrialInput,
+): void {
+  if (input.modoPessoasProcessamento !== "equipe_linha") return;
+  const p = pessoasEtapa(input.pessoasLinhaProcessamento);
+  const sufixo = p > 1 ? `${p} operadores na sequência` : "1 operador na sequência";
+  for (const e of etapas) {
+    if (!isEtapaLinhaProcessamento(e.nome) || !e.temMo) continue;
+    if (p > 1) {
+      e.moReaisPorKg =
+        e.moReaisPorKg != null ? round4(e.moReaisPorKg * p) : e.moReaisPorKg;
+      e.minPorKg = e.minPorKg != null ? round4(e.minPorKg * p) : e.minPorKg;
+    }
+    e.pessoas = p;
+    e.reaisPorKg = totalReaisPorKg(e.moReaisPorKg, e.maquinaReaisPorKg, e.consumiveisReaisPorKg);
+    e.nota = [e.nota?.split(" · equipe linha")[0] ?? e.nota, `equipe linha · ${sufixo}`]
+      .filter(Boolean)
+      .join(" · ");
+  }
+}
 
 function montarEtapaMo(
   base: EtapaBase,
@@ -310,6 +406,12 @@ function montarEtapaMo(
   const minKg = base.minPorKg != null && base.temMo ? round4(base.minPorKg * mult) : base.minPorKg;
   const minUn = base.minPorUn != null && base.temMo ? round4(base.minPorUn * mult) : base.minPorUn;
   const maqKg = base.maquinaReaisPorKg ?? null;
+  const consumKg =
+    base.consumiveisReaisPorKg != null && base.consumiveisReaisPorKg > 0
+      ? round4(base.consumiveisReaisPorKg)
+      : base.consumiveisReaisPorKg === 0
+        ? 0
+        : null;
   return {
     ...base,
     pessoas: base.temMo ? pessoas : 0,
@@ -318,10 +420,11 @@ function montarEtapaMo(
     moReaisPorKg: moKg,
     moReaisPorUn: moUn,
     maquinaReaisPorKg: maqKg,
-    reaisPorKg: base.modo === "por_kg" ? round4((moKg ?? 0) + (maqKg ?? 0)) : null,
+    consumiveisReaisPorKg: consumKg,
+    reaisPorKg: base.modo === "por_kg" ? totalReaisPorKg(moKg, maqKg, consumKg) : null,
     reaisPorUn: moUn,
     nota:
-      pessoas > 1 && base.temMo
+      pessoas > 1 && base.temMo && base.modo === "por_un"
         ? [notaBase, `${pessoas} pessoas`].filter(Boolean).join(" · ")
         : notaBase,
   };
@@ -379,8 +482,10 @@ export function calcularLinhaProcessoIndustrial(
           minPorKg: minPorKgDeThroughput(preKgH),
           minPorUn: null,
           maquinaReaisPorKg: null,
+          consumiveisReaisPorKg:
+            input.preLavagemConsumiveisReaisKg > 0 ? input.preLavagemConsumiveisReaisKg : 0,
         },
-        input.preLavagemPessoas,
+        pessoasMoEtapa(input, "Pré-lavagem", input.preLavagemPessoas),
         reaisPorKgDeThroughput(h, preKgH),
         "Operador",
       ),
@@ -407,11 +512,15 @@ export function calcularLinhaProcessoIndustrial(
           minPorUn: null,
           maquinaReaisPorKg: lavMaquinaKg > 0 ? lavMaquinaKg : null,
         },
-        input.lavagemPessoas,
+        pessoasMoEtapa(input, "Lavagem", input.lavagemPessoas),
         reaisPorKgDeThroughput(h, lavKgH),
         "Operador + máquina",
       );
-      etapaLav.reaisPorKg = round4((etapaLav.moReaisPorKg ?? 0) + (etapaLav.maquinaReaisPorKg ?? 0));
+      etapaLav.reaisPorKg = totalReaisPorKg(
+        etapaLav.moReaisPorKg,
+        etapaLav.maquinaReaisPorKg,
+        etapaLav.consumiveisReaisPorKg,
+      );
       etapas.push(etapaLav);
     }
   } else {
@@ -431,6 +540,7 @@ export function calcularLinhaProcessoIndustrial(
       minPorUn: null,
       moReaisPorKg: 0,
       maquinaReaisPorKg: lavMaquinaKg > 0 ? lavMaquinaKg : null,
+      consumiveisReaisPorKg: null,
       moReaisPorUn: null,
       reaisPorKg: lavMaquinaKg,
       reaisPorUn: null,
@@ -455,8 +565,10 @@ export function calcularLinhaProcessoIndustrial(
           minPorKg: minPorKgDeTempoOperador(input.enxagueSeg, input.enxagueKg),
           minPorUn: null,
           maquinaReaisPorKg: null,
+          consumiveisReaisPorKg:
+            input.enxagueConsumiveisReaisKg > 0 ? input.enxagueConsumiveisReaisKg : 0,
         },
-        input.enxaguePessoas,
+        pessoasMoEtapa(input, "Enxague", input.enxaguePessoas),
         enxMo,
         "Operador",
       ),
@@ -482,11 +594,15 @@ export function calcularLinhaProcessoIndustrial(
         minPorUn: null,
         maquinaReaisPorKg: secMaq > 0 ? secMaq : null,
       },
-      input.secagemPessoas,
+      pessoasMoEtapa(input, "Secagem (abastecimento)", input.secagemPessoas),
       secMo,
       "Operador + centrífuga",
     );
-    etapaSec.reaisPorKg = round4((etapaSec.moReaisPorKg ?? 0) + (etapaSec.maquinaReaisPorKg ?? 0));
+    etapaSec.reaisPorKg = totalReaisPorKg(
+      etapaSec.moReaisPorKg,
+      etapaSec.maquinaReaisPorKg,
+      etapaSec.consumiveisReaisPorKg,
+    );
     etapas.push(etapaSec);
   }
 
@@ -532,6 +648,8 @@ export function calcularLinhaProcessoIndustrial(
   );
   etapas.push(selagemEtapa);
 
+  aplicarEquipeLinhaProcessamento(etapas, input);
+
   const porKg = etapas.filter((e) => e.modo === "por_kg");
   const processamentoMoReaisKg = round4(
     porKg.reduce((s, e) => s + (e.moReaisPorKg ?? 0), 0),
@@ -539,13 +657,19 @@ export function calcularLinhaProcessoIndustrial(
   const processamentoMaquinaReaisKg = round4(
     porKg.reduce((s, e) => s + (e.maquinaReaisPorKg ?? 0), 0),
   );
-  const processamentoReaisKg = round4(processamentoMoReaisKg + processamentoMaquinaReaisKg);
+  const processamentoConsumiveisReaisKg = round4(
+    porKg.reduce((s, e) => s + (e.consumiveisReaisPorKg ?? 0), 0),
+  );
+  const processamentoReaisKg = round4(
+    processamentoMoReaisKg + processamentoMaquinaReaisKg + processamentoConsumiveisReaisKg,
+  );
 
   return {
     etapas,
     processamentoReaisKg,
     processamentoMoReaisKg,
     processamentoMaquinaReaisKg,
+    processamentoConsumiveisReaisKg,
     desfolhagemMinPorUn: desfolhagemEtapa.minPorUn ?? 0,
     selagemMinPorUn: selagemEtapa.minPorUn ?? 0,
     embalagemSelagemMinPorUn: round4((embalagemEtapa.minPorUn ?? 0) + (selagemEtapa.minPorUn ?? 0)),

@@ -41,16 +41,20 @@ import {
 import {
   calcularLinhaProcessoIndustrial,
   depreciacaoReaisKgDeEquipamento,
+  FAMILIAS_PROCESSO_MODELO,
+  isEtapaLinhaProcessamento,
   LABEL_FAMILIA_PROCESSO_MODELO,
+  LABEL_MODO_PESSOAS_PROCESSAMENTO,
   LINHA_ETAPA_CAMPO_PESSOAS,
   LINHA_ETAPA_CAMPO_REGIME,
   LINHA_PROCESSO_INDUSTRIAL_PADRAO,
+  MODOS_PESSOAS_PROCESSAMENTO,
   normalizarLinhaProcessoInput,
   type CustoMaquinaInput,
   type FamiliaProcessoModelo,
   type LinhaProcessoIndustrialInput,
+  type ModoPessoasProcessamento,
   type ProcessoModeloRecord,
-  FAMILIAS_PROCESSO_MODELO,
 } from "@shared/custosLinhaProcessoIndustrial";
 import {
   DESCRICAO_PERFIL_PROCESSO,
@@ -549,8 +553,53 @@ export function CustosProcessoModeloWizard() {
 
           {step.id === "mo" ? (
             <div className="space-y-4">
+              <div className="rounded-lg border p-3 space-y-3 bg-muted/30">
+                <p className="text-sm font-medium">Como contar pessoas na linha de lavagem</p>
+                <p className="text-xs text-muted-foreground">
+                  O mesmo operador na sequência pré-lavagem → enxague → secagem: os tempos{" "}
+                  <strong>somam</strong> (trabalho em série). Use &quot;Equipe na linha&quot; e informe
+                  quantos operadores fazem essa sequência — não repita pessoas em cada etapa.
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Modo de apontamento (linha kg)</Label>
+                    <Select
+                      value={draft.linha.modoPessoasProcessamento}
+                      onValueChange={(v) =>
+                        patchLinha({ modoPessoasProcessamento: v as ModoPessoasProcessamento })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MODOS_PESSOAS_PROCESSAMENTO.map((m) => (
+                          <SelectItem key={m} value={m}>
+                            {LABEL_MODO_PESSOAS_PROCESSAMENTO[m]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {draft.linha.modoPessoasProcessamento === "equipe_linha" ? (
+                    <div className="space-y-1">
+                      <Label className="text-xs">Operadores na sequência da linha</Label>
+                      <Input
+                        inputMode="numeric"
+                        value={String(draft.linha.pessoasLinhaProcessamento)}
+                        onChange={(e) =>
+                          patchLinha({
+                            pessoasLinhaProcessamento: parseOpt(e.target.value) ?? 1,
+                          })
+                        }
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              </div>
               <p className="text-xs text-muted-foreground">
-                Etapas só com pessoas. Lavagem automática = MO zero (máquina no próximo passo).
+                Lavagem automática = MO zero (máquina no passo Máquinas). Consumíveis = sanitizante,
+                detergente etc. (R$/kg).
               </p>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="space-y-1">
@@ -577,6 +626,17 @@ export function CustosProcessoModeloWizard() {
                     onChange={(e) =>
                       patchLinha({ preLavagemEficienciaPct: parseOpt(e.target.value) ?? 70 })
                     }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Pré-lavagem consumíveis (R$/kg)</Label>
+                  <Input
+                    inputMode="decimal"
+                    value={String(draft.linha.preLavagemConsumiveisReaisKg)}
+                    onChange={(e) =>
+                      patchLinha({ preLavagemConsumiveisReaisKg: parseOpt(e.target.value) ?? 0 })
+                    }
+                    placeholder="Sanitizante, detergente…"
                   />
                 </div>
                 <div className="space-y-1">
@@ -613,6 +673,17 @@ export function CustosProcessoModeloWizard() {
                       onChange={(e) => patchLinha({ enxagueKg: parseOpt(e.target.value) ?? 1 })}
                     />
                   </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Enxague consumíveis (R$/kg)</Label>
+                  <Input
+                    inputMode="decimal"
+                    value={String(draft.linha.enxagueConsumiveisReaisKg)}
+                    onChange={(e) =>
+                      patchLinha({ enxagueConsumiveisReaisKg: parseOpt(e.target.value) ?? 0 })
+                    }
+                    placeholder="Ácido, cloro…"
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Secagem abastec. (s / kg)</Label>
@@ -680,7 +751,13 @@ export function CustosProcessoModeloWizard() {
                           <TableRow key={e.nome}>
                             <TableCell className="text-sm">{e.nome}</TableCell>
                             <TableCell>
-                              {cp ? (
+                              {cp &&
+                              draft.linha.modoPessoasProcessamento === "equipe_linha" &&
+                              isEtapaLinhaProcessamento(e.nome) ? (
+                                <span className="text-xs text-muted-foreground tabular-nums">
+                                  equipe {draft.linha.pessoasLinhaProcessamento}
+                                </span>
+                              ) : cp ? (
                                 <Input
                                   className="h-8 w-14 text-center"
                                   value={String(draft.linha[cp])}
@@ -826,7 +903,7 @@ export function CustosProcessoModeloWizard() {
 
           {step.id === "resultado" ? (
             <div className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Card>
                   <CardHeader className="pb-1">
                     <CardTitle className="text-xs text-muted-foreground">Processamento MO</CardTitle>
@@ -837,10 +914,18 @@ export function CustosProcessoModeloWizard() {
                 </Card>
                 <Card>
                   <CardHeader className="pb-1">
-                    <CardTitle className="text-xs text-muted-foreground">Máquina (energia+fixos)</CardTitle>
+                    <CardTitle className="text-xs text-muted-foreground">Máquina (energia+deprec.)</CardTitle>
                   </CardHeader>
                   <CardContent className="text-lg font-semibold tabular-nums">
                     {fmtMoney(linhaCalc.processamentoMaquinaReaisKg)}/kg
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-1">
+                    <CardTitle className="text-xs text-muted-foreground">Consumíveis (pré-lav/enxague)</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-lg font-semibold tabular-nums">
+                    {fmtMoney(linhaCalc.processamentoConsumiveisReaisKg)}/kg
                   </CardContent>
                 </Card>
                 <Card>
@@ -859,6 +944,7 @@ export function CustosProcessoModeloWizard() {
                       <TableHead>Etapa</TableHead>
                       <TableHead>MO</TableHead>
                       <TableHead>Máquina</TableHead>
+                      <TableHead>Consum.</TableHead>
                       <TableHead>Total</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -880,6 +966,11 @@ export function CustosProcessoModeloWizard() {
                         </TableCell>
                         <TableCell className="text-xs tabular-nums">
                           {e.maquinaReaisPorKg != null ? `${fmtMoney(e.maquinaReaisPorKg)}/kg` : "—"}
+                        </TableCell>
+                        <TableCell className="text-xs tabular-nums">
+                          {e.consumiveisReaisPorKg != null && e.consumiveisReaisPorKg > 0
+                            ? `${fmtMoney(e.consumiveisReaisPorKg)}/kg`
+                            : "—"}
                         </TableCell>
                         <TableCell className="text-xs tabular-nums font-medium">
                           {e.reaisPorUn != null

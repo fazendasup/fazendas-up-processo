@@ -13,31 +13,45 @@ describe("calcularLinhaProcessoIndustrial", () => {
       pj: 18,
       misto: 22,
     });
-    expect(r.processamentoMoReaisKg).toBeGreaterThan(0);
-    expect(r.processamentoMaquinaReaisKg).toBeGreaterThan(0);
     expect(r.processamentoReaisKg).toBeCloseTo(
-      r.processamentoMoReaisKg + r.processamentoMaquinaReaisKg,
+      r.processamentoMoReaisKg +
+        r.processamentoMaquinaReaisKg +
+        r.processamentoConsumiveisReaisKg,
     );
     const lav = r.etapas.find((e) => e.nome === "Lavagem");
     expect(lav?.moReaisPorKg).toBe(0);
     expect(lav?.maquinaReaisPorKg).toBeGreaterThan(0);
-    const sec = r.etapas.find((e) => e.nome.startsWith("Secagem"));
-    expect(sec?.moReaisPorKg).toBeGreaterThan(0);
-    expect(sec?.maquinaReaisPorKg).toBeGreaterThan(0);
-    const m = modeloComumDeLinhaProcesso(r);
-    expect(m.lavagemReaisKg).toBe(r.processamentoReaisKg);
   });
 
-  it("usa R$/h CLT quando regime da etapa é CLT", () => {
-    const r = calcularLinhaProcessoIndustrial(
-      {
-        ...LINHA_PROCESSO_INDUSTRIAL_PADRAO,
-        preLavagemRegimeMo: "clt",
-      },
-      { clt: 40, pj: 20, misto: 30 },
-    );
+  it("equipe_linha: mesmo operador na sequência — MO soma tempos, pessoas aplicadas uma vez", () => {
+    const base = calcularLinhaProcessoIndustrial({
+      ...LINHA_PROCESSO_INDUSTRIAL_PADRAO,
+      lavagemMaquina: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO.lavagemMaquina, ativo: false },
+      secagemMaquina: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO.secagemMaquina, ativo: false },
+    });
+    const duas = calcularLinhaProcessoIndustrial({
+      ...LINHA_PROCESSO_INDUSTRIAL_PADRAO,
+      modoPessoasProcessamento: "equipe_linha",
+      pessoasLinhaProcessamento: 2,
+      lavagemMaquina: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO.lavagemMaquina, ativo: false },
+      secagemMaquina: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO.secagemMaquina, ativo: false },
+    });
+    expect(duas.processamentoMoReaisKg).toBeCloseTo(base.processamentoMoReaisKg * 2);
+  });
+
+  it("consumíveis entram em pré-lavagem e enxague", () => {
+    const r = calcularLinhaProcessoIndustrial({
+      ...LINHA_PROCESSO_INDUSTRIAL_PADRAO,
+      preLavagemConsumiveisReaisKg: 0.05,
+      enxagueConsumiveisReaisKg: 0.03,
+      lavagemMaquina: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO.lavagemMaquina, ativo: false },
+      secagemMaquina: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO.secagemMaquina, ativo: false },
+    });
+    expect(r.processamentoConsumiveisReaisKg).toBeCloseTo(0.08);
     const pre = r.etapas.find((e) => e.nome === "Pré-lavagem");
-    expect(pre?.custoHoraUsado).toBe(40);
+    expect(pre?.consumiveisReaisPorKg).toBeCloseTo(0.05);
+    const m = modeloComumDeLinhaProcesso(r);
+    expect(m.lavagemReaisKg).toBe(r.processamentoReaisKg);
   });
 
   it("calcularMaquinaReaisKg — ciclo centrífuga", () => {
