@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   calcularCustoProduto,
   custoMaterialRevenda,
+  custoMaterialRevendaUnidade,
   fatorAproveitamento,
   kgBrutoParaLiquido,
   precoVendaParaMargem,
@@ -22,6 +23,14 @@ describe("custoMaterialRevenda", () => {
     });
     expect(r.custo).toBeCloseTo((1.2 / 0.855) * 10);
     expect(r.kgLiquido).toBeCloseTo(1.2);
+  });
+});
+
+describe("custoMaterialRevendaUnidade", () => {
+  it("usa preço por unidade de compra", () => {
+    const r = custoMaterialRevendaUnidade({ custoCompraUn: 12, kgPorUnidadeVendida: 0.4 });
+    expect(r.custo).toBeCloseTo(12);
+    expect(r.kgLiquido).toBeCloseTo(0.4);
   });
 });
 
@@ -138,6 +147,22 @@ describe("calcularCustoProduto", () => {
     expect(r.precosVendaPorMargem.find((p) => p.margemPct === 20)?.precoVenda).toBeCloseTo(
       (8 / 0.81) / 0.8,
     );
+  });
+
+  it("revenda com compra por unidade ignora perdas de kg", () => {
+    const r = calcularCustoProduto({
+      tipo: "revenda_processada",
+      unidadeVenda: "unidade",
+      modoCompraMp: "unidade",
+      custoCompraUn: 15,
+      kgBrutoPorUnidade: 0.5,
+      perdaLavagemPct: 20,
+      componentes: [],
+      etapas: [{ tipo: "lavagem", nome: "Lavagem", custoPorKgProcessado: 2 }],
+    });
+    expect(r.custoMaterial).toBeCloseTo(15);
+    expect(r.custoProcesso).toBeCloseTo(1);
+    expect(r.custoPorUnidade).toBeCloseTo(16);
   });
 });
 

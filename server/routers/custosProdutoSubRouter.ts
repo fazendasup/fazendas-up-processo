@@ -9,6 +9,8 @@ import {
   type TipoComponenteCusto,
   type TipoEtapaProcesso,
   type TipoFichaCustoProduto,
+  MODOS_COMPRA_MP,
+  type ModoCompraMp,
 } from "@shared/custosProduto";
 import { REGIMES_MO_ETAPA, type RegimeMoEtapa } from "@shared/custosMoEquipe";
 import {
@@ -49,6 +51,7 @@ const unidadeZ = z.enum(UNIDADES_VENDA_PRODUTO);
 const tipoCompZ = z.enum(TIPOS_COMPONENTE_CUSTO);
 const tipoEtapaZ = z.enum(TIPOS_ETAPA_PROCESSO);
 const regimeMoZ = z.enum(REGIMES_MO_ETAPA);
+const modoCompraMpZ = z.enum(MODOS_COMPRA_MP);
 
 const perfilZ = z.enum(PERFIS_PROCESSO_PRODUTO);
 
@@ -140,6 +143,8 @@ const fichaInput = z
     unidadeVenda: unidadeZ.default("unidade"),
     precoVendaReferencia: z.number().nonnegative().optional().nullable(),
     precoCompraKg: z.number().nonnegative().optional().nullable(),
+    custoCompraUn: z.number().nonnegative().optional().nullable(),
+    modoCompraMp: modoCompraMpZ.optional().default("kg"),
     kgBrutoPorUnidade: z.number().nonnegative().optional().nullable(),
     perdaLavagemPct: z.number().min(0).max(100).optional().nullable(),
     perdaDescasquePct: z.number().min(0).max(100).optional().nullable(),
@@ -158,10 +163,18 @@ const fichaInput = z
       ctx.addIssue({ code: "custom", message: "Mix exige ao menos 2 componentes." });
     }
     if (val.tipo === "revenda_processada") {
-      if (val.precoCompraKg == null || val.kgBrutoPorUnidade == null) {
+      const modo = val.modoCompraMp ?? "kg";
+      if (modo === "unidade") {
+        if (val.custoCompraUn == null || val.custoCompraUn <= 0) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Revenda (compra/un): informe o preço por unidade de matéria-prima.",
+          });
+        }
+      } else if (val.precoCompraKg == null || val.kgBrutoPorUnidade == null) {
         ctx.addIssue({
           code: "custom",
-          message: "Revenda processada exige preço de compra (R$/kg) e kg bruto por unidade.",
+          message: "Revenda (compra/kg): informe preço R$/kg e kg final vendido por unidade.",
         });
       }
     }
@@ -186,6 +199,8 @@ function fichaPayload(pid: number, input: z.infer<typeof fichaInput>): InsertCus
     precoVendaReferencia:
       input.precoVendaReferencia != null ? String(input.precoVendaReferencia) : null,
     precoCompraKg: input.precoCompraKg != null ? String(input.precoCompraKg) : null,
+    custoCompraUn: input.custoCompraUn != null ? String(input.custoCompraUn) : null,
+    modoCompraMp: (input.modoCompraMp ?? "kg") as ModoCompraMp,
     kgBrutoPorUnidade: input.kgBrutoPorUnidade != null ? String(input.kgBrutoPorUnidade) : null,
     perdaLavagemPct: input.perdaLavagemPct != null ? String(input.perdaLavagemPct) : null,
     perdaDescasquePct: input.perdaDescasquePct != null ? String(input.perdaDescasquePct) : null,
@@ -321,6 +336,8 @@ export const custosProdutoSubRouter = router({
         unidadeVenda: payload.unidadeVenda ?? input.unidadeVenda,
         precoVendaReferencia: payload.precoVendaReferencia ?? null,
         precoCompraKg: payload.precoCompraKg ?? null,
+        custoCompraUn: payload.custoCompraUn ?? null,
+        modoCompraMp: payload.modoCompraMp ?? "kg",
         kgBrutoPorUnidade: payload.kgBrutoPorUnidade ?? null,
         perdaLavagemPct: payload.perdaLavagemPct ?? null,
         perdaDescasquePct: payload.perdaDescasquePct ?? null,

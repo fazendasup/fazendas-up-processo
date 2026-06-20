@@ -149,6 +149,8 @@ export async function fichaParaCalculoInput(
     unidadeVenda: ficha.unidadeVenda as FichaCalculoInput["unidadeVenda"],
     precoVendaReferencia: num(ficha.precoVendaReferencia),
     precoCompraKg: num(ficha.precoCompraKg),
+    custoCompraUn: num(ficha.custoCompraUn),
+    modoCompraMp: (ficha.modoCompraMp ?? "kg") as FichaCalculoInput["modoCompraMp"],
     kgBrutoPorUnidade: num(ficha.kgBrutoPorUnidade),
     perdaLavagemPct: num(ficha.perdaLavagemPct) ?? 0,
     perdaDescasquePct: num(ficha.perdaDescasquePct) ?? 0,

@@ -9,6 +9,9 @@ import {
   TIPOS_ETAPA_PROCESSO,
   TIPOS_FICHA_CUSTO_PRODUTO,
   UNIDADES_VENDA_PRODUTO,
+  LABEL_MODO_COMPRA_MP,
+  MODOS_COMPRA_MP,
+  type ModoCompraMp,
   type TipoComponenteCusto,
   type TipoEtapaProcesso,
   type TipoFichaCustoProduto,
@@ -276,6 +279,8 @@ type FichaForm = {
   unidadeVenda: string;
   precoVendaReferencia: string;
   precoCompraKg: string;
+  custoCompraUn: string;
+  modoCompraMp: ModoCompraMp;
   kgBrutoPorUnidade: string;
   perdaLavagemPct: string;
   perdaDescasquePct: string;
@@ -323,6 +328,8 @@ function emptyFicha(tipo: TipoFichaCustoProduto = "revenda_processada"): FichaFo
     unidadeVenda: "unidade",
     precoVendaReferencia: "",
     precoCompraKg: "",
+    custoCompraUn: "",
+    modoCompraMp: "kg",
     kgBrutoPorUnidade: "",
     perdaLavagemPct: "10",
     perdaDescasquePct: "5",
@@ -357,6 +364,8 @@ function buildPayload(form: FichaForm, id?: number) {
     unidadeVenda: form.unidadeVenda as (typeof UNIDADES_VENDA_PRODUTO)[number],
     precoVendaReferencia: parseOpt(form.precoVendaReferencia),
     precoCompraKg: parseOpt(form.precoCompraKg),
+    custoCompraUn: parseOpt(form.custoCompraUn),
+    modoCompraMp: form.modoCompraMp,
     kgBrutoPorUnidade: parseOpt(form.kgBrutoPorUnidade),
     perdaLavagemPct: parseOpt(form.perdaLavagemPct),
     perdaDescasquePct: parseOpt(form.perdaDescasquePct),
@@ -400,6 +409,8 @@ function rowToFichaForm(row: any, patch: Partial<FichaForm> = {}): FichaForm {
     unidadeVenda: row.ficha.unidadeVenda,
     precoVendaReferencia: fmtDecimalInput(row.ficha.precoVendaReferencia, 2),
     precoCompraKg: fmtDecimalInput(row.ficha.precoCompraKg, 4),
+    custoCompraUn: fmtDecimalInput(row.ficha.custoCompraUn, 4),
+    modoCompraMp: (row.ficha.modoCompraMp ?? "kg") as ModoCompraMp,
     kgBrutoPorUnidade: fmtDecimalInput(row.ficha.kgBrutoPorUnidade, 4),
     perdaLavagemPct: fmtDecimalInput(row.ficha.perdaLavagemPct, 2),
     perdaDescasquePct: fmtDecimalInput(row.ficha.perdaDescasquePct, 2),
@@ -688,55 +699,109 @@ function FichaEditor({
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Matéria-prima (revenda)</CardTitle>
             <CardDescription>
-              Informe o preço de compra e quanto produto pronto você vende. As perdas calculam automaticamente quanto
-              precisa comprar bruto.
+              {form.modoCompraMp === "unidade"
+                ? "Informe o preço por unidade de compra (caixa, bandeja, pacote fechado). Kg/un é opcional — use só se a lavagem for rateada por peso."
+                : "Informe o preço de compra por kg e quanto produto pronto você vende. As perdas calculam automaticamente quanto precisa comprar bruto."}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label>Preço compra (R$/kg)</Label>
-              <Input
-                inputMode="decimal"
-                value={form.precoCompraKg}
-                onChange={(e) => setForm((f) => ({ ...f, precoCompraKg: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Kg final vendido / unidade</Label>
-              <Input
-                inputMode="decimal"
-                placeholder={form.unidadeVenda === "kg" ? "1" : "Ex.: 0,5 para pacote de 500g"}
-                value={form.kgBrutoPorUnidade}
-                onChange={(e) => setForm((f) => ({ ...f, kgBrutoPorUnidade: e.target.value }))}
-              />
+            <div className="space-y-2 md:col-span-3">
+              <Label>Como você compra esta matéria-prima?</Label>
+              <Select
+                value={form.modoCompraMp}
+                onValueChange={(v) =>
+                  setForm((f) => ({ ...f, modoCompraMp: v as ModoCompraMp }))
+                }
+              >
+                <SelectTrigger className="max-w-md">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MODOS_COMPRA_MP.map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {LABEL_MODO_COMPRA_MP[m]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <p className="text-[10px] text-muted-foreground">
-                Ex.: venda por kg = 1. Pacote de 500g = 0,5. Não some perdas aqui; preencha as perdas abaixo.
+                O mesmo produto pode ter fornecedores diferentes — escolha o modo que reflete o custo padrão desta ficha.
               </p>
             </div>
-            <div className="space-y-2">
-              <Label>Perda lavagem (%)</Label>
-              <Input
-                inputMode="decimal"
-                value={form.perdaLavagemPct}
-                onChange={(e) => setForm((f) => ({ ...f, perdaLavagemPct: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Perda descasque/corte (%)</Label>
-              <Input
-                inputMode="decimal"
-                value={form.perdaDescasquePct}
-                onChange={(e) => setForm((f) => ({ ...f, perdaDescasquePct: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Perda seleção (%)</Label>
-              <Input
-                inputMode="decimal"
-                value={form.perdaSelecaoPct}
-                onChange={(e) => setForm((f) => ({ ...f, perdaSelecaoPct: e.target.value }))}
-              />
-            </div>
+            {form.modoCompraMp === "kg" ? (
+              <>
+                <div className="space-y-2">
+                  <Label>Preço compra (R$/kg)</Label>
+                  <Input
+                    inputMode="decimal"
+                    value={form.precoCompraKg}
+                    onChange={(e) => setForm((f) => ({ ...f, precoCompraKg: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Kg final vendido / unidade</Label>
+                  <Input
+                    inputMode="decimal"
+                    placeholder={form.unidadeVenda === "kg" ? "1" : "Ex.: 0,5 para pacote de 500g"}
+                    value={form.kgBrutoPorUnidade}
+                    onChange={(e) => setForm((f) => ({ ...f, kgBrutoPorUnidade: e.target.value }))}
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    Ex.: venda por kg = 1. Pacote de 500g = 0,5. Não some perdas aqui; preencha as perdas abaixo.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Perda lavagem (%)</Label>
+                  <Input
+                    inputMode="decimal"
+                    value={form.perdaLavagemPct}
+                    onChange={(e) => setForm((f) => ({ ...f, perdaLavagemPct: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Perda descasque/corte (%)</Label>
+                  <Input
+                    inputMode="decimal"
+                    value={form.perdaDescasquePct}
+                    onChange={(e) => setForm((f) => ({ ...f, perdaDescasquePct: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Perda seleção (%)</Label>
+                  <Input
+                    inputMode="decimal"
+                    value={form.perdaSelecaoPct}
+                    onChange={(e) => setForm((f) => ({ ...f, perdaSelecaoPct: e.target.value }))}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label>Preço compra (R$/un)</Label>
+                  <Input
+                    inputMode="decimal"
+                    value={form.custoCompraUn}
+                    onChange={(e) => setForm((f) => ({ ...f, custoCompraUn: e.target.value }))}
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    Ex.: caixa de alface a R$ 12, bandeja de tomate cereja a R$ 8.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Kg por unidade vendida (opcional)</Label>
+                  <Input
+                    inputMode="decimal"
+                    placeholder="Ex.: 0,3 se cada pacote vendido usa ~300g"
+                    value={form.kgBrutoPorUnidade}
+                    onChange={(e) => setForm((f) => ({ ...f, kgBrutoPorUnidade: e.target.value }))}
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    Só para ratear lavagem em R$/kg. Deixe vazio se não souber ou não houver lavagem por peso.
+                  </p>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       )}
@@ -1143,7 +1208,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[34%] whitespace-normal">Produto</TableHead>
-                  <TableHead className="w-[16%] whitespace-normal">Compra R$/kg</TableHead>
+                  <TableHead className="w-[16%] whitespace-normal">Compra MP</TableHead>
                   <TableHead className="w-[16%] whitespace-normal text-right">Custos e venda</TableHead>
                   <TableHead className="w-[26%] whitespace-normal">Venda por margem</TableHead>
                   <TableHead className="w-[8%]" />
@@ -1158,7 +1223,11 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                   </TableRow>
                 ) : (
                   resumoProdutos.map((row) => {
-                    const precoCompraAtual = fmtDecimalInput(row.ficha.precoCompraKg, 4);
+                    const modoCompra = (row.ficha.modoCompraMp ?? "kg") as ModoCompraMp;
+                    const precoCompraAtual =
+                      modoCompra === "unidade"
+                        ? fmtDecimalInput(row.ficha.custoCompraUn, 4)
+                        : fmtDecimalInput(row.ficha.precoCompraKg, 4);
                     const precoCompraValue = compraDraft[row.ficha.id] ?? precoCompraAtual;
                     const podeEditarCompra = row.ficha.tipo === "revenda_processada" || row.ficha.tipo === "manual";
                     const precosMargem = row.resultado.precosVendaPorMargem ?? [];
@@ -1197,40 +1266,47 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                         </TableCell>
                         <TableCell className="align-top whitespace-normal">
                           {podeEditarCompra ? (
-                            <div className="flex items-center gap-1">
-                              <Input
-                                className="h-8 min-w-0 flex-1 px-2 text-xs"
-                                inputMode="decimal"
-                                value={precoCompraValue}
-                                onChange={(e) =>
-                                  setCompraDraft((drafts) => ({ ...drafts, [row.ficha.id]: e.target.value }))
-                                }
-                                onKeyDown={(e) => {
-                                  if (e.key !== "Enter") return;
-                                  if (precoCompraValue === precoCompraAtual) return;
-                                  const p = buildPayload(
-                                    rowToFichaForm(row, { precoCompraKg: precoCompraValue }),
-                                    row.ficha.id,
-                                  );
-                                  salvarFichaRapida.mutate(p as any);
-                                }}
-                              />
-                              <Button
-                                size="icon"
-                                variant="outline"
-                                className="h-8 w-8 shrink-0"
-                                title="Atualizar compra"
-                                disabled={salvarFichaRapida.isPending || precoCompraValue === precoCompraAtual}
-                                onClick={() => {
-                                  const p = buildPayload(
-                                    rowToFichaForm(row, { precoCompraKg: precoCompraValue }),
-                                    row.ficha.id,
-                                  );
-                                  salvarFichaRapida.mutate(p as any);
-                                }}
-                              >
-                                <Save className="h-3.5 w-3.5" />
-                              </Button>
+                            <div className="space-y-1">
+                              <span className="text-[10px] text-muted-foreground">
+                                {modoCompra === "unidade" ? "R$/un" : "R$/kg"}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <Input
+                                  className="h-8 min-w-0 flex-1 px-2 text-xs"
+                                  inputMode="decimal"
+                                  value={precoCompraValue}
+                                  onChange={(e) =>
+                                    setCompraDraft((drafts) => ({ ...drafts, [row.ficha.id]: e.target.value }))
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key !== "Enter") return;
+                                    if (precoCompraValue === precoCompraAtual) return;
+                                    const patch =
+                                      modoCompra === "unidade"
+                                        ? { custoCompraUn: precoCompraValue }
+                                        : { precoCompraKg: precoCompraValue };
+                                    const p = buildPayload(rowToFichaForm(row, patch), row.ficha.id);
+                                    salvarFichaRapida.mutate(p as any);
+                                  }}
+                                />
+                                <Button
+                                  size="icon"
+                                  variant="outline"
+                                  className="h-8 w-8 shrink-0"
+                                  title="Atualizar compra"
+                                  disabled={salvarFichaRapida.isPending || precoCompraValue === precoCompraAtual}
+                                  onClick={() => {
+                                    const patch =
+                                      modoCompra === "unidade"
+                                        ? { custoCompraUn: precoCompraValue }
+                                        : { precoCompraKg: precoCompraValue };
+                                    const p = buildPayload(rowToFichaForm(row, patch), row.ficha.id);
+                                    salvarFichaRapida.mutate(p as any);
+                                  }}
+                                >
+                                  <Save className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
                             </div>
                           ) : (
                             <span className="text-muted-foreground">—</span>

@@ -36,6 +36,15 @@ export const LABEL_CATEGORIA_PRODUTO_CUSTO: Record<CategoriaProdutoCusto, string
 export const UNIDADES_VENDA_PRODUTO = ["unidade", "kg", "bandeja", "pacote", "maco"] as const;
 export type UnidadeVendaProduto = (typeof UNIDADES_VENDA_PRODUTO)[number];
 
+/** Como a matéria-prima de revenda é comprada (mesmo SKU, fornecedores diferentes). */
+export const MODOS_COMPRA_MP = ["kg", "unidade"] as const;
+export type ModoCompraMp = (typeof MODOS_COMPRA_MP)[number];
+
+export const LABEL_MODO_COMPRA_MP: Record<ModoCompraMp, string> = {
+  kg: "Por kg (a granel)",
+  unidade: "Por unidade (caixa, bandeja, pacote…)",
+};
+
 export const TIPOS_COMPONENTE_CUSTO = [
   "variedade",
   "estoque",
@@ -91,8 +100,11 @@ export type FichaCalculoInput = {
   tipo: TipoFichaCustoProduto;
   unidadeVenda: UnidadeVendaProduto;
   precoVendaReferencia?: number | null;
-  /** Revenda: preço de compra por kg */
+  /** Revenda: preço de compra por kg (modo kg). */
   precoCompraKg?: number | null;
+  /** Revenda: preço de compra por unidade de MP (modo unidade). */
+  custoCompraUn?: number | null;
+  modoCompraMp?: ModoCompraMp | null;
   /**
    * Peso final vendido por unidade.
    * O nome histórico do campo ficou como "bruto", mas o cálculo usa este valor como kg líquido/alvo
@@ -200,6 +212,25 @@ export function custoMaterialRevenda(input: {
   return { custo, kgLiquido, alertas };
 }
 
+/** Matéria-prima comprada por unidade (bandeja, caixa, pacote fechado). */
+export function custoMaterialRevendaUnidade(input: {
+  custoCompraUn: number;
+  kgPorUnidadeVendida?: number | null;
+}): { custo: number; kgLiquido: number | null; alertas: string[] } {
+  const alertas: string[] = [];
+  const custo = input.custoCompraUn;
+  if (!(custo > 0)) {
+    alertas.push("Informe o preço de compra por unidade de matéria-prima.");
+    return { custo: 0, kgLiquido: null, alertas };
+  }
+  const kg = toNum(input.kgPorUnidadeVendida);
+  return {
+    custo,
+    kgLiquido: kg != null && kg > 0 ? kg : null,
+    alertas,
+  };
+}
+
 export function custoMaterialProducaoPropria(input: {
   custoVariedadePorPlanta: number | null | undefined;
   kgColhidoPorPlanta: number | null | undefined;
@@ -288,16 +319,34 @@ export function calcularCustoProduto(input: FichaCalculoInput): ResultadoCustoPr
   ];
 
   if (input.tipo === "revenda_processada" || input.tipo === "manual") {
-    const rev = custoMaterialRevenda({
-      precoCompraKg: toNum(input.precoCompraKg) ?? 0,
-      kgBrutoPorUnidade: toNum(input.kgBrutoPorUnidade) ?? 0,
-      perdasPct: perdas,
-    });
-    custoMaterial += rev.custo;
-    kgLiquidoPorUnidade = rev.kgLiquido;
-    alertas.push(...rev.alertas);
-    if (rev.custo > 0) {
-      detalhes.push({ grupo: "material", label: "Matéria-prima (revenda)", valor: rev.custo });
+    const modo = input.modoCompraMp ?? "kg";
+    if (modo === "unidade") {
+      const rev = custoMaterialRevendaUnidade({
+        custoCompraUn: toNum(input.custoCompraUn) ?? 0,
+        kgPorUnidadeVendida: toNum(input.kgBrutoPorUnidade),
+      });
+      custoMaterial += rev.custo;
+      kgLiquidoPorUnidade = rev.kgLiquido;
+      alertas.push(...rev.alertas);
+      if (rev.custo > 0) {
+        detalhes.push({
+          grupo: "material",
+          label: "Matéria-prima (compra/un)",
+          valor: rev.custo,
+        });
+      }
+    } else {
+      const rev = custoMaterialRevenda({
+        precoCompraKg: toNum(input.precoCompraKg) ?? 0,
+        kgBrutoPorUnidade: toNum(input.kgBrutoPorUnidade) ?? 0,
+        perdasPct: perdas,
+      });
+      custoMaterial += rev.custo;
+      kgLiquidoPorUnidade = rev.kgLiquido;
+      alertas.push(...rev.alertas);
+      if (rev.custo > 0) {
+        detalhes.push({ grupo: "material", label: "Matéria-prima (R$/kg)", valor: rev.custo });
+      }
     }
   }
 

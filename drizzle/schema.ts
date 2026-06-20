@@ -896,6 +896,8 @@ export const custosProdutosFichas = mysqlTable("custos_produtos_fichas", {
   unidadeVenda: varchar("unidadeVenda", { length: 32 }).notNull().default("unidade"),
   precoVendaReferencia: decimal("precoVendaReferencia", { precision: 14, scale: 2 }),
   precoCompraKg: decimal("precoCompraKg", { precision: 18, scale: 8 }),
+  custoCompraUn: decimal("custoCompraUn", { precision: 14, scale: 6 }),
+  modoCompraMp: mysqlEnum("modoCompraMp", ["kg", "unidade"]).default("kg"),
   kgBrutoPorUnidade: decimal("kgBrutoPorUnidade", { precision: 20, scale: 10 }),
   perdaLavagemPct: decimal("perdaLavagemPct", { precision: 8, scale: 4 }),
   perdaDescasquePct: decimal("perdaDescasquePct", { precision: 8, scale: 4 }),

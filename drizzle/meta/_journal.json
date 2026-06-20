@@ -246,6 +246,13 @@
       "when": 1777700000000,
       "tag": "0045_custos_produtos_comercial_map",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "5",
+      "when": 1777800000000,
+      "tag": "0046_fichas_modo_compra_mp",
+      "breakpoints": true
     }
   ]
 }
