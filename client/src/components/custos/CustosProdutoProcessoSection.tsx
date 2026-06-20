@@ -42,6 +42,12 @@ import {
   type CustosProdutoProcessoConfig,
   type PerfilProcessoProduto,
 } from "@shared/custosProdutoProcessoPadrao";
+import {
+  calcularLinhaProcessoIndustrial,
+  LINHA_PROCESSO_INDUSTRIAL_PADRAO,
+  modeloComumDeLinhaProcesso,
+  type LinhaProcessoIndustrialInput,
+} from "@shared/custosLinhaProcessoIndustrial";
 import { Cog, Factory, PackagePlus, Save, TableProperties } from "lucide-react";
 import {
   LABEL_REGIME_MO_ETAPA,
@@ -80,6 +86,46 @@ type LinhaMap = {
   perfilSugerido: PerfilProcessoProduto;
 };
 
+type LinhaForm = { [K in keyof LinhaProcessoIndustrialInput]: string };
+
+function linhaToForm(l: LinhaProcessoIndustrialInput): LinhaForm {
+  return {
+    custoHoraMo: String(l.custoHoraMo),
+    pesPorUnidadeRef: String(l.pesPorUnidadeRef),
+    desfolhagemSegPorPe: String(l.desfolhagemSegPorPe),
+    preLavagemKgHora: String(l.preLavagemKgHora),
+    preLavagemEficienciaPct: String(l.preLavagemEficienciaPct),
+    lavagemKgHora: String(l.lavagemKgHora),
+    lavagemEficienciaPct: String(l.lavagemEficienciaPct),
+    enxagueSeg: String(l.enxagueSeg),
+    enxagueKg: String(l.enxagueKg),
+    secagemMin: String(l.secagemMin),
+    secagemKg: String(l.secagemKg),
+    embalagemMinPorUn: String(l.embalagemMinPorUn),
+    selagemMinPorCiclo: String(l.selagemMinPorCiclo),
+    selagemUnPorCiclo: String(l.selagemUnPorCiclo),
+  };
+}
+
+function linhaFormToInput(f: LinhaForm): LinhaProcessoIndustrialInput {
+  return {
+    custoHoraMo: parseOpt(f.custoHoraMo) ?? 0,
+    pesPorUnidadeRef: parseOpt(f.pesPorUnidadeRef) ?? 1,
+    desfolhagemSegPorPe: parseOpt(f.desfolhagemSegPorPe) ?? 0,
+    preLavagemKgHora: parseOpt(f.preLavagemKgHora) ?? 300,
+    preLavagemEficienciaPct: parseOpt(f.preLavagemEficienciaPct) ?? 70,
+    lavagemKgHora: parseOpt(f.lavagemKgHora) ?? 300,
+    lavagemEficienciaPct: parseOpt(f.lavagemEficienciaPct) ?? 70,
+    enxagueSeg: parseOpt(f.enxagueSeg) ?? 0,
+    enxagueKg: parseOpt(f.enxagueKg) ?? 1,
+    secagemMin: parseOpt(f.secagemMin) ?? 0,
+    secagemKg: parseOpt(f.secagemKg) ?? 1,
+    embalagemMinPorUn: parseOpt(f.embalagemMinPorUn) ?? 0,
+    selagemMinPorCiclo: parseOpt(f.selagemMinPorCiclo) ?? 0,
+    selagemUnPorCiclo: parseOpt(f.selagemUnPorCiclo) ?? 1,
+  };
+}
+
 function configToForm(config: CustosProdutoProcessoConfig): FormState {
   return {
     embalagemMicroverdeUn: String(config.embalagemMicroverdeUn),
@@ -104,7 +150,7 @@ function parseOpt(s: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function formToPayload(form: FormState) {
+function formToPayload(form: FormState, linhaProcesso: LinhaProcessoIndustrialInput) {
   return {
     embalagemMicroverdeUn: parseOpt(form.embalagemMicroverdeUn) ?? 0.95,
     embalagemOutrosUn: parseOpt(form.embalagemOutrosUn) ?? 0.6,
@@ -115,6 +161,7 @@ function formToPayload(form: FormState) {
     adesivoCustoUn: parseOpt(form.adesivoCustoUn),
     regimeMoPadrao: form.regimeMoPadrao,
     incluirAdesivo: form.incluirAdesivo,
+    linhaProcesso,
   };
 }
 
@@ -162,6 +209,9 @@ export function CustosProdutoProcessoSection() {
   const configQuery = trpc.custosProducao.produtos.processoConfig.useQuery();
   const produtosQuery = trpc.custosProducao.produtos.listarProdutosComercial.useQuery();
   const [form, setForm] = useState<FormState | null>(null);
+  const [linhaForm, setLinhaForm] = useState<LinhaForm>(() =>
+    linhaToForm(LINHA_PROCESSO_INDUSTRIAL_PADRAO),
+  );
   const [linhas, setLinhas] = useState<LinhaMap[]>([]);
   const [filtroSemFicha, setFiltroSemFicha] = useState(true);
 
@@ -170,6 +220,11 @@ export function CustosProdutoProcessoSection() {
       setForm(configToForm(configQuery.data.config));
     }
   }, [configQuery.data?.config, form]);
+
+  useEffect(() => {
+    const lp = configQuery.data?.config?.linhaProcesso;
+    if (lp) setLinhaForm(linhaToForm(lp));
+  }, [configQuery.data?.config?.linhaProcesso]);
 
   useEffect(() => {
     if (!produtosQuery.data) return;
@@ -244,9 +299,30 @@ export function CustosProdutoProcessoSection() {
     });
   }, [form]);
 
+  const linhaCalc = useMemo(() => calcularLinhaProcessoIndustrial(linhaFormToInput(linhaForm)), [linhaForm]);
+  const linhaModelo = useMemo(() => modeloComumDeLinhaProcesso(linhaCalc), [linhaCalc]);
+
+  function updateLinhaForm(patch: Partial<LinhaForm>) {
+    setLinhaForm((prev) => ({ ...prev, ...patch }));
+  }
+
+  function aplicarLinhaAoModelo() {
+    setForm((f) =>
+      f
+        ? {
+            ...f,
+            lavagemReaisKg: String(linhaModelo.lavagemReaisKg),
+            corteMinutosUn: String(linhaModelo.corteMinutosUn),
+            embalagemMinutosUn: String(linhaModelo.embalagemMinutosUn),
+          }
+        : f,
+    );
+    toast.success("Valores da linha aplicados ao modelo (R$/kg, corte e embalagem).");
+  }
+
   if (!form) return null;
 
-  function updateLinha(id: string, patch: Partial<LinhaMap>) {
+  function updateMapLinha(id: string, patch: Partial<LinhaMap>) {
     setLinhas((prev) => prev.map((l) => (l.produtoComercialId === id ? { ...l, ...patch } : l)));
   }
 
@@ -297,26 +373,162 @@ export function CustosProdutoProcessoSection() {
     <div className="space-y-4">
       <Alert>
         <Factory className="h-4 w-4" />
-        <AlertTitle>Processo real ≠ um tempo fixo por SKU</AlertTitle>
+        <AlertTitle>Processo complexo → 3 números simples nas fichas</AlertTitle>
         <AlertDescription className="space-y-2">
           <p>
-            Classifique <strong>cada produto</strong> (microverde sem nome, só colheita+emb, lavagem
-            em lote…). A lavagem industrial usa <strong>R$/kg médio do lote</strong>, não min/un —
-            porque vários produtos entram juntos na máquina.
+            Descreva sua linha real abaixo (tempos e capacidades). O sistema converte em{" "}
+            <strong>R$/kg de processamento</strong> (pré-lav + lav + enxague + secagem),{" "}
+            <strong>min/un de desfolhagem</strong> e <strong>min/un de embalagem+selagem</strong>.
           </p>
           <p>
-            Desvios mês a mês (mesma alface com kg diferente na lavagem) entram como{" "}
-            <strong>custo padrão revisável</strong> na ficha; o fechamento real fica na Rentabilidade.
+            Na ficha de cada produto: lavagem = R$/kg × kg/un · desfolhagem/embalagem = min/un × R$/h
+            das equipes. Matéria-prima e insumo de embalagem (R$ 0,60 / 0,95) entram separado.
           </p>
         </AlertDescription>
       </Alert>
 
       <Card>
         <CardHeader className="pb-2">
+          <CardTitle className="text-base">Sua linha de processo</CardTitle>
+          <CardDescription>
+            Valores padrão já vêm do seu fluxo (30 s/pé, 300 kg/h a 70%, etc.). Ajuste e clique em
+            aplicar — não precisa calcular na mão.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-1">
+              <Label className="text-xs">R$/h MO (processamento)</Label>
+              <Input inputMode="decimal" value={linhaForm.custoHoraMo} onChange={(e) => updateLinhaForm({ custoHoraMo: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Pés/un vendida (ref.)</Label>
+              <Input inputMode="decimal" value={linhaForm.pesPorUnidadeRef} onChange={(e) => updateLinhaForm({ pesPorUnidadeRef: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Desfolhagem (s/pé)</Label>
+              <Input inputMode="decimal" value={linhaForm.desfolhagemSegPorPe} onChange={(e) => updateLinhaForm({ desfolhagemSegPorPe: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Embalagem (min/un)</Label>
+              <Input inputMode="decimal" value={linhaForm.embalagemMinPorUn} onChange={(e) => updateLinhaForm({ embalagemMinPorUn: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Pré-lavagem kg/h (nominal)</Label>
+              <Input inputMode="decimal" value={linhaForm.preLavagemKgHora} onChange={(e) => updateLinhaForm({ preLavagemKgHora: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Pré-lavagem eficiência (%)</Label>
+              <Input inputMode="decimal" value={linhaForm.preLavagemEficienciaPct} onChange={(e) => updateLinhaForm({ preLavagemEficienciaPct: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Lavagem kg/h (nominal)</Label>
+              <Input inputMode="decimal" value={linhaForm.lavagemKgHora} onChange={(e) => updateLinhaForm({ lavagemKgHora: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Lavagem eficiência (%)</Label>
+              <Input inputMode="decimal" value={linhaForm.lavagemEficienciaPct} onChange={(e) => updateLinhaForm({ lavagemEficienciaPct: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Enxague (s por…)</Label>
+              <div className="flex gap-1">
+                <Input className="w-20" inputMode="decimal" value={linhaForm.enxagueSeg} onChange={(e) => updateLinhaForm({ enxagueSeg: e.target.value })} />
+                <span className="self-center text-xs text-muted-foreground">s /</span>
+                <Input className="flex-1" inputMode="decimal" value={linhaForm.enxagueKg} onChange={(e) => updateLinhaForm({ enxagueKg: e.target.value })} />
+                <span className="self-center text-xs text-muted-foreground">kg</span>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Secagem (min por…)</Label>
+              <div className="flex gap-1">
+                <Input className="w-20" inputMode="decimal" value={linhaForm.secagemMin} onChange={(e) => updateLinhaForm({ secagemMin: e.target.value })} />
+                <span className="self-center text-xs text-muted-foreground">min /</span>
+                <Input className="flex-1" inputMode="decimal" value={linhaForm.secagemKg} onChange={(e) => updateLinhaForm({ secagemKg: e.target.value })} />
+                <span className="self-center text-xs text-muted-foreground">kg</span>
+              </div>
+            </div>
+            <div className="space-y-1 sm:col-span-2">
+              <Label className="text-xs">Selagem (min por N produtos)</Label>
+              <div className="flex gap-1">
+                <Input className="w-20" inputMode="decimal" value={linhaForm.selagemMinPorCiclo} onChange={(e) => updateLinhaForm({ selagemMinPorCiclo: e.target.value })} />
+                <span className="self-center text-xs text-muted-foreground">min /</span>
+                <Input className="w-20" inputMode="decimal" value={linhaForm.selagemUnPorCiclo} onChange={(e) => updateLinhaForm({ selagemUnPorCiclo: e.target.value })} />
+                <span className="self-center text-xs text-muted-foreground">un</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto rounded-lg border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Etapa</TableHead>
+                  <TableHead>Tempo</TableHead>
+                  <TableHead>MO/un ou /kg</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {linhaCalc.etapas.map((e) => (
+                  <TableRow key={e.nome}>
+                    <TableCell className="text-sm">{e.nome}</TableCell>
+                    <TableCell className="text-xs tabular-nums">
+                      {e.minPorUn != null
+                        ? `${e.minPorUn} min/un`
+                        : e.minPorKg != null
+                          ? `${e.minPorKg} min/kg`
+                          : "—"}
+                    </TableCell>
+                    <TableCell className="text-xs tabular-nums">
+                      {e.reaisPorUn != null
+                        ? `${fmtMoney(e.reaisPorUn)}/un`
+                        : e.reaisPorKg != null
+                          ? `${fmtMoney(e.reaisPorKg)}/kg`
+                          : "—"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="rounded-lg bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 p-3 text-sm space-y-1">
+            <p>
+              <strong>→ Ficha (lavagem):</strong> {fmtMoney(linhaModelo.lavagemReaisKg)}/kg processado
+              <span className="text-muted-foreground text-xs"> (soma pré-lav + lav + enxague + secagem)</span>
+            </p>
+            <p>
+              <strong>→ Ficha (desfolhagem):</strong> {linhaModelo.corteMinutosUn} min/un
+              <span className="text-muted-foreground text-xs"> (com {linhaForm.pesPorUnidadeRef} pé/un ref.)</span>
+            </p>
+            <p>
+              <strong>→ Ficha (embalagem MO):</strong> {linhaModelo.embalagemMinutosUn} min/un
+              <span className="text-muted-foreground text-xs"> (embalagem + selagem)</span>
+            </p>
+          </div>
+
+          {linhaCalc.alertas.length > 0 ? (
+            <ul className="text-xs text-amber-700 dark:text-amber-400 list-disc pl-4">
+              {linhaCalc.alertas.map((a) => (
+                <li key={a}>{a}</li>
+              ))}
+            </ul>
+          ) : null}
+
+          <Button type="button" variant="secondary" size="sm" onClick={aplicarLinhaAoModelo}>
+            Aplicar ao modelo abaixo
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Cog className="h-4 w-4" />
-            Valores comuns de processo
+            Valores comuns de processo (fichas)
           </CardTitle>
+          <CardDescription>
+            Estes 3 campos alimentam as fichas geradas. Use &quot;Aplicar ao modelo&quot; acima ou preencha manualmente.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -420,11 +632,11 @@ export function CustosProdutoProcessoSection() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Corte (min/un)</Label>
+              <Label>Corte / desfolhagem MO (min/un)</Label>
               <Input
                 inputMode="decimal"
                 value={form.corteMinutosUn}
-                placeholder="Só perfil corte+lavagem"
+                placeholder="Da linha de processo"
                 onChange={(e) => setForm((f) => f && { ...f, corteMinutosUn: e.target.value })}
               />
             </div>
@@ -459,7 +671,11 @@ export function CustosProdutoProcessoSection() {
             </div>
           ) : null}
 
-          <Button size="sm" disabled={salvar.isPending} onClick={() => salvar.mutate(formToPayload(form))}>
+          <Button
+            size="sm"
+            disabled={salvar.isPending}
+            onClick={() => salvar.mutate(formToPayload(form, linhaFormToInput(linhaForm)))}
+          >
             <Save className="h-4 w-4 mr-1" />
             Salvar modelo
           </Button>
@@ -522,7 +738,7 @@ export function CustosProdutoProcessoSection() {
                       <Select
                         value={l.categoriaCusto}
                         onValueChange={(v) =>
-                          updateLinha(l.produtoComercialId, {
+                          updateMapLinha(l.produtoComercialId, {
                             categoriaCusto: v as CategoriaProdutoCusto,
                           })
                         }
@@ -543,7 +759,7 @@ export function CustosProdutoProcessoSection() {
                       <Select
                         value={l.perfilProcesso}
                         onValueChange={(v) =>
-                          updateLinha(l.produtoComercialId, {
+                          updateMapLinha(l.produtoComercialId, {
                             perfilProcesso: v as PerfilProcessoProduto,
                           })
                         }
@@ -572,7 +788,7 @@ export function CustosProdutoProcessoSection() {
                         }
                         value={l.kgPorUnidade}
                         onChange={(e) =>
-                          updateLinha(l.produtoComercialId, { kgPorUnidade: e.target.value })
+                          updateMapLinha(l.produtoComercialId, { kgPorUnidade: e.target.value })
                         }
                       />
                     </TableCell>
@@ -580,7 +796,7 @@ export function CustosProdutoProcessoSection() {
                       <Select
                         value={l.modoCompraMp}
                         onValueChange={(v) =>
-                          updateLinha(l.produtoComercialId, { modoCompraMp: v as ModoCompraMp })
+                          updateMapLinha(l.produtoComercialId, { modoCompraMp: v as ModoCompraMp })
                         }
                       >
                         <SelectTrigger className="h-8 text-xs">

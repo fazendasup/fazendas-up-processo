@@ -1,4 +1,5 @@
 import type { CategoriaProdutoCusto, ModoCompraMp } from "./custosProduto";
+import type { LinhaProcessoIndustrialInput } from "./custosLinhaProcessoIndustrial";
 import { LABEL_ETAPA_PROCESSO, type TipoEtapaProcesso } from "./custosProduto";
 import type { RegimeMoEtapa } from "./custosMoEquipe";
 
@@ -50,6 +51,8 @@ export type CustosProdutoProcessoConfig = {
   adesivoCustoUn: number | null;
   regimeMoPadrao: RegimeMoEtapa;
   incluirAdesivo: boolean;
+  /** Parâmetros da linha industrial (persistidos para recalcular). */
+  linhaProcesso?: LinhaProcessoIndustrialInput | null;
 };
 
 export const CUSTOS_PRODUTO_PROCESSO_CONFIG_PADRAO: CustosProdutoProcessoConfig = {
@@ -62,6 +65,7 @@ export const CUSTOS_PRODUTO_PROCESSO_CONFIG_PADRAO: CustosProdutoProcessoConfig 
   adesivoCustoUn: null,
   regimeMoPadrao: "qualquer",
   incluirAdesivo: true,
+  linhaProcesso: null,
 };
 
 export type MapeamentoProdutoComercial = {
@@ -247,9 +251,14 @@ export function etapasProcessoPadraoParaPerfil(
     }
   }
 
-  if (perfilUsaCorte(perfil) && config.corteMinutosUn != null && config.corteMinutosUn > 0) {
+  if (
+    (perfilUsaLavagem(perfil) || perfilUsaCorte(perfil)) &&
+    config.corteMinutosUn != null &&
+    config.corteMinutosUn > 0
+  ) {
     etapas.push(
       etapa("descasque_corte", {
+        nome: "Desfolhagem / corte",
         minutosPorUnidade: config.corteMinutosUn,
         regimeMo: regime,
       }),

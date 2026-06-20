@@ -260,6 +260,13 @@
       "when": 1777900000000,
       "tag": "0047_comercial_map_modo_compra_mp",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "5",
+      "when": 1778000000000,
+      "tag": "0048_processo_linha_json",
+      "breakpoints": true
     }
   ]
 }

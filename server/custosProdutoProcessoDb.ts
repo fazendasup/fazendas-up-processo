@@ -4,6 +4,7 @@ import {
   CUSTOS_PRODUTO_PROCESSO_CONFIG_PADRAO,
   type CustosProdutoProcessoConfig,
 } from "@shared/custosProdutoProcessoPadrao";
+import type { LinhaProcessoIndustrialInput } from "@shared/custosLinhaProcessoIndustrial";
 import type { RegimeMoEtapa } from "@shared/custosMoEquipe";
 import { custosProdutosProcessoConfig } from "../drizzle/schema";
 import { getDb } from "./db";
@@ -12,6 +13,17 @@ function num(v: unknown): number | null {
   if (v == null || v === "") return null;
   const n = Number(String(v).replace(",", "."));
   return Number.isFinite(n) ? n : null;
+}
+
+function parseLinhaProcessoJson(raw: unknown): LinhaProcessoIndustrialInput | null {
+  if (raw == null || raw === "") return null;
+  try {
+    const v = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!v || typeof v !== "object") return null;
+    return v as LinhaProcessoIndustrialInput;
+  } catch {
+    return null;
+  }
 }
 
 function rowToConfig(row: typeof custosProdutosProcessoConfig.$inferSelect): CustosProdutoProcessoConfig {
@@ -25,6 +37,7 @@ function rowToConfig(row: typeof custosProdutosProcessoConfig.$inferSelect): Cus
     adesivoCustoUn: num(row.adesivoCustoUn),
     regimeMoPadrao: (row.regimeMoPadrao ?? "qualquer") as RegimeMoEtapa,
     incluirAdesivo: row.incluirAdesivo !== false,
+    linhaProcesso: parseLinhaProcessoJson(row.linhaProcessoJson),
   };
 }
 
@@ -57,6 +70,13 @@ CREATE TABLE IF NOT EXISTS \`custos_produtos_processo_config\` (
     if (!/Duplicate column name/i.test(msg)) {
       console.warn("[custosProdutoProcessoDb] ensure:", msg.slice(0, 160));
     }
+  }
+  try {
+    await db.execute(
+      sql.raw("ALTER TABLE `custos_produtos_processo_config` ADD COLUMN `linhaProcessoJson` text NULL"),
+    );
+  } catch {
+    /* coluna já existe */
   }
 }
 
@@ -92,6 +112,8 @@ export async function setProcessoConfig(
     adesivoCustoUn: config.adesivoCustoUn != null ? String(config.adesivoCustoUn) : null,
     regimeMoPadrao: config.regimeMoPadrao,
     incluirAdesivo: config.incluirAdesivo,
+    linhaProcessoJson:
+      config.linhaProcesso != null ? JSON.stringify(config.linhaProcesso) : null,
   };
   await db
     .insert(custosProdutosProcessoConfig)
@@ -107,6 +129,7 @@ export async function setProcessoConfig(
         adesivoCustoUn: payload.adesivoCustoUn,
         regimeMoPadrao: payload.regimeMoPadrao,
         incluirAdesivo: payload.incluirAdesivo,
+        linhaProcessoJson: payload.linhaProcessoJson,
       },
     });
   return getProcessoConfig(projetoId);

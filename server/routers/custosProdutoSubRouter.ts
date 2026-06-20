@@ -56,6 +56,23 @@ const modoCompraMpZ = z.enum(MODOS_COMPRA_MP);
 
 const perfilZ = z.enum(PERFIS_PROCESSO_PRODUTO);
 
+const linhaProcessoInput = z.object({
+  custoHoraMo: z.number().nonnegative(),
+  pesPorUnidadeRef: z.number().nonnegative(),
+  desfolhagemSegPorPe: z.number().nonnegative(),
+  preLavagemKgHora: z.number().positive(),
+  preLavagemEficienciaPct: z.number().min(1).max(100),
+  lavagemKgHora: z.number().positive(),
+  lavagemEficienciaPct: z.number().min(1).max(100),
+  enxagueSeg: z.number().nonnegative(),
+  enxagueKg: z.number().positive(),
+  secagemMin: z.number().nonnegative(),
+  secagemKg: z.number().positive(),
+  embalagemMinPorUn: z.number().nonnegative(),
+  selagemMinPorCiclo: z.number().nonnegative(),
+  selagemUnPorCiclo: z.number().positive(),
+});
+
 const processoConfigInput = z.object({
   embalagemMicroverdeUn: z.number().nonnegative(),
   embalagemOutrosUn: z.number().nonnegative(),
@@ -66,6 +83,7 @@ const processoConfigInput = z.object({
   adesivoCustoUn: z.number().nonnegative().nullable().optional(),
   regimeMoPadrao: regimeMoZ.default("qualquer"),
   incluirAdesivo: z.boolean().default(true),
+  linhaProcesso: linhaProcessoInput.optional().nullable(),
 });
 
 const mapeamentoInput = z.object({
@@ -419,6 +437,7 @@ export const custosProdutoSubRouter = router({
         adesivoCustoUn: input.adesivoCustoUn ?? null,
         regimeMoPadrao: input.regimeMoPadrao,
         incluirAdesivo: input.incluirAdesivo,
+        linhaProcesso: input.linhaProcesso ?? null,
       });
       return { config, preview: previewProcesso(config) };
     }),
