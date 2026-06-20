@@ -21,6 +21,7 @@ import {
 } from "@shared/custosLinhaProcessoIndustrial";
 import {
   avisosMapeamentoProduto,
+  etapasProcessoDeModelo,
   etapasProcessoPadraoParaPerfil,
   inferirCategoriaProdutoCusto,
   inferirPerfilProcessoSugerido,
@@ -235,6 +236,8 @@ const fichaInput = z
     precoCompraKg: z.number().nonnegative().optional().nullable(),
     custoCompraUn: z.number().nonnegative().optional().nullable(),
     modoCompraMp: modoCompraMpZ.optional().default("kg"),
+    unidadesMpPorUnidade: z.number().positive().optional().nullable(),
+    kgPorUnidadeCompra: z.number().positive().optional().nullable(),
     kgBrutoPorUnidade: z.number().nonnegative().optional().nullable(),
     perdaLavagemPct: z.number().min(0).max(100).optional().nullable(),
     perdaDescasquePct: z.number().min(0).max(100).optional().nullable(),
@@ -294,6 +297,10 @@ function fichaPayload(pid: number, input: z.infer<typeof fichaInput>): InsertCus
     precoCompraKg: input.precoCompraKg != null ? String(input.precoCompraKg) : null,
     custoCompraUn: input.custoCompraUn != null ? String(input.custoCompraUn) : null,
     modoCompraMp: (input.modoCompraMp ?? "kg") as ModoCompraMp,
+    unidadesMpPorUnidade:
+      input.unidadesMpPorUnidade != null ? String(input.unidadesMpPorUnidade) : null,
+    kgPorUnidadeCompra:
+      input.kgPorUnidadeCompra != null ? String(input.kgPorUnidadeCompra) : null,
     kgBrutoPorUnidade: input.kgBrutoPorUnidade != null ? String(input.kgBrutoPorUnidade) : null,
     perdaLavagemPct: input.perdaLavagemPct != null ? String(input.perdaLavagemPct) : null,
     perdaDescasquePct: input.perdaDescasquePct != null ? String(input.perdaDescasquePct) : null,
@@ -431,6 +438,8 @@ export const custosProdutoSubRouter = router({
         precoCompraKg: payload.precoCompraKg ?? null,
         custoCompraUn: payload.custoCompraUn ?? null,
         modoCompraMp: payload.modoCompraMp ?? "kg",
+        unidadesMpPorUnidade: payload.unidadesMpPorUnidade ?? null,
+        kgPorUnidadeCompra: payload.kgPorUnidadeCompra ?? null,
         kgBrutoPorUnidade: payload.kgBrutoPorUnidade ?? null,
         perdaLavagemPct: payload.perdaLavagemPct ?? null,
         perdaDescasquePct: payload.perdaDescasquePct ?? null,
@@ -714,13 +723,18 @@ export const custosProdutoSubRouter = router({
           m.processoModeloId,
           mapaHora,
         );
+        const modeloRecord =
+          m.processoModeloId != null
+            ? await modelosDb.getProcessoModeloById(pid, m.processoModeloId)
+            : await modelosDb.getDefaultProcessoModelo(pid);
         for (const av of avisosMapeamentoProduto(m, config)) {
           const msg = `${p.nome}: ${av}`;
           if (!avisos.includes(msg)) avisos.push(msg);
         }
-        const etapas = etapasPadraoParaDb(
-          etapasProcessoPadraoParaPerfil(m.perfilProcesso, m.categoriaCusto, config),
-        );
+        const etapasPadrao = modeloRecord
+          ? etapasProcessoDeModelo(m.perfilProcesso, m.categoriaCusto, modeloRecord, mapaHora)
+          : etapasProcessoPadraoParaPerfil(m.perfilProcesso, m.categoriaCusto, config);
+        const etapas = etapasPadraoParaDb(etapasPadrao);
         const prev = fichaPorProduto.get(p.id);
         const kgBruto =
           m.kgPorUnidade != null && m.kgPorUnidade > 0 ? String(m.kgPorUnidade) : null;

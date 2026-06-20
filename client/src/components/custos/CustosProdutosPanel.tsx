@@ -16,6 +16,7 @@ import {
   type TipoComponenteCusto,
   type TipoEtapaProcesso,
   type TipoFichaCustoProduto,
+  unidadesMpConsumidasRevenda,
 } from "@shared/custosProduto";
 import {
   DESCRICAO_PERFIL_PROCESSO,
@@ -311,6 +312,8 @@ type FichaForm = {
   precoVendaReferencia: string;
   precoCompraKg: string;
   custoCompraUn: string;
+  kgPorUnidadeCompra: string;
+  unidadesMpPorUnidade: string;
   modoCompraMp: ModoCompraMp;
   kgBrutoPorUnidade: string;
   perdaLavagemPct: string;
@@ -406,6 +409,8 @@ function emptyFicha(tipo: TipoFichaCustoProduto = "revenda_processada"): FichaFo
     precoVendaReferencia: "",
     precoCompraKg: "",
     custoCompraUn: "",
+    kgPorUnidadeCompra: "",
+    unidadesMpPorUnidade: "",
     modoCompraMp: "kg",
     kgBrutoPorUnidade: "",
     perdaLavagemPct: "0",
@@ -444,6 +449,8 @@ function buildPayload(form: FichaForm, id?: number) {
     precoVendaReferencia: parseOpt(form.precoVendaReferencia),
     precoCompraKg: parseOpt(form.precoCompraKg),
     custoCompraUn: parseOpt(form.custoCompraUn),
+    kgPorUnidadeCompra: parseOpt(form.kgPorUnidadeCompra),
+    unidadesMpPorUnidade: parseOpt(form.unidadesMpPorUnidade),
     modoCompraMp: form.modoCompraMp,
     kgBrutoPorUnidade: parseOpt(form.kgBrutoPorUnidade),
     perdaLavagemPct: parseOpt(form.perdaLavagemPct),
@@ -489,6 +496,8 @@ function rowToFichaForm(row: any, patch: Partial<FichaForm> = {}): FichaForm {
     precoVendaReferencia: fmtDecimalInput(row.ficha.precoVendaReferencia, 2),
     precoCompraKg: fmtDecimalInput(row.ficha.precoCompraKg, 4),
     custoCompraUn: fmtDecimalInput(row.ficha.custoCompraUn, 4),
+    kgPorUnidadeCompra: fmtDecimalInput(row.ficha.kgPorUnidadeCompra, 4),
+    unidadesMpPorUnidade: fmtDecimalInput(row.ficha.unidadesMpPorUnidade, 2),
     modoCompraMp: (row.ficha.modoCompraMp ?? "kg") as ModoCompraMp,
     kgBrutoPorUnidade: fmtDecimalInput(row.ficha.kgBrutoPorUnidade, 4),
     perdaLavagemPct: fmtDecimalInput(row.ficha.perdaLavagemPct, 2),
@@ -1067,7 +1076,7 @@ function FichaEditor({
             <CardTitle className="text-sm">Matéria-prima — específico desta variedade/SKU</CardTitle>
             <CardDescription>
               {form.modoCompraMp === "unidade"
-                ? "Informe o preço por unidade de compra (caixa, bandeja, pacote fechado). Kg/un é opcional — use só se a lavagem for rateada por peso."
+                ? "Informe o preço por unidade de compra (cabeça, caixa, bandeja…). Consumo e perdas definem quantas unidades de MP entram em cada produto vendido."
                 : "Informe o preço de compra por kg e quanto produto pronto você vende. As perdas calculam automaticamente quanto precisa comprar bruto."}
             </CardDescription>
           </CardHeader>
@@ -1080,9 +1089,6 @@ function FichaEditor({
                   setForm((f) => ({
                     ...f,
                     modoCompraMp: v as ModoCompraMp,
-                    ...(v === "unidade"
-                      ? { perdaLavagemPct: "0", perdaDescasquePct: "0", perdaSelecaoPct: "0" }
-                      : {}),
                   }))
                 }
               >
@@ -1166,21 +1172,92 @@ function FichaEditor({
                     onChange={(e) => setForm((f) => ({ ...f, custoCompraUn: e.target.value }))}
                   />
                   <p className="text-[10px] text-muted-foreground">
-                    Ex.: caixa de alface a R$ 12, bandeja de tomate cereja a R$ 8.
+                    Ex.: alface americana a R$ 3,00 por cabeça.
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Kg por unidade vendida (opcional)</Label>
+                  <Label>Peso médio da unidade de compra (kg)</Label>
                   <Input
                     inputMode="decimal"
-                    placeholder="Ex.: 0,3 se cada pacote vendido usa ~300g"
+                    placeholder="Ex.: 0,35 kg por cabeça"
+                    value={form.kgPorUnidadeCompra}
+                    onChange={(e) => setForm((f) => ({ ...f, kgPorUnidadeCompra: e.target.value }))}
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    Quanto pesa (ou quanto você usa) de cada cabeça/caixa comprada — base para calcular quantas unidades
+                    entram no produto.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Peso líquido do pacote vendido (kg)</Label>
+                  <Input
+                    inputMode="decimal"
+                    placeholder="Ex.: 0,12 para pacote de 120 g"
                     value={form.kgBrutoPorUnidade}
                     onChange={(e) => setForm((f) => ({ ...f, kgBrutoPorUnidade: e.target.value }))}
                   />
                   <p className="text-[10px] text-muted-foreground">
-                    Só para ratear lavagem em R$/kg. Deixe vazio se não souber ou não houver lavagem por peso.
+                    Peso pronto que o cliente recebe — também usado para lavagem (R$/kg × kg).
                   </p>
                 </div>
+                {form.etapas.some((e) => e.tipo === "lavagem" || e.tipo === "descasque_corte") ||
+                parseOpt(form.kgPorUnidadeCompra) != null ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Perda lavagem (%)</Label>
+                      <Input
+                        inputMode="decimal"
+                        value={form.perdaLavagemPct}
+                        onChange={(e) => setForm((f) => ({ ...f, perdaLavagemPct: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Perda descasque/corte (%)</Label>
+                      <Input
+                        inputMode="decimal"
+                        value={form.perdaDescasquePct}
+                        onChange={(e) => setForm((f) => ({ ...f, perdaDescasquePct: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Perda seleção (%)</Label>
+                      <Input
+                        inputMode="decimal"
+                        value={form.perdaSelecaoPct}
+                        onChange={(e) => setForm((f) => ({ ...f, perdaSelecaoPct: e.target.value }))}
+                      />
+                    </div>
+                  </>
+                ) : null}
+                {(() => {
+                  const prev = unidadesMpConsumidasRevenda({
+                    kgPorUnidadeVendida: parseOpt(form.kgBrutoPorUnidade),
+                    kgPorUnidadeCompra: parseOpt(form.kgPorUnidadeCompra),
+                    unidadesMpPorUnidade: parseOpt(form.unidadesMpPorUnidade),
+                    perdasPct: [
+                      parseOpt(form.perdaLavagemPct) ?? 0,
+                      parseOpt(form.perdaDescasquePct) ?? 0,
+                      parseOpt(form.perdaSelecaoPct) ?? 0,
+                    ],
+                  });
+                  if (prev.unidades <= 0) return null;
+                  const preco = parseOpt(form.custoCompraUn);
+                  return (
+                    <p className="text-xs text-emerald-800 dark:text-emerald-300 md:col-span-3">
+                      Consumo estimado:{" "}
+                      <strong>
+                        {new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(prev.unidades)} un
+                      </strong>{" "}
+                      de MP por produto
+                      {prev.kgBrutoNecessario != null
+                        ? ` (${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 }).format(prev.kgBrutoNecessario)} kg bruto antes das perdas)`
+                        : ""}
+                      {preco != null && preco > 0
+                        ? ` → MP ≈ ${fmtMoney(preco * prev.unidades)}/produto`
+                        : ""}
+                    </p>
+                  );
+                })()}
               </>
             )}
           </CardContent>
@@ -1337,8 +1414,8 @@ function FichaEditor({
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">Modelo de processo industrial</CardTitle>
           <CardDescription>
-            Escolha o modelo salvo no wizard e o perfil da rota. As etapas (lavagem, corte, embalagem, MO) vêm do
-            modelo — nesta ficha você informa só matéria-prima, peso e perdas da variedade.
+            Escolha o modelo salvo no wizard e o perfil da rota. Processo (lavagem, MO, insumo de embalagem) vem do
+            modelo — nesta ficha você informa matéria-prima, pesos e perdas da variedade.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -1421,10 +1498,10 @@ function FichaEditor({
                         ? " · lavagem R$/kg pendente no modelo"
                         : ""}
                     {configModelo.corteMinutosUn != null && configModelo.corteMinutosUn > 0
-                      ? ` · corte ${configModelo.corteMinutosUn} min/un`
+                      ? ` · desfolhagem ${configModelo.corteMinutosUn} min/un`
                       : ""}
                     {configModelo.embalagemMinutosUn != null && configModelo.embalagemMinutosUn > 0
-                      ? ` · embalagem ${configModelo.embalagemMinutosUn} min/un`
+                      ? ` · MO emb+sel ${configModelo.embalagemMinutosUn} min/un (detalhado nas etapas)`
                       : ""}
                   </p>
                 </div>

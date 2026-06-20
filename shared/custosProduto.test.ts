@@ -31,6 +31,29 @@ describe("custoMaterialRevendaUnidade", () => {
     const r = custoMaterialRevendaUnidade({ custoCompraUn: 12, kgPorUnidadeVendida: 0.4 });
     expect(r.custo).toBeCloseTo(12);
     expect(r.kgLiquido).toBeCloseTo(0.4);
+    expect(r.unidadesMpConsumidas).toBeCloseTo(1);
+  });
+
+  it("calcula unidades por peso da unidade de compra e perdas", () => {
+    const r = custoMaterialRevendaUnidade({
+      custoCompraUn: 3,
+      kgPorUnidadeVendida: 0.12,
+      kgPorUnidadeCompra: 0.35,
+      perdasPct: [5, 0, 10],
+    });
+    const kgBruto = 0.12 / (0.95 * 0.9);
+    expect(r.unidadesMpConsumidas).toBeCloseTo(kgBruto / 0.35);
+    expect(r.custo).toBeCloseTo(3 * (kgBruto / 0.35));
+  });
+
+  it("aplica perdas sobre unidades base manual", () => {
+    const r = custoMaterialRevendaUnidade({
+      custoCompraUn: 3,
+      unidadesMpPorUnidade: 1,
+      perdasPct: [10, 0, 0],
+    });
+    expect(r.unidadesMpConsumidas).toBeCloseTo(1 / 0.9);
+    expect(r.custo).toBeCloseTo(3 / 0.9);
   });
 });
 
@@ -149,20 +172,20 @@ describe("calcularCustoProduto", () => {
     );
   });
 
-  it("revenda com compra por unidade ignora perdas de kg", () => {
+  it("revenda com compra por unidade usa peso e perdas", () => {
     const r = calcularCustoProduto({
       tipo: "revenda_processada",
       unidadeVenda: "unidade",
       modoCompraMp: "unidade",
       custoCompraUn: 15,
-      kgBrutoPorUnidade: 0.5,
-      perdaLavagemPct: 20,
+      kgPorUnidadeCompra: 0.5,
+      kgBrutoPorUnidade: 0.12,
+      perdaLavagemPct: 0,
       componentes: [],
       etapas: [{ tipo: "lavagem", nome: "Lavagem", custoPorKgProcessado: 2 }],
     });
-    expect(r.custoMaterial).toBeCloseTo(15);
-    expect(r.custoProcesso).toBeCloseTo(1);
-    expect(r.custoPorUnidade).toBeCloseTo(16);
+    expect(r.custoMaterial).toBeCloseTo(15 * (0.12 / 0.5));
+    expect(r.custoProcesso).toBeCloseTo(0.24);
   });
 
   it("alerta quando lavagem R$/kg sem kg vendido", () => {

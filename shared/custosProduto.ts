@@ -104,6 +104,10 @@ export type FichaCalculoInput = {
   precoCompraKg?: number | null;
   /** Revenda: preço de compra por unidade de MP (modo unidade). */
   custoCompraUn?: number | null;
+  /** Revenda (compra/un): override manual de unidades consumidas (raro — prefira kg/un compra + perdas). */
+  unidadesMpPorUnidade?: number | null;
+  /** Revenda (compra/un): peso médio de 1 unidade de compra (ex.: 0,35 kg/cabeça). */
+  kgPorUnidadeCompra?: number | null;
   modoCompraMp?: ModoCompraMp | null;
   /**
    * Peso final vendido por unidade.
@@ -212,21 +216,77 @@ export function custoMaterialRevenda(input: {
   return { custo, kgLiquido, alertas };
 }
 
-/** Matéria-prima comprada por unidade (bandeja, caixa, pacote fechado). */
+/**
+ * Calcula quantas unidades de compra (cabeça, caixa…) entram por produto vendido.
+ * Preferência: peso final + peso/un compra + perdas %. Fallback: unidades base + perdas.
+ */
+export function unidadesMpConsumidasRevenda(input: {
+  kgPorUnidadeVendida?: number | null;
+  kgPorUnidadeCompra?: number | null;
+  unidadesMpPorUnidade?: number | null;
+  perdasPct?: number[];
+}): { unidades: number; kgBrutoNecessario: number | null; alertas: string[] } {
+  const alertas: string[] = [];
+  const perdas = input.perdasPct ?? [];
+  const kgFinal = toNum(input.kgPorUnidadeVendida);
+  const kgUnCompra = toNum(input.kgPorUnidadeCompra);
+  const f = fatorAproveitamento(perdas);
+  if (f <= 0) {
+    alertas.push("Perdas acumuladas impedem calcular o consumo de matéria-prima.");
+    return { unidades: 0, kgBrutoNecessario: null, alertas };
+  }
+
+  if (kgFinal != null && kgFinal > 0 && kgUnCompra != null && kgUnCompra > 0) {
+    const kgBruto = kgBrutoParaLiquido(kgFinal, perdas);
+    if (kgBruto == null) {
+      alertas.push("Perdas acumuladas impedem calcular o consumo de matéria-prima.");
+      return { unidades: 0, kgBrutoNecessario: null, alertas };
+    }
+    return { unidades: kgBruto / kgUnCompra, kgBrutoNecessario: kgBruto, alertas };
+  }
+
+  const base = toNum(input.unidadesMpPorUnidade) ?? 1;
+  if (base <= 0) {
+    alertas.push("Unidades de matéria-prima por produto devem ser maiores que zero.");
+    return { unidades: 0, kgBrutoNecessario: null, alertas };
+  }
+  const perdasAtivas = perdas.some((p) => p > 0);
+  if (perdasAtivas && base !== 1) {
+    alertas.push(
+      "Consumo manual com perdas % — use 1 unidade base + perdas, ou informe kg/un de compra + peso do pacote.",
+    );
+  }
+  return {
+    unidades: base / f,
+    kgBrutoNecessario: kgFinal != null && kgFinal > 0 ? kgBrutoParaLiquido(kgFinal, perdas) : null,
+    alertas,
+  };
+}
+
+/** Matéria-prima comprada por unidade (cabeça, caixa, bandeja…). */
 export function custoMaterialRevendaUnidade(input: {
   custoCompraUn: number;
   kgPorUnidadeVendida?: number | null;
-}): { custo: number; kgLiquido: number | null; alertas: string[] } {
+  kgPorUnidadeCompra?: number | null;
+  unidadesMpPorUnidade?: number | null;
+  perdasPct?: number[];
+}): { custo: number; kgLiquido: number | null; unidadesMpConsumidas: number; alertas: string[] } {
   const alertas: string[] = [];
-  const custo = input.custoCompraUn;
-  if (!(custo > 0)) {
+  const precoUn = input.custoCompraUn;
+  if (!(precoUn > 0)) {
     alertas.push("Informe o preço de compra por unidade de matéria-prima.");
-    return { custo: 0, kgLiquido: null, alertas };
+    return { custo: 0, kgLiquido: null, unidadesMpConsumidas: 0, alertas };
+  }
+  const consumo = unidadesMpConsumidasRevenda(input);
+  alertas.push(...consumo.alertas);
+  if (consumo.unidades <= 0) {
+    return { custo: 0, kgLiquido: null, unidadesMpConsumidas: 0, alertas };
   }
   const kg = toNum(input.kgPorUnidadeVendida);
   return {
-    custo,
+    custo: precoUn * consumo.unidades,
     kgLiquido: kg != null && kg > 0 ? kg : null,
+    unidadesMpConsumidas: consumo.unidades,
     alertas,
   };
 }
@@ -338,14 +398,22 @@ export function calcularCustoProduto(input: FichaCalculoInput): ResultadoCustoPr
       const rev = custoMaterialRevendaUnidade({
         custoCompraUn: toNum(input.custoCompraUn) ?? 0,
         kgPorUnidadeVendida: toNum(input.kgBrutoPorUnidade),
+        kgPorUnidadeCompra: toNum(input.kgPorUnidadeCompra),
+        unidadesMpPorUnidade: toNum(input.unidadesMpPorUnidade),
+        perdasPct: perdas,
       });
       custoMaterial += rev.custo;
       kgLiquidoPorUnidade = rev.kgLiquido;
       alertas.push(...rev.alertas);
       if (rev.custo > 0) {
+        const n = rev.unidadesMpConsumidas;
+        const sufixo =
+          Math.abs(n - 1) < 0.0001
+            ? ""
+            : ` × ${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(n)} un MP`;
         detalhes.push({
           grupo: "material",
-          label: "Matéria-prima (compra/un)",
+          label: `Matéria-prima (compra/un${sufixo})`,
           valor: rev.custo,
         });
       }

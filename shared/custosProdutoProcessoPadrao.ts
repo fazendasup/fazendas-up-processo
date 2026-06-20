@@ -1,8 +1,10 @@
 import type { CategoriaProdutoCusto, ModoCompraMp } from "./custosProduto";
 import {
+  calcularLinhaProcessoIndustrial,
   configFromProcessoModelo,
   derivarProcessoModelo,
   type LinhaProcessoIndustrialInput,
+  type LinhaProcessoIndustrialResult,
   type ProcessoModeloRecord,
 } from "./custosLinhaProcessoIndustrial";
 import { LABEL_ETAPA_PROCESSO, type TipoEtapaProcesso } from "./custosProduto";
@@ -225,14 +227,63 @@ function perfilUsaCorte(perfil: PerfilProcessoProduto): boolean {
   return perfil === "lavagem_corte_embalagem";
 }
 
+function minMoLinha(calc: LinhaProcessoIndustrialResult | null | undefined, nomeEtapa: string): number | null {
+  if (!calc) return null;
+  const m = calc.etapas.find((e) => e.nome === nomeEtapa)?.minPorUn;
+  return m != null && m > 0 ? m : null;
+}
+
+function etapasMoPorUn(
+  calc: LinhaProcessoIndustrialResult | null | undefined,
+  config: CustosProdutoProcessoConfig,
+  regime: RegimeMoEtapa,
+): EtapaProcessoPadrao[] {
+  const out: EtapaProcessoPadrao[] = [];
+  const embMo = minMoLinha(calc, "Embalagem");
+  const selMo = minMoLinha(calc, "Selagem");
+  const moCombinado =
+    config.embalagemMinutosUn != null && config.embalagemMinutosUn > 0 ? config.embalagemMinutosUn : null;
+
+  if (embMo != null) {
+    out.push(
+      etapa("mao_de_obra", {
+        nome: "Embalagem (MO)",
+        minutosPorUnidade: embMo,
+        regimeMo: regime,
+      }),
+    );
+  }
+  if (selMo != null) {
+    out.push(
+      etapa("mao_de_obra", {
+        nome: "Selagem (MO)",
+        minutosPorUnidade: selMo,
+        regimeMo: regime,
+      }),
+    );
+  }
+  if (out.length === 0 && moCombinado != null && calc == null) {
+    out.push(
+      etapa("mao_de_obra", {
+        nome: "Embalagem + selagem (MO)",
+        minutosPorUnidade: moCombinado,
+        regimeMo: regime,
+      }),
+    );
+  }
+  return out;
+}
+
 /**
  * Monta etapas conforme perfil do produto.
  * Lavagem em lote → R$/kg médio (config), não min/un por SKU.
+ * Insumo de embalagem fica separado da MO (embalagem/selagem vêm do modelo de linha).
  */
 export function etapasProcessoPadraoParaPerfil(
   perfil: PerfilProcessoProduto,
   categoria: CategoriaProdutoCusto,
   config: CustosProdutoProcessoConfig = CUSTOS_PRODUTO_PROCESSO_CONFIG_PADRAO,
+  calc?: LinhaProcessoIndustrialResult | null,
 ): EtapaProcessoPadrao[] {
   const regime = config.regimeMoPadrao;
   const embalagem =
@@ -266,8 +317,8 @@ export function etapasProcessoPadraoParaPerfil(
   ) {
     etapas.push(
       etapa("descasque_corte", {
-        nome: "Desfolhagem / corte",
-        minutosPorUnidade: config.corteMinutosUn,
+        nome: "Desfolhagem / corte (MO)",
+        minutosPorUnidade: minMoLinha(calc, "Desfolhagem") ?? config.corteMinutosUn,
         regimeMo: regime,
       }),
     );
@@ -275,14 +326,14 @@ export function etapasProcessoPadraoParaPerfil(
 
   etapas.push(
     etapa("embalagem", {
+      nome: "Embalagem (insumo)",
       custoPorUnidade: embalagem,
-      minutosPorUnidade:
-        config.embalagemMinutosUn != null && config.embalagemMinutosUn > 0
-          ? config.embalagemMinutosUn
-          : null,
+      minutosPorUnidade: null,
       regimeMo: regime,
     }),
   );
+
+  etapas.push(...etapasMoPorUn(calc, config, regime));
 
   if (config.incluirAdesivo && config.adesivoCustoUn != null && config.adesivoCustoUn > 0) {
     etapas.push(
@@ -322,7 +373,9 @@ export function etapasProcessoDeModelo(
   mapaHora?: CustoHoraPorRegime | null,
 ): EtapaProcessoPadrao[] {
   const derived = derivarProcessoModelo(modelo, mapaHora);
-  return etapasProcessoPadraoParaPerfil(perfil, categoria, configFromProcessoModelo(derived));
+  const config = configFromProcessoModelo(derived);
+  const calc = calcularLinhaProcessoIndustrial(derived.linhaProcesso, mapaHora);
+  return etapasProcessoPadraoParaPerfil(perfil, categoria, config, calc);
 }
 
 /** @deprecated Use etapasProcessoPadraoParaPerfil com mapeamento manual. */
