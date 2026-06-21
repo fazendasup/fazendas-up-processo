@@ -240,6 +240,45 @@ export function CustosRentabilidadePanel() {
     onError: (e) => toast.error(e.message),
   });
 
+  const vendasPorFichaId = useMemo(() => {
+    const map = new Map<number, NonNullable<(typeof vendasContaAzul.data)["produtos"]>[number]>();
+    for (const p of vendasContaAzul.data?.produtos ?? []) {
+      if (p.fichaId != null) map.set(p.fichaId, p);
+    }
+    return map;
+  }, [vendasContaAzul.data?.produtos]);
+
+  const vendasPorProdutoId = useMemo(() => {
+    const map = new Map<string, NonNullable<(typeof vendasContaAzul.data)["produtos"]>[number]>();
+    for (const p of vendasContaAzul.data?.produtos ?? []) {
+      if (p.produtoComercialId) map.set(p.produtoComercialId, p);
+    }
+    return map;
+  }, [vendasContaAzul.data?.produtos]);
+
+  function linhaVazia(l: LinhaForm) {
+    return (
+      !l.fichaId &&
+      !l.nomeProduto.trim() &&
+      !l.quantidade.trim() &&
+      !l.receitaTotal.trim() &&
+      !l.custoUnitarioManual.trim()
+    );
+  }
+
+  function linhasFromVendasContaAzul(
+    produtos: NonNullable<(typeof vendasContaAzul.data)["produtos"]>,
+  ): LinhaForm[] {
+    return produtos.map((p) => ({
+      key: crypto.randomUUID(),
+      fichaId: p.fichaId != null ? String(p.fichaId) : "",
+      nomeProduto: p.produtoNome,
+      quantidade: String(p.quantidade),
+      receitaTotal: String(p.receitaTotal),
+      custoUnitarioManual: "",
+    }));
+  }
+
   const fichaOptions = useMemo(() => fichas.data ?? [], [fichas.data]);
 
   const fichaPorId = useMemo(() => {
@@ -255,6 +294,25 @@ export function CustosRentabilidadePanel() {
     }
     return map;
   }, [fichaOptions]);
+
+  function aplicarFichaNaLinha(l: LinhaForm, fichaId: string): LinhaForm {
+    if (!fichaId) return { ...l, fichaId: "" };
+    const ficha = fichaPorId.get(Number(fichaId));
+    if (!ficha) return { ...l, fichaId };
+    const venda =
+      vendasPorFichaId.get(Number(fichaId)) ??
+      (ficha.ficha.produtoComercialId
+        ? vendasPorProdutoId.get(ficha.ficha.produtoComercialId)
+        : undefined);
+    return {
+      ...l,
+      fichaId,
+      nomeProduto: ficha.ficha.nome,
+      custoUnitarioManual: "",
+      quantidade: venda ? String(venda.quantidade) : l.quantidade,
+      receitaTotal: venda ? String(venda.receitaTotal) : l.receitaTotal,
+    };
+  }
 
   function resetNovo() {
     setTitulo("");
@@ -325,6 +383,17 @@ export function CustosRentabilidadePanel() {
     }
   }, [modoOverhead, sugestao.data?.total, custoOperacional]);
 
+  useEffect(() => {
+    if (periodoId != null) return;
+    if (vendasContaAzul.isLoading || !vendasContaAzul.data) return;
+    const produtos = vendasContaAzul.data.produtos;
+    if (produtos.length === 0) return;
+    setLinhas((prev) => {
+      if (!(prev.length === 1 && linhaVazia(prev[0]!))) return prev;
+      return linhasFromVendasContaAzul(produtos);
+    });
+  }, [periodoId, vendasContaAzul.data, vendasContaAzul.isLoading]);
+
   const custoOpAtual = useMemo(() => {
     if (modoOverhead === "sugerido") return sugestao.data?.total ?? 0;
     if (modoOverhead === "manual") return parseNum(custoOperacional);
@@ -372,16 +441,7 @@ export function CustosRentabilidadePanel() {
       toast.error("Nenhuma venda efetivada do Conta Azul neste período.");
       return;
     }
-    setLinhas(
-      produtos.map((p) => ({
-        key: crypto.randomUUID(),
-        fichaId: p.fichaId != null ? String(p.fichaId) : "",
-        nomeProduto: p.produtoNome,
-        quantidade: String(p.quantidade),
-        receitaTotal: String(p.receitaTotal),
-        custoUnitarioManual: "",
-      })),
-    );
+    setLinhas(linhasFromVendasContaAzul(produtos));
     toast.success(`${produtos.length} produto(s) importados das vendas Conta Azul.`);
   };
 
@@ -435,14 +495,10 @@ export function CustosRentabilidadePanel() {
     setLinhas((prev) =>
       prev.map((l) => {
         if (l.key !== key) return l;
-        const next = { ...l, ...patch };
-        if (patch.fichaId !== undefined && patch.fichaId) {
-          const ficha = fichaOptions.find((f) => String(f.ficha.id) === patch.fichaId);
-          if (ficha) {
-            next.nomeProduto = ficha.ficha.nome;
-          }
+        if (patch.fichaId !== undefined) {
+          return aplicarFichaNaLinha({ ...l, ...patch }, patch.fichaId);
         }
-        return next;
+        return { ...l, ...patch };
       }),
     );
   };
@@ -699,7 +755,8 @@ export function CustosRentabilidadePanel() {
           <div>
             <CardTitle className="text-base">Linhas para análise</CardTitle>
             <CardDescription>
-              Importe do Conta Azul ou ajuste manualmente. Vincule à ficha para CMV automático.
+              Importe do Conta Azul ou ajuste manualmente. Vincule à ficha para CMV automático — ao
+              escolher a ficha, produto, qtd. e receita do mês são preenchidos sozinhos.
             </CardDescription>
           </div>
           <Button size="sm" variant="outline" onClick={() => setLinhas((p) => [...p, emptyLinha()])}>
@@ -776,7 +833,14 @@ export function CustosRentabilidadePanel() {
                     onChange={(e) =>
                       updateLinha(linha.key, { custoUnitarioManual: e.target.value })
                     }
-                    placeholder={custoFicha != null ? String(custoFicha) : "Só se não usar ficha"}
+                    disabled={Boolean(linha.fichaId)}
+                    placeholder={
+                      linha.fichaId
+                        ? custoFicha != null
+                          ? `CMV ficha: ${custoFicha}`
+                          : "Usa CMV da ficha"
+                        : "Só se não usar ficha"
+                    }
                   />
                 </div>
                 <div className="flex items-end">
