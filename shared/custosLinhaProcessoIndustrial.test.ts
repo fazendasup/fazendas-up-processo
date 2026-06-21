@@ -129,6 +129,8 @@ describe("calcularLinhaProcessoIndustrial", () => {
     expect(col?.minPorUn).toBe(1.5);
     expect(r.processamentoMaquinaReaisKg).toBe(0);
     expect(r.processamentoConsumiveisReaisKg).toBe(0);
+    expect(r.processamentoMoReaisUn).toBeGreaterThan(0);
+    expect(r.processamentoMoReaisKg).toBeGreaterThan(0);
     expect(r.alertas).toEqual([]);
   });
 

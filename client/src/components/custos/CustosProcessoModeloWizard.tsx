@@ -711,10 +711,24 @@ export function CustosProcessoModeloWizard() {
                   </div>
                 </>
               ) : (
-                <p className="text-xs text-muted-foreground sm:col-span-2">
-                  Microverdes não usam máquinas nem desfolhagem — só MO de colheita e embalagem nos passos
-                  seguintes.
-                </p>
+                <>
+                  <div className="space-y-1">
+                    <Label>Kg por unidade vendida (ref. R$/kg)</Label>
+                    <DecimalInput
+                      value={draft.linha.kgPorUnidadeRef}
+                      fallback={0.03}
+                      fractionDigits={4}
+                      onChange={(v) => patchLinha({ kgPorUnidadeRef: v })}
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      Pote 30g → <strong>0,03</strong> · clamshell 100g → <strong>0,10</strong>
+                    </p>
+                  </div>
+                  <p className="text-xs text-muted-foreground sm:col-span-2">
+                    Microverdes não usam máquinas nem desfolhagem — só MO de colheita e embalagem nos passos
+                    seguintes.
+                  </p>
+                </>
               )}
             </div>
           ) : null}
@@ -1134,7 +1148,19 @@ export function CustosProcessoModeloWizard() {
                     <CardTitle className="text-xs text-muted-foreground">Processamento MO</CardTitle>
                   </CardHeader>
                   <CardContent className="text-lg font-semibold tabular-nums">
-                    {fmtMoney(linhaCalc.processamentoMoReaisKg)}/kg
+                    {isMicroverdes ? (
+                      <>
+                        {fmtMoney(linhaCalc.processamentoMoReaisUn)}/un
+                        {draft.linha.kgPorUnidadeRef > 0 ? (
+                          <p className="text-xs font-normal text-muted-foreground mt-1">
+                            ≈ {fmtMoney(linhaCalc.processamentoMoReaisKg)}/kg (ref.{" "}
+                            {draft.linha.kgPorUnidadeRef} kg/un)
+                          </p>
+                        ) : null}
+                      </>
+                    ) : (
+                      `${fmtMoney(linhaCalc.processamentoMoReaisKg)}/kg`
+                    )}
                   </CardContent>
                 </Card>
                 {!isMicroverdes ? (
@@ -1164,7 +1190,22 @@ export function CustosProcessoModeloWizard() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="text-lg font-semibold tabular-nums text-emerald-700">
-                    {fmtMoney(linhaCalc.processamentoReaisKg)}/kg
+                    {isMicroverdes ? (
+                      <>
+                        {fmtMoney(linhaCalc.processamentoReaisUn)}/un
+                        {draft.linha.kgPorUnidadeRef > 0 ? (
+                          <p className="text-xs font-normal text-emerald-800/80 mt-1">
+                            ≈ {fmtMoney(linhaCalc.processamentoReaisKg)}/kg
+                          </p>
+                        ) : (
+                          <p className="text-xs font-normal text-amber-700 mt-1">
+                            Informe kg/un no passo Base para ver R$/kg
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      `${fmtMoney(linhaCalc.processamentoReaisKg)}/kg`
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -1317,6 +1358,10 @@ export function CustosProcessoModeloWizard() {
                                         perfilProcesso: vinculaMicroverdes
                                           ? "microverde_embalagem"
                                           : x.perfilProcesso,
+                                        kgPorUnidade:
+                                          vinculaMicroverdes && !x.kgPorUnidade.trim()
+                                            ? "0.03"
+                                            : x.kgPorUnidade,
                                       }
                                     : x,
                                 ),

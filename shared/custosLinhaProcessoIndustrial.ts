@@ -62,6 +62,8 @@ export type LinhaProcessoIndustrialInput = {
   /** Cadastro de operadores deste modelo — o mesmo id pode atuar em várias etapas. */
   operadores: OperadorLinhaProcesso[];
   pesPorUnidadeRef: number;
+  /** Peso da unidade vendida (kg) — converte MO R$/un em R$/kg de referência (ex.: pote 30g = 0,03). */
+  kgPorUnidadeRef: number;
   /** Colheita pós-cultivo (min/un) — microverdes e rotas sem lavagem. */
   colheitaMinPorUn: number;
   colheitaOperadorIds: string[];
@@ -99,6 +101,7 @@ export const LINHA_PROCESSO_INDUSTRIAL_PADRAO: LinhaProcessoIndustrialInput = {
   tarifaKwh: 0.75,
   operadores: [...OPERADORES_LINHA_PADRAO],
   pesPorUnidadeRef: 1,
+  kgPorUnidadeRef: 0,
   colheitaMinPorUn: 0,
   colheitaOperadorIds: ["1"],
   desfolhagemSegPorPe: 30,
@@ -159,6 +162,7 @@ const MAQUINA_INATIVA: CustoMaquinaInput = {
 /** Linha enxuta: colheita + embalagem (sem lavagem, selagem nem máquinas). */
 export const LINHA_PROCESSO_MICROVERDES_PADRAO: LinhaProcessoIndustrialInput = {
   ...LINHA_PROCESSO_INDUSTRIAL_PADRAO,
+  kgPorUnidadeRef: 0.03,
   colheitaMinPorUn: 1.5,
   colheitaOperadorIds: ["1"],
   desfolhagemSegPorPe: 0,
@@ -194,6 +198,7 @@ export function linhaPresetParaFamilia(
     operadores: base.operadores,
     colheitaMinPorUn: base.colheitaMinPorUn > 0 ? base.colheitaMinPorUn : 1.5,
     embalagemMinPorUn: base.embalagemMinPorUn > 0 ? base.embalagemMinPorUn : 1,
+    kgPorUnidadeRef: base.kgPorUnidadeRef > 0 ? base.kgPorUnidadeRef : 0.03,
   });
 }
 
@@ -377,6 +382,7 @@ export function normalizarLinhaProcessoInput(raw: LinhaProcessoIndustrialInputLe
   if (raw.preLavagemConsumiveisReaisKg == null) base.preLavagemConsumiveisReaisKg = 0;
   if (raw.enxagueConsumiveisReaisKg == null) base.enxagueConsumiveisReaisKg = 0;
   if (raw.colheitaMinPorUn == null) base.colheitaMinPorUn = 0;
+  if (raw.kgPorUnidadeRef == null) base.kgPorUnidadeRef = 0;
   base.lavagemMaquina = normalizarMaquina(raw.lavagemMaquina, LINHA_PROCESSO_INDUSTRIAL_PADRAO.lavagemMaquina);
   base.secagemMaquina = normalizarMaquina(raw.secagemMaquina, LINHA_PROCESSO_INDUSTRIAL_PADRAO.secagemMaquina);
   if (!base.lavagemUsaMo && raw.lavagemMaquina == null) base.lavagemMaquina.ativo = true;
@@ -422,6 +428,8 @@ export type LinhaProcessoIndustrialResult = {
   etapas: EtapaLinhaBreakdown[];
   processamentoReaisKg: number;
   processamentoMoReaisKg: number;
+  processamentoMoReaisUn: number;
+  processamentoReaisUn: number;
   processamentoMaquinaReaisKg: number;
   processamentoConsumiveisReaisKg: number;
   desfolhagemMinPorUn: number;
@@ -1001,8 +1009,24 @@ export function calcularLinhaProcessoIndustrial(
   }
 
   const porKg = etapas.filter((e) => e.modo === "por_kg");
+  const porUn = etapas.filter((e) => e.modo === "por_un");
+  const processamentoMoReaisUn = round4(
+    porUn.reduce((s, e) => s + (e.moReaisPorUn ?? 0), 0),
+  );
+  const processamentoReaisUn = round4(
+    porUn.reduce((s, e) => s + (e.reaisPorUn ?? 0), 0),
+  );
+  const kgRef = input.kgPorUnidadeRef > 0 ? input.kgPorUnidadeRef : null;
+  const moKgFromUn =
+    kgRef != null && processamentoMoReaisUn > 0
+      ? round4(processamentoMoReaisUn / kgRef)
+      : 0;
+  const totalKgFromUn =
+    kgRef != null && processamentoReaisUn > 0
+      ? round4(processamentoReaisUn / kgRef)
+      : 0;
   const processamentoMoReaisKg = round4(
-    porKg.reduce((s, e) => s + (e.moReaisPorKg ?? 0), 0),
+    porKg.reduce((s, e) => s + (e.moReaisPorKg ?? 0), 0) + moKgFromUn,
   );
   const processamentoMaquinaReaisKg = round4(
     porKg.reduce((s, e) => s + (e.maquinaReaisPorKg ?? 0), 0),
@@ -1011,7 +1035,9 @@ export function calcularLinhaProcessoIndustrial(
     porKg.reduce((s, e) => s + (e.consumiveisReaisPorKg ?? 0), 0),
   );
   const processamentoReaisKg = round4(
-    processamentoMoReaisKg + processamentoMaquinaReaisKg + processamentoConsumiveisReaisKg,
+    totalKgFromUn > 0
+      ? totalKgFromUn + processamentoMaquinaReaisKg + processamentoConsumiveisReaisKg
+      : processamentoMoReaisKg + processamentoMaquinaReaisKg + processamentoConsumiveisReaisKg,
   );
 
   const homemMinPorUnEtapa = (etapa: EtapaLinhaBreakdown) => {
@@ -1024,6 +1050,8 @@ export function calcularLinhaProcessoIndustrial(
     etapas,
     processamentoReaisKg,
     processamentoMoReaisKg,
+    processamentoMoReaisUn,
+    processamentoReaisUn,
     processamentoMaquinaReaisKg,
     processamentoConsumiveisReaisKg,
     desfolhagemMinPorUn: homemMinPorUnEtapa(desfolhagemEtapa),
