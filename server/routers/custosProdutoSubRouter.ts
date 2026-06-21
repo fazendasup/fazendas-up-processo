@@ -810,9 +810,9 @@ export const custosProdutoSubRouter = router({
             m.perfilProcesso +
             ". Complete matéria-prima (" +
             (modoMp === "unidade" ? "R$/un" : "R$/kg") +
-            "). Lavagem = R$/kg × kg/un quando informado.",
+            ") e ative a ficha. Lavagem = R$/kg × kg/un quando informado.",
           ordem: 0,
-          ativo: true,
+          ativo: false,
         });
         await custosProdutoDb.replaceComponentesEtapas(fichaId, [], etapas);
         fichaPorProduto.set(p.id, { id: fichaId } as (typeof fichas)[number]);

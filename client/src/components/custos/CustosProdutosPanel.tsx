@@ -447,6 +447,69 @@ function parseOpt(s: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function parseTrpcErrorMessage(message: string): string {
+  try {
+    const parsed = JSON.parse(message) as unknown;
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      const first = parsed[0] as { message?: string };
+      if (typeof first.message === "string" && first.message.trim()) return first.message;
+    }
+  } catch {
+    /* mensagem já legível */
+  }
+  return message;
+}
+
+/** Espelha validação do servidor ao salvar ficha ativa. */
+function mensagemErroAtivacaoFicha(form: FichaForm): string | null {
+  if (!form.ativo) return null;
+  if (form.tipo === "mix") {
+    const qtd = form.componentes.filter((c) => parseOpt(c.quantidadePorUnidade)).length;
+    if (qtd < 2) return "Mix exige ao menos 2 componentes antes de ativar.";
+  }
+  const precisaMp =
+    form.tipo === "revenda_processada" || (form.tipo === "manual" && !!form.produtoComercialId);
+  if (precisaMp) {
+    const modo = form.modoCompraMp ?? "kg";
+    if (modo === "unidade") {
+      const v = parseOpt(form.custoCompraUn);
+      if (v == null || v <= 0) {
+        return "Informe o preço por unidade de matéria-prima (coluna Compra MP ou editor) antes de ativar.";
+      }
+    } else {
+      const preco = parseOpt(form.precoCompraKg);
+      const kg = parseOpt(form.kgBrutoPorUnidade);
+      if (preco == null || preco <= 0 || kg == null) {
+        return "Para ativar: informe preço R$/kg (> 0) e kg final vendido/unidade (coluna Compra MP ou botão Editar).";
+      }
+    }
+  }
+  if (form.tipo === "producao_propria") {
+    if (
+      !form.variedadeId ||
+      parseOpt(form.kgColhidoPorPlanta) == null ||
+      parseOpt(form.kgProducaoPorUnidade) == null
+    ) {
+      return "Produção própria exige variedade, kg colhido/planta e kg usado por unidade antes de ativar.";
+    }
+  }
+  return null;
+}
+
+function rowToFichaFormComDraft(
+  row: any,
+  patch: Partial<FichaForm>,
+  compraDraft: Record<number, string>,
+): FichaForm {
+  const form = rowToFichaForm(row, patch);
+  const draft = compraDraft[row.ficha.id];
+  if (draft == null) return form;
+  const modo = (patch.modoCompraMp ?? row.ficha.modoCompraMp ?? "kg") as ModoCompraMp;
+  if (modo === "unidade") form.custoCompraUn = draft;
+  else form.precoCompraKg = draft;
+  return form;
+}
+
 function buildPayload(form: FichaForm, id?: number) {
   return {
     ...(id ? { id } : {}),
@@ -1079,7 +1142,16 @@ function FichaEditor({
               Fichas inativas ficam cadastradas, mas não entram na tabela/PDF para clientes.
             </p>
           </div>
-          <Switch checked={form.ativo} onCheckedChange={(ativo) => setForm((f) => ({ ...f, ativo }))} />
+          <Switch
+            checked={form.ativo}
+            onCheckedChange={(ativo) => {
+              if (ativo) {
+                const msg = mensagemErroAtivacaoFicha({ ...form, ativo: true });
+                if (msg) return toast.error(msg);
+              }
+              setForm((f) => ({ ...f, ativo }));
+            }}
+          />
         </div>
       </div>
 
@@ -1688,7 +1760,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
       await utils.custosProducao.produtos.listarFichas.invalidate();
       setEditingId(r.id);
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(parseTrpcErrorMessage(e.message)),
   });
   const salvarFichaRapida = trpc.custosProducao.produtos.salvarFicha.useMutation({
     onSuccess: async () => {
@@ -1696,7 +1768,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
       setCompraDraft({});
       await utils.custosProducao.produtos.listarFichas.invalidate();
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(parseTrpcErrorMessage(e.message)),
   });
   const excluir = trpc.custosProducao.produtos.excluirFicha.useMutation({
     onSuccess: async () => {
@@ -1705,7 +1777,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
       setForm(emptyFicha());
       await utils.custosProducao.produtos.listarFichas.invalidate();
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(parseTrpcErrorMessage(e.message)),
   });
 
   const resumoProdutos = useMemo(() => fichas.data ?? [], [fichas.data]);
@@ -1887,12 +1959,27 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                                 checked={ativo}
                                 disabled={salvarFichaRapida.isPending}
                                 onCheckedChange={(nextAtivo) => {
-                                  const p = buildPayload(rowToFichaForm(row, { ativo: nextAtivo }), row.ficha.id);
-                                  salvarFichaRapida.mutate(p as any);
+                                  const formAtual = rowToFichaFormComDraft(
+                                    row,
+                                    { ativo: nextAtivo },
+                                    compraDraft,
+                                  );
+                                  if (nextAtivo) {
+                                    const msg = mensagemErroAtivacaoFicha(formAtual);
+                                    if (msg) return toast.error(msg);
+                                  }
+                                  salvarFichaRapida.mutate(
+                                    buildPayload(formAtual, row.ficha.id) as any,
+                                  );
                                 }}
                               />
                               <span className="text-[11px] text-muted-foreground">Ativo</span>
                             </div>
+                            {incompleta && !ativo && (
+                              <p className="text-[10px] text-destructive leading-snug">
+                                Preencha compra MP (e kg/un se faltar) antes de ativar.
+                              </p>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell className="align-top whitespace-normal">
@@ -2067,6 +2154,8 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
               onSalvar={() => {
                 const p = buildPayload(form, editingId ?? undefined);
                 if (!p.nome) return toast.error("Informe o nome do produto.");
+                const msg = mensagemErroAtivacaoFicha(form);
+                if (msg) return toast.error(msg);
                 salvar.mutate(p as any);
               }}
             />
@@ -2097,6 +2186,8 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
         onSalvar={() => {
           const p = buildPayload(form, editingId ?? undefined);
           if (!p.nome) return toast.error("Informe o nome do produto.");
+          const msg = mensagemErroAtivacaoFicha(form);
+          if (msg) return toast.error(msg);
           salvar.mutate(p as any);
         }}
       />
