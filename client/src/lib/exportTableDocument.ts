@@ -68,6 +68,7 @@ export function downloadTablePdf(input: TableExportInput): void {
     head: [input.headers],
     body: input.rows,
     foot: input.footers,
+    showFoot: input.footers?.length ? "lastPage" : "never",
     startY,
     styles: { fontSize: 8, cellPadding: 2, overflow: "linebreak" },
     headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: "bold" },
