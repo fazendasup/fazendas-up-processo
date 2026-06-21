@@ -19,6 +19,9 @@ import {
   deduplicarEtapasLogistica,
   temEtapaLogistica,
   unidadesMpConsumidasRevenda,
+  custoMaterialRevenda,
+  kgLiquidoPorUnidadeDeRendimentoKg,
+  rendimentoUnidadesPorKg,
 } from "@shared/custosProduto";
 import {
   DESCRICAO_PERFIL_PROCESSO,
@@ -1185,9 +1188,11 @@ function FichaEditor({
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Matéria-prima — específico desta variedade/SKU</CardTitle>
             <CardDescription>
-              {form.modoCompraMp === "unidade"
-                ? "Informe o preço por unidade de compra (cabeça, caixa, bandeja…). Consumo e perdas definem quantas unidades de MP entram em cada produto vendido."
-                : "Informe o preço de compra por kg e quanto produto pronto você vende. As perdas calculam automaticamente quanto precisa comprar bruto."}
+              {isFloresCategoria && form.modoCompraMp === "kg"
+                ? "Compra por kg e vende por pote/unidade — informe o preço R$/kg e quantos potes você monta com 1 kg. O sistema calcula o kg por pote e o custo de MP."
+                : form.modoCompraMp === "unidade"
+                  ? "Informe o preço por unidade de compra (cabeça, caixa, bandeja…). Consumo e perdas definem quantas unidades de MP entram em cada produto vendido."
+                  : "Informe o preço de compra por kg e quanto produto pronto você vende. As perdas calculam automaticamente quanto precisa comprar bruto."}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-3">
@@ -1227,18 +1232,70 @@ function FichaEditor({
                     onChange={(e) => setForm((f) => ({ ...f, precoCompraKg: e.target.value }))}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Kg final vendido / unidade</Label>
-                  <Input
-                    inputMode="decimal"
-                    placeholder={form.unidadeVenda === "kg" ? "1" : "Ex.: 0,5 para pacote de 500g"}
-                    value={form.kgBrutoPorUnidade}
-                    onChange={(e) => setForm((f) => ({ ...f, kgBrutoPorUnidade: e.target.value }))}
-                  />
-                  <p className="text-[10px] text-muted-foreground">
-                    Peso <strong>líquido</strong> que o cliente recebe — o sistema calcula a compra bruta pelas perdas.
-                  </p>
-                </div>
+                {isFloresCategoria ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Rendimento (potes por kg comprado)</Label>
+                      <Input
+                        inputMode="decimal"
+                        placeholder="Ex.: 17"
+                        value={(() => {
+                          const kg = parseOpt(form.kgBrutoPorUnidade);
+                          const rend = kg != null && kg > 0 ? rendimentoUnidadesPorKg(kg) : null;
+                          return rend != null ? fmtDecimalInput(rend, 2) : "";
+                        })()}
+                        onChange={(e) => {
+                          const rend = parseOpt(e.target.value);
+                          setForm((f) => ({
+                            ...f,
+                            kgBrutoPorUnidade:
+                              rend != null && rend > 0
+                                ? fmtDecimalInput(kgLiquidoPorUnidadeDeRendimentoKg(rend), 6)
+                                : "",
+                          }));
+                        }}
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        Ex.: com <strong>1 kg</strong> a R$ 200 você monta <strong>17 potes</strong> de 25 flores — informe{" "}
+                        <strong>17</strong>. O sistema usa ≈{" "}
+                        {(() => {
+                          const kg = parseOpt(form.kgBrutoPorUnidade);
+                          return kg != null && kg > 0
+                            ? `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 }).format(kg)} kg/pote`
+                            : "0,059 kg/pote";
+                        })()}{" "}
+                        antes do desperdício na seleção.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Kg por pote (calculado)</Label>
+                      <Input
+                        inputMode="decimal"
+                        readOnly
+                        className="bg-muted/40"
+                        value={(() => {
+                          const kg = parseOpt(form.kgBrutoPorUnidade);
+                          return kg != null && kg > 0
+                            ? fmtDecimalInput(kg, 4)
+                            : "";
+                        })()}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>Kg final vendido / unidade</Label>
+                    <Input
+                      inputMode="decimal"
+                      placeholder={form.unidadeVenda === "kg" ? "1" : "Ex.: 0,5 para pacote de 500g"}
+                      value={form.kgBrutoPorUnidade}
+                      onChange={(e) => setForm((f) => ({ ...f, kgBrutoPorUnidade: e.target.value }))}
+                    />
+                    <p className="text-[10px] text-muted-foreground">
+                      Peso <strong>líquido</strong> que o cliente recebe — o sistema calcula a compra bruta pelas perdas.
+                    </p>
+                  </div>
+                )}
                 {isFloresCategoria ? (
                   <div className="space-y-2 md:col-span-2">
                     <Label>Desperdício na seleção (%)</Label>
@@ -1250,6 +1307,31 @@ function FichaEditor({
                     <p className="text-[10px] text-muted-foreground">
                       Flores: só triagem/seleção — sem perda de lavagem ou corte.
                     </p>
+                    {(() => {
+                      const precoKg = parseOpt(form.precoCompraKg);
+                      const kgPote = parseOpt(form.kgBrutoPorUnidade);
+                      if (precoKg == null || kgPote == null || precoKg <= 0 || kgPote <= 0) return null;
+                      const rev = custoMaterialRevenda({
+                        precoCompraKg: precoKg,
+                        kgBrutoPorUnidade: kgPote,
+                        perdasPct: [0, 0, parseOpt(form.perdaSelecaoPct) ?? 0],
+                      });
+                      if (rev.custo <= 0) return null;
+                      const rend = rendimentoUnidadesPorKg(kgPote);
+                      return (
+                        <p className="text-xs text-emerald-800 dark:text-emerald-300">
+                          Matéria-prima por pote:{" "}
+                          <strong>{fmtMoney(rev.custo)}</strong>
+                          {rend != null ? (
+                            <>
+                              {" "}
+                              (R$ {fmtDecimalInput(precoKg, 2)}/kg ÷ {fmtDecimalInput(rend, 1)} potes/kg
+                              {parseOpt(form.perdaSelecaoPct) ? ", com desperdício na seleção" : ""})
+                            </>
+                          ) : null}
+                        </p>
+                      );
+                    })()}
                   </div>
                 ) : form.etapas.some((e) => e.tipo === "lavagem" || e.tipo === "descasque_corte") ? (
                   <>

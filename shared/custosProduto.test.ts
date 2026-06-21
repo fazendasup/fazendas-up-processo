@@ -7,7 +7,9 @@ import {
   etapaEquivaleLogistica,
   fatorAproveitamento,
   kgBrutoParaLiquido,
+  kgLiquidoPorUnidadeDeRendimentoKg,
   precoVendaParaMargem,
+  rendimentoUnidadesPorKg,
   temEtapaLogistica,
 } from "./custosProduto";
 import { garantirEtapaLogistica } from "./custosProdutoProcessoPadrao";
@@ -260,5 +262,22 @@ describe("calcularCustoProduto", () => {
 describe("kgBrutoParaLiquido", () => {
   it("inverte perdas", () => {
     expect(kgBrutoParaLiquido(0.9, [10])!).toBeCloseTo(1);
+  });
+});
+
+describe("rendimento kg → unidade", () => {
+  it("17 potes/kg → ~0,0588 kg por pote", () => {
+    expect(kgLiquidoPorUnidadeDeRendimentoKg(17)!).toBeCloseTo(1 / 17, 6);
+    expect(rendimentoUnidadesPorKg(1 / 17)!).toBeCloseTo(17, 4);
+  });
+
+  it("custo MP flores — compra R$/kg, vende pote", () => {
+    const kgPorPote = kgLiquidoPorUnidadeDeRendimentoKg(17)!;
+    const r = custoMaterialRevenda({
+      precoCompraKg: 200,
+      kgBrutoPorUnidade: kgPorPote,
+      perdasPct: [0, 0, 5],
+    });
+    expect(r.custo).toBeCloseTo((200 * kgPorPote) / 0.95, 2);
   });
 });

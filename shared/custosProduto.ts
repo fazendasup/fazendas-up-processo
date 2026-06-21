@@ -217,6 +217,18 @@ export function precoVendaParaMargem(custo: number | null | undefined, margemPct
   return c / (1 - m / 100);
 }
 
+/** Kg de matéria-prima líquida que entra em cada unidade vendida, a partir do rendimento (ex.: 17 potes/kg → ~0,0588). */
+export function kgLiquidoPorUnidadeDeRendimentoKg(unidadesPorKg: number): number | null {
+  if (!(unidadesPorKg > 0)) return null;
+  return 1 / unidadesPorKg;
+}
+
+/** Quantas unidades vendidas saem de 1 kg de MP (inverso do kg/un). */
+export function rendimentoUnidadesPorKg(kgLiquidoPorUnidade: number): number | null {
+  if (!(kgLiquidoPorUnidade > 0)) return null;
+  return 1 / kgLiquidoPorUnidade;
+}
+
 /** Fator de aproveitamento acumulado (0–1) a partir das perdas em %. */
 export function fatorAproveitamento(perdasPct: number[]): number {
   let f = 1;
