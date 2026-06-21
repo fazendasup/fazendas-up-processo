@@ -494,6 +494,33 @@ function kgHoraEfetivo(nominal: number, eficienciaPct: number): number | null {
   return (nominal * eficienciaPct) / 100;
 }
 
+function etapaPreLavagemHabilitada(input: LinhaProcessoIndustrialInput): boolean {
+  return (
+    input.preLavagemKgHora > 0 ||
+    input.preLavagemEficienciaPct > 0 ||
+    input.preLavagemConsumiveisReaisKg > 0
+  );
+}
+
+function etapaLavagemMoHabilitada(input: LinhaProcessoIndustrialInput): boolean {
+  return (
+    input.lavagemUsaMo &&
+    (input.lavagemKgHora > 0 || input.lavagemEficienciaPct > 0 || input.lavagemMaquina.ativo)
+  );
+}
+
+function etapaLavagemMaquinaHabilitada(input: LinhaProcessoIndustrialInput): boolean {
+  return !input.lavagemUsaMo && input.lavagemMaquina.ativo;
+}
+
+function etapaEnxagueHabilitada(input: LinhaProcessoIndustrialInput): boolean {
+  return input.enxagueSeg > 0 || input.enxagueConsumiveisReaisKg > 0;
+}
+
+function etapaSecagemHabilitada(input: LinhaProcessoIndustrialInput): boolean {
+  return input.secagemSegOperador > 0 || input.secagemMaquina.ativo;
+}
+
 function horaMo(
   input: LinhaProcessoIndustrialInput,
   regime: RegimeMoEtapa,
@@ -729,39 +756,41 @@ export function calcularLinhaProcessoIndustrial(
   }
 
   const preKgH = kgHoraEfetivo(input.preLavagemKgHora, input.preLavagemEficienciaPct);
-  if (preKgH == null) {
-    alertas.push("Pré-lavagem: informe kg/h e eficiência (%).");
-  } else {
-    const opsPre = resolverOperadoresLinha(input, input.preLavagemOperadorIds);
-    const moPre = moTotalOperadoresParalelos(input, opsPre, mapaUsado, (h) =>
-      reaisPorKgDeThroughput(h, preKgH),
-    );
-    etapas.push(
-      montarEtapaMo(
-        {
-          nome: "Pré-lavagem",
-          modo: "por_kg",
-          temMo: true,
-          temMaquina: false,
-          regimeMo: moPre.regimeMo,
-          custoHoraUsado: moPre.custoHoraUsado,
-          nota: null,
-          minPorKg: minPorKgDeThroughput(preKgH),
-          minPorUn: null,
-          maquinaReaisPorKg: null,
-          consumiveisReaisPorKg:
-            input.preLavagemConsumiveisReaisKg > 0 ? input.preLavagemConsumiveisReaisKg : 0,
-        },
-        opsPre,
-        moPre,
-        null,
-      ),
-    );
+  if (etapaPreLavagemHabilitada(input)) {
+    if (preKgH == null) {
+      alertas.push("Pré-lavagem: informe kg/h e eficiência (%).");
+    } else {
+      const opsPre = resolverOperadoresLinha(input, input.preLavagemOperadorIds);
+      const moPre = moTotalOperadoresParalelos(input, opsPre, mapaUsado, (h) =>
+        reaisPorKgDeThroughput(h, preKgH),
+      );
+      etapas.push(
+        montarEtapaMo(
+          {
+            nome: "Pré-lavagem",
+            modo: "por_kg",
+            temMo: true,
+            temMaquina: false,
+            regimeMo: moPre.regimeMo,
+            custoHoraUsado: moPre.custoHoraUsado,
+            nota: null,
+            minPorKg: minPorKgDeThroughput(preKgH),
+            minPorUn: null,
+            maquinaReaisPorKg: null,
+            consumiveisReaisPorKg:
+              input.preLavagemConsumiveisReaisKg > 0 ? input.preLavagemConsumiveisReaisKg : 0,
+          },
+          opsPre,
+          moPre,
+          null,
+        ),
+      );
+    }
   }
 
   const lavKgH = kgHoraEfetivo(input.lavagemKgHora, input.lavagemEficienciaPct);
   const lavMaquinaKg = calcularMaquinaReaisKg(input.lavagemMaquina, input.tarifaKwh, lavKgH);
-  if (input.lavagemUsaMo) {
+  if (etapaLavagemMoHabilitada(input)) {
     if (lavKgH == null) {
       alertas.push("Lavagem com operador: informe kg/h e eficiência (%).");
     } else {
@@ -793,7 +822,7 @@ export function calcularLinhaProcessoIndustrial(
       );
       etapas.push(etapaLav);
     }
-  } else if (lavMaquinaKg > 0) {
+  } else if (etapaLavagemMaquinaHabilitada(input) && lavMaquinaKg > 0) {
     etapas.push({
       nome: "Lavagem",
       modo: "por_kg",
@@ -819,67 +848,71 @@ export function calcularLinhaProcessoIndustrial(
     });
   }
 
-  const opsEnx = resolverOperadoresLinha(input, input.enxagueOperadorIds);
-  const moEnx = moTotalOperadoresParalelos(input, opsEnx, mapaUsado, (h) =>
-    reaisPorKgDeTempoOperador(h, input.enxagueSeg, input.enxagueKg),
-  );
-  if (moEnx.mo == null) {
-    alertas.push("Enxague: informe segundos do operador e kg de referência.");
-  } else {
-    etapas.push(
-      montarEtapaMo(
-        {
-          nome: "Enxague",
-          modo: "por_kg",
-          temMo: true,
-          temMaquina: false,
-          regimeMo: moEnx.regimeMo,
-          custoHoraUsado: moEnx.custoHoraUsado,
-          nota: null,
-          minPorKg: minPorKgDeTempoOperador(input.enxagueSeg, input.enxagueKg),
-          minPorUn: null,
-          maquinaReaisPorKg: null,
-          consumiveisReaisPorKg:
-            input.enxagueConsumiveisReaisKg > 0 ? input.enxagueConsumiveisReaisKg : 0,
-        },
-        opsEnx,
-        moEnx,
-        null,
-      ),
+  if (etapaEnxagueHabilitada(input)) {
+    const opsEnx = resolverOperadoresLinha(input, input.enxagueOperadorIds);
+    const moEnx = moTotalOperadoresParalelos(input, opsEnx, mapaUsado, (h) =>
+      reaisPorKgDeTempoOperador(h, input.enxagueSeg, input.enxagueKg),
     );
+    if (moEnx.mo == null) {
+      alertas.push("Enxague: informe segundos do operador e kg de referência.");
+    } else {
+      etapas.push(
+        montarEtapaMo(
+          {
+            nome: "Enxague",
+            modo: "por_kg",
+            temMo: true,
+            temMaquina: false,
+            regimeMo: moEnx.regimeMo,
+            custoHoraUsado: moEnx.custoHoraUsado,
+            nota: null,
+            minPorKg: minPorKgDeTempoOperador(input.enxagueSeg, input.enxagueKg),
+            minPorUn: null,
+            maquinaReaisPorKg: null,
+            consumiveisReaisPorKg:
+              input.enxagueConsumiveisReaisKg > 0 ? input.enxagueConsumiveisReaisKg : 0,
+          },
+          opsEnx,
+          moEnx,
+          null,
+        ),
+      );
+    }
   }
 
-  const opsSec = resolverOperadoresLinha(input, input.secagemOperadorIds);
-  const moSec = moTotalOperadoresParalelos(input, opsSec, mapaUsado, (h) =>
-    reaisPorKgDeTempoOperador(h, input.secagemSegOperador, input.secagemKg),
-  );
-  const secMaq = calcularMaquinaReaisKg(input.secagemMaquina, input.tarifaKwh, null);
-  if (moSec.mo == null) {
-    alertas.push("Secagem: informe segundos do operador abastecendo e kg por carga.");
-  } else {
-    const etapaSec = montarEtapaMo(
-      {
-        nome: "Secagem (abastecimento)",
-        modo: "por_kg",
-        temMo: true,
-        temMaquina: input.secagemMaquina.ativo,
-        regimeMo: moSec.regimeMo,
-        custoHoraUsado: moSec.custoHoraUsado,
-        nota: "Operador abastecendo + ciclo centrífuga",
-        minPorKg: minPorKgDeTempoOperador(input.secagemSegOperador, input.secagemKg),
-        minPorUn: null,
-        maquinaReaisPorKg: secMaq > 0 ? secMaq : null,
-      },
-      opsSec,
-      moSec,
-      "Operador + centrífuga",
+  if (etapaSecagemHabilitada(input)) {
+    const opsSec = resolverOperadoresLinha(input, input.secagemOperadorIds);
+    const moSec = moTotalOperadoresParalelos(input, opsSec, mapaUsado, (h) =>
+      reaisPorKgDeTempoOperador(h, input.secagemSegOperador, input.secagemKg),
     );
-    etapaSec.reaisPorKg = totalReaisPorKg(
-      etapaSec.moReaisPorKg,
-      etapaSec.maquinaReaisPorKg,
-      etapaSec.consumiveisReaisPorKg,
-    );
-    etapas.push(etapaSec);
+    const secMaq = calcularMaquinaReaisKg(input.secagemMaquina, input.tarifaKwh, null);
+    if (moSec.mo == null && input.secagemSegOperador > 0) {
+      alertas.push("Secagem: informe segundos do operador abastecendo e kg por carga.");
+    } else if (moSec.mo != null || secMaq > 0) {
+      const etapaSec = montarEtapaMo(
+        {
+          nome: "Secagem (abastecimento)",
+          modo: "por_kg",
+          temMo: moSec.mo != null,
+          temMaquina: input.secagemMaquina.ativo,
+          regimeMo: moSec.regimeMo,
+          custoHoraUsado: moSec.custoHoraUsado,
+          nota: "Operador abastecendo + ciclo centrífuga",
+          minPorKg: minPorKgDeTempoOperador(input.secagemSegOperador, input.secagemKg),
+          minPorUn: null,
+          maquinaReaisPorKg: secMaq > 0 ? secMaq : null,
+        },
+        opsSec,
+        moSec,
+        "Operador + centrífuga",
+      );
+      etapaSec.reaisPorKg = totalReaisPorKg(
+        etapaSec.moReaisPorKg,
+        etapaSec.maquinaReaisPorKg,
+        etapaSec.consumiveisReaisPorKg,
+      );
+      etapas.push(etapaSec);
+    }
   }
 
   const selagemMinBase =
