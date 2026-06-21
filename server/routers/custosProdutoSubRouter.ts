@@ -789,4 +789,9 @@ export const custosProdutoSubRouter = router({
 
       return { inseridos, atualizados, nomes, totalAlvo: alvo.length, avisos };
     }),
+
+  sincronizarLogisticaFichas: commercialEditorCustosProducaoProjectProcedure.mutation(async ({ ctx }) => {
+    const { sincronizarLogisticaFichasProjeto } = await import("../custosProdutoLogisticaSync");
+    return sincronizarLogisticaFichasProjeto(projetoIdFromCtx(ctx));
+  }),
 });

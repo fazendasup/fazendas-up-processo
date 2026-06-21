@@ -334,6 +334,17 @@ async function startServer() {
   } catch (e) {
     console.error("[Server] backfillLotesProducaoLegado falhou:", e);
   }
+  try {
+    const { sincronizarLogisticaTodasFichas } = await import("../custosProdutoLogisticaSync");
+    const logistica = await sincronizarLogisticaTodasFichas();
+    if (logistica.atualizadas > 0) {
+      console.log(
+        `[Server] Logística fichas: projetos=${logistica.projetos} fichas=${logistica.total} atualizadas=${logistica.atualizadas} deduplicadas=${logistica.deduplicadas}`,
+      );
+    }
+  } catch (e) {
+    console.error("[Server] sincronizarLogisticaTodasFichas falhou:", e);
+  }
   await db.ensureProjetoMembershipsBootstrap();
   if (process.env.AUTO_MIGRATE_LEGACY_DATA === "1") {
     try {
