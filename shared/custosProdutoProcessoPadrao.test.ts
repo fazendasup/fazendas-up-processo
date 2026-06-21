@@ -27,10 +27,12 @@ describe("custosProdutoProcessoPadrao", () => {
       adesivoCustoUn: null,
       regimeMoPadrao: "qualquer",
       incluirAdesivo: false,
+      logisticaPercentualPadrao: 10,
     }, calc);
     expect(etapas.some((e) => e.tipo === "lavagem")).toBe(false);
     expect(etapas.find((e) => e.nome === "Colheita (MO)")?.minutosPorUnidade).toBe(1.5);
     expect(etapas.find((e) => e.tipo === "embalagem")?.custoPorUnidade).toBe(0.95);
+    expect(etapas.find((e) => e.tipo === "logistica")?.custoPercentual).toBe(10);
   });
 
   it("baby leaf sugere colheita sem lavagem", () => {
@@ -49,8 +51,10 @@ describe("custosProdutoProcessoPadrao", () => {
       adesivoCustoUn: null,
       regimeMoPadrao: "qualquer",
       incluirAdesivo: true,
+      logisticaPercentualPadrao: 10,
     });
     expect(etapas.find((e) => e.tipo === "lavagem")?.custoPorKgProcessado).toBe(0.25);
+    expect(etapas.find((e) => e.tipo === "logistica")?.custoPercentual).toBe(10);
   });
 
   it("calcula R$/kg de lote de lavagem", () => {

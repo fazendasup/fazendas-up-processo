@@ -40,6 +40,8 @@ function rowToConfig(row: typeof custosProdutosProcessoConfig.$inferSelect): Cus
     adesivoCustoUn: num(row.adesivoCustoUn),
     regimeMoPadrao: (row.regimeMoPadrao ?? "qualquer") as RegimeMoEtapa,
     incluirAdesivo: row.incluirAdesivo !== false,
+    logisticaPercentualPadrao:
+      num(row.logisticaPercentualPadrao) ?? CUSTOS_PRODUTO_PROCESSO_CONFIG_PADRAO.logisticaPercentualPadrao,
     linhaProcesso: parseLinhaProcessoJson(row.linhaProcessoJson),
   };
 }
@@ -81,6 +83,15 @@ CREATE TABLE IF NOT EXISTS \`custos_produtos_processo_config\` (
   } catch {
     /* coluna já existe */
   }
+  try {
+    await db.execute(
+      sql.raw(
+        "ALTER TABLE `custos_produtos_processo_config` ADD COLUMN `logisticaPercentualPadrao` decimal(6,2) NOT NULL DEFAULT 10",
+      ),
+    );
+  } catch {
+    /* coluna já existe */
+  }
 }
 
 export async function getProcessoConfig(projetoId: number): Promise<CustosProdutoProcessoConfig> {
@@ -115,6 +126,7 @@ export async function setProcessoConfig(
     adesivoCustoUn: config.adesivoCustoUn != null ? String(config.adesivoCustoUn) : null,
     regimeMoPadrao: config.regimeMoPadrao,
     incluirAdesivo: config.incluirAdesivo,
+    logisticaPercentualPadrao: String(config.logisticaPercentualPadrao),
     linhaProcessoJson:
       config.linhaProcesso != null ? JSON.stringify(config.linhaProcesso) : null,
   };
@@ -132,6 +144,7 @@ export async function setProcessoConfig(
         adesivoCustoUn: payload.adesivoCustoUn,
         regimeMoPadrao: payload.regimeMoPadrao,
         incluirAdesivo: payload.incluirAdesivo,
+        logisticaPercentualPadrao: payload.logisticaPercentualPadrao,
         linhaProcessoJson: payload.linhaProcessoJson,
       },
     });

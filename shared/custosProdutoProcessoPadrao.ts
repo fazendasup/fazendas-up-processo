@@ -58,9 +58,13 @@ export type CustosProdutoProcessoConfig = {
   adesivoCustoUn: number | null;
   regimeMoPadrao: RegimeMoEtapa;
   incluirAdesivo: boolean;
+  /** Percentual de logística sobre subtotal acumulado (material + processo). */
+  logisticaPercentualPadrao: number;
   /** Parâmetros da linha industrial (persistidos para recalcular). */
   linhaProcesso?: LinhaProcessoIndustrialInput | null;
 };
+
+export const LOGISTICA_PERCENTUAL_PADRAO = 10;
 
 export const CUSTOS_PRODUTO_PROCESSO_CONFIG_PADRAO: CustosProdutoProcessoConfig = {
   embalagemMicroverdeUn: 0.95,
@@ -72,6 +76,7 @@ export const CUSTOS_PRODUTO_PROCESSO_CONFIG_PADRAO: CustosProdutoProcessoConfig 
   adesivoCustoUn: null,
   regimeMoPadrao: "qualquer",
   incluirAdesivo: true,
+  logisticaPercentualPadrao: LOGISTICA_PERCENTUAL_PADRAO,
   linhaProcesso: null,
 };
 
@@ -201,6 +206,20 @@ export function custoEmbalagemPorCategoria(
   config: CustosProdutoProcessoConfig = CUSTOS_PRODUTO_PROCESSO_CONFIG_PADRAO,
 ): number {
   return categoria === "microverde" ? config.embalagemMicroverdeUn : config.embalagemOutrosUn;
+}
+
+/** Garante etapa de logística ao final — editável por ficha, sem repetir manualmente. */
+export function garantirEtapaLogistica(
+  etapas: EtapaProcessoPadrao[],
+  percentual: number = LOGISTICA_PERCENTUAL_PADRAO,
+): EtapaProcessoPadrao[] {
+  if (etapas.some((e) => e.tipo === "logistica")) return etapas;
+  return [
+    ...etapas,
+    etapa("logistica", {
+      custoPercentual: percentual,
+    }),
+  ];
 }
 
 function etapa(
@@ -359,7 +378,10 @@ export function etapasProcessoPadraoParaPerfil(
     );
   }
 
-  return etapas.filter((e) => e.ativo);
+  return garantirEtapaLogistica(
+    etapas.filter((e) => e.ativo),
+    config.logisticaPercentualPadrao ?? LOGISTICA_PERCENTUAL_PADRAO,
+  );
 }
 
 /** Perfil sugerido a partir das etapas já gravadas na ficha. */

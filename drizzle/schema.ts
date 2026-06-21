@@ -858,6 +858,9 @@ export const custosProdutosProcessoConfig = mysqlTable("custos_produtos_processo
   incluirLavagem: boolean("incluirLavagem").notNull().default(true),
   incluirCorte: boolean("incluirCorte").notNull().default(false),
   incluirAdesivo: boolean("incluirAdesivo").notNull().default(true),
+  logisticaPercentualPadrao: decimal("logisticaPercentualPadrao", { precision: 6, scale: 2 })
+    .notNull()
+    .default("10"),
   linhaProcessoJson: text("linhaProcessoJson"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

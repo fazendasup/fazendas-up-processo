@@ -1,5 +1,6 @@
 import type { ComponenteCalculoInput, EtapaCalculoInput, FichaCalculoInput } from "@shared/custosProduto";
-import { calcularCustoProduto } from "@shared/custosProduto";
+import { calcularCustoProduto, LABEL_ETAPA_PROCESSO } from "@shared/custosProduto";
+import { LOGISTICA_PERCENTUAL_PADRAO } from "@shared/custosProdutoProcessoPadrao";
 import { mapaCustoHoraProcessamento, type MoEquipeInput } from "@shared/custosMoEquipe";
 import type {
   CustoProdutoComponenteRow,
@@ -148,6 +149,16 @@ export async function fichaParaCalculoInput(
     minutosPorUnidade: num(e.minutosPorUnidade),
     regimeMo: (e.regimeMo ?? "qualquer") as EtapaCalculoInput["regimeMo"],
   }));
+  if (!etapasCalculo.some((e) => e.tipo === "logistica")) {
+    const processoDb = await import("./custosProdutoProcessoDb");
+    const config = await processoDb.getProcessoConfig(projetoId);
+    etapasCalculo.push({
+      tipo: "logistica",
+      nome: LABEL_ETAPA_PROCESSO.logistica,
+      custoPorUnidadeFinal: 0,
+      custoPercentual: config.logisticaPercentualPadrao ?? LOGISTICA_PERCENTUAL_PADRAO,
+    });
+  }
 
   const variedadeId = ficha.variedadeId;
   const custoVp =

@@ -1139,6 +1139,7 @@ export function configFromProcessoModelo(
     adesivoCustoUn: modelo.adesivoCustoUn,
     regimeMoPadrao: modelo.regimeMoPadrao,
     incluirAdesivo: modelo.incluirAdesivo,
+    logisticaPercentualPadrao: 10,
     linhaProcesso: modelo.linhaProcesso,
   };
 }

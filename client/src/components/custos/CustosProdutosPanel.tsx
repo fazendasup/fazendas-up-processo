@@ -25,6 +25,7 @@ import {
   avisosMapeamentoProduto,
   etapasProcessoDeModelo,
   inferirPerfilDeEtapas,
+  LOGISTICA_PERCENTUAL_PADRAO,
   perfilDefaultParaCategoria,
   perfilUsaLavagemKg,
   type EtapaProcessoPadrao,
@@ -395,8 +396,16 @@ function emptyEtapa(tipo: TipoEtapaProcesso = "lavagem"): EtapaForm {
     regimeMo: "qualquer",
     custoPorUnidade: "",
     custoPorKgProcessado: "",
-    custoPercentual: "",
+    custoPercentual: tipo === "logistica" ? String(LOGISTICA_PERCENTUAL_PADRAO) : "",
   };
+}
+
+function garantirEtapaLogisticaForm(
+  etapas: EtapaForm[],
+  percentual = LOGISTICA_PERCENTUAL_PADRAO,
+): EtapaForm[] {
+  if (etapas.some((e) => e.tipo === "logistica")) return etapas;
+  return [...etapas, emptyEtapa("logistica")];
 }
 
 function emptyFicha(tipo: TipoFichaCustoProduto = "revenda_processada"): FichaForm {
@@ -427,7 +436,7 @@ function emptyFicha(tipo: TipoFichaCustoProduto = "revenda_processada"): FichaFo
     ),
     etapasModoManual: false,
     componentes: tipo === "mix" ? [emptyComponente(), emptyComponente()] : [],
-    etapas: [],
+    etapas: [emptyEtapa("logistica")],
   };
 }
 
@@ -518,15 +527,17 @@ function rowToFichaForm(row: any, patch: Partial<FichaForm> = {}): FichaForm {
       unidadeComponente: c.unidadeComponente,
       custoUnitarioManual: fmtDecimalInput(c.custoUnitarioManual, 4),
     })),
-    etapas: row.etapas.map((e: any) => ({
-      tipo: e.tipo,
-      nome: e.nome,
-      minutosPorUnidade: fmtDecimalInput(e.minutosPorUnidade, 2),
-      regimeMo: (e.regimeMo ?? "qualquer") as RegimeMoEtapa,
-      custoPorUnidade: fmtDecimalInput(e.custoPorUnidade, 4),
-      custoPorKgProcessado: fmtDecimalInput(e.custoPorKgProcessado, 4),
-      custoPercentual: fmtDecimalInput(e.custoPercentual, 2),
-    })),
+    etapas: garantirEtapaLogisticaForm(
+      row.etapas.map((e: any) => ({
+        tipo: e.tipo,
+        nome: e.nome,
+        minutosPorUnidade: fmtDecimalInput(e.minutosPorUnidade, 2),
+        regimeMo: (e.regimeMo ?? "qualquer") as RegimeMoEtapa,
+        custoPorUnidade: fmtDecimalInput(e.custoPorUnidade, 4),
+        custoPorKgProcessado: fmtDecimalInput(e.custoPorKgProcessado, 4),
+        custoPercentual: fmtDecimalInput(e.custoPercentual, 2),
+      })),
+    ),
     processoModeloId: "",
     perfilProcesso: inferirPerfilDeEtapas(row.etapas),
     etapasModoManual: true,

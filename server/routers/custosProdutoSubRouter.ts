@@ -146,6 +146,7 @@ const processoConfigInput = z.object({
   adesivoCustoUn: z.number().nonnegative().nullable().optional(),
   regimeMoPadrao: regimeMoZ.default("qualquer"),
   incluirAdesivo: z.boolean().default(true),
+  logisticaPercentualPadrao: z.number().nonnegative().default(10),
   linhaProcesso: linhaProcessoInput.optional().nullable(),
 });
 
