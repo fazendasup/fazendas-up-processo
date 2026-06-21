@@ -53,6 +53,8 @@ import {
   type PeriodoPreset,
 } from "@/lib/comercial/periodo";
 import { trpc } from "@/lib/trpc";
+import { ExportMenu } from "@/components/ui/export-menu";
+import { exportObjectRows } from "@/lib/exportTableDocument";
 
 const REPORTS = [
   { id: "vendas-cliente", label: "Vendas por cliente" },
@@ -118,24 +120,23 @@ function fmtDate(d: Date | string | null | undefined) {
   });
 }
 
-function csvEscape(v: unknown) {
-  return `"${String(v ?? "").replace(/"/g, '""')}"`;
-}
-
 function exportCsv(filename: string, rows: Record<string, unknown>[]) {
   if (!rows.length) return;
-  const headers = Object.keys(rows[0] ?? {});
-  const body = [
-    headers.join(","),
-    ...rows.map(row => headers.map(h => csvEscape(row[h])).join(",")),
-  ].join("\n");
-  const blob = new Blob([body], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+  exportObjectRows(rows, {
+    title: filename.replace(/\.csv$/i, ""),
+    filename,
+    format: "csv",
+  });
+}
+
+function exportPdf(title: string, filename: string, rows: Record<string, unknown>[]) {
+  if (!rows.length) return;
+  exportObjectRows(rows, {
+    title,
+    filename: filename.replace(/\.csv$/i, ""),
+    format: "pdf",
+    orientation: Object.keys(rows[0] ?? {}).length > 6 ? "landscape" : "portrait",
+  });
 }
 
 function rowToSearchText(value: unknown): string {
@@ -460,16 +461,16 @@ function Section({
           </p>
         </div>
         {rows?.length ? (
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-white/15 dark:bg-white/5 dark:text-slate-200"
-            onClick={() =>
+          <ExportMenu
+            label="Exportar"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-white/15 dark:bg-white/5 dark:text-slate-200 h-auto"
+            onExportCsv={() =>
               exportCsv(`${title.toLowerCase().replace(/\s+/g, "-")}.csv`, rows)
             }
-          >
-            <Download className="h-4 w-4" />
-            Exportar CSV
-          </button>
+            onExportPdf={() =>
+              exportPdf(title, `${title.toLowerCase().replace(/\s+/g, "-")}.pdf`, rows)
+            }
+          />
         ) : null}
       </div>
       {children}

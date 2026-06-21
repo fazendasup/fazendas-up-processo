@@ -3,6 +3,8 @@
 // ============================================================
 
 import Header from '@/components/Header';
+import { ExportMenu } from '@/components/ui/export-menu';
+import { exportTableDocument } from '@/lib/exportTableDocument';
 import { useFazenda } from '@/contexts/FazendaContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -1860,75 +1862,95 @@ function RelatoriosSection({ data, period }: { data: FazendaData; period: Period
     return m;
   }, [bancadasQuery.data]);
 
-  const exportCSV = useCallback((filename: string, headers: string[], rows: string[][]) => {
-    const csv = [headers.join(','), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${filename}-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, []);
+  const exportReport = useCallback(
+    (
+      title: string,
+      filename: string,
+      headers: string[],
+      rows: string[][],
+      format: 'csv' | 'pdf',
+    ) => {
+      exportTableDocument(
+        {
+          title,
+          filename: `${filename}-${new Date().toISOString().slice(0, 10)}`,
+          headers,
+          rows,
+          orientation: headers.length > 6 ? 'landscape' : 'portrait',
+        },
+        format,
+      );
+    },
+    [],
+  );
 
-  const exportProducao = useCallback(() => {
-    if (isHidroponia) {
-      const headers = ['Data', 'Variedade', 'Bancada', 'Unidades', 'Peso (g)', 'Qualidade', 'Destino', 'Observações'];
+  const exportProducao = useCallback(
+    (format: 'csv' | 'pdf') => {
+      if (isHidroponia) {
+        const headers = ['Data', 'Variedade', 'Bancada', 'Unidades', 'Peso (g)', 'Qualidade', 'Destino', 'Observações'];
+        const rows = colheitas.map((c: any) => [
+          c.dataColheita ? new Date(c.dataColheita).toLocaleDateString('pt-BR') : '',
+          c.variedadeNome || '',
+          c.bancadaId ? (bancadaNome.get(c.bancadaId) || c.bancadaId) : '',
+          String(c.quantidadePlantas || 0),
+          String(c.pesoTotalGramas || 0),
+          c.qualidade || '',
+          c.destino || '',
+          c.observacoes || '',
+        ]);
+        exportReport('Resumo de Produção', 'relatorio-producao', headers, rows, format);
+        return;
+      }
+      const headers = ['Data', 'Variedade', 'Torre', 'Andar', 'Plantas', 'Peso (g)', 'Qualidade', 'Destino', 'Observações'];
       const rows = colheitas.map((c: any) => [
         c.dataColheita ? new Date(c.dataColheita).toLocaleDateString('pt-BR') : '',
         c.variedadeNome || '',
-        c.bancadaId ? (bancadaNome.get(c.bancadaId) || c.bancadaId) : '',
-        c.quantidadePlantas || 0,
-        c.pesoTotalGramas || 0,
+        String(c.torreId || ''),
+        String(c.andarId || ''),
+        String(c.quantidadePlantas || 0),
+        String(c.pesoTotalGramas || 0),
         c.qualidade || '',
         c.destino || '',
         c.observacoes || '',
       ]);
-      exportCSV('relatorio-producao', headers, rows);
-      return;
-    }
-    const headers = ['Data', 'Variedade', 'Torre', 'Andar', 'Plantas', 'Peso (g)', 'Qualidade', 'Destino', 'Observações'];
-    const rows = colheitas.map((c: any) => [
-      c.dataColheita ? new Date(c.dataColheita).toLocaleDateString('pt-BR') : '',
-      c.variedadeNome || '',
-      c.torreId || '',
-      c.andarId || '',
-      c.quantidadePlantas || 0,
-      c.pesoTotalGramas || 0,
-      c.qualidade || '',
-      c.destino || '',
-      c.observacoes || '',
-    ]);
-    exportCSV('relatorio-producao', headers, rows);
-  }, [colheitas, exportCSV, isHidroponia, bancadaNome]);
+      exportReport('Resumo de Produção', 'relatorio-producao', headers, rows, format);
+    },
+    [colheitas, exportReport, isHidroponia, bancadaNome],
+  );
 
-  const exportOperacional = useCallback(() => {
-    const headers = ['Título', 'Tipo', 'Prioridade', 'Status', 'Vencimento', 'Concluído Em', 'Concluído Por'];
-    const rows = tarefas.map((t: any) => [
-      t.titulo || '',
-      t.tipo || '',
-      t.prioridade || '',
-      t.status || '',
-      t.dataVencimento ? new Date(t.dataVencimento).toLocaleDateString('pt-BR') : '',
-      t.concluidoEm ? new Date(t.concluidoEm).toLocaleDateString('pt-BR') : '',
-      t.concluidoPorNome || '',
-    ]);
-    exportCSV('relatorio-operacional', headers, rows);
-  }, [tarefas, exportCSV]);
+  const exportOperacional = useCallback(
+    (format: 'csv' | 'pdf') => {
+      const headers = ['Título', 'Tipo', 'Prioridade', 'Status', 'Vencimento', 'Concluído Em', 'Concluído Por'];
+      const rows = tarefas.map((t: any) => [
+        t.titulo || '',
+        t.tipo || '',
+        t.prioridade || '',
+        t.status || '',
+        t.dataVencimento ? new Date(t.dataVencimento).toLocaleDateString('pt-BR') : '',
+        t.concluidoEm ? new Date(t.concluidoEm).toLocaleDateString('pt-BR') : '',
+        t.concluidoPorNome || '',
+      ]);
+      exportReport('Performance Operacional', 'relatorio-operacional', headers, rows, format);
+    },
+    [tarefas, exportReport],
+  );
 
-  const exportCapacidade = useCallback(() => {
-    const headers = ['Receita', 'Variedade', 'Plantas', 'Status', 'Início Germinação', 'Colheita Prevista', 'Criado Por'];
-    const rows = planos.map((p: any) => [
-      p.receitaNome || '',
-      p.variedadeNome || '',
-      p.quantidadePlantas || 0,
-      p.status || '',
-      p.dataInicioGerminacao ? new Date(p.dataInicioGerminacao).toLocaleDateString('pt-BR') : '',
-      p.dataColheitaPrevista ? new Date(p.dataColheitaPrevista).toLocaleDateString('pt-BR') : '',
-      p.criadoPorNome || '',
-    ]);
-    exportCSV('relatorio-capacidade', headers, rows);
-  }, [planos, exportCSV]);
+  const exportCapacidade = useCallback(
+    (format: 'csv' | 'pdf') => {
+      const headers = ['Receita', 'Variedade', 'Plantas', 'Status', 'Início Germinação', 'Colheita Prevista', 'Criado Por'];
+      const rows = planos.map((p: any) => [
+        p.receitaNome || '',
+        p.variedadeNome || '',
+        String(p.quantidadePlantas || 0),
+        p.status || '',
+        p.dataInicioGerminacao ? new Date(p.dataInicioGerminacao).toLocaleDateString('pt-BR') : '',
+        p.dataColheitaPrevista ? new Date(p.dataColheitaPrevista).toLocaleDateString('pt-BR') : '',
+        p.criadoPorNome || '',
+      ]);
+      exportReport('Eficiência de Capacidade', 'relatorio-capacidade', headers, rows, format);
+    },
+    [planos, exportReport],
+  );
 
   const reports = [
     {
@@ -1936,7 +1958,8 @@ function RelatoriosSection({ data, period }: { data: FazendaData; period: Period
       description: 'Todas as colheitas com peso, qualidade, destino e observações',
       icon: <Scissors className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />,
       count: colheitas.length,
-      onExport: exportProducao,
+      onExportCsv: () => exportProducao('csv'),
+      onExportPdf: () => exportProducao('pdf'),
       color: 'emerald',
     },
     {
@@ -1944,7 +1967,8 @@ function RelatoriosSection({ data, period }: { data: FazendaData; period: Period
       description: 'Tarefas com tipo, prioridade, status e datas de conclusão',
       icon: <CheckCircle2 className="w-5 h-5 text-blue-600" />,
       count: tarefas.length,
-      onExport: exportOperacional,
+      onExportCsv: () => exportOperacional('csv'),
+      onExportPdf: () => exportOperacional('pdf'),
       color: 'blue',
     },
     {
@@ -1952,7 +1976,8 @@ function RelatoriosSection({ data, period }: { data: FazendaData; period: Period
       description: 'Planos de plantio com datas, status e variedades',
       icon: <Target className="w-5 h-5 text-amber-600 dark:text-amber-400" />,
       count: planos.length,
-      onExport: exportCapacidade,
+      onExportCsv: () => exportCapacidade('csv'),
+      onExportPdf: () => exportCapacidade('pdf'),
       color: 'amber',
     },
   ];
@@ -1960,7 +1985,7 @@ function RelatoriosSection({ data, period }: { data: FazendaData; period: Period
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Exporte relatórios em formato CSV para análise externa ou compartilhamento.
+        Exporte relatórios em CSV ou PDF para análise externa ou compartilhamento.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {reports.map((report) => (
@@ -1975,18 +2000,14 @@ function RelatoriosSection({ data, period }: { data: FazendaData; period: Period
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">{report.count} registro(s)</span>
-                <button
-                  onClick={report.onExport}
+                <ExportMenu
                   disabled={report.count === 0}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    report.count > 0
-                      ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                      : 'bg-muted text-muted-foreground cursor-not-allowed'
-                  }`}
-                >
-                  <FileDown className="w-3.5 h-3.5" />
-                  Exportar CSV
-                </button>
+                  size="sm"
+                  variant={report.count > 0 ? 'default' : 'outline'}
+                  className={report.count === 0 ? 'opacity-50' : undefined}
+                  onExportCsv={report.onExportCsv}
+                  onExportPdf={report.onExportPdf}
+                />
               </div>
             </CardContent>
           </Card>

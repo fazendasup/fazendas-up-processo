@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Download, TrendingDown, TrendingUp, Users } from "lucide-react";
+import { TrendingDown, TrendingUp, Users } from "lucide-react";
 import {
   Area,
   CartesianGrid,
@@ -28,6 +28,8 @@ import { TooltipInfo } from "@/components/comercial/ui/TooltipInfo";
 import { fuGlass, fuGlassHover, fuGlassSm, fuStat, fuTextMuted, fuTextStrong, fuTitleGradient } from "@/lib/comercial/fuBrand";
 import { useTheme } from "@/contexts/ThemeContext";
 import { PeriodoFiltro } from "@/components/comercial/ui/PeriodoFiltro";
+import { ExportMenu } from "@/components/ui/export-menu";
+import { exportTableDocument } from "@/lib/exportTableDocument";
 import { hojeIsoLocal, intervaloDoPreset, labelPreset, type PeriodoPreset } from "@/lib/comercial/periodo";
 import { trpc } from "@/lib/trpc";
 
@@ -58,32 +60,43 @@ function fmtMoney(n: number | null | undefined, maximumFractionDigits = 0) {
   });
 }
 
-function exportKpisCsv(resumo: any) {
-  const header = "periodo,valor_liquido,valor_bruto,frete,desconto,orcamentos,pedidos,clientes,ticket_medio\n";
-  const body = (resumo?.serie ?? [])
-    .map((r: any) =>
-      [
-        r.periodo,
-        r.valor_liquido,
-        r.valor_bruto,
-        r.frete,
-        r.desconto,
-        r.orcamentos,
-        r.pedidos,
-        r.clientes,
-        r.ticket_medio,
-      ]
-        .map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`)
-        .join(","),
-    )
-    .join("\n");
-  const blob = new Blob([header + body], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `kpis_conta_azul_${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+function buildKpisExport(resumo: any) {
+  const headers = [
+    "Período",
+    "Valor líquido",
+    "Valor bruto",
+    "Frete",
+    "Desconto",
+    "Orçamentos",
+    "Pedidos",
+    "Clientes",
+    "Ticket médio",
+  ];
+  const rows = (resumo?.serie ?? []).map((r: any) => [
+    String(r.periodo ?? ""),
+    String(r.valor_liquido ?? ""),
+    String(r.valor_bruto ?? ""),
+    String(r.frete ?? ""),
+    String(r.desconto ?? ""),
+    String(r.orcamentos ?? ""),
+    String(r.pedidos ?? ""),
+    String(r.clientes ?? ""),
+    String(r.ticket_medio ?? ""),
+  ]);
+  const filename = `kpis_conta_azul_${new Date().toISOString().slice(0, 10)}`;
+  return {
+    title: "KPIs Conta Azul",
+    subtitle: "Série temporal do período selecionado",
+    filename,
+    headers,
+    rows,
+  };
+}
+
+function exportKpis(resumo: any, format: "csv" | "pdf") {
+  const input = buildKpisExport(resumo);
+  if (input.rows.length === 0) return;
+  exportTableDocument(input, format);
 }
 
 export function Kpis() {
@@ -165,15 +178,12 @@ export function Kpis() {
               onCustomInicio={setCustomInicio}
               onCustomFim={setCustomFim}
             />
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white px-4 py-2 text-sm font-semibold text-cyan-800 transition hover:border-cyan-500/40 hover:bg-cyan-50 disabled:opacity-50 dark:border-white/15 dark:bg-white/5 dark:text-cyan-300 dark:hover:border-cyan-400/40 dark:hover:bg-white/10"
+            <ExportMenu
               disabled={!resumo.data?.serie?.length}
-              onClick={() => resumo.data && exportKpisCsv(resumo.data)}
-            >
-              <Download className="h-4 w-4" />
-              Exportar CSV
-            </button>
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white px-4 py-2 text-sm font-semibold text-cyan-800 transition hover:border-cyan-500/40 hover:bg-cyan-50 disabled:opacity-50 dark:border-white/15 dark:bg-white/5 dark:text-cyan-300 dark:hover:border-cyan-400/40 dark:hover:bg-white/10 h-auto"
+              onExportCsv={() => resumo.data && exportKpis(resumo.data, "csv")}
+              onExportPdf={() => resumo.data && exportKpis(resumo.data, "pdf")}
+            />
           </div>
         }
       />

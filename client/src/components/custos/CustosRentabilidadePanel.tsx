@@ -33,7 +33,8 @@ import {
   somarOverheadItensIncluidos,
   type ModoOverheadRentabilidade,
 } from "@shared/custosRentabilidadeOverhead";
-import { downloadCsvUtf8Bom } from "@/lib/estoqueRelatorio";
+import { exportTableDocument, type TableExportInput } from "@/lib/exportTableDocument";
+import { ExportMenu } from "@/components/ui/export-menu";
 import {
   type ColumnFilterDef,
   useColumnTableFilters,
@@ -46,7 +47,6 @@ import {
 import {
   AlertTriangle,
   CloudDownload,
-  Download,
   Plus,
   Save,
   Trash2,
@@ -197,66 +197,94 @@ function parseNum(s: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-function csvCell(v: string | number | null | undefined): string {
-  if (v == null) return "";
-  const s = String(v);
-  if (/[",\n\r;]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
-}
-
-function exportarCsvRentabilidade(
+function buildResultadoProdutoExport(
   tituloPeriodo: string,
   inicioStr: string,
   fimStr: string,
-  calculo: ReturnType<typeof calcularRentabilidade>,
-) {
+  linhas: LinhaRentabilidadeResultado[],
+  totais: {
+    receita: number;
+    cmv: number;
+    lucroBruto: number;
+    rateio: number;
+    contribuicao: number;
+  },
+  filtrado: boolean,
+): TableExportInput {
   const headers = [
     "Produto",
-    "Ficha ID",
-    "Quantidade",
-    "Receita (R$)",
-    "Custo unit. (R$)",
-    "Fonte custo",
-    "CMV (R$)",
-    "Lucro bruto (R$)",
-    "Margem bruta (%)",
-    "Rateio operacional (R$)",
-    "Contribuição (R$)",
+    "Ficha",
+    "Qtd.",
+    "Receita",
+    "CMV (ficha)",
+    "Lucro bruto",
+    "Margem %",
+    "Rateio overhead",
+    "Contribuição",
     "Status",
   ];
-  const linhas = calculo.linhas.map((l) =>
+  const rows = linhas.map((l) => [
+    l.nomeProduto,
+    l.fichaId != null ? String(l.fichaId) : "",
+    String(l.quantidade),
+    fmtMoney(l.receitaTotal),
+    fmtMoney(l.cmv),
+    fmtMoney(l.lucroBruto),
+    fmtPct(l.margemBrutaPct),
+    fmtMoney(l.rateioOperacional),
+    fmtMoney(l.contribuicao),
+    labelStatusRentabilidade(l.status),
+  ]);
+  const footers = [
     [
-      csvCell(l.nomeProduto),
-      csvCell(l.fichaId),
-      csvCell(l.quantidade),
-      csvCell(l.receitaTotal),
-      csvCell(l.custoUnitario),
-      csvCell(l.custoUnitarioFonte ?? ""),
-      csvCell(l.cmv),
-      csvCell(l.lucroBruto),
-      csvCell(l.margemBrutaPct),
-      csvCell(l.rateioOperacional),
-      csvCell(l.contribuicao),
-      csvCell(l.status),
-    ].join(";"),
-  );
-  const resumo = [
-    "",
-    "",
-    "",
-    csvCell(calculo.totais.receita),
-    "",
-    "",
-    csvCell(calculo.totais.cmv),
-    csvCell(calculo.totais.lucroBruto),
-    csvCell(calculo.totais.margemBrutaPct),
-    csvCell(calculo.totais.custoOperacional),
-    csvCell(calculo.totais.resultado),
-    "TOTAL",
-  ].join(";");
-  const content = [headers.join(";"), ...linhas, resumo].join("\r\n");
+      filtrado ? "Total (filtrado)" : "Total do período",
+      "",
+      "",
+      fmtMoney(totais.receita),
+      fmtMoney(totais.cmv),
+      fmtMoney(totais.lucroBruto),
+      "",
+      fmtMoney(totais.rateio),
+      fmtMoney(totais.contribuicao),
+      "",
+    ],
+  ];
   const slug = (tituloPeriodo.trim() || `${inicioStr}_${fimStr}`).replace(/[^\w.-]+/g, "_");
-  downloadCsvUtf8Bom(content, `rentabilidade_${slug}.csv`);
+  return {
+    title: "Resultado por produto",
+    subtitle: `${tituloPeriodo} · ${inicioStr} a ${fimStr}${filtrado ? " · visão filtrada" : ""}`,
+    filename: `rentabilidade_resultado_${slug}`,
+    headers,
+    rows,
+    footers,
+    orientation: "landscape",
+  };
+}
+
+function exportarResultadoProduto(
+  tituloPeriodo: string,
+  inicioStr: string,
+  fimStr: string,
+  linhas: LinhaRentabilidadeResultado[],
+  totais: {
+    receita: number;
+    cmv: number;
+    lucroBruto: number;
+    rateio: number;
+    contribuicao: number;
+  },
+  filtrado: boolean,
+  format: "csv" | "pdf",
+) {
+  const input = buildResultadoProdutoExport(
+    tituloPeriodo,
+    inicioStr,
+    fimStr,
+    linhas,
+    totais,
+    filtrado,
+  );
+  exportTableDocument(input, format);
 }
 
 export function CustosRentabilidadePanel() {
@@ -1193,16 +1221,43 @@ export function CustosRentabilidadePanel() {
                   Limpar filtros
                 </Button>
               ) : null}
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() =>
-                  exportarCsvRentabilidade(tituloExibicao, inicio, fim, calculoAtual)
+              <ExportMenu
+                disabled={linhasResultadoFiltradas.length === 0}
+                onExportCsv={() =>
+                  exportarResultadoProduto(
+                    tituloExibicao,
+                    inicio,
+                    fim,
+                    linhasResultadoFiltradas,
+                    hasColumnFilters ? totaisResultadoFiltrados : {
+                      receita: calculoAtual.totais.receita,
+                      cmv: calculoAtual.totais.cmv,
+                      lucroBruto: calculoAtual.totais.lucroBruto,
+                      rateio: calculoAtual.totais.custoOperacional,
+                      contribuicao: calculoAtual.totais.resultado,
+                    },
+                    hasColumnFilters,
+                    "csv",
+                  )
                 }
-              >
-                <Download className="h-4 w-4 mr-1" />
-                Exportar CSV
-              </Button>
+                onExportPdf={() =>
+                  exportarResultadoProduto(
+                    tituloExibicao,
+                    inicio,
+                    fim,
+                    linhasResultadoFiltradas,
+                    hasColumnFilters ? totaisResultadoFiltrados : {
+                      receita: calculoAtual.totais.receita,
+                      cmv: calculoAtual.totais.cmv,
+                      lucroBruto: calculoAtual.totais.lucroBruto,
+                      rateio: calculoAtual.totais.custoOperacional,
+                      contribuicao: calculoAtual.totais.resultado,
+                    },
+                    hasColumnFilters,
+                    "pdf",
+                  )
+                }
+              />
             </div>
           </CardHeader>
           <CardContent>

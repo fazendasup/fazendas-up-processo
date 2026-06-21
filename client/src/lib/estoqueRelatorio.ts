@@ -55,34 +55,41 @@ const CSV_HEADERS = [
 ] as const;
 
 export function linhasParaCsv(rows: LinhaEstoqueExport[]): string {
-  const lines: string[] = [CSV_HEADERS.join(";")];
-  for (const r of rows) {
-    lines.push(
-      [
-        csvCell(r.categoria),
-        csvCell(r.nome),
-        csvCell(r.quantidadeTotal),
-        csvCell(r.unidadeTipo),
-        csvCell(r.nivelMinimo),
-        csvCell(r.usoPorEvento),
-        csvCell(r.frequenciaDias),
-        csvCell(r.prazoEntregaDias),
-        csvCell(r.diasMargemCompra),
-        csvCell(r.precoUnitario),
-        csvCell(r.fornecedor),
-        csvCell(r.diasAteEsgotar != null ? Math.round(r.diasAteEsgotar) : ""),
-        csvCell(r.dataCompraSugeridaIso),
-        csvCell(r.sugestaoCompraQuantidade ?? 0),
-        csvCell(r.valorCompraSugerida),
-        csvCell(r.dataEsgotamentoIso),
-        csvCell(r.status),
-        csvCell(r.valorLinha),
-        csvCell(r.consumoMedioDiario),
-        csvCell(r.observacoes),
-      ].join(";"),
-    );
+  const matrix = linhasParaExportMatrix(rows);
+  const lines: string[] = [matrix.headers.join(";")];
+  for (const row of matrix.rows) {
+    lines.push(row.map((c) => csvCell(c)).join(";"));
   }
   return lines.join("\r\n");
+}
+
+export function linhasParaExportMatrix(rows: LinhaEstoqueExport[]): {
+  headers: string[];
+  rows: string[][];
+} {
+  const rowsOut = rows.map((r) => [
+    r.categoria,
+    r.nome,
+    String(r.quantidadeTotal),
+    r.unidadeTipo,
+    r.nivelMinimo != null ? String(r.nivelMinimo) : "",
+    String(r.usoPorEvento),
+    String(r.frequenciaDias),
+    String(r.prazoEntregaDias),
+    String(r.diasMargemCompra),
+    r.precoUnitario != null ? String(r.precoUnitario) : "",
+    r.fornecedor ?? "",
+    r.diasAteEsgotar != null ? String(Math.round(r.diasAteEsgotar)) : "",
+    r.dataCompraSugeridaIso ?? "",
+    String(r.sugestaoCompraQuantidade ?? 0),
+    r.valorCompraSugerida != null ? String(r.valorCompraSugerida) : "",
+    r.dataEsgotamentoIso ?? "",
+    r.status,
+    String(r.valorLinha),
+    r.consumoMedioDiario != null ? String(r.consumoMedioDiario) : "",
+    r.observacoes ?? "",
+  ]);
+  return { headers: [...CSV_HEADERS], rows: rowsOut };
 }
 
 export function downloadCsvUtf8Bom(content: string, filename: string): void {

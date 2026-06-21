@@ -3,7 +3,6 @@ import { toast } from "sonner";
 import {
   AlertTriangle,
   CheckCircle2,
-  Download,
   Info,
   Link2,
   Percent,
@@ -13,6 +12,8 @@ import {
   Truck,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { ExportMenu } from "@/components/ui/export-menu";
+import { exportTableDocument } from "@/lib/exportTableDocument";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -233,49 +234,87 @@ export function AcompanhamentoAvarias() {
     excluirAvariaCampo.mutate({ avariaId: lancamento.id });
   }
 
-  function exportarCsv() {
-    if (!dados) return;
-    const linhas = [
-      ["Indicador", "Valor"],
+  function buildAvariasExport() {
+    if (!dados) return null;
+    const headers = ["Indicador", "Valor"];
+    const rows: string[][] = [
       ["Volume entregue", String(dados.kpis.volumeEntregue)],
       ["Quantidade avariada", String(dados.kpis.avariaQtdTotal)],
       ["Valor perdido", String(dados.kpis.valorPerdidoTotal)],
-      ["Taxa de avaria (%)", String(dados.kpis.taxaAvaria.toFixed(2))],
-      ["Pontualidade (%)", String(dados.kpis.pontualidade.toFixed(2))],
+      ["Taxa de avaria (%)", dados.kpis.taxaAvaria.toFixed(2)],
+      ["Pontualidade (%)", dados.kpis.pontualidade.toFixed(2)],
       ["Pedidos avaliados", String(dados.kpis.pedidosTotais)],
       ["Entregas validadas", String(dados.kpis.pedidosEntregues)],
-      [],
-      ["Produto", "Categoria", "Entregue", "Avaria", "Taxa avaria %", "Valor perdido"],
-      ...dados.topProdutosAvaria.map((p) => [
-        p.nome,
-        p.categoria ?? "",
-        String(p.entregueQtd),
-        String(p.quantidade),
-        p.taxaAvaria != null ? p.taxaAvaria.toFixed(2) : "",
-        String(p.valorPerdido),
-      ]),
-      [],
-      ["Unidade", "Produto", "Qtd sugerida", "Media entregue", "Media avaria", "Taxa avaria %", "Acao"],
-      ...dados.sugestoesPedido.map((s: any) => [
-        s.unidade,
-        s.produtoNome,
-        String(s.quantidadeSugerida),
-        String(s.mediaEntregue.toFixed(1)),
-        String(s.mediaAvaria.toFixed(1)),
-        String(s.taxaAvaria.toFixed(1)),
-        s.acao,
-      ]),
     ];
-    const csv = linhas
-      .map((cols) => cols.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `acompanhamento_avarias_${redeSelecionada?.nome ?? "fazendas_up_geral"}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const prodHeaders = [
+      "Produto",
+      "Categoria",
+      "Entregue",
+      "Avaria",
+      "Taxa avaria %",
+      "Valor perdido",
+    ];
+    const prodRows = dados.topProdutosAvaria.map((p) => [
+      p.nome,
+      p.categoria ?? "",
+      String(p.entregueQtd),
+      String(p.quantidade),
+      p.taxaAvaria != null ? p.taxaAvaria.toFixed(2) : "",
+      String(p.valorPerdido),
+    ]);
+    const sugHeaders = [
+      "Unidade",
+      "Produto",
+      "Qtd sugerida",
+      "Média entregue",
+      "Média avaria",
+      "Taxa avaria %",
+      "Ação",
+    ];
+    const sugRows = dados.sugestoesPedido.map((s: any) => [
+      s.unidade,
+      s.produtoNome,
+      String(s.quantidadeSugerida),
+      s.mediaEntregue.toFixed(1),
+      s.mediaAvaria.toFixed(1),
+      s.taxaAvaria.toFixed(1),
+      s.acao,
+    ]);
+    const filename = `acompanhamento_avarias_${redeSelecionada?.nome ?? "fazendas_up_geral"}`;
+    return { headers, rows, prodHeaders, prodRows, sugHeaders, sugRows, filename };
+  }
+
+  function exportarRelatorio(format: "csv" | "pdf") {
+    const data = buildAvariasExport();
+    if (!data) return;
+    const allRows = [
+      ...data.rows,
+      ["", ""],
+      data.prodHeaders,
+      ...data.prodRows,
+      ["", ""],
+      data.sugHeaders,
+      ...data.sugRows,
+    ];
+    const maxCols = Math.max(...allRows.map((r) => r.length));
+    const normalized = allRows.map((r) => {
+      const row = [...r];
+      while (row.length < maxCols) row.push("");
+      return row.slice(0, maxCols);
+    });
+    const headers = normalized[0] ?? ["Indicador", "Valor"];
+    const body = normalized.slice(1);
+    exportTableDocument(
+      {
+        title: "Acompanhamento de avarias",
+        subtitle: redeSelecionada?.nome ?? "Fazendas UP geral",
+        filename: data.filename,
+        headers,
+        rows: body,
+        orientation: "landscape",
+      },
+      format,
+    );
   }
 
   const maxAvariaCategoria = Math.max(1, ...(dados?.avariaCategorias.map((c) => c.quantidade) ?? [0]));
@@ -420,10 +459,11 @@ export function AcompanhamentoAvarias() {
                 {gerenciar ? "Fechar gestão de redes" : "Gerenciar redes"}
               </Button>
             )}
-            <Button variant="outline" disabled={!dados} onClick={exportarCsv}>
-              <Download className="mr-1.5 h-4 w-4" />
-              Exportar CSV
-            </Button>
+            <ExportMenu
+              disabled={!dados}
+              onExportCsv={() => exportarRelatorio("csv")}
+              onExportPdf={() => exportarRelatorio("pdf")}
+            />
           </>
         }
       />

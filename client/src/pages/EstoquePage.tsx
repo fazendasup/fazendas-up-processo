@@ -60,10 +60,13 @@ import {
   agregarPorFornecedor,
   downloadCsvUtf8Bom,
   linhasParaCsv,
+  linhasParaExportMatrix,
   mapaAbcPorValorLinha,
   abrirImpressaoInventario,
   type LinhaEstoqueExport,
 } from "@/lib/estoqueRelatorio";
+import { exportTableDocument } from "@/lib/exportTableDocument";
+import { ExportMenu } from "@/components/ui/export-menu";
 
 const TAB_GERAL = "geral" as const;
 type EstoqueTab = typeof TAB_GERAL | EstoqueCategoria;
@@ -101,6 +104,29 @@ const fmtMoney = (n: number) =>
 
 const fmtNum = (n: number | null | undefined, dec = 1) =>
   n == null || !Number.isFinite(n) ? "—" : n.toLocaleString("pt-BR", { maximumFractionDigits: dec });
+
+function exportInventarioEstoque(
+  rows: LinhaEstoqueExport[],
+  opts: { titulo: string; subtitulo?: string; filename: string },
+  fileFormat: "csv" | "pdf",
+) {
+  if (fileFormat === "csv") {
+    downloadCsvUtf8Bom(linhasParaCsv(rows), `${opts.filename}.csv`);
+    return;
+  }
+  const { headers, rows: body } = linhasParaExportMatrix(rows);
+  exportTableDocument(
+    {
+      title: opts.titulo,
+      subtitle: opts.subtitulo ?? format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR }),
+      filename: opts.filename,
+      headers,
+      rows: body,
+      orientation: "landscape",
+    },
+    "pdf",
+  );
+}
 
 function renderCompraSugeridaCell(
   row: Pick<
@@ -622,22 +648,42 @@ export default function EstoquePage() {
                 </select>
               </div>
               <div className="flex flex-wrap gap-2 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={() => {
+                <ExportMenu
+                  onExportCsv={() => {
                     const rows = overviewFiltered.map(toExportRow);
-                    const csv = linhasParaCsv(rows);
                     const d = format(new Date(), "yyyy-MM-dd");
-                    downloadCsvUtf8Bom(csv, `inventario-estoque-${d}.csv`);
+                    exportInventarioEstoque(
+                      rows,
+                      {
+                        titulo: "Inventário de estoque",
+                        subtitulo:
+                          overviewFiltroCategoria === "todas"
+                            ? "Todos os itens"
+                            : LABEL_CATEGORIA[overviewFiltroCategoria],
+                        filename: `inventario-estoque-${d}`,
+                      },
+                      "csv",
+                    );
                     toast.success("CSV exportado");
                   }}
-                >
-                  <FileDown className="w-4 h-4" />
-                  Exportar CSV
-                </Button>
+                  onExportPdf={() => {
+                    const rows = overviewFiltered.map(toExportRow);
+                    const d = format(new Date(), "yyyy-MM-dd");
+                    exportInventarioEstoque(
+                      rows,
+                      {
+                        titulo: "Inventário de estoque",
+                        subtitulo:
+                          overviewFiltroCategoria === "todas"
+                            ? "Todos os itens"
+                            : LABEL_CATEGORIA[overviewFiltroCategoria],
+                        filename: `inventario-estoque-${d}`,
+                      },
+                      "pdf",
+                    );
+                    toast.success("PDF exportado");
+                  }}
+                />
                 <Button
                   type="button"
                   variant="outline"
@@ -875,21 +921,33 @@ export default function EstoquePage() {
                     )}
                   </p>
                 )}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 shrink-0 self-start sm:self-auto"
-                  onClick={() => {
-                    const csv = linhasParaCsv(rows.map(toExportRow));
+                <ExportMenu
+                  label="Exportar categoria"
+                  onExportCsv={() => {
                     const d = format(new Date(), "yyyy-MM-dd");
-                    downloadCsvUtf8Bom(csv, `inventario-${c}-${d}.csv`);
+                    exportInventarioEstoque(
+                      rows.map(toExportRow),
+                      {
+                        titulo: `Inventário — ${LABEL_CATEGORIA[c]}`,
+                        filename: `inventario-${c}-${d}`,
+                      },
+                      "csv",
+                    );
                     toast.success("CSV exportado");
                   }}
-                >
-                  <FileDown className="w-4 h-4" />
-                  CSV desta categoria
-                </Button>
+                  onExportPdf={() => {
+                    const d = format(new Date(), "yyyy-MM-dd");
+                    exportInventarioEstoque(
+                      rows.map(toExportRow),
+                      {
+                        titulo: `Inventário — ${LABEL_CATEGORIA[c]}`,
+                        filename: `inventario-${c}-${d}`,
+                      },
+                      "pdf",
+                    );
+                    toast.success("PDF exportado");
+                  }}
+                />
               </div>
 
               <div className="grid lg:grid-cols-[minmax(0,1fr)_240px] gap-3 min-w-0">

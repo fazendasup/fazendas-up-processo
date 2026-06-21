@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
-import { AlertTriangle, BarChart3, CalendarDays, Download, PackageCheck, Search, ShoppingBasket, Users } from "lucide-react";
+import { AlertTriangle, BarChart3, CalendarDays, PackageCheck, Search, ShoppingBasket, Users } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { ocultarValoresComerciais } from "@/lib/accessPolicy";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchSelect } from "@/components/ui/search-select";
 import { hojeIsoLocal } from "@/lib/comercial/periodo";
+import { ExportMenu } from "@/components/ui/export-menu";
+import { exportTableDocument } from "@/lib/exportTableDocument";
 
 const STATUS = ["PENDENTE", "PRONTO", "ENTREGUE", "CANCELADO"] as const;
 
@@ -51,73 +53,91 @@ function statusBarClass(status: string) {
   return map[status] ?? "bg-primary";
 }
 
-function exportCsv(rows: any[], filename: string) {
-  const header = [
-    "data_entrega",
-    "cliente",
-    "status",
-    "tipo_venda",
-    "produto",
-    "categoria",
-    "quantidade",
-    "preco_unit",
-    "numero_venda_conta_azul",
-    "observacoes",
-    "criado_por",
-    "editado_por",
+function buildPedidosExport(rows: any[]) {
+  const headers = [
+    "Data entrega",
+    "Cliente",
+    "Status",
+    "Tipo venda",
+    "Produto",
+    "Categoria",
+    "Quantidade",
+    "Preço unit.",
+    "Nº venda CA",
+    "Observações",
+    "Criado por",
+    "Editado por",
   ];
   const body = rows.flatMap((pedido) =>
-    (pedido.itens ?? []).map((item: any) =>
-      [
-        new Date(pedido.dataEntrega).toISOString().slice(0, 10),
-        pedido.cliente?.nome ?? pedido.contaAzulCustomerId,
-        pedido.status,
-        pedido.tipoVenda,
-        item.produtoNome,
-        item.categoria ?? "",
-        String(item.quantidade ?? ""),
-        String(item.precoUnit ?? ""),
-        pedido.pedidoContaAzul?.numeroVenda ?? "",
-        pedido.observacoes ?? "",
-        pedido.criadoPor?.nome ?? "",
-        pedido.editadoPor?.nome ?? "",
-      ]
-        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-        .join(","),
-    ),
+    (pedido.itens ?? []).map((item: any) => [
+      new Date(pedido.dataEntrega).toISOString().slice(0, 10),
+      String(pedido.cliente?.nome ?? pedido.contaAzulCustomerId ?? ""),
+      String(pedido.status ?? ""),
+      String(pedido.tipoVenda ?? ""),
+      String(item.produtoNome ?? ""),
+      String(item.categoria ?? ""),
+      String(item.quantidade ?? ""),
+      String(item.precoUnit ?? ""),
+      String(pedido.pedidoContaAzul?.numeroVenda ?? ""),
+      String(pedido.observacoes ?? ""),
+      String(pedido.criadoPor?.nome ?? ""),
+      String(pedido.editadoPor?.nome ?? ""),
+    ]),
   );
-  const blob = new Blob([[header.join(","), ...body].join("\n")], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+  return { headers, rows: body };
 }
 
-function exportAvariasCsv(rows: any[], filename: string) {
-  const header = ["data_entrega", "cliente", "produto", "categoria", "quantidade", "observacoes", "pedido_id", "criado_por"];
-  const body = rows.map((avaria) =>
-    [
-      new Date(avaria.dataEntrega).toISOString().slice(0, 10),
-      avaria.cliente?.nome ?? avaria.contaAzulCustomerId,
-      avaria.produtoNome,
-      avaria.categoria ?? "",
-      String(avaria.quantidade ?? ""),
-      avaria.observacoes ?? "",
-      avaria.pedidoId ?? "",
-      avaria.criadoPor?.nome ?? "",
-    ]
-      .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-      .join(","),
+function buildAvariasExport(rows: any[]) {
+  const headers = [
+    "Data entrega",
+    "Cliente",
+    "Produto",
+    "Categoria",
+    "Quantidade",
+    "Observações",
+    "Pedido ID",
+    "Criado por",
+  ];
+  const body = rows.map((avaria) => [
+    new Date(avaria.dataEntrega).toISOString().slice(0, 10),
+    String(avaria.cliente?.nome ?? avaria.contaAzulCustomerId ?? ""),
+    String(avaria.produtoNome ?? ""),
+    String(avaria.categoria ?? ""),
+    String(avaria.quantidade ?? ""),
+    String(avaria.observacoes ?? ""),
+    String(avaria.pedidoId ?? ""),
+    String(avaria.criadoPor?.nome ?? ""),
+  ]);
+  return { headers, rows: body };
+}
+
+function exportPedidos(rows: any[], filename: string, format: "csv" | "pdf") {
+  const { headers, rows: body } = buildPedidosExport(rows);
+  if (body.length === 0) return;
+  exportTableDocument(
+    {
+      title: "Histórico de pedidos",
+      filename,
+      headers,
+      rows: body,
+      orientation: "landscape",
+    },
+    format,
   );
-  const blob = new Blob([[header.join(","), ...body].join("\n")], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+}
+
+function exportAvarias(rows: any[], filename: string, format: "csv" | "pdf") {
+  const { headers, rows: body } = buildAvariasExport(rows);
+  if (body.length === 0) return;
+  exportTableDocument(
+    {
+      title: "Avarias registradas",
+      filename,
+      headers,
+      rows: body,
+    },
+    format,
+  );
 }
 
 export function PedidosHistorico() {
@@ -168,22 +188,18 @@ export function PedidosHistorico() {
           <Button variant="outline" asChild>
             <Link href="/comercial/pedidos">Voltar ao dashboard</Link>
           </Button>
-          <Button
-            variant="outline"
+          <ExportMenu
             disabled={!rows.length}
-            onClick={() => exportCsv(rows, `pedidos_historico_${inicio}_${fim}.csv`)}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Exportar CSV
-          </Button>
-          <Button
-            variant="outline"
+            label="Exportar pedidos"
+            onExportCsv={() => exportPedidos(rows, `pedidos_historico_${inicio}_${fim}`, "csv")}
+            onExportPdf={() => exportPedidos(rows, `pedidos_historico_${inicio}_${fim}`, "pdf")}
+          />
+          <ExportMenu
             disabled={!avariasRows.length}
-            onClick={() => exportAvariasCsv(avariasRows, `avarias_${inicio}_${fim}.csv`)}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Exportar avarias
-          </Button>
+            label="Exportar avarias"
+            onExportCsv={() => exportAvarias(avariasRows, `avarias_${inicio}_${fim}`, "csv")}
+            onExportPdf={() => exportAvarias(avariasRows, `avarias_${inicio}_${fim}`, "pdf")}
+          />
         </div>
       </div>
 
