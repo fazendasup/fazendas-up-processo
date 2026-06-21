@@ -92,6 +92,17 @@ CREATE TABLE IF NOT EXISTS \`custos_produtos_processo_modelos\` (
   }
   try {
     await db.execute(
+      sql.raw(`
+ALTER TABLE \`custos_produtos_processo_modelos\`
+  MODIFY COLUMN \`familia\` enum('folhosas','legumes','microverdes','flores','outros') NOT NULL DEFAULT 'folhosas'
+`),
+    );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn("[processoModelosDb] migrate familia enum:", msg.slice(0, 160));
+  }
+  try {
+    await db.execute(
       sql.raw(
         "ALTER TABLE `custos_produtos_comercial_map` ADD COLUMN `processoModeloId` int NULL",
       ),
@@ -207,7 +218,7 @@ export async function salvarProcessoModelo(
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const slug = input.slug?.trim() || slugifyProcessoModelo(input.nome);
+  const slug = slugifyProcessoModelo(input.slug?.trim() || input.nome.trim());
   const derived = derivarProcessoModelo(
     {
       id: input.id ?? 0,
@@ -264,7 +275,15 @@ export async function salvarProcessoModelo(
     return saved;
   }
 
-  const res = await db.insert(custosProdutosProcessoModelos).values(payload);
+  const res = await db.insert(custosProdutosProcessoModelos).values(payload).catch((err: unknown) => {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/familia|enum|Data truncated/i.test(msg)) {
+      throw new Error(
+        "Não foi possível salvar o modelo Flores — atualize o banco (migration 0051: familia inclui «flores»). Tente de novo após o deploy.",
+      );
+    }
+    throw err;
+  });
   const newId = Number(res[0].insertId);
   const saved = await getProcessoModeloById(projetoId, newId);
   if (!saved) throw new Error("Falha ao criar modelo");

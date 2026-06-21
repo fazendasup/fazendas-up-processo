@@ -557,7 +557,6 @@ export const custosProdutoSubRouter = router({
         {
           id: input.id,
           nome: input.nome,
-          slug: input.slug ?? input.nome,
           descricao: input.descricao ?? null,
           familia: input.familia as FamiliaProcessoModelo,
           isDefault: input.isDefault,

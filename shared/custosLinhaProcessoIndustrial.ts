@@ -191,7 +191,7 @@ export const LINHA_PROCESSO_MICROVERDES_PADRAO: LinhaProcessoIndustrialInput = {
 export const LINHA_PROCESSO_FLORES_PADRAO: LinhaProcessoIndustrialInput = {
   ...LINHA_PROCESSO_MICROVERDES_PADRAO,
   rotuloEtapaColheita: "Seleção",
-  kgPorUnidadeRef: 0.015,
+  kgPorUnidadeRef: 1 / 17,
   colheitaMinPorUn: 2,
   embalagemMinPorUn: 1.5,
   selagemMinPorCiclo: 0,
@@ -223,7 +223,7 @@ export function linhaPresetParaFamilia(
       rotuloEtapaColheita: "Seleção",
       colheitaMinPorUn: base.colheitaMinPorUn > 0 ? base.colheitaMinPorUn : 2,
       embalagemMinPorUn: base.embalagemMinPorUn > 0 ? base.embalagemMinPorUn : 1.5,
-      kgPorUnidadeRef: base.kgPorUnidadeRef > 0 ? base.kgPorUnidadeRef : 0.015,
+      kgPorUnidadeRef: base.kgPorUnidadeRef > 0 ? base.kgPorUnidadeRef : 1 / 17,
     });
   }
   return base;

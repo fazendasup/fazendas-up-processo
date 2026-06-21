@@ -39,6 +39,8 @@ import {
   LABEL_ETAPA_PROCESSO,
   LABEL_MODO_COMPRA_MP,
   MODOS_COMPRA_MP,
+  kgLiquidoPorUnidadeDeRendimentoKg,
+  rendimentoUnidadesPorKg,
   type CategoriaProdutoCusto,
   type ModoCompraMp,
 } from "@shared/custosProduto";
@@ -757,22 +759,61 @@ export function CustosProcessoModeloWizard() {
                 </>
               ) : (
                 <>
-                  <div className="space-y-1">
-                    <Label>Kg por unidade vendida (ref. R$/kg)</Label>
-                    <DecimalInput
-                      value={draft.linha.kgPorUnidadeRef}
-                      fallback={0.03}
-                      fractionDigits={4}
-                      onChange={(v) => patchLinha({ kgPorUnidadeRef: v })}
-                    />
-                    <p className="text-[11px] text-muted-foreground">
-                      Pote 30g → <strong>0,03</strong> · clamshell 100g → <strong>0,10</strong>
-                    </p>
-                  </div>
-                  <p className="text-xs text-muted-foreground sm:col-span-2">
-                    Microverdes não usam máquinas nem desfolhagem — só MO de colheita e embalagem nos passos
-                    seguintes.
-                  </p>
+                  {isFlores ? (
+                    <>
+                      <div className="space-y-1">
+                        <Label>Rendimento (potes por kg) — referência do modelo</Label>
+                        <DecimalInput
+                          value={
+                            draft.linha.kgPorUnidadeRef > 0
+                              ? rendimentoUnidadesPorKg(draft.linha.kgPorUnidadeRef) ?? 17
+                              : 17
+                          }
+                          fallback={17}
+                          fractionDigits={1}
+                          onChange={(v) => {
+                            const kg = v > 0 ? kgLiquidoPorUnidadeDeRendimentoKg(v) : null;
+                            patchLinha({ kgPorUnidadeRef: kg ?? 0 });
+                          }}
+                        />
+                        <p className="text-[11px] text-muted-foreground">
+                          Ex.: com <strong>1 kg</strong> você monta <strong>17 potes</strong> — informe{" "}
+                          <strong>17</strong>. O rendimento exato de cada SKU fica na ficha do produto.
+                        </p>
+                      </div>
+                      {draft.linha.kgPorUnidadeRef > 0 ? (
+                        <p className="text-[11px] text-muted-foreground sm:col-span-2">
+                          ≈{" "}
+                          {new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 }).format(
+                            draft.linha.kgPorUnidadeRef,
+                          )}{" "}
+                          kg/pote — usado só para estimar R$/kg de MO no resumo (custo principal é por pote).
+                        </p>
+                      ) : null}
+                      <p className="text-xs text-muted-foreground sm:col-span-2">
+                        Flores: compra em kg, vende em pote — só MO de seleção e embalagem nos passos seguintes.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="space-y-1">
+                        <Label>Kg por unidade vendida (ref. R$/kg)</Label>
+                        <DecimalInput
+                          value={draft.linha.kgPorUnidadeRef}
+                          fallback={0.03}
+                          fractionDigits={4}
+                          onChange={(v) => patchLinha({ kgPorUnidadeRef: v })}
+                        />
+                        <p className="text-[11px] text-muted-foreground">
+                          Pote 30g → <strong>0,03</strong> · clamshell 100g → <strong>0,10</strong>
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted-foreground sm:col-span-2">
+                        Microverdes não usam máquinas nem desfolhagem — só MO de colheita e embalagem nos passos
+                        seguintes.
+                      </p>
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -1209,13 +1250,15 @@ export function CustosProcessoModeloWizard() {
                     <CardTitle className="text-xs text-muted-foreground">Processamento MO</CardTitle>
                   </CardHeader>
                   <CardContent className="text-lg font-semibold tabular-nums">
-                    {isMicroverdes ? (
+                    {isRotaColheitaEmbalagem ? (
                       <>
                         {fmtMoney(linhaCalc.processamentoMoReaisUn)}/un
                         {draft.linha.kgPorUnidadeRef > 0 ? (
                           <p className="text-xs font-normal text-muted-foreground mt-1">
-                            ≈ {fmtMoney(linhaCalc.processamentoMoReaisKg)}/kg (ref.{" "}
-                            {draft.linha.kgPorUnidadeRef} kg/un)
+                            ≈ {fmtMoney(linhaCalc.processamentoMoReaisKg)}/kg
+                            {isFlores
+                              ? ` (ref. ${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 }).format(rendimentoUnidadesPorKg(draft.linha.kgPorUnidadeRef) ?? 0)} potes/kg)`
+                              : ` (ref. ${draft.linha.kgPorUnidadeRef} kg/un)`}
                           </p>
                         ) : null}
                       </>
@@ -1264,7 +1307,9 @@ export function CustosProcessoModeloWizard() {
                           </p>
                         ) : (
                           <p className="text-xs font-normal text-amber-700 mt-1">
-                            Informe kg/un no passo Base para ver R$/kg
+                            {isFlores
+                              ? "Informe rendimento (potes/kg) no passo Base para ver R$/kg"
+                              : "Informe kg/un no passo Base para ver R$/kg"}
                           </p>
                         )}
                       </>
