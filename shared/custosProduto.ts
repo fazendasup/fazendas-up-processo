@@ -217,6 +217,9 @@ export function precoVendaParaMargem(custo: number | null | undefined, margemPct
   return c / (1 - m / 100);
 }
 
+export const FLORES_RENDIMENTO_POTES_POR_KG_PADRAO = 17;
+export const FLORES_KG_POR_POTE_PADRAO = 1 / FLORES_RENDIMENTO_POTES_POR_KG_PADRAO;
+
 /** Kg de matéria-prima líquida que entra em cada unidade vendida, a partir do rendimento (ex.: 17 potes/kg → ~0,0588). */
 export function kgLiquidoPorUnidadeDeRendimentoKg(unidadesPorKg: number): number | null {
   if (!(unidadesPorKg > 0)) return null;

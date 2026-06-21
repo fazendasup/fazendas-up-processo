@@ -39,6 +39,7 @@ import {
   LABEL_ETAPA_PROCESSO,
   LABEL_MODO_COMPRA_MP,
   MODOS_COMPRA_MP,
+  FLORES_KG_POR_POTE_PADRAO,
   kgLiquidoPorUnidadeDeRendimentoKg,
   rendimentoUnidadesPorKg,
   type CategoriaProdutoCusto,
@@ -1441,7 +1442,7 @@ export function CustosProcessoModeloWizard() {
                       <TableHead>Produto</TableHead>
                       <TableHead>Modelo</TableHead>
                       <TableHead>Perfil</TableHead>
-                      <TableHead>kg/un</TableHead>
+                      <TableHead>{isFlores ? "potes/kg" : "kg/un"}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1461,19 +1462,35 @@ export function CustosProcessoModeloWizard() {
                                 isMicroverdes &&
                                 (processoModeloId === String(draft.id) ||
                                   modeloSel?.familia === "microverdes");
+                              const vinculaFlores =
+                                isFlores &&
+                                (processoModeloId === String(draft.id) ||
+                                  modeloSel?.familia === "flores");
+                              const kgFlores =
+                                draft.linha.kgPorUnidadeRef > 0
+                                  ? draft.linha.kgPorUnidadeRef
+                                  : FLORES_KG_POR_POTE_PADRAO;
                               setLinhas((prev) =>
                                 prev.map((x) =>
                                   x.produtoComercialId === l.produtoComercialId
                                     ? {
                                         ...x,
                                         processoModeloId,
+                                        categoriaCusto: vinculaFlores
+                                          ? "flores"
+                                          : x.categoriaCusto,
                                         perfilProcesso: vinculaMicroverdes
                                           ? "microverde_embalagem"
-                                          : x.perfilProcesso,
+                                          : vinculaFlores
+                                            ? "colheita_embalagem"
+                                            : x.perfilProcesso,
+                                        modoCompraMp: vinculaFlores ? "kg" : x.modoCompraMp,
                                         kgPorUnidade:
                                           vinculaMicroverdes && !x.kgPorUnidade.trim()
                                             ? "0.03"
-                                            : x.kgPorUnidade,
+                                            : vinculaFlores && !x.kgPorUnidade.trim()
+                                              ? String(kgFlores)
+                                              : x.kgPorUnidade,
                                       }
                                     : x,
                                 ),
@@ -1519,20 +1536,52 @@ export function CustosProcessoModeloWizard() {
                           </Select>
                         </TableCell>
                         <TableCell>
-                          <Input
-                            className="h-8 w-20"
-                            inputMode="decimal"
-                            value={l.kgPorUnidade}
-                            onChange={(e) =>
-                              setLinhas((prev) =>
-                                prev.map((x) =>
-                                  x.produtoComercialId === l.produtoComercialId
-                                    ? { ...x, kgPorUnidade: e.target.value }
-                                    : x,
-                                ),
-                              )
-                            }
-                          />
+                          {isFlores ? (
+                            <Input
+                              className="h-8 w-20"
+                              inputMode="decimal"
+                              placeholder="17"
+                              value={(() => {
+                                const kg = parseOptDecimal(l.kgPorUnidade);
+                                const rend = kg != null && kg > 0 ? rendimentoUnidadesPorKg(kg) : null;
+                                return rend != null ? String(rend) : l.kgPorUnidade;
+                              })()}
+                              onChange={(e) => {
+                                const rend = parseOptDecimal(e.target.value);
+                                const kg =
+                                  rend != null && rend > 0
+                                    ? String(kgLiquidoPorUnidadeDeRendimentoKg(rend) ?? "")
+                                    : e.target.value;
+                                setLinhas((prev) =>
+                                  prev.map((x) =>
+                                    x.produtoComercialId === l.produtoComercialId
+                                      ? {
+                                          ...x,
+                                          kgPorUnidade: kg,
+                                          categoriaCusto: "flores",
+                                          modoCompraMp: "kg",
+                                        }
+                                      : x,
+                                  ),
+                                );
+                              }}
+                            />
+                          ) : (
+                            <Input
+                              className="h-8 w-20"
+                              inputMode="decimal"
+                              value={l.kgPorUnidade}
+                              onChange={(e) =>
+                                setLinhas((prev) =>
+                                  prev.map((x) =>
+                                    x.produtoComercialId === l.produtoComercialId
+                                      ? { ...x, kgPorUnidade: e.target.value }
+                                      : x,
+                                  ),
+                                )
+                              }
+                            />
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

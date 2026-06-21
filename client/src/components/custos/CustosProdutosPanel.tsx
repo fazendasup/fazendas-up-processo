@@ -20,6 +20,8 @@ import {
   temEtapaLogistica,
   unidadesMpConsumidasRevenda,
   custoMaterialRevenda,
+  FLORES_KG_POR_POTE_PADRAO,
+  FLORES_RENDIMENTO_POTES_POR_KG_PADRAO,
   kgLiquidoPorUnidadeDeRendimentoKg,
   rendimentoUnidadesPorKg,
 } from "@shared/custosProduto";
@@ -403,6 +405,24 @@ function emptyEtapa(tipo: TipoEtapaProcesso = "lavagem"): EtapaForm {
     custoPorKgProcessado: "",
     custoPercentual: tipo === "logistica" ? String(LOGISTICA_PERCENTUAL_PADRAO) : "",
   };
+}
+
+function patchCategoriaFicha(
+  f: FichaForm,
+  categoria: CategoriaProdutoCusto,
+): Partial<FichaForm> {
+  const patch: Partial<FichaForm> = {
+    categoria,
+    ...(f.etapasModoManual ? {} : { perfilProcesso: perfilDefaultParaCategoria(categoria) }),
+  };
+  if (categoria === "flores") {
+    patch.modoCompraMp = "kg";
+    patch.unidadeVenda = "unidade";
+    if (!parseOpt(f.kgBrutoPorUnidade)) {
+      patch.kgBrutoPorUnidade = fmtDecimalInput(FLORES_KG_POR_POTE_PADRAO, 6);
+    }
+  }
+  return patch;
 }
 
 function garantirEtapaLogisticaForm(etapas: EtapaForm[]): EtapaForm[] {
@@ -1062,10 +1082,7 @@ function FichaEditor({
             onValueChange={(v) =>
               setForm((f) => ({
                 ...f,
-                categoria: v,
-                ...(f.etapasModoManual
-                  ? {}
-                  : { perfilProcesso: perfilDefaultParaCategoria(v as CategoriaProdutoCusto) }),
+                ...patchCategoriaFicha(f, v as CategoriaProdutoCusto),
               }))
             }
           >
@@ -1099,15 +1116,20 @@ function FichaEditor({
                 nome: f.nome || p?.nome || f.nome,
                 ...(m
                   ? {
-                      categoria: m.categoriaCusto,
+                      ...patchCategoriaFicha(f, m.categoriaCusto as CategoriaProdutoCusto),
                       perfilProcesso: m.perfilProcesso,
                       processoModeloId:
                         m.processoModeloId != null ? String(m.processoModeloId) : f.processoModeloId,
-                      modoCompraMp: m.modoCompraMp ?? f.modoCompraMp,
+                      modoCompraMp:
+                        m.categoriaCusto === "flores"
+                          ? "kg"
+                          : (m.modoCompraMp ?? f.modoCompraMp),
                       kgBrutoPorUnidade:
                         m.kgPorUnidade != null
-                          ? fmtDecimalInput(m.kgPorUnidade, 4)
-                          : f.kgBrutoPorUnidade,
+                          ? fmtDecimalInput(m.kgPorUnidade, 6)
+                          : m.categoriaCusto === "flores"
+                            ? fmtDecimalInput(FLORES_KG_POR_POTE_PADRAO, 6)
+                            : f.kgBrutoPorUnidade,
                       etapasModoManual: false,
                     }
                   : {}),
@@ -1196,33 +1218,49 @@ function FichaEditor({
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-3">
-            <div className="space-y-2 md:col-span-3">
-              <Label>Como você compra esta matéria-prima?</Label>
-              <Select
-                value={form.modoCompraMp}
-                onValueChange={(v) =>
-                  setForm((f) => ({
-                    ...f,
-                    modoCompraMp: v as ModoCompraMp,
-                  }))
-                }
-              >
-                <SelectTrigger className="max-w-md">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {MODOS_COMPRA_MP.map((m) => (
-                    <SelectItem key={m} value={m}>
-                      {LABEL_MODO_COMPRA_MP[m]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-[10px] text-muted-foreground">
-                O mesmo produto pode ter fornecedores diferentes — escolha o modo que reflete o custo padrão desta ficha.
+            {isFloresCategoria ? (
+              <Alert className="md:col-span-3 border-pink-200 bg-pink-50/50 dark:border-pink-900 dark:bg-pink-950/20">
+                <AlertTitle className="text-sm">Flores — compra kg, vende pote</AlertTitle>
+                <AlertDescription className="text-xs">
+                  Informe o preço da matéria-prima por kg, quantos potes saem de 1 kg e o preço de venda do pote
+                  (campo acima). Ex.: R$ 200/kg → 17 potes → venda R$ 27/pote.
+                </AlertDescription>
+              </Alert>
+            ) : null}
+            {!isFloresCategoria ? (
+              <div className="space-y-2 md:col-span-3">
+                <Label>Como você compra esta matéria-prima?</Label>
+                <Select
+                  value={form.modoCompraMp}
+                  onValueChange={(v) =>
+                    setForm((f) => ({
+                      ...f,
+                      modoCompraMp: v as ModoCompraMp,
+                    }))
+                  }
+                >
+                  <SelectTrigger className="max-w-md">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MODOS_COMPRA_MP.map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {LABEL_MODO_COMPRA_MP[m]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[10px] text-muted-foreground">
+                  O mesmo produto pode ter fornecedores diferentes — escolha o modo que reflete o custo padrão desta
+                  ficha.
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground md:col-span-3">
+                Compra: <strong>por kg (a granel)</strong> · Venda: <strong>por pote/unidade</strong>
               </p>
-            </div>
-            {form.modoCompraMp === "kg" ? (
+            )}
+            {form.modoCompraMp === "kg" || isFloresCategoria ? (
               <>
                 <div className="space-y-2">
                   <Label>Preço compra (R$/kg)</Label>
@@ -1310,6 +1348,7 @@ function FichaEditor({
                     {(() => {
                       const precoKg = parseOpt(form.precoCompraKg);
                       const kgPote = parseOpt(form.kgBrutoPorUnidade);
+                      const precoVenda = parseOpt(form.precoVendaReferencia);
                       if (precoKg == null || kgPote == null || precoKg <= 0 || kgPote <= 0) return null;
                       const rev = custoMaterialRevenda({
                         precoCompraKg: precoKg,
@@ -1318,18 +1357,37 @@ function FichaEditor({
                       });
                       if (rev.custo <= 0) return null;
                       const rend = rendimentoUnidadesPorKg(kgPote);
+                      const margemMp =
+                        precoVenda != null && precoVenda > rev.custo ? precoVenda - rev.custo : null;
                       return (
-                        <p className="text-xs text-emerald-800 dark:text-emerald-300">
-                          Matéria-prima por pote:{" "}
-                          <strong>{fmtMoney(rev.custo)}</strong>
-                          {rend != null ? (
-                            <>
-                              {" "}
-                              (R$ {fmtDecimalInput(precoKg, 2)}/kg ÷ {fmtDecimalInput(rend, 1)} potes/kg
-                              {parseOpt(form.perdaSelecaoPct) ? ", com desperdício na seleção" : ""})
-                            </>
-                          ) : null}
-                        </p>
+                        <div className="rounded-md border border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/30 p-2 text-xs text-emerald-900 dark:text-emerald-200 space-y-1">
+                          <p>
+                            Matéria-prima por pote: <strong>{fmtMoney(rev.custo)}</strong>
+                            {rend != null ? (
+                              <>
+                                {" "}
+                                ({fmtMoney(precoKg)}/kg ÷ {fmtDecimalInput(rend, 1)} potes
+                                {parseOpt(form.perdaSelecaoPct) ? ", c/ desperdício" : ""})
+                              </>
+                            ) : null}
+                          </p>
+                          {precoVenda != null && precoVenda > 0 ? (
+                            <p>
+                              Venda referência: <strong>{fmtMoney(precoVenda)}</strong>/pote
+                              {margemMp != null ? (
+                                <>
+                                  {" "}
+                                  · margem bruta só MP:{" "}
+                                  <strong>{fmtMoney(margemMp)}</strong>
+                                </>
+                              ) : null}
+                            </p>
+                          ) : (
+                            <p className="text-muted-foreground">
+                              Preencha o preço de venda referência acima (ex.: 27) para ver a margem bruta de MP.
+                            </p>
+                          )}
+                        </div>
                       );
                     })()}
                   </div>

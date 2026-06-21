@@ -786,9 +786,17 @@ export const custosProdutoSubRouter = router({
           : etapasProcessoPadraoParaPerfil(m.perfilProcesso, m.categoriaCusto, config);
         const etapas = etapasPadraoParaDb(etapasPadrao);
         const prev = fichaPorProduto.get(p.id);
+        const kgModelo =
+          modeloRecord?.linhaProcesso.kgPorUnidadeRef != null && modeloRecord.linhaProcesso.kgPorUnidadeRef > 0
+            ? modeloRecord.linhaProcesso.kgPorUnidadeRef
+            : null;
+        const kgBrutoDefault =
+          m.categoriaCusto === "flores" && kgModelo != null ? String(kgModelo) : null;
         const kgBruto =
-          m.kgPorUnidade != null && m.kgPorUnidade > 0 ? String(m.kgPorUnidade) : null;
-        const modoMp = m.modoCompraMp ?? "kg";
+          m.kgPorUnidade != null && m.kgPorUnidade > 0
+            ? String(m.kgPorUnidade)
+            : kgBrutoDefault;
+        const modoMp = m.categoriaCusto === "flores" ? "kg" : (m.modoCompraMp ?? "kg");
 
         if (prev) {
           if (!input.sobrescreverEtapas) continue;
@@ -821,7 +829,9 @@ export const custosProdutoSubRouter = router({
             m.perfilProcesso +
             ". Complete matéria-prima (" +
             (modoMp === "unidade" ? "R$/un" : "R$/kg") +
-            ") e ative a ficha. Lavagem = R$/kg × kg/un quando informado.",
+            (m.categoriaCusto === "flores"
+              ? ", rendimento potes/kg) e ative a ficha."
+              : ") e ative a ficha. Lavagem = R$/kg × kg/un quando informado."),
           ordem: 0,
           ativo: false,
         });
