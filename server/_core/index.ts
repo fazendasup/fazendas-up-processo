@@ -350,7 +350,7 @@ async function startServer() {
     const copia = await executarCopiaPadraoCoentroRestaurante();
     if (copia) {
       console.log(
-        `[Server] Cópia padrão Coentro: copiadas=${copia.copiadas.length} jaAlinhadas=${copia.jaAlinhadas.length} naoEncontradas=${copia.naoEncontradas.length} erros=${copia.erros.length}`,
+        `[Server] Cópia padrão Coentro (${copia.origemEncontradaComo ?? copia.origem}): copiadas=${copia.copiadas.length} jaAlinhadas=${copia.jaAlinhadas.length} naoEncontradas=${copia.naoEncontradas.length} erros=${copia.erros.length}`,
       );
       if (copia.copiadas.length > 0) {
         console.log(`[Server] Cópia padrão Coentro — fichas: ${copia.copiadas.join("; ")}`);
