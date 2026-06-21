@@ -447,6 +447,28 @@ function parseOpt(s: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function periodoMesCorrente() {
+  const d = new Date();
+  return {
+    inicio: new Date(d.getFullYear(), d.getMonth(), 1),
+    fim: new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999),
+  };
+}
+
+function rotuloLucroPrejuizo(margemBruta: number | null | undefined): string {
+  if (margemBruta == null) return "Margem";
+  if (margemBruta < 0) return "Prejuízo";
+  if (margemBruta > 0) return "Lucro";
+  return "Margem";
+}
+
+function classeLucroPrejuizo(margemBruta: number | null | undefined): string {
+  if (margemBruta == null) return "";
+  if (margemBruta < 0) return "text-destructive font-semibold";
+  if (margemBruta > 0) return "text-emerald-600 dark:text-emerald-400 font-semibold";
+  return "";
+}
+
 function parseTrpcErrorMessage(message: string): string {
   try {
     const parsed = JSON.parse(message) as unknown;
@@ -676,10 +698,11 @@ function ResultadoCustoCard({ resultado }: { resultado: any }) {
           <div>
             <p className="text-muted-foreground text-xs">Preço venda referência</p>
             <p className="font-semibold tabular-nums">{fmtMoney(resultado.precoVendaReferencia)}</p>
+            <p className="text-[10px] text-muted-foreground">Média CA (receita ÷ qtd, mês atual)</p>
           </div>
           <div>
-            <p className="text-muted-foreground text-xs">Margem bruta</p>
-            <p className="font-semibold tabular-nums">
+            <p className="text-muted-foreground text-xs">{rotuloLucroPrejuizo(resultado.margemBruta)} bruto</p>
+            <p className={`font-semibold tabular-nums ${classeLucroPrejuizo(resultado.margemBruta)}`}>
               {fmtMoney(resultado.margemBruta)}
               {resultado.margemPct != null ? ` (${resultado.margemPct.toFixed(1)}%)` : ""}
             </p>
@@ -1070,9 +1093,6 @@ function FichaEditor({
                 ...f,
                 produtoComercialId: id,
                 nome: f.nome || p?.nome || f.nome,
-                precoVendaReferencia:
-                  f.precoVendaReferencia ||
-                  (p?.precoBase != null ? fmtDecimalInput(p.precoBase, 2) : f.precoVendaReferencia),
                 ...(m
                   ? {
                       categoria: m.categoriaCusto,
@@ -1129,10 +1149,14 @@ function FichaEditor({
         </div>
         <div className="space-y-2">
           <Label>Preço venda referência (R$)</Label>
+          <p className="text-[10px] text-muted-foreground">
+            Atualizado automaticamente com a média das vendas do mês (receita ÷ quantidade, Conta Azul).
+          </p>
           <Input
-            inputMode="decimal"
-            value={form.precoVendaReferencia}
-            onChange={(e) => setForm((f) => ({ ...f, precoVendaReferencia: e.target.value }))}
+            readOnly
+            tabIndex={-1}
+            className="bg-muted/50 cursor-default"
+            value={form.precoVendaReferencia || "—"}
           />
         </div>
         <div className="flex items-center justify-between gap-3 rounded-lg border p-3 md:col-span-2">
@@ -1742,12 +1766,38 @@ function FichaEditor({
 export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
   const utils = trpc.useUtils();
   const catalogos = trpc.custosProducao.produtos.catalogos.useQuery();
-  const fichas = trpc.custosProducao.produtos.listarFichas.useQuery();
+  const fichas = trpc.custosProducao.produtos.listarFichas.useQuery(undefined, {
+    refetchInterval: 120_000,
+  });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<FichaForm>(emptyFicha());
   const [simResult, setSimResult] = useState<any>(null);
   const [compraDraft, setCompraDraft] = useState<Record<number, string>>({});
   const [margemTabelaCliente, setMargemTabelaCliente] = useState<string>("20");
+
+  const sincronizarPrecoVenda = trpc.custosProducao.produtos.sincronizarPrecoVendaReferencia.useMutation({
+    onSuccess: async (r) => {
+      if (r.atualizados > 0) {
+        await utils.custosProducao.produtos.listarFichas.invalidate();
+      }
+    },
+  });
+
+  useEffect(() => {
+    const tick = () => sincronizarPrecoVenda.mutate(periodoMesCorrente());
+    tick();
+    const id = window.setInterval(tick, 120_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    if (editingId == null || !fichas.data) return;
+    const row = fichas.data.find((r) => r.ficha.id === editingId);
+    if (!row) return;
+    const preco = fmtDecimalInput(row.ficha.precoVendaReferencia, 2);
+    setForm((f) => (f.precoVendaReferencia === preco ? f : { ...f, precoVendaReferencia: preco }));
+    setSimResult(row.resultado);
+  }, [editingId, fichas.data]);
 
   const simular = trpc.custosProducao.produtos.simularCusto.useMutation({
     onSuccess: (r) => setSimResult(r),
@@ -2061,10 +2111,19 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                             <p>
                               <span className="text-muted-foreground">Venda </span>
                               {fmtMoney(row.resultado.precoVendaReferencia)}
+                              <span className="block text-[10px] text-muted-foreground font-normal">
+                                média CA
+                              </span>
                             </p>
                             <p>
-                              <span className="text-muted-foreground">Margem </span>
-                              {row.resultado.margemPct != null ? `${row.resultado.margemPct.toFixed(1)}%` : "—"}
+                              <span className="text-muted-foreground">
+                                {rotuloLucroPrejuizo(row.resultado.margemBruta)}{" "}
+                              </span>
+                              <span className={classeLucroPrejuizo(row.resultado.margemBruta)}>
+                                {row.resultado.margemPct != null
+                                  ? `${row.resultado.margemPct.toFixed(1)}%`
+                                  : "—"}
+                              </span>
                             </p>
                           </div>
                         </TableCell>
@@ -2217,7 +2276,7 @@ export function CustosProdutosPainelResumo() {
               <TableHead>Tipo</TableHead>
               <TableHead className="text-right">Custo/un</TableHead>
               <TableHead className="text-right">Venda ref.</TableHead>
-              <TableHead className="text-right">Margem</TableHead>
+              <TableHead className="text-right">Lucro / prejuízo</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -2229,7 +2288,7 @@ export function CustosProdutosPainelResumo() {
                 <TableCell className="text-right tabular-nums">
                   {fmtMoney(r.ficha.precoVendaReferencia != null ? Number(r.ficha.precoVendaReferencia) : null)}
                 </TableCell>
-                <TableCell className="text-right tabular-nums">
+                <TableCell className={`text-right tabular-nums ${classeLucroPrejuizo(r.resultado.margemBruta)}`}>
                   {r.resultado.margemPct != null ? `${r.resultado.margemPct.toFixed(1)}%` : "—"}
                 </TableCell>
               </TableRow>

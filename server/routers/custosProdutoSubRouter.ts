@@ -360,6 +360,18 @@ export const custosProdutoSubRouter = router({
     return itens;
   }),
 
+  sincronizarPrecoVendaReferencia: custosProducaoModuleProcedure
+    .input(
+      z.object({
+        inicio: z.coerce.date(),
+        fim: z.coerce.date(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { sincronizarPrecoVendaReferenciaDasVendas } = await import("../custosPrecoVendaMedioCa");
+      return sincronizarPrecoVendaReferenciaDasVendas(projetoIdFromCtx(ctx), input.inicio, input.fim);
+    }),
+
   obterFicha: custosProducaoModuleProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
