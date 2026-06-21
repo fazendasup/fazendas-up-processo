@@ -877,7 +877,7 @@ export const custosProdutosProcessoModelos = mysqlTable(
     nome: varchar("nome", { length: 120 }).notNull(),
     slug: varchar("slug", { length: 64 }).notNull(),
     descricao: text("descricao"),
-    familia: mysqlEnum("familia", ["folhosas", "legumes", "microverdes", "outros"])
+    familia: mysqlEnum("familia", ["folhosas", "legumes", "microverdes", "flores", "outros"])
       .notNull()
       .default("folhosas"),
     isDefault: boolean("isDefault").notNull().default(false),

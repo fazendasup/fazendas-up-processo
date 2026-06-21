@@ -67,6 +67,8 @@ export type LinhaProcessoIndustrialInput = {
   /** Colheita pós-cultivo (min/un) — microverdes e rotas sem lavagem. */
   colheitaMinPorUn: number;
   colheitaOperadorIds: string[];
+  /** Rótulo da etapa MO inicial (ex.: «Seleção» em flores comestíveis). */
+  rotuloEtapaColheita?: string;
   desfolhagemSegPorPe: number;
   /** Um ou mais operadores em paralelo na etapa (MO soma). */
   desfolhagemOperadorIds: string[];
@@ -185,27 +187,59 @@ export const LINHA_PROCESSO_MICROVERDES_PADRAO: LinhaProcessoIndustrialInput = {
   selagemOperadorIds: ["1"],
 };
 
+/** Linha enxuta: seleção + embalagem (sem lavagem, secagem nem desfolhagem). */
+export const LINHA_PROCESSO_FLORES_PADRAO: LinhaProcessoIndustrialInput = {
+  ...LINHA_PROCESSO_MICROVERDES_PADRAO,
+  rotuloEtapaColheita: "Seleção",
+  kgPorUnidadeRef: 0.015,
+  colheitaMinPorUn: 2,
+  embalagemMinPorUn: 1.5,
+  selagemMinPorCiclo: 0,
+  selagemUnPorCiclo: 1,
+};
+
 export function linhaPresetParaFamilia(
   familia: FamiliaProcessoModelo,
   atual?: LinhaProcessoIndustrialInput,
 ): LinhaProcessoIndustrialInput {
   const base = normalizarLinhaProcessoInput(atual ?? LINHA_PROCESSO_INDUSTRIAL_PADRAO);
-  if (familia !== "microverdes") return base;
-  return normalizarLinhaProcessoInput({
-    ...LINHA_PROCESSO_MICROVERDES_PADRAO,
-    usarEquipesMo: base.usarEquipesMo,
-    custoHoraMo: base.custoHoraMo,
-    operadores: base.operadores,
-    colheitaMinPorUn: base.colheitaMinPorUn > 0 ? base.colheitaMinPorUn : 1.5,
-    embalagemMinPorUn: base.embalagemMinPorUn > 0 ? base.embalagemMinPorUn : 1,
-    kgPorUnidadeRef: base.kgPorUnidadeRef > 0 ? base.kgPorUnidadeRef : 0.03,
-  });
+  if (familia === "microverdes") {
+    return normalizarLinhaProcessoInput({
+      ...LINHA_PROCESSO_MICROVERDES_PADRAO,
+      usarEquipesMo: base.usarEquipesMo,
+      custoHoraMo: base.custoHoraMo,
+      operadores: base.operadores,
+      colheitaMinPorUn: base.colheitaMinPorUn > 0 ? base.colheitaMinPorUn : 1.5,
+      embalagemMinPorUn: base.embalagemMinPorUn > 0 ? base.embalagemMinPorUn : 1,
+      kgPorUnidadeRef: base.kgPorUnidadeRef > 0 ? base.kgPorUnidadeRef : 0.03,
+    });
+  }
+  if (familia === "flores") {
+    return normalizarLinhaProcessoInput({
+      ...LINHA_PROCESSO_FLORES_PADRAO,
+      usarEquipesMo: base.usarEquipesMo,
+      custoHoraMo: base.custoHoraMo,
+      operadores: base.operadores,
+      rotuloEtapaColheita: "Seleção",
+      colheitaMinPorUn: base.colheitaMinPorUn > 0 ? base.colheitaMinPorUn : 2,
+      embalagemMinPorUn: base.embalagemMinPorUn > 0 ? base.embalagemMinPorUn : 1.5,
+      kgPorUnidadeRef: base.kgPorUnidadeRef > 0 ? base.kgPorUnidadeRef : 0.015,
+    });
+  }
+  return base;
 }
 
 export const LINHA_ETAPAS_OPERADOR_MICROVERDES = new Set(["Colheita", "Embalagem"]);
+export const LINHA_ETAPAS_OPERADOR_FLORES = new Set(["Seleção", "Embalagem"]);
+
+export function familiaUsaRotaColheitaEmbalagem(familia: FamiliaProcessoModelo): boolean {
+  return familia === "microverdes" || familia === "flores";
+}
 
 export function etapasLinhaComMoVisiveis(familia: FamiliaProcessoModelo): Set<string> | null {
-  return familia === "microverdes" ? LINHA_ETAPAS_OPERADOR_MICROVERDES : null;
+  if (familia === "microverdes") return LINHA_ETAPAS_OPERADOR_MICROVERDES;
+  if (familia === "flores") return LINHA_ETAPAS_OPERADOR_FLORES;
+  return null;
 }
 
 export const LINHA_ETAPA_CAMPO_OPERADOR: Record<
@@ -220,6 +254,7 @@ export const LINHA_ETAPA_CAMPO_OPERADOR: Record<
   | "selagemOperadorIds"
 > = {
   Colheita: "colheitaOperadorIds",
+  Seleção: "colheitaOperadorIds",
   Desfolhagem: "desfolhagemOperadorIds",
   "Pré-lavagem": "preLavagemOperadorIds",
   Lavagem: "lavagemOperadorIds",
@@ -695,26 +730,28 @@ export function calcularLinhaProcessoIndustrial(
 
   let colheitaEtapa: EtapaLinhaBreakdown | null = null;
   if (input.colheitaMinPorUn > 0) {
+    const rotuloColheita = input.rotuloEtapaColheita?.trim() || "Colheita";
+    const notaColheita = rotuloColheita === "Seleção" ? "Triagem e montagem" : "Bandeja → tray";
     const opsCol = resolverOperadoresLinha(input, input.colheitaOperadorIds);
     const moCol = moTotalOperadoresParalelos(input, opsCol, mapaUsado, (h) =>
       moPorMin(h, input.colheitaMinPorUn),
     );
     colheitaEtapa = montarEtapaMo(
       {
-        nome: "Colheita",
+        nome: rotuloColheita,
         modo: "por_un",
         temMo: true,
         temMaquina: false,
         regimeMo: moCol.regimeMo,
         custoHoraUsado: moCol.custoHoraUsado,
-        nota: "Bandeja → tray",
+        nota: notaColheita,
         minPorKg: null,
         minPorUn: round4(input.colheitaMinPorUn),
         maquinaReaisPorKg: null,
       },
       opsCol,
       moCol,
-      "Bandeja → tray",
+      notaColheita,
     );
     etapas.push(colheitaEtapa);
   }
@@ -1087,13 +1124,20 @@ export function depreciacaoReaisKgDeEquipamento(
   return round4(valorEquipamento / vidaUtilMeses / kgProcessadosMes);
 }
 
-export const FAMILIAS_PROCESSO_MODELO = ["folhosas", "legumes", "microverdes", "outros"] as const;
+export const FAMILIAS_PROCESSO_MODELO = [
+  "folhosas",
+  "legumes",
+  "microverdes",
+  "flores",
+  "outros",
+] as const;
 export type FamiliaProcessoModelo = (typeof FAMILIAS_PROCESSO_MODELO)[number];
 
 export const LABEL_FAMILIA_PROCESSO_MODELO: Record<FamiliaProcessoModelo, string> = {
   folhosas: "Folhosas (alface, rúcula…)",
   legumes: "Legumes / hortaliças de raiz",
   microverdes: "Microverdes",
+  flores: "Flores comestíveis",
   outros: "Outros / misto",
 };
 

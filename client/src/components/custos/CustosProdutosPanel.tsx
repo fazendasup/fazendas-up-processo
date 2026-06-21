@@ -960,6 +960,7 @@ function FichaEditor({
   const lavagemModeloKg = configModelo?.lavagemReaisKg ?? null;
   const kgVendidoPorUn = parseOpt(form.kgBrutoPorUnidade);
   const categoriaCusto = form.categoria as CategoriaProdutoCusto;
+  const isFloresCategoria = categoriaCusto === "flores";
 
   const avisosModelo = useMemo(() => {
     if (!configModelo) return [];
@@ -1238,7 +1239,19 @@ function FichaEditor({
                     Peso <strong>líquido</strong> que o cliente recebe — o sistema calcula a compra bruta pelas perdas.
                   </p>
                 </div>
-                {form.etapas.some((e) => e.tipo === "lavagem" || e.tipo === "descasque_corte") ? (
+                {isFloresCategoria ? (
+                  <div className="space-y-2 md:col-span-2">
+                    <Label>Desperdício na seleção (%)</Label>
+                    <Input
+                      inputMode="decimal"
+                      value={form.perdaSelecaoPct}
+                      onChange={(e) => setForm((f) => ({ ...f, perdaSelecaoPct: e.target.value }))}
+                    />
+                    <p className="text-[10px] text-muted-foreground">
+                      Flores: só triagem/seleção — sem perda de lavagem ou corte.
+                    </p>
+                  </div>
+                ) : form.etapas.some((e) => e.tipo === "lavagem" || e.tipo === "descasque_corte") ? (
                   <>
                     <div className="space-y-2">
                       <Label>Perda lavagem (%)</Label>
@@ -1309,7 +1322,16 @@ function FichaEditor({
                     Peso pronto que o cliente recebe — também usado para lavagem (R$/kg × kg).
                   </p>
                 </div>
-                {form.etapas.some((e) => e.tipo === "lavagem" || e.tipo === "descasque_corte") ||
+                {isFloresCategoria ? (
+                  <div className="space-y-2 md:col-span-2">
+                    <Label>Desperdício na seleção (%)</Label>
+                    <Input
+                      inputMode="decimal"
+                      value={form.perdaSelecaoPct}
+                      onChange={(e) => setForm((f) => ({ ...f, perdaSelecaoPct: e.target.value }))}
+                    />
+                  </div>
+                ) : form.etapas.some((e) => e.tipo === "lavagem" || e.tipo === "descasque_corte") ||
                 parseOpt(form.kgPorUnidadeCompra) != null ? (
                   <>
                     <div className="space-y-2">
@@ -1965,7 +1987,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                 {resumoProdutos.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-muted-foreground text-center py-8">
-                      Nenhuma ficha cadastrada. Crie uma para alface, microverde, revenda ou mix.
+                      Nenhuma ficha cadastrada. Crie uma para alface, microverde, flores, revenda ou mix.
                     </TableCell>
                   </TableRow>
                 ) : (

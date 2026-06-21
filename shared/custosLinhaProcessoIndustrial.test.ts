@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   calcularLinhaProcessoIndustrial,
   calcularMaquinaReaisKg,
+  LINHA_PROCESSO_FLORES_PADRAO,
   LINHA_PROCESSO_INDUSTRIAL_PADRAO,
   LINHA_PROCESSO_MICROVERDES_PADRAO,
   linhaPresetParaFamilia,
@@ -139,5 +140,29 @@ describe("calcularLinhaProcessoIndustrial", () => {
     expect(linha.colheitaMinPorUn).toBe(1.5);
     expect(linha.desfolhagemSegPorPe).toBe(0);
     expect(linha.lavagemMaquina.ativo).toBe(false);
+  });
+
+  it("preset flores — seleção + embalagem, sem lavagem/secagem/desfolhagem", () => {
+    const r = calcularLinhaProcessoIndustrial(LINHA_PROCESSO_FLORES_PADRAO, {
+      clt: 28,
+      pj: 18,
+      misto: 22,
+    });
+    expect(r.etapas.map((e) => e.nome)).toEqual(["Seleção", "Embalagem"]);
+    const sel = r.etapas.find((e) => e.nome === "Seleção");
+    expect(sel?.reaisPorUn).toBeGreaterThan(0);
+    expect(sel?.minPorUn).toBe(2);
+    expect(r.processamentoMaquinaReaisKg).toBe(0);
+    expect(r.processamentoConsumiveisReaisKg).toBe(0);
+    expect(r.alertas).toEqual([]);
+  });
+
+  it("linhaPresetParaFamilia aplica defaults flores com rótulo Seleção", () => {
+    const linha = linhaPresetParaFamilia("flores", LINHA_PROCESSO_INDUSTRIAL_PADRAO);
+    expect(linha.rotuloEtapaColheita).toBe("Seleção");
+    expect(linha.colheitaMinPorUn).toBe(2);
+    expect(linha.desfolhagemSegPorPe).toBe(0);
+    expect(linha.lavagemMaquina.ativo).toBe(false);
+    expect(linha.secagemMaquina.ativo).toBe(false);
   });
 });

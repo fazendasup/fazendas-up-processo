@@ -157,6 +157,21 @@ const MICROVERDE_KEYWORDS = [
   "abobrinha broto",
 ];
 
+const FLORES_KEYWORDS = [
+  "flor comest",
+  "flores comest",
+  "mix de flores",
+  "bouquet",
+  "capuchinha",
+  "tagete",
+  "calendula",
+  "nasturtium",
+  "violacea",
+  "antirrhinum",
+  "borago",
+  "borragem",
+];
+
 /** Sugestão inicial — sempre revisável manualmente antes de gerar fichas. */
 export function inferirCategoriaProdutoCusto(
   nome: string,
@@ -169,6 +184,15 @@ export function inferirCategoriaProdutoCusto(
   }
   for (const kw of MICROVERDE_KEYWORDS) {
     if (n.includes(kw)) return "microverde";
+  }
+  if (cat.includes("flor") || n.includes("flor")) {
+    for (const kw of FLORES_KEYWORDS) {
+      if (n.includes(kw) || cat.includes(kw)) return "flores";
+    }
+    if (/\bflor(es)?\b/.test(n) || /\bflor(es)?\b/.test(cat)) return "flores";
+  }
+  for (const kw of FLORES_KEYWORDS) {
+    if (n.includes(kw)) return "flores";
   }
   if (n.includes("mix") || cat.includes("mix")) return "mix";
   if (n.includes("alface") || n.includes("rucula") || n.includes("folha") || n.includes("agriao")) {
@@ -186,6 +210,7 @@ export function inferirPerfilProcessoSugerido(
   const n = normalizarNomeProduto(nome);
   const categoria = inferirCategoriaProdutoCusto(nome, categoriaComercial);
   if (categoria === "microverde") return "microverde_embalagem";
+  if (categoria === "flores") return "colheita_embalagem";
   if (categoria === "alface") return "lavagem_embalagem";
   if (n.includes("baby leaf") || n.includes("babyleaf")) return "colheita_embalagem";
   return "colheita_embalagem";
@@ -256,6 +281,20 @@ function minMoLinha(calc: LinhaProcessoIndustrialResult | null | undefined, nome
   if (!calc) return null;
   const m = calc.etapas.find((e) => e.nome === nomeEtapa)?.minPorUn;
   return m != null && m > 0 ? m : null;
+}
+
+function minMoColheitaOuSelecao(
+  calc: LinhaProcessoIndustrialResult | null | undefined,
+  categoria: CategoriaProdutoCusto,
+): number | null {
+  if (categoria === "flores") {
+    return minMoLinha(calc, "Seleção") ?? minMoLinha(calc, "Colheita");
+  }
+  return minMoLinha(calc, "Colheita");
+}
+
+function labelMoColheitaOuSelecao(categoria: CategoriaProdutoCusto): string {
+  return categoria === "flores" ? "Seleção (MO)" : "Colheita (MO)";
 }
 
 function etapasMoPorUn(
@@ -358,7 +397,7 @@ export function etapasProcessoPadraoParaPerfil(
     }),
   );
 
-  const colheitaMo = minMoLinha(calc, "Colheita");
+  const colheitaMo = minMoColheitaOuSelecao(calc, categoria);
   if (
     colheitaMo != null &&
     (perfil === "microverde_embalagem" || perfil === "colheita_embalagem")
@@ -367,7 +406,7 @@ export function etapasProcessoPadraoParaPerfil(
       etapas.length - 1,
       0,
       etapa("mao_de_obra", {
-        nome: "Colheita (MO)",
+        nome: labelMoColheitaOuSelecao(categoria),
         minutosPorUnidade: colheitaMo,
         regimeMo: regime,
       }),
@@ -405,6 +444,7 @@ export function inferirPerfilDeEtapas(
 
 export function perfilDefaultParaCategoria(categoria: CategoriaProdutoCusto): PerfilProcessoProduto {
   if (categoria === "microverde") return "microverde_embalagem";
+  if (categoria === "flores") return "colheita_embalagem";
   if (categoria === "alface") return "lavagem_embalagem";
   return "colheita_embalagem";
 }
@@ -432,7 +472,9 @@ export function etapasProcessoPadraoParaProduto(
       ? "microverde_embalagem"
       : categoria === "alface"
         ? "lavagem_embalagem"
-        : "colheita_embalagem";
+        : categoria === "flores"
+          ? "colheita_embalagem"
+          : "colheita_embalagem";
   return etapasProcessoPadraoParaPerfil(perfil, categoria, config);
 }
 

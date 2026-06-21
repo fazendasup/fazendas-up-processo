@@ -19,6 +19,7 @@ export const LABEL_TIPO_FICHA_CUSTO_PRODUTO: Record<TipoFichaCustoProduto, strin
 export const CATEGORIAS_PRODUTO_CUSTO = [
   "alface",
   "microverde",
+  "flores",
   "revenda",
   "mix",
   "outros",
@@ -28,6 +29,7 @@ export type CategoriaProdutoCusto = (typeof CATEGORIAS_PRODUTO_CUSTO)[number];
 export const LABEL_CATEGORIA_PRODUTO_CUSTO: Record<CategoriaProdutoCusto, string> = {
   alface: "Alface / folhosas",
   microverde: "Microverdes",
+  flores: "Flores comestíveis",
   revenda: "Revenda",
   mix: "Mix",
   outros: "Outros",

@@ -9,6 +9,7 @@ import {
 } from "./custosProdutoProcessoPadrao";
 import {
   calcularLinhaProcessoIndustrial,
+  LINHA_PROCESSO_FLORES_PADRAO,
   LINHA_PROCESSO_MICROVERDES_PADRAO,
 } from "./custosLinhaProcessoIndustrial";
 
@@ -32,6 +33,29 @@ describe("custosProdutoProcessoPadrao", () => {
     expect(etapas.some((e) => e.tipo === "lavagem")).toBe(false);
     expect(etapas.find((e) => e.nome === "Colheita (MO)")?.minutosPorUnidade).toBe(1.5);
     expect(etapas.find((e) => e.tipo === "embalagem")?.custoPorUnidade).toBe(0.95);
+    expect(etapas.find((e) => e.tipo === "logistica")?.custoPercentual).toBe(10);
+  });
+
+  it("infere flores comestíveis e perfil colheita + embalagem", () => {
+    expect(inferirCategoriaProdutoCusto("Mix de flores / Restaurante")).toBe("flores");
+    expect(inferirPerfilProcessoSugerido("Mix de flores / Restaurante")).toBe("colheita_embalagem");
+    const calc = calcularLinhaProcessoIndustrial(LINHA_PROCESSO_FLORES_PADRAO);
+    const etapas = etapasProcessoPadraoParaPerfil("colheita_embalagem", "flores", {
+      embalagemMicroverdeUn: 0.95,
+      embalagemOutrosUn: 0.6,
+      lavagemReaisKg: 0,
+      lavagemMinutosUn: null,
+      embalagemMinutosUn: null,
+      corteMinutosUn: null,
+      adesivoCustoUn: null,
+      regimeMoPadrao: "qualquer",
+      incluirAdesivo: true,
+      logisticaPercentualPadrao: 10,
+    }, calc);
+    expect(etapas.some((e) => e.tipo === "lavagem")).toBe(false);
+    expect(etapas.some((e) => e.tipo === "descasque_corte")).toBe(false);
+    expect(etapas.find((e) => e.nome === "Seleção (MO)")?.minutosPorUnidade).toBe(2);
+    expect(etapas.find((e) => e.tipo === "embalagem")?.custoPorUnidade).toBe(0.6);
     expect(etapas.find((e) => e.tipo === "logistica")?.custoPercentual).toBe(10);
   });
 

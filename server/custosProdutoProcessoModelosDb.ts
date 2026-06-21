@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS \`custos_produtos_processo_modelos\` (
   \`nome\` varchar(120) NOT NULL,
   \`slug\` varchar(64) NOT NULL,
   \`descricao\` text NULL,
-  \`familia\` enum('folhosas','legumes','microverdes','outros') NOT NULL DEFAULT 'folhosas',
+  \`familia\` enum('folhosas','legumes','microverdes','flores','outros') NOT NULL DEFAULT 'folhosas',
   \`isDefault\` tinyint(1) NOT NULL DEFAULT 0,
   \`kgReferenciaMes\` decimal(14,4) NULL,
   \`embalagemMicroverdeUn\` decimal(14,6) NOT NULL DEFAULT 0.95,
