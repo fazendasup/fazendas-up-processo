@@ -1,5 +1,10 @@
 import type { ComponenteCalculoInput, EtapaCalculoInput, FichaCalculoInput } from "@shared/custosProduto";
-import { calcularCustoProduto, LABEL_ETAPA_PROCESSO } from "@shared/custosProduto";
+import {
+  calcularCustoProduto,
+  deduplicarEtapasLogistica,
+  LABEL_ETAPA_PROCESSO,
+  temEtapaLogistica,
+} from "@shared/custosProduto";
 import { LOGISTICA_PERCENTUAL_PADRAO } from "@shared/custosProdutoProcessoPadrao";
 import { mapaCustoHoraProcessamento, type MoEquipeInput } from "@shared/custosMoEquipe";
 import type {
@@ -140,16 +145,18 @@ export async function fichaParaCalculoInput(
       custoUnitario: resolved.custoUnitario,
     });
   }
-  const etapasCalculo: EtapaCalculoInput[] = etapas.map((e) => ({
-    tipo: e.tipo as EtapaCalculoInput["tipo"],
-    nome: e.nome,
-    custoPorUnidadeFinal: num(e.custoPorUnidade) ?? 0,
-    custoPorKgProcessado: num(e.custoPorKgProcessado),
-    custoPercentual: num(e.custoPercentual),
-    minutosPorUnidade: num(e.minutosPorUnidade),
-    regimeMo: (e.regimeMo ?? "qualquer") as EtapaCalculoInput["regimeMo"],
-  }));
-  if (!etapasCalculo.some((e) => e.tipo === "logistica")) {
+  const etapasCalculo: EtapaCalculoInput[] = deduplicarEtapasLogistica(
+    etapas.map((e) => ({
+      tipo: e.tipo as EtapaCalculoInput["tipo"],
+      nome: e.nome,
+      custoPorUnidadeFinal: num(e.custoPorUnidade) ?? 0,
+      custoPorKgProcessado: num(e.custoPorKgProcessado),
+      custoPercentual: num(e.custoPercentual),
+      minutosPorUnidade: num(e.minutosPorUnidade),
+      regimeMo: (e.regimeMo ?? "qualquer") as EtapaCalculoInput["regimeMo"],
+    })),
+  );
+  if (!temEtapaLogistica(etapasCalculo)) {
     const processoDb = await import("./custosProdutoProcessoDb");
     const config = await processoDb.getProcessoConfig(projetoId);
     etapasCalculo.push({

@@ -7,7 +7,12 @@ import {
   type LinhaProcessoIndustrialResult,
   type ProcessoModeloRecord,
 } from "./custosLinhaProcessoIndustrial";
-import { LABEL_ETAPA_PROCESSO, type TipoEtapaProcesso } from "./custosProduto";
+import {
+  deduplicarEtapasLogistica,
+  LABEL_ETAPA_PROCESSO,
+  temEtapaLogistica,
+  type TipoEtapaProcesso,
+} from "./custosProduto";
 import type { CustoHoraPorRegime, RegimeMoEtapa } from "./custosMoEquipe";
 
 /** Rotas de processo — escolha manual por produto (não inferir só pelo nome). */
@@ -213,9 +218,10 @@ export function garantirEtapaLogistica(
   etapas: EtapaProcessoPadrao[],
   percentual: number = LOGISTICA_PERCENTUAL_PADRAO,
 ): EtapaProcessoPadrao[] {
-  if (etapas.some((e) => e.tipo === "logistica")) return etapas;
+  const base = deduplicarEtapasLogistica(etapas);
+  if (temEtapaLogistica(base)) return base;
   return [
-    ...etapas,
+    ...base,
     etapa("logistica", {
       custoPercentual: percentual,
     }),

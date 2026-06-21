@@ -3,10 +3,64 @@ import {
   calcularCustoProduto,
   custoMaterialRevenda,
   custoMaterialRevendaUnidade,
+  deduplicarEtapasLogistica,
+  etapaEquivaleLogistica,
   fatorAproveitamento,
   kgBrutoParaLiquido,
   precoVendaParaMargem,
+  temEtapaLogistica,
 } from "./custosProduto";
+import { garantirEtapaLogistica } from "./custosProdutoProcessoPadrao";
+
+describe("logistica etapas", () => {
+  it("detecta etapa equivalente a logistica", () => {
+    expect(etapaEquivaleLogistica({ tipo: "logistica", nome: "Logística", custoPercentual: 10 })).toBe(true);
+    expect(
+      etapaEquivaleLogistica({ tipo: "outros", nome: "Frete entrega", custoPercentual: 10 }),
+    ).toBe(true);
+    expect(etapaEquivaleLogistica({ tipo: "embalagem", nome: "Bandeja", custoPercentual: 10 })).toBe(
+      false,
+    );
+  });
+
+  it("deduplica multiplas etapas de logistica", () => {
+    const etapas = [
+      { tipo: "embalagem", nome: "Embalagem", custoPercentual: null },
+      { tipo: "logistica", nome: "Logística", custoPercentual: 10 },
+      { tipo: "logistica", nome: "Logística", custoPercentual: 10 },
+    ];
+    const out = deduplicarEtapasLogistica(etapas);
+    expect(out).toHaveLength(2);
+    expect(out.filter((e) => e.tipo === "logistica")).toHaveLength(1);
+  });
+
+  it("nao injeta logistica quando ja existe equivalente manual", () => {
+    const etapas = garantirEtapaLogistica([
+      {
+        tipo: "embalagem",
+        nome: "Embalagem",
+        custoPorUnidade: 1,
+        custoPorKgProcessado: null,
+        custoPercentual: null,
+        minutosPorUnidade: null,
+        regimeMo: "qualquer",
+        ativo: true,
+      },
+      {
+        tipo: "outros",
+        nome: "Logística",
+        custoPorUnidade: 0,
+        custoPorKgProcessado: null,
+        custoPercentual: 10,
+        minutosPorUnidade: null,
+        regimeMo: "qualquer",
+        ativo: true,
+      },
+    ]);
+    expect(temEtapaLogistica(etapas)).toBe(true);
+    expect(etapas.filter((e) => etapaEquivaleLogistica(e))).toHaveLength(1);
+  });
+});
 
 describe("fatorAproveitamento", () => {
   it("combina perdas em série", () => {

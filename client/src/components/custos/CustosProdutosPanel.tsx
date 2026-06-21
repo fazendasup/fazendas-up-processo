@@ -16,6 +16,8 @@ import {
   type TipoComponenteCusto,
   type TipoEtapaProcesso,
   type TipoFichaCustoProduto,
+  deduplicarEtapasLogistica,
+  temEtapaLogistica,
   unidadesMpConsumidasRevenda,
 } from "@shared/custosProduto";
 import {
@@ -400,12 +402,10 @@ function emptyEtapa(tipo: TipoEtapaProcesso = "lavagem"): EtapaForm {
   };
 }
 
-function garantirEtapaLogisticaForm(
-  etapas: EtapaForm[],
-  percentual = LOGISTICA_PERCENTUAL_PADRAO,
-): EtapaForm[] {
-  if (etapas.some((e) => e.tipo === "logistica")) return etapas;
-  return [...etapas, emptyEtapa("logistica")];
+function garantirEtapaLogisticaForm(etapas: EtapaForm[]): EtapaForm[] {
+  const base = deduplicarEtapasLogistica(etapas);
+  if (temEtapaLogistica(base)) return base;
+  return [...base, emptyEtapa("logistica")];
 }
 
 function emptyFicha(tipo: TipoFichaCustoProduto = "revenda_processada"): FichaForm {
@@ -482,15 +482,17 @@ function buildPayload(form: FichaForm, id?: number) {
         unidadeComponente: c.unidadeComponente || "kg",
         custoUnitarioManual: parseOpt(c.custoUnitarioManual),
       })),
-    etapas: form.etapas.map((e) => ({
-      tipo: e.tipo,
-      nome: e.nome.trim() || LABEL_ETAPA_PROCESSO[e.tipo],
-      minutosPorUnidade: parseOpt(e.minutosPorUnidade),
-      regimeMo: e.regimeMo,
-      custoPorUnidade: parseOpt(e.custoPorUnidade) ?? 0,
-      custoPorKgProcessado: parseOpt(e.custoPorKgProcessado),
-      custoPercentual: parseOpt(e.custoPercentual),
-    })),
+    etapas: deduplicarEtapasLogistica(
+      form.etapas.map((e) => ({
+        tipo: e.tipo,
+        nome: e.nome.trim() || LABEL_ETAPA_PROCESSO[e.tipo],
+        minutosPorUnidade: parseOpt(e.minutosPorUnidade),
+        regimeMo: e.regimeMo,
+        custoPorUnidade: parseOpt(e.custoPorUnidade) ?? 0,
+        custoPorKgProcessado: parseOpt(e.custoPorKgProcessado),
+        custoPercentual: parseOpt(e.custoPercentual),
+      })),
+    ),
   };
 }
 

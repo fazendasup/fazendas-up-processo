@@ -75,6 +75,45 @@ export const LABEL_ETAPA_PROCESSO: Record<TipoEtapaProcesso, string> = {
   outros: "Outros",
 };
 
+export type EtapaLogisticaLike = {
+  tipo: string;
+  nome?: string | null;
+  custoPercentual?: unknown;
+};
+
+function pctEtapaLogistica(v: unknown): number | null {
+  if (v == null || v === "") return null;
+  const n = Number(String(v).replace(",", "."));
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Etapa que já representa logística (% sobre subtotal) — evita duplicar ao auto-incluir 10%. */
+export function etapaEquivaleLogistica(e: EtapaLogisticaLike): boolean {
+  if (e.tipo === "logistica") return true;
+  const pct = pctEtapaLogistica(e.custoPercentual);
+  if (pct == null || pct <= 0) return false;
+  const n = (e.nome ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+  return /logist|frete|entrega|transporte/.test(n);
+}
+
+export function temEtapaLogistica(etapas: ReadonlyArray<EtapaLogisticaLike>): boolean {
+  return etapas.some(etapaEquivaleLogistica);
+}
+
+/** Mantém uma única etapa de logística — prefere tipo `logistica` explícito. */
+export function deduplicarEtapasLogistica<T extends EtapaLogisticaLike>(etapas: T[]): T[] {
+  const matches = etapas
+    .map((e, i) => ({ e, i }))
+    .filter(({ e }) => etapaEquivaleLogistica(e));
+  if (matches.length <= 1) return etapas;
+  const keep = matches.find(({ e }) => e.tipo === "logistica")?.i ?? matches[0]!.i;
+  return etapas.filter((e, i) => !etapaEquivaleLogistica(e) || i === keep);
+}
+
 export type ComponenteCalculoInput = {
   tipo: TipoComponenteCusto;
   nome: string;

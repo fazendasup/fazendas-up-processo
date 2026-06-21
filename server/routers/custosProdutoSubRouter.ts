@@ -6,6 +6,7 @@ import {
   TIPOS_FICHA_CUSTO_PRODUTO,
   UNIDADES_VENDA_PRODUTO,
   calcularCustoProduto,
+  deduplicarEtapasLogistica,
   type TipoComponenteCusto,
   type TipoEtapaProcesso,
   type TipoFichaCustoProduto,
@@ -399,7 +400,7 @@ export const custosProdutoSubRouter = router({
             c.custoUnitarioManual != null ? String(c.custoUnitarioManual) : null,
           ordem: c.ordem ?? i,
         })),
-        input.etapas.map((e, i) => ({
+        deduplicarEtapasLogistica(input.etapas).map((e, i) => ({
           tipo: e.tipo as TipoEtapaProcesso,
           nome: e.nome,
           custoPorUnidade: String(e.custoPorUnidade),
