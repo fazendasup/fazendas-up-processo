@@ -9,7 +9,6 @@ import {
 import * as custosProdutoDb from "./custosProdutoDb";
 import type { CustoProdutoFichaRow } from "../drizzle/schema";
 import {
-  alocarReceitaLiquidaPorLinhas,
   PRODUTO_VENDA_SEM_ITENS_CHAVE,
   PRODUTO_VENDA_SEM_ITENS_NOME,
 } from "@shared/custosRentabilidadeVendasCa";
@@ -159,7 +158,6 @@ export async function buscarVendasContaAzulPorPeriodo(
   let pedidosVenda = 0;
   let pedidosExcluidosStatus = 0;
   let pedidosSemItens = 0;
-  let receitaTotal = 0;
   let receitaLiquidaPedidos = 0;
   let receitaItensBruto = 0;
   let freteTotal = 0;
@@ -177,8 +175,6 @@ export async function buscarVendasContaAzulPorPeriodo(
     receitaLiquidaPedidos = round2(receitaLiquidaPedidos + comp.valorLiquido);
     freteTotal = round2(freteTotal + comp.valorFrete);
     descontoTotal = round2(descontoTotal + comp.valorDesconto);
-    receitaTotal = round2(receitaTotal + comp.valorLiquido);
-
     const linhas: LinhaPedidoInterna[] = [];
     for (const item of p.itens) {
       const qtd = Number(item.quantidade);
@@ -238,14 +234,9 @@ export async function buscarVendasContaAzulPorPeriodo(
       continue;
     }
 
-    const receitasAlocadas = alocarReceitaLiquidaPorLinhas(
-      comp.valorLiquido,
-      linhas.map((l) => l.bruto),
-    );
-
     for (let i = 0; i < linhas.length; i++) {
       const linha = linhas[i]!;
-      const receita = receitasAlocadas[i] ?? 0;
+      const receita = linha.bruto;
       const cur: AggInterno = agg.get(linha.chave) ?? {
         chave: linha.chave,
         produtoNome: linha.produtoNome,
@@ -285,9 +276,13 @@ export async function buscarVendasContaAzulPorPeriodo(
     }))
     .sort((a, b) => b.receitaTotal - a.receitaTotal);
 
+  const receitaTotal = round2(
+    produtosArr.reduce((s, p) => s + p.receitaTotal, 0),
+  );
+
   return {
     pedidosVenda,
-    receitaTotal: round2(receitaTotal),
+    receitaTotal,
     quantidadeTotal: round2(quantidadeTotal),
     produtos: produtosArr,
     produtosSemFicha: produtosArr.filter(

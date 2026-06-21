@@ -573,8 +573,9 @@ export function CustosRentabilidadePanel() {
         <CardContent className="space-y-3 text-sm">
           <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
             <li>
-              <strong className="text-foreground">Receita</strong> — importada do Conta Azul (valor{" "}
-              <strong>líquido</strong> de cada venda: produtos + frete − desconto), rateada por SKU.
+              <strong className="text-foreground">Receita por produto</strong> — valor do item na CA
+              (preço × quantidade), <strong>sem ratear frete</strong>. Frete e desconto do mês aparecem
+              só no resumo do período.
             </li>
             <li>
               <strong className="text-foreground">CMV por unidade (ficha)</strong> — matéria-prima + etapas com{" "}
@@ -712,12 +713,13 @@ export function CustosRentabilidadePanel() {
               {vendasContaAzul.isLoading
                 ? "Carregando vendas sincronizadas..."
                 : vendasContaAzul.data
-                  ? `${vendasContaAzul.data.pedidosVenda} pedido(s) · ${vendasContaAzul.data.produtos.length} produto(s) · receita líquida ${fmtMoney(vendasContaAzul.data.receitaTotal)} (igual ao valor líquido da CA, com frete)`
+                  ? `${vendasContaAzul.data.pedidosVenda} pedido(s) · ${vendasContaAzul.data.produtos.length} produto(s) · valor itens ${fmtMoney(vendasContaAzul.data.receitaTotal)} (igual bruto itens CA)`
                   : "Selecione o mês para ver as vendas reais."}
             </CardDescription>
             {vendasContaAzul.data?.diagnostico ? (
               <p className="text-[11px] text-muted-foreground mt-1">
-                Bruto itens {fmtMoney(vendasContaAzul.data.diagnostico.receitaItensBruto)}
+                Líquido pedidos {fmtMoney(vendasContaAzul.data.diagnostico.receitaLiquidaPedidos)}
+                (bruto + frete − desconto)
                 {vendasContaAzul.data.diagnostico.freteTotal > 0
                   ? ` · frete ${fmtMoney(vendasContaAzul.data.diagnostico.freteTotal)}`
                   : ""}
@@ -786,7 +788,7 @@ export function CustosRentabilidadePanel() {
                   <TableRow>
                     <TableHead>Produto vendido</TableHead>
                     <TableHead className="text-right">Qtd.</TableHead>
-                    <TableHead className="text-right">Receita</TableHead>
+                    <TableHead className="text-right">Valor itens</TableHead>
                     <TableHead>Ficha CMV</TableHead>
                   </TableRow>
                 </TableHeader>
