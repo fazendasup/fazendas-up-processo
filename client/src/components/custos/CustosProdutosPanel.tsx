@@ -496,13 +496,37 @@ function parseTrpcErrorMessage(message: string): string {
   try {
     const parsed = JSON.parse(message) as unknown;
     if (Array.isArray(parsed) && parsed.length > 0) {
-      const first = parsed[0] as { message?: string };
-      if (typeof first.message === "string" && first.message.trim()) return first.message;
+      const issues = parsed as Array<{ path?: unknown[]; message?: string; code?: string }>;
+      const nomeIssue = issues.find((i) => i.path?.[0] === "nome");
+      if (nomeIssue?.code === "too_small") {
+        return "Informe o nome do produto (ou vincule um SKU do Conta Azul).";
+      }
+      const first = issues[0];
+      if (typeof first.message === "string" && first.message.trim()) {
+        if (first.message.startsWith("Too small")) {
+          const field = first.path?.[0];
+          if (field === "nome") return "Informe o nome do produto.";
+        }
+        return first.message;
+      }
     }
   } catch {
     /* mensagem já legível */
   }
   return message;
+}
+
+function resolveNomeFicha(
+  form: FichaForm,
+  produtosComerciais?: ReadonlyArray<{ id: string; nome: string }>,
+): string {
+  const direto = form.nome.trim();
+  if (direto) return direto;
+  if (form.produtoComercialId && produtosComerciais) {
+    const p = produtosComerciais.find((x) => x.id === form.produtoComercialId);
+    return p?.nome?.trim() ?? "";
+  }
+  return "";
 }
 
 /** Espelha validação do servidor ao salvar ficha ativa. */
@@ -525,7 +549,9 @@ function mensagemErroAtivacaoFicha(form: FichaForm): string | null {
       const preco = parseOpt(form.precoCompraKg);
       const kg = parseOpt(form.kgBrutoPorUnidade);
       if (preco == null || preco <= 0 || kg == null) {
-        return "Para ativar: informe preço R$/kg (> 0) e kg final vendido/unidade (coluna Compra MP ou botão Editar).";
+        return form.categoria === "flores"
+          ? "Para ativar: informe preço R$/kg (> 0) e rendimento (potes/kg)."
+          : "Para ativar: informe preço R$/kg (> 0) e kg final vendido/unidade (coluna Compra MP ou botão Editar).";
       }
     }
   }
@@ -555,12 +581,16 @@ function rowToFichaFormComDraft(
   return form;
 }
 
-function buildPayload(form: FichaForm, id?: number) {
+function buildPayload(
+  form: FichaForm,
+  id?: number,
+  produtosComerciais?: ReadonlyArray<{ id: string; nome: string }>,
+) {
   return {
     ...(id ? { id } : {}),
     tipo: form.tipo,
     categoria: form.categoria as (typeof CATEGORIAS_PRODUTO_CUSTO)[number],
-    nome: form.nome.trim(),
+    nome: resolveNomeFicha(form, produtosComerciais),
     produtoComercialId: form.produtoComercialId || null,
     unidadeVenda: form.unidadeVenda as (typeof UNIDADES_VENDA_PRODUTO)[number],
     precoVendaReferencia: parseOpt(form.precoVendaReferencia),
@@ -1000,14 +1030,18 @@ function FichaEditor({
   useEffect(() => {
     if (!form.produtoComercialId || !produtosComercialQuery.data) return;
     const p = produtosComercialQuery.data.find((x) => x.id === form.produtoComercialId);
-    if (!p?.mapeamento) return;
+    if (!p) return;
     setForm((f) => {
-      if (f.processoModeloId) return f;
+      let next = f;
+      if (!f.nome.trim() && p.nome?.trim()) {
+        next = { ...next, nome: p.nome.trim() };
+      }
+      if (f.processoModeloId || !p.mapeamento) return next === f ? f : next;
       return {
-        ...f,
+        ...next,
         perfilProcesso: p.mapeamento.perfilProcesso,
         processoModeloId:
-          p.mapeamento.processoModeloId != null ? String(p.mapeamento.processoModeloId) : f.processoModeloId,
+          p.mapeamento.processoModeloId != null ? String(p.mapeamento.processoModeloId) : next.processoModeloId,
       };
     });
   }, [form.produtoComercialId, produtosComercialQuery.data, setForm]);
@@ -1099,8 +1133,13 @@ function FichaEditor({
           </Select>
         </div>
         <div className="space-y-2 md:col-span-2">
-          <Label>Nome do produto</Label>
+          <Label>Nome do produto (obrigatório)</Label>
           <Input value={form.nome} onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))} />
+          {!form.nome.trim() && form.produtoComercialId ? (
+            <p className="text-[10px] text-amber-700">
+              Vazio — ao salvar/simular usamos o nome do SKU vinculado, se houver.
+            </p>
+          ) : null}
         </div>
         <div className="space-y-2">
           <Label>Produto comercial (opcional)</Label>
@@ -1113,7 +1152,7 @@ function FichaEditor({
               setForm((f) => ({
                 ...f,
                 produtoComercialId: id,
-                nome: f.nome || p?.nome || f.nome,
+                nome: f.nome.trim() || p?.nome?.trim() || "",
                 ...(m
                   ? {
                       ...patchCategoriaFicha(f, m.categoriaCusto as CategoriaProdutoCusto),
@@ -1928,6 +1967,14 @@ function FichaEditor({
 export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
   const utils = trpc.useUtils();
   const catalogos = trpc.custosProducao.produtos.catalogos.useQuery();
+  const produtosComercialQuery = trpc.custosProducao.produtos.listarProdutosComercial.useQuery();
+  const produtosParaNome = useMemo(
+    () =>
+      (produtosComercialQuery.data ?? catalogos.data?.produtosComerciais ?? []).map(
+        (p: { id: string; nome: string }) => ({ id: p.id, nome: p.nome }),
+      ),
+    [produtosComercialQuery.data, catalogos.data],
+  );
   const fichas = trpc.custosProducao.produtos.listarFichas.useQuery(undefined, {
     refetchInterval: 120_000,
   });
@@ -1963,7 +2010,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
 
   const simular = trpc.custosProducao.produtos.simularCusto.useMutation({
     onSuccess: (r) => setSimResult(r),
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(parseTrpcErrorMessage(e.message)),
   });
   const salvar = trpc.custosProducao.produtos.salvarFicha.useMutation({
     onSuccess: async (r) => {
@@ -2181,7 +2228,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                                     if (msg) return toast.error(msg);
                                   }
                                   salvarFichaRapida.mutate(
-                                    buildPayload(formAtual, row.ficha.id) as any,
+                                    buildPayload(formAtual, row.ficha.id, produtosParaNome) as any,
                                   );
                                 }}
                               />
@@ -2204,6 +2251,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                                   const p = buildPayload(
                                     rowToFichaForm(row, { modoCompraMp: v as ModoCompraMp }),
                                     row.ficha.id,
+                                    produtosParaNome,
                                   );
                                   salvarFichaRapida.mutate(p as any);
                                 }}
@@ -2237,7 +2285,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                                       modoCompra === "unidade"
                                         ? { custoCompraUn: precoCompraValue }
                                         : { precoCompraKg: precoCompraValue };
-                                    const p = buildPayload(rowToFichaForm(row, patch), row.ficha.id);
+                                    const p = buildPayload(rowToFichaForm(row, patch), row.ficha.id, produtosParaNome);
                                     salvarFichaRapida.mutate(p as any);
                                   }}
                                 />
@@ -2252,7 +2300,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                                       modoCompra === "unidade"
                                         ? { custoCompraUn: precoCompraValue }
                                         : { precoCompraKg: precoCompraValue };
-                                    const p = buildPayload(rowToFichaForm(row, patch), row.ficha.id);
+                                    const p = buildPayload(rowToFichaForm(row, patch), row.ficha.id, produtosParaNome);
                                     salvarFichaRapida.mutate(p as any);
                                   }}
                                 >
@@ -2371,10 +2419,17 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
               editingId={editingId}
               simulando={simular.isPending}
               salvando={salvar.isPending}
-              onSimular={() => simular.mutate(buildPayload(form) as any)}
+              onSimular={() => {
+                const p = buildPayload(form, undefined, produtosParaNome);
+                if (!p.nome) {
+                  toast.error("Informe o nome do produto ou vincule um SKU do Conta Azul.");
+                  return;
+                }
+                simular.mutate(p as any);
+              }}
               onSalvar={() => {
-                const p = buildPayload(form, editingId ?? undefined);
-                if (!p.nome) return toast.error("Informe o nome do produto.");
+                const p = buildPayload(form, editingId ?? undefined, produtosParaNome);
+                if (!p.nome) return toast.error("Informe o nome do produto ou vincule um SKU do Conta Azul.");
                 const msg = mensagemErroAtivacaoFicha(form);
                 if (msg) return toast.error(msg);
                 salvar.mutate(p as any);
@@ -2403,10 +2458,17 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
         editingId={editingId}
         simulando={simular.isPending}
         salvando={salvar.isPending}
-        onSimular={() => simular.mutate(buildPayload(form) as any)}
+        onSimular={() => {
+          const p = buildPayload(form, undefined, produtosParaNome);
+          if (!p.nome) {
+            toast.error("Informe o nome do produto ou vincule um SKU do Conta Azul.");
+            return;
+          }
+          simular.mutate(p as any);
+        }}
         onSalvar={() => {
-          const p = buildPayload(form, editingId ?? undefined);
-          if (!p.nome) return toast.error("Informe o nome do produto.");
+          const p = buildPayload(form, editingId ?? undefined, produtosParaNome);
+          if (!p.nome) return toast.error("Informe o nome do produto ou vincule um SKU do Conta Azul.");
           const msg = mensagemErroAtivacaoFicha(form);
           if (msg) return toast.error(msg);
           salvar.mutate(p as any);
