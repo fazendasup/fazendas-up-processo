@@ -28,11 +28,16 @@ import {
   type TipoFichaCustoProduto,
 } from "@shared/custosProduto";
 import { calcularRentabilidade } from "@shared/custosRentabilidade";
+import type { LinhaRentabilidadeResultado } from "@shared/custosRentabilidade";
 import {
   somarOverheadItensIncluidos,
   type ModoOverheadRentabilidade,
 } from "@shared/custosRentabilidadeOverhead";
 import { downloadCsvUtf8Bom } from "@/lib/estoqueRelatorio";
+import {
+  type ColumnFilterDef,
+  useColumnTableFilters,
+} from "@/lib/columnTableFilters";
 import {
   CustosRentabilidadeOverheadSection,
   emptyOverheadItem,
@@ -57,6 +62,63 @@ const fmtMoney = (n: number | null | undefined) =>
 
 const fmtPct = (n: number | null | undefined) =>
   n == null || !Number.isFinite(n) ? "—" : `${n.toFixed(1)}%`;
+
+const RESULTADO_PRODUTO_TABLE_ID = "rentabilidade-resultado-produto";
+
+function labelStatusRentabilidade(status: LinhaRentabilidadeResultado["status"]) {
+  if (status === "lucro") return "Lucro";
+  if (status === "prejuizo") return "Prejuízo";
+  return "Incompleto";
+}
+
+const RESULTADO_PRODUTO_COLUMNS: ColumnFilterDef<LinhaRentabilidadeResultado>[] = [
+  { key: "produto", label: "Produto", value: (r) => r.nomeProduto },
+  {
+    key: "quantidade",
+    label: "Qtd.",
+    value: (r) => r.quantidade,
+    optionLabel: (r) => String(r.quantidade),
+  },
+  {
+    key: "receita",
+    label: "Receita",
+    value: (r) => r.receitaTotal,
+    optionLabel: (r) => fmtMoney(r.receitaTotal),
+  },
+  {
+    key: "cmv",
+    label: "CMV (ficha)",
+    value: (r) => r.cmv,
+    optionLabel: (r) => fmtMoney(r.cmv),
+  },
+  {
+    key: "lucroBruto",
+    label: "Lucro bruto",
+    value: (r) => r.lucroBruto,
+    optionLabel: (r) =>
+      r.lucroBruto != null
+        ? `${fmtMoney(r.lucroBruto)} (${fmtPct(r.margemBrutaPct)})`
+        : "—",
+  },
+  {
+    key: "rateioOperacional",
+    label: "Rateio overhead",
+    value: (r) => r.rateioOperacional,
+    optionLabel: (r) => fmtMoney(r.rateioOperacional),
+  },
+  {
+    key: "contribuicao",
+    label: "Contribuição",
+    value: (r) => r.contribuicao,
+    optionLabel: (r) => fmtMoney(r.contribuicao),
+  },
+  {
+    key: "status",
+    label: "Status",
+    value: (r) => r.status,
+    optionLabel: (r) => labelStatusRentabilidade(r.status),
+  },
+];
 
 function isoLocal(d: Date) {
   const y = d.getFullYear();
@@ -483,6 +545,32 @@ export function CustosRentabilidadePanel() {
       custoOperacionalTotal: custoOpAtual,
     });
   }, [linhasCalculo, custoOpAtual]);
+
+  const {
+    hasColumnFilters,
+    clearColumnFilters,
+    filterAndSortRows,
+    renderColumnHeader,
+  } = useColumnTableFilters(RESULTADO_PRODUTO_TABLE_ID);
+
+  useEffect(() => {
+    clearColumnFilters();
+  }, [inicio, fim, periodoId, clearColumnFilters]);
+
+  const linhasResultadoFiltradas = useMemo(() => {
+    if (!calculoAtual) return [];
+    return filterAndSortRows(calculoAtual.linhas, RESULTADO_PRODUTO_COLUMNS);
+  }, [calculoAtual, filterAndSortRows]);
+
+  const totaisResultadoFiltrados = useMemo(() => {
+    return {
+      receita: linhasResultadoFiltradas.reduce((s, l) => s + l.receitaTotal, 0),
+      cmv: linhasResultadoFiltradas.reduce((s, l) => s + (l.cmv ?? 0), 0),
+      lucroBruto: linhasResultadoFiltradas.reduce((s, l) => s + (l.lucroBruto ?? 0), 0),
+      rateio: linhasResultadoFiltradas.reduce((s, l) => s + l.rateioOperacional, 0),
+      contribuicao: linhasResultadoFiltradas.reduce((s, l) => s + (l.contribuicao ?? 0), 0),
+    };
+  }, [linhasResultadoFiltradas]);
 
   const tituloExibicao = titulo.trim() || `Período ${inicio}`;
 
@@ -1091,92 +1179,196 @@ export function CustosRentabilidadePanel() {
       {calculoAtual && calculoAtual.linhas.length > 0 ? (
         <Card>
           <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-            <CardTitle className="text-base">Resultado por produto</CardTitle>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                exportarCsvRentabilidade(tituloExibicao, inicio, fim, calculoAtual)
-              }
-            >
-              <Download className="h-4 w-4 mr-1" />
-              Exportar CSV
-            </Button>
+            <div>
+              <CardTitle className="text-base">Resultado por produto</CardTitle>
+              {hasColumnFilters ? (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {linhasResultadoFiltradas.length} de {calculoAtual.linhas.length} produto(s)
+                </p>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {hasColumnFilters ? (
+                <Button size="sm" variant="ghost" onClick={clearColumnFilters}>
+                  Limpar filtros
+                </Button>
+              ) : null}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  exportarCsvRentabilidade(tituloExibicao, inicio, fim, calculoAtual)
+                }
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Exportar CSV
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Produto</TableHead>
-                  <TableHead className="text-right">Qtd.</TableHead>
-                  <TableHead className="text-right">Receita</TableHead>
-                  <TableHead className="text-right">CMV (ficha)</TableHead>
-                  <TableHead className="text-right">Lucro bruto</TableHead>
-                  <TableHead className="text-right">Rateio overhead</TableHead>
-                  <TableHead className="text-right">Contribuição</TableHead>
-                  <TableHead />
+                  <TableHead>
+                    {renderColumnHeader(
+                      "produto",
+                      "Produto",
+                      calculoAtual.linhas,
+                      RESULTADO_PRODUTO_COLUMNS,
+                    )}
+                  </TableHead>
+                  <TableHead className="text-right">
+                    {renderColumnHeader(
+                      "quantidade",
+                      "Qtd.",
+                      calculoAtual.linhas,
+                      RESULTADO_PRODUTO_COLUMNS,
+                      "right",
+                    )}
+                  </TableHead>
+                  <TableHead className="text-right">
+                    {renderColumnHeader(
+                      "receita",
+                      "Receita",
+                      calculoAtual.linhas,
+                      RESULTADO_PRODUTO_COLUMNS,
+                      "right",
+                    )}
+                  </TableHead>
+                  <TableHead className="text-right">
+                    {renderColumnHeader(
+                      "cmv",
+                      "CMV (ficha)",
+                      calculoAtual.linhas,
+                      RESULTADO_PRODUTO_COLUMNS,
+                      "right",
+                    )}
+                  </TableHead>
+                  <TableHead className="text-right">
+                    {renderColumnHeader(
+                      "lucroBruto",
+                      "Lucro bruto",
+                      calculoAtual.linhas,
+                      RESULTADO_PRODUTO_COLUMNS,
+                      "right",
+                    )}
+                  </TableHead>
+                  <TableHead className="text-right">
+                    {renderColumnHeader(
+                      "rateioOperacional",
+                      "Rateio overhead",
+                      calculoAtual.linhas,
+                      RESULTADO_PRODUTO_COLUMNS,
+                      "right",
+                    )}
+                  </TableHead>
+                  <TableHead className="text-right">
+                    {renderColumnHeader(
+                      "contribuicao",
+                      "Contribuição",
+                      calculoAtual.linhas,
+                      RESULTADO_PRODUTO_COLUMNS,
+                      "right",
+                    )}
+                  </TableHead>
+                  <TableHead>
+                    {renderColumnHeader(
+                      "status",
+                      "Status",
+                      calculoAtual.linhas,
+                      RESULTADO_PRODUTO_COLUMNS,
+                    )}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {calculoAtual.linhas.map((r, idx) => (
-                  <TableRow key={`${r.nomeProduto}-${idx}`}>
-                    <TableCell>
-                      <div className="font-medium">{r.nomeProduto}</div>
-                      {r.fichaId ? (
-                        <span className="text-[11px] text-muted-foreground">
-                          Ficha #{r.fichaId}
-                          {r.custoUnitarioFonte === "manual" ? " · custo manual" : ""}
-                        </span>
-                      ) : null}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">{r.quantidade}</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {fmtMoney(r.receitaTotal)}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">{fmtMoney(r.cmv)}</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {fmtMoney(r.lucroBruto)}
-                      <span className="block text-[10px] text-muted-foreground">
-                        {fmtPct(r.margemBrutaPct)}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {fmtMoney(r.rateioOperacional)}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums font-semibold">
-                      {fmtMoney(r.contribuicao)}
-                    </TableCell>
-                    <TableCell>
-                      {r.status === "lucro" ? (
-                        <Badge className="bg-emerald-600">Lucro</Badge>
-                      ) : r.status === "prejuizo" ? (
-                        <Badge variant="destructive">Prejuízo</Badge>
-                      ) : (
-                        <Badge variant="outline">
-                          <AlertTriangle className="h-3 w-3 mr-1" />
-                          Incompleto
-                        </Badge>
-                      )}
+                {linhasResultadoFiltradas.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                      Nenhum produto corresponde aos filtros selecionados.
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  linhasResultadoFiltradas.map((r, idx) => (
+                    <TableRow key={`${r.nomeProduto}-${idx}`}>
+                      <TableCell>
+                        <div className="font-medium">{r.nomeProduto}</div>
+                        {r.fichaId ? (
+                          <span className="text-[11px] text-muted-foreground">
+                            Ficha #{r.fichaId}
+                            {r.custoUnitarioFonte === "manual" ? " · custo manual" : ""}
+                          </span>
+                        ) : null}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{r.quantidade}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {fmtMoney(r.receitaTotal)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{fmtMoney(r.cmv)}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {fmtMoney(r.lucroBruto)}
+                        <span className="block text-[10px] text-muted-foreground">
+                          {fmtPct(r.margemBrutaPct)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {fmtMoney(r.rateioOperacional)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums font-semibold">
+                        {fmtMoney(r.contribuicao)}
+                      </TableCell>
+                      <TableCell>
+                        {r.status === "lucro" ? (
+                          <Badge className="bg-emerald-600">Lucro</Badge>
+                        ) : r.status === "prejuizo" ? (
+                          <Badge variant="destructive">Prejuízo</Badge>
+                        ) : (
+                          <Badge variant="outline">
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            Incompleto
+                          </Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
                 <TableRow className="bg-muted/40 font-semibold">
-                  <TableCell>Total do período</TableCell>
+                  <TableCell>
+                    {hasColumnFilters ? "Total (filtrado)" : "Total do período"}
+                  </TableCell>
                   <TableCell />
                   <TableCell className="text-right tabular-nums">
-                    {fmtMoney(calculoAtual.totais.receita)}
+                    {fmtMoney(
+                      hasColumnFilters
+                        ? totaisResultadoFiltrados.receita
+                        : calculoAtual.totais.receita,
+                    )}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {fmtMoney(calculoAtual.totais.cmv)}
+                    {fmtMoney(
+                      hasColumnFilters ? totaisResultadoFiltrados.cmv : calculoAtual.totais.cmv,
+                    )}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {fmtMoney(calculoAtual.totais.lucroBruto)}
+                    {fmtMoney(
+                      hasColumnFilters
+                        ? totaisResultadoFiltrados.lucroBruto
+                        : calculoAtual.totais.lucroBruto,
+                    )}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {fmtMoney(calculoAtual.totais.custoOperacional)}
+                    {fmtMoney(
+                      hasColumnFilters
+                        ? totaisResultadoFiltrados.rateio
+                        : calculoAtual.totais.custoOperacional,
+                    )}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {fmtMoney(calculoAtual.totais.resultado)}
+                    {fmtMoney(
+                      hasColumnFilters
+                        ? totaisResultadoFiltrados.contribuicao
+                        : calculoAtual.totais.resultado,
+                    )}
                   </TableCell>
                   <TableCell />
                 </TableRow>

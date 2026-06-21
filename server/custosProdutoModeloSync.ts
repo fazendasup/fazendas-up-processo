@@ -15,6 +15,7 @@ import {
 import type {
   CustoProdutoComponenteRow,
   CustoProdutoEtapaRow,
+  CustoProdutoFichaRow,
   InsertCustoProdutoComponente,
   InsertCustoProdutoEtapa,
 } from "../drizzle/schema";
@@ -100,6 +101,56 @@ export function etapasEsperadasParaConfigLegacy(
   config: CustosProdutoProcessoConfig,
 ): EtapaProcessoPadrao[] {
   return etapasProcessoPadraoParaPerfil(perfil, categoria, config);
+}
+
+/** Etapas derivadas do modelo vinculado + R$/h atual (sem ler valores congelados no DB). */
+export async function etapasProcessoAoVivoParaFicha(
+  projetoId: number,
+  ficha: CustoProdutoFichaRow,
+  etapasDb: CustoProdutoEtapaRow[],
+  mapaHora: ReturnType<typeof mapaCustoHoraProcessamento>,
+): Promise<EtapaProcessoPadrao[] | null> {
+  const defaultModelo = await modelosDb.getDefaultProcessoModelo(projetoId);
+  const defaultModeloId = defaultModelo?.id ?? null;
+  const mapRows = await mapDb.listComercialMap(projetoId);
+  const map = new Map(mapRows.map((m) => [m.produtoComercialId, m]));
+
+  let perfil: PerfilProcessoProduto;
+  let categoria: CategoriaProdutoCusto;
+  let modeloId: number | null;
+
+  if (ficha.produtoComercialId) {
+    let prodNome = ficha.nome;
+    let prodCat: string | null = null;
+    try {
+      const prisma = getComercialPrisma();
+      const p = await prisma.produtoComercial.findUnique({
+        where: { id: ficha.produtoComercialId },
+        select: { nome: true, categoria: true },
+      });
+      if (p) {
+        prodNome = p.nome;
+        prodCat = p.categoria;
+      }
+    } catch {
+      /* comercial opcional */
+    }
+    const m = resolveMapeamentoProduto(ficha.produtoComercialId, prodNome, prodCat, map);
+    perfil = m.perfilProcesso;
+    categoria = m.categoriaCusto;
+    modeloId = modeloIdDoMapeamento(m, defaultModeloId);
+  } else {
+    perfil = inferirPerfilDeEtapas(etapasDb);
+    categoria = (ficha.categoria ?? "outros") as CategoriaProdutoCusto;
+    modeloId = defaultModeloId;
+  }
+
+  if (modeloId == null) return null;
+
+  const modelo = await modelosDb.getProcessoModeloById(projetoId, modeloId);
+  if (!modelo) return null;
+
+  return etapasEsperadasParaMapeamento(perfil, categoria, modelo, mapaHora);
 }
 
 async function mapaHoraProjeto(projetoId: number) {

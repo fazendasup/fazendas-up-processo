@@ -99,13 +99,20 @@ export function CustosMoEquipesPanel() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<EquipeForm>(emptyForm());
 
+  async function invalidateCalculosMo() {
+    await Promise.all([
+      utils.custosProducao.moEquipes.listar.invalidate(),
+      utils.custosProducao.rentabilidade.sugestaoCustoOperacional.invalidate(),
+      utils.custosProducao.produtos.listarFichas.invalidate(),
+      utils.custosProducao.produtos.listarProcessoModelos.invalidate(),
+    ]);
+  }
+
   const salvar = trpc.custosProducao.moEquipes.salvar.useMutation({
     onSuccess: async () => {
       toast.success("Equipe salva");
       setOpen(false);
-      await utils.custosProducao.moEquipes.listar.invalidate();
-      await utils.custosProducao.rentabilidade.sugestaoCustoOperacional.invalidate();
-      await utils.custosProducao.produtos.listarFichas.invalidate();
+      await invalidateCalculosMo();
     },
     onError: (e) => toast.error(e.message),
   });
@@ -113,9 +120,7 @@ export function CustosMoEquipesPanel() {
   const excluir = trpc.custosProducao.moEquipes.excluir.useMutation({
     onSuccess: async () => {
       toast.success("Equipe excluída");
-      await utils.custosProducao.moEquipes.listar.invalidate();
-      await utils.custosProducao.rentabilidade.sugestaoCustoOperacional.invalidate();
-      await utils.custosProducao.produtos.listarFichas.invalidate();
+      await invalidateCalculosMo();
     },
     onError: (e) => toast.error(e.message),
   });
@@ -129,9 +134,7 @@ export function CustosMoEquipesPanel() {
           `${data.inseridos} operador(es) PJ cadastrados (${fmtMoney(data.custoMensalPorOperador)}/mês cada).`,
         );
       }
-      await utils.custosProducao.moEquipes.listar.invalidate();
-      await utils.custosProducao.rentabilidade.sugestaoCustoOperacional.invalidate();
-      await utils.custosProducao.produtos.listarFichas.invalidate();
+      await invalidateCalculosMo();
     },
     onError: (e) => toast.error(e.message),
   });
@@ -141,18 +144,14 @@ export function CustosMoEquipesPanel() {
       toast.success(
         `Folha 05/2026: ${data.inseridos} novo(s), ${data.atualizados} atualizado(s).`,
       );
-      await utils.custosProducao.moEquipes.listar.invalidate();
-      await utils.custosProducao.rentabilidade.sugestaoCustoOperacional.invalidate();
-      await utils.custosProducao.produtos.listarFichas.invalidate();
+      await invalidateCalculosMo();
     },
     onError: (e) => toast.error(e.message),
   });
 
   const salvarConfig = trpc.custosProducao.moEquipes.salvarConfig.useMutation({
     onSuccess: async () => {
-      await utils.custosProducao.moEquipes.listar.invalidate();
-      await utils.custosProducao.rentabilidade.sugestaoCustoOperacional.invalidate();
-      await utils.custosProducao.produtos.listarFichas.invalidate();
+      await invalidateCalculosMo();
     },
     onError: (e) => toast.error(e.message),
   });
@@ -222,10 +221,11 @@ export function CustosMoEquipesPanel() {
         <Users className="h-4 w-4" />
         <AlertTitle>Equipes CLT e PJ — base para custo/hora automático</AlertTitle>
         <AlertDescription>
-          Cadastre folha/contrato e horas produtivas. O sistema calcula R$/h e aplica nas fichas de{" "}
-          <strong>Produtos vendidos</strong> via <strong>minutos por unidade</strong>. Equipes de{" "}
-          <em>processamento</em> entram no CMV; equipes <em>fixas/overhead</em> entram no rateio mensal
-          da Rentabilidade.
+          Cadastre folha/contrato e horas produtivas. O sistema calcula R$/h e aplica automaticamente nas
+          fichas de <strong>Produtos vendidos</strong> — etapas com <strong>minutos/unidade</strong> e{" "}
+          <strong>lavagem R$/kg</strong> (linha industrial) recalculam sem precisar salvar o modelo de
+          processo. Equipes de <em>processamento</em> entram no CMV; equipes <em>fixas/overhead</em>{" "}
+          entram no rateio mensal da Rentabilidade.
         </AlertDescription>
       </Alert>
 

@@ -361,6 +361,83 @@ function etapasFormDeModelo(
   return etapasProcessoDeModelo(perfil, categoria, modelo, mapaHora).map(etapaPadraoToForm);
 }
 
+function etapasFormEquivalentes(a: EtapaForm[], b: EtapaForm[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((e, i) => {
+    const o = b[i]!;
+    return (
+      e.tipo === o.tipo &&
+      e.custoPorKgProcessado === o.custoPorKgProcessado &&
+      e.custoPorUnidade === o.custoPorUnidade &&
+      e.custoPercentual === o.custoPercentual &&
+      e.minutosPorUnidade === o.minutosPorUnidade &&
+      e.regimeMo === o.regimeMo
+    );
+  });
+}
+
+function resolverModeloEPerfilParaRow(
+  row: any,
+  modelos: ProcessoModeloRecord[],
+  produtosComercial:
+    | Array<{
+        id: string;
+        mapeamento?: {
+          perfilProcesso: PerfilProcessoProduto;
+          categoriaCusto: CategoriaProdutoCusto;
+          processoModeloId: number | null;
+        };
+      }>
+    | undefined,
+): { modelo: ProcessoModeloRecord; perfil: PerfilProcessoProduto; categoria: CategoriaProdutoCusto } | null {
+  const defaultModelo = modelos.find((m) => m.isDefault) ?? modelos[0] ?? null;
+  let perfil: PerfilProcessoProduto = inferirPerfilDeEtapas(row.etapas);
+  let categoria = (row.ficha.categoria ?? "outros") as CategoriaProdutoCusto;
+  let modelo: ProcessoModeloRecord | null = defaultModelo;
+
+  if (row.ficha.produtoComercialId && produtosComercial) {
+    const p = produtosComercial.find((x) => x.id === row.ficha.produtoComercialId);
+    if (p?.mapeamento) {
+      perfil = p.mapeamento.perfilProcesso;
+      categoria = p.mapeamento.categoriaCusto;
+      if (p.mapeamento.processoModeloId != null) {
+        modelo = modelos.find((m) => m.id === p.mapeamento!.processoModeloId) ?? defaultModelo;
+      }
+    }
+  }
+
+  if (!modelo) return null;
+  return { modelo, perfil, categoria };
+}
+
+function inferirEtapasModoManualRow(
+  row: any,
+  modelos: ProcessoModeloRecord[],
+  mapaHora: import("@shared/custosMoEquipe").CustoHoraPorRegime | null,
+  produtosComercial: Parameters<typeof resolverModeloEPerfilParaRow>[2],
+): boolean {
+  const resolved = resolverModeloEPerfilParaRow(row, modelos, produtosComercial);
+  if (!resolved) return true;
+  const dbEtapas = garantirEtapaLogisticaForm(
+    row.etapas.map((e: any) => ({
+      tipo: e.tipo,
+      nome: e.nome,
+      minutosPorUnidade: fmtDecimalInput(e.minutosPorUnidade, 2),
+      regimeMo: (e.regimeMo ?? "qualquer") as RegimeMoEtapa,
+      custoPorUnidade: fmtDecimalInput(e.custoPorUnidade, 4),
+      custoPorKgProcessado: fmtDecimalInput(e.custoPorKgProcessado, 4),
+      custoPercentual: fmtDecimalInput(e.custoPercentual, 2),
+    })),
+  );
+  const modelEtapas = etapasFormDeModelo(
+    resolved.modelo,
+    resolved.perfil,
+    resolved.categoria,
+    mapaHora,
+  );
+  return !etapasFormEquivalentes(dbEtapas, modelEtapas);
+}
+
 function resumoValorEtapa(e: EtapaForm): string {
   if (e.tipo === "lavagem") {
     const v = parseOpt(e.custoPorKgProcessado);
@@ -680,7 +757,7 @@ function rowToFichaForm(row: any, patch: Partial<FichaForm> = {}): FichaForm {
     ),
     processoModeloId: "",
     perfilProcesso: inferirPerfilDeEtapas(row.etapas),
-    etapasModoManual: true,
+    etapasModoManual: false,
     ...patch,
   };
 }
@@ -1978,6 +2055,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
   const fichas = trpc.custosProducao.produtos.listarFichas.useQuery(undefined, {
     refetchInterval: 120_000,
   });
+  const modelosQuery = trpc.custosProducao.produtos.listarProcessoModelos.useQuery();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<FichaForm>(emptyFicha());
   const [simResult, setSimResult] = useState<any>(null);
@@ -2371,7 +2449,16 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                               title="Editar ficha"
                               onClick={() => {
                                 setEditingId(row.ficha.id);
-                                setForm(rowToFichaForm(row));
+                                setForm(
+                                  rowToFichaForm(row, {
+                                    etapasModoManual: inferirEtapasModoManualRow(
+                                      row,
+                                      modelosQuery.data?.modelos ?? [],
+                                      modelosQuery.data?.mapaHora ?? null,
+                                      produtosComercialQuery.data,
+                                    ),
+                                  }),
+                                );
                                 setSimResult(row.resultado);
                               }}
                             >

@@ -1,4 +1,5 @@
 import type { ComponenteCalculoInput, EtapaCalculoInput, FichaCalculoInput } from "@shared/custosProduto";
+import type { EtapaProcessoPadrao } from "@shared/custosProdutoProcessoPadrao";
 import {
   calcularCustoProduto,
   deduplicarEtapasLogistica,
@@ -126,6 +127,36 @@ async function resolveCustoUnitarioComponente(
   return { nome, custoUnitario: null };
 }
 
+function etapasPadraoParaCalculo(etapas: EtapaProcessoPadrao[]): EtapaCalculoInput[] {
+  return etapas.map((e) => ({
+    tipo: e.tipo,
+    nome: e.nome,
+    custoPorUnidadeFinal: e.custoPorUnidade,
+    custoPorKgProcessado: e.custoPorKgProcessado,
+    custoPercentual: e.custoPercentual,
+    minutosPorUnidade: e.minutosPorUnidade,
+    regimeMo: e.regimeMo,
+  }));
+}
+
+async function garantirEtapaLogisticaCalculo(
+  projetoId: number,
+  etapasCalculo: EtapaCalculoInput[],
+): Promise<EtapaCalculoInput[]> {
+  if (temEtapaLogistica(etapasCalculo)) return etapasCalculo;
+  const processoDb = await import("./custosProdutoProcessoDb");
+  const config = await processoDb.getProcessoConfig(projetoId);
+  return [
+    ...etapasCalculo,
+    {
+      tipo: "logistica",
+      nome: LABEL_ETAPA_PROCESSO.logistica,
+      custoPorUnidadeFinal: 0,
+      custoPercentual: config.logisticaPercentualPadrao ?? LOGISTICA_PERCENTUAL_PADRAO,
+    },
+  ];
+}
+
 export async function fichaParaCalculoInput(
   projetoId: number,
   ficha: CustoProdutoFichaRow,
@@ -145,7 +176,7 @@ export async function fichaParaCalculoInput(
       custoUnitario: resolved.custoUnitario,
     });
   }
-  const etapasCalculo: EtapaCalculoInput[] = deduplicarEtapasLogistica(
+  let etapasCalculo: EtapaCalculoInput[] = deduplicarEtapasLogistica(
     etapas.map((e) => ({
       tipo: e.tipo as EtapaCalculoInput["tipo"],
       nome: e.nome,
@@ -156,16 +187,7 @@ export async function fichaParaCalculoInput(
       regimeMo: (e.regimeMo ?? "qualquer") as EtapaCalculoInput["regimeMo"],
     })),
   );
-  if (!temEtapaLogistica(etapasCalculo)) {
-    const processoDb = await import("./custosProdutoProcessoDb");
-    const config = await processoDb.getProcessoConfig(projetoId);
-    etapasCalculo.push({
-      tipo: "logistica",
-      nome: LABEL_ETAPA_PROCESSO.logistica,
-      custoPorUnidadeFinal: 0,
-      custoPercentual: config.logisticaPercentualPadrao ?? LOGISTICA_PERCENTUAL_PADRAO,
-    });
-  }
+  etapasCalculo = await garantirEtapaLogisticaCalculo(projetoId, etapasCalculo);
 
   const variedadeId = ficha.variedadeId;
   const custoVp =
@@ -195,6 +217,7 @@ export async function fichaParaCalculoInput(
 export async function calcularFichaCompleta(projetoId: number, ficha: CustoProdutoFichaRow) {
   const { listComponentesByFichaIds, listEtapasByFichaIds } = await import("./custosProdutoDb");
   const moEquipeDb = await import("./custosMoEquipeDb");
+  const { etapasProcessoAoVivoParaFicha } = await import("./custosProdutoModeloSync");
   const [componentes, etapas, equipesRows, modoMo] = await Promise.all([
     listComponentesByFichaIds([ficha.id]),
     listEtapasByFichaIds([ficha.id]),
@@ -202,8 +225,16 @@ export async function calcularFichaCompleta(projetoId: number, ficha: CustoProdu
     moEquipeDb.getModoCustoMoEquipe(projetoId),
   ]);
   const equipes: MoEquipeInput[] = equipesRows.map(mapMoEquipeRowToInput);
+  const mapaHora = mapaCustoHoraProcessamento(equipes, modoMo);
   const input = await fichaParaCalculoInput(projetoId, ficha, componentes, etapas);
-  input.custoHoraMo = mapaCustoHoraProcessamento(equipes, modoMo);
+  const etapasAoVivo = await etapasProcessoAoVivoParaFicha(projetoId, ficha, etapas, mapaHora);
+  if (etapasAoVivo) {
+    input.etapas = await garantirEtapaLogisticaCalculo(
+      projetoId,
+      deduplicarEtapasLogistica(etapasPadraoParaCalculo(etapasAoVivo)),
+    );
+  }
+  input.custoHoraMo = mapaHora;
   return calcularCustoProduto(input);
 }
 
