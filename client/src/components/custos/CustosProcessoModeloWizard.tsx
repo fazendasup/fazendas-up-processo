@@ -397,10 +397,16 @@ export function CustosProcessoModeloWizard() {
 
   const salvarModelo = trpc.custosProducao.produtos.salvarProcessoModelo.useMutation({
     onSuccess: (data) => {
-      toast.success(`Modelo «${data.modelo.nome}» salvo`);
+      const n = data.fichasSync?.atualizadas ?? 0;
+      toast.success(
+        n > 0
+          ? `Modelo «${data.modelo.nome}» salvo — ${n} ficha(s) atualizada(s)`
+          : `Modelo «${data.modelo.nome}» salvo`,
+      );
       setDraft(modeloToDraft(data.modelo));
       void utils.custosProducao.produtos.listarProcessoModelos.invalidate();
       void utils.custosProducao.produtos.processoConfig.invalidate();
+      void utils.custosProducao.produtos.listarFichas.invalidate();
     },
     onError: (e) => toast.error(e.message),
   });
@@ -415,7 +421,16 @@ export function CustosProcessoModeloWizard() {
   });
 
   const salvarMap = trpc.custosProducao.produtos.salvarMapeamentos.useMutation({
-    onSuccess: (d) => toast.success(`Classificação salva (${d.total} produto(s))`),
+    onSuccess: async (d) => {
+      const n = d.fichasSync?.atualizadas ?? 0;
+      toast.success(
+        n > 0
+          ? `Classificação salva (${d.total} produto(s)) — ${n} ficha(s) atualizada(s)`
+          : `Classificação salva (${d.total} produto(s))`,
+      );
+      await utils.custosProducao.produtos.listarFichas.invalidate();
+      await utils.custosProducao.produtos.listarProdutosComercial.invalidate();
+    },
     onError: (e) => toast.error(e.message),
   });
 

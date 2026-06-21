@@ -559,10 +559,16 @@ export const custosProdutoSubRouter = router({
         },
         mapaHora,
       );
+      const { sincronizarFichasComModeloProcesso } = await import("../custosProdutoModeloSync");
+      const fichasSync = await sincronizarFichasComModeloProcesso(pid, {
+        processoModeloId: saved.id,
+        isDefault: saved.isDefault,
+      });
       return {
         modelo: saved,
         calc: calcularLinhaProcessoIndustrial(saved.linhaProcesso, mapaHora),
         preview: previewProcesso(configFromProcessoModelo(saved)),
+        fichasSync,
       };
     }),
 
@@ -576,14 +582,21 @@ export const custosProdutoSubRouter = router({
   definirProcessoModeloPadrao: commercialEditorCustosProducaoProjectProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
-      const saved = await modelosDb.definirProcessoModeloPadrao(projetoIdFromCtx(ctx), input.id);
-      return { modelo: saved };
+      const pid = projetoIdFromCtx(ctx);
+      const saved = await modelosDb.definirProcessoModeloPadrao(pid, input.id);
+      const { sincronizarFichasComModeloProcesso } = await import("../custosProdutoModeloSync");
+      const fichasSync = await sincronizarFichasComModeloProcesso(pid, {
+        processoModeloId: saved.id,
+        isDefault: true,
+      });
+      return { modelo: saved, fichasSync };
     }),
 
   salvarProcessoConfig: commercialEditorCustosProducaoProjectProcedure
     .input(processoConfigInput)
     .mutation(async ({ ctx, input }) => {
-      const config = await processoDb.setProcessoConfig(projetoIdFromCtx(ctx), {
+      const pid = projetoIdFromCtx(ctx);
+      const config = await processoDb.setProcessoConfig(pid, {
         embalagemMicroverdeUn: input.embalagemMicroverdeUn,
         embalagemOutrosUn: input.embalagemOutrosUn,
         lavagemReaisKg: input.lavagemReaisKg ?? null,
@@ -595,7 +608,9 @@ export const custosProdutoSubRouter = router({
         incluirAdesivo: input.incluirAdesivo,
         linhaProcesso: input.linhaProcesso ?? null,
       });
-      return { config, preview: previewProcesso(config) };
+      const { sincronizarFichasComProcessoConfig } = await import("../custosProdutoModeloSync");
+      const fichasSync = await sincronizarFichasComProcessoConfig(pid);
+      return { config, preview: previewProcesso(config), fichasSync };
     }),
 
   listarProdutosComercial: custosProducaoModuleProcedure.query(async ({ ctx }) => {
@@ -650,7 +665,25 @@ export const custosProdutoSubRouter = router({
           processoModeloId: i.processoModeloId ?? null,
         })),
       );
-      return { success: true, total: input.itens.length };
+
+      const { sincronizarFichasComModeloProcesso } = await import("../custosProdutoModeloSync");
+      const defaultModelo = await modelosDb.getDefaultProcessoModelo(pid);
+      const modelosSync = new Map<number, boolean>();
+      for (const i of input.itens) {
+        const modeloId = i.processoModeloId ?? defaultModelo?.id;
+        if (modeloId == null) continue;
+        const isDefault =
+          i.processoModeloId == null || defaultModelo?.id === i.processoModeloId;
+        modelosSync.set(modeloId, modelosSync.get(modeloId) || isDefault);
+      }
+
+      let atualizadas = 0;
+      for (const [processoModeloId, isDefault] of modelosSync) {
+        const r = await sincronizarFichasComModeloProcesso(pid, { processoModeloId, isDefault });
+        atualizadas += r.atualizadas;
+      }
+
+      return { success: true, total: input.itens.length, fichasSync: { atualizadas } };
     }),
 
   produtosSemFicha: custosProducaoModuleProcedure.query(async ({ ctx }) => {
@@ -794,6 +827,30 @@ export const custosProdutoSubRouter = router({
     const { sincronizarLogisticaFichasProjeto } = await import("../custosProdutoLogisticaSync");
     return sincronizarLogisticaFichasProjeto(projetoIdFromCtx(ctx));
   }),
+
+  sincronizarModeloFichas: commercialEditorCustosProducaoProjectProcedure
+    .input(z.object({ processoModeloId: z.number().int().positive().optional() }).optional())
+    .mutation(async ({ ctx, input }) => {
+      const pid = projetoIdFromCtx(ctx);
+      const { sincronizarFichasComModeloProcesso, sincronizarFichasComProcessoConfig } =
+        await import("../custosProdutoModeloSync");
+      if (input?.processoModeloId != null) {
+        const modelo = await modelosDb.getProcessoModeloById(pid, input.processoModeloId);
+        if (!modelo) throw new Error("Modelo não encontrado");
+        return sincronizarFichasComModeloProcesso(pid, {
+          processoModeloId: modelo.id,
+          isDefault: modelo.isDefault,
+        });
+      }
+      const defaultModelo = await modelosDb.getDefaultProcessoModelo(pid);
+      if (defaultModelo) {
+        return sincronizarFichasComModeloProcesso(pid, {
+          processoModeloId: defaultModelo.id,
+          isDefault: true,
+        });
+      }
+      return sincronizarFichasComProcessoConfig(pid);
+    }),
 
   copiarPadraoCoentroRestaurante: commercialEditorCustosProducaoProjectProcedure.mutation(async () => {
     const {
