@@ -794,4 +794,13 @@ export const custosProdutoSubRouter = router({
     const { sincronizarLogisticaFichasProjeto } = await import("../custosProdutoLogisticaSync");
     return sincronizarLogisticaFichasProjeto(projetoIdFromCtx(ctx));
   }),
+
+  copiarPadraoCoentroRestaurante: commercialEditorCustosProducaoProjectProcedure.mutation(async () => {
+    const {
+      COPIA_PADRAO_COENTRO_DESTINOS,
+      COPIA_PADRAO_COENTRO_ORIGEM,
+      copiarPadraoFichaCustos,
+    } = await import("../custosProdutoCopiarPadrao");
+    return copiarPadraoFichaCustos(COPIA_PADRAO_COENTRO_ORIGEM, COPIA_PADRAO_COENTRO_DESTINOS);
+  }),
 });

@@ -345,6 +345,23 @@ async function startServer() {
   } catch (e) {
     console.error("[Server] sincronizarLogisticaTodasFichas falhou:", e);
   }
+  try {
+    const { executarCopiaPadraoCoentroRestaurante } = await import("../custosProdutoCopiarPadrao");
+    const copia = await executarCopiaPadraoCoentroRestaurante();
+    if (copia) {
+      console.log(
+        `[Server] Cópia padrão Coentro: copiadas=${copia.copiadas.length} jaAlinhadas=${copia.jaAlinhadas.length} naoEncontradas=${copia.naoEncontradas.length} erros=${copia.erros.length}`,
+      );
+      if (copia.copiadas.length > 0) {
+        console.log(`[Server] Cópia padrão Coentro — fichas: ${copia.copiadas.join("; ")}`);
+      }
+      if (copia.erros.length > 0) {
+        console.warn("[Server] Cópia padrão Coentro — erros:", copia.erros.join(" | "));
+      }
+    }
+  } catch (e) {
+    console.error("[Server] executarCopiaPadraoCoentroRestaurante falhou:", e);
+  }
   await db.ensureProjetoMembershipsBootstrap();
   if (process.env.AUTO_MIGRATE_LEGACY_DATA === "1") {
     try {

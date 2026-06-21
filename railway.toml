@@ -18,3 +18,5 @@ restartPolicyType = "ON_FAILURE"
 [deploy.variables]
 # Evita bloqueio por metadata lock do MySQL no arranque; schema via ensure* após HTTP.
 SKIP_DRIZZLE_MIGRATE = "1"
+# Cópia única: Coentro / Restaurante → demais SKUs (remover após deploy OK).
+RUN_CUSTOS_COPIAR_PADRAO_COENTRO = "1"
