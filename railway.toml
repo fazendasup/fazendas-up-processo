@@ -14,3 +14,7 @@ healthcheckPath = "/healthz"
 # Arranque pode demorar (MySQL a aquecer + migrações); margem extra além de /healthz precoce.
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
+
+[deploy.variables]
+# Evita bloqueio por metadata lock do MySQL no arranque; schema via ensure* após HTTP.
+SKIP_DRIZZLE_MIGRATE = "1"
