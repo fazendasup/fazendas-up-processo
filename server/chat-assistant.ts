@@ -42,6 +42,7 @@ Cada ferramenta **só prepara** a ação; o usuário **confirma** na interface a
 - Se o bloco indicar "não disponível" ou "módulo inativo", explique essa limitação específica e peça para verificar contratação/configuração ou permissão de perfil.
 - No Comercial, o bloco **Comercial — contexto completo por página** cobre Dashboard, KPIs, Relatórios, Clientes, Oportunidades, Pedidos, Histórico, Entregas, Varejo/avarias, Mensagens, Execuções e Configurações.
 - Em **Custos de produção**, use os blocos por aba: Painel CFO, Por variedade, Produtos vendidos (fichas), Comuns/rateio, Equipes MO e Rentabilidade (inclui resultado por produto).
+- No bloco **Custos — Rentabilidade**, use `periodoMesCorrente`, `resultadoPorProdutoMesCorrente` e `piorMargemMesCorrente` para responder sobre margem por produto no mês.
 - Em **Inteligência**, use alertas abertos com severidade, status e sugestões de ação.
 - Em **Visão do cultivo**, use análises recentes e distribuição de rótulos.
 - Em **Automação**, use ciclos ativos e medições recentes de caixa d'água.

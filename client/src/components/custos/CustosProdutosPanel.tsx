@@ -311,6 +311,8 @@ type EtapaForm = {
   custoPercentual: string;
 };
 
+type PrecoVendaReferenciaModo = "automatico" | "manual";
+
 type FichaForm = {
   tipo: TipoFichaCustoProduto;
   categoria: string;
@@ -318,6 +320,7 @@ type FichaForm = {
   produtoComercialId: string;
   unidadeVenda: string;
   precoVendaReferencia: string;
+  precoVendaReferenciaModo: PrecoVendaReferenciaModo;
   precoCompraKg: string;
   custoCompraUn: string;
   kgPorUnidadeCompra: string;
@@ -516,6 +519,7 @@ function emptyFicha(tipo: TipoFichaCustoProduto = "revenda_processada"): FichaFo
     produtoComercialId: "",
     unidadeVenda: "unidade",
     precoVendaReferencia: "",
+    precoVendaReferenciaModo: "automatico",
     precoCompraKg: "",
     custoCompraUn: "",
     kgPorUnidadeCompra: "",
@@ -671,6 +675,7 @@ function buildPayload(
     produtoComercialId: form.produtoComercialId || null,
     unidadeVenda: form.unidadeVenda as (typeof UNIDADES_VENDA_PRODUTO)[number],
     precoVendaReferencia: parseOpt(form.precoVendaReferencia),
+    precoVendaReferenciaModo: form.precoVendaReferenciaModo,
     precoCompraKg: parseOpt(form.precoCompraKg),
     custoCompraUn: parseOpt(form.custoCompraUn),
     kgPorUnidadeCompra: parseOpt(form.kgPorUnidadeCompra),
@@ -720,6 +725,8 @@ function rowToFichaForm(row: any, patch: Partial<FichaForm> = {}): FichaForm {
     produtoComercialId: row.ficha.produtoComercialId ?? "",
     unidadeVenda: row.ficha.unidadeVenda,
     precoVendaReferencia: fmtDecimalInput(row.ficha.precoVendaReferencia, 2),
+    precoVendaReferenciaModo:
+      row.ficha.precoVendaReferenciaModo === "manual" ? "manual" : "automatico",
     precoCompraKg: fmtDecimalInput(row.ficha.precoCompraKg, 4),
     custoCompraUn: fmtDecimalInput(row.ficha.custoCompraUn, 4),
     kgPorUnidadeCompra: fmtDecimalInput(row.ficha.kgPorUnidadeCompra, 4),
@@ -1289,17 +1296,53 @@ function FichaEditor({
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 md:col-span-2">
           <Label>Preço venda referência (R$)</Label>
-          <p className="text-[10px] text-muted-foreground">
-            Atualizado automaticamente com a média das vendas do mês (receita ÷ quantidade, Conta Azul).
-          </p>
-          <Input
-            readOnly
-            tabIndex={-1}
-            className="bg-muted/50 cursor-default"
-            value={form.precoVendaReferencia || "—"}
-          />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="space-y-1 shrink-0 sm:w-56">
+              <p className="text-[10px] text-muted-foreground">Origem do preço</p>
+              <Select
+                value={form.precoVendaReferenciaModo}
+                onValueChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    precoVendaReferenciaModo: v as PrecoVendaReferenciaModo,
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="automatico">Automático (vendas CA)</SelectItem>
+                  <SelectItem value="manual">Manual</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1 space-y-1">
+              <p className="text-[10px] text-muted-foreground">
+                {form.precoVendaReferenciaModo === "automatico"
+                  ? "Média do mês (receita ÷ quantidade, Conta Azul). Atualiza a cada ~2 min."
+                  : "Informe o preço de referência para margem e simulação."}
+              </p>
+              <Input
+                type="text"
+                inputMode="decimal"
+                readOnly={form.precoVendaReferenciaModo === "automatico"}
+                tabIndex={form.precoVendaReferenciaModo === "automatico" ? -1 : 0}
+                className={
+                  form.precoVendaReferenciaModo === "automatico"
+                    ? "bg-muted/50 cursor-default"
+                    : undefined
+                }
+                placeholder={form.precoVendaReferenciaModo === "manual" ? "Ex.: 12,50" : undefined}
+                value={form.precoVendaReferencia}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, precoVendaReferencia: e.target.value }))
+                }
+              />
+            </div>
+          </div>
         </div>
         <div className="flex items-center justify-between gap-3 rounded-lg border p-3 md:col-span-2">
           <div>
@@ -2081,8 +2124,27 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
     if (editingId == null || !fichas.data) return;
     const row = fichas.data.find((r) => r.ficha.id === editingId);
     if (!row) return;
-    const preco = fmtDecimalInput(row.ficha.precoVendaReferencia, 2);
-    setForm((f) => (f.precoVendaReferencia === preco ? f : { ...f, precoVendaReferencia: preco }));
+    const modoServidor =
+      row.ficha.precoVendaReferenciaModo === "manual" ? "manual" : "automatico";
+    setForm((f) => {
+      let changed = false;
+      const next = { ...f };
+      if (f.precoVendaReferenciaModo !== modoServidor) {
+        next.precoVendaReferenciaModo = modoServidor;
+        changed = true;
+      }
+      if (
+        modoServidor === "automatico" &&
+        f.precoVendaReferenciaModo === "automatico"
+      ) {
+        const preco = fmtDecimalInput(row.ficha.precoVendaReferencia, 2);
+        if (f.precoVendaReferencia !== preco) {
+          next.precoVendaReferencia = preco;
+          changed = true;
+        }
+      }
+      return changed ? next : f;
+    });
     setSimResult(row.resultado);
   }, [editingId, fichas.data]);
 

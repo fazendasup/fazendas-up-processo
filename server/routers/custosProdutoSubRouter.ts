@@ -238,6 +238,7 @@ const fichaInput = z
     produtoComercialId: z.string().max(64).optional().nullable(),
     unidadeVenda: unidadeZ.default("unidade"),
     precoVendaReferencia: z.number().nonnegative().optional().nullable(),
+    precoVendaReferenciaModo: z.enum(["automatico", "manual"]).optional().default("automatico"),
     precoCompraKg: z.number().nonnegative().optional().nullable(),
     custoCompraUn: z.number().nonnegative().optional().nullable(),
     modoCompraMp: modoCompraMpZ.optional().default("kg"),
@@ -300,6 +301,7 @@ function fichaPayload(pid: number, input: z.infer<typeof fichaInput>): InsertCus
     unidadeVenda: input.unidadeVenda,
     precoVendaReferencia:
       input.precoVendaReferencia != null ? String(input.precoVendaReferencia) : null,
+    precoVendaReferenciaModo: input.precoVendaReferenciaModo ?? "automatico",
     precoCompraKg: input.precoCompraKg != null ? String(input.precoCompraKg) : null,
     custoCompraUn: input.custoCompraUn != null ? String(input.custoCompraUn) : null,
     modoCompraMp: (input.modoCompraMp ?? "kg") as ModoCompraMp,
@@ -819,6 +821,7 @@ export const custosProdutoSubRouter = router({
           produtoComercialId: p.id,
           unidadeVenda: "unidade",
           precoVendaReferencia: p.precoBase != null ? String(p.precoBase) : null,
+          precoVendaReferenciaModo: p.precoBase != null ? "manual" : "automatico",
           kgBrutoPorUnidade: kgBruto,
           modoCompraMp: modoMp,
           perdaLavagemPct: "0",

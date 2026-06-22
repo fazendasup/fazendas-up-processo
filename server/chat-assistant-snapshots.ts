@@ -7,6 +7,7 @@ import {
   calcularCustoMensalEquipe,
   mapaCustoHoraProcessamento,
   somarMoOverheadEquipes,
+  type CustoHoraPorRegime,
 } from "@shared/custosMoEquipe";
 import {
   custoPorPlantaLinha,
@@ -55,6 +56,48 @@ function round2(v: number): number {
 
 function ymd(d: Date): string {
   return d.toISOString().slice(0, 10);
+}
+
+function serializeMapaHora(mapa: CustoHoraPorRegime) {
+  return {
+    clt: mapa.clt != null ? round2(mapa.clt) : null,
+    pj: mapa.pj != null ? round2(mapa.pj) : null,
+    misto: mapa.misto != null ? round2(mapa.misto) : null,
+  };
+}
+
+function periodoCobreMes(inicio: Date, fim: Date, ref = new Date()): boolean {
+  const ano = ref.getFullYear();
+  const mes = ref.getMonth();
+  const mesInicio = new Date(ano, mes, 1);
+  const mesFim = new Date(ano, mes + 1, 0, 23, 59, 59, 999);
+  return inicio <= mesFim && fim >= mesInicio;
+}
+
+function rankingMargemRentabilidade(
+  linhas: Array<{
+    produto: string;
+    margemBrutaPct: number | null;
+    contribuicao: number | null;
+    lucroBruto: number | null;
+    status: string;
+  }>,
+) {
+  return [...linhas]
+    .filter((l) => l.margemBrutaPct != null || l.contribuicao != null)
+    .sort((a, b) => {
+      const ca = a.contribuicao ?? a.lucroBruto ?? Number.NEGATIVE_INFINITY;
+      const cb = b.contribuicao ?? b.lucroBruto ?? Number.NEGATIVE_INFINITY;
+      return ca - cb;
+    })
+    .slice(0, 20)
+    .map((l) => ({
+      produto: l.produto,
+      margemBrutaPct: l.margemBrutaPct,
+      contribuicao: l.contribuicao,
+      lucroBruto: l.lucroBruto,
+      status: l.status,
+    }));
 }
 
 function resolveModoOverhead(periodo: CustoRentabilidadePeriodoRow): ModoOverheadRentabilidade {
@@ -322,7 +365,7 @@ export async function buildCustosAssistantResumo(
     }));
 
     const fichasAtivas = fichas.filter((f) => f.ativo).slice(0, 30);
-    const fichasResumo = await Promise.all(
+    const fichasResumoResults = await Promise.allSettled(
       fichasAtivas.map(async (f) => {
         const calc = await calcularFichaCompleta(pid, f);
         return {
@@ -348,16 +391,47 @@ export async function buildCustosAssistantResumo(
         };
       }),
     );
-
-    let rentabilidadeUltimo: unknown = null;
-    if (periodos[0]) {
-      const p = periodos[0];
-      const [linhas, overhead] = await Promise.all([
-        rentabilidadeDb.listRentabilidadeLinhas(p.id),
-        rentabilidadeDb.listRentabilidadeOverheadItens(p.id),
-      ]);
-      rentabilidadeUltimo = await montarRentabilidadePeriodo(pid, p, linhas, overhead);
+    const fichasResumo: Array<{
+      id: number;
+      nome: string;
+      tipo: string;
+      unidadeVenda: string;
+      produtoComercialId: string | null;
+      variedadeId: number | null;
+      precoVendaReferencia: number | null;
+      custoPorUnidade: number | null;
+      margemReferenciaPct: number | null;
+      detalhesCusto: Array<{ grupo: string; label: string; valor: number }>;
+    }> = [];
+    let fichasErros = 0;
+    for (const r of fichasResumoResults) {
+      if (r.status === "fulfilled") fichasResumo.push(r.value);
+      else fichasErros += 1;
     }
+
+    const rentabilidadeDetalhes = new Map<number, Awaited<ReturnType<typeof montarRentabilidadePeriodo>>>();
+    const periodosDetalheIds = new Set<number>();
+    if (periodos[0]) periodosDetalheIds.add(periodos[0].id);
+    for (const p of periodos) {
+      if (periodoCobreMes(p.inicio, p.fim)) periodosDetalheIds.add(p.id);
+    }
+    await Promise.all(
+      Array.from(periodosDetalheIds).map(async (periodoId) => {
+        const p = periodos.find((x) => x.id === periodoId);
+        if (!p) return;
+        const [linhas, overhead] = await Promise.all([
+          rentabilidadeDb.listRentabilidadeLinhas(p.id),
+          rentabilidadeDb.listRentabilidadeOverheadItens(p.id),
+        ]);
+        rentabilidadeDetalhes.set(p.id, await montarRentabilidadePeriodo(pid, p, linhas, overhead));
+      }),
+    );
+
+    const rentabilidadeUltimo = periodos[0] ? rentabilidadeDetalhes.get(periodos[0].id) ?? null : null;
+    const rentabilidadeMesCorrente = periodos.find((p) => periodoCobreMes(p.inicio, p.fim));
+    const rentabilidadeMesCorrenteDetalhe = rentabilidadeMesCorrente
+      ? (rentabilidadeDetalhes.get(rentabilidadeMesCorrente.id) ?? null)
+      : null;
 
     const compartilhados = compartilhadosRows.map((r) => {
       const { valor, detalhe } = custoPorPlantaLinha({
@@ -389,7 +463,11 @@ export async function buildCustosAssistantResumo(
       periodos[0]
         ? `Último período rentabilidade: ${periodos[0].titulo} (${ymd(periodos[0].inicio)} a ${ymd(periodos[0].fim)}).`
         : "Nenhum período de rentabilidade salvo ainda.",
-    ];
+      rentabilidadeMesCorrenteDetalhe
+        ? `Período do mês corrente: ${rentabilidadeMesCorrenteDetalhe.periodo.titulo}; resultado R$ ${round2(rentabilidadeMesCorrenteDetalhe.totais.resultado)}.`
+        : "Sem período de rentabilidade cadastrado para o mês corrente.",
+      fichasErros > 0 ? `${fichasErros} ficha(s) não puderam ser calculadas no resumo.` : "",
+    ].filter(Boolean);
 
     return {
       disponivel: true,
@@ -410,9 +488,7 @@ export async function buildCustosAssistantResumo(
         "Custos — Comuns (rateio)": { rubricas: compartilhados },
         "Custos — Equipes MO": {
           modoMo,
-          mapaHora: Object.fromEntries(
-            Array.from(mapaHora.entries()).map(([k, v]) => [k, round2(v)]),
-          ),
+          mapaHora: serializeMapaHora(mapaHora),
           equipes: equipesMo,
         },
         "Custos — Rentabilidade": {
@@ -421,8 +497,14 @@ export async function buildCustosAssistantResumo(
             titulo: p.titulo,
             inicio: ymd(p.inicio),
             fim: ymd(p.fim),
+            mesCorrente: periodoCobreMes(p.inicio, p.fim),
           })),
           ultimoPeriodo: rentabilidadeUltimo,
+          periodoMesCorrente: rentabilidadeMesCorrenteDetalhe,
+          piorMargemMesCorrente: rentabilidadeMesCorrenteDetalhe
+            ? rankingMargemRentabilidade(rentabilidadeMesCorrenteDetalhe.linhas).slice(0, 5)
+            : null,
+          resultadoPorProdutoMesCorrente: rentabilidadeMesCorrenteDetalhe?.linhas ?? null,
         },
       },
     };

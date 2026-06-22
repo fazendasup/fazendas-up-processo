@@ -46,6 +46,7 @@ export async function sincronizarPrecoVendaReferenciaDasVendas(
 
     const ficha = fichaPorId.get(p.fichaId);
     if (!ficha) continue;
+    if ((ficha.precoVendaReferenciaModo ?? "automatico") === "manual") continue;
 
     const atualizado = precoGravadoDiferente(ficha.precoVendaReferencia, preco);
     if (atualizado) {
