@@ -973,7 +973,7 @@ export async function confirmarVinculoMultiploConciliacao(
     observacoes?: string;
   },
 ) {
-  const ids = [...new Set(input.pedidoOperacionalIds)].filter(Boolean);
+  const ids = Array.from(new Set(input.pedidoOperacionalIds)).filter(Boolean);
   if (ids.length === 0) throw new Error("Selecione ao menos um pedido operacional.");
 
   const [operacionais, contaAzul] = await Promise.all([

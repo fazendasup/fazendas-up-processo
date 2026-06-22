@@ -2454,6 +2454,7 @@ export const pedidosRouter = router({
                     regraComercial: {
                       select: {
                         acumulaPedidos: true,
+                        diasAcumulo: true,
                         ...REGRA_ENTREGA_CONCILIACAO_SELECT,
                       },
                     },
@@ -2479,6 +2480,7 @@ export const pedidosRouter = router({
                 regraComercial: {
                   select: {
                     acumulaPedidos: true,
+                    diasAcumulo: true,
                     ...REGRA_ENTREGA_CONCILIACAO_SELECT,
                   },
                 },
@@ -2516,6 +2518,21 @@ export const pedidosRouter = router({
       });
       const resolverChaveConciliacao =
         criarResolverChaveItemConciliacao(produtosConciliacao);
+      const limparVenda = (v: any) =>
+        deveOcultarValores(ctx)
+          ? {
+              ...v,
+              valorTotal: null,
+              valorLiquido: null,
+              valorFrete: null,
+              valorDesconto: null,
+              itens: (v.itens ?? []).map((i: any) => ({
+                ...i,
+                precoUnit: null,
+                custoUnit: null,
+              })),
+            }
+          : v;
       await reconciliarDivergenciasAcumuloEsperadas(
         prisma,
         operacionais,
@@ -2618,21 +2635,6 @@ export const pedidosRouter = router({
           }
         }
       }
-      const limparVenda = (v: any) =>
-        deveOcultarValores(ctx)
-          ? {
-              ...v,
-              valorTotal: null,
-              valorLiquido: null,
-              valorFrete: null,
-              valorDesconto: null,
-              itens: (v.itens ?? []).map((i: any) => ({
-                ...i,
-                precoUnit: null,
-                custoUnit: null,
-              })),
-            }
-          : v;
 
       const semanaInicio = inicioSemana(inicio);
       const semanaFim = fimSemana(inicio);

@@ -78,7 +78,10 @@ export async function autoVincularAcumuloSemana(
         dataEntrega: { gte: janela.inicio, lte: janela.fim },
         OR: [{ pedidoContaAzulId: null }, { pedidoContaAzulId: venda.id }],
       },
-      include: { itens: true },
+      include: {
+        itens: true,
+        cliente: { select: { externalId: true, regraComercial: true } },
+      },
       orderBy: { dataEntrega: "asc" },
     });
 
