@@ -2,6 +2,7 @@ import { AcaoApi, OrigemPedido } from "../generated/prisma/index.js";
 import type { PrismaClient } from "../generated/prisma/index.js";
 import { composicaoDoPedidoParaDashboard } from "./composicao-valor.js";
 import {
+  clienteAcumulaFaturamento,
   pedidoCriadoAPartirDoContaAzul,
   REGRA_ENTREGA_CONCILIACAO_SELECT,
   taxaEntregaParaConciliacao,
@@ -67,10 +68,13 @@ type OperacionalSemanal = {
   status: string;
   freteCortesia: boolean;
   snapshotConciliacao: unknown;
+  pedidoContaAzulId: string | null;
   cliente: { nome: string } | null;
   pedidoContaAzul: { valorLiquido: unknown; valorTotal: unknown } | null;
   itens: Array<{ quantidade: unknown; precoUnit: unknown }>;
 };
+
+type RegraSemanal = RegraEntregaConciliacao & { acumulaPedidos: boolean };
 
 function money(v: unknown): number | null {
   if (v == null) return null;
@@ -85,21 +89,44 @@ function valorItensPedido(itens: OperacionalSemanal["itens"]): number {
   }, 0);
 }
 
-function classificarClienteSemanal(
+/** Vários pedidos operacionais podem apontar para a mesma venda CA (vínculo múltiplo). */
+export function pedidosOperacionaisEfetivos(
+  pedidos: Array<{ pedidoContaAzulId: string | null }>,
+): number {
+  const vinculos = new Set<string>();
+  let semVinculo = 0;
+  for (const pedido of pedidos) {
+    if (pedido.pedidoContaAzulId) vinculos.add(pedido.pedidoContaAzulId);
+    else semVinculo += 1;
+  }
+  return vinculos.size + semVinculo;
+}
+
+export function classificarClienteSemanal(
   opPedidos: number,
   caPedidos: number,
   diffUnidades: number,
   diffValor: number,
+  opts?: { acumulaPedidos?: boolean },
 ): StatusConciliacaoSemanalCliente {
-  if (opPedidos > caPedidos) return "aguardando_venda";
-  if (caPedidos > opPedidos) return "venda_sem_pedido";
-  if (
-    Math.abs(diffUnidades) > 0.001 ||
-    Math.abs(diffValor) > 0.05
-  ) {
-    return "divergente";
-  }
-  return "ok";
+  const unidadesOk = Math.abs(diffUnidades) <= 0.001;
+  const valorOk = Math.abs(diffValor) <= 0.05;
+  if (unidadesOk && valorOk) return "ok";
+
+  if (caPedidos === 0 && opPedidos > 0) return "aguardando_venda";
+  if (opPedidos === 0 && caPedidos > 0) return "venda_sem_pedido";
+
+  // Clientes acumuladores ou vínculo múltiplo: comparar totais, não contagem 1:1 de documentos.
+  return "divergente";
+}
+
+function documentoContaAzulSemanal(
+  statusPedido: string | null,
+  acumulaPedidos: boolean,
+): boolean {
+  const cls = classificarStatusPedido(statusPedido);
+  if (cls === "venda") return true;
+  return cls === "orcamento" && acumulaPedidos;
 }
 
 /** Compara pedidos operacionais da semana com vendas Conta Azul no mesmo intervalo. */
@@ -116,6 +143,7 @@ export async function calcularConciliacaoSemanal(
         status: true,
         freteCortesia: true,
         snapshotConciliacao: true,
+        pedidoContaAzulId: true,
         cliente: { select: { nome: true } },
         pedidoContaAzul: { select: { valorLiquido: true, valorTotal: true } },
         itens: true,
@@ -138,14 +166,13 @@ export async function calcularConciliacaoSemanal(
     }),
     mapDescontoBoletoPorContaAzul(prisma),
     prisma.regraComercialCliente.findMany({
-      select: { contaAzulCustomerId: true, ...REGRA_ENTREGA_CONCILIACAO_SELECT },
+      select: { contaAzulCustomerId: true, acumulaPedidos: true, ...REGRA_ENTREGA_CONCILIACAO_SELECT },
     }),
   ]);
 
-  const regraPorCliente = new Map<string, RegraEntregaConciliacao>(
+  const regraPorCliente = new Map<string, RegraSemanal>(
     regrasEntrega.map((regra) => [regra.contaAzulCustomerId, regra]),
   );
-  const vendasContaAzul = vendasContaAzulRaw.filter((p) => classificarStatusPedido(p.statusPedido) === "venda");
 
   const contaAzulPorCliente = new Map<
     string,
@@ -165,8 +192,11 @@ export async function calcularConciliacaoSemanal(
   let contaAzulValorGerencial = 0;
   let descontoBoletoTotal = 0;
 
-  for (const venda of vendasContaAzul) {
+  for (const venda of vendasContaAzulRaw) {
     const contaAzulCustomerId = venda.cliente.externalId ?? venda.cliente.id;
+    const acumula = clienteAcumulaFaturamento(regraPorCliente.get(contaAzulCustomerId));
+    if (!documentoContaAzulSemanal(venda.statusPedido, acumula)) continue;
+
     const comp = composicaoDoPedidoParaDashboard(venda);
     const pct = descontoPorConta.get(contaAzulCustomerId) ?? 0;
     const gerencial = composicaoGerencialDoPedido(comp, pct);
@@ -197,28 +227,46 @@ export async function calcularConciliacaoSemanal(
     contaAzulPorCliente.set(contaAzulCustomerId, atual);
   }
 
-  const operacionalPorCliente = new Map<string, { clienteNome: string; pedidos: number; unidades: number; valorEstimado: number }>();
+  const operacionalPorCliente = new Map<
+    string,
+    {
+      clienteNome: string;
+      pedidos: OperacionalSemanal[];
+      unidades: number;
+      valorEstimado: number;
+    }
+  >();
+  const espelhoCaContado = new Map<string, Set<string>>();
   let operacionalPedidos = 0;
   let operacionalUnidades = 0;
   let operacionalValor = 0;
 
   for (const pedido of pedidosOperacionais as OperacionalSemanal[]) {
     if (pedido.status === "CANCELADO") continue;
+
+    const criadoDoContaAzul = pedidoCriadoAPartirDoContaAzul(pedido);
+    const caId = pedido.pedidoContaAzulId;
+    if (criadoDoContaAzul && caId) {
+      const contados = espelhoCaContado.get(pedido.contaAzulCustomerId) ?? new Set<string>();
+      if (contados.has(caId)) continue;
+      contados.add(caId);
+      espelhoCaContado.set(pedido.contaAzulCustomerId, contados);
+    }
+
     operacionalPedidos += 1;
     const opCliente = operacionalPorCliente.get(pedido.contaAzulCustomerId) ?? {
       clienteNome: pedido.cliente?.nome ?? pedido.contaAzulCustomerId,
-      pedidos: 0,
+      pedidos: [],
       unidades: 0,
       valorEstimado: 0,
     };
-    opCliente.pedidos += 1;
+    opCliente.pedidos.push(pedido);
     for (const item of pedido.itens) {
       const quantidade = Number(item.quantidade);
       operacionalUnidades += quantidade;
       opCliente.unidades += quantidade;
     }
 
-    const criadoDoContaAzul = pedidoCriadoAPartirDoContaAzul(pedido);
     if (criadoDoContaAzul) {
       const valorPedidoCa = money(pedido.pedidoContaAzul?.valorLiquido ?? pedido.pedidoContaAzul?.valorTotal);
       const valorPedido = valorPedidoCa ?? valorItensPedido(pedido.itens);
@@ -244,18 +292,23 @@ export async function calcularConciliacaoSemanal(
   ]);
   const clientes = Array.from(chaves)
     .map((contaAzulCustomerId) => {
-      const op = operacionalPorCliente.get(contaAzulCustomerId);
+      const opRaw = operacionalPorCliente.get(contaAzulCustomerId);
       const ca = contaAzulPorCliente.get(contaAzulCustomerId);
-      const opPedidos = op?.pedidos ?? 0;
+      const acumulaPedidos = clienteAcumulaFaturamento(regraPorCliente.get(contaAzulCustomerId));
+      const opPedidos = opRaw ? pedidosOperacionaisEfetivos(opRaw.pedidos) : 0;
       const caPedidos = ca?.pedidos ?? 0;
       const diffPedidos = opPedidos - caPedidos;
-      const diffUnidades = (op?.unidades ?? 0) - (ca?.unidades ?? 0);
-      const diffValor = (op?.valorEstimado ?? 0) - (ca?.valorLiquido ?? 0);
-      const status = classificarClienteSemanal(opPedidos, caPedidos, diffUnidades, diffValor);
+      const diffUnidades = (opRaw?.unidades ?? 0) - (ca?.unidades ?? 0);
+      const diffValor = (opRaw?.valorEstimado ?? 0) - (ca?.valorLiquido ?? 0);
+      const status = classificarClienteSemanal(opPedidos, caPedidos, diffUnidades, diffValor, {
+        acumulaPedidos,
+      });
       return {
         contaAzulCustomerId,
-        clienteNome: op?.clienteNome ?? ca?.clienteNome ?? contaAzulCustomerId,
-        operacional: op ?? { pedidos: 0, unidades: 0, valorEstimado: 0 },
+        clienteNome: opRaw?.clienteNome ?? ca?.clienteNome ?? contaAzulCustomerId,
+        operacional: opRaw
+          ? { pedidos: opPedidos, unidades: opRaw.unidades, valorEstimado: opRaw.valorEstimado }
+          : { pedidos: 0, unidades: 0, valorEstimado: 0 },
         contaAzul: ca
           ? {
               pedidos: ca.pedidos,

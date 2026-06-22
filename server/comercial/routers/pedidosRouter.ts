@@ -2622,7 +2622,11 @@ export const pedidosRouter = router({
         semanaFim,
       );
       const clientesSemana = conciliacaoSemanal.clientes
-        .filter(c => c.status !== "ok")
+        .filter(
+          c =>
+            c.status === "divergente" ||
+            c.status === "venda_sem_pedido",
+        )
         .map(c => {
           const base = deveOcultarValores(ctx)
             ? ocultarValoresConciliacaoCliente(c)
