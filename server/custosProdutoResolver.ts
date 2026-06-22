@@ -1,5 +1,5 @@
-import type { ComponenteCalculoInput, EtapaCalculoInput, FichaCalculoInput } from "@shared/custosProduto";
-import type { EtapaProcessoPadrao } from "@shared/custosProdutoProcessoPadrao";
+import type { ComponenteCalculoInput, CategoriaProdutoCusto, EtapaCalculoInput, FichaCalculoInput } from "@shared/custosProduto";
+import type { EtapaProcessoPadrao, PerfilProcessoProduto } from "@shared/custosProdutoProcessoPadrao";
 import {
   calcularCustoProduto,
   deduplicarEtapasLogistica,
@@ -214,9 +214,17 @@ export async function fichaParaCalculoInput(
   };
 }
 
+export type ProcessoCalculoOverride = {
+  processoModeloId?: number | null;
+  perfilProcesso?: PerfilProcessoProduto;
+  categoriaCusto?: CategoriaProdutoCusto;
+};
+
 export type CalcularFichaOptions = {
   /** Usa etapas do formulário/DB; quando false, deriva do modelo industrial + MO ao vivo. */
   usarEtapasInformadas?: boolean;
+  /** Preferências do formulário (modelo/perfil/categoria) sobre o mapa comercial ao vivo. */
+  processo?: ProcessoCalculoOverride;
 };
 
 export async function calcularFichaFromRows(
@@ -236,7 +244,13 @@ export async function calcularFichaFromRows(
   const mapaHora = mapaCustoHoraProcessamento(equipes, modoMo);
   const input = await fichaParaCalculoInput(projetoId, ficha, componentes, etapas);
   if (!opts?.usarEtapasInformadas) {
-    const etapasAoVivo = await etapasProcessoAoVivoParaFicha(projetoId, ficha, etapas, mapaHora);
+    const etapasAoVivo = await etapasProcessoAoVivoParaFicha(
+      projetoId,
+      ficha,
+      etapas,
+      mapaHora,
+      opts?.processo,
+    );
     if (etapasAoVivo) {
       input.etapas = await garantirEtapaLogisticaCalculo(
         projetoId,

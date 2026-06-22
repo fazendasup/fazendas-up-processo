@@ -103,12 +103,19 @@ export function etapasEsperadasParaConfigLegacy(
   return etapasProcessoPadraoParaPerfil(perfil, categoria, config);
 }
 
+export type ProcessoCalculoOverride = {
+  processoModeloId?: number | null;
+  perfilProcesso?: PerfilProcessoProduto;
+  categoriaCusto?: CategoriaProdutoCusto;
+};
+
 /** Etapas derivadas do modelo vinculado + R$/h atual (sem ler valores congelados no DB). */
 export async function etapasProcessoAoVivoParaFicha(
   projetoId: number,
   ficha: CustoProdutoFichaRow,
   etapasDb: CustoProdutoEtapaRow[],
   mapaHora: ReturnType<typeof mapaCustoHoraProcessamento>,
+  override?: ProcessoCalculoOverride,
 ): Promise<EtapaProcessoPadrao[] | null> {
   const defaultModelo = await modelosDb.getDefaultProcessoModelo(projetoId);
   const defaultModeloId = defaultModelo?.id ?? null;
@@ -143,6 +150,12 @@ export async function etapasProcessoAoVivoParaFicha(
     perfil = inferirPerfilDeEtapas(etapasDb);
     categoria = (ficha.categoria ?? "outros") as CategoriaProdutoCusto;
     modeloId = defaultModeloId;
+  }
+
+  if (override?.perfilProcesso) perfil = override.perfilProcesso;
+  if (override?.categoriaCusto) categoria = override.categoriaCusto;
+  if (override?.processoModeloId !== undefined) {
+    modeloId = override.processoModeloId ?? defaultModeloId;
   }
 
   if (modeloId == null) return null;

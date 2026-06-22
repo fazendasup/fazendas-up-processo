@@ -714,6 +714,10 @@ function buildPayload(
       })),
     ),
     etapasModoManual: form.etapasModoManual,
+    processoModeloId: form.processoModeloId ? Number(form.processoModeloId) : null,
+    ...(form.processoModeloId || form.etapasModoManual
+      ? { perfilProcesso: form.perfilProcesso }
+      : {}),
   };
 }
 

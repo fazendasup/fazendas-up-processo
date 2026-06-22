@@ -52,6 +52,7 @@ import {
   calcularFichaCompleta,
   calcularFichaFromRows,
   catalogosCustosProduto,
+  type CalcularFichaOptions,
 } from "../custosProdutoResolver";
 
 const tipoFichaZ = z.enum(TIPOS_FICHA_CUSTO_PRODUTO);
@@ -256,6 +257,8 @@ const fichaInput = z
     componentes: z.array(componenteInput).default([]),
     etapas: z.array(etapaInput).default([]),
     etapasModoManual: z.boolean().optional().default(false),
+    processoModeloId: z.number().int().positive().nullable().optional(),
+    perfilProcesso: perfilZ.optional(),
   })
   .superRefine((val, ctx) => {
     if (val.ativo === false) return;
@@ -321,6 +324,93 @@ function fichaPayload(pid: number, input: z.infer<typeof fichaInput>): InsertCus
     ordem: input.ordem ?? 0,
     ativo: input.ativo ?? true,
   };
+}
+
+function calcularFichaOptsFromInput(input: z.infer<typeof fichaInput>): CalcularFichaOptions {
+  const processo: NonNullable<CalcularFichaOptions["processo"]> = {};
+  if (input.perfilProcesso) processo.perfilProcesso = input.perfilProcesso;
+  if (input.processoModeloId !== undefined) processo.processoModeloId = input.processoModeloId ?? null;
+  if ((input.perfilProcesso || input.processoModeloId != null) && input.categoria) {
+    processo.categoriaCusto = input.categoria;
+  }
+
+  return {
+    usarEtapasInformadas: input.etapasModoManual ?? false,
+    processo: Object.keys(processo).length > 0 ? processo : undefined,
+  };
+}
+
+function componentesRowsFromInput(
+  input: z.infer<typeof fichaInput>,
+  fichaId: number,
+): CustoProdutoComponenteRow[] {
+  return input.componentes.map((c, i) => ({
+    id: i,
+    fichaId,
+    tipo: c.tipo as TipoComponenteCusto,
+    variedadeId: c.variedadeId ?? null,
+    estoqueItemId: c.estoqueItemId ?? null,
+    produtoComercialId: c.produtoComercialId ?? null,
+    componenteFichaId: c.componenteFichaId ?? null,
+    nomeManual: c.nomeManual ?? null,
+    quantidadePorUnidade: String(c.quantidadePorUnidade),
+    unidadeComponente: c.unidadeComponente,
+    custoUnitarioManual: c.custoUnitarioManual != null ? String(c.custoUnitarioManual) : null,
+    ordem: c.ordem ?? i,
+  }));
+}
+
+function etapasRowsFromInput(
+  input: z.infer<typeof fichaInput>,
+  fichaId: number,
+): CustoProdutoEtapaRow[] {
+  return deduplicarEtapasLogistica(input.etapas).map((e, i) => ({
+    id: i,
+    fichaId,
+    tipo: e.tipo as TipoEtapaProcesso,
+    nome: e.nome,
+    custoPorUnidade: String(e.custoPorUnidade),
+    custoPorKgProcessado: e.custoPorKgProcessado != null ? String(e.custoPorKgProcessado) : null,
+    custoPercentual: e.custoPercentual != null ? String(e.custoPercentual) : null,
+    minutosPorUnidade: e.minutosPorUnidade != null ? String(e.minutosPorUnidade) : null,
+    regimeMo: (e.regimeMo ?? "qualquer") as RegimeMoEtapa,
+    ordem: e.ordem ?? i,
+  }));
+}
+
+function fichaFakeFromInput(
+  pid: number,
+  input: z.infer<typeof fichaInput>,
+  payload: InsertCustoProdutoFicha,
+): CustoProdutoFichaRow {
+  return {
+    id: 0,
+    projetoId: payload.projetoId,
+    tipo: payload.tipo ?? input.tipo,
+    categoria: payload.categoria ?? input.categoria,
+    nome: payload.nome,
+    produtoComercialId: payload.produtoComercialId ?? null,
+    unidadeVenda: payload.unidadeVenda ?? input.unidadeVenda,
+    precoVendaReferencia: payload.precoVendaReferencia ?? null,
+    precoVendaReferenciaModo: payload.precoVendaReferenciaModo ?? "automatico",
+    precoCompraKg: payload.precoCompraKg ?? null,
+    custoCompraUn: payload.custoCompraUn ?? null,
+    modoCompraMp: payload.modoCompraMp ?? "kg",
+    unidadesMpPorUnidade: payload.unidadesMpPorUnidade ?? null,
+    kgPorUnidadeCompra: payload.kgPorUnidadeCompra ?? null,
+    kgBrutoPorUnidade: payload.kgBrutoPorUnidade ?? null,
+    perdaLavagemPct: payload.perdaLavagemPct ?? null,
+    perdaDescasquePct: payload.perdaDescasquePct ?? null,
+    perdaSelecaoPct: payload.perdaSelecaoPct ?? null,
+    variedadeId: payload.variedadeId ?? null,
+    kgColhidoPorPlanta: payload.kgColhidoPorPlanta ?? null,
+    kgProducaoPorUnidade: payload.kgProducaoPorUnidade ?? null,
+    observacoes: payload.observacoes ?? null,
+    ordem: payload.ordem ?? 0,
+    ativo: payload.ativo ?? true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  } satisfies CustoProdutoFichaRow;
 }
 
 export const custosProdutoSubRouter = router({
@@ -393,6 +483,7 @@ export const custosProdutoSubRouter = router({
     .mutation(async ({ ctx, input }) => {
       const pid = projetoIdFromCtx(ctx);
       const payload = fichaPayload(pid, input);
+      const calcOpts = calcularFichaOptsFromInput(input);
       let fichaId = input.id;
       if (fichaId) {
         await custosProdutoDb.updateCustoProdutoFicha(pid, fichaId, payload);
@@ -428,9 +519,23 @@ export const custosProdutoSubRouter = router({
           ordem: e.ordem ?? i,
         })),
       );
+      if (input.produtoComercialId && (input.processoModeloId != null || input.perfilProcesso)) {
+        await mapDb.upsertComercialMap(pid, [
+          {
+            produtoComercialId: input.produtoComercialId,
+            categoriaCusto: input.categoria,
+            perfilProcesso: input.perfilProcesso ?? "colheita_embalagem",
+            kgPorUnidade: input.kgBrutoPorUnidade ?? null,
+            modoCompraMp: input.modoCompraMp ?? "kg",
+            processoModeloId: input.processoModeloId ?? null,
+          },
+        ]);
+      }
       const ficha = await custosProdutoDb.getCustoProdutoFichaById(pid, fichaId);
       if (!ficha) throw new Error("Ficha não encontrada após salvar");
-      const resultado = await calcularFichaCompleta(pid, ficha);
+      const componentes = componentesRowsFromInput(input, fichaId);
+      const etapas = etapasRowsFromInput(input, fichaId);
+      const resultado = await calcularFichaFromRows(pid, ficha, componentes, etapas, calcOpts);
       return { id: fichaId, resultado };
     }),
 
@@ -446,66 +551,10 @@ export const custosProdutoSubRouter = router({
     .mutation(async ({ ctx, input }) => {
       const pid = projetoIdFromCtx(ctx);
       const payload = fichaPayload(pid, input);
-      const fichaFake = {
-        id: 0,
-        projetoId: payload.projetoId,
-        tipo: payload.tipo ?? input.tipo,
-        categoria: payload.categoria ?? input.categoria,
-        nome: payload.nome,
-        produtoComercialId: payload.produtoComercialId ?? null,
-        unidadeVenda: payload.unidadeVenda ?? input.unidadeVenda,
-        precoVendaReferencia: payload.precoVendaReferencia ?? null,
-        precoCompraKg: payload.precoCompraKg ?? null,
-        custoCompraUn: payload.custoCompraUn ?? null,
-        modoCompraMp: payload.modoCompraMp ?? "kg",
-        unidadesMpPorUnidade: payload.unidadesMpPorUnidade ?? null,
-        kgPorUnidadeCompra: payload.kgPorUnidadeCompra ?? null,
-        kgBrutoPorUnidade: payload.kgBrutoPorUnidade ?? null,
-        perdaLavagemPct: payload.perdaLavagemPct ?? null,
-        perdaDescasquePct: payload.perdaDescasquePct ?? null,
-        perdaSelecaoPct: payload.perdaSelecaoPct ?? null,
-        variedadeId: payload.variedadeId ?? null,
-        kgColhidoPorPlanta: payload.kgColhidoPorPlanta ?? null,
-        kgProducaoPorUnidade: payload.kgProducaoPorUnidade ?? null,
-        observacoes: payload.observacoes ?? null,
-        ordem: payload.ordem ?? 0,
-        ativo: payload.ativo ?? true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } satisfies CustoProdutoFichaRow;
-      const componentes: CustoProdutoComponenteRow[] = input.componentes.map((c, i) => ({
-        id: i,
-        fichaId: 0,
-        tipo: c.tipo as TipoComponenteCusto,
-        variedadeId: c.variedadeId ?? null,
-        estoqueItemId: c.estoqueItemId ?? null,
-        produtoComercialId: c.produtoComercialId ?? null,
-        componenteFichaId: c.componenteFichaId ?? null,
-        nomeManual: c.nomeManual ?? null,
-        quantidadePorUnidade: String(c.quantidadePorUnidade),
-        unidadeComponente: c.unidadeComponente,
-        custoUnitarioManual:
-          c.custoUnitarioManual != null ? String(c.custoUnitarioManual) : null,
-        ordem: c.ordem ?? i,
-      }));
-      const etapas: CustoProdutoEtapaRow[] = input.etapas.map((e, i) => ({
-        id: i,
-        fichaId: 0,
-        tipo: e.tipo as TipoEtapaProcesso,
-        nome: e.nome,
-        custoPorUnidade: String(e.custoPorUnidade),
-        custoPorKgProcessado:
-          e.custoPorKgProcessado != null ? String(e.custoPorKgProcessado) : null,
-        custoPercentual:
-          e.custoPercentual != null ? String(e.custoPercentual) : null,
-        minutosPorUnidade:
-          e.minutosPorUnidade != null ? String(e.minutosPorUnidade) : null,
-        regimeMo: (e.regimeMo ?? "qualquer") as RegimeMoEtapa,
-        ordem: e.ordem ?? i,
-      }));
-      return calcularFichaFromRows(pid, fichaFake, componentes, etapas, {
-        usarEtapasInformadas: input.etapasModoManual ?? false,
-      });
+      const fichaFake = fichaFakeFromInput(pid, input, payload);
+      const componentes = componentesRowsFromInput(input, 0);
+      const etapas = etapasRowsFromInput(input, 0);
+      return calcularFichaFromRows(pid, fichaFake, componentes, etapas, calcularFichaOptsFromInput(input));
     }),
 
   processoConfig: custosProducaoModuleProcedure.query(async ({ ctx }) => {
