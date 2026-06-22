@@ -2098,6 +2098,10 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
   const fichas = trpc.custosProducao.produtos.listarFichas.useQuery(undefined, {
     refetchInterval: 120_000,
   });
+  const vendasSemFicha = trpc.custosProducao.produtos.listarVendasSemFicha.useQuery(
+    { dias: 400 },
+    { staleTime: 60_000 },
+  );
   const modelosQuery = trpc.custosProducao.produtos.listarProcessoModelos.useQuery();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<FichaForm>(emptyFicha());
@@ -2157,6 +2161,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
       toast.success("Ficha salva");
       setSimResult(r.resultado);
       await utils.custosProducao.produtos.listarFichas.invalidate();
+      await utils.custosProducao.produtos.listarVendasSemFicha.invalidate();
       setEditingId(r.id);
     },
     onError: (e) => toast.error(parseTrpcErrorMessage(e.message)),
@@ -2166,6 +2171,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
       toast.success("Ficha atualizada");
       setCompraDraft({});
       await utils.custosProducao.produtos.listarFichas.invalidate();
+      await utils.custosProducao.produtos.listarVendasSemFicha.invalidate();
     },
     onError: (e) => toast.error(parseTrpcErrorMessage(e.message)),
   });
@@ -2178,6 +2184,51 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
     },
     onError: (e) => toast.error(parseTrpcErrorMessage(e.message)),
   });
+  const gerarFichasContaAzul = trpc.custosProducao.produtos.gerarFichasContaAzul.useMutation({
+    onSuccess: async (r) => {
+      const n = r.inseridos + r.atualizados;
+      toast.success(
+        n > 0
+          ? `${n} ficha(s) gerada(s) do catálogo comercial`
+          : "Nenhuma ficha nova gerada",
+      );
+      await Promise.all([
+        utils.custosProducao.produtos.listarFichas.invalidate(),
+        utils.custosProducao.produtos.listarVendasSemFicha.invalidate(),
+        utils.custosProducao.produtos.listarProdutosComercial.invalidate(),
+      ]);
+    },
+    onError: (e) => toast.error(parseTrpcErrorMessage(e.message)),
+  });
+
+  const abrirFichaDeVenda = (
+    item: NonNullable<typeof vendasSemFicha.data>[number],
+  ) => {
+    const produto = item.produtoComercialId
+      ? produtosComercialQuery.data?.find((p) => p.id === item.produtoComercialId)
+      : undefined;
+    const categoria = (produto?.categoriaSugerida ??
+      produto?.mapeamento?.categoriaCusto ??
+      "revenda") as CategoriaProdutoCusto;
+    setEditingId(null);
+    setSimResult(null);
+    setForm({
+      ...emptyFicha(item.produtoComercialId ? "revenda_processada" : "manual"),
+      nome: item.nome,
+      produtoComercialId: item.produtoComercialId ?? "",
+      categoria,
+      perfilProcesso:
+        produto?.perfilSugerido ?? perfilDefaultParaCategoria(categoria),
+    });
+  };
+
+  const idsVendasGeraveis = useMemo(
+    () =>
+      (vendasSemFicha.data ?? [])
+        .map((v) => v.produtoComercialId)
+        .filter((id): id is string => Boolean(id)),
+    [vendasSemFicha.data],
+  );
 
   const resumoProdutos = useMemo(() => fichas.data ?? [], [fichas.data]);
   const tabelaClienteRows = useMemo(() => {
@@ -2220,6 +2271,97 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
             <Plus className="h-4 w-4 mr-1" /> Nova ficha
           </Button>
         </div>
+
+        {(vendasSemFicha.data?.length ?? 0) > 0 && editingId == null && form.nome === "" && (
+          <Card className="border-amber-200 bg-amber-50/40 dark:border-amber-900 dark:bg-amber-950/20">
+            <CardHeader className="pb-2">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-600" />
+                    Vendidos sem ficha (Conta Azul)
+                  </CardTitle>
+                  <CardDescription>
+                    Produtos que apareceram em vendas nos últimos ~13 meses e ainda não têm ficha de
+                    custo — por isso ficam &quot;incompletos&quot; na rentabilidade.
+                  </CardDescription>
+                </div>
+                {idsVendasGeraveis.length > 0 ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={gerarFichasContaAzul.isPending}
+                    onClick={() =>
+                      gerarFichasContaAzul.mutate({ produtoIds: idsVendasGeraveis })
+                    }
+                  >
+                    <RefreshCw className="h-4 w-4 mr-1" />
+                    Gerar fichas do catálogo ({idsVendasGeraveis.length})
+                  </Button>
+                ) : null}
+              </div>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Produto vendido</TableHead>
+                    <TableHead className="text-right">Qtd. (período)</TableHead>
+                    <TableHead className="text-right">Receita</TableHead>
+                    <TableHead>Catálogo</TableHead>
+                    <TableHead className="w-[10rem]" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {vendasSemFicha.data!.map((item) => (
+                    <TableRow key={item.chave}>
+                      <TableCell>
+                        <div className="font-medium">{item.nome}</div>
+                        {item.sku ? (
+                          <span className="text-[11px] text-muted-foreground">SKU {item.sku}</span>
+                        ) : null}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{item.quantidade}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {fmtMoney(item.receitaTotal)}
+                      </TableCell>
+                      <TableCell>
+                        {item.produtoComercialId ? (
+                          <Badge variant="secondary" className="font-normal">
+                            Vinculado ao catálogo
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline">Só no pedido CA</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex flex-wrap justify-end gap-1">
+                          {item.produtoComercialId ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={gerarFichasContaAzul.isPending}
+                              onClick={() =>
+                                gerarFichasContaAzul.mutate({
+                                  produtoIds: [item.produtoComercialId!],
+                                })
+                              }
+                            >
+                              Gerar ficha
+                            </Button>
+                          ) : null}
+                          <Button size="sm" onClick={() => abrirFichaDeVenda(item)}>
+                            {item.produtoComercialId ? "Editar" : "Criar ficha"}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
 
         {editingId == null && form.nome === "" && resumoProdutos.length > 0 && (
           <Card>

@@ -639,7 +639,7 @@ export const custosProdutoSubRouter = router({
     try {
       const prisma = getComercialPrisma();
       const produtos = await prisma.produtoComercial.findMany({
-        where: { ativo: true, importadoOperacao: true },
+        where: { ativo: true },
         select: { id: true, nome: true, sku: true, precoBase: true, categoria: true },
         orderBy: { nome: "asc" },
       });
@@ -710,7 +710,7 @@ export const custosProdutoSubRouter = router({
     try {
       const prisma = getComercialPrisma();
       const produtos = await prisma.produtoComercial.findMany({
-        where: { ativo: true, importadoOperacao: true },
+        where: { ativo: true },
         select: { id: true, nome: true, sku: true, precoBase: true, categoria: true },
         orderBy: { nome: "asc" },
       });
@@ -734,6 +734,32 @@ export const custosProdutoSubRouter = router({
     }
   }),
 
+  /** Produtos que apareceram em vendas CA recentes sem ficha de custo vinculada. */
+  listarVendasSemFicha: custosProducaoModuleProcedure
+    .input(z.object({ dias: z.number().int().min(30).max(730).optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      const pid = projetoIdFromCtx(ctx);
+      const { buscarVendasContaAzulPorPeriodo } = await import("../custosRentabilidadeContaAzul");
+      const { PRODUTO_VENDA_SEM_ITENS_CHAVE } = await import("@shared/custosRentabilidadeVendasCa");
+      const fim = new Date();
+      fim.setHours(23, 59, 59, 999);
+      const inicio = new Date(fim);
+      inicio.setDate(inicio.getDate() - (input?.dias ?? 400));
+      inicio.setHours(0, 0, 0, 0);
+      const vendas = await buscarVendasContaAzulPorPeriodo(pid, inicio, fim);
+      return vendas.produtos
+        .filter((p) => p.fichaId == null && p.chave !== PRODUTO_VENDA_SEM_ITENS_CHAVE)
+        .map((p) => ({
+          chave: p.chave,
+          nome: p.produtoNome,
+          sku: p.sku,
+          produtoComercialId: p.produtoComercialId,
+          quantidade: p.quantidade,
+          receitaTotal: p.receitaTotal,
+          linhasPedido: p.linhasPedido,
+        }));
+    }),
+
   gerarFichasContaAzul: commercialEditorCustosProducaoProjectProcedure
     .input(
       z.object({
@@ -749,7 +775,7 @@ export const custosProdutoSubRouter = router({
       const prisma = getComercialPrisma();
       const [produtos, fichas] = await Promise.all([
         prisma.produtoComercial.findMany({
-          where: { ativo: true, importadoOperacao: true },
+          where: { ativo: true },
           select: { id: true, nome: true, sku: true, precoBase: true, categoria: true },
           orderBy: { nome: "asc" },
         }),

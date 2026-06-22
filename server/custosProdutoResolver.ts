@@ -249,7 +249,7 @@ export async function catalogosCustosProduto(projetoId: number) {
   try {
     const prisma = getComercialPrisma();
     const rows = await prisma.produtoComercial.findMany({
-      where: { ativo: true, importadoOperacao: true },
+      where: { ativo: true },
       select: { id: true, nome: true, precoBase: true, categoria: true },
       orderBy: { nome: "asc" },
       take: 500,

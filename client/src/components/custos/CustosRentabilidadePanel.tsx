@@ -895,7 +895,8 @@ export function CustosRentabilidadePanel() {
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>
                     {vendasContaAzul.data!.produtosSemFicha} produto(s) vendido(s) sem ficha de
-                    custo vinculada — o CMV ficará incompleto até cadastrar em Produtos vendidos.
+                    custo vinculada — cadastre em Custos → Produtos vendidos, seção
+                    &quot;Vendidos sem ficha&quot;.
                   </AlertDescription>
                 </Alert>
               ) : null}
