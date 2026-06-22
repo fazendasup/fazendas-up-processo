@@ -1866,11 +1866,27 @@ function FichaEditor({
                   <Select
                     value={form.processoModeloId || "__padrao__"}
                     onValueChange={(v) =>
-                      setForm((f) => ({
-                        ...f,
-                        processoModeloId: v === "__padrao__" ? "" : v,
-                        etapasModoManual: false,
-                      }))
+                      setForm((f) => {
+                        const modelo =
+                          v === "__padrao__" ? null : modelos.find((m) => String(m.id) === v) ?? null;
+                        const patch: Partial<FichaForm> = {
+                          processoModeloId: v === "__padrao__" ? "" : v,
+                          etapasModoManual: false,
+                        };
+                        if (
+                          f.categoria === "revenda" &&
+                          (modelo?.familia === "legumes" || modelo?.familia === "folhosas")
+                        ) {
+                          patch.categoria = "outros";
+                        }
+                        if (
+                          modelo?.familia === "legumes" &&
+                          !perfilUsaLavagemKg(f.perfilProcesso)
+                        ) {
+                          patch.perfilProcesso = "lavagem_corte_embalagem";
+                        }
+                        return { ...f, ...patch };
+                      })
                     }
                   >
                     <SelectTrigger>
@@ -1897,11 +1913,17 @@ function FichaEditor({
                   <Select
                     value={form.perfilProcesso}
                     onValueChange={(v) =>
-                      setForm((f) => ({
-                        ...f,
-                        perfilProcesso: v as PerfilProcessoProduto,
-                        etapasModoManual: false,
-                      }))
+                      setForm((f) => {
+                        const perfil = v as PerfilProcessoProduto;
+                        const patch: Partial<FichaForm> = {
+                          perfilProcesso: perfil,
+                          etapasModoManual: false,
+                        };
+                        if (f.categoria === "revenda" && perfilUsaLavagemKg(perfil)) {
+                          patch.categoria = "outros";
+                        }
+                        return { ...f, ...patch };
+                      })
                     }
                   >
                     <SelectTrigger>

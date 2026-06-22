@@ -116,6 +116,26 @@ describe("custosProdutoProcessoPadrao", () => {
     expect(etapas.find((e) => e.tipo === "logistica")?.custoPercentual).toBe(10);
   });
 
+  it("revenda com lavagem + corte mantém etapas industriais completas", () => {
+    const etapas = etapasProcessoPadraoParaPerfil("lavagem_corte_embalagem", "revenda", {
+      embalagemMicroverdeUn: 0.95,
+      embalagemOutrosUn: 0.6,
+      lavagemReaisKg: 0.7,
+      lavagemMinutosUn: null,
+      embalagemMinutosUn: null,
+      corteMinutosUn: 2,
+      adesivoCustoUn: 0.05,
+      regimeMoPadrao: "qualquer",
+      incluirAdesivo: true,
+      logisticaPercentualPadrao: 10,
+    });
+    expect(etapas.some((e) => e.tipo === "lavagem")).toBe(true);
+    expect(etapas.some((e) => e.tipo === "descasque_corte")).toBe(true);
+    expect(etapas.find((e) => e.tipo === "embalagem")?.custoPorUnidade).toBe(0.6);
+    expect(etapas.find((e) => e.tipo === "adesivo")?.custoPorUnidade).toBe(0.05);
+    expect(etapas.find((e) => e.tipo === "logistica")?.custoPercentual).toBe(10);
+  });
+
   it("compat etapasProcessoPadraoParaProduto", () => {
     expect(etapasProcessoPadraoParaProduto("outros").find((e) => e.tipo === "embalagem")?.custoPorUnidade).toBe(
       0.6,

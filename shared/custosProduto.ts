@@ -208,6 +208,16 @@ function clampPct(v: number): number {
   return Math.min(100, Math.max(0, v));
 }
 
+/** Etapas com lavagem, corte, embalagem ou MO → MP deve considerar perdas mesmo vendendo por kg. */
+export function etapasIndicamProcessamentoIndustrial(etapas: EtapaCalculoInput[]): boolean {
+  return etapas.some((e) => {
+    if (e.tipo === "lavagem" || e.tipo === "descasque_corte") return true;
+    if (e.tipo === "embalagem" && (toNum(e.custoPorUnidadeFinal) ?? 0) > 0) return true;
+    if (e.tipo === "mao_de_obra" && (toNum(e.minutosPorUnidade) ?? 0) > 0) return true;
+    return false;
+  });
+}
+
 export const MARGENS_ALVO_PRECO_VENDA = [5, 10, 20, 30] as const;
 
 export function precoVendaParaMargem(custo: number | null | undefined, margemPct: number): number | null {
@@ -480,6 +490,18 @@ export function calcularCustoProduto(input: FichaCalculoInput): ResultadoCustoPr
       if (input.unidadeVenda === "kg") {
         if (!(preco > 0) || !(kgVendido > 0)) {
           alertas.push("Informe preço de compra (R$/kg) e kg vendido por unidade.");
+        } else if (etapasIndicamProcessamentoIndustrial(input.etapas)) {
+          const rev = custoMaterialRevenda({
+            precoCompraKg: preco,
+            kgBrutoPorUnidade: kgVendido,
+            perdasPct: perdas,
+          });
+          custoMaterial += rev.custo;
+          kgLiquidoPorUnidade = rev.kgLiquido;
+          alertas.push(...rev.alertas);
+          if (rev.custo > 0) {
+            detalhes.push({ grupo: "material", label: "Matéria-prima (R$/kg)", valor: rev.custo });
+          }
         } else {
           const custoMp = preco * kgVendido;
           custoMaterial += custoMp;

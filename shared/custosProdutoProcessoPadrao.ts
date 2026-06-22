@@ -101,6 +101,11 @@ export function perfilUsaLavagemKg(perfil: PerfilProcessoProduto): boolean {
   return perfil === "lavagem_embalagem" || perfil === "lavagem_corte_embalagem";
 }
 
+/** Lavagem, corte ou MO/embalagem industrial — não é revenda simples (só rótulo + frete). */
+export function perfilTemProcessamentoIndustrial(perfil: PerfilProcessoProduto): boolean {
+  return perfilUsaLavagemKg(perfil);
+}
+
 /** Avisos antes de gerar ficha — não bloqueia (nem tudo é pesado na entrada). */
 export function avisosMapeamentoProduto(
   m: Pick<MapeamentoProdutoComercial, "perfilProcesso" | "kgPorUnidade" | "modoCompraMp">,
@@ -350,8 +355,8 @@ export function etapasProcessoPadraoParaPerfil(
   config: CustosProdutoProcessoConfig = CUSTOS_PRODUTO_PROCESSO_CONFIG_PADRAO,
   calc?: LinhaProcessoIndustrialResult | null,
 ): EtapaProcessoPadrao[] {
-  /** Revenda: só rótulo + frete — sem lavagem, embalagem ou MO industrial. */
-  if (categoria === "revenda") {
+  /** Revenda simples (só rótulo + frete): sem lavagem/corte no perfil. */
+  if (categoria === "revenda" && !perfilTemProcessamentoIndustrial(perfil)) {
     const etapas: EtapaProcessoPadrao[] = [];
     if (config.incluirAdesivo && config.adesivoCustoUn != null && config.adesivoCustoUn > 0) {
       etapas.push(

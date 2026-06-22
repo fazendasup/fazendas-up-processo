@@ -244,6 +244,29 @@ describe("calcularCustoProduto", () => {
     expect(r.custoPorKg).toBeCloseTo(33.55);
   });
 
+  it("legumes por kg: perdas na MP + lavagem + adesivo + logística", () => {
+    const r = calcularCustoProduto({
+      tipo: "revenda_processada",
+      unidadeVenda: "kg",
+      precoCompraKg: 30,
+      kgBrutoPorUnidade: 1,
+      perdaLavagemPct: 10,
+      perdaDescasquePct: 10,
+      componentes: [],
+      etapas: [
+        { tipo: "lavagem", nome: "Lavagem", custoPorUnidadeFinal: 0, custoPorKgProcessado: 0.7 },
+        { tipo: "descasque_corte", nome: "Corte", custoPorUnidadeFinal: 0, minutosPorUnidade: 2 },
+        { tipo: "embalagem", nome: "Embalagem", custoPorUnidadeFinal: 0.6 },
+        { tipo: "adesivo", nome: "Adesivo", custoPorUnidadeFinal: 0.05 },
+        { tipo: "logistica", nome: "Logística", custoPorUnidadeFinal: 0, custoPercentual: 10 },
+      ],
+      custoHoraMo: { clt: 30, pj: 30, misto: 30, qualquer: 30 },
+    });
+    expect(r.custoMaterial).toBeCloseTo(30 / 0.81);
+    expect(r.custoProcesso).toBeGreaterThan(1.5);
+    expect(r.custoTotal).toBeGreaterThan(r.custoMaterial);
+  });
+
   it("revenda com compra por unidade usa peso e perdas", () => {
     const r = calcularCustoProduto({
       tipo: "revenda_processada",
