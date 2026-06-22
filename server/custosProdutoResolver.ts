@@ -214,13 +214,15 @@ export async function fichaParaCalculoInput(
   };
 }
 
-export async function calcularFichaCompleta(projetoId: number, ficha: CustoProdutoFichaRow) {
-  const { listComponentesByFichaIds, listEtapasByFichaIds } = await import("./custosProdutoDb");
+export async function calcularFichaFromRows(
+  projetoId: number,
+  ficha: CustoProdutoFichaRow,
+  componentes: CustoProdutoComponenteRow[],
+  etapas: CustoProdutoEtapaRow[],
+) {
   const moEquipeDb = await import("./custosMoEquipeDb");
   const { etapasProcessoAoVivoParaFicha } = await import("./custosProdutoModeloSync");
-  const [componentes, etapas, equipesRows, modoMo] = await Promise.all([
-    listComponentesByFichaIds([ficha.id]),
-    listEtapasByFichaIds([ficha.id]),
+  const [equipesRows, modoMo] = await Promise.all([
     moEquipeDb.listMoEquipes(projetoId),
     moEquipeDb.getModoCustoMoEquipe(projetoId),
   ]);
@@ -236,6 +238,15 @@ export async function calcularFichaCompleta(projetoId: number, ficha: CustoProdu
   }
   input.custoHoraMo = mapaHora;
   return calcularCustoProduto(input);
+}
+
+export async function calcularFichaCompleta(projetoId: number, ficha: CustoProdutoFichaRow) {
+  const { listComponentesByFichaIds, listEtapasByFichaIds } = await import("./custosProdutoDb");
+  const [componentes, etapas] = await Promise.all([
+    listComponentesByFichaIds([ficha.id]),
+    listEtapasByFichaIds([ficha.id]),
+  ]);
+  return calcularFichaFromRows(projetoId, ficha, componentes, etapas);
 }
 
 export async function catalogosCustosProduto(projetoId: number) {

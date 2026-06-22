@@ -5,7 +5,6 @@ import {
   TIPOS_ETAPA_PROCESSO,
   TIPOS_FICHA_CUSTO_PRODUTO,
   UNIDADES_VENDA_PRODUTO,
-  calcularCustoProduto,
   deduplicarEtapasLogistica,
   type TipoComponenteCusto,
   type TipoEtapaProcesso,
@@ -51,8 +50,8 @@ import type {
 } from "../../drizzle/schema";
 import {
   calcularFichaCompleta,
+  calcularFichaFromRows,
   catalogosCustosProduto,
-  fichaParaCalculoInput,
 } from "../custosProdutoResolver";
 
 const tipoFichaZ = z.enum(TIPOS_FICHA_CUSTO_PRODUTO);
@@ -503,19 +502,7 @@ export const custosProdutoSubRouter = router({
         regimeMo: (e.regimeMo ?? "qualquer") as RegimeMoEtapa,
         ordem: e.ordem ?? i,
       }));
-      const calcInput = await fichaParaCalculoInput(pid, fichaFake, componentes, etapas);
-      const moEquipeDbMod = await import("../custosMoEquipeDb");
-      const { mapMoEquipeRowToInput } = await import("../moEquipeMapper");
-      const { mapaCustoHoraProcessamento } = await import("@shared/custosMoEquipe");
-      const [equipesRows, modoMo] = await Promise.all([
-        moEquipeDbMod.listMoEquipes(pid),
-        moEquipeDbMod.getModoCustoMoEquipe(pid),
-      ]);
-      calcInput.custoHoraMo = mapaCustoHoraProcessamento(
-        equipesRows.map(mapMoEquipeRowToInput),
-        modoMo,
-      );
-      return calcularCustoProduto(calcInput);
+      return calcularFichaFromRows(pid, fichaFake, componentes, etapas);
     }),
 
   processoConfig: custosProducaoModuleProcedure.query(async ({ ctx }) => {
