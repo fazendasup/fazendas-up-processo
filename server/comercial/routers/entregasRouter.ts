@@ -7,6 +7,10 @@ import {
   ordenarParadasOtimizadas,
   type ParadaParaOtimizar,
 } from "../lib/otimizar-rota-entrega";
+import { resolverItensOperacionaisExibicao } from "../lib/pedido-acumulo-operacional.js";
+import {
+  criarResolverChaveItemConciliacao,
+} from "../lib/produto-operacional.js";
 
 const podeGerenciarEntregas = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL", "COMERCIAL", "OPERACOES", "LOGISTICA");
 const podeUsarModoEntregador = comercialRequirePerfis(
@@ -137,11 +141,34 @@ async function clientesPlanejados(prisma: ReturnType<typeof getComercialPrisma>,
     },
     include: {
       cliente: { include: { regraComercial: true } },
+      pedidoContaAzul: {
+        select: {
+          id: true,
+          statusPedido: true,
+          itens: {
+            select: { produto: true, sku: true, quantidade: true },
+          },
+        },
+      },
       itens: true,
       avarias: true,
     },
     orderBy: [{ cliente: { nome: "asc" } }, { criadoEm: "asc" }],
   });
+
+  const produtosConciliacao = await prisma.produtoComercial.findMany({
+    where: { contaAzulProdutoId: { not: null } },
+    select: {
+      id: true,
+      nome: true,
+      sku: true,
+      contaAzulProdutoId: true,
+      ativo: true,
+      importadoOperacao: true,
+      categoria: true,
+    },
+  });
+  const resolverChave = criarResolverChaveItemConciliacao(produtosConciliacao);
 
   const grupos = new Map<
     string,
@@ -169,7 +196,14 @@ async function clientesPlanejados(prisma: ReturnType<typeof getComercialPrisma>,
     };
     atual.prioridade = Math.min(atual.prioridade, prioridade);
     atual.pedidos.push(pedido);
-    atual.itens.push(...pedido.itens);
+    const itensResolvidos = await resolverItensOperacionaisExibicao(prisma, {
+      pedido,
+      regra: pedido.cliente?.regraComercial ?? null,
+      contaAzul: pedido.pedidoContaAzul,
+      resolverChave,
+      diaReferencia: dia,
+    });
+    atual.itens.push(...itensResolvidos.itens);
     atual.avariasCount += pedido.avarias.length;
     grupos.set(key, atual);
   }

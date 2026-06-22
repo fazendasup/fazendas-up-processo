@@ -245,7 +245,11 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
               </li>
               <li>
                 <strong>Confirmar vínculo</strong> — junta os dois registros. O <strong>valor que vale para faturamento é o da Conta Azul</strong>;
-                o pedido operacional continua valendo para produção/colheita. Diferenças listadas continuam visíveis até serem corrigidas.
+                o pedido operacional continua valendo para produção/colheita.
+              </li>
+              <li>
+                Clientes com <strong>faturamento acumulado</strong> recebem todo dia o mesmo pedido operacional, mas a venda/orçamento no Conta Azul
+                traz o volume do período. Nesse caso, diferença de quantidade e valor é <strong>esperada</strong> — o vínculo pode ser confirmado sem corrigir itens.
               </li>
               <li>
                 <strong>Manter operacional</strong> — o pedido operacional está certo e essa venda não é dele.

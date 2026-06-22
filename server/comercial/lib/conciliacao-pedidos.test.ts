@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { calcularDivergencias, consolidarDivergenciasEspelhadas } from "./conciliacao-pedidos";
+import {
+  calcularDivergencias,
+  consolidarDivergenciasEspelhadas,
+  opcoesCalcularDivergenciasParaPar,
+} from "./conciliacao-pedidos";
 
 describe("consolidarDivergenciasEspelhadas", () => {
   it("remove par espelhado de nomes diferentes com mesma quantidade", () => {
@@ -60,6 +64,54 @@ describe("calcularDivergencias", () => {
         compararItens: true,
         compararValorEstimado: true,
       }),
+    ).toHaveLength(0);
+  });
+
+  it("ignora diferença de itens e valor para cliente com faturamento acumulado", () => {
+    const operacional = {
+      dataEntrega: new Date("2026-06-16T12:00:00Z"),
+      freteCortesia: false,
+      snapshotConciliacao: null,
+      itens: [
+        { produtoId: "p1", produtoNome: "Rúcula", quantidade: 10, precoUnit: 5 },
+        {
+          produtoId: "p2",
+          produtoNome: "Manjericão Folha Fina 60g",
+          quantidade: 5,
+          precoUnit: 8,
+        },
+      ],
+    };
+    const contaAzul = {
+      dataPedido: new Date("2026-06-16T12:00:00Z"),
+      valorFrete: 0,
+      valorLiquido: 483.22,
+      valorTotal: 483.22,
+      cliente: {
+        regraComercial: {
+          acumulaPedidos: true,
+          cobraTaxaEntrega: false,
+          valorTaxaEntrega: null,
+        },
+      },
+      itens: [
+        { produto: "Rúcula", sku: null, quantidade: 50, precoUnit: 5 },
+        {
+          produto: "Manjericão Folha Fina 60g",
+          sku: null,
+          quantidade: 25,
+          precoUnit: 8,
+        },
+      ],
+    };
+
+    expect(
+      calcularDivergencias(
+        operacional as any,
+        contaAzul as any,
+        undefined,
+        opcoesCalcularDivergenciasParaPar(operacional as any, contaAzul as any),
+      ),
     ).toHaveLength(0);
   });
 });

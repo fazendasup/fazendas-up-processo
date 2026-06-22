@@ -1041,6 +1041,9 @@ export function Pedidos({
                                   </div>
                                 </div>
                                 <RegrasResumo regra={grupo.regras} />
+                                <AlertaAcumuloFaturamento
+                                  avisos={grupo.avisosAcumulo ?? []}
+                                />
                                 <AlertaAvariasPedidoCopiado
                                   alertas={grupo.alertasAvariasPendentes}
                                 />
@@ -2033,6 +2036,25 @@ function AvisoAvariasPedido({
       >
         Ver sugestão de pedido no Acompanhamento avarias
       </Link>
+    </div>
+  );
+}
+
+function AlertaAcumuloFaturamento({ avisos }: { avisos: string[] }) {
+  const unicos = Array.from(new Set((avisos ?? []).filter(Boolean)));
+  if (unicos.length === 0) return null;
+  return (
+    <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-2 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-100">
+      <div className="flex items-start gap-2">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+        <div className="space-y-1">
+          {unicos.map(aviso => (
+            <p key={aviso} className="text-xs leading-relaxed">
+              {aviso}
+            </p>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

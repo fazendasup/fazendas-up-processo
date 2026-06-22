@@ -28,6 +28,8 @@ import {
   calcularDivergencias,
   confirmarVinculoConciliacao,
   opcoesCalcularDivergencias,
+  opcoesCalcularDivergenciasParaPar,
+  reconciliarDivergenciasAcumuloEsperadas,
   REGRA_ENTREGA_CONCILIACAO_SELECT,
   criarOperacionalDeVenda,
   desvincularConciliacao,
@@ -47,6 +49,7 @@ import {
   importarProdutosParaOperacao,
   iniciarSincronizacaoCatalogoProdutosEmBackground,
 } from "../integrations/conta-azul/produtos-sync.service.js";
+import { resolverItensOperacionaisExibicao } from "../lib/pedido-acumulo-operacional.js";
 
 const podeConfigurarEstoqueVivo = comercialRequirePerfis(
   "ADMIN",
@@ -1372,6 +1375,19 @@ export const pedidosRouter = router({
               },
             },
           },
+          pedidoContaAzul: {
+            select: {
+              id: true,
+              statusPedido: true,
+              itens: {
+                select: {
+                  produto: true,
+                  sku: true,
+                  quantidade: true,
+                },
+              },
+            },
+          },
           itens: true,
           avarias: {
             include: { criadoPor: { select: { nome: true, email: true } } },
@@ -1384,6 +1400,21 @@ export const pedidosRouter = router({
         ctx.prisma!,
         pedidos
       );
+      const produtosConciliacao =
+        await ctx.prisma!.produtoComercial.findMany({
+          where: { contaAzulProdutoId: { not: null } },
+          select: {
+            id: true,
+            nome: true,
+            sku: true,
+            contaAzulProdutoId: true,
+            ativo: true,
+            importadoOperacao: true,
+            categoria: true,
+          },
+        });
+      const resolverChaveConciliacao =
+        criarResolverChaveItemConciliacao(produtosConciliacao);
       const grupos = new Map<
         string,
         {
@@ -1396,6 +1427,8 @@ export const pedidosRouter = router({
           itens: unknown[];
           avarias: unknown[];
           alertasAvariasPendentes: unknown[];
+          avisosAcumulo: string[];
+          volumeFaturamentoOculto: boolean;
         }
       >();
       for (const p of pedidos) {
@@ -1413,10 +1446,28 @@ export const pedidosRouter = router({
           itens: [],
           avarias: [],
           alertasAvariasPendentes: [],
+          avisosAcumulo: [],
+          volumeFaturamentoOculto: false,
         };
         atual.pedidos.push(pedido);
+        const itensResolvidos = await resolverItensOperacionaisExibicao(
+          ctx.prisma!,
+          {
+            pedido: p,
+            regra: p.cliente?.regraComercial ?? null,
+            contaAzul: p.pedidoContaAzul,
+            resolverChave: resolverChaveConciliacao,
+            diaReferencia: input.dia,
+          }
+        );
+        if (itensResolvidos.avisoAcumulo) {
+          atual.avisosAcumulo.push(itensResolvidos.avisoAcumulo);
+          atual.volumeFaturamentoOculto =
+            atual.volumeFaturamentoOculto ||
+            itensResolvidos.volumeFaturamentoOculto;
+        }
         atual.itens.push(
-          ...pedido.itens.map((i: any) => ({
+          ...itensResolvidos.itens.map((i: any) => ({
             ...i,
             tipoVenda: p.tipoVenda,
           }))
@@ -1431,9 +1482,12 @@ export const pedidosRouter = router({
         if (alerta) atual.alertasAvariasPendentes.push(alerta);
         grupos.set(key, atual);
       }
-      return Array.from(grupos.values()).sort(
-        (a, b) => a.prioridadeEntrega - b.prioridadeEntrega
-      );
+      return Array.from(grupos.values())
+        .map(grupo => ({
+          ...grupo,
+          avisosAcumulo: Array.from(new Set(grupo.avisosAcumulo)),
+        }))
+        .sort((a, b) => a.prioridadeEntrega - b.prioridadeEntrega);
     }),
 
   atualizarStatusClienteDia: comercialProcedure
@@ -1965,7 +2019,19 @@ export const pedidosRouter = router({
             },
             status: { not: "CANCELADO" },
           },
-          include: { itens: { include: { produto: true } } },
+          include: {
+            itens: { include: { produto: true } },
+            cliente: { include: { regraComercial: true } },
+            pedidoContaAzul: {
+              select: {
+                id: true,
+                statusPedido: true,
+                itens: {
+                  select: { produto: true, sku: true, quantidade: true },
+                },
+              },
+            },
+          },
         }),
         ctx.prisma!.produtoComercial.findMany({
           where: {
@@ -1978,11 +2044,24 @@ export const pedidosRouter = router({
         ctx.prisma!.estoqueVivoConfig.findUnique({ where: { id: "default" } }),
       ]);
 
+      const resolverChaveCompras =
+        criarResolverChaveItemConciliacao(produtosDb);
+
       const pedidosLinhas: LinhaPedidoEstoque[] = [];
       for (const pedido of pedidosDb) {
-        for (const item of pedido.itens) {
+        const itensResolvidos = await resolverItensOperacionaisExibicao(
+          ctx.prisma!,
+          {
+            pedido,
+            regra: pedido.cliente?.regraComercial ?? null,
+            contaAzul: pedido.pedidoContaAzul,
+            resolverChave: resolverChaveCompras,
+            diaReferencia: input.dia,
+          }
+        );
+        for (const item of itensResolvidos.itens) {
           pedidosLinhas.push({
-            nome: item.produto.nome,
+            nome: item.produtoNome,
             quantidade: Number(item.quantidade),
           });
         }
@@ -2329,7 +2408,13 @@ export const pedidosRouter = router({
         prisma.pedidoOperacional.findMany({
           where: { dataEntrega: { gte: inicio, lte: fim } },
           include: {
-            cliente: { select: { nome: true, externalId: true } },
+            cliente: {
+              select: {
+                nome: true,
+                externalId: true,
+                regraComercial: { select: { acumulaPedidos: true, diasAcumulo: true } },
+              },
+            },
             itens: true,
             pedidoContaAzul: {
               include: {
@@ -2403,6 +2488,11 @@ export const pedidosRouter = router({
       });
       const resolverChaveConciliacao =
         criarResolverChaveItemConciliacao(produtosConciliacao);
+      await reconciliarDivergenciasAcumuloEsperadas(
+        prisma,
+        operacionais,
+        resolverChaveConciliacao,
+      );
       const sugestoes = operacionais
         .filter(
           op =>
@@ -2421,7 +2511,7 @@ export const pedidosRouter = router({
                 op,
                 venda,
                 resolverChaveConciliacao,
-                opcoesCalcularDivergencias(op)
+                opcoesCalcularDivergenciasParaPar(op, venda),
               )
             : [];
           return {
@@ -2457,7 +2547,11 @@ export const pedidosRouter = router({
                 op,
                 op.pedidoContaAzul,
                 resolverChaveConciliacao,
-                opcoesCalcularDivergencias(op)
+                opcoesCalcularDivergenciasParaPar(
+                  op,
+                  op.pedidoContaAzul,
+                  op.cliente?.regraComercial,
+                ),
               )
             : [];
           return {
@@ -2659,7 +2753,7 @@ export const pedidosRouter = router({
                 op,
                 venda,
                 resolverChave,
-                opcoesCalcularDivergencias(op)
+                opcoesCalcularDivergenciasParaPar(op, venda),
               ),
               vinculadoNestaVenda: op.pedidoContaAzulId === venda.id,
             };

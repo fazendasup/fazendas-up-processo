@@ -7,6 +7,10 @@ import {
   type ProdutoOperacionalLookup,
 } from "./produto-operacional.js";
 import { assertSemanaAnteriorFechada } from "./fechamento.js";
+import {
+  isOrcamentoFaturamentoAcumulado,
+  mensagemErroCriarOperacionalDeOrcamentoAcumulado,
+} from "./pedido-acumulo-operacional.js";
 import { GO_LIVE_PEDIDOS, inicioSemana } from "./semana.js";
 
 type PedidoOperacionalComItens = Prisma.PedidoOperacionalGetPayload<{
@@ -111,6 +115,79 @@ export function opcoesCalcularDivergencias(
     compararItens: !criadoDoContaAzul,
     compararValorEstimado: !criadoDoContaAzul,
   };
+}
+
+/** Cliente com faturamento acumulado: pedido operacional = entrega do dia; CA = período. */
+export function clienteAcumulaFaturamento(regra?: {
+  acumulaPedidos?: boolean;
+} | null): boolean {
+  return Boolean(regra?.acumulaPedidos);
+}
+
+export function opcoesCalcularDivergenciasParaPar(
+  operacional: Pick<PedidoOperacionalComItens, "snapshotConciliacao">,
+  contaAzul?: {
+    cliente?: { regraComercial?: { acumulaPedidos?: boolean } | null };
+  } | null,
+  regraOperacional?: { acumulaPedidos?: boolean } | null,
+): OpcoesDivergenciaConciliacao {
+  const base = opcoesCalcularDivergencias(operacional);
+  const acumula =
+    clienteAcumulaFaturamento(regraOperacional) ||
+    clienteAcumulaFaturamento(contaAzul?.cliente?.regraComercial);
+  if (!acumula) return base;
+  return {
+    compararData: base.compararData,
+    compararItens: false,
+    compararValorEstimado: false,
+  };
+}
+
+export async function reconciliarDivergenciasAcumuloEsperadas(
+  prisma: PrismaClient,
+  operacionais: Array<
+    PedidoOperacionalComItens & {
+      statusConciliacao: string;
+      pedidoContaAzul?: PedidoContaAzulComItens | null;
+      cliente?: { regraComercial?: { acumulaPedidos?: boolean } | null } | null;
+    }
+  >,
+  resolverChave: ResolverChaveItem,
+): Promise<number> {
+  let corrigidos = 0;
+  for (const op of operacionais) {
+    if (op.statusConciliacao !== "DIVERGENTE" || !op.pedidoContaAzul) continue;
+    const divergencias = calcularDivergencias(
+      op,
+      op.pedidoContaAzul,
+      resolverChave,
+      opcoesCalcularDivergenciasParaPar(
+        op,
+        op.pedidoContaAzul,
+        op.cliente?.regraComercial,
+      ),
+    );
+    if (divergencias.length > 0) continue;
+    await prisma.$transaction(async (tx) => {
+      await tx.pedidoOperacional.update({
+        where: { id: op.id },
+        data: {
+          statusConciliacao: "CONCILIADO",
+          snapshotConciliacao: {
+            operacional: snapshotOperacional(op),
+            contaAzul: snapshotContaAzul(op.pedidoContaAzul!),
+          } as Prisma.InputJsonValue,
+        },
+      });
+      await tx.pedido.update({
+        where: { id: op.pedidoContaAzul!.id },
+        data: { statusConciliacao: "CONCILIADA" },
+      });
+    });
+    op.statusConciliacao = "CONCILIADO";
+    corrigidos++;
+  }
+  return corrigidos;
 }
 
 function inicioDia(d: Date): Date {
@@ -497,7 +574,12 @@ export async function processarConciliacaoAposSyncVenda(
   const resolverChave = criarResolverChaveItemConciliacao(produtosConciliacao);
 
   if (vinculado) {
-    const divergencias = calcularDivergencias(vinculado, contaAzul, resolverChave, opcoesCalcularDivergencias(vinculado));
+    const divergencias = calcularDivergencias(
+      vinculado,
+      contaAzul,
+      resolverChave,
+      opcoesCalcularDivergenciasParaPar(vinculado, contaAzul),
+    );
     if (divergencias.length > 0 && vinculado.statusConciliacao === "CONCILIADO") {
       await prisma.$transaction(async (tx) => {
         await tx.pedidoOperacional.update({
@@ -633,7 +715,12 @@ export async function confirmarVinculoConciliacao(
 
   const produtosConciliacao = await carregarProdutosConciliacao(prisma);
   const resolverChave = criarResolverChaveItemConciliacao(produtosConciliacao);
-  const divergencias = calcularDivergencias(operacional, contaAzul, resolverChave, opcoesCalcularDivergencias(operacional));
+  const divergencias = calcularDivergencias(
+    operacional,
+    contaAzul,
+    resolverChave,
+    opcoesCalcularDivergenciasParaPar(operacional, contaAzul),
+  );
   const snapshot: SnapshotConciliacao = {
     operacional: snapshotOperacional(operacional),
     contaAzul: snapshotContaAzul(contaAzul),
@@ -798,6 +885,19 @@ export async function criarOperacionalDeVenda(
   });
   if (existente) throw new Error("Esta venda já possui pedido operacional vinculado.");
 
+  if (
+    isOrcamentoFaturamentoAcumulado(
+      contaAzul.cliente.regraComercial,
+      contaAzul.statusPedido
+    )
+  ) {
+    throw new Error(
+      mensagemErroCriarOperacionalDeOrcamentoAcumulado(
+        contaAzul.cliente.regraComercial?.diasAcumulo
+      )
+    );
+  }
+
   const produtosAtivos = await prisma.produtoComercial.findMany({
     where: { contaAzulProdutoId: { not: null }, ativo: true, importadoOperacao: true },
     select: {
@@ -922,7 +1022,12 @@ export async function aplicarCorrecaoConciliacao(
   const produtosAtivos = produtosConciliacao.filter((p) => p.ativo && p.importadoOperacao);
   const indice = criarIndiceProdutosOperacionais(produtosAtivos);
   const resolverChave = criarResolverChaveItemConciliacao(produtosConciliacao);
-  const divergenciasAtuais = calcularDivergencias(operacional, contaAzul, resolverChave, opcoesCalcularDivergencias(operacional));
+  const divergenciasAtuais = calcularDivergencias(
+    operacional,
+    contaAzul,
+    resolverChave,
+    opcoesCalcularDivergenciasParaPar(operacional, contaAzul),
+  );
   const camposAlvo = input.campos?.length
     ? input.campos
     : divergenciasAtuais.map((d) => d.campo);
@@ -955,9 +1060,14 @@ export async function aplicarCorrecaoConciliacao(
       });
     }
 
+    const bloquearSyncItensAcumulo = isOrcamentoFaturamentoAcumulado(
+      contaAzul.cliente.regraComercial,
+      contaAzul.statusPedido
+    );
     const sincronizarItens =
-      divergenciasCorrigir.some((d) => d.campo === "valor_estimado") ||
-      divergenciasCorrigir.some((d) => d.campo.startsWith("item:"));
+      !bloquearSyncItensAcumulo &&
+      (divergenciasCorrigir.some((d) => d.campo === "valor_estimado") ||
+        divergenciasCorrigir.some((d) => d.campo.startsWith("item:")));
     if (sincronizarItens) {
       const mapCa = quantidadePorChaveContaAzul(contaAzul, resolverChave);
       const mapOp = quantidadePorChaveOperacional(operacional, resolverChave);
@@ -1024,7 +1134,7 @@ export async function aplicarCorrecaoConciliacao(
       operacionalAtualizado,
       contaAzul,
       resolverChave,
-      opcoesCalcularDivergencias(operacionalAtualizado),
+      opcoesCalcularDivergenciasParaPar(operacionalAtualizado, contaAzul),
     );
     const snapshot: SnapshotConciliacao = {
       operacional: snapshotOperacional(operacionalAtualizado),
@@ -1078,7 +1188,12 @@ export async function aplicarCorrecaoConciliacao(
     include: { itens: true, cliente: { select: { externalId: true, nome: true } } },
   });
   const divergenciasRestantes = operacionalFinal
-    ? calcularDivergencias(operacionalFinal, contaAzul, resolverChave, opcoesCalcularDivergencias(operacionalFinal))
+    ? calcularDivergencias(
+        operacionalFinal,
+        contaAzul,
+        resolverChave,
+        opcoesCalcularDivergenciasParaPar(operacionalFinal, contaAzul),
+      )
     : [];
 
   return {
