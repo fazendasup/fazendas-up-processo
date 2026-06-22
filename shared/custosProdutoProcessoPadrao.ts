@@ -209,6 +209,7 @@ export function inferirPerfilProcessoSugerido(
 ): PerfilProcessoProduto {
   const n = normalizarNomeProduto(nome);
   const categoria = inferirCategoriaProdutoCusto(nome, categoriaComercial);
+  if (categoria === "revenda") return "colheita_embalagem";
   if (categoria === "microverde") return "microverde_embalagem";
   if (categoria === "flores") return "colheita_embalagem";
   if (categoria === "alface") return "lavagem_embalagem";
@@ -349,6 +350,22 @@ export function etapasProcessoPadraoParaPerfil(
   config: CustosProdutoProcessoConfig = CUSTOS_PRODUTO_PROCESSO_CONFIG_PADRAO,
   calc?: LinhaProcessoIndustrialResult | null,
 ): EtapaProcessoPadrao[] {
+  /** Revenda: só rótulo + frete — sem lavagem, embalagem ou MO industrial. */
+  if (categoria === "revenda") {
+    const etapas: EtapaProcessoPadrao[] = [];
+    if (config.incluirAdesivo && config.adesivoCustoUn != null && config.adesivoCustoUn > 0) {
+      etapas.push(
+        etapa("adesivo", {
+          custoPorUnidade: config.adesivoCustoUn,
+        }),
+      );
+    }
+    return garantirEtapaLogistica(
+      etapas,
+      config.logisticaPercentualPadrao ?? LOGISTICA_PERCENTUAL_PADRAO,
+    );
+  }
+
   const regime = config.regimeMoPadrao;
   const embalagem =
     perfil === "microverde_embalagem"
@@ -443,6 +460,7 @@ export function inferirPerfilDeEtapas(
 }
 
 export function perfilDefaultParaCategoria(categoria: CategoriaProdutoCusto): PerfilProcessoProduto {
+  if (categoria === "revenda") return "colheita_embalagem";
   if (categoria === "microverde") return "microverde_embalagem";
   if (categoria === "flores") return "colheita_embalagem";
   if (categoria === "alface") return "lavagem_embalagem";

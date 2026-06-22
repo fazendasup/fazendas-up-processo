@@ -97,6 +97,25 @@ describe("custosProdutoProcessoPadrao", () => {
     expect(m.perfilProcesso).toBe("lavagem_embalagem");
   });
 
+  it("revenda só adesivo e logística — sem embalagem ou MO", () => {
+    const etapas = etapasProcessoPadraoParaPerfil("colheita_embalagem", "revenda", {
+      embalagemMicroverdeUn: 0.95,
+      embalagemOutrosUn: 0.6,
+      lavagemReaisKg: 0.25,
+      lavagemMinutosUn: null,
+      embalagemMinutosUn: null,
+      corteMinutosUn: null,
+      adesivoCustoUn: 0.5,
+      regimeMoPadrao: "qualquer",
+      incluirAdesivo: true,
+      logisticaPercentualPadrao: 10,
+    });
+    expect(etapas.some((e) => e.tipo === "embalagem")).toBe(false);
+    expect(etapas.some((e) => e.tipo === "lavagem")).toBe(false);
+    expect(etapas.find((e) => e.tipo === "adesivo")?.custoPorUnidade).toBe(0.5);
+    expect(etapas.find((e) => e.tipo === "logistica")?.custoPercentual).toBe(10);
+  });
+
   it("compat etapasProcessoPadraoParaProduto", () => {
     expect(etapasProcessoPadraoParaProduto("outros").find((e) => e.tipo === "embalagem")?.custoPorUnidade).toBe(
       0.6,

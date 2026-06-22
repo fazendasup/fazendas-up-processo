@@ -221,11 +221,27 @@ describe("calcularCustoProduto", () => {
       componentes: [],
       etapas: [],
     });
-    expect(r.custoPorKg).toBeCloseTo(8 / 0.81);
-    expect(r.custoPorUnidade).toBeCloseTo(r.custoPorKg!);
-    expect(r.precosVendaPorMargem.find((p) => p.margemPct === 20)?.precoVenda).toBeCloseTo(
-      (8 / 0.81) / 0.8,
-    );
+    expect(r.custoMaterial).toBeCloseTo(8);
+    expect(r.custoPorKg).toBeCloseTo(8);
+    expect(r.custoPorUnidade).toBeCloseTo(8);
+    expect(r.precosVendaPorMargem.find((p) => p.margemPct === 20)?.precoVenda).toBeCloseTo(10);
+  });
+
+  it("revenda por kg: MP + adesivo + logística percentual", () => {
+    const r = calcularCustoProduto({
+      tipo: "revenda_processada",
+      unidadeVenda: "kg",
+      precoCompraKg: 30,
+      kgBrutoPorUnidade: 1,
+      componentes: [],
+      etapas: [
+        { tipo: "adesivo", nome: "Adesivo", custoPorUnidadeFinal: 0.5 },
+        { tipo: "logistica", nome: "Logística", custoPorUnidadeFinal: 0, custoPercentual: 10 },
+      ],
+    });
+    expect(r.custoMaterial).toBeCloseTo(30);
+    expect(r.custoProcesso).toBeCloseTo(3.55);
+    expect(r.custoPorKg).toBeCloseTo(33.55);
   });
 
   it("revenda com compra por unidade usa peso e perdas", () => {

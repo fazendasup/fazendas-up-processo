@@ -474,16 +474,30 @@ export function calcularCustoProduto(input: FichaCalculoInput): ResultadoCustoPr
         });
       }
     } else {
-      const rev = custoMaterialRevenda({
-        precoCompraKg: toNum(input.precoCompraKg) ?? 0,
-        kgBrutoPorUnidade: toNum(input.kgBrutoPorUnidade) ?? 0,
-        perdasPct: perdas,
-      });
-      custoMaterial += rev.custo;
-      kgLiquidoPorUnidade = rev.kgLiquido;
-      alertas.push(...rev.alertas);
-      if (rev.custo > 0) {
-        detalhes.push({ grupo: "material", label: "Matéria-prima (R$/kg)", valor: rev.custo });
+      const preco = toNum(input.precoCompraKg) ?? 0;
+      const kgVendido =
+        toNum(input.kgBrutoPorUnidade) ?? (input.unidadeVenda === "kg" ? 1 : 0);
+      if (input.unidadeVenda === "kg") {
+        if (!(preco > 0) || !(kgVendido > 0)) {
+          alertas.push("Informe preço de compra (R$/kg) e kg vendido por unidade.");
+        } else {
+          const custoMp = preco * kgVendido;
+          custoMaterial += custoMp;
+          kgLiquidoPorUnidade = kgVendido;
+          detalhes.push({ grupo: "material", label: "Matéria-prima (R$/kg)", valor: custoMp });
+        }
+      } else {
+        const rev = custoMaterialRevenda({
+          precoCompraKg: preco,
+          kgBrutoPorUnidade: kgVendido,
+          perdasPct: perdas,
+        });
+        custoMaterial += rev.custo;
+        kgLiquidoPorUnidade = rev.kgLiquido;
+        alertas.push(...rev.alertas);
+        if (rev.custo > 0) {
+          detalhes.push({ grupo: "material", label: "Matéria-prima (R$/kg)", valor: rev.custo });
+        }
       }
     }
   }
