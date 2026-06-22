@@ -1,7 +1,13 @@
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "../generated/prisma/index.js";
 import { calcularConciliacaoSemanal } from "./conciliacao-semanal.js";
-import { fimSemana, inicioSemana, inicioSemanaGoLive, rotuloSemana } from "./semana.js";
+import {
+  fimSemana,
+  inicioSemana,
+  inicioSemanaGoLive,
+  rotuloSemana,
+  semanaAnteriorInicio,
+} from "./semana.js";
 
 type PrismaLike = Pick<
   PrismaClient,
@@ -60,10 +66,32 @@ export async function calcularStatusSemana(prisma: PrismaLike, dia: Date): Promi
   };
 }
 
+/** Verifica se uma semana específica impede novos pedidos na semana seguinte. */
+export async function semanaBloqueiaNovosPedidos(
+  prisma: PrismaLike,
+  semanaInicio: Date,
+): Promise<SemanaStatus | null> {
+  const status = await calcularStatusSemana(prisma, semanaInicio);
+  if (status.totalPedidos === 0) return null;
+
+  if (status.pendentes > 0 || !status.fechada) {
+    return status;
+  }
+
+  const conciliacao = await calcularConciliacaoSemanal(
+    prisma,
+    semanaInicio,
+    fimSemana(semanaInicio),
+  );
+  if (!conciliacao.conciliado) {
+    return { ...status, conciliacaoPendente: true };
+  }
+  return null;
+}
+
 /**
- * Primeira semana anterior à `semanaAlvoInicio` (a partir do go-live) que bloqueia
- * a criação de novos pedidos: contém pedidos e ainda tem pendência (não ENTREGUE/CANCELADO),
- * não foi explicitamente fechada ou voltou a ter conciliação pendente.
+ * Semana que bloqueia a criação de pedidos na semana alvo: apenas a **semana passada**
+ * (imediata anterior), não semanas mais antigas desde o go-live.
  */
 export async function primeiraSemanaBloqueante(
   prisma: PrismaLike,
@@ -72,54 +100,10 @@ export async function primeiraSemanaBloqueante(
   const goLiveInicio = inicioSemanaGoLive();
   if (semanaAlvoInicio.getTime() <= goLiveInicio.getTime()) return null;
 
-  const [pedidos, fechamentos] = await Promise.all([
-    prisma.pedidoOperacional.findMany({
-      where: { dataEntrega: { gte: goLiveInicio, lt: semanaAlvoInicio } },
-      select: { dataEntrega: true, status: true },
-    }),
-    prisma.fechamentoSemanal.findMany({
-      where: { semanaInicio: { gte: goLiveInicio, lt: semanaAlvoInicio } },
-    }),
-  ]);
-  if (pedidos.length === 0) return null;
+  const semanaPrevInicio = semanaAnteriorInicio(semanaAlvoInicio);
+  if (semanaPrevInicio.getTime() < goLiveInicio.getTime()) return null;
 
-  const fechadasMap = new Map<number, boolean>();
-  for (const f of fechamentos) {
-    fechadasMap.set(inicioSemana(f.semanaInicio).getTime(), !f.reabertoEm);
-  }
-
-  const porSemana = new Map<number, { total: number; pendentes: number }>();
-  for (const p of pedidos) {
-    const k = inicioSemana(p.dataEntrega).getTime();
-    const acc = porSemana.get(k) ?? { total: 0, pendentes: 0 };
-    acc.total++;
-    if (p.status !== "ENTREGUE" && p.status !== "CANCELADO") acc.pendentes++;
-    porSemana.set(k, acc);
-  }
-
-  const semanasOrdenadas = Array.from(porSemana.keys()).sort((a, b) => a - b);
-  for (const k of semanasOrdenadas) {
-    const acc = porSemana.get(k)!;
-    const fechada = fechadasMap.get(k) === true;
-    if (acc.total > 0 && (acc.pendentes > 0 || !fechada)) {
-      return calcularStatusSemana(prisma, new Date(k));
-    }
-    if (acc.total > 0) {
-      const semanaInicio = new Date(k);
-      const conciliacao = await calcularConciliacaoSemanal(
-        prisma,
-        semanaInicio,
-        fimSemana(semanaInicio),
-      );
-      if (!conciliacao.conciliado) {
-        return {
-          ...(await calcularStatusSemana(prisma, semanaInicio)),
-          conciliacaoPendente: true,
-        };
-      }
-    }
-  }
-  return null;
+  return semanaBloqueiaNovosPedidos(prisma, semanaPrevInicio);
 }
 
 /** Lança erro se existir uma semana anterior não revisada/não fechada (bloqueio do gate). */

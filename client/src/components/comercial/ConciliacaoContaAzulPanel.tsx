@@ -335,7 +335,8 @@ export function ConciliacaoContaAzulPanel({
             </div>
           ) : null}
           <p className="mb-3 text-xs text-muted-foreground">
-            Compara o total operacional da semana com as vendas Conta Azul no mesmo intervalo — é o mesmo critério usado no fechamento semanal.
+            Compara o total operacional da semana com as vendas Conta Azul no mesmo intervalo — é o mesmo critério do fechamento semanal.
+            Mostra a <strong>semana passada</strong> (a que precisa ser fechada para liberar a semana atual), não semanas anteriores acumuladas.
           </p>
           {clientesSemanaExibidos.length === 0 ? (
             <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">

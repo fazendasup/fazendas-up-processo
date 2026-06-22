@@ -2614,8 +2614,8 @@ export const pedidosRouter = router({
             }
           : v;
 
-      const semanaInicio = inicioSemana(fim);
-      const semanaFim = fimSemana(fim);
+      const semanaInicio = inicioSemana(inicio);
+      const semanaFim = fimSemana(inicio);
       const conciliacaoSemanal = await calcularConciliacaoSemanal(
         prisma,
         semanaInicio,

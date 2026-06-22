@@ -62,3 +62,14 @@ export function rotuloSemana(inicio: Date): string {
     `${String(x.getDate()).padStart(2, "0")}/${String(x.getMonth() + 1).padStart(2, "0")}`;
   return `${fmt(inicio)}–${fmt(fim)}`;
 }
+
+/** Segunda-feira da semana imediatamente anterior à semana que contém `semanaAlvoInicio`. */
+export function semanaAnteriorInicio(semanaAlvoInicio: Date): Date {
+  return adicionarSemanas(semanaAlvoInicio, -1);
+}
+
+/** Intervalo (seg–dom) da semana passada em relação ao dia `d`. */
+export function intervaloSemanaAnterior(d: Date): { inicio: Date; fim: Date } {
+  const inicio = semanaAnteriorInicio(inicioSemana(d));
+  return { inicio, fim: fimSemana(inicio) };
+}

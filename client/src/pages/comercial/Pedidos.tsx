@@ -234,19 +234,6 @@ export function Pedidos({
   const [produtoEdit, setProdutoEdit] = useState<any>(null);
 
   const diaDate = useMemo(() => new Date(`${dia}T12:00:00`), [dia]);
-  const conciliacaoIntervalo = useMemo(() => {
-    const d = new Date(diaDate);
-    d.setHours(0, 0, 0, 0);
-    const diaSemana = d.getDay();
-    const diff = (diaSemana + 6) % 7;
-    const inicio = new Date(d);
-    inicio.setDate(inicio.getDate() - diff);
-    inicio.setHours(0, 0, 0, 0);
-    const fim = new Date(inicio);
-    fim.setDate(fim.getDate() + 6);
-    fim.setHours(23, 59, 59, 999);
-    return { inicio, fim };
-  }, [diaDate]);
   const [clienteConciliacaoFoco, setClienteConciliacaoFoco] = useState<
     string | null
   >(null);
@@ -320,6 +307,28 @@ export function Pedidos({
   const podeCriarPedidos = statusSemana.data
     ? statusSemana.data.podeCriarPedidos
     : true;
+  /** Conciliação sempre foca na semana a fechar (bloqueio) ou na semana passada — não na semana corrente. */
+  const conciliacaoIntervalo = useMemo(() => {
+    if (bloqueioSemana?.inicio && bloqueioSemana?.fim) {
+      return {
+        inicio: new Date(bloqueioSemana.inicio),
+        fim: new Date(bloqueioSemana.fim),
+      };
+    }
+    const ref = new Date();
+    ref.setHours(12, 0, 0, 0);
+    const diaSemana = ref.getDay();
+    const diff = (diaSemana + 6) % 7;
+    const inicioSemanaAtual = new Date(ref);
+    inicioSemanaAtual.setDate(inicioSemanaAtual.getDate() - diff);
+    inicioSemanaAtual.setHours(0, 0, 0, 0);
+    const inicio = new Date(inicioSemanaAtual);
+    inicio.setDate(inicio.getDate() - 7);
+    const fim = new Date(inicio);
+    fim.setDate(fim.getDate() + 6);
+    fim.setHours(23, 59, 59, 999);
+    return { inicio, fim };
+  }, [bloqueioSemana]);
 
   const salvarPedido = trpc.comercial.pedidos.salvarPedido.useMutation({
     onSuccess: async () => {
