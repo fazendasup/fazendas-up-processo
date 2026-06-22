@@ -41,6 +41,10 @@ import * as custosProdutoDb from "../custosProdutoDb";
 import * as processoDb from "../custosProdutoProcessoDb";
 import * as modelosDb from "../custosProdutoProcessoModelosDb";
 import * as mapDb from "../custosProdutoComercialMapDb";
+import {
+  repararMapeamentoComercialProdutos,
+  resolverMapeamentoEfetivo,
+} from "../custosProdutoModeloSync";
 import { getComercialPrisma } from "../comercial/db";
 import type {
   CustoProdutoComponenteRow,
@@ -202,7 +206,7 @@ function resolverMapeamentoProduto(
   categoriaComercial: string | null,
   map: Map<string, MapeamentoProdutoComercial>,
 ): MapeamentoProdutoComercial {
-  return map.get(produtoComercialId) ?? sugerirMapeamentoProduto(produtoComercialId, nome, categoriaComercial);
+  return resolverMapeamentoEfetivo(produtoComercialId, nome, categoriaComercial, map);
 }
 
 const componenteInput = z.object({
@@ -330,9 +334,7 @@ function calcularFichaOptsFromInput(input: z.infer<typeof fichaInput>): Calcular
   const processo: NonNullable<CalcularFichaOptions["processo"]> = {};
   if (input.perfilProcesso) processo.perfilProcesso = input.perfilProcesso;
   if (input.processoModeloId !== undefined) processo.processoModeloId = input.processoModeloId ?? null;
-  if ((input.perfilProcesso || input.processoModeloId != null) && input.categoria) {
-    processo.categoriaCusto = input.categoria;
-  }
+  if (input.categoria) processo.categoriaCusto = input.categoria;
 
   return {
     usarEtapasInformadas: input.etapasModoManual ?? false,
@@ -420,6 +422,7 @@ export const custosProdutoSubRouter = router({
 
   listarFichas: custosProducaoModuleProcedure.query(async ({ ctx }) => {
     const pid = projetoIdFromCtx(ctx);
+    await repararMapeamentoComercialProdutos(pid);
     const fichas = await custosProdutoDb.listCustosProdutoFichas(pid);
     const ids = fichas.map((f) => f.id);
     const [componentes, etapas] = await Promise.all([
@@ -865,6 +868,17 @@ export const custosProdutoSubRouter = router({
             : kgBrutoDefault;
         const modoMp = m.categoriaCusto === "flores" ? "kg" : (m.modoCompraMp ?? "kg");
 
+        await mapDb.upsertComercialMap(pid, [
+          {
+            produtoComercialId: p.id,
+            categoriaCusto: m.categoriaCusto,
+            perfilProcesso: m.perfilProcesso,
+            kgPorUnidade: m.kgPorUnidade,
+            modoCompraMp: modoMp,
+            processoModeloId: m.processoModeloId ?? null,
+          },
+        ]);
+
         if (prev) {
           if (!input.sobrescreverEtapas) continue;
           await custosProdutoDb.replaceComponentesEtapas(prev.id, [], etapas);
@@ -911,6 +925,10 @@ export const custosProdutoSubRouter = router({
 
       return { inseridos, atualizados, nomes, totalAlvo: alvo.length, avisos };
     }),
+
+  repararMapeamentoComercial: commercialEditorCustosProducaoProjectProcedure.mutation(async ({ ctx }) => {
+    return repararMapeamentoComercialProdutos(projetoIdFromCtx(ctx));
+  }),
 
   sincronizarLogisticaFichas: commercialEditorCustosProducaoProjectProcedure.mutation(async ({ ctx }) => {
     const { sincronizarLogisticaFichasProjeto } = await import("../custosProdutoLogisticaSync");

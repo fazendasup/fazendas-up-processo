@@ -264,11 +264,59 @@ export async function calcularFichaFromRows(
 
 export async function calcularFichaCompleta(projetoId: number, ficha: CustoProdutoFichaRow) {
   const { listComponentesByFichaIds, listEtapasByFichaIds } = await import("./custosProdutoDb");
-  const [componentes, etapas] = await Promise.all([
+  const moEquipeDb = await import("./custosMoEquipeDb");
+  const { detectarEtapasModoManualFicha } = await import("./custosProdutoModeloSync");
+  const { mapMoEquipeRowToInput } = await import("./moEquipeMapper");
+  const [componentes, etapas, equipesRows, modoMo] = await Promise.all([
     listComponentesByFichaIds([ficha.id]),
     listEtapasByFichaIds([ficha.id]),
+    moEquipeDb.listMoEquipes(projetoId),
+    moEquipeDb.getModoCustoMoEquipe(projetoId),
   ]);
-  return calcularFichaFromRows(projetoId, ficha, componentes, etapas);
+  const mapaHora = mapaCustoHoraProcessamento(equipesRows.map(mapMoEquipeRowToInput), modoMo);
+  const processo = await processoOverrideFromFichaArmazenada(projetoId, ficha);
+  const usarEtapasInformadas = await detectarEtapasModoManualFicha(projetoId, ficha, etapas, mapaHora);
+  return calcularFichaFromRows(projetoId, ficha, componentes, etapas, {
+    usarEtapasInformadas,
+    processo,
+  });
+}
+
+async function processoOverrideFromFichaArmazenada(
+  projetoId: number,
+  ficha: CustoProdutoFichaRow,
+): Promise<ProcessoCalculoOverride | undefined> {
+  const mapDb = await import("./custosProdutoComercialMapDb");
+  const { resolverMapeamentoEfetivo } = await import("./custosProdutoModeloSync");
+  const processo: ProcessoCalculoOverride = {};
+
+  if (ficha.produtoComercialId) {
+    let prodNome = ficha.nome;
+    let prodCat: string | null = null;
+    try {
+      const prisma = getComercialPrisma();
+      const p = await prisma.produtoComercial.findUnique({
+        where: { id: ficha.produtoComercialId },
+        select: { nome: true, categoria: true },
+      });
+      if (p) {
+        prodNome = p.nome;
+        prodCat = p.categoria;
+      }
+    } catch {
+      /* comercial opcional */
+    }
+    const mapRows = await mapDb.listComercialMap(projetoId);
+    const map = new Map(mapRows.map((m) => [m.produtoComercialId, m]));
+    const m = resolverMapeamentoEfetivo(ficha.produtoComercialId, prodNome, prodCat, map);
+    processo.perfilProcesso = m.perfilProcesso;
+    processo.categoriaCusto = m.categoriaCusto;
+    processo.processoModeloId = m.processoModeloId ?? null;
+  } else {
+    processo.categoriaCusto = (ficha.categoria ?? "outros") as CategoriaProdutoCusto;
+  }
+
+  return Object.keys(processo).length > 0 ? processo : undefined;
 }
 
 export async function catalogosCustosProduto(projetoId: number) {

@@ -33,8 +33,10 @@ import {
   etapasProcessoDeModelo,
   inferirPerfilDeEtapas,
   LOGISTICA_PERCENTUAL_PADRAO,
+  mapeamentoEfetivoParaCalculo,
   perfilDefaultParaCategoria,
   perfilUsaLavagemKg,
+  sugerirMapeamentoProduto,
   type EtapaProcessoPadrao,
   type PerfilProcessoProduto,
 } from "@shared/custosProdutoProcessoPadrao";
@@ -400,12 +402,22 @@ function resolverModeloEPerfilParaRow(
 
   if (row.ficha.produtoComercialId && produtosComercial) {
     const p = produtosComercial.find((x) => x.id === row.ficha.produtoComercialId);
-    if (p?.mapeamento) {
-      perfil = p.mapeamento.perfilProcesso;
-      categoria = p.mapeamento.categoriaCusto;
-      if (p.mapeamento.processoModeloId != null) {
-        modelo = modelos.find((m) => m.id === p.mapeamento!.processoModeloId) ?? defaultModelo;
-      }
+    const sugerido = sugerirMapeamentoProduto(row.ficha.produtoComercialId, row.ficha.nome, null);
+    const mapeado = p?.mapeamento
+      ? {
+          produtoComercialId: row.ficha.produtoComercialId,
+          categoriaCusto: p.mapeamento.categoriaCusto,
+          perfilProcesso: p.mapeamento.perfilProcesso,
+          kgPorUnidade: null,
+          modoCompraMp: "kg" as const,
+          processoModeloId: p.mapeamento.processoModeloId,
+        }
+      : sugerido;
+    const m = mapeamentoEfetivoParaCalculo(mapeado, sugerido);
+    perfil = m.perfilProcesso;
+    categoria = m.categoriaCusto;
+    if (m.processoModeloId != null) {
+      modelo = modelos.find((mod) => mod.id === m.processoModeloId) ?? defaultModelo;
     }
   }
 
@@ -652,8 +664,9 @@ function rowToFichaFormComDraft(
   row: any,
   patch: Partial<FichaForm>,
   compraDraft: Record<number, string>,
+  produtosComercial?: Parameters<typeof resolverModeloEPerfilParaRow>[2],
 ): FichaForm {
-  const form = rowToFichaForm(row, patch);
+  const form = rowToFichaForm(row, patch, produtosComercial);
   const draft = compraDraft[row.ficha.id];
   if (draft == null) return form;
   const modo = (patch.modoCompraMp ?? row.ficha.modoCompraMp ?? "kg") as ModoCompraMp;
@@ -715,17 +728,22 @@ function buildPayload(
     ),
     etapasModoManual: form.etapasModoManual,
     processoModeloId: form.processoModeloId ? Number(form.processoModeloId) : null,
-    ...(form.processoModeloId || form.etapasModoManual
-      ? { perfilProcesso: form.perfilProcesso }
-      : {}),
+    perfilProcesso: form.perfilProcesso,
   };
 }
 
-function rowToFichaForm(row: any, patch: Partial<FichaForm> = {}): FichaForm {
+function rowToFichaForm(
+  row: any,
+  patch: Partial<FichaForm> = {},
+  produtosComercial?: Parameters<typeof resolverModeloEPerfilParaRow>[2],
+): FichaForm {
+  const resolved = produtosComercial
+    ? resolverModeloEPerfilParaRow(row, [], produtosComercial)
+    : null;
   return {
     ...emptyFicha(row.ficha.tipo as TipoFichaCustoProduto),
     tipo: row.ficha.tipo as TipoFichaCustoProduto,
-    categoria: row.ficha.categoria,
+    categoria: resolved?.categoria ?? row.ficha.categoria,
     nome: row.ficha.nome,
     produtoComercialId: row.ficha.produtoComercialId ?? "",
     unidadeVenda: row.ficha.unidadeVenda,
@@ -767,8 +785,16 @@ function rowToFichaForm(row: any, patch: Partial<FichaForm> = {}): FichaForm {
         custoPercentual: fmtDecimalInput(e.custoPercentual, 2),
       })),
     ),
-    processoModeloId: "",
-    perfilProcesso: inferirPerfilDeEtapas(row.etapas),
+    processoModeloId:
+      resolved && produtosComercial
+        ? (() => {
+            const p = produtosComercial.find((x) => x.id === row.ficha.produtoComercialId);
+            return p?.mapeamento?.processoModeloId != null
+              ? String(p.mapeamento.processoModeloId)
+              : "";
+          })()
+        : "",
+    perfilProcesso: resolved?.perfil ?? inferirPerfilDeEtapas(row.etapas),
     etapasModoManual: false,
     ...patch,
   };
@@ -2202,9 +2228,17 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
     onError: (e) => toast.error(parseTrpcErrorMessage(e.message)),
   });
   const salvarFichaRapida = trpc.custosProducao.produtos.salvarFicha.useMutation({
-    onSuccess: async () => {
+    onSuccess: async (_r, variables) => {
       toast.success("Ficha atualizada");
-      setCompraDraft({});
+      if (variables?.id != null) {
+        setCompraDraft((draft) => {
+          const next = { ...draft };
+          delete next[variables.id!];
+          return next;
+        });
+      } else {
+        setCompraDraft({});
+      }
       await utils.custosProducao.produtos.listarFichas.invalidate();
       await utils.custosProducao.produtos.listarVendasSemFicha.invalidate();
     },
@@ -2539,6 +2573,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                                     row,
                                     { ativo: nextAtivo },
                                     compraDraft,
+                                    produtosParaNome,
                                   );
                                   if (nextAtivo) {
                                     const msg = mensagemErroAtivacaoFicha(formAtual);
@@ -2566,7 +2601,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                                 disabled={salvarFichaRapida.isPending}
                                 onValueChange={(v) => {
                                   const p = buildPayload(
-                                    rowToFichaForm(row, { modoCompraMp: v as ModoCompraMp }),
+                                    rowToFichaForm(row, { modoCompraMp: v as ModoCompraMp }, produtosParaNome),
                                     row.ficha.id,
                                     produtosParaNome,
                                   );
@@ -2602,7 +2637,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                                       modoCompra === "unidade"
                                         ? { custoCompraUn: precoCompraValue }
                                         : { precoCompraKg: precoCompraValue };
-                                    const p = buildPayload(rowToFichaForm(row, patch), row.ficha.id, produtosParaNome);
+                                    const p = buildPayload(rowToFichaForm(row, patch, produtosParaNome), row.ficha.id, produtosParaNome);
                                     salvarFichaRapida.mutate(p as any);
                                   }}
                                 />
@@ -2617,7 +2652,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                                       modoCompra === "unidade"
                                         ? { custoCompraUn: precoCompraValue }
                                         : { precoCompraKg: precoCompraValue };
-                                    const p = buildPayload(rowToFichaForm(row, patch), row.ficha.id, produtosParaNome);
+                                    const p = buildPayload(rowToFichaForm(row, patch, produtosParaNome), row.ficha.id, produtosParaNome);
                                     salvarFichaRapida.mutate(p as any);
                                   }}
                                 >
@@ -2633,7 +2668,16 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                           <div className="space-y-0.5 text-xs tabular-nums">
                             <p>
                               <span className="text-muted-foreground">Custo </span>
-                              <span className="font-semibold">{fmtMoney(row.resultado.custoPorUnidade)}</span>
+                              <span className="font-semibold">
+                                {fmtMoney(
+                                  row.ficha.unidadeVenda === "kg" && row.resultado.custoPorKg != null
+                                    ? row.resultado.custoPorKg
+                                    : row.resultado.custoPorUnidade,
+                                )}
+                              </span>
+                              {row.ficha.unidadeVenda === "kg" ? (
+                                <span className="text-[10px] text-muted-foreground"> /kg</span>
+                              ) : null}
                             </p>
                             <p>
                               <span className="text-muted-foreground">Venda </span>
@@ -2689,14 +2733,18 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                               onClick={() => {
                                 setEditingId(row.ficha.id);
                                 setForm(
-                                  rowToFichaForm(row, {
-                                    etapasModoManual: inferirEtapasModoManualRow(
-                                      row,
-                                      modelosQuery.data?.modelos ?? [],
-                                      modelosQuery.data?.mapaHora ?? null,
-                                      produtosComercialQuery.data,
-                                    ),
-                                  }),
+                                  rowToFichaForm(
+                                    row,
+                                    {
+                                      etapasModoManual: inferirEtapasModoManualRow(
+                                        row,
+                                        modelosQuery.data?.modelos ?? [],
+                                        modelosQuery.data?.mapaHora ?? null,
+                                        produtosComercialQuery.data,
+                                      ),
+                                    },
+                                    produtosComercialQuery.data,
+                                  ),
                                 );
                                 setSimResult(row.resultado);
                               }}
@@ -2836,7 +2884,7 @@ export function CustosProdutosPainelResumo() {
                 <TableCell className="text-xs">{LABEL_TIPO_FICHA_CUSTO_PRODUTO[r.ficha.tipo as TipoFichaCustoProduto]}</TableCell>
                 <TableCell className="text-right tabular-nums">{fmtMoney(r.resultado.custoPorUnidade)}</TableCell>
                 <TableCell className="text-right tabular-nums">
-                  {fmtMoney(r.ficha.precoVendaReferencia != null ? Number(r.ficha.precoVendaReferencia) : null)}
+                  {fmtMoney(r.resultado.precoVendaReferencia)}
                 </TableCell>
                 <TableCell className={`text-right tabular-nums ${classeLucroPrejuizo(r.resultado.margemBruta)}`}>
                   {r.resultado.margemPct != null ? `${r.resultado.margemPct.toFixed(1)}%` : "—"}

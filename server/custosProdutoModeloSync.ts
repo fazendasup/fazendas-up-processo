@@ -144,11 +144,7 @@ export async function etapasProcessoAoVivoParaFicha(
     } catch {
       /* comercial opcional */
     }
-    const sugerido = sugerirMapeamentoProduto(ficha.produtoComercialId, prodNome, prodCat);
-    const m = mapeamentoEfetivoParaCalculo(
-      resolveMapeamentoProduto(ficha.produtoComercialId, prodNome, prodCat, map),
-      sugerido,
-    );
+    const m = resolverMapeamentoEfetivo(ficha.produtoComercialId, prodNome, prodCat, map);
     perfil = m.perfilProcesso;
     categoria = m.categoriaCusto;
     modeloId = modeloIdDoMapeamento(m, defaultModeloId);
@@ -172,12 +168,80 @@ export async function etapasProcessoAoVivoParaFicha(
     modeloId = override.processoModeloId ?? defaultModeloId;
   }
 
-  if (modeloId == null) return null;
+  if (modeloId == null) {
+    const config = await getProcessoConfig(projetoId);
+    return etapasProcessoPadraoParaPerfil(perfil, categoria, config);
+  }
 
   const modelo = await modelosDb.getProcessoModeloById(projetoId, modeloId);
-  if (!modelo) return null;
+  if (!modelo) {
+    const config = await getProcessoConfig(projetoId);
+    return etapasProcessoPadraoParaPerfil(perfil, categoria, config);
+  }
 
   return etapasEsperadasParaMapeamento(perfil, categoria, modelo, mapaHora);
+}
+
+/** Detecta se etapas gravadas divergem do modelo ao vivo (modo manual). */
+export async function detectarEtapasModoManualFicha(
+  projetoId: number,
+  ficha: CustoProdutoFichaRow,
+  etapasDb: CustoProdutoEtapaRow[],
+  mapaHora: ReturnType<typeof mapaCustoHoraProcessamento>,
+): Promise<boolean> {
+  const aoVivo = await etapasProcessoAoVivoParaFicha(projetoId, ficha, etapasDb, mapaHora);
+  if (!aoVivo) return false;
+  return !etapasDbEquivalemAoModelo(etapasDb, aoVivo);
+}
+
+export type RepararMapeamentoResult = {
+  mapasAtualizados: number;
+  fichasCategoriaAtualizadas: number;
+};
+
+/** Corrige mapas comerciais stale e alinha categoria das fichas vinculadas. */
+export async function repararMapeamentoComercialProdutos(projetoId: number): Promise<RepararMapeamentoResult> {
+  const mapRows = await mapDb.listComercialMap(projetoId);
+  const map = new Map(mapRows.map((m) => [m.produtoComercialId, m]));
+  let produtos: Array<{ id: string; nome: string; categoria: string | null }> = [];
+  try {
+    const prisma = getComercialPrisma();
+    produtos = await prisma.produtoComercial.findMany({
+      where: { ativo: true },
+      select: { id: true, nome: true, categoria: true },
+    });
+  } catch {
+    return { mapasAtualizados: 0, fichasCategoriaAtualizadas: 0 };
+  }
+
+  const toUpsert: MapeamentoProdutoComercial[] = [];
+  for (const p of produtos) {
+    const mapeado = resolveMapeamentoProduto(p.id, p.nome, p.categoria, map);
+    const efetivo = resolverMapeamentoEfetivo(p.id, p.nome, p.categoria, map);
+    const changed =
+      mapeado.categoriaCusto !== efetivo.categoriaCusto ||
+      mapeado.perfilProcesso !== efetivo.perfilProcesso ||
+      (mapeado.processoModeloId ?? null) !== (efetivo.processoModeloId ?? null);
+    if (changed || !map.has(p.id)) toUpsert.push(efetivo);
+  }
+
+  if (toUpsert.length > 0) await mapDb.upsertComercialMap(projetoId, toUpsert);
+
+  const fichas = await custosProdutoDb.listCustosProdutoFichas(projetoId);
+  let fichasCategoriaAtualizadas = 0;
+  for (const ficha of fichas) {
+    if (!ficha.produtoComercialId) continue;
+    const prod = produtos.find((p) => p.id === ficha.produtoComercialId);
+    if (!prod) continue;
+    const efetivo = resolverMapeamentoEfetivo(ficha.produtoComercialId, prod.nome, prod.categoria, map);
+    if (ficha.categoria === efetivo.categoriaCusto) continue;
+    await custosProdutoDb.updateCustoProdutoFicha(projetoId, ficha.id, {
+      categoria: efetivo.categoriaCusto,
+    });
+    fichasCategoriaAtualizadas += 1;
+  }
+
+  return { mapasAtualizados: toUpsert.length, fichasCategoriaAtualizadas };
 }
 
 async function mapaHoraProjeto(projetoId: number) {
@@ -195,6 +259,25 @@ function resolveMapeamentoProduto(
   map: Map<string, MapeamentoProdutoComercial>,
 ): MapeamentoProdutoComercial {
   return map.get(produtoComercialId) ?? sugerirMapeamentoProduto(produtoComercialId, nome, categoriaComercial);
+}
+
+/** Mapa persistido + sugestão pelo nome — corrige mapas antigos (ex.: alface granel com lavagem). */
+export function resolverMapeamentoEfetivo(
+  produtoComercialId: string,
+  nome: string,
+  categoriaComercial: string | null,
+  map: Map<string, MapeamentoProdutoComercial>,
+): MapeamentoProdutoComercial {
+  const sugerido = sugerirMapeamentoProduto(produtoComercialId, nome, categoriaComercial);
+  const mapeado = resolveMapeamentoProduto(produtoComercialId, nome, categoriaComercial, map);
+  return mapeamentoEfetivoParaCalculo(mapeado, sugerido);
+}
+
+export function etapasDbEquivalemAoModelo(
+  etapasDb: CustoProdutoEtapaRow[],
+  esperadas: EtapaProcessoPadrao[],
+): boolean {
+  return etapaSignature(rowsToPersist(etapasDb)) === etapaSignature(etapasPadraoParaPersist(esperadas));
 }
 
 function modeloIdDoMapeamento(
@@ -267,7 +350,7 @@ export async function sincronizarFichasComModeloProcesso(
 
     if (ficha.produtoComercialId) {
       const prod = produtoById.get(ficha.produtoComercialId);
-      const m = resolveMapeamentoProduto(
+      const m = resolverMapeamentoEfetivo(
         ficha.produtoComercialId,
         prod?.nome ?? ficha.nome,
         prod?.categoria ?? null,
@@ -358,7 +441,7 @@ export async function sincronizarFichasComProcessoConfig(
       const m = map.get(ficha.produtoComercialId);
       if (m?.processoModeloId != null) continue;
       const prod = produtoById.get(ficha.produtoComercialId);
-      const resolved = resolveMapeamentoProduto(
+      const resolved = resolverMapeamentoEfetivo(
         ficha.produtoComercialId,
         prod?.nome ?? ficha.nome,
         prod?.categoria ?? null,
