@@ -11,6 +11,12 @@ import { classificarStatusPedido } from "../comercial/lib/pedido-status";
 import { getComercialPrisma } from "../comercial/db";
 import { resolveComercialUsuario } from "../comercial/resolve-usuario";
 import { buildCompactFazendaSnapshotMarkdown } from "../chat-context";
+import {
+  buildAutomacaoAssistantResumo,
+  buildCustosAssistantResumo,
+  buildInteligenciaAssistantResumo,
+  buildVisaoAssistantResumo,
+} from "../chat-assistant-snapshots";
 import * as db from "../db";
 import { projetarEstoque } from "../../shared/estoque";
 
@@ -160,6 +166,7 @@ async function buildComercialAssistantResumo(enabled: boolean, user: User) {
       interacoes,
       kpiSnapshots,
       ultimaSync,
+      pedidosHistorico,
     ] = await Promise.all([
       prisma.cliente.findMany({
         select: {
@@ -262,6 +269,21 @@ async function buildComercialAssistantResumo(enabled: boolean, user: User) {
         take: 60,
       }),
       prisma.execucaoApi.findFirst({ where: { acaoApi: "SYNC_CA" }, orderBy: { dataExecucao: "desc" } }),
+      prisma.pedido.findMany({
+        where: { dataPedido: { lt: inicio90 } },
+        orderBy: { dataPedido: "desc" },
+        take: 200,
+        select: {
+          id: true,
+          clienteId: true,
+          dataPedido: true,
+          statusPedido: true,
+          valorLiquido: true,
+          valorTotal: true,
+          cliente: { select: { nome: true, tipo: true } },
+          itens: { select: { produto: true, quantidade: true, precoUnit: true } },
+        },
+      }),
     ]);
 
     const clientesPorTipo: Record<string, number> = {};
@@ -450,6 +472,44 @@ async function buildComercialAssistantResumo(enabled: boolean, user: User) {
       avarias: p._count.avariasPedido,
     }));
 
+    const pedidosComAvaria = pedidosOperacionais.filter((p) => p.avarias.length > 0);
+    const avariasDetalhe = pedidosComAvaria.slice(0, 35).map((p) => ({
+      pedidoId: p.id,
+      cliente: p.cliente?.nome ?? p.contaAzulCustomerId,
+      dataEntrega: p.dataEntrega.toISOString().slice(0, 10),
+      status: p.status,
+      avarias: p.avarias.map((a) => ({
+        produto: a.produtoNome,
+        categoria: a.categoria,
+        quantidade: num(a.quantidade),
+        observacoes: resumoTexto(a.observacoes, 80),
+      })),
+    }));
+
+    const entregasPorStatus: Record<string, number> = {};
+    for (const p of pedidosOperacionais) addCount(entregasPorStatus, p.status);
+
+    const kpiPorNome = new Map<string, Array<{ periodo: string; valor: number; data: string }>>();
+    for (const k of kpiSnapshots) {
+      const arr = kpiPorNome.get(k.nomeKpi) ?? [];
+      arr.push({
+        periodo: k.periodo,
+        valor: num(k.valor),
+        data: k.dataReferencia.toISOString().slice(0, 10),
+      });
+      kpiPorNome.set(k.nomeKpi, arr);
+    }
+
+    const historicoPorMes = new Map<string, { vendas: number; pedidos: number }>();
+    for (const p of pedidosHistorico) {
+      if (classificarStatusPedido(p.statusPedido) !== "venda") continue;
+      const mes = p.dataPedido.toISOString().slice(0, 7);
+      const row = historicoPorMes.get(mes) ?? { vendas: 0, pedidos: 0 };
+      row.vendas += num(p.valorLiquido ?? p.valorTotal);
+      row.pedidos += 1;
+      historicoPorMes.set(mes, row);
+    }
+
     const insights = [
       `Receita líquida 90d: R$ ${round2(vendas90Liquido)} em ${pedidosVenda90} venda(s), com ${receitaPorCliente.size} cliente(s) comprando.`,
       `Top cliente 90d: ${topClientes[0]?.nome ?? "sem vendas"}${topClientes[0] ? ` (R$ ${topClientes[0].receita})` : ""}.`,
@@ -626,6 +686,55 @@ async function buildComercialAssistantResumo(enabled: boolean, user: User) {
             resumo: resumoTexto(i.resumo ?? i.conteudoBruto),
           })),
         },
+        KPIs: {
+          porIndicador: Object.fromEntries(
+            Array.from(kpiPorNome.entries()).map(([nome, vals]) => [nome, vals.slice(0, 6)]),
+          ),
+          snapshotsRecentes: kpiSnapshots.slice(0, 30).map(k => ({
+            nome: k.nomeKpi,
+            periodo: k.periodo,
+            valor: num(k.valor),
+            dataReferencia: k.dataReferencia.toISOString().slice(0, 10),
+          })),
+          vendas90d: {
+            liquido: round2(vendas90Liquido),
+            pedidosVenda: pedidosVenda90,
+            margemComCusto: round2(vendas90Bruto - vendas90Custo),
+          },
+        },
+        Entregas: {
+          janela: `${ymd(inicio30)} a ${ymd(fim14)}`,
+          porStatus: entregasPorStatus,
+          proximasERecentes: pedidosOperacionais.slice(0, 45).map(p => ({
+            id: p.id,
+            cliente: p.cliente?.nome ?? p.contaAzulCustomerId,
+            dataEntrega: p.dataEntrega.toISOString().slice(0, 10),
+            status: p.status,
+            tipoVenda: p.tipoVenda,
+            itens: p.itens.length,
+            avarias: p.avarias.length,
+          })),
+        },
+        AcompanhamentoAvarias: {
+          pedidosComAvaria: pedidosComAvaria.length,
+          avariasPorProduto: topEntries(avariasPorProduto, 25),
+          detalhes: avariasDetalhe,
+        },
+        PedidosHistorico: {
+          antesDe: ymd(inicio90),
+          serieMensal: Array.from(historicoPorMes.entries())
+            .sort(([a], [b]) => a.localeCompare(b))
+            .slice(-24)
+            .map(([mes, v]) => ({ mes, vendas: round2(v.vendas), pedidos: v.pedidos })),
+          amostraPedidos: pedidosHistorico.slice(0, 40).map(p => ({
+            id: p.id,
+            cliente: p.cliente.nome,
+            data: p.dataPedido.toISOString().slice(0, 10),
+            status: p.statusPedido,
+            liquido: round2(num(p.valorLiquido ?? p.valorTotal)),
+            itens: p.itens.map(i => ({ produto: i.produto, quantidade: num(i.quantidade) })),
+          })),
+        },
       },
     };
   } catch (err) {
@@ -660,19 +769,29 @@ export const chatRouter = router({
 
       const pid = projetoIdFromCtx(ctx);
       const projeto = await db.getProjetoRow(pid);
-      const [data, bancadas, estoqueItens, comercial] = await Promise.all([
+      const modulos = ctx.projetoModulos;
+      const [data, bancadas, estoqueItens, comercial, custos, inteligencia, visao] = await Promise.all([
         db.loadFullFazendaData(pid),
         db.getAllBancadas(pid),
-        buildEstoqueAssistantResumo(pid, Boolean(ctx.projetoModulos?.estoque)),
-        buildComercialAssistantResumo(Boolean(ctx.projetoModulos?.comercial), ctx.user),
+        buildEstoqueAssistantResumo(pid, Boolean(modulos?.estoque)),
+        buildComercialAssistantResumo(Boolean(modulos?.comercial), ctx.user),
+        buildCustosAssistantResumo(pid, Boolean(modulos?.custos_producao)),
+        buildInteligenciaAssistantResumo(pid, Boolean(modulos?.inteligencia)),
+        buildVisaoAssistantResumo(pid, Boolean(modulos?.visao_cultivo)),
       ]);
+      const automacao = buildAutomacaoAssistantResumo(data, Boolean(modulos?.automacao));
 
       const resumoOperacionalMarkdown = buildCompactFazendaSnapshotMarkdown(data, {
         projetoId: pid,
         projetoNome: projeto?.nome ?? `Projeto ${pid}`,
         bancadas,
+        projetoModulos: modulos ?? null,
         estoqueItens,
         comercial,
+        custos,
+        inteligencia,
+        visao,
+        automacao,
       });
 
       const messages = input.messages.map((m) => ({

@@ -1,4 +1,7 @@
+import { formatChatPageCatalogMarkdown } from "@shared/chatPageCatalog";
+import type { ModulosProjetoMap } from "@shared/chatPageCatalog";
 import { filtrarPlanosPrioridadeSomenteGerminacaoPlantio, ymdLocalKey } from "@shared/planosPlantioOperacao";
+import type { ModuleAssistantResumo } from "./chat-assistant-snapshots";
 import type * as db from "./db";
 
 export type FullFazendaData = Awaited<ReturnType<typeof db.loadFullFazendaData>>;
@@ -40,7 +43,7 @@ export type ComercialAssistantResumo =
     }
   | { disponivel: false; motivo: string };
 
-const MAX_SNAPSHOT_CHARS = 42_000;
+const MAX_SNAPSHOT_CHARS = 55_000;
 
 function clip(body: string): string {
   if (body.length <= MAX_SNAPSHOT_CHARS) return body;
@@ -75,14 +78,38 @@ function pushJsonBlock(lines: string[], title: string, value: unknown): void {
  * cópia dos dados num instante; para gestores: resumo consolidado ao enviar a mensagem).
  * Não inclui PII além do que já está nas entidades operacionais.
  */
+function renderModulePaginas(lines: string[], tituloModulo: string, resumo: ModuleAssistantResumo | null | undefined): void {
+  if (!resumo) return;
+  if (!resumo.disponivel) {
+    lines.push(`## ${tituloModulo}`);
+    lines.push(`- Não disponível: ${resumo.motivo}`);
+    lines.push("");
+    return;
+  }
+  lines.push(`## ${tituloModulo}`);
+  if (resumo.insights?.length) {
+    lines.push("- Sinais pré-calculados:");
+    for (const insight of resumo.insights) lines.push(`  - ${insight}`);
+  }
+  lines.push("");
+  for (const [title, value] of Object.entries(resumo.paginas)) {
+    pushJsonBlock(lines, title, value);
+  }
+}
+
 export function buildCompactFazendaSnapshotMarkdown(
   data: FullFazendaData,
   opts: {
     projetoNome: string;
     projetoId: number;
     bancadas: BancadaRow[];
+    projetoModulos?: ModulosProjetoMap | null;
     estoqueItens?: EstoqueAssistantItem[] | null;
     comercial?: ComercialAssistantResumo | null;
+    custos?: ModuleAssistantResumo | null;
+    inteligencia?: ModuleAssistantResumo | null;
+    visao?: ModuleAssistantResumo | null;
+    automacao?: ModuleAssistantResumo | null;
   },
 ): string {
   const varById = new Map(data.variedades.map((v) => [v.id, v.nome]));
@@ -102,6 +129,9 @@ export function buildCompactFazendaSnapshotMarkdown(
   lines.push(`- **Tipo:** ${data.projetoTipo ?? "desconhecido"}`);
   lines.push("");
 
+  lines.push(formatChatPageCatalogMarkdown(opts.projetoModulos));
+  lines.push("");
+
   lines.push("## Módulos contratados / dados disponíveis");
   lines.push(`- **Estoque:** ${opts.estoqueItens ? "disponível neste resumo" : "não incluído ou módulo inativo"}`);
   lines.push(
@@ -110,6 +140,42 @@ export function buildCompactFazendaSnapshotMarkdown(
         ? "disponível neste resumo"
         : opts.comercial
           ? `não disponível (${opts.comercial.motivo})`
+          : "não incluído ou módulo inativo"
+    }`,
+  );
+  lines.push(
+    `- **Custos de produção:** ${
+      opts.custos?.disponivel
+        ? "disponível neste resumo"
+        : opts.custos
+          ? `não disponível (${opts.custos.motivo})`
+          : "não incluído ou módulo inativo"
+    }`,
+  );
+  lines.push(
+    `- **Inteligência:** ${
+      opts.inteligencia?.disponivel
+        ? "disponível neste resumo"
+        : opts.inteligencia
+          ? `não disponível (${opts.inteligencia.motivo})`
+          : "não incluído ou módulo inativo"
+    }`,
+  );
+  lines.push(
+    `- **Visão do cultivo:** ${
+      opts.visao?.disponivel
+        ? "disponível neste resumo"
+        : opts.visao
+          ? `não disponível (${opts.visao.motivo})`
+          : "não incluído ou módulo inativo"
+    }`,
+  );
+  lines.push(
+    `- **Automação:** ${
+      opts.automacao?.disponivel
+        ? "disponível neste resumo"
+        : opts.automacao
+          ? `não disponível (${opts.automacao.motivo})`
           : "não incluído ou módulo inativo"
     }`,
   );
@@ -150,6 +216,11 @@ export function buildCompactFazendaSnapshotMarkdown(
       }
     }
   }
+
+  renderModulePaginas(lines, "Custos de produção — contexto por página", opts.custos);
+  renderModulePaginas(lines, "Inteligência operacional", opts.inteligencia);
+  renderModulePaginas(lines, "Visão do cultivo", opts.visao);
+  renderModulePaginas(lines, "Automação", opts.automacao);
 
   if (opts.estoqueItens) {
     const criticos = opts.estoqueItens.filter((i) => i.status === "critico").length;
