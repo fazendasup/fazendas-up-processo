@@ -26,6 +26,7 @@ async function main() {
         semana: `${inicio.toISOString().slice(0, 10)} → ${fim.toISOString().slice(0, 10)}`,
         vinculosMultiplos: r.vinculosMultiplos,
         vinculosSimples: r.vinculosSimples,
+        sugestoesConfirmadas: r.sugestoesConfirmadas,
         acumulaHabilitados: r.acumulaHabilitados,
         resumo: r.conciliacao.resumo,
         pendentes: r.pendentes.map((c) => ({

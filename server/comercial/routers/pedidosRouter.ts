@@ -17,7 +17,7 @@ import {
   primeiraSemanaBloqueante,
 } from "../lib/fechamento.js";
 import { calcularConciliacaoSemanal } from "../lib/conciliacao-semanal.js";
-import { autoVincularAcumuloSemana } from "../lib/conciliacao-semana-reparo.js";
+import { repararConciliacaoSemana, usuarioReparo } from "../lib/conciliacao-semana-reparo.js";
 import { fimSemana, GO_LIVE_PEDIDOS, inicioSemana, semanaIgnoraConciliacaoFechamento } from "../lib/semana.js";
 import {
   comercialProcedure,
@@ -2225,6 +2225,14 @@ export const pedidosRouter = router({
         calcularStatusSemana(ctx.prisma!, input.dia),
         primeiraSemanaBloqueante(ctx.prisma!, semanaInicio),
       ]);
+      if (bloqueio) {
+        await repararConciliacaoSemana(
+          ctx.prisma!,
+          bloqueio.inicio,
+          bloqueio.fim,
+          usuarioReparo(ctx),
+        );
+      }
       const [conciliacaoAtual, conciliacaoBloqueio] = await Promise.all([
         calcularConciliacaoSemanal(ctx.prisma!, semanaInicio, semanaFim),
         bloqueio
@@ -2431,6 +2439,10 @@ export const pedidosRouter = router({
       const inicio = intervalo.inicio;
       const fim = intervalo.fim;
       const prisma = ctx.prisma!;
+      const semanaInicio = inicioSemana(inicio);
+      const semanaFim = fimSemana(inicio);
+
+      await repararConciliacaoSemana(prisma, semanaInicio, semanaFim, usuarioReparo(ctx));
 
       const [operacionais, vendas, eventos] = await Promise.all([
         prisma.pedidoOperacional.findMany({
@@ -2636,12 +2648,6 @@ export const pedidosRouter = router({
         }
       }
 
-      const semanaInicio = inicioSemana(inicio);
-      const semanaFim = fimSemana(inicio);
-      await autoVincularAcumuloSemana(prisma, semanaInicio, semanaFim, {
-        id: String(ctx.user?.id ?? "sistema"),
-        nome: ctx.user?.name ?? "Conciliação automática",
-      });
       const conciliacaoSemanal = await calcularConciliacaoSemanal(
         prisma,
         semanaInicio,
