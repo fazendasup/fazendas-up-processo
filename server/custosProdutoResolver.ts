@@ -214,11 +214,17 @@ export async function fichaParaCalculoInput(
   };
 }
 
+export type CalcularFichaOptions = {
+  /** Usa etapas do formulário/DB; quando false, deriva do modelo industrial + MO ao vivo. */
+  usarEtapasInformadas?: boolean;
+};
+
 export async function calcularFichaFromRows(
   projetoId: number,
   ficha: CustoProdutoFichaRow,
   componentes: CustoProdutoComponenteRow[],
   etapas: CustoProdutoEtapaRow[],
+  opts?: CalcularFichaOptions,
 ) {
   const moEquipeDb = await import("./custosMoEquipeDb");
   const { etapasProcessoAoVivoParaFicha } = await import("./custosProdutoModeloSync");
@@ -229,12 +235,14 @@ export async function calcularFichaFromRows(
   const equipes: MoEquipeInput[] = equipesRows.map(mapMoEquipeRowToInput);
   const mapaHora = mapaCustoHoraProcessamento(equipes, modoMo);
   const input = await fichaParaCalculoInput(projetoId, ficha, componentes, etapas);
-  const etapasAoVivo = await etapasProcessoAoVivoParaFicha(projetoId, ficha, etapas, mapaHora);
-  if (etapasAoVivo) {
-    input.etapas = await garantirEtapaLogisticaCalculo(
-      projetoId,
-      deduplicarEtapasLogistica(etapasPadraoParaCalculo(etapasAoVivo)),
-    );
+  if (!opts?.usarEtapasInformadas) {
+    const etapasAoVivo = await etapasProcessoAoVivoParaFicha(projetoId, ficha, etapas, mapaHora);
+    if (etapasAoVivo) {
+      input.etapas = await garantirEtapaLogisticaCalculo(
+        projetoId,
+        deduplicarEtapasLogistica(etapasPadraoParaCalculo(etapasAoVivo)),
+      );
+    }
   }
   input.custoHoraMo = mapaHora;
   return calcularCustoProduto(input);

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import {
@@ -713,6 +713,7 @@ function buildPayload(
         custoPercentual: parseOpt(e.custoPercentual),
       })),
     ),
+    etapasModoManual: form.etapasModoManual,
   };
 }
 
@@ -2106,6 +2107,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<FichaForm>(emptyFicha());
   const [simResult, setSimResult] = useState<any>(null);
+  const simResultFichaId = useRef<number | null>(null);
   const [compraDraft, setCompraDraft] = useState<Record<number, string>>({});
   const [margemTabelaCliente, setMargemTabelaCliente] = useState<string>("20");
 
@@ -2125,7 +2127,11 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
   }, []);
 
   useEffect(() => {
-    if (editingId == null || !fichas.data) return;
+    if (editingId == null) {
+      simResultFichaId.current = null;
+      return;
+    }
+    if (!fichas.data) return;
     const row = fichas.data.find((r) => r.ficha.id === editingId);
     if (!row) return;
     const modoServidor =
@@ -2149,7 +2155,10 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
       }
       return changed ? next : f;
     });
-    setSimResult(row.resultado);
+    if (simResultFichaId.current !== editingId) {
+      simResultFichaId.current = editingId;
+      setSimResult(row.resultado);
+    }
   }, [editingId, fichas.data]);
 
   const simular = trpc.custosProducao.produtos.simularCusto.useMutation({

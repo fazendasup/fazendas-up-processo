@@ -255,6 +255,7 @@ const fichaInput = z
     ativo: z.boolean().optional(),
     componentes: z.array(componenteInput).default([]),
     etapas: z.array(etapaInput).default([]),
+    etapasModoManual: z.boolean().optional().default(false),
   })
   .superRefine((val, ctx) => {
     if (val.ativo === false) return;
@@ -502,7 +503,9 @@ export const custosProdutoSubRouter = router({
         regimeMo: (e.regimeMo ?? "qualquer") as RegimeMoEtapa,
         ordem: e.ordem ?? i,
       }));
-      return calcularFichaFromRows(pid, fichaFake, componentes, etapas);
+      return calcularFichaFromRows(pid, fichaFake, componentes, etapas, {
+        usarEtapasInformadas: input.etapasModoManual ?? false,
+      });
     }),
 
   processoConfig: custosProducaoModuleProcedure.query(async ({ ctx }) => {
