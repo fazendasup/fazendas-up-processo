@@ -744,7 +744,7 @@ export const custosProdutoSubRouter = router({
       const fim = new Date();
       fim.setHours(23, 59, 59, 999);
       const inicio = new Date(fim);
-      inicio.setDate(inicio.getDate() - (input?.dias ?? 400));
+      inicio.setDate(inicio.getDate() - (input?.dias ?? 90));
       inicio.setHours(0, 0, 0, 0);
       const vendas = await buscarVendasContaAzulPorPeriodo(pid, inicio, fim);
       return vendas.produtos

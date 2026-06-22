@@ -2099,7 +2099,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
     refetchInterval: 120_000,
   });
   const vendasSemFicha = trpc.custosProducao.produtos.listarVendasSemFicha.useQuery(
-    { dias: 400 },
+    { dias: 90 },
     { staleTime: 60_000 },
   );
   const modelosQuery = trpc.custosProducao.produtos.listarProcessoModelos.useQuery();
@@ -2282,7 +2282,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                     Vendidos sem ficha (Conta Azul)
                   </CardTitle>
                   <CardDescription>
-                    Produtos que apareceram em vendas nos últimos ~13 meses e ainda não têm ficha de
+                    Produtos que apareceram em vendas nos últimos 3 meses e ainda não têm ficha de
                     custo — por isso ficam &quot;incompletos&quot; na rentabilidade.
                   </CardDescription>
                 </div>
