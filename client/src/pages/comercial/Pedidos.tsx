@@ -235,12 +235,21 @@ export function Pedidos({
 
   const diaDate = useMemo(() => new Date(`${dia}T12:00:00`), [dia]);
   const conciliacaoIntervalo = useMemo(() => {
-    const fim = new Date(diaDate);
-    const inicio = new Date(diaDate);
-    inicio.setDate(inicio.getDate() - 14);
-    fim.setDate(fim.getDate() + 7);
+    const d = new Date(diaDate);
+    d.setHours(0, 0, 0, 0);
+    const diaSemana = d.getDay();
+    const diff = (diaSemana + 6) % 7;
+    const inicio = new Date(d);
+    inicio.setDate(inicio.getDate() - diff);
+    inicio.setHours(0, 0, 0, 0);
+    const fim = new Date(inicio);
+    fim.setDate(fim.getDate() + 6);
+    fim.setHours(23, 59, 59, 999);
     return { inicio, fim };
   }, [diaDate]);
+  const [clienteConciliacaoFoco, setClienteConciliacaoFoco] = useState<
+    string | null
+  >(null);
   const me = trpc.comercial.pedidos.me.useQuery();
   const canEditarComercial =
     me.data?.perfil === "ADMIN" ||
@@ -851,7 +860,10 @@ export function Pedidos({
             <PainelConciliacaoFechamento
               conciliacao={statusSemana.data.conciliacaoBloqueio}
               className="mt-3"
-              onIrConciliacao={() => setAba("conciliacao")}
+              onIrConciliacao={contaAzulCustomerId => {
+                setClienteConciliacaoFoco(contaAzulCustomerId ?? null);
+                setAba("conciliacao");
+              }}
               onConfigurarRegras={contaAzulCustomerId => {
                 setClienteRegrasId(contaAzulCustomerId);
                 setAba("regras");
@@ -929,7 +941,10 @@ export function Pedidos({
             <PainelConciliacaoFechamento
               conciliacao={statusSemana.data.conciliacaoContaAzul}
               className="mt-3"
-              onIrConciliacao={() => setAba("conciliacao")}
+              onIrConciliacao={contaAzulCustomerId => {
+                setClienteConciliacaoFoco(contaAzulCustomerId ?? null);
+                setAba("conciliacao");
+              }}
               onConfigurarRegras={contaAzulCustomerId => {
                 setClienteRegrasId(contaAzulCustomerId);
                 setAba("regras");
@@ -1214,6 +1229,8 @@ export function Pedidos({
             <ConciliacaoContaAzulPanel
               inicio={conciliacaoIntervalo.inicio}
               fim={conciliacaoIntervalo.fim}
+              clienteFoco={clienteConciliacaoFoco}
+              onLimparClienteFoco={() => setClienteConciliacaoFoco(null)}
             />
           </TabsContent>
         )}
@@ -2420,7 +2437,7 @@ function PainelConciliacaoFechamento({
 }: {
   conciliacao: any;
   className?: string;
-  onIrConciliacao?: () => void;
+  onIrConciliacao?: (contaAzulCustomerId?: string) => void;
   onConfigurarRegras?: (contaAzulCustomerId: string) => void;
 }) {
   if (!conciliacao) return null;
@@ -2528,7 +2545,7 @@ function PainelConciliacaoFechamento({
                     size="sm"
                     variant="outline"
                     className="h-7 px-2 text-xs"
-                    onClick={onIrConciliacao}
+                    onClick={() => onIrConciliacao?.(c.contaAzulCustomerId)}
                   >
                     Abrir conciliação
                   </Button>

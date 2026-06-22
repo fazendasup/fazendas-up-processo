@@ -143,6 +143,63 @@ export function opcoesCalcularDivergenciasParaPar(
   };
 }
 
+export function opcoesCalcularDivergenciasAgregadas(): OpcoesDivergenciaConciliacao {
+  return {
+    compararData: false,
+    compararItens: true,
+    compararValorEstimado: true,
+  };
+}
+
+/** Soma itens de várias entregas operacionais para comparar com faturamento acumulado. */
+export function montarOperacionalAgregado(
+  operacionais: PedidoOperacionalComItens[],
+): PedidoOperacionalComItens {
+  if (operacionais.length === 0) {
+    throw new Error("Informe ao menos um pedido operacional para agregar.");
+  }
+  if (operacionais.length === 1) return operacionais[0]!;
+  const base = operacionais[0]!;
+  const dataEntrega = operacionais.reduce(
+    (min, op) => (op.dataEntrega.getTime() < min.getTime() ? op.dataEntrega : min),
+    operacionais[0]!.dataEntrega,
+  );
+  return {
+    ...base,
+    dataEntrega,
+    freteCortesia: operacionais.every((op) => op.freteCortesia),
+    itens: operacionais.flatMap((op) => op.itens),
+  };
+}
+
+export function snapshotOperacionalAgregado(
+  operacionais: PedidoOperacionalComItens[],
+): NonNullable<SnapshotConciliacao["operacional"]> & {
+  agregado: true;
+  ids: string[];
+  datasEntrega: string[];
+} {
+  const agregado = montarOperacionalAgregado(operacionais);
+  return {
+    ...snapshotOperacional(agregado)!,
+    agregado: true,
+    ids: operacionais.map((op) => op.id),
+    datasEntrega: operacionais.map((op) => op.dataEntrega.toISOString()).sort(),
+  };
+}
+
+export function calcularDivergenciasAgregadas(
+  operacionais: PedidoOperacionalComItens[],
+  contaAzul: PedidoContaAzulComItens,
+  resolverChave?: ResolverChaveItem,
+): DivergenciaConciliacao[] {
+  const agregado = montarOperacionalAgregado(operacionais);
+  return calcularDivergencias(agregado, contaAzul, resolverChave, {
+    ...opcoesCalcularDivergenciasAgregadas(),
+    regraEntrega: contaAzul.cliente.regraComercial ?? null,
+  });
+}
+
 export async function reconciliarDivergenciasAcumuloEsperadas(
   prisma: PrismaClient,
   operacionais: Array<
@@ -154,38 +211,61 @@ export async function reconciliarDivergenciasAcumuloEsperadas(
   >,
   resolverChave: ResolverChaveItem,
 ): Promise<number> {
-  let corrigidos = 0;
+  const porVenda = new Map<
+    string,
+    Array<
+      PedidoOperacionalComItens & {
+        statusConciliacao: string;
+        pedidoContaAzul?: PedidoContaAzulComItens | null;
+        cliente?: { regraComercial?: { acumulaPedidos?: boolean } | null } | null;
+      }
+    >
+  >();
+
   for (const op of operacionais) {
-    if (op.statusConciliacao !== "DIVERGENTE" || !op.pedidoContaAzul) continue;
-    const divergencias = calcularDivergencias(
-      op,
-      op.pedidoContaAzul,
-      resolverChave,
-      opcoesCalcularDivergenciasParaPar(
-        op,
-        op.pedidoContaAzul,
-        op.cliente?.regraComercial,
-      ),
+    if (!op.pedidoContaAzulId || !op.pedidoContaAzul) continue;
+    const acumula =
+      clienteAcumulaFaturamento(op.cliente?.regraComercial) ||
+      clienteAcumulaFaturamento(op.pedidoContaAzul.cliente?.regraComercial);
+    if (!acumula) continue;
+    const lista = porVenda.get(op.pedidoContaAzulId) ?? [];
+    lista.push(op);
+    porVenda.set(op.pedidoContaAzulId, lista);
+  }
+
+  let corrigidos = 0;
+  for (const [, ops] of Array.from(porVenda.entries())) {
+    const contaAzul = ops[0]!.pedidoContaAzul!;
+    const divergencias = calcularDivergenciasAgregadas(ops, contaAzul, resolverChave);
+    const conciliado = divergencias.length === 0;
+    const snapshot: SnapshotConciliacao = {
+      operacional: snapshotOperacionalAgregado(ops),
+      contaAzul: snapshotContaAzul(contaAzul),
+    };
+    const precisaAtualizar = ops.some(
+      (op) =>
+        (conciliado && op.statusConciliacao === "DIVERGENTE") ||
+        (!conciliado && op.statusConciliacao === "CONCILIADO"),
     );
-    if (divergencias.length > 0) continue;
+    if (!precisaAtualizar) continue;
+
     await prisma.$transaction(async (tx) => {
-      await tx.pedidoOperacional.update({
-        where: { id: op.id },
-        data: {
-          statusConciliacao: "CONCILIADO",
-          snapshotConciliacao: {
-            operacional: snapshotOperacional(op),
-            contaAzul: snapshotContaAzul(op.pedidoContaAzul!),
-          } as Prisma.InputJsonValue,
-        },
-      });
+      for (const op of ops) {
+        await tx.pedidoOperacional.update({
+          where: { id: op.id },
+          data: {
+            statusConciliacao: conciliado ? "CONCILIADO" : "DIVERGENTE",
+            snapshotConciliacao: snapshot as Prisma.InputJsonValue,
+          },
+        });
+        op.statusConciliacao = conciliado ? "CONCILIADO" : "DIVERGENTE";
+      }
       await tx.pedido.update({
-        where: { id: op.pedidoContaAzul!.id },
-        data: { statusConciliacao: "CONCILIADA" },
+        where: { id: contaAzul.id },
+        data: { statusConciliacao: conciliado ? "CONCILIADA" : "DIVERGENTE" },
       });
     });
-    op.statusConciliacao = "CONCILIADO";
-    corrigidos++;
+    corrigidos += ops.filter((op) => op.statusConciliacao === (conciliado ? "CONCILIADO" : "DIVERGENTE")).length;
   }
   return corrigidos;
 }
@@ -214,6 +294,38 @@ function mesmoDia(a: Date, b: Date): boolean {
 
 function ymdOperacional(d: Date): string {
   return d.toISOString().slice(0, 10);
+}
+
+/** Segunda-feira 00:00 UTC da semana operacional que contém `d`. */
+function inicioSemanaOperacional(d: Date): Date {
+  const utc = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const diff = (utc.getUTCDay() + 6) % 7;
+  utc.setUTCDate(utc.getUTCDate() - diff);
+  return utc;
+}
+
+function fimSemanaOperacional(d: Date): Date {
+  const inicio = inicioSemanaOperacional(d);
+  const fim = new Date(inicio);
+  fim.setUTCDate(fim.getUTCDate() + 6);
+  fim.setUTCHours(23, 59, 59, 999);
+  return fim;
+}
+
+function inicioDiaOperacional(d: Date): Date {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+}
+
+function fimDiaOperacional(d: Date): Date {
+  const fim = inicioDiaOperacional(d);
+  fim.setUTCHours(23, 59, 59, 999);
+  return fim;
+}
+
+function adicionarDiasOperacional(d: Date, dias: number): Date {
+  const out = inicioDiaOperacional(d);
+  out.setUTCDate(out.getUTCDate() + dias);
+  return out;
 }
 
 function diaSemanaOperacional(d: Date): number {
@@ -304,11 +416,13 @@ function quantidadePorChaveContaAzul(
 }
 
 function diffDias(a: Date, b: Date): number {
-  return Math.abs(inicioDia(a).getTime() - inicioDia(b).getTime()) / 86_400_000;
+  const utcA = Date.UTC(a.getUTCFullYear(), a.getUTCMonth(), a.getUTCDate());
+  const utcB = Date.UTC(b.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate());
+  return Math.abs(utcA - utcB) / 86_400_000;
 }
 
 function mesmaSemanaOperacional(a: Date, b: Date): boolean {
-  return inicioSemana(a).getTime() === inicioSemana(b).getTime();
+  return inicioSemanaOperacional(a).getTime() === inicioSemanaOperacional(b).getTime();
 }
 
 function normalizarNome(s: string): string {
@@ -499,6 +613,74 @@ export function scoreSugestaoVinculo(
   return score;
 }
 
+/** Score para listagem manual de candidatos — não exige mesmo dia nem documento conciliável. */
+export function scoreCandidatoVinculoManual(
+  operacional: Pick<PedidoOperacionalComItens, "dataEntrega" | "contaAzulCustomerId" | "itens">,
+  contaAzul: PedidoContaAzulComItens,
+  resolverChave?: ResolverChaveItem,
+): number {
+  const extOp = operacional.contaAzulCustomerId;
+  const extCa = contaAzul.cliente.externalId;
+  if (!extOp || !extCa || extOp !== extCa) return 0;
+
+  let score = 20;
+  const dias = diffDias(operacional.dataEntrega, contaAzul.dataPedido);
+  if (dias === 0) score += 50;
+  else if (mesmaSemanaOperacional(operacional.dataEntrega, contaAzul.dataPedido)) score += 30;
+  else if (dias <= 7) score += 10;
+
+  const chavesOp = new Set(
+    operacional.itens
+      .map((i) =>
+        resolverChave
+          ? resolverChave("operacional", { produtoId: i.produtoId, produtoNome: i.produtoNome })
+          : `nome:${normalizarNome(i.produtoNome)}`,
+      )
+      .filter(Boolean),
+  );
+  const chavesCa = new Set(
+    contaAzul.itens
+      .map((i) =>
+        resolverChave
+          ? resolverChave("contaAzul", { produto: i.produto, sku: i.sku })
+          : `nome:${normalizarNome(i.produto)}`,
+      )
+      .filter(Boolean),
+  );
+  if (chavesOp.size === 0 || chavesCa.size === 0) return score;
+
+  let overlap = 0;
+  for (const chave of Array.from(chavesOp)) {
+    if (chavesCa.has(chave)) overlap++;
+  }
+  score += Math.min(15, Math.round((overlap / Math.max(chavesOp.size, chavesCa.size)) * 15));
+  return score;
+}
+
+export function janelaCandidatosVinculo(input: {
+  dataPedido: Date;
+  acumula: boolean;
+  diasAcumulo?: number | null;
+  janelaDias?: number;
+}): { inicio: Date; fim: Date } {
+  const janelaDias = input.janelaDias ?? 14;
+  const corte = inicioDiaOperacional(GO_LIVE_PEDIDOS);
+
+  let inicio = input.acumula
+    ? adicionarDiasOperacional(input.dataPedido, -((input.diasAcumulo ?? 15) - 1))
+    : inicioSemanaOperacional(input.dataPedido);
+  let fim = input.acumula
+    ? fimDiaOperacional(input.dataPedido)
+    : fimSemanaOperacional(input.dataPedido);
+
+  const extInicio = adicionarDiasOperacional(input.dataPedido, -janelaDias);
+  const extFim = fimDiaOperacional(adicionarDiasOperacional(input.dataPedido, janelaDias));
+  inicio = new Date(Math.min(inicio.getTime(), extInicio.getTime()));
+  fim = new Date(Math.max(fim.getTime(), extFim.getTime()));
+  if (inicio.getTime() < corte.getTime()) inicio = corte;
+  return { inicio, fim };
+}
+
 export function diasEntrePedidos(operacional: { dataEntrega: Date }, contaAzul: { dataPedido: Date }): number {
   return diffDias(operacional.dataEntrega, contaAzul.dataPedido);
 }
@@ -565,64 +747,80 @@ export async function processarConciliacaoAposSyncVenda(
     return { sugestoes: 0, divergencias: 0 };
   }
 
-  const vinculado = await prisma.pedidoOperacional.findFirst({
+  const vinculados = await prisma.pedidoOperacional.findMany({
     where: { pedidoContaAzulId: contaAzul.id },
     include: { itens: true, cliente: { select: { externalId: true, nome: true } } },
+    orderBy: { dataEntrega: "asc" },
   });
 
   const produtosConciliacao = await carregarProdutosConciliacao(prisma);
   const resolverChave = criarResolverChaveItemConciliacao(produtosConciliacao);
+  const acumula = clienteAcumulaFaturamento(contaAzul.cliente.regraComercial);
 
-  if (vinculado) {
-    const divergencias = calcularDivergencias(
-      vinculado,
-      contaAzul,
-      resolverChave,
-      opcoesCalcularDivergenciasParaPar(vinculado, contaAzul),
-    );
-    if (divergencias.length > 0 && vinculado.statusConciliacao === "CONCILIADO") {
+  if (vinculados.length > 0) {
+    const divergencias =
+      acumula && vinculados.length >= 1
+        ? calcularDivergenciasAgregadas(vinculados, contaAzul, resolverChave)
+        : calcularDivergencias(
+            vinculados[0]!,
+            contaAzul,
+            resolverChave,
+            opcoesCalcularDivergenciasParaPar(vinculados[0]!, contaAzul),
+          );
+    const snapshot: SnapshotConciliacao = {
+      operacional:
+        acumula && vinculados.length > 1
+          ? snapshotOperacionalAgregado(vinculados)
+          : snapshotOperacional(vinculados[0]!),
+      contaAzul: snapshotContaAzul(contaAzul),
+    };
+    const algumConciliado = vinculados.some((op) => op.statusConciliacao === "CONCILIADO");
+    const algumDivergente = vinculados.some((op) => op.statusConciliacao === "DIVERGENTE");
+
+    if (divergencias.length > 0 && algumConciliado) {
       await prisma.$transaction(async (tx) => {
-        await tx.pedidoOperacional.update({
-          where: { id: vinculado.id },
-          data: { statusConciliacao: "DIVERGENTE" },
-        });
+        for (const op of vinculados) {
+          await tx.pedidoOperacional.update({
+            where: { id: op.id },
+            data: { statusConciliacao: "DIVERGENTE", snapshotConciliacao: snapshot as Prisma.InputJsonValue },
+          });
+        }
         await tx.pedido.update({
           where: { id: contaAzul.id },
           data: { statusConciliacao: "DIVERGENTE" },
         });
         await registrarEvento(tx, {
-          pedidoOperacionalId: vinculado.id,
+          pedidoOperacionalId: vinculados[0]!.id,
           pedidoContaAzulId: contaAzul.id,
           tipo: "VENDA_ALTERADA_CA",
-          antes: vinculado.snapshotConciliacao ?? undefined,
-          depois: { operacional: snapshotOperacional(vinculado), contaAzul: snapshotContaAzul(contaAzul) },
+          antes: vinculados[0]!.snapshotConciliacao ?? undefined,
+          depois: snapshot,
           divergencias,
         });
       });
       return { sugestoes: 0, divergencias: 1 };
     }
-    if (divergencias.length === 0 && vinculado.statusConciliacao === "DIVERGENTE") {
+    if (divergencias.length === 0 && algumDivergente) {
       await prisma.$transaction(async (tx) => {
-        await tx.pedidoOperacional.update({
-          where: { id: vinculado.id },
-          data: {
-            statusConciliacao: "CONCILIADO",
-            snapshotConciliacao: {
-              operacional: snapshotOperacional(vinculado),
-              contaAzul: snapshotContaAzul(contaAzul),
-            } as Prisma.InputJsonValue,
-          },
-        });
+        for (const op of vinculados) {
+          await tx.pedidoOperacional.update({
+            where: { id: op.id },
+            data: {
+              statusConciliacao: "CONCILIADO",
+              snapshotConciliacao: snapshot as Prisma.InputJsonValue,
+            },
+          });
+        }
         await tx.pedido.update({
           where: { id: contaAzul.id },
           data: { statusConciliacao: "CONCILIADA" },
         });
         await registrarEvento(tx, {
-          pedidoOperacionalId: vinculado.id,
+          pedidoOperacionalId: vinculados[0]!.id,
           pedidoContaAzulId: contaAzul.id,
           tipo: "DIVERGENCIA_RESOLVIDA",
-          antes: vinculado.snapshotConciliacao ?? undefined,
-          depois: { operacional: snapshotOperacional(vinculado), contaAzul: snapshotContaAzul(contaAzul) },
+          antes: vinculados[0]!.snapshotConciliacao ?? undefined,
+          depois: snapshot,
         });
       });
     }
@@ -708,10 +906,18 @@ export async function confirmarVinculoConciliacao(
   if (operacional.pedidoContaAzulId && operacional.pedidoContaAzulId !== contaAzul.id) {
     throw new Error("Este pedido operacional já está vinculado a outra venda.");
   }
-  const outro = await prisma.pedidoOperacional.findFirst({
+  const acumula = clienteAcumulaFaturamento(contaAzul.cliente.regraComercial);
+  const jaVinculados = await prisma.pedidoOperacional.findMany({
     where: { pedidoContaAzulId: contaAzul.id, NOT: { id: operacional.id } },
   });
-  if (outro) throw new Error("Esta venda Conta Azul já está vinculada a outro pedido operacional.");
+  if (!acumula && jaVinculados.length > 0) {
+    throw new Error("Esta venda Conta Azul já está vinculada a outro pedido operacional.");
+  }
+  if (acumula && jaVinculados.length > 0) {
+    throw new Error(
+      "Cliente com faturamento acumulado: use o vínculo múltiplo para incluir todos os pedidos do período.",
+    );
+  }
 
   const produtosConciliacao = await carregarProdutosConciliacao(prisma);
   const resolverChave = criarResolverChaveItemConciliacao(produtosConciliacao);
@@ -756,6 +962,100 @@ export async function confirmarVinculoConciliacao(
   });
 
   return { divergencias };
+}
+
+export async function confirmarVinculoMultiploConciliacao(
+  prisma: PrismaClient,
+  input: {
+    pedidoOperacionalIds: string[];
+    pedidoContaAzulId: string;
+    usuario: { id: string; nome: string };
+    observacoes?: string;
+  },
+) {
+  const ids = [...new Set(input.pedidoOperacionalIds)].filter(Boolean);
+  if (ids.length === 0) throw new Error("Selecione ao menos um pedido operacional.");
+
+  const [operacionais, contaAzul] = await Promise.all([
+    prisma.pedidoOperacional.findMany({
+      where: { id: { in: ids } },
+      include: { itens: true, cliente: { select: { externalId: true, nome: true } } },
+      orderBy: { dataEntrega: "asc" },
+    }),
+    prisma.pedido.findUnique({
+      where: { id: input.pedidoContaAzulId },
+      include: {
+        itens: true,
+        cliente: {
+          select: {
+            externalId: true,
+            nome: true,
+            regraComercial: { select: { acumulaPedidos: true, ...REGRA_ENTREGA_CONCILIACAO_SELECT } },
+          },
+        },
+      },
+    }),
+  ]);
+
+  if (!contaAzul) throw new Error("Venda Conta Azul não encontrada.");
+  if (operacionais.length !== ids.length) {
+    throw new Error("Um ou mais pedidos operacionais não foram encontrados.");
+  }
+  if (!clienteAcumulaFaturamento(contaAzul.cliente.regraComercial)) {
+    throw new Error("Vínculo múltiplo só está disponível para clientes com faturamento acumulado.");
+  }
+
+  const extCa = contaAzul.cliente.externalId;
+  for (const op of operacionais) {
+    if (op.pedidoContaAzulId && op.pedidoContaAzulId !== contaAzul.id) {
+      throw new Error(`Pedido operacional ${op.id} já está vinculado a outra venda.`);
+    }
+    if (extCa && op.contaAzulCustomerId !== extCa) {
+      throw new Error("Todos os pedidos operacionais devem ser do mesmo cliente da venda.");
+    }
+  }
+
+  const produtosConciliacao = await carregarProdutosConciliacao(prisma);
+  const resolverChave = criarResolverChaveItemConciliacao(produtosConciliacao);
+  const divergencias = calcularDivergenciasAgregadas(operacionais, contaAzul, resolverChave);
+  const snapshot: SnapshotConciliacao = {
+    operacional: snapshotOperacionalAgregado(operacionais),
+    contaAzul: snapshotContaAzul(contaAzul),
+  };
+  const conciliado = divergencias.length === 0;
+
+  await prisma.$transaction(async (tx) => {
+    for (const op of operacionais) {
+      await tx.pedidoOperacional.update({
+        where: { id: op.id },
+        data: {
+          pedidoContaAzulId: contaAzul.id,
+          sugestaoPedidoContaAzulId: null,
+          statusConciliacao: conciliado ? "CONCILIADO" : "DIVERGENTE",
+          snapshotConciliacao: snapshot as Prisma.InputJsonValue,
+        },
+      });
+    }
+    await tx.pedido.update({
+      where: { id: contaAzul.id },
+      data: {
+        sugestaoPedidoOperacionalId: null,
+        statusConciliacao: conciliado ? "CONCILIADA" : "DIVERGENTE",
+      },
+    });
+    await registrarEvento(tx, {
+      pedidoOperacionalId: operacionais[0]!.id,
+      pedidoContaAzulId: contaAzul.id,
+      tipo: conciliado ? "VINCULO_MULTIPLO_CONFIRMADO" : "VINCULO_MULTIPLO_COM_DIVERGENCIA",
+      depois: snapshot,
+      divergencias: divergencias.length ? divergencias : undefined,
+      usuarioId: input.usuario.id,
+      usuarioNome: input.usuario.nome,
+      observacoes: input.observacoes,
+    });
+  });
+
+  return { divergencias, pedidosVinculados: operacionais.length };
 }
 
 export async function marcarVendaErrada(
@@ -1220,10 +1520,6 @@ export async function desvincularConciliacao(
         sugestaoPedidoContaAzulId: null,
       },
     });
-    await tx.pedido.update({
-      where: { id: caId },
-      data: { statusConciliacao: "NAO_CONCILIADA", sugestaoPedidoOperacionalId: null },
-    });
     await registrarEvento(tx, {
       pedidoOperacionalId: op.id,
       pedidoContaAzulId: caId,
@@ -1232,6 +1528,71 @@ export async function desvincularConciliacao(
       usuarioId: input.usuario.id,
       usuarioNome: input.usuario.nome,
       observacoes: input.observacoes,
+    });
+
+    const restantes = await tx.pedidoOperacional.findMany({
+      where: { pedidoContaAzulId: caId },
+      include: {
+        itens: true,
+        cliente: { select: { externalId: true, nome: true } },
+      },
+      orderBy: { dataEntrega: "asc" },
+    });
+    if (restantes.length === 0) {
+      await tx.pedido.update({
+        where: { id: caId },
+        data: { statusConciliacao: "NAO_CONCILIADA", sugestaoPedidoOperacionalId: null },
+      });
+      return;
+    }
+
+    const contaAzul = await tx.pedido.findUnique({
+      where: { id: caId },
+      include: {
+        itens: true,
+        cliente: {
+          select: {
+            externalId: true,
+            nome: true,
+            regraComercial: { select: { acumulaPedidos: true, ...REGRA_ENTREGA_CONCILIACAO_SELECT } },
+          },
+        },
+      },
+    });
+    if (!contaAzul) return;
+
+    const produtosConciliacao = await carregarProdutosConciliacao(tx as PrismaClient);
+    const resolverChave = criarResolverChaveItemConciliacao(produtosConciliacao);
+    const acumula = clienteAcumulaFaturamento(contaAzul.cliente.regraComercial);
+    const divergencias =
+      acumula && restantes.length > 1
+        ? calcularDivergenciasAgregadas(restantes, contaAzul, resolverChave)
+        : calcularDivergencias(
+            restantes[0]!,
+            contaAzul,
+            resolverChave,
+            opcoesCalcularDivergenciasParaPar(restantes[0]!, contaAzul),
+          );
+    const conciliado = divergencias.length === 0;
+    const snapshot: SnapshotConciliacao = {
+      operacional:
+        acumula && restantes.length > 1
+          ? snapshotOperacionalAgregado(restantes)
+          : snapshotOperacional(restantes[0]!),
+      contaAzul: snapshotContaAzul(contaAzul),
+    };
+    for (const rest of restantes) {
+      await tx.pedidoOperacional.update({
+        where: { id: rest.id },
+        data: {
+          statusConciliacao: conciliado ? "CONCILIADO" : "DIVERGENTE",
+          snapshotConciliacao: snapshot as Prisma.InputJsonValue,
+        },
+      });
+    }
+    await tx.pedido.update({
+      where: { id: caId },
+      data: { statusConciliacao: conciliado ? "CONCILIADA" : "DIVERGENTE" },
     });
   });
 }

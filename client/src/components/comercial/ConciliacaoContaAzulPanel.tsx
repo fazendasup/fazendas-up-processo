@@ -1,9 +1,49 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, CheckCircle2, Link2, Unlink, XCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+function labelStatusConciliacaoSemanal(status: string) {
+  switch (status) {
+    case "aguardando_venda":
+      return "aguardando venda";
+    case "venda_sem_pedido":
+      return "venda sem pedido";
+    case "divergente":
+      return "divergente";
+    default:
+      return "ok";
+  }
+}
+
+function detalheConciliacaoSemanal(c: any) {
+  if (c.status === "aguardando_venda") {
+    return `Há mais pedidos operacionais (${c.operacional?.pedidos ?? 0}) do que vendas CA (${c.contaAzul?.pedidos ?? 0}). Aguarde/sincronize a venda ou confira se o pedido deve ser cancelado.`;
+  }
+  if (c.status === "venda_sem_pedido") {
+    return `Há mais vendas CA (${c.contaAzul?.pedidos ?? 0}) do que pedidos operacionais (${c.operacional?.pedidos ?? 0}). Vincule a um pedido existente ou crie o operacional.`;
+  }
+  const problemas: string[] = [];
+  if ((c.diffPedidos ?? 0) !== 0) {
+    problemas.push(`pedidos ${c.operacional?.pedidos ?? 0}/${c.contaAzul?.pedidos ?? 0}`);
+  }
+  if (Math.abs(Number(c.diffUnidades ?? 0)) > 0.001) {
+    problemas.push(
+      `quantidade ${Number(c.operacional?.unidades ?? 0).toLocaleString("pt-BR")}/${Number(c.contaAzul?.unidades ?? 0).toLocaleString("pt-BR")}`,
+    );
+  }
+  if (Math.abs(Number(c.diffValor ?? 0)) > 0.05) {
+    problemas.push(
+      `valor ${fmtMoney(c.operacional?.valorEstimado ?? 0)}/${fmtMoney(c.contaAzul?.valorLiquido ?? 0)}`,
+    );
+  }
+  if (problemas.length === 0) {
+    return "Revise os vínculos e sincronize novamente.";
+  }
+  return `Corrija ${problemas.join(", ")}. Se a diferença de valor for frete, preencha Regras do cliente > Valor taxa de entrega. Para clientes que acumulam, vincule todas as entregas do período à mesma venda.`;
+}
 
 function fmtDate(v: string | Date) {
   return new Date(v).toLocaleDateString("pt-BR", { timeZone: "UTC" });
@@ -98,7 +138,17 @@ const TIPOS_VENDA = [
 
 type TipoVenda = (typeof TIPOS_VENDA)[number][0];
 
-export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: Date }) {
+export function ConciliacaoContaAzulPanel({
+  inicio,
+  fim,
+  clienteFoco,
+  onLimparClienteFoco,
+}: {
+  inicio: Date;
+  fim: Date;
+  clienteFoco?: string | null;
+  onLimparClienteFoco?: () => void;
+}) {
   const utils = trpc.useUtils();
   const painel = trpc.comercial.pedidos.conciliacaoPainel.useQuery({ inicio, fim });
   const [vendaCandidatosId, setVendaCandidatosId] = useState<string | null>(null);
@@ -122,6 +172,18 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
         r.divergencias?.length
           ? "Vínculo confirmado com divergências registradas."
           : "Vínculo confirmado com sucesso.",
+      );
+      invalidarCachesConciliacao();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const confirmarMultiplo = trpc.comercial.pedidos.conciliacaoConfirmarVinculoMultiplo.useMutation({
+    onSuccess: (r) => {
+      setVendaCandidatosId(null);
+      toast.success(
+        r.divergencias?.length
+          ? `Vínculo com ${r.pedidosVinculados} pedido(s) confirmado — há divergências no total acumulado.`
+          : `Vínculo com ${r.pedidosVinculados} pedido(s) confirmado sem divergências.`,
       );
       invalidarCachesConciliacao();
     },
@@ -204,8 +266,20 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
   const alertas = useMemo(() => {
     const d = painel.data;
     if (!d) return 0;
-    return (d.divergentes?.length ?? 0) + (d.sugestoes?.length ?? 0) + (d.vendasSemPedido?.length ?? 0);
+    return (
+      (d.divergentes?.length ?? 0) +
+      (d.sugestoes?.length ?? 0) +
+      (d.vendasSemPedido?.length ?? 0) +
+      (d.clientesSemana?.length ?? 0)
+    );
   }, [painel.data]);
+
+  const clientesSemanaExibidos = useMemo(() => {
+    const lista = painel.data?.clientesSemana ?? [];
+    if (!clienteFoco) return lista;
+    const foco = lista.filter((c: any) => c.contaAzulCustomerId === clienteFoco);
+    return foco.length > 0 ? foco : lista;
+  }, [painel.data?.clientesSemana, clienteFoco]);
 
   if (painel.isLoading) {
     return <p className="text-sm text-muted-foreground">Carregando conciliação Conta Azul...</p>;
@@ -219,13 +293,98 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
         <strong>aplicar a correção da Conta Azul</strong> direto nesta tela (com confirmação), sem ir à emissão.
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
         <ResumoCard label="Sem venda CA" value={resumo?.semVenda ?? 0} />
         <ResumoCard label="Docs. CA sem pedido" value={resumo?.vendasSemPedido ?? 0} />
         <ResumoCard label="Sugestões" value={resumo?.sugestoes ?? 0} highlight={Boolean(resumo?.sugestoes)} />
         <ResumoCard label="Conciliados" value={resumo?.conciliados ?? 0} ok />
-        <ResumoCard label="Divergentes" value={resumo?.divergentes ?? 0} alert={Boolean(resumo?.divergentes)} />
+        <ResumoCard label="Divergentes (vínculo)" value={resumo?.divergentes ?? 0} alert={Boolean(resumo?.divergentes)} />
+        <ResumoCard
+          label="Semana pendente"
+          value={resumo?.clientesSemanaPendentes ?? 0}
+          alert={Boolean(resumo?.clientesSemanaPendentes)}
+        />
       </div>
+
+      {(clientesSemanaExibidos.length > 0 || painel.data?.semana) && (
+        <Section
+          title={`Conciliação semanal${painel.data?.semana?.rotulo ? ` (${painel.data.semana.rotulo})` : ""}`}
+          icon={<AlertTriangle className="h-4 w-4 text-amber-600" />}
+        >
+          {clienteFoco && onLimparClienteFoco ? (
+            <div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
+              <span className="text-muted-foreground">Filtrando cliente do dashboard.</span>
+              <Button size="sm" variant="outline" className="h-7" onClick={onLimparClienteFoco}>
+                Ver todos
+              </Button>
+            </div>
+          ) : null}
+          <p className="mb-3 text-xs text-muted-foreground">
+            Compara o total operacional da semana com as vendas Conta Azul no mesmo intervalo — é o mesmo critério usado no fechamento semanal.
+          </p>
+          {clientesSemanaExibidos.length === 0 ? (
+            <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+              Nenhum cliente pendente nesta semana para o filtro atual.
+            </p>
+          ) : (
+            clientesSemanaExibidos.map((c: any) => (
+              <Card
+                key={c.contaAzulCustomerId}
+                className={`border-amber-200/80 ${clienteFoco === c.contaAzulCustomerId ? "ring-2 ring-amber-400" : ""}`}
+              >
+                <CardContent className="space-y-3 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="font-semibold">{c.clienteNome}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {labelStatusConciliacaoSemanal(c.status)}
+                        {" · pedidos "}
+                        {c.operacional?.pedidos ?? 0}/{c.contaAzul?.pedidos ?? 0}
+                        {" · un "}
+                        {Number(c.operacional?.unidades ?? 0).toLocaleString("pt-BR")}/
+                        {Number(c.contaAzul?.unidades ?? 0).toLocaleString("pt-BR")}
+                        {" · valor "}
+                        {fmtMoney(c.operacional?.valorEstimado ?? 0)}/{fmtMoney(c.contaAzul?.valorLiquido ?? 0)}
+                      </p>
+                      <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">
+                        {detalheConciliacaoSemanal(c)}
+                      </p>
+                    </div>
+                  </div>
+                  {(c.operacionais?.length ?? 0) > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Pedidos operacionais da semana
+                      </p>
+                      {c.operacionais.map((op: any) => (
+                        <BlocoPedido key={op.id} titulo={`Entrega ${fmtDate(op.dataEntrega)}`} pedido={op} />
+                      ))}
+                    </div>
+                  )}
+                  {(c.vendas?.length ?? 0) > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Vendas Conta Azul da semana
+                      </p>
+                      {c.vendas.map((v: any) => (
+                        <BlocoVenda key={v.id} titulo="Venda" venda={v} />
+                      ))}
+                    </div>
+                  )}
+                  {c.status === "venda_sem_pedido" && (c.vendas?.length ?? 0) > 0 && (
+                    <Button
+                      size="sm"
+                      onClick={() => setVendaCandidatosId(c.vendas[0].id)}
+                    >
+                      Vincular ou criar pedido para esta venda
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </Section>
+      )}
 
       {alertas > 0 && (
         <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-200">
@@ -248,8 +407,8 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
                 o pedido operacional continua valendo para produção/colheita.
               </li>
               <li>
-                Clientes com <strong>faturamento acumulado</strong> recebem todo dia o mesmo pedido operacional, mas a venda/orçamento no Conta Azul
-                traz o volume do período. Nesse caso, diferença de quantidade e valor é <strong>esperada</strong> — o vínculo pode ser confirmado sem corrigir itens.
+                Clientes com <strong>faturamento acumulado</strong> recebem entregas diárias, mas a venda/orçamento no Conta Azul
+                traz o volume do período. Selecione <strong>todos os pedidos operacionais do período</strong> para comparar a soma com o faturamento e apontar divergências reais.
               </li>
               <li>
                 <strong>Manter operacional</strong> — o pedido operacional está certo e essa venda não é dele.
@@ -322,7 +481,13 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
                     isLoading={candidatos.isLoading}
                     candidatos={candidatos.data?.candidatos ?? []}
                     vendaId={s.venda.id}
+                    acumulaPedidos={Boolean(candidatos.data?.acumulaPedidos)}
+                    diasAcumulo={candidatos.data?.diasAcumulo ?? null}
+                    selecionadosPadrao={candidatos.data?.selecionadosPadrao ?? []}
+                    divergenciasAgregadas={candidatos.data?.divergenciasAgregadas ?? []}
+                    vendaItens={candidatos.data?.venda?.itens ?? []}
                     suggestedId={s.operacional.id}
+                    confirmando={confirmar.isPending || confirmarMultiplo.isPending}
                     onConfirmar={(pedidoOperacionalId) =>
                       confirmar.mutate({
                         pedidoOperacionalId,
@@ -331,6 +496,13 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
                           pedidoOperacionalId === s.operacional.id
                             ? undefined
                             : "Operador selecionou manualmente outro pedido operacional para esta venda.",
+                      })
+                    }
+                    onConfirmarMultiplo={(pedidoOperacionalIds) =>
+                      confirmarMultiplo.mutate({
+                        pedidoOperacionalIds,
+                        pedidoContaAzulId: s.venda.id,
+                        observacoes: "Vínculo múltiplo — faturamento acumulado.",
                       })
                     }
                   />
@@ -343,31 +515,51 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
 
       {(painel.data?.divergentes ?? []).length > 0 && (
         <Section title="Divergências após conciliação ou alteração no Conta Azul" icon={<AlertTriangle className="h-4 w-4 text-amber-600" />}>
-          {painel.data!.divergentes.map((op: any) => (
-            <Card key={op.id} className="border-amber-300 bg-amber-50/30 dark:border-amber-900 dark:bg-amber-950/10">
-              <CardContent className="space-y-2 p-4">
-                <BlocoPedido titulo="Pedido operacional (referência)" pedido={op} />
-                {op.pedidoContaAzul && <BlocoVenda titulo="Venda Conta Azul atual" venda={op.pedidoContaAzul} />}
-                <DivergenciasLista
-                  divergencias={op.divergencias ?? []}
-                  pedidoOperacionalId={op.id}
-                  pedidoContaAzulId={op.pedidoContaAzulId ?? op.pedidoContaAzul?.id}
-                  aplicando={aplicarCorrecao.isPending}
-                  onAplicarCorrecao={solicitarAplicarCorrecao}
-                />
-                <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" disabled={manterOp.isPending} onClick={() => manterOp.mutate({ pedidoOperacionalId: op.id })}>
-                    Manter operacional como verdade
-                  </Button>
-                  {op.pedidoContaAzulId && (
-                    <Button size="sm" variant="ghost" disabled={desvincular.isPending} onClick={() => desvincular.mutate({ pedidoOperacionalId: op.id })}>
-                      <Unlink className="mr-1 h-3 w-3" /> Desvincular
+          {painel.data!.divergentes.map((item: any) =>
+            item.agregado ? (
+              <Card key={item.pedidoContaAzulId} className="border-amber-300 bg-amber-50/30 dark:border-amber-900 dark:bg-amber-950/10">
+                <CardContent className="space-y-2 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-200">
+                    Faturamento acumulado — {item.operacionais?.length ?? 0} entrega(s) operacionais
+                  </p>
+                  {item.pedidoContaAzul && <BlocoVenda titulo="Venda Conta Azul (período)" venda={item.pedidoContaAzul} />}
+                  <div className="space-y-2">
+                    {(item.operacionais ?? []).map((op: any) => (
+                      <BlocoPedido key={op.id} titulo={`Entrega ${fmtDate(op.dataEntrega)}`} pedido={op} />
+                    ))}
+                  </div>
+                  <DivergenciasLista
+                    divergencias={item.divergencias ?? []}
+                    pedidoContaAzulId={item.pedidoContaAzulId}
+                  />
+                </CardContent>
+              </Card>
+            ) : (
+              <Card key={item.id} className="border-amber-300 bg-amber-50/30 dark:border-amber-900 dark:bg-amber-950/10">
+                <CardContent className="space-y-2 p-4">
+                  <BlocoPedido titulo="Pedido operacional (referência)" pedido={item} />
+                  {item.pedidoContaAzul && <BlocoVenda titulo="Venda Conta Azul atual" venda={item.pedidoContaAzul} />}
+                  <DivergenciasLista
+                    divergencias={item.divergencias ?? []}
+                    pedidoOperacionalId={item.id}
+                    pedidoContaAzulId={item.pedidoContaAzulId ?? item.pedidoContaAzul?.id}
+                    aplicando={aplicarCorrecao.isPending}
+                    onAplicarCorrecao={solicitarAplicarCorrecao}
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant="outline" disabled={manterOp.isPending} onClick={() => manterOp.mutate({ pedidoOperacionalId: item.id })}>
+                      Manter operacional como verdade
                     </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                    {item.pedidoContaAzulId && (
+                      <Button size="sm" variant="ghost" disabled={desvincular.isPending} onClick={() => desvincular.mutate({ pedidoOperacionalId: item.id })}>
+                        <Unlink className="mr-1 h-3 w-3" /> Desvincular
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ),
+          )}
         </Section>
       )}
 
@@ -384,11 +576,19 @@ export function ConciliacaoContaAzulPanel({ inicio, fim }: { inicio: Date; fim: 
               vendaCandidatosId={vendaCandidatosId}
               setVendaCandidatosId={setVendaCandidatosId}
               candidatos={candidatos}
+              confirmando={confirmar.isPending || confirmarMultiplo.isPending}
               onConfirmarVinculo={(pedidoOperacionalId) =>
                 confirmar.mutate({
                   pedidoOperacionalId,
                   pedidoContaAzulId: v.id,
                   observacoes: "Operador vinculou manualmente uma venda sem pedido sugerido.",
+                })
+              }
+              onConfirmarVinculoMultiplo={(pedidoOperacionalIds) =>
+                confirmarMultiplo.mutate({
+                  pedidoOperacionalIds,
+                  pedidoContaAzulId: v.id,
+                  observacoes: "Vínculo múltiplo — faturamento acumulado.",
                 })
               }
             />
@@ -511,14 +711,34 @@ function CandidatosVenda({
   isLoading,
   candidatos,
   suggestedId,
+  acumulaPedidos = false,
+  diasAcumulo,
+  selecionadosPadrao = [],
+  divergenciasAgregadas = [],
+  confirmando = false,
+  vendaItens = [],
   onConfirmar,
+  onConfirmarMultiplo,
 }: {
   isLoading: boolean;
   candidatos: any[];
   vendaId: string;
   suggestedId?: string;
+  acumulaPedidos?: boolean;
+  diasAcumulo?: number | null;
+  selecionadosPadrao?: string[];
+  divergenciasAgregadas?: any[];
+  confirmando?: boolean;
+  vendaItens?: Array<{ produto: string; quantidade: unknown }>;
   onConfirmar: (pedidoOperacionalId: string) => void;
+  onConfirmarMultiplo?: (pedidoOperacionalIds: string[]) => void;
 }) {
+  const [selecionados, setSelecionados] = useState<string[]>(selecionadosPadrao);
+
+  useEffect(() => {
+    setSelecionados(selecionadosPadrao);
+  }, [selecionadosPadrao.join(",")]);
+
   if (isLoading) {
     return <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">Buscando pedidos possíveis...</p>;
   }
@@ -526,8 +746,132 @@ function CandidatosVenda({
   if (candidatos.length === 0) {
     return (
       <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
-        Nenhum pedido operacional do mesmo cliente foi encontrado na janela de 14 dias.
+        Nenhum pedido operacional do mesmo cliente foi encontrado na janela do período.
       </p>
+    );
+  }
+
+  const toggleSelecionado = (id: string, bloqueado: boolean) => {
+    if (bloqueado) return;
+    setSelecionados((atual) =>
+      atual.includes(id) ? atual.filter((x) => x !== id) : [...atual, id],
+    );
+  };
+
+  const itensAgregados = new Map<string, number>();
+  for (const id of selecionados) {
+    const c = candidatos.find((x) => x.pedido.id === id);
+    if (!c) continue;
+    for (const item of c.pedido.itens ?? []) {
+      const nome = item.produtoNome ?? "?";
+      itensAgregados.set(nome, (itensAgregados.get(nome) ?? 0) + Number(item.quantidade ?? 0));
+    }
+  }
+
+  const divergenciasPreview = useMemo(() => {
+    if (!acumulaPedidos || selecionados.length === 0) return divergenciasAgregadas;
+    const mapCa = new Map<string, number>();
+    for (const item of vendaItens) {
+      const nome = String(item.produto ?? "?");
+      mapCa.set(nome, (mapCa.get(nome) ?? 0) + Number(item.quantidade ?? 0));
+    }
+    const nomes = new Set([...Array.from(itensAgregados.keys()), ...Array.from(mapCa.keys())]);
+    const divs: Array<{ campo: string; operacional: number; contaAzul: number }> = [];
+    for (const nome of Array.from(nomes)) {
+      const qOp = itensAgregados.get(nome) ?? 0;
+      const qCa = mapCa.get(nome) ?? 0;
+      if (Math.abs(qOp - qCa) > 0.001) {
+        divs.push({ campo: `item:${nome}`, operacional: qOp, contaAzul: qCa });
+      }
+    }
+    return divs;
+  }, [acumulaPedidos, selecionados.join(","), divergenciasAgregadas, vendaItens]);
+
+  if (acumulaPedidos && onConfirmarMultiplo) {
+    return (
+      <div className="rounded-xl border bg-muted/20 p-3">
+        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          Faturamento acumulado — selecione as entregas do período ({diasAcumulo ?? "?"} dias)
+        </p>
+        <div className="space-y-2">
+          {candidatos.map((c) => {
+          const pedido = c.pedido;
+          const bloqueado = Boolean(
+            c.vinculadoOutraVenda || (pedido.pedidoContaAzulId && !c.vinculadoNestaVenda),
+          );
+          const marcado = selecionados.includes(pedido.id);
+          return (
+            <label
+              key={pedido.id}
+              className={`flex cursor-pointer flex-wrap items-start justify-between gap-3 rounded-lg border bg-background/80 p-3 ${marcado ? "border-cyan-400/80" : ""} ${bloqueado ? "opacity-60" : ""}`}
+            >
+                <div className="flex min-w-0 gap-3">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={marcado}
+                    disabled={bloqueado}
+                    onChange={() => toggleSelecionado(pedido.id, bloqueado)}
+                  />
+                  <div className="min-w-0">
+                    <p className="font-semibold">
+                      {pedido.cliente?.nome ?? pedido.contaAzulCustomerId}
+                      {pedido.id === suggestedId ? (
+                        <span className="ml-2 rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] text-cyan-800">sugestão automática</span>
+                      ) : null}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {fmtDate(pedido.dataEntrega)} · {labelStatusConciliacao(pedido.statusConciliacao ?? "PLANEJADO")}
+                      {pedido.pedidoContaAzul?.numeroVenda
+                        ? c.vinculadoOutraVenda
+                          ? ` · vinculado à venda nº ${pedido.pedidoContaAzul.numeroVenda} (desvincule antes)`
+                          : ` · já vinculado à venda nº ${pedido.pedidoContaAzul.numeroVenda}`
+                        : ""}
+                    </p>
+                    <ul className="mt-1 text-xs text-muted-foreground">
+                      {(pedido.itens ?? []).slice(0, 5).map((i: any) => (
+                        <li key={i.id ?? i.produtoNome}>
+                          {i.produtoNome}: {Number(i.quantidade)}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </label>
+            );
+          })}
+        </div>
+        {selecionados.length > 0 && (
+          <div className="mt-3 rounded-lg border bg-background/90 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Total operacional ({selecionados.length} entrega(s))
+            </p>
+            <ul className="mt-1 text-xs text-muted-foreground">
+              {Array.from(itensAgregados.entries()).slice(0, 8).map(([nome, qtd]) => (
+                <li key={nome}>{nome}: {qtd.toLocaleString("pt-BR")}</li>
+              ))}
+            </ul>
+            {divergenciasPreview.length > 0 ? (
+              <div className="mt-2">
+                <DivergenciasLista divergencias={divergenciasPreview} />
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-emerald-700 dark:text-emerald-200">
+                Soma operacional compatível com a venda Conta Azul.
+              </p>
+            )}
+          </div>
+        )}
+        <div className="mt-3 flex justify-end">
+          <Button
+            size="sm"
+            disabled={confirmando || selecionados.length === 0}
+            onClick={() => onConfirmarMultiplo(selecionados)}
+          >
+            Confirmar vínculo com {selecionados.length} pedido(s)
+          </Button>
+        </div>
+      </div>
     );
   }
 
@@ -539,7 +883,9 @@ function CandidatosVenda({
       <div className="space-y-2">
         {candidatos.map((c) => {
           const pedido = c.pedido;
-          const bloqueado = pedido.pedidoContaAzulId && !c.vinculadoNestaVenda;
+          const bloqueado = Boolean(
+            c.vinculadoOutraVenda || (pedido.pedidoContaAzulId && !c.vinculadoNestaVenda),
+          );
           return (
             <div key={pedido.id} className="rounded-lg border bg-background/80 p-3">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -567,8 +913,12 @@ function CandidatosVenda({
                     <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-200">Sem divergências relevantes.</p>
                   )}
                 </div>
-                <Button size="sm" disabled={bloqueado} onClick={() => onConfirmar(pedido.id)}>
-                  {bloqueado ? "Já vinculado" : "Confirmar neste pedido"}
+                <Button size="sm" disabled={bloqueado || confirmando} onClick={() => onConfirmar(pedido.id)}>
+                  {bloqueado
+                    ? c.vinculadoOutraVenda
+                      ? "Vinculado a outra venda"
+                      : "Já vinculado"
+                    : "Confirmar neste pedido"}
                 </Button>
               </div>
             </div>
@@ -588,7 +938,9 @@ function VendaSemPedidoCard({
   vendaCandidatosId,
   setVendaCandidatosId,
   candidatos,
+  confirmando,
   onConfirmarVinculo,
+  onConfirmarVinculoMultiplo,
 }: {
   venda: any;
   criarDeVenda: { isPending: boolean; mutate: (input: { pedidoContaAzulId: string; tipoVenda: TipoVenda }) => void };
@@ -597,8 +949,10 @@ function VendaSemPedidoCard({
   importarProdutos: { isPending: boolean; mutate: (input: { produtoIds: string[] }) => void };
   vendaCandidatosId: string | null;
   setVendaCandidatosId: (id: string | null) => void;
-  candidatos: { isLoading: boolean; data?: { candidatos: any[] } };
+  candidatos: { isLoading: boolean; data?: { candidatos: any[]; acumulaPedidos?: boolean; diasAcumulo?: number | null; selecionadosPadrao?: string[]; divergenciasAgregadas?: any[] } };
+  confirmando?: boolean;
   onConfirmarVinculo: (pedidoOperacionalId: string) => void;
+  onConfirmarVinculoMultiplo?: (pedidoOperacionalIds: string[]) => void;
 }) {
   const [tipoVenda, setTipoVenda] = useState<TipoVenda | "">("");
   const faltantes = trpc.comercial.pedidos.conciliacaoProdutosFaltantesVenda.useQuery({ pedidoContaAzulId: venda.id });
@@ -674,7 +1028,14 @@ function VendaSemPedidoCard({
               isLoading={candidatos.isLoading}
               candidatos={candidatos.data?.candidatos ?? []}
               vendaId={venda.id}
+              acumulaPedidos={Boolean(candidatos.data?.acumulaPedidos)}
+              diasAcumulo={candidatos.data?.diasAcumulo ?? null}
+              selecionadosPadrao={candidatos.data?.selecionadosPadrao ?? []}
+              divergenciasAgregadas={candidatos.data?.divergenciasAgregadas ?? []}
+              vendaItens={candidatos.data?.venda?.itens ?? []}
+              confirmando={confirmando}
               onConfirmar={onConfirmarVinculo}
+              onConfirmarMultiplo={onConfirmarVinculoMultiplo}
             />
           </div>
         )}

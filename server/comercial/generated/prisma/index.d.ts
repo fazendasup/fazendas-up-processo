@@ -3923,11 +3923,13 @@ export namespace Prisma {
 
   export type PedidoCountOutputType = {
     itens: number
+    pedidosOperacionaisVinculo: number
     eventosConciliacao: number
   }
 
   export type PedidoCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     itens?: boolean | PedidoCountOutputTypeCountItensArgs
+    pedidosOperacionaisVinculo?: boolean | PedidoCountOutputTypeCountPedidosOperacionaisVinculoArgs
     eventosConciliacao?: boolean | PedidoCountOutputTypeCountEventosConciliacaoArgs
   }
 
@@ -3947,6 +3949,13 @@ export namespace Prisma {
    */
   export type PedidoCountOutputTypeCountItensArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: ItemPedidoWhereInput
+  }
+
+  /**
+   * PedidoCountOutputType without action
+   */
+  export type PedidoCountOutputTypeCountPedidosOperacionaisVinculoArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PedidoOperacionalWhereInput
   }
 
   /**
@@ -22759,7 +22768,7 @@ export namespace Prisma {
     origemPedido?: boolean
     cliente?: boolean | ClienteDefaultArgs<ExtArgs>
     itens?: boolean | Pedido$itensArgs<ExtArgs>
-    pedidoOperacionalVinculo?: boolean | Pedido$pedidoOperacionalVinculoArgs<ExtArgs>
+    pedidosOperacionaisVinculo?: boolean | Pedido$pedidosOperacionaisVinculoArgs<ExtArgs>
     eventosConciliacao?: boolean | Pedido$eventosConciliacaoArgs<ExtArgs>
     _count?: boolean | PedidoCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["pedido"]>
@@ -22788,7 +22797,7 @@ export namespace Prisma {
   export type PedidoInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     cliente?: boolean | ClienteDefaultArgs<ExtArgs>
     itens?: boolean | Pedido$itensArgs<ExtArgs>
-    pedidoOperacionalVinculo?: boolean | Pedido$pedidoOperacionalVinculoArgs<ExtArgs>
+    pedidosOperacionaisVinculo?: boolean | Pedido$pedidosOperacionaisVinculoArgs<ExtArgs>
     eventosConciliacao?: boolean | Pedido$eventosConciliacaoArgs<ExtArgs>
     _count?: boolean | PedidoCountOutputTypeDefaultArgs<ExtArgs>
   }
@@ -22798,7 +22807,7 @@ export namespace Prisma {
     objects: {
       cliente: Prisma.$ClientePayload<ExtArgs>
       itens: Prisma.$ItemPedidoPayload<ExtArgs>[]
-      pedidoOperacionalVinculo: Prisma.$PedidoOperacionalPayload<ExtArgs> | null
+      pedidosOperacionaisVinculo: Prisma.$PedidoOperacionalPayload<ExtArgs>[]
       eventosConciliacao: Prisma.$PedidoConciliacaoEventoPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
@@ -23159,7 +23168,7 @@ export namespace Prisma {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     cliente<T extends ClienteDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ClienteDefaultArgs<ExtArgs>>): Prisma__ClienteClient<$Result.GetResult<Prisma.$ClientePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     itens<T extends Pedido$itensArgs<ExtArgs> = {}>(args?: Subset<T, Pedido$itensArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ItemPedidoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    pedidoOperacionalVinculo<T extends Pedido$pedidoOperacionalVinculoArgs<ExtArgs> = {}>(args?: Subset<T, Pedido$pedidoOperacionalVinculoArgs<ExtArgs>>): Prisma__PedidoOperacionalClient<$Result.GetResult<Prisma.$PedidoOperacionalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    pedidosOperacionaisVinculo<T extends Pedido$pedidosOperacionaisVinculoArgs<ExtArgs> = {}>(args?: Subset<T, Pedido$pedidosOperacionaisVinculoArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     eventosConciliacao<T extends Pedido$eventosConciliacaoArgs<ExtArgs> = {}>(args?: Subset<T, Pedido$eventosConciliacaoArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoConciliacaoEventoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -23572,9 +23581,9 @@ export namespace Prisma {
   }
 
   /**
-   * Pedido.pedidoOperacionalVinculo
+   * Pedido.pedidosOperacionaisVinculo
    */
-  export type Pedido$pedidoOperacionalVinculoArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type Pedido$pedidosOperacionaisVinculoArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
      * Select specific fields to fetch from the PedidoOperacional
      */
@@ -23588,6 +23597,11 @@ export namespace Prisma {
      */
     include?: PedidoOperacionalInclude<ExtArgs> | null
     where?: PedidoOperacionalWhereInput
+    orderBy?: PedidoOperacionalOrderByWithRelationInput | PedidoOperacionalOrderByWithRelationInput[]
+    cursor?: PedidoOperacionalWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PedidoOperacionalScalarFieldEnum | PedidoOperacionalScalarFieldEnum[]
   }
 
   /**
@@ -36190,7 +36204,6 @@ export namespace Prisma {
 
   export type PedidoOperacionalWhereUniqueInput = Prisma.AtLeast<{
     id?: string
-    pedidoContaAzulId?: string
     AND?: PedidoOperacionalWhereInput | PedidoOperacionalWhereInput[]
     OR?: PedidoOperacionalWhereInput[]
     NOT?: PedidoOperacionalWhereInput | PedidoOperacionalWhereInput[]
@@ -36201,6 +36214,7 @@ export namespace Prisma {
     tipoVenda?: EnumTipoVendaPedidoFilter<"PedidoOperacional"> | $Enums.TipoVendaPedido
     status?: EnumPedidoOperacionalStatusFilter<"PedidoOperacional"> | $Enums.PedidoOperacionalStatus
     statusConciliacao?: EnumStatusConciliacaoOperacionalFilter<"PedidoOperacional"> | $Enums.StatusConciliacaoOperacional
+    pedidoContaAzulId?: StringNullableFilter<"PedidoOperacional"> | string | null
     sugestaoPedidoContaAzulId?: StringNullableFilter<"PedidoOperacional"> | string | null
     snapshotConciliacao?: JsonNullableFilter<"PedidoOperacional">
     observacoes?: StringNullableFilter<"PedidoOperacional"> | string | null
@@ -36218,7 +36232,7 @@ export namespace Prisma {
     avarias?: PedidoOperacionalAvariaListRelationFilter
     auditoria?: PedidoOperacionalAuditoriaListRelationFilter
     eventosConciliacao?: PedidoConciliacaoEventoListRelationFilter
-  }, "id" | "pedidoContaAzulId">
+  }, "id">
 
   export type PedidoOperacionalOrderByWithAggregationInput = {
     id?: SortOrder
@@ -36948,7 +36962,7 @@ export namespace Prisma {
     origemPedido?: EnumOrigemPedidoFilter<"Pedido"> | $Enums.OrigemPedido
     cliente?: XOR<ClienteScalarRelationFilter, ClienteWhereInput>
     itens?: ItemPedidoListRelationFilter
-    pedidoOperacionalVinculo?: XOR<PedidoOperacionalNullableScalarRelationFilter, PedidoOperacionalWhereInput> | null
+    pedidosOperacionaisVinculo?: PedidoOperacionalListRelationFilter
     eventosConciliacao?: PedidoConciliacaoEventoListRelationFilter
   }
 
@@ -36970,7 +36984,7 @@ export namespace Prisma {
     origemPedido?: SortOrder
     cliente?: ClienteOrderByWithRelationInput
     itens?: ItemPedidoOrderByRelationAggregateInput
-    pedidoOperacionalVinculo?: PedidoOperacionalOrderByWithRelationInput
+    pedidosOperacionaisVinculo?: PedidoOperacionalOrderByRelationAggregateInput
     eventosConciliacao?: PedidoConciliacaoEventoOrderByRelationAggregateInput
     _relevance?: PedidoOrderByRelevanceInput
   }
@@ -36996,7 +37010,7 @@ export namespace Prisma {
     origemPedido?: EnumOrigemPedidoFilter<"Pedido"> | $Enums.OrigemPedido
     cliente?: XOR<ClienteScalarRelationFilter, ClienteWhereInput>
     itens?: ItemPedidoListRelationFilter
-    pedidoOperacionalVinculo?: XOR<PedidoOperacionalNullableScalarRelationFilter, PedidoOperacionalWhereInput> | null
+    pedidosOperacionaisVinculo?: PedidoOperacionalListRelationFilter
     eventosConciliacao?: PedidoConciliacaoEventoListRelationFilter
   }, "id" | "externalId">
 
@@ -38769,7 +38783,7 @@ export namespace Prisma {
     cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
     criadoPor?: UsuarioCreateNestedOneWithoutPedidosCriadosInput
     editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
-    pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidoOperacionalVinculoInput
+    pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidosOperacionaisVinculoInput
     itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
@@ -38819,7 +38833,7 @@ export namespace Prisma {
     cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
     criadoPor?: UsuarioUpdateOneWithoutPedidosCriadosNestedInput
     editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
-    pedidoContaAzul?: PedidoUpdateOneWithoutPedidoOperacionalVinculoNestedInput
+    pedidoContaAzul?: PedidoUpdateOneWithoutPedidosOperacionaisVinculoNestedInput
     itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
@@ -39628,7 +39642,7 @@ export namespace Prisma {
     origemPedido: $Enums.OrigemPedido
     cliente: ClienteCreateNestedOneWithoutPedidosInput
     itens?: ItemPedidoCreateNestedManyWithoutPedidoInput
-    pedidoOperacionalVinculo?: PedidoOperacionalCreateNestedOneWithoutPedidoContaAzulInput
+    pedidosOperacionaisVinculo?: PedidoOperacionalCreateNestedManyWithoutPedidoContaAzulInput
     eventosConciliacao?: PedidoConciliacaoEventoCreateNestedManyWithoutPedidoContaAzulInput
   }
 
@@ -39649,7 +39663,7 @@ export namespace Prisma {
     sugestaoPedidoOperacionalId?: string | null
     origemPedido: $Enums.OrigemPedido
     itens?: ItemPedidoUncheckedCreateNestedManyWithoutPedidoInput
-    pedidoOperacionalVinculo?: PedidoOperacionalUncheckedCreateNestedOneWithoutPedidoContaAzulInput
+    pedidosOperacionaisVinculo?: PedidoOperacionalUncheckedCreateNestedManyWithoutPedidoContaAzulInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedCreateNestedManyWithoutPedidoContaAzulInput
   }
 
@@ -39670,7 +39684,7 @@ export namespace Prisma {
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
     cliente?: ClienteUpdateOneRequiredWithoutPedidosNestedInput
     itens?: ItemPedidoUpdateManyWithoutPedidoNestedInput
-    pedidoOperacionalVinculo?: PedidoOperacionalUpdateOneWithoutPedidoContaAzulNestedInput
+    pedidosOperacionaisVinculo?: PedidoOperacionalUpdateManyWithoutPedidoContaAzulNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUpdateManyWithoutPedidoContaAzulNestedInput
   }
 
@@ -39691,7 +39705,7 @@ export namespace Prisma {
     sugestaoPedidoOperacionalId?: NullableStringFieldUpdateOperationsInput | string | null
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
     itens?: ItemPedidoUncheckedUpdateManyWithoutPedidoNestedInput
-    pedidoOperacionalVinculo?: PedidoOperacionalUncheckedUpdateOneWithoutPedidoContaAzulNestedInput
+    pedidosOperacionaisVinculo?: PedidoOperacionalUncheckedUpdateManyWithoutPedidoContaAzulNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedUpdateManyWithoutPedidoContaAzulNestedInput
   }
 
@@ -42355,11 +42369,6 @@ export namespace Prisma {
     none?: ItemPedidoWhereInput
   }
 
-  export type PedidoOperacionalNullableScalarRelationFilter = {
-    is?: PedidoOperacionalWhereInput | null
-    isNot?: PedidoOperacionalWhereInput | null
-  }
-
   export type ItemPedidoOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -42458,6 +42467,11 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumOrigemPedidoFilter<$PrismaModel>
     _max?: NestedEnumOrigemPedidoFilter<$PrismaModel>
+  }
+
+  export type PedidoOperacionalNullableScalarRelationFilter = {
+    is?: PedidoOperacionalWhereInput | null
+    isNot?: PedidoOperacionalWhereInput | null
   }
 
   export type PedidoConciliacaoEventoOrderByRelevanceInput = {
@@ -44370,9 +44384,9 @@ export namespace Prisma {
     connect?: UsuarioWhereUniqueInput
   }
 
-  export type PedidoCreateNestedOneWithoutPedidoOperacionalVinculoInput = {
-    create?: XOR<PedidoCreateWithoutPedidoOperacionalVinculoInput, PedidoUncheckedCreateWithoutPedidoOperacionalVinculoInput>
-    connectOrCreate?: PedidoCreateOrConnectWithoutPedidoOperacionalVinculoInput
+  export type PedidoCreateNestedOneWithoutPedidosOperacionaisVinculoInput = {
+    create?: XOR<PedidoCreateWithoutPedidosOperacionaisVinculoInput, PedidoUncheckedCreateWithoutPedidosOperacionaisVinculoInput>
+    connectOrCreate?: PedidoCreateOrConnectWithoutPedidosOperacionaisVinculoInput
     connect?: PedidoWhereUniqueInput
   }
 
@@ -44482,14 +44496,14 @@ export namespace Prisma {
     update?: XOR<XOR<UsuarioUpdateToOneWithWhereWithoutPedidosEditadosInput, UsuarioUpdateWithoutPedidosEditadosInput>, UsuarioUncheckedUpdateWithoutPedidosEditadosInput>
   }
 
-  export type PedidoUpdateOneWithoutPedidoOperacionalVinculoNestedInput = {
-    create?: XOR<PedidoCreateWithoutPedidoOperacionalVinculoInput, PedidoUncheckedCreateWithoutPedidoOperacionalVinculoInput>
-    connectOrCreate?: PedidoCreateOrConnectWithoutPedidoOperacionalVinculoInput
-    upsert?: PedidoUpsertWithoutPedidoOperacionalVinculoInput
+  export type PedidoUpdateOneWithoutPedidosOperacionaisVinculoNestedInput = {
+    create?: XOR<PedidoCreateWithoutPedidosOperacionaisVinculoInput, PedidoUncheckedCreateWithoutPedidosOperacionaisVinculoInput>
+    connectOrCreate?: PedidoCreateOrConnectWithoutPedidosOperacionaisVinculoInput
+    upsert?: PedidoUpsertWithoutPedidosOperacionaisVinculoInput
     disconnect?: PedidoWhereInput | boolean
     delete?: PedidoWhereInput | boolean
     connect?: PedidoWhereUniqueInput
-    update?: XOR<XOR<PedidoUpdateToOneWithWhereWithoutPedidoOperacionalVinculoInput, PedidoUpdateWithoutPedidoOperacionalVinculoInput>, PedidoUncheckedUpdateWithoutPedidoOperacionalVinculoInput>
+    update?: XOR<XOR<PedidoUpdateToOneWithWhereWithoutPedidosOperacionaisVinculoInput, PedidoUpdateWithoutPedidosOperacionaisVinculoInput>, PedidoUncheckedUpdateWithoutPedidosOperacionaisVinculoInput>
   }
 
   export type PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput = {
@@ -44919,10 +44933,11 @@ export namespace Prisma {
     connect?: ItemPedidoWhereUniqueInput | ItemPedidoWhereUniqueInput[]
   }
 
-  export type PedidoOperacionalCreateNestedOneWithoutPedidoContaAzulInput = {
-    create?: XOR<PedidoOperacionalCreateWithoutPedidoContaAzulInput, PedidoOperacionalUncheckedCreateWithoutPedidoContaAzulInput>
-    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutPedidoContaAzulInput
-    connect?: PedidoOperacionalWhereUniqueInput
+  export type PedidoOperacionalCreateNestedManyWithoutPedidoContaAzulInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutPedidoContaAzulInput, PedidoOperacionalUncheckedCreateWithoutPedidoContaAzulInput> | PedidoOperacionalCreateWithoutPedidoContaAzulInput[] | PedidoOperacionalUncheckedCreateWithoutPedidoContaAzulInput[]
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutPedidoContaAzulInput | PedidoOperacionalCreateOrConnectWithoutPedidoContaAzulInput[]
+    createMany?: PedidoOperacionalCreateManyPedidoContaAzulInputEnvelope
+    connect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
   }
 
   export type PedidoConciliacaoEventoCreateNestedManyWithoutPedidoContaAzulInput = {
@@ -44939,10 +44954,11 @@ export namespace Prisma {
     connect?: ItemPedidoWhereUniqueInput | ItemPedidoWhereUniqueInput[]
   }
 
-  export type PedidoOperacionalUncheckedCreateNestedOneWithoutPedidoContaAzulInput = {
-    create?: XOR<PedidoOperacionalCreateWithoutPedidoContaAzulInput, PedidoOperacionalUncheckedCreateWithoutPedidoContaAzulInput>
-    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutPedidoContaAzulInput
-    connect?: PedidoOperacionalWhereUniqueInput
+  export type PedidoOperacionalUncheckedCreateNestedManyWithoutPedidoContaAzulInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutPedidoContaAzulInput, PedidoOperacionalUncheckedCreateWithoutPedidoContaAzulInput> | PedidoOperacionalCreateWithoutPedidoContaAzulInput[] | PedidoOperacionalUncheckedCreateWithoutPedidoContaAzulInput[]
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutPedidoContaAzulInput | PedidoOperacionalCreateOrConnectWithoutPedidoContaAzulInput[]
+    createMany?: PedidoOperacionalCreateManyPedidoContaAzulInputEnvelope
+    connect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
   }
 
   export type PedidoConciliacaoEventoUncheckedCreateNestedManyWithoutPedidoContaAzulInput = {
@@ -44982,14 +44998,18 @@ export namespace Prisma {
     deleteMany?: ItemPedidoScalarWhereInput | ItemPedidoScalarWhereInput[]
   }
 
-  export type PedidoOperacionalUpdateOneWithoutPedidoContaAzulNestedInput = {
-    create?: XOR<PedidoOperacionalCreateWithoutPedidoContaAzulInput, PedidoOperacionalUncheckedCreateWithoutPedidoContaAzulInput>
-    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutPedidoContaAzulInput
-    upsert?: PedidoOperacionalUpsertWithoutPedidoContaAzulInput
-    disconnect?: PedidoOperacionalWhereInput | boolean
-    delete?: PedidoOperacionalWhereInput | boolean
-    connect?: PedidoOperacionalWhereUniqueInput
-    update?: XOR<XOR<PedidoOperacionalUpdateToOneWithWhereWithoutPedidoContaAzulInput, PedidoOperacionalUpdateWithoutPedidoContaAzulInput>, PedidoOperacionalUncheckedUpdateWithoutPedidoContaAzulInput>
+  export type PedidoOperacionalUpdateManyWithoutPedidoContaAzulNestedInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutPedidoContaAzulInput, PedidoOperacionalUncheckedCreateWithoutPedidoContaAzulInput> | PedidoOperacionalCreateWithoutPedidoContaAzulInput[] | PedidoOperacionalUncheckedCreateWithoutPedidoContaAzulInput[]
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutPedidoContaAzulInput | PedidoOperacionalCreateOrConnectWithoutPedidoContaAzulInput[]
+    upsert?: PedidoOperacionalUpsertWithWhereUniqueWithoutPedidoContaAzulInput | PedidoOperacionalUpsertWithWhereUniqueWithoutPedidoContaAzulInput[]
+    createMany?: PedidoOperacionalCreateManyPedidoContaAzulInputEnvelope
+    set?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    disconnect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    delete?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    connect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    update?: PedidoOperacionalUpdateWithWhereUniqueWithoutPedidoContaAzulInput | PedidoOperacionalUpdateWithWhereUniqueWithoutPedidoContaAzulInput[]
+    updateMany?: PedidoOperacionalUpdateManyWithWhereWithoutPedidoContaAzulInput | PedidoOperacionalUpdateManyWithWhereWithoutPedidoContaAzulInput[]
+    deleteMany?: PedidoOperacionalScalarWhereInput | PedidoOperacionalScalarWhereInput[]
   }
 
   export type PedidoConciliacaoEventoUpdateManyWithoutPedidoContaAzulNestedInput = {
@@ -45020,14 +45040,18 @@ export namespace Prisma {
     deleteMany?: ItemPedidoScalarWhereInput | ItemPedidoScalarWhereInput[]
   }
 
-  export type PedidoOperacionalUncheckedUpdateOneWithoutPedidoContaAzulNestedInput = {
-    create?: XOR<PedidoOperacionalCreateWithoutPedidoContaAzulInput, PedidoOperacionalUncheckedCreateWithoutPedidoContaAzulInput>
-    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutPedidoContaAzulInput
-    upsert?: PedidoOperacionalUpsertWithoutPedidoContaAzulInput
-    disconnect?: PedidoOperacionalWhereInput | boolean
-    delete?: PedidoOperacionalWhereInput | boolean
-    connect?: PedidoOperacionalWhereUniqueInput
-    update?: XOR<XOR<PedidoOperacionalUpdateToOneWithWhereWithoutPedidoContaAzulInput, PedidoOperacionalUpdateWithoutPedidoContaAzulInput>, PedidoOperacionalUncheckedUpdateWithoutPedidoContaAzulInput>
+  export type PedidoOperacionalUncheckedUpdateManyWithoutPedidoContaAzulNestedInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutPedidoContaAzulInput, PedidoOperacionalUncheckedCreateWithoutPedidoContaAzulInput> | PedidoOperacionalCreateWithoutPedidoContaAzulInput[] | PedidoOperacionalUncheckedCreateWithoutPedidoContaAzulInput[]
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutPedidoContaAzulInput | PedidoOperacionalCreateOrConnectWithoutPedidoContaAzulInput[]
+    upsert?: PedidoOperacionalUpsertWithWhereUniqueWithoutPedidoContaAzulInput | PedidoOperacionalUpsertWithWhereUniqueWithoutPedidoContaAzulInput[]
+    createMany?: PedidoOperacionalCreateManyPedidoContaAzulInputEnvelope
+    set?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    disconnect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    delete?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    connect?: PedidoOperacionalWhereUniqueInput | PedidoOperacionalWhereUniqueInput[]
+    update?: PedidoOperacionalUpdateWithWhereUniqueWithoutPedidoContaAzulInput | PedidoOperacionalUpdateWithWhereUniqueWithoutPedidoContaAzulInput[]
+    updateMany?: PedidoOperacionalUpdateManyWithWhereWithoutPedidoContaAzulInput | PedidoOperacionalUpdateManyWithWhereWithoutPedidoContaAzulInput[]
+    deleteMany?: PedidoOperacionalScalarWhereInput | PedidoOperacionalScalarWhereInput[]
   }
 
   export type PedidoConciliacaoEventoUncheckedUpdateManyWithoutPedidoContaAzulNestedInput = {
@@ -46048,7 +46072,7 @@ export namespace Prisma {
     atualizadoEm?: Date | string
     cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
     editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
-    pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidoOperacionalVinculoInput
+    pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidosOperacionaisVinculoInput
     itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
@@ -46106,7 +46130,7 @@ export namespace Prisma {
     atualizadoEm?: Date | string
     cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
     criadoPor?: UsuarioCreateNestedOneWithoutPedidosCriadosInput
-    pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidoOperacionalVinculoInput
+    pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidosOperacionaisVinculoInput
     itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
@@ -46903,7 +46927,7 @@ export namespace Prisma {
     sugestaoPedidoOperacionalId?: string | null
     origemPedido: $Enums.OrigemPedido
     itens?: ItemPedidoCreateNestedManyWithoutPedidoInput
-    pedidoOperacionalVinculo?: PedidoOperacionalCreateNestedOneWithoutPedidoContaAzulInput
+    pedidosOperacionaisVinculo?: PedidoOperacionalCreateNestedManyWithoutPedidoContaAzulInput
     eventosConciliacao?: PedidoConciliacaoEventoCreateNestedManyWithoutPedidoContaAzulInput
   }
 
@@ -46923,7 +46947,7 @@ export namespace Prisma {
     sugestaoPedidoOperacionalId?: string | null
     origemPedido: $Enums.OrigemPedido
     itens?: ItemPedidoUncheckedCreateNestedManyWithoutPedidoInput
-    pedidoOperacionalVinculo?: PedidoOperacionalUncheckedCreateNestedOneWithoutPedidoContaAzulInput
+    pedidosOperacionaisVinculo?: PedidoOperacionalUncheckedCreateNestedManyWithoutPedidoContaAzulInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedCreateNestedManyWithoutPedidoContaAzulInput
   }
 
@@ -47135,7 +47159,7 @@ export namespace Prisma {
     atualizadoEm?: Date | string
     criadoPor?: UsuarioCreateNestedOneWithoutPedidosCriadosInput
     editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
-    pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidoOperacionalVinculoInput
+    pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidosOperacionaisVinculoInput
     itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
@@ -48651,7 +48675,7 @@ export namespace Prisma {
     create: XOR<UsuarioCreateWithoutPedidosEditadosInput, UsuarioUncheckedCreateWithoutPedidosEditadosInput>
   }
 
-  export type PedidoCreateWithoutPedidoOperacionalVinculoInput = {
+  export type PedidoCreateWithoutPedidosOperacionaisVinculoInput = {
     id?: string
     externalId?: string | null
     numeroVenda?: string | null
@@ -48671,7 +48695,7 @@ export namespace Prisma {
     eventosConciliacao?: PedidoConciliacaoEventoCreateNestedManyWithoutPedidoContaAzulInput
   }
 
-  export type PedidoUncheckedCreateWithoutPedidoOperacionalVinculoInput = {
+  export type PedidoUncheckedCreateWithoutPedidosOperacionaisVinculoInput = {
     id?: string
     externalId?: string | null
     numeroVenda?: string | null
@@ -48691,9 +48715,9 @@ export namespace Prisma {
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedCreateNestedManyWithoutPedidoContaAzulInput
   }
 
-  export type PedidoCreateOrConnectWithoutPedidoOperacionalVinculoInput = {
+  export type PedidoCreateOrConnectWithoutPedidosOperacionaisVinculoInput = {
     where: PedidoWhereUniqueInput
-    create: XOR<PedidoCreateWithoutPedidoOperacionalVinculoInput, PedidoUncheckedCreateWithoutPedidoOperacionalVinculoInput>
+    create: XOR<PedidoCreateWithoutPedidosOperacionaisVinculoInput, PedidoUncheckedCreateWithoutPedidosOperacionaisVinculoInput>
   }
 
   export type PedidoOperacionalItemCreateWithoutPedidoInput = {
@@ -48999,18 +49023,18 @@ export namespace Prisma {
     rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
-  export type PedidoUpsertWithoutPedidoOperacionalVinculoInput = {
-    update: XOR<PedidoUpdateWithoutPedidoOperacionalVinculoInput, PedidoUncheckedUpdateWithoutPedidoOperacionalVinculoInput>
-    create: XOR<PedidoCreateWithoutPedidoOperacionalVinculoInput, PedidoUncheckedCreateWithoutPedidoOperacionalVinculoInput>
+  export type PedidoUpsertWithoutPedidosOperacionaisVinculoInput = {
+    update: XOR<PedidoUpdateWithoutPedidosOperacionaisVinculoInput, PedidoUncheckedUpdateWithoutPedidosOperacionaisVinculoInput>
+    create: XOR<PedidoCreateWithoutPedidosOperacionaisVinculoInput, PedidoUncheckedCreateWithoutPedidosOperacionaisVinculoInput>
     where?: PedidoWhereInput
   }
 
-  export type PedidoUpdateToOneWithWhereWithoutPedidoOperacionalVinculoInput = {
+  export type PedidoUpdateToOneWithWhereWithoutPedidosOperacionaisVinculoInput = {
     where?: PedidoWhereInput
-    data: XOR<PedidoUpdateWithoutPedidoOperacionalVinculoInput, PedidoUncheckedUpdateWithoutPedidoOperacionalVinculoInput>
+    data: XOR<PedidoUpdateWithoutPedidosOperacionaisVinculoInput, PedidoUncheckedUpdateWithoutPedidosOperacionaisVinculoInput>
   }
 
-  export type PedidoUpdateWithoutPedidoOperacionalVinculoInput = {
+  export type PedidoUpdateWithoutPedidosOperacionaisVinculoInput = {
     id?: StringFieldUpdateOperationsInput | string
     externalId?: NullableStringFieldUpdateOperationsInput | string | null
     numeroVenda?: NullableStringFieldUpdateOperationsInput | string | null
@@ -49030,7 +49054,7 @@ export namespace Prisma {
     eventosConciliacao?: PedidoConciliacaoEventoUpdateManyWithoutPedidoContaAzulNestedInput
   }
 
-  export type PedidoUncheckedUpdateWithoutPedidoOperacionalVinculoInput = {
+  export type PedidoUncheckedUpdateWithoutPedidosOperacionaisVinculoInput = {
     id?: StringFieldUpdateOperationsInput | string
     externalId?: NullableStringFieldUpdateOperationsInput | string | null
     numeroVenda?: NullableStringFieldUpdateOperationsInput | string | null
@@ -49875,7 +49899,7 @@ export namespace Prisma {
     cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
     criadoPor?: UsuarioCreateNestedOneWithoutPedidosCriadosInput
     editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
-    pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidoOperacionalVinculoInput
+    pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidosOperacionaisVinculoInput
     avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
     eventosConciliacao?: PedidoConciliacaoEventoCreateNestedManyWithoutPedidoOperacionalInput
@@ -49996,7 +50020,7 @@ export namespace Prisma {
     cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
     criadoPor?: UsuarioUpdateOneWithoutPedidosCriadosNestedInput
     editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
-    pedidoContaAzul?: PedidoUpdateOneWithoutPedidoOperacionalVinculoNestedInput
+    pedidoContaAzul?: PedidoUpdateOneWithoutPedidosOperacionaisVinculoNestedInput
     avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUpdateManyWithoutPedidoOperacionalNestedInput
@@ -50107,7 +50131,7 @@ export namespace Prisma {
     cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
     criadoPor?: UsuarioCreateNestedOneWithoutPedidosCriadosInput
     editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
-    pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidoOperacionalVinculoInput
+    pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidosOperacionaisVinculoInput
     itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
     eventosConciliacao?: PedidoConciliacaoEventoCreateNestedManyWithoutPedidoOperacionalInput
@@ -50334,7 +50358,7 @@ export namespace Prisma {
     cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
     criadoPor?: UsuarioUpdateOneWithoutPedidosCriadosNestedInput
     editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
-    pedidoContaAzul?: PedidoUpdateOneWithoutPedidoOperacionalVinculoNestedInput
+    pedidoContaAzul?: PedidoUpdateOneWithoutPedidosOperacionaisVinculoNestedInput
     itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUpdateManyWithoutPedidoOperacionalNestedInput
@@ -50563,7 +50587,7 @@ export namespace Prisma {
     cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
     criadoPor?: UsuarioCreateNestedOneWithoutPedidosCriadosInput
     editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
-    pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidoOperacionalVinculoInput
+    pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidosOperacionaisVinculoInput
     itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
     eventosConciliacao?: PedidoConciliacaoEventoCreateNestedManyWithoutPedidoOperacionalInput
@@ -50670,7 +50694,7 @@ export namespace Prisma {
     cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
     criadoPor?: UsuarioUpdateOneWithoutPedidosCriadosNestedInput
     editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
-    pedidoContaAzul?: PedidoUpdateOneWithoutPedidoOperacionalVinculoNestedInput
+    pedidoContaAzul?: PedidoUpdateOneWithoutPedidosOperacionaisVinculoNestedInput
     itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUpdateManyWithoutPedidoOperacionalNestedInput
@@ -50895,6 +50919,11 @@ export namespace Prisma {
     create: XOR<PedidoOperacionalCreateWithoutPedidoContaAzulInput, PedidoOperacionalUncheckedCreateWithoutPedidoContaAzulInput>
   }
 
+  export type PedidoOperacionalCreateManyPedidoContaAzulInputEnvelope = {
+    data: PedidoOperacionalCreateManyPedidoContaAzulInput | PedidoOperacionalCreateManyPedidoContaAzulInput[]
+    skipDuplicates?: boolean
+  }
+
   export type PedidoConciliacaoEventoCreateWithoutPedidoContaAzulInput = {
     id?: string
     tipo: string
@@ -51030,63 +51059,20 @@ export namespace Prisma {
     custoUnit?: DecimalNullableFilter<"ItemPedido"> | Decimal | DecimalJsLike | number | string | null
   }
 
-  export type PedidoOperacionalUpsertWithoutPedidoContaAzulInput = {
+  export type PedidoOperacionalUpsertWithWhereUniqueWithoutPedidoContaAzulInput = {
+    where: PedidoOperacionalWhereUniqueInput
     update: XOR<PedidoOperacionalUpdateWithoutPedidoContaAzulInput, PedidoOperacionalUncheckedUpdateWithoutPedidoContaAzulInput>
     create: XOR<PedidoOperacionalCreateWithoutPedidoContaAzulInput, PedidoOperacionalUncheckedCreateWithoutPedidoContaAzulInput>
-    where?: PedidoOperacionalWhereInput
   }
 
-  export type PedidoOperacionalUpdateToOneWithWhereWithoutPedidoContaAzulInput = {
-    where?: PedidoOperacionalWhereInput
+  export type PedidoOperacionalUpdateWithWhereUniqueWithoutPedidoContaAzulInput = {
+    where: PedidoOperacionalWhereUniqueInput
     data: XOR<PedidoOperacionalUpdateWithoutPedidoContaAzulInput, PedidoOperacionalUncheckedUpdateWithoutPedidoContaAzulInput>
   }
 
-  export type PedidoOperacionalUpdateWithoutPedidoContaAzulInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
-    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
-    diaSemana?: IntFieldUpdateOperationsInput | number
-    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
-    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
-    statusConciliacao?: EnumStatusConciliacaoOperacionalFieldUpdateOperationsInput | $Enums.StatusConciliacaoOperacional
-    sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
-    snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
-    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
-    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
-    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
-    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
-    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
-    cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
-    criadoPor?: UsuarioUpdateOneWithoutPedidosCriadosNestedInput
-    editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
-    itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
-    avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
-    auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
-    eventosConciliacao?: PedidoConciliacaoEventoUpdateManyWithoutPedidoOperacionalNestedInput
-  }
-
-  export type PedidoOperacionalUncheckedUpdateWithoutPedidoContaAzulInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
-    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
-    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
-    diaSemana?: IntFieldUpdateOperationsInput | number
-    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
-    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
-    statusConciliacao?: EnumStatusConciliacaoOperacionalFieldUpdateOperationsInput | $Enums.StatusConciliacaoOperacional
-    sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
-    snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
-    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
-    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
-    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
-    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
-    editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
-    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
-    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
-    itens?: PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoNestedInput
-    avarias?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoNestedInput
-    auditoria?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutPedidoNestedInput
-    eventosConciliacao?: PedidoConciliacaoEventoUncheckedUpdateManyWithoutPedidoOperacionalNestedInput
+  export type PedidoOperacionalUpdateManyWithWhereWithoutPedidoContaAzulInput = {
+    where: PedidoOperacionalScalarWhereInput
+    data: XOR<PedidoOperacionalUpdateManyMutationInput, PedidoOperacionalUncheckedUpdateManyWithoutPedidoContaAzulInput>
   }
 
   export type PedidoConciliacaoEventoUpsertWithWhereUniqueWithoutPedidoContaAzulInput = {
@@ -51123,7 +51109,7 @@ export namespace Prisma {
     cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
     criadoPor?: UsuarioCreateNestedOneWithoutPedidosCriadosInput
     editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
-    pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidoOperacionalVinculoInput
+    pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidosOperacionaisVinculoInput
     itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
@@ -51175,7 +51161,7 @@ export namespace Prisma {
     origemPedido: $Enums.OrigemPedido
     cliente: ClienteCreateNestedOneWithoutPedidosInput
     itens?: ItemPedidoCreateNestedManyWithoutPedidoInput
-    pedidoOperacionalVinculo?: PedidoOperacionalCreateNestedOneWithoutPedidoContaAzulInput
+    pedidosOperacionaisVinculo?: PedidoOperacionalCreateNestedManyWithoutPedidoContaAzulInput
   }
 
   export type PedidoUncheckedCreateWithoutEventosConciliacaoInput = {
@@ -51195,7 +51181,7 @@ export namespace Prisma {
     sugestaoPedidoOperacionalId?: string | null
     origemPedido: $Enums.OrigemPedido
     itens?: ItemPedidoUncheckedCreateNestedManyWithoutPedidoInput
-    pedidoOperacionalVinculo?: PedidoOperacionalUncheckedCreateNestedOneWithoutPedidoContaAzulInput
+    pedidosOperacionaisVinculo?: PedidoOperacionalUncheckedCreateNestedManyWithoutPedidoContaAzulInput
   }
 
   export type PedidoCreateOrConnectWithoutEventosConciliacaoInput = {
@@ -51232,7 +51218,7 @@ export namespace Prisma {
     cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
     criadoPor?: UsuarioUpdateOneWithoutPedidosCriadosNestedInput
     editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
-    pedidoContaAzul?: PedidoUpdateOneWithoutPedidoOperacionalVinculoNestedInput
+    pedidoContaAzul?: PedidoUpdateOneWithoutPedidosOperacionaisVinculoNestedInput
     itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
@@ -51290,7 +51276,7 @@ export namespace Prisma {
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
     cliente?: ClienteUpdateOneRequiredWithoutPedidosNestedInput
     itens?: ItemPedidoUpdateManyWithoutPedidoNestedInput
-    pedidoOperacionalVinculo?: PedidoOperacionalUpdateOneWithoutPedidoContaAzulNestedInput
+    pedidosOperacionaisVinculo?: PedidoOperacionalUpdateManyWithoutPedidoContaAzulNestedInput
   }
 
   export type PedidoUncheckedUpdateWithoutEventosConciliacaoInput = {
@@ -51310,7 +51296,7 @@ export namespace Prisma {
     sugestaoPedidoOperacionalId?: NullableStringFieldUpdateOperationsInput | string | null
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
     itens?: ItemPedidoUncheckedUpdateManyWithoutPedidoNestedInput
-    pedidoOperacionalVinculo?: PedidoOperacionalUncheckedUpdateOneWithoutPedidoContaAzulNestedInput
+    pedidosOperacionaisVinculo?: PedidoOperacionalUncheckedUpdateManyWithoutPedidoContaAzulNestedInput
   }
 
   export type PedidoCreateWithoutItensInput = {
@@ -51329,7 +51315,7 @@ export namespace Prisma {
     sugestaoPedidoOperacionalId?: string | null
     origemPedido: $Enums.OrigemPedido
     cliente: ClienteCreateNestedOneWithoutPedidosInput
-    pedidoOperacionalVinculo?: PedidoOperacionalCreateNestedOneWithoutPedidoContaAzulInput
+    pedidosOperacionaisVinculo?: PedidoOperacionalCreateNestedManyWithoutPedidoContaAzulInput
     eventosConciliacao?: PedidoConciliacaoEventoCreateNestedManyWithoutPedidoContaAzulInput
   }
 
@@ -51349,7 +51335,7 @@ export namespace Prisma {
     statusConciliacao?: $Enums.StatusConciliacaoContaAzul
     sugestaoPedidoOperacionalId?: string | null
     origemPedido: $Enums.OrigemPedido
-    pedidoOperacionalVinculo?: PedidoOperacionalUncheckedCreateNestedOneWithoutPedidoContaAzulInput
+    pedidosOperacionaisVinculo?: PedidoOperacionalUncheckedCreateNestedManyWithoutPedidoContaAzulInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedCreateNestedManyWithoutPedidoContaAzulInput
   }
 
@@ -51385,7 +51371,7 @@ export namespace Prisma {
     sugestaoPedidoOperacionalId?: NullableStringFieldUpdateOperationsInput | string | null
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
     cliente?: ClienteUpdateOneRequiredWithoutPedidosNestedInput
-    pedidoOperacionalVinculo?: PedidoOperacionalUpdateOneWithoutPedidoContaAzulNestedInput
+    pedidosOperacionaisVinculo?: PedidoOperacionalUpdateManyWithoutPedidoContaAzulNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUpdateManyWithoutPedidoContaAzulNestedInput
   }
 
@@ -51405,7 +51391,7 @@ export namespace Prisma {
     statusConciliacao?: EnumStatusConciliacaoContaAzulFieldUpdateOperationsInput | $Enums.StatusConciliacaoContaAzul
     sugestaoPedidoOperacionalId?: NullableStringFieldUpdateOperationsInput | string | null
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
-    pedidoOperacionalVinculo?: PedidoOperacionalUncheckedUpdateOneWithoutPedidoContaAzulNestedInput
+    pedidosOperacionaisVinculo?: PedidoOperacionalUncheckedUpdateManyWithoutPedidoContaAzulNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedUpdateManyWithoutPedidoContaAzulNestedInput
   }
 
@@ -52406,7 +52392,7 @@ export namespace Prisma {
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
     editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
-    pedidoContaAzul?: PedidoUpdateOneWithoutPedidoOperacionalVinculoNestedInput
+    pedidoContaAzul?: PedidoUpdateOneWithoutPedidosOperacionaisVinculoNestedInput
     itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
@@ -52474,7 +52460,7 @@ export namespace Prisma {
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
     criadoPor?: UsuarioUpdateOneWithoutPedidosCriadosNestedInput
-    pedidoContaAzul?: PedidoUpdateOneWithoutPedidoOperacionalVinculoNestedInput
+    pedidoContaAzul?: PedidoUpdateOneWithoutPedidosOperacionaisVinculoNestedInput
     itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
@@ -53029,7 +53015,7 @@ export namespace Prisma {
     sugestaoPedidoOperacionalId?: NullableStringFieldUpdateOperationsInput | string | null
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
     itens?: ItemPedidoUpdateManyWithoutPedidoNestedInput
-    pedidoOperacionalVinculo?: PedidoOperacionalUpdateOneWithoutPedidoContaAzulNestedInput
+    pedidosOperacionaisVinculo?: PedidoOperacionalUpdateManyWithoutPedidoContaAzulNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUpdateManyWithoutPedidoContaAzulNestedInput
   }
 
@@ -53049,7 +53035,7 @@ export namespace Prisma {
     sugestaoPedidoOperacionalId?: NullableStringFieldUpdateOperationsInput | string | null
     origemPedido?: EnumOrigemPedidoFieldUpdateOperationsInput | $Enums.OrigemPedido
     itens?: ItemPedidoUncheckedUpdateManyWithoutPedidoNestedInput
-    pedidoOperacionalVinculo?: PedidoOperacionalUncheckedUpdateOneWithoutPedidoContaAzulNestedInput
+    pedidosOperacionaisVinculo?: PedidoOperacionalUncheckedUpdateManyWithoutPedidoContaAzulNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedUpdateManyWithoutPedidoContaAzulNestedInput
   }
 
@@ -53237,7 +53223,7 @@ export namespace Prisma {
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     criadoPor?: UsuarioUpdateOneWithoutPedidosCriadosNestedInput
     editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
-    pedidoContaAzul?: PedidoUpdateOneWithoutPedidoOperacionalVinculoNestedInput
+    pedidoContaAzul?: PedidoUpdateOneWithoutPedidosOperacionaisVinculoNestedInput
     itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
@@ -53965,6 +53951,26 @@ export namespace Prisma {
     custoUnit?: Decimal | DecimalJsLike | number | string | null
   }
 
+  export type PedidoOperacionalCreateManyPedidoContaAzulInput = {
+    id?: string
+    clienteId?: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    statusConciliacao?: $Enums.StatusConciliacaoOperacional
+    sugestaoPedidoContaAzulId?: string | null
+    snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
+    observacoes?: string | null
+    freteCortesia?: boolean
+    prioridadeEntrega?: number | null
+    criadoPorId?: string | null
+    editadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
   export type PedidoConciliacaoEventoCreateManyPedidoContaAzulInput = {
     id?: string
     pedidoOperacionalId?: string | null
@@ -54006,6 +54012,74 @@ export namespace Prisma {
     quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     precoUnit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     custoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+  }
+
+  export type PedidoOperacionalUpdateWithoutPedidoContaAzulInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    statusConciliacao?: EnumStatusConciliacaoOperacionalFieldUpdateOperationsInput | $Enums.StatusConciliacaoOperacional
+    sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
+    snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
+    criadoPor?: UsuarioUpdateOneWithoutPedidosCriadosNestedInput
+    editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
+    itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
+    avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
+    auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
+    eventosConciliacao?: PedidoConciliacaoEventoUpdateManyWithoutPedidoOperacionalNestedInput
+  }
+
+  export type PedidoOperacionalUncheckedUpdateWithoutPedidoContaAzulInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    statusConciliacao?: EnumStatusConciliacaoOperacionalFieldUpdateOperationsInput | $Enums.StatusConciliacaoOperacional
+    sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
+    snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    itens?: PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoNestedInput
+    avarias?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoNestedInput
+    auditoria?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutPedidoNestedInput
+    eventosConciliacao?: PedidoConciliacaoEventoUncheckedUpdateManyWithoutPedidoOperacionalNestedInput
+  }
+
+  export type PedidoOperacionalUncheckedUpdateManyWithoutPedidoContaAzulInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    statusConciliacao?: EnumStatusConciliacaoOperacionalFieldUpdateOperationsInput | $Enums.StatusConciliacaoOperacional
+    sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
+    snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type PedidoConciliacaoEventoUpdateWithoutPedidoContaAzulInput = {

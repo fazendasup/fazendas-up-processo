@@ -360,7 +360,7 @@ model PedidoOperacional {
   tipoVenda                 TipoVendaPedido              @map("tipo_venda")
   status                    PedidoOperacionalStatus      @default(PENDENTE)
   statusConciliacao         StatusConciliacaoOperacional @default(PLANEJADO) @map("status_conciliacao")
-  pedidoContaAzulId         String?                      @unique @map("pedido_conta_azul_id")
+  pedidoContaAzulId         String?                      @map("pedido_conta_azul_id")
   sugestaoPedidoContaAzulId String?                      @map("sugestao_pedido_conta_azul_id")
   snapshotConciliacao       Json?                        @map("snapshot_conciliacao")
   observacoes               String?                      @db.Text
@@ -385,6 +385,7 @@ model PedidoOperacional {
   @@index([dataEntrega, status])
   @@index([statusConciliacao])
   @@index([sugestaoPedidoContaAzulId])
+  @@index([pedidoContaAzulId])
   @@map("pedidos_operacionais")
 }
 
@@ -559,7 +560,7 @@ model Pedido {
   origemPedido                OrigemPedido               @map("origem_pedido")
   cliente                     Cliente                    @relation(fields: [clienteId], references: [id], onDelete: Cascade)
   itens                       ItemPedido[]
-  pedidoOperacionalVinculo    PedidoOperacional?         @relation("PedidoOperacionalVinculo")
+  pedidosOperacionaisVinculo  PedidoOperacional[]        @relation("PedidoOperacionalVinculo")
   eventosConciliacao          PedidoConciliacaoEvento[]
 
   @@index([clienteId, dataPedido])

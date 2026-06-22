@@ -26,7 +26,11 @@ import {
 import {
   aplicarCorrecaoConciliacao,
   calcularDivergencias,
+  calcularDivergenciasAgregadas,
+  clienteAcumulaFaturamento,
   confirmarVinculoConciliacao,
+  confirmarVinculoMultiploConciliacao,
+  janelaCandidatosVinculo,
   opcoesCalcularDivergencias,
   opcoesCalcularDivergenciasParaPar,
   reconciliarDivergenciasAcumuloEsperadas,
@@ -38,6 +42,7 @@ import {
   ignorarVendaContaAzul,
   manterOperacionalComoVerdade,
   marcarVendaErrada,
+  scoreCandidatoVinculoManual,
   scoreSugestaoVinculo,
 } from "../lib/conciliacao-pedidos.js";
 import {
@@ -2391,7 +2396,10 @@ export const pedidosRouter = router({
             sugestoes: 0,
             conciliados: 0,
             divergentes: 0,
+            clientesSemanaPendentes: 0,
           },
+          semana: null,
+          clientesSemana: [],
           semVenda: [],
           vendasSemPedido: [],
           sugestoes: [],
@@ -2457,8 +2465,8 @@ export const pedidosRouter = router({
               },
             },
             itens: true,
-            pedidoOperacionalVinculo: {
-              select: { id: true, statusConciliacao: true },
+            pedidosOperacionaisVinculo: {
+              select: { id: true, statusConciliacao: true, dataEntrega: true },
             },
           },
           orderBy: { dataPedido: "desc" },
@@ -2529,7 +2537,7 @@ export const pedidosRouter = router({
       );
       const vendasSemPedido = documentosConciliaveis.filter(
         v =>
-          !v.pedidoOperacionalVinculo &&
+          (v.pedidosOperacionaisVinculo?.length ?? 0) === 0 &&
           v.statusConciliacao !== "IGNORADA" &&
           v.statusConciliacao !== "VENDA_ERRADA" &&
           v.statusConciliacao !== "CONCILIADA" &&
@@ -2539,27 +2547,57 @@ export const pedidosRouter = router({
       const conciliados = operacionais.filter(
         op => op.statusConciliacao === "CONCILIADO" && op.pedidoContaAzul
       );
-      const divergentes = operacionais
-        .filter(op => op.statusConciliacao === "DIVERGENTE")
-        .map(op => {
-          const divergencias = op.pedidoContaAzul
-            ? calcularDivergencias(
-                op,
-                op.pedidoContaAzul,
+      const divergentesRaw = operacionais.filter(
+        op => op.statusConciliacao === "DIVERGENTE" && op.pedidoContaAzul
+      );
+      const divergentesPorVenda = new Map<string, typeof divergentesRaw>();
+      for (const op of divergentesRaw) {
+        const caId = op.pedidoContaAzulId!;
+        const lista = divergentesPorVenda.get(caId) ?? [];
+        lista.push(op);
+        divergentesPorVenda.set(caId, lista);
+      }
+
+      const divergentes: Array<Record<string, unknown>> = [];
+      for (const [, ops] of Array.from(divergentesPorVenda.entries())) {
+        const venda = ops[0]!.pedidoContaAzul!;
+        const acumula =
+          clienteAcumulaFaturamento(ops[0]!.cliente?.regraComercial) ||
+          clienteAcumulaFaturamento(venda.cliente?.regraComercial);
+        const divergencias =
+          acumula && ops.length >= 1
+            ? calcularDivergenciasAgregadas(ops, venda, resolverChaveConciliacao)
+            : calcularDivergencias(
+                ops[0]!,
+                venda,
                 resolverChaveConciliacao,
                 opcoesCalcularDivergenciasParaPar(
-                  op,
-                  op.pedidoContaAzul,
-                  op.cliente?.regraComercial,
+                  ops[0]!,
+                  venda,
+                  ops[0]!.cliente?.regraComercial,
                 ),
-              )
-            : [];
-          return {
-            ...(deveOcultarValores(ctx) ? ocultarValoresPedido(op) : op),
+              );
+        if (divergencias.length === 0) continue;
+
+        if (acumula && ops.length > 1) {
+          divergentes.push({
+            agregado: true,
+            pedidoContaAzulId: venda.id,
+            pedidoContaAzul: deveOcultarValores(ctx) ? limparVenda(venda) : venda,
+            operacionais: deveOcultarValores(ctx)
+              ? ops.map(ocultarValoresPedido)
+              : ops,
             divergencias,
-          };
-        })
-        .filter(op => op.divergencias.length > 0);
+          });
+        } else {
+          for (const op of ops) {
+            divergentes.push({
+              ...(deveOcultarValores(ctx) ? ocultarValoresPedido(op) : op),
+              divergencias,
+            });
+          }
+        }
+      }
       const limparVenda = (v: any) =>
         deveOcultarValores(ctx)
           ? {
@@ -2576,6 +2614,35 @@ export const pedidosRouter = router({
             }
           : v;
 
+      const semanaInicio = inicioSemana(fim);
+      const semanaFim = fimSemana(fim);
+      const conciliacaoSemanal = await calcularConciliacaoSemanal(
+        prisma,
+        semanaInicio,
+        semanaFim,
+      );
+      const clientesSemana = conciliacaoSemanal.clientes
+        .filter(c => c.status !== "ok")
+        .map(c => {
+          const base = deveOcultarValores(ctx)
+            ? ocultarValoresConciliacaoCliente(c)
+            : c;
+          const opsCliente = operacionais.filter(
+            op => op.contaAzulCustomerId === c.contaAzulCustomerId,
+          );
+          const vendasCliente = documentosConciliaveis.filter(
+            v =>
+              (v.cliente.externalId ?? v.cliente.id) === c.contaAzulCustomerId,
+          );
+          return {
+            ...base,
+            operacionais: opsCliente.map(op =>
+              deveOcultarValores(ctx) ? ocultarValoresPedido(op) : op,
+            ),
+            vendas: vendasCliente.map(limparVenda),
+          };
+        });
+
       return {
         resumo: {
           semVenda: semVenda.length,
@@ -2583,7 +2650,15 @@ export const pedidosRouter = router({
           sugestoes: sugestoes.length,
           conciliados: conciliados.length,
           divergentes: divergentes.length,
+          clientesSemanaPendentes: clientesSemana.length,
         },
+        semana: {
+          inicio: semanaInicio,
+          fim: semanaFim,
+          rotulo: `${String(semanaInicio.getDate()).padStart(2, "0")}/${String(semanaInicio.getMonth() + 1).padStart(2, "0")}–${String(semanaFim.getDate()).padStart(2, "0")}/${String(semanaFim.getMonth() + 1).padStart(2, "0")}`,
+          conciliado: conciliacaoSemanal.conciliado,
+        },
+        clientesSemana,
         semVenda: deveOcultarValores(ctx)
           ? semVenda.map(ocultarValoresPedido)
           : semVenda,
@@ -2683,6 +2758,7 @@ export const pedidosRouter = router({
               regraComercial: {
                 select: {
                   acumulaPedidos: true,
+                  diasAcumulo: true,
                   ...REGRA_ENTREGA_CONCILIACAO_SELECT,
                 },
               },
@@ -2700,15 +2776,18 @@ export const pedidosRouter = router({
         return { venda, candidatos: [] };
       }
 
-      const inicioJanela = inicioComCortePedidos(
-        inicioSemana(venda.dataPedido)
-      );
-      const fimJanela = fimSemana(venda.dataPedido);
+      const acumula = clienteAcumulaFaturamento(venda.cliente.regraComercial);
+      const diasAcumulo = venda.cliente.regraComercial?.diasAcumulo ?? 15;
+      const { inicio: inicioJanela, fim: fimJanela } = janelaCandidatosVinculo({
+        dataPedido: venda.dataPedido,
+        acumula,
+        diasAcumulo,
+        janelaDias: input.janelaDias,
+      });
       const candidatos = await ctx.prisma!.pedidoOperacional.findMany({
         where: {
           contaAzulCustomerId: venda.cliente.externalId,
           status: { not: "CANCELADO" },
-          OR: [{ pedidoContaAzulId: null }, { pedidoContaAzulId: venda.id }],
           dataEntrega: {
             gte: inicioJanela,
             lte: fimJanela,
@@ -2740,28 +2819,53 @@ export const pedidosRouter = router({
       const resolverChave =
         criarResolverChaveItemConciliacao(produtosConciliacao);
 
+      const candidatosMapeados = candidatos
+        .map(op => {
+          const score = scoreCandidatoVinculoManual(op, venda, resolverChave);
+          const vinculadoNestaVenda = op.pedidoContaAzulId === venda.id;
+          const vinculadoOutraVenda = Boolean(
+            op.pedidoContaAzulId && op.pedidoContaAzulId !== venda.id,
+          );
+          return {
+            pedido: op,
+            score,
+            diasDistancia: diasEntrePedidos(op, venda),
+            divergencias: calcularDivergencias(
+              op,
+              venda,
+              resolverChave,
+              opcoesCalcularDivergenciasParaPar(op, venda),
+            ),
+            vinculadoNestaVenda,
+            vinculadoOutraVenda,
+          };
+        })
+        .filter(c => c.score > 0)
+        .sort(
+          (a, b) =>
+            a.pedido.dataEntrega.getTime() - b.pedido.dataEntrega.getTime() ||
+            b.score - a.score ||
+            a.diasDistancia - b.diasDistancia
+        );
+
+      const selecionadosPadrao = candidatosMapeados
+        .filter(c => c.vinculadoNestaVenda || !c.pedido.pedidoContaAzulId)
+        .map(c => c.pedido.id);
+      const opsAgregacao = candidatos.filter(c =>
+        selecionadosPadrao.includes(c.id)
+      );
+      const divergenciasAgregadas =
+        acumula && opsAgregacao.length > 0
+          ? calcularDivergenciasAgregadas(opsAgregacao, venda, resolverChave)
+          : [];
+
       return {
         venda,
-        candidatos: candidatos
-          .map(op => {
-            const score = scoreSugestaoVinculo(op, venda, resolverChave);
-            return {
-              pedido: op,
-              score,
-              diasDistancia: diasEntrePedidos(op, venda),
-              divergencias: calcularDivergencias(
-                op,
-                venda,
-                resolverChave,
-                opcoesCalcularDivergenciasParaPar(op, venda),
-              ),
-              vinculadoNestaVenda: op.pedidoContaAzulId === venda.id,
-            };
-          })
-          .filter(c => c.score > 0)
-          .sort(
-            (a, b) => b.score - a.score || a.diasDistancia - b.diasDistancia
-          ),
+        acumulaPedidos: acumula,
+        diasAcumulo: acumula ? diasAcumulo : null,
+        selecionadosPadrao,
+        divergenciasAgregadas,
+        candidatos: candidatosMapeados,
       };
     }),
 
@@ -2835,6 +2939,28 @@ export const pedidosRouter = router({
           message: "Usuário comercial não identificado",
         });
       return confirmarVinculoConciliacao(ctx.prisma!, {
+        ...input,
+        usuario: { id: usuario.id, nome: usuario.nome },
+      });
+    }),
+
+  conciliacaoConfirmarVinculoMultiplo: comercialProcedure
+    .use(podeConfigurarEstoqueVivo)
+    .input(
+      z.object({
+        pedidoOperacionalIds: z.array(z.string()).min(1),
+        pedidoContaAzulId: z.string(),
+        observacoes: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const usuario = ctx.comercialUsuario;
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
+      return confirmarVinculoMultiploConciliacao(ctx.prisma!, {
         ...input,
         usuario: { id: usuario.id, nome: usuario.nome },
       });
