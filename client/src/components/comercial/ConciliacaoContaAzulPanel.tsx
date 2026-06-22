@@ -802,6 +802,34 @@ function CandidatosVenda({
     setSelecionados(selecionadosPadrao);
   }, [selecionadosPadrao.join(",")]);
 
+  const divergenciasPreview = useMemo(() => {
+    if (!acumulaPedidos || selecionados.length === 0) return divergenciasAgregadas;
+    const itensAgregados = new Map<string, number>();
+    for (const id of selecionados) {
+      const c = candidatos.find((x) => x.pedido.id === id);
+      if (!c) continue;
+      for (const item of c.pedido.itens ?? []) {
+        const nome = item.produtoNome ?? "?";
+        itensAgregados.set(nome, (itensAgregados.get(nome) ?? 0) + Number(item.quantidade ?? 0));
+      }
+    }
+    const mapCa = new Map<string, number>();
+    for (const item of vendaItens) {
+      const nome = String(item.produto ?? "?");
+      mapCa.set(nome, (mapCa.get(nome) ?? 0) + Number(item.quantidade ?? 0));
+    }
+    const nomes = new Set([...Array.from(itensAgregados.keys()), ...Array.from(mapCa.keys())]);
+    const divs: Array<{ campo: string; operacional: number; contaAzul: number }> = [];
+    for (const nome of Array.from(nomes)) {
+      const qOp = itensAgregados.get(nome) ?? 0;
+      const qCa = mapCa.get(nome) ?? 0;
+      if (Math.abs(qOp - qCa) > 0.001) {
+        divs.push({ campo: `item:${nome}`, operacional: qOp, contaAzul: qCa });
+      }
+    }
+    return divs;
+  }, [acumulaPedidos, selecionados, divergenciasAgregadas, vendaItens, candidatos]);
+
   if (isLoading) {
     return <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">Buscando pedidos possíveis...</p>;
   }
@@ -830,25 +858,6 @@ function CandidatosVenda({
       itensAgregados.set(nome, (itensAgregados.get(nome) ?? 0) + Number(item.quantidade ?? 0));
     }
   }
-
-  const divergenciasPreview = useMemo(() => {
-    if (!acumulaPedidos || selecionados.length === 0) return divergenciasAgregadas;
-    const mapCa = new Map<string, number>();
-    for (const item of vendaItens) {
-      const nome = String(item.produto ?? "?");
-      mapCa.set(nome, (mapCa.get(nome) ?? 0) + Number(item.quantidade ?? 0));
-    }
-    const nomes = new Set([...Array.from(itensAgregados.keys()), ...Array.from(mapCa.keys())]);
-    const divs: Array<{ campo: string; operacional: number; contaAzul: number }> = [];
-    for (const nome of Array.from(nomes)) {
-      const qOp = itensAgregados.get(nome) ?? 0;
-      const qCa = mapCa.get(nome) ?? 0;
-      if (Math.abs(qOp - qCa) > 0.001) {
-        divs.push({ campo: `item:${nome}`, operacional: qOp, contaAzul: qCa });
-      }
-    }
-    return divs;
-  }, [acumulaPedidos, selecionados.join(","), divergenciasAgregadas, vendaItens]);
 
   if (acumulaPedidos && onConfirmarMultiplo) {
     return (
