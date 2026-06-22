@@ -42,7 +42,22 @@ function detalheConciliacaoSemanal(c: any) {
   if (problemas.length === 0) {
     return "Revise os vínculos e sincronize novamente.";
   }
-  return `Corrija ${problemas.join(", ")}. Se a diferença de valor for frete, preencha Regras do cliente > Valor taxa de entrega. Para clientes que acumulam, vincule todas as entregas do período à mesma venda.`;
+  const acumula = Boolean(c.acumulaPedidos);
+  const sufixoAcumulo = acumula
+    ? " Este cliente acumula faturamento: o total da semana no Conta Azul costuma ser a venda consolidada do período, não o orçamento diário. Use «Vincular entregas» na venda/orçamento principal e selecione todas as entregas do intervalo."
+    : " Se a diferença de valor for frete, preencha Regras do cliente > Valor taxa de entrega.";
+  return `Corrija ${problemas.join(", ")}.${sufixoAcumulo}`;
+}
+
+function vendaSemVinculoOperacional(v: {
+  pedidosOperacionaisVinculo?: unknown[];
+  statusConciliacao?: string | null;
+}) {
+  return (
+    (v.pedidosOperacionaisVinculo?.length ?? 0) === 0 &&
+    v.statusConciliacao !== "IGNORADA" &&
+    v.statusConciliacao !== "VENDA_ERRADA"
+  );
 }
 
 function fmtDate(v: string | Date) {
@@ -364,20 +379,68 @@ export function ConciliacaoContaAzulPanel({
                   {(c.vendas?.length ?? 0) > 0 && (
                     <div className="space-y-2">
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Vendas Conta Azul da semana
+                        Documentos Conta Azul da semana
+                        {c.acumulaPedidos ? " (orçamentos + vendas)" : ""}
                       </p>
-                      {c.vendas.map((v: any) => (
-                        <BlocoVenda key={v.id} titulo="Venda" venda={v} />
-                      ))}
+                      {c.vendas.map((v: any) => {
+                        const semVinculo = vendaSemVinculoOperacional(v);
+                        const tipo = tipoDocumentoContaAzul(v.statusPedido);
+                        return (
+                          <div
+                            key={v.id}
+                            className="flex flex-wrap items-start justify-between gap-2 rounded-lg border bg-muted/10 p-3"
+                          >
+                            <BlocoVenda titulo={tipo} venda={v} />
+                            {semVinculo ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  setVendaCandidatosId((atual) => (atual === v.id ? null : v.id))
+                                }
+                              >
+                                Vincular entregas
+                              </Button>
+                            ) : null}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
-                  {c.status === "venda_sem_pedido" && (c.vendas?.length ?? 0) > 0 && (
-                    <Button
-                      size="sm"
-                      onClick={() => setVendaCandidatosId(c.vendas[0].id)}
-                    >
-                      Vincular ou criar pedido para esta venda
-                    </Button>
+                  {vendaCandidatosId &&
+                    (c.vendas ?? []).some((v: any) => v.id === vendaCandidatosId) && (
+                      <CandidatosVenda
+                        isLoading={candidatos.isLoading}
+                        candidatos={candidatos.data?.candidatos ?? []}
+                        vendaId={vendaCandidatosId}
+                        acumulaPedidos={Boolean(candidatos.data?.acumulaPedidos ?? c.acumulaPedidos)}
+                        diasAcumulo={candidatos.data?.diasAcumulo ?? c.diasAcumulo ?? null}
+                        selecionadosPadrao={candidatos.data?.selecionadosPadrao ?? []}
+                        divergenciasAgregadas={candidatos.data?.divergenciasAgregadas ?? []}
+                        vendaItens={candidatos.data?.venda?.itens ?? []}
+                        confirmando={confirmar.isPending || confirmarMultiplo.isPending}
+                        onConfirmar={(pedidoOperacionalId) =>
+                          confirmar.mutate({
+                            pedidoOperacionalId,
+                            pedidoContaAzulId: vendaCandidatosId,
+                            observacoes: "Vínculo manual a partir da conciliação semanal.",
+                          })
+                        }
+                        onConfirmarMultiplo={(pedidoOperacionalIds) =>
+                          confirmarMultiplo.mutate({
+                            pedidoOperacionalIds,
+                            pedidoContaAzulId: vendaCandidatosId,
+                            observacoes: "Vínculo múltiplo — faturamento acumulado (conciliação semanal).",
+                          })
+                        }
+                      />
+                    )}
+                  {c.status === "divergente" && c.acumulaPedidos && (c.vendas?.length ?? 0) > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      O resumo 7/28 compara entregas operacionais desta semana com a{" "}
+                      <strong>venda faturada</strong> no Conta Azul (orçamentos diários não entram no total).
+                      Para fechar a semana, vincule todas as entregas do período de acumulação à venda consolidada.
+                    </p>
                   )}
                 </CardContent>
               </Card>

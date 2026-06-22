@@ -2628,14 +2628,30 @@ export const pedidosRouter = router({
             ? ocultarValoresConciliacaoCliente(c)
             : c;
           const opsCliente = operacionais.filter(
-            op => op.contaAzulCustomerId === c.contaAzulCustomerId,
+            op =>
+              op.contaAzulCustomerId === c.contaAzulCustomerId &&
+              op.dataEntrega.getTime() >= semanaInicio.getTime() &&
+              op.dataEntrega.getTime() <= semanaFim.getTime(),
           );
           const vendasCliente = documentosConciliaveis.filter(
             v =>
-              (v.cliente.externalId ?? v.cliente.id) === c.contaAzulCustomerId,
+              (v.cliente.externalId ?? v.cliente.id) === c.contaAzulCustomerId &&
+              v.dataPedido.getTime() >= semanaInicio.getTime() &&
+              v.dataPedido.getTime() <= semanaFim.getTime(),
           );
+          const acumulaPedidos =
+            clienteAcumulaFaturamento(
+              opsCliente[0]?.cliente?.regraComercial ??
+                vendasCliente[0]?.cliente?.regraComercial,
+            ) ?? false;
+          const diasAcumulo =
+            opsCliente[0]?.cliente?.regraComercial?.diasAcumulo ??
+            vendasCliente[0]?.cliente?.regraComercial?.diasAcumulo ??
+            null;
           return {
             ...base,
+            acumulaPedidos,
+            diasAcumulo,
             operacionais: opsCliente.map(op =>
               deveOcultarValores(ctx) ? ocultarValoresPedido(op) : op,
             ),
