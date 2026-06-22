@@ -177,6 +177,36 @@ const FLORES_KEYWORDS = [
   "borragem",
 ];
 
+const PROCESSAMENTO_INDUSTRIAL_KEYWORDS = [
+  "higieniz",
+  "fatiad",
+  "lavad",
+  "processad",
+  "sanitiz",
+  "desinfect",
+  "desinfec",
+  "cortad",
+  "picad",
+  "fatia",
+  "corte",
+] as const;
+
+/** Nome indica produto já processado (lavagem, corte, higienização…). */
+export function produtoIndicaProcessamentoIndustrial(nome: string): boolean {
+  const n = normalizarNomeProduto(nome);
+  return PROCESSAMENTO_INDUSTRIAL_KEYWORDS.some((kw) => n.includes(kw));
+}
+
+/** SKU embalado com peso no nome (ex.: Alface 240g) — costuma passar por lavagem/embalagem. */
+export function produtoIndicaEmbalagemPesada(nome: string): boolean {
+  const n = normalizarNomeProduto(nome);
+  return /\d+\s*(g|gr|grama|gramas|kg)\b/.test(n);
+}
+
+function folhaPrecisaProcessamentoIndustrial(nome: string): boolean {
+  return produtoIndicaProcessamentoIndustrial(nome) || produtoIndicaEmbalagemPesada(nome);
+}
+
 /** Sugestão inicial — sempre revisável manualmente antes de gerar fichas. */
 export function inferirCategoriaProdutoCusto(
   nome: string,
@@ -201,7 +231,7 @@ export function inferirCategoriaProdutoCusto(
   }
   if (n.includes("mix") || cat.includes("mix")) return "mix";
   if (n.includes("alface") || n.includes("rucula") || n.includes("folha") || n.includes("agriao")) {
-    return "alface";
+    return folhaPrecisaProcessamentoIndustrial(nome) ? "alface" : "revenda";
   }
   if (n.includes("revenda") || cat.includes("revenda")) return "revenda";
   return "outros";
@@ -217,9 +247,25 @@ export function inferirPerfilProcessoSugerido(
   if (categoria === "revenda") return "colheita_embalagem";
   if (categoria === "microverde") return "microverde_embalagem";
   if (categoria === "flores") return "colheita_embalagem";
-  if (categoria === "alface") return "lavagem_embalagem";
+  if (categoria === "alface") {
+    if (n.includes("fatiad") || n.includes("fatia") || n.includes("corte") || n.includes("cortad")) {
+      return "lavagem_corte_embalagem";
+    }
+    return "lavagem_embalagem";
+  }
   if (n.includes("baby leaf") || n.includes("babyleaf")) return "colheita_embalagem";
   return "colheita_embalagem";
+}
+
+/** Evita mapa antigo forçar lavagem/perdas em revenda simples (ex.: alface a granel). */
+export function mapeamentoEfetivoParaCalculo(
+  mapeado: MapeamentoProdutoComercial,
+  sugerido: MapeamentoProdutoComercial,
+): MapeamentoProdutoComercial {
+  const mapIndustrial = perfilTemProcessamentoIndustrial(mapeado.perfilProcesso);
+  const sugIndustrial = perfilTemProcessamentoIndustrial(sugerido.perfilProcesso);
+  if (mapIndustrial && !sugIndustrial) return sugerido;
+  return mapeado;
 }
 
 export function sugerirMapeamentoProduto(

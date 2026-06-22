@@ -5,6 +5,7 @@ import {
   etapasProcessoPadraoParaProduto,
   inferirCategoriaProdutoCusto,
   inferirPerfilProcessoSugerido,
+  mapeamentoEfetivoParaCalculo,
   sugerirMapeamentoProduto,
 } from "./custosProdutoProcessoPadrao";
 import {
@@ -63,7 +64,33 @@ describe("custosProdutoProcessoPadrao", () => {
     expect(inferirPerfilProcessoSugerido("Baby Leaf - Manjericão")).toBe("colheita_embalagem");
   });
 
-  it("alface sugere lavagem por kg", () => {
+  it("alface a granel sugere revenda simples sem lavagem", () => {
+    expect(inferirCategoriaProdutoCusto("Alface americana bola")).toBe("revenda");
+    expect(inferirPerfilProcessoSugerido("Alface americana bola")).toBe("colheita_embalagem");
+    const etapas = etapasProcessoPadraoParaPerfil("colheita_embalagem", "revenda", {
+      embalagemMicroverdeUn: 0.95,
+      embalagemOutrosUn: 0.6,
+      lavagemReaisKg: 0.25,
+      lavagemMinutosUn: null,
+      embalagemMinutosUn: null,
+      corteMinutosUn: null,
+      adesivoCustoUn: 0.5,
+      regimeMoPadrao: "qualquer",
+      incluirAdesivo: true,
+      logisticaPercentualPadrao: 10,
+    });
+    expect(etapas.some((e) => e.tipo === "lavagem")).toBe(false);
+    expect(etapas.find((e) => e.tipo === "adesivo")?.custoPorUnidade).toBe(0.5);
+  });
+
+  it("alface higienizada e fatiada sugere lavagem e corte", () => {
+    expect(inferirCategoriaProdutoCusto("Alface americana bola – Higienizada e fatiada")).toBe("alface");
+    expect(inferirPerfilProcessoSugerido("Alface americana bola – Higienizada e fatiada")).toBe(
+      "lavagem_corte_embalagem",
+    );
+  });
+
+  it("alface embalada sugere lavagem por kg", () => {
     expect(inferirPerfilProcessoSugerido("Alface 240g Plano 3")).toBe("lavagem_embalagem");
     const etapas = etapasProcessoPadraoParaPerfil("lavagem_embalagem", "alface", {
       embalagemMicroverdeUn: 0.95,
@@ -94,7 +121,20 @@ describe("custosProdutoProcessoPadrao", () => {
   it("mapeamento sugerido traz ids", () => {
     const m = sugerirMapeamentoProduto("abc", "Agrião", null);
     expect(m.produtoComercialId).toBe("abc");
-    expect(m.perfilProcesso).toBe("lavagem_embalagem");
+    expect(m.categoriaCusto).toBe("revenda");
+    expect(m.perfilProcesso).toBe("colheita_embalagem");
+  });
+
+  it("mapa antigo com lavagem cede para revenda simples sugerida", () => {
+    const sugerido = sugerirMapeamentoProduto("x", "Alface americana bola", null);
+    const antigo = {
+      ...sugerido,
+      categoriaCusto: "alface" as const,
+      perfilProcesso: "lavagem_embalagem" as const,
+    };
+    const efetivo = mapeamentoEfetivoParaCalculo(antigo, sugerido);
+    expect(efetivo.categoriaCusto).toBe("revenda");
+    expect(efetivo.perfilProcesso).toBe("colheita_embalagem");
   });
 
   it("revenda só adesivo e logística — sem embalagem ou MO", () => {

@@ -6,11 +6,13 @@ import {
   etapasProcessoDeModelo,
   etapasProcessoPadraoParaPerfil,
   inferirPerfilDeEtapas,
+  mapeamentoEfetivoParaCalculo,
+  perfilTemProcessamentoIndustrial,
+  sugerirMapeamentoProduto,
   type CustosProdutoProcessoConfig,
   type EtapaProcessoPadrao,
   type MapeamentoProdutoComercial,
   type PerfilProcessoProduto,
-  sugerirMapeamentoProduto,
 } from "@shared/custosProdutoProcessoPadrao";
 import type {
   CustoProdutoComponenteRow,
@@ -142,13 +144,25 @@ export async function etapasProcessoAoVivoParaFicha(
     } catch {
       /* comercial opcional */
     }
-    const m = resolveMapeamentoProduto(ficha.produtoComercialId, prodNome, prodCat, map);
+    const sugerido = sugerirMapeamentoProduto(ficha.produtoComercialId, prodNome, prodCat);
+    const m = mapeamentoEfetivoParaCalculo(
+      resolveMapeamentoProduto(ficha.produtoComercialId, prodNome, prodCat, map),
+      sugerido,
+    );
     perfil = m.perfilProcesso;
     categoria = m.categoriaCusto;
     modeloId = modeloIdDoMapeamento(m, defaultModeloId);
   } else {
+    const sugerido = sugerirMapeamentoProduto("", ficha.nome, null);
     perfil = inferirPerfilDeEtapas(etapasDb);
     categoria = (ficha.categoria ?? "outros") as CategoriaProdutoCusto;
+    if (
+      perfilTemProcessamentoIndustrial(perfil) &&
+      !perfilTemProcessamentoIndustrial(sugerido.perfilProcesso)
+    ) {
+      perfil = sugerido.perfilProcesso;
+      categoria = sugerido.categoriaCusto;
+    }
     modeloId = defaultModeloId;
   }
 

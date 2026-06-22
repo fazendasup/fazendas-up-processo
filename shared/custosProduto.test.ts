@@ -244,6 +244,24 @@ describe("calcularCustoProduto", () => {
     expect(r.custoPorKg).toBeCloseTo(33.55);
   });
 
+  it("alface a granel revenda: sem gross-up de perdas na MP", () => {
+    const r = calcularCustoProduto({
+      tipo: "revenda_processada",
+      unidadeVenda: "kg",
+      precoCompraKg: 30,
+      kgBrutoPorUnidade: 1,
+      perdaLavagemPct: 10,
+      perdaDescasquePct: 10,
+      componentes: [],
+      etapas: [
+        { tipo: "adesivo", nome: "Adesivo", custoPorUnidadeFinal: 0.5 },
+        { tipo: "logistica", nome: "Logística", custoPorUnidadeFinal: 0, custoPercentual: 10 },
+      ],
+    });
+    expect(r.custoMaterial).toBeCloseTo(30);
+    expect(r.custoPorKg).toBeCloseTo(33.55);
+  });
+
   it("legumes por kg: perdas na MP + lavagem + adesivo + logística", () => {
     const r = calcularCustoProduto({
       tipo: "revenda_processada",
