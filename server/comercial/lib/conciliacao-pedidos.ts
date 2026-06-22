@@ -61,7 +61,7 @@ export type SnapshotConciliacao = {
 
 type ResolverChaveItem = ReturnType<typeof criarResolverChaveItemConciliacao>;
 
-async function carregarProdutosConciliacao(prisma: PrismaClient): Promise<ProdutoOperacionalLookup[]> {
+export async function carregarProdutosConciliacao(prisma: PrismaClient): Promise<ProdutoOperacionalLookup[]> {
   return prisma.produtoComercial.findMany({
     where: { contaAzulProdutoId: { not: null } },
     select: {

@@ -26,6 +26,7 @@
     "comercial:generate": "prisma generate --schema=prisma-comercial/schema.prisma",
     "comercial:migrate": "prisma migrate deploy --schema=prisma-comercial/schema.prisma",
     "comercial:seed": "tsx prisma-comercial/seed.ts",
+    "comercial:reparar-semana": "tsx server/run-conciliacao-semana-reparo.ts",
     "custos:sync-logistica": "tsx server/run-custos-logistica-sync.ts",
     "custos:copiar-padrao-coentro": "tsx server/run-copiar-padrao-ficha-custos.ts",
     "db:cleanup-test-users": "node scripts/cleanup-dev-test-users.mjs",

@@ -2,7 +2,91 @@ import { describe, expect, it } from "vitest";
 import {
   classificarClienteSemanal,
   pedidosOperacionaisEfetivos,
+  pedidosOperacionaisSemanaEfetivos,
+  totaisOperacionaisClienteSemanal,
 } from "./conciliacao-semanal.js";
+import { pedidoCriadoAPartirDoContaAzul } from "./conciliacao-pedidos.js";
+
+function op(
+  id: string,
+  opts: {
+    pedidoContaAzulId?: string | null;
+    espelho?: boolean;
+    unidades?: number;
+    valorItem?: number;
+    freteCortesia?: boolean;
+    status?: string;
+    dataEntrega?: Date;
+  } = {},
+) {
+  const un = opts.unidades ?? 10;
+  const pu = opts.valorItem ?? 1;
+  return {
+    id,
+    dataEntrega: opts.dataEntrega ?? new Date("2026-06-16"),
+    status: opts.status ?? "ENTREGUE",
+    freteCortesia: opts.freteCortesia ?? false,
+    pedidoContaAzulId: opts.pedidoContaAzulId ?? null,
+    pedidoContaAzul: null,
+    contaAzulCustomerId: "cli-1",
+    cliente: null,
+    snapshotConciliacao: opts.espelho ? { operacional: null, contaAzul: {} } : {},
+    itens: [{ quantidade: un, precoUnit: pu }],
+  };
+}
+
+describe("totaisOperacionaisClienteSemanal", () => {
+  it("acumulador: espelho CA não entra no total — só entregas manuais", () => {
+    const totais = totaisOperacionaisClienteSemanal(
+      [
+        op("m1", { unidades: 31 }),
+        op("m2", { unidades: 31 }),
+        op("esp", { espelho: true, unidades: 62, pedidoContaAzulId: "ca-1" }),
+      ],
+      true,
+      { cobraTaxaEntrega: false, valorTaxaEntrega: null, acumulaPedidos: true },
+      undefined,
+    );
+    expect(totais.unidades).toBe(62);
+    expect(totais.valorEstimado).toBe(62);
+  });
+
+  it("acumulador: frete uma vez no total da semana", () => {
+    const totais = totaisOperacionaisClienteSemanal(
+      [op("m1", { unidades: 30, valorItem: 10 }), op("m2", { unidades: 32, valorItem: 10 })],
+      true,
+      { cobraTaxaEntrega: true, valorTaxaEntrega: 15, acumulaPedidos: true },
+      undefined,
+    );
+    expect(totais.unidades).toBe(62);
+    expect(totais.valorEstimado).toBeCloseTo(635);
+  });
+
+  it("vínculo múltiplo: soma itens do grupo e frete único", () => {
+    const totais = totaisOperacionaisClienteSemanal(
+      [
+        op("m1", { pedidoContaAzulId: "ca-1", unidades: 40 }),
+        op("m2", { pedidoContaAzulId: "ca-1", unidades: 22 }),
+      ],
+      true,
+      { cobraTaxaEntrega: true, valorTaxaEntrega: 10, acumulaPedidos: true },
+      undefined,
+    );
+    expect(totais.unidades).toBe(62);
+    expect(totais.valorEstimado).toBeCloseTo(72);
+  });
+});
+
+describe("pedidosOperacionaisSemanaEfetivos", () => {
+  it("exclui espelhos CA quando acumula", () => {
+    const pedidos = [
+      op("m1"),
+      op("esp", { espelho: true, pedidoContaAzulId: "ca-1" }),
+    ];
+    expect(pedidosOperacionaisSemanaEfetivos(pedidos, true).length).toBe(1);
+    expect(pedidosOperacionaisSemanaEfetivos(pedidos, false).length).toBe(2);
+  });
+});
 
 describe("pedidosOperacionaisEfetivos", () => {
   it("conta vínculos únicos CA + pedidos sem vínculo", () => {

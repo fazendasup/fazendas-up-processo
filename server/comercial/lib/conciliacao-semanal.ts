@@ -3,6 +3,7 @@ import type { PrismaClient } from "../generated/prisma/index.js";
 import { composicaoDoPedidoParaDashboard } from "./composicao-valor.js";
 import {
   clienteAcumulaFaturamento,
+  janelaCandidatosVinculo,
   pedidoCriadoAPartirDoContaAzul,
   REGRA_ENTREGA_CONCILIACAO_SELECT,
   taxaEntregaParaConciliacao,
@@ -64,6 +65,8 @@ type PrismaConciliacao = Pick<
 >;
 
 type OperacionalSemanal = {
+  id: string;
+  dataEntrega: Date;
   contaAzulCustomerId: string;
   status: string;
   freteCortesia: boolean;
@@ -74,7 +77,9 @@ type OperacionalSemanal = {
   itens: Array<{ quantidade: unknown; precoUnit: unknown }>;
 };
 
-type RegraSemanal = RegraEntregaConciliacao & { acumulaPedidos: boolean };
+type VendaCaSemanal = { id: string; dataPedido: Date };
+
+type RegraSemanal = RegraEntregaConciliacao & { acumulaPedidos: boolean; diasAcumulo?: number | null };
 
 function money(v: unknown): number | null {
   if (v == null) return null;
@@ -87,6 +92,155 @@ function valorItensPedido(itens: OperacionalSemanal["itens"]): number {
     const quantidade = Number(item.quantidade);
     return sum + quantidade * (money(item.precoUnit) ?? 0);
   }, 0);
+}
+
+function sumUnidadesPedidos(pedidos: OperacionalSemanal[]): number {
+  return pedidos.reduce(
+    (sum, p) => sum + p.itens.reduce((s, i) => s + Number(i.quantidade), 0),
+    0,
+  );
+}
+
+function taxaEntregaCliente(
+  regra: RegraSemanal | undefined,
+  freteCliente: { pedidos: number; valorFrete: number } | undefined,
+): number {
+  const freteReferencia =
+    freteCliente && freteCliente.pedidos > 0
+      ? freteCliente.valorFrete / freteCliente.pedidos
+      : 0;
+  return taxaEntregaParaConciliacao(regra, freteReferencia);
+}
+
+/**
+ * Totais operacionais da semana por cliente.
+ * Clientes acumuladores: espelhos CA não entram (volume já está nas entregas manuais).
+ * Vínculo múltiplo: soma itens do grupo e cobra frete uma vez.
+ */
+export function totaisOperacionaisClienteSemanal(
+  pedidos: OperacionalSemanal[],
+  acumulaPedidos: boolean,
+  regra: RegraSemanal | undefined,
+  freteCliente: { pedidos: number; valorFrete: number } | undefined,
+): { unidades: number; valorEstimado: number } {
+  const ativos = pedidos.filter((p) => p.status !== "CANCELADO");
+  const porVinculo = new Map<string, OperacionalSemanal[]>();
+  const manuais: OperacionalSemanal[] = [];
+  const espelhosNaoAcumula: OperacionalSemanal[] = [];
+  const espelhosContados = new Set<string>();
+
+  for (const pedido of ativos) {
+    const espelho = pedidoCriadoAPartirDoContaAzul(pedido);
+    if (espelho && acumulaPedidos) continue;
+
+    if (espelho) {
+      const caId = pedido.pedidoContaAzulId;
+      if (caId) {
+        if (espelhosContados.has(caId)) continue;
+        espelhosContados.add(caId);
+      }
+      espelhosNaoAcumula.push(pedido);
+      continue;
+    }
+
+    const caId = pedido.pedidoContaAzulId;
+    if (caId) {
+      const lista = porVinculo.get(caId) ?? [];
+      lista.push(pedido);
+      porVinculo.set(caId, lista);
+    } else {
+      manuais.push(pedido);
+    }
+  }
+
+  let unidades = 0;
+  let valorEstimado = 0;
+  const taxa = taxaEntregaCliente(regra, freteCliente);
+
+  for (const pedido of espelhosNaoAcumula) {
+    unidades += sumUnidadesPedidos([pedido]);
+    const valorCa = money(
+      pedido.pedidoContaAzul?.valorLiquido ?? pedido.pedidoContaAzul?.valorTotal,
+    );
+    valorEstimado += valorCa ?? valorItensPedido(pedido.itens);
+  }
+
+  for (const grupo of Array.from(porVinculo.values())) {
+    unidades += sumUnidadesPedidos(grupo);
+    valorEstimado += grupo.reduce((s, p) => s + valorItensPedido(p.itens), 0);
+    if (grupo.some((p) => !p.freteCortesia)) valorEstimado += taxa;
+  }
+
+  if (manuais.length > 0) {
+    unidades += sumUnidadesPedidos(manuais);
+    valorEstimado += manuais.reduce((s, p) => s + valorItensPedido(p.itens), 0);
+    if (acumulaPedidos) {
+      if (manuais.some((p) => !p.freteCortesia)) valorEstimado += taxa;
+    } else {
+      for (const pedido of manuais) {
+        if (!pedido.freteCortesia) valorEstimado += taxa;
+      }
+    }
+  }
+
+  return { unidades, valorEstimado };
+}
+
+/**
+ * Cliente acumulador: total operacional = entregas manuais na janela de cada venda CA da semana
+ * (inclui dias anteriores dentro do período de acumulação).
+ */
+export function totaisOperacionaisAcumuloSemana(
+  pedidos: OperacionalSemanal[],
+  vendasCaSemana: VendaCaSemanal[],
+  regra: RegraSemanal | undefined,
+  freteCliente: { pedidos: number; valorFrete: number } | undefined,
+): { unidades: number; valorEstimado: number } {
+  if (vendasCaSemana.length === 0) {
+    return totaisOperacionaisClienteSemanal(pedidos, true, regra, freteCliente);
+  }
+
+  const opsUsados = new Set<string>();
+  const grupos: OperacionalSemanal[][] = [];
+
+  for (const venda of vendasCaSemana) {
+    const janela = janelaCandidatosVinculo({
+      dataPedido: venda.dataPedido,
+      acumula: true,
+      diasAcumulo: regra?.diasAcumulo,
+    });
+    const candidatos = pedidos.filter((p) => {
+      if (p.status === "CANCELADO") return false;
+      if (pedidoCriadoAPartirDoContaAzul(p)) return false;
+      if (opsUsados.has(p.id)) return false;
+      const t = p.dataEntrega.getTime();
+      if (t < janela.inicio.getTime() || t > janela.fim.getTime()) return false;
+      return !p.pedidoContaAzulId || p.pedidoContaAzulId === venda.id;
+    });
+    for (const p of candidatos) opsUsados.add(p.id);
+    if (candidatos.length > 0) grupos.push(candidatos);
+  }
+
+  let unidades = 0;
+  let valorEstimado = 0;
+  const taxa = taxaEntregaCliente(regra, freteCliente);
+  for (const grupo of grupos) {
+    unidades += sumUnidadesPedidos(grupo);
+    valorEstimado += grupo.reduce((s, p) => s + valorItensPedido(p.itens), 0);
+    if (grupo.some((p) => !p.freteCortesia)) valorEstimado += taxa;
+  }
+
+  return { unidades, valorEstimado };
+}
+
+/** Pedidos usados na contagem efetiva da semana (exclui espelhos CA em clientes acumuladores). */
+export function pedidosOperacionaisSemanaEfetivos(
+  pedidos: OperacionalSemanal[],
+  acumulaPedidos: boolean,
+): OperacionalSemanal[] {
+  const ativos = pedidos.filter((p) => p.status !== "CANCELADO");
+  if (!acumulaPedidos) return ativos;
+  return ativos.filter((p) => !pedidoCriadoAPartirDoContaAzul(p));
 }
 
 /** Vários pedidos operacionais podem apontar para a mesma venda CA (vínculo múltiplo). */
@@ -139,6 +293,8 @@ export async function calcularConciliacaoSemanal(
     prisma.pedidoOperacional.findMany({
       where: { dataEntrega: { gte: inicio, lte: fim } },
       select: {
+        id: true,
+        dataEntrega: true,
         contaAzulCustomerId: true,
         status: true,
         freteCortesia: true,
@@ -166,7 +322,12 @@ export async function calcularConciliacaoSemanal(
     }),
     mapDescontoBoletoPorContaAzul(prisma),
     prisma.regraComercialCliente.findMany({
-      select: { contaAzulCustomerId: true, acumulaPedidos: true, ...REGRA_ENTREGA_CONCILIACAO_SELECT },
+      select: {
+        contaAzulCustomerId: true,
+        acumulaPedidos: true,
+        diasAcumulo: true,
+        ...REGRA_ENTREGA_CONCILIACAO_SELECT,
+      },
     }),
   ]);
 
@@ -191,6 +352,7 @@ export async function calcularConciliacaoSemanal(
   let contaAzulValor = 0;
   let contaAzulValorGerencial = 0;
   let descontoBoletoTotal = 0;
+  const vendasCaPorCliente = new Map<string, VendaCaSemanal[]>();
 
   for (const venda of vendasContaAzulRaw) {
     const contaAzulCustomerId = venda.cliente.externalId ?? venda.cliente.id;
@@ -225,6 +387,51 @@ export async function calcularConciliacaoSemanal(
     atual.descontoBoletoValor += gerencial.descontoBoletoValor;
     atual.valorFrete += valorFrete;
     contaAzulPorCliente.set(contaAzulCustomerId, atual);
+
+    const vendasCliente = vendasCaPorCliente.get(contaAzulCustomerId) ?? [];
+    vendasCliente.push({ id: venda.id, dataPedido: venda.dataPedido });
+    vendasCaPorCliente.set(contaAzulCustomerId, vendasCliente);
+  }
+
+  const selectOperacionalSemanal = {
+    id: true,
+    dataEntrega: true,
+    contaAzulCustomerId: true,
+    status: true,
+    freteCortesia: true,
+    snapshotConciliacao: true,
+    pedidoContaAzulId: true,
+    cliente: { select: { nome: true } },
+    pedidoContaAzul: { select: { valorLiquido: true, valorTotal: true } },
+    itens: true,
+  } as const;
+
+  const acumulaComCa = Array.from(vendasCaPorCliente.keys()).filter((id) =>
+    clienteAcumulaFaturamento(regraPorCliente.get(id)),
+  );
+  let pedidosAcumuloExtra: OperacionalSemanal[] = [];
+  if (acumulaComCa.length > 0) {
+    const maxDias = Math.max(
+      15,
+      ...acumulaComCa.map((id) => regraPorCliente.get(id)?.diasAcumulo ?? 15),
+    );
+    const inicioAcumulo = new Date(inicio);
+    inicioAcumulo.setDate(inicioAcumulo.getDate() - maxDias - 14);
+    pedidosAcumuloExtra = (await prisma.pedidoOperacional.findMany({
+      where: {
+        contaAzulCustomerId: { in: acumulaComCa },
+        dataEntrega: { gte: inicioAcumulo, lt: inicio },
+        status: { not: "CANCELADO" },
+      },
+      select: selectOperacionalSemanal,
+    })) as OperacionalSemanal[];
+  }
+
+  const pedidosAcumuloExtraPorCliente = new Map<string, OperacionalSemanal[]>();
+  for (const p of pedidosAcumuloExtra) {
+    const lista = pedidosAcumuloExtraPorCliente.get(p.contaAzulCustomerId) ?? [];
+    lista.push(p);
+    pedidosAcumuloExtraPorCliente.set(p.contaAzulCustomerId, lista);
   }
 
   const operacionalPorCliente = new Map<
@@ -236,24 +443,12 @@ export async function calcularConciliacaoSemanal(
       valorEstimado: number;
     }
   >();
-  const espelhoCaContado = new Map<string, Set<string>>();
   let operacionalPedidos = 0;
   let operacionalUnidades = 0;
   let operacionalValor = 0;
 
   for (const pedido of pedidosOperacionais as OperacionalSemanal[]) {
     if (pedido.status === "CANCELADO") continue;
-
-    const criadoDoContaAzul = pedidoCriadoAPartirDoContaAzul(pedido);
-    const caId = pedido.pedidoContaAzulId;
-    if (criadoDoContaAzul && caId) {
-      const contados = espelhoCaContado.get(pedido.contaAzulCustomerId) ?? new Set<string>();
-      if (contados.has(caId)) continue;
-      contados.add(caId);
-      espelhoCaContado.set(pedido.contaAzulCustomerId, contados);
-    }
-
-    operacionalPedidos += 1;
     const opCliente = operacionalPorCliente.get(pedido.contaAzulCustomerId) ?? {
       clienteNome: pedido.cliente?.nome ?? pedido.contaAzulCustomerId,
       pedidos: [],
@@ -261,29 +456,28 @@ export async function calcularConciliacaoSemanal(
       valorEstimado: 0,
     };
     opCliente.pedidos.push(pedido);
-    for (const item of pedido.itens) {
-      const quantidade = Number(item.quantidade);
-      operacionalUnidades += quantidade;
-      opCliente.unidades += quantidade;
-    }
-
-    if (criadoDoContaAzul) {
-      const valorPedidoCa = money(pedido.pedidoContaAzul?.valorLiquido ?? pedido.pedidoContaAzul?.valorTotal);
-      const valorPedido = valorPedidoCa ?? valorItensPedido(pedido.itens);
-      operacionalValor += valorPedido;
-      opCliente.valorEstimado += valorPedido;
-    } else {
-      const regra = regraPorCliente.get(pedido.contaAzulCustomerId);
-      const freteCliente = contaAzulPorCliente.get(pedido.contaAzulCustomerId);
-      const freteReferencia =
-        freteCliente && freteCliente.pedidos > 0 ? freteCliente.valorFrete / freteCliente.pedidos : 0;
-      const taxaEntrega = pedido.freteCortesia ? 0 : taxaEntregaParaConciliacao(regra, freteReferencia);
-      const valorPedido = valorItensPedido(pedido.itens) + taxaEntrega;
-      operacionalValor += valorPedido;
-      opCliente.valorEstimado += valorPedido;
-    }
-
     operacionalPorCliente.set(pedido.contaAzulCustomerId, opCliente);
+  }
+
+  for (const [contaAzulCustomerId, opCliente] of Array.from(operacionalPorCliente.entries())) {
+    const regra = regraPorCliente.get(contaAzulCustomerId);
+    const acumula = clienteAcumulaFaturamento(regra);
+    const ca = contaAzulPorCliente.get(contaAzulCustomerId);
+    const vendasCa = vendasCaPorCliente.get(contaAzulCustomerId) ?? [];
+    const pedidosTotais = acumula
+      ? [...opCliente.pedidos, ...(pedidosAcumuloExtraPorCliente.get(contaAzulCustomerId) ?? [])]
+      : opCliente.pedidos;
+    const totais =
+      acumula && vendasCa.length > 0
+        ? totaisOperacionaisAcumuloSemana(pedidosTotais, vendasCa, regra, ca)
+        : totaisOperacionaisClienteSemanal(pedidosTotais, acumula, regra, ca);
+    opCliente.unidades = totais.unidades;
+    opCliente.valorEstimado = totais.valorEstimado;
+    operacionalUnidades += totais.unidades;
+    operacionalValor += totais.valorEstimado;
+    operacionalPedidos += pedidosOperacionaisEfetivos(
+      pedidosOperacionaisSemanaEfetivos(opCliente.pedidos, acumula),
+    );
   }
 
   const chaves = new Set([
@@ -295,7 +489,11 @@ export async function calcularConciliacaoSemanal(
       const opRaw = operacionalPorCliente.get(contaAzulCustomerId);
       const ca = contaAzulPorCliente.get(contaAzulCustomerId);
       const acumulaPedidos = clienteAcumulaFaturamento(regraPorCliente.get(contaAzulCustomerId));
-      const opPedidos = opRaw ? pedidosOperacionaisEfetivos(opRaw.pedidos) : 0;
+      const opPedidos = opRaw
+        ? pedidosOperacionaisEfetivos(
+            pedidosOperacionaisSemanaEfetivos(opRaw.pedidos, acumulaPedidos),
+          )
+        : 0;
       const caPedidos = ca?.pedidos ?? 0;
       const diffPedidos = opPedidos - caPedidos;
       const diffUnidades = (opRaw?.unidades ?? 0) - (ca?.unidades ?? 0);

@@ -17,6 +17,7 @@ import {
   primeiraSemanaBloqueante,
 } from "../lib/fechamento.js";
 import { calcularConciliacaoSemanal } from "../lib/conciliacao-semanal.js";
+import { autoVincularAcumuloSemana } from "../lib/conciliacao-semana-reparo.js";
 import { fimSemana, GO_LIVE_PEDIDOS, inicioSemana, semanaIgnoraConciliacaoFechamento } from "../lib/semana.js";
 import {
   comercialProcedure,
@@ -2635,6 +2636,10 @@ export const pedidosRouter = router({
 
       const semanaInicio = inicioSemana(inicio);
       const semanaFim = fimSemana(inicio);
+      await autoVincularAcumuloSemana(prisma, semanaInicio, semanaFim, {
+        id: String(ctx.user?.id ?? "sistema"),
+        nome: ctx.user?.name ?? "Conciliação automática",
+      });
       const conciliacaoSemanal = await calcularConciliacaoSemanal(
         prisma,
         semanaInicio,
