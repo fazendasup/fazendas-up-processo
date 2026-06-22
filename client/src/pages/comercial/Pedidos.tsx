@@ -701,23 +701,30 @@ export function Pedidos({
     setDia(isoLocal(new Date(bloqueioSemana.inicio)));
   }
 
-  function fecharSemanaAtual() {
+  function fecharSemanaAtual(ignorarConciliacao = false) {
     const info = statusSemana.data?.semanaAtual;
     if (!info) return;
     const ok = window.confirm(
-      `Fechar a semana de ${info.rotulo}?\n\nIsso valida o histórico (${info.entregues} entregue(s), ${info.cancelados} cancelado(s)) e libera a criação de pedidos da próxima semana. Você poderá reabrir depois, se necessário.`
+      ignorarConciliacao
+        ? `Fechar a semana de ${info.rotulo} mesmo com divergências na conciliação?\n\nOs pedidos operacionais já revisados serão validados; diferenças com o Conta Azul ficam registradas no histórico.`
+        : `Fechar a semana de ${info.rotulo}?\n\nIsso valida o histórico (${info.entregues} entregue(s), ${info.cancelados} cancelado(s)) e libera a criação de pedidos da próxima semana. Você poderá reabrir depois, se necessário.`,
     );
     if (!ok) return;
-    fecharSemana.mutate({ dia: diaDate });
+    fecharSemana.mutate({ dia: diaDate, ignorarConciliacao });
   }
 
-  function fecharSemanaBloqueante() {
+  function fecharSemanaBloqueante(ignorarConciliacao = false) {
     if (!bloqueioSemana) return;
     const ok = window.confirm(
-      `Fechar a semana de ${bloqueioSemana.rotulo}?\n\nTodos os pedidos estão revisados. Isso valida o histórico e libera a criação de novos pedidos.`
+      ignorarConciliacao
+        ? `Fechar a semana de ${bloqueioSemana.rotulo} mesmo com divergências na conciliação?\n\nUse se os pedidos já foram revisados e as diferenças com o Conta Azul são esperadas (ex.: semana piloto).`
+        : `Fechar a semana de ${bloqueioSemana.rotulo}?\n\nTodos os pedidos estão revisados. Isso valida o histórico e libera a criação de novos pedidos.`,
     );
     if (!ok) return;
-    fecharSemana.mutate({ dia: new Date(bloqueioSemana.inicio) });
+    fecharSemana.mutate({
+      dia: new Date(bloqueioSemana.inicio),
+      ignorarConciliacao,
+    });
   }
 
   function trazerSemanaAnterior() {
@@ -835,7 +842,9 @@ export function Pedidos({
                     ? `Há ${bloqueioSemana.pendentes} pedido(s) sem definição de entregue/cancelado. Revise e feche a semana para liberar novos pedidos.`
                     : statusSemana.data?.conciliacaoBloqueio?.conciliado ===
                         false
-                      ? "Há conciliações pendentes com a Conta Azul. Corrija as divergências e feche novamente a semana anterior para liberar novos pedidos."
+                      ? statusSemana.data.bloqueioIgnoraConciliacao
+                        ? "Semana piloto (go-live): pode fechar sem conciliar o Conta Azul — os pedidos operacionais já foram revisados."
+                        : "Há conciliações pendentes com a Conta Azul. Corrija as divergências ou use «Fechar sem conciliar» se for seguro."
                     : "Os pedidos já estão revisados, mas a semana ainda não foi fechada. Finalize o fechamento para liberar novos pedidos."}
                 </p>
                 {!canEditarComercial && (
@@ -850,18 +859,30 @@ export function Pedidos({
                 Revisar semana de {bloqueioSemana.rotulo}
               </Button>
               {canEditarComercial && bloqueioSemana.pendentes === 0 && (
-                <Button
-                  className="bg-red-600 hover:bg-red-700"
-                  disabled={
-                    fecharSemana.isPending ||
-                    !statusSemana.data?.conciliacaoBloqueio?.conciliado
-                  }
-                  onClick={fecharSemanaBloqueante}
-                >
-                  {fecharSemana.isPending
-                    ? "Fechando..."
-                    : `Fechar semana ${bloqueioSemana.rotulo}`}
-                </Button>
+                <>
+                  {statusSemana.data?.podeFecharBloqueio ? (
+                    <Button
+                      className="bg-red-600 hover:bg-red-700"
+                      disabled={fecharSemana.isPending}
+                      onClick={() => fecharSemanaBloqueante(false)}
+                    >
+                      {fecharSemana.isPending
+                        ? "Fechando..."
+                        : `Fechar semana ${bloqueioSemana.rotulo}`}
+                    </Button>
+                  ) : statusSemana.data?.conciliacaoBloqueio?.conciliado === false ? (
+                    <Button
+                      variant="outline"
+                      className="border-red-400 text-red-800 dark:text-red-200"
+                      disabled={fecharSemana.isPending}
+                      onClick={() => fecharSemanaBloqueante(true)}
+                    >
+                      {fecharSemana.isPending
+                        ? "Fechando..."
+                        : "Fechar sem conciliar"}
+                    </Button>
+                  ) : null}
+                </>
               )}
             </div>
           </div>
@@ -929,9 +950,23 @@ export function Pedidos({
                 ) : statusSemana.data.podeFecharSemanaAtual ? (
                   <Button
                     disabled={fecharSemana.isPending}
-                    onClick={fecharSemanaAtual}
+                    onClick={() => fecharSemanaAtual(false)}
                   >
                     {fecharSemana.isPending ? "Fechando..." : "Fechar semana"}
+                  </Button>
+                ) : statusSemana.data.semanaAtual.totalPedidos > 0 &&
+                  statusSemana.data.semanaAtual.pendentes === 0 &&
+                  statusSemana.data.conciliacaoContaAzul?.conciliado === false ? (
+                  <Button
+                    variant="outline"
+                    disabled={fecharSemana.isPending}
+                    onClick={() => fecharSemanaAtual(true)}
+                  >
+                    {fecharSemana.isPending
+                      ? "Fechando..."
+                      : statusSemana.data.semanaAtualIgnoraConciliacao
+                        ? "Fechar semana (piloto)"
+                        : "Fechar sem conciliar"}
                   </Button>
                 ) : statusSemana.data.semanaAtual.totalPedidos > 0 ? (
                   <span className="text-xs text-muted-foreground">

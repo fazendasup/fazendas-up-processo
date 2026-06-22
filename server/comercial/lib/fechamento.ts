@@ -7,6 +7,7 @@ import {
   inicioSemanaGoLive,
   rotuloSemana,
   semanaAnteriorInicio,
+  semanaIgnoraConciliacaoFechamento,
 } from "./semana.js";
 
 type PrismaLike = Pick<
@@ -76,6 +77,10 @@ export async function semanaBloqueiaNovosPedidos(
 
   if (status.pendentes > 0 || !status.fechada) {
     return status;
+  }
+
+  if (semanaIgnoraConciliacaoFechamento(semanaInicio)) {
+    return null;
   }
 
   const conciliacao = await calcularConciliacaoSemanal(

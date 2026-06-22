@@ -40,6 +40,15 @@ export function inicioSemanaGoLive(): Date {
   return inicioSemana(GO_LIVE_PEDIDOS);
 }
 
+/** Semana piloto de go-live (01/06–07/06/2026): fechamento sem exigir conciliação CA. */
+export function isSemanaGoLive(semanaInicio: Date): boolean {
+  return inicioSemana(semanaInicio).getTime() === inicioSemanaGoLive().getTime();
+}
+
+export function semanaIgnoraConciliacaoFechamento(semanaInicio: Date): boolean {
+  return isSemanaGoLive(semanaInicio);
+}
+
 /**
  * Lista os inícios de semana (segundas) no intervalo `[de, ate)`, a partir do go-live.
  * Útil para varrer semanas anteriores à semana alvo em busca de pendências.

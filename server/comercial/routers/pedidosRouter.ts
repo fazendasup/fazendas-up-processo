@@ -17,7 +17,7 @@ import {
   primeiraSemanaBloqueante,
 } from "../lib/fechamento.js";
 import { calcularConciliacaoSemanal } from "../lib/conciliacao-semanal.js";
-import { fimSemana, GO_LIVE_PEDIDOS, inicioSemana } from "../lib/semana.js";
+import { fimSemana, GO_LIVE_PEDIDOS, inicioSemana, semanaIgnoraConciliacaoFechamento } from "../lib/semana.js";
 import {
   comercialProcedure,
   comercialRequirePerfis,
@@ -2238,6 +2238,9 @@ export const pedidosRouter = router({
         semanaAtual.totalPedidos > 0 &&
         semanaAtual.pendentes === 0 &&
         !semanaAtual.fechada;
+      const ignoraConciliacaoAtual = semanaIgnoraConciliacaoFechamento(semanaInicio);
+      const ignoraConciliacaoBloqueio =
+        bloqueio != null && semanaIgnoraConciliacaoFechamento(bloqueio.inicio);
       return {
         semanaAtual,
         bloqueio,
@@ -2245,14 +2248,26 @@ export const pedidosRouter = router({
         conciliacaoBloqueio,
         podeCriarPedidos: bloqueio == null,
         podeFecharSemanaAtual:
-          podeFecharOperacional && conciliacaoAtual.conciliado,
+          podeFecharOperacional &&
+          (conciliacaoAtual.conciliado || ignoraConciliacaoAtual),
+        podeFecharBloqueio:
+          bloqueio != null &&
+          bloqueio.pendentes === 0 &&
+          (conciliacaoBloqueio?.conciliado !== false || ignoraConciliacaoBloqueio),
+        bloqueioIgnoraConciliacao: ignoraConciliacaoBloqueio,
+        semanaAtualIgnoraConciliacao: ignoraConciliacaoAtual,
       };
     }),
 
   /** Fecha (ou refecha) a semana do dia informado. Exige que não haja pedidos pendentes. */
   fecharSemana: comercialProcedure
     .use(podeConfigurarEstoqueVivo)
-    .input(z.object({ dia: z.coerce.date() }))
+    .input(
+      z.object({
+        dia: z.coerce.date(),
+        ignorarConciliacao: z.boolean().optional().default(false),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const usuario = ctx.comercialUsuario;
       if (!usuario)
@@ -2291,7 +2306,10 @@ export const pedidosRouter = router({
         semanaInicio,
         semanaFim
       );
-      if (!conciliacao.conciliado) {
+      const ignoraConciliacao =
+        input.ignorarConciliacao ||
+        semanaIgnoraConciliacaoFechamento(semanaInicio);
+      if (!conciliacao.conciliado && !ignoraConciliacao) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: `Há ${conciliacao.resumo.clientesDivergentes} cliente(s) com divergência real entre Pedidos e Conta Azul. Corrija os lançamentos e sincronize novamente antes de fechar.`,
@@ -2336,6 +2354,7 @@ export const pedidosRouter = router({
             valorEntregue: Number(valorEntregue),
           },
           conciliacaoContaAzul: conciliacao,
+          conciliacaoIgnoradaNoFechamento: ignoraConciliacao && !conciliacao.conciliado,
           fechadoEm: new Date().toISOString(),
         } as Prisma.InputJsonValue,
       };

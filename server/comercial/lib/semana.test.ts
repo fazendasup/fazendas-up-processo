@@ -3,6 +3,7 @@ import {
   GO_LIVE_PEDIDOS,
   inicioSemana,
   intervaloSemanaAnterior,
+  isSemanaGoLive,
   semanaAnteriorInicio,
 } from "./semana.js";
 
@@ -13,6 +14,13 @@ describe("intervaloSemanaAnterior", () => {
     expect(inicio.getDate()).toBe(8);
     expect(inicio.getMonth()).toBe(5);
     expect(fim.getDate()).toBe(14);
+  });
+});
+
+describe("isSemanaGoLive", () => {
+  it("identifica a semana 01/06–07/06", () => {
+    expect(isSemanaGoLive(inicioSemana(GO_LIVE_PEDIDOS))).toBe(true);
+    expect(isSemanaGoLive(inicioSemana(new Date(2026, 5, 8)))).toBe(false);
   });
 });
 
