@@ -8,6 +8,9 @@ import {
   fatorAproveitamento,
   kgBrutoParaLiquido,
   kgLiquidoPorUnidadeDeRendimentoKg,
+  mediaOrcamentosCompraKg,
+  parseOrcamentosCompraKg,
+  precoCompraKgEfetivo,
   precoVendaParaMargem,
   rendimentoUnidadesPorKg,
   temEtapaLogistica,
@@ -67,6 +70,25 @@ describe("logistica etapas", () => {
 describe("fatorAproveitamento", () => {
   it("combina perdas em série", () => {
     expect(fatorAproveitamento([10, 5])).toBeCloseTo(0.855);
+  });
+});
+
+describe("orcamentosCompraKg", () => {
+  it("parseia array ou JSON string com até 3 valores positivos", () => {
+    expect(parseOrcamentosCompraKg([9, 10, 11])).toEqual([9, 10, 11]);
+    expect(parseOrcamentosCompraKg(JSON.stringify([8.5, 9.5]))).toEqual([8.5, 9.5]);
+    expect(parseOrcamentosCompraKg([1, -2, 0, 4, 5, 6])).toEqual([1, 4, 5]);
+    expect(parseOrcamentosCompraKg(null)).toEqual([]);
+  });
+
+  it("calcula média e preço efetivo", () => {
+    expect(mediaOrcamentosCompraKg([9, 10, 11])).toBeCloseTo(10);
+    expect(mediaOrcamentosCompraKg([])).toBeNull();
+    expect(
+      precoCompraKgEfetivo({ orcamentosCompraKg: [9, 10, 11], precoCompraKg: 99 }),
+    ).toBeCloseTo(10);
+    expect(precoCompraKgEfetivo({ orcamentosCompraKg: [], precoCompraKg: 9.38 })).toBeCloseTo(9.38);
+    expect(precoCompraKgEfetivo({ orcamentosCompraKg: [], precoCompraKg: null })).toBeNull();
   });
 });
 

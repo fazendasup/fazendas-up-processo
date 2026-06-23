@@ -944,6 +944,8 @@ export const custosProdutosFichas = mysqlTable("custos_produtos_fichas", {
     .notNull()
     .default("automatico"),
   precoCompraKg: decimal("precoCompraKg", { precision: 18, scale: 8 }),
+  /** Até 3 orçamentos R$/kg — precoCompraKg = média automática. */
+  orcamentosCompraKg: text("orcamentosCompraKg"),
   custoCompraUn: decimal("custoCompraUn", { precision: 14, scale: 6 }),
   modoCompraMp: mysqlEnum("modoCompraMp", ["kg", "unidade"]).default("kg"),
   /** Unidades de MP (cabeça, caixa…) consumidas por unidade vendida — modo compra/un. */

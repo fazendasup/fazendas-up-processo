@@ -4,6 +4,7 @@ import {
   calcularCustoProduto,
   deduplicarEtapasLogistica,
   LABEL_ETAPA_PROCESSO,
+  precoCompraKgEfetivo,
   temEtapaLogistica,
 } from "@shared/custosProduto";
 import { LOGISTICA_PERCENTUAL_PADRAO } from "@shared/custosProdutoProcessoPadrao";
@@ -197,7 +198,10 @@ export async function fichaParaCalculoInput(
     tipo: ficha.tipo as FichaCalculoInput["tipo"],
     unidadeVenda: ficha.unidadeVenda as FichaCalculoInput["unidadeVenda"],
     precoVendaReferencia: num(ficha.precoVendaReferencia),
-    precoCompraKg: num(ficha.precoCompraKg),
+    precoCompraKg: precoCompraKgEfetivo({
+      orcamentosCompraKg: ficha.orcamentosCompraKg,
+      precoCompraKg: num(ficha.precoCompraKg),
+    }),
     custoCompraUn: num(ficha.custoCompraUn),
     modoCompraMp: (ficha.modoCompraMp ?? "kg") as FichaCalculoInput["modoCompraMp"],
     unidadesMpPorUnidade: num(ficha.unidadesMpPorUnidade),

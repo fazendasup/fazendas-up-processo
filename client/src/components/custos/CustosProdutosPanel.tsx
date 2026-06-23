@@ -20,6 +20,9 @@ import {
   temEtapaLogistica,
   unidadesMpConsumidasRevenda,
   custoMaterialRevenda,
+  parseOrcamentosCompraKg,
+  mediaOrcamentosCompraKg,
+  precoCompraKgEfetivo,
   FLORES_KG_POR_POTE_PADRAO,
   FLORES_RENDIMENTO_POTES_POR_KG_PADRAO,
   kgLiquidoPorUnidadeDeRendimentoKg,
@@ -323,6 +326,8 @@ type FichaForm = {
   unidadeVenda: string;
   precoVendaReferencia: string;
   precoVendaReferenciaModo: PrecoVendaReferenciaModo;
+  /** Até 3 orçamentos R$/kg — precoCompraKg = média automática. */
+  orcamentosCompraKg: string[];
   precoCompraKg: string;
   custoCompraUn: string;
   kgPorUnidadeCompra: string;
@@ -532,6 +537,7 @@ function emptyFicha(tipo: TipoFichaCustoProduto = "revenda_processada"): FichaFo
     unidadeVenda: "unidade",
     precoVendaReferencia: "",
     precoVendaReferenciaModo: "automatico",
+    orcamentosCompraKg: emptyOrcamentosCompraSlots(),
     precoCompraKg: "",
     custoCompraUn: "",
     kgPorUnidadeCompra: "",
@@ -561,6 +567,61 @@ function parseOpt(s: string): number | null {
   if (!t) return null;
   const n = Number(t);
   return Number.isFinite(n) ? n : null;
+}
+
+const ORCAMENTOS_COMPRA_SLOTS = 3;
+
+function emptyOrcamentosCompraSlots(): string[] {
+  return Array(ORCAMENTOS_COMPRA_SLOTS).fill("");
+}
+
+function orcamentosCompraSlotsFromRow(row: any): string[] {
+  const parsed = parseOrcamentosCompraKg(row.ficha?.orcamentosCompraKg);
+  const slots = emptyOrcamentosCompraSlots();
+  parsed.forEach((n, i) => {
+    if (i < ORCAMENTOS_COMPRA_SLOTS) slots[i] = fmtDecimalInput(n, 4);
+  });
+  if (parsed.length === 0 && row.ficha?.precoCompraKg != null) {
+    slots[0] = fmtDecimalInput(row.ficha.precoCompraKg, 4);
+  }
+  return slots;
+}
+
+function orcamentosCompraNumsFromSlots(slots: string[]): number[] {
+  return slots.map((s) => parseOpt(s)).filter((n): n is number => n != null && n > 0);
+}
+
+function precoCompraKgMedioFromSlots(slots: string[], fallbackPreco = ""): string {
+  const media = mediaOrcamentosCompraKg(orcamentosCompraNumsFromSlots(slots));
+  if (media != null) return fmtDecimalInput(media, 4);
+  return fallbackPreco;
+}
+
+function numFichaDecimal(v: unknown): number | null {
+  if (v == null || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function orcamentosCompraSlotsIguais(a: string[], b: string[]): boolean {
+  return a.every((v, i) => v === (b[i] ?? ""));
+}
+
+function precoCompraKgEfetivoRow(ficha: {
+  orcamentosCompraKg?: unknown;
+  precoCompraKg?: unknown;
+}): number | null {
+  return precoCompraKgEfetivo({
+    orcamentosCompraKg: ficha.orcamentosCompraKg,
+    precoCompraKg: numFichaDecimal(ficha.precoCompraKg),
+  });
+}
+
+function precoCompraKgEfetivoForm(form: FichaForm): number | null {
+  return precoCompraKgEfetivo({
+    orcamentosCompraKg: orcamentosCompraNumsFromSlots(form.orcamentosCompraKg),
+    precoCompraKg: parseOpt(form.precoCompraKg),
+  });
 }
 
 function periodoMesCorrente() {
@@ -639,7 +700,7 @@ function mensagemErroAtivacaoFicha(form: FichaForm): string | null {
         return "Informe o preço por unidade de matéria-prima (coluna Compra MP ou editor) antes de ativar.";
       }
     } else {
-      const preco = parseOpt(form.precoCompraKg);
+      const preco = precoCompraKgEfetivoForm(form);
       const kg = parseOpt(form.kgBrutoPorUnidade);
       if (preco == null || preco <= 0 || kg == null) {
         return form.categoria === "flores"
@@ -664,14 +725,21 @@ function rowToFichaFormComDraft(
   row: any,
   patch: Partial<FichaForm>,
   compraDraft: Record<number, string>,
+  orcamentosDraft: Record<number, string[]>,
   produtosComercial?: Parameters<typeof resolverModeloEPerfilParaRow>[2],
 ): FichaForm {
   const form = rowToFichaForm(row, patch, produtosComercial);
-  const draft = compraDraft[row.ficha.id];
-  if (draft == null) return form;
   const modo = (patch.modoCompraMp ?? row.ficha.modoCompraMp ?? "kg") as ModoCompraMp;
-  if (modo === "unidade") form.custoCompraUn = draft;
-  else form.precoCompraKg = draft;
+  if (modo === "unidade") {
+    const draft = compraDraft[row.ficha.id];
+    if (draft != null) form.custoCompraUn = draft;
+  } else {
+    const draft = orcamentosDraft[row.ficha.id];
+    if (draft != null) {
+      form.orcamentosCompraKg = draft;
+      form.precoCompraKg = precoCompraKgMedioFromSlots(draft);
+    }
+  }
   return form;
 }
 
@@ -680,6 +748,9 @@ function buildPayload(
   id?: number,
   produtosComerciais?: ReadonlyArray<{ id: string; nome: string }>,
 ) {
+  const orcamentos = orcamentosCompraNumsFromSlots(form.orcamentosCompraKg);
+  const precoCompraKg =
+    mediaOrcamentosCompraKg(orcamentos) ?? parseOpt(form.precoCompraKg);
   return {
     ...(id ? { id } : {}),
     tipo: form.tipo,
@@ -689,7 +760,8 @@ function buildPayload(
     unidadeVenda: form.unidadeVenda as (typeof UNIDADES_VENDA_PRODUTO)[number],
     precoVendaReferencia: parseOpt(form.precoVendaReferencia),
     precoVendaReferenciaModo: form.precoVendaReferenciaModo,
-    precoCompraKg: parseOpt(form.precoCompraKg),
+    orcamentosCompraKg: orcamentos.length > 0 ? orcamentos : undefined,
+    precoCompraKg,
     custoCompraUn: parseOpt(form.custoCompraUn),
     kgPorUnidadeCompra: parseOpt(form.kgPorUnidadeCompra),
     unidadesMpPorUnidade: parseOpt(form.unidadesMpPorUnidade),
@@ -750,7 +822,8 @@ function rowToFichaForm(
     precoVendaReferencia: fmtDecimalInput(row.ficha.precoVendaReferencia, 2),
     precoVendaReferenciaModo:
       row.ficha.precoVendaReferenciaModo === "manual" ? "manual" : "automatico",
-    precoCompraKg: fmtDecimalInput(row.ficha.precoCompraKg, 4),
+    orcamentosCompraKg: orcamentosCompraSlotsFromRow(row),
+    precoCompraKg: fmtDecimalInput(precoCompraKgEfetivoRow(row.ficha), 4),
     custoCompraUn: fmtDecimalInput(row.ficha.custoCompraUn, 4),
     kgPorUnidadeCompra: fmtDecimalInput(row.ficha.kgPorUnidadeCompra, 4),
     unidadesMpPorUnidade: fmtDecimalInput(row.ficha.unidadesMpPorUnidade, 2),
@@ -1404,7 +1477,7 @@ function FichaEditor({
                 ? "Compra por kg e vende por pote/unidade — informe o preço R$/kg e quantos potes você monta com 1 kg. O sistema calcula o kg por pote e o custo de MP."
                 : form.modoCompraMp === "unidade"
                   ? "Informe o preço por unidade de compra (cabeça, caixa, bandeja…). Consumo e perdas definem quantas unidades de MP entram em cada produto vendido."
-                  : "Informe o preço de compra por kg e quanto produto pronto você vende. As perdas calculam automaticamente quanto precisa comprar bruto."}
+                  : "Informe de 1 a 3 orçamentos R$/kg recebidos — o preço de compra será a média. Informe também quanto produto pronto você vende; as perdas calculam a compra bruta."}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-3">
@@ -1452,12 +1525,39 @@ function FichaEditor({
             )}
             {form.modoCompraMp === "kg" || isFloresCategoria ? (
               <>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Orçamentos recebidos (R$/kg)</Label>
+                  <p className="text-[10px] text-muted-foreground">
+                    Informe de 1 a 3 valores de orçamento de fornecedores — o preço de compra será a média
+                    automaticamente.
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    {form.orcamentosCompraKg.map((val, i) => (
+                      <Input
+                        key={i}
+                        inputMode="decimal"
+                        placeholder={i === 0 ? "Orçamento 1" : `Orçamento ${i + 1} (opc.)`}
+                        value={val}
+                        onChange={(e) => {
+                          const next = [...form.orcamentosCompraKg];
+                          next[i] = e.target.value;
+                          setForm((f) => ({
+                            ...f,
+                            orcamentosCompraKg: next,
+                            precoCompraKg: precoCompraKgMedioFromSlots(next),
+                          }));
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <Label>Preço compra (R$/kg)</Label>
+                  <Label>Preço compra (R$/kg) — média</Label>
                   <Input
                     inputMode="decimal"
+                    readOnly
+                    className="bg-muted/40"
                     value={form.precoCompraKg}
-                    onChange={(e) => setForm((f) => ({ ...f, precoCompraKg: e.target.value }))}
                   />
                 </div>
                 {isFloresCategoria ? (
@@ -1536,7 +1636,7 @@ function FichaEditor({
                       Flores: só triagem/seleção — sem perda de lavagem ou corte.
                     </p>
                     {(() => {
-                      const precoKg = parseOpt(form.precoCompraKg);
+                      const precoKg = precoCompraKgEfetivoForm(form);
                       const kgPote = parseOpt(form.kgBrutoPorUnidade);
                       const precoVenda = parseOpt(form.precoVendaReferencia);
                       if (precoKg == null || kgPote == null || precoKg <= 0 || kgPote <= 0) return null;
@@ -2161,6 +2261,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
   const [simResult, setSimResult] = useState<any>(null);
   const simResultFichaId = useRef<number | null>(null);
   const [compraDraft, setCompraDraft] = useState<Record<number, string>>({});
+  const [orcamentosDraft, setOrcamentosDraft] = useState<Record<number, string[]>>({});
   const [margemTabelaCliente, setMargemTabelaCliente] = useState<string>("20");
 
   const sincronizarPrecoVenda = trpc.custosProducao.produtos.sincronizarPrecoVendaReferencia.useMutation({
@@ -2236,8 +2337,14 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
           delete next[variables.id!];
           return next;
         });
+        setOrcamentosDraft((draft) => {
+          const next = { ...draft };
+          delete next[variables.id!];
+          return next;
+        });
       } else {
         setCompraDraft({});
+        setOrcamentosDraft({});
       }
       await utils.custosProducao.produtos.listarFichas.invalidate();
       await utils.custosProducao.produtos.listarVendasSemFicha.invalidate();
@@ -2534,8 +2641,11 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                     const precoCompraAtual =
                       modoCompra === "unidade"
                         ? fmtDecimalInput(row.ficha.custoCompraUn, 4)
-                        : fmtDecimalInput(row.ficha.precoCompraKg, 4);
+                        : fmtDecimalInput(precoCompraKgEfetivoRow(row.ficha), 4);
                     const precoCompraValue = compraDraft[row.ficha.id] ?? precoCompraAtual;
+                    const orcamentosAtuais =
+                      orcamentosDraft[row.ficha.id] ?? orcamentosCompraSlotsFromRow(row);
+                    const orcamentosSalvos = orcamentosCompraSlotsFromRow(row);
                     const podeEditarCompra = row.ficha.tipo === "revenda_processada" || row.ficha.tipo === "manual";
                     const precosMargem = row.resultado.precosVendaPorMargem ?? [];
                     const ativo = fichaAtiva(row);
@@ -2573,6 +2683,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                                     row,
                                     { ativo: nextAtivo },
                                     compraDraft,
+                                    orcamentosDraft,
                                     produtosParaNome,
                                   );
                                   if (nextAtivo) {
@@ -2622,43 +2733,110 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                               <span className="text-[10px] text-muted-foreground">
                                 {modoCompra === "unidade" ? "R$/un" : "R$/kg"}
                               </span>
-                              <div className="flex items-center gap-1">
-                                <Input
-                                  className="h-8 min-w-0 flex-1 px-2 text-xs"
-                                  inputMode="decimal"
-                                  value={precoCompraValue}
-                                  onChange={(e) =>
-                                    setCompraDraft((drafts) => ({ ...drafts, [row.ficha.id]: e.target.value }))
-                                  }
-                                  onKeyDown={(e) => {
-                                    if (e.key !== "Enter") return;
-                                    if (precoCompraValue === precoCompraAtual) return;
-                                    const patch =
-                                      modoCompra === "unidade"
-                                        ? { custoCompraUn: precoCompraValue }
-                                        : { precoCompraKg: precoCompraValue };
-                                    const p = buildPayload(rowToFichaForm(row, patch, produtosParaNome), row.ficha.id, produtosParaNome);
-                                    salvarFichaRapida.mutate(p as any);
-                                  }}
-                                />
-                                <Button
-                                  size="icon"
-                                  variant="outline"
-                                  className="h-8 w-8 shrink-0"
-                                  title="Atualizar compra"
-                                  disabled={salvarFichaRapida.isPending || precoCompraValue === precoCompraAtual}
-                                  onClick={() => {
-                                    const patch =
-                                      modoCompra === "unidade"
-                                        ? { custoCompraUn: precoCompraValue }
-                                        : { precoCompraKg: precoCompraValue };
-                                    const p = buildPayload(rowToFichaForm(row, patch, produtosParaNome), row.ficha.id, produtosParaNome);
-                                    salvarFichaRapida.mutate(p as any);
-                                  }}
-                                >
-                                  <Save className="h-3.5 w-3.5" />
-                                </Button>
-                              </div>
+                              {modoCompra === "kg" ? (
+                                <>
+                                  {orcamentosAtuais.map((val, i) => (
+                                    <Input
+                                      key={i}
+                                      className="h-7 min-w-0 flex-1 px-2 text-xs"
+                                      inputMode="decimal"
+                                      placeholder={i === 0 ? "Orç. 1" : `Orç. ${i + 1}`}
+                                      value={val}
+                                      onChange={(e) => {
+                                        const next = [...orcamentosAtuais];
+                                        next[i] = e.target.value;
+                                        setOrcamentosDraft((drafts) => ({
+                                          ...drafts,
+                                          [row.ficha.id]: next,
+                                        }));
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key !== "Enter") return;
+                                        if (orcamentosCompraSlotsIguais(orcamentosAtuais, orcamentosSalvos)) return;
+                                        const patch = {
+                                          orcamentosCompraKg: orcamentosAtuais,
+                                          precoCompraKg: precoCompraKgMedioFromSlots(orcamentosAtuais),
+                                        };
+                                        const p = buildPayload(
+                                          rowToFichaForm(row, patch, produtosParaNome),
+                                          row.ficha.id,
+                                          produtosParaNome,
+                                        );
+                                        salvarFichaRapida.mutate(p as any);
+                                      }}
+                                    />
+                                  ))}
+                                  <p className="text-[10px] text-muted-foreground tabular-nums">
+                                    Média:{" "}
+                                    {precoCompraKgMedioFromSlots(orcamentosAtuais) || "—"}
+                                  </p>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 w-full text-[10px]"
+                                    title="Atualizar orçamentos"
+                                    disabled={
+                                      salvarFichaRapida.isPending ||
+                                      orcamentosCompraSlotsIguais(orcamentosAtuais, orcamentosSalvos)
+                                    }
+                                    onClick={() => {
+                                      const patch = {
+                                        orcamentosCompraKg: orcamentosAtuais,
+                                        precoCompraKg: precoCompraKgMedioFromSlots(orcamentosAtuais),
+                                      };
+                                      const p = buildPayload(
+                                        rowToFichaForm(row, patch, produtosParaNome),
+                                        row.ficha.id,
+                                        produtosParaNome,
+                                      );
+                                      salvarFichaRapida.mutate(p as any);
+                                    }}
+                                  >
+                                    <Save className="h-3 w-3 mr-1" />
+                                    Salvar média
+                                  </Button>
+                                </>
+                              ) : (
+                                <div className="flex items-center gap-1">
+                                  <Input
+                                    className="h-8 min-w-0 flex-1 px-2 text-xs"
+                                    inputMode="decimal"
+                                    value={precoCompraValue}
+                                    onChange={(e) =>
+                                      setCompraDraft((drafts) => ({ ...drafts, [row.ficha.id]: e.target.value }))
+                                    }
+                                    onKeyDown={(e) => {
+                                      if (e.key !== "Enter") return;
+                                      if (precoCompraValue === precoCompraAtual) return;
+                                      const patch = { custoCompraUn: precoCompraValue };
+                                      const p = buildPayload(
+                                        rowToFichaForm(row, patch, produtosParaNome),
+                                        row.ficha.id,
+                                        produtosParaNome,
+                                      );
+                                      salvarFichaRapida.mutate(p as any);
+                                    }}
+                                  />
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    className="h-8 w-8 shrink-0"
+                                    title="Atualizar compra"
+                                    disabled={salvarFichaRapida.isPending || precoCompraValue === precoCompraAtual}
+                                    onClick={() => {
+                                      const patch = { custoCompraUn: precoCompraValue };
+                                      const p = buildPayload(
+                                        rowToFichaForm(row, patch, produtosParaNome),
+                                        row.ficha.id,
+                                        produtosParaNome,
+                                      );
+                                      salvarFichaRapida.mutate(p as any);
+                                    }}
+                                  >
+                                    <Save className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <span className="text-muted-foreground">—</span>

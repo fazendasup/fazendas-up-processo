@@ -173,6 +173,7 @@ function payloadCopia(
     categoria: categoriaDestino(origem, destino.nome),
     unidadeVenda: origem.unidadeVenda,
     precoCompraKg: origem.precoCompraKg,
+    orcamentosCompraKg: origem.orcamentosCompraKg,
     custoCompraUn: origem.custoCompraUn,
     modoCompraMp: origem.modoCompraMp,
     unidadesMpPorUnidade: origem.unidadesMpPorUnidade,

@@ -42,6 +42,48 @@ export type UnidadeVendaProduto = (typeof UNIDADES_VENDA_PRODUTO)[number];
 export const MODOS_COMPRA_MP = ["kg", "unidade"] as const;
 export type ModoCompraMp = (typeof MODOS_COMPRA_MP)[number];
 
+const MAX_ORCAMENTOS_COMPRA_KG = 3;
+
+/** Normaliza 1–3 orçamentos de compra (R$/kg) armazenados na ficha. */
+export function parseOrcamentosCompraKg(raw: unknown): number[] {
+  if (raw == null) return [];
+  let arr: unknown[] = [];
+  if (Array.isArray(raw)) arr = raw;
+  else if (typeof raw === "string") {
+    const t = raw.trim();
+    if (!t) return [];
+    try {
+      const parsed = JSON.parse(t) as unknown;
+      if (Array.isArray(parsed)) arr = parsed;
+    } catch {
+      return [];
+    }
+  } else return [];
+  return arr
+    .map((v) => Number(v))
+    .filter((n) => Number.isFinite(n) && n > 0)
+    .slice(0, MAX_ORCAMENTOS_COMPRA_KG);
+}
+
+/** Média aritmética dos orçamentos informados (mínimo 1 valor > 0). */
+export function mediaOrcamentosCompraKg(values: number[]): number | null {
+  const nums = values.filter((n) => Number.isFinite(n) && n > 0);
+  if (nums.length === 0) return null;
+  return nums.reduce((s, n) => s + n, 0) / nums.length;
+}
+
+/** Preço efetivo de compra/kg: média dos orçamentos quando houver, senão precoCompraKg manual. */
+export function precoCompraKgEfetivo(input: {
+  orcamentosCompraKg?: unknown;
+  precoCompraKg?: number | null;
+}): number | null {
+  const orcamentos = parseOrcamentosCompraKg(input.orcamentosCompraKg);
+  const media = mediaOrcamentosCompraKg(orcamentos);
+  if (media != null) return media;
+  const manual = input.precoCompraKg;
+  return manual != null && manual > 0 ? manual : null;
+}
+
 export const LABEL_MODO_COMPRA_MP: Record<ModoCompraMp, string> = {
   kg: "Por kg (a granel)",
   unidade: "Por unidade (caixa, bandeja, pacote…)",

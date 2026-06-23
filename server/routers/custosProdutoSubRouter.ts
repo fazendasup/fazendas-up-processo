@@ -11,6 +11,9 @@ import {
   type TipoFichaCustoProduto,
   MODOS_COMPRA_MP,
   type ModoCompraMp,
+  parseOrcamentosCompraKg,
+  mediaOrcamentosCompraKg,
+  precoCompraKgEfetivo,
 } from "@shared/custosProduto";
 import { REGIMES_MO_ETAPA, mapaCustoHoraProcessamento, type RegimeMoEtapa } from "@shared/custosMoEquipe";
 import {
@@ -243,6 +246,7 @@ const fichaInput = z
     unidadeVenda: unidadeZ.default("unidade"),
     precoVendaReferencia: z.number().nonnegative().optional().nullable(),
     precoVendaReferenciaModo: z.enum(["automatico", "manual"]).optional().default("automatico"),
+    orcamentosCompraKg: z.array(z.number().positive()).max(3).optional(),
     precoCompraKg: z.number().nonnegative().optional().nullable(),
     custoCompraUn: z.number().nonnegative().optional().nullable(),
     modoCompraMp: modoCompraMpZ.optional().default("kg"),
@@ -281,11 +285,17 @@ const fichaInput = z
             message: "Revenda (compra/un): informe o preço por unidade de matéria-prima.",
           });
         }
-      } else if (val.precoCompraKg == null || val.precoCompraKg <= 0 || val.kgBrutoPorUnidade == null) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Revenda (compra/kg): informe preço R$/kg (> 0) e kg final vendido por unidade.",
+      } else {
+        const precoEfetivo = precoCompraKgEfetivo({
+          orcamentosCompraKg: val.orcamentosCompraKg,
+          precoCompraKg: val.precoCompraKg,
         });
+        if (precoEfetivo == null || precoEfetivo <= 0 || val.kgBrutoPorUnidade == null) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Revenda (compra/kg): informe ao menos 1 orçamento R$/kg (> 0) e kg final vendido por unidade.",
+          });
+        }
       }
     }
     if (val.tipo === "producao_propria") {
@@ -299,6 +309,11 @@ const fichaInput = z
   });
 
 function fichaPayload(pid: number, input: z.infer<typeof fichaInput>): InsertCustoProdutoFicha {
+  const orcamentos = parseOrcamentosCompraKg(input.orcamentosCompraKg);
+  const precoCompraKg = precoCompraKgEfetivo({
+    orcamentosCompraKg: orcamentos,
+    precoCompraKg: input.precoCompraKg,
+  });
   return {
     projetoId: pid,
     tipo: input.tipo as TipoFichaCustoProduto,
@@ -309,7 +324,8 @@ function fichaPayload(pid: number, input: z.infer<typeof fichaInput>): InsertCus
     precoVendaReferencia:
       input.precoVendaReferencia != null ? String(input.precoVendaReferencia) : null,
     precoVendaReferenciaModo: input.precoVendaReferenciaModo ?? "automatico",
-    precoCompraKg: input.precoCompraKg != null ? String(input.precoCompraKg) : null,
+    orcamentosCompraKg: orcamentos.length > 0 ? JSON.stringify(orcamentos) : null,
+    precoCompraKg: precoCompraKg != null ? String(precoCompraKg) : null,
     custoCompraUn: input.custoCompraUn != null ? String(input.custoCompraUn) : null,
     modoCompraMp: (input.modoCompraMp ?? "kg") as ModoCompraMp,
     unidadesMpPorUnidade:
@@ -395,6 +411,7 @@ function fichaFakeFromInput(
     unidadeVenda: payload.unidadeVenda ?? input.unidadeVenda,
     precoVendaReferencia: payload.precoVendaReferencia ?? null,
     precoVendaReferenciaModo: payload.precoVendaReferenciaModo ?? "automatico",
+    orcamentosCompraKg: payload.orcamentosCompraKg ?? null,
     precoCompraKg: payload.precoCompraKg ?? null,
     custoCompraUn: payload.custoCompraUn ?? null,
     modoCompraMp: payload.modoCompraMp ?? "kg",

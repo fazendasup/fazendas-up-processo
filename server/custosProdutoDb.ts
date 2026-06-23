@@ -106,6 +106,7 @@ export async function ensureCustosProdutosTables(): Promise<void> {
     "ALTER TABLE `custos_produtos_fichas` ADD COLUMN `unidadesMpPorUnidade` decimal(10,4) NULL",
     "ALTER TABLE `custos_produtos_fichas` ADD COLUMN `kgPorUnidadeCompra` decimal(20,10) NULL",
     "ALTER TABLE `custos_produtos_fichas` ADD COLUMN `precoVendaReferenciaModo` enum('automatico','manual') NOT NULL DEFAULT 'automatico'",
+    "ALTER TABLE `custos_produtos_fichas` ADD COLUMN `orcamentosCompraKg` text NULL",
   ]) {
     try {
       await db.execute(sql.raw(stmt));
