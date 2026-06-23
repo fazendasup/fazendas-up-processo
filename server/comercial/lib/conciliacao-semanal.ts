@@ -274,13 +274,39 @@ export function classificarClienteSemanal(
   return "divergente";
 }
 
-function documentoContaAzulSemanal(
+/**
+ * Documentos que entram no total Conta Azul do fechamento semanal.
+ * Orçamentos diários de clientes acumuladores ficam visíveis na conciliação,
+ * mas não somam no total — mesmo quando coexistem com a venda consolidada
+ * (3 orçamentos + 1 venda total, ou 2 orçamentos + venda no último dia).
+ */
+export function documentoEntraTotalConciliacaoSemanal(
   statusPedido: string | null,
-  acumulaPedidos: boolean,
 ): boolean {
-  const cls = classificarStatusPedido(statusPedido);
-  if (cls === "venda") return true;
-  return cls === "orcamento" && acumulaPedidos;
+  return classificarStatusPedido(statusPedido) === "venda";
+}
+
+function documentoContaAzulSemanal(statusPedido: string | null): boolean {
+  return documentoEntraTotalConciliacaoSemanal(statusPedido);
+}
+
+/**
+ * Cliente acumulador com venda faturada na semana: soma todas as entregas manuais
+ * (independente de estarem vinculadas a orçamentos diários intermediários).
+ */
+export function totaisOperacionaisAcumuladorSemanaFaturada(
+  pedidos: OperacionalSemanal[],
+  regra: RegraSemanal | undefined,
+  freteCliente: { pedidos: number; valorFrete: number } | undefined,
+): { unidades: number; valorEstimado: number } {
+  const manuais = pedidos.filter(
+    (p) => p.status !== "CANCELADO" && !pedidoCriadoAPartirDoContaAzul(p),
+  );
+  let unidades = sumUnidadesPedidos(manuais);
+  let valorEstimado = manuais.reduce((s, p) => s + valorItensPedido(p.itens), 0);
+  const taxa = taxaEntregaCliente(regra, freteCliente);
+  if (manuais.some((p) => !p.freteCortesia)) valorEstimado += taxa;
+  return { unidades, valorEstimado };
 }
 
 /** Compara pedidos operacionais da semana com vendas Conta Azul no mesmo intervalo. */
@@ -357,7 +383,7 @@ export async function calcularConciliacaoSemanal(
   for (const venda of vendasContaAzulRaw) {
     const contaAzulCustomerId = venda.cliente.externalId ?? venda.cliente.id;
     const acumula = clienteAcumulaFaturamento(regraPorCliente.get(contaAzulCustomerId));
-    if (!documentoContaAzulSemanal(venda.statusPedido, acumula)) continue;
+    if (!documentoContaAzulSemanal(venda.statusPedido)) continue;
 
     const comp = composicaoDoPedidoParaDashboard(venda);
     const pct = descontoPorConta.get(contaAzulCustomerId) ?? 0;
@@ -469,7 +495,7 @@ export async function calcularConciliacaoSemanal(
       : opCliente.pedidos;
     const totais =
       acumula && vendasCa.length > 0
-        ? totaisOperacionaisAcumuloSemana(pedidosTotais, vendasCa, regra, ca)
+        ? totaisOperacionaisAcumuladorSemanaFaturada(pedidosTotais, regra, ca)
         : totaisOperacionaisClienteSemanal(pedidosTotais, acumula, regra, ca);
     opCliente.unidades = totais.unidades;
     opCliente.valorEstimado = totais.valorEstimado;

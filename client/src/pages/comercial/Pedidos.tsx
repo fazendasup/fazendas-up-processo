@@ -1309,6 +1309,16 @@ export function Pedidos({
               fim={conciliacaoIntervalo.fim}
               clienteFoco={clienteConciliacaoFoco}
               onLimparClienteFoco={() => setClienteConciliacaoFoco(null)}
+              diaFechamento={
+                bloqueioSemana
+                  ? new Date(bloqueioSemana.inicio)
+                  : conciliacaoIntervalo.inicio
+              }
+              podeFecharSemConciliacao={
+                statusSemana.data?.podeFecharSemConciliacaoBloqueio
+              }
+              rotuloSemanaFechamento={bloqueioSemana?.rotulo}
+              canEditarComercial={canEditarComercial}
             />
           </TabsContent>
         )}

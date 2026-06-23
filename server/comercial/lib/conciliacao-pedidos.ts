@@ -1503,6 +1503,238 @@ export async function aplicarCorrecaoConciliacao(
   };
 }
 
+function distribuirQuantidadeEntreEntregas(
+  total: number,
+  entregas: Array<{ id: string; peso: number }>,
+): Map<string, number> {
+  const out = new Map<string, number>();
+  if (entregas.length === 0 || total <= 0) return out;
+  const pesoTotal = entregas.reduce((s, e) => s + e.peso, 0);
+  if (pesoTotal <= 0) {
+    out.set(entregas[0]!.id, total);
+    return out;
+  }
+  let restante = total;
+  for (let i = 0; i < entregas.length; i++) {
+    const entrega = entregas[i]!;
+    const q =
+      i === entregas.length - 1
+        ? restante
+        : Math.round(((total * entrega.peso) / pesoTotal) * 1000) / 1000;
+    out.set(entrega.id, q);
+    restante -= q;
+  }
+  return out;
+}
+
+/** Distribui itens da venda CA entre entregas operacionais vinculadas (faturamento acumulado). */
+export async function aplicarCorrecaoAgregadaConciliacao(
+  prisma: PrismaClient,
+  input: {
+    pedidoOperacionalIds: string[];
+    pedidoContaAzulId: string;
+    campos?: string[];
+    usuario: { id: string; nome: string };
+    observacoes?: string;
+  },
+) {
+  const ids = Array.from(new Set(input.pedidoOperacionalIds)).filter(Boolean);
+  if (ids.length === 0) throw new Error("Informe ao menos uma entrega operacional.");
+
+  const [operacionaisRaw, contaAzul] = await Promise.all([
+    prisma.pedidoOperacional.findMany({
+      where: { id: { in: ids } },
+      include: {
+        itens: true,
+        cliente: { select: { externalId: true, nome: true, regraComercial: { select: { acumulaPedidos: true } } } },
+      },
+      orderBy: [{ dataEntrega: "asc" }, { criadoEm: "asc" }],
+    }),
+    prisma.pedido.findUnique({
+      where: { id: input.pedidoContaAzulId },
+      include: {
+        itens: true,
+        cliente: {
+          select: {
+            externalId: true,
+            nome: true,
+            regraComercial: { select: { acumulaPedidos: true, ...REGRA_ENTREGA_CONCILIACAO_SELECT } },
+          },
+        },
+      },
+    }),
+  ]);
+
+  if (!contaAzul) throw new Error("Venda Conta Azul não encontrada.");
+  const operacionais = operacionaisRaw.filter((op) => op.status !== "CANCELADO");
+  if (operacionais.length === 0) throw new Error("Nenhuma entrega operacional ativa para corrigir.");
+
+  for (const op of operacionais) {
+    if (op.pedidoContaAzulId !== contaAzul.id && op.sugestaoPedidoContaAzulId !== contaAzul.id) {
+      throw new Error("Todas as entregas devem estar vinculadas (ou sugeridas) à mesma venda Conta Azul.");
+    }
+    if (op.contaAzulCustomerId && contaAzul.cliente.externalId !== op.contaAzulCustomerId) {
+      throw new Error("Cliente inconsistente entre entregas operacionais e venda Conta Azul.");
+    }
+  }
+
+  if (isOrcamentoFaturamentoAcumulado(contaAzul.cliente.regraComercial, contaAzul.statusPedido)) {
+    throw new Error(
+      "Orçamento diário de acumulador não recebe correção agregada. Vincule as entregas à venda faturada consolidada.",
+    );
+  }
+
+  const produtosConciliacao = await carregarProdutosConciliacao(prisma);
+  const produtosAtivos = produtosConciliacao.filter((p) => p.ativo && p.importadoOperacao);
+  const indice = criarIndiceProdutosOperacionais(produtosAtivos);
+  const resolverChave = criarResolverChaveItemConciliacao(produtosConciliacao);
+
+  const divergenciasAtuais = calcularDivergenciasAgregadas(operacionais, contaAzul, resolverChave);
+  const camposAlvo = input.campos?.length
+    ? input.campos
+    : divergenciasAtuais.map((d) => d.campo);
+  if (camposAlvo.length === 0) throw new Error("Não há divergências agregadas para corrigir.");
+
+  const divergenciasCorrigir = divergenciasAtuais.filter((d) => camposAlvo.includes(d.campo));
+  if (divergenciasCorrigir.length === 0) {
+    throw new Error("As divergências informadas não existem mais. Atualize a página.");
+  }
+  if (divergenciasCorrigir.some((d) => d.campo === "data")) {
+    throw new Error(
+      "Divergência de data em faturamento acumulado: ajuste a data de cada entrega individualmente.",
+    );
+  }
+
+  const sincronizarItens =
+    divergenciasCorrigir.some((d) => d.campo === "valor_estimado") ||
+    divergenciasCorrigir.some((d) => d.campo.startsWith("item:"));
+
+  await prisma.$transaction(async (tx) => {
+    if (sincronizarItens) {
+      const mapCa = quantidadePorChaveContaAzul(contaAzul, resolverChave);
+      const itensPorOp = new Map<string, Array<{ produtoId: string; produtoNome: string; categoria: string | null; quantidade: number; precoUnit: number | null }>>();
+
+      for (const op of operacionais) {
+        itensPorOp.set(op.id, []);
+      }
+
+      for (const [chave, ca] of Array.from(mapCa.entries())) {
+        if (ca.quantidade <= 0) continue;
+        const produtoCa = resolverProdutoOperacional(indice, { produto: ca.produto, sku: ca.sku });
+        if (!produtoCa) {
+          throw new Error(
+            `Produto "${ca.produto}" não está ativo na operação. Ative no catálogo antes de aplicar a correção.`,
+          );
+        }
+
+        const pesos = operacionais.map((op) => {
+          const mapOp = quantidadePorChaveOperacional(op, resolverChave);
+          return { id: op.id, peso: mapOp.get(chave)?.quantidade ?? 0 };
+        });
+        const distribuicao = distribuirQuantidadeEntreEntregas(ca.quantidade, pesos);
+
+        for (const [opId, qtd] of Array.from(distribuicao.entries())) {
+          if (qtd <= 0) continue;
+          const lista = itensPorOp.get(opId) ?? [];
+          lista.push({
+            produtoId: produtoCa.id,
+            produtoNome: produtoCa.nome,
+            categoria: ca.categoria ?? produtoCa.categoria,
+            quantidade: qtd,
+            precoUnit: ca.precoUnit ?? null,
+          });
+          itensPorOp.set(opId, lista);
+        }
+      }
+
+      for (const op of operacionais) {
+        await tx.pedidoOperacionalItem.deleteMany({ where: { pedidoId: op.id } });
+        const novosItens = itensPorOp.get(op.id) ?? [];
+        if (novosItens.length > 0) {
+          await tx.pedidoOperacionalItem.createMany({
+            data: novosItens.map((item) => ({
+              pedidoId: op.id,
+              produtoId: item.produtoId,
+              produtoNome: item.produtoNome,
+              categoria: item.categoria,
+              quantidade: new Prisma.Decimal(item.quantidade),
+              precoUnit: item.precoUnit == null ? null : new Prisma.Decimal(item.precoUnit),
+            })),
+          });
+        }
+        await tx.pedidoOperacional.update({
+          where: { id: op.id },
+          data: { editadoPorId: input.usuario.id },
+        });
+      }
+    }
+
+    const operacionaisAtualizados = await tx.pedidoOperacional.findMany({
+      where: { id: { in: operacionais.map((op) => op.id) } },
+      include: { itens: true, cliente: { select: { externalId: true, nome: true } } },
+      orderBy: [{ dataEntrega: "asc" }, { criadoEm: "asc" }],
+    });
+
+    const divergenciasDepois = calcularDivergenciasAgregadas(
+      operacionaisAtualizados,
+      contaAzul,
+      resolverChave,
+    );
+    const conciliado = divergenciasDepois.length === 0;
+    const snapshot: SnapshotConciliacao = {
+      operacional: snapshotOperacionalAgregado(operacionaisAtualizados),
+      contaAzul: snapshotContaAzul(contaAzul),
+    };
+
+    for (const op of operacionaisAtualizados) {
+      await tx.pedidoOperacional.update({
+        where: { id: op.id },
+        data: {
+          pedidoContaAzulId: contaAzul.id,
+          sugestaoPedidoContaAzulId: null,
+          statusConciliacao: conciliado ? "CONCILIADO" : "DIVERGENTE",
+          snapshotConciliacao: snapshot as Prisma.InputJsonValue,
+        },
+      });
+      await registrarEvento(tx, {
+        pedidoOperacionalId: op.id,
+        pedidoContaAzulId: contaAzul.id,
+        tipo: "CORRECAO_AGREGADA_APLICADA_CA",
+        depois: snapshot,
+        divergencias: divergenciasCorrigir,
+        usuarioId: input.usuario.id,
+        usuarioNome: input.usuario.nome,
+        observacoes: input.observacoes,
+      });
+    }
+
+    await tx.pedido.update({
+      where: { id: contaAzul.id },
+      data: {
+        sugestaoPedidoOperacionalId: null,
+        statusConciliacao: conciliado ? "CONCILIADA" : "DIVERGENTE",
+      },
+    });
+  });
+
+  const operacionaisFinal = await prisma.pedidoOperacional.findMany({
+    where: { id: { in: operacionais.map((op) => op.id) } },
+    include: { itens: true, cliente: { select: { externalId: true, nome: true } } },
+    orderBy: [{ dataEntrega: "asc" }, { criadoEm: "asc" }],
+  });
+  const divergenciasRestantes = calcularDivergenciasAgregadas(
+    operacionaisFinal,
+    contaAzul,
+    resolverChave,
+  );
+
+  return {
+    pedidosCorrigidos: operacionaisFinal.length,
+    divergenciasRestantes,
+    conciliado: divergenciasRestantes.length === 0,
+  };
+}
+
 export async function desvincularConciliacao(
   prisma: PrismaClient,
   input: { pedidoOperacionalId: string; usuario: { id: string; nome: string }; observacoes?: string },

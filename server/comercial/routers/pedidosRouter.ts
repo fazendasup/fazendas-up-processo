@@ -26,6 +26,7 @@ import {
 } from "../../_core/trpc";
 import {
   aplicarCorrecaoConciliacao,
+  aplicarCorrecaoAgregadaConciliacao,
   calcularDivergencias,
   calcularDivergenciasAgregadas,
   clienteAcumulaFaturamento,
@@ -2666,7 +2667,8 @@ export const pedidosRouter = router({
         .filter(
           c =>
             c.status === "divergente" ||
-            c.status === "venda_sem_pedido",
+            c.status === "venda_sem_pedido" ||
+            c.status === "aguardando_venda",
         )
         .map(c => {
           const base = deveOcultarValores(ctx)
@@ -3167,6 +3169,39 @@ export const pedidosRouter = router({
             error instanceof Error
               ? error.message
               : "Não foi possível aplicar a correção.",
+        });
+      }
+    }),
+
+  conciliacaoAplicarCorrecaoAgregada: comercialProcedure
+    .use(podeConfigurarEstoqueVivo)
+    .input(
+      z.object({
+        pedidoOperacionalIds: z.array(z.string()).min(1),
+        pedidoContaAzulId: z.string(),
+        campos: z.array(z.string()).optional(),
+        observacoes: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const usuario = ctx.comercialUsuario;
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
+      try {
+        return await aplicarCorrecaoAgregadaConciliacao(ctx.prisma!, {
+          ...input,
+          usuario: { id: usuario.id, nome: usuario.nome },
+        });
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Não foi possível aplicar a correção agregada.",
         });
       }
     }),

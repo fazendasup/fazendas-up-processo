@@ -1,9 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, CheckCircle2, Link2, Unlink, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Link2, RefreshCw, Unlink, XCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { useSyncContaAzul } from "@/hooks/useSyncContaAzul";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AcoesPedidoConciliacao,
+  AjustarFreteConciliacaoDialog,
+  EditarPedidoConciliacaoDialog,
+} from "@/components/comercial/ConciliacaoResolucaoDialogs";
 
 function labelStatusConciliacaoSemanal(status: string) {
   switch (status) {
@@ -158,15 +164,27 @@ export function ConciliacaoContaAzulPanel({
   fim,
   clienteFoco,
   onLimparClienteFoco,
+  diaFechamento,
+  podeFecharSemConciliacao,
+  rotuloSemanaFechamento,
+  canEditarComercial = true,
 }: {
   inicio: Date;
   fim: Date;
   clienteFoco?: string | null;
   onLimparClienteFoco?: () => void;
+  /** Segunda-feira da semana a fechar (para «Fechar sem conciliar»). */
+  diaFechamento?: Date;
+  podeFecharSemConciliacao?: boolean;
+  rotuloSemanaFechamento?: string;
+  canEditarComercial?: boolean;
 }) {
   const utils = trpc.useUtils();
-  const painel = trpc.comercial.pedidos.conciliacaoPainel.useQuery({ inicio, fim });
+  const { sync: syncContaAzul, busy: syncBusy } = useSyncContaAzul();
   const [vendaCandidatosId, setVendaCandidatosId] = useState<string | null>(null);
+  const [pedidoEdit, setPedidoEdit] = useState<any | null>(null);
+  const [freteClienteId, setFreteClienteId] = useState<string | null>(null);
+  const painel = trpc.comercial.pedidos.conciliacaoPainel.useQuery({ inicio, fim });
   const candidatos = trpc.comercial.pedidos.conciliacaoCandidatosVenda.useQuery(
     { pedidoContaAzulId: vendaCandidatosId ?? "", janelaDias: 14 },
     { enabled: Boolean(vendaCandidatosId) },
@@ -261,6 +279,92 @@ export function ConciliacaoContaAzulPanel({
     },
     onError: (e) => toast.error(e.message),
   });
+  const aplicarCorrecaoAgregada = trpc.comercial.pedidos.conciliacaoAplicarCorrecaoAgregada.useMutation({
+    onSuccess: (r) => {
+      toast.success(
+        r.conciliado
+          ? `Correção agregada aplicada em ${r.pedidosCorrigidos} entrega(s).`
+          : `Correção aplicada em ${r.pedidosCorrigidos} entrega(s). Ainda há divergências.`,
+      );
+      invalidarCachesConciliacao();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const cancelarPedido = trpc.comercial.pedidos.cancelarPedido.useMutation({
+    onSuccess: () => {
+      toast.success("Pedido cancelado.");
+      invalidarCachesConciliacao();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const reativarPedidos = trpc.comercial.pedidos.reativarPedidosCancelados.useMutation({
+    onSuccess: () => {
+      toast.success("Pedido reativado.");
+      invalidarCachesConciliacao();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const atualizarStatus = trpc.comercial.pedidos.atualizarStatusClienteDia.useMutation({
+    onSuccess: (r) => {
+      toast.success(`${r.count} pedido(s) atualizado(s).`);
+      invalidarCachesConciliacao();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const fecharSemana = trpc.comercial.pedidos.fecharSemana.useMutation({
+    onSuccess: () => {
+      toast.success("Semana fechada.");
+      invalidarCachesConciliacao();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const solicitarAplicarCorrecaoAgregada = (
+    pedidoOperacionalIds: string[],
+    pedidoContaAzulId: string,
+    campos?: string[],
+  ) => {
+    const ok = window.confirm(
+      campos?.length
+        ? "A Conta Azul será usada como referência e os itens serão redistribuídos entre as entregas vinculadas. Confirma?"
+        : "Todas as divergências agregadas serão corrigidas com base na venda Conta Azul, redistribuindo itens entre as entregas. Confirma?",
+    );
+    if (!ok) return;
+    aplicarCorrecaoAgregada.mutate({ pedidoOperacionalIds, pedidoContaAzulId, campos });
+  };
+
+  function marcarEntregue(pedido: any) {
+    atualizarStatus.mutate({
+      contaAzulCustomerId: pedido.contaAzulCustomerId,
+      dia: new Date(pedido.dataEntrega),
+      status: "ENTREGUE",
+      statusAtual: pedido.status,
+    });
+  }
+
+  function cancelarPedidoOp(pedido: any) {
+    const nome = pedido.cliente?.nome ?? pedido.contaAzulCustomerId;
+    if (!window.confirm(`Cancelar o pedido de ${nome}?`)) return;
+    cancelarPedido.mutate({ pedidoId: pedido.id });
+  }
+
+  function reativarPedidoOp(pedido: any) {
+    if (!window.confirm("Reativar este pedido cancelado?")) return;
+    reativarPedidos.mutate({ pedidoIds: [pedido.id] });
+  }
+
+  function fecharSemConciliacao() {
+    if (!diaFechamento) return;
+    const rotulo = rotuloSemanaFechamento ?? "semana pendente";
+    if (
+      !window.confirm(
+        `Fechar a semana de ${rotulo} mesmo com divergências na conciliação?\n\nUse se os pedidos operacionais já foram revisados.`,
+      )
+    ) {
+      return;
+    }
+    fecharSemana.mutate({ dia: diaFechamento, ignorarConciliacao: true });
+  }
 
   const solicitarAplicarCorrecao = (
     pedidoOperacionalId: string,
@@ -302,10 +406,34 @@ export function ConciliacaoContaAzulPanel({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-cyan-200 bg-cyan-50/50 p-3 text-sm text-cyan-950 dark:border-cyan-900 dark:bg-cyan-950/20 dark:text-cyan-100">
-        A sincronização importa vendas e orçamentos conciliáveis do Conta Azul e sugere vínculos, mas{" "}
-        <strong>não substitui</strong> pedidos operacionais automaticamente. Em cada divergência você pode{" "}
-        <strong>aplicar a correção da Conta Azul</strong> direto nesta tela (com confirmação), sem ir à emissão.
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="rounded-lg border border-cyan-200 bg-cyan-50/50 p-3 text-sm text-cyan-950 dark:border-cyan-900 dark:bg-cyan-950/20 dark:text-cyan-100">
+          <strong>Hub de conciliação:</strong> vincule, corrija quantidades/preços, ajuste frete, marque entregue/cancelado e feche a semana — tudo nesta aba, sem ir ao dia na emissão.
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={syncBusy}
+            onClick={() => syncContaAzul.mutate()}
+          >
+            <RefreshCw className={`mr-1 h-3.5 w-3.5 ${syncBusy ? "animate-spin" : ""}`} />
+            {syncBusy ? "Sincronizando..." : "Sync Conta Azul"}
+          </Button>
+          {canEditarComercial && podeFecharSemConciliacao && diaFechamento ? (
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-amber-400"
+              disabled={fecharSemana.isPending}
+              onClick={fecharSemConciliacao}
+            >
+              {fecharSemana.isPending
+                ? "Fechando..."
+                : `Fechar sem conciliar (${rotuloSemanaFechamento ?? "semana"})`}
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
@@ -373,7 +501,23 @@ export function ConciliacaoContaAzulPanel({
                         Pedidos operacionais da semana
                       </p>
                       {c.operacionais.map((op: any) => (
-                        <BlocoPedido key={op.id} titulo={`Entrega ${fmtDate(op.dataEntrega)}`} pedido={op} />
+                        <div key={op.id} className="rounded-lg border bg-muted/10 p-3">
+                          <BlocoPedido titulo={`Entrega ${fmtDate(op.dataEntrega)}`} pedido={op} />
+                          {canEditarComercial ? (
+                            <AcoesPedidoConciliacao
+                              pedido={op}
+                              disabled={
+                                cancelarPedido.isPending ||
+                                reativarPedidos.isPending ||
+                                atualizarStatus.isPending
+                              }
+                              onEditar={() => setPedidoEdit(op)}
+                              onMarcarEntregue={() => marcarEntregue(op)}
+                              onCancelar={() => cancelarPedidoOp(op)}
+                              onReativar={() => reativarPedidoOp(op)}
+                            />
+                          ) : null}
+                        </div>
                       ))}
                     </div>
                   )}
@@ -391,7 +535,11 @@ export function ConciliacaoContaAzulPanel({
                             key={v.id}
                             className="flex flex-wrap items-start justify-between gap-2 rounded-lg border bg-muted/10 p-3"
                           >
-                            <BlocoVenda titulo={tipo} venda={v} />
+                            <BlocoVenda
+                              titulo={tipo}
+                              venda={v}
+                              acumulaPedidos={Boolean(c.acumulaPedidos)}
+                            />
                             {semVinculo ? (
                               <Button
                                 size="sm"
@@ -436,13 +584,47 @@ export function ConciliacaoContaAzulPanel({
                         }
                       />
                     )}
+                  {c.acumulaPedidos &&
+                    (c.vendas ?? []).some(
+                      (v: any) => tipoDocumentoContaAzul(v.statusPedido) === "Orçamento"
+                    ) &&
+                    (c.vendas ?? []).some(
+                      (v: any) => tipoDocumentoContaAzul(v.statusPedido) === "Venda"
+                    ) && (
+                      <p className="text-xs text-muted-foreground">
+                        Cliente acumulador: os orçamentos diários podem coexistir com a venda
+                        consolidada (ex.: 3 orçamentos + venda total). No fechamento, só a{" "}
+                        <strong>venda faturada</strong> entra no total — compare a soma das
+                        entregas operacionais com ela.
+                      </p>
+                    )}
                   {c.status === "divergente" && c.acumulaPedidos && (c.vendas?.length ?? 0) > 0 && (
                     <p className="text-xs text-muted-foreground">
                       O resumo 7/28 compara entregas operacionais desta semana com a{" "}
                       <strong>venda faturada</strong> no Conta Azul (orçamentos diários não entram no total).
-                      Para fechar a semana, vincule todas as entregas do período de acumulação à venda consolidada.
+                      Os vínculos com orçamentos intermediários não impedem o fechamento — basta a soma
+                      das entregas bater com a venda consolidada.
                     </p>
                   )}
+                  {canEditarComercial && c.status === "divergente" ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setFreteClienteId(c.contaAzulCustomerId)}
+                    >
+                      Ajustar taxa de entrega
+                    </Button>
+                  ) : null}
+                  {c.acumulaPedidos &&
+                    !(c.vendas ?? []).some(
+                      (v: any) => tipoDocumentoContaAzul(v.statusPedido) === "Venda"
+                    ) &&
+                    (c.vendas?.length ?? 0) > 0 && (
+                      <p className="text-xs text-amber-800 dark:text-amber-200">
+                        Ainda não há venda faturada nesta semana — só orçamentos diários. O fechamento
+                        aguarda a venda consolidada do período ou «Fechar sem conciliar».
+                      </p>
+                    )}
                 </CardContent>
               </Card>
             ))
@@ -586,16 +768,84 @@ export function ConciliacaoContaAzulPanel({
                   <p className="text-xs font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-200">
                     Faturamento acumulado — {item.operacionais?.length ?? 0} entrega(s) operacionais
                   </p>
-                  {item.pedidoContaAzul && <BlocoVenda titulo="Venda Conta Azul (período)" venda={item.pedidoContaAzul} />}
+                  {item.pedidoContaAzul && (
+                    <BlocoVenda titulo="Venda Conta Azul (período)" venda={item.pedidoContaAzul} acumulaPedidos />
+                  )}
                   <div className="space-y-2">
                     {(item.operacionais ?? []).map((op: any) => (
-                      <BlocoPedido key={op.id} titulo={`Entrega ${fmtDate(op.dataEntrega)}`} pedido={op} />
+                      <div key={op.id} className="rounded-lg border bg-background/60 p-2">
+                        <BlocoPedido titulo={`Entrega ${fmtDate(op.dataEntrega)}`} pedido={op} />
+                        {canEditarComercial ? (
+                          <AcoesPedidoConciliacao
+                            pedido={op}
+                            onEditar={() => setPedidoEdit(op)}
+                            onMarcarEntregue={() => marcarEntregue(op)}
+                            onCancelar={() => cancelarPedidoOp(op)}
+                            onReativar={() => reativarPedidoOp(op)}
+                          />
+                        ) : null}
+                      </div>
                     ))}
                   </div>
                   <DivergenciasLista
                     divergencias={item.divergencias ?? []}
                     pedidoContaAzulId={item.pedidoContaAzulId}
+                    aplicando={aplicarCorrecaoAgregada.isPending}
+                    onAplicarCorrecaoAgregada={
+                      canEditarComercial
+                        ? (campos) =>
+                            solicitarAplicarCorrecaoAgregada(
+                              (item.operacionais ?? []).map((op: any) => op.id),
+                              item.pedidoContaAzulId,
+                              campos,
+                            )
+                        : undefined
+                    }
+                    onAjustarFrete={
+                      canEditarComercial && item.operacionais?.[0]?.contaAzulCustomerId
+                        ? () => setFreteClienteId(item.operacionais[0].contaAzulCustomerId)
+                        : undefined
+                    }
                   />
+                  {canEditarComercial ? (
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={aplicarCorrecaoAgregada.isPending}
+                        onClick={() =>
+                          solicitarAplicarCorrecaoAgregada(
+                            (item.operacionais ?? []).map((op: any) => op.id),
+                            item.pedidoContaAzulId,
+                          )
+                        }
+                      >
+                        Aplicar todas da Conta Azul (agregado)
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={marcarErrada.isPending}
+                        onClick={() => {
+                          if (!window.confirm("Marcar esta venda CA como incorreta?")) return;
+                          marcarErrada.mutate({ pedidoContaAzulId: item.pedidoContaAzulId });
+                        }}
+                      >
+                        Venda CA errada
+                      </Button>
+                      {(item.operacionais ?? []).map((op: any) => (
+                        <Button
+                          key={op.id}
+                          size="sm"
+                          variant="ghost"
+                          disabled={desvincular.isPending}
+                          onClick={() => desvincular.mutate({ pedidoOperacionalId: op.id })}
+                        >
+                          Desvincular {fmtDate(op.dataEntrega)}
+                        </Button>
+                      ))}
+                    </div>
+                  ) : null}
                 </CardContent>
               </Card>
             ) : (
@@ -609,16 +859,48 @@ export function ConciliacaoContaAzulPanel({
                     pedidoContaAzulId={item.pedidoContaAzulId ?? item.pedidoContaAzul?.id}
                     aplicando={aplicarCorrecao.isPending}
                     onAplicarCorrecao={solicitarAplicarCorrecao}
+                    onAjustarFrete={
+                      canEditarComercial
+                        ? () => setFreteClienteId(item.contaAzulCustomerId)
+                        : undefined
+                    }
                   />
                   <div className="flex flex-wrap gap-2">
-                    <Button size="sm" variant="outline" disabled={manterOp.isPending} onClick={() => manterOp.mutate({ pedidoOperacionalId: item.id })}>
-                      Manter operacional como verdade
-                    </Button>
-                    {item.pedidoContaAzulId && (
-                      <Button size="sm" variant="ghost" disabled={desvincular.isPending} onClick={() => desvincular.mutate({ pedidoOperacionalId: item.id })}>
-                        <Unlink className="mr-1 h-3 w-3" /> Desvincular
-                      </Button>
-                    )}
+                    {canEditarComercial ? (
+                      <>
+                        <AcoesPedidoConciliacao
+                          pedido={item}
+                          onEditar={() => setPedidoEdit(item)}
+                          onMarcarEntregue={() => marcarEntregue(item)}
+                          onCancelar={() => cancelarPedidoOp(item)}
+                          onReativar={() => reativarPedidoOp(item)}
+                        />
+                        <Button size="sm" variant="outline" disabled={manterOp.isPending} onClick={() => manterOp.mutate({ pedidoOperacionalId: item.id })}>
+                          Manter operacional como verdade
+                        </Button>
+                        {item.pedidoContaAzulId ? (
+                          <>
+                            <Button size="sm" variant="ghost" disabled={desvincular.isPending} onClick={() => desvincular.mutate({ pedidoOperacionalId: item.id })}>
+                              <Unlink className="mr-1 h-3 w-3" /> Desvincular
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={marcarErrada.isPending}
+                              onClick={() => {
+                                if (!window.confirm("Marcar venda CA como incorreta?")) return;
+                                marcarErrada.mutate({
+                                  pedidoContaAzulId: item.pedidoContaAzulId,
+                                  pedidoOperacionalId: item.id,
+                                });
+                              }}
+                            >
+                              Venda CA errada
+                            </Button>
+                          </>
+                        ) : null}
+                      </>
+                    ) : null}
                   </div>
                 </CardContent>
               </Card>
@@ -663,16 +945,42 @@ export function ConciliacaoContaAzulPanel({
       {(painel.data?.semVenda ?? []).length > 0 && (
         <Section title="Pedidos operacionais ainda sem venda no Conta Azul" icon={<CheckCircle2 className="h-4 w-4" />}>
           <div className="grid gap-2 lg:grid-cols-2">
-            {painel.data!.semVenda.slice(0, 12).map((op: any) => (
+            {painel.data!.semVenda.map((op: any) => (
               <Card key={op.id}>
                 <CardContent className="p-3">
                   <BlocoPedido titulo="Aguardando venda" pedido={op} compact />
+                  {canEditarComercial ? (
+                    <AcoesPedidoConciliacao
+                      pedido={op}
+                      onEditar={() => setPedidoEdit(op)}
+                      onMarcarEntregue={() => marcarEntregue(op)}
+                      onCancelar={() => cancelarPedidoOp(op)}
+                      onReativar={() => reativarPedidoOp(op)}
+                    />
+                  ) : null}
                 </CardContent>
               </Card>
             ))}
           </div>
         </Section>
       )}
+
+      <EditarPedidoConciliacaoDialog
+        pedido={pedidoEdit}
+        open={Boolean(pedidoEdit)}
+        onOpenChange={(open) => {
+          if (!open) setPedidoEdit(null);
+        }}
+        onSalvo={invalidarCachesConciliacao}
+      />
+      <AjustarFreteConciliacaoDialog
+        contaAzulCustomerId={freteClienteId}
+        open={Boolean(freteClienteId)}
+        onOpenChange={(open) => {
+          if (!open) setFreteClienteId(null);
+        }}
+        onSalvo={invalidarCachesConciliacao}
+      />
 
       {(painel.data?.eventos ?? []).length > 0 && (
         <Card>
@@ -751,8 +1059,17 @@ function BlocoPedido({ titulo, pedido, compact }: { titulo: string; pedido: any;
   );
 }
 
-function BlocoVenda({ titulo, venda }: { titulo: string; venda: any }) {
+function BlocoVenda({
+  titulo,
+  venda,
+  acumulaPedidos = false,
+}: {
+  titulo: string;
+  venda: any;
+  acumulaPedidos?: boolean;
+}) {
   const tipo = tipoDocumentoContaAzul(venda.statusPedido);
+  const ehOrcamento = tipo === "Orçamento";
   return (
     <div>
       <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{titulo}</p>
@@ -762,6 +1079,19 @@ function BlocoVenda({ titulo, venda }: { titulo: string; venda: any }) {
         {" · "}{fmtMoney(venda.valorLiquido ?? venda.valorTotal)}
         {" · "}{labelStatusConciliacao(venda.statusConciliacao ?? "NAO_CONCILIADA")}
       </p>
+      {acumulaPedidos && (
+        <p
+          className={`mt-0.5 text-[11px] ${
+            ehOrcamento
+              ? "text-muted-foreground"
+              : "font-medium text-emerald-700 dark:text-emerald-300"
+          }`}
+        >
+          {ehOrcamento
+            ? "Controle diário — não entra no total do fechamento"
+            : "Documento usado no fechamento semanal"}
+        </p>
+      )}
       <ul className="mt-1 text-xs text-muted-foreground">
         {(venda.itens ?? []).slice(0, 4).map((i: any) => (
           <li key={i.id ?? i.produto}>{i.produto}: {Number(i.quantidade)}</li>
@@ -1165,14 +1495,19 @@ function DivergenciasLista({
   pedidoContaAzulId,
   aplicando,
   onAplicarCorrecao,
+  onAplicarCorrecaoAgregada,
+  onAjustarFrete,
 }: {
   divergencias: any[];
   pedidoOperacionalId?: string;
   pedidoContaAzulId?: string;
   aplicando?: boolean;
   onAplicarCorrecao?: (pedidoOperacionalId: string, pedidoContaAzulId: string, campos?: string[], mensagem?: string) => void;
+  onAplicarCorrecaoAgregada?: (campos?: string[]) => void;
+  onAjustarFrete?: () => void;
 }) {
   const podeCorrigir = Boolean(pedidoOperacionalId && pedidoContaAzulId && onAplicarCorrecao);
+  const podeCorrigirAgregado = Boolean(pedidoContaAzulId && onAplicarCorrecaoAgregada);
   const divergenciasExibidas = normalizarDivergenciasItens(divergencias);
 
   if (!divergenciasExibidas.length) {
@@ -1203,6 +1538,16 @@ function DivergenciasLista({
             Aplicar todas da Conta Azul
           </Button>
         ) : null}
+        {podeCorrigirAgregado && divergenciasExibidas.length > 1 ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={aplicando}
+            onClick={() => onAplicarCorrecaoAgregada!()}
+          >
+            Aplicar todas (agregado)
+          </Button>
+        ) : null}
       </div>
       <ul className="space-y-2">
         {divergenciasExibidas.map((d: any) => {
@@ -1228,6 +1573,22 @@ function DivergenciasLista({
                   }
                 >
                   {labelBotaoCorrecao(d)}
+                </Button>
+              ) : null}
+              {podeCorrigirAgregado && String(d.campo) !== "data" ? (
+                <Button
+                  size="sm"
+                  className="mt-2 ml-2"
+                  variant="secondary"
+                  disabled={aplicando}
+                  onClick={() => onAplicarCorrecaoAgregada!([String(d.campo)])}
+                >
+                  {labelBotaoCorrecao(d)} (agregado)
+                </Button>
+              ) : null}
+              {String(d.campo) === "valor_estimado" && onAjustarFrete ? (
+                <Button size="sm" className="mt-2 ml-2" variant="outline" onClick={onAjustarFrete}>
+                  Ajustar taxa de entrega
                 </Button>
               ) : null}
             </li>

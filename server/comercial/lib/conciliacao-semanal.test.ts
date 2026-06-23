@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   classificarClienteSemanal,
+  documentoEntraTotalConciliacaoSemanal,
   pedidosOperacionaisEfetivos,
   pedidosOperacionaisSemanaEfetivos,
+  totaisOperacionaisAcumuladorSemanaFaturada,
   totaisOperacionaisClienteSemanal,
 } from "./conciliacao-semanal.js";
 import { pedidoCriadoAPartirDoContaAzul } from "./conciliacao-pedidos.js";
@@ -98,6 +100,34 @@ describe("pedidosOperacionaisEfetivos", () => {
         { pedidoContaAzulId: null },
       ]),
     ).toBe(3);
+  });
+});
+
+describe("documentoEntraTotalConciliacaoSemanal", () => {
+  it("inclui vendas faturadas", () => {
+    expect(documentoEntraTotalConciliacaoSemanal("VENDA")).toBe(true);
+    expect(documentoEntraTotalConciliacaoSemanal("Venda faturada")).toBe(true);
+  });
+
+  it("exclui orçamentos mesmo em clientes acumuladores (3 orçamentos + venda total)", () => {
+    expect(documentoEntraTotalConciliacaoSemanal("ORÇAMENTO")).toBe(false);
+    expect(documentoEntraTotalConciliacaoSemanal("Orcamento")).toBe(false);
+  });
+});
+
+describe("totaisOperacionaisAcumuladorSemanaFaturada", () => {
+  it("soma todas as entregas manuais mesmo vinculadas a orçamentos diários distintos", () => {
+    const totais = totaisOperacionaisAcumuladorSemanaFaturada(
+      [
+        op("d1", { pedidoContaAzulId: "venda-consolidada", unidades: 120, valorItem: 10 }),
+        op("d2", { pedidoContaAzulId: "orcamento-16", unidades: 40, valorItem: 10 }),
+        op("d3", { pedidoContaAzulId: "orcamento-19", unidades: 30, valorItem: 10 }),
+      ],
+      { cobraTaxaEntrega: true, valorTaxaEntrega: 15, acumulaPedidos: true },
+      undefined,
+    );
+    expect(totais.unidades).toBe(190);
+    expect(totais.valorEstimado).toBeCloseTo(1915);
   });
 });
 
