@@ -1,4 +1,3 @@
-import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "../generated/prisma/index.js";
 import { calcularConciliacaoSemanal } from "./conciliacao-semanal.js";
 import {
@@ -26,9 +25,16 @@ export type SemanaStatus = {
   fechada: boolean;
   reaberta: boolean;
   conciliacaoPendente?: boolean;
+  conciliacaoIgnoradaNoFechamento?: boolean;
   fechadoPorNome: string | null;
   fechadoEm: Date | null;
 };
+
+function snapshotFechamento(fechamento: { snapshot: unknown } | null | undefined) {
+  return (fechamento?.snapshot ?? null) as {
+    conciliacaoIgnoradaNoFechamento?: boolean;
+  } | null;
+}
 
 /** Computa o status de fechamento de uma semana (a partir de qualquer dia dela). */
 export async function calcularStatusSemana(prisma: PrismaLike, dia: Date): Promise<SemanaStatus> {
@@ -52,6 +58,7 @@ export async function calcularStatusSemana(prisma: PrismaLike, dia: Date): Promi
   }
 
   const reaberta = !!fechamento?.reabertoEm;
+  const snap = snapshotFechamento(fechamento);
   return {
     inicio,
     fim,
@@ -62,6 +69,8 @@ export async function calcularStatusSemana(prisma: PrismaLike, dia: Date): Promi
     cancelados,
     fechada: !!fechamento && !reaberta,
     reaberta,
+    conciliacaoIgnoradaNoFechamento:
+      snap?.conciliacaoIgnoradaNoFechamento === true,
     fechadoPorNome: fechamento?.fechadoPorNome ?? null,
     fechadoEm: fechamento?.fechadoEm ?? null,
   };
@@ -80,6 +89,10 @@ export async function semanaBloqueiaNovosPedidos(
   }
 
   if (semanaIgnoraConciliacaoFechamento(semanaInicio)) {
+    return null;
+  }
+
+  if (status.conciliacaoIgnoradaNoFechamento) {
     return null;
   }
 
@@ -111,21 +124,4 @@ export async function primeiraSemanaBloqueante(
   return semanaBloqueiaNovosPedidos(prisma, semanaPrevInicio);
 }
 
-/** Lança erro se existir uma semana anterior não revisada/não fechada (bloqueio do gate). */
-export async function assertSemanaAnteriorFechada(prisma: PrismaLike, dataEntrega: Date): Promise<void> {
-  const semanaAlvo = inicioSemana(dataEntrega);
-  const bloqueante = await primeiraSemanaBloqueante(prisma, semanaAlvo);
-  if (!bloqueante) return;
-
-  const motivo =
-    bloqueante.pendentes > 0
-      ? `Há ${bloqueante.pendentes} pedido(s) sem revisão (marque como entregue ou cancelado) e finalize o fechamento.`
-      : bloqueante.conciliacaoPendente
-        ? "Há conciliações pendentes com a Conta Azul. Corrija as divergências e feche novamente a semana."
-      : "Os pedidos já estão revisados, mas a semana ainda não foi fechada. Finalize o fechamento para liberar.";
-
-  throw new TRPCError({
-    code: "BAD_REQUEST",
-    message: `Feche a semana de ${bloqueante.rotulo} antes de criar ou copiar pedidos de semanas seguintes. ${motivo}`,
-  });
-}
+export { assertSemanaAnteriorFechada } from "./fechamento-gate.js";

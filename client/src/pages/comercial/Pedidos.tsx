@@ -835,16 +835,23 @@ export function Pedidos({
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400" />
               <div className="space-y-0.5">
                 <p className="font-semibold text-red-800 dark:text-red-200">
-                  Semana de {bloqueioSemana.rotulo} ainda não foi fechada
+                  {bloqueioSemana.fechada &&
+                  (bloqueioSemana.conciliacaoPendente ||
+                    statusSemana.data?.conciliacaoBloqueio?.conciliado === false)
+                    ? `Semana de ${bloqueioSemana.rotulo} fechada com conciliação pendente`
+                    : `Semana de ${bloqueioSemana.rotulo} ainda não foi fechada`}
                 </p>
                 <p className="text-sm text-red-700 dark:text-red-300">
                   {bloqueioSemana.pendentes > 0
                     ? `Há ${bloqueioSemana.pendentes} pedido(s) sem definição de entregue/cancelado. Revise e feche a semana para liberar novos pedidos.`
-                    : statusSemana.data?.conciliacaoBloqueio?.conciliado ===
-                        false
-                      ? statusSemana.data.bloqueioIgnoraConciliacao
+                    : bloqueioSemana.conciliacaoPendente ||
+                        statusSemana.data?.conciliacaoBloqueio?.conciliado ===
+                          false
+                      ? statusSemana.data?.bloqueioIgnoraConciliacao
                         ? "Semana piloto (go-live): pode fechar sem conciliar o Conta Azul — os pedidos operacionais já foram revisados."
-                        : "Há conciliações pendentes com a Conta Azul. Corrija as divergências ou use «Fechar sem conciliar» se for seguro."
+                        : bloqueioSemana.fechada
+                          ? "A conciliação com o Conta Azul ainda tem divergências. Corrija abaixo ou use «Fechar sem conciliar» para validar a semana mesmo assim."
+                          : "Há conciliações pendentes com a Conta Azul. Corrija as divergências ou use «Fechar sem conciliar» se for seguro."
                     : "Os pedidos já estão revisados, mas a semana ainda não foi fechada. Finalize o fechamento para liberar novos pedidos."}
                 </p>
                 {!canEditarComercial && (
@@ -858,6 +865,19 @@ export function Pedidos({
               <Button variant="outline" onClick={irParaSemanaPendente}>
                 Revisar semana de {bloqueioSemana.rotulo}
               </Button>
+              {!perfilOperacionalRestrito &&
+                (bloqueioSemana.conciliacaoPendente ||
+                  statusSemana.data?.conciliacaoBloqueio?.conciliado ===
+                    false) && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setAba("conciliacao");
+                    }}
+                  >
+                    Ver conciliação
+                  </Button>
+                )}
               {canEditarComercial && bloqueioSemana.pendentes === 0 && (
                 <>
                   {statusSemana.data?.podeFecharBloqueio ? (
@@ -870,7 +890,8 @@ export function Pedidos({
                         ? "Fechando..."
                         : `Fechar semana ${bloqueioSemana.rotulo}`}
                     </Button>
-                  ) : statusSemana.data?.conciliacaoBloqueio?.conciliado === false ? (
+                  ) : null}
+                  {statusSemana.data?.podeFecharSemConciliacaoBloqueio ? (
                     <Button
                       variant="outline"
                       className="border-red-400 text-red-800 dark:text-red-200"
@@ -879,7 +900,20 @@ export function Pedidos({
                     >
                       {fecharSemana.isPending
                         ? "Fechando..."
-                        : "Fechar sem conciliar"}
+                        : bloqueioSemana.fechada
+                          ? "Validar sem conciliar"
+                          : "Fechar sem conciliar"}
+                    </Button>
+                  ) : !statusSemana.data?.podeFecharBloqueio &&
+                    !bloqueioSemana.fechada ? (
+                    <Button
+                      className="bg-red-600 hover:bg-red-700"
+                      disabled={fecharSemana.isPending}
+                      onClick={() => fecharSemanaBloqueante(false)}
+                    >
+                      {fecharSemana.isPending
+                        ? "Fechando..."
+                        : `Fechar semana ${bloqueioSemana.rotulo}`}
                     </Button>
                   ) : null}
                 </>

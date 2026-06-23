@@ -14,8 +14,8 @@ import { classificarStatusPedido } from "../lib/pedido-status.js";
 import {
   assertSemanaAnteriorFechada,
   calcularStatusSemana,
-  primeiraSemanaBloqueante,
 } from "../lib/fechamento.js";
+import { obterBloqueioSemanaComReparo } from "../lib/fechamento-gate.js";
 import { calcularConciliacaoSemanal } from "../lib/conciliacao-semanal.js";
 import { repararConciliacaoSemana, usuarioReparo } from "../lib/conciliacao-semana-reparo.js";
 import { fimSemana, GO_LIVE_PEDIDOS, inicioSemana, semanaIgnoraConciliacaoFechamento } from "../lib/semana.js";
@@ -2221,18 +2221,15 @@ export const pedidosRouter = router({
     .query(async ({ ctx, input }) => {
       const semanaInicio = inicioSemana(input.dia);
       const semanaFim = fimSemana(input.dia);
-      const [semanaAtual, bloqueio] = await Promise.all([
+      const [semanaAtual, bloqueioResult] = await Promise.all([
         calcularStatusSemana(ctx.prisma!, input.dia),
-        primeiraSemanaBloqueante(ctx.prisma!, semanaInicio),
-      ]);
-      if (bloqueio) {
-        await repararConciliacaoSemana(
+        obterBloqueioSemanaComReparo(
           ctx.prisma!,
-          bloqueio.inicio,
-          bloqueio.fim,
+          semanaInicio,
           usuarioReparo(ctx),
-        );
-      }
+        ),
+      ]);
+      const bloqueio = bloqueioResult.bloqueio;
       const [conciliacaoAtual, conciliacaoBloqueio] = await Promise.all([
         calcularConciliacaoSemanal(ctx.prisma!, semanaInicio, semanaFim),
         bloqueio
@@ -2250,6 +2247,7 @@ export const pedidosRouter = router({
       const ignoraConciliacaoAtual = semanaIgnoraConciliacaoFechamento(semanaInicio);
       const ignoraConciliacaoBloqueio =
         bloqueio != null && semanaIgnoraConciliacaoFechamento(bloqueio.inicio);
+      const conciliacaoBloqueioPendente = conciliacaoBloqueio?.conciliado === false;
       return {
         semanaAtual,
         bloqueio,
@@ -2263,6 +2261,11 @@ export const pedidosRouter = router({
           bloqueio != null &&
           bloqueio.pendentes === 0 &&
           (conciliacaoBloqueio?.conciliado !== false || ignoraConciliacaoBloqueio),
+        podeFecharSemConciliacaoBloqueio:
+          bloqueio != null &&
+          bloqueio.pendentes === 0 &&
+          conciliacaoBloqueioPendente &&
+          !ignoraConciliacaoBloqueio,
         bloqueioIgnoraConciliacao: ignoraConciliacaoBloqueio,
         semanaAtualIgnoraConciliacao: ignoraConciliacaoAtual,
       };
@@ -2310,6 +2313,12 @@ export const pedidosRouter = router({
         });
       }
 
+      await repararConciliacaoSemana(
+        ctx.prisma!,
+        semanaInicio,
+        semanaFim,
+        usuarioReparo(ctx),
+      );
       const conciliacao = await calcularConciliacaoSemanal(
         ctx.prisma!,
         semanaInicio,
