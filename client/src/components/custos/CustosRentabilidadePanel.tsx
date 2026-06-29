@@ -924,9 +924,16 @@ export function CustosRentabilidadePanel() {
                       </TableCell>
                       <TableCell>
                         {p.fichaId ? (
-                          <Badge variant="secondary" className="font-normal">
-                            {p.fichaNome ?? `Ficha #${p.fichaId}`}
-                          </Badge>
+                          <div className="flex flex-wrap items-center gap-1">
+                            <Badge variant="secondary" className="font-normal">
+                              {p.fichaNome ?? `Ficha #${p.fichaId}`}
+                            </Badge>
+                            {p.fichaAtivo === false ? (
+                              <Badge variant="outline" className="text-[10px] font-normal">
+                                Inativa
+                              </Badge>
+                            ) : null}
+                          </div>
                         ) : (
                           <Badge variant="outline">Sem ficha</Badge>
                         )}

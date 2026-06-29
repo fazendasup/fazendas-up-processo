@@ -33,6 +33,8 @@ export type VendaContaAzulAgregada = {
   produtoComercialId: string | null;
   fichaId: number | null;
   fichaNome: string | null;
+  /** false quando a ficha existe mas está desativada na lista de custos. */
+  fichaAtivo: boolean | null;
   quantidade: number;
   receitaTotal: number;
   linhasPedido: number;
@@ -61,14 +63,27 @@ export type VendasContaAzulResultado = {
   diagnostico: VendasContaAzulDiagnostico;
 };
 
+function fichaEstaAtiva(f: { ativo: boolean | number | null | undefined }): boolean {
+  return f.ativo !== false && f.ativo !== 0;
+}
+
 function criarIndiceFichas(fichas: CustoProdutoFichaRow[]) {
   const porProdutoComercialId = new Map<string, CustoProdutoFichaRow>();
   const porNome = new Map<string, CustoProdutoFichaRow>();
   for (const f of fichas) {
-    if (f.ativo === false) continue;
-    if (f.produtoComercialId) porProdutoComercialId.set(f.produtoComercialId, f);
+    if (f.produtoComercialId) {
+      const atual = porProdutoComercialId.get(f.produtoComercialId);
+      if (!atual || (fichaEstaAtiva(f) && !fichaEstaAtiva(atual))) {
+        porProdutoComercialId.set(f.produtoComercialId, f);
+      }
+    }
     const nk = normalizarNome(f.nome);
-    if (nk && !porNome.has(nk)) porNome.set(nk, f);
+    if (nk) {
+      const atual = porNome.get(nk);
+      if (!atual || (fichaEstaAtiva(f) && !fichaEstaAtiva(atual))) {
+        porNome.set(nk, f);
+      }
+    }
   }
   return { porProdutoComercialId, porNome };
 }
@@ -77,14 +92,14 @@ function resolverFicha(
   indice: ReturnType<typeof criarIndiceFichas>,
   produtoComercialId: string | null,
   produtoNome: string,
-): { fichaId: number | null; fichaNome: string | null } {
+): { fichaId: number | null; fichaNome: string | null; fichaAtivo: boolean | null } {
   if (produtoComercialId) {
     const f = indice.porProdutoComercialId.get(produtoComercialId);
-    if (f) return { fichaId: f.id, fichaNome: f.nome };
+    if (f) return { fichaId: f.id, fichaNome: f.nome, fichaAtivo: fichaEstaAtiva(f) };
   }
   const f = indice.porNome.get(normalizarNome(produtoNome));
-  if (f) return { fichaId: f.id, fichaNome: f.nome };
-  return { fichaId: null, fichaNome: null };
+  if (f) return { fichaId: f.id, fichaNome: f.nome, fichaAtivo: fichaEstaAtiva(f) };
+  return { fichaId: null, fichaNome: null, fichaAtivo: null };
 }
 
 type AggInterno = VendaContaAzulAgregada & { _custoPeso: number; _custoSum: number };
@@ -96,6 +111,7 @@ type LinhaPedidoInterna = {
   produtoComercialId: string | null;
   fichaId: number | null;
   fichaNome: string | null;
+  fichaAtivo: boolean | null;
   quantidade: number;
   bruto: number;
   custoUnit: number | null;
@@ -192,7 +208,11 @@ export async function buscarVendasContaAzulPorPeriodo(
       const chave = produtoComercialId
         ? `pid:${produtoComercialId}`
         : `nome:${normalizarNome(item.produto) || "sem_nome"}`;
-      const { fichaId, fichaNome } = resolverFicha(indiceFichas, produtoComercialId, item.produto);
+      const { fichaId, fichaNome, fichaAtivo } = resolverFicha(
+        indiceFichas,
+        produtoComercialId,
+        item.produto,
+      );
       const custo = item.custoUnit != null ? Number(item.custoUnit) : null;
 
       linhas.push({
@@ -202,6 +222,7 @@ export async function buscarVendasContaAzulPorPeriodo(
         produtoComercialId,
         fichaId,
         fichaNome,
+        fichaAtivo,
         quantidade: qtd,
         bruto,
         custoUnit: custo != null && Number.isFinite(custo) && custo >= 0 ? custo : null,
@@ -218,6 +239,7 @@ export async function buscarVendasContaAzulPorPeriodo(
           produtoComercialId: null,
           fichaId: null,
           fichaNome: null,
+          fichaAtivo: null,
           quantidade: 0,
           receitaTotal: 0,
           linhasPedido: 0,
@@ -244,6 +266,7 @@ export async function buscarVendasContaAzulPorPeriodo(
         produtoComercialId: linha.produtoComercialId,
         fichaId: linha.fichaId,
         fichaNome: linha.fichaNome,
+        fichaAtivo: linha.fichaAtivo,
         quantidade: 0,
         receitaTotal: 0,
         linhasPedido: 0,
@@ -258,6 +281,7 @@ export async function buscarVendasContaAzulPorPeriodo(
       if (!cur.fichaId && linha.fichaId) {
         cur.fichaId = linha.fichaId;
         cur.fichaNome = linha.fichaNome;
+        cur.fichaAtivo = linha.fichaAtivo;
       }
       if (linha.custoUnit != null) {
         cur._custoSum += linha.custoUnit * linha.quantidade;
