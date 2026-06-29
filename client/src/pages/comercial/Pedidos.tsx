@@ -3038,14 +3038,29 @@ function RegrasClienteArea({
                   horarioMaximoEntrega: merged.horarioMaximoEntrega ?? null,
                   cobraTaxaEntrega: Boolean(merged.cobraTaxaEntrega),
                   valorTaxaEntrega: merged.cobraTaxaEntrega
-                    ? (merged.valorTaxaEntrega ?? null)
+                    ? merged.valorTaxaEntrega != null && merged.valorTaxaEntrega !== ""
+                      ? Number(String(merged.valorTaxaEntrega).replace(",", "."))
+                      : null
                     : null,
-                  prazoBoletoDias: merged.prazoBoletoDias ?? null,
+                  prazoBoletoDias:
+                    merged.prazoBoletoDias != null && merged.prazoBoletoDias !== ""
+                      ? Number(merged.prazoBoletoDias)
+                      : null,
                   descontoBoletoPercentual:
-                    merged.descontoBoletoPercentual ?? null,
+                    merged.descontoBoletoPercentual != null &&
+                    merged.descontoBoletoPercentual !== ""
+                      ? Number(String(merged.descontoBoletoPercentual).replace(",", "."))
+                      : null,
                   acumulaPedidos: Boolean(merged.acumulaPedidos),
-                  diasAcumulo: merged.diasAcumulo ?? null,
-                  prazoBoletoAcumuloDias: merged.prazoBoletoAcumuloDias ?? null,
+                  diasAcumulo:
+                    merged.diasAcumulo != null && merged.diasAcumulo !== ""
+                      ? Number(merged.diasAcumulo)
+                      : null,
+                  prazoBoletoAcumuloDias:
+                    merged.prazoBoletoAcumuloDias != null &&
+                    merged.prazoBoletoAcumuloDias !== ""
+                      ? Number(merged.prazoBoletoAcumuloDias)
+                      : null,
                   precosEspeciais: Object.entries(precosForm)
                     .filter(([, v]) => v !== "")
                     .map(([produtoId, preco]) => ({

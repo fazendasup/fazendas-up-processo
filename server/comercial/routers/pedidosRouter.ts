@@ -397,6 +397,24 @@ const nullablePositiveNumber = z.preprocess(value => {
   return value;
 }, z.number().positive().nullable().optional());
 
+const nullableNonNegativeNumber = z.preprocess(value => {
+  if (value === "" || value == null) return null;
+  if (typeof value === "string") {
+    const normalized = value.trim().replace(",", ".");
+    return normalized === "" ? null : Number(normalized);
+  }
+  return value;
+}, z.number().nonnegative().nullable().optional());
+
+const nullableNonNegativeInt = z.preprocess(value => {
+  if (value === "" || value == null) return null;
+  if (typeof value === "string") {
+    const normalized = value.trim().replace(",", ".");
+    return normalized === "" ? null : Number(normalized);
+  }
+  return value;
+}, z.number().int().nonnegative().nullable().optional());
+
 const nullableStringArray = z.array(z.string()).nullable().optional();
 
 const produtoInput = z.object({
@@ -776,22 +794,22 @@ export const pedidosRouter = router({
         periodoEntrega: periodoEntregaSchema,
         horarioMaximoEntrega: z.string().nullable().optional(),
         cobraTaxaEntrega: z.boolean().default(false),
-        valorTaxaEntrega: z.number().nonnegative().nullable().optional(),
-        prazoBoletoDias: z.number().int().nonnegative().nullable().optional(),
-        descontoBoletoPercentual: z
-          .number()
-          .min(0)
-          .max(100)
-          .nullable()
-          .optional(),
+        valorTaxaEntrega: nullableNonNegativeNumber,
+        prazoBoletoDias: nullableNonNegativeInt,
+        descontoBoletoPercentual: z.preprocess(
+          (value) => {
+            if (value === "" || value == null) return null;
+            if (typeof value === "string") {
+              const normalized = value.trim().replace(",", ".");
+              return normalized === "" ? null : Number(normalized);
+            }
+            return value;
+          },
+          z.number().min(0).max(100).nullable().optional(),
+        ),
         acumulaPedidos: z.boolean().default(false),
-        diasAcumulo: z.number().int().nonnegative().nullable().optional(),
-        prazoBoletoAcumuloDias: z
-          .number()
-          .int()
-          .nonnegative()
-          .nullable()
-          .optional(),
+        diasAcumulo: nullableNonNegativeInt,
+        prazoBoletoAcumuloDias: nullableNonNegativeInt,
         precosEspeciais: z
           .array(
             z.object({ produtoId: z.string(), preco: z.number().nonnegative() })
