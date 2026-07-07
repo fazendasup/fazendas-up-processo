@@ -12,6 +12,11 @@ import {
   mensagemErroCriarOperacionalDeOrcamentoAcumulado,
 } from "./pedido-acumulo-operacional.js";
 import { GO_LIVE_PEDIDOS, inicioSemana } from "./semana.js";
+import {
+  isErroTabelaConciliacaoEventosCheia,
+  limparEventosConciliacaoAntigosIfDue,
+  recuperarEspacoEventosConciliacao,
+} from "./conciliacao-eventos-retencao.js";
 
 type PedidoOperacionalComItens = Prisma.PedidoOperacionalGetPayload<{
   include: { itens: true; cliente: { select: { externalId: true; nome: true } } };
@@ -708,19 +713,42 @@ async function registrarEvento(
     observacoes?: string | null;
   },
 ) {
-  await prisma.pedidoConciliacaoEvento.create({
-    data: {
-      pedidoOperacionalId: data.pedidoOperacionalId ?? undefined,
-      pedidoContaAzulId: data.pedidoContaAzulId ?? undefined,
-      tipo: data.tipo,
-      antes: data.antes == null ? undefined : (data.antes as Prisma.InputJsonValue),
-      depois: data.depois == null ? undefined : (data.depois as Prisma.InputJsonValue),
-      divergencias: data.divergencias == null ? undefined : (data.divergencias as Prisma.InputJsonValue),
-      usuarioId: data.usuarioId ?? undefined,
-      usuarioNome: data.usuarioNome ?? undefined,
-      observacoes: data.observacoes ?? undefined,
-    },
-  });
+  const payload = {
+    pedidoOperacionalId: data.pedidoOperacionalId ?? undefined,
+    pedidoContaAzulId: data.pedidoContaAzulId ?? undefined,
+    tipo: data.tipo,
+    antes: data.antes == null ? undefined : (data.antes as Prisma.InputJsonValue),
+    depois: data.depois == null ? undefined : (data.depois as Prisma.InputJsonValue),
+    divergencias:
+      data.divergencias == null ? undefined : (data.divergencias as Prisma.InputJsonValue),
+    usuarioId: data.usuarioId ?? undefined,
+    usuarioNome: data.usuarioNome ?? undefined,
+    observacoes: data.observacoes ?? undefined,
+  };
+
+  try {
+    await prisma.pedidoConciliacaoEvento.create({ data: payload });
+    void limparEventosConciliacaoAntigosIfDue(prisma);
+    return;
+  } catch (err) {
+    if (!isErroTabelaConciliacaoEventosCheia(err)) throw err;
+    console.warn("[conciliacao] tabela de eventos cheia — tentando liberar espaço");
+  }
+
+  try {
+    const removidos = await recuperarEspacoEventosConciliacao(prisma);
+    if (removidos > 0) {
+      await prisma.pedidoConciliacaoEvento.create({ data: payload });
+      return;
+    }
+  } catch (retryErr) {
+    console.error("[conciliacao] falha ao registrar evento após limpeza", retryErr);
+  }
+
+  console.error(
+    "[conciliacao] evento de auditoria não registrado (tabela cheia). Operação principal concluída.",
+    { tipo: data.tipo },
+  );
 }
 
 export async function processarConciliacaoAposSyncVenda(

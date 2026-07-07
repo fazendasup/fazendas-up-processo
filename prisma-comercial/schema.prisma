@@ -589,6 +589,7 @@ model PedidoConciliacaoEvento {
   @@index([pedidoOperacionalId, criadoEm])
   @@index([pedidoContaAzulId, criadoEm])
   @@index([tipo, criadoEm])
+  @@index([criadoEm])
   @@map("pedidos_conciliacao_eventos")
 }
 
