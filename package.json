@@ -28,6 +28,7 @@
     "comercial:seed": "tsx prisma-comercial/seed.ts",
     "comercial:reparar-semana": "tsx server/run-conciliacao-semana-reparo.ts",
     "comercial:limpar-eventos-conciliacao": "tsx server/run-limpar-eventos-conciliacao.ts",
+    "comercial:reparar-db": "tsx server/run-reparar-migrate-comercial-eventos.ts",
     "custos:sync-logistica": "tsx server/run-custos-logistica-sync.ts",
     "custos:copiar-padrao-coentro": "tsx server/run-copiar-padrao-ficha-custos.ts",
     "db:cleanup-test-users": "node scripts/cleanup-dev-test-users.mjs",

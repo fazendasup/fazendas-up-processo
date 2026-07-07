@@ -2,6 +2,7 @@
  * Libera espaço em pedidos_conciliacao_eventos (auditoria de conciliação).
  * Uso: tsx server/run-limpar-eventos-conciliacao.ts [--dias=90] [--emergencia]
  */
+import "dotenv/config";
 import { getComercialPrisma } from "./comercial/db.js";
 import {
   liberarEspacoEventosConciliacao,
