@@ -2360,6 +2360,24 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
     },
     onError: (e) => toast.error(parseTrpcErrorMessage(e.message)),
   });
+  const alterarAtivoTodasFichas = trpc.custosProducao.produtos.alterarAtivoTodasFichas.useMutation({
+    onSuccess: async (r, variables) => {
+      if (variables.ativo) {
+        if (r.ignoradas > 0) {
+          toast.success(
+            `${r.atualizadas} ficha(s) ativada(s). ${r.ignoradas} incompleta(s) não foram alteradas.`,
+          );
+        } else {
+          toast.success(`${r.atualizadas} ficha(s) ativada(s).`);
+        }
+      } else {
+        toast.success(`${r.atualizadas} ficha(s) desativada(s).`);
+      }
+      await utils.custosProducao.produtos.listarFichas.invalidate();
+      await utils.custosProducao.produtos.listarVendasSemFicha.invalidate();
+    },
+    onError: (e) => toast.error(parseTrpcErrorMessage(e.message)),
+  });
   const gerarFichasContaAzul = trpc.custosProducao.produtos.gerarFichasContaAzul.useMutation({
     onSuccess: async (r) => {
       const n = r.inseridos + r.atualizados;
@@ -2407,6 +2425,13 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
   );
 
   const resumoProdutos = useMemo(() => fichas.data ?? [], [fichas.data]);
+  const contagemAtivoFichas = useMemo(() => {
+    let ativas = 0;
+    for (const row of resumoProdutos) {
+      if (fichaAtiva(row)) ativas += 1;
+    }
+    return { ativas, total: resumoProdutos.length };
+  }, [resumoProdutos]);
   const tabelaClienteRows = useMemo(() => {
     const margem = Number(margemTabelaCliente);
     return resumoProdutos
@@ -2437,15 +2462,42 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
           <p className="text-sm text-muted-foreground max-w-2xl">
             Fichas por produto vendido: produção própria, revenda processada (lavagem, corte, embalagem) e mix.
           </p>
-          <Button
-            onClick={() => {
-              setEditingId(null);
-              setForm(emptyFicha());
-              setSimResult(null);
-            }}
-          >
-            <Plus className="h-4 w-4 mr-1" /> Nova ficha
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {resumoProdutos.length > 0 && editingId == null && form.nome === "" ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={
+                    alterarAtivoTodasFichas.isPending ||
+                    contagemAtivoFichas.ativas === contagemAtivoFichas.total
+                  }
+                  onClick={() => alterarAtivoTodasFichas.mutate({ ativo: true })}
+                >
+                  Ativar todos
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={
+                    alterarAtivoTodasFichas.isPending || contagemAtivoFichas.ativas === 0
+                  }
+                  onClick={() => alterarAtivoTodasFichas.mutate({ ativo: false })}
+                >
+                  Desativar todos
+                </Button>
+              </>
+            ) : null}
+            <Button
+              onClick={() => {
+                setEditingId(null);
+                setForm(emptyFicha());
+                setSimResult(null);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-1" /> Nova ficha
+            </Button>
+          </div>
         </div>
 
         {(vendasSemFicha.data?.length ?? 0) > 0 && editingId == null && form.nome === "" && (
@@ -2677,7 +2729,7 @@ export function CustosProdutosTab({ modo }: { modo: "lista" | "simulador" }) {
                             <div className="flex items-center gap-2">
                               <Switch
                                 checked={ativo}
-                                disabled={salvarFichaRapida.isPending}
+                                disabled={salvarFichaRapida.isPending || alterarAtivoTodasFichas.isPending}
                                 onCheckedChange={(nextAtivo) => {
                                   const formAtual = rowToFichaFormComDraft(
                                     row,

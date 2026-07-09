@@ -188,6 +188,31 @@ export async function updateCustoProdutoFicha(
     .where(and(eq(custosProdutosFichas.projetoId, projetoId), eq(custosProdutosFichas.id, id)));
 }
 
+export async function setAtivoTodasFichas(projetoId: number, ativo: boolean): Promise<void> {
+  await ensureCustosProdutosTables();
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(custosProdutosFichas)
+    .set({ ativo })
+    .where(eq(custosProdutosFichas.projetoId, projetoId));
+}
+
+export async function setAtivoFichasPorIds(
+  projetoId: number,
+  ids: number[],
+  ativo: boolean,
+): Promise<void> {
+  if (ids.length === 0) return;
+  await ensureCustosProdutosTables();
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(custosProdutosFichas)
+    .set({ ativo })
+    .where(and(eq(custosProdutosFichas.projetoId, projetoId), inArray(custosProdutosFichas.id, ids)));
+}
+
 export async function deleteCustoProdutoFicha(projetoId: number, id: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

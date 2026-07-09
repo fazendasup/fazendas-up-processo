@@ -566,6 +566,32 @@ export const custosProdutoSubRouter = router({
       return { success: true };
     }),
 
+  alterarAtivoTodasFichas: commercialEditorCustosProducaoProjectProcedure
+    .input(z.object({ ativo: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      const pid = projetoIdFromCtx(ctx);
+      if (!input.ativo) {
+        await custosProdutoDb.setAtivoTodasFichas(pid, false);
+        const fichas = await custosProdutoDb.listCustosProdutoFichas(pid);
+        return { atualizadas: fichas.length, ignoradas: 0 };
+      }
+      const fichas = await custosProdutoDb.listCustosProdutoFichas(pid);
+      const idsAtivar: number[] = [];
+      let ignoradas = 0;
+      for (const ficha of fichas) {
+        const jaAtiva = ficha.ativo !== false && ficha.ativo !== 0;
+        if (jaAtiva) continue;
+        const resultado = await calcularFichaCompleta(pid, ficha);
+        if ((resultado.alertas?.length ?? 0) > 0) {
+          ignoradas += 1;
+          continue;
+        }
+        idsAtivar.push(ficha.id);
+      }
+      await custosProdutoDb.setAtivoFichasPorIds(pid, idsAtivar, true);
+      return { atualizadas: idsAtivar.length, ignoradas };
+    }),
+
   simularCusto: custosProducaoModuleProcedure
     .input(fichaInput.omit({ id: true }))
     .mutation(async ({ ctx, input }) => {
