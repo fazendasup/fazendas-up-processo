@@ -1,3 +1,4 @@
+import { clientePodeAcumularPedidos } from "@shared/clientesAcumuloPedidos";
 import { OrigemPedido } from "../generated/prisma/index.js";
 import type { PrismaClient } from "../generated/prisma/index.js";
 import {
@@ -134,6 +135,7 @@ export async function habilitarAcumuloDetectadoSemana(
   for (const c of conciliacao.clientes) {
     if (c.status !== "divergente") continue;
     if (c.operacional.pedidos < 2 || c.contaAzul.pedidos !== 1) continue;
+    if (!clientePodeAcumularPedidos(c.clienteNome)) continue;
     const ratioUn =
       c.contaAzul.unidades > 0 ? c.operacional.unidades / c.contaAzul.unidades : 0;
     if (ratioUn < 1.8 || ratioUn > 2.2) continue;
@@ -169,7 +171,13 @@ export async function habilitarAcumuloPorOrcamentoSemana(
       dataPedido: { gte: inicio, lte: fim },
     },
     include: {
-      cliente: { select: { externalId: true, regraComercial: { select: { acumulaPedidos: true } } } },
+      cliente: {
+        select: {
+          externalId: true,
+          nome: true,
+          regraComercial: { select: { acumulaPedidos: true } },
+        },
+      },
     },
   });
 
@@ -178,6 +186,7 @@ export async function habilitarAcumuloPorOrcamentoSemana(
     if (classificarStatusPedido(venda.statusPedido) !== "orcamento") continue;
     const contaAzulCustomerId = venda.cliente.externalId;
     if (!contaAzulCustomerId || venda.cliente.regraComercial?.acumulaPedidos) continue;
+    if (!clientePodeAcumularPedidos(venda.cliente.nome)) continue;
 
     const ops = await prisma.pedidoOperacional.count({
       where: {

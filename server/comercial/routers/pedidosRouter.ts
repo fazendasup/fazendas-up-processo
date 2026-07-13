@@ -1,5 +1,9 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import {
+  CLIENTES_ACUMULO_ALLOWLIST_LABELS,
+  clientePodeAcumularPedidos,
+} from "@shared/clientesAcumuloPedidos";
 import { OrigemPedido, Prisma } from "../generated/prisma/index.js";
 import type { PrismaClient } from "../generated/prisma/index.js";
 import { composicaoDoPedidoParaDashboard } from "../lib/composicao-valor.js";
@@ -832,6 +836,12 @@ export const pedidosRouter = router({
           code: "NOT_FOUND",
           message: "Cliente Conta Azul não encontrado",
         });
+      if (input.acumulaPedidos && !clientePodeAcumularPedidos(cliente.nome)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Acúmulo de pedidos só é permitido para: ${CLIENTES_ACUMULO_ALLOWLIST_LABELS.join(", ")}.`,
+        });
+      }
       return ctx.prisma!.$transaction(async tx => {
         const regra = await tx.regraComercialCliente.upsert({
           where: { contaAzulCustomerId: input.contaAzulCustomerId },

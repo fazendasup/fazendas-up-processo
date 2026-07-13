@@ -34,6 +34,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConciliacaoContaAzulPanel } from "@/components/comercial/ConciliacaoContaAzulPanel";
 import { SearchSelect } from "@/components/ui/search-select";
+import {
+  CLIENTES_ACUMULO_ALLOWLIST_LABELS,
+  clientePodeAcumularPedidos,
+} from "@shared/clientesAcumuloPedidos";
 
 const DIAS = [
   "Domingo",
@@ -2838,6 +2842,10 @@ function RegrasClienteArea({
   );
   const [precosForm, setPrecosForm] = useState<Record<string, string>>({});
   const merged = { ...regra, ...form };
+  const clienteSelecionado = (clientes as any[]).find(
+    (c: any) => c.externalId === clienteId,
+  );
+  const podeAcumular = clientePodeAcumularPedidos(clienteSelecionado?.nome);
   return (
     <Card>
       <CardHeader>
@@ -2973,11 +2981,17 @@ function RegrasClienteArea({
               )}
               <Check
                 label="Acumula pedidos"
-                checked={Boolean(merged.acumulaPedidos)}
+                checked={Boolean(merged.acumulaPedidos) && podeAcumular}
+                disabled={!podeAcumular}
                 onChange={(v: boolean) =>
                   setForm((f: any) => ({ ...f, acumulaPedidos: v }))
                 }
               />
+              {!podeAcumular && clienteId ? (
+                <p className="text-[10px] text-muted-foreground md:col-span-3">
+                  Acúmulo liberado só para: {CLIENTES_ACUMULO_ALLOWLIST_LABELS.join(", ")}.
+                </p>
+              ) : null}
               <Field
                 label="Dias de acúmulo"
                 value={merged.diasAcumulo ?? ""}
@@ -3051,7 +3065,7 @@ function RegrasClienteArea({
                     merged.descontoBoletoPercentual !== ""
                       ? Number(String(merged.descontoBoletoPercentual).replace(",", "."))
                       : null,
-                  acumulaPedidos: Boolean(merged.acumulaPedidos),
+                  acumulaPedidos: Boolean(merged.acumulaPedidos) && podeAcumular,
                   diasAcumulo:
                     merged.diasAcumulo != null && merged.diasAcumulo !== ""
                       ? Number(merged.diasAcumulo)
@@ -3754,12 +3768,17 @@ function Field({
   );
 }
 
-function Check({ label, checked, onChange }: any) {
+function Check({ label, checked, onChange, disabled }: any) {
   return (
-    <label className="flex items-center gap-2 rounded-md border p-2 text-sm">
+    <label
+      className={`flex items-center gap-2 rounded-md border p-2 text-sm ${
+        disabled ? "cursor-not-allowed opacity-60" : ""
+      }`}
+    >
       <input
         type="checkbox"
         checked={checked}
+        disabled={disabled}
         onChange={e => onChange(e.target.checked)}
       />
       {label}
