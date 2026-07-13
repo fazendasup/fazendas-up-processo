@@ -571,7 +571,14 @@ export function calcularDivergencias(
     }
   }
 
-  return consolidarDivergenciasEspelhadas(divergencias);
+  const consolidadas = consolidarDivergenciasEspelhadas(divergencias);
+  // Quantidades batem: diferença de valor costuma ser frete/desconto/arredondamento/preço de tabela
+  // vs líquido CA — não bloqueia conciliação (já há fluxo específico para frete nas regras).
+  const temDiffItens = consolidadas.some((d) => d.campo.startsWith("item:"));
+  if (!temDiffItens) {
+    return consolidadas.filter((d) => d.campo !== "valor_estimado");
+  }
+  return consolidadas;
 }
 
 export function scoreSugestaoVinculo(

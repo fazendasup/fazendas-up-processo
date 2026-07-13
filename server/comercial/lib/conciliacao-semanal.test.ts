@@ -64,7 +64,7 @@ describe("totaisOperacionaisClienteSemanal", () => {
     expect(totais.valorEstimado).toBeCloseTo(635);
   });
 
-  it("vínculo múltiplo: soma itens do grupo e frete único", () => {
+  it("vínculo múltiplo sem CA: soma itens do grupo e frete único", () => {
     const totais = totaisOperacionaisClienteSemanal(
       [
         op("m1", { pedidoContaAzulId: "ca-1", unidades: 40 }),
@@ -76,6 +76,21 @@ describe("totaisOperacionaisClienteSemanal", () => {
     );
     expect(totais.unidades).toBe(62);
     expect(totais.valorEstimado).toBeCloseTo(72);
+  });
+
+  it("vínculo múltiplo: usa líquido CA quando disponível", () => {
+    const withCa = (id: string, unidades: number) => ({
+      ...op(id, { pedidoContaAzulId: "ca-1", unidades }),
+      pedidoContaAzul: { valorLiquido: 99.9, valorTotal: 99.9 },
+    });
+    const totais = totaisOperacionaisClienteSemanal(
+      [withCa("m1", 40), withCa("m2", 22)],
+      false,
+      { cobraTaxaEntrega: true, valorTaxaEntrega: 10, acumulaPedidos: false },
+      undefined,
+    );
+    expect(totais.unidades).toBe(62);
+    expect(totais.valorEstimado).toBeCloseTo(99.9);
   });
 });
 
@@ -134,6 +149,10 @@ describe("totaisOperacionaisAcumuladorSemanaFaturada", () => {
 describe("classificarClienteSemanal", () => {
   it("ok quando unidades e valor batem apesar de mais entregas que vendas", () => {
     expect(classificarClienteSemanal(2, 1, 0, 0)).toBe("ok");
+  });
+
+  it("ok quando unidades batem mesmo com diferença de valor (frete/desconto)", () => {
+    expect(classificarClienteSemanal(1, 1, 0, 42.5)).toBe("ok");
   });
 
   it("não marca aguardando venda quando já há faturamento CA", () => {

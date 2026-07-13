@@ -70,6 +70,66 @@ describe("calcularDivergencias", () => {
     ).toHaveLength(0);
   });
 
+  it("não acusa valor_estimado quando as quantidades batem (frete/desconto/arredondamento)", () => {
+    const operacional = {
+      dataEntrega: new Date("2026-06-15T12:00:00Z"),
+      freteCortesia: false,
+      snapshotConciliacao: null,
+      itens: [{ produtoNome: "Alface", quantidade: 10, precoUnit: 5 }],
+    };
+    const contaAzul = {
+      dataPedido: new Date("2026-06-15T12:00:00Z"),
+      valorFrete: 12,
+      valorLiquido: 58,
+      valorTotal: 58,
+      cliente: {
+        regraComercial: {
+          cobraTaxaEntrega: false,
+          valorTaxaEntrega: null,
+        },
+      },
+      itens: [{ produto: "Alface", sku: null, quantidade: 10 }],
+    };
+
+    expect(
+      calcularDivergencias(operacional as any, contaAzul as any, undefined, {
+        compararData: true,
+        compararItens: true,
+        compararValorEstimado: true,
+      }),
+    ).toHaveLength(0);
+  });
+
+  it("mantém valor_estimado quando há divergência de quantidade", () => {
+    const operacional = {
+      dataEntrega: new Date("2026-06-15T12:00:00Z"),
+      freteCortesia: false,
+      snapshotConciliacao: null,
+      itens: [{ produtoNome: "Alface", quantidade: 8, precoUnit: 5 }],
+    };
+    const contaAzul = {
+      dataPedido: new Date("2026-06-15T12:00:00Z"),
+      valorFrete: 0,
+      valorLiquido: 50,
+      valorTotal: 50,
+      cliente: {
+        regraComercial: {
+          cobraTaxaEntrega: false,
+          valorTaxaEntrega: null,
+        },
+      },
+      itens: [{ produto: "Alface", sku: null, quantidade: 10 }],
+    };
+
+    const out = calcularDivergencias(operacional as any, contaAzul as any, undefined, {
+      compararData: true,
+      compararItens: true,
+      compararValorEstimado: true,
+    });
+    expect(out.some((d) => d.campo.startsWith("item:"))).toBe(true);
+    expect(out.some((d) => d.campo === "valor_estimado")).toBe(true);
+  });
+
   it("ignora diferença de itens e valor para cliente com faturamento acumulado", () => {
     const operacional = {
       dataEntrega: new Date("2026-06-16T12:00:00Z"),

@@ -167,8 +167,16 @@ export function totaisOperacionaisClienteSemanal(
 
   for (const grupo of Array.from(porVinculo.values())) {
     unidades += sumUnidadesPedidos(grupo);
-    valorEstimado += grupo.reduce((s, p) => s + valorItensPedido(p.itens), 0);
-    if (grupo.some((p) => !p.freteCortesia)) valorEstimado += taxa;
+    // Pedidos já vinculados: usar líquido CA (fonte financeira) em vez de
+    // recompor itens+taxa — evita falso "diff valor" com desconto/frete/arredondamento.
+    const caRef = grupo.find((p) => p.pedidoContaAzul)?.pedidoContaAzul;
+    const valorCa = money(caRef?.valorLiquido ?? caRef?.valorTotal);
+    if (valorCa != null && valorCa > 0) {
+      valorEstimado += valorCa;
+    } else {
+      valorEstimado += grupo.reduce((s, p) => s + valorItensPedido(p.itens), 0);
+      if (grupo.some((p) => !p.freteCortesia)) valorEstimado += taxa;
+    }
   }
 
   if (manuais.length > 0) {
@@ -264,8 +272,11 @@ export function classificarClienteSemanal(
   opts?: { acumulaPedidos?: boolean },
 ): StatusConciliacaoSemanalCliente {
   const unidadesOk = Math.abs(diffUnidades) <= 0.001;
-  const valorOk = Math.abs(diffValor) <= 0.05;
-  if (unidadesOk && valorOk) return "ok";
+  // Volume operacional é a fonte da verdade na semana. Diferença só de valor
+  // (frete CA vs taxa cadastrada, desconto, arredondamento) não marca divergente.
+  if (unidadesOk) return "ok";
+  void diffValor;
+  void opts;
 
   if (caPedidos === 0 && opPedidos > 0) return "aguardando_venda";
   if (opPedidos === 0 && caPedidos > 0) return "venda_sem_pedido";
