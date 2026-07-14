@@ -547,5 +547,8 @@ function detalheConciliacaoHistorico(row: any) {
   if (Math.abs(Number(row.diffUnidades ?? 0)) > 0.001) partes.push("quantidade");
   if (Math.abs(Number(row.diffValor ?? 0)) > 0.05) partes.push("valor/frete");
   if (partes.length === 0) return "Sem diferença recalculada; sincronize novamente.";
-  return `Corrigir: ${partes.join(", ")}. Para frete, revisar Regras do cliente > Valor taxa de entrega.`;
+  const sufixo = Boolean(row.acumulaPedidos)
+    ? " Cliente com acúmulo: comparar o período consolidado."
+    : " Compare só venda e pedido do mesmo dia.";
+  return `Corrigir: ${partes.join(", ")}.${sufixo}`;
 }

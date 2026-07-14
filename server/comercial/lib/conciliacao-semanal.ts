@@ -77,9 +77,13 @@ type OperacionalSemanal = {
   itens: Array<{ quantidade: unknown; precoUnit: unknown }>;
 };
 
-type VendaCaSemanal = { id: string; dataPedido: Date };
+type VendaCaSemanal = { id: string; dataPedido: Date; unidades: number; valorLiquido: number };
 
 type RegraSemanal = RegraEntregaConciliacao & { acumulaPedidos: boolean; diasAcumulo?: number | null };
+
+function ymdCalendario(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
 
 function money(v: unknown): number | null {
   if (v == null) return null;
@@ -285,6 +289,75 @@ export function classificarClienteSemanal(
   return "divergente";
 }
 
+const RANK_STATUS_SEMANAL: Record<StatusConciliacaoSemanalCliente, number> = {
+  ok: 0,
+  aguardando_venda: 1,
+  venda_sem_pedido: 2,
+  divergente: 3,
+};
+
+export function piorStatusConciliacaoSemanal(
+  statuses: StatusConciliacaoSemanalCliente[],
+): StatusConciliacaoSemanalCliente {
+  if (statuses.length === 0) return "ok";
+  return statuses.reduce((pior, atual) =>
+    RANK_STATUS_SEMANAL[atual] > RANK_STATUS_SEMANAL[pior] ? atual : pior,
+  );
+}
+
+/**
+ * Clientes sem acúmulo: compara operacional × Conta Azul só no mesmo dia (UTC).
+ * Evita marcar "divergente" misturando venda de 07/07 com pedido de 09/07.
+ */
+export function classificarClienteNaoAcumuladorPorDatas(input: {
+  operacionais: Array<{
+    dataEntrega: Date;
+    status: string;
+    pedidoContaAzulId: string | null;
+    itens: Array<{ quantidade: unknown }>;
+  }>;
+  vendas: Array<{ dataPedido: Date; unidades: number }>;
+}): StatusConciliacaoSemanalCliente {
+  const opPorDia = new Map<
+    string,
+    Array<{
+      dataEntrega: Date;
+      status: string;
+      pedidoContaAzulId: string | null;
+      itens: Array<{ quantidade: unknown }>;
+    }>
+  >();
+  for (const pedido of input.operacionais) {
+    if (pedido.status === "CANCELADO") continue;
+    const dia = ymdCalendario(pedido.dataEntrega);
+    const lista = opPorDia.get(dia) ?? [];
+    lista.push(pedido);
+    opPorDia.set(dia, lista);
+  }
+
+  const caPorDia = new Map<string, { pedidos: number; unidades: number }>();
+  for (const venda of input.vendas) {
+    const dia = ymdCalendario(venda.dataPedido);
+    const atual = caPorDia.get(dia) ?? { pedidos: 0, unidades: 0 };
+    atual.pedidos += 1;
+    atual.unidades += venda.unidades;
+    caPorDia.set(dia, atual);
+  }
+
+  const dias = new Set([...Array.from(opPorDia.keys()), ...Array.from(caPorDia.keys())]);
+  const statuses: StatusConciliacaoSemanalCliente[] = [];
+  for (const dia of Array.from(dias)) {
+    const ops = opPorDia.get(dia) ?? [];
+    const ca = caPorDia.get(dia) ?? { pedidos: 0, unidades: 0 };
+    const opPedidos = pedidosOperacionaisEfetivos(ops);
+    const opUnidades = sumUnidadesPedidos(ops);
+    statuses.push(
+      classificarClienteSemanal(opPedidos, ca.pedidos, opUnidades - ca.unidades, 0),
+    );
+  }
+  return piorStatusConciliacaoSemanal(statuses);
+}
+
 /**
  * Documentos que entram no total Conta Azul do fechamento semanal.
  * Orçamentos diários de clientes acumuladores ficam visíveis na conciliação,
@@ -426,7 +499,12 @@ export async function calcularConciliacaoSemanal(
     contaAzulPorCliente.set(contaAzulCustomerId, atual);
 
     const vendasCliente = vendasCaPorCliente.get(contaAzulCustomerId) ?? [];
-    vendasCliente.push({ id: venda.id, dataPedido: venda.dataPedido });
+    vendasCliente.push({
+      id: venda.id,
+      dataPedido: venda.dataPedido,
+      unidades: totalUnidades,
+      valorLiquido: comp.valorLiquido,
+    });
     vendasCaPorCliente.set(contaAzulCustomerId, vendasCliente);
   }
 
@@ -535,9 +613,15 @@ export async function calcularConciliacaoSemanal(
       const diffPedidos = opPedidos - caPedidos;
       const diffUnidades = (opRaw?.unidades ?? 0) - (ca?.unidades ?? 0);
       const diffValor = (opRaw?.valorEstimado ?? 0) - (ca?.valorLiquido ?? 0);
-      const status = classificarClienteSemanal(opPedidos, caPedidos, diffUnidades, diffValor, {
-        acumulaPedidos,
-      });
+      const vendasCa = vendasCaPorCliente.get(contaAzulCustomerId) ?? [];
+      const status = acumulaPedidos
+        ? classificarClienteSemanal(opPedidos, caPedidos, diffUnidades, diffValor, {
+            acumulaPedidos,
+          })
+        : classificarClienteNaoAcumuladorPorDatas({
+            operacionais: opRaw?.pedidos ?? [],
+            vendas: vendasCa,
+          });
       return {
         contaAzulCustomerId,
         clienteNome: opRaw?.clienteNome ?? ca?.clienteNome ?? contaAzulCustomerId,

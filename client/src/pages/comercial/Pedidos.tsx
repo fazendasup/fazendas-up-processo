@@ -2518,7 +2518,10 @@ function detalheConciliacaoSemanal(c: any) {
   }
   if (problemas.length === 0)
     return "Status antigo sem divergência recalculada. Sincronize novamente.";
-  return `Corrija ${problemas.join(", ")}. Se a diferença de valor for frete, preencha Regras do cliente > Valor taxa de entrega.`;
+  const sufixo = Boolean(c.acumulaPedidos)
+    ? " Cliente com acúmulo: use o vínculo de todas as entregas do período."
+    : " Compare só venda e pedido do mesmo dia.";
+  return `Corrija ${problemas.join(", ")}.${sufixo}`;
 }
 
 function PainelConciliacaoFechamento({

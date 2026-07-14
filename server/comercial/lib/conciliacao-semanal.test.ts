@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   classificarClienteSemanal,
+  classificarClienteNaoAcumuladorPorDatas,
   documentoEntraTotalConciliacaoSemanal,
   pedidosOperacionaisEfetivos,
   pedidosOperacionaisSemanaEfetivos,
@@ -165,5 +166,64 @@ describe("classificarClienteSemanal", () => {
 
   it("venda sem pedido quando só há CA", () => {
     expect(classificarClienteSemanal(0, 1, -5, -10)).toBe("venda_sem_pedido");
+  });
+});
+
+describe("classificarClienteNaoAcumuladorPorDatas", () => {
+  it("não mistura venda de outro dia com pedido conciliado do dia", () => {
+    const status = classificarClienteNaoAcumuladorPorDatas({
+      operacionais: [
+        {
+          dataEntrega: new Date("2026-07-09T12:00:00Z"),
+          status: "ENTREGUE",
+          pedidoContaAzulId: "4549",
+          itens: [{ quantidade: 8 }],
+        },
+      ],
+      vendas: [
+        { dataPedido: new Date("2026-07-09T12:00:00Z"), unidades: 8 },
+        { dataPedido: new Date("2026-07-07T12:00:00Z"), unidades: 41 },
+      ],
+    });
+    expect(status).toBe("venda_sem_pedido");
+  });
+
+  it("marca divergente só quando o mesmo dia tem quantidade diferente", () => {
+    const status = classificarClienteNaoAcumuladorPorDatas({
+      operacionais: [
+        {
+          dataEntrega: new Date("2026-07-09T12:00:00Z"),
+          status: "ENTREGUE",
+          pedidoContaAzulId: "4549",
+          itens: [{ quantidade: 8 }],
+        },
+      ],
+      vendas: [{ dataPedido: new Date("2026-07-09T12:00:00Z"), unidades: 10 }],
+    });
+    expect(status).toBe("divergente");
+  });
+
+  it("ok quando cada dia bate individualmente", () => {
+    const status = classificarClienteNaoAcumuladorPorDatas({
+      operacionais: [
+        {
+          dataEntrega: new Date("2026-07-07T12:00:00Z"),
+          status: "ENTREGUE",
+          pedidoContaAzulId: "4510",
+          itens: [{ quantidade: 41 }],
+        },
+        {
+          dataEntrega: new Date("2026-07-09T12:00:00Z"),
+          status: "ENTREGUE",
+          pedidoContaAzulId: "4549",
+          itens: [{ quantidade: 8 }],
+        },
+      ],
+      vendas: [
+        { dataPedido: new Date("2026-07-07T12:00:00Z"), unidades: 41 },
+        { dataPedido: new Date("2026-07-09T12:00:00Z"), unidades: 8 },
+      ],
+    });
+    expect(status).toBe("ok");
   });
 });

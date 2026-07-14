@@ -3,6 +3,7 @@ import {
   calcularDivergencias,
   calcularDivergenciasAgregadas,
   consolidarDivergenciasEspelhadas,
+  janelaCandidatosVinculo,
   opcoesCalcularDivergenciasParaPar,
   scoreCandidatoVinculoManual,
   scoreSugestaoVinculo,
@@ -248,5 +249,27 @@ describe("calcularDivergencias", () => {
 
     expect(scoreSugestaoVinculo(operacional as any, contaAzul as any)).toBeGreaterThanOrEqual(75);
     expect(scoreCandidatoVinculoManual(operacional as any, contaAzul as any)).toBeGreaterThanOrEqual(70);
+  });
+
+  it("scoreCandidatoVinculoManual zera dias diferentes sem acúmulo", () => {
+    const operacional = {
+      dataEntrega: new Date("2026-07-09T12:00:00Z"),
+      contaAzulCustomerId: "cliente-1",
+      itens: [{ produtoId: "p1", produtoNome: "Alface", quantidade: 8 }],
+    };
+    const contaAzul = {
+      dataPedido: new Date("2026-07-07T12:00:00Z"),
+      statusPedido: "VENDA",
+      cliente: { externalId: "cliente-1", regraComercial: { acumulaPedidos: false } },
+      itens: [{ produto: "Alface", sku: null, quantidade: 8 }],
+    };
+    expect(scoreCandidatoVinculoManual(operacional as any, contaAzul as any)).toBe(0);
+  });
+
+  it("janelaCandidatosVinculo sem acúmulo fica no mesmo dia", () => {
+    const data = new Date("2026-07-09T15:30:00Z");
+    const j = janelaCandidatosVinculo({ dataPedido: data, acumula: false });
+    expect(j.inicio.toISOString().slice(0, 10)).toBe("2026-07-09");
+    expect(j.fim.toISOString().slice(0, 10)).toBe("2026-07-09");
   });
 });

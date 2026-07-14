@@ -635,8 +635,13 @@ export function scoreCandidatoVinculoManual(
   const extCa = contaAzul.cliente.externalId;
   if (!extOp || !extCa || extOp !== extCa) return 0;
 
-  let score = 20;
+  const acumula = clienteAcumulaFaturamento(contaAzul.cliente.regraComercial);
   const dias = diffDias(operacional.dataEntrega, contaAzul.dataPedido);
+
+  // Sem acúmulo: só candidata vínculo no mesmo dia (evita misturar 07/07 com 09/07).
+  if (!acumula && dias !== 0) return 0;
+
+  let score = 20;
   if (dias === 0) score += 50;
   else if (mesmaSemanaOperacional(operacional.dataEntrega, contaAzul.dataPedido)) score += 30;
   else if (dias <= 7) score += 10;
@@ -675,15 +680,19 @@ export function janelaCandidatosVinculo(input: {
   diasAcumulo?: number | null;
   janelaDias?: number;
 }): { inicio: Date; fim: Date } {
-  const janelaDias = input.janelaDias ?? 14;
   const corte = inicioDiaOperacional(GO_LIVE_PEDIDOS);
 
-  let inicio = input.acumula
-    ? adicionarDiasOperacional(input.dataPedido, -((input.diasAcumulo ?? 15) - 1))
-    : inicioSemanaOperacional(input.dataPedido);
-  let fim = input.acumula
-    ? fimDiaOperacional(input.dataPedido)
-    : fimSemanaOperacional(input.dataPedido);
+  // Sem acúmulo: apenas o próprio dia da venda.
+  if (!input.acumula) {
+    let inicio = inicioDiaOperacional(input.dataPedido);
+    const fim = fimDiaOperacional(input.dataPedido);
+    if (inicio.getTime() < corte.getTime()) inicio = corte;
+    return { inicio, fim };
+  }
+
+  const janelaDias = input.janelaDias ?? 14;
+  let inicio = adicionarDiasOperacional(input.dataPedido, -((input.diasAcumulo ?? 15) - 1));
+  let fim = fimDiaOperacional(input.dataPedido);
 
   const extInicio = adicionarDiasOperacional(input.dataPedido, -janelaDias);
   const extFim = fimDiaOperacional(adicionarDiasOperacional(input.dataPedido, janelaDias));
@@ -951,6 +960,11 @@ export async function confirmarVinculoConciliacao(
   if (acumula && jaVinculados.length > 0) {
     throw new Error(
       "Cliente com faturamento acumulado: use o vínculo múltiplo para incluir todos os pedidos do período.",
+    );
+  }
+  if (!acumula && !mesmoDia(operacional.dataEntrega, contaAzul.dataPedido)) {
+    throw new Error(
+      "Para clientes sem acúmulo, o pedido operacional e a venda Conta Azul precisam ser do mesmo dia.",
     );
   }
 

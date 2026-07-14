@@ -51,7 +51,7 @@ function detalheConciliacaoSemanal(c: any) {
   const acumula = Boolean(c.acumulaPedidos);
   const sufixoAcumulo = acumula
     ? " Este cliente acumula faturamento: o total da semana no Conta Azul costuma ser a venda consolidada do período, não o orçamento diário. Use «Vincular entregas» na venda/orçamento principal e selecione todas as entregas do intervalo."
-    : " Se a diferença de valor for frete, preencha Regras do cliente > Valor taxa de entrega.";
+    : " Compare apenas venda e pedido do mesmo dia — documentos de outras datas não devem entrar nesse cálculo.";
   return `Corrija ${problemas.join(", ")}.${sufixoAcumulo}`;
 }
 
