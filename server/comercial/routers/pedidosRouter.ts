@@ -2715,10 +2715,15 @@ export const pedidosRouter = router({
               v.dataPedido.getTime() <= semanaFim.getTime(),
           );
           const acumulaPedidos =
-            clienteAcumulaFaturamento(
-              opsCliente[0]?.cliente?.regraComercial ??
-                vendasCliente[0]?.cliente?.regraComercial,
-            ) ?? false;
+            typeof c.acumulaPedidos === "boolean"
+              ? c.acumulaPedidos
+              : clienteAcumulaFaturamento(
+                  opsCliente[0]?.cliente?.regraComercial ??
+                    vendasCliente[0]?.cliente?.regraComercial,
+                  c.clienteNome ??
+                    opsCliente[0]?.cliente?.nome ??
+                    vendasCliente[0]?.cliente?.nome,
+                );
           const diasAcumulo =
             opsCliente[0]?.cliente?.regraComercial?.diasAcumulo ??
             vendasCliente[0]?.cliente?.regraComercial?.diasAcumulo ??
@@ -2867,7 +2872,10 @@ export const pedidosRouter = router({
         return { venda, candidatos: [] };
       }
 
-      const acumula = clienteAcumulaFaturamento(venda.cliente.regraComercial);
+      const acumula = clienteAcumulaFaturamento(
+        venda.cliente.regraComercial,
+        venda.cliente.nome,
+      );
       const diasAcumulo = venda.cliente.regraComercial?.diasAcumulo ?? 15;
       const { inicio: inicioJanela, fim: fimJanela } = janelaCandidatosVinculo({
         dataPedido: venda.dataPedido,

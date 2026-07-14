@@ -1,3 +1,4 @@
+import { clientePodeAcumularPedidos } from "@shared/clientesAcumuloPedidos";
 import { Prisma, type PrismaClient } from "../generated/prisma/index.js";
 import { classificarStatusPedido } from "./pedido-status.js";
 import {
@@ -122,11 +123,19 @@ export function opcoesCalcularDivergencias(
   };
 }
 
-/** Cliente com faturamento acumulado: pedido operacional = entrega do dia; CA = período. */
-export function clienteAcumulaFaturamento(regra?: {
-  acumulaPedidos?: boolean;
-} | null): boolean {
-  return Boolean(regra?.acumulaPedidos);
+/**
+ * Cliente com faturamento acumulado: várias entregas ↔ um orçamento/venda do período.
+ * A flag do banco só vale se o cliente estiver na allowlist (evita falso acúmulo residual).
+ */
+export function clienteAcumulaFaturamento(
+  regra?: { acumulaPedidos?: boolean } | null,
+  nomeCliente?: string | null,
+): boolean {
+  if (!regra?.acumulaPedidos) return false;
+  if (nomeCliente != null && String(nomeCliente).trim() !== "") {
+    return clientePodeAcumularPedidos(nomeCliente);
+  }
+  return true;
 }
 
 export function opcoesCalcularDivergenciasParaPar(
@@ -138,8 +147,14 @@ export function opcoesCalcularDivergenciasParaPar(
 ): OpcoesDivergenciaConciliacao {
   const base = opcoesCalcularDivergencias(operacional);
   const acumula =
-    clienteAcumulaFaturamento(regraOperacional) ||
-    clienteAcumulaFaturamento(contaAzul?.cliente?.regraComercial);
+    clienteAcumulaFaturamento(
+      regraOperacional,
+      (contaAzul?.cliente as { nome?: string } | undefined)?.nome,
+    ) ||
+    clienteAcumulaFaturamento(
+      contaAzul?.cliente?.regraComercial,
+      (contaAzul?.cliente as { nome?: string } | undefined)?.nome,
+    );
   if (!acumula) return base;
   return {
     compararData: base.compararData,
@@ -230,8 +245,15 @@ export async function reconciliarDivergenciasAcumuloEsperadas(
   for (const op of operacionais) {
     if (!op.pedidoContaAzulId || !op.pedidoContaAzul) continue;
     const acumula =
-      clienteAcumulaFaturamento(op.cliente?.regraComercial) ||
-      clienteAcumulaFaturamento(op.pedidoContaAzul.cliente?.regraComercial);
+      clienteAcumulaFaturamento(
+        op.cliente?.regraComercial,
+        (op.cliente as { nome?: string } | null | undefined)?.nome ??
+          (op.pedidoContaAzul.cliente as { nome?: string } | null | undefined)?.nome,
+      ) ||
+      clienteAcumulaFaturamento(
+        op.pedidoContaAzul.cliente?.regraComercial,
+        (op.pedidoContaAzul.cliente as { nome?: string } | null | undefined)?.nome,
+      );
     if (!acumula) continue;
     const lista = porVenda.get(op.pedidoContaAzulId) ?? [];
     lista.push(op);
@@ -635,7 +657,10 @@ export function scoreCandidatoVinculoManual(
   const extCa = contaAzul.cliente.externalId;
   if (!extOp || !extCa || extOp !== extCa) return 0;
 
-  const acumula = clienteAcumulaFaturamento(contaAzul.cliente.regraComercial);
+  const acumula = clienteAcumulaFaturamento(
+    contaAzul.cliente.regraComercial,
+    contaAzul.cliente.nome,
+  );
   const dias = diffDias(operacional.dataEntrega, contaAzul.dataPedido);
 
   // Sem acúmulo: só candidata vínculo no mesmo dia (evita misturar 07/07 com 09/07).
@@ -799,7 +824,10 @@ export async function processarConciliacaoAposSyncVenda(
 
   const produtosConciliacao = await carregarProdutosConciliacao(prisma);
   const resolverChave = criarResolverChaveItemConciliacao(produtosConciliacao);
-  const acumula = clienteAcumulaFaturamento(contaAzul.cliente.regraComercial);
+  const acumula = clienteAcumulaFaturamento(
+    contaAzul.cliente.regraComercial,
+    contaAzul.cliente.nome,
+  );
 
   if (vinculados.length > 0) {
     const divergencias =
@@ -950,7 +978,10 @@ export async function confirmarVinculoConciliacao(
   if (operacional.pedidoContaAzulId && operacional.pedidoContaAzulId !== contaAzul.id) {
     throw new Error("Este pedido operacional já está vinculado a outra venda.");
   }
-  const acumula = clienteAcumulaFaturamento(contaAzul.cliente.regraComercial);
+  const acumula = clienteAcumulaFaturamento(
+    contaAzul.cliente.regraComercial,
+    contaAzul.cliente.nome,
+  );
   const jaVinculados = await prisma.pedidoOperacional.findMany({
     where: { pedidoContaAzulId: contaAzul.id, NOT: { id: operacional.id } },
   });
@@ -1050,7 +1081,7 @@ export async function confirmarVinculoMultiploConciliacao(
   if (operacionais.length !== ids.length) {
     throw new Error("Um ou mais pedidos operacionais não foram encontrados.");
   }
-  if (!clienteAcumulaFaturamento(contaAzul.cliente.regraComercial)) {
+  if (!clienteAcumulaFaturamento(contaAzul.cliente.regraComercial, contaAzul.cliente.nome)) {
     throw new Error("Vínculo múltiplo só está disponível para clientes com faturamento acumulado.");
   }
 
@@ -1844,7 +1875,10 @@ export async function desvincularConciliacao(
 
     const produtosConciliacao = await carregarProdutosConciliacao(tx as PrismaClient);
     const resolverChave = criarResolverChaveItemConciliacao(produtosConciliacao);
-    const acumula = clienteAcumulaFaturamento(contaAzul.cliente.regraComercial);
+    const acumula = clienteAcumulaFaturamento(
+      contaAzul.cliente.regraComercial,
+      contaAzul.cliente.nome,
+    );
     const divergencias =
       acumula && restantes.length > 1
         ? calcularDivergenciasAgregadas(restantes, contaAzul, resolverChave)

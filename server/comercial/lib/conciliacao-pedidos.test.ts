@@ -2,12 +2,25 @@ import { describe, expect, it } from "vitest";
 import {
   calcularDivergencias,
   calcularDivergenciasAgregadas,
+  clienteAcumulaFaturamento,
   consolidarDivergenciasEspelhadas,
   janelaCandidatosVinculo,
   opcoesCalcularDivergenciasParaPar,
   scoreCandidatoVinculoManual,
   scoreSugestaoVinculo,
 } from "./conciliacao-pedidos";
+
+describe("clienteAcumulaFaturamento", () => {
+  it("ignora flag residual fora da allowlist quando o nome é informado", () => {
+    expect(
+      clienteAcumulaFaturamento(
+        { acumulaPedidos: true },
+        "Banzeiro Cozinha Amazônica",
+      ),
+    ).toBe(false);
+    expect(clienteAcumulaFaturamento({ acumulaPedidos: true }, "Licco Casa Gourmet")).toBe(true);
+  });
+});
 
 describe("consolidarDivergenciasEspelhadas", () => {
   it("remove par espelhado de nomes diferentes com mesma quantidade", () => {
@@ -260,9 +273,14 @@ describe("calcularDivergencias", () => {
     const contaAzul = {
       dataPedido: new Date("2026-07-07T12:00:00Z"),
       statusPedido: "VENDA",
-      cliente: { externalId: "cliente-1", regraComercial: { acumulaPedidos: false } },
+      cliente: {
+        externalId: "cliente-1",
+        nome: "Banzeiro Cozinha Amazônica",
+        regraComercial: { acumulaPedidos: true },
+      },
       itens: [{ produto: "Alface", sku: null, quantidade: 8 }],
     };
+    // Flag residual true, mas fora da allowlist → trata como sem acúmulo → dia diferente = 0
     expect(scoreCandidatoVinculoManual(operacional as any, contaAzul as any)).toBe(0);
   });
 

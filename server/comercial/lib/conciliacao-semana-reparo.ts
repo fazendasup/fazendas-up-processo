@@ -75,7 +75,7 @@ export async function autoVincularAcumuloSemana(
   for (const venda of vendas) {
     if (!documentoContaAzulConciliavel(venda)) continue;
     const regra = venda.cliente.regraComercial;
-    if (!clienteAcumulaFaturamento(regra)) continue;
+    if (!clienteAcumulaFaturamento(regra, venda.cliente.nome)) continue;
 
     const contaAzulCustomerId = venda.cliente.externalId;
     if (!contaAzulCustomerId) continue;
@@ -229,6 +229,7 @@ export async function autoConfirmarSugestoesSemana(
       itens: true,
       cliente: {
         select: {
+          nome: true,
           regraComercial: {
             select: { acumulaPedidos: true, diasAcumulo: true, ...REGRA_ENTREGA_CONCILIACAO_SELECT },
           },
@@ -239,7 +240,7 @@ export async function autoConfirmarSugestoesSemana(
 
   let confirmados = 0;
   for (const op of operacionais) {
-    if (clienteAcumulaFaturamento(op.cliente?.regraComercial)) continue;
+    if (clienteAcumulaFaturamento(op.cliente?.regraComercial, op.cliente?.nome)) continue;
     if (pedidoCriadoAPartirDoContaAzul(op)) continue;
 
     const venda = await prisma.pedido.findUnique({
@@ -305,7 +306,7 @@ export async function autoVincularSimplesSemana(
     },
     include: {
       itens: true,
-      cliente: { select: { regraComercial: { select: { acumulaPedidos: true } } } },
+      cliente: { select: { nome: true, regraComercial: { select: { acumulaPedidos: true } } } },
     },
   });
 
@@ -315,7 +316,7 @@ export async function autoVincularSimplesSemana(
       dataPedido: { gte: inicio, lte: fim },
     },
     include: {
-      cliente: { select: { externalId: true, regraComercial: true } },
+      cliente: { select: { externalId: true, nome: true, regraComercial: true } },
       itens: true,
       pedidosOperacionaisVinculo: { select: { id: true } },
     },
@@ -323,7 +324,7 @@ export async function autoVincularSimplesSemana(
 
   let vinculos = 0;
   for (const op of operacionais) {
-    if (clienteAcumulaFaturamento(op.cliente?.regraComercial)) continue;
+    if (clienteAcumulaFaturamento(op.cliente?.regraComercial, op.cliente?.nome)) continue;
     if (pedidoCriadoAPartirDoContaAzul(op)) continue;
 
     let melhor: { venda: (typeof vendas)[0]; score: number } | null = null;

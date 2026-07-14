@@ -35,6 +35,8 @@ export type ClienteConciliacaoSemanal = {
   status: StatusConciliacaoSemanalCliente;
   /** Mantido para compatibilidade: só `true` quando `status === "divergente"`. */
   divergente: boolean;
+  /** Efetivo após allowlist (Licco/Spoleto/…); ignora flag residual de outros clientes. */
+  acumulaPedidos?: boolean;
 };
 
 export type ConciliacaoSemanal = {
@@ -466,7 +468,6 @@ export async function calcularConciliacaoSemanal(
 
   for (const venda of vendasContaAzulRaw) {
     const contaAzulCustomerId = venda.cliente.externalId ?? venda.cliente.id;
-    const acumula = clienteAcumulaFaturamento(regraPorCliente.get(contaAzulCustomerId));
     if (!documentoContaAzulSemanal(venda.statusPedido)) continue;
 
     const comp = composicaoDoPedidoParaDashboard(venda);
@@ -522,7 +523,10 @@ export async function calcularConciliacaoSemanal(
   } as const;
 
   const acumulaComCa = Array.from(vendasCaPorCliente.keys()).filter((id) =>
-    clienteAcumulaFaturamento(regraPorCliente.get(id)),
+    clienteAcumulaFaturamento(
+      regraPorCliente.get(id),
+      contaAzulPorCliente.get(id)?.clienteNome,
+    ),
   );
   let pedidosAcumuloExtra: OperacionalSemanal[] = [];
   if (acumulaComCa.length > 0) {
@@ -576,7 +580,7 @@ export async function calcularConciliacaoSemanal(
 
   for (const [contaAzulCustomerId, opCliente] of Array.from(operacionalPorCliente.entries())) {
     const regra = regraPorCliente.get(contaAzulCustomerId);
-    const acumula = clienteAcumulaFaturamento(regra);
+    const acumula = clienteAcumulaFaturamento(regra, opCliente.clienteNome);
     const ca = contaAzulPorCliente.get(contaAzulCustomerId);
     const vendasCa = vendasCaPorCliente.get(contaAzulCustomerId) ?? [];
     const pedidosTotais = acumula
@@ -603,7 +607,11 @@ export async function calcularConciliacaoSemanal(
     .map((contaAzulCustomerId) => {
       const opRaw = operacionalPorCliente.get(contaAzulCustomerId);
       const ca = contaAzulPorCliente.get(contaAzulCustomerId);
-      const acumulaPedidos = clienteAcumulaFaturamento(regraPorCliente.get(contaAzulCustomerId));
+      const clienteNome = opRaw?.clienteNome ?? ca?.clienteNome ?? contaAzulCustomerId;
+      const acumulaPedidos = clienteAcumulaFaturamento(
+        regraPorCliente.get(contaAzulCustomerId),
+        clienteNome,
+      );
       const opPedidos = opRaw
         ? pedidosOperacionaisEfetivos(
             pedidosOperacionaisSemanaEfetivos(opRaw.pedidos, acumulaPedidos),
@@ -624,7 +632,7 @@ export async function calcularConciliacaoSemanal(
           });
       return {
         contaAzulCustomerId,
-        clienteNome: opRaw?.clienteNome ?? ca?.clienteNome ?? contaAzulCustomerId,
+        clienteNome,
         operacional: opRaw
           ? { pedidos: opPedidos, unidades: opRaw.unidades, valorEstimado: opRaw.valorEstimado }
           : { pedidos: 0, unidades: 0, valorEstimado: 0 },
@@ -642,6 +650,7 @@ export async function calcularConciliacaoSemanal(
         diffValor,
         status,
         divergente: status === "divergente",
+        acumulaPedidos,
       };
     })
     .sort((a, b) => {
