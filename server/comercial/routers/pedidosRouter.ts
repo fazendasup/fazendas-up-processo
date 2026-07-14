@@ -2711,6 +2711,7 @@ export const pedidosRouter = router({
             ? ocultarValoresConciliacaoCliente(c)
             : c;
           // Sem acúmulo: listar só dias com problema (não misturar 07/07 ok com 10/07).
+          // Ainda assim inclui OP vinculado à venda do dia-problema (mesmo se a entrega for noutra data).
           const diasProblemaSet =
             c.acumulaPedidos !== true &&
             Array.isArray(c.diasProblema) &&
@@ -2721,13 +2722,6 @@ export const pedidosRouter = router({
               : null;
           const noDiaProblema = (d: Date) =>
             !diasProblemaSet || diasProblemaSet.has(d.toISOString().slice(0, 10));
-          const opsCliente = operacionais.filter(
-            (op) =>
-              op.contaAzulCustomerId === c.contaAzulCustomerId &&
-              op.dataEntrega.getTime() >= semanaInicio.getTime() &&
-              op.dataEntrega.getTime() <= semanaFim.getTime() &&
-              noDiaProblema(op.dataEntrega),
-          );
           const vendasCliente = documentosConciliaveis.filter(
             (v) =>
               (v.cliente.externalId ?? v.cliente.id) === c.contaAzulCustomerId &&
@@ -2735,6 +2729,22 @@ export const pedidosRouter = router({
               v.dataPedido.getTime() <= semanaFim.getTime() &&
               noDiaProblema(v.dataPedido),
           );
+          const opIdsVinculadosVendasProblema = new Set(
+            vendasCliente.flatMap((v) =>
+              (v.pedidosOperacionaisVinculo ?? []).map((op: { id: string }) => op.id),
+            ),
+          );
+          const opsCliente = operacionais.filter((op) => {
+            if (op.contaAzulCustomerId !== c.contaAzulCustomerId) return false;
+            if (
+              op.dataEntrega.getTime() < semanaInicio.getTime() ||
+              op.dataEntrega.getTime() > semanaFim.getTime()
+            ) {
+              // OP fora da semana visual, mas vinculado à venda do dia-problema
+              return opIdsVinculadosVendasProblema.has(op.id);
+            }
+            return noDiaProblema(op.dataEntrega) || opIdsVinculadosVendasProblema.has(op.id);
+          });
           const acumulaPedidos =
             typeof c.acumulaPedidos === "boolean"
               ? c.acumulaPedidos

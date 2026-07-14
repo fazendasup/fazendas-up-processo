@@ -500,24 +500,37 @@ export function ConciliacaoContaAzulPanel({
                   {(c.operacionais?.length ?? 0) > 0 && (
                     <div className="space-y-2">
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Pedidos operacionais da semana
+                        Pedidos operacionais
+                        {c.status === "venda_sem_pedido" ? " vinculados (outra data?)" : " da semana"}
                       </p>
                       {c.operacionais.map((op: any) => (
                         <div key={op.id} className="rounded-lg border bg-muted/10 p-3">
                           <BlocoPedido titulo={`Entrega ${fmtDate(op.dataEntrega)}`} pedido={op} />
                           {canEditarComercial ? (
-                            <AcoesPedidoConciliacao
-                              pedido={op}
-                              disabled={
-                                cancelarPedido.isPending ||
-                                reativarPedidos.isPending ||
-                                atualizarStatus.isPending
-                              }
-                              onEditar={() => setPedidoEdit(op)}
-                              onMarcarEntregue={() => marcarEntregue(op)}
-                              onCancelar={() => cancelarPedidoOp(op)}
-                              onReativar={() => reativarPedidoOp(op)}
-                            />
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <AcoesPedidoConciliacao
+                                pedido={op}
+                                disabled={
+                                  cancelarPedido.isPending ||
+                                  reativarPedidos.isPending ||
+                                  atualizarStatus.isPending
+                                }
+                                onEditar={() => setPedidoEdit(op)}
+                                onMarcarEntregue={() => marcarEntregue(op)}
+                                onCancelar={() => cancelarPedidoOp(op)}
+                                onReativar={() => reativarPedidoOp(op)}
+                              />
+                              {op.pedidoContaAzulId ? (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={desvincular.isPending}
+                                  onClick={() => desvincular.mutate({ pedidoOperacionalId: op.id })}
+                                >
+                                  <Unlink className="mr-1 h-3 w-3" /> Desvincular
+                                </Button>
+                              ) : null}
+                            </div>
                           ) : null}
                         </div>
                       ))}
@@ -532,16 +545,30 @@ export function ConciliacaoContaAzulPanel({
                       {c.vendas.map((v: any) => {
                         const semVinculo = vendaSemVinculoOperacional(v);
                         const tipo = tipoDocumentoContaAzul(v.statusPedido);
+                        const precisaCriar =
+                          c.status === "venda_sem_pedido" || c.status === "aguardando_venda";
+                        const vinculados = (v.pedidosOperacionaisVinculo ?? []) as Array<{
+                          id: string;
+                          dataEntrega?: string | Date;
+                        }>;
                         return (
                           <div
                             key={v.id}
                             className="flex flex-wrap items-start justify-between gap-2 rounded-lg border bg-muted/10 p-3"
                           >
-                            <BlocoVenda
-                              titulo={tipo}
-                              venda={v}
-                              acumulaPedidos={Boolean(c.acumulaPedidos)}
-                            />
+                            <div className="min-w-0 flex-1 space-y-2">
+                              <BlocoVenda
+                                titulo={tipo}
+                                venda={v}
+                                acumulaPedidos={Boolean(c.acumulaPedidos)}
+                              />
+                              {!semVinculo && precisaCriar && canEditarComercial ? (
+                                <p className="text-xs text-amber-800 dark:text-amber-200">
+                                  Esta venda está vinculada a entrega de outra data. Desvincule para criar o
+                                  operacional do dia da venda, ou corrija o vínculo.
+                                </p>
+                              ) : null}
+                            </div>
                             {semVinculo && canEditarComercial ? (
                               <AcoesVendaSemVinculo
                                 vendaId={v.id}
@@ -561,6 +588,33 @@ export function ConciliacaoContaAzulPanel({
                               >
                                 Vincular entregas
                               </Button>
+                            ) : canEditarComercial && (precisaCriar || vinculados.length > 0) ? (
+                              <div className="flex flex-wrap gap-2">
+                                {vinculados.map((op) => (
+                                  <Button
+                                    key={op.id}
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={desvincular.isPending}
+                                    onClick={() => desvincular.mutate({ pedidoOperacionalId: op.id })}
+                                  >
+                                    <Unlink className="mr-1 h-3 w-3" />
+                                    Desvincular
+                                    {op.dataEntrega ? ` ${fmtDate(op.dataEntrega)}` : ""}
+                                  </Button>
+                                ))}
+                                {precisaCriar ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      setVendaCandidatosId((atual) => (atual === v.id ? null : v.id))
+                                    }
+                                  >
+                                    Vincular entregas
+                                  </Button>
+                                ) : null}
+                              </div>
                             ) : null}
                           </div>
                         );
