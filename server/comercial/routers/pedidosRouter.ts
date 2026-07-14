@@ -51,6 +51,7 @@ import {
   scoreCandidatoVinculoManual,
   scoreSugestaoVinculo,
 } from "../lib/conciliacao-pedidos.js";
+import { acumulaPedidosEfetivo, desligarAcumuloForaAllowlist } from "../lib/clientes-acumulo-cleanup.js";
 import {
   criarIndiceProdutosOperacionais,
   criarResolverChaveItemConciliacao,
@@ -525,18 +526,24 @@ export const pedidosRouter = router({
         where: { contaAzulCustomerId: input.contaAzulCustomerId },
         include: { precosEspeciais: { include: { produto: true } } },
       });
+      const regraEfetiva = regra
+        ? {
+            ...regra,
+            acumulaPedidos: acumulaPedidosEfetivo(regra.acumulaPedidos, cliente.nome),
+          }
+        : regra;
       if (deveOcultarValores(ctx)) {
-        const regraSemValores = regra
+        const regraSemValores = regraEfetiva
           ? {
-              ...regra,
+              ...regraEfetiva,
               valorTaxaEntrega: null,
               descontoBoletoPercentual: null,
               precosEspeciais: [],
             }
-          : regra;
+          : regraEfetiva;
         return { cliente, regra: regraSemValores, semRegras: !regra };
       }
-      return { cliente, regra, semRegras: !regra };
+      return { cliente, regra: regraEfetiva, semRegras: !regra };
     }),
 
   avisoAvariasCliente: comercialProcedure
@@ -2480,6 +2487,7 @@ export const pedidosRouter = router({
       const semanaInicio = inicioSemana(inicio);
       const semanaFim = fimSemana(inicio);
 
+      await desligarAcumuloForaAllowlist(prisma);
       await repararConciliacaoSemana(prisma, semanaInicio, semanaFim, usuarioReparo(ctx));
 
       const [operacionais, vendas, eventos] = await Promise.all([

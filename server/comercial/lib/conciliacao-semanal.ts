@@ -9,6 +9,7 @@ import {
   taxaEntregaParaConciliacao,
   type RegraEntregaConciliacao,
 } from "./conciliacao-pedidos.js";
+import { desligarAcumuloForaAllowlist } from "./clientes-acumulo-cleanup.js";
 import { classificarStatusPedido } from "./pedido-status.js";
 import { composicaoGerencialDoPedido, mapDescontoBoletoPorContaAzul } from "./valor-gerencial.js";
 
@@ -401,6 +402,8 @@ export async function calcularConciliacaoSemanal(
   inicio: Date,
   fim: Date,
 ): Promise<ConciliacaoSemanal> {
+  await desligarAcumuloForaAllowlist(prisma);
+
   const [pedidosOperacionais, vendasContaAzulRaw, ultimaSync, descontoPorConta, regrasEntrega] = await Promise.all([
     prisma.pedidoOperacional.findMany({
       where: { dataEntrega: { gte: inicio, lte: fim } },

@@ -8,10 +8,8 @@
  */
 import "dotenv/config";
 import { getComercialPrisma } from "./comercial/db.js";
-import {
-  CLIENTES_ACUMULO_ALLOWLIST_LABELS,
-  clientePodeAcumularPedidos,
-} from "@shared/clientesAcumuloPedidos";
+import { CLIENTES_ACUMULO_ALLOWLIST_LABELS, clientePodeAcumularPedidos } from "@shared/clientesAcumuloPedidos";
+import { desligarAcumuloForaAllowlist } from "./comercial/lib/clientes-acumulo-cleanup.js";
 
 async function main() {
   const apply = process.argv.includes("--apply");
@@ -25,13 +23,8 @@ async function main() {
     orderBy: { contaAzulCustomerId: "asc" },
   });
 
-  const manter: typeof regras = [];
-  const desligar: typeof regras = [];
-  for (const regra of regras) {
-    const nome = regra.cliente?.nome ?? "";
-    if (clientePodeAcumularPedidos(nome)) manter.push(regra);
-    else desligar.push(regra);
-  }
+  const manter = regras.filter((r) => clientePodeAcumularPedidos(r.cliente?.nome));
+  const desligar = regras.filter((r) => !clientePodeAcumularPedidos(r.cliente?.nome));
 
   console.log(
     JSON.stringify(
@@ -61,18 +54,8 @@ async function main() {
     return;
   }
 
-  if (desligar.length > 0) {
-    const result = await prisma.regraComercialCliente.updateMany({
-      where: {
-        contaAzulCustomerId: { in: desligar.map((r) => r.contaAzulCustomerId) },
-        acumulaPedidos: true,
-      },
-      data: { acumulaPedidos: false },
-    });
-    console.log(`Desligadas: ${result.count} regra(s).`);
-  } else {
-    console.log("Nenhuma regra para desligar.");
-  }
+  const { desligadas, mantidas } = await desligarAcumuloForaAllowlist(prisma);
+  console.log(`Desligadas: ${desligadas}. Mantidas na allowlist: ${mantidas}.`);
 
   const clientesAllow = await prisma.cliente.findMany({
     where: { externalId: { not: null } },

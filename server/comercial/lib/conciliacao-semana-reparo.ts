@@ -20,6 +20,7 @@ import {
   REGRA_ENTREGA_CONCILIACAO_SELECT,
   scoreSugestaoVinculo,
 } from "./conciliacao-pedidos.js";
+import { desligarAcumuloForaAllowlist } from "./clientes-acumulo-cleanup.js";
 import { classificarStatusPedido } from "./pedido-status.js";
 import { criarResolverChaveItemConciliacao } from "./produto-operacional.js";
 
@@ -361,6 +362,9 @@ export async function repararConciliacaoSemana(
   fim: Date,
   usuario: UsuarioReparo,
 ): Promise<ResultadoReparoConciliacaoSemana> {
+  // Limpa flag residual de acúmulo (Banzeiro etc.) antes de qualquer auto-vínculo.
+  await desligarAcumuloForaAllowlist(prisma);
+
   let acumulaHabilitados = 0;
   let vinculosMultiplos = 0;
   let vinculosSimples = 0;
