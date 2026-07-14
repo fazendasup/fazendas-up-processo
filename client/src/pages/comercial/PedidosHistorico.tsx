@@ -536,11 +536,12 @@ function CompareMetric({
 }
 
 function detalheConciliacaoHistorico(row: any) {
+  if (typeof row.detalhe === "string" && row.detalhe.trim()) return row.detalhe;
   if (row.status === "aguardando_venda") {
     return "Aguardando a venda aparecer no Conta Azul; não é divergência real.";
   }
   if (row.status === "venda_sem_pedido") {
-    return "Crie pedido operacional a partir da venda CA ou vincule a um pedido existente.";
+    return "Crie pedido operacional a partir da venda CA do mesmo dia ou vincule a um pedido existente.";
   }
   const partes: string[] = [];
   if ((row.diffPedidos ?? 0) !== 0) partes.push("número de pedidos");

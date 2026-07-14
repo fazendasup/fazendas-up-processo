@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   classificarClienteSemanal,
   classificarClienteNaoAcumuladorPorDatas,
+  avaliarClienteNaoAcumuladorPorDatas,
   documentoEntraTotalConciliacaoSemanal,
   pedidosOperacionaisEfetivos,
   pedidosOperacionaisSemanaEfetivos,
@@ -225,5 +226,53 @@ describe("classificarClienteNaoAcumuladorPorDatas", () => {
       ],
     });
     expect(status).toBe("ok");
+  });
+});
+
+describe("avaliarClienteNaoAcumuladorPorDatas", () => {
+  it("Villa Amazonia: métricas só do dia com problema (não mistura 07 ok com 10)", () => {
+    const avaliacao = avaliarClienteNaoAcumuladorPorDatas({
+      operacionais: [
+        {
+          dataEntrega: new Date("2026-07-07T12:00:00Z"),
+          status: "ENTREGUE",
+          pedidoContaAzulId: "4525",
+          itens: [{ quantidade: 10, precoUnit: 9.09 }],
+        },
+      ],
+      vendas: [
+        {
+          dataPedido: new Date("2026-07-07T12:00:00Z"),
+          unidades: 10,
+          valorLiquido: 90.9,
+        },
+        {
+          dataPedido: new Date("2026-07-10T12:00:00Z"),
+          unidades: 14,
+          valorLiquido: 123.76,
+        },
+      ],
+    });
+
+    expect(avaliacao.status).toBe("venda_sem_pedido");
+    expect(avaliacao.operacional.pedidos).toBe(0);
+    expect(avaliacao.contaAzul.pedidos).toBe(1);
+    expect(avaliacao.operacional.unidades).toBe(0);
+    expect(avaliacao.contaAzul.unidades).toBe(14);
+    expect(avaliacao.diasProblema).toHaveLength(1);
+    expect(avaliacao.diasProblema[0]?.dia).toBe("2026-07-10");
+    expect(avaliacao.detalhe).toContain("10/07/2026");
+    expect(avaliacao.detalhe).not.toContain("07/07/2026");
+  });
+
+  it("não marca ok se há venda CA sem OP mesmo com unidades 0", () => {
+    const avaliacao = avaliarClienteNaoAcumuladorPorDatas({
+      operacionais: [],
+      vendas: [
+        { dataPedido: new Date("2026-07-10T12:00:00Z"), unidades: 0, valorLiquido: 0 },
+      ],
+    });
+    expect(avaliacao.status).toBe("venda_sem_pedido");
+    expect(avaliacao.contaAzul.pedidos).toBe(1);
   });
 });

@@ -25,11 +25,12 @@ function labelStatusConciliacaoSemanal(status: string) {
 }
 
 function detalheConciliacaoSemanal(c: any) {
+  if (typeof c.detalhe === "string" && c.detalhe.trim()) return c.detalhe;
   if (c.status === "aguardando_venda") {
     return `Há mais pedidos operacionais (${c.operacional?.pedidos ?? 0}) do que vendas CA (${c.contaAzul?.pedidos ?? 0}). Aguarde/sincronize a venda ou confira se o pedido deve ser cancelado.`;
   }
   if (c.status === "venda_sem_pedido") {
-    return `Há mais vendas CA (${c.contaAzul?.pedidos ?? 0}) do que pedidos operacionais (${c.operacional?.pedidos ?? 0}). Vincule a um pedido existente ou crie o operacional.`;
+    return `Há mais vendas CA (${c.contaAzul?.pedidos ?? 0}) do que pedidos operacionais (${c.operacional?.pedidos ?? 0}). Vincule a um pedido existente ou crie o operacional do mesmo dia.`;
   }
   const problemas: string[] = [];
   if ((c.diffPedidos ?? 0) !== 0) {
@@ -51,7 +52,7 @@ function detalheConciliacaoSemanal(c: any) {
   const acumula = Boolean(c.acumulaPedidos);
   const sufixoAcumulo = acumula
     ? " Este cliente acumula faturamento: o total da semana no Conta Azul costuma ser a venda consolidada do período, não o orçamento diário. Use «Vincular entregas» na venda/orçamento principal e selecione todas as entregas do intervalo."
-    : " Compare apenas venda e pedido do mesmo dia — documentos de outras datas não devem entrar nesse cálculo.";
+    : " Compare apenas venda e pedido do mesmo dia.";
   return `Corrija ${problemas.join(", ")}.${sufixoAcumulo}`;
 }
 
@@ -463,8 +464,9 @@ export function ConciliacaoContaAzulPanel({
             </div>
           ) : null}
           <p className="mb-3 text-xs text-muted-foreground">
-            Compara o total operacional da semana com as vendas Conta Azul no mesmo intervalo — é o mesmo critério do fechamento semanal.
-            Mostra a <strong>semana passada</strong> (a que precisa ser fechada para liberar a semana atual), não semanas anteriores acumuladas.
+            Sem acúmulo: compara e lista só o mesmo dia (UTC) — dia conciliado não entra no card de outro dia com pendência.
+            Clientes com acúmulo (Licco/Spoleto/…) usam o total da semana. Mostra a{" "}
+            <strong>semana passada</strong> (a que precisa ser fechada), não semanas anteriores acumuladas.
           </p>
           {clientesSemanaExibidos.length === 0 ? (
             <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">

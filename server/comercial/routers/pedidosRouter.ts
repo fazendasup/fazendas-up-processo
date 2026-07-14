@@ -2710,17 +2710,30 @@ export const pedidosRouter = router({
           const base = deveOcultarValores(ctx)
             ? ocultarValoresConciliacaoCliente(c)
             : c;
+          // Sem acúmulo: listar só dias com problema (não misturar 07/07 ok com 10/07).
+          const diasProblemaSet =
+            c.acumulaPedidos !== true &&
+            Array.isArray(c.diasProblema) &&
+            c.diasProblema.length > 0
+              ? new Set(
+                  (c.diasProblema as Array<{ dia: string }>).map((d) => d.dia),
+                )
+              : null;
+          const noDiaProblema = (d: Date) =>
+            !diasProblemaSet || diasProblemaSet.has(d.toISOString().slice(0, 10));
           const opsCliente = operacionais.filter(
-            op =>
+            (op) =>
               op.contaAzulCustomerId === c.contaAzulCustomerId &&
               op.dataEntrega.getTime() >= semanaInicio.getTime() &&
-              op.dataEntrega.getTime() <= semanaFim.getTime(),
+              op.dataEntrega.getTime() <= semanaFim.getTime() &&
+              noDiaProblema(op.dataEntrega),
           );
           const vendasCliente = documentosConciliaveis.filter(
-            v =>
+            (v) =>
               (v.cliente.externalId ?? v.cliente.id) === c.contaAzulCustomerId &&
               v.dataPedido.getTime() >= semanaInicio.getTime() &&
-              v.dataPedido.getTime() <= semanaFim.getTime(),
+              v.dataPedido.getTime() <= semanaFim.getTime() &&
+              noDiaProblema(v.dataPedido),
           );
           const acumulaPedidos =
             typeof c.acumulaPedidos === "boolean"

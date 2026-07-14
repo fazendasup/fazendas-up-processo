@@ -2494,11 +2494,12 @@ function statusConciliacaoSemanalLabel(status: string) {
 }
 
 function detalheConciliacaoSemanal(c: any) {
+  if (typeof c.detalhe === "string" && c.detalhe.trim()) return c.detalhe;
   if (c.status === "aguardando_venda") {
     return `Há mais pedidos operacionais (${c.operacional?.pedidos ?? 0}) do que vendas CA (${c.contaAzul?.pedidos ?? 0}). Aguarde/sincronize a venda ou confira se o pedido deve ser cancelado.`;
   }
   if (c.status === "venda_sem_pedido") {
-    return `Há mais vendas CA (${c.contaAzul?.pedidos ?? 0}) do que pedidos operacionais (${c.operacional?.pedidos ?? 0}). Crie o pedido a partir da venda CA que falta ou vincule a um pedido existente.`;
+    return `Há mais vendas CA (${c.contaAzul?.pedidos ?? 0}) do que pedidos operacionais (${c.operacional?.pedidos ?? 0}). Vincule a um pedido existente ou crie o operacional do mesmo dia.`;
   }
   const problemas: string[] = [];
   if ((c.diffPedidos ?? 0) !== 0) {
