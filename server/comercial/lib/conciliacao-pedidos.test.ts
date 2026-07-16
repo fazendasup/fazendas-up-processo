@@ -290,4 +290,53 @@ describe("calcularDivergencias", () => {
     expect(j.inicio.toISOString().slice(0, 10)).toBe("2026-07-09");
     expect(j.fim.toISOString().slice(0, 10)).toBe("2026-07-09");
   });
+
+  it("janelaCandidatosVinculo com acúmulo cobre o período para frente (venda antecipada)", () => {
+    const j = janelaCandidatosVinculo({
+      dataPedido: new Date("2026-07-01T12:00:00Z"),
+      acumula: true,
+      diasAcumulo: 31,
+    });
+    expect(j.fim.toISOString().slice(0, 10)).toBe("2026-07-31");
+  });
+
+  it("divergência agregada tolera entrega parcial de cliente com faturamento antecipado", () => {
+    const entrega = (data: string, qtd: number) => ({
+      dataEntrega: new Date(`${data}T12:00:00Z`),
+      freteCortesia: false,
+      snapshotConciliacao: null,
+      itens: [{ produtoId: "p1", produtoNome: "Pão Italiano", quantidade: qtd, precoUnit: 10 }],
+      cliente: { externalId: "c1", nome: "Padoca Pão e Companhia" },
+    });
+    const vendaMes = {
+      dataPedido: new Date("2026-07-01T12:00:00Z"),
+      valorFrete: 0,
+      valorLiquido: 1000,
+      valorTotal: 1000,
+      cliente: {
+        externalId: "c1",
+        nome: "Padoca Pão e Companhia",
+        regraComercial: {
+          acumulaPedidos: true,
+          cobraTaxaEntrega: false,
+          valorTaxaEntrega: null,
+        },
+      },
+      itens: [{ produto: "Pão Italiano", sku: null, quantidade: 100, precoUnit: 10 }],
+    };
+
+    // Meio do mês: só 40 de 100 entregues — sem divergência (saldo a entregar).
+    const parcial = calcularDivergenciasAgregadas(
+      [entrega("2026-07-06", 20), entrega("2026-07-13", 20)] as any,
+      vendaMes as any,
+    );
+    expect(parcial).toHaveLength(0);
+
+    // Excesso sobre a venda continua apontado.
+    const excesso = calcularDivergenciasAgregadas(
+      [entrega("2026-07-06", 70), entrega("2026-07-13", 60)] as any,
+      vendaMes as any,
+    );
+    expect(excesso.some((d) => d.campo.startsWith("item:"))).toBe(true);
+  });
 });

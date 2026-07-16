@@ -37,3 +37,17 @@ export const CLIENTES_ACUMULO_ALLOWLIST_LABELS = [
   "Ibis Novotel",
   "Padoca",
 ] as const;
+
+/**
+ * Clientes que faturam o mês antecipado: a venda Conta Azul sai no início do
+ * período e as entregas acontecem depois, validadas por orçamentos diários
+ * (cautela). Para eles, entregar menos que a venda no meio do mês é o fluxo
+ * normal — divergência real é só quando as entregas EXCEDEM a venda.
+ */
+const PADROES_FATURAMENTO_ANTECIPADO: RegExp[] = [/\bpadoca\b/i];
+
+export function clienteFaturaMesAntecipado(nome: string | null | undefined): boolean {
+  if (!nome?.trim()) return false;
+  const n = normalizarNomeClienteAcumulo(nome);
+  return PADROES_FATURAMENTO_ANTECIPADO.some((re) => re.test(n));
+}

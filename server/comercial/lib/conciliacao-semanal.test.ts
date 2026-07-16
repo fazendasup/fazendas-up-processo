@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   classificarClienteSemanal,
   classificarClienteNaoAcumuladorPorDatas,
+  avaliarClienteAcumuladorSemanal,
   avaliarClienteNaoAcumuladorPorDatas,
   documentoEntraTotalConciliacaoSemanal,
   pedidosOperacionaisEfetivos,
@@ -274,5 +275,76 @@ describe("avaliarClienteNaoAcumuladorPorDatas", () => {
     });
     expect(avaliacao.status).toBe("venda_sem_pedido");
     expect(avaliacao.contaAzul.pedidos).toBe(1);
+  });
+});
+
+describe("avaliarClienteAcumuladorSemanal", () => {
+  it("Padoca: venda antecipada com entregas parciais no período fica ok", () => {
+    const r = avaliarClienteAcumuladorSemanal({
+      clienteNome: "Padoca Pão e Companhia",
+      opPedidos: 3,
+      caPedidos: 1,
+      diffUnidades: -120,
+      diffValor: -850,
+      entregasEfetivas: [
+        { pedidoContaAzulId: "venda-mes" },
+        { pedidoContaAzulId: null },
+        { pedidoContaAzulId: null },
+      ],
+    });
+    expect(r.status).toBe("ok");
+    expect(r.detalhe).toContain("antecipada");
+  });
+
+  it("Padoca: entregar MAIS que a venda antecipada continua divergente", () => {
+    const r = avaliarClienteAcumuladorSemanal({
+      clienteNome: "Padoca Pão e Companhia",
+      opPedidos: 3,
+      caPedidos: 1,
+      diffUnidades: 25,
+      diffValor: 180,
+      entregasEfetivas: [{ pedidoContaAzulId: "venda-mes" }],
+    });
+    expect(r.status).toBe("divergente");
+  });
+
+  it("semana só com orçamentos: entregas vinculadas não são pendência", () => {
+    const r = avaliarClienteAcumuladorSemanal({
+      clienteNome: "Padoca Pão e Companhia",
+      opPedidos: 2,
+      caPedidos: 0,
+      diffUnidades: 60,
+      diffValor: 420,
+      entregasEfetivas: [
+        { pedidoContaAzulId: "venda-mes" },
+        { pedidoContaAzulId: "orcamento-dia" },
+      ],
+    });
+    expect(r.status).toBe("ok");
+  });
+
+  it("semana sem venda e entregas sem vínculo segue aguardando_venda", () => {
+    const r = avaliarClienteAcumuladorSemanal({
+      clienteNome: "Padoca Pão e Companhia",
+      opPedidos: 2,
+      caPedidos: 0,
+      diffUnidades: 60,
+      diffValor: 420,
+      entregasEfetivas: [{ pedidoContaAzulId: "venda-mes" }, { pedidoContaAzulId: null }],
+    });
+    expect(r.status).toBe("aguardando_venda");
+    expect(r.detalhe).toContain("antecipado");
+  });
+
+  it("Licco (venda no fim do período): entregar menos que a venda continua divergente", () => {
+    const r = avaliarClienteAcumuladorSemanal({
+      clienteNome: "Licco Casa Gourmet",
+      opPedidos: 4,
+      caPedidos: 1,
+      diffUnidades: -30,
+      diffValor: -200,
+      entregasEfetivas: [{ pedidoContaAzulId: "venda" }],
+    });
+    expect(r.status).toBe("divergente");
   });
 });

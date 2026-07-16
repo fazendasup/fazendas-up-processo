@@ -1,4 +1,7 @@
-import { clientePodeAcumularPedidos } from "@shared/clientesAcumuloPedidos";
+import {
+  clienteFaturaMesAntecipado,
+  clientePodeAcumularPedidos,
+} from "@shared/clientesAcumuloPedidos";
 import { Prisma, type PrismaClient } from "../generated/prisma/index.js";
 import { classificarStatusPedido } from "./pedido-status.js";
 import {
@@ -214,9 +217,28 @@ export function calcularDivergenciasAgregadas(
   resolverChave?: ResolverChaveItem,
 ): DivergenciaConciliacao[] {
   const agregado = montarOperacionalAgregado(operacionais);
-  return calcularDivergencias(agregado, contaAzul, resolverChave, {
+  const divergencias = calcularDivergencias(agregado, contaAzul, resolverChave, {
     ...opcoesCalcularDivergenciasAgregadas(),
     regraEntrega: contaAzul.cliente.regraComercial ?? null,
+  });
+  // Faturamento antecipado (Padoca): a venda do início do mês cobre entregas
+  // futuras — entregar menos que o vendido no meio do período é o fluxo normal.
+  // Só é divergência real quando as entregas EXCEDEM a venda.
+  if (!clienteFaturaMesAntecipado((contaAzul.cliente as { nome?: string } | null)?.nome)) {
+    return divergencias;
+  }
+  return divergencias.filter((d) => {
+    if (d.campo.startsWith("item:")) {
+      return Number(d.operacional ?? 0) > Number(d.contaAzul ?? 0) + 0.001;
+    }
+    if (d.campo === "valor_estimado") {
+      const opTotal =
+        d.operacional && typeof d.operacional === "object" && !Array.isArray(d.operacional)
+          ? Number((d.operacional as { total?: unknown }).total ?? 0)
+          : Number(d.operacional ?? 0);
+      return opTotal > Number(d.contaAzul ?? 0) + 0.05;
+    }
+    return true;
   });
 }
 
@@ -716,11 +738,16 @@ export function janelaCandidatosVinculo(input: {
   }
 
   const janelaDias = input.janelaDias ?? 14;
-  let inicio = adicionarDiasOperacional(input.dataPedido, -((input.diasAcumulo ?? 15) - 1));
+  const diasAcumulo = input.diasAcumulo ?? 15;
+  let inicio = adicionarDiasOperacional(input.dataPedido, -(diasAcumulo - 1));
   let fim = fimDiaOperacional(input.dataPedido);
 
   const extInicio = adicionarDiasOperacional(input.dataPedido, -janelaDias);
-  const extFim = fimDiaOperacional(adicionarDiasOperacional(input.dataPedido, janelaDias));
+  // Para frente cobre o período de acumulação: venda antecipada no dia 01
+  // precisa enxergar as entregas do mês inteiro como candidatas.
+  const extFim = fimDiaOperacional(
+    adicionarDiasOperacional(input.dataPedido, Math.max(janelaDias, diasAcumulo - 1)),
+  );
   inicio = new Date(Math.min(inicio.getTime(), extInicio.getTime()));
   fim = new Date(Math.max(fim.getTime(), extFim.getTime()));
   if (inicio.getTime() < corte.getTime()) inicio = corte;
@@ -1250,7 +1277,9 @@ export async function criarOperacionalDeVenda(
           id: true,
           externalId: true,
           nome: true,
-          regraComercial: { select: { acumulaPedidos: true, ...REGRA_ENTREGA_CONCILIACAO_SELECT } },
+          regraComercial: {
+            select: { acumulaPedidos: true, diasAcumulo: true, ...REGRA_ENTREGA_CONCILIACAO_SELECT },
+          },
         },
       },
     },

@@ -1,3 +1,4 @@
+import { clienteFaturaMesAntecipado } from "@shared/clientesAcumuloPedidos";
 import { AcaoApi, OrigemPedido } from "../generated/prisma/index.js";
 import type { PrismaClient } from "../generated/prisma/index.js";
 import { composicaoDoPedidoParaDashboard } from "./composicao-valor.js";
@@ -108,14 +109,16 @@ function money(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function valorItensPedido(itens: OperacionalSemanal["itens"]): number {
+function valorItensPedido(itens: Array<{ quantidade: unknown; precoUnit?: unknown }>): number {
   return itens.reduce((sum, item) => {
     const quantidade = Number(item.quantidade);
     return sum + quantidade * (money(item.precoUnit) ?? 0);
   }, 0);
 }
 
-function sumUnidadesPedidos(pedidos: OperacionalSemanal[]): number {
+function sumUnidadesPedidos(
+  pedidos: Array<{ itens: Array<{ quantidade: unknown }> }>,
+): number {
   return pedidos.reduce(
     (sum, p) => sum + p.itens.reduce((s, i) => s + Number(i.quantidade), 0),
     0,
@@ -475,6 +478,67 @@ export function avaliarClienteNaoAcumuladorPorDatas(input: {
   };
 }
 
+/**
+ * Status semanal para cliente acumulador (Licco/Spoleto/…/Padoca).
+ *
+ * Regras além da comparação de totais:
+ * - Semana sem venda CA: entregas todas vinculadas a documento CA (venda de outra
+ *   semana ou orçamento-cautela) não são pendência — a validação acontece no
+ *   documento vinculado.
+ * - Faturamento antecipado (Padoca): a venda sai no início do mês e as entregas
+ *   vêm depois. Entregar MENOS que a venda no meio do período é o fluxo normal
+ *   (saldo a entregar); só é divergência real quando as entregas excedem a venda.
+ */
+export function avaliarClienteAcumuladorSemanal(input: {
+  clienteNome: string;
+  opPedidos: number;
+  caPedidos: number;
+  diffUnidades: number;
+  diffValor: number;
+  entregasEfetivas: Array<{ pedidoContaAzulId: string | null }>;
+}): { status: StatusConciliacaoSemanalCliente; detalhe?: string } {
+  const antecipado = clienteFaturaMesAntecipado(input.clienteNome);
+  const unidadesOk = Math.abs(input.diffUnidades) <= 0.001;
+  if (unidadesOk) return { status: "ok" };
+
+  if (input.caPedidos === 0 && input.opPedidos > 0) {
+    const todasVinculadas =
+      input.entregasEfetivas.length > 0 &&
+      input.entregasEfetivas.every((p) => p.pedidoContaAzulId);
+    if (todasVinculadas) {
+      return {
+        status: "ok",
+        detalhe: antecipado
+          ? "Entregas cobertas pela venda antecipada do período (vinculadas no Conta Azul)."
+          : "Entregas vinculadas a documento Conta Azul de outra semana (faturamento acumulado).",
+      };
+    }
+    return {
+      status: "aguardando_venda",
+      detalhe: antecipado
+        ? "Faturamento antecipado: vincule as entregas da semana à venda do início do período (ou ao orçamento-cautela do dia) para conciliar."
+        : undefined,
+    };
+  }
+
+  if (antecipado && input.caPedidos > 0 && input.diffUnidades < 0) {
+    return {
+      status: "ok",
+      detalhe: `Venda antecipada do período: ${Math.abs(input.diffUnidades).toLocaleString("pt-BR")} unidade(s) ainda a entregar. Vincule as entregas conforme acontecem.`,
+    };
+  }
+
+  return {
+    status: classificarClienteSemanal(
+      input.opPedidos,
+      input.caPedidos,
+      input.diffUnidades,
+      input.diffValor,
+      { acumulaPedidos: true },
+    ),
+  };
+}
+
 /** @deprecated use avaliarClienteNaoAcumuladorPorDatas — mantido para testes/compat. */
 export function classificarClienteNaoAcumuladorPorDatas(input: {
   operacionais: Array<{
@@ -771,17 +835,19 @@ export async function calcularConciliacaoSemanal(
         };
       }
 
-      const opPedidos = opRaw
-        ? pedidosOperacionaisEfetivos(
-            pedidosOperacionaisSemanaEfetivos(opRaw.pedidos, true),
-          )
-        : 0;
+      const entregasEfetivas = pedidosOperacionaisSemanaEfetivos(opRaw?.pedidos ?? [], true);
+      const opPedidos = pedidosOperacionaisEfetivos(entregasEfetivas);
       const caPedidos = ca?.pedidos ?? 0;
       const diffPedidos = opPedidos - caPedidos;
       const diffUnidades = (opRaw?.unidades ?? 0) - (ca?.unidades ?? 0);
       const diffValor = (opRaw?.valorEstimado ?? 0) - (ca?.valorLiquido ?? 0);
-      const status = classificarClienteSemanal(opPedidos, caPedidos, diffUnidades, diffValor, {
-        acumulaPedidos: true,
+      const avaliado = avaliarClienteAcumuladorSemanal({
+        clienteNome,
+        opPedidos,
+        caPedidos,
+        diffUnidades,
+        diffValor,
+        entregasEfetivas,
       });
       return {
         contaAzulCustomerId,
@@ -801,9 +867,10 @@ export async function calcularConciliacaoSemanal(
         diffPedidos,
         diffUnidades,
         diffValor,
-        status,
-        divergente: status === "divergente",
+        status: avaliado.status,
+        divergente: avaliado.status === "divergente",
         acumulaPedidos: true,
+        detalhe: avaliado.detalhe,
       };
     })
     .sort((a, b) => {
