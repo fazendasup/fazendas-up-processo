@@ -1009,8 +1009,7 @@ export const pedidosRouter = router({
           code: "NOT_FOUND",
           message: "Cliente Conta Azul não encontrado",
         });
-      // Gate de fechamento semanal: bloqueia a criação de novos pedidos enquanto a semana anterior
-      // não estiver revisada e fechada. Edições de pedidos já existentes não são bloqueadas.
+      // Gate de fechamento semanal desativado — criação liberada mesmo com semana anterior aberta.
       if (!input.id) {
         await assertSemanaAnteriorFechada(ctx.prisma!, input.dataEntrega);
       }
@@ -1263,7 +1262,7 @@ export const pedidosRouter = router({
         };
       }
 
-      // Gate de fechamento: não permite copiar/criar pedidos no destino se houver semana anterior pendente.
+      // Gate de fechamento desativado — cópia liberada mesmo com semana anterior aberta.
       await assertSemanaAnteriorFechada(ctx.prisma!, semanaDestinoInicio);
 
       const [pedidosOrigem, clientesDestino, regrasOrigem] = await Promise.all([
@@ -2289,7 +2288,7 @@ export const pedidosRouter = router({
         bloqueio,
         conciliacaoContaAzul: conciliacaoAtual,
         conciliacaoBloqueio,
-        podeCriarPedidos: bloqueio == null,
+        podeCriarPedidos: true,
         podeFecharSemanaAtual:
           podeFecharOperacional &&
           (conciliacaoAtual.conciliado || ignoraConciliacaoAtual),

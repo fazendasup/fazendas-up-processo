@@ -308,9 +308,6 @@ export function Pedidos({
     dia: diaDate,
   });
   const bloqueioSemana = statusSemana.data?.bloqueio ?? null;
-  const podeCriarPedidos = statusSemana.data
-    ? statusSemana.data.podeCriarPedidos
-    : true;
   /** Conciliação sempre foca na semana a fechar (bloqueio) ou na semana passada — não na semana corrente. */
   const conciliacaoIntervalo = useMemo(() => {
     if (bloqueioSemana?.inicio && bloqueioSemana?.fim) {
@@ -656,11 +653,6 @@ export function Pedidos({
   }));
 
   function salvarPedidoAtual() {
-    if (!pedidoEditId && !podeCriarPedidos && bloqueioSemana) {
-      return toast.error(
-        `Feche a semana de ${bloqueioSemana.rotulo} antes de criar novos pedidos.`
-      );
-    }
     if (!clienteId) return toast.error("Selecione um cliente Conta Azul.");
     if (!tipoVenda) return toast.error("Tipo de venda é obrigatório.");
     const itens = linhas
@@ -711,7 +703,7 @@ export function Pedidos({
     const ok = window.confirm(
       ignorarConciliacao
         ? `Fechar a semana de ${info.rotulo} mesmo com divergências na conciliação?\n\nOs pedidos operacionais já revisados serão validados; diferenças com o Conta Azul ficam registradas no histórico.`
-        : `Fechar a semana de ${info.rotulo}?\n\nIsso valida o histórico (${info.entregues} entregue(s), ${info.cancelados} cancelado(s)) e libera a criação de pedidos da próxima semana. Você poderá reabrir depois, se necessário.`,
+        : `Fechar a semana de ${info.rotulo}?\n\nIsso valida o histórico (${info.entregues} entregue(s), ${info.cancelados} cancelado(s)). Você poderá reabrir depois, se necessário.`,
     );
     if (!ok) return;
     fecharSemana.mutate({ dia: diaDate, ignorarConciliacao });
@@ -722,7 +714,7 @@ export function Pedidos({
     const ok = window.confirm(
       ignorarConciliacao
         ? `Fechar a semana de ${bloqueioSemana.rotulo} mesmo com divergências na conciliação?\n\nUse se os pedidos já foram revisados e as diferenças com o Conta Azul são esperadas (ex.: semana piloto).`
-        : `Fechar a semana de ${bloqueioSemana.rotulo}?\n\nTodos os pedidos estão revisados. Isso valida o histórico e libera a criação de novos pedidos.`,
+        : `Fechar a semana de ${bloqueioSemana.rotulo}?\n\nTodos os pedidos estão revisados. Isso valida o histórico da semana.`,
     );
     if (!ok) return;
     fecharSemana.mutate({
@@ -732,11 +724,6 @@ export function Pedidos({
   }
 
   function trazerSemanaAnterior() {
-    if (!podeCriarPedidos && bloqueioSemana) {
-      return toast.error(
-        `Feche a semana de ${bloqueioSemana.rotulo} antes de trazer pedidos.`
-      );
-    }
     const origem = new Date(diaDate);
     origem.setDate(origem.getDate() - 7);
     const origemLabel = origem.toLocaleDateString("pt-BR");
@@ -818,7 +805,7 @@ export function Pedidos({
           </Button>
           <Button
             variant="outline"
-            disabled={copiarSemanaAnterior.isPending || !podeCriarPedidos}
+            disabled={copiarSemanaAnterior.isPending}
             onClick={trazerSemanaAnterior}
           >
             {copiarSemanaAnterior.isPending
@@ -831,23 +818,23 @@ export function Pedidos({
         </div>
       </div>
 
-      {/* Gate de fechamento semanal */}
+      {/* Aviso de semana anterior ainda aberta (não bloqueia criação de pedidos) */}
       {bloqueioSemana ? (
-        <div className="rounded-lg border border-red-300 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/40">
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/40">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-start gap-2">
-              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400" />
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
               <div className="space-y-0.5">
-                <p className="font-semibold text-red-800 dark:text-red-200">
+                <p className="font-semibold text-amber-900 dark:text-amber-100">
                   {bloqueioSemana.fechada &&
                   (bloqueioSemana.conciliacaoPendente ||
                     statusSemana.data?.conciliacaoBloqueio?.conciliado === false)
                     ? `Semana de ${bloqueioSemana.rotulo} fechada com conciliação pendente`
                     : `Semana de ${bloqueioSemana.rotulo} ainda não foi fechada`}
                 </p>
-                <p className="text-sm text-red-700 dark:text-red-300">
+                <p className="text-sm text-amber-800 dark:text-amber-200">
                   {bloqueioSemana.pendentes > 0
-                    ? `Há ${bloqueioSemana.pendentes} pedido(s) sem definição de entregue/cancelado. Revise e feche a semana para liberar novos pedidos.`
+                    ? `Há ${bloqueioSemana.pendentes} pedido(s) sem definição de entregue/cancelado. Revise e feche a semana quando puder — a criação de novos pedidos continua liberada.`
                     : bloqueioSemana.conciliacaoPendente ||
                         statusSemana.data?.conciliacaoBloqueio?.conciliado ===
                           false
@@ -856,10 +843,10 @@ export function Pedidos({
                         : bloqueioSemana.fechada
                           ? "A conciliação com o Conta Azul ainda tem divergências. Corrija abaixo ou use «Fechar sem conciliar» para validar a semana mesmo assim."
                           : "Há conciliações pendentes com a Conta Azul. Corrija as divergências ou use «Fechar sem conciliar» se for seguro."
-                    : "Os pedidos já estão revisados, mas a semana ainda não foi fechada. Finalize o fechamento para liberar novos pedidos."}
+                    : "Os pedidos já estão revisados, mas a semana ainda não foi fechada. Finalize o fechamento quando puder — a criação de novos pedidos continua liberada."}
                 </p>
                 {!canEditarComercial && (
-                  <p className="text-xs text-red-600 dark:text-red-400">
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
                     Apenas usuários comerciais completos podem fechar a semana.
                   </p>
                 )}
@@ -886,7 +873,7 @@ export function Pedidos({
                 <>
                   {statusSemana.data?.podeFecharBloqueio ? (
                     <Button
-                      className="bg-red-600 hover:bg-red-700"
+                      className="bg-amber-600 hover:bg-amber-700"
                       disabled={fecharSemana.isPending}
                       onClick={() => fecharSemanaBloqueante(false)}
                     >
@@ -898,7 +885,7 @@ export function Pedidos({
                   {statusSemana.data?.podeFecharSemConciliacaoBloqueio ? (
                     <Button
                       variant="outline"
-                      className="border-red-400 text-red-800 dark:text-red-200"
+                      className="border-amber-400 text-amber-900 dark:text-amber-100"
                       disabled={fecharSemana.isPending}
                       onClick={() => fecharSemanaBloqueante(true)}
                     >
@@ -911,7 +898,7 @@ export function Pedidos({
                   ) : !statusSemana.data?.podeFecharBloqueio &&
                     !bloqueioSemana.fechada ? (
                     <Button
-                      className="bg-red-600 hover:bg-red-700"
+                      className="bg-amber-600 hover:bg-amber-700"
                       disabled={fecharSemana.isPending}
                       onClick={() => fecharSemanaBloqueante(false)}
                     >

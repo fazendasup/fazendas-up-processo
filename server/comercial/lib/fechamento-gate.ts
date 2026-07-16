@@ -1,4 +1,3 @@
-import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "../generated/prisma/index.js";
 import {
   repararConciliacaoSemana,
@@ -46,29 +45,11 @@ export async function obterBloqueioSemanaComReparo(
   return { bloqueio, reparo };
 }
 
-/** Lança erro se existir semana anterior bloqueando novos pedidos (com reparo automático antes). */
+/** Gate desativado: não bloqueia mais criação/cópia por semana anterior aberta. */
 export async function assertSemanaAnteriorFechada(
-  prisma: PrismaGate,
-  dataEntrega: Date,
-  usuario?: UsuarioReparo,
+  _prisma: PrismaGate,
+  _dataEntrega: Date,
+  _usuario?: UsuarioReparo,
 ): Promise<void> {
-  const semanaAlvo = inicioSemana(dataEntrega);
-  const { bloqueio: bloqueante } = await obterBloqueioSemanaComReparo(
-    prisma,
-    semanaAlvo,
-    usuario,
-  );
-  if (!bloqueante) return;
-
-  const motivo =
-    bloqueante.pendentes > 0
-      ? `Há ${bloqueante.pendentes} pedido(s) sem revisão (marque como entregue ou cancelado) e finalize o fechamento.`
-      : bloqueante.conciliacaoPendente
-        ? "Há conciliações pendentes com a Conta Azul. Corrija as divergências ou use «Fechar sem conciliar» na tela de Pedidos."
-        : "Os pedidos já estão revisados, mas a semana ainda não foi fechada. Finalize o fechamento para liberar.";
-
-  throw new TRPCError({
-    code: "BAD_REQUEST",
-    message: `Feche a semana de ${bloqueante.rotulo} antes de criar ou copiar pedidos de semanas seguintes. ${motivo}`,
-  });
+  return;
 }
