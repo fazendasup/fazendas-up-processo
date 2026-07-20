@@ -142,23 +142,17 @@ export function pedidoItensEspelhamContaAzul(
   return chaves.size > 0;
 }
 
+/**
+ * Antes ocultava volume do orçamento CA e forçava digitação manual.
+ * Desativado: orçamento de faturamento não bloqueia nem esconde os itens.
+ */
 export function deveOcultarItensFaturamentoAcumulado(
-  regra: RegraAcumulo,
-  pedido: PedidoComItens,
-  contaAzul: ContaAzulResumo,
-  resolverChave?: ResolverChaveItem
+  _regra: RegraAcumulo,
+  _pedido: PedidoComItens,
+  _contaAzul: ContaAzulResumo,
+  _resolverChave?: ResolverChaveItem
 ): boolean {
-  if (!contaAzul || pedido.pedidoContaAzulId !== contaAzul.id) return false;
-  if (classificarStatusPedido(contaAzul.statusPedido) !== "orcamento") {
-    return false;
-  }
-  if (pedidoCriadoAPartirDoContaAzul(pedido)) return true;
-  if (!regra?.acumulaPedidos) return false;
-  return pedidoItensEspelhamContaAzul(
-    pedido.itens,
-    contaAzul.itens,
-    resolverChave
-  );
+  return false;
 }
 
 export type ItensOperacionaisResolvidos = {

@@ -22,7 +22,7 @@ describe("pedido-acumulo-operacional", () => {
     ).toBe(false);
   });
 
-  it("oculta itens quando pedido foi criado a partir do Conta Azul", () => {
+  it("não oculta itens de orçamento de faturamento (sem bloqueio operacional)", () => {
     const pedido = {
       id: "p1",
       contaAzulCustomerId: "c1",
@@ -46,79 +46,11 @@ describe("pedido-acumulo-operacional", () => {
       itens: [{ produto: "Alface", sku: null, quantidade: 300 }],
     };
 
+    expect(pedidoCriadoAPartirDoContaAzul(pedido)).toBe(true);
+    expect(pedidoItensEspelhamContaAzul(pedido.itens, contaAzul.itens)).toBe(true);
     expect(
       deveOcultarItensFaturamentoAcumulado(
         { acumulaPedidos: true, diasAcumulo: 15 },
-        pedido,
-        contaAzul
-      )
-    ).toBe(true);
-    expect(pedidoCriadoAPartirDoContaAzul(pedido)).toBe(true);
-  });
-
-  it("oculta itens quando espelham o orçamento acumulado", () => {
-    const pedido = {
-      id: "p1",
-      contaAzulCustomerId: "c1",
-      diaSemana: 1,
-      pedidoContaAzulId: "ca1",
-      snapshotConciliacao: null,
-      itens: [
-        {
-          id: "i1",
-          produtoId: "prod1",
-          produtoNome: "Mix Rúcula",
-          categoria: null,
-          quantidade: 1355,
-          precoUnit: 4.09,
-        },
-      ],
-    };
-    const contaAzul = {
-      id: "ca1",
-      statusPedido: "ORÇAMENTO",
-      itens: [{ produto: "Mix Rúcula", sku: null, quantidade: 1355 }],
-    };
-
-    expect(pedidoItensEspelhamContaAzul(pedido.itens, contaAzul.itens)).toBe(
-      true
-    );
-    expect(
-      deveOcultarItensFaturamentoAcumulado(
-        { acumulaPedidos: true },
-        pedido,
-        contaAzul
-      )
-    ).toBe(true);
-  });
-
-  it("mantém itens operacionais editados manualmente", () => {
-    const pedido = {
-      id: "p1",
-      contaAzulCustomerId: "c1",
-      diaSemana: 1,
-      pedidoContaAzulId: "ca1",
-      snapshotConciliacao: null,
-      itens: [
-        {
-          id: "i1",
-          produtoId: "prod1",
-          produtoNome: "Alface",
-          categoria: null,
-          quantidade: 30,
-          precoUnit: 7.59,
-        },
-      ],
-    };
-    const contaAzul = {
-      id: "ca1",
-      statusPedido: "ORÇAMENTO",
-      itens: [{ produto: "Alface", sku: null, quantidade: 300 }],
-    };
-
-    expect(
-      deveOcultarItensFaturamentoAcumulado(
-        { acumulaPedidos: true },
         pedido,
         contaAzul
       )

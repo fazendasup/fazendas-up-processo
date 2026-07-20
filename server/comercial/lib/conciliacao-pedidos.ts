@@ -11,10 +11,6 @@ import {
   type ProdutoOperacionalLookup,
 } from "./produto-operacional.js";
 import { assertSemanaAnteriorFechada } from "./fechamento.js";
-import {
-  isOrcamentoFaturamentoAcumulado,
-  mensagemErroCriarOperacionalDeOrcamentoAcumulado,
-} from "./pedido-acumulo-operacional.js";
 import { GO_LIVE_PEDIDOS, inicioSemana } from "./semana.js";
 import {
   isErroTabelaConciliacaoEventosCheia,
@@ -1294,19 +1290,6 @@ export async function criarOperacionalDeVenda(
   });
   if (existente) throw new Error("Esta venda já possui pedido operacional vinculado.");
 
-  if (
-    isOrcamentoFaturamentoAcumulado(
-      contaAzul.cliente.regraComercial,
-      contaAzul.statusPedido
-    )
-  ) {
-    throw new Error(
-      mensagemErroCriarOperacionalDeOrcamentoAcumulado(
-        contaAzul.cliente.regraComercial?.diasAcumulo
-      )
-    );
-  }
-
   const produtosAtivos = await prisma.produtoComercial.findMany({
     where: { contaAzulProdutoId: { not: null }, ativo: true, importadoOperacao: true },
     select: {
@@ -1469,14 +1452,9 @@ export async function aplicarCorrecaoConciliacao(
       });
     }
 
-    const bloquearSyncItensAcumulo = isOrcamentoFaturamentoAcumulado(
-      contaAzul.cliente.regraComercial,
-      contaAzul.statusPedido
-    );
     const sincronizarItens =
-      !bloquearSyncItensAcumulo &&
-      (divergenciasCorrigir.some((d) => d.campo === "valor_estimado") ||
-        divergenciasCorrigir.some((d) => d.campo.startsWith("item:")));
+      divergenciasCorrigir.some((d) => d.campo === "valor_estimado") ||
+      divergenciasCorrigir.some((d) => d.campo.startsWith("item:"));
     if (sincronizarItens) {
       const mapCa = quantidadePorChaveContaAzul(contaAzul, resolverChave);
       const mapOp = quantidadePorChaveOperacional(operacional, resolverChave);
@@ -1685,12 +1663,6 @@ export async function aplicarCorrecaoAgregadaConciliacao(
     if (op.contaAzulCustomerId && contaAzul.cliente.externalId !== op.contaAzulCustomerId) {
       throw new Error("Cliente inconsistente entre entregas operacionais e venda Conta Azul.");
     }
-  }
-
-  if (isOrcamentoFaturamentoAcumulado(contaAzul.cliente.regraComercial, contaAzul.statusPedido)) {
-    throw new Error(
-      "Orçamento diário de acumulador não recebe correção agregada. Vincule as entregas à venda faturada consolidada.",
-    );
   }
 
   const produtosConciliacao = await carregarProdutosConciliacao(prisma);
