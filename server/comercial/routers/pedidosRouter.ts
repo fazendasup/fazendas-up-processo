@@ -61,8 +61,6 @@ import {
   importarProdutosParaOperacao,
   iniciarSincronizacaoCatalogoProdutosEmBackground,
 } from "../integrations/conta-azul/produtos-sync.service.js";
-import { resolverItensOperacionaisExibicao } from "../lib/pedido-acumulo-operacional.js";
-
 const podeConfigurarEstoqueVivo = comercialRequirePerfis(
   "ADMIN",
   "GERENTE_COMERCIAL",
@@ -1441,21 +1439,6 @@ export const pedidosRouter = router({
         ctx.prisma!,
         pedidos
       );
-      const produtosConciliacao =
-        await ctx.prisma!.produtoComercial.findMany({
-          where: { contaAzulProdutoId: { not: null } },
-          select: {
-            id: true,
-            nome: true,
-            sku: true,
-            contaAzulProdutoId: true,
-            ativo: true,
-            importadoOperacao: true,
-            categoria: true,
-          },
-        });
-      const resolverChaveConciliacao =
-        criarResolverChaveItemConciliacao(produtosConciliacao);
       const grupos = new Map<
         string,
         {
@@ -1491,25 +1474,12 @@ export const pedidosRouter = router({
           volumeFaturamentoOculto: false,
         };
         atual.pedidos.push(pedido);
-        const itensResolvidos = await resolverItensOperacionaisExibicao(
-          ctx.prisma!,
-          {
-            pedido: p,
-            regra: p.cliente?.regraComercial ?? null,
-            contaAzul: p.pedidoContaAzul,
-            resolverChave: resolverChaveConciliacao,
-            diaReferencia: input.dia,
-          }
-        );
-        if (itensResolvidos.avisoAcumulo) {
-          atual.avisosAcumulo.push(itensResolvidos.avisoAcumulo);
-          atual.volumeFaturamentoOculto =
-            atual.volumeFaturamentoOculto ||
-            itensResolvidos.volumeFaturamentoOculto;
-        }
+        // Mesma fonte da agenda: itens salvos no pedido operacional (não trocar por
+        // orçamento CA nem por entrega da semana anterior).
         atual.itens.push(
-          ...itensResolvidos.itens.map((i: any) => ({
+          ...p.itens.map((i: any) => ({
             ...i,
+            quantidade: Number(i.quantidade ?? 0) || 0,
             tipoVenda: p.tipoVenda,
           }))
         );
@@ -1523,12 +1493,9 @@ export const pedidosRouter = router({
         if (alerta) atual.alertasAvariasPendentes.push(alerta);
         grupos.set(key, atual);
       }
-      return Array.from(grupos.values())
-        .map(grupo => ({
-          ...grupo,
-          avisosAcumulo: Array.from(new Set(grupo.avisosAcumulo)),
-        }))
-        .sort((a, b) => a.prioridadeEntrega - b.prioridadeEntrega);
+      return Array.from(grupos.values()).sort(
+        (a, b) => a.prioridadeEntrega - b.prioridadeEntrega,
+      );
     }),
 
   atualizarStatusClienteDia: comercialProcedure
@@ -2085,25 +2052,12 @@ export const pedidosRouter = router({
         ctx.prisma!.estoqueVivoConfig.findUnique({ where: { id: "default" } }),
       ]);
 
-      const resolverChaveCompras =
-        criarResolverChaveItemConciliacao(produtosDb);
-
       const pedidosLinhas: LinhaPedidoEstoque[] = [];
       for (const pedido of pedidosDb) {
-        const itensResolvidos = await resolverItensOperacionaisExibicao(
-          ctx.prisma!,
-          {
-            pedido,
-            regra: pedido.cliente?.regraComercial ?? null,
-            contaAzul: pedido.pedidoContaAzul,
-            resolverChave: resolverChaveCompras,
-            diaReferencia: input.dia,
-          }
-        );
-        for (const item of itensResolvidos.itens) {
+        for (const item of pedido.itens) {
           pedidosLinhas.push({
             nome: item.produtoNome,
-            quantidade: Number(item.quantidade),
+            quantidade: Number(item.quantidade ?? 0) || 0,
           });
         }
       }
