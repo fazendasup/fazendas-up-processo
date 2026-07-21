@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ClipboardList,
   Clock,
+  Copy,
   Package,
   PackageCheck,
   Plus,
@@ -483,6 +484,28 @@ export function Pedidos({
           err.message || "Não foi possível alterar a data do pedido."
         ),
     });
+  const copiarPedidoParaDia =
+    trpc.comercial.pedidos.copiarPedidoParaDia.useMutation({
+      onSuccess: async result => {
+        if (result.dataEntrega) {
+          setDia(isoLocal(new Date(result.dataEntrega)));
+        }
+        toast.success(
+          `Pedido de ${result.clienteNome} copiado para ${fmtDate(result.dataEntrega)}. O original permanece no dia de origem.`
+        );
+        await Promise.all([
+          utils.comercial.pedidos.agenda.invalidate(),
+          utils.comercial.pedidos.dashboard.invalidate(),
+          utils.comercial.pedidos.compras.invalidate(),
+          utils.comercial.pedidos.clientes.invalidate(),
+          utils.comercial.pedidos.relatorioHistorico.invalidate(),
+          utils.comercial.pedidos.statusSemana.invalidate(),
+          utils.comercial.entregas.roteiro.invalidate(),
+        ]);
+      },
+      onError: err =>
+        toast.error(err.message || "Não foi possível copiar o pedido."),
+    });
   const salvarProduto = trpc.comercial.pedidos.salvarProduto.useMutation({
     onSuccess: () => {
       toast.success("Produto salvo.");
@@ -773,6 +796,24 @@ export function Pedidos({
       pedidoId: pedido.id,
       dataEntrega: new Date(`${novaData}T12:00:00`),
       moverClienteDia: true,
+    });
+  }
+
+  function copiarPedidoAgenda(pedido: any) {
+    const dataAtual = isoLocal(new Date(pedido.dataEntrega));
+    const novaData = datasPedidos[pedido.id] || dataAtual;
+    if (!novaData) return toast.error("Informe a data de destino.");
+    const nome =
+      pedido.cliente?.nome ?? pedido.contaAzulCustomerId ?? "cliente";
+    const ok = window.confirm(
+      novaData === dataAtual
+        ? `Copiar o pedido de ${nome} para o mesmo dia (${fmtDate(`${novaData}T12:00:00`)})?\n\nSerá criado um novo pedido; o original permanece.`
+        : `Copiar o pedido de ${nome} de ${fmtDate(pedido.dataEntrega)} para ${fmtDate(`${novaData}T12:00:00`)}?\n\nSerá criado um novo pedido na data escolhida; o original permanece.`
+    );
+    if (!ok) return;
+    copiarPedidoParaDia.mutate({
+      pedidoId: pedido.id,
+      dataEntrega: new Date(`${novaData}T12:00:00`),
     });
   }
 
@@ -1776,7 +1817,7 @@ export function Pedidos({
                             <div className="mt-3 flex flex-wrap items-end gap-2 rounded-lg border bg-muted/20 p-2">
                               <div>
                                 <Label className="text-xs">
-                                  Mover para outra data
+                                  Data no calendário
                                 </Label>
                                 <Input
                                   type="date"
@@ -1793,7 +1834,8 @@ export function Pedidos({
                                   }
                                   disabled={
                                     p.status === "CANCELADO" ||
-                                    alterarDataPedido.isPending
+                                    alterarDataPedido.isPending ||
+                                    copiarPedidoParaDia.isPending
                                   }
                                 />
                               </div>
@@ -1811,6 +1853,21 @@ export function Pedidos({
                               >
                                 <CalendarDays className="mr-2 h-4 w-4" />
                                 Mudar data
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={
+                                  p.status === "CANCELADO" ||
+                                  copiarPedidoParaDia.isPending ||
+                                  (p.itens?.length ?? 0) === 0
+                                }
+                                onClick={() => copiarPedidoAgenda(p)}
+                              >
+                                <Copy className="mr-2 h-4 w-4" />
+                                {copiarPedidoParaDia.isPending
+                                  ? "Copiando..."
+                                  : "Copiar para este dia"}
                               </Button>
                             </div>
                             <div className="mt-2 flex flex-wrap gap-2">

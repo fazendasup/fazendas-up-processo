@@ -288,7 +288,9 @@ async function alertasAvariasDepoisPedidoOrigem(
   const auditoriasCopia = await prisma.pedidoOperacionalAuditoria.findMany({
     where: {
       pedidoId: { in: pedidos.map(p => p.id) },
-      acao: "pedido_copiado_semana_anterior",
+      acao: {
+        in: ["pedido_copiado_semana_anterior", "pedido_copiado_para_dia"],
+      },
     },
     select: { pedidoId: true, depois: true },
     orderBy: { criadoEm: "desc" },
@@ -1237,6 +1239,107 @@ export const pedidosRouter = router({
         unchanged: false,
         pedidosMovidos: pedidosAlvoIds.length,
         dataEntrega: novaData,
+      };
+    }),
+
+  /** Copia um único pedido operacional para a data escolhida (mantém o original). */
+  copiarPedidoParaDia: comercialProcedure
+    .input(
+      z.object({
+        pedidoId: z.string().min(1),
+        dataEntrega: z.coerce.date(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const usuario = ctx.comercialUsuario;
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
+      if (antesDoCortePedidos(input.dataEntrega)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Pedidos operacionais começam em 01/06/2026.",
+        });
+      }
+
+      const dataDestino = inicioDia(input.dataEntrega);
+      const pedidoOrigem = await ctx.prisma!.pedidoOperacional.findUnique({
+        where: { id: input.pedidoId },
+        include: { itens: true, cliente: { select: { nome: true } } },
+      });
+      if (!pedidoOrigem)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Pedido não encontrado",
+        });
+      if (pedidoOrigem.status === "CANCELADO") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Não é possível copiar pedido cancelado.",
+        });
+      }
+      if (pedidoOrigem.itens.length === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Pedido sem itens para copiar.",
+        });
+      }
+
+      const novoPedido = await ctx.prisma!.$transaction(async tx => {
+        const criado = await tx.pedidoOperacional.create({
+          data: {
+            clienteId: pedidoOrigem.clienteId,
+            contaAzulCustomerId: pedidoOrigem.contaAzulCustomerId,
+            dataEntrega: dataDestino,
+            diaSemana: diaSemana(dataDestino),
+            tipoVenda: pedidoOrigem.tipoVenda,
+            status: "PENDENTE",
+            statusConciliacao: "PLANEJADO",
+            observacoes: pedidoOrigem.observacoes,
+            freteCortesia: pedidoOrigem.freteCortesia,
+            prioridadeEntrega: pedidoOrigem.prioridadeEntrega,
+            criadoPorId: usuario.id,
+            editadoPorId: usuario.id,
+          },
+        });
+
+        await tx.pedidoOperacionalItem.createMany({
+          data: pedidoOrigem.itens.map(item => ({
+            pedidoId: criado.id,
+            produtoId: item.produtoId,
+            produtoNome: item.produtoNome,
+            categoria: item.categoria,
+            quantidade: item.quantidade,
+            precoUnit: item.precoUnit,
+            precoEspecial: item.precoEspecial,
+            observacoes: item.observacoes,
+          })),
+        });
+
+        await registrarAuditoria(
+          tx as any,
+          criado.id,
+          { id: usuario.id, nome: usuario.nome },
+          "pedido_copiado_para_dia",
+          null,
+          {
+            pedidoOrigemId: pedidoOrigem.id,
+            dataOrigem: pedidoOrigem.dataEntrega.toISOString(),
+            dataDestino: dataDestino.toISOString(),
+            clienteNome: pedidoOrigem.cliente?.nome ?? null,
+          }
+        );
+
+        return criado;
+      });
+
+      return {
+        success: true,
+        pedidoId: novoPedido.id,
+        dataEntrega: dataDestino,
+        clienteNome: pedidoOrigem.cliente?.nome ?? pedidoOrigem.contaAzulCustomerId,
       };
     }),
 
