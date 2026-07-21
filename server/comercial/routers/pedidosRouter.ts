@@ -685,7 +685,14 @@ export const pedidosRouter = router({
       const produtos = await ctx.prisma!.produtoComercial.findMany({
         where: {
           contaAzulProdutoId: { not: null },
-          ...(input.apenasDisponiveis ? { importadoOperacao: false } : {}),
+          // Disponíveis = ainda não estão ativos na operação (nunca importados
+          // ou desativados). Antes só `importadoOperacao: false` escondia itens
+          // desativados com a flag ainda true — sem caminho para reativar.
+          ...(input.apenasDisponiveis
+            ? {
+                OR: [{ importadoOperacao: false }, { ativo: false }],
+              }
+            : {}),
           ...(input.somenteAtivosContaAzul ? { statusContaAzul: "ATIVO" } : {}),
           ...(input.busca?.trim()
             ? { nome: { contains: input.busca.trim() } }
@@ -785,9 +792,10 @@ export const pedidosRouter = router({
         where: { produtoId: input.id },
       });
       if (usos > 0) {
+        // Volta ao catálogo "Disponíveis" para poder reativar depois.
         return ctx.prisma!.produtoComercial.update({
           where: { id: input.id },
-          data: { ativo: false },
+          data: { ativo: false, importadoOperacao: false },
         });
       }
       return ctx.prisma!.produtoComercial.delete({ where: { id: input.id } });
@@ -2030,15 +2038,6 @@ export const pedidosRouter = router({
           include: {
             itens: { include: { produto: true } },
             cliente: { include: { regraComercial: true } },
-            pedidoContaAzul: {
-              select: {
-                id: true,
-                statusPedido: true,
-                itens: {
-                  select: { produto: true, sku: true, quantidade: true },
-                },
-              },
-            },
           },
         }),
         ctx.prisma!.produtoComercial.findMany({

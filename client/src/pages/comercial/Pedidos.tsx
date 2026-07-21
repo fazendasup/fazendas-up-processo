@@ -493,8 +493,9 @@ export function Pedidos({
   });
   const excluirProduto = trpc.comercial.pedidos.excluirProduto.useMutation({
     onSuccess: () => {
-      toast.success("Produto removido/inativado.");
+      toast.success("Produto desativado. Pode reativar na lista do Conta Azul.");
       void utils.comercial.pedidos.produtos.invalidate();
+      void utils.comercial.pedidos.catalogoContaAzul.invalidate();
     },
     onError: err => toast.error(err.message),
   });
@@ -3215,8 +3216,9 @@ function ProdutosArea({
                 </p>
               ) : itensCatalogo.length === 0 ? (
                 <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                  Nenhum produto pendente de importação. Clique em
-                  &quot;Sincronizar catálogo&quot; para buscar do Conta Azul.
+                  Nenhum produto disponível para ativar com o filtro atual. Busque
+                  pelo nome, desmarque &quot;somente ativos no Conta Azul&quot; se
+                  o item estiver inativo lá, ou sincronize o catálogo.
                 </p>
               ) : (
                 itensCatalogo.map((prod: any) => (
@@ -3238,7 +3240,14 @@ function ProdutosArea({
                       }
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium">{prod.nome}</p>
+                      <p className="font-medium">
+                        {prod.nome}
+                        {prod.importadoOperacao && !prod.ativo ? (
+                          <span className="ml-1 text-xs font-normal text-amber-700 dark:text-amber-300">
+                            (desativado — selecione para reativar)
+                          </span>
+                        ) : null}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {prod.sku ? `SKU ${prod.sku} · ` : ""}
                         {fmtMoney(prod.precoBase ?? 0)}
