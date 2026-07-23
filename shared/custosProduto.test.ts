@@ -323,6 +323,35 @@ describe("calcularCustoProduto", () => {
     expect(r.custoProcesso).toBeCloseTo(0.24);
   });
 
+  it("revenda compra/un + venda kg: peso 0,1 faz custo/kg parecer ~10× o preço da un", () => {
+    const r = calcularCustoProduto({
+      tipo: "revenda_processada",
+      unidadeVenda: "kg",
+      modoCompraMp: "unidade",
+      custoCompraUn: 4.2,
+      kgBrutoPorUnidade: 0.1,
+      componentes: [],
+      etapas: [],
+    });
+    expect(r.custoMaterial).toBeCloseTo(4.2);
+    expect(r.custoPorKg).toBeCloseTo(42);
+    expect(r.custoPorUnidade).toBeCloseTo(42);
+  });
+
+  it("revenda compra/un + venda kg com base 1 kg mantém o preço da un", () => {
+    const r = calcularCustoProduto({
+      tipo: "revenda_processada",
+      unidadeVenda: "kg",
+      modoCompraMp: "unidade",
+      custoCompraUn: 4.2,
+      kgBrutoPorUnidade: 1,
+      componentes: [],
+      etapas: [],
+    });
+    expect(r.custoMaterial).toBeCloseTo(4.2);
+    expect(r.custoPorKg).toBeCloseTo(4.2);
+  });
+
   it("alerta quando lavagem R$/kg sem kg vendido", () => {
     const r = calcularCustoProduto({
       tipo: "revenda_processada",

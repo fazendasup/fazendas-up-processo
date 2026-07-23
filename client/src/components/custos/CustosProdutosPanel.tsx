@@ -44,6 +44,7 @@ import {
   type PerfilProcessoProduto,
 } from "@shared/custosProdutoProcessoPadrao";
 import { configFromProcessoModelo, derivarProcessoModelo, type ProcessoModeloRecord } from "@shared/custosLinhaProcessoIndustrial";
+import { formatDecimalForInput, parseOptDecimal } from "@/lib/decimalInput";
 import {
   LABEL_REGIME_MO_ETAPA,
   REGIMES_MO_ETAPA,
@@ -99,9 +100,9 @@ const fmtMoney = (n: number | null | undefined) =>
 
 const fmtDecimalInput = (value: unknown, maximumFractionDigits = 4) => {
   if (value == null || value === "") return "";
-  const n = Number(String(value).replace(",", "."));
-  if (!Number.isFinite(n)) return String(value);
-  return new Intl.NumberFormat("pt-BR", { maximumFractionDigits }).format(n);
+  const n = typeof value === "number" ? value : parseOptDecimal(String(value));
+  if (n == null || !Number.isFinite(n)) return String(value);
+  return formatDecimalForInput(n, maximumFractionDigits);
 };
 
 const margemTabelaClienteOptions = [5, 10, 20, 30] as const;
@@ -563,10 +564,7 @@ function emptyFicha(tipo: TipoFichaCustoProduto = "revenda_processada"): FichaFo
 }
 
 function parseOpt(s: string): number | null {
-  const t = s.trim().replace(",", ".");
-  if (!t) return null;
-  const n = Number(t);
-  return Number.isFinite(n) ? n : null;
+  return parseOptDecimal(s);
 }
 
 const ORCAMENTOS_COMPRA_SLOTS = 3;
@@ -904,6 +902,13 @@ function abrirCopiaFicha(
 function ResultadoCustoCard({ resultado }: { resultado: any }) {
   if (!resultado) return null;
   const vendePorKg = resultado.unidadeVenda === "kg";
+  const kgLiq =
+    typeof resultado.kgLiquidoPorUnidade === "number" && resultado.kgLiquidoPorUnidade > 0
+      ? resultado.kgLiquidoPorUnidade
+      : null;
+  const detalhes: Array<{ label: string; valor: number }> = Array.isArray(resultado.detalhes)
+    ? resultado.detalhes
+    : [];
   return (
     <Card className="border-emerald-200 bg-emerald-50/40 dark:border-emerald-900 dark:bg-emerald-950/20">
       <CardHeader className="pb-2">
@@ -923,6 +928,15 @@ function ResultadoCustoCard({ resultado }: { resultado: any }) {
             <div>
               <p className="text-muted-foreground text-xs">Custo calculado / kg vendido</p>
               <p className="text-lg font-bold tabular-nums">{fmtMoney(resultado.custoPorKg)}</p>
+              {kgLiq != null && kgLiq !== 1 && resultado.custoTotal != null ? (
+                <p className="text-[10px] text-muted-foreground leading-snug mt-0.5">
+                  Base: {fmtMoney(resultado.custoTotal)} para{" "}
+                  {new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 4 }).format(kgLiq)} kg
+                  {kgLiq > 0 && kgLiq < 1
+                    ? " — se o preço de compra já é por unidade quase de 1 kg, confira o campo de peso (use 1 kg na venda por kg)."
+                    : ""}
+                </p>
+              ) : null}
             </div>
           ) : (
             <>
@@ -949,6 +963,23 @@ function ResultadoCustoCard({ resultado }: { resultado: any }) {
             </p>
           </div>
         </div>
+        {detalhes.length > 0 && (
+          <div className="rounded-lg border bg-background/60 p-3">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Como o custo foi montado</p>
+            <ul className="space-y-1 text-xs">
+              {detalhes.map((d, i) => (
+                <li key={`${d.label}-${i}`} className="flex justify-between gap-3 tabular-nums">
+                  <span className="text-muted-foreground">{d.label}</span>
+                  <span className="font-medium shrink-0">{fmtMoney(d.valor)}</span>
+                </li>
+              ))}
+              <li className="flex justify-between gap-3 border-t pt-1 font-semibold tabular-nums">
+                <span>Total (base de cálculo)</span>
+                <span>{fmtMoney(resultado.custoTotal)}</span>
+              </li>
+            </ul>
+          </div>
+        )}
         {resultado.precosVendaPorMargem?.length > 0 && (
           <div className="rounded-lg border bg-background/60 p-3">
             <p className="text-xs font-medium text-muted-foreground mb-2">
@@ -1736,20 +1767,28 @@ function FichaEditor({
                     onChange={(e) => setForm((f) => ({ ...f, kgPorUnidadeCompra: e.target.value }))}
                   />
                   <p className="text-[10px] text-muted-foreground">
-                    Quanto pesa (ou quanto você usa) de cada cabeça/caixa comprada — base para calcular quantas unidades
-                    entram no produto.
+                    Quanto pesa cada cabeça/caixa comprada. Com o peso vendido, o sistema calcula quantas unidades de MP
+                    entram no produto (preço × consumo) — não multiplica o preço sozinho.
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Peso líquido do pacote vendido (kg)</Label>
+                  <Label>
+                    {form.unidadeVenda === "kg"
+                      ? "Kg na base de cálculo (venda por kg)"
+                      : "Peso líquido do pacote vendido (kg)"}
+                  </Label>
                   <Input
                     inputMode="decimal"
-                    placeholder="Ex.: 0,12 para pacote de 120 g"
+                    placeholder={
+                      form.unidadeVenda === "kg" ? "Use 1 para custo por kg" : "Ex.: 0,12 para pacote de 120 g"
+                    }
                     value={form.kgBrutoPorUnidade}
                     onChange={(e) => setForm((f) => ({ ...f, kgBrutoPorUnidade: e.target.value }))}
                   />
                   <p className="text-[10px] text-muted-foreground">
-                    Peso pronto que o cliente recebe — também usado para lavagem (R$/kg × kg).
+                    {form.unidadeVenda === "kg"
+                      ? "Na venda por kg, use 1 (ou deixe 1). Se colocar 0,10, o custo R$/un é dividido por 0,10 e parece ~10× maior (ex.: 4,20 → ~42 /kg)."
+                      : "Peso pronto que o cliente recebe — também usado para lavagem (R$/kg × kg)."}
                   </p>
                 </div>
                 {isFloresCategoria ? (

@@ -241,8 +241,13 @@ export type ResultadoCustoProduto = {
 };
 
 function toNum(v: unknown): number | null {
-  if (v == null) return null;
-  const n = typeof v === "number" ? v : Number(String(v).replace(",", "."));
+  if (v == null || v === "") return null;
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  const s = String(v).trim();
+  if (!s) return null;
+  // pt-BR: "4,20" ou "1.234,56"; en: "4.20"
+  const normalized = s.includes(",") ? s.replace(/\./g, "").replace(",", ".") : s;
+  const n = Number(normalized);
   return Number.isFinite(n) ? n : null;
 }
 
