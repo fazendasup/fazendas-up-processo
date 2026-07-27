@@ -22,6 +22,7 @@ import {
 import { obterBloqueioSemanaComReparo } from "../lib/fechamento-gate.js";
 import { calcularConciliacaoSemanal } from "../lib/conciliacao-semanal.js";
 import { repararConciliacaoSemana, usuarioReparo } from "../lib/conciliacao-semana-reparo.js";
+import { comRecuperacaoEspacoMysql } from "../lib/mysql-espaco.js";
 import { fimSemana, GO_LIVE_PEDIDOS, inicioSemana, semanaIgnoraConciliacaoFechamento } from "../lib/semana.js";
 import {
   comercialProcedure,
@@ -1057,90 +1058,106 @@ export const pedidosRouter = router({
         (regra?.precosEspeciais ?? []).map(p => [p.produtoId, p.preco])
       );
 
-      return ctx.prisma!.$transaction(async tx => {
-        const antes = input.id
-          ? await tx.pedidoOperacional.findUnique({
-              where: { id: input.id },
-              include: { itens: true, avarias: true },
-            })
-          : null;
-        const baseData = {
-          clienteId: cliente.id,
-          contaAzulCustomerId: input.contaAzulCustomerId,
-          dataEntrega: inicioDia(input.dataEntrega),
-          diaSemana: diaSemana(input.dataEntrega),
-          tipoVenda: input.tipoVenda,
-          observacoes: input.observacoes?.trim() || null,
-          freteCortesia: input.freteCortesia ?? false,
-          editadoPorId: usuario.id,
-        };
-        const pedido = input.id
-          ? await tx.pedidoOperacional.update({
-              where: { id: input.id },
-              data: baseData,
-            })
-          : await tx.pedidoOperacional.create({
-              data: { ...baseData, criadoPorId: usuario.id },
+      try {
+        return await comRecuperacaoEspacoMysql(ctx.prisma!, () =>
+          ctx.prisma!.$transaction(async tx => {
+            const antes = input.id
+              ? await tx.pedidoOperacional.findUnique({
+                  where: { id: input.id },
+                  include: { itens: true, avarias: true },
+                })
+              : null;
+            const baseData = {
+              clienteId: cliente.id,
+              contaAzulCustomerId: input.contaAzulCustomerId,
+              dataEntrega: inicioDia(input.dataEntrega),
+              diaSemana: diaSemana(input.dataEntrega),
+              tipoVenda: input.tipoVenda,
+              observacoes: input.observacoes?.trim() || null,
+              freteCortesia: input.freteCortesia ?? false,
+              editadoPorId: usuario.id,
+            };
+            const pedido = input.id
+              ? await tx.pedidoOperacional.update({
+                  where: { id: input.id },
+                  data: baseData,
+                })
+              : await tx.pedidoOperacional.create({
+                  data: { ...baseData, criadoPorId: usuario.id },
+                });
+            if (input.id) {
+              await tx.pedidoOperacionalItem.deleteMany({
+                where: { pedidoId: pedido.id },
+              });
+              await tx.pedidoOperacionalAvaria.deleteMany({
+                where: { pedidoId: pedido.id },
+              });
+            }
+            if (input.itens.length > 0) {
+              await tx.pedidoOperacionalItem.createMany({
+                data: input.itens.map(item => {
+                  const produto = produtoMap.get(item.produtoId)!;
+                  const especial = precoEspecial.get(item.produtoId);
+                  const preco = especial ?? produto.precoBase;
+                  return {
+                    pedidoId: pedido.id,
+                    produtoId: produto.id,
+                    produtoNome: produto.nome,
+                    categoria: produto.categoria,
+                    quantidade: new Prisma.Decimal(item.quantidade),
+                    precoUnit: preco ?? null,
+                    precoEspecial: Boolean(especial),
+                    observacoes: item.observacoes?.trim() || null,
+                  };
+                }),
+              });
+            }
+            if (input.avarias.length > 0) {
+              await tx.pedidoOperacionalAvaria.createMany({
+                data: input.avarias.map(avaria => {
+                  const produto = produtoMap.get(avaria.produtoId)!;
+                  return {
+                    pedidoId: pedido.id,
+                    clienteId: cliente.id,
+                    contaAzulCustomerId: input.contaAzulCustomerId,
+                    dataEntrega: inicioDia(input.dataEntrega),
+                    produtoId: produto.id,
+                    produtoNome: produto.nome,
+                    categoria: produto.categoria,
+                    quantidade: new Prisma.Decimal(avaria.quantidade),
+                    observacoes: avaria.observacoes?.trim() || null,
+                    criadoPorId: usuario.id,
+                  };
+                }),
+              });
+            }
+            await registrarAuditoria(
+              tx as any,
+              pedido.id,
+              { id: usuario.id, nome: usuario.nome },
+              input.id ? "pedido_editado" : "pedido_criado",
+              antes,
+              { ...pedido, itens: input.itens, avarias: input.avarias },
+            );
+            return tx.pedidoOperacional.findUnique({
+              where: { id: pedido.id },
+              include: { cliente: true, itens: true, avarias: true },
             });
-        if (input.id) {
-          await tx.pedidoOperacionalItem.deleteMany({
-            where: { pedidoId: pedido.id },
-          });
-          await tx.pedidoOperacionalAvaria.deleteMany({
-            where: { pedidoId: pedido.id },
-          });
-        }
-        if (input.itens.length > 0) {
-          await tx.pedidoOperacionalItem.createMany({
-            data: input.itens.map(item => {
-              const produto = produtoMap.get(item.produtoId)!;
-              const especial = precoEspecial.get(item.produtoId);
-              const preco = especial ?? produto.precoBase;
-              return {
-                pedidoId: pedido.id,
-                produtoId: produto.id,
-                produtoNome: produto.nome,
-                categoria: produto.categoria,
-                quantidade: new Prisma.Decimal(item.quantidade),
-                precoUnit: preco ?? null,
-                precoEspecial: Boolean(especial),
-                observacoes: item.observacoes?.trim() || null,
-              };
-            }),
-          });
-        }
-        if (input.avarias.length > 0) {
-          await tx.pedidoOperacionalAvaria.createMany({
-            data: input.avarias.map(avaria => {
-              const produto = produtoMap.get(avaria.produtoId)!;
-              return {
-                pedidoId: pedido.id,
-                clienteId: cliente.id,
-                contaAzulCustomerId: input.contaAzulCustomerId,
-                dataEntrega: inicioDia(input.dataEntrega),
-                produtoId: produto.id,
-                produtoNome: produto.nome,
-                categoria: produto.categoria,
-                quantidade: new Prisma.Decimal(avaria.quantidade),
-                observacoes: avaria.observacoes?.trim() || null,
-                criadoPorId: usuario.id,
-              };
-            }),
-          });
-        }
-        await registrarAuditoria(
-          tx as any,
-          pedido.id,
-          { id: usuario.id, nome: usuario.nome },
-          input.id ? "pedido_editado" : "pedido_criado",
-          antes,
-          { ...pedido, itens: input.itens, avarias: input.avarias }
+          }),
         );
-        return tx.pedidoOperacional.findUnique({
-          where: { id: pedido.id },
-          include: { cliente: true, itens: true, avarias: true },
-        });
-      });
+      } catch (err) {
+        if (
+          err instanceof Error &&
+          (err.message.includes("1114") || /table ['`].+['`] is full/i.test(err.message))
+        ) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message:
+              "Banco comercial sem espaço em disco. Rode `npm run comercial:liberar-espaco -- --emergencia` no servidor e tente de novo.",
+          });
+        }
+        throw err;
+      }
     }),
 
   alterarDataPedido: comercialProcedure
@@ -1287,60 +1304,76 @@ export const pedidosRouter = router({
         });
       }
 
-      const novoPedido = await ctx.prisma!.$transaction(async tx => {
-        const criado = await tx.pedidoOperacional.create({
-          data: {
-            clienteId: pedidoOrigem.clienteId,
-            contaAzulCustomerId: pedidoOrigem.contaAzulCustomerId,
-            dataEntrega: dataDestino,
-            diaSemana: diaSemana(dataDestino),
-            tipoVenda: pedidoOrigem.tipoVenda,
-            status: "PENDENTE",
-            statusConciliacao: "PLANEJADO",
-            observacoes: pedidoOrigem.observacoes,
-            freteCortesia: pedidoOrigem.freteCortesia,
-            prioridadeEntrega: pedidoOrigem.prioridadeEntrega,
-            criadoPorId: usuario.id,
-            editadoPorId: usuario.id,
-          },
-        });
+      try {
+        const novoPedido = await comRecuperacaoEspacoMysql(ctx.prisma!, () =>
+          ctx.prisma!.$transaction(async tx => {
+            const criado = await tx.pedidoOperacional.create({
+              data: {
+                clienteId: pedidoOrigem.clienteId,
+                contaAzulCustomerId: pedidoOrigem.contaAzulCustomerId,
+                dataEntrega: dataDestino,
+                diaSemana: diaSemana(dataDestino),
+                tipoVenda: pedidoOrigem.tipoVenda,
+                status: "PENDENTE",
+                statusConciliacao: "PLANEJADO",
+                observacoes: pedidoOrigem.observacoes,
+                freteCortesia: pedidoOrigem.freteCortesia,
+                prioridadeEntrega: pedidoOrigem.prioridadeEntrega,
+                criadoPorId: usuario.id,
+                editadoPorId: usuario.id,
+              },
+            });
 
-        await tx.pedidoOperacionalItem.createMany({
-          data: pedidoOrigem.itens.map(item => ({
-            pedidoId: criado.id,
-            produtoId: item.produtoId,
-            produtoNome: item.produtoNome,
-            categoria: item.categoria,
-            quantidade: item.quantidade,
-            precoUnit: item.precoUnit,
-            precoEspecial: item.precoEspecial,
-            observacoes: item.observacoes,
-          })),
-        });
+            await tx.pedidoOperacionalItem.createMany({
+              data: pedidoOrigem.itens.map(item => ({
+                pedidoId: criado.id,
+                produtoId: item.produtoId,
+                produtoNome: item.produtoNome,
+                categoria: item.categoria,
+                quantidade: item.quantidade,
+                precoUnit: item.precoUnit,
+                precoEspecial: item.precoEspecial,
+                observacoes: item.observacoes,
+              })),
+            });
 
-        await registrarAuditoria(
-          tx as any,
-          criado.id,
-          { id: usuario.id, nome: usuario.nome },
-          "pedido_copiado_para_dia",
-          null,
-          {
-            pedidoOrigemId: pedidoOrigem.id,
-            dataOrigem: pedidoOrigem.dataEntrega.toISOString(),
-            dataDestino: dataDestino.toISOString(),
-            clienteNome: pedidoOrigem.cliente?.nome ?? null,
-          }
+            await registrarAuditoria(
+              tx as any,
+              criado.id,
+              { id: usuario.id, nome: usuario.nome },
+              "pedido_copiado_para_dia",
+              null,
+              {
+                pedidoOrigemId: pedidoOrigem.id,
+                dataOrigem: pedidoOrigem.dataEntrega.toISOString(),
+                dataDestino: dataDestino.toISOString(),
+                clienteNome: pedidoOrigem.cliente?.nome ?? null,
+              },
+            );
+
+            return criado;
+          }),
         );
 
-        return criado;
-      });
-
-      return {
-        success: true,
-        pedidoId: novoPedido.id,
-        dataEntrega: dataDestino,
-        clienteNome: pedidoOrigem.cliente?.nome ?? pedidoOrigem.contaAzulCustomerId,
-      };
+        return {
+          success: true,
+          pedidoId: novoPedido.id,
+          dataEntrega: dataDestino,
+          clienteNome: pedidoOrigem.cliente?.nome ?? pedidoOrigem.contaAzulCustomerId,
+        };
+      } catch (err) {
+        if (
+          err instanceof Error &&
+          (err.message.includes("1114") || /table ['`].+['`] is full/i.test(err.message))
+        ) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message:
+              "Banco comercial sem espaço em disco. Rode `npm run comercial:liberar-espaco -- --emergencia` no servidor e tente de novo.",
+          });
+        }
+        throw err;
+      }
     }),
 
   copiarSemanaAnterior: comercialProcedure

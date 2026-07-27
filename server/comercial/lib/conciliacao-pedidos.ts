@@ -17,6 +17,7 @@ import {
   limparEventosConciliacaoAntigosIfDue,
   recuperarEspacoEventosConciliacao,
 } from "./conciliacao-eventos-retencao.js";
+import { isErroMysqlTabelaCheia, liberarEspacoComercial, comRecuperacaoEspacoMysql } from "./mysql-espaco.js";
 
 type PedidoOperacionalComItens = Prisma.PedidoOperacionalGetPayload<{
   include: { itens: true; cliente: { select: { externalId: true; nome: true } } };
@@ -795,16 +796,24 @@ async function registrarEvento(
     void limparEventosConciliacaoAntigosIfDue(prisma);
     return;
   } catch (err) {
-    if (!isErroTabelaConciliacaoEventosCheia(err)) throw err;
+    if (!isErroMysqlTabelaCheia(err) && !isErroTabelaConciliacaoEventosCheia(err)) throw err;
     console.warn("[conciliacao] tabela de eventos cheia — tentando liberar espaço");
   }
 
   try {
-    const removidos = await recuperarEspacoEventosConciliacao(prisma);
-    if (removidos > 0) {
-      await prisma.pedidoConciliacaoEvento.create({ data: payload });
-      return;
+    const { removidos } = await liberarEspacoComercial(prisma as any, { emergencia: true });
+    if (removidos <= 0) {
+      const fallback = await recuperarEspacoEventosConciliacao(prisma);
+      if (fallback <= 0) {
+        console.error(
+          "[conciliacao] evento de auditoria não registrado (tabela cheia). Operação principal concluída.",
+          { tipo: data.tipo },
+        );
+        return;
+      }
     }
+    await prisma.pedidoConciliacaoEvento.create({ data: payload });
+    return;
   } catch (retryErr) {
     console.error("[conciliacao] falha ao registrar evento após limpeza", retryErr);
   }
@@ -1315,7 +1324,8 @@ export async function criarOperacionalDeVenda(
     );
   }
 
-  const operacional = await prisma.$transaction(async (tx) => {
+  const operacional = await comRecuperacaoEspacoMysql(prisma, () =>
+    prisma.$transaction(async (tx) => {
     const pedido = await tx.pedidoOperacional.create({
       data: {
         clienteId: contaAzul.cliente.id,
@@ -1365,7 +1375,8 @@ export async function criarOperacionalDeVenda(
     });
 
     return pedido;
-  });
+  }),
+  );
 
   return { pedidoOperacionalId: operacional.id };
 }

@@ -10,8 +10,8 @@ export function isErroTabelaConciliacaoEventosCheia(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
   return (
     msg.includes("1114") ||
-    msg.includes("is full") ||
-    msg.includes("pedidos_conciliacao_eventos")
+    /table ['`].+['`] is full/i.test(msg) ||
+    msg.includes("is full")
   );
 }
 
