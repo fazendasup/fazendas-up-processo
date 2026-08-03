@@ -22,7 +22,7 @@ import {
 import { obterBloqueioSemanaComReparo } from "../lib/fechamento-gate.js";
 import { calcularConciliacaoSemanal } from "../lib/conciliacao-semanal.js";
 import { repararConciliacaoSemana, usuarioReparo } from "../lib/conciliacao-semana-reparo.js";
-import { comRecuperacaoEspacoMysql } from "../lib/mysql-espaco.js";
+import { comRecuperacaoEspacoMysql, liberarEspacoComercial } from "../lib/mysql-espaco.js";
 import { fimSemana, GO_LIVE_PEDIDOS, inicioSemana, semanaIgnoraConciliacaoFechamento } from "../lib/semana.js";
 import {
   comercialProcedure,
@@ -1447,92 +1447,115 @@ export const pedidosRouter = router({
 
       const destinoKey = (contaAzulCustomerId: string, data: Date) =>
         `${contaAzulCustomerId}:${inicioDia(data).toISOString().slice(0, 10)}`;
-      const clientesJaNoDestino = new Set(
-        clientesDestino.map(p =>
-          destinoKey(p.contaAzulCustomerId, p.dataEntrega)
-        )
+      const destinosJaExistentes = clientesDestino.map(p =>
+        destinoKey(p.contaAzulCustomerId, p.dataEntrega)
       );
-      let criados = 0;
-      let ignorados = 0;
+
+      // Cópia semanal grava muitos itens de uma vez — libera disco de logs antes de começar.
+      try {
+        await liberarEspacoComercial(ctx.prisma!, { emergencia: true });
+      } catch (err) {
+        console.warn(
+          "[copiarSemanaAnterior] falha ao liberar espaço antes da cópia:",
+          err instanceof Error ? err.message : err,
+        );
+      }
 
       try {
-        await comRecuperacaoEspacoMysql(ctx.prisma!, () =>
-          ctx.prisma!.$transaction(async tx => {
-            for (const pedidoOrigem of pedidosOrigem) {
-              const tipoVendaDestino =
-                tipoVendaPadraoPorCliente.get(pedidoOrigem.contaAzulCustomerId) ??
-                pedidoOrigem.tipoVenda;
-              if (tipoVendaDestino === "AVULSO") {
-                ignorados++;
-                continue;
-              }
-              const dataDestino = inicioDia(
-                adicionarDias(pedidoOrigem.dataEntrega, 7)
-              );
-              const keyDestino = destinoKey(
-                pedidoOrigem.contaAzulCustomerId,
-                dataDestino
-              );
-              if (clientesJaNoDestino.has(keyDestino)) {
-                ignorados++;
-                continue;
-              }
-              if (pedidoOrigem.itens.length === 0) {
-                ignorados++;
-                continue;
-              }
+        const { criados, ignorados } = await comRecuperacaoEspacoMysql(ctx.prisma!, async () => {
+          // Set recriado a cada tentativa — se o tx falhar no meio, não pode “sujar” o retry.
+          const clientesJaNoDestino = new Set(destinosJaExistentes);
+          let criados = 0;
+          let ignorados = 0;
 
-              const novoPedido = await tx.pedidoOperacional.create({
-                data: {
-                  clienteId: pedidoOrigem.clienteId,
-                  contaAzulCustomerId: pedidoOrigem.contaAzulCustomerId,
-                  dataEntrega: dataDestino,
-                  diaSemana: diaSemana(dataDestino),
-                  tipoVenda: tipoVendaDestino,
-                  status: "PENDENTE",
-                  statusConciliacao: "PLANEJADO",
-                  observacoes: pedidoOrigem.observacoes,
-                  freteCortesia: pedidoOrigem.freteCortesia,
-                  prioridadeEntrega: pedidoOrigem.prioridadeEntrega,
-                  criadoPorId: usuario.id,
-                  editadoPorId: usuario.id,
-                },
-              });
+          await ctx.prisma!.$transaction(
+            async tx => {
+              for (const pedidoOrigem of pedidosOrigem) {
+                const tipoVendaDestino =
+                  tipoVendaPadraoPorCliente.get(pedidoOrigem.contaAzulCustomerId) ??
+                  pedidoOrigem.tipoVenda;
+                if (tipoVendaDestino === "AVULSO") {
+                  ignorados++;
+                  continue;
+                }
+                const dataDestino = inicioDia(
+                  adicionarDias(pedidoOrigem.dataEntrega, 7)
+                );
+                const keyDestino = destinoKey(
+                  pedidoOrigem.contaAzulCustomerId,
+                  dataDestino
+                );
+                if (clientesJaNoDestino.has(keyDestino)) {
+                  ignorados++;
+                  continue;
+                }
+                if (pedidoOrigem.itens.length === 0) {
+                  ignorados++;
+                  continue;
+                }
 
-              // Cópia semanal replica apenas o pedido tradicional; avarias ficam rastreadas no histórico
-              // e aparecem como alerta separado para o vendedor.
-              await tx.pedidoOperacionalItem.createMany({
-                data: pedidoOrigem.itens.map(item => ({
-                  pedidoId: novoPedido.id,
-                  produtoId: item.produtoId,
-                  produtoNome: item.produtoNome,
-                  categoria: item.categoria,
-                  quantidade: item.quantidade,
-                  precoUnit: item.precoUnit,
-                  precoEspecial: item.precoEspecial,
-                  observacoes: item.observacoes,
-                })),
-              });
+                const novoPedido = await tx.pedidoOperacional.create({
+                  data: {
+                    clienteId: pedidoOrigem.clienteId,
+                    contaAzulCustomerId: pedidoOrigem.contaAzulCustomerId,
+                    dataEntrega: dataDestino,
+                    diaSemana: diaSemana(dataDestino),
+                    tipoVenda: tipoVendaDestino,
+                    status: "PENDENTE",
+                    statusConciliacao: "PLANEJADO",
+                    observacoes: pedidoOrigem.observacoes,
+                    freteCortesia: pedidoOrigem.freteCortesia,
+                    prioridadeEntrega: pedidoOrigem.prioridadeEntrega,
+                    criadoPorId: usuario.id,
+                    editadoPorId: usuario.id,
+                  },
+                });
 
-              await registrarAuditoria(
-                tx as any,
-                novoPedido.id,
-                { id: usuario.id, nome: usuario.nome },
-                "pedido_copiado_semana_anterior",
-                null,
-                {
-                  pedidoOrigemId: pedidoOrigem.id,
-                  dataOrigem: pedidoOrigem.dataEntrega.toISOString(),
-                  dataDestino: dataDestino.toISOString(),
-                  semanaOrigem: semanaOrigemInicio.toISOString(),
-                  semanaDestino: semanaDestinoInicio.toISOString(),
-                },
-              );
-              clientesJaNoDestino.add(keyDestino);
-              criados++;
-            }
-          }),
-        );
+                // Cópia semanal replica apenas o pedido tradicional; avarias ficam rastreadas no histórico
+                // e aparecem como alerta separado para o vendedor.
+                await tx.pedidoOperacionalItem.createMany({
+                  data: pedidoOrigem.itens.map(item => ({
+                    pedidoId: novoPedido.id,
+                    produtoId: item.produtoId,
+                    produtoNome: item.produtoNome,
+                    categoria: item.categoria,
+                    quantidade: item.quantidade,
+                    precoUnit: item.precoUnit,
+                    precoEspecial: item.precoEspecial,
+                    observacoes: item.observacoes,
+                  })),
+                });
+
+                await registrarAuditoria(
+                  tx as any,
+                  novoPedido.id,
+                  { id: usuario.id, nome: usuario.nome },
+                  "pedido_copiado_semana_anterior",
+                  null,
+                  {
+                    pedidoOrigemId: pedidoOrigem.id,
+                    dataOrigem: pedidoOrigem.dataEntrega.toISOString(),
+                    dataDestino: dataDestino.toISOString(),
+                    semanaOrigem: semanaOrigemInicio.toISOString(),
+                    semanaDestino: semanaDestinoInicio.toISOString(),
+                  },
+                );
+                clientesJaNoDestino.add(keyDestino);
+                criados++;
+              }
+            },
+            { timeout: 120_000 },
+          );
+
+          return { criados, ignorados };
+        });
+
+        return {
+          criados,
+          ignorados,
+          origem: semanaOrigemInicio,
+          destino: semanaDestinoInicio,
+        };
       } catch (err) {
         if (
           err instanceof Error &&
@@ -1543,18 +1566,11 @@ export const pedidosRouter = router({
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message:
-              "Banco comercial sem espaço em disco. Rode `npm run comercial:liberar-espaco -- --emergencia` (TRUNCATE dos logs) e tente de novo.",
+              "Cópia da semana falhou: banco sem espaço em disco. Rode `npm run comercial:liberar-espaco -- --emergencia` no servidor e tente copiar de novo.",
           });
         }
         throw err;
       }
-
-      return {
-        criados,
-        ignorados,
-        origem: semanaOrigemInicio,
-        destino: semanaDestinoInicio,
-      };
     }),
 
   dashboard: comercialProcedure
