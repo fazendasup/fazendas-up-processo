@@ -3,6 +3,10 @@
  * Uso:
  *   tsx server/run-liberar-espaco-comercial.ts
  *   tsx server/run-liberar-espaco-comercial.ts --emergencia
+ *
+ * --emergencia faz TRUNCATE de pedidos_conciliacao_eventos, execucoes_api e
+ * pedidos_operacionais_auditoria (único jeito de devolver bytes ao disco com
+ * innodb_file_per_table — DELETE não basta quando o volume está 100% cheio).
  */
 import "dotenv/config";
 import { getComercialPrisma } from "./comercial/db.js";

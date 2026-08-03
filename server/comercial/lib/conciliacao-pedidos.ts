@@ -1701,7 +1701,8 @@ export async function aplicarCorrecaoAgregadaConciliacao(
     divergenciasCorrigir.some((d) => d.campo === "valor_estimado") ||
     divergenciasCorrigir.some((d) => d.campo.startsWith("item:"));
 
-  await prisma.$transaction(async (tx) => {
+  await comRecuperacaoEspacoMysql(prisma, () =>
+    prisma.$transaction(async (tx) => {
     if (sincronizarItens) {
       const mapCa = quantidadePorChaveContaAzul(contaAzul, resolverChave);
       const itensPorOp = new Map<string, Array<{ produtoId: string; produtoNome: string; categoria: string | null; quantidade: number; precoUnit: number | null }>>();
@@ -1807,7 +1808,8 @@ export async function aplicarCorrecaoAgregadaConciliacao(
         statusConciliacao: conciliado ? "CONCILIADA" : "DIVERGENTE",
       },
     });
-  });
+  }),
+  );
 
   const operacionaisFinal = await prisma.pedidoOperacional.findMany({
     where: { id: { in: operacionais.map((op) => op.id) } },

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { TipoMensagem } from "../generated/prisma/index.js";
 import { router, comercialProcedure, comercialRequirePerfis } from "../../_core/trpc";
+import { liberarEspacoComercial } from "../lib/mysql-espaco.js";
 
 const adminOuGerente = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL");
 
@@ -81,5 +82,16 @@ export const configRouter = router({
         },
         select: { id: true, email: true, perfil: true },
       });
+    }),
+
+  /** Emergência MySQL 1114 — TRUNCATE de logs/auditoria para devolver disco ao SO. */
+  liberarEspacoMysql: comercialProcedure
+    .use(comercialRequirePerfis("ADMIN"))
+    .input(z.object({ emergencia: z.boolean().default(true) }).optional())
+    .mutation(async ({ ctx, input }) => {
+      const result = await liberarEspacoComercial(ctx.prisma!, {
+        emergencia: input?.emergencia ?? true,
+      });
+      return { ok: true, ...result };
     }),
 });

@@ -14,6 +14,13 @@ export function isErroMysqlTabelaCheia(err: unknown): boolean {
 export const RETENCAO_AUDITORIA_PEDIDO_DIAS = 60;
 export const RETENCAO_EXECUCOES_API_DIAS = 30;
 
+/** Tabelas de log/auditoria seguras para TRUNCATE em emergência (reclaim de disco com file-per-table). */
+const TABELAS_LOG_TRUNCATE = [
+  "pedidos_conciliacao_eventos",
+  "execucoes_api",
+  "pedidos_operacionais_auditoria",
+] as const;
+
 type PrismaEspaco = Pick<
   PrismaClient,
   | "pedidoConciliacaoEvento"
@@ -96,7 +103,6 @@ export async function limparSnapshotsConciliacaoAntigos(
   const corte = new Date(Date.now() - dias * 24 * 60 * 60 * 1000);
   let atualizados = 0;
   for (let i = 0; i < maxLotes; i++) {
-    // MySQL: UPDATE ... LIMIT reclama espaço de JSON sem apagar o pedido.
     const affected = await prisma.$executeRawUnsafe(
       `UPDATE \`pedidos_operacionais\`
        SET \`snapshot_conciliacao\` = NULL
@@ -115,45 +121,86 @@ export async function limparSnapshotsConciliacaoAntigos(
 }
 
 /**
+ * TRUNCATE devolve espaço ao SO com innodb_file_per_table.
+ * DELETE só marca páginas livres dentro do .ibd — não resolve disco 100% cheio para OUTRAS tabelas.
+ */
+export async function truncarTabelasLogComercial(
+  prisma: Pick<PrismaClient, "$executeRawUnsafe">,
+): Promise<Record<string, string>> {
+  const resultado: Record<string, string> = {};
+  await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 0");
+  try {
+    for (const tabela of TABELAS_LOG_TRUNCATE) {
+      try {
+        await prisma.$executeRawUnsafe(`TRUNCATE TABLE \`${tabela}\``);
+        resultado[tabela] = "ok";
+      } catch (err) {
+        resultado[tabela] = err instanceof Error ? err.message : String(err);
+        console.warn(`[mysql-espaco] TRUNCATE ${tabela} falhou:`, resultado[tabela]);
+      }
+    }
+  } finally {
+    await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 1");
+  }
+  return resultado;
+}
+
+/**
  * Libera espaço nas tabelas de auditoria/log que costumam encher o disco no Railway.
- * Em emergência, remove os eventos de conciliação mais antigos mesmo dentro da retenção.
+ * Em emergência: TRUNCATE dos logs (único jeito confiável de devolver bytes ao disco).
  */
 export async function liberarEspacoComercial(
   prisma: PrismaEspaco,
   opts?: { emergencia?: boolean },
-): Promise<{ removidos: number; detalhe: Record<string, number> }> {
-  const detalhe: Record<string, number> = {};
+): Promise<{ removidos: number; detalhe: Record<string, number | string> }> {
+  const detalhe: Record<string, number | string> = {};
   let removidos = 0;
 
+  if (opts?.emergencia) {
+    // Conta antes do truncate para telemetria
+    const [ev, au, ex] = await Promise.all([
+      prisma.pedidoConciliacaoEvento.count().catch(() => 0),
+      prisma.pedidoOperacionalAuditoria.count().catch(() => 0),
+      prisma.execucaoApi.count().catch(() => 0),
+    ]);
+    const trunc = await truncarTabelasLogComercial(prisma);
+    detalhe.truncate = JSON.stringify(trunc);
+    detalhe.eventosTruncados = ev;
+    detalhe.auditoriaTruncada = au;
+    detalhe.execucoesTruncadas = ex;
+    removidos += ev + au + ex;
+
+    detalhe.snapshotsLimpos = await limparSnapshotsConciliacaoAntigos(prisma, {
+      dias: 0,
+      maxLotes: 80,
+    });
+    removidos += Number(detalhe.snapshotsLimpos) || 0;
+
+    return { removidos, detalhe };
+  }
+
   const eventosRetencao = await limparEventosConciliacaoAntigos(prisma, {
-    dias: opts?.emergencia ? 14 : RETENCAO_EVENTOS_CONCILIACAO_DIAS,
+    dias: RETENCAO_EVENTOS_CONCILIACAO_DIAS,
   });
   detalhe.eventosConciliacao = eventosRetencao.removidos;
   removidos += eventosRetencao.removidos;
 
-  detalhe.auditoriaPedido = await limparAuditoriaPedidoAntiga(prisma, {
-    dias: opts?.emergencia ? 14 : RETENCAO_AUDITORIA_PEDIDO_DIAS,
-  });
-  removidos += detalhe.auditoriaPedido;
+  detalhe.auditoriaPedido = await limparAuditoriaPedidoAntiga(prisma);
+  removidos += Number(detalhe.auditoriaPedido) || 0;
 
-  detalhe.execucoesApi = await limparExecucoesApiAntigas(prisma, {
-    dias: opts?.emergencia ? 7 : RETENCAO_EXECUCOES_API_DIAS,
-  });
-  removidos += detalhe.execucoesApi;
+  detalhe.execucoesApi = await limparExecucoesApiAntigas(prisma);
+  removidos += Number(detalhe.execucoesApi) || 0;
 
-  detalhe.snapshotsLimpos = await limparSnapshotsConciliacaoAntigos(prisma, {
-    dias: opts?.emergencia ? 21 : 45,
-  });
-  removidos += detalhe.snapshotsLimpos;
+  detalhe.snapshotsLimpos = await limparSnapshotsConciliacaoAntigos(prisma);
+  removidos += Number(detalhe.snapshotsLimpos) || 0;
 
-  if (opts?.emergencia || removidos === 0) {
-    const extra = await liberarEspacoEventosConciliacao(prisma, opts?.emergencia ? 100_000 : 20_000);
+  if (removidos === 0) {
+    const extra = await liberarEspacoEventosConciliacao(prisma, 20_000);
     detalhe.eventosEmergencia = extra;
     removidos += extra;
   }
 
   try {
-    // Reclama páginas InnoDB após deletes em massa (best-effort; alguns hosts bloqueiam).
     await prisma.$executeRawUnsafe("OPTIMIZE TABLE `pedidos_conciliacao_eventos`");
     await prisma.$executeRawUnsafe("OPTIMIZE TABLE `pedidos_operacionais_auditoria`");
     await prisma.$executeRawUnsafe("OPTIMIZE TABLE `execucoes_api`");
@@ -172,10 +219,21 @@ export async function comRecuperacaoEspacoMysql<T>(
     return await operacao();
   } catch (err) {
     if (!isErroMysqlTabelaCheia(err)) throw err;
-    console.warn("[mysql-espaco] tabela cheia (1114) — liberando espaço e tentando de novo");
+    console.warn("[mysql-espaco] tabela cheia (1114) — TRUNCATE de logs e nova tentativa");
     const { removidos, detalhe } = await liberarEspacoComercial(prisma, { emergencia: true });
-    console.warn("[mysql-espaco] liberação:", { removidos, detalhe });
-    if (removidos <= 0) throw err;
-    return await operacao();
+    console.warn("[mysql-espaco] liberação emergência:", { removidos, detalhe });
+    // Sempre tenta de novo após TRUNCATE — mesmo com removidos=0 o .ibd pode ter encolhido.
+    try {
+      return await operacao();
+    } catch (retryErr) {
+      if (isErroMysqlTabelaCheia(retryErr)) {
+        const e = new Error(
+          "Banco comercial sem espaço em disco (MySQL 1114). Logs foram truncados; se persistir, aumente o disco do MySQL no Railway.",
+        );
+        (e as Error & { cause?: unknown }).cause = retryErr;
+        throw e;
+      }
+      throw retryErr;
+    }
   }
 }

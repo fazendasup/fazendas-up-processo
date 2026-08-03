@@ -10,6 +10,13 @@ describe("isErroMysqlTabelaCheia", () => {
     ).toBe(true);
     expect(
       isErroMysqlTabelaCheia(
+        new Error(
+          "Invalid `prisma.pedidoOperacionalItem.createMany()` invocation: MysqlError { code: 1114 }",
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      isErroMysqlTabelaCheia(
         new Error("MysqlError { code: 1114, message: \"The table 'x' is full\" }"),
       ),
     ).toBe(true);
