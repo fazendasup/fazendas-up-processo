@@ -1451,16 +1451,7 @@ export const pedidosRouter = router({
         destinoKey(p.contaAzulCustomerId, p.dataEntrega)
       );
 
-      // Libera GPS/logs ANTES — falha aqui deve ser visível (não engolir o erro).
-      const liberacao = await liberarEspacoComercial(ctx.prisma!, { emergencia: true }).catch(
-        (err) => {
-          console.error("[copiarSemanaAnterior] liberação de espaço falhou:", err);
-          return { removidos: 0, detalhe: { erro: String(err) } };
-        },
-      );
-      console.warn("[copiarSemanaAnterior] espaço liberado:", liberacao);
-
-      // Um pedido por transação: evita undo log gigante e permite retomar se o disco apertar.
+      // Um pedido por transação: evita undo log gigante. Limpeza pesada fica no endpoint /liberar.
       const clientesJaNoDestino = new Set(destinosJaExistentes);
       let criados = 0;
       let ignorados = 0;
@@ -1486,37 +1477,35 @@ export const pedidosRouter = router({
         }
 
         try {
-          await comRecuperacaoEspacoMysql(ctx.prisma!, async () => {
-            await ctx.prisma!.$transaction(async tx => {
-              const novoPedido = await tx.pedidoOperacional.create({
-                data: {
-                  clienteId: pedidoOrigem.clienteId,
-                  contaAzulCustomerId: pedidoOrigem.contaAzulCustomerId,
-                  dataEntrega: dataDestino,
-                  diaSemana: diaSemana(dataDestino),
-                  tipoVenda: tipoVendaDestino,
-                  status: "PENDENTE",
-                  statusConciliacao: "PLANEJADO",
-                  observacoes: pedidoOrigem.observacoes,
-                  freteCortesia: pedidoOrigem.freteCortesia,
-                  prioridadeEntrega: pedidoOrigem.prioridadeEntrega,
-                  criadoPorId: usuario.id,
-                  editadoPorId: usuario.id,
-                },
-              });
+          await ctx.prisma!.$transaction(async tx => {
+            const novoPedido = await tx.pedidoOperacional.create({
+              data: {
+                clienteId: pedidoOrigem.clienteId,
+                contaAzulCustomerId: pedidoOrigem.contaAzulCustomerId,
+                dataEntrega: dataDestino,
+                diaSemana: diaSemana(dataDestino),
+                tipoVenda: tipoVendaDestino,
+                status: "PENDENTE",
+                statusConciliacao: "PLANEJADO",
+                observacoes: pedidoOrigem.observacoes,
+                freteCortesia: pedidoOrigem.freteCortesia,
+                prioridadeEntrega: pedidoOrigem.prioridadeEntrega,
+                criadoPorId: usuario.id,
+                editadoPorId: usuario.id,
+              },
+            });
 
-              await tx.pedidoOperacionalItem.createMany({
-                data: pedidoOrigem.itens.map(item => ({
-                  pedidoId: novoPedido.id,
-                  produtoId: item.produtoId,
-                  produtoNome: item.produtoNome,
-                  categoria: item.categoria,
-                  quantidade: item.quantidade,
-                  precoUnit: item.precoUnit,
-                  precoEspecial: item.precoEspecial,
-                  observacoes: item.observacoes,
-                })),
-              });
+            await tx.pedidoOperacionalItem.createMany({
+              data: pedidoOrigem.itens.map(item => ({
+                pedidoId: novoPedido.id,
+                produtoId: item.produtoId,
+                produtoNome: item.produtoNome,
+                categoria: item.categoria,
+                quantidade: item.quantidade,
+                precoUnit: item.precoUnit,
+                precoEspecial: item.precoEspecial,
+                observacoes: item.observacoes,
+              })),
             });
           });
           clientesJaNoDestino.add(keyDestino);
@@ -1526,11 +1515,15 @@ export const pedidosRouter = router({
             err instanceof Error &&
             (err.message.includes("1114") ||
               /table ['`].+['`] is full/i.test(err.message) ||
-              err.message.includes("sem espaço em disco"))
+              err.message.includes("sem espaço em disco") ||
+              err.message.includes("3019") ||
+              /undo log/i.test(err.message))
           ) {
             falhasEspaco++;
-            // Tenta limpar de novo e segue para o próximo (não aborta a semana inteira).
-            await liberarEspacoComercial(ctx.prisma!, { emergencia: true }).catch(() => null);
+            // Limpeza rápida (sem shrink) — shrink bloqueava a request por minutos.
+            await liberarEspacoComercial(ctx.prisma!, { emergencia: true, shrink: false }).catch(
+              () => null,
+            );
             continue;
           }
           throw err;
@@ -1549,7 +1542,6 @@ export const pedidosRouter = router({
         criados,
         ignorados,
         falhasEspaco,
-        liberacao,
         origem: semanaOrigemInicio,
         destino: semanaDestinoInicio,
         mensagem:

@@ -8,6 +8,7 @@ export const TRPC_LONG_TIMEOUT_MS =
 const LONG_TRPC_PATHS = new Set([
   "comercial.integracoes.sincronizarContaAzul",
   "comercial.integracoes.aplicarInteligenciaComercial",
+  "comercial.pedidos.copiarSemanaAnterior",
 ]);
 
 export function isLongRunningTrpcOp(path: string): boolean {

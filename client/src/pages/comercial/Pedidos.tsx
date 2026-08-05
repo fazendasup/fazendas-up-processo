@@ -406,10 +406,16 @@ export function Pedidos({
           utils.comercial.entregas.roteiro.invalidate(),
         ]);
       },
-      onError: err =>
-        toast.error(
-          err.message || "Não foi possível trazer a semana anterior."
-        ),
+      onError: err => {
+        const msg = err.message || "";
+        if (/abort/i.test(msg)) {
+          toast.error(
+            "A cópia demorou demais e a conexão caiu. Atualize a página e tente de novo — pedidos já copiados permanecem.",
+          );
+          return;
+        }
+        toast.error(msg || "Não foi possível trazer a semana anterior.");
+      },
     });
   const fecharSemana = trpc.comercial.pedidos.fecharSemana.useMutation({
     onSuccess: async () => {

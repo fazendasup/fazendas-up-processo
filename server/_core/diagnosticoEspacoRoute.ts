@@ -118,7 +118,10 @@ export function registerDiagnosticoEspacoRoute(app: Express) {
       const { liberarEspacoComercial } = await import("../comercial/lib/mysql-espaco.js");
       const prisma = getComercialPrisma();
       const antes = await montarDiagnostico();
-      const result = await liberarEspacoComercial(prisma, { emergencia: true });
+      const result = await liberarEspacoComercial(prisma, {
+        emergencia: true,
+        shrink: true,
+      });
       const depois = await montarDiagnostico();
       res.status(200).json({
         ok: true,

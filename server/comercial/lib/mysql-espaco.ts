@@ -224,10 +224,11 @@ export async function truncarTabelasLogComercial(
  */
 export async function liberarEspacoComercial(
   prisma: PrismaEspaco,
-  opts?: { emergencia?: boolean },
+  opts?: { emergencia?: boolean; /** rebuild .ibd (lento; não usar no meio de request HTTP) */ shrink?: boolean },
 ): Promise<{ removidos: number; detalhe: Record<string, number | string> }> {
   const detalhe: Record<string, number | string> = {};
   let removidos = 0;
+  const shrink = opts?.shrink ?? Boolean(opts?.emergencia);
 
   if (opts?.emergencia) {
     // Conta antes do truncate para telemetria
@@ -237,6 +238,12 @@ export async function liberarEspacoComercial(
       prisma.execucaoApi.count().catch(() => 0),
       prisma.historicoLocalizacaoEntrega.count().catch(() => 0),
     ]);
+    // Se já está vazio, não gasta tempo (evita timeout do browser na cópia semanal).
+    if (ev + au + ex + gps === 0 && !shrink) {
+      detalhe.skipped = "ja_vazio";
+      return { removidos: 0, detalhe };
+    }
+
     const trunc = await truncarTabelasLogComercial(prisma);
     detalhe.truncate = JSON.stringify(trunc);
     detalhe.eventosTruncados = ev;
@@ -251,41 +258,43 @@ export async function liberarEspacoComercial(
     });
     removidos += Number(detalhe.snapshotsLimpos) || 0;
 
-    // Força recreate mesmo vazia: DELETE zera linhas mas o .ibd inchado continua no disco.
-    const otimizadas: Record<string, string> = {};
-    for (const tabela of TABELAS_LOG_TRUNCATE) {
-      const tmp = `${tabela}__shrink`;
-      try {
-        await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 0");
-        await prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS \`${tmp}\``);
-        await prisma.$executeRawUnsafe(`CREATE TABLE \`${tmp}\` LIKE \`${tabela}\``);
-        await prisma.$executeRawUnsafe(
-          `RENAME TABLE \`${tabela}\` TO \`${tabela}__bloated\`, \`${tmp}\` TO \`${tabela}\``,
-        );
-        await prisma.$executeRawUnsafe(`DROP TABLE \`${tabela}__bloated\``);
-        otimizadas[tabela] = "ok_shrink";
-      } catch (err) {
-        otimizadas[tabela] = err instanceof Error ? err.message : String(err);
+    if (shrink) {
+      // Força recreate mesmo vazia: DELETE zera linhas mas o .ibd inchado continua no disco.
+      const otimizadas: Record<string, string> = {};
+      for (const tabela of TABELAS_LOG_TRUNCATE) {
+        const tmp = `${tabela}__shrink`;
         try {
+          await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 0");
           await prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS \`${tmp}\``);
-        } catch {
-          /* ignore */
-        }
-        try {
-          await prisma.$executeRawUnsafe(`ALTER TABLE \`${tabela}\` ENGINE=InnoDB`);
-          otimizadas[tabela] = `${otimizadas[tabela]}|ok_alter`;
-        } catch {
-          /* ignore */
-        }
-      } finally {
-        try {
-          await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 1");
-        } catch {
-          /* ignore */
+          await prisma.$executeRawUnsafe(`CREATE TABLE \`${tmp}\` LIKE \`${tabela}\``);
+          await prisma.$executeRawUnsafe(
+            `RENAME TABLE \`${tabela}\` TO \`${tabela}__bloated\`, \`${tmp}\` TO \`${tabela}\``,
+          );
+          await prisma.$executeRawUnsafe(`DROP TABLE \`${tabela}__bloated\``);
+          otimizadas[tabela] = "ok_shrink";
+        } catch (err) {
+          otimizadas[tabela] = err instanceof Error ? err.message : String(err);
+          try {
+            await prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS \`${tmp}\``);
+          } catch {
+            /* ignore */
+          }
+          try {
+            await prisma.$executeRawUnsafe(`ALTER TABLE \`${tabela}\` ENGINE=InnoDB`);
+            otimizadas[tabela] = `${otimizadas[tabela]}|ok_alter`;
+          } catch {
+            /* ignore */
+          }
+        } finally {
+          try {
+            await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 1");
+          } catch {
+            /* ignore */
+          }
         }
       }
+      detalhe.otimizadas = JSON.stringify(otimizadas);
     }
-    detalhe.otimizadas = JSON.stringify(otimizadas);
 
     return { removidos, detalhe };
   }
@@ -350,9 +359,13 @@ export async function comRecuperacaoEspacoMysql<T>(
   } catch (err) {
     if (!isErroMysqlTabelaCheia(err)) throw err;
     console.warn("[mysql-espaco] tabela cheia (1114) — TRUNCATE de logs e nova tentativa");
-    const { removidos, detalhe } = await liberarEspacoComercial(prisma, { emergencia: true });
+    // shrink=false: rebuild de .ibd é lento demais no meio de request HTTP (causa abort no browser).
+    const { removidos, detalhe } = await liberarEspacoComercial(prisma, {
+      emergencia: true,
+      shrink: false,
+    });
     console.warn("[mysql-espaco] liberação emergência:", { removidos, detalhe });
-    // Sempre tenta de novo após TRUNCATE — mesmo com removidos=0 o .ibd pode ter encolhido.
+    // Sempre tenta de novo após TRUNCATE.
     try {
       return await operacao();
     } catch (retryErr) {
