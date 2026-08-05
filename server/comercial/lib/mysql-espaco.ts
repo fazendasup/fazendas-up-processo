@@ -139,12 +139,29 @@ export async function truncarTabelasLogComercial(
         await prisma.$executeRawUnsafe(`TRUNCATE TABLE \`${tabela}\``);
         resultado[tabela] = "ok";
       } catch (err) {
-        resultado[tabela] = err instanceof Error ? err.message : String(err);
-        console.warn(`[mysql-espaco] TRUNCATE ${tabela} falhou:`, resultado[tabela]);
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn(`[mysql-espaco] TRUNCATE ${tabela} falhou, tentando DELETE:`, msg);
+        try {
+          // Fallback quando TRUNCATE é bloqueado: esvazia e OPTIMIZE para devolver disco.
+          await prisma.$executeRawUnsafe(`DELETE FROM \`${tabela}\``);
+          try {
+            await prisma.$executeRawUnsafe(`OPTIMIZE TABLE \`${tabela}\``);
+          } catch {
+            /* ignore */
+          }
+          resultado[tabela] = "ok_delete";
+        } catch (err2) {
+          resultado[tabela] = err2 instanceof Error ? err2.message : String(err2);
+          console.warn(`[mysql-espaco] DELETE ${tabela} falhou:`, resultado[tabela]);
+        }
       }
     }
   } finally {
-    await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 1");
+    try {
+      await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 1");
+    } catch {
+      /* ignore */
+    }
   }
   return resultado;
 }
