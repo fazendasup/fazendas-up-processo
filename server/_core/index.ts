@@ -225,6 +225,16 @@ async function startServer() {
 
   registerPublicConfigRoute(app);
   registerGeocodeRoute(app);
+  try {
+    const { registerDiagnosticoEspacoRoute } = await import("./diagnosticoEspacoRoute");
+    registerDiagnosticoEspacoRoute(app);
+    console.log("[Server] Rota /api/diagnostico/espaco registrada.");
+  } catch (e) {
+    console.warn(
+      "[Server] Diagnóstico de espaço não carregado:",
+      e instanceof Error ? e.message : e,
+    );
+  }
 
   /** Site (HTML/JS/CSS) já disponível durante a inicialização da BD — evita página em branco / 404. */
   if (process.env.NODE_ENV !== "development") {
