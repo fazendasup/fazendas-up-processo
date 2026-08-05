@@ -226,6 +226,25 @@ async function startServer() {
   registerPublicConfigRoute(app);
   registerGeocodeRoute(app);
 
+  app.get("/api/diagnostico/espaco", async (_req, res) => {
+    try {
+      const { getDiagnosticoEspaco } = await import(
+        "../comercial/diagnostico-espaco-api"
+      );
+      const resultado = await getDiagnosticoEspaco();
+      res.setHeader(
+        "Content-Disposition",
+        'attachment; filename="diagnostico-espaco.json"'
+      );
+      res.json(resultado);
+    } catch (e) {
+      res.status(500).json({
+        success: false,
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+  });
+
   /** Site (HTML/JS/CSS) já disponível durante a inicialização da BD — evita página em branco / 404. */
   if (process.env.NODE_ENV !== "development") {
     serveStatic(app);
