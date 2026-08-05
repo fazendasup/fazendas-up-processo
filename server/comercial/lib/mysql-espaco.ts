@@ -251,19 +251,37 @@ export async function liberarEspacoComercial(
     });
     removidos += Number(detalhe.snapshotsLimpos) || 0;
 
-    // Reconstruir .ibd vazios / fragmentados para devolver bytes ao SO (file-per-table).
+    // Força recreate mesmo vazia: DELETE zera linhas mas o .ibd inchado continua no disco.
     const otimizadas: Record<string, string> = {};
     for (const tabela of TABELAS_LOG_TRUNCATE) {
+      const tmp = `${tabela}__shrink`;
       try {
-        await prisma.$executeRawUnsafe(`ALTER TABLE \`${tabela}\` ENGINE=InnoDB`);
-        otimizadas[tabela] = "ok_alter";
+        await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 0");
+        await prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS \`${tmp}\``);
+        await prisma.$executeRawUnsafe(`CREATE TABLE \`${tmp}\` LIKE \`${tabela}\``);
+        await prisma.$executeRawUnsafe(
+          `RENAME TABLE \`${tabela}\` TO \`${tabela}__bloated\`, \`${tmp}\` TO \`${tabela}\``,
+        );
+        await prisma.$executeRawUnsafe(`DROP TABLE \`${tabela}__bloated\``);
+        otimizadas[tabela] = "ok_shrink";
       } catch (err) {
+        otimizadas[tabela] = err instanceof Error ? err.message : String(err);
         try {
-          await prisma.$executeRawUnsafe(`OPTIMIZE TABLE \`${tabela}\``);
-          otimizadas[tabela] = "ok_optimize";
-        } catch (err2) {
-          otimizadas[tabela] =
-            err2 instanceof Error ? err2.message : String(err2);
+          await prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS \`${tmp}\``);
+        } catch {
+          /* ignore */
+        }
+        try {
+          await prisma.$executeRawUnsafe(`ALTER TABLE \`${tabela}\` ENGINE=InnoDB`);
+          otimizadas[tabela] = `${otimizadas[tabela]}|ok_alter`;
+        } catch {
+          /* ignore */
+        }
+      } finally {
+        try {
+          await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 1");
+        } catch {
+          /* ignore */
         }
       }
     }
