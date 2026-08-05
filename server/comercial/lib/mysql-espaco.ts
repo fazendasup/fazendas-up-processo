@@ -128,33 +128,85 @@ export async function limparSnapshotsConciliacaoAntigos(
  * TRUNCATE devolve espaço ao SO com innodb_file_per_table.
  * DELETE só marca páginas livres dentro do .ibd — não resolve disco 100% cheio para OUTRAS tabelas.
  */
+/**
+ * Esvazia tabela quando undo/tablespace está no limite.
+ * Ordem: TRUNCATE → recreate (CREATE LIKE + RENAME + DROP) → DELETE em lotes minúsculos.
+ */
+async function esvaziarTabelaSegura(
+  prisma: Pick<PrismaClient, "$executeRawUnsafe">,
+  tabela: string,
+): Promise<string> {
+  try {
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE \`${tabela}\``);
+    return "ok_truncate";
+  } catch (err) {
+    console.warn(
+      `[mysql-espaco] TRUNCATE ${tabela}:`,
+      err instanceof Error ? err.message : err,
+    );
+  }
+
+  // Recreate evita UNDO log de 100k+ linhas (erro 3019 no Railway).
+  const tmp = `${tabela}__empty`;
+  try {
+    await prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS \`${tmp}\``);
+    await prisma.$executeRawUnsafe(`CREATE TABLE \`${tmp}\` LIKE \`${tabela}\``);
+    await prisma.$executeRawUnsafe(
+      `RENAME TABLE \`${tabela}\` TO \`${tabela}__old\`, \`${tmp}\` TO \`${tabela}\``,
+    );
+    try {
+      await prisma.$executeRawUnsafe(`DROP TABLE \`${tabela}__old\``);
+    } catch (dropErr) {
+      console.warn(
+        `[mysql-espaco] DROP ${tabela}__old (dados já fora da tabela ativa):`,
+        dropErr instanceof Error ? dropErr.message : dropErr,
+      );
+      // Mesmo se o DROP da antiga falhar, a tabela ativa já está vazia.
+    }
+    return "ok_recreate";
+  } catch (err) {
+    console.warn(
+      `[mysql-espaco] recreate ${tabela}:`,
+      err instanceof Error ? err.message : err,
+    );
+    try {
+      await prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS \`${tmp}\``);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // Último recurso: DELETE em lotes pequenos (cada statement = pouco UNDO).
+  let total = 0;
+  for (let i = 0; i < 5000; i++) {
+    try {
+      const affected = await prisma.$executeRawUnsafe(
+        `DELETE FROM \`${tabela}\` LIMIT 200`,
+      );
+      const n = typeof affected === "bigint" ? Number(affected) : Number(affected);
+      if (!Number.isFinite(n) || n <= 0) break;
+      total += n;
+    } catch (err) {
+      return total > 0
+        ? `ok_batch_parcial_${total}`
+        : `fail_batch: ${err instanceof Error ? err.message : String(err)}`;
+    }
+  }
+  return total > 0 ? `ok_batch_${total}` : "fail_empty";
+}
+
 export async function truncarTabelasLogComercial(
   prisma: Pick<PrismaClient, "$executeRawUnsafe">,
 ): Promise<Record<string, string>> {
   const resultado: Record<string, string> = {};
-  await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 0");
+  try {
+    await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 0");
+  } catch {
+    /* ignore */
+  }
   try {
     for (const tabela of TABELAS_LOG_TRUNCATE) {
-      try {
-        await prisma.$executeRawUnsafe(`TRUNCATE TABLE \`${tabela}\``);
-        resultado[tabela] = "ok";
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.warn(`[mysql-espaco] TRUNCATE ${tabela} falhou, tentando DELETE:`, msg);
-        try {
-          // Fallback quando TRUNCATE é bloqueado: esvazia e OPTIMIZE para devolver disco.
-          await prisma.$executeRawUnsafe(`DELETE FROM \`${tabela}\``);
-          try {
-            await prisma.$executeRawUnsafe(`OPTIMIZE TABLE \`${tabela}\``);
-          } catch {
-            /* ignore */
-          }
-          resultado[tabela] = "ok_delete";
-        } catch (err2) {
-          resultado[tabela] = err2 instanceof Error ? err2.message : String(err2);
-          console.warn(`[mysql-espaco] DELETE ${tabela} falhou:`, resultado[tabela]);
-        }
-      }
+      resultado[tabela] = await esvaziarTabelaSegura(prisma, tabela);
     }
   } finally {
     try {
