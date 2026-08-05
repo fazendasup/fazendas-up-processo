@@ -68,6 +68,7 @@ export function registerDiagnosticoEspacoRoute(app: Express) {
       const logs_mb = top
         .filter((t) =>
           [
+            "historico_localizacao_entrega",
             "pedidos_conciliacao_eventos",
             "pedidos_operacionais_auditoria",
             "execucoes_api",

@@ -13,9 +13,12 @@ export function isErroMysqlTabelaCheia(err: unknown): boolean {
 
 export const RETENCAO_AUDITORIA_PEDIDO_DIAS = 60;
 export const RETENCAO_EXECUCOES_API_DIAS = 30;
+/** Rastreio GPS do entregador — pontos antigos não são necessários para operação. */
+export const RETENCAO_HISTORICO_LOCALIZACAO_DIAS = 14;
 
 /** Tabelas de log/auditoria seguras para TRUNCATE em emergência (reclaim de disco com file-per-table). */
 const TABELAS_LOG_TRUNCATE = [
+  "historico_localizacao_entrega",
   "pedidos_conciliacao_eventos",
   "execucoes_api",
   "pedidos_operacionais_auditoria",
@@ -26,6 +29,7 @@ type PrismaEspaco = Pick<
   | "pedidoConciliacaoEvento"
   | "pedidoOperacionalAuditoria"
   | "execucaoApi"
+  | "historicoLocalizacaoEntrega"
   | "$executeRawUnsafe"
 >;
 
@@ -158,17 +162,19 @@ export async function liberarEspacoComercial(
 
   if (opts?.emergencia) {
     // Conta antes do truncate para telemetria
-    const [ev, au, ex] = await Promise.all([
+    const [ev, au, ex, gps] = await Promise.all([
       prisma.pedidoConciliacaoEvento.count().catch(() => 0),
       prisma.pedidoOperacionalAuditoria.count().catch(() => 0),
       prisma.execucaoApi.count().catch(() => 0),
+      prisma.historicoLocalizacaoEntrega.count().catch(() => 0),
     ]);
     const trunc = await truncarTabelasLogComercial(prisma);
     detalhe.truncate = JSON.stringify(trunc);
     detalhe.eventosTruncados = ev;
     detalhe.auditoriaTruncada = au;
     detalhe.execucoesTruncadas = ex;
-    removidos += ev + au + ex;
+    detalhe.gpsTruncado = gps;
+    removidos += ev + au + ex + gps;
 
     detalhe.snapshotsLimpos = await limparSnapshotsConciliacaoAntigos(prisma, {
       dias: 0,
@@ -178,6 +184,25 @@ export async function liberarEspacoComercial(
 
     return { removidos, detalhe };
   }
+
+  // Retenção normal: GPS antigo (maior tabela em produção)
+  detalhe.gpsAntigo = await limparPorData(
+    async (corte, lote) => {
+      const rows = await prisma.historicoLocalizacaoEntrega.findMany({
+        where: { criadoEm: { lt: corte } },
+        select: { id: true },
+        take: lote,
+      });
+      return rows.map((r) => r.id);
+    },
+    async (ids) => {
+      const r = await prisma.historicoLocalizacaoEntrega.deleteMany({ where: { id: { in: ids } } });
+      return r.count;
+    },
+    RETENCAO_HISTORICO_LOCALIZACAO_DIAS,
+    { lote: 10_000, maxLotes: 200 },
+  );
+  removidos += Number(detalhe.gpsAntigo) || 0;
 
   const eventosRetencao = await limparEventosConciliacaoAntigos(prisma, {
     dias: RETENCAO_EVENTOS_CONCILIACAO_DIAS,
