@@ -251,6 +251,24 @@ export async function liberarEspacoComercial(
     });
     removidos += Number(detalhe.snapshotsLimpos) || 0;
 
+    // Reconstruir .ibd vazios / fragmentados para devolver bytes ao SO (file-per-table).
+    const otimizadas: Record<string, string> = {};
+    for (const tabela of TABELAS_LOG_TRUNCATE) {
+      try {
+        await prisma.$executeRawUnsafe(`ALTER TABLE \`${tabela}\` ENGINE=InnoDB`);
+        otimizadas[tabela] = "ok_alter";
+      } catch (err) {
+        try {
+          await prisma.$executeRawUnsafe(`OPTIMIZE TABLE \`${tabela}\``);
+          otimizadas[tabela] = "ok_optimize";
+        } catch (err2) {
+          otimizadas[tabela] =
+            err2 instanceof Error ? err2.message : String(err2);
+        }
+      }
+    }
+    detalhe.otimizadas = JSON.stringify(otimizadas);
+
     return { removidos, detalhe };
   }
 
