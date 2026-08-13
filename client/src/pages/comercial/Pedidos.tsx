@@ -1019,6 +1019,35 @@ export function Pedidos({
               className="h-9"
             />
           </div>
+          <div>
+            <Label className="text-xs">Visão do dashboard</Label>
+            <div className="inline-flex h-9 rounded-md border bg-muted/40 p-0.5">
+              <Button
+                type="button"
+                size="sm"
+                variant={escopoDashboard === "dia" ? "default" : "ghost"}
+                className="h-8 px-3 text-xs"
+                onClick={() => {
+                  setEscopoDashboard("dia");
+                  setAba("operacional");
+                }}
+              >
+                Dia
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={escopoDashboard === "semana" ? "default" : "ghost"}
+                className="h-8 px-3 text-xs"
+                onClick={() => {
+                  setEscopoDashboard("semana");
+                  setAba("operacional");
+                }}
+              >
+                Semana (pendentes)
+              </Button>
+            </div>
+          </div>
           <Button variant="outline" onClick={() => setDia(hojeIso())}>
             Hoje
           </Button>
