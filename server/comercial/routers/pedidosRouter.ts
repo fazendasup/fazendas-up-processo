@@ -1059,14 +1059,17 @@ export const pedidosRouter = router({
       );
 
       try {
-        return await comRecuperacaoEspacoMysql(ctx.prisma!, () =>
+        // Auditoria FORA da transação: se a tabela de log estiver cheia (1114),
+        // a edição de itens/data não pode ser revertida — o dashboard precisa refletir o salvo.
+        const antes = input.id
+          ? await ctx.prisma!.pedidoOperacional.findUnique({
+              where: { id: input.id },
+              include: { itens: true, avarias: true },
+            })
+          : null;
+
+        const salvo = await comRecuperacaoEspacoMysql(ctx.prisma!, () =>
           ctx.prisma!.$transaction(async tx => {
-            const antes = input.id
-              ? await tx.pedidoOperacional.findUnique({
-                  where: { id: input.id },
-                  include: { itens: true, avarias: true },
-                })
-              : null;
             const baseData = {
               clienteId: cliente.id,
               contaAzulCustomerId: input.contaAzulCustomerId,
@@ -1131,20 +1134,26 @@ export const pedidosRouter = router({
                 }),
               });
             }
-            await registrarAuditoria(
-              tx as any,
-              pedido.id,
-              { id: usuario.id, nome: usuario.nome },
-              input.id ? "pedido_editado" : "pedido_criado",
-              antes,
-              { ...pedido, itens: input.itens, avarias: input.avarias },
-            );
             return tx.pedidoOperacional.findUnique({
               where: { id: pedido.id },
               include: { cliente: true, itens: true, avarias: true },
             });
           }),
         );
+
+        if (salvo) {
+          await registrarAuditoria(
+            ctx.prisma!,
+            salvo.id,
+            { id: usuario.id, nome: usuario.nome },
+            input.id ? "pedido_editado" : "pedido_criado",
+            antes,
+            { ...salvo, itens: input.itens, avarias: input.avarias },
+          ).catch(err => {
+            console.warn("[salvarPedido] auditoria ignorada:", err);
+          });
+        }
+        return salvo;
       } catch (err) {
         if (
           err instanceof Error &&
@@ -1236,20 +1245,23 @@ export const pedidosRouter = router({
           where: { pedidoId: { in: pedidosAlvoIds } },
           data: { dataEntrega: novaData },
         });
-        for (const pedidoAlvo of pedidosAlvo) {
-          await registrarAuditoria(
-            tx as any,
-            pedidoAlvo.id,
-            { id: usuario.id, nome: usuario.nome },
-            "data_pedido_alterada",
-            {
-              dataEntrega: pedidoAlvo.dataEntrega,
-              diaSemana: pedidoAlvo.diaSemana,
-            },
-            { dataEntrega: novaData, diaSemana: diaSemana(novaData) }
-          );
-        }
       });
+
+      for (const pedidoAlvo of pedidosAlvo) {
+        await registrarAuditoria(
+          ctx.prisma!,
+          pedidoAlvo.id,
+          { id: usuario.id, nome: usuario.nome },
+          "data_pedido_alterada",
+          {
+            dataEntrega: pedidoAlvo.dataEntrega,
+            diaSemana: pedidoAlvo.diaSemana,
+          },
+          { dataEntrega: novaData, diaSemana: diaSemana(novaData) }
+        ).catch(err => {
+          console.warn("[alterarDataPedido] auditoria ignorada:", err);
+        });
+      }
 
       return {
         success: true,
@@ -1552,15 +1564,26 @@ export const pedidosRouter = router({
     }),
 
   dashboard: comercialProcedure
-    .input(z.object({ dia: z.coerce.date() }))
+    .input(
+      z.object({
+        dia: z.coerce.date(),
+        /** dia = só a data; semana = seg–dom da data, só pedidos ainda abertos (PENDENTE/PRONTO). */
+        escopo: z.enum(["dia", "semana"]).default("dia"),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       if (antesDoCortePedidos(input.dia)) return [];
+      const escopoSemana = input.escopo === "semana";
+      const inicio = escopoSemana
+        ? inicioSemana(input.dia)
+        : inicioComCortePedidos(input.dia);
+      const fim = escopoSemana ? fimSemana(input.dia) : fimDia(input.dia);
       const pedidos = await ctx.prisma!.pedidoOperacional.findMany({
         where: {
-          dataEntrega: {
-            gte: inicioComCortePedidos(input.dia),
-            lte: fimDia(input.dia),
-          },
+          dataEntrega: { gte: inicio, lte: fim },
+          ...(escopoSemana
+            ? { status: { in: ["PENDENTE", "PRONTO"] } }
+            : {}),
         },
         include: {
           cliente: {
@@ -1588,9 +1611,18 @@ export const pedidosRouter = router({
             include: { criadoPor: { select: { nome: true, email: true } } },
           },
         },
-        orderBy: [{ cliente: { nome: "asc" } }, { criadoEm: "asc" }],
+        orderBy: [
+          { dataEntrega: "asc" },
+          { cliente: { nome: "asc" } },
+          { criadoEm: "asc" },
+        ],
       });
-      pedidos.sort(compararEntregaPorRegra);
+      pedidos.sort((a, b) => {
+        const da = inicioDia(a.dataEntrega).getTime();
+        const db = inicioDia(b.dataEntrega).getTime();
+        if (da !== db) return da - db;
+        return compararEntregaPorRegra(a, b);
+      });
       const alertas = await alertasAvariasDepoisPedidoOrigem(
         ctx.prisma!,
         pedidos
@@ -1602,6 +1634,8 @@ export const pedidosRouter = router({
           cliente: unknown;
           regras: unknown;
           status: string;
+          dataEntrega: Date;
+          dataEntregaIso: string;
           prioridadeEntrega: number;
           pedidos: typeof pedidos;
           itens: unknown[];
@@ -1613,12 +1647,18 @@ export const pedidosRouter = router({
       >();
       for (const p of pedidos) {
         const pedido = deveOcultarValores(ctx) ? ocultarValoresPedido(p) : p;
-        const key = `${p.contaAzulCustomerId}:${p.status}`;
+        const dataEntrega = inicioDia(p.dataEntrega);
+        const dataEntregaIso = `${dataEntrega.getFullYear()}-${String(dataEntrega.getMonth() + 1).padStart(2, "0")}-${String(dataEntrega.getDate()).padStart(2, "0")}`;
+        const key = escopoSemana
+          ? `${p.contaAzulCustomerId}:${p.status}:${dataEntregaIso}`
+          : `${p.contaAzulCustomerId}:${p.status}`;
         const atual = grupos.get(key) ?? {
           contaAzulCustomerId: p.contaAzulCustomerId,
           cliente: pedido.cliente,
           regras: pedido.cliente?.regraComercial ?? null,
           status: p.status,
+          dataEntrega,
+          dataEntregaIso,
           prioridadeEntrega: prioridadeEntregaAutomatica(
             p.cliente?.regraComercial
           ),
@@ -1649,9 +1689,14 @@ export const pedidosRouter = router({
         if (alerta) atual.alertasAvariasPendentes.push(alerta);
         grupos.set(key, atual);
       }
-      return Array.from(grupos.values()).sort(
-        (a, b) => a.prioridadeEntrega - b.prioridadeEntrega,
-      );
+      return Array.from(grupos.values()).sort((a, b) => {
+        if (escopoSemana) {
+          const da = a.dataEntrega.getTime();
+          const db = b.dataEntrega.getTime();
+          if (da !== db) return da - db;
+        }
+        return a.prioridadeEntrega - b.prioridadeEntrega;
+      });
     }),
 
   atualizarStatusClienteDia: comercialProcedure

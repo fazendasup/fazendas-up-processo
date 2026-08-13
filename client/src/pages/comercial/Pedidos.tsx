@@ -219,6 +219,9 @@ export function Pedidos({
   const utils = trpc.useUtils();
   const [aba, setAba] = useState<PedidosTab>(abaInicial);
   const [dia, setDia] = useState(diaOperacionalInicial);
+  const [escopoDashboard, setEscopoDashboard] = useState<"dia" | "semana">(
+    "dia",
+  );
   const [busca, setBusca] = useState("");
   const [agendaClienteFiltro, setAgendaClienteFiltro] = useState("");
   const [clienteBusca, setClienteBusca] = useState("");
@@ -291,23 +294,43 @@ export function Pedidos({
     { contaAzulCustomerId: clienteRegrasId },
     { enabled: Boolean(clienteRegrasId) }
   );
-  const agenda = trpc.comercial.pedidos.agenda.useQuery({
-    dia: diaDate,
-    contaAzulCustomerId: agendaClienteFiltro || undefined,
-    busca: busca || undefined,
-  });
+  const agenda = trpc.comercial.pedidos.agenda.useQuery(
+    {
+      dia: diaDate,
+      contaAzulCustomerId: agendaClienteFiltro || undefined,
+      busca: busca || undefined,
+    },
+    { staleTime: 0 },
+  );
   const auditoriaPedido = trpc.comercial.pedidos.auditoriaPedido.useQuery(
     { pedidoId: pedidoAuditoriaId! },
     { enabled: Boolean(pedidoAuditoriaId) }
   );
-  const dashboard = trpc.comercial.pedidos.dashboard.useQuery({ dia: diaDate });
+  const dashboard = trpc.comercial.pedidos.dashboard.useQuery(
+    { dia: diaDate, escopo: escopoDashboard },
+    { staleTime: 0 },
+  );
   const compras = trpc.comercial.pedidos.compras.useQuery(
     { dia: diaDate, incluirOcultos: false },
-    { enabled: !isPromoter }
+    { enabled: !isPromoter, staleTime: 0 },
   );
   const statusSemana = trpc.comercial.pedidos.statusSemana.useQuery({
     dia: diaDate,
   });
+
+  async function invalidarVisaoOperacionalDia() {
+    await Promise.all([
+      utils.comercial.pedidos.agenda.invalidate(undefined, { refetchType: "all" }),
+      utils.comercial.pedidos.dashboard.invalidate(undefined, { refetchType: "all" }),
+      utils.comercial.pedidos.compras.invalidate(undefined, { refetchType: "all" }),
+      utils.comercial.pedidos.statusSemana.invalidate(undefined, {
+        refetchType: "all",
+      }),
+      utils.comercial.pedidos.avisoAvariasCliente.invalidate(),
+      utils.comercial.pedidos.relatorioHistorico.invalidate(),
+      utils.comercial.entregas.roteiro.invalidate(),
+    ]);
+  }
   const bloqueioSemana = statusSemana.data?.bloqueio ?? null;
   /** Conciliação sempre foca na semana a fechar (bloqueio) ou na semana passada — não na semana corrente. */
   const conciliacaoIntervalo = useMemo(() => {
@@ -334,21 +357,15 @@ export function Pedidos({
 
   const salvarPedido = trpc.comercial.pedidos.salvarPedido.useMutation({
     onSuccess: async () => {
-      toast.success("Pedido salvo e agenda atualizada.");
+      toast.success("Pedido salvo. Dashboard e agenda atualizados.");
       setPedidoEditId(null);
       setTipoVenda("");
       setObsPedido("");
       setFreteCortesia(false);
       setLinhas([{ produtoId: "", quantidade: "1", observacoes: "" }]);
       setAvarias([]);
-      await Promise.all([
-        utils.comercial.pedidos.agenda.invalidate(),
-        utils.comercial.pedidos.dashboard.invalidate(),
-        utils.comercial.pedidos.compras.invalidate(),
-        utils.comercial.pedidos.statusSemana.invalidate(),
-        utils.comercial.pedidos.avisoAvariasCliente.invalidate(),
-        utils.comercial.entregas.roteiro.invalidate(),
-      ]);
+      setAba("operacional");
+      await invalidarVisaoOperacionalDia();
     },
     onError: err =>
       toast.error(err.message || "Não foi possível salvar o pedido."),
@@ -356,9 +373,7 @@ export function Pedidos({
   const mudarStatus =
     trpc.comercial.pedidos.atualizarStatusClienteDia.useMutation({
       onSuccess: () => {
-        void utils.comercial.pedidos.dashboard.invalidate();
-        void utils.comercial.pedidos.agenda.invalidate();
-        void utils.comercial.pedidos.statusSemana.invalidate();
+        void invalidarVisaoOperacionalDia();
       },
       onError: err => toast.error(err.message),
     });
@@ -370,11 +385,7 @@ export function Pedidos({
             ? `${result.count} pedidos reativados como pendentes.`
             : "Pedido reativado como pendente."
         );
-        void utils.comercial.pedidos.dashboard.invalidate();
-        void utils.comercial.pedidos.agenda.invalidate();
-        void utils.comercial.pedidos.statusSemana.invalidate();
-        void utils.comercial.pedidos.compras.invalidate();
-        void utils.comercial.entregas.roteiro.invalidate();
+        void invalidarVisaoOperacionalDia();
       },
       onError: err => toast.error(err.message),
     });
@@ -397,14 +408,8 @@ export function Pedidos({
             }
           );
         }
-        await Promise.all([
-          utils.comercial.pedidos.dashboard.invalidate(),
-          utils.comercial.pedidos.agenda.invalidate(),
-          utils.comercial.pedidos.compras.invalidate(),
-          utils.comercial.pedidos.clientes.invalidate(),
-          utils.comercial.pedidos.relatorioHistorico.invalidate(),
-          utils.comercial.entregas.roteiro.invalidate(),
-        ]);
+        await invalidarVisaoOperacionalDia();
+        void utils.comercial.pedidos.clientes.invalidate();
       },
       onError: err => {
         const msg = err.message || "";
@@ -422,11 +427,7 @@ export function Pedidos({
       toast.success(
         "Semana fechada. Histórico validado e próxima semana liberada."
       );
-      await Promise.all([
-        utils.comercial.pedidos.statusSemana.invalidate(),
-        utils.comercial.pedidos.agenda.invalidate(),
-        utils.comercial.pedidos.dashboard.invalidate(),
-      ]);
+      await invalidarVisaoOperacionalDia();
     },
     onError: err =>
       toast.error(err.message || "Não foi possível fechar a semana."),
@@ -434,11 +435,7 @@ export function Pedidos({
   const reabrirSemana = trpc.comercial.pedidos.reabrirSemana.useMutation({
     onSuccess: async () => {
       toast.success("Semana reaberta para ajustes.");
-      await Promise.all([
-        utils.comercial.pedidos.statusSemana.invalidate(),
-        utils.comercial.pedidos.agenda.invalidate(),
-        utils.comercial.pedidos.dashboard.invalidate(),
-      ]);
+      await invalidarVisaoOperacionalDia();
     },
     onError: err =>
       toast.error(err.message || "Não foi possível reabrir a semana."),
@@ -450,14 +447,8 @@ export function Pedidos({
           ? "Pedido já estava cancelado."
           : "Pedido cancelado e mantido no histórico."
       );
-      await Promise.all([
-        utils.comercial.pedidos.agenda.invalidate(),
-        utils.comercial.pedidos.dashboard.invalidate(),
-        utils.comercial.pedidos.compras.invalidate(),
-        utils.comercial.pedidos.relatorioHistorico.invalidate(),
-        utils.comercial.pedidos.statusSemana.invalidate(),
-        utils.comercial.entregas.roteiro.invalidate(),
-      ]);
+      setAba("operacional");
+      await invalidarVisaoOperacionalDia();
     },
     onError: err =>
       toast.error(err.message || "Não foi possível cancelar o pedido."),
@@ -475,15 +466,9 @@ export function Pedidos({
               ? `${result.pedidosMovidos} pedidos do cliente foram movidos para a nova data.`
               : "Data do pedido alterada."
         );
-        await Promise.all([
-          utils.comercial.pedidos.agenda.invalidate(),
-          utils.comercial.pedidos.dashboard.invalidate(),
-          utils.comercial.pedidos.compras.invalidate(),
-          utils.comercial.pedidos.clientes.invalidate(),
-          utils.comercial.pedidos.relatorioHistorico.invalidate(),
-          utils.comercial.pedidos.statusSemana.invalidate(),
-          utils.comercial.entregas.roteiro.invalidate(),
-        ]);
+        setAba("operacional");
+        await invalidarVisaoOperacionalDia();
+        void utils.comercial.pedidos.clientes.invalidate();
       },
       onError: err =>
         toast.error(
@@ -499,15 +484,9 @@ export function Pedidos({
         toast.success(
           `Pedido de ${result.clienteNome} copiado para ${fmtDate(result.dataEntrega)}. O original permanece no dia de origem.`
         );
-        await Promise.all([
-          utils.comercial.pedidos.agenda.invalidate(),
-          utils.comercial.pedidos.dashboard.invalidate(),
-          utils.comercial.pedidos.compras.invalidate(),
-          utils.comercial.pedidos.clientes.invalidate(),
-          utils.comercial.pedidos.relatorioHistorico.invalidate(),
-          utils.comercial.pedidos.statusSemana.invalidate(),
-          utils.comercial.entregas.roteiro.invalidate(),
-        ]);
+        setAba("operacional");
+        await invalidarVisaoOperacionalDia();
+        void utils.comercial.pedidos.clientes.invalidate();
       },
       onError: err =>
         toast.error(err.message || "Não foi possível copiar o pedido."),
@@ -682,6 +661,196 @@ export function Pedidos({
     pedidos: pedidosAtivosAgenda.filter(pedido => pedido.status === status),
   }));
 
+  const semanaRotulo = useMemo(() => {
+    const inicio = new Date(diaDate);
+    inicio.setHours(0, 0, 0, 0);
+    const diff = (inicio.getDay() + 6) % 7;
+    inicio.setDate(inicio.getDate() - diff);
+    const fim = new Date(inicio);
+    fim.setDate(fim.getDate() + 6);
+    const fmt = (d: Date) =>
+      `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+    return `${fmt(inicio)}–${fmt(fim)}`;
+  }, [diaDate]);
+
+  const pendentesSemanaPorDia = useMemo(() => {
+    if (escopoDashboard !== "semana") return [];
+    const inicio = new Date(diaDate);
+    inicio.setHours(0, 0, 0, 0);
+    const diff = (inicio.getDay() + 6) % 7;
+    inicio.setDate(inicio.getDate() - diff);
+    const dias: Array<{
+      iso: string;
+      label: string;
+      grupos: any[];
+      pedidos: number;
+    }> = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(inicio);
+      d.setDate(inicio.getDate() + i);
+      const iso = isoLocal(d);
+      const grupos = gruposDashboard.filter(
+        (g: any) =>
+          (g.dataEntregaIso ?? isoLocal(new Date(g.dataEntrega ?? dia))) === iso,
+      );
+      dias.push({
+        iso,
+        label: `${DIAS[d.getDay()]} · ${fmtDate(`${iso}T12:00:00`)}`,
+        grupos,
+        pedidos: grupos.reduce(
+          (sum: number, g: any) => sum + (g.pedidos?.length ?? 0),
+          0,
+        ),
+      });
+    }
+    return dias;
+  }, [escopoDashboard, diaDate, gruposDashboard, dia]);
+
+  function diaDoGrupoDashboard(grupo: any): Date {
+    if (grupo?.dataEntregaIso) {
+      return new Date(`${grupo.dataEntregaIso}T12:00:00`);
+    }
+    if (grupo?.dataEntrega) return new Date(grupo.dataEntrega);
+    return diaDate;
+  }
+
+  function renderGrupoDashboardCard(grupo: any) {
+    const diaGrupo = diaDoGrupoDashboard(grupo);
+    return (
+      <Card
+        key={`${grupo.contaAzulCustomerId}-${grupo.status}-${grupo.dataEntregaIso ?? ""}`}
+        className={`border-l-4 ${statusAccentClass(grupo.status)}`}
+      >
+        <CardContent className="space-y-3 p-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate font-bold">
+                {grupo.cliente?.nome ?? grupo.contaAzulCustomerId}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {grupo.cliente?.cnpjCpf || "Sem documento"} ·{" "}
+                {grupo.pedidos.length} pedido(s)
+                {escopoDashboard === "semana" && grupo.dataEntregaIso
+                  ? ` · ${fmtDate(`${grupo.dataEntregaIso}T12:00:00`)}`
+                  : ""}
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <select
+                className={`h-8 rounded-md border px-2 text-xs font-semibold ${statusSelectClass(grupo.status)}`}
+                value={grupo.status}
+                onChange={e =>
+                  mudarStatus.mutate({
+                    contaAzulCustomerId: grupo.contaAzulCustomerId,
+                    dia: diaGrupo,
+                    statusAtual: grupo.status as any,
+                    status: e.target.value as any,
+                  })
+                }
+              >
+                {STATUS.map(s => (
+                  <option key={s} value={s}>
+                    {labelStatus(s)}
+                  </option>
+                ))}
+              </select>
+              {escopoDashboard === "semana" && grupo.dataEntregaIso ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs"
+                  onClick={() => {
+                    setDia(grupo.dataEntregaIso);
+                    setEscopoDashboard("dia");
+                  }}
+                >
+                  Abrir dia
+                </Button>
+              ) : null}
+            </div>
+          </div>
+          <RegrasResumo regra={grupo.regras} />
+          <AlertaAcumuloFaturamento avisos={grupo.avisosAcumulo ?? []} />
+          <AlertaAvariasPedidoCopiado alertas={grupo.alertasAvariasPendentes} />
+          <DestaqueObservacaoPedido pedidos={grupo.pedidos ?? []} />
+          <div className="grid gap-2">
+            {grupo.itens.map((item: any) => {
+              const obsItem = observacaoOperacional(item.observacoes);
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-3 rounded-xl bg-sky-50/70 px-3 py-2.5 text-sm ring-1 ring-sky-100 dark:bg-sky-950/20 dark:ring-sky-900/50"
+                >
+                  <div className="flex h-12 w-14 shrink-0 flex-col items-center justify-center rounded-lg bg-white text-sky-900 shadow-sm ring-1 ring-sky-100 dark:bg-slate-950 dark:text-sky-100 dark:ring-sky-900">
+                    <span className="text-lg font-extrabold leading-none">
+                      {fmtQtd(item.quantidade)}
+                    </span>
+                    <span className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-700 dark:text-sky-300">
+                      Qtd.
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-extrabold leading-tight text-slate-950 dark:text-slate-50">
+                      {item.produtoNome}
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      {item.categoria ? (
+                        <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground ring-1 ring-sky-100 dark:bg-slate-950/70 dark:ring-sky-900">
+                          {item.categoria}
+                        </span>
+                      ) : null}
+                      {podeVerValores && item.precoUnit != null ? (
+                        <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 ring-1 ring-emerald-100 dark:bg-slate-950/70 dark:text-emerald-200 dark:ring-emerald-900">
+                          {fmtMoney(item.precoUnit)}
+                          {item.precoEspecial ? " · especial" : ""}
+                        </span>
+                      ) : null}
+                      {obsItem ? (
+                        <span className="text-xs text-muted-foreground">
+                          Obs. item: {obsItem}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {grupo.avarias?.length ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-2 dark:border-amber-900/60 dark:bg-amber-950/10">
+              <p className="mb-1 text-xs font-bold uppercase tracking-wide text-amber-800 dark:text-amber-200">
+                Avarias
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {grupo.avarias.map((a: any) => (
+                  <span
+                    key={a.id}
+                    className="rounded-lg bg-background px-2 py-1 text-xs"
+                  >
+                    <span className="font-medium">
+                      {Number(a.quantidade)} × {a.produtoNome}
+                      {a.categoria ? ` · ${a.categoria}` : ""}
+                    </span>
+                    {a.observacoes ? (
+                      <span className="block text-muted-foreground">
+                        {a.observacoes}
+                      </span>
+                    ) : null}
+                    {a.criadoPor?.nome || a.criadoPor?.email ? (
+                      <span className="block text-[10px] text-muted-foreground">
+                        Lançado por {a.criadoPor?.nome ?? a.criadoPor?.email}
+                      </span>
+                    ) : null}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+    );
+  }
+
   function salvarPedidoAtual() {
     if (!clienteId) return toast.error("Selecione um cliente Conta Azul.");
     if (!tipoVenda) return toast.error("Tipo de venda é obrigatório.");
@@ -725,6 +894,8 @@ export function Pedidos({
   function irParaSemanaPendente() {
     if (!bloqueioSemana) return;
     setDia(isoLocal(new Date(bloqueioSemana.inicio)));
+    setEscopoDashboard("semana");
+    setAba("operacional");
   }
 
   function fecharSemanaAtual(ignorarConciliacao = false) {
@@ -1098,14 +1269,89 @@ export function Pedidos({
         <TabsContent value="operacional" className="space-y-3">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <CalendarDays className="h-4 w-4" /> {DIAS[diaDate.getDay()]} ·{" "}
-                {dia}
-              </CardTitle>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <CalendarDays className="h-4 w-4" />
+                  {escopoDashboard === "semana"
+                    ? `Semana ${semanaRotulo} · abertos`
+                    : `${DIAS[diaDate.getDay()]} · ${dia}`}
+                </CardTitle>
+                <div className="inline-flex rounded-lg border bg-muted/40 p-0.5">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={escopoDashboard === "dia" ? "default" : "ghost"}
+                    className="h-8 px-3 text-xs"
+                    onClick={() => setEscopoDashboard("dia")}
+                  >
+                    Dia
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={escopoDashboard === "semana" ? "default" : "ghost"}
+                    className="h-8 px-3 text-xs"
+                    onClick={() => setEscopoDashboard("semana")}
+                  >
+                    Semana (pendentes)
+                  </Button>
+                </div>
+              </div>
+              {escopoDashboard === "semana" ? (
+                <p className="text-xs text-muted-foreground">
+                  Pedidos ainda abertos (pendente ou pronto) de segunda a domingo
+                  da data selecionada. Use «Abrir dia» para detalhar ou alterar
+                  itens.
+                </p>
+              ) : null}
             </CardHeader>
             <CardContent className="space-y-4">
               <PedidosKpiDashboard kpis={dashboardKpis} />
-              {gruposAtivosDashboard.length === 0 ? (
+              {escopoDashboard === "semana" ? (
+                gruposDashboard.length === 0 ? (
+                  <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                    Nenhum pedido pendente/pronto nesta semana.
+                  </p>
+                ) : (
+                  <div className="space-y-5">
+                    {pendentesSemanaPorDia.map(diaBloco => (
+                      <section key={diaBloco.iso} className="space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-bold">{diaBloco.label}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {diaBloco.pedidos} pedido(s) aberto(s) ·{" "}
+                              {diaBloco.grupos.length} cliente(s)
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 text-xs"
+                            onClick={() => {
+                              setDia(diaBloco.iso);
+                              setEscopoDashboard("dia");
+                            }}
+                          >
+                            Ver dia
+                          </Button>
+                        </div>
+                        {diaBloco.grupos.length === 0 ? (
+                          <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
+                            Sem pendências neste dia.
+                          </p>
+                        ) : (
+                          <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+                            {diaBloco.grupos.map((grupo: any) =>
+                              renderGrupoDashboardCard(grupo),
+                            )}
+                          </div>
+                        )}
+                      </section>
+                    ))}
+                  </div>
+                )
+              ) : gruposAtivosDashboard.length === 0 ? (
                 <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
                   Nenhum pedido ativo para o dia selecionado.
                 </p>
@@ -1132,150 +1378,17 @@ export function Pedidos({
                         </p>
                       ) : (
                         <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
-                          {bloco.grupos.map((grupo: any) => (
-                            <Card
-                              key={`${grupo.contaAzulCustomerId}-${grupo.status}`}
-                              className={`border-l-4 ${statusAccentClass(grupo.status)}`}
-                            >
-                              <CardContent className="space-y-3 p-3">
-                                <div className="flex flex-wrap items-start justify-between gap-3">
-                                  <div className="min-w-0">
-                                    <p className="truncate font-bold">
-                                      {grupo.cliente?.nome ??
-                                        grupo.contaAzulCustomerId}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {grupo.cliente?.cnpjCpf ||
-                                        "Sem documento"}{" "}
-                                      · {grupo.pedidos.length} pedido(s)
-                                    </p>
-                                  </div>
-                                  <div className="flex shrink-0 flex-wrap items-center gap-2">
-                                    <select
-                                      className={`h-8 rounded-md border px-2 text-xs font-semibold ${statusSelectClass(grupo.status)}`}
-                                      value={grupo.status}
-                                      onChange={e =>
-                                        mudarStatus.mutate({
-                                          contaAzulCustomerId:
-                                            grupo.contaAzulCustomerId,
-                                          dia: diaDate,
-                                          statusAtual: grupo.status as any,
-                                          status: e.target.value as any,
-                                        })
-                                      }
-                                    >
-                                      {STATUS.map(s => (
-                                        <option key={s} value={s}>
-                                          {labelStatus(s)}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                </div>
-                                <RegrasResumo regra={grupo.regras} />
-                                <AlertaAcumuloFaturamento
-                                  avisos={grupo.avisosAcumulo ?? []}
-                                />
-                                <AlertaAvariasPedidoCopiado
-                                  alertas={grupo.alertasAvariasPendentes}
-                                />
-                                <DestaqueObservacaoPedido
-                                  pedidos={grupo.pedidos ?? []}
-                                />
-                                <div className="grid gap-2">
-                                  {grupo.itens.map((item: any) => {
-                                    const obsItem = observacaoOperacional(
-                                      item.observacoes
-                                    );
-                                    return (
-                                      <div
-                                        key={item.id}
-                                        className="flex items-center gap-3 rounded-xl bg-sky-50/70 px-3 py-2.5 text-sm ring-1 ring-sky-100 dark:bg-sky-950/20 dark:ring-sky-900/50"
-                                      >
-                                        <div className="flex h-12 w-14 shrink-0 flex-col items-center justify-center rounded-lg bg-white text-sky-900 shadow-sm ring-1 ring-sky-100 dark:bg-slate-950 dark:text-sky-100 dark:ring-sky-900">
-                                          <span className="text-lg font-extrabold leading-none">
-                                            {fmtQtd(item.quantidade)}
-                                          </span>
-                                          <span className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-700 dark:text-sky-300">
-                                            Qtd.
-                                          </span>
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                          <p className="truncate text-base font-extrabold leading-tight text-slate-950 dark:text-slate-50">
-                                            {item.produtoNome}
-                                          </p>
-                                          <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                                            {item.categoria ? (
-                                              <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground ring-1 ring-sky-100 dark:bg-slate-950/70 dark:ring-sky-900">
-                                                {item.categoria}
-                                              </span>
-                                            ) : null}
-                                            {podeVerValores &&
-                                            item.precoUnit != null ? (
-                                              <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 ring-1 ring-emerald-100 dark:bg-slate-950/70 dark:text-emerald-200 dark:ring-emerald-900">
-                                                {fmtMoney(item.precoUnit)}
-                                                {item.precoEspecial
-                                                  ? " · especial"
-                                                  : ""}
-                                              </span>
-                                            ) : null}
-                                            {obsItem ? (
-                                              <span className="text-xs text-muted-foreground">
-                                                Obs. item: {obsItem}
-                                              </span>
-                                            ) : null}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                                {grupo.avarias?.length ? (
-                                  <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-2 dark:border-amber-900/60 dark:bg-amber-950/10">
-                                    <p className="mb-1 text-xs font-bold uppercase tracking-wide text-amber-800 dark:text-amber-200">
-                                      Avarias
-                                    </p>
-                                    <div className="flex flex-wrap gap-2">
-                                      {grupo.avarias.map((a: any) => (
-                                        <span
-                                          key={a.id}
-                                          className="rounded-lg bg-background px-2 py-1 text-xs"
-                                        >
-                                          <span className="font-medium">
-                                            {Number(a.quantidade)} ×{" "}
-                                            {a.produtoNome}
-                                            {a.categoria
-                                              ? ` · ${a.categoria}`
-                                              : ""}
-                                          </span>
-                                          {a.observacoes ? (
-                                            <span className="block text-muted-foreground">
-                                              {a.observacoes}
-                                            </span>
-                                          ) : null}
-                                          {a.criadoPor?.nome ||
-                                          a.criadoPor?.email ? (
-                                            <span className="block text-[10px] text-muted-foreground">
-                                              Lançado por{" "}
-                                              {a.criadoPor?.nome ??
-                                                a.criadoPor?.email}
-                                            </span>
-                                          ) : null}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                ) : null}
-                              </CardContent>
-                            </Card>
-                          ))}
+                          {bloco.grupos.map((grupo: any) =>
+                            renderGrupoDashboardCard(grupo),
+                          )}
                         </div>
                       )}
                     </section>
                   ))}
                 </div>
               )}
-              {gruposCanceladosDashboard.length > 0 ? (
+              {escopoDashboard === "dia" &&
+              gruposCanceladosDashboard.length > 0 ? (
                 <div className="rounded-xl border border-dashed bg-muted/20 p-3">
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <div>

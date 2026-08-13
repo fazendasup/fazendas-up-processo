@@ -193,10 +193,13 @@ export function ConciliacaoContaAzulPanel({
 
   const invalidarCachesConciliacao = () => {
     void utils.comercial.pedidos.conciliacaoPainel.invalidate();
-    void utils.comercial.pedidos.agenda.invalidate();
-    void utils.comercial.pedidos.dashboard.invalidate();
+    void utils.comercial.pedidos.agenda.invalidate(undefined, { refetchType: "all" });
+    void utils.comercial.pedidos.dashboard.invalidate(undefined, {
+      refetchType: "all",
+    });
     void utils.comercial.pedidos.relatorioHistorico.invalidate();
     void utils.comercial.pedidos.statusSemana.invalidate();
+    void utils.comercial.pedidos.compras.invalidate(undefined, { refetchType: "all" });
   };
 
   const confirmar = trpc.comercial.pedidos.conciliacaoConfirmarVinculo.useMutation({

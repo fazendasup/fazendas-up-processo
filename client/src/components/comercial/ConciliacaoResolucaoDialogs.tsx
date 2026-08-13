@@ -102,7 +102,10 @@ export function EditarPedidoConciliacaoDialog({
     setObservacoes(pedido.observacoes ?? "");
     setFreteCortesia(Boolean(pedido.freteCortesia));
     const d = new Date(pedido.dataEntrega);
-    setDataEntrega(d.toISOString().slice(0, 10));
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    setDataEntrega(`${y}-${m}-${day}`);
     setLinhas(
       (pedido.itens ?? []).length > 0
         ? pedido.itens.map((i: any) => ({
