@@ -553,13 +553,22 @@ export function Pedidos({
         nome: string;
         categoria: string;
         quantidade: number;
+        pendente: number;
+        pronto: number;
+        entregue: number;
         linhas: number;
         clientes: Set<string>;
       }
     >();
-    const categoriasMap = new Map<string, number>();
+    const categoriasMap = new Map<
+      string,
+      { quantidade: number; pendente: number; pronto: number; entregue: number }
+    >();
     let pedidos = 0;
     let unidades = 0;
+    let unidadesPendente = 0;
+    let unidadesPronto = 0;
+    let unidadesEntregue = 0;
     let linhas = 0;
     let observacoes = 0;
     let clientesSemRegras = 0;
@@ -588,39 +597,71 @@ export function Pedidos({
           nome,
           categoria,
           quantidade: 0,
+          pendente: 0,
+          pronto: 0,
+          entregue: 0,
           linhas: 0,
           clientes: new Set<string>(),
         };
         atual.quantidade += quantidade;
+        if (grupo.status === "PRONTO") atual.pronto += quantidade;
+        else if (grupo.status === "ENTREGUE") atual.entregue += quantidade;
+        else atual.pendente += quantidade;
         atual.linhas += 1;
         atual.clientes.add(grupo.contaAzulCustomerId);
         produtosMap.set(nome, atual);
-        categoriasMap.set(
-          categoria,
-          (categoriasMap.get(categoria) ?? 0) + quantidade
-        );
+        const cat = categoriasMap.get(categoria) ?? {
+          quantidade: 0,
+          pendente: 0,
+          pronto: 0,
+          entregue: 0,
+        };
+        cat.quantidade += quantidade;
+        if (grupo.status === "PRONTO") cat.pronto += quantidade;
+        else if (grupo.status === "ENTREGUE") cat.entregue += quantidade;
+        else cat.pendente += quantidade;
+        categoriasMap.set(categoria, cat);
         unidades += quantidade;
+        if (grupo.status === "PRONTO") unidadesPronto += quantidade;
+        else if (grupo.status === "ENTREGUE") unidadesEntregue += quantidade;
+        else unidadesPendente += quantidade;
         linhas += 1;
       }
     }
     observacoes = pedidosComObs.size;
 
     const produtos = Array.from(produtosMap.values())
-      .map(p => ({ ...p, clientes: p.clientes.size }))
+      .map(p => ({
+        ...p,
+        clientes: p.clientes.size,
+        falta: Math.max(0, p.quantidade - p.pronto - p.entregue),
+      }))
       .sort(
         (a, b) =>
-          b.quantidade - a.quantidade || a.nome.localeCompare(b.nome, "pt-BR")
+          b.falta - a.falta ||
+          b.quantidade - a.quantidade ||
+          a.nome.localeCompare(b.nome, "pt-BR")
       );
     const categorias = Array.from(categoriasMap.entries())
-      .map(([nome, quantidade]) => ({ nome, quantidade }))
+      .map(([nome, c]) => ({
+        nome,
+        ...c,
+        falta: Math.max(0, c.quantidade - c.pronto - c.entregue),
+      }))
       .sort(
         (a, b) =>
-          b.quantidade - a.quantidade || a.nome.localeCompare(b.nome, "pt-BR")
+          b.falta - a.falta ||
+          b.quantidade - a.quantidade ||
+          a.nome.localeCompare(b.nome, "pt-BR")
       );
 
     return {
       pedidos,
       unidades,
+      unidadesPendente,
+      unidadesPronto,
+      unidadesEntregue,
+      unidadesFalta: Math.max(0, unidades - unidadesPronto - unidadesEntregue),
       clientes: (grupos as any[]).filter(grupo => grupo.status !== "CANCELADO")
         .length,
       cancelados: (grupos as any[])
@@ -2449,9 +2490,9 @@ function PedidosKpiDashboard({ kpis }: { kpis: any }) {
             icon={
               <PackageCheck className="h-4 w-4 text-emerald-700 dark:text-emerald-300" />
             }
-            label="Unidades do dia"
-            value={formatQuantidade(kpis.unidades)}
-            hint="Soma das quantidades"
+            label="Ainda falta"
+            value={formatQuantidade(kpis.unidadesFalta ?? kpis.unidades)}
+            hint={`Total ${formatQuantidade(kpis.unidades)} − pronto ${formatQuantidade(kpis.unidadesPronto ?? 0)} − entregue ${formatQuantidade(kpis.unidadesEntregue ?? 0)}`}
             className="bg-emerald-500/[0.07] dark:bg-emerald-500/15"
           />
           <KpiResumoCard
@@ -2480,6 +2521,9 @@ function PedidosKpiDashboard({ kpis }: { kpis: any }) {
           <CardTitle className="flex items-center gap-2 text-sm">
             <ShoppingBasket className="h-4 w-4" /> Produtos por variedade
           </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Falta = total − pronto − entregue. O número grande é o que ainda precisa ser feito.
+          </p>
         </CardHeader>
         <CardContent>
           {produtosPorVariedade.length === 0 ? (
@@ -2489,14 +2533,13 @@ function PedidosKpiDashboard({ kpis }: { kpis: any }) {
           ) : (
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {produtosPorVariedade.map((produto: any, index: number) => {
-                const max = Math.max(
-                  1,
-                  Number(produtosPorVariedade[0]?.quantidade ?? 0)
-                );
-                const pct = Math.max(
-                  4,
-                  Math.round((Number(produto.quantidade ?? 0) / max) * 100)
-                );
+                const total = Number(produto.quantidade ?? 0);
+                const falta = Number(produto.falta ?? produto.pendente ?? total);
+                const pronto = Number(produto.pronto ?? 0);
+                const entregue = Number(produto.entregue ?? 0);
+                const feito = pronto + entregue;
+                const pctFeito =
+                  total > 0 ? Math.min(100, Math.round((feito / total) * 100)) : 0;
                 return (
                   <div
                     key={produto.nome}
@@ -2514,14 +2557,26 @@ function PedidosKpiDashboard({ kpis }: { kpis: any }) {
                           {produto.categoria} · {produto.clientes} cliente(s)
                         </p>
                       </div>
-                      <span className="shrink-0 rounded-full bg-background px-2 py-0.5 text-[11px] font-bold">
-                        {formatQuantidade(produto.quantidade)}
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                          falta > 0
+                            ? "bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-100"
+                            : "bg-emerald-100 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-100"
+                        }`}
+                      >
+                        {falta > 0
+                          ? `Falta ${formatQuantidade(falta)}`
+                          : "Feito"}
                       </span>
                     </div>
-                    <div className="h-1 overflow-hidden rounded-full bg-background">
+                    <p className="mb-1 text-[10px] tabular-nums text-muted-foreground">
+                      {formatQuantidade(total)} − pronto {formatQuantidade(pronto)} −
+                      entregue {formatQuantidade(entregue)}
+                    </p>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-amber-200/70 dark:bg-amber-900/40">
                       <div
                         className="h-full rounded-full bg-emerald-500"
-                        style={{ width: `${pct}%` }}
+                        style={{ width: `${pctFeito}%` }}
                       />
                     </div>
                   </div>
@@ -2600,12 +2655,19 @@ function PedidosKpiDashboard({ kpis }: { kpis: any }) {
               {categorias.map((categoria: any) => (
                 <div
                   key={categoria.nome}
-                  className="flex items-center justify-between gap-2 rounded-lg border bg-muted/20 px-3 py-2 text-sm"
+                  className="rounded-lg border bg-muted/20 px-3 py-2 text-sm"
                 >
-                  <span className="truncate font-medium">{categoria.nome}</span>
-                  <span className="font-bold">
-                    {formatQuantidade(categoria.quantidade)}
-                  </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{categoria.nome}</span>
+                    <span className="font-bold tabular-nums">
+                      Falta {formatQuantidade(categoria.falta ?? categoria.quantidade)}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-[10px] tabular-nums text-muted-foreground">
+                    {formatQuantidade(categoria.quantidade)} − pronto{" "}
+                    {formatQuantidade(categoria.pronto ?? 0)} − entregue{" "}
+                    {formatQuantidade(categoria.entregue ?? 0)}
+                  </p>
                 </div>
               ))}
               {categorias.length === 0 ? (
