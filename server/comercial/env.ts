@@ -27,7 +27,13 @@ const envSchema = z.object({
   CONTA_AZUL_TOKEN_URL: z.string().url().optional(),
   CONTA_AZUL_API_BASE_URL: z.string().url().optional(),
   CONTA_AZUL_SCOPES: z.string().optional(),
-  CONTA_AZUL_VENDAS_SYNC_DIAS: z.coerce.number().int().min(1).max(365).default(365),
+  CONTA_AZUL_VENDAS_SYNC_DIAS: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(365)
+    .default(365)
+    .transform(n => Math.max(n, 90)),
   MANYCHAT_API_KEY: z.string().optional(),
   MANUS_API_URL: z.string().url().optional(),
   MANUS_API_KEY: z.string().optional(),

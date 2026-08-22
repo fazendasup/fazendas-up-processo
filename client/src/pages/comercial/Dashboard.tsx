@@ -57,7 +57,7 @@ import {
 } from "@/lib/comercial/fuBrand";
 import { useTheme } from "@/contexts/ThemeContext";
 import { comercialPath } from "@/lib/comercial/routes";
-import { hojeIsoLocal, intervaloDoPreset, type PeriodoPreset } from "@/lib/comercial/periodo";
+import { hojeIsoLocal, intervaloDoPreset, primeiroDiaMesIso, type PeriodoPreset } from "@/lib/comercial/periodo";
 import { useSyncContaAzul } from "@/hooks/useSyncContaAzul";
 import { trpc } from "@/lib/trpc";
 
@@ -95,11 +95,7 @@ export function Dashboard() {
   const lineActiveStroke = theme === "dark" ? "#030712" : "#f8fafc";
 
   const [preset, setPreset] = useState<PeriodoPreset>("mes_atual");
-  const [customInicio, setCustomInicio] = useState(() => {
-    const d = new Date();
-    d.setDate(1);
-    return d.toISOString().slice(0, 10);
-  });
+  const [customInicio, setCustomInicio] = useState(primeiroDiaMesIso);
   const [customFim, setCustomFim] = useState(hojeIsoLocal);
   const [busca, setBusca] = useState("");
   const { inicio, fim } = useMemo(

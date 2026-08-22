@@ -110,7 +110,7 @@ const trpcClient = trpc.createClient({
   links: [
     splitLink({
       condition(op) {
-        return op.type === "mutation" && isLongRunningTrpcOp(op.path);
+        return isLongRunningTrpcOp(op.path);
       },
       true: httpLink({
         ...trpcLinkOptions,

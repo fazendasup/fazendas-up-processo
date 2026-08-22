@@ -78,7 +78,7 @@ export function DeltaBadge({ value }: { value: number | null | undefined }) {
             : "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300",
       ].join(" ")}
     >
-      {fmtVariacao(value)} vs período anterior
+      {fmtVariacao(value)} vs mesmo período no mês anterior
     </span>
   );
 }

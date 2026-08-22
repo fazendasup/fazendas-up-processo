@@ -1,3 +1,5 @@
+import { periodoMesAnterior } from "@shared/comercial/periodo-america-sp";
+
 export function n(v: unknown): number {
   const out = Number(v ?? 0);
   return Number.isFinite(out) ? out : 0;
@@ -7,11 +9,9 @@ export function round2(v: number): number {
   return Math.round(v * 100) / 100;
 }
 
+/** Mesmo intervalo de dias no mês anterior (ex.: 1–22/ago → 1–22/jul). */
 export function periodoAnterior(inicio: Date, fim: Date): { inicio: Date; fim: Date } {
-  const ms = Math.max(86_400_000, fim.getTime() - inicio.getTime());
-  const fimPrev = new Date(inicio.getTime() - 1);
-  const inicioPrev = new Date(fimPrev.getTime() - ms);
-  return { inicio: inicioPrev, fim: fimPrev };
+  return periodoMesAnterior(inicio, fim);
 }
 
 export function variacaoPct(atual: number, anterior: number): number | null {

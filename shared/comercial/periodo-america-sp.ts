@@ -29,3 +29,27 @@ export function inicioMesAmericaSp(ref: Date = new Date()): Date {
 export function fimMesAteHojeAmericaSp(ref: Date = new Date()): Date {
   return fimDiaAmericaSp(diaIsoAmericaSp(ref));
 }
+
+/** Mesmo dia civil no mês anterior (America/Sao_Paulo). 31/mar → 28/fev em ano não bissexto. */
+export function diaIsoMesAnterior(isoDia: string): string {
+  const [y, m, d] = isoDia.split("-").map(Number);
+  let ano = y;
+  let mes = m - 1;
+  if (mes <= 0) {
+    mes = 12;
+    ano -= 1;
+  }
+  const ultimoDia = new Date(ano, mes, 0).getDate();
+  const dia = Math.min(d, ultimoDia);
+  return `${ano}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+}
+
+/** Intervalo equivalente no mês anterior: mesmos dias de início e fim (calendário SP). */
+export function periodoMesAnterior(inicio: Date, fim: Date): { inicio: Date; fim: Date } {
+  const inicioIso = diaIsoAmericaSp(inicio);
+  const fimIso = diaIsoAmericaSp(fim);
+  return {
+    inicio: inicioDiaAmericaSp(diaIsoMesAnterior(inicioIso)),
+    fim: fimDiaAmericaSp(diaIsoMesAnterior(fimIso)),
+  };
+}

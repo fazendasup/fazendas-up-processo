@@ -9,6 +9,7 @@ const LONG_TRPC_PATHS = new Set([
   "comercial.integracoes.sincronizarContaAzul",
   "comercial.integracoes.aplicarInteligenciaComercial",
   "comercial.pedidos.copiarSemanaAnterior",
+  "comercial.relatorios.resumo",
 ]);
 
 export function isLongRunningTrpcOp(path: string): boolean {

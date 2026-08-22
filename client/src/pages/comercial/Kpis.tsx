@@ -30,7 +30,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { PeriodoFiltro } from "@/components/comercial/ui/PeriodoFiltro";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { exportTableDocument } from "@/lib/exportTableDocument";
-import { hojeIsoLocal, intervaloDoPreset, labelPreset, type PeriodoPreset } from "@/lib/comercial/periodo";
+import { hojeIsoLocal, intervaloDoPreset, labelPreset, primeiroDiaMesIso, type PeriodoPreset } from "@/lib/comercial/periodo";
 import { trpc } from "@/lib/trpc";
 
 const GREEN = CHART.green.mid;
@@ -114,11 +114,7 @@ export function Kpis() {
   const lineActiveStroke = theme === "dark" ? "#030712" : "#f8fafc";
 
   const [preset, setPreset] = useState<PeriodoPreset>("mes_atual");
-  const [customInicio, setCustomInicio] = useState(() => {
-    const d = new Date();
-    d.setDate(1);
-    return d.toISOString().slice(0, 10);
-  });
+  const [customInicio, setCustomInicio] = useState(primeiroDiaMesIso);
   const [customFim, setCustomFim] = useState(hojeIsoLocal);
   const { inicio, fim } = useMemo(
     () => intervaloDoPreset(preset, { inicio: customInicio, fim: customFim }),

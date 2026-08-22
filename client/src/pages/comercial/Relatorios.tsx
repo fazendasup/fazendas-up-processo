@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   ArrowDownAZ,
   ArrowUpAZ,
@@ -50,9 +50,12 @@ import {
   hojeIsoLocal,
   intervaloDoPreset,
   labelPreset,
+  primeiroDiaMesIso,
   type PeriodoPreset,
 } from "@/lib/comercial/periodo";
+import { diaIsoAmericaSp } from "@shared/comercial/periodo-america-sp";
 import { trpc } from "@/lib/trpc";
+import { isTrpcAbortError } from "@/lib/trpc-fetch";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { exportObjectRows } from "@/lib/exportTableDocument";
 
@@ -120,19 +123,45 @@ function fmtDate(d: Date | string | null | undefined) {
   });
 }
 
-function exportCsv(filename: string, rows: Record<string, unknown>[]) {
+function diasCivis(inicio: Date | string, fim: Date | string): number {
+  const a = new Date(`${diaIsoAmericaSp(new Date(inicio))}T12:00:00-03:00`);
+  const b = new Date(`${diaIsoAmericaSp(new Date(fim))}T12:00:00-03:00`);
+  return Math.round((b.getTime() - a.getTime()) / 86_400_000) + 1;
+}
+
+function slugFilename(title: string) {
+  return title
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function exportCsv(
+  filename: string,
+  rows: Record<string, unknown>[],
+  subtitle?: string,
+) {
   if (!rows.length) return;
   exportObjectRows(rows, {
     title: filename.replace(/\.csv$/i, ""),
+    subtitle,
     filename,
     format: "csv",
   });
 }
 
-function exportPdf(title: string, filename: string, rows: Record<string, unknown>[]) {
+function exportPdf(
+  title: string,
+  filename: string,
+  rows: Record<string, unknown>[],
+  subtitle?: string,
+) {
   if (!rows.length) return;
   exportObjectRows(rows, {
     title,
+    subtitle,
     filename: filename.replace(/\.csv$/i, ""),
     format: "pdf",
     orientation: Object.keys(rows[0] ?? {}).length > 6 ? "landscape" : "portrait",
@@ -443,12 +472,17 @@ function Section({
   description,
   children,
   rows,
+  exportSubtitle,
+  exportFilename,
 }: {
   title: string;
   description: string;
   children: ReactNode;
   rows?: Record<string, unknown>[];
+  exportSubtitle?: string;
+  exportFilename?: string;
 }) {
+  const fileBase = exportFilename ?? slugFilename(title);
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/5">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -459,22 +493,54 @@ function Section({
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
             {description}
           </p>
+          {exportSubtitle ? (
+            <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
+              {exportSubtitle}
+            </p>
+          ) : null}
         </div>
         {rows?.length ? (
           <ExportMenu
             label="Exportar"
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-white/15 dark:bg-white/5 dark:text-slate-200 h-auto"
-            onExportCsv={() =>
-              exportCsv(`${title.toLowerCase().replace(/\s+/g, "-")}.csv`, rows)
-            }
+            onExportCsv={() => exportCsv(`${fileBase}.csv`, rows, exportSubtitle)}
             onExportPdf={() =>
-              exportPdf(title, `${title.toLowerCase().replace(/\s+/g, "-")}.pdf`, rows)
+              exportPdf(title, `${fileBase}.pdf`, rows, exportSubtitle)
             }
           />
         ) : null}
       </div>
       {children}
     </section>
+  );
+}
+
+function TableCapNotice({
+  total,
+  cap,
+  showingAll,
+  onShowAll,
+}: {
+  total: number;
+  cap: number;
+  showingAll: boolean;
+  onShowAll: () => void;
+}) {
+  if (showingAll || total <= cap) return null;
+  return (
+    <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-950 dark:border-sky-400/30 dark:bg-sky-950/20 dark:text-sky-100">
+      <p>
+        Mostrando as <strong>{cap}</strong> linhas mais recentes de{" "}
+        <strong>{total}</strong>. O exportar inclui o período inteiro.
+      </p>
+      <button
+        type="button"
+        className="rounded-lg bg-sky-600 px-3 py-1 text-xs font-bold text-white hover:bg-sky-700"
+        onClick={onShowAll}
+      >
+        Mostrar todas
+      </button>
+    </div>
   );
 }
 
@@ -522,13 +588,10 @@ function Table({ children }: { children: ReactNode }) {
 
 export function Relatorios() {
   const [preset, setPreset] = useState<PeriodoPreset>("mes_atual");
-  const [customInicio, setCustomInicio] = useState(() => {
-    const d = new Date();
-    d.setDate(1);
-    return d.toISOString().slice(0, 10);
-  });
+  const [customInicio, setCustomInicio] = useState(primeiroDiaMesIso);
   const [customFim, setCustomFim] = useState(hojeIsoLocal);
   const [active, setActive] = useState<ReportId>("prioridades");
+  const [mostrarTodasLinhas, setMostrarTodasLinhas] = useState(false);
   const [metricaCliente, setMetricaCliente] = useState<
     "valorBruto" | "valorLiquido" | "totalVendido" | "ticketMedio"
   >("valorBruto");
@@ -550,9 +613,18 @@ export function Relatorios() {
     () => intervaloDoPreset(preset, { inicio: customInicio, fim: customFim }),
     [preset, customInicio, customFim]
   );
+  useEffect(() => {
+    setMostrarTodasLinhas(false);
+  }, [active, inicio, fim, clienteSituacao]);
   const q = trpc.comercial.relatorios.resumo.useQuery(
     { inicio, fim, clienteSituacao },
-    { staleTime: 30_000 }
+    {
+      staleTime: 30_000,
+      retry: (failureCount, err) => {
+        if (isTrpcAbortError(err)) return false;
+        return failureCount < 1;
+      },
+    }
   );
   const data = q.data;
 
@@ -1332,6 +1404,46 @@ export function Relatorios() {
     ],
   };
 
+  const periodoIsoInicio = diaIsoAmericaSp(inicio);
+  const periodoIsoFim = diaIsoAmericaSp(fim);
+  const periodoFiltroTexto = `${fmtDate(inicio)} a ${fmtDate(fim)}`;
+  const cobertura = data?.cobertura;
+  const coberturaTexto =
+    cobertura?.primeiraVenda && cobertura?.ultimaVenda
+      ? `Vendas no banco: ${fmtDate(cobertura.primeiraVenda)} a ${fmtDate(cobertura.ultimaVenda)} · ${fmtNumber(cobertura.vendas)} vendas · ${fmtNumber(cobertura.linhasProduto)} linhas de produto`
+      : "Nenhuma venda encontrada neste intervalo";
+  const exportSubtitle = `${labelPreset(preset, { inicio: customInicio, fim: customFim })} · filtro ${periodoFiltroTexto}. ${coberturaTexto}.`;
+  const diasFiltro = diasCivis(inicio, fim);
+  const diasCobertura =
+    cobertura?.primeiraVenda && cobertura?.ultimaVenda
+      ? diasCivis(cobertura.primeiraVenda, cobertura.ultimaVenda)
+      : 0;
+  const coberturaCurta = Boolean(data) && diasCobertura > 0 && diasFiltro - diasCobertura >= 7;
+
+  function ReportSection({
+    title,
+    description,
+    children,
+    rows,
+  }: {
+    title: string;
+    description: string;
+    children: ReactNode;
+    rows?: Record<string, unknown>[];
+  }) {
+    return (
+      <Section
+        title={title}
+        description={description}
+        rows={rows}
+        exportSubtitle={exportSubtitle}
+        exportFilename={`${slugFilename(title)}_${periodoIsoInicio}_a_${periodoIsoFim}`}
+      >
+        {children}
+      </Section>
+    );
+  }
+
   return (
     <div className="space-y-6 p-4 lg:p-8">
       <PageHeader
@@ -1480,6 +1592,12 @@ export function Relatorios() {
           <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
             {labelPreset(preset, { inicio: customInicio, fim: customFim })}
           </div>
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+            {periodoFiltroTexto}
+            {cobertura?.primeiraVenda && cobertura?.ultimaVenda
+              ? ` · no banco ${fmtDate(cobertura.primeiraVenda)} a ${fmtDate(cobertura.ultimaVenda)}`
+              : ""}
+          </p>
         </div>
         <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-400/25 dark:bg-sky-950/20">
           <div className="text-xs font-bold uppercase tracking-wide text-sky-800 dark:text-sky-300">
@@ -1518,14 +1636,34 @@ export function Relatorios() {
 
       {q.isLoading ? (
         <div className="rounded-2xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500">
-          Carregando relatórios...
+          Carregando relatórios do período {periodoFiltroTexto}...
+          {diasFiltro > 14 ? (
+            <span className="mt-2 block text-xs">
+              Períodos longos podem levar alguns minutos na primeira carga.
+            </span>
+          ) : null}
         </div>
+      ) : q.isError ? (
+        <Notice>
+          {isTrpcAbortError(q.error)
+            ? "A consulta deste período foi interrompida. Tente de novo — intervalos longos agora têm até 30 minutos para concluir."
+            : q.error.message ||
+              "Não foi possível carregar os relatórios comerciais."}
+        </Notice>
       ) : !data ? (
         <Notice>Não foi possível carregar os relatórios comerciais.</Notice>
       ) : (
         <>
+          {coberturaCurta ? (
+            <Notice>
+              Você filtrou {diasFiltro} dias ({periodoFiltroTexto}), mas as vendas
+              no banco vão só de {fmtDate(cobertura?.primeiraVenda)} a{" "}
+              {fmtDate(cobertura?.ultimaVenda)} ({diasCobertura} dias). Sincronize a
+              Conta Azul de novo para puxar o histórico completo (mínimo 90 dias).
+            </Notice>
+          ) : null}
           {active === "prioridades" ? (
-            <Section
+            <ReportSection
               title="O que fazer agora"
               description="Lista curta para uma operação pequena: priorize ligação, WhatsApp ou revisão de preço antes de abrir planilhas."
               rows={prioridades.map(item => ({
@@ -1588,11 +1726,11 @@ export function Relatorios() {
                   </div>
                 )}
               </div>
-            </Section>
+            </ReportSection>
           ) : null}
 
           {active === "vendas-cliente" ? (
-            <Section
+            <ReportSection
               title="Análise das vendas por cliente"
               description="Produtos mais comprados por cliente no período, com quantidade de itens e valor bruto."
               rows={filterRowsDrill(
@@ -1721,11 +1859,11 @@ export function Relatorios() {
                   </tbody>
                 </table>
               </Table>
-            </Section>
+            </ReportSection>
           ) : null}
 
           {active === "cmv" ? (
-            <Section
+            <ReportSection
               title="Análise do custo da mercadoria vendida (CMV)"
               description="Custo médio, custo total, valor bruto e valor unitário médio por produto."
               rows={filterRows("cmv", data.cmv.linhas)}
@@ -1845,11 +1983,11 @@ export function Relatorios() {
                   </tbody>
                 </table>
               </Table>
-            </Section>
+            </ReportSection>
           ) : null}
 
           {active === "clientes-sem-vendas" ? (
-            <Section
+            <ReportSection
               title="Clientes sem vendas há mais tempo"
               description="Clientes ordenados pelo maior tempo desde a última venda."
               rows={filterRows("clientes-sem-vendas", data.clientesSemVendas)}
@@ -1915,11 +2053,11 @@ export function Relatorios() {
                   </tbody>
                 </table>
               </Table>
-            </Section>
+            </ReportSection>
           ) : null}
 
           {active === "lucro-margem" ? (
-            <Section
+            <ReportSection
               title="Gráfico de lucro bruto e margem por mês"
               description="Lucro bruto e margem mês a mês, considerando CMV quando disponível."
               rows={filterRows("lucro-margem", data.lucroMargemMes)}
@@ -2011,11 +2149,11 @@ export function Relatorios() {
                   </tbody>
                 </table>
               </Table>
-            </Section>
+            </ReportSection>
           ) : null}
 
           {active === "maiores-clientes" ? (
-            <Section
+            <ReportSection
               title="Gráfico de maiores clientes"
               description="Compare clientes por valor bruto, valor líquido, total vendido ou ticket médio por venda."
               rows={filterRows("maiores-clientes", data.maioresClientes)}
@@ -2106,11 +2244,11 @@ export function Relatorios() {
                   </tbody>
                 </table>
               </Table>
-            </Section>
+            </ReportSection>
           ) : null}
 
           {active === "abc-clientes" ? (
-            <Section
+            <ReportSection
               title="Curva ABC de clientes"
               description="Classificação A/B/C pela receita líquida acumulada. Clique no gráfico para filtrar."
               rows={filterRowsDrill(
@@ -2199,11 +2337,11 @@ export function Relatorios() {
                   </tbody>
                 </table>
               </Table>
-            </Section>
+            </ReportSection>
           ) : null}
 
           {active === "abc-produtos" ? (
-            <Section
+            <ReportSection
               title="Curva ABC de produtos"
               description="Produtos que mais contribuem para o faturamento bruto."
               rows={filterRows("abc-produtos", data.abcProdutos ?? []).map(
@@ -2273,13 +2411,13 @@ export function Relatorios() {
                   </tbody>
                 </table>
               </Table>
-            </Section>
+            </ReportSection>
           ) : null}
 
           {active === "clientes-risco" ? (
-            <Section
+            <ReportSection
               title="Clientes em risco"
-              description="Queda ou parada de compra vs período anterior equivalente."
+              description="Queda ou parada de compra vs o mesmo intervalo no mês anterior."
               rows={filterRowsDrill(
                 "clientes-risco",
                 data.clientesRisco ?? [],
@@ -2362,11 +2500,11 @@ export function Relatorios() {
                   </tbody>
                 </table>
               </Table>
-            </Section>
+            </ReportSection>
           ) : null}
 
           {active === "margem" ? (
-            <Section
+            <ReportSection
               title="Margem por cliente"
               description="Lucro bruto e margem quando custo unitário está preenchido nos itens."
               rows={filterRowsDrill(
@@ -2450,11 +2588,11 @@ export function Relatorios() {
                   </tbody>
                 </table>
               </Table>
-            </Section>
+            </ReportSection>
           ) : null}
 
           {active === "mix-produtos" ? (
-            <Section
+            <ReportSection
               title="Mix de produtos e cross-sell"
               description="Produtos populares que clientes relevantes ainda não compram no período."
               rows={filterRowsDrill(
@@ -2530,11 +2668,11 @@ export function Relatorios() {
                   </tbody>
                 </table>
               </Table>
-            </Section>
+            </ReportSection>
           ) : null}
 
           {active === "impostos" ? (
-            <Section
+            <ReportSection
               title="Relatório de Impostos"
               description="Nota fiscal, valores e impostos por venda/serviço."
               rows={data.impostos.linhas}
@@ -2546,11 +2684,11 @@ export function Relatorios() {
                 <EmptyChart message="Dados fiscais ainda indisponíveis na base comercial." />
               </ChartCard>
               <Notice>{data.impostos.observacao}</Notice>
-            </Section>
+            </ReportSection>
           ) : null}
 
           {active === "clientes" ? (
-            <Section
+            <ReportSection
               title="Relação de clientes"
               description="Lista completa dos clientes cadastrados com dados básicos."
               rows={filterRows("clientes", data.clientes)}
@@ -2626,11 +2764,11 @@ export function Relatorios() {
                   </tbody>
                 </table>
               </Table>
-            </Section>
+            </ReportSection>
           ) : null}
 
           {active === "vendas-detalhadas" ? (
-            <Section
+            <ReportSection
               title="Relação detalhada das vendas"
               description="Cliente, vendedor, data, valor bruto, líquido, frete e desconto aplicado."
               rows={filterRows("vendas-detalhadas", data.vendasDetalhadas)}
@@ -2672,6 +2810,12 @@ export function Relatorios() {
                 data.vendasDetalhadas.length,
                 filterRows("vendas-detalhadas", data.vendasDetalhadas).length
               )}
+              <TableCapNotice
+                total={filterRows("vendas-detalhadas", data.vendasDetalhadas).length}
+                cap={150}
+                showingAll={mostrarTodasLinhas}
+                onShowAll={() => setMostrarTodasLinhas(true)}
+              />
               <Table>
                 <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
                   <thead className="bg-slate-50 dark:bg-white/5">
@@ -2700,7 +2844,10 @@ export function Relatorios() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
-                    {filterRows("vendas-detalhadas", data.vendasDetalhadas).slice(0, 150).map((r: any) => (
+                    {(mostrarTodasLinhas
+                      ? filterRows("vendas-detalhadas", data.vendasDetalhadas)
+                      : filterRows("vendas-detalhadas", data.vendasDetalhadas).slice(0, 150)
+                    ).map((r: any) => (
                       <tr key={r.id}>
                         <td className="px-3 py-2">{fmtDate(r.dataVenda)}</td>
                         <td className="px-3 py-2 font-semibold">{r.cliente}</td>
@@ -2722,11 +2869,11 @@ export function Relatorios() {
                   </tbody>
                 </table>
               </Table>
-            </Section>
+            </ReportSection>
           ) : null}
 
           {active === "produtos-vendidos" ? (
-            <Section
+            <ReportSection
               title="Relação detalhada de produtos vendidos"
               description="Produto, quantidade, valor total, cliente, data, tipo de item e desconto aplicado."
               rows={filterRows("produtos-vendidos", data.produtosVendidosDetalhados)}
@@ -2772,6 +2919,12 @@ export function Relatorios() {
                 data.produtosVendidosDetalhados.length,
                 filterRows("produtos-vendidos", data.produtosVendidosDetalhados).length
               )}
+              <TableCapNotice
+                total={filterRows("produtos-vendidos", data.produtosVendidosDetalhados).length}
+                cap={200}
+                showingAll={mostrarTodasLinhas}
+                onShowAll={() => setMostrarTodasLinhas(true)}
+              />
               <Table>
                 <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
                   <thead className="bg-slate-50 dark:bg-white/5">
@@ -2800,9 +2953,10 @@ export function Relatorios() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
-                    {filterRows("produtos-vendidos", data.produtosVendidosDetalhados)
-                      .slice(0, 200)
-                      .map((r: any, idx: number) => (
+                    {(mostrarTodasLinhas
+                      ? filterRows("produtos-vendidos", data.produtosVendidosDetalhados)
+                      : filterRows("produtos-vendidos", data.produtosVendidosDetalhados).slice(0, 200)
+                    ).map((r: any, idx: number) => (
                         <tr key={`${r.pedidoId}-${r.produto}-${idx}`}>
                           <td className="px-3 py-2">{fmtDate(r.dataVenda)}</td>
                           <td className="px-3 py-2 font-semibold">
@@ -2824,11 +2978,11 @@ export function Relatorios() {
                   </tbody>
                 </table>
               </Table>
-            </Section>
+            </ReportSection>
           ) : null}
 
           {active === "vendas-mes" ? (
-            <Section
+            <ReportSection
               title="Total de vendas por mês"
               description="Valor total vendido em cada mês, alternando entre bruto, líquido, frete e desconto."
               rows={filterRows("vendas-mes", data.vendasPorMes)}
@@ -2908,11 +3062,11 @@ export function Relatorios() {
                   </tbody>
                 </table>
               </Table>
-            </Section>
+            </ReportSection>
           ) : null}
 
           {active === "servicos" ? (
-            <Section
+            <ReportSection
               title="Relação detalhada de serviços prestados"
               description="Cliente, serviço, data, valor bruto, líquido e desconto aplicado."
               rows={data.servicosPrestados.linhas}
@@ -2924,11 +3078,11 @@ export function Relatorios() {
                 <EmptyChart message="Dados de serviços ainda indisponíveis." />
               </ChartCard>
               <Notice>{data.servicosPrestados.observacao}</Notice>
-            </Section>
+            </ReportSection>
           ) : null}
 
           {active === "contratos" ? (
-            <Section
+            <ReportSection
               title="Situação dos Contratos"
               description="Contratos ativos ou encerrados, datas e valores em aberto/pagos/vencidos."
               rows={data.contratos.linhas}
@@ -2940,11 +3094,11 @@ export function Relatorios() {
                 <EmptyChart message="Dados de contratos ainda indisponíveis." />
               </ChartCard>
               <Notice>{data.contratos.observacao}</Notice>
-            </Section>
+            </ReportSection>
           ) : null}
 
           {active === "orcamentos" ? (
-            <Section
+            <ReportSection
               title="Situação dos orçamentos"
               description="Orçamentos em andamento, cliente, data e valor bruto."
               rows={filterRows("orcamentos", data.orcamentos)}
@@ -3024,11 +3178,11 @@ export function Relatorios() {
                   </tbody>
                 </table>
               </Table>
-            </Section>
+            </ReportSection>
           ) : null}
 
           {active === "financeiro-servico" ? (
-            <Section
+            <ReportSection
               title="Situação financeira por cliente e serviço"
               description="Valores em aberto, pagos e vencidos por cliente/serviço."
               rows={data.financeiraClienteServico.linhas}
@@ -3040,11 +3194,11 @@ export function Relatorios() {
                 <EmptyChart message="Dados financeiros detalhados ainda indisponíveis." />
               </ChartCard>
               <Notice>{data.financeiraClienteServico.observacao}</Notice>
-            </Section>
+            </ReportSection>
           ) : null}
 
           {active === "vendedores" ? (
-            <Section
+            <ReportSection
               title="Análise das vendas por vendedor"
               description="Produtos/serviços vendidos por vendedor, valores e descontos."
               rows={data.vendasPorVendedor.linhas}
@@ -3056,7 +3210,7 @@ export function Relatorios() {
                 <EmptyChart message="Dados de vendedor ainda indisponíveis." />
               </ChartCard>
               <Notice>{data.vendasPorVendedor.observacao}</Notice>
-            </Section>
+            </ReportSection>
           ) : null}
         </>
       )}

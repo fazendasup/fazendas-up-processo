@@ -1,5 +1,7 @@
 export type PeriodoPreset =
   | "semana_atual"
+  | "ultimos_30_dias"
+  | "ultimos_90_dias"
   | "mes_atual"
   | "ano_atual"
   | "todo_periodo"
@@ -12,6 +14,7 @@ import {
   fimMesAteHojeAmericaSp,
   inicioDiaAmericaSp,
   inicioMesAmericaSp,
+  mesIsoAmericaSp,
 } from "@shared/comercial/periodo-america-sp";
 
 export type IntervaloPeriodo = { inicio: Date; fim: Date };
@@ -64,6 +67,18 @@ export function intervaloDoPreset(
     return { inicio: inicioSemanaAtualSp(agora), fim };
   }
 
+  if (preset === "ultimos_30_dias") {
+    const d = new Date(`${diaIsoAmericaSp(agora)}T12:00:00-03:00`);
+    d.setDate(d.getDate() - 29);
+    return { inicio: inicioDiaAmericaSp(diaIsoAmericaSp(d)), fim };
+  }
+
+  if (preset === "ultimos_90_dias") {
+    const d = new Date(`${diaIsoAmericaSp(agora)}T12:00:00-03:00`);
+    d.setDate(d.getDate() - 89);
+    return { inicio: inicioDiaAmericaSp(diaIsoAmericaSp(d)), fim };
+  }
+
   if (preset === "ano_atual") {
     const hoje = diaIsoAmericaSp(agora);
     const [ano] = hoje.split("-").map(Number);
@@ -75,6 +90,8 @@ export function intervaloDoPreset(
 
 export function labelPreset(p: PeriodoPreset, custom?: { inicio: string; fim: string }): string {
   if (p === "semana_atual") return "Esta semana";
+  if (p === "ultimos_30_dias") return "Últimos 30 dias";
+  if (p === "ultimos_90_dias") return "Últimos 90 dias";
   if (p === "mes_atual") return "Este mês";
   if (p === "ano_atual") return "Este ano";
   if (p === "todo_periodo") return "Todo o período";
@@ -88,9 +105,10 @@ export function labelPreset(p: PeriodoPreset, custom?: { inicio: string; fim: st
 }
 
 export function hojeIsoLocal(): string {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return diaIsoAmericaSp();
+}
+
+/** Primeiro dia do mês civil em America/Sao_Paulo (evita deslocar um dia via UTC). */
+export function primeiroDiaMesIso(): string {
+  return `${mesIsoAmericaSp()}-01`;
 }

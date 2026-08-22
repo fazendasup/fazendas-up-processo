@@ -33,6 +33,7 @@ export function useSyncContaAzul(callbacks?: SyncContaAzulCallbacks) {
       utils.comercial.pedidos.statusSemana.invalidate(),
       utils.comercial.pedidos.dashboard.invalidate(),
       utils.comercial.pedidos.agenda.invalidate(),
+      utils.comercial.relatorios.resumo.invalidate(),
     ]);
   };
 

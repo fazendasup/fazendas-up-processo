@@ -227,6 +227,12 @@ export const relatoriosRouter = router({
       const vendas = pedidos.filter(
         p => classificarStatusPedido(p.statusPedido) === "venda"
       );
+      let primeiraVenda: Date | null = null;
+      let ultimaVenda: Date | null = null;
+      for (const p of vendas) {
+        if (!primeiraVenda || p.dataPedido < primeiraVenda) primeiraVenda = p.dataPedido;
+        if (!ultimaVenda || p.dataPedido > ultimaVenda) ultimaVenda = p.dataPedido;
+      }
       const orcamentos = pedidos.filter(p =>
         pedidoContaOrcamento(p.statusPedido)
       );
@@ -682,6 +688,12 @@ export const relatoriosRouter = router({
           telefone: c.telefoneWhatsapp,
           endereco: c.endereco,
         })),
+        cobertura: {
+          primeiraVenda,
+          ultimaVenda,
+          vendas: vendas.length,
+          linhasProduto: produtosVendidosDetalhados.length,
+        },
         vendasDetalhadas,
         produtosVendidosDetalhados: produtosVendidosDetalhados.sort(
           (a, b) => b.dataVenda.getTime() - a.dataVenda.getTime()
