@@ -11,7 +11,9 @@ import {
   ESTOQUE_MIX_FOLHA_PADRAO,
   buildEstoqueVivoDia,
   normalizeEstoqueMixFolhaLeve,
+  previewMixEstoqueVivo,
   type ConfigProdutoEstoque,
+  type EstoqueVivoMixCfg,
   type LinhaPedidoEstoque,
 } from "../lib/estoque-vivo.js";
 import { classificarStatusPedido } from "../lib/pedido-status.js";
@@ -248,6 +250,58 @@ function money(v: unknown): number | null {
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }
+
+type MixEstoqueDb = {
+  id: string;
+  nome: string;
+  produtoReferenciaId: string;
+  perdaPercentual: unknown;
+  ativo: boolean;
+  produtoReferencia: { id: string; nome: string };
+  componentes: Array<{
+    produtoId: string;
+    quantidade: unknown;
+    produto: { id: string; nome: string };
+  }>;
+};
+
+function mapMixEstoqueDbParaCfg(row: MixEstoqueDb): EstoqueVivoMixCfg {
+  return {
+    id: row.id,
+    nome: row.nome,
+    produtoReferenciaId: row.produtoReferenciaId,
+    produtoReferenciaNome: row.produtoReferencia.nome,
+    perdaPercentual: money(row.perdaPercentual) ?? 0,
+    ativo: row.ativo,
+    componentes: row.componentes.map(c => ({
+      produtoId: c.produtoId,
+      produtoNome: c.produto.nome,
+      quantidade: money(c.quantidade) ?? 0,
+    })),
+  };
+}
+
+const mixEstoqueInclude = {
+  produtoReferencia: { select: { id: true, nome: true } },
+  componentes: {
+    include: { produto: { select: { id: true, nome: true } } },
+    orderBy: { produto: { nome: "asc" as const } },
+  },
+} satisfies Prisma.EstoqueVivoMixInclude;
+
+const mixEstoqueComponenteSchema = z.object({
+  produtoId: z.string().min(1),
+  quantidade: z.number().positive(),
+});
+
+const salvarMixEstoqueSchema = z.object({
+  id: z.string().optional(),
+  nome: z.string().min(1),
+  produtoReferenciaId: z.string().min(1),
+  perdaPercentual: z.number().min(0).max(99.99).default(0),
+  ativo: z.boolean().default(true),
+  componentes: z.array(mixEstoqueComponenteSchema).min(1),
+});
 
 async function registrarAuditoria(
   prisma: PrismaClient | Prisma.TransactionClient,
@@ -2212,6 +2266,7 @@ export const pedidosRouter = router({
           linhas: [],
           desativados: [],
           totais: { sumNec: 0, sumUn: 0, sumKg: 0 },
+          mixes: [],
           cfgMix: {
             ...ESTOQUE_MIX_FOLHA_PADRAO,
             qtdReferencia: 0,
@@ -2219,7 +2274,7 @@ export const pedidosRouter = router({
           },
         };
       }
-      const [pedidosDb, produtosDb, cfgRow] = await Promise.all([
+      const [pedidosDb, produtosDb, cfgRow, mixesDb] = await Promise.all([
         ctx.prisma!.pedidoOperacional.findMany({
           where: {
             dataEntrega: {
@@ -2242,6 +2297,11 @@ export const pedidosRouter = router({
           orderBy: { nome: "asc" },
         }),
         ctx.prisma!.estoqueVivoConfig.findUnique({ where: { id: "default" } }),
+        ctx.prisma!.estoqueVivoMix.findMany({
+          where: { ativo: true },
+          include: mixEstoqueInclude,
+          orderBy: { nome: "asc" },
+        }),
       ]);
 
       const pedidosLinhas: LinhaPedidoEstoque[] = [];
@@ -2263,6 +2323,8 @@ export const pedidosRouter = router({
           : ESTOQUE_MIX_FOLHA_PADRAO
       );
 
+      const mixesCfg = mixesDb.map(mapMixEstoqueDbParaCfg);
+
       const produtosCfg: ConfigProdutoEstoque[] = produtosDb.map(p => {
         const fatorN = money(p.fatorCompraUnidade);
         const rendN = money(p.rendimentoPorKg);
@@ -2283,6 +2345,7 @@ export const pedidosRouter = router({
         cfgMix,
         {
           incluirOcultos: input.incluirOcultos,
+          mixes: mixesCfg,
         }
       );
 
@@ -2303,6 +2366,229 @@ export const pedidosRouter = router({
               a.nome.localeCompare(b.nome, "pt-BR")
           ),
       };
+    }),
+
+  listarMixesEstoqueVivo: comercialProcedure.query(async ({ ctx }) => {
+    const rows = await ctx.prisma!.estoqueVivoMix.findMany({
+      include: mixEstoqueInclude,
+      orderBy: { nome: "asc" },
+    });
+    return rows.map(mapMixEstoqueDbParaCfg);
+  }),
+
+  previewMixEstoqueVivo: comercialProcedure
+    .input(
+      z.object({
+        mixId: z.string().optional(),
+        mix: salvarMixEstoqueSchema.optional(),
+        unidadesReferencia: z.number().positive(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      let mixCfg: EstoqueVivoMixCfg | null = null;
+      if (input.mixId) {
+        const row = await ctx.prisma!.estoqueVivoMix.findUnique({
+          where: { id: input.mixId },
+          include: mixEstoqueInclude,
+        });
+        if (!row) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Mix não encontrado." });
+        }
+        mixCfg = mapMixEstoqueDbParaCfg(row);
+      } else if (input.mix) {
+        const ref = await ctx.prisma!.produtoComercial.findUnique({
+          where: { id: input.mix.produtoReferenciaId },
+          select: { id: true, nome: true },
+        });
+        if (!ref) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Produto referência do mix não encontrado.",
+          });
+        }
+        const compIds = Array.from(
+          new Set(input.mix.componentes.map(c => c.produtoId))
+        );
+        const compDb = await ctx.prisma!.produtoComercial.findMany({
+          where: { id: { in: compIds } },
+          select: { id: true, nome: true },
+        });
+        const compPorId = new Map(compDb.map(c => [c.id, c]));
+        mixCfg = {
+          id: input.mix.id ?? "preview",
+          nome: input.mix.nome,
+          produtoReferenciaId: ref.id,
+          produtoReferenciaNome: ref.nome,
+          perdaPercentual: input.mix.perdaPercentual,
+          ativo: input.mix.ativo,
+          componentes: input.mix.componentes.map(c => {
+            const prod = compPorId.get(c.produtoId);
+            if (!prod) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: "Componente do mix não encontrado no catálogo.",
+              });
+            }
+            return {
+              produtoId: prod.id,
+              produtoNome: prod.nome,
+              quantidade: c.quantidade,
+            };
+          }),
+        };
+      } else {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Informe mixId ou mix para simular.",
+        });
+      }
+
+      const produtosDb = await ctx.prisma!.produtoComercial.findMany({
+        where: {
+          contaAzulProdutoId: { not: null },
+          importadoOperacao: true,
+          ativo: true,
+        },
+      });
+      const produtosCfg: ConfigProdutoEstoque[] = produtosDb.map(p => {
+        const fatorN = money(p.fatorCompraUnidade);
+        const rendN = money(p.rendimentoPorKg);
+        return {
+          produtoId: p.id,
+          nome: p.nome,
+          modoCompra: p.modoCompra === "KG" ? "kilo" : "unidade",
+          fator: fatorN != null && fatorN > 0 ? fatorN : null,
+          rendimento: rendN != null && rendN > 0 ? rendN : 0,
+          mixAtivo: p.mixAtivo,
+          oculto: p.ocultoListaCompra,
+        };
+      });
+
+      return {
+        mix: mixCfg,
+        unidadesReferencia: input.unidadesReferencia,
+        linhas: previewMixEstoqueVivo(
+          input.unidadesReferencia,
+          mixCfg,
+          produtosCfg
+        ),
+      };
+    }),
+
+  salvarMixEstoqueVivo: comercialProcedure
+    .use(podeConfigurarEstoqueVivo)
+    .input(salvarMixEstoqueSchema)
+    .mutation(async ({ ctx, input }) => {
+      const compIds = Array.from(
+        new Set(input.componentes.map(c => c.produtoId))
+      );
+      if (compIds.includes(input.produtoReferenciaId)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "O produto referência não pode ser componente do próprio mix.",
+        });
+      }
+      const [ref, comps] = await Promise.all([
+        ctx.prisma!.produtoComercial.findUnique({
+          where: { id: input.produtoReferenciaId },
+          select: { id: true },
+        }),
+        ctx.prisma!.produtoComercial.findMany({
+          where: { id: { in: compIds } },
+          select: { id: true },
+        }),
+      ]);
+      if (!ref) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Produto referência não encontrado.",
+        });
+      }
+      if (comps.length !== compIds.length) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Um ou mais componentes não existem no catálogo.",
+        });
+      }
+
+      const dataMix = {
+        nome: input.nome.trim(),
+        produtoReferenciaId: input.produtoReferenciaId,
+        perdaPercentual: new Prisma.Decimal(input.perdaPercentual),
+        ativo: input.ativo,
+      };
+
+      if (input.id) {
+        const existente = await ctx.prisma!.estoqueVivoMix.findUnique({
+          where: { id: input.id },
+          select: { id: true },
+        });
+        if (!existente) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Mix não encontrado." });
+        }
+        const out = await ctx.prisma!.$transaction(async tx => {
+          await tx.estoqueVivoMixComponente.deleteMany({ where: { mixId: input.id! } });
+          return tx.estoqueVivoMix.update({
+            where: { id: input.id },
+            data: {
+              ...dataMix,
+              componentes: {
+                create: input.componentes.map(c => ({
+                  produtoId: c.produtoId,
+                  quantidade: new Prisma.Decimal(c.quantidade),
+                })),
+              },
+            },
+            include: mixEstoqueInclude,
+          });
+        });
+        return mapMixEstoqueDbParaCfg(out);
+      }
+
+      try {
+        const out = await ctx.prisma!.estoqueVivoMix.create({
+          data: {
+            ...dataMix,
+            componentes: {
+              create: input.componentes.map(c => ({
+                produtoId: c.produtoId,
+                quantidade: new Prisma.Decimal(c.quantidade),
+              })),
+            },
+          },
+          include: mixEstoqueInclude,
+        });
+        return mapMixEstoqueDbParaCfg(out);
+      } catch (err) {
+        if (
+          err instanceof Prisma.PrismaClientKnownRequestError &&
+          err.code === "P2002"
+        ) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Já existe um mix para este produto referência.",
+          });
+        }
+        throw err;
+      }
+    }),
+
+  excluirMixEstoqueVivo: comercialProcedure
+    .use(podeConfigurarEstoqueVivo)
+    .input(z.object({ id: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        await ctx.prisma!.estoqueVivoMix.delete({ where: { id: input.id } });
+        return { ok: true as const };
+      } catch (err) {
+        if (
+          err instanceof Prisma.PrismaClientKnownRequestError &&
+          err.code === "P2025"
+        ) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Mix não encontrado." });
+        }
+        throw err;
+      }
     }),
 
   salvarConfigMixFolhaLeve: comercialProcedure

@@ -2,10 +2,15 @@ import { describe, expect, it } from "vitest";
 import {
   ESTOQUE_MIX_MULT,
   buildEstoqueVivoDia,
+  calcularDemandaMixCustomizado,
+  fatorPerdaEstoque,
   kgComprarPorRendimento,
   normalizeEstoqueMixFolhaLeve,
+  previewMixEstoqueVivo,
   unidadesAjustadasMixEstoque,
+  unidadesComponenteMixComPerda,
   type ConfigProdutoEstoque,
+  type EstoqueVivoMixCfg,
   type LinhaPedidoEstoque,
 } from "./estoque-vivo.js";
 
@@ -67,5 +72,90 @@ describe("estoque-vivo", () => {
     const out = buildEstoqueVivoDia(pedidos, produtos, cfgMix);
     const rucula = out.linhas.find((l) => l.nome === "Rúcula");
     expect(rucula?.comprarValor).toBe(Math.ceil(20 * 1.5));
+  });
+
+  it("calcula perda como divisor 1/(1-p)", () => {
+    expect(fatorPerdaEstoque(10)).toBeCloseTo(1 / 0.9);
+    expect(unidadesComponenteMixComPerda(100, 0.5, 10)).toBeCloseTo(55.5556, 3);
+  });
+
+  it("distribui demanda de mix customizado nos componentes", () => {
+    const mixes: EstoqueVivoMixCfg[] = [
+      {
+        id: "m1",
+        nome: "Mix salada",
+        produtoReferenciaId: "ref",
+        produtoReferenciaNome: "Mix Salada",
+        perdaPercentual: 0,
+        ativo: true,
+        componentes: [
+          { produtoId: "c1", produtoNome: "Cenoura", quantidade: 0.2 },
+          { produtoId: "c2", produtoNome: "Repolho", quantidade: 0.15 },
+        ],
+      },
+    ];
+    const pedidosMix: LinhaPedidoEstoque[] = [{ nome: "Mix Salada", quantidade: 100 }];
+    const demanda = calcularDemandaMixCustomizado(pedidosMix, mixes);
+    expect(demanda.get("Cenoura")).toBeCloseTo(20);
+    expect(demanda.get("Repolho")).toBeCloseTo(15);
+  });
+
+  it("integra mix customizado no build do dia", () => {
+    const mixes: EstoqueVivoMixCfg[] = [
+      {
+        id: "m1",
+        nome: "Mix salada",
+        produtoReferenciaId: "ref",
+        produtoReferenciaNome: "Mix Salada",
+        perdaPercentual: 10,
+        ativo: true,
+        componentes: [
+          { produtoId: "c1", produtoNome: "Cenoura", quantidade: 1 },
+        ],
+      },
+    ];
+    const produtos: ConfigProdutoEstoque[] = [
+      {
+        produtoId: "c1",
+        nome: "Cenoura",
+        modoCompra: "kilo",
+        fator: null,
+        rendimento: 10,
+        mixAtivo: false,
+        oculto: false,
+      },
+    ];
+    const pedidosMix: LinhaPedidoEstoque[] = [{ nome: "Mix Salada", quantidade: 100 }];
+    const out = buildEstoqueVivoDia(pedidosMix, produtos, cfgMix, { mixes });
+    const cenoura = out.linhas.find((l) => l.nome === "Cenoura");
+    expect(cenoura?.quantidadeMix).toBeCloseTo(111.1111, 3);
+    expect(cenoura?.comprarValor).toBeCloseTo(11.112, 2);
+    expect(cenoura?.inMixCustomizado).toBe(true);
+  });
+
+  it("preview de mix converte unidades em kg", () => {
+    const mix: EstoqueVivoMixCfg = {
+      id: "m1",
+      nome: "Mix",
+      produtoReferenciaId: "ref",
+      produtoReferenciaNome: "Mix",
+      perdaPercentual: 0,
+      ativo: true,
+      componentes: [{ produtoId: "1", produtoNome: "Alface", quantidade: 2 }],
+    };
+    const produtos: ConfigProdutoEstoque[] = [
+      {
+        produtoId: "1",
+        nome: "Alface",
+        modoCompra: "kilo",
+        fator: null,
+        rendimento: 8,
+        mixAtivo: false,
+        oculto: false,
+      },
+    ];
+    const preview = previewMixEstoqueVivo(10, mix, produtos);
+    expect(preview[0]?.unidadesNecessarias).toBe(20);
+    expect(preview[0]?.comprarValor).toBe(2.5);
   });
 });

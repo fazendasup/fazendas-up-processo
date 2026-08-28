@@ -39,6 +39,16 @@ export type Cliente = $Result.DefaultSelection<Prisma.$ClientePayload>
  */
 export type EstoqueVivoConfig = $Result.DefaultSelection<Prisma.$EstoqueVivoConfigPayload>
 /**
+ * Model EstoqueVivoMix
+ * Mix de compras com componentes proporcionais e taxa de perda.
+ */
+export type EstoqueVivoMix = $Result.DefaultSelection<Prisma.$EstoqueVivoMixPayload>
+/**
+ * Model EstoqueVivoMixComponente
+ * 
+ */
+export type EstoqueVivoMixComponente = $Result.DefaultSelection<Prisma.$EstoqueVivoMixComponentePayload>
+/**
  * Model ProdutoComercial
  * 
  */
@@ -639,6 +649,26 @@ export class PrismaClient<
     * ```
     */
   get estoqueVivoConfig(): Prisma.EstoqueVivoConfigDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.estoqueVivoMix`: Exposes CRUD operations for the **EstoqueVivoMix** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more EstoqueVivoMixes
+    * const estoqueVivoMixes = await prisma.estoqueVivoMix.findMany()
+    * ```
+    */
+  get estoqueVivoMix(): Prisma.EstoqueVivoMixDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.estoqueVivoMixComponente`: Exposes CRUD operations for the **EstoqueVivoMixComponente** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more EstoqueVivoMixComponentes
+    * const estoqueVivoMixComponentes = await prisma.estoqueVivoMixComponente.findMany()
+    * ```
+    */
+  get estoqueVivoMixComponente(): Prisma.EstoqueVivoMixComponenteDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.produtoComercial`: Exposes CRUD operations for the **ProdutoComercial** model.
@@ -1324,6 +1354,8 @@ export namespace Prisma {
     GrupoCliente: 'GrupoCliente',
     Cliente: 'Cliente',
     EstoqueVivoConfig: 'EstoqueVivoConfig',
+    EstoqueVivoMix: 'EstoqueVivoMix',
+    EstoqueVivoMixComponente: 'EstoqueVivoMixComponente',
     ProdutoComercial: 'ProdutoComercial',
     RegraComercialCliente: 'RegraComercialCliente',
     ClienteLegadoContaAzulLink: 'ClienteLegadoContaAzulLink',
@@ -1366,7 +1398,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "produtoComercial" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "syncState" | "regraClassificacao" | "templateMensagem"
+      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "estoqueVivoMix" | "estoqueVivoMixComponente" | "produtoComercial" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "syncState" | "regraClassificacao" | "templateMensagem"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1697,6 +1729,138 @@ export namespace Prisma {
           count: {
             args: Prisma.EstoqueVivoConfigCountArgs<ExtArgs>
             result: $Utils.Optional<EstoqueVivoConfigCountAggregateOutputType> | number
+          }
+        }
+      }
+      EstoqueVivoMix: {
+        payload: Prisma.$EstoqueVivoMixPayload<ExtArgs>
+        fields: Prisma.EstoqueVivoMixFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.EstoqueVivoMixFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoMixPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.EstoqueVivoMixFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoMixPayload>
+          }
+          findFirst: {
+            args: Prisma.EstoqueVivoMixFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoMixPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.EstoqueVivoMixFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoMixPayload>
+          }
+          findMany: {
+            args: Prisma.EstoqueVivoMixFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoMixPayload>[]
+          }
+          create: {
+            args: Prisma.EstoqueVivoMixCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoMixPayload>
+          }
+          createMany: {
+            args: Prisma.EstoqueVivoMixCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.EstoqueVivoMixDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoMixPayload>
+          }
+          update: {
+            args: Prisma.EstoqueVivoMixUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoMixPayload>
+          }
+          deleteMany: {
+            args: Prisma.EstoqueVivoMixDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.EstoqueVivoMixUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.EstoqueVivoMixUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoMixPayload>
+          }
+          aggregate: {
+            args: Prisma.EstoqueVivoMixAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateEstoqueVivoMix>
+          }
+          groupBy: {
+            args: Prisma.EstoqueVivoMixGroupByArgs<ExtArgs>
+            result: $Utils.Optional<EstoqueVivoMixGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.EstoqueVivoMixCountArgs<ExtArgs>
+            result: $Utils.Optional<EstoqueVivoMixCountAggregateOutputType> | number
+          }
+        }
+      }
+      EstoqueVivoMixComponente: {
+        payload: Prisma.$EstoqueVivoMixComponentePayload<ExtArgs>
+        fields: Prisma.EstoqueVivoMixComponenteFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.EstoqueVivoMixComponenteFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoMixComponentePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.EstoqueVivoMixComponenteFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoMixComponentePayload>
+          }
+          findFirst: {
+            args: Prisma.EstoqueVivoMixComponenteFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoMixComponentePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.EstoqueVivoMixComponenteFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoMixComponentePayload>
+          }
+          findMany: {
+            args: Prisma.EstoqueVivoMixComponenteFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoMixComponentePayload>[]
+          }
+          create: {
+            args: Prisma.EstoqueVivoMixComponenteCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoMixComponentePayload>
+          }
+          createMany: {
+            args: Prisma.EstoqueVivoMixComponenteCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.EstoqueVivoMixComponenteDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoMixComponentePayload>
+          }
+          update: {
+            args: Prisma.EstoqueVivoMixComponenteUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoMixComponentePayload>
+          }
+          deleteMany: {
+            args: Prisma.EstoqueVivoMixComponenteDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.EstoqueVivoMixComponenteUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.EstoqueVivoMixComponenteUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueVivoMixComponentePayload>
+          }
+          aggregate: {
+            args: Prisma.EstoqueVivoMixComponenteAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateEstoqueVivoMixComponente>
+          }
+          groupBy: {
+            args: Prisma.EstoqueVivoMixComponenteGroupByArgs<ExtArgs>
+            result: $Utils.Optional<EstoqueVivoMixComponenteGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.EstoqueVivoMixComponenteCountArgs<ExtArgs>
+            result: $Utils.Optional<EstoqueVivoMixComponenteCountAggregateOutputType> | number
           }
         }
       }
@@ -3385,6 +3549,8 @@ export namespace Prisma {
     grupoCliente?: GrupoClienteOmit
     cliente?: ClienteOmit
     estoqueVivoConfig?: EstoqueVivoConfigOmit
+    estoqueVivoMix?: EstoqueVivoMixOmit
+    estoqueVivoMixComponente?: EstoqueVivoMixComponenteOmit
     produtoComercial?: ProdutoComercialOmit
     regraComercialCliente?: RegraComercialClienteOmit
     clienteLegadoContaAzulLink?: ClienteLegadoContaAzulLinkOmit
@@ -3731,6 +3897,37 @@ export namespace Prisma {
 
 
   /**
+   * Count Type EstoqueVivoMixCountOutputType
+   */
+
+  export type EstoqueVivoMixCountOutputType = {
+    componentes: number
+  }
+
+  export type EstoqueVivoMixCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    componentes?: boolean | EstoqueVivoMixCountOutputTypeCountComponentesArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * EstoqueVivoMixCountOutputType without action
+   */
+  export type EstoqueVivoMixCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMixCountOutputType
+     */
+    select?: EstoqueVivoMixCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * EstoqueVivoMixCountOutputType without action
+   */
+  export type EstoqueVivoMixCountOutputTypeCountComponentesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EstoqueVivoMixComponenteWhereInput
+  }
+
+
+  /**
    * Count Type ProdutoComercialCountOutputType
    */
 
@@ -3739,6 +3936,7 @@ export namespace Prisma {
     itensPedido: number
     avariasPedido: number
     mixReferenciadoPor: number
+    estoqueVivoMixComponentes: number
   }
 
   export type ProdutoComercialCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -3746,6 +3944,7 @@ export namespace Prisma {
     itensPedido?: boolean | ProdutoComercialCountOutputTypeCountItensPedidoArgs
     avariasPedido?: boolean | ProdutoComercialCountOutputTypeCountAvariasPedidoArgs
     mixReferenciadoPor?: boolean | ProdutoComercialCountOutputTypeCountMixReferenciadoPorArgs
+    estoqueVivoMixComponentes?: boolean | ProdutoComercialCountOutputTypeCountEstoqueVivoMixComponentesArgs
   }
 
   // Custom InputTypes
@@ -3785,6 +3984,13 @@ export namespace Prisma {
    */
   export type ProdutoComercialCountOutputTypeCountMixReferenciadoPorArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: ProdutoComercialWhereInput
+  }
+
+  /**
+   * ProdutoComercialCountOutputType without action
+   */
+  export type ProdutoComercialCountOutputTypeCountEstoqueVivoMixComponentesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EstoqueVivoMixComponenteWhereInput
   }
 
 
@@ -9349,6 +9555,1977 @@ export namespace Prisma {
 
 
   /**
+   * Model EstoqueVivoMix
+   */
+
+  export type AggregateEstoqueVivoMix = {
+    _count: EstoqueVivoMixCountAggregateOutputType | null
+    _avg: EstoqueVivoMixAvgAggregateOutputType | null
+    _sum: EstoqueVivoMixSumAggregateOutputType | null
+    _min: EstoqueVivoMixMinAggregateOutputType | null
+    _max: EstoqueVivoMixMaxAggregateOutputType | null
+  }
+
+  export type EstoqueVivoMixAvgAggregateOutputType = {
+    perdaPercentual: Decimal | null
+  }
+
+  export type EstoqueVivoMixSumAggregateOutputType = {
+    perdaPercentual: Decimal | null
+  }
+
+  export type EstoqueVivoMixMinAggregateOutputType = {
+    id: string | null
+    nome: string | null
+    produtoReferenciaId: string | null
+    perdaPercentual: Decimal | null
+    ativo: boolean | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type EstoqueVivoMixMaxAggregateOutputType = {
+    id: string | null
+    nome: string | null
+    produtoReferenciaId: string | null
+    perdaPercentual: Decimal | null
+    ativo: boolean | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type EstoqueVivoMixCountAggregateOutputType = {
+    id: number
+    nome: number
+    produtoReferenciaId: number
+    perdaPercentual: number
+    ativo: number
+    criadoEm: number
+    atualizadoEm: number
+    _all: number
+  }
+
+
+  export type EstoqueVivoMixAvgAggregateInputType = {
+    perdaPercentual?: true
+  }
+
+  export type EstoqueVivoMixSumAggregateInputType = {
+    perdaPercentual?: true
+  }
+
+  export type EstoqueVivoMixMinAggregateInputType = {
+    id?: true
+    nome?: true
+    produtoReferenciaId?: true
+    perdaPercentual?: true
+    ativo?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type EstoqueVivoMixMaxAggregateInputType = {
+    id?: true
+    nome?: true
+    produtoReferenciaId?: true
+    perdaPercentual?: true
+    ativo?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type EstoqueVivoMixCountAggregateInputType = {
+    id?: true
+    nome?: true
+    produtoReferenciaId?: true
+    perdaPercentual?: true
+    ativo?: true
+    criadoEm?: true
+    atualizadoEm?: true
+    _all?: true
+  }
+
+  export type EstoqueVivoMixAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which EstoqueVivoMix to aggregate.
+     */
+    where?: EstoqueVivoMixWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EstoqueVivoMixes to fetch.
+     */
+    orderBy?: EstoqueVivoMixOrderByWithRelationInput | EstoqueVivoMixOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: EstoqueVivoMixWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EstoqueVivoMixes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EstoqueVivoMixes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned EstoqueVivoMixes
+    **/
+    _count?: true | EstoqueVivoMixCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: EstoqueVivoMixAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: EstoqueVivoMixSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: EstoqueVivoMixMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: EstoqueVivoMixMaxAggregateInputType
+  }
+
+  export type GetEstoqueVivoMixAggregateType<T extends EstoqueVivoMixAggregateArgs> = {
+        [P in keyof T & keyof AggregateEstoqueVivoMix]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateEstoqueVivoMix[P]>
+      : GetScalarType<T[P], AggregateEstoqueVivoMix[P]>
+  }
+
+
+
+
+  export type EstoqueVivoMixGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EstoqueVivoMixWhereInput
+    orderBy?: EstoqueVivoMixOrderByWithAggregationInput | EstoqueVivoMixOrderByWithAggregationInput[]
+    by: EstoqueVivoMixScalarFieldEnum[] | EstoqueVivoMixScalarFieldEnum
+    having?: EstoqueVivoMixScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: EstoqueVivoMixCountAggregateInputType | true
+    _avg?: EstoqueVivoMixAvgAggregateInputType
+    _sum?: EstoqueVivoMixSumAggregateInputType
+    _min?: EstoqueVivoMixMinAggregateInputType
+    _max?: EstoqueVivoMixMaxAggregateInputType
+  }
+
+  export type EstoqueVivoMixGroupByOutputType = {
+    id: string
+    nome: string
+    produtoReferenciaId: string
+    perdaPercentual: Decimal
+    ativo: boolean
+    criadoEm: Date
+    atualizadoEm: Date
+    _count: EstoqueVivoMixCountAggregateOutputType | null
+    _avg: EstoqueVivoMixAvgAggregateOutputType | null
+    _sum: EstoqueVivoMixSumAggregateOutputType | null
+    _min: EstoqueVivoMixMinAggregateOutputType | null
+    _max: EstoqueVivoMixMaxAggregateOutputType | null
+  }
+
+  type GetEstoqueVivoMixGroupByPayload<T extends EstoqueVivoMixGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<EstoqueVivoMixGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof EstoqueVivoMixGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], EstoqueVivoMixGroupByOutputType[P]>
+            : GetScalarType<T[P], EstoqueVivoMixGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type EstoqueVivoMixSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nome?: boolean
+    produtoReferenciaId?: boolean
+    perdaPercentual?: boolean
+    ativo?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+    produtoReferencia?: boolean | ProdutoComercialDefaultArgs<ExtArgs>
+    componentes?: boolean | EstoqueVivoMix$componentesArgs<ExtArgs>
+    _count?: boolean | EstoqueVivoMixCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["estoqueVivoMix"]>
+
+
+
+  export type EstoqueVivoMixSelectScalar = {
+    id?: boolean
+    nome?: boolean
+    produtoReferenciaId?: boolean
+    perdaPercentual?: boolean
+    ativo?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+  }
+
+  export type EstoqueVivoMixOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "produtoReferenciaId" | "perdaPercentual" | "ativo" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["estoqueVivoMix"]>
+  export type EstoqueVivoMixInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    produtoReferencia?: boolean | ProdutoComercialDefaultArgs<ExtArgs>
+    componentes?: boolean | EstoqueVivoMix$componentesArgs<ExtArgs>
+    _count?: boolean | EstoqueVivoMixCountOutputTypeDefaultArgs<ExtArgs>
+  }
+
+  export type $EstoqueVivoMixPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "EstoqueVivoMix"
+    objects: {
+      produtoReferencia: Prisma.$ProdutoComercialPayload<ExtArgs>
+      componentes: Prisma.$EstoqueVivoMixComponentePayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      nome: string
+      produtoReferenciaId: string
+      perdaPercentual: Prisma.Decimal
+      ativo: boolean
+      criadoEm: Date
+      atualizadoEm: Date
+    }, ExtArgs["result"]["estoqueVivoMix"]>
+    composites: {}
+  }
+
+  type EstoqueVivoMixGetPayload<S extends boolean | null | undefined | EstoqueVivoMixDefaultArgs> = $Result.GetResult<Prisma.$EstoqueVivoMixPayload, S>
+
+  type EstoqueVivoMixCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<EstoqueVivoMixFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: EstoqueVivoMixCountAggregateInputType | true
+    }
+
+  export interface EstoqueVivoMixDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['EstoqueVivoMix'], meta: { name: 'EstoqueVivoMix' } }
+    /**
+     * Find zero or one EstoqueVivoMix that matches the filter.
+     * @param {EstoqueVivoMixFindUniqueArgs} args - Arguments to find a EstoqueVivoMix
+     * @example
+     * // Get one EstoqueVivoMix
+     * const estoqueVivoMix = await prisma.estoqueVivoMix.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends EstoqueVivoMixFindUniqueArgs>(args: SelectSubset<T, EstoqueVivoMixFindUniqueArgs<ExtArgs>>): Prisma__EstoqueVivoMixClient<$Result.GetResult<Prisma.$EstoqueVivoMixPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one EstoqueVivoMix that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {EstoqueVivoMixFindUniqueOrThrowArgs} args - Arguments to find a EstoqueVivoMix
+     * @example
+     * // Get one EstoqueVivoMix
+     * const estoqueVivoMix = await prisma.estoqueVivoMix.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends EstoqueVivoMixFindUniqueOrThrowArgs>(args: SelectSubset<T, EstoqueVivoMixFindUniqueOrThrowArgs<ExtArgs>>): Prisma__EstoqueVivoMixClient<$Result.GetResult<Prisma.$EstoqueVivoMixPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first EstoqueVivoMix that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoMixFindFirstArgs} args - Arguments to find a EstoqueVivoMix
+     * @example
+     * // Get one EstoqueVivoMix
+     * const estoqueVivoMix = await prisma.estoqueVivoMix.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends EstoqueVivoMixFindFirstArgs>(args?: SelectSubset<T, EstoqueVivoMixFindFirstArgs<ExtArgs>>): Prisma__EstoqueVivoMixClient<$Result.GetResult<Prisma.$EstoqueVivoMixPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first EstoqueVivoMix that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoMixFindFirstOrThrowArgs} args - Arguments to find a EstoqueVivoMix
+     * @example
+     * // Get one EstoqueVivoMix
+     * const estoqueVivoMix = await prisma.estoqueVivoMix.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends EstoqueVivoMixFindFirstOrThrowArgs>(args?: SelectSubset<T, EstoqueVivoMixFindFirstOrThrowArgs<ExtArgs>>): Prisma__EstoqueVivoMixClient<$Result.GetResult<Prisma.$EstoqueVivoMixPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more EstoqueVivoMixes that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoMixFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all EstoqueVivoMixes
+     * const estoqueVivoMixes = await prisma.estoqueVivoMix.findMany()
+     * 
+     * // Get first 10 EstoqueVivoMixes
+     * const estoqueVivoMixes = await prisma.estoqueVivoMix.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const estoqueVivoMixWithIdOnly = await prisma.estoqueVivoMix.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends EstoqueVivoMixFindManyArgs>(args?: SelectSubset<T, EstoqueVivoMixFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EstoqueVivoMixPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a EstoqueVivoMix.
+     * @param {EstoqueVivoMixCreateArgs} args - Arguments to create a EstoqueVivoMix.
+     * @example
+     * // Create one EstoqueVivoMix
+     * const EstoqueVivoMix = await prisma.estoqueVivoMix.create({
+     *   data: {
+     *     // ... data to create a EstoqueVivoMix
+     *   }
+     * })
+     * 
+     */
+    create<T extends EstoqueVivoMixCreateArgs>(args: SelectSubset<T, EstoqueVivoMixCreateArgs<ExtArgs>>): Prisma__EstoqueVivoMixClient<$Result.GetResult<Prisma.$EstoqueVivoMixPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many EstoqueVivoMixes.
+     * @param {EstoqueVivoMixCreateManyArgs} args - Arguments to create many EstoqueVivoMixes.
+     * @example
+     * // Create many EstoqueVivoMixes
+     * const estoqueVivoMix = await prisma.estoqueVivoMix.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends EstoqueVivoMixCreateManyArgs>(args?: SelectSubset<T, EstoqueVivoMixCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a EstoqueVivoMix.
+     * @param {EstoqueVivoMixDeleteArgs} args - Arguments to delete one EstoqueVivoMix.
+     * @example
+     * // Delete one EstoqueVivoMix
+     * const EstoqueVivoMix = await prisma.estoqueVivoMix.delete({
+     *   where: {
+     *     // ... filter to delete one EstoqueVivoMix
+     *   }
+     * })
+     * 
+     */
+    delete<T extends EstoqueVivoMixDeleteArgs>(args: SelectSubset<T, EstoqueVivoMixDeleteArgs<ExtArgs>>): Prisma__EstoqueVivoMixClient<$Result.GetResult<Prisma.$EstoqueVivoMixPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one EstoqueVivoMix.
+     * @param {EstoqueVivoMixUpdateArgs} args - Arguments to update one EstoqueVivoMix.
+     * @example
+     * // Update one EstoqueVivoMix
+     * const estoqueVivoMix = await prisma.estoqueVivoMix.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends EstoqueVivoMixUpdateArgs>(args: SelectSubset<T, EstoqueVivoMixUpdateArgs<ExtArgs>>): Prisma__EstoqueVivoMixClient<$Result.GetResult<Prisma.$EstoqueVivoMixPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more EstoqueVivoMixes.
+     * @param {EstoqueVivoMixDeleteManyArgs} args - Arguments to filter EstoqueVivoMixes to delete.
+     * @example
+     * // Delete a few EstoqueVivoMixes
+     * const { count } = await prisma.estoqueVivoMix.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends EstoqueVivoMixDeleteManyArgs>(args?: SelectSubset<T, EstoqueVivoMixDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more EstoqueVivoMixes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoMixUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many EstoqueVivoMixes
+     * const estoqueVivoMix = await prisma.estoqueVivoMix.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends EstoqueVivoMixUpdateManyArgs>(args: SelectSubset<T, EstoqueVivoMixUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one EstoqueVivoMix.
+     * @param {EstoqueVivoMixUpsertArgs} args - Arguments to update or create a EstoqueVivoMix.
+     * @example
+     * // Update or create a EstoqueVivoMix
+     * const estoqueVivoMix = await prisma.estoqueVivoMix.upsert({
+     *   create: {
+     *     // ... data to create a EstoqueVivoMix
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the EstoqueVivoMix we want to update
+     *   }
+     * })
+     */
+    upsert<T extends EstoqueVivoMixUpsertArgs>(args: SelectSubset<T, EstoqueVivoMixUpsertArgs<ExtArgs>>): Prisma__EstoqueVivoMixClient<$Result.GetResult<Prisma.$EstoqueVivoMixPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of EstoqueVivoMixes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoMixCountArgs} args - Arguments to filter EstoqueVivoMixes to count.
+     * @example
+     * // Count the number of EstoqueVivoMixes
+     * const count = await prisma.estoqueVivoMix.count({
+     *   where: {
+     *     // ... the filter for the EstoqueVivoMixes we want to count
+     *   }
+     * })
+    **/
+    count<T extends EstoqueVivoMixCountArgs>(
+      args?: Subset<T, EstoqueVivoMixCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], EstoqueVivoMixCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a EstoqueVivoMix.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoMixAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends EstoqueVivoMixAggregateArgs>(args: Subset<T, EstoqueVivoMixAggregateArgs>): Prisma.PrismaPromise<GetEstoqueVivoMixAggregateType<T>>
+
+    /**
+     * Group by EstoqueVivoMix.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoMixGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends EstoqueVivoMixGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: EstoqueVivoMixGroupByArgs['orderBy'] }
+        : { orderBy?: EstoqueVivoMixGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, EstoqueVivoMixGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetEstoqueVivoMixGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the EstoqueVivoMix model
+   */
+  readonly fields: EstoqueVivoMixFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for EstoqueVivoMix.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__EstoqueVivoMixClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    produtoReferencia<T extends ProdutoComercialDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercialDefaultArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    componentes<T extends EstoqueVivoMix$componentesArgs<ExtArgs> = {}>(args?: Subset<T, EstoqueVivoMix$componentesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EstoqueVivoMixComponentePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the EstoqueVivoMix model
+   */
+  interface EstoqueVivoMixFieldRefs {
+    readonly id: FieldRef<"EstoqueVivoMix", 'String'>
+    readonly nome: FieldRef<"EstoqueVivoMix", 'String'>
+    readonly produtoReferenciaId: FieldRef<"EstoqueVivoMix", 'String'>
+    readonly perdaPercentual: FieldRef<"EstoqueVivoMix", 'Decimal'>
+    readonly ativo: FieldRef<"EstoqueVivoMix", 'Boolean'>
+    readonly criadoEm: FieldRef<"EstoqueVivoMix", 'DateTime'>
+    readonly atualizadoEm: FieldRef<"EstoqueVivoMix", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * EstoqueVivoMix findUnique
+   */
+  export type EstoqueVivoMixFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMix
+     */
+    select?: EstoqueVivoMixSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMix
+     */
+    omit?: EstoqueVivoMixOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixInclude<ExtArgs> | null
+    /**
+     * Filter, which EstoqueVivoMix to fetch.
+     */
+    where: EstoqueVivoMixWhereUniqueInput
+  }
+
+  /**
+   * EstoqueVivoMix findUniqueOrThrow
+   */
+  export type EstoqueVivoMixFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMix
+     */
+    select?: EstoqueVivoMixSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMix
+     */
+    omit?: EstoqueVivoMixOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixInclude<ExtArgs> | null
+    /**
+     * Filter, which EstoqueVivoMix to fetch.
+     */
+    where: EstoqueVivoMixWhereUniqueInput
+  }
+
+  /**
+   * EstoqueVivoMix findFirst
+   */
+  export type EstoqueVivoMixFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMix
+     */
+    select?: EstoqueVivoMixSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMix
+     */
+    omit?: EstoqueVivoMixOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixInclude<ExtArgs> | null
+    /**
+     * Filter, which EstoqueVivoMix to fetch.
+     */
+    where?: EstoqueVivoMixWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EstoqueVivoMixes to fetch.
+     */
+    orderBy?: EstoqueVivoMixOrderByWithRelationInput | EstoqueVivoMixOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for EstoqueVivoMixes.
+     */
+    cursor?: EstoqueVivoMixWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EstoqueVivoMixes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EstoqueVivoMixes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EstoqueVivoMixes.
+     */
+    distinct?: EstoqueVivoMixScalarFieldEnum | EstoqueVivoMixScalarFieldEnum[]
+  }
+
+  /**
+   * EstoqueVivoMix findFirstOrThrow
+   */
+  export type EstoqueVivoMixFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMix
+     */
+    select?: EstoqueVivoMixSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMix
+     */
+    omit?: EstoqueVivoMixOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixInclude<ExtArgs> | null
+    /**
+     * Filter, which EstoqueVivoMix to fetch.
+     */
+    where?: EstoqueVivoMixWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EstoqueVivoMixes to fetch.
+     */
+    orderBy?: EstoqueVivoMixOrderByWithRelationInput | EstoqueVivoMixOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for EstoqueVivoMixes.
+     */
+    cursor?: EstoqueVivoMixWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EstoqueVivoMixes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EstoqueVivoMixes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EstoqueVivoMixes.
+     */
+    distinct?: EstoqueVivoMixScalarFieldEnum | EstoqueVivoMixScalarFieldEnum[]
+  }
+
+  /**
+   * EstoqueVivoMix findMany
+   */
+  export type EstoqueVivoMixFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMix
+     */
+    select?: EstoqueVivoMixSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMix
+     */
+    omit?: EstoqueVivoMixOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixInclude<ExtArgs> | null
+    /**
+     * Filter, which EstoqueVivoMixes to fetch.
+     */
+    where?: EstoqueVivoMixWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EstoqueVivoMixes to fetch.
+     */
+    orderBy?: EstoqueVivoMixOrderByWithRelationInput | EstoqueVivoMixOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing EstoqueVivoMixes.
+     */
+    cursor?: EstoqueVivoMixWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EstoqueVivoMixes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EstoqueVivoMixes.
+     */
+    skip?: number
+    distinct?: EstoqueVivoMixScalarFieldEnum | EstoqueVivoMixScalarFieldEnum[]
+  }
+
+  /**
+   * EstoqueVivoMix create
+   */
+  export type EstoqueVivoMixCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMix
+     */
+    select?: EstoqueVivoMixSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMix
+     */
+    omit?: EstoqueVivoMixOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixInclude<ExtArgs> | null
+    /**
+     * The data needed to create a EstoqueVivoMix.
+     */
+    data: XOR<EstoqueVivoMixCreateInput, EstoqueVivoMixUncheckedCreateInput>
+  }
+
+  /**
+   * EstoqueVivoMix createMany
+   */
+  export type EstoqueVivoMixCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many EstoqueVivoMixes.
+     */
+    data: EstoqueVivoMixCreateManyInput | EstoqueVivoMixCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * EstoqueVivoMix update
+   */
+  export type EstoqueVivoMixUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMix
+     */
+    select?: EstoqueVivoMixSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMix
+     */
+    omit?: EstoqueVivoMixOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixInclude<ExtArgs> | null
+    /**
+     * The data needed to update a EstoqueVivoMix.
+     */
+    data: XOR<EstoqueVivoMixUpdateInput, EstoqueVivoMixUncheckedUpdateInput>
+    /**
+     * Choose, which EstoqueVivoMix to update.
+     */
+    where: EstoqueVivoMixWhereUniqueInput
+  }
+
+  /**
+   * EstoqueVivoMix updateMany
+   */
+  export type EstoqueVivoMixUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update EstoqueVivoMixes.
+     */
+    data: XOR<EstoqueVivoMixUpdateManyMutationInput, EstoqueVivoMixUncheckedUpdateManyInput>
+    /**
+     * Filter which EstoqueVivoMixes to update
+     */
+    where?: EstoqueVivoMixWhereInput
+    /**
+     * Limit how many EstoqueVivoMixes to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * EstoqueVivoMix upsert
+   */
+  export type EstoqueVivoMixUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMix
+     */
+    select?: EstoqueVivoMixSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMix
+     */
+    omit?: EstoqueVivoMixOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixInclude<ExtArgs> | null
+    /**
+     * The filter to search for the EstoqueVivoMix to update in case it exists.
+     */
+    where: EstoqueVivoMixWhereUniqueInput
+    /**
+     * In case the EstoqueVivoMix found by the `where` argument doesn't exist, create a new EstoqueVivoMix with this data.
+     */
+    create: XOR<EstoqueVivoMixCreateInput, EstoqueVivoMixUncheckedCreateInput>
+    /**
+     * In case the EstoqueVivoMix was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<EstoqueVivoMixUpdateInput, EstoqueVivoMixUncheckedUpdateInput>
+  }
+
+  /**
+   * EstoqueVivoMix delete
+   */
+  export type EstoqueVivoMixDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMix
+     */
+    select?: EstoqueVivoMixSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMix
+     */
+    omit?: EstoqueVivoMixOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixInclude<ExtArgs> | null
+    /**
+     * Filter which EstoqueVivoMix to delete.
+     */
+    where: EstoqueVivoMixWhereUniqueInput
+  }
+
+  /**
+   * EstoqueVivoMix deleteMany
+   */
+  export type EstoqueVivoMixDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which EstoqueVivoMixes to delete
+     */
+    where?: EstoqueVivoMixWhereInput
+    /**
+     * Limit how many EstoqueVivoMixes to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * EstoqueVivoMix.componentes
+   */
+  export type EstoqueVivoMix$componentesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMixComponente
+     */
+    select?: EstoqueVivoMixComponenteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMixComponente
+     */
+    omit?: EstoqueVivoMixComponenteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixComponenteInclude<ExtArgs> | null
+    where?: EstoqueVivoMixComponenteWhereInput
+    orderBy?: EstoqueVivoMixComponenteOrderByWithRelationInput | EstoqueVivoMixComponenteOrderByWithRelationInput[]
+    cursor?: EstoqueVivoMixComponenteWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: EstoqueVivoMixComponenteScalarFieldEnum | EstoqueVivoMixComponenteScalarFieldEnum[]
+  }
+
+  /**
+   * EstoqueVivoMix without action
+   */
+  export type EstoqueVivoMixDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMix
+     */
+    select?: EstoqueVivoMixSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMix
+     */
+    omit?: EstoqueVivoMixOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model EstoqueVivoMixComponente
+   */
+
+  export type AggregateEstoqueVivoMixComponente = {
+    _count: EstoqueVivoMixComponenteCountAggregateOutputType | null
+    _avg: EstoqueVivoMixComponenteAvgAggregateOutputType | null
+    _sum: EstoqueVivoMixComponenteSumAggregateOutputType | null
+    _min: EstoqueVivoMixComponenteMinAggregateOutputType | null
+    _max: EstoqueVivoMixComponenteMaxAggregateOutputType | null
+  }
+
+  export type EstoqueVivoMixComponenteAvgAggregateOutputType = {
+    quantidade: Decimal | null
+  }
+
+  export type EstoqueVivoMixComponenteSumAggregateOutputType = {
+    quantidade: Decimal | null
+  }
+
+  export type EstoqueVivoMixComponenteMinAggregateOutputType = {
+    id: string | null
+    mixId: string | null
+    produtoId: string | null
+    quantidade: Decimal | null
+  }
+
+  export type EstoqueVivoMixComponenteMaxAggregateOutputType = {
+    id: string | null
+    mixId: string | null
+    produtoId: string | null
+    quantidade: Decimal | null
+  }
+
+  export type EstoqueVivoMixComponenteCountAggregateOutputType = {
+    id: number
+    mixId: number
+    produtoId: number
+    quantidade: number
+    _all: number
+  }
+
+
+  export type EstoqueVivoMixComponenteAvgAggregateInputType = {
+    quantidade?: true
+  }
+
+  export type EstoqueVivoMixComponenteSumAggregateInputType = {
+    quantidade?: true
+  }
+
+  export type EstoqueVivoMixComponenteMinAggregateInputType = {
+    id?: true
+    mixId?: true
+    produtoId?: true
+    quantidade?: true
+  }
+
+  export type EstoqueVivoMixComponenteMaxAggregateInputType = {
+    id?: true
+    mixId?: true
+    produtoId?: true
+    quantidade?: true
+  }
+
+  export type EstoqueVivoMixComponenteCountAggregateInputType = {
+    id?: true
+    mixId?: true
+    produtoId?: true
+    quantidade?: true
+    _all?: true
+  }
+
+  export type EstoqueVivoMixComponenteAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which EstoqueVivoMixComponente to aggregate.
+     */
+    where?: EstoqueVivoMixComponenteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EstoqueVivoMixComponentes to fetch.
+     */
+    orderBy?: EstoqueVivoMixComponenteOrderByWithRelationInput | EstoqueVivoMixComponenteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: EstoqueVivoMixComponenteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EstoqueVivoMixComponentes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EstoqueVivoMixComponentes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned EstoqueVivoMixComponentes
+    **/
+    _count?: true | EstoqueVivoMixComponenteCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: EstoqueVivoMixComponenteAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: EstoqueVivoMixComponenteSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: EstoqueVivoMixComponenteMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: EstoqueVivoMixComponenteMaxAggregateInputType
+  }
+
+  export type GetEstoqueVivoMixComponenteAggregateType<T extends EstoqueVivoMixComponenteAggregateArgs> = {
+        [P in keyof T & keyof AggregateEstoqueVivoMixComponente]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateEstoqueVivoMixComponente[P]>
+      : GetScalarType<T[P], AggregateEstoqueVivoMixComponente[P]>
+  }
+
+
+
+
+  export type EstoqueVivoMixComponenteGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EstoqueVivoMixComponenteWhereInput
+    orderBy?: EstoqueVivoMixComponenteOrderByWithAggregationInput | EstoqueVivoMixComponenteOrderByWithAggregationInput[]
+    by: EstoqueVivoMixComponenteScalarFieldEnum[] | EstoqueVivoMixComponenteScalarFieldEnum
+    having?: EstoqueVivoMixComponenteScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: EstoqueVivoMixComponenteCountAggregateInputType | true
+    _avg?: EstoqueVivoMixComponenteAvgAggregateInputType
+    _sum?: EstoqueVivoMixComponenteSumAggregateInputType
+    _min?: EstoqueVivoMixComponenteMinAggregateInputType
+    _max?: EstoqueVivoMixComponenteMaxAggregateInputType
+  }
+
+  export type EstoqueVivoMixComponenteGroupByOutputType = {
+    id: string
+    mixId: string
+    produtoId: string
+    quantidade: Decimal
+    _count: EstoqueVivoMixComponenteCountAggregateOutputType | null
+    _avg: EstoqueVivoMixComponenteAvgAggregateOutputType | null
+    _sum: EstoqueVivoMixComponenteSumAggregateOutputType | null
+    _min: EstoqueVivoMixComponenteMinAggregateOutputType | null
+    _max: EstoqueVivoMixComponenteMaxAggregateOutputType | null
+  }
+
+  type GetEstoqueVivoMixComponenteGroupByPayload<T extends EstoqueVivoMixComponenteGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<EstoqueVivoMixComponenteGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof EstoqueVivoMixComponenteGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], EstoqueVivoMixComponenteGroupByOutputType[P]>
+            : GetScalarType<T[P], EstoqueVivoMixComponenteGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type EstoqueVivoMixComponenteSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    mixId?: boolean
+    produtoId?: boolean
+    quantidade?: boolean
+    mix?: boolean | EstoqueVivoMixDefaultArgs<ExtArgs>
+    produto?: boolean | ProdutoComercialDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["estoqueVivoMixComponente"]>
+
+
+
+  export type EstoqueVivoMixComponenteSelectScalar = {
+    id?: boolean
+    mixId?: boolean
+    produtoId?: boolean
+    quantidade?: boolean
+  }
+
+  export type EstoqueVivoMixComponenteOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "mixId" | "produtoId" | "quantidade", ExtArgs["result"]["estoqueVivoMixComponente"]>
+  export type EstoqueVivoMixComponenteInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    mix?: boolean | EstoqueVivoMixDefaultArgs<ExtArgs>
+    produto?: boolean | ProdutoComercialDefaultArgs<ExtArgs>
+  }
+
+  export type $EstoqueVivoMixComponentePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "EstoqueVivoMixComponente"
+    objects: {
+      mix: Prisma.$EstoqueVivoMixPayload<ExtArgs>
+      produto: Prisma.$ProdutoComercialPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      mixId: string
+      produtoId: string
+      quantidade: Prisma.Decimal
+    }, ExtArgs["result"]["estoqueVivoMixComponente"]>
+    composites: {}
+  }
+
+  type EstoqueVivoMixComponenteGetPayload<S extends boolean | null | undefined | EstoqueVivoMixComponenteDefaultArgs> = $Result.GetResult<Prisma.$EstoqueVivoMixComponentePayload, S>
+
+  type EstoqueVivoMixComponenteCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<EstoqueVivoMixComponenteFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: EstoqueVivoMixComponenteCountAggregateInputType | true
+    }
+
+  export interface EstoqueVivoMixComponenteDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['EstoqueVivoMixComponente'], meta: { name: 'EstoqueVivoMixComponente' } }
+    /**
+     * Find zero or one EstoqueVivoMixComponente that matches the filter.
+     * @param {EstoqueVivoMixComponenteFindUniqueArgs} args - Arguments to find a EstoqueVivoMixComponente
+     * @example
+     * // Get one EstoqueVivoMixComponente
+     * const estoqueVivoMixComponente = await prisma.estoqueVivoMixComponente.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends EstoqueVivoMixComponenteFindUniqueArgs>(args: SelectSubset<T, EstoqueVivoMixComponenteFindUniqueArgs<ExtArgs>>): Prisma__EstoqueVivoMixComponenteClient<$Result.GetResult<Prisma.$EstoqueVivoMixComponentePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one EstoqueVivoMixComponente that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {EstoqueVivoMixComponenteFindUniqueOrThrowArgs} args - Arguments to find a EstoqueVivoMixComponente
+     * @example
+     * // Get one EstoqueVivoMixComponente
+     * const estoqueVivoMixComponente = await prisma.estoqueVivoMixComponente.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends EstoqueVivoMixComponenteFindUniqueOrThrowArgs>(args: SelectSubset<T, EstoqueVivoMixComponenteFindUniqueOrThrowArgs<ExtArgs>>): Prisma__EstoqueVivoMixComponenteClient<$Result.GetResult<Prisma.$EstoqueVivoMixComponentePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first EstoqueVivoMixComponente that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoMixComponenteFindFirstArgs} args - Arguments to find a EstoqueVivoMixComponente
+     * @example
+     * // Get one EstoqueVivoMixComponente
+     * const estoqueVivoMixComponente = await prisma.estoqueVivoMixComponente.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends EstoqueVivoMixComponenteFindFirstArgs>(args?: SelectSubset<T, EstoqueVivoMixComponenteFindFirstArgs<ExtArgs>>): Prisma__EstoqueVivoMixComponenteClient<$Result.GetResult<Prisma.$EstoqueVivoMixComponentePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first EstoqueVivoMixComponente that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoMixComponenteFindFirstOrThrowArgs} args - Arguments to find a EstoqueVivoMixComponente
+     * @example
+     * // Get one EstoqueVivoMixComponente
+     * const estoqueVivoMixComponente = await prisma.estoqueVivoMixComponente.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends EstoqueVivoMixComponenteFindFirstOrThrowArgs>(args?: SelectSubset<T, EstoqueVivoMixComponenteFindFirstOrThrowArgs<ExtArgs>>): Prisma__EstoqueVivoMixComponenteClient<$Result.GetResult<Prisma.$EstoqueVivoMixComponentePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more EstoqueVivoMixComponentes that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoMixComponenteFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all EstoqueVivoMixComponentes
+     * const estoqueVivoMixComponentes = await prisma.estoqueVivoMixComponente.findMany()
+     * 
+     * // Get first 10 EstoqueVivoMixComponentes
+     * const estoqueVivoMixComponentes = await prisma.estoqueVivoMixComponente.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const estoqueVivoMixComponenteWithIdOnly = await prisma.estoqueVivoMixComponente.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends EstoqueVivoMixComponenteFindManyArgs>(args?: SelectSubset<T, EstoqueVivoMixComponenteFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EstoqueVivoMixComponentePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a EstoqueVivoMixComponente.
+     * @param {EstoqueVivoMixComponenteCreateArgs} args - Arguments to create a EstoqueVivoMixComponente.
+     * @example
+     * // Create one EstoqueVivoMixComponente
+     * const EstoqueVivoMixComponente = await prisma.estoqueVivoMixComponente.create({
+     *   data: {
+     *     // ... data to create a EstoqueVivoMixComponente
+     *   }
+     * })
+     * 
+     */
+    create<T extends EstoqueVivoMixComponenteCreateArgs>(args: SelectSubset<T, EstoqueVivoMixComponenteCreateArgs<ExtArgs>>): Prisma__EstoqueVivoMixComponenteClient<$Result.GetResult<Prisma.$EstoqueVivoMixComponentePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many EstoqueVivoMixComponentes.
+     * @param {EstoqueVivoMixComponenteCreateManyArgs} args - Arguments to create many EstoqueVivoMixComponentes.
+     * @example
+     * // Create many EstoqueVivoMixComponentes
+     * const estoqueVivoMixComponente = await prisma.estoqueVivoMixComponente.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends EstoqueVivoMixComponenteCreateManyArgs>(args?: SelectSubset<T, EstoqueVivoMixComponenteCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a EstoqueVivoMixComponente.
+     * @param {EstoqueVivoMixComponenteDeleteArgs} args - Arguments to delete one EstoqueVivoMixComponente.
+     * @example
+     * // Delete one EstoqueVivoMixComponente
+     * const EstoqueVivoMixComponente = await prisma.estoqueVivoMixComponente.delete({
+     *   where: {
+     *     // ... filter to delete one EstoqueVivoMixComponente
+     *   }
+     * })
+     * 
+     */
+    delete<T extends EstoqueVivoMixComponenteDeleteArgs>(args: SelectSubset<T, EstoqueVivoMixComponenteDeleteArgs<ExtArgs>>): Prisma__EstoqueVivoMixComponenteClient<$Result.GetResult<Prisma.$EstoqueVivoMixComponentePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one EstoqueVivoMixComponente.
+     * @param {EstoqueVivoMixComponenteUpdateArgs} args - Arguments to update one EstoqueVivoMixComponente.
+     * @example
+     * // Update one EstoqueVivoMixComponente
+     * const estoqueVivoMixComponente = await prisma.estoqueVivoMixComponente.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends EstoqueVivoMixComponenteUpdateArgs>(args: SelectSubset<T, EstoqueVivoMixComponenteUpdateArgs<ExtArgs>>): Prisma__EstoqueVivoMixComponenteClient<$Result.GetResult<Prisma.$EstoqueVivoMixComponentePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more EstoqueVivoMixComponentes.
+     * @param {EstoqueVivoMixComponenteDeleteManyArgs} args - Arguments to filter EstoqueVivoMixComponentes to delete.
+     * @example
+     * // Delete a few EstoqueVivoMixComponentes
+     * const { count } = await prisma.estoqueVivoMixComponente.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends EstoqueVivoMixComponenteDeleteManyArgs>(args?: SelectSubset<T, EstoqueVivoMixComponenteDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more EstoqueVivoMixComponentes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoMixComponenteUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many EstoqueVivoMixComponentes
+     * const estoqueVivoMixComponente = await prisma.estoqueVivoMixComponente.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends EstoqueVivoMixComponenteUpdateManyArgs>(args: SelectSubset<T, EstoqueVivoMixComponenteUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one EstoqueVivoMixComponente.
+     * @param {EstoqueVivoMixComponenteUpsertArgs} args - Arguments to update or create a EstoqueVivoMixComponente.
+     * @example
+     * // Update or create a EstoqueVivoMixComponente
+     * const estoqueVivoMixComponente = await prisma.estoqueVivoMixComponente.upsert({
+     *   create: {
+     *     // ... data to create a EstoqueVivoMixComponente
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the EstoqueVivoMixComponente we want to update
+     *   }
+     * })
+     */
+    upsert<T extends EstoqueVivoMixComponenteUpsertArgs>(args: SelectSubset<T, EstoqueVivoMixComponenteUpsertArgs<ExtArgs>>): Prisma__EstoqueVivoMixComponenteClient<$Result.GetResult<Prisma.$EstoqueVivoMixComponentePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of EstoqueVivoMixComponentes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoMixComponenteCountArgs} args - Arguments to filter EstoqueVivoMixComponentes to count.
+     * @example
+     * // Count the number of EstoqueVivoMixComponentes
+     * const count = await prisma.estoqueVivoMixComponente.count({
+     *   where: {
+     *     // ... the filter for the EstoqueVivoMixComponentes we want to count
+     *   }
+     * })
+    **/
+    count<T extends EstoqueVivoMixComponenteCountArgs>(
+      args?: Subset<T, EstoqueVivoMixComponenteCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], EstoqueVivoMixComponenteCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a EstoqueVivoMixComponente.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoMixComponenteAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends EstoqueVivoMixComponenteAggregateArgs>(args: Subset<T, EstoqueVivoMixComponenteAggregateArgs>): Prisma.PrismaPromise<GetEstoqueVivoMixComponenteAggregateType<T>>
+
+    /**
+     * Group by EstoqueVivoMixComponente.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueVivoMixComponenteGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends EstoqueVivoMixComponenteGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: EstoqueVivoMixComponenteGroupByArgs['orderBy'] }
+        : { orderBy?: EstoqueVivoMixComponenteGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, EstoqueVivoMixComponenteGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetEstoqueVivoMixComponenteGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the EstoqueVivoMixComponente model
+   */
+  readonly fields: EstoqueVivoMixComponenteFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for EstoqueVivoMixComponente.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__EstoqueVivoMixComponenteClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    mix<T extends EstoqueVivoMixDefaultArgs<ExtArgs> = {}>(args?: Subset<T, EstoqueVivoMixDefaultArgs<ExtArgs>>): Prisma__EstoqueVivoMixClient<$Result.GetResult<Prisma.$EstoqueVivoMixPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    produto<T extends ProdutoComercialDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercialDefaultArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the EstoqueVivoMixComponente model
+   */
+  interface EstoqueVivoMixComponenteFieldRefs {
+    readonly id: FieldRef<"EstoqueVivoMixComponente", 'String'>
+    readonly mixId: FieldRef<"EstoqueVivoMixComponente", 'String'>
+    readonly produtoId: FieldRef<"EstoqueVivoMixComponente", 'String'>
+    readonly quantidade: FieldRef<"EstoqueVivoMixComponente", 'Decimal'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * EstoqueVivoMixComponente findUnique
+   */
+  export type EstoqueVivoMixComponenteFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMixComponente
+     */
+    select?: EstoqueVivoMixComponenteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMixComponente
+     */
+    omit?: EstoqueVivoMixComponenteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixComponenteInclude<ExtArgs> | null
+    /**
+     * Filter, which EstoqueVivoMixComponente to fetch.
+     */
+    where: EstoqueVivoMixComponenteWhereUniqueInput
+  }
+
+  /**
+   * EstoqueVivoMixComponente findUniqueOrThrow
+   */
+  export type EstoqueVivoMixComponenteFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMixComponente
+     */
+    select?: EstoqueVivoMixComponenteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMixComponente
+     */
+    omit?: EstoqueVivoMixComponenteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixComponenteInclude<ExtArgs> | null
+    /**
+     * Filter, which EstoqueVivoMixComponente to fetch.
+     */
+    where: EstoqueVivoMixComponenteWhereUniqueInput
+  }
+
+  /**
+   * EstoqueVivoMixComponente findFirst
+   */
+  export type EstoqueVivoMixComponenteFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMixComponente
+     */
+    select?: EstoqueVivoMixComponenteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMixComponente
+     */
+    omit?: EstoqueVivoMixComponenteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixComponenteInclude<ExtArgs> | null
+    /**
+     * Filter, which EstoqueVivoMixComponente to fetch.
+     */
+    where?: EstoqueVivoMixComponenteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EstoqueVivoMixComponentes to fetch.
+     */
+    orderBy?: EstoqueVivoMixComponenteOrderByWithRelationInput | EstoqueVivoMixComponenteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for EstoqueVivoMixComponentes.
+     */
+    cursor?: EstoqueVivoMixComponenteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EstoqueVivoMixComponentes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EstoqueVivoMixComponentes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EstoqueVivoMixComponentes.
+     */
+    distinct?: EstoqueVivoMixComponenteScalarFieldEnum | EstoqueVivoMixComponenteScalarFieldEnum[]
+  }
+
+  /**
+   * EstoqueVivoMixComponente findFirstOrThrow
+   */
+  export type EstoqueVivoMixComponenteFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMixComponente
+     */
+    select?: EstoqueVivoMixComponenteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMixComponente
+     */
+    omit?: EstoqueVivoMixComponenteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixComponenteInclude<ExtArgs> | null
+    /**
+     * Filter, which EstoqueVivoMixComponente to fetch.
+     */
+    where?: EstoqueVivoMixComponenteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EstoqueVivoMixComponentes to fetch.
+     */
+    orderBy?: EstoqueVivoMixComponenteOrderByWithRelationInput | EstoqueVivoMixComponenteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for EstoqueVivoMixComponentes.
+     */
+    cursor?: EstoqueVivoMixComponenteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EstoqueVivoMixComponentes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EstoqueVivoMixComponentes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EstoqueVivoMixComponentes.
+     */
+    distinct?: EstoqueVivoMixComponenteScalarFieldEnum | EstoqueVivoMixComponenteScalarFieldEnum[]
+  }
+
+  /**
+   * EstoqueVivoMixComponente findMany
+   */
+  export type EstoqueVivoMixComponenteFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMixComponente
+     */
+    select?: EstoqueVivoMixComponenteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMixComponente
+     */
+    omit?: EstoqueVivoMixComponenteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixComponenteInclude<ExtArgs> | null
+    /**
+     * Filter, which EstoqueVivoMixComponentes to fetch.
+     */
+    where?: EstoqueVivoMixComponenteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EstoqueVivoMixComponentes to fetch.
+     */
+    orderBy?: EstoqueVivoMixComponenteOrderByWithRelationInput | EstoqueVivoMixComponenteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing EstoqueVivoMixComponentes.
+     */
+    cursor?: EstoqueVivoMixComponenteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EstoqueVivoMixComponentes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EstoqueVivoMixComponentes.
+     */
+    skip?: number
+    distinct?: EstoqueVivoMixComponenteScalarFieldEnum | EstoqueVivoMixComponenteScalarFieldEnum[]
+  }
+
+  /**
+   * EstoqueVivoMixComponente create
+   */
+  export type EstoqueVivoMixComponenteCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMixComponente
+     */
+    select?: EstoqueVivoMixComponenteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMixComponente
+     */
+    omit?: EstoqueVivoMixComponenteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixComponenteInclude<ExtArgs> | null
+    /**
+     * The data needed to create a EstoqueVivoMixComponente.
+     */
+    data: XOR<EstoqueVivoMixComponenteCreateInput, EstoqueVivoMixComponenteUncheckedCreateInput>
+  }
+
+  /**
+   * EstoqueVivoMixComponente createMany
+   */
+  export type EstoqueVivoMixComponenteCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many EstoqueVivoMixComponentes.
+     */
+    data: EstoqueVivoMixComponenteCreateManyInput | EstoqueVivoMixComponenteCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * EstoqueVivoMixComponente update
+   */
+  export type EstoqueVivoMixComponenteUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMixComponente
+     */
+    select?: EstoqueVivoMixComponenteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMixComponente
+     */
+    omit?: EstoqueVivoMixComponenteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixComponenteInclude<ExtArgs> | null
+    /**
+     * The data needed to update a EstoqueVivoMixComponente.
+     */
+    data: XOR<EstoqueVivoMixComponenteUpdateInput, EstoqueVivoMixComponenteUncheckedUpdateInput>
+    /**
+     * Choose, which EstoqueVivoMixComponente to update.
+     */
+    where: EstoqueVivoMixComponenteWhereUniqueInput
+  }
+
+  /**
+   * EstoqueVivoMixComponente updateMany
+   */
+  export type EstoqueVivoMixComponenteUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update EstoqueVivoMixComponentes.
+     */
+    data: XOR<EstoqueVivoMixComponenteUpdateManyMutationInput, EstoqueVivoMixComponenteUncheckedUpdateManyInput>
+    /**
+     * Filter which EstoqueVivoMixComponentes to update
+     */
+    where?: EstoqueVivoMixComponenteWhereInput
+    /**
+     * Limit how many EstoqueVivoMixComponentes to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * EstoqueVivoMixComponente upsert
+   */
+  export type EstoqueVivoMixComponenteUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMixComponente
+     */
+    select?: EstoqueVivoMixComponenteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMixComponente
+     */
+    omit?: EstoqueVivoMixComponenteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixComponenteInclude<ExtArgs> | null
+    /**
+     * The filter to search for the EstoqueVivoMixComponente to update in case it exists.
+     */
+    where: EstoqueVivoMixComponenteWhereUniqueInput
+    /**
+     * In case the EstoqueVivoMixComponente found by the `where` argument doesn't exist, create a new EstoqueVivoMixComponente with this data.
+     */
+    create: XOR<EstoqueVivoMixComponenteCreateInput, EstoqueVivoMixComponenteUncheckedCreateInput>
+    /**
+     * In case the EstoqueVivoMixComponente was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<EstoqueVivoMixComponenteUpdateInput, EstoqueVivoMixComponenteUncheckedUpdateInput>
+  }
+
+  /**
+   * EstoqueVivoMixComponente delete
+   */
+  export type EstoqueVivoMixComponenteDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMixComponente
+     */
+    select?: EstoqueVivoMixComponenteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMixComponente
+     */
+    omit?: EstoqueVivoMixComponenteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixComponenteInclude<ExtArgs> | null
+    /**
+     * Filter which EstoqueVivoMixComponente to delete.
+     */
+    where: EstoqueVivoMixComponenteWhereUniqueInput
+  }
+
+  /**
+   * EstoqueVivoMixComponente deleteMany
+   */
+  export type EstoqueVivoMixComponenteDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which EstoqueVivoMixComponentes to delete
+     */
+    where?: EstoqueVivoMixComponenteWhereInput
+    /**
+     * Limit how many EstoqueVivoMixComponentes to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * EstoqueVivoMixComponente without action
+   */
+  export type EstoqueVivoMixComponenteDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMixComponente
+     */
+    select?: EstoqueVivoMixComponenteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMixComponente
+     */
+    omit?: EstoqueVivoMixComponenteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixComponenteInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Model ProdutoComercial
    */
 
@@ -9675,6 +11852,8 @@ export namespace Prisma {
     avariasPedido?: boolean | ProdutoComercial$avariasPedidoArgs<ExtArgs>
     mixProdutoReferencia?: boolean | ProdutoComercial$mixProdutoReferenciaArgs<ExtArgs>
     mixReferenciadoPor?: boolean | ProdutoComercial$mixReferenciadoPorArgs<ExtArgs>
+    estoqueVivoMixReferencia?: boolean | ProdutoComercial$estoqueVivoMixReferenciaArgs<ExtArgs>
+    estoqueVivoMixComponentes?: boolean | ProdutoComercial$estoqueVivoMixComponentesArgs<ExtArgs>
     _count?: boolean | ProdutoComercialCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["produtoComercial"]>
 
@@ -9710,6 +11889,8 @@ export namespace Prisma {
     avariasPedido?: boolean | ProdutoComercial$avariasPedidoArgs<ExtArgs>
     mixProdutoReferencia?: boolean | ProdutoComercial$mixProdutoReferenciaArgs<ExtArgs>
     mixReferenciadoPor?: boolean | ProdutoComercial$mixReferenciadoPorArgs<ExtArgs>
+    estoqueVivoMixReferencia?: boolean | ProdutoComercial$estoqueVivoMixReferenciaArgs<ExtArgs>
+    estoqueVivoMixComponentes?: boolean | ProdutoComercial$estoqueVivoMixComponentesArgs<ExtArgs>
     _count?: boolean | ProdutoComercialCountOutputTypeDefaultArgs<ExtArgs>
   }
 
@@ -9721,6 +11902,8 @@ export namespace Prisma {
       avariasPedido: Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>[]
       mixProdutoReferencia: Prisma.$ProdutoComercialPayload<ExtArgs> | null
       mixReferenciadoPor: Prisma.$ProdutoComercialPayload<ExtArgs>[]
+      estoqueVivoMixReferencia: Prisma.$EstoqueVivoMixPayload<ExtArgs> | null
+      estoqueVivoMixComponentes: Prisma.$EstoqueVivoMixComponentePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -10088,6 +12271,8 @@ export namespace Prisma {
     avariasPedido<T extends ProdutoComercial$avariasPedidoArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$avariasPedidoArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     mixProdutoReferencia<T extends ProdutoComercial$mixProdutoReferenciaArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$mixProdutoReferenciaArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     mixReferenciadoPor<T extends ProdutoComercial$mixReferenciadoPorArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$mixReferenciadoPorArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    estoqueVivoMixReferencia<T extends ProdutoComercial$estoqueVivoMixReferenciaArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$estoqueVivoMixReferenciaArgs<ExtArgs>>): Prisma__EstoqueVivoMixClient<$Result.GetResult<Prisma.$EstoqueVivoMixPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    estoqueVivoMixComponentes<T extends ProdutoComercial$estoqueVivoMixComponentesArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$estoqueVivoMixComponentesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EstoqueVivoMixComponentePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -10592,6 +12777,49 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: ProdutoComercialScalarFieldEnum | ProdutoComercialScalarFieldEnum[]
+  }
+
+  /**
+   * ProdutoComercial.estoqueVivoMixReferencia
+   */
+  export type ProdutoComercial$estoqueVivoMixReferenciaArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMix
+     */
+    select?: EstoqueVivoMixSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMix
+     */
+    omit?: EstoqueVivoMixOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixInclude<ExtArgs> | null
+    where?: EstoqueVivoMixWhereInput
+  }
+
+  /**
+   * ProdutoComercial.estoqueVivoMixComponentes
+   */
+  export type ProdutoComercial$estoqueVivoMixComponentesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueVivoMixComponente
+     */
+    select?: EstoqueVivoMixComponenteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueVivoMixComponente
+     */
+    omit?: EstoqueVivoMixComponenteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueVivoMixComponenteInclude<ExtArgs> | null
+    where?: EstoqueVivoMixComponenteWhereInput
+    orderBy?: EstoqueVivoMixComponenteOrderByWithRelationInput | EstoqueVivoMixComponenteOrderByWithRelationInput[]
+    cursor?: EstoqueVivoMixComponenteWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: EstoqueVivoMixComponenteScalarFieldEnum | EstoqueVivoMixComponenteScalarFieldEnum[]
   }
 
   /**
@@ -34349,6 +36577,29 @@ export namespace Prisma {
   export type EstoqueVivoConfigScalarFieldEnum = (typeof EstoqueVivoConfigScalarFieldEnum)[keyof typeof EstoqueVivoConfigScalarFieldEnum]
 
 
+  export const EstoqueVivoMixScalarFieldEnum: {
+    id: 'id',
+    nome: 'nome',
+    produtoReferenciaId: 'produtoReferenciaId',
+    perdaPercentual: 'perdaPercentual',
+    ativo: 'ativo',
+    criadoEm: 'criadoEm',
+    atualizadoEm: 'atualizadoEm'
+  };
+
+  export type EstoqueVivoMixScalarFieldEnum = (typeof EstoqueVivoMixScalarFieldEnum)[keyof typeof EstoqueVivoMixScalarFieldEnum]
+
+
+  export const EstoqueVivoMixComponenteScalarFieldEnum: {
+    id: 'id',
+    mixId: 'mixId',
+    produtoId: 'produtoId',
+    quantidade: 'quantidade'
+  };
+
+  export type EstoqueVivoMixComponenteScalarFieldEnum = (typeof EstoqueVivoMixComponenteScalarFieldEnum)[keyof typeof EstoqueVivoMixComponenteScalarFieldEnum]
+
+
   export const ProdutoComercialScalarFieldEnum: {
     id: 'id',
     nome: 'nome',
@@ -34845,6 +37096,24 @@ export namespace Prisma {
   };
 
   export type EstoqueVivoConfigOrderByRelevanceFieldEnum = (typeof EstoqueVivoConfigOrderByRelevanceFieldEnum)[keyof typeof EstoqueVivoConfigOrderByRelevanceFieldEnum]
+
+
+  export const EstoqueVivoMixOrderByRelevanceFieldEnum: {
+    id: 'id',
+    nome: 'nome',
+    produtoReferenciaId: 'produtoReferenciaId'
+  };
+
+  export type EstoqueVivoMixOrderByRelevanceFieldEnum = (typeof EstoqueVivoMixOrderByRelevanceFieldEnum)[keyof typeof EstoqueVivoMixOrderByRelevanceFieldEnum]
+
+
+  export const EstoqueVivoMixComponenteOrderByRelevanceFieldEnum: {
+    id: 'id',
+    mixId: 'mixId',
+    produtoId: 'produtoId'
+  };
+
+  export type EstoqueVivoMixComponenteOrderByRelevanceFieldEnum = (typeof EstoqueVivoMixComponenteOrderByRelevanceFieldEnum)[keyof typeof EstoqueVivoMixComponenteOrderByRelevanceFieldEnum]
 
 
   export const ProdutoComercialOrderByRelevanceFieldEnum: {
@@ -35734,6 +38003,134 @@ export namespace Prisma {
     atualizadoEm?: DateTimeWithAggregatesFilter<"EstoqueVivoConfig"> | Date | string
   }
 
+  export type EstoqueVivoMixWhereInput = {
+    AND?: EstoqueVivoMixWhereInput | EstoqueVivoMixWhereInput[]
+    OR?: EstoqueVivoMixWhereInput[]
+    NOT?: EstoqueVivoMixWhereInput | EstoqueVivoMixWhereInput[]
+    id?: StringFilter<"EstoqueVivoMix"> | string
+    nome?: StringFilter<"EstoqueVivoMix"> | string
+    produtoReferenciaId?: StringFilter<"EstoqueVivoMix"> | string
+    perdaPercentual?: DecimalFilter<"EstoqueVivoMix"> | Decimal | DecimalJsLike | number | string
+    ativo?: BoolFilter<"EstoqueVivoMix"> | boolean
+    criadoEm?: DateTimeFilter<"EstoqueVivoMix"> | Date | string
+    atualizadoEm?: DateTimeFilter<"EstoqueVivoMix"> | Date | string
+    produtoReferencia?: XOR<ProdutoComercialScalarRelationFilter, ProdutoComercialWhereInput>
+    componentes?: EstoqueVivoMixComponenteListRelationFilter
+  }
+
+  export type EstoqueVivoMixOrderByWithRelationInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    produtoReferenciaId?: SortOrder
+    perdaPercentual?: SortOrder
+    ativo?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    produtoReferencia?: ProdutoComercialOrderByWithRelationInput
+    componentes?: EstoqueVivoMixComponenteOrderByRelationAggregateInput
+    _relevance?: EstoqueVivoMixOrderByRelevanceInput
+  }
+
+  export type EstoqueVivoMixWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    produtoReferenciaId?: string
+    AND?: EstoqueVivoMixWhereInput | EstoqueVivoMixWhereInput[]
+    OR?: EstoqueVivoMixWhereInput[]
+    NOT?: EstoqueVivoMixWhereInput | EstoqueVivoMixWhereInput[]
+    nome?: StringFilter<"EstoqueVivoMix"> | string
+    perdaPercentual?: DecimalFilter<"EstoqueVivoMix"> | Decimal | DecimalJsLike | number | string
+    ativo?: BoolFilter<"EstoqueVivoMix"> | boolean
+    criadoEm?: DateTimeFilter<"EstoqueVivoMix"> | Date | string
+    atualizadoEm?: DateTimeFilter<"EstoqueVivoMix"> | Date | string
+    produtoReferencia?: XOR<ProdutoComercialScalarRelationFilter, ProdutoComercialWhereInput>
+    componentes?: EstoqueVivoMixComponenteListRelationFilter
+  }, "id" | "produtoReferenciaId">
+
+  export type EstoqueVivoMixOrderByWithAggregationInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    produtoReferenciaId?: SortOrder
+    perdaPercentual?: SortOrder
+    ativo?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    _count?: EstoqueVivoMixCountOrderByAggregateInput
+    _avg?: EstoqueVivoMixAvgOrderByAggregateInput
+    _max?: EstoqueVivoMixMaxOrderByAggregateInput
+    _min?: EstoqueVivoMixMinOrderByAggregateInput
+    _sum?: EstoqueVivoMixSumOrderByAggregateInput
+  }
+
+  export type EstoqueVivoMixScalarWhereWithAggregatesInput = {
+    AND?: EstoqueVivoMixScalarWhereWithAggregatesInput | EstoqueVivoMixScalarWhereWithAggregatesInput[]
+    OR?: EstoqueVivoMixScalarWhereWithAggregatesInput[]
+    NOT?: EstoqueVivoMixScalarWhereWithAggregatesInput | EstoqueVivoMixScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"EstoqueVivoMix"> | string
+    nome?: StringWithAggregatesFilter<"EstoqueVivoMix"> | string
+    produtoReferenciaId?: StringWithAggregatesFilter<"EstoqueVivoMix"> | string
+    perdaPercentual?: DecimalWithAggregatesFilter<"EstoqueVivoMix"> | Decimal | DecimalJsLike | number | string
+    ativo?: BoolWithAggregatesFilter<"EstoqueVivoMix"> | boolean
+    criadoEm?: DateTimeWithAggregatesFilter<"EstoqueVivoMix"> | Date | string
+    atualizadoEm?: DateTimeWithAggregatesFilter<"EstoqueVivoMix"> | Date | string
+  }
+
+  export type EstoqueVivoMixComponenteWhereInput = {
+    AND?: EstoqueVivoMixComponenteWhereInput | EstoqueVivoMixComponenteWhereInput[]
+    OR?: EstoqueVivoMixComponenteWhereInput[]
+    NOT?: EstoqueVivoMixComponenteWhereInput | EstoqueVivoMixComponenteWhereInput[]
+    id?: StringFilter<"EstoqueVivoMixComponente"> | string
+    mixId?: StringFilter<"EstoqueVivoMixComponente"> | string
+    produtoId?: StringFilter<"EstoqueVivoMixComponente"> | string
+    quantidade?: DecimalFilter<"EstoqueVivoMixComponente"> | Decimal | DecimalJsLike | number | string
+    mix?: XOR<EstoqueVivoMixScalarRelationFilter, EstoqueVivoMixWhereInput>
+    produto?: XOR<ProdutoComercialScalarRelationFilter, ProdutoComercialWhereInput>
+  }
+
+  export type EstoqueVivoMixComponenteOrderByWithRelationInput = {
+    id?: SortOrder
+    mixId?: SortOrder
+    produtoId?: SortOrder
+    quantidade?: SortOrder
+    mix?: EstoqueVivoMixOrderByWithRelationInput
+    produto?: ProdutoComercialOrderByWithRelationInput
+    _relevance?: EstoqueVivoMixComponenteOrderByRelevanceInput
+  }
+
+  export type EstoqueVivoMixComponenteWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    mixId_produtoId?: EstoqueVivoMixComponenteMixIdProdutoIdCompoundUniqueInput
+    AND?: EstoqueVivoMixComponenteWhereInput | EstoqueVivoMixComponenteWhereInput[]
+    OR?: EstoqueVivoMixComponenteWhereInput[]
+    NOT?: EstoqueVivoMixComponenteWhereInput | EstoqueVivoMixComponenteWhereInput[]
+    mixId?: StringFilter<"EstoqueVivoMixComponente"> | string
+    produtoId?: StringFilter<"EstoqueVivoMixComponente"> | string
+    quantidade?: DecimalFilter<"EstoqueVivoMixComponente"> | Decimal | DecimalJsLike | number | string
+    mix?: XOR<EstoqueVivoMixScalarRelationFilter, EstoqueVivoMixWhereInput>
+    produto?: XOR<ProdutoComercialScalarRelationFilter, ProdutoComercialWhereInput>
+  }, "id" | "mixId_produtoId">
+
+  export type EstoqueVivoMixComponenteOrderByWithAggregationInput = {
+    id?: SortOrder
+    mixId?: SortOrder
+    produtoId?: SortOrder
+    quantidade?: SortOrder
+    _count?: EstoqueVivoMixComponenteCountOrderByAggregateInput
+    _avg?: EstoqueVivoMixComponenteAvgOrderByAggregateInput
+    _max?: EstoqueVivoMixComponenteMaxOrderByAggregateInput
+    _min?: EstoqueVivoMixComponenteMinOrderByAggregateInput
+    _sum?: EstoqueVivoMixComponenteSumOrderByAggregateInput
+  }
+
+  export type EstoqueVivoMixComponenteScalarWhereWithAggregatesInput = {
+    AND?: EstoqueVivoMixComponenteScalarWhereWithAggregatesInput | EstoqueVivoMixComponenteScalarWhereWithAggregatesInput[]
+    OR?: EstoqueVivoMixComponenteScalarWhereWithAggregatesInput[]
+    NOT?: EstoqueVivoMixComponenteScalarWhereWithAggregatesInput | EstoqueVivoMixComponenteScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"EstoqueVivoMixComponente"> | string
+    mixId?: StringWithAggregatesFilter<"EstoqueVivoMixComponente"> | string
+    produtoId?: StringWithAggregatesFilter<"EstoqueVivoMixComponente"> | string
+    quantidade?: DecimalWithAggregatesFilter<"EstoqueVivoMixComponente"> | Decimal | DecimalJsLike | number | string
+  }
+
   export type ProdutoComercialWhereInput = {
     AND?: ProdutoComercialWhereInput | ProdutoComercialWhereInput[]
     OR?: ProdutoComercialWhereInput[]
@@ -35763,6 +38160,8 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaListRelationFilter
     mixProdutoReferencia?: XOR<ProdutoComercialNullableScalarRelationFilter, ProdutoComercialWhereInput> | null
     mixReferenciadoPor?: ProdutoComercialListRelationFilter
+    estoqueVivoMixReferencia?: XOR<EstoqueVivoMixNullableScalarRelationFilter, EstoqueVivoMixWhereInput> | null
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteListRelationFilter
   }
 
   export type ProdutoComercialOrderByWithRelationInput = {
@@ -35791,6 +38190,8 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaOrderByRelationAggregateInput
     mixProdutoReferencia?: ProdutoComercialOrderByWithRelationInput
     mixReferenciadoPor?: ProdutoComercialOrderByRelationAggregateInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixOrderByWithRelationInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteOrderByRelationAggregateInput
     _relevance?: ProdutoComercialOrderByRelevanceInput
   }
 
@@ -35823,6 +38224,8 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaListRelationFilter
     mixProdutoReferencia?: XOR<ProdutoComercialNullableScalarRelationFilter, ProdutoComercialWhereInput> | null
     mixReferenciadoPor?: ProdutoComercialListRelationFilter
+    estoqueVivoMixReferencia?: XOR<EstoqueVivoMixNullableScalarRelationFilter, EstoqueVivoMixWhereInput> | null
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteListRelationFilter
   }, "id" | "nome" | "contaAzulProdutoId">
 
   export type ProdutoComercialOrderByWithAggregationInput = {
@@ -38309,6 +40712,126 @@ export namespace Prisma {
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type EstoqueVivoMixCreateInput = {
+    id?: string
+    nome: string
+    perdaPercentual?: Decimal | DecimalJsLike | number | string
+    ativo?: boolean
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    produtoReferencia: ProdutoComercialCreateNestedOneWithoutEstoqueVivoMixReferenciaInput
+    componentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutMixInput
+  }
+
+  export type EstoqueVivoMixUncheckedCreateInput = {
+    id?: string
+    nome: string
+    produtoReferenciaId: string
+    perdaPercentual?: Decimal | DecimalJsLike | number | string
+    ativo?: boolean
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    componentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutMixInput
+  }
+
+  export type EstoqueVivoMixUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    perdaPercentual?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoReferencia?: ProdutoComercialUpdateOneRequiredWithoutEstoqueVivoMixReferenciaNestedInput
+    componentes?: EstoqueVivoMixComponenteUpdateManyWithoutMixNestedInput
+  }
+
+  export type EstoqueVivoMixUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    produtoReferenciaId?: StringFieldUpdateOperationsInput | string
+    perdaPercentual?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    componentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutMixNestedInput
+  }
+
+  export type EstoqueVivoMixCreateManyInput = {
+    id?: string
+    nome: string
+    produtoReferenciaId: string
+    perdaPercentual?: Decimal | DecimalJsLike | number | string
+    ativo?: boolean
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type EstoqueVivoMixUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    perdaPercentual?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EstoqueVivoMixUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    produtoReferenciaId?: StringFieldUpdateOperationsInput | string
+    perdaPercentual?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EstoqueVivoMixComponenteCreateInput = {
+    id?: string
+    quantidade: Decimal | DecimalJsLike | number | string
+    mix: EstoqueVivoMixCreateNestedOneWithoutComponentesInput
+    produto: ProdutoComercialCreateNestedOneWithoutEstoqueVivoMixComponentesInput
+  }
+
+  export type EstoqueVivoMixComponenteUncheckedCreateInput = {
+    id?: string
+    mixId: string
+    produtoId: string
+    quantidade: Decimal | DecimalJsLike | number | string
+  }
+
+  export type EstoqueVivoMixComponenteUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    mix?: EstoqueVivoMixUpdateOneRequiredWithoutComponentesNestedInput
+    produto?: ProdutoComercialUpdateOneRequiredWithoutEstoqueVivoMixComponentesNestedInput
+  }
+
+  export type EstoqueVivoMixComponenteUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    mixId?: StringFieldUpdateOperationsInput | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+  }
+
+  export type EstoqueVivoMixComponenteCreateManyInput = {
+    id?: string
+    mixId: string
+    produtoId: string
+    quantidade: Decimal | DecimalJsLike | number | string
+  }
+
+  export type EstoqueVivoMixComponenteUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+  }
+
+  export type EstoqueVivoMixComponenteUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    mixId?: StringFieldUpdateOperationsInput | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+  }
+
   export type ProdutoComercialCreateInput = {
     id?: string
     nome: string
@@ -38334,6 +40857,8 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
     mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
     mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialUncheckedCreateInput = {
@@ -38361,6 +40886,8 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialUpdateInput = {
@@ -38388,6 +40915,8 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
     mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
     mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialUncheckedUpdateInput = {
@@ -38415,6 +40944,8 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialCreateManyInput = {
@@ -41230,9 +43761,148 @@ export namespace Prisma {
     atualizadoEm?: SortOrder
   }
 
+  export type DecimalFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[]
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[]
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+  }
+
   export type BoolFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
+  export type ProdutoComercialScalarRelationFilter = {
+    is?: ProdutoComercialWhereInput
+    isNot?: ProdutoComercialWhereInput
+  }
+
+  export type EstoqueVivoMixComponenteListRelationFilter = {
+    every?: EstoqueVivoMixComponenteWhereInput
+    some?: EstoqueVivoMixComponenteWhereInput
+    none?: EstoqueVivoMixComponenteWhereInput
+  }
+
+  export type EstoqueVivoMixComponenteOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type EstoqueVivoMixOrderByRelevanceInput = {
+    fields: EstoqueVivoMixOrderByRelevanceFieldEnum | EstoqueVivoMixOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type EstoqueVivoMixCountOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    produtoReferenciaId?: SortOrder
+    perdaPercentual?: SortOrder
+    ativo?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type EstoqueVivoMixAvgOrderByAggregateInput = {
+    perdaPercentual?: SortOrder
+  }
+
+  export type EstoqueVivoMixMaxOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    produtoReferenciaId?: SortOrder
+    perdaPercentual?: SortOrder
+    ativo?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type EstoqueVivoMixMinOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    produtoReferenciaId?: SortOrder
+    perdaPercentual?: SortOrder
+    ativo?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type EstoqueVivoMixSumOrderByAggregateInput = {
+    perdaPercentual?: SortOrder
+  }
+
+  export type DecimalWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[]
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[]
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedDecimalFilter<$PrismaModel>
+    _sum?: NestedDecimalFilter<$PrismaModel>
+    _min?: NestedDecimalFilter<$PrismaModel>
+    _max?: NestedDecimalFilter<$PrismaModel>
+  }
+
+  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
+  export type EstoqueVivoMixScalarRelationFilter = {
+    is?: EstoqueVivoMixWhereInput
+    isNot?: EstoqueVivoMixWhereInput
+  }
+
+  export type EstoqueVivoMixComponenteOrderByRelevanceInput = {
+    fields: EstoqueVivoMixComponenteOrderByRelevanceFieldEnum | EstoqueVivoMixComponenteOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type EstoqueVivoMixComponenteMixIdProdutoIdCompoundUniqueInput = {
+    mixId: string
+    produtoId: string
+  }
+
+  export type EstoqueVivoMixComponenteCountOrderByAggregateInput = {
+    id?: SortOrder
+    mixId?: SortOrder
+    produtoId?: SortOrder
+    quantidade?: SortOrder
+  }
+
+  export type EstoqueVivoMixComponenteAvgOrderByAggregateInput = {
+    quantidade?: SortOrder
+  }
+
+  export type EstoqueVivoMixComponenteMaxOrderByAggregateInput = {
+    id?: SortOrder
+    mixId?: SortOrder
+    produtoId?: SortOrder
+    quantidade?: SortOrder
+  }
+
+  export type EstoqueVivoMixComponenteMinOrderByAggregateInput = {
+    id?: SortOrder
+    mixId?: SortOrder
+    produtoId?: SortOrder
+    quantidade?: SortOrder
+  }
+
+  export type EstoqueVivoMixComponenteSumOrderByAggregateInput = {
+    quantidade?: SortOrder
   }
 
   export type EnumModoCompraProdutoFilter<$PrismaModel = never> = {
@@ -41286,6 +43956,11 @@ export namespace Prisma {
     every?: ProdutoComercialWhereInput
     some?: ProdutoComercialWhereInput
     none?: ProdutoComercialWhereInput
+  }
+
+  export type EstoqueVivoMixNullableScalarRelationFilter = {
+    is?: EstoqueVivoMixWhereInput | null
+    isNot?: EstoqueVivoMixWhereInput | null
   }
 
   export type PrecoEspecialClienteOrderByRelationAggregateInput = {
@@ -41383,14 +44058,6 @@ export namespace Prisma {
     precoBase?: SortOrder
     fatorCompraUnidade?: SortOrder
     rendimentoPorKg?: SortOrder
-  }
-
-  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type EnumModoCompraProdutoWithAggregatesFilter<$PrismaModel = never> = {
@@ -41571,17 +44238,6 @@ export namespace Prisma {
     _max?: NestedIntNullableFilter<$PrismaModel>
   }
 
-  export type DecimalFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[]
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[]
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
-  }
-
   export type ClienteLegadoContaAzulLinkOrderByRelevanceInput = {
     fields: ClienteLegadoContaAzulLinkOrderByRelevanceFieldEnum | ClienteLegadoContaAzulLinkOrderByRelevanceFieldEnum[]
     sort: SortOrder
@@ -41635,30 +44291,9 @@ export namespace Prisma {
     confianca?: SortOrder
   }
 
-  export type DecimalWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[]
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[]
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
-    _count?: NestedIntFilter<$PrismaModel>
-    _avg?: NestedDecimalFilter<$PrismaModel>
-    _sum?: NestedDecimalFilter<$PrismaModel>
-    _min?: NestedDecimalFilter<$PrismaModel>
-    _max?: NestedDecimalFilter<$PrismaModel>
-  }
-
   export type RegraComercialClienteScalarRelationFilter = {
     is?: RegraComercialClienteWhereInput
     isNot?: RegraComercialClienteWhereInput
-  }
-
-  export type ProdutoComercialScalarRelationFilter = {
-    is?: ProdutoComercialWhereInput
-    isNot?: ProdutoComercialWhereInput
   }
 
   export type PrecoEspecialClienteOrderByRelevanceInput = {
@@ -44048,6 +46683,102 @@ export namespace Prisma {
     deleteMany?: ParadaEntregaScalarWhereInput | ParadaEntregaScalarWhereInput[]
   }
 
+  export type ProdutoComercialCreateNestedOneWithoutEstoqueVivoMixReferenciaInput = {
+    create?: XOR<ProdutoComercialCreateWithoutEstoqueVivoMixReferenciaInput, ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixReferenciaInput>
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutEstoqueVivoMixReferenciaInput
+    connect?: ProdutoComercialWhereUniqueInput
+  }
+
+  export type EstoqueVivoMixComponenteCreateNestedManyWithoutMixInput = {
+    create?: XOR<EstoqueVivoMixComponenteCreateWithoutMixInput, EstoqueVivoMixComponenteUncheckedCreateWithoutMixInput> | EstoqueVivoMixComponenteCreateWithoutMixInput[] | EstoqueVivoMixComponenteUncheckedCreateWithoutMixInput[]
+    connectOrCreate?: EstoqueVivoMixComponenteCreateOrConnectWithoutMixInput | EstoqueVivoMixComponenteCreateOrConnectWithoutMixInput[]
+    createMany?: EstoqueVivoMixComponenteCreateManyMixInputEnvelope
+    connect?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
+  }
+
+  export type EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutMixInput = {
+    create?: XOR<EstoqueVivoMixComponenteCreateWithoutMixInput, EstoqueVivoMixComponenteUncheckedCreateWithoutMixInput> | EstoqueVivoMixComponenteCreateWithoutMixInput[] | EstoqueVivoMixComponenteUncheckedCreateWithoutMixInput[]
+    connectOrCreate?: EstoqueVivoMixComponenteCreateOrConnectWithoutMixInput | EstoqueVivoMixComponenteCreateOrConnectWithoutMixInput[]
+    createMany?: EstoqueVivoMixComponenteCreateManyMixInputEnvelope
+    connect?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
+  }
+
+  export type DecimalFieldUpdateOperationsInput = {
+    set?: Decimal | DecimalJsLike | number | string
+    increment?: Decimal | DecimalJsLike | number | string
+    decrement?: Decimal | DecimalJsLike | number | string
+    multiply?: Decimal | DecimalJsLike | number | string
+    divide?: Decimal | DecimalJsLike | number | string
+  }
+
+  export type BoolFieldUpdateOperationsInput = {
+    set?: boolean
+  }
+
+  export type ProdutoComercialUpdateOneRequiredWithoutEstoqueVivoMixReferenciaNestedInput = {
+    create?: XOR<ProdutoComercialCreateWithoutEstoqueVivoMixReferenciaInput, ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixReferenciaInput>
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutEstoqueVivoMixReferenciaInput
+    upsert?: ProdutoComercialUpsertWithoutEstoqueVivoMixReferenciaInput
+    connect?: ProdutoComercialWhereUniqueInput
+    update?: XOR<XOR<ProdutoComercialUpdateToOneWithWhereWithoutEstoqueVivoMixReferenciaInput, ProdutoComercialUpdateWithoutEstoqueVivoMixReferenciaInput>, ProdutoComercialUncheckedUpdateWithoutEstoqueVivoMixReferenciaInput>
+  }
+
+  export type EstoqueVivoMixComponenteUpdateManyWithoutMixNestedInput = {
+    create?: XOR<EstoqueVivoMixComponenteCreateWithoutMixInput, EstoqueVivoMixComponenteUncheckedCreateWithoutMixInput> | EstoqueVivoMixComponenteCreateWithoutMixInput[] | EstoqueVivoMixComponenteUncheckedCreateWithoutMixInput[]
+    connectOrCreate?: EstoqueVivoMixComponenteCreateOrConnectWithoutMixInput | EstoqueVivoMixComponenteCreateOrConnectWithoutMixInput[]
+    upsert?: EstoqueVivoMixComponenteUpsertWithWhereUniqueWithoutMixInput | EstoqueVivoMixComponenteUpsertWithWhereUniqueWithoutMixInput[]
+    createMany?: EstoqueVivoMixComponenteCreateManyMixInputEnvelope
+    set?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
+    disconnect?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
+    delete?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
+    connect?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
+    update?: EstoqueVivoMixComponenteUpdateWithWhereUniqueWithoutMixInput | EstoqueVivoMixComponenteUpdateWithWhereUniqueWithoutMixInput[]
+    updateMany?: EstoqueVivoMixComponenteUpdateManyWithWhereWithoutMixInput | EstoqueVivoMixComponenteUpdateManyWithWhereWithoutMixInput[]
+    deleteMany?: EstoqueVivoMixComponenteScalarWhereInput | EstoqueVivoMixComponenteScalarWhereInput[]
+  }
+
+  export type EstoqueVivoMixComponenteUncheckedUpdateManyWithoutMixNestedInput = {
+    create?: XOR<EstoqueVivoMixComponenteCreateWithoutMixInput, EstoqueVivoMixComponenteUncheckedCreateWithoutMixInput> | EstoqueVivoMixComponenteCreateWithoutMixInput[] | EstoqueVivoMixComponenteUncheckedCreateWithoutMixInput[]
+    connectOrCreate?: EstoqueVivoMixComponenteCreateOrConnectWithoutMixInput | EstoqueVivoMixComponenteCreateOrConnectWithoutMixInput[]
+    upsert?: EstoqueVivoMixComponenteUpsertWithWhereUniqueWithoutMixInput | EstoqueVivoMixComponenteUpsertWithWhereUniqueWithoutMixInput[]
+    createMany?: EstoqueVivoMixComponenteCreateManyMixInputEnvelope
+    set?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
+    disconnect?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
+    delete?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
+    connect?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
+    update?: EstoqueVivoMixComponenteUpdateWithWhereUniqueWithoutMixInput | EstoqueVivoMixComponenteUpdateWithWhereUniqueWithoutMixInput[]
+    updateMany?: EstoqueVivoMixComponenteUpdateManyWithWhereWithoutMixInput | EstoqueVivoMixComponenteUpdateManyWithWhereWithoutMixInput[]
+    deleteMany?: EstoqueVivoMixComponenteScalarWhereInput | EstoqueVivoMixComponenteScalarWhereInput[]
+  }
+
+  export type EstoqueVivoMixCreateNestedOneWithoutComponentesInput = {
+    create?: XOR<EstoqueVivoMixCreateWithoutComponentesInput, EstoqueVivoMixUncheckedCreateWithoutComponentesInput>
+    connectOrCreate?: EstoqueVivoMixCreateOrConnectWithoutComponentesInput
+    connect?: EstoqueVivoMixWhereUniqueInput
+  }
+
+  export type ProdutoComercialCreateNestedOneWithoutEstoqueVivoMixComponentesInput = {
+    create?: XOR<ProdutoComercialCreateWithoutEstoqueVivoMixComponentesInput, ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixComponentesInput>
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutEstoqueVivoMixComponentesInput
+    connect?: ProdutoComercialWhereUniqueInput
+  }
+
+  export type EstoqueVivoMixUpdateOneRequiredWithoutComponentesNestedInput = {
+    create?: XOR<EstoqueVivoMixCreateWithoutComponentesInput, EstoqueVivoMixUncheckedCreateWithoutComponentesInput>
+    connectOrCreate?: EstoqueVivoMixCreateOrConnectWithoutComponentesInput
+    upsert?: EstoqueVivoMixUpsertWithoutComponentesInput
+    connect?: EstoqueVivoMixWhereUniqueInput
+    update?: XOR<XOR<EstoqueVivoMixUpdateToOneWithWhereWithoutComponentesInput, EstoqueVivoMixUpdateWithoutComponentesInput>, EstoqueVivoMixUncheckedUpdateWithoutComponentesInput>
+  }
+
+  export type ProdutoComercialUpdateOneRequiredWithoutEstoqueVivoMixComponentesNestedInput = {
+    create?: XOR<ProdutoComercialCreateWithoutEstoqueVivoMixComponentesInput, ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixComponentesInput>
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutEstoqueVivoMixComponentesInput
+    upsert?: ProdutoComercialUpsertWithoutEstoqueVivoMixComponentesInput
+    connect?: ProdutoComercialWhereUniqueInput
+    update?: XOR<XOR<ProdutoComercialUpdateToOneWithWhereWithoutEstoqueVivoMixComponentesInput, ProdutoComercialUpdateWithoutEstoqueVivoMixComponentesInput>, ProdutoComercialUncheckedUpdateWithoutEstoqueVivoMixComponentesInput>
+  }
+
   export type PrecoEspecialClienteCreateNestedManyWithoutProdutoInput = {
     create?: XOR<PrecoEspecialClienteCreateWithoutProdutoInput, PrecoEspecialClienteUncheckedCreateWithoutProdutoInput> | PrecoEspecialClienteCreateWithoutProdutoInput[] | PrecoEspecialClienteUncheckedCreateWithoutProdutoInput[]
     connectOrCreate?: PrecoEspecialClienteCreateOrConnectWithoutProdutoInput | PrecoEspecialClienteCreateOrConnectWithoutProdutoInput[]
@@ -44082,6 +46813,19 @@ export namespace Prisma {
     connect?: ProdutoComercialWhereUniqueInput | ProdutoComercialWhereUniqueInput[]
   }
 
+  export type EstoqueVivoMixCreateNestedOneWithoutProdutoReferenciaInput = {
+    create?: XOR<EstoqueVivoMixCreateWithoutProdutoReferenciaInput, EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput>
+    connectOrCreate?: EstoqueVivoMixCreateOrConnectWithoutProdutoReferenciaInput
+    connect?: EstoqueVivoMixWhereUniqueInput
+  }
+
+  export type EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput = {
+    create?: XOR<EstoqueVivoMixComponenteCreateWithoutProdutoInput, EstoqueVivoMixComponenteUncheckedCreateWithoutProdutoInput> | EstoqueVivoMixComponenteCreateWithoutProdutoInput[] | EstoqueVivoMixComponenteUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: EstoqueVivoMixComponenteCreateOrConnectWithoutProdutoInput | EstoqueVivoMixComponenteCreateOrConnectWithoutProdutoInput[]
+    createMany?: EstoqueVivoMixComponenteCreateManyProdutoInputEnvelope
+    connect?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
+  }
+
   export type PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput = {
     create?: XOR<PrecoEspecialClienteCreateWithoutProdutoInput, PrecoEspecialClienteUncheckedCreateWithoutProdutoInput> | PrecoEspecialClienteCreateWithoutProdutoInput[] | PrecoEspecialClienteUncheckedCreateWithoutProdutoInput[]
     connectOrCreate?: PrecoEspecialClienteCreateOrConnectWithoutProdutoInput | PrecoEspecialClienteCreateOrConnectWithoutProdutoInput[]
@@ -44110,8 +46854,17 @@ export namespace Prisma {
     connect?: ProdutoComercialWhereUniqueInput | ProdutoComercialWhereUniqueInput[]
   }
 
-  export type BoolFieldUpdateOperationsInput = {
-    set?: boolean
+  export type EstoqueVivoMixUncheckedCreateNestedOneWithoutProdutoReferenciaInput = {
+    create?: XOR<EstoqueVivoMixCreateWithoutProdutoReferenciaInput, EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput>
+    connectOrCreate?: EstoqueVivoMixCreateOrConnectWithoutProdutoReferenciaInput
+    connect?: EstoqueVivoMixWhereUniqueInput
+  }
+
+  export type EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput = {
+    create?: XOR<EstoqueVivoMixComponenteCreateWithoutProdutoInput, EstoqueVivoMixComponenteUncheckedCreateWithoutProdutoInput> | EstoqueVivoMixComponenteCreateWithoutProdutoInput[] | EstoqueVivoMixComponenteUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: EstoqueVivoMixComponenteCreateOrConnectWithoutProdutoInput | EstoqueVivoMixComponenteCreateOrConnectWithoutProdutoInput[]
+    createMany?: EstoqueVivoMixComponenteCreateManyProdutoInputEnvelope
+    connect?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
   }
 
   export type EnumModoCompraProdutoFieldUpdateOperationsInput = {
@@ -44184,6 +46937,30 @@ export namespace Prisma {
     deleteMany?: ProdutoComercialScalarWhereInput | ProdutoComercialScalarWhereInput[]
   }
 
+  export type EstoqueVivoMixUpdateOneWithoutProdutoReferenciaNestedInput = {
+    create?: XOR<EstoqueVivoMixCreateWithoutProdutoReferenciaInput, EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput>
+    connectOrCreate?: EstoqueVivoMixCreateOrConnectWithoutProdutoReferenciaInput
+    upsert?: EstoqueVivoMixUpsertWithoutProdutoReferenciaInput
+    disconnect?: EstoqueVivoMixWhereInput | boolean
+    delete?: EstoqueVivoMixWhereInput | boolean
+    connect?: EstoqueVivoMixWhereUniqueInput
+    update?: XOR<XOR<EstoqueVivoMixUpdateToOneWithWhereWithoutProdutoReferenciaInput, EstoqueVivoMixUpdateWithoutProdutoReferenciaInput>, EstoqueVivoMixUncheckedUpdateWithoutProdutoReferenciaInput>
+  }
+
+  export type EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput = {
+    create?: XOR<EstoqueVivoMixComponenteCreateWithoutProdutoInput, EstoqueVivoMixComponenteUncheckedCreateWithoutProdutoInput> | EstoqueVivoMixComponenteCreateWithoutProdutoInput[] | EstoqueVivoMixComponenteUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: EstoqueVivoMixComponenteCreateOrConnectWithoutProdutoInput | EstoqueVivoMixComponenteCreateOrConnectWithoutProdutoInput[]
+    upsert?: EstoqueVivoMixComponenteUpsertWithWhereUniqueWithoutProdutoInput | EstoqueVivoMixComponenteUpsertWithWhereUniqueWithoutProdutoInput[]
+    createMany?: EstoqueVivoMixComponenteCreateManyProdutoInputEnvelope
+    set?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
+    disconnect?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
+    delete?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
+    connect?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
+    update?: EstoqueVivoMixComponenteUpdateWithWhereUniqueWithoutProdutoInput | EstoqueVivoMixComponenteUpdateWithWhereUniqueWithoutProdutoInput[]
+    updateMany?: EstoqueVivoMixComponenteUpdateManyWithWhereWithoutProdutoInput | EstoqueVivoMixComponenteUpdateManyWithWhereWithoutProdutoInput[]
+    deleteMany?: EstoqueVivoMixComponenteScalarWhereInput | EstoqueVivoMixComponenteScalarWhereInput[]
+  }
+
   export type PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput = {
     create?: XOR<PrecoEspecialClienteCreateWithoutProdutoInput, PrecoEspecialClienteUncheckedCreateWithoutProdutoInput> | PrecoEspecialClienteCreateWithoutProdutoInput[] | PrecoEspecialClienteUncheckedCreateWithoutProdutoInput[]
     connectOrCreate?: PrecoEspecialClienteCreateOrConnectWithoutProdutoInput | PrecoEspecialClienteCreateOrConnectWithoutProdutoInput[]
@@ -44238,6 +47015,30 @@ export namespace Prisma {
     update?: ProdutoComercialUpdateWithWhereUniqueWithoutMixProdutoReferenciaInput | ProdutoComercialUpdateWithWhereUniqueWithoutMixProdutoReferenciaInput[]
     updateMany?: ProdutoComercialUpdateManyWithWhereWithoutMixProdutoReferenciaInput | ProdutoComercialUpdateManyWithWhereWithoutMixProdutoReferenciaInput[]
     deleteMany?: ProdutoComercialScalarWhereInput | ProdutoComercialScalarWhereInput[]
+  }
+
+  export type EstoqueVivoMixUncheckedUpdateOneWithoutProdutoReferenciaNestedInput = {
+    create?: XOR<EstoqueVivoMixCreateWithoutProdutoReferenciaInput, EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput>
+    connectOrCreate?: EstoqueVivoMixCreateOrConnectWithoutProdutoReferenciaInput
+    upsert?: EstoqueVivoMixUpsertWithoutProdutoReferenciaInput
+    disconnect?: EstoqueVivoMixWhereInput | boolean
+    delete?: EstoqueVivoMixWhereInput | boolean
+    connect?: EstoqueVivoMixWhereUniqueInput
+    update?: XOR<XOR<EstoqueVivoMixUpdateToOneWithWhereWithoutProdutoReferenciaInput, EstoqueVivoMixUpdateWithoutProdutoReferenciaInput>, EstoqueVivoMixUncheckedUpdateWithoutProdutoReferenciaInput>
+  }
+
+  export type EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput = {
+    create?: XOR<EstoqueVivoMixComponenteCreateWithoutProdutoInput, EstoqueVivoMixComponenteUncheckedCreateWithoutProdutoInput> | EstoqueVivoMixComponenteCreateWithoutProdutoInput[] | EstoqueVivoMixComponenteUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: EstoqueVivoMixComponenteCreateOrConnectWithoutProdutoInput | EstoqueVivoMixComponenteCreateOrConnectWithoutProdutoInput[]
+    upsert?: EstoqueVivoMixComponenteUpsertWithWhereUniqueWithoutProdutoInput | EstoqueVivoMixComponenteUpsertWithWhereUniqueWithoutProdutoInput[]
+    createMany?: EstoqueVivoMixComponenteCreateManyProdutoInputEnvelope
+    set?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
+    disconnect?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
+    delete?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
+    connect?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
+    update?: EstoqueVivoMixComponenteUpdateWithWhereUniqueWithoutProdutoInput | EstoqueVivoMixComponenteUpdateWithWhereUniqueWithoutProdutoInput[]
+    updateMany?: EstoqueVivoMixComponenteUpdateManyWithWhereWithoutProdutoInput | EstoqueVivoMixComponenteUpdateManyWithWhereWithoutProdutoInput[]
+    deleteMany?: EstoqueVivoMixComponenteScalarWhereInput | EstoqueVivoMixComponenteScalarWhereInput[]
   }
 
   export type ClienteCreateNestedOneWithoutRegraComercialInput = {
@@ -44318,14 +47119,6 @@ export namespace Prisma {
     create?: XOR<ClienteCreateWithoutLinksLegadoContaAzulInput, ClienteUncheckedCreateWithoutLinksLegadoContaAzulInput>
     connectOrCreate?: ClienteCreateOrConnectWithoutLinksLegadoContaAzulInput
     connect?: ClienteWhereUniqueInput
-  }
-
-  export type DecimalFieldUpdateOperationsInput = {
-    set?: Decimal | DecimalJsLike | number | string
-    increment?: Decimal | DecimalJsLike | number | string
-    decrement?: Decimal | DecimalJsLike | number | string
-    multiply?: Decimal | DecimalJsLike | number | string
-    divide?: Decimal | DecimalJsLike | number | string
   }
 
   export type ClienteUpdateOneWithoutLinksLegadoContaAzulNestedInput = {
@@ -45513,16 +48306,36 @@ export namespace Prisma {
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
+  export type NestedDecimalFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[]
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[]
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+  }
+
   export type NestedBoolFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolFilter<$PrismaModel> | boolean
   }
 
-  export type NestedEnumModoCompraProdutoFilter<$PrismaModel = never> = {
-    equals?: $Enums.ModoCompraProduto | EnumModoCompraProdutoFieldRefInput<$PrismaModel>
-    in?: $Enums.ModoCompraProduto[]
-    notIn?: $Enums.ModoCompraProduto[]
-    not?: NestedEnumModoCompraProdutoFilter<$PrismaModel> | $Enums.ModoCompraProduto
+  export type NestedDecimalWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[]
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[]
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedDecimalFilter<$PrismaModel>
+    _sum?: NestedDecimalFilter<$PrismaModel>
+    _min?: NestedDecimalFilter<$PrismaModel>
+    _max?: NestedDecimalFilter<$PrismaModel>
   }
 
   export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
@@ -45531,6 +48344,13 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedBoolFilter<$PrismaModel>
     _max?: NestedBoolFilter<$PrismaModel>
+  }
+
+  export type NestedEnumModoCompraProdutoFilter<$PrismaModel = never> = {
+    equals?: $Enums.ModoCompraProduto | EnumModoCompraProdutoFieldRefInput<$PrismaModel>
+    in?: $Enums.ModoCompraProduto[]
+    notIn?: $Enums.ModoCompraProduto[]
+    not?: NestedEnumModoCompraProdutoFilter<$PrismaModel> | $Enums.ModoCompraProduto
   }
 
   export type NestedEnumModoCompraProdutoWithAggregatesFilter<$PrismaModel = never> = {
@@ -45625,33 +48445,6 @@ export namespace Prisma {
     gt?: number | FloatFieldRefInput<$PrismaModel>
     gte?: number | FloatFieldRefInput<$PrismaModel>
     not?: NestedFloatNullableFilter<$PrismaModel> | number | null
-  }
-
-  export type NestedDecimalFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[]
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[]
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
-  }
-
-  export type NestedDecimalWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[]
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[]
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
-    _count?: NestedIntFilter<$PrismaModel>
-    _avg?: NestedDecimalFilter<$PrismaModel>
-    _sum?: NestedDecimalFilter<$PrismaModel>
-    _min?: NestedDecimalFilter<$PrismaModel>
-    _max?: NestedDecimalFilter<$PrismaModel>
   }
 
   export type NestedEnumTipoVendaPedidoFilter<$PrismaModel = never> = {
@@ -47617,6 +50410,366 @@ export namespace Prisma {
     atualizadoEm?: DateTimeFilter<"ParadaEntrega"> | Date | string
   }
 
+  export type ProdutoComercialCreateWithoutEstoqueVivoMixReferenciaInput = {
+    id?: string
+    nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
+    itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
+    avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
+    mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
+    mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
+  }
+
+  export type ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixReferenciaInput = {
+    id?: string
+    nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixProdutoReferenciaId?: string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
+    itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
+    avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
+    mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
+  }
+
+  export type ProdutoComercialCreateOrConnectWithoutEstoqueVivoMixReferenciaInput = {
+    where: ProdutoComercialWhereUniqueInput
+    create: XOR<ProdutoComercialCreateWithoutEstoqueVivoMixReferenciaInput, ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixReferenciaInput>
+  }
+
+  export type EstoqueVivoMixComponenteCreateWithoutMixInput = {
+    id?: string
+    quantidade: Decimal | DecimalJsLike | number | string
+    produto: ProdutoComercialCreateNestedOneWithoutEstoqueVivoMixComponentesInput
+  }
+
+  export type EstoqueVivoMixComponenteUncheckedCreateWithoutMixInput = {
+    id?: string
+    produtoId: string
+    quantidade: Decimal | DecimalJsLike | number | string
+  }
+
+  export type EstoqueVivoMixComponenteCreateOrConnectWithoutMixInput = {
+    where: EstoqueVivoMixComponenteWhereUniqueInput
+    create: XOR<EstoqueVivoMixComponenteCreateWithoutMixInput, EstoqueVivoMixComponenteUncheckedCreateWithoutMixInput>
+  }
+
+  export type EstoqueVivoMixComponenteCreateManyMixInputEnvelope = {
+    data: EstoqueVivoMixComponenteCreateManyMixInput | EstoqueVivoMixComponenteCreateManyMixInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ProdutoComercialUpsertWithoutEstoqueVivoMixReferenciaInput = {
+    update: XOR<ProdutoComercialUpdateWithoutEstoqueVivoMixReferenciaInput, ProdutoComercialUncheckedUpdateWithoutEstoqueVivoMixReferenciaInput>
+    create: XOR<ProdutoComercialCreateWithoutEstoqueVivoMixReferenciaInput, ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixReferenciaInput>
+    where?: ProdutoComercialWhereInput
+  }
+
+  export type ProdutoComercialUpdateToOneWithWhereWithoutEstoqueVivoMixReferenciaInput = {
+    where?: ProdutoComercialWhereInput
+    data: XOR<ProdutoComercialUpdateWithoutEstoqueVivoMixReferenciaInput, ProdutoComercialUncheckedUpdateWithoutEstoqueVivoMixReferenciaInput>
+  }
+
+  export type ProdutoComercialUpdateWithoutEstoqueVivoMixReferenciaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
+    itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
+    avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
+    mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
+    mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
+  }
+
+  export type ProdutoComercialUncheckedUpdateWithoutEstoqueVivoMixReferenciaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixProdutoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
+    itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
+    avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
+    mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
+  }
+
+  export type EstoqueVivoMixComponenteUpsertWithWhereUniqueWithoutMixInput = {
+    where: EstoqueVivoMixComponenteWhereUniqueInput
+    update: XOR<EstoqueVivoMixComponenteUpdateWithoutMixInput, EstoqueVivoMixComponenteUncheckedUpdateWithoutMixInput>
+    create: XOR<EstoqueVivoMixComponenteCreateWithoutMixInput, EstoqueVivoMixComponenteUncheckedCreateWithoutMixInput>
+  }
+
+  export type EstoqueVivoMixComponenteUpdateWithWhereUniqueWithoutMixInput = {
+    where: EstoqueVivoMixComponenteWhereUniqueInput
+    data: XOR<EstoqueVivoMixComponenteUpdateWithoutMixInput, EstoqueVivoMixComponenteUncheckedUpdateWithoutMixInput>
+  }
+
+  export type EstoqueVivoMixComponenteUpdateManyWithWhereWithoutMixInput = {
+    where: EstoqueVivoMixComponenteScalarWhereInput
+    data: XOR<EstoqueVivoMixComponenteUpdateManyMutationInput, EstoqueVivoMixComponenteUncheckedUpdateManyWithoutMixInput>
+  }
+
+  export type EstoqueVivoMixComponenteScalarWhereInput = {
+    AND?: EstoqueVivoMixComponenteScalarWhereInput | EstoqueVivoMixComponenteScalarWhereInput[]
+    OR?: EstoqueVivoMixComponenteScalarWhereInput[]
+    NOT?: EstoqueVivoMixComponenteScalarWhereInput | EstoqueVivoMixComponenteScalarWhereInput[]
+    id?: StringFilter<"EstoqueVivoMixComponente"> | string
+    mixId?: StringFilter<"EstoqueVivoMixComponente"> | string
+    produtoId?: StringFilter<"EstoqueVivoMixComponente"> | string
+    quantidade?: DecimalFilter<"EstoqueVivoMixComponente"> | Decimal | DecimalJsLike | number | string
+  }
+
+  export type EstoqueVivoMixCreateWithoutComponentesInput = {
+    id?: string
+    nome: string
+    perdaPercentual?: Decimal | DecimalJsLike | number | string
+    ativo?: boolean
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    produtoReferencia: ProdutoComercialCreateNestedOneWithoutEstoqueVivoMixReferenciaInput
+  }
+
+  export type EstoqueVivoMixUncheckedCreateWithoutComponentesInput = {
+    id?: string
+    nome: string
+    produtoReferenciaId: string
+    perdaPercentual?: Decimal | DecimalJsLike | number | string
+    ativo?: boolean
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type EstoqueVivoMixCreateOrConnectWithoutComponentesInput = {
+    where: EstoqueVivoMixWhereUniqueInput
+    create: XOR<EstoqueVivoMixCreateWithoutComponentesInput, EstoqueVivoMixUncheckedCreateWithoutComponentesInput>
+  }
+
+  export type ProdutoComercialCreateWithoutEstoqueVivoMixComponentesInput = {
+    id?: string
+    nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
+    itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
+    avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
+    mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
+    mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixCreateNestedOneWithoutProdutoReferenciaInput
+  }
+
+  export type ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixComponentesInput = {
+    id?: string
+    nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixProdutoReferenciaId?: string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
+    itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
+    avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
+    mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedCreateNestedOneWithoutProdutoReferenciaInput
+  }
+
+  export type ProdutoComercialCreateOrConnectWithoutEstoqueVivoMixComponentesInput = {
+    where: ProdutoComercialWhereUniqueInput
+    create: XOR<ProdutoComercialCreateWithoutEstoqueVivoMixComponentesInput, ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixComponentesInput>
+  }
+
+  export type EstoqueVivoMixUpsertWithoutComponentesInput = {
+    update: XOR<EstoqueVivoMixUpdateWithoutComponentesInput, EstoqueVivoMixUncheckedUpdateWithoutComponentesInput>
+    create: XOR<EstoqueVivoMixCreateWithoutComponentesInput, EstoqueVivoMixUncheckedCreateWithoutComponentesInput>
+    where?: EstoqueVivoMixWhereInput
+  }
+
+  export type EstoqueVivoMixUpdateToOneWithWhereWithoutComponentesInput = {
+    where?: EstoqueVivoMixWhereInput
+    data: XOR<EstoqueVivoMixUpdateWithoutComponentesInput, EstoqueVivoMixUncheckedUpdateWithoutComponentesInput>
+  }
+
+  export type EstoqueVivoMixUpdateWithoutComponentesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    perdaPercentual?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoReferencia?: ProdutoComercialUpdateOneRequiredWithoutEstoqueVivoMixReferenciaNestedInput
+  }
+
+  export type EstoqueVivoMixUncheckedUpdateWithoutComponentesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    produtoReferenciaId?: StringFieldUpdateOperationsInput | string
+    perdaPercentual?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ProdutoComercialUpsertWithoutEstoqueVivoMixComponentesInput = {
+    update: XOR<ProdutoComercialUpdateWithoutEstoqueVivoMixComponentesInput, ProdutoComercialUncheckedUpdateWithoutEstoqueVivoMixComponentesInput>
+    create: XOR<ProdutoComercialCreateWithoutEstoqueVivoMixComponentesInput, ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixComponentesInput>
+    where?: ProdutoComercialWhereInput
+  }
+
+  export type ProdutoComercialUpdateToOneWithWhereWithoutEstoqueVivoMixComponentesInput = {
+    where?: ProdutoComercialWhereInput
+    data: XOR<ProdutoComercialUpdateWithoutEstoqueVivoMixComponentesInput, ProdutoComercialUncheckedUpdateWithoutEstoqueVivoMixComponentesInput>
+  }
+
+  export type ProdutoComercialUpdateWithoutEstoqueVivoMixComponentesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
+    itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
+    avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
+    mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
+    mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUpdateOneWithoutProdutoReferenciaNestedInput
+  }
+
+  export type ProdutoComercialUncheckedUpdateWithoutEstoqueVivoMixComponentesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixProdutoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
+    itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
+    avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
+    mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedUpdateOneWithoutProdutoReferenciaNestedInput
+  }
+
   export type PrecoEspecialClienteCreateWithoutProdutoInput = {
     id?: string
     preco: Decimal | DecimalJsLike | number | string
@@ -47737,6 +50890,8 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
     mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialUncheckedCreateWithoutMixReferenciadoPorInput = {
@@ -47763,6 +50918,8 @@ export namespace Prisma {
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialCreateOrConnectWithoutMixReferenciadoPorInput = {
@@ -47794,6 +50951,8 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialUncheckedCreateWithoutMixProdutoReferenciaInput = {
@@ -47820,6 +50979,8 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialCreateOrConnectWithoutMixProdutoReferenciaInput = {
@@ -47829,6 +50990,53 @@ export namespace Prisma {
 
   export type ProdutoComercialCreateManyMixProdutoReferenciaInputEnvelope = {
     data: ProdutoComercialCreateManyMixProdutoReferenciaInput | ProdutoComercialCreateManyMixProdutoReferenciaInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type EstoqueVivoMixCreateWithoutProdutoReferenciaInput = {
+    id?: string
+    nome: string
+    perdaPercentual?: Decimal | DecimalJsLike | number | string
+    ativo?: boolean
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    componentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutMixInput
+  }
+
+  export type EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput = {
+    id?: string
+    nome: string
+    perdaPercentual?: Decimal | DecimalJsLike | number | string
+    ativo?: boolean
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    componentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutMixInput
+  }
+
+  export type EstoqueVivoMixCreateOrConnectWithoutProdutoReferenciaInput = {
+    where: EstoqueVivoMixWhereUniqueInput
+    create: XOR<EstoqueVivoMixCreateWithoutProdutoReferenciaInput, EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput>
+  }
+
+  export type EstoqueVivoMixComponenteCreateWithoutProdutoInput = {
+    id?: string
+    quantidade: Decimal | DecimalJsLike | number | string
+    mix: EstoqueVivoMixCreateNestedOneWithoutComponentesInput
+  }
+
+  export type EstoqueVivoMixComponenteUncheckedCreateWithoutProdutoInput = {
+    id?: string
+    mixId: string
+    quantidade: Decimal | DecimalJsLike | number | string
+  }
+
+  export type EstoqueVivoMixComponenteCreateOrConnectWithoutProdutoInput = {
+    where: EstoqueVivoMixComponenteWhereUniqueInput
+    create: XOR<EstoqueVivoMixComponenteCreateWithoutProdutoInput, EstoqueVivoMixComponenteUncheckedCreateWithoutProdutoInput>
+  }
+
+  export type EstoqueVivoMixComponenteCreateManyProdutoInputEnvelope = {
+    data: EstoqueVivoMixComponenteCreateManyProdutoInput | EstoqueVivoMixComponenteCreateManyProdutoInput[]
     skipDuplicates?: boolean
   }
 
@@ -47942,6 +51150,8 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
     mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialUncheckedUpdateWithoutMixReferenciadoPorInput = {
@@ -47968,6 +51178,8 @@ export namespace Prisma {
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialUpsertWithWhereUniqueWithoutMixProdutoReferenciaInput = {
@@ -48010,6 +51222,53 @@ export namespace Prisma {
     mixVariedades?: JsonNullableFilter<"ProdutoComercial">
     criadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
+  }
+
+  export type EstoqueVivoMixUpsertWithoutProdutoReferenciaInput = {
+    update: XOR<EstoqueVivoMixUpdateWithoutProdutoReferenciaInput, EstoqueVivoMixUncheckedUpdateWithoutProdutoReferenciaInput>
+    create: XOR<EstoqueVivoMixCreateWithoutProdutoReferenciaInput, EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput>
+    where?: EstoqueVivoMixWhereInput
+  }
+
+  export type EstoqueVivoMixUpdateToOneWithWhereWithoutProdutoReferenciaInput = {
+    where?: EstoqueVivoMixWhereInput
+    data: XOR<EstoqueVivoMixUpdateWithoutProdutoReferenciaInput, EstoqueVivoMixUncheckedUpdateWithoutProdutoReferenciaInput>
+  }
+
+  export type EstoqueVivoMixUpdateWithoutProdutoReferenciaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    perdaPercentual?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    componentes?: EstoqueVivoMixComponenteUpdateManyWithoutMixNestedInput
+  }
+
+  export type EstoqueVivoMixUncheckedUpdateWithoutProdutoReferenciaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    perdaPercentual?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    componentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutMixNestedInput
+  }
+
+  export type EstoqueVivoMixComponenteUpsertWithWhereUniqueWithoutProdutoInput = {
+    where: EstoqueVivoMixComponenteWhereUniqueInput
+    update: XOR<EstoqueVivoMixComponenteUpdateWithoutProdutoInput, EstoqueVivoMixComponenteUncheckedUpdateWithoutProdutoInput>
+    create: XOR<EstoqueVivoMixComponenteCreateWithoutProdutoInput, EstoqueVivoMixComponenteUncheckedCreateWithoutProdutoInput>
+  }
+
+  export type EstoqueVivoMixComponenteUpdateWithWhereUniqueWithoutProdutoInput = {
+    where: EstoqueVivoMixComponenteWhereUniqueInput
+    data: XOR<EstoqueVivoMixComponenteUpdateWithoutProdutoInput, EstoqueVivoMixComponenteUncheckedUpdateWithoutProdutoInput>
+  }
+
+  export type EstoqueVivoMixComponenteUpdateManyWithWhereWithoutProdutoInput = {
+    where: EstoqueVivoMixComponenteScalarWhereInput
+    data: XOR<EstoqueVivoMixComponenteUpdateManyMutationInput, EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoInput>
   }
 
   export type ClienteCreateWithoutRegraComercialInput = {
@@ -48383,6 +51642,8 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
     mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
     mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialUncheckedCreateWithoutPrecosEspeciaisInput = {
@@ -48409,6 +51670,8 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialCreateOrConnectWithoutPrecosEspeciaisInput = {
@@ -48498,6 +51761,8 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
     mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
     mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialUncheckedUpdateWithoutPrecosEspeciaisInput = {
@@ -48524,6 +51789,8 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
   export type ClienteCreateWithoutPedidosOperacionaisInput = {
@@ -49958,6 +53225,8 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
     mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
     mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialUncheckedCreateWithoutItensPedidoInput = {
@@ -49984,6 +53253,8 @@ export namespace Prisma {
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialCreateOrConnectWithoutItensPedidoInput = {
@@ -50085,6 +53356,8 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
     mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
     mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialUncheckedUpdateWithoutItensPedidoInput = {
@@ -50111,6 +53384,8 @@ export namespace Prisma {
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
   export type PedidoOperacionalCreateWithoutAvariasInput = {
@@ -50253,6 +53528,8 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
     mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialUncheckedCreateWithoutAvariasPedidoInput = {
@@ -50279,6 +53556,8 @@ export namespace Prisma {
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialCreateOrConnectWithoutAvariasPedidoInput = {
@@ -50492,6 +53771,8 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
     mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialUncheckedUpdateWithoutAvariasPedidoInput = {
@@ -50518,6 +53799,8 @@ export namespace Prisma {
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
   export type UsuarioUpsertWithoutAvariasCriadasInput = {
@@ -53397,6 +56680,30 @@ export namespace Prisma {
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type EstoqueVivoMixComponenteCreateManyMixInput = {
+    id?: string
+    produtoId: string
+    quantidade: Decimal | DecimalJsLike | number | string
+  }
+
+  export type EstoqueVivoMixComponenteUpdateWithoutMixInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    produto?: ProdutoComercialUpdateOneRequiredWithoutEstoqueVivoMixComponentesNestedInput
+  }
+
+  export type EstoqueVivoMixComponenteUncheckedUpdateWithoutMixInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+  }
+
+  export type EstoqueVivoMixComponenteUncheckedUpdateManyWithoutMixInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+  }
+
   export type PrecoEspecialClienteCreateManyProdutoInput = {
     id?: string
     regraId: string
@@ -53450,6 +56757,12 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+  }
+
+  export type EstoqueVivoMixComponenteCreateManyProdutoInput = {
+    id?: string
+    mixId: string
+    quantidade: Decimal | DecimalJsLike | number | string
   }
 
   export type PrecoEspecialClienteUpdateWithoutProdutoInput = {
@@ -53575,6 +56888,8 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialUncheckedUpdateWithoutMixProdutoReferenciaInput = {
@@ -53601,6 +56916,8 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
+    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaInput = {
@@ -53623,6 +56940,24 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EstoqueVivoMixComponenteUpdateWithoutProdutoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    mix?: EstoqueVivoMixUpdateOneRequiredWithoutComponentesNestedInput
+  }
+
+  export type EstoqueVivoMixComponenteUncheckedUpdateWithoutProdutoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    mixId?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+  }
+
+  export type EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    mixId?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
   }
 
   export type PrecoEspecialClienteCreateManyRegraInput = {

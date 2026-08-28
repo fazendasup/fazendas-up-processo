@@ -174,6 +174,23 @@ exports.Prisma.EstoqueVivoConfigScalarFieldEnum = {
   atualizadoEm: 'atualizadoEm'
 };
 
+exports.Prisma.EstoqueVivoMixScalarFieldEnum = {
+  id: 'id',
+  nome: 'nome',
+  produtoReferenciaId: 'produtoReferenciaId',
+  perdaPercentual: 'perdaPercentual',
+  ativo: 'ativo',
+  criadoEm: 'criadoEm',
+  atualizadoEm: 'atualizadoEm'
+};
+
+exports.Prisma.EstoqueVivoMixComponenteScalarFieldEnum = {
+  id: 'id',
+  mixId: 'mixId',
+  produtoId: 'produtoId',
+  quantidade: 'quantidade'
+};
+
 exports.Prisma.ProdutoComercialScalarFieldEnum = {
   id: 'id',
   nome: 'nome',
@@ -567,6 +584,18 @@ exports.Prisma.EstoqueVivoConfigOrderByRelevanceFieldEnum = {
   mixReferenciaNome: 'mixReferenciaNome'
 };
 
+exports.Prisma.EstoqueVivoMixOrderByRelevanceFieldEnum = {
+  id: 'id',
+  nome: 'nome',
+  produtoReferenciaId: 'produtoReferenciaId'
+};
+
+exports.Prisma.EstoqueVivoMixComponenteOrderByRelevanceFieldEnum = {
+  id: 'id',
+  mixId: 'mixId',
+  produtoId: 'produtoId'
+};
+
 exports.Prisma.ProdutoComercialOrderByRelevanceFieldEnum = {
   id: 'id',
   nome: 'nome',
@@ -916,6 +945,8 @@ exports.Prisma.ModelName = {
   GrupoCliente: 'GrupoCliente',
   Cliente: 'Cliente',
   EstoqueVivoConfig: 'EstoqueVivoConfig',
+  EstoqueVivoMix: 'EstoqueVivoMix',
+  EstoqueVivoMixComponente: 'EstoqueVivoMixComponente',
   ProdutoComercial: 'ProdutoComercial',
   RegraComercialCliente: 'RegraComercialCliente',
   ClienteLegadoContaAzulLink: 'ClienteLegadoContaAzulLink',
