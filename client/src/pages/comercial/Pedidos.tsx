@@ -256,9 +256,6 @@ export function Pedidos({
   const perfilOperacionalRestrito = isPromoter || isLiderColheita;
   const podeVerValores = !ocultarValoresComerciais(me.data?.perfil);
   useEffect(() => {
-    setAba(abaInicial);
-  }, [abaInicial]);
-  useEffect(() => {
     if (
       perfilOperacionalRestrito &&
       (aba === "conciliacao" ||
@@ -357,14 +354,13 @@ export function Pedidos({
 
   const salvarPedido = trpc.comercial.pedidos.salvarPedido.useMutation({
     onSuccess: async () => {
-      toast.success("Pedido salvo. Dashboard e agenda atualizados.");
+      toast.success("Pedido salvo.");
       setPedidoEditId(null);
       setTipoVenda("");
       setObsPedido("");
       setFreteCortesia(false);
       setLinhas([{ produtoId: "", quantidade: "1", observacoes: "" }]);
       setAvarias([]);
-      setAba("operacional");
       await invalidarVisaoOperacionalDia();
     },
     onError: err =>
@@ -447,7 +443,6 @@ export function Pedidos({
           ? "Pedido já estava cancelado."
           : "Pedido cancelado e mantido no histórico."
       );
-      setAba("operacional");
       await invalidarVisaoOperacionalDia();
     },
     onError: err =>
@@ -466,7 +461,6 @@ export function Pedidos({
               ? `${result.pedidosMovidos} pedidos do cliente foram movidos para a nova data.`
               : "Data do pedido alterada."
         );
-        setAba("operacional");
         await invalidarVisaoOperacionalDia();
         void utils.comercial.pedidos.clientes.invalidate();
       },
@@ -484,7 +478,6 @@ export function Pedidos({
         toast.success(
           `Pedido de ${result.clienteNome} copiado para ${fmtDate(result.dataEntrega)}. O original permanece no dia de origem.`
         );
-        setAba("operacional");
         await invalidarVisaoOperacionalDia();
         void utils.comercial.pedidos.clientes.invalidate();
       },
