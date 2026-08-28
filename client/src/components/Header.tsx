@@ -61,6 +61,7 @@ import {
   Sparkles,
   Briefcase,
   Truck,
+  ShoppingBasket,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -135,6 +136,13 @@ const COMERCIAL_ITEMS: NavItem[] = [
     label: "Pedidos",
     icon: CalendarClock,
     requiredRole: "comercial",
+  },
+  {
+    href: "/comercial/estoque-vivo",
+    label: "Estoque vivo",
+    icon: ShoppingBasket,
+    requiredRole: "comercial",
+    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
   },
   {
     href: "/comercial/entregas",
