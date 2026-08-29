@@ -236,6 +236,21 @@ async function startServer() {
     );
   }
 
+  try {
+    const { registerDiagnosticoEspacoComercialRoute } = await import(
+      "../comercial/diagnostico-espaco-comercial-route"
+    );
+    registerDiagnosticoEspacoComercialRoute(app);
+    console.log(
+      "[Server] Rota GET /api/diagnostico/espaco-comercial registrada."
+    );
+  } catch (e) {
+    console.warn(
+      "[Server] Rota de diagnóstico de espaço comercial não carregada:",
+      e instanceof Error ? e.message : e
+    );
+  }
+
   /** Site (HTML/JS/CSS) já disponível durante a inicialização da BD — evita página em branco / 404. */
   if (process.env.NODE_ENV !== "development") {
     serveStatic(app);
