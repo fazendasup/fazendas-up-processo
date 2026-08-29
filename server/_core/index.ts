@@ -236,6 +236,55 @@ async function startServer() {
     );
   }
 
+  app.get("/api/diagnostico/espaco", async (_req, res) => {
+    try {
+      const { getComercialPrisma } = await import("../comercial/db.js");
+      const prisma = getComercialPrisma();
+
+      const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+        `SELECT table_name AS t,
+                table_rows AS r,
+                ROUND(data_length/1024/1024,2) AS data_mb,
+                ROUND(index_length/1024/1024,2) AS idx_mb,
+                ROUND((data_length+index_length)/1024/1024,2) AS total_mb
+         FROM information_schema.tables
+         WHERE table_schema = DATABASE()
+         ORDER BY (data_length+index_length) DESC
+         LIMIT 20`,
+      );
+
+      const data = rows.map((row) => ({
+        t: String(row.t),
+        r: row.r ? Number(row.r) : null,
+        data_mb: row.data_mb ? Number(row.data_mb) : null,
+        idx_mb: row.idx_mb ? Number(row.idx_mb) : null,
+        total_mb: row.total_mb ? Number(row.total_mb) : null,
+      }));
+
+      const counts = {
+        itens: await prisma.pedidoOperacionalItem.count(),
+        pedidos: await prisma.pedidoOperacional.count(),
+        eventos: await prisma.pedidoConciliacaoEvento.count(),
+        auditoria: await prisma.pedidoOperacionalAuditoria.count(),
+        itensPedidoCa: await prisma.itemPedido.count(),
+        pedidosCa: await prisma.pedido.count(),
+      };
+
+      res.setHeader("Content-Disposition", 'attachment; filename="diagnostico-espaco.json"');
+      res.json({
+        success: true,
+        timestamp: new Date().toISOString(),
+        data,
+        counts,
+      });
+    } catch (e) {
+      res.status(500).json({
+        success: false,
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+  });
+
   /** Site (HTML/JS/CSS) já disponível durante a inicialização da BD — evita página em branco / 404. */
   if (process.env.NODE_ENV !== "development") {
     serveStatic(app);
