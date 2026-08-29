@@ -24,6 +24,7 @@ const STATIC: Record<string, string> = {
   "/comercial/entregas": "Comercial — Entregas",
   "/comercial/entregador": "Comercial — Modo entregador",
   "/comercial/estoque-vivo": "Comercial — Estoque vivo",
+  "/comercial/mixes": "Comercial — Mixes",
   "/comercial/pedidos-historico": "Comercial — Histórico de pedidos",
   "/comercial/dashboard": "Comercial — Painel",
   "/comercial/clientes": "Comercial — Carteira",

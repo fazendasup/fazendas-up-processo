@@ -23,10 +23,11 @@ export type EstoqueVivoMixComponenteCfg = {
 export type EstoqueVivoMixCfg = {
   id: string;
   nome: string;
-  produtoReferenciaId: string;
-  produtoReferenciaNome: string;
+  produtoReferenciaId: string | null;
+  produtoReferenciaNome: string | null;
   perdaPercentual: number;
   ativo: boolean;
+  /** Componentes: quantidade = gramas por 1 un. do mix */
   componentes: EstoqueVivoMixComponenteCfg[];
 };
 
@@ -118,11 +119,15 @@ export function normalizeEstoqueVivoMixes(raw: unknown): EstoqueVivoMixCfg[] {
     const obj = item as Record<string, unknown>;
     const id = obj.id != null ? String(obj.id).trim() : "";
     const nome = obj.nome != null ? String(obj.nome).trim() : "";
+    if (!id || !nome) continue;
     const produtoReferenciaId =
-      obj.produtoReferenciaId != null ? String(obj.produtoReferenciaId).trim() : "";
+      obj.produtoReferenciaId != null && String(obj.produtoReferenciaId).trim() !== ""
+        ? String(obj.produtoReferenciaId).trim()
+        : null;
     const produtoReferenciaNome =
-      obj.produtoReferenciaNome != null ? String(obj.produtoReferenciaNome).trim() : "";
-    if (!id || !nome || !produtoReferenciaId || !produtoReferenciaNome) continue;
+      obj.produtoReferenciaNome != null && String(obj.produtoReferenciaNome).trim() !== ""
+        ? nomeChaveEstoque(obj.produtoReferenciaNome)
+        : null;
     const perdaRaw = Number(obj.perdaPercentual);
     const perdaPercentual =
       Number.isFinite(perdaRaw) && perdaRaw >= 0 && perdaRaw < 100 ? perdaRaw : 0;
@@ -147,7 +152,7 @@ export function normalizeEstoqueVivoMixes(raw: unknown): EstoqueVivoMixCfg[] {
       id,
       nome,
       produtoReferenciaId,
-      produtoReferenciaNome: nomeChaveEstoque(produtoReferenciaNome),
+      produtoReferenciaNome,
       perdaPercentual,
       ativo,
       componentes,
@@ -163,6 +168,47 @@ export function fatorPerdaEstoque(perdaPercentual: number): number {
   return 1 / (1 - p / 100);
 }
 
+/** kg a processar = (qtd mixes × gramas) / 1000 × 1/(1−perda%) */
+export function kgProcessarIngredienteMix(
+  quantidadeMixes: number,
+  gramasPorMix: number,
+  perdaPercentual: number,
+): number {
+  const q = Number(quantidadeMixes) || 0;
+  const g = Number(gramasPorMix) || 0;
+  if (q <= 0 || g <= 0) return 0;
+  const raw = (q * g * fatorPerdaEstoque(perdaPercentual)) / 1000;
+  return Math.ceil(raw * 1000) / 1000;
+}
+
+export function calcularProducaoMix(
+  quantidadeMixes: number,
+  mix: EstoqueVivoMixCfg,
+): Array<{
+  produtoId: string;
+  nome: string;
+  gramasPorMix: number;
+  gramasTotais: number;
+  kgProcessar: number;
+  comprarTexto: string;
+}> {
+  const q = Number(quantidadeMixes) || 0;
+  return mix.componentes.map((comp) => {
+    const gramasPorMix = Number(comp.quantidade) || 0;
+    const gramasTotais = q * gramasPorMix * fatorPerdaEstoque(mix.perdaPercentual);
+    const kgProcessar = kgProcessarIngredienteMix(q, gramasPorMix, mix.perdaPercentual);
+    return {
+      produtoId: comp.produtoId,
+      nome: comp.produtoNome,
+      gramasPorMix,
+      gramasTotais,
+      kgProcessar,
+      comprarTexto: `${formatKgPt(kgProcessar)} kg`,
+    };
+  });
+}
+
+/** @deprecated use kgProcessarIngredienteMix — mantido para testes legados */
 export function unidadesComponenteMixComPerda(
   unidadesReferencia: number,
   quantidadePorUnidade: number,
@@ -175,49 +221,18 @@ export function unidadesComponenteMixComPerda(
 }
 
 export function calcularDemandaMixCustomizado(
-  pedidos: LinhaPedidoEstoque[],
-  mixes: EstoqueVivoMixCfg[],
+  _pedidos: LinhaPedidoEstoque[],
+  _mixes: EstoqueVivoMixCfg[],
 ): Map<string, number> {
-  const demanda = new Map<string, number>();
-  const mixesAtivos = mixes.filter((m) => m.ativo);
-  if (!mixesAtivos.length) return demanda;
-
-  const qtdPorReferencia = new Map<string, number>();
-  for (const mix of mixesAtivos) {
-    const refKey = nomeChaveEstoque(mix.produtoReferenciaNome);
-    if (qtdPorReferencia.has(refKey)) continue;
-    qtdPorReferencia.set(refKey, quantidadeReferenciaMixFolhaNoDia(pedidos, {
-      referenciaProduto: refKey,
-      variedades: [],
-    }));
-  }
-
-  for (const mix of mixesAtivos) {
-    const refKey = nomeChaveEstoque(mix.produtoReferenciaNome);
-    const refQty = qtdPorReferencia.get(refKey) ?? 0;
-    if (refQty <= 0) continue;
-    for (const comp of mix.componentes) {
-      const compKey = nomeChaveEstoque(comp.produtoNome);
-      const extra = unidadesComponenteMixComPerda(refQty, comp.quantidade, mix.perdaPercentual);
-      demanda.set(compKey, (demanda.get(compKey) ?? 0) + extra);
-    }
-  }
-  return demanda;
+  // Mixes são receitas de produção (calculadora), não alteram a lista de compras do dia.
+  return new Map();
 }
 
 export function aplicarDemandaMixCustomizado(
   lista: LinhaPedidoEstoque[],
-  demandaMix: Map<string, number>,
+  _demandaMix: Map<string, number>,
 ): LinhaPedidoEstoque[] {
-  if (!demandaMix.size) return lista;
-  const map = new Map(lista.map((p) => [nomeChaveEstoque(p.nome), { ...p }]));
-  for (const [nome, extra] of Array.from(demandaMix.entries())) {
-    const key = nomeChaveEstoque(nome);
-    const atual = map.get(key) ?? { nome: key, quantidade: 0 };
-    atual.quantidade += extra;
-    map.set(key, atual);
-  }
-  return Array.from(map.values()).sort((a, b) => b.quantidade - a.quantidade);
+  return lista;
 }
 
 export function produtosEmMixCustomizado(
@@ -235,7 +250,7 @@ export function produtosEmMixCustomizado(
 export function previewMixEstoqueVivo(
   unidadesReferencia: number,
   mix: EstoqueVivoMixCfg,
-  produtos: ConfigProdutoEstoque[],
+  _produtos?: ConfigProdutoEstoque[],
 ): Array<{
   produtoId: string;
   nome: string;
@@ -244,53 +259,14 @@ export function previewMixEstoqueVivo(
   comprarTexto: string;
   comprarUnidade: "kg" | "un" | null;
 }> {
-  const produtoPorId = new Map(produtos.map((p) => [p.produtoId, p]));
-  const produtoPorNome = new Map(produtos.map((p) => [nomeChaveEstoque(p.nome), p]));
-  return mix.componentes.map((comp) => {
-    const cfg =
-      produtoPorId.get(comp.produtoId) ??
-      produtoPorNome.get(nomeChaveEstoque(comp.produtoNome)) ??
-      ({
-        produtoId: comp.produtoId,
-        nome: comp.produtoNome,
-        modoCompra: "unidade",
-        fator: null,
-        rendimento: 0,
-        mixAtivo: false,
-        oculto: false,
-      } satisfies ConfigProdutoEstoque);
-    const unidadesNecessarias = unidadesComponenteMixComPerda(
-      unidadesReferencia,
-      comp.quantidade,
-      mix.perdaPercentual,
-    );
-    let comprarValor: number | null = null;
-    let comprarTexto = "—";
-    let comprarUnidade: "kg" | "un" | null = null;
-    if (cfg.modoCompra === "kilo") {
-      if (cfg.rendimento > 0) {
-        comprarValor = kgComprarPorRendimento(unidadesNecessarias, cfg.rendimento);
-        comprarTexto = `${formatKgPt(comprarValor)} kg`;
-        comprarUnidade = "kg";
-      } else {
-        comprarTexto = "Informe rendimento (prod/kg)";
-      }
-    } else if (cfg.fator == null) {
-      comprarTexto = "Informe o fator";
-    } else {
-      comprarValor = Math.ceil(unidadesNecessarias * cfg.fator);
-      comprarTexto = `${comprarValor} un.`;
-      comprarUnidade = "un";
-    }
-    return {
-      produtoId: cfg.produtoId,
-      nome: cfg.nome,
-      unidadesNecessarias,
-      comprarValor,
-      comprarTexto,
-      comprarUnidade,
-    };
-  });
+  return calcularProducaoMix(unidadesReferencia, mix).map((l) => ({
+    produtoId: l.produtoId,
+    nome: l.nome,
+    unidadesNecessarias: l.gramasTotais,
+    comprarValor: l.kgProcessar,
+    comprarTexto: l.comprarTexto,
+    comprarUnidade: "kg" as const,
+  }));
 }
 
 export function agregarPedidosPorProduto(pedidos: LinhaPedidoEstoque[]): LinhaPedidoEstoque[] {
@@ -381,21 +357,17 @@ export function calcularCompraLinha(
   cfgProduto: ConfigProdutoEstoque,
   pedidos: LinhaPedidoEstoque[],
   cfgMix: EstoqueMixFolhaLeveCfg,
-  opts?: { quantidadeMix?: number; inMixCustomizado?: boolean },
 ): LinhaCompraEstoque {
   const nome = nomeChaveEstoque(row.nome);
   const unidadesPedido = Number(row.quantidade) || 0;
-  const quantidadeMix = Number(opts?.quantidadeMix) || 0;
-  const unidadesDirectAjustadas = unidadesAjustadasMixEstoque(
+  const unidadesParaCompra = unidadesAjustadasMixEstoque(
     nome,
     unidadesPedido,
     cfgProduto.mixAtivo,
     pedidos,
     cfgMix,
   );
-  const unidadesParaCompra = unidadesDirectAjustadas + quantidadeMix;
   const inMixFolha = isVariedadeMixFolhaLeve(nome, cfgMix);
-  const inMixCustomizado = opts?.inMixCustomizado ?? quantidadeMix > 0;
 
   let comprarValor: number | null = null;
   let comprarTexto = "—";
@@ -421,12 +393,12 @@ export function calcularCompraLinha(
     produtoId: cfgProduto.produtoId,
     nome,
     quantidadePedido: unidadesPedido,
-    quantidadeMix,
+    quantidadeMix: 0,
     unidadesParaCompra,
     modoCompra: cfgProduto.modoCompra,
     mixAtivo: cfgProduto.mixAtivo,
     inMixFolha,
-    inMixCustomizado,
+    inMixCustomizado: false,
     fator: cfgProduto.fator,
     rendimento: cfgProduto.rendimento,
     comprarValor,
@@ -440,52 +412,31 @@ export function buildEstoqueVivoDia(
   pedidos: LinhaPedidoEstoque[],
   produtos: ConfigProdutoEstoque[],
   cfgMix: EstoqueMixFolhaLeveCfg,
-  opts?: { incluirOcultos?: boolean; mixes?: EstoqueVivoMixCfg[] },
+  opts?: { incluirOcultos?: boolean },
 ): {
   cfgMix: EstoqueMixFolhaLeveCfg & { qtdReferencia: number; partePorVariedade: number };
-  mixes: EstoqueVivoMixCfg[];
   linhas: LinhaCompraEstoque[];
   desativados: string[];
   totais: { sumNec: number; sumUn: number; sumKg: number };
 } {
-  const mixes = normalizeEstoqueVivoMixes(opts?.mixes ?? []);
-  const mixesAtivos = mixes.filter((m) => m.ativo);
-  const demandaMix = calcularDemandaMixCustomizado(pedidos, mixesAtivos);
   const produtoPorNome = new Map(produtos.map((p) => [nomeChaveEstoque(p.nome), p]));
-  let agregadosDirect = agregarPedidosPorProduto(pedidos);
-  agregadosDirect = estoqueInjetarLinhasMixFolha(agregadosDirect, pedidos, cfgMix);
-
-  const keys = new Set(agregadosDirect.map((p) => nomeChaveEstoque(p.nome)));
-  for (const nome of Array.from(demandaMix.keys())) {
-    keys.add(nomeChaveEstoque(nome));
-  }
-
-  const agregadosMap = new Map(
-    agregadosDirect.map((p) => [nomeChaveEstoque(p.nome), p]),
-  );
-  for (const nome of Array.from(keys)) {
-    if (!agregadosMap.has(nome)) {
-      agregadosMap.set(nome, { nome, quantidade: 0 });
-    }
-  }
-  const agregados = Array.from(agregadosMap.values()).sort(
-    (a, b) => b.quantidade - a.quantidade,
-  );
+  let agregados = agregarPedidosPorProduto(pedidos);
+  agregados = estoqueInjetarLinhasMixFolha(agregados, pedidos, cfgMix);
 
   const qtdReferencia = quantidadeReferenciaMixFolhaNoDia(pedidos, cfgMix);
   const partePorVariedade =
     cfgMix.variedades.length > 0 ? qtdReferencia / cfgMix.variedades.length : 0;
 
-  const desativados = produtos.filter((p) => p.oculto).map((p) => nomeChaveEstoque(p.nome)).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const desativados = produtos
+    .filter((p) => p.oculto)
+    .map((p) => nomeChaveEstoque(p.nome))
+    .sort((a, b) => a.localeCompare(b, "pt-BR"));
 
   const linhasVisiveis = agregados.filter((row) => {
-    const qMix = demandaMix.get(nomeChaveEstoque(row.nome)) ?? 0;
     const cfg = produtoPorNome.get(nomeChaveEstoque(row.nome));
-    if (!cfg && row.quantidade <= 0 && qMix <= 0) return false;
     if (!cfg) return true;
     if (opts?.incluirOcultos) return true;
-    if (cfg.oculto && row.quantidade <= 0 && qMix <= 0) return false;
-    return !cfg.oculto || row.quantidade > 0 || qMix > 0;
+    return !cfg.oculto;
   });
 
   let sumNec = 0;
@@ -494,7 +445,6 @@ export function buildEstoqueVivoDia(
 
   const linhas = linhasVisiveis.map((row) => {
     const key = nomeChaveEstoque(row.nome);
-    const qMix = demandaMix.get(key) ?? 0;
     const cfgProduto =
       produtoPorNome.get(key) ??
       ({
@@ -507,10 +457,7 @@ export function buildEstoqueVivoDia(
         oculto: false,
       } satisfies ConfigProdutoEstoque);
 
-    const linha = calcularCompraLinha(row, cfgProduto, pedidos, cfgMix, {
-      quantidadeMix: qMix,
-      inMixCustomizado: qMix > 0,
-    });
+    const linha = calcularCompraLinha(row, cfgProduto, pedidos, cfgMix);
     sumNec += linha.quantidadePedido;
     if (linha.comprarUnidade === "un" && linha.comprarValor != null) sumUn += linha.comprarValor;
     if (linha.comprarUnidade === "kg" && linha.comprarValor != null) sumKg += linha.comprarValor;
@@ -519,7 +466,6 @@ export function buildEstoqueVivoDia(
 
   return {
     cfgMix: { ...cfgMix, qtdReferencia, partePorVariedade },
-    mixes: mixesAtivos,
     linhas,
     desativados,
     totais: { sumNec, sumUn, sumKg },

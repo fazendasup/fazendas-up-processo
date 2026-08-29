@@ -17,7 +17,6 @@ import {
   Settings2,
   ShoppingBasket,
   Sprout,
-  Trash2,
   Users,
   XCircle,
 } from "lucide-react";
@@ -524,29 +523,6 @@ export function Pedidos({
       },
       onError: err => toast.error(err.message),
     });
-  const salvarMixEstoque =
-    trpc.comercial.pedidos.salvarMixEstoqueVivo.useMutation({
-      onSuccess: () => {
-        void utils.comercial.pedidos.compras.invalidate();
-        void utils.comercial.pedidos.listarMixesEstoqueVivo.invalidate();
-        toast.success("Mix salvo.");
-      },
-      onError: err => toast.error(err.message),
-    });
-  const excluirMixEstoque =
-    trpc.comercial.pedidos.excluirMixEstoqueVivo.useMutation({
-      onSuccess: () => {
-        void utils.comercial.pedidos.compras.invalidate();
-        void utils.comercial.pedidos.listarMixesEstoqueVivo.invalidate();
-        toast.success("Mix removido.");
-      },
-      onError: err => toast.error(err.message),
-    });
-  const mixesEstoque = trpc.comercial.pedidos.listarMixesEstoqueVivo.useQuery(
-    undefined,
-    { staleTime: 30_000 }
-  );
-
   const clienteSelecionado = contextoCliente.data?.cliente;
   const regra = contextoCliente.data?.regra;
   const precosEspeciais = new Map(
@@ -2259,14 +2235,10 @@ export function Pedidos({
           <ComprasArea
             estoque={compras.data}
             produtos={produtos.data ?? []}
-            mixes={mixesEstoque.data ?? []}
             isLoading={compras.isLoading}
             isAdmin={canEditarComercial}
             onUpdate={(payload: any) => atualizarCompra.mutate(payload)}
             onSalvarMixFolha={(payload: any) => salvarMixFolha.mutate(payload)}
-            onSalvarMix={(payload: any) => salvarMixEstoque.mutate(payload)}
-            onExcluirMix={(id: string) => excluirMixEstoque.mutate({ id })}
-            salvandoMix={salvarMixEstoque.isPending}
           />
         </TabsContent>
       </Tabs>
@@ -3695,34 +3667,19 @@ function ProdutosArea({
 function ComprasArea({
   estoque,
   produtos,
-  mixes,
   isLoading,
   isAdmin,
   onUpdate,
   onSalvarMixFolha,
-  onSalvarMix,
-  onExcluirMix,
-  salvandoMix,
 }: any) {
   const cfg = estoque?.cfgMix;
-  const mixesAtivos = estoque?.mixes ?? mixes ?? [];
   const linhas = estoque?.linhas ?? [];
   const desativados = estoque?.desativados ?? [];
   const totais = estoque?.totais;
   const [mixRef, setMixRef] = useState("");
   const [mixVars, setMixVars] = useState("");
-  const [mixEdit, setMixEdit] = useState<any | null>(null);
-  const [mixPreviewQty, setMixPreviewQty] = useState("100");
   const produtoIdPorNome = useMemo(
     () => new Map(produtos.map((p: any) => [p.nome, p.id])),
-    [produtos]
-  );
-  const produtoOptions = useMemo(
-    () =>
-      produtos.map((p: any) => ({
-        id: p.id,
-        nome: p.nome,
-      })),
     [produtos]
   );
   const produtoUpdatePayload = (row: any, pid: string | null | undefined) => ({
@@ -3730,69 +3687,11 @@ function ComprasArea({
     produtoNome: row.nome,
   });
 
-  const mixFormValid =
-    mixEdit &&
-    mixEdit.nome?.trim() &&
-    mixEdit.produtoReferenciaId &&
-    mixEdit.componentes?.length > 0 &&
-    mixEdit.componentes.every(
-      (c: any) => c.produtoId && Number(c.quantidade) > 0
-    );
-
-  const previewInput = useMemo(() => {
-    if (!mixFormValid || !mixEdit) return null;
-    const qty = Number(String(mixPreviewQty).replace(",", "."));
-    if (!Number.isFinite(qty) || qty <= 0) return null;
-    return {
-      unidadesReferencia: qty,
-      mix: {
-        nome: mixEdit.nome.trim(),
-        produtoReferenciaId: mixEdit.produtoReferenciaId,
-        perdaPercentual: Number(mixEdit.perdaPercentual) || 0,
-        ativo: mixEdit.ativo !== false,
-        componentes: mixEdit.componentes.map((c: any) => ({
-          produtoId: c.produtoId,
-          quantidade: Number(c.quantidade),
-        })),
-      },
-    };
-  }, [mixEdit, mixFormValid, mixPreviewQty]);
-
-  const previewMix = trpc.comercial.pedidos.previewMixEstoqueVivo.useQuery(
-    previewInput ?? { unidadesReferencia: 1, mixId: "__skip__" },
-    { enabled: !!previewInput }
-  );
-
   useEffect(() => {
     if (!cfg) return;
     setMixRef(cfg.referenciaProduto ?? "");
     setMixVars((cfg.variedades ?? []).join("\n"));
   }, [cfg?.referenciaProduto, cfg?.variedades?.join("|")]);
-
-  const iniciarNovoMix = () => {
-    setMixEdit({
-      id: undefined,
-      nome: "",
-      produtoReferenciaId: "",
-      perdaPercentual: 0,
-      ativo: true,
-      componentes: [{ produtoId: "", quantidade: 1 }],
-    });
-  };
-
-  const editarMix = (mix: any) => {
-    setMixEdit({
-      id: mix.id,
-      nome: mix.nome,
-      produtoReferenciaId: mix.produtoReferenciaId,
-      perdaPercentual: mix.perdaPercentual ?? 0,
-      ativo: mix.ativo !== false,
-      componentes: (mix.componentes ?? []).map((c: any) => ({
-        produtoId: c.produtoId,
-        quantidade: c.quantidade,
-      })),
-    });
-  };
 
   if (isLoading) {
     return (
@@ -3802,307 +3701,6 @@ function ComprasArea({
 
   return (
     <div className="space-y-4">
-      {isAdmin ? (
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Package className="h-4 w-4" /> Criar / editar mixes
-              </CardTitle>
-              {!mixEdit ? (
-                <Button size="sm" onClick={iniciarNovoMix}>
-                  <Plus className="mr-1 h-3.5 w-3.5" /> Novo mix
-                </Button>
-              ) : null}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Monte mixes com produtos do catálogo, quantidade de cada item e %
-              de perda — o sistema calcula quantos kg processar nas compras do
-              dia.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {(mixes ?? []).length > 0 ? (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase text-muted-foreground">
-                  Mixes cadastrados
-                </p>
-                <ul className="space-y-2">
-                  {(mixes ?? []).map((mix: any) => (
-                    <li
-                      key={mix.id}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm"
-                    >
-                      <div>
-                        <span className="font-medium">{mix.nome}</span>
-                        <span className="ml-2 text-muted-foreground">
-                          ref.: {mix.produtoReferenciaNome}
-                        </span>
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          {mix.componentes?.length ?? 0} componente(s)
-                          {mix.perdaPercentual > 0
-                            ? ` · perda ${mix.perdaPercentual}%`
-                            : ""}
-                          {mix.ativo === false ? " · inativo" : ""}
-                        </span>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => editarMix(mix)}
-                        >
-                          Editar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-destructive"
-                          onClick={() => {
-                            if (confirm(`Remover o mix «${mix.nome}»?`)) {
-                              onExcluirMix(mix.id);
-                            }
-                          }}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <p className="rounded-lg border border-dashed px-3 py-4 text-sm text-muted-foreground">
-                Nenhum mix ainda. Clique em <strong>Novo mix</strong> para
-                selecionar os produtos (cenoura, repolho, alface…) e a perda %.
-              </p>
-            )}
-
-            {mixEdit ? (
-              <div className="space-y-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Nome do mix</Label>
-                    <Input
-                      value={mixEdit.nome}
-                      onChange={e =>
-                        setMixEdit({ ...mixEdit, nome: e.target.value })
-                      }
-                      placeholder="Ex.: Mix salada"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">
-                      Produto vendido nos pedidos (referência)
-                    </Label>
-                    <select
-                      className="h-9 w-full rounded-md border bg-background px-2 text-sm"
-                      value={mixEdit.produtoReferenciaId}
-                      onChange={e =>
-                        setMixEdit({
-                          ...mixEdit,
-                          produtoReferenciaId: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="">Selecione…</option>
-                      {produtoOptions.map((p: any) => (
-                        <option key={p.id} value={p.id}>
-                          {p.nome}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Perda no processamento (%)</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={99.99}
-                      step={0.1}
-                      value={mixEdit.perdaPercentual}
-                      onChange={e =>
-                        setMixEdit({
-                          ...mixEdit,
-                          perdaPercentual: e.target.value,
-                        })
-                      }
-                      placeholder="0"
-                    />
-                  </div>
-                  <div className="flex items-end gap-2">
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={mixEdit.ativo !== false}
-                        onChange={e =>
-                          setMixEdit({
-                            ...mixEdit,
-                            ativo: e.target.checked,
-                          })
-                        }
-                      />
-                      Ativo
-                    </label>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-xs">
-                    Componentes (qtd. por 1 un. do mix vendido)
-                  </Label>
-                  {mixEdit.componentes.map((comp: any, idx: number) => (
-                    <div
-                      key={idx}
-                      className="flex flex-wrap items-center gap-2"
-                    >
-                      <select
-                        className="h-9 min-w-[180px] flex-1 rounded-md border bg-background px-2 text-sm"
-                        value={comp.produtoId}
-                        onChange={e => {
-                          const next = [...mixEdit.componentes];
-                          next[idx] = {
-                            ...next[idx],
-                            produtoId: e.target.value,
-                          };
-                          setMixEdit({ ...mixEdit, componentes: next });
-                        }}
-                      >
-                        <option value="">Produto…</option>
-                        {produtoOptions.map((p: any) => (
-                          <option key={p.id} value={p.id}>
-                            {p.nome}
-                          </option>
-                        ))}
-                      </select>
-                      <Input
-                        type="number"
-                        min={0.0001}
-                        step={0.01}
-                        className="h-9 w-24"
-                        value={comp.quantidade}
-                        onChange={e => {
-                          const next = [...mixEdit.componentes];
-                          next[idx] = {
-                            ...next[idx],
-                            quantidade: e.target.value,
-                          };
-                          setMixEdit({ ...mixEdit, componentes: next });
-                        }}
-                      />
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-destructive"
-                        disabled={mixEdit.componentes.length <= 1}
-                        onClick={() => {
-                          const next = mixEdit.componentes.filter(
-                            (_: any, i: number) => i !== idx
-                          );
-                          setMixEdit({ ...mixEdit, componentes: next });
-                        }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  ))}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      setMixEdit({
-                        ...mixEdit,
-                        componentes: [
-                          ...mixEdit.componentes,
-                          { produtoId: "", quantidade: 1 },
-                        ],
-                      })
-                    }
-                  >
-                    <Plus className="mr-1 h-3.5 w-3.5" /> Componente
-                  </Button>
-                </div>
-
-                <div className="space-y-2 rounded-md bg-background/80 p-3">
-                  <p className="text-xs font-semibold uppercase text-muted-foreground">
-                    Simular produção
-                  </p>
-                  <div className="flex flex-wrap items-end gap-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Un. do mix a produzir</Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        step={1}
-                        className="h-9 w-28"
-                        value={mixPreviewQty}
-                        onChange={e => setMixPreviewQty(e.target.value)}
-                      />
-                    </div>
-                    {previewMix.isFetching ? (
-                      <span className="text-xs text-muted-foreground">
-                        Calculando…
-                      </span>
-                    ) : previewMix.data?.linhas?.length ? (
-                      <ul className="flex flex-wrap gap-2 text-xs">
-                        {previewMix.data.linhas.map((l: any) => (
-                          <li
-                            key={l.produtoId}
-                            className="rounded-full border bg-background px-2 py-1"
-                          >
-                            <strong>{l.nome}</strong>: {l.comprarTexto}
-                            <span className="ml-1 text-muted-foreground">
-                              (
-                              {l.unidadesNecessarias.toLocaleString("pt-BR", {
-                                maximumFractionDigits: 4,
-                              })}{" "}
-                              un. c/ perda)
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">
-                    Fórmula: qtd componente × un. mix × 1/(1 − perda%) → kg via
-                    rendimento (prod/kg) ou fator de compra.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    disabled={!mixFormValid || salvandoMix}
-                    onClick={() =>
-                      onSalvarMix({
-                        id: mixEdit.id,
-                        nome: mixEdit.nome.trim(),
-                        produtoReferenciaId: mixEdit.produtoReferenciaId,
-                        perdaPercentual: Number(mixEdit.perdaPercentual) || 0,
-                        ativo: mixEdit.ativo !== false,
-                        componentes: mixEdit.componentes.map((c: any) => ({
-                          produtoId: c.produtoId,
-                          quantidade: Number(c.quantidade),
-                        })),
-                      })
-                    }
-                  >
-                    <Save className="mr-1 h-3.5 w-3.5" /> Salvar mix
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setMixEdit(null)}
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
-      ) : null}
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -4118,16 +3716,13 @@ function ComprasArea({
                 ? ` → ${cfg.partePorVariedade?.toLocaleString("pt-BR", { maximumFractionDigits: 4 })} un./variedade (${cfg.variedades.length} partes)`
                 : ""}
               {" · "}Demais linhas com mix: ×1,34
-              {mixesAtivos.length > 0
-                ? ` · ${mixesAtivos.length} mix(es) personalizado(s) ativo(s)`
-                : ""}
             </p>
           )}
 
           {isAdmin && (
             <details className="rounded-lg border p-3">
               <summary className="cursor-pointer text-sm font-semibold">
-                Mix folha leve · referência (legado)
+                Mix folha leve · referência
               </summary>
               <div className="mt-3 space-y-2">
                 <Label className="text-xs">
@@ -4211,22 +3806,9 @@ function ComprasArea({
                               folha
                             </span>
                           ) : null}
-                          {row.inMixCustomizado ? (
-                            <span className="ml-1 rounded bg-sky-500/15 px-1 text-[10px] text-sky-800 dark:text-sky-200">
-                              mix
-                            </span>
-                          ) : null}
                         </td>
                         <td className="px-3 py-2 tabular-nums">
                           {row.quantidadePedido}
-                          {row.quantidadeMix > 0 ? (
-                            <span className="block text-[10px] font-normal text-muted-foreground">
-                              +{row.quantidadeMix.toLocaleString("pt-BR", {
-                                maximumFractionDigits: 4,
-                              })}{" "}
-                              mix
-                            </span>
-                          ) : null}
                         </td>
                         <td className="px-3 py-2">
                           {isAdmin ? (
@@ -4356,8 +3938,6 @@ function ComprasArea({
                               )}
                             </Button>
                           </td>
-                        ) : isAdmin ? (
-                          <td />
                         ) : null}
                       </tr>
                     );

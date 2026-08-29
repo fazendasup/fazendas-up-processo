@@ -258,20 +258,21 @@ model EstoqueVivoConfig {
   @@map("estoque_vivo_config")
 }
 
-/// Mix de compras com componentes proporcionais e taxa de perda.
+/// Receita de mix (ex.: Crocante 1) com ingredientes em gramas e taxa de perda.
 model EstoqueVivoMix {
   id                  String   @id @default(cuid())
   nome                String
-  produtoReferenciaId String   @unique @map("produto_referencia_id")
+  produtoReferenciaId String?  @map("produto_referencia_id")
   perdaPercentual     Decimal  @default(0) @map("perda_percentual") @db.Decimal(5, 2)
   ativo               Boolean  @default(true)
   criadoEm            DateTime @default(now()) @map("criado_em")
   atualizadoEm        DateTime @updatedAt @map("atualizado_em")
 
-  produtoReferencia ProdutoComercial           @relation("EstoqueVivoMixReferencia", fields: [produtoReferenciaId], references: [id], onDelete: Cascade)
+  produtoReferencia ProdutoComercial?          @relation("EstoqueVivoMixReferencia", fields: [produtoReferenciaId], references: [id], onDelete: SetNull)
   componentes       EstoqueVivoMixComponente[]
 
   @@index([ativo])
+  @@index([nome])
   @@map("estoque_vivo_mixes")
 }
 
@@ -279,6 +280,7 @@ model EstoqueVivoMixComponente {
   id         String  @id @default(cuid())
   mixId      String  @map("mix_id")
   produtoId  String  @map("produto_id")
+  /// Gramas do ingrediente por 1 unidade do mix.
   quantidade Decimal @db.Decimal(14, 4)
 
   mix     EstoqueVivoMix   @relation(fields: [mixId], references: [id], onDelete: Cascade)
@@ -311,13 +313,13 @@ model ProdutoComercial {
   criadoEm               DateTime          @default(now()) @map("criado_em")
   atualizadoEm           DateTime          @updatedAt @map("atualizado_em")
 
-  precosEspeciais           PrecoEspecialCliente[]
-  itensPedido               PedidoOperacionalItem[]
-  avariasPedido             PedidoOperacionalAvaria[]
-  mixProdutoReferencia      ProdutoComercial?          @relation("ProdutoMixReferencia", fields: [mixProdutoReferenciaId], references: [id], onDelete: SetNull)
-  mixReferenciadoPor        ProdutoComercial[]         @relation("ProdutoMixReferencia")
-  estoqueVivoMixReferencia  EstoqueVivoMix?            @relation("EstoqueVivoMixReferencia")
-  estoqueVivoMixComponentes EstoqueVivoMixComponente[] @relation("EstoqueVivoMixComponenteProduto")
+  precosEspeciais            PrecoEspecialCliente[]
+  itensPedido                PedidoOperacionalItem[]
+  avariasPedido              PedidoOperacionalAvaria[]
+  mixProdutoReferencia       ProdutoComercial?          @relation("ProdutoMixReferencia", fields: [mixProdutoReferenciaId], references: [id], onDelete: SetNull)
+  mixReferenciadoPor         ProdutoComercial[]         @relation("ProdutoMixReferencia")
+  estoqueVivoMixesReferencia EstoqueVivoMix[]           @relation("EstoqueVivoMixReferencia")
+  estoqueVivoMixComponentes  EstoqueVivoMixComponente[] @relation("EstoqueVivoMixComponenteProduto")
 
   @@index([nome])
   @@index([categoria])

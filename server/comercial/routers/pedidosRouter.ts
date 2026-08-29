@@ -254,10 +254,10 @@ function money(v: unknown): number | null {
 type MixEstoqueDb = {
   id: string;
   nome: string;
-  produtoReferenciaId: string;
+  produtoReferenciaId: string | null;
   perdaPercentual: unknown;
   ativo: boolean;
-  produtoReferencia: { id: string; nome: string };
+  produtoReferencia: { id: string; nome: string } | null;
   componentes: Array<{
     produtoId: string;
     quantidade: unknown;
@@ -270,7 +270,7 @@ function mapMixEstoqueDbParaCfg(row: MixEstoqueDb): EstoqueVivoMixCfg {
     id: row.id,
     nome: row.nome,
     produtoReferenciaId: row.produtoReferenciaId,
-    produtoReferenciaNome: row.produtoReferencia.nome,
+    produtoReferenciaNome: row.produtoReferencia?.nome ?? null,
     perdaPercentual: money(row.perdaPercentual) ?? 0,
     ativo: row.ativo,
     componentes: row.componentes.map(c => ({
@@ -291,13 +291,14 @@ const mixEstoqueInclude = {
 
 const mixEstoqueComponenteSchema = z.object({
   produtoId: z.string().min(1),
+  /** Gramas por 1 unidade do mix */
   quantidade: z.number().positive(),
 });
 
 const salvarMixEstoqueSchema = z.object({
   id: z.string().optional(),
   nome: z.string().min(1),
-  produtoReferenciaId: z.string().min(1),
+  produtoReferenciaId: z.string().nullable().optional(),
   perdaPercentual: z.number().min(0).max(99.99).default(0),
   ativo: z.boolean().default(true),
   componentes: z.array(mixEstoqueComponenteSchema).min(1),
@@ -2266,7 +2267,6 @@ export const pedidosRouter = router({
           linhas: [],
           desativados: [],
           totais: { sumNec: 0, sumUn: 0, sumKg: 0 },
-          mixes: [],
           cfgMix: {
             ...ESTOQUE_MIX_FOLHA_PADRAO,
             qtdReferencia: 0,
@@ -2274,7 +2274,7 @@ export const pedidosRouter = router({
           },
         };
       }
-      const [pedidosDb, produtosDb, cfgRow, mixesDb] = await Promise.all([
+      const [pedidosDb, produtosDb, cfgRow] = await Promise.all([
         ctx.prisma!.pedidoOperacional.findMany({
           where: {
             dataEntrega: {
@@ -2297,11 +2297,6 @@ export const pedidosRouter = router({
           orderBy: { nome: "asc" },
         }),
         ctx.prisma!.estoqueVivoConfig.findUnique({ where: { id: "default" } }),
-        ctx.prisma!.estoqueVivoMix.findMany({
-          where: { ativo: true },
-          include: mixEstoqueInclude,
-          orderBy: { nome: "asc" },
-        }),
       ]);
 
       const pedidosLinhas: LinhaPedidoEstoque[] = [];
@@ -2323,8 +2318,6 @@ export const pedidosRouter = router({
           : ESTOQUE_MIX_FOLHA_PADRAO
       );
 
-      const mixesCfg = mixesDb.map(mapMixEstoqueDbParaCfg);
-
       const produtosCfg: ConfigProdutoEstoque[] = produtosDb.map(p => {
         const fatorN = money(p.fatorCompraUnidade);
         const rendN = money(p.rendimentoPorKg);
@@ -2345,7 +2338,6 @@ export const pedidosRouter = router({
         cfgMix,
         {
           incluirOcultos: input.incluirOcultos,
-          mixes: mixesCfg,
         }
       );
 
@@ -2396,16 +2388,6 @@ export const pedidosRouter = router({
         }
         mixCfg = mapMixEstoqueDbParaCfg(row);
       } else if (input.mix) {
-        const ref = await ctx.prisma!.produtoComercial.findUnique({
-          where: { id: input.mix.produtoReferenciaId },
-          select: { id: true, nome: true },
-        });
-        if (!ref) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Produto referência do mix não encontrado.",
-          });
-        }
         const compIds = Array.from(
           new Set(input.mix.componentes.map(c => c.produtoId))
         );
@@ -2417,8 +2399,8 @@ export const pedidosRouter = router({
         mixCfg = {
           id: input.mix.id ?? "preview",
           nome: input.mix.nome,
-          produtoReferenciaId: ref.id,
-          produtoReferenciaNome: ref.nome,
+          produtoReferenciaId: input.mix.produtoReferenciaId ?? null,
+          produtoReferenciaNome: null,
           perdaPercentual: input.mix.perdaPercentual,
           ativo: input.mix.ativo,
           componentes: input.mix.componentes.map(c => {
@@ -2426,7 +2408,7 @@ export const pedidosRouter = router({
             if (!prod) {
               throw new TRPCError({
                 code: "BAD_REQUEST",
-                message: "Componente do mix não encontrado no catálogo.",
+                message: "Ingrediente do mix não encontrado no catálogo.",
               });
             }
             return {
@@ -2443,35 +2425,10 @@ export const pedidosRouter = router({
         });
       }
 
-      const produtosDb = await ctx.prisma!.produtoComercial.findMany({
-        where: {
-          contaAzulProdutoId: { not: null },
-          importadoOperacao: true,
-          ativo: true,
-        },
-      });
-      const produtosCfg: ConfigProdutoEstoque[] = produtosDb.map(p => {
-        const fatorN = money(p.fatorCompraUnidade);
-        const rendN = money(p.rendimentoPorKg);
-        return {
-          produtoId: p.id,
-          nome: p.nome,
-          modoCompra: p.modoCompra === "KG" ? "kilo" : "unidade",
-          fator: fatorN != null && fatorN > 0 ? fatorN : null,
-          rendimento: rendN != null && rendN > 0 ? rendN : 0,
-          mixAtivo: p.mixAtivo,
-          oculto: p.ocultoListaCompra,
-        };
-      });
-
       return {
         mix: mixCfg,
         unidadesReferencia: input.unidadesReferencia,
-        linhas: previewMixEstoqueVivo(
-          input.unidadesReferencia,
-          mixCfg,
-          produtosCfg
-        ),
+        linhas: previewMixEstoqueVivo(input.unidadesReferencia, mixCfg),
       };
     }),
 
@@ -2482,38 +2439,20 @@ export const pedidosRouter = router({
       const compIds = Array.from(
         new Set(input.componentes.map(c => c.produtoId))
       );
-      if (compIds.includes(input.produtoReferenciaId)) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "O produto referência não pode ser componente do próprio mix.",
-        });
-      }
-      const [ref, comps] = await Promise.all([
-        ctx.prisma!.produtoComercial.findUnique({
-          where: { id: input.produtoReferenciaId },
-          select: { id: true },
-        }),
-        ctx.prisma!.produtoComercial.findMany({
-          where: { id: { in: compIds } },
-          select: { id: true },
-        }),
-      ]);
-      if (!ref) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Produto referência não encontrado.",
-        });
-      }
+      const comps = await ctx.prisma!.produtoComercial.findMany({
+        where: { id: { in: compIds } },
+        select: { id: true },
+      });
       if (comps.length !== compIds.length) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Um ou mais componentes não existem no catálogo.",
+          message: "Um ou mais ingredientes não existem no catálogo.",
         });
       }
 
       const dataMix = {
         nome: input.nome.trim(),
-        produtoReferenciaId: input.produtoReferenciaId,
+        produtoReferenciaId: input.produtoReferenciaId ?? null,
         perdaPercentual: new Prisma.Decimal(input.perdaPercentual),
         ativo: input.ativo,
       };
@@ -2545,32 +2484,19 @@ export const pedidosRouter = router({
         return mapMixEstoqueDbParaCfg(out);
       }
 
-      try {
-        const out = await ctx.prisma!.estoqueVivoMix.create({
-          data: {
-            ...dataMix,
-            componentes: {
-              create: input.componentes.map(c => ({
-                produtoId: c.produtoId,
-                quantidade: new Prisma.Decimal(c.quantidade),
-              })),
-            },
+      const out = await ctx.prisma!.estoqueVivoMix.create({
+        data: {
+          ...dataMix,
+          componentes: {
+            create: input.componentes.map(c => ({
+              produtoId: c.produtoId,
+              quantidade: new Prisma.Decimal(c.quantidade),
+            })),
           },
-          include: mixEstoqueInclude,
-        });
-        return mapMixEstoqueDbParaCfg(out);
-      } catch (err) {
-        if (
-          err instanceof Prisma.PrismaClientKnownRequestError &&
-          err.code === "P2002"
-        ) {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message: "Já existe um mix para este produto referência.",
-          });
-        }
-        throw err;
-      }
+        },
+        include: mixEstoqueInclude,
+      });
+      return mapMixEstoqueDbParaCfg(out);
     }),
 
   excluirMixEstoqueVivo: comercialProcedure

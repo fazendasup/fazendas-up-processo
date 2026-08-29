@@ -34,6 +34,9 @@ const AcompanhamentoAvarias = lazy(() =>
 const Pedidos = lazy(() =>
   import("./comercial/Pedidos").then(m => ({ default: m.Pedidos }))
 );
+const Mixes = lazy(() =>
+  import("./comercial/Mixes").then(m => ({ default: m.Mixes }))
+);
 const Entregas = lazy(() =>
   import("./comercial/Entregas").then(m => ({ default: m.Entregas }))
 );
@@ -84,6 +87,7 @@ export default function ComercialRoutes() {
           <Route path="/comercial/estoque-vivo">
             <Pedidos abaInicial="compras" />
           </Route>
+          <Route path="/comercial/mixes" component={Mixes} />
           <Route path="/comercial/pedidos">
             <Pedidos />
           </Route>

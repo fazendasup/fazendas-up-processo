@@ -40,7 +40,7 @@ export type Cliente = $Result.DefaultSelection<Prisma.$ClientePayload>
 export type EstoqueVivoConfig = $Result.DefaultSelection<Prisma.$EstoqueVivoConfigPayload>
 /**
  * Model EstoqueVivoMix
- * Mix de compras com componentes proporcionais e taxa de perda.
+ * Receita de mix (ex.: Crocante 1) com ingredientes em gramas e taxa de perda.
  */
 export type EstoqueVivoMix = $Result.DefaultSelection<Prisma.$EstoqueVivoMixPayload>
 /**
@@ -3936,6 +3936,7 @@ export namespace Prisma {
     itensPedido: number
     avariasPedido: number
     mixReferenciadoPor: number
+    estoqueVivoMixesReferencia: number
     estoqueVivoMixComponentes: number
   }
 
@@ -3944,6 +3945,7 @@ export namespace Prisma {
     itensPedido?: boolean | ProdutoComercialCountOutputTypeCountItensPedidoArgs
     avariasPedido?: boolean | ProdutoComercialCountOutputTypeCountAvariasPedidoArgs
     mixReferenciadoPor?: boolean | ProdutoComercialCountOutputTypeCountMixReferenciadoPorArgs
+    estoqueVivoMixesReferencia?: boolean | ProdutoComercialCountOutputTypeCountEstoqueVivoMixesReferenciaArgs
     estoqueVivoMixComponentes?: boolean | ProdutoComercialCountOutputTypeCountEstoqueVivoMixComponentesArgs
   }
 
@@ -3984,6 +3986,13 @@ export namespace Prisma {
    */
   export type ProdutoComercialCountOutputTypeCountMixReferenciadoPorArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: ProdutoComercialWhereInput
+  }
+
+  /**
+   * ProdutoComercialCountOutputType without action
+   */
+  export type ProdutoComercialCountOutputTypeCountEstoqueVivoMixesReferenciaArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EstoqueVivoMixWhereInput
   }
 
   /**
@@ -9734,7 +9743,7 @@ export namespace Prisma {
   export type EstoqueVivoMixGroupByOutputType = {
     id: string
     nome: string
-    produtoReferenciaId: string
+    produtoReferenciaId: string | null
     perdaPercentual: Decimal
     ativo: boolean
     criadoEm: Date
@@ -9768,7 +9777,7 @@ export namespace Prisma {
     ativo?: boolean
     criadoEm?: boolean
     atualizadoEm?: boolean
-    produtoReferencia?: boolean | ProdutoComercialDefaultArgs<ExtArgs>
+    produtoReferencia?: boolean | EstoqueVivoMix$produtoReferenciaArgs<ExtArgs>
     componentes?: boolean | EstoqueVivoMix$componentesArgs<ExtArgs>
     _count?: boolean | EstoqueVivoMixCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["estoqueVivoMix"]>
@@ -9787,7 +9796,7 @@ export namespace Prisma {
 
   export type EstoqueVivoMixOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "produtoReferenciaId" | "perdaPercentual" | "ativo" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["estoqueVivoMix"]>
   export type EstoqueVivoMixInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    produtoReferencia?: boolean | ProdutoComercialDefaultArgs<ExtArgs>
+    produtoReferencia?: boolean | EstoqueVivoMix$produtoReferenciaArgs<ExtArgs>
     componentes?: boolean | EstoqueVivoMix$componentesArgs<ExtArgs>
     _count?: boolean | EstoqueVivoMixCountOutputTypeDefaultArgs<ExtArgs>
   }
@@ -9795,13 +9804,13 @@ export namespace Prisma {
   export type $EstoqueVivoMixPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "EstoqueVivoMix"
     objects: {
-      produtoReferencia: Prisma.$ProdutoComercialPayload<ExtArgs>
+      produtoReferencia: Prisma.$ProdutoComercialPayload<ExtArgs> | null
       componentes: Prisma.$EstoqueVivoMixComponentePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
       nome: string
-      produtoReferenciaId: string
+      produtoReferenciaId: string | null
       perdaPercentual: Prisma.Decimal
       ativo: boolean
       criadoEm: Date
@@ -10146,7 +10155,7 @@ export namespace Prisma {
    */
   export interface Prisma__EstoqueVivoMixClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    produtoReferencia<T extends ProdutoComercialDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercialDefaultArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    produtoReferencia<T extends EstoqueVivoMix$produtoReferenciaArgs<ExtArgs> = {}>(args?: Subset<T, EstoqueVivoMix$produtoReferenciaArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     componentes<T extends EstoqueVivoMix$componentesArgs<ExtArgs> = {}>(args?: Subset<T, EstoqueVivoMix$componentesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EstoqueVivoMixComponentePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -10527,6 +10536,25 @@ export namespace Prisma {
   }
 
   /**
+   * EstoqueVivoMix.produtoReferencia
+   */
+  export type EstoqueVivoMix$produtoReferenciaArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProdutoComercial
+     */
+    select?: ProdutoComercialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProdutoComercial
+     */
+    omit?: ProdutoComercialOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProdutoComercialInclude<ExtArgs> | null
+    where?: ProdutoComercialWhereInput
+  }
+
+  /**
    * EstoqueVivoMix.componentes
    */
   export type EstoqueVivoMix$componentesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -10788,6 +10816,9 @@ export namespace Prisma {
       id: string
       mixId: string
       produtoId: string
+      /**
+       * Gramas do ingrediente por 1 unidade do mix.
+       */
       quantidade: Prisma.Decimal
     }, ExtArgs["result"]["estoqueVivoMixComponente"]>
     composites: {}
@@ -11852,7 +11883,7 @@ export namespace Prisma {
     avariasPedido?: boolean | ProdutoComercial$avariasPedidoArgs<ExtArgs>
     mixProdutoReferencia?: boolean | ProdutoComercial$mixProdutoReferenciaArgs<ExtArgs>
     mixReferenciadoPor?: boolean | ProdutoComercial$mixReferenciadoPorArgs<ExtArgs>
-    estoqueVivoMixReferencia?: boolean | ProdutoComercial$estoqueVivoMixReferenciaArgs<ExtArgs>
+    estoqueVivoMixesReferencia?: boolean | ProdutoComercial$estoqueVivoMixesReferenciaArgs<ExtArgs>
     estoqueVivoMixComponentes?: boolean | ProdutoComercial$estoqueVivoMixComponentesArgs<ExtArgs>
     _count?: boolean | ProdutoComercialCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["produtoComercial"]>
@@ -11889,7 +11920,7 @@ export namespace Prisma {
     avariasPedido?: boolean | ProdutoComercial$avariasPedidoArgs<ExtArgs>
     mixProdutoReferencia?: boolean | ProdutoComercial$mixProdutoReferenciaArgs<ExtArgs>
     mixReferenciadoPor?: boolean | ProdutoComercial$mixReferenciadoPorArgs<ExtArgs>
-    estoqueVivoMixReferencia?: boolean | ProdutoComercial$estoqueVivoMixReferenciaArgs<ExtArgs>
+    estoqueVivoMixesReferencia?: boolean | ProdutoComercial$estoqueVivoMixesReferenciaArgs<ExtArgs>
     estoqueVivoMixComponentes?: boolean | ProdutoComercial$estoqueVivoMixComponentesArgs<ExtArgs>
     _count?: boolean | ProdutoComercialCountOutputTypeDefaultArgs<ExtArgs>
   }
@@ -11902,7 +11933,7 @@ export namespace Prisma {
       avariasPedido: Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>[]
       mixProdutoReferencia: Prisma.$ProdutoComercialPayload<ExtArgs> | null
       mixReferenciadoPor: Prisma.$ProdutoComercialPayload<ExtArgs>[]
-      estoqueVivoMixReferencia: Prisma.$EstoqueVivoMixPayload<ExtArgs> | null
+      estoqueVivoMixesReferencia: Prisma.$EstoqueVivoMixPayload<ExtArgs>[]
       estoqueVivoMixComponentes: Prisma.$EstoqueVivoMixComponentePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
@@ -12271,7 +12302,7 @@ export namespace Prisma {
     avariasPedido<T extends ProdutoComercial$avariasPedidoArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$avariasPedidoArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     mixProdutoReferencia<T extends ProdutoComercial$mixProdutoReferenciaArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$mixProdutoReferenciaArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     mixReferenciadoPor<T extends ProdutoComercial$mixReferenciadoPorArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$mixReferenciadoPorArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    estoqueVivoMixReferencia<T extends ProdutoComercial$estoqueVivoMixReferenciaArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$estoqueVivoMixReferenciaArgs<ExtArgs>>): Prisma__EstoqueVivoMixClient<$Result.GetResult<Prisma.$EstoqueVivoMixPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    estoqueVivoMixesReferencia<T extends ProdutoComercial$estoqueVivoMixesReferenciaArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$estoqueVivoMixesReferenciaArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EstoqueVivoMixPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     estoqueVivoMixComponentes<T extends ProdutoComercial$estoqueVivoMixComponentesArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$estoqueVivoMixComponentesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EstoqueVivoMixComponentePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -12780,9 +12811,9 @@ export namespace Prisma {
   }
 
   /**
-   * ProdutoComercial.estoqueVivoMixReferencia
+   * ProdutoComercial.estoqueVivoMixesReferencia
    */
-  export type ProdutoComercial$estoqueVivoMixReferenciaArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ProdutoComercial$estoqueVivoMixesReferenciaArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
      * Select specific fields to fetch from the EstoqueVivoMix
      */
@@ -12796,6 +12827,11 @@ export namespace Prisma {
      */
     include?: EstoqueVivoMixInclude<ExtArgs> | null
     where?: EstoqueVivoMixWhereInput
+    orderBy?: EstoqueVivoMixOrderByWithRelationInput | EstoqueVivoMixOrderByWithRelationInput[]
+    cursor?: EstoqueVivoMixWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: EstoqueVivoMixScalarFieldEnum | EstoqueVivoMixScalarFieldEnum[]
   }
 
   /**
@@ -38009,19 +38045,19 @@ export namespace Prisma {
     NOT?: EstoqueVivoMixWhereInput | EstoqueVivoMixWhereInput[]
     id?: StringFilter<"EstoqueVivoMix"> | string
     nome?: StringFilter<"EstoqueVivoMix"> | string
-    produtoReferenciaId?: StringFilter<"EstoqueVivoMix"> | string
+    produtoReferenciaId?: StringNullableFilter<"EstoqueVivoMix"> | string | null
     perdaPercentual?: DecimalFilter<"EstoqueVivoMix"> | Decimal | DecimalJsLike | number | string
     ativo?: BoolFilter<"EstoqueVivoMix"> | boolean
     criadoEm?: DateTimeFilter<"EstoqueVivoMix"> | Date | string
     atualizadoEm?: DateTimeFilter<"EstoqueVivoMix"> | Date | string
-    produtoReferencia?: XOR<ProdutoComercialScalarRelationFilter, ProdutoComercialWhereInput>
+    produtoReferencia?: XOR<ProdutoComercialNullableScalarRelationFilter, ProdutoComercialWhereInput> | null
     componentes?: EstoqueVivoMixComponenteListRelationFilter
   }
 
   export type EstoqueVivoMixOrderByWithRelationInput = {
     id?: SortOrder
     nome?: SortOrder
-    produtoReferenciaId?: SortOrder
+    produtoReferenciaId?: SortOrderInput | SortOrder
     perdaPercentual?: SortOrder
     ativo?: SortOrder
     criadoEm?: SortOrder
@@ -38033,23 +38069,23 @@ export namespace Prisma {
 
   export type EstoqueVivoMixWhereUniqueInput = Prisma.AtLeast<{
     id?: string
-    produtoReferenciaId?: string
     AND?: EstoqueVivoMixWhereInput | EstoqueVivoMixWhereInput[]
     OR?: EstoqueVivoMixWhereInput[]
     NOT?: EstoqueVivoMixWhereInput | EstoqueVivoMixWhereInput[]
     nome?: StringFilter<"EstoqueVivoMix"> | string
+    produtoReferenciaId?: StringNullableFilter<"EstoqueVivoMix"> | string | null
     perdaPercentual?: DecimalFilter<"EstoqueVivoMix"> | Decimal | DecimalJsLike | number | string
     ativo?: BoolFilter<"EstoqueVivoMix"> | boolean
     criadoEm?: DateTimeFilter<"EstoqueVivoMix"> | Date | string
     atualizadoEm?: DateTimeFilter<"EstoqueVivoMix"> | Date | string
-    produtoReferencia?: XOR<ProdutoComercialScalarRelationFilter, ProdutoComercialWhereInput>
+    produtoReferencia?: XOR<ProdutoComercialNullableScalarRelationFilter, ProdutoComercialWhereInput> | null
     componentes?: EstoqueVivoMixComponenteListRelationFilter
-  }, "id" | "produtoReferenciaId">
+  }, "id">
 
   export type EstoqueVivoMixOrderByWithAggregationInput = {
     id?: SortOrder
     nome?: SortOrder
-    produtoReferenciaId?: SortOrder
+    produtoReferenciaId?: SortOrderInput | SortOrder
     perdaPercentual?: SortOrder
     ativo?: SortOrder
     criadoEm?: SortOrder
@@ -38067,7 +38103,7 @@ export namespace Prisma {
     NOT?: EstoqueVivoMixScalarWhereWithAggregatesInput | EstoqueVivoMixScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"EstoqueVivoMix"> | string
     nome?: StringWithAggregatesFilter<"EstoqueVivoMix"> | string
-    produtoReferenciaId?: StringWithAggregatesFilter<"EstoqueVivoMix"> | string
+    produtoReferenciaId?: StringNullableWithAggregatesFilter<"EstoqueVivoMix"> | string | null
     perdaPercentual?: DecimalWithAggregatesFilter<"EstoqueVivoMix"> | Decimal | DecimalJsLike | number | string
     ativo?: BoolWithAggregatesFilter<"EstoqueVivoMix"> | boolean
     criadoEm?: DateTimeWithAggregatesFilter<"EstoqueVivoMix"> | Date | string
@@ -38160,7 +38196,7 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaListRelationFilter
     mixProdutoReferencia?: XOR<ProdutoComercialNullableScalarRelationFilter, ProdutoComercialWhereInput> | null
     mixReferenciadoPor?: ProdutoComercialListRelationFilter
-    estoqueVivoMixReferencia?: XOR<EstoqueVivoMixNullableScalarRelationFilter, EstoqueVivoMixWhereInput> | null
+    estoqueVivoMixesReferencia?: EstoqueVivoMixListRelationFilter
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteListRelationFilter
   }
 
@@ -38190,7 +38226,7 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaOrderByRelationAggregateInput
     mixProdutoReferencia?: ProdutoComercialOrderByWithRelationInput
     mixReferenciadoPor?: ProdutoComercialOrderByRelationAggregateInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixOrderByWithRelationInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixOrderByRelationAggregateInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteOrderByRelationAggregateInput
     _relevance?: ProdutoComercialOrderByRelevanceInput
   }
@@ -38224,7 +38260,7 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaListRelationFilter
     mixProdutoReferencia?: XOR<ProdutoComercialNullableScalarRelationFilter, ProdutoComercialWhereInput> | null
     mixReferenciadoPor?: ProdutoComercialListRelationFilter
-    estoqueVivoMixReferencia?: XOR<EstoqueVivoMixNullableScalarRelationFilter, EstoqueVivoMixWhereInput> | null
+    estoqueVivoMixesReferencia?: EstoqueVivoMixListRelationFilter
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteListRelationFilter
   }, "id" | "nome" | "contaAzulProdutoId">
 
@@ -40719,14 +40755,14 @@ export namespace Prisma {
     ativo?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
-    produtoReferencia: ProdutoComercialCreateNestedOneWithoutEstoqueVivoMixReferenciaInput
+    produtoReferencia?: ProdutoComercialCreateNestedOneWithoutEstoqueVivoMixesReferenciaInput
     componentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutMixInput
   }
 
   export type EstoqueVivoMixUncheckedCreateInput = {
     id?: string
     nome: string
-    produtoReferenciaId: string
+    produtoReferenciaId?: string | null
     perdaPercentual?: Decimal | DecimalJsLike | number | string
     ativo?: boolean
     criadoEm?: Date | string
@@ -40741,14 +40777,14 @@ export namespace Prisma {
     ativo?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
-    produtoReferencia?: ProdutoComercialUpdateOneRequiredWithoutEstoqueVivoMixReferenciaNestedInput
+    produtoReferencia?: ProdutoComercialUpdateOneWithoutEstoqueVivoMixesReferenciaNestedInput
     componentes?: EstoqueVivoMixComponenteUpdateManyWithoutMixNestedInput
   }
 
   export type EstoqueVivoMixUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     nome?: StringFieldUpdateOperationsInput | string
-    produtoReferenciaId?: StringFieldUpdateOperationsInput | string
+    produtoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
     perdaPercentual?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     ativo?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -40759,7 +40795,7 @@ export namespace Prisma {
   export type EstoqueVivoMixCreateManyInput = {
     id?: string
     nome: string
-    produtoReferenciaId: string
+    produtoReferenciaId?: string | null
     perdaPercentual?: Decimal | DecimalJsLike | number | string
     ativo?: boolean
     criadoEm?: Date | string
@@ -40778,7 +40814,7 @@ export namespace Prisma {
   export type EstoqueVivoMixUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     nome?: StringFieldUpdateOperationsInput | string
-    produtoReferenciaId?: StringFieldUpdateOperationsInput | string
+    produtoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
     perdaPercentual?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     ativo?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -40857,7 +40893,7 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
     mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
     mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
   }
 
@@ -40886,7 +40922,7 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
   }
 
@@ -40915,7 +40951,7 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
     mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
     mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
   }
 
@@ -40944,7 +40980,7 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
@@ -43777,9 +43813,9 @@ export namespace Prisma {
     not?: NestedBoolFilter<$PrismaModel> | boolean
   }
 
-  export type ProdutoComercialScalarRelationFilter = {
-    is?: ProdutoComercialWhereInput
-    isNot?: ProdutoComercialWhereInput
+  export type ProdutoComercialNullableScalarRelationFilter = {
+    is?: ProdutoComercialWhereInput | null
+    isNot?: ProdutoComercialWhereInput | null
   }
 
   export type EstoqueVivoMixComponenteListRelationFilter = {
@@ -43865,6 +43901,11 @@ export namespace Prisma {
     isNot?: EstoqueVivoMixWhereInput
   }
 
+  export type ProdutoComercialScalarRelationFilter = {
+    is?: ProdutoComercialWhereInput
+    isNot?: ProdutoComercialWhereInput
+  }
+
   export type EstoqueVivoMixComponenteOrderByRelevanceInput = {
     fields: EstoqueVivoMixComponenteOrderByRelevanceFieldEnum | EstoqueVivoMixComponenteOrderByRelevanceFieldEnum[]
     sort: SortOrder
@@ -43947,20 +43988,16 @@ export namespace Prisma {
     none?: PedidoOperacionalItemWhereInput
   }
 
-  export type ProdutoComercialNullableScalarRelationFilter = {
-    is?: ProdutoComercialWhereInput | null
-    isNot?: ProdutoComercialWhereInput | null
-  }
-
   export type ProdutoComercialListRelationFilter = {
     every?: ProdutoComercialWhereInput
     some?: ProdutoComercialWhereInput
     none?: ProdutoComercialWhereInput
   }
 
-  export type EstoqueVivoMixNullableScalarRelationFilter = {
-    is?: EstoqueVivoMixWhereInput | null
-    isNot?: EstoqueVivoMixWhereInput | null
+  export type EstoqueVivoMixListRelationFilter = {
+    every?: EstoqueVivoMixWhereInput
+    some?: EstoqueVivoMixWhereInput
+    none?: EstoqueVivoMixWhereInput
   }
 
   export type PrecoEspecialClienteOrderByRelationAggregateInput = {
@@ -43972,6 +44009,10 @@ export namespace Prisma {
   }
 
   export type ProdutoComercialOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type EstoqueVivoMixOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -46683,9 +46724,9 @@ export namespace Prisma {
     deleteMany?: ParadaEntregaScalarWhereInput | ParadaEntregaScalarWhereInput[]
   }
 
-  export type ProdutoComercialCreateNestedOneWithoutEstoqueVivoMixReferenciaInput = {
-    create?: XOR<ProdutoComercialCreateWithoutEstoqueVivoMixReferenciaInput, ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixReferenciaInput>
-    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutEstoqueVivoMixReferenciaInput
+  export type ProdutoComercialCreateNestedOneWithoutEstoqueVivoMixesReferenciaInput = {
+    create?: XOR<ProdutoComercialCreateWithoutEstoqueVivoMixesReferenciaInput, ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixesReferenciaInput>
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutEstoqueVivoMixesReferenciaInput
     connect?: ProdutoComercialWhereUniqueInput
   }
 
@@ -46715,12 +46756,14 @@ export namespace Prisma {
     set?: boolean
   }
 
-  export type ProdutoComercialUpdateOneRequiredWithoutEstoqueVivoMixReferenciaNestedInput = {
-    create?: XOR<ProdutoComercialCreateWithoutEstoqueVivoMixReferenciaInput, ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixReferenciaInput>
-    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutEstoqueVivoMixReferenciaInput
-    upsert?: ProdutoComercialUpsertWithoutEstoqueVivoMixReferenciaInput
+  export type ProdutoComercialUpdateOneWithoutEstoqueVivoMixesReferenciaNestedInput = {
+    create?: XOR<ProdutoComercialCreateWithoutEstoqueVivoMixesReferenciaInput, ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixesReferenciaInput>
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutEstoqueVivoMixesReferenciaInput
+    upsert?: ProdutoComercialUpsertWithoutEstoqueVivoMixesReferenciaInput
+    disconnect?: ProdutoComercialWhereInput | boolean
+    delete?: ProdutoComercialWhereInput | boolean
     connect?: ProdutoComercialWhereUniqueInput
-    update?: XOR<XOR<ProdutoComercialUpdateToOneWithWhereWithoutEstoqueVivoMixReferenciaInput, ProdutoComercialUpdateWithoutEstoqueVivoMixReferenciaInput>, ProdutoComercialUncheckedUpdateWithoutEstoqueVivoMixReferenciaInput>
+    update?: XOR<XOR<ProdutoComercialUpdateToOneWithWhereWithoutEstoqueVivoMixesReferenciaInput, ProdutoComercialUpdateWithoutEstoqueVivoMixesReferenciaInput>, ProdutoComercialUncheckedUpdateWithoutEstoqueVivoMixesReferenciaInput>
   }
 
   export type EstoqueVivoMixComponenteUpdateManyWithoutMixNestedInput = {
@@ -46813,10 +46856,11 @@ export namespace Prisma {
     connect?: ProdutoComercialWhereUniqueInput | ProdutoComercialWhereUniqueInput[]
   }
 
-  export type EstoqueVivoMixCreateNestedOneWithoutProdutoReferenciaInput = {
-    create?: XOR<EstoqueVivoMixCreateWithoutProdutoReferenciaInput, EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput>
-    connectOrCreate?: EstoqueVivoMixCreateOrConnectWithoutProdutoReferenciaInput
-    connect?: EstoqueVivoMixWhereUniqueInput
+  export type EstoqueVivoMixCreateNestedManyWithoutProdutoReferenciaInput = {
+    create?: XOR<EstoqueVivoMixCreateWithoutProdutoReferenciaInput, EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput> | EstoqueVivoMixCreateWithoutProdutoReferenciaInput[] | EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput[]
+    connectOrCreate?: EstoqueVivoMixCreateOrConnectWithoutProdutoReferenciaInput | EstoqueVivoMixCreateOrConnectWithoutProdutoReferenciaInput[]
+    createMany?: EstoqueVivoMixCreateManyProdutoReferenciaInputEnvelope
+    connect?: EstoqueVivoMixWhereUniqueInput | EstoqueVivoMixWhereUniqueInput[]
   }
 
   export type EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput = {
@@ -46854,10 +46898,11 @@ export namespace Prisma {
     connect?: ProdutoComercialWhereUniqueInput | ProdutoComercialWhereUniqueInput[]
   }
 
-  export type EstoqueVivoMixUncheckedCreateNestedOneWithoutProdutoReferenciaInput = {
-    create?: XOR<EstoqueVivoMixCreateWithoutProdutoReferenciaInput, EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput>
-    connectOrCreate?: EstoqueVivoMixCreateOrConnectWithoutProdutoReferenciaInput
-    connect?: EstoqueVivoMixWhereUniqueInput
+  export type EstoqueVivoMixUncheckedCreateNestedManyWithoutProdutoReferenciaInput = {
+    create?: XOR<EstoqueVivoMixCreateWithoutProdutoReferenciaInput, EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput> | EstoqueVivoMixCreateWithoutProdutoReferenciaInput[] | EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput[]
+    connectOrCreate?: EstoqueVivoMixCreateOrConnectWithoutProdutoReferenciaInput | EstoqueVivoMixCreateOrConnectWithoutProdutoReferenciaInput[]
+    createMany?: EstoqueVivoMixCreateManyProdutoReferenciaInputEnvelope
+    connect?: EstoqueVivoMixWhereUniqueInput | EstoqueVivoMixWhereUniqueInput[]
   }
 
   export type EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput = {
@@ -46937,14 +46982,18 @@ export namespace Prisma {
     deleteMany?: ProdutoComercialScalarWhereInput | ProdutoComercialScalarWhereInput[]
   }
 
-  export type EstoqueVivoMixUpdateOneWithoutProdutoReferenciaNestedInput = {
-    create?: XOR<EstoqueVivoMixCreateWithoutProdutoReferenciaInput, EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput>
-    connectOrCreate?: EstoqueVivoMixCreateOrConnectWithoutProdutoReferenciaInput
-    upsert?: EstoqueVivoMixUpsertWithoutProdutoReferenciaInput
-    disconnect?: EstoqueVivoMixWhereInput | boolean
-    delete?: EstoqueVivoMixWhereInput | boolean
-    connect?: EstoqueVivoMixWhereUniqueInput
-    update?: XOR<XOR<EstoqueVivoMixUpdateToOneWithWhereWithoutProdutoReferenciaInput, EstoqueVivoMixUpdateWithoutProdutoReferenciaInput>, EstoqueVivoMixUncheckedUpdateWithoutProdutoReferenciaInput>
+  export type EstoqueVivoMixUpdateManyWithoutProdutoReferenciaNestedInput = {
+    create?: XOR<EstoqueVivoMixCreateWithoutProdutoReferenciaInput, EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput> | EstoqueVivoMixCreateWithoutProdutoReferenciaInput[] | EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput[]
+    connectOrCreate?: EstoqueVivoMixCreateOrConnectWithoutProdutoReferenciaInput | EstoqueVivoMixCreateOrConnectWithoutProdutoReferenciaInput[]
+    upsert?: EstoqueVivoMixUpsertWithWhereUniqueWithoutProdutoReferenciaInput | EstoqueVivoMixUpsertWithWhereUniqueWithoutProdutoReferenciaInput[]
+    createMany?: EstoqueVivoMixCreateManyProdutoReferenciaInputEnvelope
+    set?: EstoqueVivoMixWhereUniqueInput | EstoqueVivoMixWhereUniqueInput[]
+    disconnect?: EstoqueVivoMixWhereUniqueInput | EstoqueVivoMixWhereUniqueInput[]
+    delete?: EstoqueVivoMixWhereUniqueInput | EstoqueVivoMixWhereUniqueInput[]
+    connect?: EstoqueVivoMixWhereUniqueInput | EstoqueVivoMixWhereUniqueInput[]
+    update?: EstoqueVivoMixUpdateWithWhereUniqueWithoutProdutoReferenciaInput | EstoqueVivoMixUpdateWithWhereUniqueWithoutProdutoReferenciaInput[]
+    updateMany?: EstoqueVivoMixUpdateManyWithWhereWithoutProdutoReferenciaInput | EstoqueVivoMixUpdateManyWithWhereWithoutProdutoReferenciaInput[]
+    deleteMany?: EstoqueVivoMixScalarWhereInput | EstoqueVivoMixScalarWhereInput[]
   }
 
   export type EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput = {
@@ -47017,14 +47066,18 @@ export namespace Prisma {
     deleteMany?: ProdutoComercialScalarWhereInput | ProdutoComercialScalarWhereInput[]
   }
 
-  export type EstoqueVivoMixUncheckedUpdateOneWithoutProdutoReferenciaNestedInput = {
-    create?: XOR<EstoqueVivoMixCreateWithoutProdutoReferenciaInput, EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput>
-    connectOrCreate?: EstoqueVivoMixCreateOrConnectWithoutProdutoReferenciaInput
-    upsert?: EstoqueVivoMixUpsertWithoutProdutoReferenciaInput
-    disconnect?: EstoqueVivoMixWhereInput | boolean
-    delete?: EstoqueVivoMixWhereInput | boolean
-    connect?: EstoqueVivoMixWhereUniqueInput
-    update?: XOR<XOR<EstoqueVivoMixUpdateToOneWithWhereWithoutProdutoReferenciaInput, EstoqueVivoMixUpdateWithoutProdutoReferenciaInput>, EstoqueVivoMixUncheckedUpdateWithoutProdutoReferenciaInput>
+  export type EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput = {
+    create?: XOR<EstoqueVivoMixCreateWithoutProdutoReferenciaInput, EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput> | EstoqueVivoMixCreateWithoutProdutoReferenciaInput[] | EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput[]
+    connectOrCreate?: EstoqueVivoMixCreateOrConnectWithoutProdutoReferenciaInput | EstoqueVivoMixCreateOrConnectWithoutProdutoReferenciaInput[]
+    upsert?: EstoqueVivoMixUpsertWithWhereUniqueWithoutProdutoReferenciaInput | EstoqueVivoMixUpsertWithWhereUniqueWithoutProdutoReferenciaInput[]
+    createMany?: EstoqueVivoMixCreateManyProdutoReferenciaInputEnvelope
+    set?: EstoqueVivoMixWhereUniqueInput | EstoqueVivoMixWhereUniqueInput[]
+    disconnect?: EstoqueVivoMixWhereUniqueInput | EstoqueVivoMixWhereUniqueInput[]
+    delete?: EstoqueVivoMixWhereUniqueInput | EstoqueVivoMixWhereUniqueInput[]
+    connect?: EstoqueVivoMixWhereUniqueInput | EstoqueVivoMixWhereUniqueInput[]
+    update?: EstoqueVivoMixUpdateWithWhereUniqueWithoutProdutoReferenciaInput | EstoqueVivoMixUpdateWithWhereUniqueWithoutProdutoReferenciaInput[]
+    updateMany?: EstoqueVivoMixUpdateManyWithWhereWithoutProdutoReferenciaInput | EstoqueVivoMixUpdateManyWithWhereWithoutProdutoReferenciaInput[]
+    deleteMany?: EstoqueVivoMixScalarWhereInput | EstoqueVivoMixScalarWhereInput[]
   }
 
   export type EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput = {
@@ -50410,7 +50463,7 @@ export namespace Prisma {
     atualizadoEm?: DateTimeFilter<"ParadaEntrega"> | Date | string
   }
 
-  export type ProdutoComercialCreateWithoutEstoqueVivoMixReferenciaInput = {
+  export type ProdutoComercialCreateWithoutEstoqueVivoMixesReferenciaInput = {
     id?: string
     nome: string
     contaAzulProdutoId?: string | null
@@ -50438,7 +50491,7 @@ export namespace Prisma {
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
   }
 
-  export type ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixReferenciaInput = {
+  export type ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixesReferenciaInput = {
     id?: string
     nome: string
     contaAzulProdutoId?: string | null
@@ -50466,9 +50519,9 @@ export namespace Prisma {
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
   }
 
-  export type ProdutoComercialCreateOrConnectWithoutEstoqueVivoMixReferenciaInput = {
+  export type ProdutoComercialCreateOrConnectWithoutEstoqueVivoMixesReferenciaInput = {
     where: ProdutoComercialWhereUniqueInput
-    create: XOR<ProdutoComercialCreateWithoutEstoqueVivoMixReferenciaInput, ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixReferenciaInput>
+    create: XOR<ProdutoComercialCreateWithoutEstoqueVivoMixesReferenciaInput, ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixesReferenciaInput>
   }
 
   export type EstoqueVivoMixComponenteCreateWithoutMixInput = {
@@ -50493,18 +50546,18 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
-  export type ProdutoComercialUpsertWithoutEstoqueVivoMixReferenciaInput = {
-    update: XOR<ProdutoComercialUpdateWithoutEstoqueVivoMixReferenciaInput, ProdutoComercialUncheckedUpdateWithoutEstoqueVivoMixReferenciaInput>
-    create: XOR<ProdutoComercialCreateWithoutEstoqueVivoMixReferenciaInput, ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixReferenciaInput>
+  export type ProdutoComercialUpsertWithoutEstoqueVivoMixesReferenciaInput = {
+    update: XOR<ProdutoComercialUpdateWithoutEstoqueVivoMixesReferenciaInput, ProdutoComercialUncheckedUpdateWithoutEstoqueVivoMixesReferenciaInput>
+    create: XOR<ProdutoComercialCreateWithoutEstoqueVivoMixesReferenciaInput, ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixesReferenciaInput>
     where?: ProdutoComercialWhereInput
   }
 
-  export type ProdutoComercialUpdateToOneWithWhereWithoutEstoqueVivoMixReferenciaInput = {
+  export type ProdutoComercialUpdateToOneWithWhereWithoutEstoqueVivoMixesReferenciaInput = {
     where?: ProdutoComercialWhereInput
-    data: XOR<ProdutoComercialUpdateWithoutEstoqueVivoMixReferenciaInput, ProdutoComercialUncheckedUpdateWithoutEstoqueVivoMixReferenciaInput>
+    data: XOR<ProdutoComercialUpdateWithoutEstoqueVivoMixesReferenciaInput, ProdutoComercialUncheckedUpdateWithoutEstoqueVivoMixesReferenciaInput>
   }
 
-  export type ProdutoComercialUpdateWithoutEstoqueVivoMixReferenciaInput = {
+  export type ProdutoComercialUpdateWithoutEstoqueVivoMixesReferenciaInput = {
     id?: StringFieldUpdateOperationsInput | string
     nome?: StringFieldUpdateOperationsInput | string
     contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -50532,7 +50585,7 @@ export namespace Prisma {
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
   }
 
-  export type ProdutoComercialUncheckedUpdateWithoutEstoqueVivoMixReferenciaInput = {
+  export type ProdutoComercialUncheckedUpdateWithoutEstoqueVivoMixesReferenciaInput = {
     id?: StringFieldUpdateOperationsInput | string
     nome?: StringFieldUpdateOperationsInput | string
     contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -50593,13 +50646,13 @@ export namespace Prisma {
     ativo?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
-    produtoReferencia: ProdutoComercialCreateNestedOneWithoutEstoqueVivoMixReferenciaInput
+    produtoReferencia?: ProdutoComercialCreateNestedOneWithoutEstoqueVivoMixesReferenciaInput
   }
 
   export type EstoqueVivoMixUncheckedCreateWithoutComponentesInput = {
     id?: string
     nome: string
-    produtoReferenciaId: string
+    produtoReferenciaId?: string | null
     perdaPercentual?: Decimal | DecimalJsLike | number | string
     ativo?: boolean
     criadoEm?: Date | string
@@ -50636,7 +50689,7 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
     mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
     mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixCreateNestedManyWithoutProdutoReferenciaInput
   }
 
   export type ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixComponentesInput = {
@@ -50664,7 +50717,7 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedCreateNestedManyWithoutProdutoReferenciaInput
   }
 
   export type ProdutoComercialCreateOrConnectWithoutEstoqueVivoMixComponentesInput = {
@@ -50690,13 +50743,13 @@ export namespace Prisma {
     ativo?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
-    produtoReferencia?: ProdutoComercialUpdateOneRequiredWithoutEstoqueVivoMixReferenciaNestedInput
+    produtoReferencia?: ProdutoComercialUpdateOneWithoutEstoqueVivoMixesReferenciaNestedInput
   }
 
   export type EstoqueVivoMixUncheckedUpdateWithoutComponentesInput = {
     id?: StringFieldUpdateOperationsInput | string
     nome?: StringFieldUpdateOperationsInput | string
-    produtoReferenciaId?: StringFieldUpdateOperationsInput | string
+    produtoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
     perdaPercentual?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     ativo?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -50739,7 +50792,7 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
     mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
     mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUpdateManyWithoutProdutoReferenciaNestedInput
   }
 
   export type ProdutoComercialUncheckedUpdateWithoutEstoqueVivoMixComponentesInput = {
@@ -50767,7 +50820,7 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput
   }
 
   export type PrecoEspecialClienteCreateWithoutProdutoInput = {
@@ -50890,7 +50943,7 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
     mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
   }
 
@@ -50918,7 +50971,7 @@ export namespace Prisma {
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
   }
 
@@ -50951,7 +51004,7 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
   }
 
@@ -50979,7 +51032,7 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
   }
 
@@ -51016,6 +51069,11 @@ export namespace Prisma {
   export type EstoqueVivoMixCreateOrConnectWithoutProdutoReferenciaInput = {
     where: EstoqueVivoMixWhereUniqueInput
     create: XOR<EstoqueVivoMixCreateWithoutProdutoReferenciaInput, EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput>
+  }
+
+  export type EstoqueVivoMixCreateManyProdutoReferenciaInputEnvelope = {
+    data: EstoqueVivoMixCreateManyProdutoReferenciaInput | EstoqueVivoMixCreateManyProdutoReferenciaInput[]
+    skipDuplicates?: boolean
   }
 
   export type EstoqueVivoMixComponenteCreateWithoutProdutoInput = {
@@ -51150,7 +51208,7 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
     mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
   }
 
@@ -51178,7 +51236,7 @@ export namespace Prisma {
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
@@ -51224,35 +51282,33 @@ export namespace Prisma {
     atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
   }
 
-  export type EstoqueVivoMixUpsertWithoutProdutoReferenciaInput = {
+  export type EstoqueVivoMixUpsertWithWhereUniqueWithoutProdutoReferenciaInput = {
+    where: EstoqueVivoMixWhereUniqueInput
     update: XOR<EstoqueVivoMixUpdateWithoutProdutoReferenciaInput, EstoqueVivoMixUncheckedUpdateWithoutProdutoReferenciaInput>
     create: XOR<EstoqueVivoMixCreateWithoutProdutoReferenciaInput, EstoqueVivoMixUncheckedCreateWithoutProdutoReferenciaInput>
-    where?: EstoqueVivoMixWhereInput
   }
 
-  export type EstoqueVivoMixUpdateToOneWithWhereWithoutProdutoReferenciaInput = {
-    where?: EstoqueVivoMixWhereInput
+  export type EstoqueVivoMixUpdateWithWhereUniqueWithoutProdutoReferenciaInput = {
+    where: EstoqueVivoMixWhereUniqueInput
     data: XOR<EstoqueVivoMixUpdateWithoutProdutoReferenciaInput, EstoqueVivoMixUncheckedUpdateWithoutProdutoReferenciaInput>
   }
 
-  export type EstoqueVivoMixUpdateWithoutProdutoReferenciaInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    nome?: StringFieldUpdateOperationsInput | string
-    perdaPercentual?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    ativo?: BoolFieldUpdateOperationsInput | boolean
-    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
-    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
-    componentes?: EstoqueVivoMixComponenteUpdateManyWithoutMixNestedInput
+  export type EstoqueVivoMixUpdateManyWithWhereWithoutProdutoReferenciaInput = {
+    where: EstoqueVivoMixScalarWhereInput
+    data: XOR<EstoqueVivoMixUpdateManyMutationInput, EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaInput>
   }
 
-  export type EstoqueVivoMixUncheckedUpdateWithoutProdutoReferenciaInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    nome?: StringFieldUpdateOperationsInput | string
-    perdaPercentual?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    ativo?: BoolFieldUpdateOperationsInput | boolean
-    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
-    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
-    componentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutMixNestedInput
+  export type EstoqueVivoMixScalarWhereInput = {
+    AND?: EstoqueVivoMixScalarWhereInput | EstoqueVivoMixScalarWhereInput[]
+    OR?: EstoqueVivoMixScalarWhereInput[]
+    NOT?: EstoqueVivoMixScalarWhereInput | EstoqueVivoMixScalarWhereInput[]
+    id?: StringFilter<"EstoqueVivoMix"> | string
+    nome?: StringFilter<"EstoqueVivoMix"> | string
+    produtoReferenciaId?: StringNullableFilter<"EstoqueVivoMix"> | string | null
+    perdaPercentual?: DecimalFilter<"EstoqueVivoMix"> | Decimal | DecimalJsLike | number | string
+    ativo?: BoolFilter<"EstoqueVivoMix"> | boolean
+    criadoEm?: DateTimeFilter<"EstoqueVivoMix"> | Date | string
+    atualizadoEm?: DateTimeFilter<"EstoqueVivoMix"> | Date | string
   }
 
   export type EstoqueVivoMixComponenteUpsertWithWhereUniqueWithoutProdutoInput = {
@@ -51642,7 +51698,7 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
     mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
     mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
   }
 
@@ -51670,7 +51726,7 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
   }
 
@@ -51761,7 +51817,7 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
     mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
     mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
   }
 
@@ -51789,7 +51845,7 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
@@ -53225,7 +53281,7 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
     mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
     mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
   }
 
@@ -53253,7 +53309,7 @@ export namespace Prisma {
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
   }
 
@@ -53356,7 +53412,7 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
     mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
     mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
   }
 
@@ -53384,7 +53440,7 @@ export namespace Prisma {
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
@@ -53528,7 +53584,7 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
     mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
   }
 
@@ -53556,7 +53612,7 @@ export namespace Prisma {
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedCreateNestedOneWithoutProdutoReferenciaInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
   }
 
@@ -53771,7 +53827,7 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
     mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
   }
 
@@ -53799,7 +53855,7 @@ export namespace Prisma {
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
@@ -56759,6 +56815,15 @@ export namespace Prisma {
     atualizadoEm?: Date | string
   }
 
+  export type EstoqueVivoMixCreateManyProdutoReferenciaInput = {
+    id?: string
+    nome: string
+    perdaPercentual?: Decimal | DecimalJsLike | number | string
+    ativo?: boolean
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
   export type EstoqueVivoMixComponenteCreateManyProdutoInput = {
     id?: string
     mixId: string
@@ -56888,7 +56953,7 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
   }
 
@@ -56916,7 +56981,7 @@ export namespace Prisma {
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
-    estoqueVivoMixReferencia?: EstoqueVivoMixUncheckedUpdateOneWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
@@ -56938,6 +57003,35 @@ export namespace Prisma {
     mixAtivo?: BoolFieldUpdateOperationsInput | boolean
     mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EstoqueVivoMixUpdateWithoutProdutoReferenciaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    perdaPercentual?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    componentes?: EstoqueVivoMixComponenteUpdateManyWithoutMixNestedInput
+  }
+
+  export type EstoqueVivoMixUncheckedUpdateWithoutProdutoReferenciaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    perdaPercentual?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    componentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutMixNestedInput
+  }
+
+  export type EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    perdaPercentual?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    ativo?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }

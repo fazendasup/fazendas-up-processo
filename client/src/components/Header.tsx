@@ -145,6 +145,13 @@ const COMERCIAL_ITEMS: NavItem[] = [
     comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
   },
   {
+    href: "/comercial/mixes",
+    label: "Mixes",
+    icon: Package,
+    requiredRole: "comercial",
+    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
+  },
+  {
     href: "/comercial/entregas",
     label: "Entregas",
     icon: Truck,
