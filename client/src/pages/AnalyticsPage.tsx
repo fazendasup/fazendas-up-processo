@@ -48,7 +48,7 @@ import {
 import {
   Activity, BarChart3, Sprout, Wrench, TrendingUp, Droplet,
   Scissors, AlertTriangle, Clock, Target, Leaf,
-  FileDown, FileText, CheckCircle2, XCircle,
+  FileDown, FileText, CheckCircle2, XCircle, Thermometer,
 } from 'lucide-react';
 import { useMemo, useState, useCallback } from "react";
 import { trpc } from '@/lib/trpc';
@@ -99,8 +99,10 @@ function filterByPeriod<T>(items: T[], getDate: (item: T) => string | null | und
 const COLORS = {
   ec: '#16a34a',       // green-600
   ph: '#2563eb',       // blue-600
+  temp: '#ea580c',     // orange-600
   ecRange: '#dcfce7',  // green-100
   phRange: '#dbeafe',  // blue-100
+  tempRange: '#ffedd5', // orange-100
   mudas: '#22c55e',
   vegetativa: '#16a34a',
   maturacao: '#15803d',
@@ -113,6 +115,9 @@ const COLORS = {
   orange: '#f97316',
   teal: '#14b8a6',
 };
+
+/** Faixa típica de temperatura da água (°C) para referência visual nos gráficos. */
+const TEMP_AGUA_FAIXA = { min: 18, max: 24 };
 
 const PIE_COLORS = [COLORS.mudas, COLORS.vegetativa, COLORS.maturacao, COLORS.purple, COLORS.pink, COLORS.orange, COLORS.teal, COLORS.info];
 
@@ -175,7 +180,7 @@ export default function AnalyticsPage() {
             }
           >
             <TabsTrigger value="ecph" className="text-xs gap-1.5">
-              <Droplet className="w-3.5 h-3.5" /> EC/pH
+              <Droplet className="w-3.5 h-3.5" /> EC/pH/Temp
             </TabsTrigger>
             {!isHidroponia && (
               <TabsTrigger value="producao" className="text-xs gap-1.5">
@@ -284,6 +289,10 @@ function ECpHSectionHidroponia() {
 
   const comLeitura = linhas.filter((l) => l.med);
   const naFaixa = comLeitura.filter((l) => l.ecOk && l.phOk).length;
+  const temps = comLeitura.map((l) => l.med?.temp).filter((t): t is number => t != null);
+  const tempMedia = temps.length
+    ? +(temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1)
+    : null;
 
   if (bancadasQuery.isLoading || medicoesQuery.isLoading) {
     return <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">Carregando medições…</CardContent></Card>;
@@ -291,10 +300,11 @@ function ECpHSectionHidroponia() {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <Card><CardContent className="p-3.5"><p className="text-[10px] text-muted-foreground font-medium">Bancadas ativas</p><p className="font-display font-bold text-xl">{bancadas.length}</p></CardContent></Card>
         <Card><CardContent className="p-3.5"><p className="text-[10px] text-muted-foreground font-medium">Com leitura</p><p className="font-display font-bold text-xl">{comLeitura.length}</p></CardContent></Card>
         <Card><CardContent className="p-3.5"><p className="text-[10px] text-muted-foreground font-medium">EC/pH na faixa</p><p className="font-display font-bold text-xl">{naFaixa}/{comLeitura.length}</p></CardContent></Card>
+        <Card><CardContent className="p-3.5"><p className="text-[10px] text-muted-foreground font-medium">Temp. média</p><p className="font-display font-bold text-xl">{tempMedia != null ? `${tempMedia}°` : '—'}</p></CardContent></Card>
         <Card><CardContent className="p-3.5"><p className="text-[10px] text-muted-foreground font-medium">Sem leitura</p><p className="font-display font-bold text-xl">{bancadas.length - comLeitura.length}</p></CardContent></Card>
       </div>
 
@@ -352,35 +362,42 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
   const chartData = useMemo(() => {
     const targetCaixas = selectedCaixa === 'all' ? caixas : caixas.filter((c) => c.id === selectedCaixa);
 
-    // Collect all medições
-    const allMedicoes: { date: Date; ec: number; ph: number; caixa: string }[] = [];
+    const allMedicoes: { date: Date; ec: number; ph: number; temp: number | null; caixa: string }[] = [];
     targetCaixas.forEach((caixa) => {
       const filtered = filterByPeriod(caixa.medicoes, (m) => m.dataHora, period);
       filtered.forEach((m) => {
         const d = parseDate(m.dataHora);
         if (d) {
-          allMedicoes.push({ date: d, ec: m.ec, ph: m.ph, caixa: caixa.nome });
+          allMedicoes.push({
+            date: d,
+            ec: m.ec,
+            ph: m.ph,
+            temp: m.temperaturaAgua != null && Number.isFinite(m.temperaturaAgua) ? m.temperaturaAgua : null,
+            caixa: caixa.nome,
+          });
         }
       });
     });
 
-    // Sort by date
     allMedicoes.sort((a, b) => a.date.getTime() - b.date.getTime());
 
-    // Group by day for the chart
-    const byDay = new Map<string, { ec: number[]; ph: number[] }>();
-    allMedicoes.forEach(({ date, ec, ph }) => {
+    const byDay = new Map<string, { ec: number[]; ph: number[]; temp: number[] }>();
+    allMedicoes.forEach(({ date, ec, ph, temp }) => {
       const key = formatDateShort(date);
-      if (!byDay.has(key)) byDay.set(key, { ec: [], ph: [] });
+      if (!byDay.has(key)) byDay.set(key, { ec: [], ph: [], temp: [] });
       const entry = byDay.get(key)!;
       entry.ec.push(ec);
       entry.ph.push(ph);
+      if (temp != null) entry.temp.push(temp);
     });
 
-    return Array.from(byDay.entries()).map(([day, { ec, ph }]) => ({
+    return Array.from(byDay.entries()).map(([day, { ec, ph, temp }]) => ({
       day,
       ec: +(ec.reduce((a, b) => a + b, 0) / ec.length).toFixed(2),
       ph: +(ph.reduce((a, b) => a + b, 0) / ph.length).toFixed(2),
+      temp: temp.length
+        ? +(temp.reduce((a, b) => a + b, 0) / temp.length).toFixed(1)
+        : null,
     }));
   }, [caixas, selectedCaixa, period]);
 
@@ -400,11 +417,11 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
     };
   }, [selectedCaixa, caixas, data.fasesConfig]);
 
-  // Summary stats
   const stats = useMemo(() => {
     if (chartData.length === 0) return null;
     const ecValues = chartData.map((d) => d.ec);
     const phValues = chartData.map((d) => d.ph);
+    const tempValues = chartData.map((d) => d.temp).filter((t): t is number => t != null);
     return {
       ecAvg: +(ecValues.reduce((a, b) => a + b, 0) / ecValues.length).toFixed(2),
       ecMin: Math.min(...ecValues),
@@ -412,6 +429,11 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
       phAvg: +(phValues.reduce((a, b) => a + b, 0) / phValues.length).toFixed(2),
       phMin: Math.min(...phValues),
       phMax: Math.max(...phValues),
+      tempAvg: tempValues.length
+        ? +(tempValues.reduce((a, b) => a + b, 0) / tempValues.length).toFixed(1)
+        : null,
+      tempMin: tempValues.length ? Math.min(...tempValues) : null,
+      tempMax: tempValues.length ? Math.max(...tempValues) : null,
       totalMedicoes: chartData.length,
     };
   }, [chartData]);
@@ -422,10 +444,14 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
   const phChartConfig: ChartConfig = {
     ph: { label: 'pH', color: COLORS.ph },
   };
+  const tempChartConfig: ChartConfig = {
+    temp: { label: 'Temp. água (°C)', color: COLORS.temp },
+  };
+
+  const hasTemp = stats?.tempAvg != null;
 
   return (
     <div className="space-y-4">
-      {/* Filter */}
       <div className="flex items-center gap-3">
         <Select value={selectedCaixa} onValueChange={setSelectedCaixa}>
           <SelectTrigger className="w-[240px]">
@@ -440,15 +466,17 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
         </Select>
       </div>
 
-      {/* Summary cards */}
       {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-10 gap-3">
           <MiniStat label="EC Média" value={stats.ecAvg} unit="mS/cm" color="emerald" />
           <MiniStat label="EC Mín" value={stats.ecMin} unit="mS/cm" color="emerald" />
           <MiniStat label="EC Máx" value={stats.ecMax} unit="mS/cm" color="emerald" />
           <MiniStat label="pH Médio" value={stats.phAvg} color="blue" />
           <MiniStat label="pH Mín" value={stats.phMin} color="blue" />
           <MiniStat label="pH Máx" value={stats.phMax} color="blue" />
+          <MiniStat label="Temp. Média" value={stats.tempAvg ?? '—'} unit={stats.tempAvg != null ? '°C' : undefined} color="orange" />
+          <MiniStat label="Temp. Mín" value={stats.tempMin ?? '—'} unit={stats.tempMin != null ? '°C' : undefined} color="orange" />
+          <MiniStat label="Temp. Máx" value={stats.tempMax ?? '—'} unit={stats.tempMax != null ? '°C' : undefined} color="orange" />
           <MiniStat label="Medições" value={stats.totalMedicoes} color="gray" />
         </div>
       )}
@@ -456,8 +484,7 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
       {chartData.length === 0 ? (
         <EmptyState icon={Droplet} message="Nenhuma medição registrada no período selecionado" />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* EC Chart */}
+        <div className={`grid grid-cols-1 gap-4 ${hasTemp ? 'xl:grid-cols-3 lg:grid-cols-2' : 'lg:grid-cols-2'}`}>
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -546,6 +573,52 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
               </ChartPlotChrome>
             </CardContent>
           </Card>
+
+          {hasTemp && (
+            <Card className="lg:col-span-2 xl:col-span-1">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ background: COLORS.temp }} />
+                  Evolução Temp. água (°C)
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Faixa típica {TEMP_AGUA_FAIXA.min}–{TEMP_AGUA_FAIXA.max}°C · série em degrau
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChartPlotChrome>
+                <ChartContainer config={tempChartConfig} className="h-[280px] w-full">
+                  <ComposedChart data={chartData} margin={{ ...ANALYTICS_MARGIN, left: 2, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
+                    <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} domain={["auto", "auto"]} />
+                    <ReferenceArea
+                      y1={TEMP_AGUA_FAIXA.min}
+                      y2={TEMP_AGUA_FAIXA.max}
+                      fill={COLORS.tempRange}
+                      fillOpacity={0.65}
+                      strokeOpacity={0}
+                      ifOverflow="extendDomain"
+                    />
+                    <ReferenceLine y={TEMP_AGUA_FAIXA.min} stroke={COLORS.temp} strokeDasharray="4 4" strokeOpacity={0.45} />
+                    <ReferenceLine y={TEMP_AGUA_FAIXA.max} stroke={COLORS.temp} strokeDasharray="4 4" strokeOpacity={0.45} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Line
+                      type="stepAfter"
+                      dataKey="temp"
+                      stroke={COLORS.temp}
+                      strokeWidth={2.5}
+                      strokeLinecap="square"
+                      dot={{ r: 4, fill: COLORS.temp, stroke: "hsl(var(--background))", strokeWidth: 2 }}
+                      activeDot={{ r: 6 }}
+                      connectNulls
+                    />
+                  </ComposedChart>
+                </ChartContainer>
+                </ChartPlotChrome>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
     </div>
@@ -1952,7 +2025,49 @@ function RelatoriosSection({ data, period }: { data: FazendaData; period: Period
     [planos, exportReport],
   );
 
+  const medicoesRows = useMemo(() => {
+    const rows: string[][] = [];
+    for (const caixa of data.caixasAgua) {
+      const filtered = filterByPeriod(caixa.medicoes, (m) => m.dataHora, period);
+      for (const m of filtered) {
+        const d = parseDate(m.dataHora);
+        rows.push([
+          d ? formatDateFull(d) : '',
+          caixa.nome,
+          caixa.fase,
+          m.ec != null ? String(m.ec) : '',
+          m.ph != null ? String(m.ph) : '',
+          m.temperaturaAgua != null ? String(m.temperaturaAgua) : '',
+        ]);
+      }
+    }
+    rows.sort((a, b) => a[0].localeCompare(b[0]));
+    return rows;
+  }, [data.caixasAgua, period]);
+
+  const exportMedicoes = useCallback(
+    (format: 'csv' | 'pdf') => {
+      exportReport(
+        'Medições EC / pH / Temperatura',
+        'relatorio-medicoes-ecph-temp',
+        ['Data', 'Caixa', 'Fase', 'EC (mS/cm)', 'pH', 'Temp. água (°C)'],
+        medicoesRows,
+        format,
+      );
+    },
+    [exportReport, medicoesRows],
+  );
+
   const reports = [
+    {
+      title: 'Medições EC / pH / Temp.',
+      description: 'Leituras de EC, pH e temperatura da água no período selecionado',
+      icon: <Thermometer className="w-5 h-5 text-orange-600 dark:text-orange-400" />,
+      count: medicoesRows.length,
+      onExportCsv: () => exportMedicoes('csv'),
+      onExportPdf: () => exportMedicoes('pdf'),
+      color: 'orange',
+    },
     {
       title: 'Resumo de Produção',
       description: 'Todas as colheitas com peso, qualidade, destino e observações',
@@ -1987,7 +2102,7 @@ function RelatoriosSection({ data, period }: { data: FazendaData; period: Period
       <p className="text-sm text-muted-foreground">
         Exporte relatórios em CSV ou PDF para análise externa ou compartilhamento.
       </p>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {reports.map((report) => (
           <Card key={report.title} className="hover:shadow-md transition-shadow">
             <CardContent className="p-5">
