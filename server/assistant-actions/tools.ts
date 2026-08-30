@@ -254,7 +254,7 @@ const OPERATOR_OPERATION_TOOLS: ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "preparar_registrar_medicao_caixa",
-      description: "Regista pH e EC numa caixa d'água.",
+      description: "Regista pH, EC e temperatura da água numa caixa d'água.",
       parameters: {
         type: "object",
         properties: {
@@ -262,8 +262,9 @@ const OPERATOR_OPERATION_TOOLS: ChatCompletionTool[] = [
           caixa_id: { type: "number" },
           ph: { type: "number" },
           ec: { type: "number" },
+          temperatura_agua: { type: "number", description: "Temperatura da água em °C" },
         },
-        required: ["ph", "ec"],
+        required: ["ph", "ec", "temperatura_agua"],
         additionalProperties: false,
       },
     },

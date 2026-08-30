@@ -151,6 +151,7 @@ describe("Permissões: medicoesCaixa (operador + projeto)", () => {
         caixaAguaId: 1,
         ec: 1.5,
         ph: 6.0,
+        temperaturaAgua: 22,
         dataHora: new Date(),
       }),
     ).rejects.toThrow();
@@ -164,6 +165,7 @@ describe("Permissões: medicoesCaixa (operador + projeto)", () => {
         caixaAguaId: 1,
         ec: 1.5,
         ph: 6.0,
+        temperaturaAgua: 22,
         dataHora: new Date(),
       }),
     ).rejects.toMatchObject({ message: PROJETO_REQUIRED_ERR_MSG });

@@ -245,6 +245,8 @@ export interface MedicaoCaixa {
   id: string;
   ec: number;
   ph: number;
+  /** Temperatura da água (°C). */
+  temperaturaAgua?: number;
   dataHora: string;
   executadoPorNome?: string;
 }

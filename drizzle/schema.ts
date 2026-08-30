@@ -281,6 +281,8 @@ export const medicoesCaixa = mysqlTable("medicoes_caixa", {
   caixaAguaId: int("caixaAguaId").notNull(),
   ec: float("ec").notNull(),
   ph: float("ph").notNull(),
+  /** Temperatura da água (°C). Nullable para medições antigas. */
+  temperaturaAgua: float("temperaturaAgua"),
   dataHora: timestamp("dataHora").notNull(),
   executadoPorId: int("executadoPorId"),
   executadoPorNome: varchar("executadoPorNome", { length: 128 }),

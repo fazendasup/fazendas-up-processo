@@ -310,13 +310,17 @@ export default function BancadaDetail() {
       toast.error("Preencha EC e pH");
       return;
     }
-    const ta = parseFloat(fd.get("temperaturaAgua") as string);
+    const ta = parseFloat(String(fd.get("temperaturaAgua") ?? "").replace(",", "."));
+    if (!Number.isFinite(ta)) {
+      toast.error("Informe a temperatura da água");
+      return;
+    }
     const um = parseFloat(fd.get("umidade") as string);
     createMed.mutate({
       bancadaId,
       ec,
       ph,
-      temperaturaAgua: Number.isFinite(ta) ? ta : null,
+      temperaturaAgua: ta,
       umidade: Number.isFinite(um) ? um : null,
     });
     e.currentTarget.reset();
@@ -858,25 +862,23 @@ export default function BancadaDetail() {
 
               <TabsContent value="medir">
                 <form onSubmit={handleAddMedicao} className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <Label className="text-xs">EC</Label>
+                      <Label className="text-xs">EC *</Label>
                       <Input name="ec" type="number" step="0.01" placeholder="Ex: 1.1" className="h-9 text-sm" required />
                     </div>
                     <div>
-                      <Label className="text-xs">pH</Label>
+                      <Label className="text-xs">pH *</Label>
                       <Input name="ph" type="number" step="0.01" placeholder="Ex: 5.9" className="h-9 text-sm" required />
                     </div>
+                    <div>
+                      <Label className="text-xs">Temp. água (°C) *</Label>
+                      <Input name="temperaturaAgua" type="number" step="0.1" placeholder="Ex: 22" className="h-9 text-sm" required />
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs">Temp. água (opcional)</Label>
-                      <Input name="temperaturaAgua" type="number" step="0.1" className="h-9 text-sm" />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Umidade % (opcional)</Label>
-                      <Input name="umidade" type="number" step="0.1" className="h-9 text-sm" />
-                    </div>
+                  <div>
+                    <Label className="text-xs">Umidade % (opcional)</Label>
+                    <Input name="umidade" type="number" step="0.1" className="h-9 text-sm" />
                   </div>
                   <Button type="submit" size="sm" className="w-full" disabled={createMed.isPending}>
                     {createMed.isPending ? "A guardar…" : "Registar medição"}
@@ -956,6 +958,11 @@ export default function BancadaDetail() {
                             >
                               {numFromDb(item.row.ph) ?? "—"}
                             </span>
+                            {numFromDb(item.row.temperaturaAgua) != null ? (
+                              <>
+                                {" · "}Temp. {numFromDb(item.row.temperaturaAgua)}°C
+                              </>
+                            ) : null}
                           </p>
                           <p className="text-[10px] text-muted-foreground">
                             Medição · {formatarDataHora(String(item.row.createdAt))}

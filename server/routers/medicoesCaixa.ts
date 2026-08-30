@@ -16,6 +16,7 @@ export const medicoesCaixaRouter = router({
         caixaAguaId: z.number(),
         ec: z.number(),
         ph: z.number(),
+        temperaturaAgua: z.number().min(-5).max(60),
         dataHora: z.date(),
       }),
     )

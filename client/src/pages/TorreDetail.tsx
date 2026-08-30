@@ -316,8 +316,14 @@ export default function TorreDetail() {
     const fd = new FormData(e.currentTarget);
     const ec = parseFloat(fd.get('ec') as string);
     const ph = parseFloat(fd.get('ph') as string);
+    const temperaturaAgua = parseFloat(
+      String(fd.get('temperaturaAgua') ?? '').replace(',', '.')
+    );
     const dataHora = fd.get('dataHora') as string;
-    if (isNaN(ec) || isNaN(ph) || !dataHora) { toast.error('Preencha todos os campos'); return; }
+    if (isNaN(ec) || isNaN(ph) || isNaN(temperaturaAgua) || !dataHora) {
+      toast.error('Preencha EC, pH e temperatura da água');
+      return;
+    }
 
     const caixaDbId = caixa ? resolver.caixaSlugToId.get(caixa.id) : undefined;
     if (!caixaDbId) { toast.error('Caixa d\'água não encontrada'); return; }
@@ -326,6 +332,7 @@ export default function TorreDetail() {
       caixaAguaId: caixaDbId,
       ec,
       ph,
+      temperaturaAgua,
       dataHora: new Date(dataHora),
     });
     e.currentTarget.reset();
@@ -1387,9 +1394,10 @@ export default function TorreDetail() {
 
                     <TabsContent value="medir">
                       <form onSubmit={handleAddMedicao} className="space-y-3" style={isReadOnly ? { pointerEvents: 'none', opacity: 0.55 } : undefined}>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div><Label className="text-xs">EC</Label><Input name="ec" type="number" step="0.01" placeholder="Ex: 1.1" className="h-9 text-sm" required /></div>
-                          <div><Label className="text-xs">pH</Label><Input name="ph" type="number" step="0.01" placeholder="Ex: 5.9" className="h-9 text-sm" required /></div>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div><Label className="text-xs">EC *</Label><Input name="ec" type="number" step="0.01" placeholder="Ex: 1.1" className="h-9 text-sm" required /></div>
+                          <div><Label className="text-xs">pH *</Label><Input name="ph" type="number" step="0.01" placeholder="Ex: 5.9" className="h-9 text-sm" required /></div>
+                          <div><Label className="text-xs">Temp. água (°C) *</Label><Input name="temperaturaAgua" type="number" step="0.1" placeholder="Ex: 22" className="h-9 text-sm" required /></div>
                         </div>
                         <div><Label className="text-xs">Data/Hora</Label><Input name="dataHora" type="datetime-local" defaultValue={localDatetime} className="h-9 text-sm" required /></div>
                         <Button type="submit" size="sm" className="w-full">Registrar Medição</Button>
@@ -1425,6 +1433,12 @@ export default function TorreDetail() {
                                     EC <span className={ecForaRange((item as MedicaoCaixa).ec, torre.fase, data.fasesConfig) !== 'ok' ? 'text-red-600' : 'text-emerald-600 dark:text-emerald-400'}>{(item as MedicaoCaixa).ec}</span>
                                     {' · '}
                                     pH <span className={phForaRange((item as MedicaoCaixa).ph, torre.fase, data.fasesConfig) !== 'ok' ? 'text-red-600' : 'text-emerald-600 dark:text-emerald-400'}>{(item as MedicaoCaixa).ph}</span>
+                                    {(item as MedicaoCaixa).temperaturaAgua != null ? (
+                                      <>
+                                        {' · '}
+                                        Temp. {(item as MedicaoCaixa).temperaturaAgua}°C
+                                      </>
+                                    ) : null}
                                   </p>
                                   <p className="text-[10px] text-muted-foreground">Medição · {formatarDataHora(item.dataHora)}</p>
                                 </div>

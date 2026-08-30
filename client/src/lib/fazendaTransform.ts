@@ -92,6 +92,10 @@ export function transformFazendaLoadAllResponse(raw: unknown): FazendaData {
         id: `mc-${m.id}`,
         ec: m.ec,
         ph: m.ph,
+        temperaturaAgua:
+          m.temperaturaAgua != null && Number.isFinite(Number(m.temperaturaAgua))
+            ? Number(m.temperaturaAgua)
+            : undefined,
         dataHora: toDateStr(m.dataHora) || "",
         executadoPorNome: m.executadoPorNome || undefined,
       }))

@@ -117,6 +117,7 @@ export const registrarMedicaoCaixaParamsSchema = z.object({
   caixaAguaId: z.number().int().positive(),
   ec: z.number(),
   ph: z.number(),
+  temperaturaAgua: z.number().min(-5).max(60),
   dataHora: z.coerce.date(),
 });
 

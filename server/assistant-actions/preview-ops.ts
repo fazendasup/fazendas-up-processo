@@ -108,12 +108,16 @@ export async function previewRegistrarMedicaoCaixa(
   if (isResolveError(c)) return { error: c.error };
   const ph = Number(args.ph);
   const ec = Number(args.ec);
-  if (!Number.isFinite(ph) || !Number.isFinite(ec)) return { error: "Informe ph e ec." };
-  const summary = `**Medição caixa d'água**\n- **${c.caixa.nome}**\n- pH **${ph}**, EC **${ec}**`;
+  const temperaturaAgua = Number(args.temperatura_agua);
+  if (!Number.isFinite(ph) || !Number.isFinite(ec) || !Number.isFinite(temperaturaAgua)) {
+    return { error: "Informe ph, ec e temperatura_agua." };
+  }
+  const summary = `**Medição caixa d'água**\n- **${c.caixa.nome}**\n- pH **${ph}**, EC **${ec}**, temp. água **${temperaturaAgua}°C**`;
   return action("registrar_medicao_caixa", summary, {
     caixaAguaId: c.caixa.id,
     ph,
     ec,
+    temperaturaAgua,
     dataHora: new Date(),
   });
 }

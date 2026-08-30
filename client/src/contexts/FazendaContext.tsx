@@ -90,7 +90,7 @@ export function FazendaProvider({ children }: { children: React.ReactNode }) {
           .filter((t) => caixa.torreIds.includes(t.id))
           .map((t) => t.nome)
           .join(';');
-        rows.push(`Medição,${torresNomes},,${caixa.fase},${m.dataHora},${m.ec},${m.ph},,,,,,`);
+        rows.push(`Medição,${torresNomes},,${caixa.fase},${m.dataHora},${m.ec},${m.ph},${m.temperaturaAgua ?? ""},,,,,`);
       });
     });
 
