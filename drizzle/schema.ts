@@ -504,6 +504,8 @@ export const ciclos = mysqlTable("ciclos", {
   dosagem: varchar("dosagem", { length: 128 }),
   fasesAplicaveis: json("fasesAplicaveis").notNull(),
   alvo: varchar("alvo", { length: 16 }).notNull().default("caixa"),
+  /** Âncora do agendamento (próximas aplicações / data de início no formulário). */
+  dataInicio: timestamp("dataInicio"),
   ultimaExecucao: timestamp("ultimaExecucao"),
   ultimoExecutorId: int("ultimoExecutorId"),
   ultimoExecutorNome: varchar("ultimoExecutorNome", { length: 128 }),

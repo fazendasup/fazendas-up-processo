@@ -425,6 +425,13 @@ export function cicloPendenteHoje(ciclo: CicloAplicacao): boolean {
   if (!ciclo.ativo) return false;
   const hoje = new Date();
   const hojeDia = hoje.getDay();
+  const hojeYmd = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
+
+  // Ainda não chegou a data de início do agendamento
+  if (ciclo.dataInicio) {
+    const inicioYmd = String(ciclo.dataInicio).slice(0, 10);
+    if (inicioYmd > hojeYmd) return false;
+  }
 
   // Verificar se já foi executado hoje
   if (ciclo.ultimaExecucao) {
@@ -443,7 +450,11 @@ export function cicloPendenteHoje(ciclo: CicloAplicacao): boolean {
   }
 
   if (ciclo.frequencia === 'quinzenal' || ciclo.frequencia === 'mensal' || ciclo.frequencia === 'personalizada') {
-    if (!ciclo.ultimaExecucao) return true;
+    if (!ciclo.ultimaExecucao) {
+      // Sem execução: pendente a partir da data de início (ou imediatamente se não houver)
+      if (!ciclo.dataInicio) return true;
+      return String(ciclo.dataInicio).slice(0, 10) <= hojeYmd;
+    }
     const ultima = new Date(ciclo.ultimaExecucao);
     const diffDias = Math.floor((hoje.getTime() - ultima.getTime()) / (1000 * 60 * 60 * 24));
     const intervalo = ciclo.intervaloDias || (ciclo.frequencia === 'quinzenal' ? 14 : 30);

@@ -320,6 +320,7 @@ export function transformFazendaLoadAllResponse(raw: unknown): FazendaData {
     dosagem: c.dosagem || undefined,
     fasesAplicaveis: (c.fasesAplicaveis as Fase[]) || [],
     alvo: c.alvo as CicloAplicacao["alvo"],
+    dataInicio: toDateStr(c.dataInicio) || undefined,
     ultimaExecucao: toDateStr(c.ultimaExecucao) || undefined,
     ultimoExecutorNome: c.ultimoExecutorNome || undefined,
     ativo: c.ativo,

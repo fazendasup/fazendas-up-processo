@@ -297,6 +297,8 @@ export interface CicloAplicacao {
   dosagem?: string;
   fasesAplicaveis: Fase[];
   alvo: 'caixa' | 'andar' | 'ambos';
+  /** Data de início do agendamento (YYYY-MM-DD ou ISO). */
+  dataInicio?: string;
   ultimaExecucao?: string;
   ultimoExecutorNome?: string;
   ativo: boolean;

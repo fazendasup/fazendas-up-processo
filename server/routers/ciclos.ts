@@ -17,6 +17,7 @@ const cicloBaseSchema = z.object({
   fasesAplicaveis: z.array(faseCicloSchema).min(1),
   alvo: alvoCicloSchema.default("ambos"),
   ativo: z.boolean().default(true),
+  dataInicio: z.coerce.date().optional(),
 });
 
 export const ciclosRouter = router({
@@ -35,6 +36,7 @@ export const ciclosRouter = router({
         diasSemana: z.array(z.number().int().min(0).max(6)).nullable().optional(),
         intervaloDias: z.number().int().min(1).max(365).nullable().optional(),
         dosagem: z.string().nullable().optional(),
+        dataInicio: z.coerce.date().nullable().optional(),
         ultimaExecucao: z.coerce.date().nullable().optional(),
       }),
     )

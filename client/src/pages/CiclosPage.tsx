@@ -151,8 +151,12 @@ export default function CiclosPage() {
     );
     const ultimaExecucaoEdit = ciclo.ultimaExecucao ? isoToYmdLocal(ciclo.ultimaExecucao) : '';
     setUltimaExecucaoYmd(ultimaExecucaoEdit);
-    /* Prévia de datas: âncora na última execução, se houver, senão hoje */
-    const dataInicioEdit = ciclo.ultimaExecucao ? isoToYmdLocal(ciclo.ultimaExecucao) : hojeYmdLocal();
+    /* Data de início persistida; fallback última execução / hoje só para prévia */
+    const dataInicioEdit = ciclo.dataInicio
+      ? isoToYmdLocal(ciclo.dataInicio)
+      : ciclo.ultimaExecucao
+        ? isoToYmdLocal(ciclo.ultimaExecucao)
+        : hojeYmdLocal();
     setDataInicio(dataInicioEdit);
     setInitialDataInicioYmd(dataInicioEdit);
     setInitialUltimaExecucaoYmd(ultimaExecucaoEdit);
@@ -269,6 +273,14 @@ export default function CiclosPage() {
         // reabre o ciclo para ele voltar a aparecer como pendente em Hoje.
         ultimaExecucao = null;
       }
+      const dataInicioDate =
+        modoData === 'frequencia' && dataInicio
+          ? dateAtLocalNoonFromYmd(dataInicio)
+          : undefined;
+      if (dataInicioDate && Number.isNaN(dataInicioDate.getTime())) {
+        toast.error('Data de início inválida');
+        return;
+      }
       mutations.updateCiclo.mutate({
         id: dbId,
         nome,
@@ -280,9 +292,18 @@ export default function CiclosPage() {
         dosagem: dosagem.trim() || null,
         fasesAplicaveis: fasesSelecionadas,
         alvo,
+        ...(dataInicioDate ? { dataInicio: dataInicioDate } : {}),
         ...(ultimaExecucao !== undefined ? { ultimaExecucao } : {}),
       });
     } else {
+      const dataInicioDate =
+        modoData === 'frequencia' && dataInicio
+          ? dateAtLocalNoonFromYmd(dataInicio)
+          : undefined;
+      if (dataInicioDate && Number.isNaN(dataInicioDate.getTime())) {
+        toast.error('Data de início inválida');
+        return;
+      }
       mutations.createCiclo.mutate({
         nome,
         frequencia: (modoData === 'frequencia' ? frequencia : 'personalizada') as FrequenciaCiclo,
@@ -293,6 +314,7 @@ export default function CiclosPage() {
         dosagem: dosagem.trim() || undefined,
         fasesAplicaveis: fasesSelecionadas,
         alvo,
+        ...(dataInicioDate ? { dataInicio: dataInicioDate } : {}),
       }, {
         onSuccess: () => {
           const datas = modoData === 'frequencia' 
