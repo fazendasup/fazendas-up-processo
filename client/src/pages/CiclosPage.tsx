@@ -237,6 +237,15 @@ export default function CiclosPage() {
       return;
     }
 
+    if (
+      modoData === 'frequencia' &&
+      frequencia === 'personalizada' &&
+      (!intervaloDias || intervaloDias < 1)
+    ) {
+      toast.error('Informe o intervalo em dias (mínimo 1)');
+      return;
+    }
+
     if (modoData === 'especifica' && datesEspecificas.length === 0) {
       toast.error('Adicione pelo menos uma data');
       return;
@@ -584,7 +593,12 @@ export default function CiclosPage() {
                         <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                           <p className="text-xs text-blue-900 font-semibold mb-2">Próximas 5 aplicações:</p>
                           <div className="space-y-1">
-                            {calcularProximasDatas(dataInicio, frequencia, diasSelecionados).map((data, idx) => (
+                            {calcularProximasDatas(
+                              dataInicio,
+                              frequencia,
+                              diasSelecionados,
+                              parseInt(intervaloDiasStr, 10) || undefined
+                            ).map((data, idx) => (
                               <div key={idx} className="text-xs text-blue-800">
                                 📅 {formatYmdPtBr(data)} {dosagem && `| 💧 ${dosagem}`}
                               </div>
