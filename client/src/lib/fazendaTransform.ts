@@ -33,6 +33,20 @@ function toDateStr(d: Date | string | null | undefined): string | null {
   return d;
 }
 
+/** Calendário local YYYY-MM-DD (para âncoras de agendamento). */
+function toYmdLocal(d: Date | string | null | undefined): string | undefined {
+  if (!d) return undefined;
+  const dt = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(dt.getTime())) {
+    const s = String(d);
+    return /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10) : undefined;
+  }
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, "0");
+  const day = String(dt.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export function transformFazendaLoadAllResponse(raw: unknown): FazendaData {
   const r = raw as Record<string, unknown>;
   // Build lookup maps
@@ -324,7 +338,7 @@ export function transformFazendaLoadAllResponse(raw: unknown): FazendaData {
     dosagem: c.dosagem || undefined,
     fasesAplicaveis: (c.fasesAplicaveis as Fase[]) || [],
     alvo: c.alvo as CicloAplicacao["alvo"],
-    dataInicio: toDateStr(c.dataInicio) || undefined,
+    dataInicio: toYmdLocal(c.dataInicio),
     ultimaExecucao: toDateStr(c.ultimaExecucao) || undefined,
     ultimoExecutorNome: c.ultimoExecutorNome || undefined,
     ativo: c.ativo,

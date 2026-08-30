@@ -2502,6 +2502,7 @@ export async function getMedicoesByCaixaId(projetoId: number, caixaAguaId: numbe
 export async function createMedicaoCaixa(data: InsertMedicaoCaixa) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  await ensureMedicoesCaixaTemperaturaColumn();
   const result = await db.insert(medicoesCaixa).values(data);
   return { id: result[0].insertId };
 }
@@ -3175,12 +3176,15 @@ export async function getAllCiclos(projetoId: number) {
   const db = await getDb();
   if (!db) return [];
   await ensureCiclosDosagemColumn();
+  await ensureCiclosDataInicioColumn();
   return db.select().from(ciclos).where(eq(ciclos.projetoId, projetoId));
 }
 
 export async function createCiclo(data: InsertCiclo) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  await ensureCiclosDosagemColumn();
+  await ensureCiclosDataInicioColumn();
   const result = await db.insert(ciclos).values(data);
   return { id: result[0].insertId };
 }
@@ -3188,6 +3192,8 @@ export async function createCiclo(data: InsertCiclo) {
 export async function updateCiclo(projetoId: number, id: number, data: Partial<InsertCiclo>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  await ensureCiclosDosagemColumn();
+  await ensureCiclosDataInicioColumn();
   await db.update(ciclos).set(data).where(and(eq(ciclos.projetoId, projetoId), eq(ciclos.id, id)));
 }
 
@@ -3207,6 +3213,8 @@ export async function loadFullFazendaData(projetoId: number) {
 
   // Compat: adiciona colunas novas em bases antigas (ex.: testes/local sem migrate).
   await ensureCiclosDosagemColumn();
+  await ensureCiclosDataInicioColumn();
+  await ensureMedicoesCaixaTemperaturaColumn();
   await ensureTransplantiosRastreioColumns();
   await ensureReceitasCrescimentoNovasColunas();
   await ensureEstoqueItensTable();
@@ -3475,6 +3483,34 @@ export async function ensureCiclosDosagemColumn(): Promise<void> {
     if (isMysqlDuplicateColumnError(err)) return;
     if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
     console.error("[Database] ensureCiclosDosagemColumn:", err);
+  }
+}
+
+/** Garante coluna `dataInicio` em `ciclos` (migração 0053). */
+export async function ensureCiclosDataInicioColumn(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.execute(sql.raw("ALTER TABLE `ciclos` ADD COLUMN `dataInicio` timestamp NULL"));
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (isMysqlDuplicateColumnError(err)) return;
+    if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
+    console.error("[Database] ensureCiclosDataInicioColumn:", err);
+  }
+}
+
+/** Garante coluna `temperaturaAgua` em `medicoes_caixa` (migração 0054). */
+export async function ensureMedicoesCaixaTemperaturaColumn(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.execute(sql.raw("ALTER TABLE `medicoes_caixa` ADD COLUMN `temperaturaAgua` float NULL"));
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (isMysqlDuplicateColumnError(err)) return;
+    if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
+    console.error("[Database] ensureMedicoesCaixaTemperaturaColumn:", err);
   }
 }
 

@@ -54,7 +54,9 @@ function hojeYmdLocal(): string {
 
 /** Converte ISO gravado no servidor para YYYY-MM-DD do calendário local (sem deslocar o dia). */
 function isoToYmdLocal(iso: string): string {
-  const d = new Date(iso);
+  const raw = iso.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const d = new Date(raw);
   if (Number.isNaN(d.getTime())) return '';
   return formatYmdLocal(new Date(d.getFullYear(), d.getMonth(), d.getDate()));
 }
@@ -258,21 +260,7 @@ export default function CiclosPage() {
     if (editingId) {
       const dbId = resolver.cicloFrontIdToDbId.get(editingId);
       if (!dbId) { toast.error('Ciclo não encontrado'); return; }
-      let ultimaExecucao: Date | null | undefined;
-      if (ultimaExecucaoYmd.trim()) {
-        ultimaExecucao = dateAtLocalNoonFromYmd(ultimaExecucaoYmd.trim());
-        if (Number.isNaN(ultimaExecucao.getTime())) {
-          toast.error('Data da última aplicação inválida');
-          return;
-        }
-      } else if (
-        initialUltimaExecucaoYmd &&
-        (ultimaExecucaoTouched || dataInicio !== initialDataInicioYmd || dataInicioTouched)
-      ) {
-        // Se mudou a data de início e não informou nova última execução,
-        // reabre o ciclo para ele voltar a aparecer como pendente em Hoje.
-        ultimaExecucao = null;
-      }
+
       const dataInicioDate =
         modoData === 'frequencia' && dataInicio
           ? dateAtLocalNoonFromYmd(dataInicio)
@@ -281,6 +269,25 @@ export default function CiclosPage() {
         toast.error('Data de início inválida');
         return;
       }
+
+      const dataInicioMudou =
+        dataInicioTouched || dataInicio !== initialDataInicioYmd;
+
+      let ultimaExecucao: Date | null | undefined;
+      if (dataInicioMudou) {
+        // Reancora o agendamento: data de início nova manda; limpa última execução.
+        ultimaExecucao = null;
+        setUltimaExecucaoYmd('');
+      } else if (ultimaExecucaoYmd.trim()) {
+        ultimaExecucao = dateAtLocalNoonFromYmd(ultimaExecucaoYmd.trim());
+        if (Number.isNaN(ultimaExecucao.getTime())) {
+          toast.error('Data da última aplicação inválida');
+          return;
+        }
+      } else if (initialUltimaExecucaoYmd && ultimaExecucaoTouched) {
+        ultimaExecucao = null;
+      }
+
       mutations.updateCiclo.mutate({
         id: dbId,
         nome,
@@ -871,6 +878,9 @@ function CicloItem({
           <span>
             {ciclo.fasesAplicaveis.map((f) => FASES_CONFIG[f].label).join(', ')}
           </span>
+          {ciclo.dataInicio && (
+            <span>Início: {ciclo.dataInicio.split('-').reverse().join('/')}</span>
+          )}
           {ciclo.ultimaExecucao && (
             <span>Última execução: {formatarDataHora(ciclo.ultimaExecucao)}</span>
           )}

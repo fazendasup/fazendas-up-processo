@@ -420,6 +420,20 @@ export function ultimaMedicaoPorData(medicoes: MedicaoCaixa[]): MedicaoCaixa | n
 
 // ---- Ciclos (com fix: verificar se já executou HOJE) ----
 
+/** YYYY-MM-DD em calendário local a partir de ISO/Date/string. */
+function ymdLocalDe(valor: string | Date | undefined | null): string | null {
+  if (valor == null || valor === "") return null;
+  if (typeof valor === "string" && /^\d{4}-\d{2}-\d{2}$/.test(valor.slice(0, 10)) && valor.length <= 10) {
+    return valor.slice(0, 10);
+  }
+  const d = valor instanceof Date ? valor : new Date(valor);
+  if (Number.isNaN(d.getTime())) return null;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 /** Verifica se um ciclo está pendente hoje */
 export function cicloPendenteHoje(ciclo: CicloAplicacao): boolean {
   if (!ciclo.ativo) return false;
@@ -428,10 +442,8 @@ export function cicloPendenteHoje(ciclo: CicloAplicacao): boolean {
   const hojeYmd = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
 
   // Ainda não chegou a data de início do agendamento
-  if (ciclo.dataInicio) {
-    const inicioYmd = String(ciclo.dataInicio).slice(0, 10);
-    if (inicioYmd > hojeYmd) return false;
-  }
+  const inicioYmd = ymdLocalDe(ciclo.dataInicio);
+  if (inicioYmd && inicioYmd > hojeYmd) return false;
 
   // Verificar se já foi executado hoje
   if (ciclo.ultimaExecucao) {
@@ -451,9 +463,9 @@ export function cicloPendenteHoje(ciclo: CicloAplicacao): boolean {
 
   if (ciclo.frequencia === 'quinzenal' || ciclo.frequencia === 'mensal' || ciclo.frequencia === 'personalizada') {
     if (!ciclo.ultimaExecucao) {
-      // Sem execução: pendente a partir da data de início (ou imediatamente se não houver)
-      if (!ciclo.dataInicio) return true;
-      return String(ciclo.dataInicio).slice(0, 10) <= hojeYmd;
+      // Sem execução: pendente só a partir da data de início
+      if (!inicioYmd) return true;
+      return inicioYmd <= hojeYmd;
     }
     const ultima = new Date(ciclo.ultimaExecucao);
     const diffDias = Math.floor((hoje.getTime() - ultima.getTime()) / (1000 * 60 * 60 * 24));

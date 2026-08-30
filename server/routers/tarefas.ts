@@ -228,9 +228,20 @@ export const tarefasRouter = router({
         );
 
         for (const ciclo of data.ciclos.filter(c => c.ativo)) {
+          // Respeita data de início futura do agendamento
+          if (ciclo.dataInicio) {
+            const inicioYmd = ymdInTimeZone(new Date(ciclo.dataInicio), tz);
+            if (inicioYmd && inicioYmd > ymdHoje) continue;
+          }
+
           let pendente = false;
           if (!ciclo.ultimaExecucao) {
-            pendente = true;
+            if (ciclo.dataInicio) {
+              const inicioYmd = ymdInTimeZone(new Date(ciclo.dataInicio), tz);
+              pendente = !inicioYmd || inicioYmd <= ymdHoje;
+            } else {
+              pendente = true;
+            }
           } else {
             const ultima = new Date(ciclo.ultimaExecucao);
             if (ciclo.frequencia === 'diaria' || ciclo.frequencia === 'diario') {
