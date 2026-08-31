@@ -93,6 +93,7 @@ export function useFazendaMutations() {
 
   // ---- Medições Caixa ----
   const addMedicaoCaixa = trpc.medicoesCaixa.create.useMutation({ onSuccess: invalidate });
+  const updateMedicaoCaixa = trpc.medicoesCaixa.update.useMutation({ onSuccess: invalidate });
   const deleteMedicaoCaixa = trpc.medicoesCaixa.delete.useMutation({ onSuccess: invalidate });
 
   // ---- Aplicações Caixa ----
@@ -275,6 +276,7 @@ export function useFazendaMutations() {
     isReadOnly,
     // Medições
     addMedicaoCaixa: ro(addMedicaoCaixa),
+    updateMedicaoCaixa: ro(updateMedicaoCaixa),
     deleteMedicaoCaixa: ro(deleteMedicaoCaixa),
     // Aplicações Caixa
     addAplicacaoCaixa: ro(addAplicacaoCaixa),

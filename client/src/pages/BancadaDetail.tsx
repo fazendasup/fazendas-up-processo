@@ -37,6 +37,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import {
   ArrowLeft,
@@ -46,6 +53,7 @@ import {
   ClipboardList,
   CalendarClock,
   Scissors,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -76,6 +84,11 @@ export default function BancadaDetail() {
   const utils = trpc.useUtils();
 
   const [tipoAplicacao, setTipoAplicacao] = useState("");
+  const [editMedicaoId, setEditMedicaoId] = useState<number | null>(null);
+  const [editMedicaoEc, setEditMedicaoEc] = useState("");
+  const [editMedicaoPh, setEditMedicaoPh] = useState("");
+  const [editMedicaoTemp, setEditMedicaoTemp] = useState("");
+  const [editMedicaoMotivo, setEditMedicaoMotivo] = useState("");
 
   const bancadaQuery = trpc.bancadas.getById.useQuery(
     { id: bancadaId },
@@ -95,6 +108,14 @@ export default function BancadaDetail() {
       await utils.medicoesBancada.listByBancada.invalidate({ bancadaId });
     },
     onError: (e) => toast.error(e.message || "Erro"),
+  });
+  const updateMed = trpc.medicoesBancada.update.useMutation({
+    onSuccess: async () => {
+      toast.success("Medição corrigida (histórico preservado)");
+      setEditMedicaoId(null);
+      await utils.medicoesBancada.listByBancada.invalidate({ bancadaId });
+    },
+    onError: (e) => toast.error(e.message || "Erro ao corrigir medição"),
   });
   const deleteMed = trpc.medicoesBancada.delete.useMutation({
     onSuccess: async () => {
@@ -284,6 +305,32 @@ export default function BancadaDetail() {
   const ultimaMedicao = medicoes[0] ?? null;
   const ecUlt = ultimaMedicao ? numFromDb(ultimaMedicao.ec) : null;
   const phUlt = ultimaMedicao ? numFromDb(ultimaMedicao.ph) : null;
+
+  const openEditMedicao = (row: (typeof medicoes)[number]) => {
+    setEditMedicaoId(row.id);
+    setEditMedicaoEc(numFromDb(row.ec) != null ? String(numFromDb(row.ec)) : "");
+    setEditMedicaoPh(numFromDb(row.ph) != null ? String(numFromDb(row.ph)) : "");
+    setEditMedicaoTemp(numFromDb(row.temperaturaAgua) != null ? String(numFromDb(row.temperaturaAgua)) : "");
+    setEditMedicaoMotivo("");
+  };
+
+  const handleSaveEditMedicao = () => {
+    if (editMedicaoId == null || !isAdmin) return;
+    const ec = parseFloat(editMedicaoEc.replace(",", "."));
+    const ph = parseFloat(editMedicaoPh.replace(",", "."));
+    const temperaturaAgua = parseFloat(editMedicaoTemp.replace(",", "."));
+    if (Number.isNaN(ec) || Number.isNaN(ph) || Number.isNaN(temperaturaAgua)) {
+      toast.error("Informe EC, pH e temperatura válidos");
+      return;
+    }
+    updateMed.mutate({
+      id: editMedicaoId,
+      ec,
+      ph,
+      temperaturaAgua,
+      motivo: editMedicaoMotivo.trim() || null,
+    });
+  };
 
   const historicoMerged = useMemo(() => {
     const m = medicoes.map((x) => ({
@@ -984,17 +1031,29 @@ export default function BancadaDetail() {
                         </div>
                       )}
                       {isAdmin && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            item.kind === "medicao"
-                              ? deleteMed.mutate({ id: item.id })
-                              : deleteApl.mutate({ id: item.id })
-                          }
-                          className="text-muted-foreground hover:text-destructive p-2 min-w-[36px] min-h-[36px] flex items-center justify-center"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-0.5 shrink-0">
+                          {item.kind === "medicao" && (
+                            <button
+                              type="button"
+                              title="Corrigir medição"
+                              onClick={() => openEditMedicao(item.row as (typeof medicoes)[number])}
+                              className="text-muted-foreground hover:text-foreground p-2 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              item.kind === "medicao"
+                                ? deleteMed.mutate({ id: item.id })
+                                : deleteApl.mutate({ id: item.id })
+                            }
+                            className="text-muted-foreground hover:text-destructive p-2 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       )}
                     </div>
                   ))}
@@ -1003,6 +1062,47 @@ export default function BancadaDetail() {
             </Tabs>
           </div>
         </motion.div>
+
+        <Dialog open={editMedicaoId != null} onOpenChange={(open) => { if (!open) setEditMedicaoId(null); }}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="font-display">Corrigir medição</DialogTitle>
+            </DialogHeader>
+            <p className="text-xs text-muted-foreground">
+              Os valores anteriores ficam salvos na auditoria. Use para corrigir lançamentos invertidos (EC/pH).
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs">EC *</Label>
+                <Input value={editMedicaoEc} onChange={(e) => setEditMedicaoEc(e.target.value)} type="number" step="0.01" className="h-9 text-sm" />
+              </div>
+              <div>
+                <Label className="text-xs">pH *</Label>
+                <Input value={editMedicaoPh} onChange={(e) => setEditMedicaoPh(e.target.value)} type="number" step="0.01" className="h-9 text-sm" />
+              </div>
+              <div>
+                <Label className="text-xs">Temp. °C *</Label>
+                <Input value={editMedicaoTemp} onChange={(e) => setEditMedicaoTemp(e.target.value)} type="number" step="0.1" className="h-9 text-sm" />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">Motivo da correção</Label>
+              <Input
+                value={editMedicaoMotivo}
+                onChange={(e) => setEditMedicaoMotivo(e.target.value)}
+                placeholder="Ex: EC e pH lançados invertidos"
+                className="h-9 text-sm"
+                maxLength={255}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditMedicaoId(null)}>Cancelar</Button>
+              <Button type="button" onClick={handleSaveEditMedicao} disabled={updateMed.isPending}>
+                {updateMed.isPending ? "Salvando…" : "Salvar correção"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

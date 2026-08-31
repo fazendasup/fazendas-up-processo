@@ -52,7 +52,7 @@ import {
 import {
   ArrowLeft, Droplets, AlertTriangle, Clock, Leaf,
   Trash2, Sprout, Scissors, Droplet, CheckCircle2, Wrench, ArrowRightLeft,
-  HelpCircle, Undo2, Copy, CheckSquare, Square, Info, Eye,
+  HelpCircle, Undo2, Copy, CheckSquare, Square, Info, Eye, Pencil,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { useEffect, useState } from 'react';
@@ -72,7 +72,7 @@ export default function TorreDetail() {
   const isMicroverdes = activeProjeto?.tipo === 'microverdes';
   const projetoTipo = data.projetoTipo ?? activeProjeto?.tipo ?? null;
   const unidOperacao = termoUnidadeProducao(projetoTipo);
-  const { isVisitante, loading: roleLoading } = useRole();
+  const { isVisitante, isAdmin, loading: roleLoading } = useRole();
   const mutations = useFazendaMutations();
   const isReadOnly = roleLoading || isVisitante || mutations.isReadOnly;
   const resolver = useDbIdResolver();
@@ -82,6 +82,12 @@ export default function TorreDetail() {
   const [modoFuros, setModoFuros] = useState<'visualizacao' | 'transplantio' | 'colheita'>('visualizacao');
   const [showTransplantioSmart, setShowTransplantioSmart] = useState(false);
   const [showColheita, setShowColheita] = useState(false);
+  const [editMedicao, setEditMedicao] = useState<MedicaoCaixa | null>(null);
+  const [editMedicaoEc, setEditMedicaoEc] = useState('');
+  const [editMedicaoPh, setEditMedicaoPh] = useState('');
+  const [editMedicaoTemp, setEditMedicaoTemp] = useState('');
+  const [editMedicaoDataHora, setEditMedicaoDataHora] = useState('');
+  const [editMedicaoMotivo, setEditMedicaoMotivo] = useState('');
   const [perfilHistoricoIndex, setPerfilHistoricoIndex] = useState<number | null>(null);
   const [colheitaPeso, setColheitaPeso] = useState<string>('');
   const [colheitaQualidade, setColheitaQualidade] = useState<string>('A');
@@ -1118,8 +1124,55 @@ export default function TorreDetail() {
     toast.success('Andar limpo!');
   };
 
+  const openEditMedicao = (m: MedicaoCaixa) => {
+    setEditMedicao(m);
+    setEditMedicaoEc(String(m.ec));
+    setEditMedicaoPh(String(m.ph));
+    setEditMedicaoTemp(m.temperaturaAgua != null ? String(m.temperaturaAgua) : '');
+    const d = m.dataHora ? new Date(m.dataHora) : new Date();
+    setEditMedicaoDataHora(Number.isNaN(d.getTime()) ? datetimeLocalValue(new Date()) : datetimeLocalValue(d));
+    setEditMedicaoMotivo('');
+  };
+
+  const handleSaveEditMedicao = () => {
+    if (!editMedicao || !isAdmin) return;
+    const dbId = resolver.medicaoFrontIdToDbId.get(editMedicao.id);
+    if (!dbId) {
+      toast.error('Medição não encontrada');
+      return;
+    }
+    const ec = parseFloat(editMedicaoEc.replace(',', '.'));
+    const ph = parseFloat(editMedicaoPh.replace(',', '.'));
+    const temperaturaAgua = parseFloat(editMedicaoTemp.replace(',', '.'));
+    if (Number.isNaN(ec) || Number.isNaN(ph) || Number.isNaN(temperaturaAgua)) {
+      toast.error('Informe EC, pH e temperatura válidos');
+      return;
+    }
+    const dataHora = editMedicaoDataHora ? new Date(editMedicaoDataHora) : undefined;
+    mutations.updateMedicaoCaixa.mutate(
+      {
+        id: dbId,
+        ec,
+        ph,
+        temperaturaAgua,
+        ...(dataHora && !Number.isNaN(dataHora.getTime()) ? { dataHora } : {}),
+        motivo: editMedicaoMotivo.trim() || null,
+      },
+      {
+        onSuccess: () => {
+          toast.success('Medição corrigida (histórico preservado)');
+          setEditMedicao(null);
+        },
+        onError: (e) => toast.error(e.message || 'Erro ao corrigir medição'),
+      },
+    );
+  };
+
   const handleDeleteMedicao = (medicaoId: string) => {
-    if (isReadOnly) return blockReadOnlyAction();
+    if (!isAdmin) {
+      toast.error('Apenas administradores podem remover medições');
+      return;
+    }
     const dbId = resolver.medicaoFrontIdToDbId.get(medicaoId);
     if (!dbId) return;
     mutations.deleteMedicaoCaixa.mutate({ id: dbId });
@@ -1450,14 +1503,28 @@ export default function TorreDetail() {
                                   </p>
                                 </div>
                               )}
-                              <button
-                                type="button"
-                                disabled={isReadOnly}
-                                onClick={() => item._type === 'medicao' ? handleDeleteMedicao(item.id) : handleDeleteAplicacaoCaixa(item.id)}
-                                className="text-muted-foreground hover:text-destructive p-2 min-w-[36px] min-h-[36px] flex items-center justify-center disabled:opacity-40"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              <div className="flex items-center gap-0.5 shrink-0">
+                                {item._type === 'medicao' && isAdmin && (
+                                  <button
+                                    type="button"
+                                    title="Corrigir medição"
+                                    onClick={() => openEditMedicao(item as MedicaoCaixa)}
+                                    className="text-muted-foreground hover:text-foreground p-2 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </button>
+                                )}
+                                {isAdmin && (
+                                  <button
+                                    type="button"
+                                    title="Remover"
+                                    onClick={() => item._type === 'medicao' ? handleDeleteMedicao(item.id) : handleDeleteAplicacaoCaixa(item.id)}
+                                    className="text-muted-foreground hover:text-destructive p-2 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           ))}
                       </div>
@@ -1466,6 +1533,51 @@ export default function TorreDetail() {
                 </div>
               </motion.div>
             )}
+
+            <Dialog open={!!editMedicao} onOpenChange={(open) => { if (!open) setEditMedicao(null); }}>
+              <DialogContent className="max-w-sm">
+                <DialogHeader>
+                  <DialogTitle className="font-display">Corrigir medição</DialogTitle>
+                </DialogHeader>
+                <p className="text-xs text-muted-foreground">
+                  Os valores anteriores ficam salvos na auditoria. Use para corrigir lançamentos invertidos (EC/pH).
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <Label className="text-xs">EC *</Label>
+                    <Input value={editMedicaoEc} onChange={(e) => setEditMedicaoEc(e.target.value)} type="number" step="0.01" className="h-9 text-sm" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">pH *</Label>
+                    <Input value={editMedicaoPh} onChange={(e) => setEditMedicaoPh(e.target.value)} type="number" step="0.01" className="h-9 text-sm" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Temp. °C *</Label>
+                    <Input value={editMedicaoTemp} onChange={(e) => setEditMedicaoTemp(e.target.value)} type="number" step="0.1" className="h-9 text-sm" />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">Data/Hora</Label>
+                  <Input value={editMedicaoDataHora} onChange={(e) => setEditMedicaoDataHora(e.target.value)} type="datetime-local" className="h-9 text-sm" />
+                </div>
+                <div>
+                  <Label className="text-xs">Motivo da correção</Label>
+                  <Input
+                    value={editMedicaoMotivo}
+                    onChange={(e) => setEditMedicaoMotivo(e.target.value)}
+                    placeholder="Ex: EC e pH lançados invertidos"
+                    className="h-9 text-sm"
+                    maxLength={255}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setEditMedicao(null)}>Cancelar</Button>
+                  <Button type="button" onClick={handleSaveEditMedicao} disabled={mutations.updateMedicaoCaixa.isPending}>
+                    {mutations.updateMedicaoCaixa.isPending ? 'Salvando…' : 'Salvar correção'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             {/* Andar selecionado — Painel UNIFICADO */}
             {andarSelecionado && (

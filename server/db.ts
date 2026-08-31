@@ -18,6 +18,7 @@ import {
   torres, InsertTorre,
   caixasAgua, InsertCaixaAgua,
   medicoesCaixa, InsertMedicaoCaixa,
+  medicoesAuditoria,
   aplicacoesCaixa, InsertAplicacaoCaixa,
   andares, InsertAndar,
   perfis, InsertPerfil,
@@ -1716,9 +1717,111 @@ export async function createMedicaoBancada(
   return { id: Number(r.insertId) };
 }
 
-export async function deleteMedicaoBancada(projetoId: number, id: number) {
+export async function getMedicaoBancadaById(projetoId: number, id: number) {
+  const dbConn = await getDb();
+  if (!dbConn) return null;
+  const rows = await dbConn
+    .select()
+    .from(medicoesBancada)
+    .where(and(eq(medicoesBancada.projetoId, projetoId), eq(medicoesBancada.id, id)))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+function snapshotMedicaoBancada(row: typeof medicoesBancada.$inferSelect) {
+  return {
+    id: row.id,
+    bancadaId: row.bancadaId,
+    ec: row.ec,
+    ph: row.ph,
+    temperaturaAgua: row.temperaturaAgua,
+    temperaturaAmbiente: row.temperaturaAmbiente,
+    umidade: row.umidade,
+    observacoes: row.observacoes,
+    medidoPor: row.medidoPor,
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : String(row.createdAt),
+  };
+}
+
+export async function updateMedicaoBancada(
+  projetoId: number,
+  id: number,
+  data: {
+    ec: number;
+    ph: number;
+    temperaturaAgua?: number | null;
+    temperaturaAmbiente?: number | null;
+    umidade?: number | null;
+    observacoes?: string | null;
+  },
+  audit: { usuarioId: number | null; usuarioNome: string; motivo?: string | null },
+) {
   const dbConn = await getDb();
   if (!dbConn) throw new Error("Database not available");
+  await ensureMedicoesAuditoriaTable();
+  const current = await getMedicaoBancadaById(projetoId, id);
+  if (!current) return null;
+
+  const depois = {
+    ec: data.ec,
+    ph: data.ph,
+    temperaturaAgua: data.temperaturaAgua ?? null,
+    temperaturaAmbiente: data.temperaturaAmbiente ?? null,
+    umidade: data.umidade ?? null,
+    observacoes: data.observacoes ?? null,
+  };
+
+  await dbConn.insert(medicoesAuditoria).values({
+    projetoId,
+    origem: "bancada",
+    medicaoId: id,
+    acao: "edicao",
+    antesJson: JSON.stringify(snapshotMedicaoBancada(current)),
+    depoisJson: JSON.stringify(depois),
+    usuarioId: audit.usuarioId,
+    usuarioNome: audit.usuarioNome,
+    motivo: audit.motivo ?? null,
+  });
+
+  await dbConn
+    .update(medicoesBancada)
+    .set({
+      ec: String(data.ec),
+      ph: String(data.ph),
+      temperaturaAgua: data.temperaturaAgua != null ? String(data.temperaturaAgua) : null,
+      temperaturaAmbiente: data.temperaturaAmbiente != null ? String(data.temperaturaAmbiente) : null,
+      umidade: data.umidade != null ? String(data.umidade) : null,
+      observacoes: data.observacoes ?? null,
+    })
+    .where(and(eq(medicoesBancada.projetoId, projetoId), eq(medicoesBancada.id, id)));
+
+  return { id };
+}
+
+export async function deleteMedicaoBancada(
+  projetoId: number,
+  id: number,
+  audit?: { usuarioId: number | null; usuarioNome: string; motivo?: string | null },
+) {
+  const dbConn = await getDb();
+  if (!dbConn) throw new Error("Database not available");
+  if (audit) {
+    await ensureMedicoesAuditoriaTable();
+    const current = await getMedicaoBancadaById(projetoId, id);
+    if (current) {
+      await dbConn.insert(medicoesAuditoria).values({
+        projetoId,
+        origem: "bancada",
+        medicaoId: id,
+        acao: "exclusao",
+        antesJson: JSON.stringify(snapshotMedicaoBancada(current)),
+        depoisJson: null,
+        usuarioId: audit.usuarioId,
+        usuarioNome: audit.usuarioNome,
+        motivo: audit.motivo ?? null,
+      });
+    }
+  }
   await dbConn.delete(medicoesBancada).where(and(eq(medicoesBancada.projetoId, projetoId), eq(medicoesBancada.id, id)));
 }
 
@@ -2507,9 +2610,104 @@ export async function createMedicaoCaixa(data: InsertMedicaoCaixa) {
   return { id: result[0].insertId };
 }
 
-export async function deleteMedicaoCaixa(projetoId: number, id: number) {
+export async function getMedicaoCaixaById(projetoId: number, id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(medicoesCaixa)
+    .where(and(eq(medicoesCaixa.projetoId, projetoId), eq(medicoesCaixa.id, id)))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+function snapshotMedicaoCaixa(row: typeof medicoesCaixa.$inferSelect) {
+  return {
+    id: row.id,
+    caixaAguaId: row.caixaAguaId,
+    ec: row.ec,
+    ph: row.ph,
+    temperaturaAgua: row.temperaturaAgua,
+    dataHora: row.dataHora instanceof Date ? row.dataHora.toISOString() : String(row.dataHora),
+    executadoPorId: row.executadoPorId,
+    executadoPorNome: row.executadoPorNome,
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : String(row.createdAt),
+  };
+}
+
+export async function updateMedicaoCaixa(
+  projetoId: number,
+  id: number,
+  data: { ec: number; ph: number; temperaturaAgua: number; dataHora?: Date },
+  audit: { usuarioId: number | null; usuarioNome: string; motivo?: string | null },
+) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  await ensureMedicoesAuditoriaTable();
+  await ensureMedicoesCaixaTemperaturaColumn();
+  const current = await getMedicaoCaixaById(projetoId, id);
+  if (!current) return null;
+
+  const depois = {
+    ec: data.ec,
+    ph: data.ph,
+    temperaturaAgua: data.temperaturaAgua,
+    dataHora: data.dataHora
+      ? data.dataHora.toISOString()
+      : current.dataHora instanceof Date
+        ? current.dataHora.toISOString()
+        : String(current.dataHora),
+  };
+
+  await db.insert(medicoesAuditoria).values({
+    projetoId,
+    origem: "caixa",
+    medicaoId: id,
+    acao: "edicao",
+    antesJson: JSON.stringify(snapshotMedicaoCaixa(current)),
+    depoisJson: JSON.stringify(depois),
+    usuarioId: audit.usuarioId,
+    usuarioNome: audit.usuarioNome,
+    motivo: audit.motivo ?? null,
+  });
+
+  await db
+    .update(medicoesCaixa)
+    .set({
+      ec: data.ec,
+      ph: data.ph,
+      temperaturaAgua: data.temperaturaAgua,
+      ...(data.dataHora ? { dataHora: data.dataHora } : {}),
+    })
+    .where(and(eq(medicoesCaixa.projetoId, projetoId), eq(medicoesCaixa.id, id)));
+
+  return { id };
+}
+
+export async function deleteMedicaoCaixa(
+  projetoId: number,
+  id: number,
+  audit?: { usuarioId: number | null; usuarioNome: string; motivo?: string | null },
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  if (audit) {
+    await ensureMedicoesAuditoriaTable();
+    const current = await getMedicaoCaixaById(projetoId, id);
+    if (current) {
+      await db.insert(medicoesAuditoria).values({
+        projetoId,
+        origem: "caixa",
+        medicaoId: id,
+        acao: "exclusao",
+        antesJson: JSON.stringify(snapshotMedicaoCaixa(current)),
+        depoisJson: null,
+        usuarioId: audit.usuarioId,
+        usuarioNome: audit.usuarioNome,
+        motivo: audit.motivo ?? null,
+      });
+    }
+  }
   await db.delete(medicoesCaixa).where(and(eq(medicoesCaixa.projetoId, projetoId), eq(medicoesCaixa.id, id)));
 }
 
@@ -3215,6 +3413,7 @@ export async function loadFullFazendaData(projetoId: number) {
   await ensureCiclosDosagemColumn();
   await ensureCiclosDataInicioColumn();
   await ensureMedicoesCaixaTemperaturaColumn();
+  await ensureMedicoesAuditoriaTable();
   await ensureTransplantiosRastreioColumns();
   await ensureReceitasCrescimentoNovasColunas();
   await ensureEstoqueItensTable();
@@ -3511,6 +3710,31 @@ export async function ensureMedicoesCaixaTemperaturaColumn(): Promise<void> {
     if (isMysqlDuplicateColumnError(err)) return;
     if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
     console.error("[Database] ensureMedicoesCaixaTemperaturaColumn:", err);
+  }
+}
+
+/** Garante tabela `medicoes_auditoria` (migração 0055) — histórico de edições/exclusões. */
+export async function ensureMedicoesAuditoriaTable(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.execute(sql.raw(`CREATE TABLE IF NOT EXISTS \`medicoes_auditoria\` (
+      \`id\` int AUTO_INCREMENT NOT NULL,
+      \`projetoId\` int NOT NULL,
+      \`origem\` varchar(16) NOT NULL,
+      \`medicaoId\` int NOT NULL,
+      \`acao\` varchar(16) NOT NULL,
+      \`antesJson\` text NOT NULL,
+      \`depoisJson\` text,
+      \`usuarioId\` int,
+      \`usuarioNome\` varchar(128),
+      \`motivo\` varchar(255),
+      \`criadoEm\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (\`id\`),
+      KEY \`medicoes_auditoria_projeto_medicao\` (\`projetoId\`, \`origem\`, \`medicaoId\`)
+    )`));
+  } catch (err: unknown) {
+    console.error("[Database] ensureMedicoesAuditoriaTable:", err);
   }
 }
 

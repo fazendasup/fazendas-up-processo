@@ -292,6 +292,26 @@ export const medicoesCaixa = mysqlTable("medicoes_caixa", {
 export type MedicaoCaixa = typeof medicoesCaixa.$inferSelect;
 export type InsertMedicaoCaixa = typeof medicoesCaixa.$inferInsert;
 
+/** Auditoria de edição/exclusão de medições (caixa ou bancada) — preserva valores anteriores. */
+export const medicoesAuditoria = mysqlTable("medicoes_auditoria", {
+  id: int("id").autoincrement().primaryKey(),
+  projetoId: int("projetoId").notNull(),
+  /** `caixa` | `bancada` */
+  origem: varchar("origem", { length: 16 }).notNull(),
+  medicaoId: int("medicaoId").notNull(),
+  /** `edicao` | `exclusao` */
+  acao: varchar("acao", { length: 16 }).notNull(),
+  antesJson: text("antesJson").notNull(),
+  depoisJson: text("depoisJson"),
+  usuarioId: int("usuarioId"),
+  usuarioNome: varchar("usuarioNome", { length: 128 }),
+  motivo: varchar("motivo", { length: 255 }),
+  criadoEm: timestamp("criadoEm").defaultNow().notNull(),
+});
+
+export type MedicaoAuditoriaRow = typeof medicoesAuditoria.$inferSelect;
+export type InsertMedicaoAuditoria = typeof medicoesAuditoria.$inferInsert;
+
 // ---- Aplicações em Caixa d'Água ----
 export const aplicacoesCaixa = mysqlTable("aplicacoes_caixa", {
   id: int("id").autoincrement().primaryKey(),
