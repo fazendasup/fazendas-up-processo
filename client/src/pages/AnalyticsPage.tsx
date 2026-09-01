@@ -7,6 +7,8 @@ import { ExportMenu } from '@/components/ui/export-menu';
 import { exportTableDocument } from '@/lib/exportTableDocument';
 import { useFazenda } from '@/contexts/FazendaContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -50,7 +52,7 @@ import {
   Scissors, AlertTriangle, Clock, Target, Leaf,
   FileDown, FileText, CheckCircle2, XCircle, Thermometer,
 } from 'lucide-react';
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { trpc } from '@/lib/trpc';
 import type { FazendaData, Fase, CaixaAgua, MedicaoCaixa } from '@/lib/types';
 import { FASES_CONFIG } from '@/lib/types';
@@ -83,7 +85,50 @@ function daysAgo(days: number): Date {
   return d;
 }
 
+function dateToYmdLocal(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function ymdToDateStart(ymd: string): Date {
+  const [y, m, day] = ymd.split('-').map(Number);
+  const dt = new Date(y!, m! - 1, day!);
+  dt.setHours(0, 0, 0, 0);
+  return dt;
+}
+
+function ymdToDateEnd(ymd: string): Date {
+  const dt = ymdToDateStart(ymd);
+  dt.setHours(23, 59, 59, 999);
+  return dt;
+}
+
+function periodToYmdRange(period: PeriodFilter): { inicio: string; fim: string } {
+  const fimYmd = dateToYmdLocal(new Date());
+  if (period === 'all') return { inicio: '2000-01-01', fim: fimYmd };
+  const days = period === '7d' ? 7 : period === '30d' ? 30 : 90;
+  return { inicio: dateToYmdLocal(daysAgo(days)), fim: fimYmd };
+}
+
+function formatDateHour(d: Date): string {
+  return `${formatDateShort(d)} ${String(d.getHours()).padStart(2, '0')}h`;
+}
+
 type PeriodFilter = '7d' | '30d' | '90d' | 'all';
+type ChartGranularity = 'day' | 'hour';
+
+function filterByDateRange<T>(
+  items: T[],
+  getDate: (item: T) => string | null | undefined,
+  inicioYmd: string,
+  fimYmd: string,
+): T[] {
+  const inicio = ymdToDateStart(inicioYmd);
+  const fim = ymdToDateEnd(fimYmd);
+  return items.filter((item) => {
+    const d = parseDate(getDate(item));
+    return d && d >= inicio && d <= fim;
+  });
+}
 
 function filterByPeriod<T>(items: T[], getDate: (item: T) => string | null | undefined, period: PeriodFilter): T[] {
   if (period === 'all') return items;
@@ -356,50 +401,79 @@ function ECpHSectionHidroponia() {
 
 function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter }) {
   const [selectedCaixa, setSelectedCaixa] = useState<string>('all');
+  const [granularity, setGranularity] = useState<ChartGranularity>('day');
+  const [dateInicio, setDateInicio] = useState(() => periodToYmdRange(period).inicio);
+  const [dateFim, setDateFim] = useState(() => periodToYmdRange(period).fim);
+
+  useEffect(() => {
+    const { inicio, fim } = periodToYmdRange(period);
+    setDateInicio(inicio);
+    setDateFim(fim);
+  }, [period]);
 
   const caixas = data.caixasAgua;
+  const periodoInvalido = dateInicio > dateFim;
 
-  const chartData = useMemo(() => {
+  const { chartData, rawMedicoes } = useMemo(() => {
     const targetCaixas = selectedCaixa === 'all' ? caixas : caixas.filter((c) => c.id === selectedCaixa);
 
     const allMedicoes: { date: Date; ec: number; ph: number; temp: number | null; caixa: string }[] = [];
-    targetCaixas.forEach((caixa) => {
-      const filtered = filterByPeriod(caixa.medicoes, (m) => m.dataHora, period);
-      filtered.forEach((m) => {
-        const d = parseDate(m.dataHora);
-        if (d) {
-          allMedicoes.push({
-            date: d,
-            ec: m.ec,
-            ph: m.ph,
-            temp: m.temperaturaAgua != null && Number.isFinite(m.temperaturaAgua) ? m.temperaturaAgua : null,
-            caixa: caixa.nome,
-          });
-        }
+    if (!periodoInvalido) {
+      targetCaixas.forEach((caixa) => {
+        const filtered = filterByDateRange(caixa.medicoes, (m) => m.dataHora, dateInicio, dateFim);
+        filtered.forEach((m) => {
+          const d = parseDate(m.dataHora);
+          if (d) {
+            allMedicoes.push({
+              date: d,
+              ec: m.ec,
+              ph: m.ph,
+              temp: m.temperaturaAgua != null && Number.isFinite(m.temperaturaAgua) ? m.temperaturaAgua : null,
+              caixa: caixa.nome,
+            });
+          }
+        });
       });
-    });
+    }
 
     allMedicoes.sort((a, b) => a.date.getTime() - b.date.getTime());
 
-    const byDay = new Map<string, { ec: number[]; ph: number[]; temp: number[] }>();
+    const bucketKey = (date: Date) =>
+      granularity === 'hour' ? formatDateHour(date) : formatDateShort(date);
+
+    const byBucket = new Map<string, { ec: number[]; ph: number[]; temp: number[]; sortKey: number }>();
     allMedicoes.forEach(({ date, ec, ph, temp }) => {
-      const key = formatDateShort(date);
-      if (!byDay.has(key)) byDay.set(key, { ec: [], ph: [], temp: [] });
-      const entry = byDay.get(key)!;
+      const key = bucketKey(date);
+      if (!byBucket.has(key)) {
+        byBucket.set(key, {
+          ec: [],
+          ph: [],
+          temp: [],
+          sortKey: granularity === 'hour'
+            ? date.getTime() - (date.getMinutes() * 60_000 + date.getSeconds() * 1000 + date.getMilliseconds())
+            : ymdToDateStart(dateToYmdLocal(date)).getTime(),
+        });
+      }
+      const entry = byBucket.get(key)!;
       entry.ec.push(ec);
       entry.ph.push(ph);
       if (temp != null) entry.temp.push(temp);
     });
 
-    return Array.from(byDay.entries()).map(([day, { ec, ph, temp }]) => ({
-      day,
-      ec: +(ec.reduce((a, b) => a + b, 0) / ec.length).toFixed(2),
-      ph: +(ph.reduce((a, b) => a + b, 0) / ph.length).toFixed(2),
-      temp: temp.length
-        ? +(temp.reduce((a, b) => a + b, 0) / temp.length).toFixed(1)
-        : null,
-    }));
-  }, [caixas, selectedCaixa, period]);
+    const chart = Array.from(byBucket.entries())
+      .map(([label, { ec, ph, temp, sortKey }]) => ({
+        label,
+        sortKey,
+        ec: +(ec.reduce((a, b) => a + b, 0) / ec.length).toFixed(2),
+        ph: +(ph.reduce((a, b) => a + b, 0) / ph.length).toFixed(2),
+        temp: temp.length
+          ? +(temp.reduce((a, b) => a + b, 0) / temp.length).toFixed(1)
+          : null,
+      }))
+      .sort((a, b) => a.sortKey - b.sortKey);
+
+    return { chartData: chart, rawMedicoes: allMedicoes };
+  }, [caixas, selectedCaixa, dateInicio, dateFim, granularity, periodoInvalido]);
 
   // Get ideal ranges for selected caixa
   const idealRange = useMemo(() => {
@@ -418,10 +492,10 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
   }, [selectedCaixa, caixas, data.fasesConfig]);
 
   const stats = useMemo(() => {
-    if (chartData.length === 0) return null;
-    const ecValues = chartData.map((d) => d.ec);
-    const phValues = chartData.map((d) => d.ph);
-    const tempValues = chartData.map((d) => d.temp).filter((t): t is number => t != null);
+    if (rawMedicoes.length === 0) return null;
+    const ecValues = rawMedicoes.map((d) => d.ec);
+    const phValues = rawMedicoes.map((d) => d.ph);
+    const tempValues = rawMedicoes.map((d) => d.temp).filter((t): t is number => t != null);
     return {
       ecAvg: +(ecValues.reduce((a, b) => a + b, 0) / ecValues.length).toFixed(2),
       ecMin: Math.min(...ecValues),
@@ -434,9 +508,9 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
         : null,
       tempMin: tempValues.length ? Math.min(...tempValues) : null,
       tempMax: tempValues.length ? Math.max(...tempValues) : null,
-      totalMedicoes: chartData.length,
+      totalMedicoes: rawMedicoes.length,
     };
-  }, [chartData]);
+  }, [rawMedicoes]);
 
   const ecChartConfig: ChartConfig = {
     ec: { label: 'EC (mS/cm)', color: COLORS.ec },
@@ -449,22 +523,59 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
   };
 
   const hasTemp = stats?.tempAvg != null;
+  const xAxisAngle = granularity === 'hour' && chartData.length > 8 ? -35 : 0;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <Select value={selectedCaixa} onValueChange={setSelectedCaixa}>
-          <SelectTrigger className="w-[240px]">
-            <SelectValue placeholder="Selecionar caixa d'água" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas as caixas (média)</SelectItem>
-            {caixas.map((c) => (
-              <SelectItem key={c.id} value={c.id}>{c.nome} ({c.fase})</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Caixa d&apos;água</Label>
+          <Select value={selectedCaixa} onValueChange={setSelectedCaixa}>
+            <SelectTrigger className="w-[240px]">
+              <SelectValue placeholder="Selecionar caixa d'água" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as caixas (média)</SelectItem>
+              {caixas.map((c) => (
+                <SelectItem key={c.id} value={c.id}>{c.nome} ({c.fase})</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Agrupamento</Label>
+          <Select value={granularity} onValueChange={(v) => setGranularity(v as ChartGranularity)}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="day">Por dia</SelectItem>
+              <SelectItem value="hour">Por hora</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">De</Label>
+          <Input
+            type="date"
+            className="w-[150px]"
+            value={dateInicio}
+            onChange={(e) => setDateInicio(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Até</Label>
+          <Input
+            type="date"
+            className="w-[150px]"
+            value={dateFim}
+            onChange={(e) => setDateFim(e.target.value)}
+          />
+        </div>
       </div>
+      {periodoInvalido ? (
+        <p className="text-xs text-destructive">A data inicial não pode ser posterior à data final.</p>
+      ) : null}
 
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-10 gap-3">
@@ -481,7 +592,9 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
         </div>
       )}
 
-      {chartData.length === 0 ? (
+      {periodoInvalido ? (
+        <EmptyState icon={Droplet} message="Ajuste o intervalo de datas para visualizar as medições" />
+      ) : chartData.length === 0 ? (
         <EmptyState icon={Droplet} message="Nenhuma medição registrada no período selecionado" />
       ) : (
         <div className={`grid grid-cols-1 gap-4 ${hasTemp ? 'xl:grid-cols-3 lg:grid-cols-2' : 'lg:grid-cols-2'}`}>
@@ -492,7 +605,7 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
                 Evolução EC (mS/cm)
               </CardTitle>
               <CardDescription className="text-xs">
-                Faixa ideal sombreada · série em degrau (leitura tipo painel SCADA)
+                {granularity === 'hour' ? 'Média por hora' : 'Média por dia'} · faixa ideal sombreada · série em degrau
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -500,7 +613,7 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
               <ChartContainer config={ecChartConfig} className="h-[280px] w-full">
                 <ComposedChart data={chartData} margin={{ ...ANALYTICS_MARGIN, left: 2, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
-                  <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                  <XAxis dataKey="label" tick={{ fontSize: 11 }} angle={xAxisAngle} textAnchor={xAxisAngle ? 'end' : 'middle'} height={xAxisAngle ? 52 : 30} />
                   <YAxis tick={{ fontSize: 11 }} domain={["auto", "auto"]} />
                   <ReferenceArea
                     y1={idealRange.ecMin}
@@ -537,7 +650,7 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
                 Evolução pH
               </CardTitle>
               <CardDescription className="text-xs">
-                Faixa ideal sombreada · série em degrau
+                {granularity === 'hour' ? 'Média por hora' : 'Média por dia'} · faixa ideal sombreada · série em degrau
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -545,7 +658,7 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
               <ChartContainer config={phChartConfig} className="h-[280px] w-full">
                 <ComposedChart data={chartData} margin={{ ...ANALYTICS_MARGIN, left: 2, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
-                  <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                  <XAxis dataKey="label" tick={{ fontSize: 11 }} angle={xAxisAngle} textAnchor={xAxisAngle ? 'end' : 'middle'} height={xAxisAngle ? 52 : 30} />
                   <YAxis tick={{ fontSize: 11 }} domain={["auto", "auto"]} />
                   <ReferenceArea
                     y1={idealRange.phMin}
@@ -582,7 +695,7 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
                   Evolução Temp. água (°C)
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Faixa típica {TEMP_AGUA_FAIXA.min}–{TEMP_AGUA_FAIXA.max}°C · série em degrau
+                  {granularity === 'hour' ? 'Média por hora' : 'Média por dia'} · faixa típica {TEMP_AGUA_FAIXA.min}–{TEMP_AGUA_FAIXA.max}°C · série em degrau
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -590,7 +703,7 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
                 <ChartContainer config={tempChartConfig} className="h-[280px] w-full">
                   <ComposedChart data={chartData} margin={{ ...ANALYTICS_MARGIN, left: 2, bottom: 4 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
-                    <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="label" tick={{ fontSize: 11 }} angle={xAxisAngle} textAnchor={xAxisAngle ? 'end' : 'middle'} height={xAxisAngle ? 52 : 30} />
                     <YAxis tick={{ fontSize: 11 }} domain={["auto", "auto"]} />
                     <ReferenceArea
                       y1={TEMP_AGUA_FAIXA.min}
