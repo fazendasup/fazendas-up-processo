@@ -1092,8 +1092,28 @@ export function CustosRentabilidadePanel() {
             <CardContent>
               <p className="text-xl font-bold tabular-nums">{fmtMoney(calculoAtual.totais.receita)}</p>
               <p className="text-xs text-muted-foreground">
-                {linhasCalculo.length} produto(s)
+                {linhasCalculo.length} produto(s) · bruto itens (preço × qtd)
               </p>
+              {vendasContaAzul.data?.diagnostico ? (
+                <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug">
+                  Líquido pedidos CA{" "}
+                  <span className="font-semibold tabular-nums text-foreground">
+                    {fmtMoney(vendasContaAzul.data.diagnostico.receitaLiquidaPedidos)}
+                  </span>
+                  {vendasContaAzul.data.diagnostico.freteTotal > 0 ? (
+                    <>
+                      {" "}
+                      · frete {fmtMoney(vendasContaAzul.data.diagnostico.freteTotal)}
+                    </>
+                  ) : null}
+                  {vendasContaAzul.data.diagnostico.descontoTotal > 0 ? (
+                    <>
+                      {" "}
+                      · desconto −{fmtMoney(vendasContaAzul.data.diagnostico.descontoTotal)}
+                    </>
+                  ) : null}
+                </p>
+              ) : null}
             </CardContent>
           </Card>
           <Card>
