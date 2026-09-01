@@ -27,7 +27,7 @@ import {
   LABEL_TIPO_FICHA_CUSTO_PRODUTO,
   type TipoFichaCustoProduto,
 } from "@shared/custosProduto";
-import { calcularRentabilidade } from "@shared/custosRentabilidade";
+import { calcularRentabilidade, type LinhaRentabilidadeResultado } from "@shared/custosRentabilidade";
 import type { LinhaRentabilidadeResultado } from "@shared/custosRentabilidade";
 import {
   somarOverheadItensIncluidos,
@@ -287,6 +287,39 @@ function exportarResultadoProduto(
   exportTableDocument(input, format);
 }
 
+function snapshotLinhasCalculo(linhas: LinhaForm[]): string {
+  return JSON.stringify(
+    linhas.map((x) => ({
+      fichaId: x.fichaId,
+      nomeProduto: x.nomeProduto.trim(),
+      quantidade: x.quantidade,
+      receitaTotal: x.receitaTotal,
+      custoUnitarioManual: x.custoUnitarioManual,
+    })),
+  );
+}
+
+function linhasFormFromSalvo(
+  linhas: Array<{
+    id: number;
+    fichaId: number | null;
+    nomeProduto: string;
+    quantidade: number;
+    receitaTotal: number;
+    custoUnitarioManual: number | null;
+  }>,
+): LinhaForm[] {
+  return linhas.map((l) => ({
+    key: String(l.id),
+    fichaId: l.fichaId != null ? String(l.fichaId) : "",
+    nomeProduto: l.nomeProduto,
+    quantidade: String(l.quantidade),
+    receitaTotal: String(l.receitaTotal),
+    custoUnitarioManual:
+      l.custoUnitarioManual != null ? String(l.custoUnitarioManual) : "",
+  }));
+}
+
 export function CustosRentabilidadePanel() {
   const utils = trpc.useUtils();
   const periodos = trpc.custosProducao.rentabilidade.listarPeriodos.useQuery();
@@ -303,6 +336,12 @@ export function CustosRentabilidadePanel() {
   const [overheadItens, setOverheadItens] = useState<OverheadItemForm[]>([]);
   const [observacoes, setObservacoes] = useState("");
   const [linhas, setLinhas] = useState<LinhaForm[]>([emptyLinha()]);
+  const [ultimoSalvo, setUltimoSalvo] = useState<{
+    snapshot: string;
+    linhas: LinhaRentabilidadeResultado[];
+    totais: ReturnType<typeof calcularRentabilidade>["totais"];
+    viabilidade: ReturnType<typeof calcularRentabilidade>["viabilidade"];
+  } | null>(null);
   const ultimoMesLinhasSincronizado = useRef<string | null>(null);
   const ultimoVendasFetchKey = useRef<string | null>(null);
 
@@ -325,8 +364,23 @@ export function CustosRentabilidadePanel() {
 
   const salvar = trpc.custosProducao.rentabilidade.salvarPeriodo.useMutation({
     onSuccess: async (data) => {
-      toast.success("Análise salva");
+      const linhasSalvas = linhasFormFromSalvo(data.linhas);
+      const snapshot = snapshotLinhasCalculo(linhasSalvas);
+      const linhasResultado = data.linhas
+        .map((l) => l.resultado)
+        .filter((r): r is LinhaRentabilidadeResultado => r != null);
+
       setPeriodoId(data.periodo.id);
+      setLinhas(linhasSalvas);
+      setUltimoSalvo({
+        snapshot,
+        linhas: linhasResultado,
+        totais: data.totais,
+        viabilidade: data.viabilidade,
+      });
+
+      toast.success("Análise salva");
+      await utils.custosProducao.produtos.listarFichas.invalidate();
       await utils.custosProducao.rentabilidade.listarPeriodos.invalidate();
       await utils.custosProducao.rentabilidade.obterPeriodo.invalidate({ id: data.periodo.id });
     },
@@ -412,6 +466,10 @@ export function CustosRentabilidadePanel() {
     ultimoVendasFetchKey.current = null;
   }
 
+  function marcarLinhasEditadas() {
+    setUltimoSalvo(null);
+  }
+
   function resetNovo() {
     setTitulo("");
     setInicio(inicioMesAtual());
@@ -422,6 +480,7 @@ export function CustosRentabilidadePanel() {
     setOverheadItens([]);
     setObservacoes("");
     setLinhas([emptyLinha()]);
+    setUltimoSalvo(null);
     resetRefsSincLinhas();
   }
 
@@ -460,7 +519,7 @@ export function CustosRentabilidadePanel() {
           }))
         : [],
     );
-    setLinhas(
+    const linhasCarregadas =
       detalhe.data.linhas.length > 0
         ? detalhe.data.linhas.map((l) => ({
             key: String(l.id),
@@ -471,8 +530,21 @@ export function CustosRentabilidadePanel() {
             custoUnitarioManual:
               l.custoUnitarioManual != null ? String(l.custoUnitarioManual) : "",
           }))
-        : [emptyLinha()],
-    );
+        : [emptyLinha()];
+    setLinhas(linhasCarregadas);
+    const linhasResultado = detalhe.data.linhas
+      .map((l) => l.resultado)
+      .filter((r): r is LinhaRentabilidadeResultado => r != null);
+    if (linhasResultado.length > 0) {
+      setUltimoSalvo({
+        snapshot: snapshotLinhasCalculo(linhasCarregadas),
+        linhas: linhasResultado,
+        totais: detalhe.data.totais,
+        viabilidade: detalhe.data.viabilidade,
+      });
+    } else {
+      setUltimoSalvo(null);
+    }
     ultimoMesLinhasSincronizado.current = mesRefDePeriodo(p.inicio);
     ultimoVendasFetchKey.current = null;
   }, [detalhe.data, periodoId]);
@@ -525,6 +597,7 @@ export function CustosRentabilidadePanel() {
 
     const produtos = vendasContaAzul.data.produtos;
     setLinhas(produtos.length > 0 ? linhasFromVendasContaAzul(produtos) : [emptyLinha()]);
+    marcarLinhasEditadas();
   }, [
     inicio,
     periodoId,
@@ -566,13 +639,28 @@ export function CustosRentabilidadePanel() {
     [linhas, custoPorFicha],
   );
 
-  const calculoAtual = useMemo(() => {
+  const calculoPreview = useMemo(() => {
     if (linhasCalculo.length === 0) return null;
     return calcularRentabilidade({
       linhas: linhasCalculo,
       custoOperacionalTotal: custoOpAtual,
     });
   }, [linhasCalculo, custoOpAtual]);
+
+  const calculoAtual = useMemo(() => {
+    if (
+      ultimoSalvo &&
+      snapshotLinhasCalculo(linhas) === ultimoSalvo.snapshot &&
+      ultimoSalvo.linhas.length > 0
+    ) {
+      return {
+        linhas: ultimoSalvo.linhas,
+        totais: ultimoSalvo.totais,
+        viabilidade: ultimoSalvo.viabilidade,
+      };
+    }
+    return calculoPreview;
+  }, [ultimoSalvo, linhas, calculoPreview]);
 
   const {
     hasColumnFilters,
@@ -610,6 +698,7 @@ export function CustosRentabilidadePanel() {
     }
     const mesRef = mesReferenciaDeInicio(inicio);
     setLinhas(linhasFromVendasContaAzul(produtos));
+    marcarLinhasEditadas();
     ultimoMesLinhasSincronizado.current = mesRef;
     ultimoVendasFetchKey.current = `${mesRef}:${vendasContaAzul.dataUpdatedAt ?? "manual"}`;
     toast.success(`${produtos.length} produto(s) importados das vendas Conta Azul.`);
@@ -662,11 +751,16 @@ export function CustosRentabilidadePanel() {
   };
 
   const updateLinha = (key: string, patch: Partial<LinhaForm>) => {
+    marcarLinhasEditadas();
     setLinhas((prev) =>
       prev.map((l) => {
         if (l.key !== key) return l;
         if (patch.fichaId !== undefined) {
-          return aplicarFichaNaLinha({ ...l, ...patch }, patch.fichaId);
+          const next = aplicarFichaNaLinha({ ...l, ...patch }, patch.fichaId);
+          if (patch.fichaId && custoPorFicha.get(Number(patch.fichaId)) == null) {
+            void utils.custosProducao.produtos.listarFichas.invalidate();
+          }
+          return next;
         }
         return { ...l, ...patch };
       }),
@@ -956,7 +1050,14 @@ export function CustosRentabilidadePanel() {
               escolher a ficha, produto, qtd. e receita do mês são preenchidos sozinhos.
             </CardDescription>
           </div>
-          <Button size="sm" variant="outline" onClick={() => setLinhas((p) => [...p, emptyLinha()])}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              marcarLinhasEditadas();
+              setLinhas((p) => [...p, emptyLinha()]);
+            }}
+          >
             <Plus className="h-4 w-4 mr-1" />
             Linha
           </Button>
@@ -1045,7 +1146,10 @@ export function CustosRentabilidadePanel() {
                     variant="ghost"
                     size="icon"
                     className="h-9 w-9"
-                    onClick={() => setLinhas((p) => p.filter((l) => l.key !== linha.key))}
+                    onClick={() => {
+                      marcarLinhasEditadas();
+                      setLinhas((p) => p.filter((l) => l.key !== linha.key));
+                    }}
                     disabled={linhas.length <= 1}
                   >
                     <Trash2 className="h-4 w-4" />
