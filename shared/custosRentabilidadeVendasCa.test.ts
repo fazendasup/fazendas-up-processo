@@ -1,5 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { alocarReceitaLiquidaPorLinhas } from "./custosRentabilidadeVendasCa";
+import {
+  alocarReceitaLiquidaPorLinhas,
+  reconciliarBrutoItensComPedido,
+} from "./custosRentabilidadeVendasCa";
+
+describe("reconciliarBrutoItensComPedido", () => {
+  it("mantém valores quando já batem", () => {
+    expect(reconciliarBrutoItensComPedido(100, [60, 40])).toEqual([60, 40]);
+  });
+
+  it("escala linhas para o bruto do pedido", () => {
+    const receitas = reconciliarBrutoItensComPedido(100, [75, 75]);
+    expect(receitas.reduce((a, b) => a + b, 0)).toBeCloseTo(100, 2);
+    expect(receitas[0]).toBe(50);
+    expect(receitas[1]).toBe(50);
+  });
+});
 
 describe("alocarReceitaLiquidaPorLinhas", () => {
   it("inclui frete no rateio quando há uma linha", () => {

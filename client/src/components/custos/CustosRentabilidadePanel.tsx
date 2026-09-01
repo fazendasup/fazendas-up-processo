@@ -923,24 +923,38 @@ export function CustosRentabilidadePanel() {
               {vendasContaAzul.isLoading
                 ? "Carregando vendas sincronizadas..."
                 : vendasContaAzul.data
-                  ? `${vendasContaAzul.data.pedidosVenda} pedido(s) · ${vendasContaAzul.data.produtos.length} produto(s) · valor itens ${fmtMoney(vendasContaAzul.data.receitaTotal)} (igual bruto itens CA)`
+                  ? `${vendasContaAzul.data.pedidosVenda} pedido(s) · ${vendasContaAzul.data.produtos.length} produto(s) · bruto pedidos CA ${fmtMoney(vendasContaAzul.data.diagnostico?.receitaBrutaPedidos ?? vendasContaAzul.data.receitaTotal)}`
                   : "Selecione o mês para ver as vendas reais."}
             </CardDescription>
             {vendasContaAzul.data?.diagnostico ? (
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Líquido pedidos {fmtMoney(vendasContaAzul.data.diagnostico.receitaLiquidaPedidos)}
-                (bruto + frete − desconto)
+              <p className="text-[11px] text-muted-foreground mt-1 leading-snug">
+                Bruto pedidos {fmtMoney(vendasContaAzul.data.diagnostico.receitaBrutaPedidos)}
+                {Math.abs(
+                  vendasContaAzul.data.diagnostico.receitaItensBruto -
+                    vendasContaAzul.data.diagnostico.receitaBrutaPedidos,
+                ) > 0.01 ? (
+                  <>
+                    {" "}
+                    · itens sync {fmtMoney(vendasContaAzul.data.diagnostico.receitaItensBruto)} (ajustado
+                    para bater)
+                  </>
+                ) : null}
                 {vendasContaAzul.data.diagnostico.freteTotal > 0
-                  ? ` · frete ${fmtMoney(vendasContaAzul.data.diagnostico.freteTotal)}`
+                  ? ` · + frete ${fmtMoney(vendasContaAzul.data.diagnostico.freteTotal)}`
                   : ""}
                 {vendasContaAzul.data.diagnostico.descontoTotal > 0
-                  ? ` · desconto ${fmtMoney(vendasContaAzul.data.diagnostico.descontoTotal)}`
+                  ? ` · − desconto ${fmtMoney(vendasContaAzul.data.diagnostico.descontoTotal)}`
                   : ""}
+                {" · = líquido "}
+                {fmtMoney(vendasContaAzul.data.diagnostico.receitaLiquidaPedidos)}
                 {vendasContaAzul.data.diagnostico.pedidosExcluidosStatus > 0
                   ? ` · ${vendasContaAzul.data.diagnostico.pedidosExcluidosStatus} pedido(s) fora (status ≠ venda)`
                   : ""}
                 {vendasContaAzul.data.diagnostico.pedidosSemItens > 0
                   ? ` · ${vendasContaAzul.data.diagnostico.pedidosSemItens} venda(s) sem itens na sync`
+                  : ""}
+                {vendasContaAzul.data.diagnostico.pedidosItensDivergentes > 0
+                  ? ` · ${vendasContaAzul.data.diagnostico.pedidosItensDivergentes} pedido(s) com qtd×preço ≠ bruto CA`
                   : ""}
               </p>
             ) : null}
@@ -1196,27 +1210,59 @@ export function CustosRentabilidadePanel() {
             <CardContent>
               <p className="text-xl font-bold tabular-nums">{fmtMoney(calculoAtual.totais.receita)}</p>
               <p className="text-xs text-muted-foreground">
-                {linhasCalculo.length} produto(s) · bruto itens (preço × qtd)
+                {linhasCalculo.length} produto(s) · receita por produto (CMV)
               </p>
               {vendasContaAzul.data?.diagnostico ? (
-                <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug">
-                  Líquido pedidos CA{" "}
-                  <span className="font-semibold tabular-nums text-foreground">
-                    {fmtMoney(vendasContaAzul.data.diagnostico.receitaLiquidaPedidos)}
-                  </span>
-                  {vendasContaAzul.data.diagnostico.freteTotal > 0 ? (
-                    <>
-                      {" "}
-                      · frete {fmtMoney(vendasContaAzul.data.diagnostico.freteTotal)}
-                    </>
+                <div className="text-[11px] text-muted-foreground mt-1.5 leading-snug space-y-0.5">
+                  <p>
+                    Bruto pedidos CA{" "}
+                    <span className="font-semibold tabular-nums text-foreground">
+                      {fmtMoney(vendasContaAzul.data.diagnostico.receitaBrutaPedidos)}
+                    </span>
+                    {Math.abs(
+                      vendasContaAzul.data.diagnostico.receitaItensBruto -
+                        vendasContaAzul.data.diagnostico.receitaBrutaPedidos,
+                    ) > 0.01 ? (
+                      <>
+                        {" "}
+                        (itens sync {fmtMoney(vendasContaAzul.data.diagnostico.receitaItensBruto)})
+                      </>
+                    ) : null}
+                  </p>
+                  <p>
+                    {vendasContaAzul.data.diagnostico.freteTotal > 0 ? (
+                      <>+ frete {fmtMoney(vendasContaAzul.data.diagnostico.freteTotal)}</>
+                    ) : null}
+                    {vendasContaAzul.data.diagnostico.descontoTotal > 0 ? (
+                      <>
+                        {vendasContaAzul.data.diagnostico.freteTotal > 0 ? " · " : ""}
+                        − desconto {fmtMoney(vendasContaAzul.data.diagnostico.descontoTotal)}
+                      </>
+                    ) : null}
+                    {(vendasContaAzul.data.diagnostico.freteTotal > 0 ||
+                      vendasContaAzul.data.diagnostico.descontoTotal > 0) &&
+                    vendasContaAzul.data.diagnostico.receitaLiquidaPedidos > 0 ? (
+                      <>
+                        {" "}
+                        = líquido{" "}
+                        <span className="font-semibold tabular-nums text-foreground">
+                          {fmtMoney(vendasContaAzul.data.diagnostico.receitaLiquidaPedidos)}
+                        </span>
+                      </>
+                    ) : null}
+                  </p>
+                  {Math.abs(
+                    calculoAtual.totais.receita - vendasContaAzul.data.diagnostico.receitaBrutaPedidos,
+                  ) > 0.01 ? (
+                    <p className="text-amber-700 dark:text-amber-400">
+                      Diferença vs CA: recarregue o mês ou use “Importar da CA” para alinhar (
+                      {fmtMoney(
+                        calculoAtual.totais.receita - vendasContaAzul.data.diagnostico.receitaBrutaPedidos,
+                      )}
+                      ).
+                    </p>
                   ) : null}
-                  {vendasContaAzul.data.diagnostico.descontoTotal > 0 ? (
-                    <>
-                      {" "}
-                      · desconto −{fmtMoney(vendasContaAzul.data.diagnostico.descontoTotal)}
-                    </>
-                  ) : null}
-                </p>
+                </div>
               ) : null}
             </CardContent>
           </Card>

@@ -11,6 +11,7 @@ import type { CustoProdutoFichaRow } from "../drizzle/schema";
 import {
   PRODUTO_VENDA_SEM_ITENS_CHAVE,
   PRODUTO_VENDA_SEM_ITENS_NOME,
+  reconciliarBrutoItensComPedido,
 } from "@shared/custosRentabilidadeVendasCa";
 
 function normalizarNome(s: string): string {
@@ -46,8 +47,12 @@ export type VendasContaAzulDiagnostico = {
   pedidosVenda: number;
   pedidosExcluidosStatus: number;
   pedidosSemItens: number;
+  pedidosItensDivergentes: number;
   receitaLiquidaPedidos: number;
+  /** Soma qtd × preço unit. dos itens sincronizados (antes do ajuste). */
   receitaItensBruto: number;
+  /** Soma valorBruto dos pedidos CA (relatório Conta Azul). */
+  receitaBrutaPedidos: number;
   freteTotal: number;
   descontoTotal: number;
 };
@@ -174,8 +179,10 @@ export async function buscarVendasContaAzulPorPeriodo(
   let pedidosVenda = 0;
   let pedidosExcluidosStatus = 0;
   let pedidosSemItens = 0;
+  let pedidosItensDivergentes = 0;
   let receitaLiquidaPedidos = 0;
   let receitaItensBruto = 0;
+  let receitaBrutaPedidos = 0;
   let freteTotal = 0;
   let descontoTotal = 0;
   let quantidadeTotal = 0;
@@ -189,6 +196,7 @@ export async function buscarVendasContaAzulPorPeriodo(
     pedidosVenda += 1;
     const comp = composicaoDoPedidoParaDashboard(p);
     receitaLiquidaPedidos = round2(receitaLiquidaPedidos + comp.valorLiquido);
+    receitaBrutaPedidos = round2(receitaBrutaPedidos + comp.valorBruto);
     freteTotal = round2(freteTotal + comp.valorFrete);
     descontoTotal = round2(descontoTotal + comp.valorDesconto);
     const linhas: LinhaPedidoInterna[] = [];
@@ -230,7 +238,8 @@ export async function buscarVendasContaAzulPorPeriodo(
     }
 
     if (linhas.length === 0) {
-      if (comp.valorLiquido > 0) {
+      const receitaSemItens = comp.valorBruto > 0 ? comp.valorBruto : comp.valorLiquido;
+      if (receitaSemItens > 0) {
         pedidosSemItens += 1;
         const cur: AggInterno = agg.get(PRODUTO_VENDA_SEM_ITENS_CHAVE) ?? {
           chave: PRODUTO_VENDA_SEM_ITENS_CHAVE,
@@ -248,12 +257,24 @@ export async function buscarVendasContaAzulPorPeriodo(
           _custoSum: 0,
         };
         cur.quantidade = round2(cur.quantidade + 1);
-        cur.receitaTotal = round2(cur.receitaTotal + comp.valorLiquido);
+        cur.receitaTotal = round2(cur.receitaTotal + receitaSemItens);
         cur.linhasPedido += 1;
         agg.set(PRODUTO_VENDA_SEM_ITENS_CHAVE, cur);
         quantidadeTotal = round2(quantidadeTotal + 1);
       }
       continue;
+    }
+
+    const sumBrutoRaw = round2(linhas.reduce((s, l) => s + l.bruto, 0));
+    if (comp.valorBruto > 0 && sumBrutoRaw > 0 && Math.abs(sumBrutoRaw - comp.valorBruto) > 0.01) {
+      pedidosItensDivergentes += 1;
+      const reconciliados = reconciliarBrutoItensComPedido(
+        comp.valorBruto,
+        linhas.map((l) => l.bruto),
+      );
+      for (let i = 0; i < linhas.length; i++) {
+        linhas[i]!.bruto = reconciliados[i]!;
+      }
     }
 
     for (let i = 0; i < linhas.length; i++) {
@@ -319,8 +340,10 @@ export async function buscarVendasContaAzulPorPeriodo(
       pedidosVenda,
       pedidosExcluidosStatus,
       pedidosSemItens,
+      pedidosItensDivergentes,
       receitaLiquidaPedidos: round2(receitaLiquidaPedidos),
       receitaItensBruto: round2(receitaItensBruto),
+      receitaBrutaPedidos: round2(receitaBrutaPedidos),
       freteTotal: round2(freteTotal),
       descontoTotal: round2(descontoTotal),
     },
