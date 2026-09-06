@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { parseOptDecimal } from "@/lib/decimalInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -138,53 +139,63 @@ export default function HidroponiaConfigBancadas() {
     onError: (e) => toast.error(e.message || "Erro"),
   });
 
-  const handleSaveConfig = (fase: Fase, e: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveConfig = async (fase: Fase, e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const ecMin = parseFloat(fd.get("ecMin") as string);
-    const ecMax = parseFloat(fd.get("ecMax") as string);
-    const phMin = parseFloat(fd.get("phMin") as string);
-    const phMax = parseFloat(fd.get("phMax") as string);
+    const ecMin = parseOptDecimal(String(fd.get("ecMin") ?? ""));
+    const ecMax = parseOptDecimal(String(fd.get("ecMax") ?? ""));
+    const phMin = parseOptDecimal(String(fd.get("phMin") ?? ""));
+    const phMax = parseOptDecimal(String(fd.get("phMax") ?? ""));
 
-    if (isNaN(ecMin) || isNaN(ecMax) || isNaN(phMin) || isNaN(phMax)) {
+    if (ecMin == null || ecMax == null || phMin == null || phMax == null) {
       toast.error("Preencha todos os campos corretamente");
       return;
     }
 
     const cfg = FASES_CONFIG[fase];
-    mutations.upsertFaseConfig.mutate({
-      fase,
-      label: cfg.label,
-      ecMin,
-      ecMax,
-      phMin,
-      phMax,
-      cor: cfg.cor,
-      corLight: cfg.corLight,
-      icon: cfg.icon,
-    });
-    setConfigVersion((v) => v + 1);
-    toast.success(`Configurações de ${FASES_CONFIG[fase].label} salvas!`);
-  };
-
-  const handleResetConfig = () => {
-    if (!window.confirm("Restaurar parâmetros EC/pH ao padrão?")) return;
-    fases.forEach((fase) => {
-      const cfg = FASES_CONFIG[fase];
-      mutations.upsertFaseConfig.mutate({
+    try {
+      await mutations.upsertFaseConfig.mutateAsync({
         fase,
         label: cfg.label,
-        ecMin: cfg.ecMin,
-        ecMax: cfg.ecMax,
-        phMin: cfg.phMin,
-        phMax: cfg.phMax,
+        ecMin,
+        ecMax,
+        phMin,
+        phMax,
         cor: cfg.cor,
         corLight: cfg.corLight,
         icon: cfg.icon,
       });
-    });
-    setConfigVersion((v) => v + 1);
-    toast.success("Parâmetros restaurados.");
+      setConfigVersion((v) => v + 1);
+      toast.success(`Configurações de ${FASES_CONFIG[fase].label} salvas!`);
+    } catch {
+      // toast de erro no hook da mutação
+    }
+  };
+
+  const handleResetConfig = async () => {
+    if (!window.confirm("Restaurar parâmetros EC/pH ao padrão?")) return;
+    try {
+      await Promise.all(
+        fases.map((fase) => {
+          const cfg = FASES_CONFIG[fase];
+          return mutations.upsertFaseConfig.mutateAsync({
+            fase,
+            label: cfg.label,
+            ecMin: cfg.ecMin,
+            ecMax: cfg.ecMax,
+            phMin: cfg.phMin,
+            phMax: cfg.phMax,
+            cor: cfg.cor,
+            corLight: cfg.corLight,
+            icon: cfg.icon,
+          });
+        }),
+      );
+      setConfigVersion((v) => v + 1);
+      toast.success("Parâmetros restaurados.");
+    } catch {
+      // toast de erro no hook da mutação
+    }
   };
 
   const badgeClass = (fase: Fase) =>

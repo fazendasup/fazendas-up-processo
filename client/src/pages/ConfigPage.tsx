@@ -29,6 +29,7 @@ import { ProjetoModulosCard } from '@/components/ProjetoModulosCard';
 import { Settings, Save, RotateCcw, Plus, Trash2, SlidersHorizontal, Bell, Globe, Database, ShieldCheck, Building2, Power, Edit2, AlertTriangle, Layers } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { proximoNumeroTorreOperacional, sugerirNomeNovaTorre } from '@/lib/sugerirNomeTorre';
+import { parseOptDecimal } from '@/lib/decimalInput';
 import { ESTRUTURA_OVERRIDE_FV_12x6, torreEstruturaOverrideIgual } from '@shared/types';
 import {
   DEFAULT_OPERATIONAL_RESET_CLUSTERS,
@@ -271,55 +272,65 @@ export default function ConfigPage() {
     });
   };
 
-  const handleSaveConfig = (fase: Fase, e: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveConfig = async (fase: Fase, e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const ecMin = parseFloat(fd.get('ecMin') as string);
-    const ecMax = parseFloat(fd.get('ecMax') as string);
-    const phMin = parseFloat(fd.get('phMin') as string);
-    const phMax = parseFloat(fd.get('phMax') as string);
+    const ecMin = parseOptDecimal(String(fd.get('ecMin') ?? ''));
+    const ecMax = parseOptDecimal(String(fd.get('ecMax') ?? ''));
+    const phMin = parseOptDecimal(String(fd.get('phMin') ?? ''));
+    const phMax = parseOptDecimal(String(fd.get('phMax') ?? ''));
 
-    if (isNaN(ecMin) || isNaN(ecMax) || isNaN(phMin) || isNaN(phMax)) {
+    if (ecMin == null || ecMax == null || phMin == null || phMax == null) {
       toast.error('Preencha todos os campos corretamente');
       return;
     }
 
     const cfg = FASES_CONFIG[fase];
-    mutations.upsertFaseConfig.mutate({
-      fase,
-      label: cfg.label,
-      ecMin,
-      ecMax,
-      phMin,
-      phMax,
-      cor: cfg.cor,
-      corLight: cfg.corLight,
-      icon: cfg.icon,
-    });
-    setConfigVersion((v) => v + 1);
-    toast.success(
-      `Configurações de ${isMicroverdes ? labelFaseTorreMicroverdes(fase) : FASES_CONFIG[fase].label} salvas!`,
-    );
-  };
-
-  const handleResetConfig = () => {
-    if (!window.confirm('Restaurar configurações padrão?')) return;
-    fases.forEach((fase) => {
-      const cfg = FASES_CONFIG[fase];
-      mutations.upsertFaseConfig.mutate({
+    try {
+      await mutations.upsertFaseConfig.mutateAsync({
         fase,
         label: cfg.label,
-        ecMin: cfg.ecMin,
-        ecMax: cfg.ecMax,
-        phMin: cfg.phMin,
-        phMax: cfg.phMax,
+        ecMin,
+        ecMax,
+        phMin,
+        phMax,
         cor: cfg.cor,
         corLight: cfg.corLight,
         icon: cfg.icon,
       });
-    });
-    setConfigVersion((v) => v + 1);
-    toast.success('Configurações restauradas!');
+      setConfigVersion((v) => v + 1);
+      toast.success(
+        `Configurações de ${isMicroverdes ? labelFaseTorreMicroverdes(fase) : FASES_CONFIG[fase].label} salvas!`,
+      );
+    } catch {
+      // toast de erro no hook da mutação
+    }
+  };
+
+  const handleResetConfig = async () => {
+    if (!window.confirm('Restaurar configurações padrão?')) return;
+    try {
+      await Promise.all(
+        fases.map((fase) => {
+          const cfg = FASES_CONFIG[fase];
+          return mutations.upsertFaseConfig.mutateAsync({
+            fase,
+            label: cfg.label,
+            ecMin: cfg.ecMin,
+            ecMax: cfg.ecMax,
+            phMin: cfg.phMin,
+            phMax: cfg.phMax,
+            cor: cfg.cor,
+            corLight: cfg.corLight,
+            icon: cfg.icon,
+          });
+        }),
+      );
+      setConfigVersion((v) => v + 1);
+      toast.success('Configurações restauradas!');
+    } catch {
+      // toast de erro no hook da mutação
+    }
   };
 
   const badgeClass = (fase: Fase) =>

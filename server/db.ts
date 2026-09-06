@@ -2075,18 +2075,44 @@ export async function getAllFasesConfig(projetoId: number) {
 export async function upsertFaseConfig(data: InsertFaseConfig) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.insert(fasesConfig).values(data).onDuplicateKeyUpdate({
-    set: {
-      label: data.label,
-      ecMin: data.ecMin,
-      ecMax: data.ecMax,
-      phMin: data.phMin,
-      phMax: data.phMax,
-      cor: data.cor,
-      corLight: data.corLight,
-      icon: data.icon,
-    },
-  });
+
+  const existing = await db
+    .select({ id: fasesConfig.id })
+    .from(fasesConfig)
+    .where(and(eq(fasesConfig.projetoId, data.projetoId), eq(fasesConfig.fase, data.fase)))
+    .limit(1);
+
+  const payload = {
+    label: data.label,
+    ecMin: data.ecMin,
+    ecMax: data.ecMax,
+    phMin: data.phMin,
+    phMax: data.phMax,
+    cor: data.cor,
+    corLight: data.corLight,
+    icon: data.icon,
+  };
+
+  if (existing[0]) {
+    await db.update(fasesConfig).set(payload).where(eq(fasesConfig.id, existing[0].id));
+    return;
+  }
+
+  try {
+    await db.insert(fasesConfig).values(data);
+  } catch (err) {
+    // Bases antigas podem ainda ter UNIQUE só em `fase` — tenta atualizar por projeto+fase de novo.
+    const retry = await db
+      .select({ id: fasesConfig.id })
+      .from(fasesConfig)
+      .where(and(eq(fasesConfig.projetoId, data.projetoId), eq(fasesConfig.fase, data.fase)))
+      .limit(1);
+    if (retry[0]) {
+      await db.update(fasesConfig).set(payload).where(eq(fasesConfig.id, retry[0].id));
+      return;
+    }
+    throw err;
+  }
 }
 
 // ============================================================

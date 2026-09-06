@@ -8,7 +8,8 @@ import { useFazenda } from '@/contexts/FazendaContext';
 import { useRole } from '@/hooks/useRole';
 import { wrapReadOnlyMutation } from '@/lib/readOnlyMutation';
 import { useCallback, useRef } from 'react';
-import type { Furo, PerfilData } from '@/lib/types';
+import { toast } from 'sonner';
+import { FASES_CONFIG, type Fase, type Furo, type PerfilData } from '@/lib/types';
 
 export function useFazendaMutations() {
   const utils = trpc.useUtils();
@@ -258,7 +259,34 @@ export function useFazendaMutations() {
   const deleteVariedade = trpc.variedades.delete.useMutation({ onSuccess: invalidate });
 
   // ---- Fases Config ----
-  const upsertFaseConfig = trpc.fasesConfig.upsert.useMutation({ onSuccess: invalidate });
+  const upsertFaseConfig = trpc.fasesConfig.upsert.useMutation({
+    onMutate: (input) => {
+      if (isReadOnly) return;
+      const fase = input.fase as Fase;
+      updateData((prev) => ({
+        ...prev,
+        fasesConfig: {
+          ...prev.fasesConfig,
+          [fase]: {
+            ...(prev.fasesConfig[fase] ?? FASES_CONFIG[fase]),
+            label: input.label,
+            ecMin: input.ecMin,
+            ecMax: input.ecMax,
+            phMin: input.phMin,
+            phMax: input.phMax,
+            cor: input.cor,
+            corLight: input.corLight,
+            icon: input.icon,
+          },
+        },
+      }));
+    },
+    onSuccess: invalidate,
+    onError: (error) => {
+      invalidate();
+      toast.error(error.message || 'Erro ao salvar parâmetros EC/pH');
+    },
+  });
 
   // ---- Movimentação ----
   const moverPerfil = trpc.andares.moverPerfil.useMutation({ onSuccess: invalidate });

@@ -53,7 +53,8 @@ import MicroverdesDashboard from '@/components/MicroverdesDashboard';
 import ProntasColheitaKpiDialog from '@/components/ProntasColheitaKpiDialog';
 import { useAgendaModal } from '@/contexts/AgendaModalContext';
 
-const HERO_URL = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663464614308/V8Zeqmat63YDtBSE4w4iyd/torres-real_fb616389.jpeg';
+/** Foto das torres versionada no app (CDN Manus/CloudFront ficou 403). */
+const HERO_URL = '/images/hero-fazenda.jpg';
 
 export default function Home() {
   const { openAgenda } = useAgendaModal();
@@ -182,9 +183,15 @@ export default function Home() {
         <MicroverdesDashboard />
       ) : (
         <>
-      {/* Hero — faixa hero com malha / glow (design v2) */}
-      <div className="relative h-44 sm:h-52 overflow-hidden border-b border-border/40">
-        <img src={HERO_URL} alt="Fazenda Vertical" className="w-full h-full object-cover scale-105" />
+      {/* Hero — faixa com foto real das torres (asset local) */}
+      <div className="relative h-44 sm:h-52 overflow-hidden border-b border-border/40 bg-emerald-950">
+        <img
+          src={HERO_URL}
+          alt="Fazenda Vertical"
+          className="w-full h-full object-cover scale-105"
+          loading="eager"
+          decoding="async"
+        />
         {/* Escurecimento leve à esquerda (texto) — não cobre a foto toda */}
         <div className="absolute inset-y-0 left-0 w-[62%] sm:w-[52%] bg-gradient-to-r from-black/50 via-black/18 to-transparent sm:from-black/45 sm:via-black/12" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
