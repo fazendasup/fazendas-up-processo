@@ -40,6 +40,8 @@ const STATIC: Record<string, string> = {
   "/inteligencia": "Inteligência",
   "/visao": "Visão",
   "/automacao": "Automação",
+  "/correcao-ec": "Correção EC/pH",
+  "/calculadora": "Calculadora EC/pH",
   "/usuarios": "Usuários",
   "/projetos": "Projetos",
   "/404": "Não encontrado",

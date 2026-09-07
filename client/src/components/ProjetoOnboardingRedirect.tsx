@@ -19,6 +19,7 @@ export function ProjetoOnboardingRedirect({ children }: { children: React.ReactN
     const path = location.split("?")[0] ?? "";
     if (path === "/login" || path === "/login/") return;
     if (path === "/privacidade" || path === "/privacidade/") return;
+    if (path === "/calculadora" || path === "/calculadora/") return;
     const isProjetos = path === "/projetos";
     const isAdmin = isOperationalAdminRole(user.role);
     if (isProjetos && isAdmin) return;

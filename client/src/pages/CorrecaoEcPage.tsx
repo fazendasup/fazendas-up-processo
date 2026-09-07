@@ -31,12 +31,14 @@ import {
   KOH_TEOR_MIN,
   calcularCorrecaoPhKoh,
 } from "@shared/correcaoPh";
-import { AlertTriangle, Beaker, Droplets, FlaskConical, RotateCcw, ShieldAlert } from "lucide-react";
+import { AlertTriangle, Beaker, Copy, Droplets, FlaskConical, Link2, RotateCcw, ShieldAlert } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Link } from "wouter";
 import { toast } from "sonner";
 
 const STORAGE_KEY_EC = "fazendas.correcaoEc.receita";
 const STORAGE_KEY_PH = "fazendas.correcaoPh.fatorMlEstoque";
+export const CALCULADORA_PUBLIC_PATH = "/calculadora";
 
 function loadReceita(): ReceitaConcentradoAb {
   try {
@@ -77,7 +79,7 @@ function fmtG(n: number): string {
   return `${formatDecimalForInput(n, 2)} g`;
 }
 
-export default function CorrecaoEcPage() {
+export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: boolean }) {
   const [volumeEc, setVolumeEc] = useState("");
   const [ecAtual, setEcAtual] = useState("");
   const [ecAlvo, setEcAlvo] = useState("");
@@ -141,6 +143,16 @@ export default function CorrecaoEcPage() {
     toast.success("Fator de pH restaurado ao padrão");
   };
 
+  const copiarLinkPublico = async () => {
+    const url = `${window.location.origin}${CALCULADORA_PUBLIC_PATH}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link público copiado");
+    } catch {
+      toast.message(url);
+    }
+  };
+
   const updateSal = (galao: "A" | "B", id: string, massaKg: number) => {
     setReceita((prev) => ({
       ...prev,
@@ -152,17 +164,49 @@ export default function CorrecaoEcPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      {publicMode ? (
+        <header className="border-b border-border/60 bg-card/80">
+          <div className="container py-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <Beaker className="w-5 h-5 text-cyan-600 shrink-0" />
+              <div className="min-w-0">
+                <p className="font-display font-bold text-sm truncate">Fazendas Up</p>
+                <p className="text-[11px] text-muted-foreground">Calculadora pública · EC / pH</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={copiarLinkPublico}>
+                <Copy className="w-3.5 h-3.5" />
+                Copiar link
+              </Button>
+              <Button type="button" variant="ghost" size="sm" asChild>
+                <Link href="/login">Entrar no sistema</Link>
+              </Button>
+            </div>
+          </div>
+        </header>
+      ) : (
+        <Header />
+      )}
       <main className="container py-6 max-w-3xl space-y-4">
-        <div>
-          <h1 className="font-display text-2xl font-bold flex items-center gap-2">
-            <Beaker className="w-6 h-6 text-cyan-600" />
-            Correção EC / pH
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Ferramenta liberada para operadores. Escolha EC (concentrados A/B) ou pH (hidróxido de potássio
-            P.A.).
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div>
+            <h1 className="font-display text-2xl font-bold flex items-center gap-2">
+              <Beaker className="w-6 h-6 text-cyan-600" />
+              Correção EC / pH
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {publicMode
+                ? "Ferramenta aberta — sem login. Escolha EC (concentrados A/B) ou pH (KOH P.A.)."
+                : "Ferramenta liberada para operadores. Escolha EC (concentrados A/B) ou pH (hidróxido de potássio P.A.)."}
+            </p>
+          </div>
+          {!publicMode ? (
+            <Button type="button" variant="outline" size="sm" className="gap-1.5 shrink-0" onClick={copiarLinkPublico}>
+              <Link2 className="w-3.5 h-3.5" />
+              Link público
+            </Button>
+          ) : null}
         </div>
 
         <Tabs defaultValue="ec" className="space-y-4">

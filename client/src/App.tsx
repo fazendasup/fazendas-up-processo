@@ -93,6 +93,12 @@ function Router() {
           <Route path="/login/" component={LoginPage} />
           <Route path="/privacidade" component={PrivacidadePage} />
           <Route path="/privacidade/" component={PrivacidadePage} />
+          <Route path="/calculadora">
+            {() => <CorrecaoEcPage publicMode />}
+          </Route>
+          <Route path="/calculadora/">
+            {() => <CorrecaoEcPage publicMode />}
+          </Route>
           <Route path="/rastreio/:token" component={RastreioEntrega} />
 
           <Route path="/">
