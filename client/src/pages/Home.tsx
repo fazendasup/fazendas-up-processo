@@ -196,7 +196,7 @@ export default function Home() {
         />
         <div className="absolute inset-0 flex items-end sm:items-center pb-6 sm:pb-0 pointer-events-none">
           <div className="container">
-            <div className="max-w-xl rounded-lg bg-black/35 px-3 py-2.5 sm:px-4 sm:py-3 backdrop-blur-[2px]">
+            <div className="max-w-xl rounded-lg bg-black/40 px-3 py-2.5 sm:px-4 sm:py-3">
               <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-white/90 mb-1">
                 Supervisão de cultivo
               </p>
