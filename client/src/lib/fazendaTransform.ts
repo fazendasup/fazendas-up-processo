@@ -84,14 +84,14 @@ export function transformFazendaLoadAllResponse(raw: unknown): FazendaData {
     const fase = fc.fase as Fase;
     if (fasesConfig[fase]) {
       fasesConfig[fase] = {
-        label: fc.label,
-        ecMin: fc.ecMin,
-        ecMax: fc.ecMax,
-        phMin: fc.phMin,
-        phMax: fc.phMax,
-        cor: fc.cor,
-        corLight: fc.corLight,
-        icon: fc.icon,
+        label: fc.label || fasesConfig[fase].label,
+        ecMin: Number(fc.ecMin),
+        ecMax: Number(fc.ecMax),
+        phMin: Number(fc.phMin),
+        phMax: Number(fc.phMax),
+        cor: fc.cor || fasesConfig[fase].cor,
+        corLight: fc.corLight || fasesConfig[fase].corLight,
+        icon: fc.icon || fasesConfig[fase].icon,
       };
     }
   });

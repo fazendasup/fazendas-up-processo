@@ -15,9 +15,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { useFazenda } from "@/contexts/FazendaContext";
+import { useProjeto } from "@/contexts/ProjetoContext";
 import { formatDecimalForInput, parseOptDecimal } from "@/lib/decimalInput";
 import { FASES_CONFIG, type Fase, type FaseConfig } from "@/lib/types";
+import { trpc } from "@/lib/trpc";
 import {
   RECEITA_AB_PADRAO,
   calcularCorrecaoEc,
@@ -35,7 +38,7 @@ import {
 } from "@shared/correcaoPh";
 import { AlertTriangle, Beaker, Copy, Droplets, FlaskConical, Link2, RotateCcw, ShieldAlert } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 
 const STORAGE_KEY_EC = "fazendas.correcaoEc.receita";
@@ -49,6 +52,32 @@ function meioFaixa(min: number, max: number): number {
 
 function fmtFaixa(min: number, max: number, casas = 2): string {
   return `${formatDecimalForInput(min, casas)}–${formatDecimalForInput(max, casas)}`;
+}
+
+function mergeFasesFromRows(
+  rows: Array<{ fase: string; label: string; ecMin: number; ecMax: number; phMin: number; phMax: number }> | undefined,
+): Record<Fase, FaseConfig> | null {
+  if (!rows?.length) return null;
+  const next: Record<Fase, FaseConfig> = { ...FASES_CONFIG };
+  for (const row of rows) {
+    const fase = row.fase as Fase;
+    if (!next[fase]) continue;
+    next[fase] = {
+      ...next[fase],
+      label: row.label || next[fase].label,
+      ecMin: Number(row.ecMin),
+      ecMax: Number(row.ecMax),
+      phMin: Number(row.phMin),
+      phMax: Number(row.phMax),
+    };
+  }
+  return next;
+}
+
+function projetoIdFromSearch(search: string): number | null {
+  const raw = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search).get("projeto");
+  const n = raw ? Number(raw) : NaN;
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : null;
 }
 
 function loadReceita(): ReceitaConcentradoAb {
@@ -91,7 +120,28 @@ function fmtG(n: number): string {
 }
 
 export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: boolean }) {
+  const { user } = useAuth();
   const { data: fazendaData } = useFazenda();
+  const { activeProjetoId, activeProjeto } = useProjeto();
+  const [location] = useLocation();
+  const projetoIdUrl = useMemo(() => {
+    const q = location.includes("?") ? location.slice(location.indexOf("?")) : window.location.search;
+    return projetoIdFromSearch(q);
+  }, [location]);
+
+  const authFaixas = trpc.fasesConfig.list.useQuery(undefined, {
+    enabled: Boolean(user && activeProjetoId),
+    staleTime: 30_000,
+  });
+
+  const publicFaixas = trpc.fasesConfig.publicFaixas.useQuery(
+    { projetoId: projetoIdUrl ?? undefined },
+    {
+      enabled: Boolean(publicMode || !user || !activeProjetoId),
+      staleTime: 60_000,
+    },
+  );
+
   const [faseAlvo, setFaseAlvo] = useState<Fase | null>(null);
   const [volumeEc, setVolumeEc] = useState("");
   const [ecAtual, setEcAtual] = useState("");
@@ -105,10 +155,55 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
   const [fatorPh, setFatorPh] = useState(() => loadFatorPh());
   const [mostrarFatorPh, setMostrarFatorPh] = useState(false);
 
-  const fasesConfig = useMemo(
-    () => fazendaData.fasesConfig ?? FASES_CONFIG,
-    [fazendaData.fasesConfig],
-  );
+  const fasesConfig = useMemo(() => {
+    const fromAuth = mergeFasesFromRows(authFaixas.data);
+    if (fromAuth) return fromAuth;
+    // publicFaixas sempre devolve 3 fases; só aplica quando a query está ativa/com dados
+    if (publicFaixas.data?.fases?.length) {
+      return mergeFasesFromRows(publicFaixas.data.fases) ?? FASES_CONFIG;
+    }
+    return fazendaData.fasesConfig ?? FASES_CONFIG;
+  }, [authFaixas.data, publicFaixas.data, fazendaData.fasesConfig]);
+
+  const faixaOrigem = useMemo(() => {
+    if (authFaixas.isLoading || (publicMode && publicFaixas.isLoading)) {
+      return { texto: "Carregando faixas cadastradas…", cadastrado: false };
+    }
+    if (authFaixas.data && authFaixas.data.length > 0) {
+      return {
+        texto: activeProjeto?.nome
+          ? `Faixas cadastradas do projeto «${activeProjeto.nome}» (Configurações).`
+          : "Faixas cadastradas do projeto ativo (Configurações).",
+        cadastrado: true,
+      };
+    }
+    if (publicFaixas.data?.origem === "cadastrado" && publicFaixas.data.projetoNome) {
+      return {
+        texto: `Faixas cadastradas de «${publicFaixas.data.projetoNome}». Ao escolher a fase, o alvo usa o meio da faixa.`,
+        cadastrado: true,
+      };
+    }
+    if (publicFaixas.data?.origem === "cadastrado") {
+      return {
+        texto: "Faixas cadastradas do projeto. Ao escolher a fase, o alvo usa o meio da faixa.",
+        cadastrado: true,
+      };
+    }
+    return {
+      texto: publicMode
+        ? "Faixas padrão — gere o link em Correção EC/pH (com login) para incluir o projeto, ou mantenha um único projeto ativo."
+        : "Nenhuma faixa salva neste projeto ainda — mostrando padrão. Salve em Configurações → Fases.",
+      cadastrado: false,
+    };
+  }, [
+    authFaixas.data,
+    authFaixas.isLoading,
+    publicFaixas.data,
+    publicFaixas.isLoading,
+    activeProjeto?.nome,
+    publicMode,
+  ]);
+
 
   const configFase: FaseConfig | null = faseAlvo ? fasesConfig[faseAlvo] ?? FASES_CONFIG[faseAlvo] : null;
 
@@ -175,7 +270,10 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
   };
 
   const copiarLinkPublico = async () => {
-    const url = `${window.location.origin}${CALCULADORA_PUBLIC_PATH}`;
+    const projetoId =
+      activeProjetoId ?? publicFaixas.data?.projetoId ?? projetoIdUrl ?? null;
+    const qs = projetoId != null ? `?projeto=${projetoId}` : "";
+    const url = `${window.location.origin}${CALCULADORA_PUBLIC_PATH}${qs}`;
     try {
       await navigator.clipboard.writeText(url);
       toast.success("Link público copiado");
@@ -243,11 +341,7 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Fase (faixa alvo cadastrada)</CardTitle>
-            <CardDescription>
-              {publicMode
-                ? "Faixas padrão do sistema. Com login, usa os valores salvos em Configurações do projeto."
-                : "Valores de EC/pH definidos em Configurações → Fases. Ao escolher a fase, o alvo é preenchido com o meio da faixa."}
-            </CardDescription>
+            <CardDescription>{faixaOrigem.texto}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">

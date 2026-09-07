@@ -841,6 +841,18 @@ export async function getProjetoById(projetoId: number) {
   return rows[0];
 }
 
+/** Se existir exatamente um projeto ativo, devolve o id (útil para calculadora pública). */
+export async function getUniqueActiveProjetoId(): Promise<number | null> {
+  const dbConn = await getDb();
+  if (!dbConn) return null;
+  const rows = await dbConn
+    .select({ id: projetos.id })
+    .from(projetos)
+    .where(eq(projetos.status, "ativo"))
+    .limit(2);
+  return rows.length === 1 ? rows[0]!.id : null;
+}
+
 export async function getProjetoByIdForUser(userId: number, projetoId: number) {
   const dbConn = await getDb();
   if (!dbConn) return undefined;
