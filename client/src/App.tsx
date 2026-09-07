@@ -252,7 +252,7 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/correcao-ec">
-            <ProtectedRoute requiredRole="processo">
+            <ProtectedRoute requiredRole="user">
               <CorrecaoEcPage />
             </ProtectedRoute>
           </Route>

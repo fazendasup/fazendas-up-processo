@@ -1,5 +1,5 @@
 // ============================================================
-// Correção EC — calculadora de dose dos concentrados A/B
+// Correção EC / pH — calculadoras para operadores
 // ============================================================
 
 import Header from "@/components/Header";
@@ -14,21 +14,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDecimalForInput, parseOptDecimal } from "@/lib/decimalInput";
 import {
   RECEITA_AB_PADRAO,
   calcularCorrecaoEc,
   type ReceitaConcentradoAb,
 } from "@shared/correcaoEc";
-import { AlertTriangle, Beaker, Droplets, RotateCcw } from "lucide-react";
+import {
+  FATOR_KOH_G_POR_L_POR_PH_PADRAO,
+  KOH_PA_EMBALAGEM_G,
+  calcularCorrecaoPhKoh,
+} from "@shared/correcaoPh";
+import { AlertTriangle, Beaker, Droplets, FlaskConical, RotateCcw, ShieldAlert } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-const STORAGE_KEY = "fazendas.correcaoEc.receita";
+const STORAGE_KEY_EC = "fazendas.correcaoEc.receita";
+const STORAGE_KEY_PH = "fazendas.correcaoPh.fator";
 
 function loadReceita(): ReceitaConcentradoAb {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY_EC);
     if (!raw) return RECEITA_AB_PADRAO;
     const parsed = JSON.parse(raw) as ReceitaConcentradoAb;
     if (!parsed?.galaoA?.length || !parsed?.galaoB?.length) return RECEITA_AB_PADRAO;
@@ -40,6 +47,17 @@ function loadReceita(): ReceitaConcentradoAb {
     };
   } catch {
     return RECEITA_AB_PADRAO;
+  }
+}
+
+function loadFatorPh(): number {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_PH);
+    if (!raw) return FATOR_KOH_G_POR_L_POR_PH_PADRAO;
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : FATOR_KOH_G_POR_L_POR_PH_PADRAO;
+  } catch {
+    return FATOR_KOH_G_POR_L_POR_PH_PADRAO;
   }
 }
 
@@ -55,14 +73,20 @@ function fmtG(n: number): string {
 }
 
 export default function CorrecaoEcPage() {
-  const [volume, setVolume] = useState("");
+  const [volumeEc, setVolumeEc] = useState("");
   const [ecAtual, setEcAtual] = useState("");
   const [ecAlvo, setEcAlvo] = useState("");
   const [receita, setReceita] = useState<ReceitaConcentradoAb>(() => loadReceita());
   const [mostrarReceita, setMostrarReceita] = useState(false);
 
-  const resultado = useMemo(() => {
-    const v = parseOptDecimal(volume);
+  const [volumePh, setVolumePh] = useState("");
+  const [phAtual, setPhAtual] = useState("");
+  const [phAlvo, setPhAlvo] = useState("");
+  const [fatorPh, setFatorPh] = useState(() => loadFatorPh());
+  const [mostrarFatorPh, setMostrarFatorPh] = useState(false);
+
+  const resultadoEc = useMemo(() => {
+    const v = parseOptDecimal(volumeEc);
     const a = parseOptDecimal(ecAtual);
     const t = parseOptDecimal(ecAlvo);
     if (v == null || a == null || t == null) return null;
@@ -72,17 +96,42 @@ export default function CorrecaoEcPage() {
       ecAlvo: t,
       receita,
     });
-  }, [volume, ecAtual, ecAlvo, receita]);
+  }, [volumeEc, ecAtual, ecAlvo, receita]);
+
+  const resultadoPh = useMemo(() => {
+    const v = parseOptDecimal(volumePh);
+    const a = parseOptDecimal(phAtual);
+    const t = parseOptDecimal(phAlvo);
+    if (v == null || a == null || t == null) return null;
+    return calcularCorrecaoPhKoh({
+      volumeCaixaL: v,
+      phAtual: a,
+      phAlvo: t,
+      fatorGPorLPorPh: fatorPh,
+      embalagemG: KOH_PA_EMBALAGEM_G,
+    });
+  }, [volumePh, phAtual, phAlvo, fatorPh]);
 
   const salvarReceita = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(receita));
+    localStorage.setItem(STORAGE_KEY_EC, JSON.stringify(receita));
     toast.success("Receita dos concentrados salva neste navegador");
   };
 
   const restaurarReceita = () => {
     setReceita(RECEITA_AB_PADRAO);
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY_EC);
     toast.success("Receita restaurada ao padrão");
+  };
+
+  const salvarFatorPh = () => {
+    localStorage.setItem(STORAGE_KEY_PH, String(fatorPh));
+    toast.success("Fator de correção de pH salvo neste navegador");
+  };
+
+  const restaurarFatorPh = () => {
+    setFatorPh(FATOR_KOH_G_POR_L_POR_PH_PADRAO);
+    localStorage.removeItem(STORAGE_KEY_PH);
+    toast.success("Fator de pH restaurado ao padrão");
   };
 
   const updateSal = (galao: "A" | "B", id: string, massaKg: number) => {
@@ -101,229 +150,422 @@ export default function CorrecaoEcPage() {
         <div>
           <h1 className="font-display text-2xl font-bold flex items-center gap-2">
             <Beaker className="w-6 h-6 text-cyan-600" />
-            Correção de EC
+            Correção EC / pH
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Informe o volume da caixa, o EC atual e o EC desejado. A calculadora indica quantos mL dos
-            concentrados <strong>A</strong> e <strong>B</strong> adicionar (dosagem 1:1).
+            Ferramenta liberada para operadores. Escolha EC (concentrados A/B) ou pH (hidróxido de potássio
+            P.A.).
           </p>
         </div>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Dados da caixa</CardTitle>
-            <CardDescription>Use vírgula ou ponto nos decimais (ex.: 1,35).</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-3">
-            <div className="space-y-1">
-              <Label className="text-xs">Volume da caixa (L)</Label>
-              <Input
-                inputMode="decimal"
-                placeholder="Ex: 500"
-                value={volume}
-                onChange={(e) => setVolume(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">EC atual (mS/cm)</Label>
-              <Input
-                inputMode="decimal"
-                placeholder="Ex: 1,20"
-                value={ecAtual}
-                onChange={(e) => setEcAtual(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">EC alvo (mS/cm)</Label>
-              <Input
-                inputMode="decimal"
-                placeholder="Ex: 1,50"
-                value={ecAlvo}
-                onChange={(e) => setEcAlvo(e.target.value)}
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="ec" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2 h-auto">
+            <TabsTrigger value="ec" className="gap-1.5 text-xs sm:text-sm">
+              <Droplets className="w-3.5 h-3.5" /> Correção EC
+            </TabsTrigger>
+            <TabsTrigger value="ph" className="gap-1.5 text-xs sm:text-sm">
+              <FlaskConical className="w-3.5 h-3.5" /> Correção pH (KOH)
+            </TabsTrigger>
+          </TabsList>
 
-        {resultado ? (
-          <Card className="border-cyan-500/30 bg-cyan-500/[0.04]">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Droplets className="w-4 h-4 text-cyan-600" />
-                Dose recomendada
-              </CardTitle>
-              <CardDescription>
-                ΔEC {formatDecimalForInput(resultado.deltaEc, 2)} mS/cm · potência ≈{" "}
-                {formatDecimalForInput(resultado.potenciaMlPorL, 3)} mS por mL/L de cada concentrado
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {resultado.aviso ? (
-                <div className="flex gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-50">
-                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <p>{resultado.aviso}</p>
-                </div>
-              ) : null}
-
-              {resultado.diluirComAguaL != null ? (
-                <div className="rounded-xl border bg-card p-4 text-center">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Água limpa a adicionar</p>
-                  <p className="font-display text-3xl font-bold tabular-nums mt-1">
-                    {formatDecimalForInput(resultado.diluirComAguaL, 1)} L
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center">
-                    <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-200">Galão A</p>
-                    <p className="font-display text-3xl font-bold tabular-nums mt-1 text-emerald-900 dark:text-emerald-100">
-                      {fmtMl(resultado.mlA)}
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 p-4 text-center">
-                    <p className="text-xs font-semibold text-sky-800 dark:text-sky-200">Galão B</p>
-                    <p className="font-display text-3xl font-bold tabular-nums mt-1 text-sky-900 dark:text-sky-100">
-                      {fmtMl(resultado.mlB)}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {resultado.sais.length > 0 ? (
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-2">
-                    Equivalente em sais (já dissolvidos nos concentrados)
-                  </p>
-                  <div className="overflow-x-auto rounded-lg border">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/40 text-xs">
-                        <tr>
-                          <th className="text-left p-2">Galão</th>
-                          <th className="text-left p-2">Sal</th>
-                          <th className="text-right p-2">Massa</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y">
-                        {resultado.sais.map((s) => (
-                          <tr key={`${s.galao}-${s.id}`}>
-                            <td className="p-2 font-medium">{s.galao}</td>
-                            <td className="p-2 text-muted-foreground">{s.nome}</td>
-                            <td className="p-2 text-right tabular-nums">{fmtG(s.gramas)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              ) : null}
-
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Adicione A e B em volumes iguais, misture bem e meça o EC de novo após estabilizar. O cálculo usa a
-                massa dos sais nos galões de {receita.volumeGalaoL} L e o fator TDS {receita.fatorTds} do medidor —
-                calibre o fator se a leitura real divergir.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardContent className="py-8 text-center text-sm text-muted-foreground">
-              Preencha volume, EC atual e EC alvo para ver a dose.
-            </CardContent>
-          </Card>
-        )}
-
-        <Card>
-          <CardHeader className="pb-2 flex flex-row flex-wrap items-center justify-between gap-2">
-            <div>
-              <CardTitle className="text-base">Concentrados A / B</CardTitle>
-              <CardDescription>
-                Estoque padrão: 2×{receita.volumeGalaoL} L · A {formatDecimalForInput(resultado?.concA_gL ?? 235.16, 1)}{" "}
-                g/L · B {formatDecimalForInput(resultado?.concB_gL ?? 130.8, 1)} g/L
-              </CardDescription>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => setMostrarReceita((v) => !v)}>
-              {mostrarReceita ? "Ocultar receita" : "Editar receita"}
-            </Button>
-          </CardHeader>
-          {mostrarReceita ? (
-            <CardContent className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
+          <TabsContent value="ec" className="space-y-4 mt-0">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Dados da caixa</CardTitle>
+                <CardDescription>
+                  Informe volume, EC atual e alvo. A dose de A e B é 1:1. Use vírgula ou ponto (ex.: 1,35).
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3 sm:grid-cols-3">
                 <div className="space-y-1">
-                  <Label className="text-xs">Volume de cada galão (L)</Label>
+                  <Label className="text-xs">Volume da caixa (L)</Label>
                   <Input
                     inputMode="decimal"
-                    value={String(receita.volumeGalaoL)}
-                    onChange={(e) => {
-                      const n = parseOptDecimal(e.target.value);
-                      if (n != null && n > 0) setReceita((r) => ({ ...r, volumeGalaoL: n }));
-                    }}
+                    placeholder="Ex: 500"
+                    value={volumeEc}
+                    onChange={(e) => setVolumeEc(e.target.value)}
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Fator TDS do medidor</Label>
-                  <Select
-                    value={String(receita.fatorTds)}
-                    onValueChange={(v) => setReceita((r) => ({ ...r, fatorTds: Number(v) }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="500">500 (escala 500)</SelectItem>
-                      <SelectItem value="640">640 (fertilizantes)</SelectItem>
-                      <SelectItem value="700">700 (escala 700 — padrão)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-xs">EC atual (mS/cm)</Label>
+                  <Input
+                    inputMode="decimal"
+                    placeholder="Ex: 1,20"
+                    value={ecAtual}
+                    onChange={(e) => setEcAtual(e.target.value)}
+                  />
                 </div>
-              </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">EC alvo (mS/cm)</Label>
+                  <Input
+                    inputMode="decimal"
+                    placeholder="Ex: 1,50"
+                    value={ecAlvo}
+                    onChange={(e) => setEcAlvo(e.target.value)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Galão A</p>
-                  {receita.galaoA.map((s) => (
-                    <div key={s.id} className="space-y-1">
-                      <Label className="text-[11px] text-muted-foreground">{s.nome} (kg)</Label>
+            {resultadoEc ? (
+              <Card className="border-cyan-500/30 bg-cyan-500/[0.04]">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Droplets className="w-4 h-4 text-cyan-600" />
+                    Dose recomendada
+                  </CardTitle>
+                  <CardDescription>
+                    ΔEC {formatDecimalForInput(resultadoEc.deltaEc, 2)} mS/cm · potência ≈{" "}
+                    {formatDecimalForInput(resultadoEc.potenciaMlPorL, 3)} mS por mL/L de cada concentrado
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {resultadoEc.aviso ? (
+                    <div className="flex gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-50">
+                      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <p>{resultadoEc.aviso}</p>
+                    </div>
+                  ) : null}
+
+                  {resultadoEc.diluirComAguaL != null ? (
+                    <div className="rounded-xl border bg-card p-4 text-center">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                        Água limpa a adicionar
+                      </p>
+                      <p className="font-display text-3xl font-bold tabular-nums mt-1">
+                        {formatDecimalForInput(resultadoEc.diluirComAguaL, 1)} L
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center">
+                        <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-200">Galão A</p>
+                        <p className="font-display text-3xl font-bold tabular-nums mt-1 text-emerald-900 dark:text-emerald-100">
+                          {fmtMl(resultadoEc.mlA)}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 p-4 text-center">
+                        <p className="text-xs font-semibold text-sky-800 dark:text-sky-200">Galão B</p>
+                        <p className="font-display text-3xl font-bold tabular-nums mt-1 text-sky-900 dark:text-sky-100">
+                          {fmtMl(resultadoEc.mlB)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {resultadoEc.sais.length > 0 ? (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-2">
+                        Equivalente em sais (já dissolvidos nos concentrados)
+                      </p>
+                      <div className="overflow-x-auto rounded-lg border">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/40 text-xs">
+                            <tr>
+                              <th className="text-left p-2">Galão</th>
+                              <th className="text-left p-2">Sal</th>
+                              <th className="text-right p-2">Massa</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y">
+                            {resultadoEc.sais.map((s) => (
+                              <tr key={`${s.galao}-${s.id}`}>
+                                <td className="p-2 font-medium">{s.galao}</td>
+                                <td className="p-2 text-muted-foreground">{s.nome}</td>
+                                <td className="p-2 text-right tabular-nums">{fmtG(s.gramas)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Adicione A e B em volumes iguais, misture bem e meça o EC de novo após estabilizar. Calibre o
+                    fator TDS se a leitura real divergir.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                  Preencha volume, EC atual e EC alvo para ver a dose.
+                </CardContent>
+              </Card>
+            )}
+
+            <Card>
+              <CardHeader className="pb-2 flex flex-row flex-wrap items-center justify-between gap-2">
+                <div>
+                  <CardTitle className="text-base">Concentrados A / B</CardTitle>
+                  <CardDescription>
+                    Estoque padrão: 2×{receita.volumeGalaoL} L · A{" "}
+                    {formatDecimalForInput(resultadoEc?.concA_gL ?? 235.16, 1)} g/L · B{" "}
+                    {formatDecimalForInput(resultadoEc?.concB_gL ?? 130.8, 1)} g/L
+                  </CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setMostrarReceita((v) => !v)}>
+                  {mostrarReceita ? "Ocultar receita" : "Editar receita"}
+                </Button>
+              </CardHeader>
+              {mostrarReceita ? (
+                <CardContent className="space-y-4">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Volume de cada galão (L)</Label>
                       <Input
                         inputMode="decimal"
-                        value={formatDecimalForInput(s.massaKg, 3)}
+                        value={String(receita.volumeGalaoL)}
                         onChange={(e) => {
                           const n = parseOptDecimal(e.target.value);
-                          if (n != null && n >= 0) updateSal("A", s.id, n);
+                          if (n != null && n > 0) setReceita((r) => ({ ...r, volumeGalaoL: n }));
                         }}
                       />
                     </div>
-                  ))}
-                </div>
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-sky-700 dark:text-sky-300">Galão B</p>
-                  {receita.galaoB.map((s) => (
-                    <div key={s.id} className="space-y-1">
-                      <Label className="text-[11px] text-muted-foreground">{s.nome} (kg)</Label>
-                      <Input
-                        inputMode="decimal"
-                        value={formatDecimalForInput(s.massaKg, 3)}
-                        onChange={(e) => {
-                          const n = parseOptDecimal(e.target.value);
-                          if (n != null && n >= 0) updateSal("B", s.id, n);
-                        }}
-                      />
+                    <div className="space-y-1">
+                      <Label className="text-xs">Fator TDS do medidor</Label>
+                      <Select
+                        value={String(receita.fatorTds)}
+                        onValueChange={(v) => setReceita((r) => ({ ...r, fatorTds: Number(v) }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="500">500 (escala 500)</SelectItem>
+                          <SelectItem value="640">640 (fertilizantes)</SelectItem>
+                          <SelectItem value="700">700 (escala 700 — padrão)</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
 
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" onClick={salvarReceita}>
-                  Salvar receita
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Galão A</p>
+                      {receita.galaoA.map((s) => (
+                        <div key={s.id} className="space-y-1">
+                          <Label className="text-[11px] text-muted-foreground">{s.nome} (kg)</Label>
+                          <Input
+                            inputMode="decimal"
+                            value={formatDecimalForInput(s.massaKg, 3)}
+                            onChange={(e) => {
+                              const n = parseOptDecimal(e.target.value);
+                              if (n != null && n >= 0) updateSal("A", s.id, n);
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-sky-700 dark:text-sky-300">Galão B</p>
+                      {receita.galaoB.map((s) => (
+                        <div key={s.id} className="space-y-1">
+                          <Label className="text-[11px] text-muted-foreground">{s.nome} (kg)</Label>
+                          <Input
+                            inputMode="decimal"
+                            value={formatDecimalForInput(s.massaKg, 3)}
+                            onChange={(e) => {
+                              const n = parseOptDecimal(e.target.value);
+                              if (n != null && n >= 0) updateSal("B", s.id, n);
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" onClick={salvarReceita}>
+                      Salvar receita
+                    </Button>
+                    <Button size="sm" variant="outline" className="gap-1.5" onClick={restaurarReceita}>
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      Restaurar padrão
+                    </Button>
+                  </div>
+                </CardContent>
+              ) : null}
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="ph" className="space-y-4 mt-0">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Dados da caixa</CardTitle>
+                <CardDescription>
+                  Hidróxido de potássio P.A. (embalagem {KOH_PA_EMBALAGEM_G} g) — apenas para <strong>subir</strong>{" "}
+                  o pH. Nunca jogue o sólido direto na caixa.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3 sm:grid-cols-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Volume da caixa (L)</Label>
+                  <Input
+                    inputMode="decimal"
+                    placeholder="Ex: 500"
+                    value={volumePh}
+                    onChange={(e) => setVolumePh(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">pH atual</Label>
+                  <Input
+                    inputMode="decimal"
+                    placeholder="Ex: 5,50"
+                    value={phAtual}
+                    onChange={(e) => setPhAtual(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">pH alvo</Label>
+                  <Input
+                    inputMode="decimal"
+                    placeholder="Ex: 6,00"
+                    value={phAlvo}
+                    onChange={(e) => setPhAlvo(e.target.value)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {resultadoPh ? (
+              <Card className="border-violet-500/30 bg-violet-500/[0.04]">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <FlaskConical className="w-4 h-4 text-violet-600" />
+                    Dose e diluição
+                  </CardTitle>
+                  <CardDescription>
+                    ΔpH {formatDecimalForInput(resultadoPh.deltaPh, 2)} · fator{" "}
+                    {formatDecimalForInput(fatorPh, 3)} g KOH / L / unidade de pH
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {resultadoPh.aviso ? (
+                    <div
+                      className={`flex gap-2 rounded-lg border px-3 py-2 text-sm ${
+                        resultadoPh.precisaAcido
+                          ? "border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-50"
+                          : "border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-50"
+                      }`}
+                    >
+                      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <p>{resultadoPh.aviso}</p>
+                    </div>
+                  ) : null}
+
+                  {!resultadoPh.precisaAcido && resultadoPh.kohGramas > 0 ? (
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="rounded-xl border border-violet-500/30 bg-violet-500/10 p-4 text-center">
+                          <p className="text-xs font-semibold text-violet-800 dark:text-violet-200">
+                            KOH P.A. a pesar
+                          </p>
+                          <p className="font-display text-3xl font-bold tabular-nums mt-1 text-violet-900 dark:text-violet-100">
+                            {fmtG(resultadoPh.kohGramas)}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            da embalagem de {KOH_PA_EMBALAGEM_G} g · sobra ≈{" "}
+                            {fmtG(resultadoPh.sobraEmbalagemG)}
+                          </p>
+                        </div>
+                        <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 p-4 text-center">
+                          <p className="text-xs font-semibold text-sky-800 dark:text-sky-200">
+                            Água para diluir
+                          </p>
+                          <p className="font-display text-3xl font-bold tabular-nums mt-1 text-sky-900 dark:text-sky-100">
+                            {fmtMl(resultadoPh.aguaDiluicaoMl)}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            pré-solução ≈ {formatDecimalForInput(resultadoPh.concentracaoPreSolucaoPct, 1)}% m/v
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="rounded-lg border bg-card p-3 text-sm space-y-2">
+                        <p className="font-semibold flex items-center gap-2">
+                          <ShieldAlert className="w-4 h-4 text-amber-600" />
+                          Como aplicar
+                        </p>
+                        <ol className="list-decimal pl-4 space-y-1 text-muted-foreground text-xs sm:text-sm">
+                          <li>
+                            Pese <strong className="text-foreground">{fmtG(resultadoPh.kohGramas)}</strong> de
+                            hidróxido de potássio P.A.
+                          </li>
+                          <li>
+                            Em um recipiente plástico, coloque{" "}
+                            <strong className="text-foreground">{fmtMl(resultadoPh.aguaDiluicaoMl)}</strong> de
+                            água limpa (fria).
+                          </li>
+                          <li>
+                            Adicione o KOH à água aos poucos (nunca o contrário), misture até dissolver. Use EPI —
+                            a reação esquenta.
+                          </li>
+                          <li>
+                            Despeje <strong className="text-foreground">toda</strong> essa solução na caixa,
+                            misture a solução nutritiva e meça o pH após estabilizar.
+                          </li>
+                        </ol>
+                      </div>
+                    </>
+                  ) : null}
+
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    A dose é uma estimativa: a alcalinidade da água altera o resultado. Se o pH subir pouco ou
+                    demais, ajuste o fator de correção abaixo e meça de novo.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                  Preencha volume, pH atual e pH alvo para ver a dose e a diluição.
+                </CardContent>
+              </Card>
+            )}
+
+            <Card>
+              <CardHeader className="pb-2 flex flex-row flex-wrap items-center justify-between gap-2">
+                <div>
+                  <CardTitle className="text-base">Calibração do fator</CardTitle>
+                  <CardDescription>
+                    Padrão {formatDecimalForInput(FATOR_KOH_G_POR_L_POR_PH_PADRAO, 3)} g KOH por litro da caixa
+                    para subir 1,0 de pH
+                  </CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setMostrarFatorPh((v) => !v)}>
+                  {mostrarFatorPh ? "Ocultar" : "Ajustar fator"}
                 </Button>
-                <Button size="sm" variant="outline" className="gap-1.5" onClick={restaurarReceita}>
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  Restaurar padrão
-                </Button>
-              </div>
-            </CardContent>
-          ) : null}
-        </Card>
+              </CardHeader>
+              {mostrarFatorPh ? (
+                <CardContent className="space-y-3">
+                  <div className="space-y-1 max-w-xs">
+                    <Label className="text-xs">g KOH / L / unidade de pH</Label>
+                    <Input
+                      inputMode="decimal"
+                      value={formatDecimalForInput(fatorPh, 3)}
+                      onChange={(e) => {
+                        const n = parseOptDecimal(e.target.value);
+                        if (n != null && n > 0) setFatorPh(n);
+                      }}
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" onClick={salvarFatorPh}>
+                      Salvar fator
+                    </Button>
+                    <Button size="sm" variant="outline" className="gap-1.5" onClick={restaurarFatorPh}>
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      Restaurar padrão
+                    </Button>
+                  </div>
+                </CardContent>
+              ) : null}
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
