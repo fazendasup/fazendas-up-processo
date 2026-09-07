@@ -22,8 +22,13 @@ import {
   type ReceitaConcentradoAb,
 } from "@shared/correcaoEc";
 import {
-  FATOR_KOH_G_POR_L_POR_PH_PADRAO,
+  FATOR_ML_ESTOQUE_POR_L_POR_PH_PADRAO,
+  KOH_ESTOQUE_G_PRODUTO_POR_L,
+  KOH_ESTOQUE_MASSA_G,
+  KOH_ESTOQUE_VOLUME_L,
   KOH_PA_EMBALAGEM_G,
+  KOH_PRODUTO_NOME,
+  KOH_TEOR_MIN,
   calcularCorrecaoPhKoh,
 } from "@shared/correcaoPh";
 import { AlertTriangle, Beaker, Droplets, FlaskConical, RotateCcw, ShieldAlert } from "lucide-react";
@@ -31,7 +36,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 const STORAGE_KEY_EC = "fazendas.correcaoEc.receita";
-const STORAGE_KEY_PH = "fazendas.correcaoPh.fator";
+const STORAGE_KEY_PH = "fazendas.correcaoPh.fatorMlEstoque";
 
 function loadReceita(): ReceitaConcentradoAb {
   try {
@@ -53,11 +58,11 @@ function loadReceita(): ReceitaConcentradoAb {
 function loadFatorPh(): number {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_PH);
-    if (!raw) return FATOR_KOH_G_POR_L_POR_PH_PADRAO;
+    if (!raw) return FATOR_ML_ESTOQUE_POR_L_POR_PH_PADRAO;
     const n = Number(raw);
-    return Number.isFinite(n) && n > 0 ? n : FATOR_KOH_G_POR_L_POR_PH_PADRAO;
+    return Number.isFinite(n) && n > 0 ? n : FATOR_ML_ESTOQUE_POR_L_POR_PH_PADRAO;
   } catch {
-    return FATOR_KOH_G_POR_L_POR_PH_PADRAO;
+    return FATOR_ML_ESTOQUE_POR_L_POR_PH_PADRAO;
   }
 }
 
@@ -107,7 +112,9 @@ export default function CorrecaoEcPage() {
       volumeCaixaL: v,
       phAtual: a,
       phAlvo: t,
-      fatorGPorLPorPh: fatorPh,
+      fatorMlEstoquePorLPorPh: fatorPh,
+      estoqueGProdutoPorL: KOH_ESTOQUE_G_PRODUTO_POR_L,
+      teor: KOH_TEOR_MIN,
       embalagemG: KOH_PA_EMBALAGEM_G,
     });
   }, [volumePh, phAtual, phAlvo, fatorPh]);
@@ -129,7 +136,7 @@ export default function CorrecaoEcPage() {
   };
 
   const restaurarFatorPh = () => {
-    setFatorPh(FATOR_KOH_G_POR_L_POR_PH_PADRAO);
+    setFatorPh(FATOR_ML_ESTOQUE_POR_L_POR_PH_PADRAO);
     localStorage.removeItem(STORAGE_KEY_PH);
     toast.success("Fator de pH restaurado ao padrão");
   };
@@ -395,8 +402,10 @@ export default function CorrecaoEcPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Dados da caixa</CardTitle>
                 <CardDescription>
-                  Hidróxido de potássio P.A. (embalagem {KOH_PA_EMBALAGEM_G} g) — apenas para <strong>subir</strong>{" "}
-                  o pH. Nunca jogue o sólido direto na caixa.
+                  Produto: <strong>{KOH_PRODUTO_NOME}</strong> — teor mín. {Math.round(KOH_TEOR_MIN * 100)}%.
+                  Estoque: <strong>{KOH_ESTOQUE_MASSA_G} g</strong> do produto em{" "}
+                  <strong>{KOH_ESTOQUE_VOLUME_L} L</strong> de água. A calculadora indica quantos{" "}
+                  <strong>mL desse estoque</strong> colocar na caixa para subir o pH.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3 sm:grid-cols-3">
@@ -435,51 +444,38 @@ export default function CorrecaoEcPage() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <FlaskConical className="w-4 h-4 text-violet-600" />
-                    Dose e diluição
+                    Dose na caixa
                   </CardTitle>
                   <CardDescription>
                     ΔpH {formatDecimalForInput(resultadoPh.deltaPh, 2)} · fator{" "}
-                    {formatDecimalForInput(fatorPh, 3)} g KOH / L / unidade de pH
+                    {formatDecimalForInput(fatorPh, 3)} mL estoque / L / unidade de pH
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {resultadoPh.aviso ? (
-                    <div
-                      className={`flex gap-2 rounded-lg border px-3 py-2 text-sm ${
-                        resultadoPh.precisaAcido
-                          ? "border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-50"
-                          : "border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-50"
-                      }`}
-                    >
+                    <div className="flex gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-50">
                       <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                       <p>{resultadoPh.aviso}</p>
                     </div>
                   ) : null}
 
-                  {!resultadoPh.precisaAcido && resultadoPh.kohGramas > 0 ? (
+                  {!resultadoPh.precisaAcido && resultadoPh.mlEstoque > 0 ? (
                     <>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="rounded-xl border border-violet-500/30 bg-violet-500/10 p-4 text-center">
+                        <div className="rounded-xl border border-violet-500/30 bg-violet-500/10 p-4 text-center sm:col-span-2">
                           <p className="text-xs font-semibold text-violet-800 dark:text-violet-200">
-                            KOH P.A. a pesar
+                            Solução estoque KOH a adicionar na caixa
                           </p>
-                          <p className="font-display text-3xl font-bold tabular-nums mt-1 text-violet-900 dark:text-violet-100">
-                            {fmtG(resultadoPh.kohGramas)}
+                          <p className="font-display text-4xl font-bold tabular-nums mt-1 text-violet-900 dark:text-violet-100">
+                            {fmtMl(resultadoPh.mlEstoque)}
                           </p>
-                          <p className="text-[10px] text-muted-foreground mt-1">
-                            da embalagem de {KOH_PA_EMBALAGEM_G} g · sobra ≈{" "}
-                            {fmtG(resultadoPh.sobraEmbalagemG)}
-                          </p>
-                        </div>
-                        <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 p-4 text-center">
-                          <p className="text-xs font-semibold text-sky-800 dark:text-sky-200">
-                            Água para diluir
-                          </p>
-                          <p className="font-display text-3xl font-bold tabular-nums mt-1 text-sky-900 dark:text-sky-100">
-                            {fmtMl(resultadoPh.aguaDiluicaoMl)}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground mt-1">
-                            pré-solução ≈ {formatDecimalForInput(resultadoPh.concentracaoPreSolucaoPct, 1)}% m/v
+                          <p className="text-[11px] text-muted-foreground mt-1">
+                            ≈ {fmtG(resultadoPh.produtoGramas)} de produto (
+                            {fmtG(resultadoPh.kohPuroGramas)} KOH puro a {Math.round(resultadoPh.teor * 100)}%) ·
+                            estoque {KOH_ESTOQUE_G_PRODUTO_POR_L} g/L
+                            {resultadoPh.dosesPorLitroEstoque != null
+                              ? ` · ~${formatDecimalForInput(resultadoPh.dosesPorLitroEstoque, 0)} doses desse tamanho por litro de estoque`
+                              : ""}
                           </p>
                         </div>
                       </div>
@@ -487,25 +483,24 @@ export default function CorrecaoEcPage() {
                       <div className="rounded-lg border bg-card p-3 text-sm space-y-2">
                         <p className="font-semibold flex items-center gap-2">
                           <ShieldAlert className="w-4 h-4 text-amber-600" />
-                          Como aplicar
+                          Como preparar e aplicar
                         </p>
                         <ol className="list-decimal pl-4 space-y-1 text-muted-foreground text-xs sm:text-sm">
                           <li>
-                            Pese <strong className="text-foreground">{fmtG(resultadoPh.kohGramas)}</strong> de
-                            hidróxido de potássio P.A.
+                            Prepare o estoque (se ainda não tiver): dissolva{" "}
+                            <strong className="text-foreground">{KOH_ESTOQUE_MASSA_G} g</strong> do produto
+                            (teor mín. {Math.round(KOH_TEOR_MIN * 100)}%, embalagem {KOH_PA_EMBALAGEM_G} g) em{" "}
+                            <strong className="text-foreground">{KOH_ESTOQUE_VOLUME_L} L</strong> de água fria —
+                            água primeiro, KOH depois, com EPI.
                           </li>
                           <li>
-                            Em um recipiente plástico, coloque{" "}
-                            <strong className="text-foreground">{fmtMl(resultadoPh.aguaDiluicaoMl)}</strong> de
-                            água limpa (fria).
+                            Com seringa ou proveta, meça{" "}
+                            <strong className="text-foreground">{fmtMl(resultadoPh.mlEstoque)}</strong> dessa
+                            solução estoque.
                           </li>
                           <li>
-                            Adicione o KOH à água aos poucos (nunca o contrário), misture até dissolver. Use EPI —
-                            a reação esquenta.
-                          </li>
-                          <li>
-                            Despeje <strong className="text-foreground">toda</strong> essa solução na caixa,
-                            misture a solução nutritiva e meça o pH após estabilizar.
+                            Adicione na caixa, misture bem e meça o pH após estabilizar. Se precisar, corrija de
+                            novo em pequenas doses.
                           </li>
                         </ol>
                       </div>
@@ -513,15 +508,15 @@ export default function CorrecaoEcPage() {
                   ) : null}
 
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    A dose é uma estimativa: a alcalinidade da água altera o resultado. Se o pH subir pouco ou
-                    demais, ajuste o fator de correção abaixo e meça de novo.
+                    Se na prática você usa bem menos ou mais mL, ajuste o fator abaixo até bater com o seu
+                    histórico de correção.
                   </p>
                 </CardContent>
               </Card>
             ) : (
               <Card>
                 <CardContent className="py-8 text-center text-sm text-muted-foreground">
-                  Preencha volume, pH atual e pH alvo para ver a dose e a diluição.
+                  Preencha volume, pH atual e pH alvo para ver quantos mL do estoque adicionar.
                 </CardContent>
               </Card>
             )}
@@ -531,8 +526,8 @@ export default function CorrecaoEcPage() {
                 <div>
                   <CardTitle className="text-base">Calibração do fator</CardTitle>
                   <CardDescription>
-                    Padrão {formatDecimalForInput(FATOR_KOH_G_POR_L_POR_PH_PADRAO, 3)} g KOH por litro da caixa
-                    para subir 1,0 de pH
+                    Padrão {formatDecimalForInput(FATOR_ML_ESTOQUE_POR_L_POR_PH_PADRAO, 3)} mL de estoque (100
+                    g/L) por litro da caixa para subir 1,0 de pH
                   </CardDescription>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setMostrarFatorPh((v) => !v)}>
@@ -542,7 +537,7 @@ export default function CorrecaoEcPage() {
               {mostrarFatorPh ? (
                 <CardContent className="space-y-3">
                   <div className="space-y-1 max-w-xs">
-                    <Label className="text-xs">g KOH / L / unidade de pH</Label>
+                    <Label className="text-xs">mL estoque / L caixa / unidade de pH</Label>
                     <Input
                       inputMode="decimal"
                       value={formatDecimalForInput(fatorPh, 3)}

@@ -1,44 +1,62 @@
 /**
  * Correção de pH com hidróxido de potássio P.A. (para subir o pH).
  *
- * A quantidade exata depende da alcalinidade/tampão da solução.
- * Usamos um fator empírico calibrável: g KOH / L / unidade de pH.
+ * Produto de referência: Dinâmica KOH P.A. — teor mín. 85%.
+ *
+ * Prática operacional:
+ * 1) Estoque: 100 g do produto em 1 L de água (~100 g/L).
+ * 2) Adicionar poucos mL desse estoque na caixa.
+ *
+ * A dose em mL é empírica (fator calibrável); o teor 85% entra no equivalente de KOH puro.
  */
 
+export const KOH_PRODUTO_NOME = "Hidróxido de potássio P.A. (Dinâmica)";
+
+/** Embalagem comercial típica (g). */
 export const KOH_PA_EMBALAGEM_G = 1000;
-export const KOH_MASSA_MOLAR = 56.11;
 
-/** Padrão conservador para solução nutritiva recirculante (~tampão moderado). */
-export const FATOR_KOH_G_POR_L_POR_PH_PADRAO = 0.08;
+/** Teor mínimo declarado no rótulo (fração 0–1). */
+export const KOH_TEOR_MIN = 0.85;
 
-/** mL de água por grama de KOH na pré-diluição (segurança — reação exotérmica). */
-export const ML_AGUA_POR_G_KOH_DILUICAO = 10;
+/** Receita do estoque: 100 g do produto em 1 L → 100 g produto/L. */
+export const KOH_ESTOQUE_MASSA_G = 100;
+export const KOH_ESTOQUE_VOLUME_L = 1;
+export const KOH_ESTOQUE_G_PRODUTO_POR_L = KOH_ESTOQUE_MASSA_G / KOH_ESTOQUE_VOLUME_L; // 100
 
-/** Volume mínimo de água para dissolver a dose (mL). */
-export const ML_AGUA_DILUICAO_MIN = 100;
+/**
+ * mL da solução estoque (100 g produto/L) por litro da caixa para subir 1,0 de pH.
+ * Ex.: 0,06 → em 500 L e ΔpH 0,5 ≈ 15 mL de estoque.
+ */
+export const FATOR_ML_ESTOQUE_POR_L_POR_PH_PADRAO = 0.06;
 
 export type EntradaCorrecaoPhKoh = {
   volumeCaixaL: number;
   phAtual: number;
   phAlvo: number;
-  /** g KOH necessários por litro da caixa para subir 1,0 unidade de pH. */
-  fatorGPorLPorPh?: number;
-  /** Embalagem disponível (g). Default 1000 g P.A. */
+  /** mL de estoque por litro da caixa por unidade de pH. */
+  fatorMlEstoquePorLPorPh?: number;
+  /** g de produto (não puro) por litro do estoque. Default 100. */
+  estoqueGProdutoPorL?: number;
+  /** Teor KOH (0–1). Default 0,85. */
+  teor?: number;
   embalagemG?: number;
 };
 
 export type ResultadoCorrecaoPhKoh = {
   deltaPh: number;
-  /** Gramas de KOH P.A. a pesar. */
-  kohGramas: number;
-  /** mL de água limpa para dissolver o KOH antes de ir à caixa. */
-  aguaDiluicaoMl: number;
-  /** Concentração aproximada da pré-solução (% m/v). */
-  concentracaoPreSolucaoPct: number;
-  /** Quanto sobra da embalagem de 1000 g após esta dose. */
+  /** mL da solução estoque a adicionar na caixa. */
+  mlEstoque: number;
+  /** Gramas de produto (como pesado) equivalentes na dose. */
+  produtoGramas: number;
+  /** Gramas de KOH puro equivalentes (produto × teor). */
+  kohPuroGramas: number;
+  teor: number;
+  estoqueMassaG: number;
+  estoqueVolumeL: number;
+  estoqueGProdutoPorL: number;
+  dosesPorLitroEstoque: number | null;
   sobraEmbalagemG: number;
   aviso: string | null;
-  /** true quando o alvo exige baixar pH (KOH não serve). */
   precisaAcido: boolean;
 };
 
@@ -48,21 +66,32 @@ function round(n: number, digits = 2): number {
 }
 
 /**
- * Calcula dose de KOH P.A. e volume de água para pré-diluição.
- * Adicione à caixa somente a solução já diluída (nunca o sólido direto).
+ * Calcula mL de solução estoque KOH (100 g produto/L, teor ~85%) para subir o pH.
  */
 export function calcularCorrecaoPhKoh(input: EntradaCorrecaoPhKoh): ResultadoCorrecaoPhKoh {
   const volume = input.volumeCaixaL;
   const phAtual = input.phAtual;
   const phAlvo = input.phAlvo;
-  const fator = input.fatorGPorLPorPh ?? FATOR_KOH_G_POR_L_POR_PH_PADRAO;
+  const fator = input.fatorMlEstoquePorLPorPh ?? FATOR_ML_ESTOQUE_POR_L_POR_PH_PADRAO;
+  const estoqueGProdutoPorL = input.estoqueGProdutoPorL ?? KOH_ESTOQUE_G_PRODUTO_POR_L;
+  const teor = input.teor ?? KOH_TEOR_MIN;
   const embalagem = input.embalagemG ?? KOH_PA_EMBALAGEM_G;
+  const estoqueMassaG = KOH_ESTOQUE_MASSA_G;
+  const estoqueVolumeL = KOH_ESTOQUE_VOLUME_L;
 
-  const empty = (aviso: string, extra?: Partial<ResultadoCorrecaoPhKoh>): ResultadoCorrecaoPhKoh => ({
+  const empty = (
+    aviso: string,
+    extra?: Partial<ResultadoCorrecaoPhKoh>,
+  ): ResultadoCorrecaoPhKoh => ({
     deltaPh: 0,
-    kohGramas: 0,
-    aguaDiluicaoMl: 0,
-    concentracaoPreSolucaoPct: 0,
+    mlEstoque: 0,
+    produtoGramas: 0,
+    kohPuroGramas: 0,
+    teor,
+    estoqueMassaG,
+    estoqueVolumeL,
+    estoqueGProdutoPorL,
+    dosesPorLitroEstoque: null,
     sobraEmbalagemG: embalagem,
     aviso,
     precisaAcido: false,
@@ -87,7 +116,7 @@ export function calcularCorrecaoPhKoh(input: EntradaCorrecaoPhKoh): ResultadoCor
 
   if (deltaPh < -0.01) {
     return empty(
-      "pH alvo menor que o atual: hidróxido de potássio sobe o pH. Use um ácido (ex.: nítrico ou fosfórico) para baixar.",
+      "pH alvo menor que o atual: KOH sobe o pH. Use um ácido (ex.: nítrico ou fosfórico) para baixar.",
       { deltaPh, precisaAcido: true },
     );
   }
@@ -96,29 +125,31 @@ export function calcularCorrecaoPhKoh(input: EntradaCorrecaoPhKoh): ResultadoCor
     return empty("pH já está no alvo — nenhuma dose necessária.", { deltaPh: 0 });
   }
 
-  if (!(fator > 0)) {
-    return empty("Fator de correção inválido.", { deltaPh });
+  if (!(fator > 0) || !(estoqueGProdutoPorL > 0) || !(teor > 0)) {
+    return empty("Fator, estoque ou teor inválidos.", { deltaPh });
   }
 
-  const kohGramas = round(volume * deltaPh * fator, 2);
-  const aguaDiluicaoMl = Math.max(
-    ML_AGUA_DILUICAO_MIN,
-    Math.ceil(kohGramas * ML_AGUA_POR_G_KOH_DILUICAO),
-  );
-  const concentracaoPreSolucaoPct =
-    aguaDiluicaoMl > 0 ? round((kohGramas / aguaDiluicaoMl) * 100, 1) : 0;
-  const sobraEmbalagemG = round(Math.max(0, embalagem - kohGramas), 1);
+  const mlEstoque = round(volume * deltaPh * fator, 1);
+  const produtoGramas = round((mlEstoque / 1000) * estoqueGProdutoPorL, 3);
+  const kohPuroGramas = round(produtoGramas * teor, 3);
+  const dosesPorLitroEstoque = mlEstoque > 0 ? round(1000 / mlEstoque, 1) : null;
+  const sobraEmbalagemG = round(Math.max(0, embalagem - produtoGramas), 1);
 
   let aviso: string | null = null;
-  if (kohGramas > embalagem) {
-    aviso = `A dose (${kohGramas} g) ultrapassa a embalagem de ${embalagem} g — use mais de um frasco.`;
+  if (produtoGramas > embalagem) {
+    aviso = `A dose usa ${produtoGramas} g de produto — mais que a embalagem de ${embalagem} g.`;
   }
 
   return {
     deltaPh,
-    kohGramas,
-    aguaDiluicaoMl,
-    concentracaoPreSolucaoPct,
+    mlEstoque,
+    produtoGramas,
+    kohPuroGramas,
+    teor,
+    estoqueMassaG,
+    estoqueVolumeL,
+    estoqueGProdutoPorL,
+    dosesPorLitroEstoque,
     sobraEmbalagemG,
     aviso,
     precisaAcido: false,
