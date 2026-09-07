@@ -56,6 +56,7 @@ import {
   LineChart,
   Settings2,
   Cpu,
+  Beaker,
   Camera,
   Brain,
   Sparkles,
@@ -86,6 +87,7 @@ const OPERACAO_ITEMS: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/planejamento", label: "Plantio", icon: CalendarIcon },
   { href: "/automacao", label: "Automação", icon: Cpu },
+  { href: "/correcao-ec", label: "Correção EC", icon: Beaker },
   { href: "/manutencao", label: "Manutenção", icon: Wrench },
   {
     href: "/estoque",

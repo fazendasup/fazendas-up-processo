@@ -42,6 +42,7 @@ const AdministradorPage = lazy(() => import(/* @vite-ignore */"./pages/Administr
 const EstoquePage = lazy(() => import(/* @vite-ignore */"./pages/EstoquePage"));
 const ProjetosPage = lazy(() => import(/* @vite-ignore */"./pages/ProjetosPage"));
 const AutomacaoPage = lazy(() => import(/* @vite-ignore */"./pages/AutomacaoPage"));
+const CorrecaoEcPage = lazy(() => import(/* @vite-ignore */"./pages/CorrecaoEcPage"));
 const ModulosPlataformaPage = lazy(() => import(/* @vite-ignore */"./pages/ModulosPlataformaPage"));
 const ComercialRoutes = lazy(() => import(/* @vite-ignore */"./pages/ComercialRoutes"));
 const RastreioEntrega = lazy(() => import(/* @vite-ignore */"./pages/RastreioEntrega"));
@@ -248,6 +249,11 @@ function Router() {
               <ModuloProjetoRouteGuard modulo="automacao">
                 <AutomacaoPage />
               </ModuloProjetoRouteGuard>
+            </ProtectedRoute>
+          </Route>
+          <Route path="/correcao-ec">
+            <ProtectedRoute requiredRole="processo">
+              <CorrecaoEcPage />
             </ProtectedRoute>
           </Route>
           <Route path="/usuarios">
