@@ -183,25 +183,19 @@ export default function Home() {
         <MicroverdesDashboard />
       ) : (
         <>
-      {/* Hero — faixa com foto real das torres (asset local) */}
-      <div className="relative h-44 sm:h-52 overflow-hidden border-b border-border/40 bg-emerald-950">
+      {/* Hero — foto real das torres (alta resolução, sem soft-scale) */}
+      <div className="relative h-48 sm:h-56 md:h-64 overflow-hidden border-b border-border/40 bg-emerald-950">
         <img
           src={HERO_URL}
           alt="Fazenda Vertical"
-          className="w-full h-full object-cover scale-105"
+          className="absolute inset-0 h-full w-full object-cover object-center"
           loading="eager"
           decoding="async"
+          fetchPriority="high"
         />
         {/* Escurecimento leve à esquerda (texto) — não cobre a foto toda */}
-        <div className="absolute inset-y-0 left-0 w-[62%] sm:w-[52%] bg-gradient-to-r from-black/50 via-black/18 to-transparent sm:from-black/45 sm:via-black/12" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
-        <div
-          className="absolute inset-0 opacity-[0.12] mix-blend-overlay pointer-events-none"
-          style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)`,
-            backgroundSize: "24px 24px",
-          }}
-        />
+        <div className="absolute inset-y-0 left-0 w-[55%] sm:w-[45%] bg-gradient-to-r from-black/45 via-black/15 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
         <div className="absolute inset-0 flex items-end sm:items-center pb-6 sm:pb-0">
           <div className="container">
             <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-cyan-100/95 mb-1 drop-shadow-[0_1px_6px_rgba(0,0,0,0.65)]">
