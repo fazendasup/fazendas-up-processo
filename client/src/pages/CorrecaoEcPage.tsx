@@ -360,9 +360,27 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
                     }`}
                   >
                     <p className="text-sm font-semibold">{cfg.label}</p>
-                    <p className="text-[11px] text-muted-foreground mt-1 tabular-nums">
-                      EC {fmtFaixa(cfg.ecMin, cfg.ecMax)} · pH {fmtFaixa(cfg.phMin, cfg.phMax)}
-                    </p>
+                    <div className="mt-2 space-y-1.5">
+                      <div className="flex items-baseline justify-between gap-2 rounded-md bg-emerald-500/10 px-2 py-1">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200">
+                          EC
+                        </span>
+                        <span className="text-xs font-semibold tabular-nums text-emerald-950 dark:text-emerald-50">
+                          {fmtFaixa(cfg.ecMin, cfg.ecMax)}
+                          <span className="ml-1 text-[10px] font-normal text-emerald-800/80 dark:text-emerald-200/80">
+                            mS/cm
+                          </span>
+                        </span>
+                      </div>
+                      <div className="flex items-baseline justify-between gap-2 rounded-md bg-violet-500/10 px-2 py-1">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-violet-800 dark:text-violet-200">
+                          pH
+                        </span>
+                        <span className="text-xs font-semibold tabular-nums text-violet-950 dark:text-violet-50">
+                          {fmtFaixa(cfg.phMin, cfg.phMax)}
+                        </span>
+                      </div>
+                    </div>
                   </button>
                 );
               })}
