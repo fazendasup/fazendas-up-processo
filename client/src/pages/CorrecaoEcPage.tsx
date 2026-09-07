@@ -15,7 +15,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useFazenda } from "@/contexts/FazendaContext";
 import { formatDecimalForInput, parseOptDecimal } from "@/lib/decimalInput";
+import { FASES_CONFIG, type Fase, type FaseConfig } from "@/lib/types";
 import {
   RECEITA_AB_PADRAO,
   calcularCorrecaoEc,
@@ -38,7 +40,16 @@ import { toast } from "sonner";
 
 const STORAGE_KEY_EC = "fazendas.correcaoEc.receita";
 const STORAGE_KEY_PH = "fazendas.correcaoPh.fatorMlEstoque";
+const FASES_ORDEM: Fase[] = ["mudas", "vegetativa", "maturacao"];
 export const CALCULADORA_PUBLIC_PATH = "/calculadora";
+
+function meioFaixa(min: number, max: number): number {
+  return (min + max) / 2;
+}
+
+function fmtFaixa(min: number, max: number, casas = 2): string {
+  return `${formatDecimalForInput(min, casas)}–${formatDecimalForInput(max, casas)}`;
+}
 
 function loadReceita(): ReceitaConcentradoAb {
   try {
@@ -80,6 +91,8 @@ function fmtG(n: number): string {
 }
 
 export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: boolean }) {
+  const { data: fazendaData } = useFazenda();
+  const [faseAlvo, setFaseAlvo] = useState<Fase | null>(null);
   const [volumeEc, setVolumeEc] = useState("");
   const [ecAtual, setEcAtual] = useState("");
   const [ecAlvo, setEcAlvo] = useState("");
@@ -91,6 +104,24 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
   const [phAlvo, setPhAlvo] = useState("");
   const [fatorPh, setFatorPh] = useState(() => loadFatorPh());
   const [mostrarFatorPh, setMostrarFatorPh] = useState(false);
+
+  const fasesConfig = useMemo(
+    () => fazendaData.fasesConfig ?? FASES_CONFIG,
+    [fazendaData.fasesConfig],
+  );
+
+  const configFase: FaseConfig | null = faseAlvo ? fasesConfig[faseAlvo] ?? FASES_CONFIG[faseAlvo] : null;
+
+  const aplicarFase = (fase: Fase, ponto: "min" | "meio" | "max" = "meio") => {
+    const cfg = fasesConfig[fase] ?? FASES_CONFIG[fase];
+    setFaseAlvo(fase);
+    const ec =
+      ponto === "min" ? cfg.ecMin : ponto === "max" ? cfg.ecMax : meioFaixa(cfg.ecMin, cfg.ecMax);
+    const ph =
+      ponto === "min" ? cfg.phMin : ponto === "max" ? cfg.phMax : meioFaixa(cfg.phMin, cfg.phMax);
+    setEcAlvo(formatDecimalForInput(ec, 2));
+    setPhAlvo(formatDecimalForInput(ph, 2));
+  };
 
   const resultadoEc = useMemo(() => {
     const v = parseOptDecimal(volumeEc);
@@ -209,6 +240,56 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
           ) : null}
         </div>
 
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Fase (faixa alvo cadastrada)</CardTitle>
+            <CardDescription>
+              {publicMode
+                ? "Faixas padrão do sistema. Com login, usa os valores salvos em Configurações do projeto."
+                : "Valores de EC/pH definidos em Configurações → Fases. Ao escolher a fase, o alvo é preenchido com o meio da faixa."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {FASES_ORDEM.map((fase) => {
+                const cfg = fasesConfig[fase] ?? FASES_CONFIG[fase];
+                const selected = faseAlvo === fase;
+                return (
+                  <button
+                    key={fase}
+                    type="button"
+                    onClick={() => aplicarFase(fase)}
+                    className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                      selected
+                        ? "border-cyan-500/50 bg-cyan-500/10 ring-1 ring-cyan-500/30"
+                        : "border-border bg-card hover:bg-muted/40"
+                    }`}
+                  >
+                    <p className="text-sm font-semibold">{cfg.label}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1 tabular-nums">
+                      EC {fmtFaixa(cfg.ecMin, cfg.ecMax)} · pH {fmtFaixa(cfg.phMin, cfg.phMax)}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+            {configFase && faseAlvo ? (
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="text-muted-foreground">Preencher alvo com:</span>
+                <Button type="button" variant="outline" size="sm" className="h-7 px-2" onClick={() => aplicarFase(faseAlvo, "min")}>
+                  Mínimo
+                </Button>
+                <Button type="button" variant="outline" size="sm" className="h-7 px-2" onClick={() => aplicarFase(faseAlvo, "meio")}>
+                  Meio
+                </Button>
+                <Button type="button" variant="outline" size="sm" className="h-7 px-2" onClick={() => aplicarFase(faseAlvo, "max")}>
+                  Máximo
+                </Button>
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+
         <Tabs defaultValue="ec" className="space-y-4">
           <TabsList className="grid w-full grid-cols-2 h-auto">
             <TabsTrigger value="ec" className="gap-1.5 text-xs sm:text-sm">
@@ -250,10 +331,17 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
                   <Label className="text-xs">EC alvo (mS/cm)</Label>
                   <Input
                     inputMode="decimal"
-                    placeholder="Ex: 1,50"
+                    placeholder={configFase ? fmtFaixa(configFase.ecMin, configFase.ecMax) : "Ex: 1,50"}
                     value={ecAlvo}
                     onChange={(e) => setEcAlvo(e.target.value)}
                   />
+                  {configFase ? (
+                    <p className="text-[11px] text-muted-foreground tabular-nums">
+                      Faixa {configFase.label}: {fmtFaixa(configFase.ecMin, configFase.ecMax)} mS/cm
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-muted-foreground">Escolha a fase acima para ver a faixa cadastrada.</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -475,10 +563,17 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
                   <Label className="text-xs">pH alvo</Label>
                   <Input
                     inputMode="decimal"
-                    placeholder="Ex: 6,00"
+                    placeholder={configFase ? fmtFaixa(configFase.phMin, configFase.phMax) : "Ex: 6,00"}
                     value={phAlvo}
                     onChange={(e) => setPhAlvo(e.target.value)}
                   />
+                  {configFase ? (
+                    <p className="text-[11px] text-muted-foreground tabular-nums">
+                      Faixa {configFase.label}: {fmtFaixa(configFase.phMin, configFase.phMax)}
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-muted-foreground">Escolha a fase acima para ver a faixa cadastrada.</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
