@@ -53,8 +53,8 @@ import MicroverdesDashboard from '@/components/MicroverdesDashboard';
 import ProntasColheitaKpiDialog from '@/components/ProntasColheitaKpiDialog';
 import { useAgendaModal } from '@/contexts/AgendaModalContext';
 
-/** Foto das torres versionada no app (CDN Manus/CloudFront ficou 403). */
-const HERO_URL = '/images/hero-fazenda.jpg';
+/** Foto das torres versionada no app (CDN Manus/CloudFront ficou 403). Cache-bust no nome ao trocar arquivo. */
+const HERO_URL = '/images/hero-fazenda.jpg?v=3';
 
 export default function Home() {
   const { openAgenda } = useAgendaModal();
@@ -183,30 +183,30 @@ export default function Home() {
         <MicroverdesDashboard />
       ) : (
         <>
-      {/* Hero — foto real das torres (alta resolução, sem soft-scale) */}
-      <div className="relative h-48 sm:h-56 md:h-64 overflow-hidden border-b border-border/40 bg-emerald-950">
+      {/* Hero — foto limpa, sem overlay escuro / malha (só sombra no texto) */}
+      <div className="relative h-52 sm:h-64 md:h-72 overflow-hidden border-b border-border/40 bg-neutral-900">
         <img
           src={HERO_URL}
           alt="Fazenda Vertical"
-          className="absolute inset-0 h-full w-full object-cover object-center"
+          className="absolute inset-0 h-full w-full object-cover object-[center_45%] [image-rendering:auto]"
+          style={{ filter: 'none' }}
           loading="eager"
           decoding="async"
           fetchPriority="high"
         />
-        {/* Escurecimento leve à esquerda (texto) — não cobre a foto toda */}
-        <div className="absolute inset-y-0 left-0 w-[55%] sm:w-[45%] bg-gradient-to-r from-black/45 via-black/15 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-        <div className="absolute inset-0 flex items-end sm:items-center pb-6 sm:pb-0">
+        <div className="absolute inset-0 flex items-end sm:items-center pb-6 sm:pb-0 pointer-events-none">
           <div className="container">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-cyan-100/95 mb-1 drop-shadow-[0_1px_6px_rgba(0,0,0,0.65)]">
-              Supervisão de cultivo
-            </p>
-            <h1 className="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight drop-shadow-[0_2px_20px_rgba(0,0,0,0.5)]">
-              Painel de Controle
-            </h1>
-            <p className="text-sm mt-2 max-w-xl text-white/95 drop-shadow-[0_1px_10px_rgba(0,0,0,0.75)]">
-              {resumo.totalTorres} torres &middot; {resumo.totalAndares} andares &middot; {resumo.andaresOcupados} ocupados
-            </p>
+            <div className="max-w-xl rounded-lg bg-black/35 px-3 py-2.5 sm:px-4 sm:py-3 backdrop-blur-[2px]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-white/90 mb-1">
+                Supervisão de cultivo
+              </p>
+              <h1 className="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+                Painel de Controle
+              </h1>
+              <p className="text-sm mt-1.5 text-white/90">
+                {resumo.totalTorres} torres &middot; {resumo.totalAndares} andares &middot; {resumo.andaresOcupados} ocupados
+              </p>
+            </div>
           </div>
         </div>
       </div>
