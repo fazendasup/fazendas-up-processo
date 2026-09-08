@@ -54,13 +54,14 @@ import {
 } from 'lucide-react';
 import { useMemo, useState, useCallback, useEffect } from "react";
 import { trpc } from '@/lib/trpc';
-import type { FazendaData, Fase, CaixaAgua, MedicaoCaixa } from '@/lib/types';
-import { FASES_CONFIG } from '@/lib/types';
+import type { FazendaData, Fase, CaixaAgua, MedicaoCaixa, Torre } from '@/lib/types';
+import { FASES_CONFIG, torreEstaAtivaNoDashboard } from '@/lib/types';
 import {
   contarPlantasAndar,
   contarColhidasAndar,
   calcularKPIs,
 } from '@/lib/utils-farm';
+import { compareTorresPorExibicao } from '@/lib/utils';
 
 // ---- Helpers ----
 
@@ -76,6 +77,156 @@ function formatDateShort(d: Date): string {
 
 function formatDateFull(d: Date): string {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+}
+
+/** “Torre Maturação 1” → “Torre 1” (a fase já aparece no rótulo). */
+function compactTorreNomeAnalise(nome: string): string {
+  return nome
+    .replace(/^Torre\s+Matura[cç][aã]o\s+/i, 'Torre ')
+    .replace(/^Torre\s+Vegetativa\s+/i, 'Torre ')
+    .replace(/^Torre\s+Mudas\s+/i, 'Torre ');
+}
+
+const FASE_ORDEM_ANALISE: Fase[] = ['mudas', 'vegetativa', 'maturacao'];
+
+type CaixaAnaliseOption = {
+  id: string;
+  label: string;
+  fase: Fase;
+  /** Caixa(s) usadas no gráfico — em dupla virtual pode agregar medições de 2 caixas. */
+  caixas: CaixaAgua[];
+  torreCount: number;
+};
+
+function numeroTorreParaPareamento(t: Torre): number {
+  if (typeof t.numeroTorre === "number" && t.numeroTorre > 0) return t.numeroTorre;
+  const m = t.nome.match(/(\d+)/);
+  return m ? Number(m[1]) : Number.MAX_SAFE_INTEGER;
+}
+
+function labelDupla(fase: Fase, torres: Torre[]): string {
+  const faseLabel = FASES_CONFIG[fase]?.label ?? fase;
+  const nomes = torres.map((t) => compactTorreNomeAnalise(t.nome));
+  return `Dupla ${faseLabel} · ${nomes.join(" + ")}`;
+}
+
+function caixaAgregada(id: string, fase: Fase, nome: string, partes: CaixaAgua[]): CaixaAgua {
+  const medicoes = partes
+    .flatMap((c) => c.medicoes)
+    .slice()
+    .sort((a, b) => new Date(a.dataHora).getTime() - new Date(b.dataHora).getTime());
+  const aplicacoes = partes
+    .flatMap((c) => c.aplicacoes)
+    .slice()
+    .sort((a, b) => new Date(a.dataHora).getTime() - new Date(b.dataHora).getTime());
+  return {
+    id,
+    nome,
+    fase,
+    torreIds: partes.flatMap((c) => c.torreIds),
+    medicoes,
+    aplicacoes,
+  };
+}
+
+/**
+ * Uma opção por caixa física ligada a torres ativas.
+ * - Já compartilhada (2+ torres na mesma caixa) → uma linha “Dupla …”.
+ * - Maturação ainda 1:1 no cadastro → pareia torres consecutivas (1–2, 3–4…) e agrega medições.
+ * - Caixas órfãs ficam de fora.
+ */
+function caixasUnicasPorTorresAtivas(data: FazendaData): CaixaAnaliseOption[] {
+  const byId = new Map<string, { caixa: CaixaAgua; torres: Torre[] }>();
+
+  for (const torre of data.torres) {
+    if (!torreEstaAtivaNoDashboard(torre)) continue;
+    if (!torre.caixaAguaId) continue;
+    const caixa = data.caixasAgua.find((c) => c.id === torre.caixaAguaId);
+    if (!caixa) continue;
+    const cur = byId.get(caixa.id);
+    if (cur) {
+      if (!cur.torres.some((t) => t.id === torre.id)) cur.torres.push(torre);
+    } else {
+      byId.set(caixa.id, { caixa, torres: [torre] });
+    }
+  }
+
+  const shared: CaixaAnaliseOption[] = [];
+  const singles: Array<{ caixa: CaixaAgua; torres: Torre[] }> = [];
+
+  for (const { caixa, torres } of byId.values()) {
+    const sorted = [...torres].sort(compareTorresPorExibicao);
+    if (sorted.length >= 2) {
+      shared.push({
+        id: caixa.id,
+        label: labelDupla(caixa.fase, sorted),
+        fase: caixa.fase,
+        caixas: [caixa],
+        torreCount: sorted.length,
+      });
+    } else {
+      singles.push({ caixa, torres: sorted });
+    }
+  }
+
+  const result: CaixaAnaliseOption[] = [...shared];
+  const singlesUsados = new Set<string>();
+
+  const singlesMat = singles
+    .filter((s) => s.caixa.fase === "maturacao" && s.torres.length === 1)
+    .sort(
+      (a, b) =>
+        numeroTorreParaPareamento(a.torres[0]!) - numeroTorreParaPareamento(b.torres[0]!),
+    );
+
+  for (let i = 0; i < singlesMat.length; i++) {
+    const a = singlesMat[i]!;
+    if (singlesUsados.has(a.caixa.id)) continue;
+    const na = numeroTorreParaPareamento(a.torres[0]!);
+    const b = singlesMat[i + 1];
+    if (b && !singlesUsados.has(b.caixa.id)) {
+      const nb = numeroTorreParaPareamento(b.torres[0]!);
+      const mesmoPar = Math.ceil(na / 2) === Math.ceil(nb / 2) && Math.abs(na - nb) === 1;
+      if (mesmoPar) {
+        const torres = [...a.torres, ...b.torres].sort(compareTorresPorExibicao);
+        const virtualId = `dupla:${a.caixa.id}+${b.caixa.id}`;
+        result.push({
+          id: virtualId,
+          label: labelDupla("maturacao", torres),
+          fase: "maturacao",
+          caixas: [
+            caixaAgregada(virtualId, "maturacao", labelDupla("maturacao", torres), [
+              a.caixa,
+              b.caixa,
+            ]),
+          ],
+          torreCount: 2,
+        });
+        singlesUsados.add(a.caixa.id);
+        singlesUsados.add(b.caixa.id);
+        continue;
+      }
+    }
+  }
+
+  for (const s of singles) {
+    if (singlesUsados.has(s.caixa.id)) continue;
+    const faseLabel = FASES_CONFIG[s.caixa.fase]?.label ?? s.caixa.fase;
+    const nomeTorre = s.torres[0] ? compactTorreNomeAnalise(s.torres[0].nome) : s.caixa.nome;
+    result.push({
+      id: s.caixa.id,
+      label: `${nomeTorre} (${faseLabel})`,
+      fase: s.caixa.fase,
+      caixas: [s.caixa],
+      torreCount: s.torres.length,
+    });
+  }
+
+  return result.sort((a, b) => {
+    const fr = FASE_ORDEM_ANALISE.indexOf(a.fase) - FASE_ORDEM_ANALISE.indexOf(b.fase);
+    if (fr !== 0) return fr;
+    return a.label.localeCompare(b.label, "pt-BR", { numeric: true, sensitivity: "base" });
+  });
 }
 
 function daysAgo(days: number): Date {
@@ -411,11 +562,23 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
     setDateFim(fim);
   }, [period]);
 
-  const caixas = data.caixasAgua;
+  const caixaOpcoes = useMemo(() => caixasUnicasPorTorresAtivas(data), [data]);
+  const caixas = useMemo(() => caixaOpcoes.flatMap((o) => o.caixas), [caixaOpcoes]);
+
+  useEffect(() => {
+    if (selectedCaixa === 'all') return;
+    if (!caixaOpcoes.some((o) => o.id === selectedCaixa)) {
+      setSelectedCaixa('all');
+    }
+  }, [caixaOpcoes, selectedCaixa]);
+
   const periodoInvalido = dateInicio > dateFim;
 
   const { chartData, rawMedicoes } = useMemo(() => {
-    const targetCaixas = selectedCaixa === 'all' ? caixas : caixas.filter((c) => c.id === selectedCaixa);
+    const targetCaixas =
+      selectedCaixa === 'all'
+        ? caixas
+        : (caixaOpcoes.find((o) => o.id === selectedCaixa)?.caixas ?? []);
 
     const allMedicoes: { date: Date; ec: number; ph: number; temp: number | null; caixa: string }[] = [];
     if (!periodoInvalido) {
@@ -473,14 +636,15 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
       .sort((a, b) => a.sortKey - b.sortKey);
 
     return { chartData: chart, rawMedicoes: allMedicoes };
-  }, [caixas, selectedCaixa, dateInicio, dateFim, granularity, periodoInvalido]);
+  }, [caixas, caixaOpcoes, selectedCaixa, dateInicio, dateFim, granularity, periodoInvalido]);
 
   // Get ideal ranges for selected caixa
   const idealRange = useMemo(() => {
     if (selectedCaixa === 'all') {
       return { ecMin: 1.0, ecMax: 2.5, phMin: 5.5, phMax: 6.5 };
     }
-    const caixa = caixas.find((c) => c.id === selectedCaixa);
+    const opt = caixaOpcoes.find((o) => o.id === selectedCaixa);
+    const caixa = opt?.caixas[0];
     if (!caixa) return { ecMin: 1.0, ecMax: 2.5, phMin: 5.5, phMax: 6.5 };
     const faseConfig = data.fasesConfig[caixa.fase];
     return {
@@ -489,7 +653,7 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
       phMin: faseConfig.phMin,
       phMax: faseConfig.phMax,
     };
-  }, [selectedCaixa, caixas, data.fasesConfig]);
+  }, [selectedCaixa, caixaOpcoes, data.fasesConfig]);
 
   const stats = useMemo(() => {
     if (rawMedicoes.length === 0) return null;
@@ -524,6 +688,7 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
 
   const hasTemp = stats?.tempAvg != null;
   const xAxisAngle = granularity === 'hour' && chartData.length > 8 ? -35 : 0;
+  const duplasCount = caixaOpcoes.filter((o) => o.torreCount >= 2).length;
 
   return (
     <div className="space-y-4">
@@ -531,16 +696,22 @@ function ECpHSection({ data, period }: { data: FazendaData; period: PeriodFilter
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Caixa d&apos;água</Label>
           <Select value={selectedCaixa} onValueChange={setSelectedCaixa}>
-            <SelectTrigger className="w-[240px]">
+            <SelectTrigger className="w-[min(100%,320px)] sm:w-[320px]">
               <SelectValue placeholder="Selecionar caixa d'água" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todas as caixas (média)</SelectItem>
-              {caixas.map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.nome} ({c.fase})</SelectItem>
+              <SelectItem value="all">
+                Todas as caixas ({caixaOpcoes.length}
+                {duplasCount > 0 ? ` · ${duplasCount} dupla${duplasCount > 1 ? 's' : ''}` : ''})
+              </SelectItem>
+              {caixaOpcoes.map((o) => (
+                <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
+          <p className="text-[11px] text-muted-foreground max-w-[320px]">
+            Uma opção por caixa física. Duplas (2 torres na mesma caixa) aparecem juntas.
+          </p>
         </div>
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Agrupamento</Label>
