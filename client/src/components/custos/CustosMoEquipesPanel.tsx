@@ -642,19 +642,22 @@ export function CustosMoEquipesPanel() {
               <Alert>
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription className="text-xs">
-                  Estimativa:{" "}
-                  {fmtMoney(
-                    (parseNum(form.custoMensalBase) ?? 0) *
-                      (1 + (parseNum(form.encargosPct) ?? 0) / 100),
-                  )}
-                  /mês
-                  {parseNum(form.horasMes)
-                    ? ` · ${fmtMoney(
-                        ((parseNum(form.custoMensalBase) ?? 0) *
-                          (1 + (parseNum(form.encargosPct) ?? 0) / 100)) /
-                          (parseNum(form.horasMes) ?? 1),
-                      )}/h`
-                    : ""}
+                  {(() => {
+                    const n = Math.max(1, Math.floor(parseNum(form.numPessoas) ?? 1));
+                    const porPessoa =
+                      (parseNum(form.custoMensalBase) ?? 0) *
+                      (1 + (parseNum(form.encargosPct) ?? 0) / 100);
+                    const horas = parseNum(form.horasMes);
+                    return (
+                      <>
+                        Estimativa: {fmtMoney(porPessoa * n)}/mês
+                        {n > 1 ? ` (${fmtMoney(porPessoa)} × ${n})` : ""}
+                        {horas
+                          ? ` · ${fmtMoney(porPessoa / horas)}/h`
+                          : ""}
+                      </>
+                    );
+                  })()}
                 </AlertDescription>
               </Alert>
             ) : null}
