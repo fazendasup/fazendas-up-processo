@@ -33,12 +33,19 @@ export type MoEquipeInput = {
   codigoFolha?: string | null;
   regime: RegimeMoEquipe;
   finalidade: FinalidadeMoEquipe;
+  /**
+   * Quantidade de pessoas nesta linha.
+   * Custo mensal e horas/mês cadastrados são **por pessoa**; o total multiplica por este valor.
+   */
   numPessoas: number;
+  /** Horas produtivas por pessoa no mês. */
   horasMes: number;
+  /** Base salarial/contrato por pessoa. */
   custoMensalBase?: number | null;
   encargosPct?: number | null;
+  /** Custo mensal total por pessoa (quando informado manualmente). */
   custoMensalTotal?: number | null;
-  /** Valor líquido desembolsado (folha / transferência). */
+  /** Valor líquido desembolsado por pessoa (folha / transferência). */
   liquidoMensal?: number | null;
   observacoes?: string | null;
   ativo?: boolean | null;
@@ -55,6 +62,8 @@ export const LABEL_MODO_CUSTO_MO_EQUIPE: Record<ModoCustoMoEquipe, string> = {
 export type MoEquipeCalculada = MoEquipeInput & {
   custoMensalEmpregador: number;
   custoMensalEfetivo: number;
+  /** Horas produtivas totais da linha (horasMes × numPessoas). */
+  horasMesEfetivas: number;
   custoHora: number | null;
   modoCusto: ModoCustoMoEquipe;
 };
@@ -73,8 +82,14 @@ function round4(n: number): number {
   return Math.round(n * 10000) / 10000;
 }
 
-/** Custo mensal cheio (empregador / contrato). */
-export function calcularCustoMensalEmpregador(e: MoEquipeInput): number {
+/** Garante pelo menos 1 pessoa na linha. */
+export function pessoasEquipe(e: Pick<MoEquipeInput, "numPessoas">): number {
+  const n = Math.floor(Number(e.numPessoas));
+  return Number.isFinite(n) && n >= 1 ? n : 1;
+}
+
+/** Custo mensal cheio por pessoa (empregador / contrato), sem multiplicar por quantidade. */
+export function calcularCustoMensalEmpregadorPorPessoa(e: MoEquipeInput): number {
   if (e.ativo === false) return 0;
   const totalManual = e.custoMensalTotal;
   if (totalManual != null && totalManual >= 0) return round2(totalManual);
@@ -91,14 +106,21 @@ export function calcularCustoMensalEmpregador(e: MoEquipeInput): number {
   return 0;
 }
 
-/** Custo usado nos cálculos conforme modo (empregador ou líquido desembolsado). */
+/** Custo mensal cheio da linha (empregador / contrato) × pessoas. */
+export function calcularCustoMensalEmpregador(e: MoEquipeInput): number {
+  if (e.ativo === false) return 0;
+  return round2(calcularCustoMensalEmpregadorPorPessoa(e) * pessoasEquipe(e));
+}
+
+/** Custo usado nos cálculos conforme modo (empregador ou líquido desembolsado) × pessoas. */
 export function calcularCustoMensalEquipe(
   e: MoEquipeInput,
   modo: ModoCustoMoEquipe = "empregador",
 ): number {
   if (e.ativo === false) return 0;
+  const n = pessoasEquipe(e);
   if (modo === "liquido") {
-    if (e.liquidoMensal != null && e.liquidoMensal >= 0) return round2(e.liquidoMensal);
+    if (e.liquidoMensal != null && e.liquidoMensal >= 0) return round2(e.liquidoMensal * n);
     return calcularCustoMensalEmpregador(e);
   }
   return calcularCustoMensalEmpregador(e);
@@ -113,13 +135,17 @@ export function calcularEquipeCompleta(
   e: MoEquipeInput,
   modo: ModoCustoMoEquipe = "empregador",
 ): MoEquipeCalculada {
+  const n = pessoasEquipe(e);
   const custoMensalEmpregador = calcularCustoMensalEmpregador(e);
   const custoMensalEfetivo = calcularCustoMensalEquipe(e, modo);
+  const horasMesEfetivas = round4(Math.max(0, e.horasMes) * n);
   return {
     ...e,
+    numPessoas: n,
     custoMensalEmpregador,
     custoMensalEfetivo,
-    custoHora: calcularCustoHoraEquipe(custoMensalEfetivo, e.horasMes),
+    horasMesEfetivas,
+    custoHora: calcularCustoHoraEquipe(custoMensalEfetivo, horasMesEfetivas),
     modoCusto: modo,
   };
 }
@@ -139,10 +165,10 @@ export function mapaCustoHoraProcessamento(
     const e = calcularEquipeCompleta(raw, modo);
     if (e.custoHora == null) continue;
     if (e.regime === "clt") {
-      horasClt += e.horasMes;
+      horasClt += e.horasMesEfetivas;
       custoClt += e.custoMensalEfetivo;
     } else {
-      horasPj += e.horasMes;
+      horasPj += e.horasMesEfetivas;
       custoPj += e.custoMensalEfetivo;
     }
   }

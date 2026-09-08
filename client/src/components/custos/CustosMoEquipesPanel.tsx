@@ -168,7 +168,16 @@ export function CustosMoEquipesPanel() {
     const procPj = equipes.filter(
       (e) => e.ativo && e.finalidade === "processamento" && e.regime === "pj",
     );
-    return { procClt: procClt.length, procPj: procPj.length };
+    const pessoas = (lista: typeof procClt) =>
+      lista.reduce((s, e) => s + (e.numPessoas > 0 ? e.numPessoas : 1), 0);
+    return {
+      procClt: procClt.length,
+      procPj: procPj.length,
+      pessoasClt: pessoas(procClt),
+      pessoasPj: pessoas(procPj),
+      custoMesProcClt: procClt.reduce((s, e) => s + (e.calculo.custoMensalEfetivo ?? 0), 0),
+      custoMesProcPj: procPj.reduce((s, e) => s + (e.calculo.custoMensalEfetivo ?? 0), 0),
+    };
   }, [equipes]);
 
   function abrirNova(regime: RegimeMoEquipe) {
@@ -221,8 +230,10 @@ export function CustosMoEquipesPanel() {
         <Users className="h-4 w-4" />
         <AlertTitle>Equipes CLT e PJ — base para custo/hora automático</AlertTitle>
         <AlertDescription>
-          Cadastre folha/contrato e horas produtivas. O sistema calcula R$/h e aplica automaticamente nas
-          fichas de <strong>Produtos vendidos</strong> — etapas com <strong>minutos/unidade</strong> e{" "}
+          Cadastre folha/contrato e horas produtivas <strong>por pessoa</strong>. A quantidade em{" "}
+          <strong>Pessoas</strong> multiplica o custo mensal e as horas totais. O R$/h (por pessoa) só muda se
+          misturar salários diferentes. O sistema aplica automaticamente nas fichas de{" "}
+          <strong>Produtos vendidos</strong> — etapas com <strong>minutos/unidade</strong> e{" "}
           <strong>lavagem R$/kg</strong> (linha industrial) recalculam sem precisar salvar o modelo de
           processo. Equipes de <em>processamento</em> entram no CMV; equipes <em>fixas/overhead</em>{" "}
           entram no rateio mensal da Rentabilidade.
@@ -261,7 +272,10 @@ export function CustosMoEquipesPanel() {
             <p className="text-xl font-bold tabular-nums">
               {mapa?.clt != null ? fmtMoney(mapa.clt) : "—"}
             </p>
-            <p className="text-[11px] text-muted-foreground">{resumo.procClt} equipe(s)</p>
+            <p className="text-[11px] text-muted-foreground">
+              {resumo.pessoasClt} pessoa(s) · {resumo.procClt} linha(s) · mês{" "}
+              {fmtMoney(resumo.custoMesProcClt)}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -272,7 +286,10 @@ export function CustosMoEquipesPanel() {
             <p className="text-xl font-bold tabular-nums">
               {mapa?.pj != null ? fmtMoney(mapa.pj) : "—"}
             </p>
-            <p className="text-[11px] text-muted-foreground">{resumo.procPj} equipe(s)</p>
+            <p className="text-[11px] text-muted-foreground">
+              {resumo.pessoasPj} pessoa(s) · {resumo.procPj} linha(s) · mês{" "}
+              {fmtMoney(resumo.custoMesProcPj)}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -404,7 +421,14 @@ export function CustosMoEquipesPanel() {
                       {LABEL_FINALIDADE_MO_EQUIPE[e.finalidade]}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{e.numPessoas}</TableCell>
-                    <TableCell className="text-right tabular-nums">{e.horasMes}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {e.calculo.horasMesEfetivas}
+                      {e.numPessoas > 1 ? (
+                        <span className="block text-[10px] text-muted-foreground">
+                          {e.horasMes} × {e.numPessoas}
+                        </span>
+                      ) : null}
+                    </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {fmtMoney(e.calculo.custoMensalEfetivo)}
                     </TableCell>
@@ -521,27 +545,30 @@ export function CustosMoEquipesPanel() {
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-2">
-                <Label>Pessoas</Label>
+                <Label>Pessoas nesta linha</Label>
                 <Input
                   inputMode="numeric"
                   value={form.numPessoas}
                   onChange={(e) => setForm((f) => ({ ...f, numPessoas: e.target.value }))}
                 />
+                <p className="text-[11px] text-muted-foreground">
+                  Multiplica custo e horas cadastrados abaixo (valores por pessoa).
+                </p>
               </div>
               <div className="space-y-2">
-                <Label>Horas produtivas / mês (equipe)</Label>
+                <Label>Horas produtivas / mês (por pessoa)</Label>
                 <Input
                   inputMode="decimal"
                   value={form.horasMes}
                   onChange={(e) => setForm((f) => ({ ...f, horasMes: e.target.value }))}
-                  placeholder={form.finalidade === "overhead" ? "Opcional" : "Ex.: 352"}
+                  placeholder={form.finalidade === "overhead" ? "Opcional" : "Ex.: 173,33"}
                 />
               </div>
             </div>
             {form.regime === "clt" ? (
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-2">
-                  <Label>Base salarial CLT / mês (R$)</Label>
+                  <Label>Base salarial CLT / mês por pessoa (R$)</Label>
                   <Input
                     inputMode="decimal"
                     value={form.custoMensalBase}
@@ -560,7 +587,7 @@ export function CustosMoEquipesPanel() {
               </div>
             ) : form.regime === "prolabore" ? (
               <div className="space-y-2">
-                <Label>Pró-labore mensal (R$)</Label>
+                <Label>Pró-labore mensal por pessoa (R$)</Label>
                 <Input
                   inputMode="decimal"
                   value={form.custoMensalBase}
@@ -569,7 +596,7 @@ export function CustosMoEquipesPanel() {
               </div>
             ) : (
               <div className="space-y-2">
-                <Label>Valor contrato PJ / mês (R$)</Label>
+                <Label>Valor contrato PJ / mês por pessoa (R$)</Label>
                 <Input
                   inputMode="decimal"
                   value={form.custoMensalBase}
@@ -578,7 +605,7 @@ export function CustosMoEquipesPanel() {
               </div>
             )}
             <div className="space-y-2">
-              <Label>Custo mensal total (R$) — opcional, sobrescreve cálculo</Label>
+              <Label>Custo mensal total por pessoa (R$) — opcional, sobrescreve cálculo</Label>
               <Input
                 inputMode="decimal"
                 value={form.custoMensalTotal}
@@ -587,7 +614,7 @@ export function CustosMoEquipesPanel() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Líquido desembolsado / mês (R$)</Label>
+              <Label>Líquido desembolsado / mês por pessoa (R$)</Label>
               <Input
                 inputMode="decimal"
                 value={form.liquidoMensal}
@@ -596,7 +623,7 @@ export function CustosMoEquipesPanel() {
               />
               <p className="text-[11px] text-muted-foreground">
                 Usado quando a opção &quot;Desembolso líquido&quot; está ativa. Folha 05/2026 e
-                operadores PJ já trazem esse valor preenchido.
+                operadores PJ já trazem esse valor preenchido. Multiplica por Pessoas.
               </p>
             </div>
             <div className="space-y-2">

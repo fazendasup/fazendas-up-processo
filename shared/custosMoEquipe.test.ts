@@ -8,21 +8,21 @@ import {
 } from "./custosMoEquipe";
 
 describe("custosMoEquipe", () => {
-  it("CLT aplica encargos sobre base", () => {
+  it("CLT aplica encargos sobre base por pessoa e multiplica por quantidade", () => {
     expect(
       calcularCustoMensalEquipe({
         nome: "CLT",
         regime: "clt",
         finalidade: "processamento",
         numPessoas: 2,
-        horasMes: 352,
+        horasMes: 176,
         custoMensalBase: 10000,
         encargosPct: 80,
       }),
-    ).toBe(18000);
+    ).toBe(36000);
   });
 
-  it("PJ usa custo mensal total", () => {
+  it("PJ usa custo mensal total por pessoa", () => {
     const e = calcularEquipeCompleta({
       nome: "PJ",
       regime: "pj",
@@ -32,6 +32,29 @@ describe("custosMoEquipe", () => {
       custoMensalTotal: 12000,
     });
     expect(e.custoHora).toBe(75);
+    expect(e.horasMesEfetivas).toBe(160);
+  });
+
+  it("aumentar pessoas multiplica custo e horas, mantendo R$/h", () => {
+    const uma = calcularEquipeCompleta({
+      nome: "PJ",
+      regime: "pj",
+      finalidade: "processamento",
+      numPessoas: 1,
+      horasMes: 173.33,
+      custoMensalTotal: 3150,
+    });
+    const tres = calcularEquipeCompleta({
+      nome: "PJ",
+      regime: "pj",
+      finalidade: "processamento",
+      numPessoas: 3,
+      horasMes: 173.33,
+      custoMensalTotal: 3150,
+    });
+    expect(tres.custoMensalEfetivo).toBeCloseTo(uma.custoMensalEfetivo! * 3, 2);
+    expect(tres.horasMesEfetivas).toBeCloseTo(uma.horasMesEfetivas * 3, 2);
+    expect(tres.custoHora).toBeCloseTo(uma.custoHora!, 4);
   });
 
   it("mapa separa CLT e PJ e calcula MO por minutos", () => {
@@ -59,14 +82,37 @@ describe("custosMoEquipe", () => {
     expect(custoMoPorMinutos(6, "pj", mapa)).toBe(8);
   });
 
-  it("soma overhead fixo de equipes", () => {
+  it("mapa pondera horas pelo número de pessoas", () => {
+    const mapa = mapaCustoHoraProcessamento([
+      {
+        nome: "Barato",
+        regime: "pj",
+        finalidade: "processamento",
+        numPessoas: 1,
+        horasMes: 100,
+        custoMensalTotal: 5000,
+      },
+      {
+        nome: "Caro",
+        regime: "pj",
+        finalidade: "processamento",
+        numPessoas: 3,
+        horasMes: 100,
+        custoMensalTotal: 8000,
+      },
+    ]);
+    // (5000 + 24000) / (100 + 300) = 72.5
+    expect(mapa.pj).toBe(72.5);
+  });
+
+  it("soma overhead fixo de equipes × pessoas", () => {
     expect(
       somarMoOverheadEquipes([
         {
           nome: "Supervisor CLT",
           regime: "clt",
           finalidade: "overhead",
-          numPessoas: 1,
+          numPessoas: 2,
           horasMes: 176,
           custoMensalTotal: 9000,
         },
@@ -79,7 +125,7 @@ describe("custosMoEquipe", () => {
           custoMensalTotal: 10000,
         },
       ]),
-    ).toBe(9000);
+    ).toBe(18000);
   });
 
   it("modo liquido usa liquidoMensal e fallback para empregador", () => {
