@@ -9,6 +9,45 @@ import {
   modeloComumDeLinhaProcesso,
 } from "./custosLinhaProcessoIndustrial";
 
+describe("calcularMaquinaReaisKg", () => {
+  it("modo contínuo usa horas (não minutos) — evita inflar energia ~60×", () => {
+    // 8 kW · 210 kg/h · R$ 0,75/kWh → 8 × (1/210) × 0,75 ≈ R$ 0,0286/kg
+    const energia = calcularMaquinaReaisKg(
+      {
+        ativo: true,
+        potenciaKw: 8,
+        modoContinuo: true,
+        minutosCiclo: 0,
+        kgPorCiclo: 1,
+        tarifaKwh: 0.75,
+        depreciacaoReaisKg: 0,
+        consumiveisReaisKg: 0,
+      },
+      0.75,
+      210,
+    );
+    expect(energia).toBeCloseTo(8 / 210 * 0.75, 4);
+    expect(energia).toBeLessThan(0.05);
+  });
+
+  it("modo ciclo: 4 min / 3 kg · 3 kW · R$ 0,75 → R$ 0,05/kg", () => {
+    const energia = calcularMaquinaReaisKg(
+      {
+        ativo: true,
+        potenciaKw: 3,
+        modoContinuo: false,
+        minutosCiclo: 4,
+        kgPorCiclo: 3,
+        tarifaKwh: 0.75,
+        depreciacaoReaisKg: 0,
+        consumiveisReaisKg: 0,
+      },
+      0.75,
+    );
+    expect(energia).toBeCloseTo(0.05, 4);
+  });
+});
+
 describe("calcularLinhaProcessoIndustrial", () => {
   it("MO + máquina — lavagem automática com energia e secagem com ciclo", () => {
     const r = calcularLinhaProcessoIndustrial(LINHA_PROCESSO_INDUSTRIAL_PADRAO, {

@@ -610,15 +610,16 @@ export function calcularMaquinaReaisKg(
 ): number {
   if (!maquina.ativo) return 0;
   const tarifa = maquina.tarifaKwh ?? tarifaDefault;
-  let minPorKg: number | null = null;
+  /** Horas de máquina por kg (kWh = kW × h). */
+  let horasPorKg: number | null = null;
   if (maquina.modoContinuo && kgHoraContinuo != null && kgHoraContinuo > 0) {
-    minPorKg = 60 / kgHoraContinuo;
+    horasPorKg = 1 / kgHoraContinuo;
   } else if (maquina.kgPorCiclo > 0 && maquina.minutosCiclo > 0) {
-    minPorKg = maquina.minutosCiclo / 60 / maquina.kgPorCiclo;
+    horasPorKg = maquina.minutosCiclo / 60 / maquina.kgPorCiclo;
   }
   const fixos = maquina.depreciacaoReaisKg + maquina.consumiveisReaisKg;
-  if (minPorKg == null) return round4(fixos);
-  const energia = maquina.potenciaKw * minPorKg * tarifa;
+  if (horasPorKg == null) return round4(fixos);
+  const energia = maquina.potenciaKw * horasPorKg * tarifa;
   return round4(energia + fixos);
 }
 
