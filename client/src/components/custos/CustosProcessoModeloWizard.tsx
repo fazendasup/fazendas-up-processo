@@ -863,6 +863,19 @@ export function CustosProcessoModeloWizard() {
                     />
                   </div>
                   <div className="space-y-1">
+                    <Label>Kg por unidade vendida (ref. do resumo)</Label>
+                    <DecimalInput
+                      value={draft.linha.kgPorUnidadeRef}
+                      fallback={0}
+                      fractionDigits={4}
+                      onChange={(v) => patchLinha({ kgPorUnidadeRef: v })}
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      Pote 120 g → <strong>0,12</strong> · 240 g → <strong>0,24</strong>. Só para unificar o
+                      total no Resultado; o kg real de cada SKU fica no passo Produtos / ficha.
+                    </p>
+                  </div>
+                  <div className="space-y-1">
                     <Label>Pés/un vendida (ref. desfolhagem)</Label>
                     <DecimalInput
                       value={draft.linha.pesPorUnidadeRef}
