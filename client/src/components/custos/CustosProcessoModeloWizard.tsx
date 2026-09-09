@@ -57,10 +57,12 @@ import {
   LINHA_PROCESSO_INDUSTRIAL_PADRAO,
   LINHA_PROCESSO_FLORES_PADRAO,
   LINHA_PROCESSO_MICROVERDES_PADRAO,
+  modeloComumDeLinhaProcesso,
   normalizarLinhaProcessoInput,
   type CustoMaquinaInput,
   type FamiliaProcessoModelo,
   type LinhaProcessoIndustrialInput,
+  type LinhaProcessoIndustrialResult,
   type OperadorLinhaProcesso,
   type ProcessoModeloRecord,
 } from "@shared/custosLinhaProcessoIndustrial";
@@ -75,6 +77,7 @@ import {
   LABEL_REGIME_MO_ETAPA,
   LABEL_REGIME_MO_EQUIPE,
   REGIMES_MO_ETAPA,
+  type CustoHoraPorRegime,
   type RegimeMoEtapa,
 } from "@shared/custosMoEquipe";
 import {
@@ -83,6 +86,7 @@ import {
   ChevronRight,
   Copy,
   Cog,
+  Download,
   Factory,
   Plus,
   Save,
@@ -90,6 +94,30 @@ import {
   Trash2,
 } from "lucide-react";
 
+const AUDITORIA_SCHEMA = "fazendas-up-processo-modelo-auditoria" as const;
+const AUDITORIA_VERSION = 1;
+
+function downloadJson(filename: string, data: unknown) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function slugArquivo(nome: string): string {
+  return (
+    nome
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 40) || "modelo"
+  );
+}
 const fmtMoney = (n: number | null | undefined) =>
   n == null || !Number.isFinite(n)
     ? "—"
@@ -271,6 +299,55 @@ function draftToPayload(d: ModeloDraft) {
     regimeMoPadrao: d.regimeMoPadrao,
     incluirAdesivo: d.incluirAdesivo,
     linhaProcesso: normalizarLinhaProcessoInput(d.linha),
+  };
+}
+
+/** Snapshot para colar no chat e auditar preenchimento da linha / CMV. */
+function montarExportAuditoriaModelo(opts: {
+  draft: ModeloDraft;
+  mapaHora: CustoHoraPorRegime | null;
+  calc: LinhaProcessoIndustrialResult;
+  produtos: LinhaMap[];
+}) {
+  const payload = draftToPayload(opts.draft);
+  const comum = modeloComumDeLinhaProcesso(opts.calc);
+  return {
+    schema: AUDITORIA_SCHEMA,
+    version: AUDITORIA_VERSION,
+    exportedAt: new Date().toISOString(),
+    mapaHora: opts.mapaHora,
+    modelo: {
+      ...payload,
+      lavagemReaisKg: comum.lavagemReaisKg,
+      corteMinutosUn: comum.corteMinutosUn,
+      embalagemMinutosUn: comum.embalagemMinutosUn,
+    },
+    calculo: {
+      processamentoLinhaMolhadaReaisKg: opts.calc.processamentoLinhaMolhadaReaisKg,
+      processamentoReaisKg: opts.calc.processamentoReaisKg,
+      processamentoMoReaisKg: opts.calc.processamentoMoReaisKg,
+      processamentoMoReaisUn: opts.calc.processamentoMoReaisUn,
+      processamentoReaisUn: opts.calc.processamentoReaisUn,
+      processamentoMaquinaReaisKg: opts.calc.processamentoMaquinaReaisKg,
+      processamentoConsumiveisReaisKg: opts.calc.processamentoConsumiveisReaisKg,
+      desfolhagemMinPorUn: opts.calc.desfolhagemMinPorUn,
+      selagemMinPorUn: opts.calc.selagemMinPorUn,
+      embalagemSelagemMinPorUn: opts.calc.embalagemSelagemMinPorUn,
+      resumoCapacidade: opts.calc.resumoCapacidade,
+      alertas: opts.calc.alertas,
+      etapas: opts.calc.etapas,
+    },
+    produtos: opts.produtos.map((l) => ({
+      produtoComercialId: l.produtoComercialId,
+      nome: l.nome,
+      semFicha: l.semFicha,
+      categoriaCusto: l.categoriaCusto,
+      perfilProcesso: l.perfilProcesso,
+      perfilSugerido: l.perfilSugerido,
+      kgPorUnidade: parseOptDecimal(l.kgPorUnidade),
+      modoCompraMp: l.modoCompraMp,
+      processoModeloId: l.processoModeloId ? Number(l.processoModeloId) : null,
+    })),
   };
 }
 
@@ -514,6 +591,31 @@ export function CustosProcessoModeloWizard() {
 
   const linhasVisiveis = filtroSemFicha ? linhas.filter((l) => l.semFicha) : linhas;
 
+  function snapshotAuditoria() {
+    return montarExportAuditoriaModelo({
+      draft,
+      mapaHora,
+      calc: linhaCalc,
+      produtos: linhas,
+    });
+  }
+
+  function exportarJsonAuditoria() {
+    const data = snapshotAuditoria();
+    const stamp = new Date().toISOString().slice(0, 10);
+    downloadJson(`auditoria-processo-${slugArquivo(draft.nome)}-${stamp}.json`, data);
+    toast.success("JSON exportado — envie o arquivo no chat para análise");
+  }
+
+  async function copiarJsonAuditoria() {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(snapshotAuditoria(), null, 2));
+      toast.success("JSON copiado — cole no chat para análise");
+    } catch {
+      toast.error("Não foi possível copiar. Use Exportar JSON.");
+    }
+  }
+
   return (
     <div className="space-y-4">
       <Alert>
@@ -522,7 +624,8 @@ export function CustosProcessoModeloWizard() {
         <AlertDescription>
           Cadastre <strong>um modelo por tipo de linha</strong> (folhosas, legumes, flores…). Cada etapa pode ser{" "}
           <strong>só MO</strong>, <strong>MO + máquina</strong> ou <strong>só máquina</strong> (lavagem
-          automática). MO usa R$/h das <strong>Equipes MO</strong> (CLT/PJ) quando disponível.
+          automática). MO usa R$/h das <strong>Equipes MO</strong> (CLT/PJ) quando disponível. Para revisar o
+          preenchimento, use <strong>Exportar JSON</strong> ou <strong>Copiar</strong> e envie no chat.
         </AlertDescription>
       </Alert>
 
@@ -536,7 +639,17 @@ export function CustosProcessoModeloWizard() {
               </CardTitle>
               <CardDescription>{step.desc}</CardDescription>
             </div>
-            <Badge variant="outline">{draft.nome || "Sem nome"}</Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline">{draft.nome || "Sem nome"}</Badge>
+              <Button type="button" variant="outline" size="sm" onClick={() => void copiarJsonAuditoria()}>
+                <Copy className="h-3.5 w-3.5 mr-1" />
+                Copiar
+              </Button>
+              <Button type="button" variant="secondary" size="sm" onClick={exportarJsonAuditoria}>
+                <Download className="h-3.5 w-3.5 mr-1" />
+                Exportar JSON
+              </Button>
+            </div>
           </div>
           <Progress value={progress} className="h-1.5 mt-3" />
           <div className="flex flex-wrap gap-1 mt-2">
@@ -1245,6 +1358,14 @@ export function CustosProcessoModeloWizard() {
 
           {step.id === "resultado" ? (
             <div className="space-y-4">
+              <Alert>
+                <Download className="h-4 w-4" />
+                <AlertTitle>Auditoria do preenchimento</AlertTitle>
+                <AlertDescription>
+                  Exporte o JSON (botões no topo) e envie no chat para conferirmos tempos, kg/h, máquinas,
+                  operadores e o R$/kg que vai para a ficha.
+                </AlertDescription>
+              </Alert>
               <div className={`grid gap-3 sm:grid-cols-2 ${isMicroverdes ? "lg:grid-cols-2" : "lg:grid-cols-4"}`}>
                 <Card>
                   <CardHeader className="pb-1">
