@@ -381,6 +381,17 @@ function etapasMoPorUn(
       }),
     );
   }
+  const selMaqUn = calc?.etapas.find((e) => e.nome === "Selagem")?.maquinaReaisPorUn;
+  if (selMaqUn != null && selMaqUn > 0) {
+    out.push(
+      etapa("mao_de_obra", {
+        nome: "Selagem (máquina/energia)",
+        custoPorUnidade: selMaqUn,
+        minutosPorUnidade: null,
+        regimeMo: regime,
+      }),
+    );
+  }
   if (out.length === 0 && moCombinado != null && calc == null) {
     out.push(
       etapa("mao_de_obra", {

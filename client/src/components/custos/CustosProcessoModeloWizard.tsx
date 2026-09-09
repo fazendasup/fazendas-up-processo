@@ -1271,6 +1271,17 @@ export function CustosProcessoModeloWizard() {
           {step.id === "maquina" ? (
             <div className="space-y-4">
               <MaquinaFields
+                label="Pré-lavagem (bomba/tanque — energia contínua)"
+                maquina={draft.linha.preLavagemMaquina}
+                showContinuo
+                kgHoraHint={`Usa ~${((draft.linha.preLavagemKgHora * draft.linha.preLavagemEficienciaPct) / 100).toFixed(0)} kg/h efetivos da pré-lavagem`}
+                onChange={(m) =>
+                  patchLinha({
+                    preLavagemMaquina: { ...m, modoContinuo: true },
+                  })
+                }
+              />
+              <MaquinaFields
                 label="Lavagem industrial (automática ou complemento)"
                 maquina={draft.linha.lavagemMaquina}
                 showContinuo
@@ -1304,6 +1315,19 @@ export function CustosProcessoModeloWizard() {
                 maquina={draft.linha.secagemMaquina}
                 onChange={(m) => patchLinha({ secagemMaquina: m })}
               />
+              <MaquinaFields
+                label="Seladora (energia por unidade — usa min da selagem)"
+                maquina={draft.linha.selagemMaquina}
+                onChange={(m) =>
+                  patchLinha({
+                    selagemMaquina: { ...m, modoContinuo: false },
+                  })
+                }
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Seladora: ative, informe kW; o tempo vem de «min/ciclo ÷ un/ciclo» no passo MO. Depreciação e
+                consumíveis deste bloco entram como <strong>R$/un</strong>.
+              </p>
             </div>
           ) : null}
 
@@ -1412,7 +1436,7 @@ export function CustosProcessoModeloWizard() {
                             </div>
                             <div>
                               <p className="text-xs text-muted-foreground">
-                                MO por unidade (desfolha + emb. + selagem)
+                                Por unidade (desfolha + emb. + selagem MO/máquina)
                               </p>
                               <p className="text-2xl font-semibold tabular-nums text-emerald-800 dark:text-emerald-300">
                                 {fmtMoney(moPorUn)}
@@ -1574,7 +1598,11 @@ export function CustosProcessoModeloWizard() {
                               : "—"}
                         </TableCell>
                         <TableCell className="text-xs tabular-nums">
-                          {e.maquinaReaisPorKg != null ? `${fmtMoney(e.maquinaReaisPorKg)}/kg` : "—"}
+                          {e.maquinaReaisPorUn != null
+                            ? `${fmtMoney(e.maquinaReaisPorUn)}/un`
+                            : e.maquinaReaisPorKg != null
+                              ? `${fmtMoney(e.maquinaReaisPorKg)}/kg`
+                              : "—"}
                         </TableCell>
                         <TableCell className="text-xs tabular-nums">
                           {e.consumiveisReaisPorKg != null && e.consumiveisReaisPorKg > 0

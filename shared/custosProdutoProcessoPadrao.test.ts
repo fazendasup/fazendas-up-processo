@@ -129,8 +129,19 @@ describe("custosProdutoProcessoPadrao", () => {
     const linha = {
       ...LINHA_PROCESSO_INDUSTRIAL_PADRAO,
       embalagemOperadorIds: ["1", "2"],
-      selagemMinPorUn: 0,
+      selagemMinPorCiclo: 3,
+      selagemUnPorCiclo: 4,
       desfolhagemSegPorPe: 0,
+      selagemMaquina: {
+        ativo: true,
+        potenciaKw: 1,
+        modoContinuo: false,
+        minutosCiclo: 0,
+        kgPorCiclo: 1,
+        tarifaKwh: 0.9,
+        depreciacaoReaisKg: 0,
+        consumiveisReaisKg: 0,
+      },
       operadores: [
         { id: "1", nome: "A", regimeMo: "qualquer" as const },
         { id: "2", nome: "B", regimeMo: "qualquer" as const },
@@ -157,6 +168,8 @@ describe("custosProdutoProcessoPadrao", () => {
     const embMo = etapas.find((e) => e.nome === "Embalagem (MO)");
     expect(embMo?.minutosPorUnidade).toBeCloseTo(linha.embalagemMinPorUn * 2);
     expect(etapas.some((e) => e.tipo === "descasque_corte")).toBe(false);
+    const selMaq = etapas.find((e) => e.nome === "Selagem (máquina/energia)");
+    expect(selMaq?.custoPorUnidade).toBeCloseTo(1 * (0.75 / 60) * 0.9, 4);
   });
 
   it("calcula R$/kg de lote de lavagem", () => {

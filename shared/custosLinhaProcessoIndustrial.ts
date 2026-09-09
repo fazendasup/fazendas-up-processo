@@ -77,6 +77,8 @@ export type LinhaProcessoIndustrialInput = {
   preLavagemOperadorIds: string[];
   /** Sanitizante, detergente etc. (R$/kg processado). */
   preLavagemConsumiveisReaisKg: number;
+  /** Ex.: bomba/tanque de pré-lavagem — energia contínua via kg/h da etapa. */
+  preLavagemMaquina: CustoMaquinaInput;
   lavagemKgHora: number;
   lavagemEficienciaPct: number;
   lavagemUsaMo: boolean;
@@ -95,6 +97,8 @@ export type LinhaProcessoIndustrialInput = {
   selagemMinPorCiclo: number;
   selagemUnPorCiclo: number;
   selagemOperadorIds: string[];
+  /** Seladora — energia por unidade (usa min/un da selagem). Deprec./consumíveis do bloco = R$/un. */
+  selagemMaquina: CustoMaquinaInput;
 };
 
 export const LINHA_PROCESSO_INDUSTRIAL_PADRAO: LinhaProcessoIndustrialInput = {
@@ -112,6 +116,7 @@ export const LINHA_PROCESSO_INDUSTRIAL_PADRAO: LinhaProcessoIndustrialInput = {
   preLavagemEficienciaPct: 70,
   preLavagemOperadorIds: ["1"],
   preLavagemConsumiveisReaisKg: 0,
+  preLavagemMaquina: { ...CUSTO_MAQUINA_PADRAO },
   lavagemKgHora: 300,
   lavagemEficienciaPct: 70,
   lavagemUsaMo: false,
@@ -148,6 +153,7 @@ export const LINHA_PROCESSO_INDUSTRIAL_PADRAO: LinhaProcessoIndustrialInput = {
   selagemMinPorCiclo: 2,
   selagemUnPorCiclo: 4,
   selagemOperadorIds: ["1"],
+  selagemMaquina: { ...CUSTO_MAQUINA_PADRAO },
 };
 
 const MAQUINA_INATIVA: CustoMaquinaInput = {
@@ -172,6 +178,7 @@ export const LINHA_PROCESSO_MICROVERDES_PADRAO: LinhaProcessoIndustrialInput = {
   preLavagemKgHora: 0,
   preLavagemEficienciaPct: 0,
   preLavagemConsumiveisReaisKg: 0,
+  preLavagemMaquina: { ...MAQUINA_INATIVA },
   lavagemKgHora: 0,
   lavagemEficienciaPct: 0,
   lavagemUsaMo: false,
@@ -185,6 +192,7 @@ export const LINHA_PROCESSO_MICROVERDES_PADRAO: LinhaProcessoIndustrialInput = {
   selagemMinPorCiclo: 0,
   selagemUnPorCiclo: 1,
   selagemOperadorIds: ["1"],
+  selagemMaquina: { ...MAQUINA_INATIVA },
 };
 
 /** Linha enxuta: seleção + embalagem (sem lavagem, secagem nem desfolhagem). */
@@ -420,6 +428,14 @@ export function normalizarLinhaProcessoInput(raw: LinhaProcessoIndustrialInputLe
   if (raw.kgPorUnidadeRef == null) base.kgPorUnidadeRef = 0;
   base.lavagemMaquina = normalizarMaquina(raw.lavagemMaquina, LINHA_PROCESSO_INDUSTRIAL_PADRAO.lavagemMaquina);
   base.secagemMaquina = normalizarMaquina(raw.secagemMaquina, LINHA_PROCESSO_INDUSTRIAL_PADRAO.secagemMaquina);
+  base.preLavagemMaquina = normalizarMaquina(
+    raw.preLavagemMaquina,
+    LINHA_PROCESSO_INDUSTRIAL_PADRAO.preLavagemMaquina,
+  );
+  base.selagemMaquina = normalizarMaquina(
+    raw.selagemMaquina,
+    LINHA_PROCESSO_INDUSTRIAL_PADRAO.selagemMaquina,
+  );
   if (!base.lavagemUsaMo && raw.lavagemMaquina == null) base.lavagemMaquina.ativo = true;
   for (const op of base.operadores) {
     if (!op.regimeMo) op.regimeMo = "qualquer";
@@ -442,6 +458,8 @@ export type EtapaLinhaBreakdown = {
   minPorUn: number | null;
   moReaisPorKg: number | null;
   maquinaReaisPorKg: number | null;
+  /** Energia/fixos de máquina em etapas por unidade (ex.: seladora). */
+  maquinaReaisPorUn: number | null;
   consumiveisReaisPorKg: number | null;
   moReaisPorUn: number | null;
   reaisPorKg: number | null;
@@ -549,7 +567,8 @@ function etapaPreLavagemHabilitada(input: LinhaProcessoIndustrialInput): boolean
   return (
     input.preLavagemKgHora > 0 ||
     input.preLavagemEficienciaPct > 0 ||
-    input.preLavagemConsumiveisReaisKg > 0
+    input.preLavagemConsumiveisReaisKg > 0 ||
+    input.preLavagemMaquina.ativo
   );
 }
 
@@ -631,6 +650,21 @@ export function calcularMaquinaReaisKg(
   return round4(energia + fixos);
 }
 
+/** Energia de máquina por unidade (seladora): kW × (min/un ÷ 60) × tarifa. Fixos do bloco = R$/un. */
+export function calcularMaquinaReaisUn(
+  maquina: CustoMaquinaInput,
+  tarifaDefault: number,
+  minutosPorUnidade: number,
+): number {
+  if (!maquina.ativo) return 0;
+  const tarifa = maquina.tarifaKwh ?? tarifaDefault;
+  const fixos = maquina.depreciacaoReaisKg + maquina.consumiveisReaisKg;
+  const energia =
+    minutosPorUnidade > 0 ? maquina.potenciaKw * (minutosPorUnidade / 60) * tarifa : 0;
+  if (!(energia > 0) && !(fixos > 0)) return 0;
+  return round4(energia + fixos);
+}
+
 type EtapaBase = Omit<
   EtapaLinhaBreakdown,
   | "operadorId"
@@ -638,12 +672,14 @@ type EtapaBase = Omit<
   | "operadorNome"
   | "moReaisPorKg"
   | "maquinaReaisPorKg"
+  | "maquinaReaisPorUn"
   | "consumiveisReaisPorKg"
   | "moReaisPorUn"
   | "reaisPorKg"
   | "reaisPorUn"
 > & {
   maquinaReaisPorKg?: number | null;
+  maquinaReaisPorUn?: number | null;
   consumiveisReaisPorKg?: number | null;
 };
 
@@ -697,6 +733,7 @@ function montarEtapaMo(
   const moKg = base.modo === "por_kg" && moValor != null ? round4(moValor) : null;
   const moUn = base.modo === "por_un" && moValor != null ? round4(moValor) : null;
   const maqKg = base.maquinaReaisPorKg ?? null;
+  const maqUn = base.maquinaReaisPorUn ?? null;
   const consumKg =
     base.consumiveisReaisPorKg != null && base.consumiveisReaisPorKg > 0
       ? round4(base.consumiveisReaisPorKg)
@@ -704,6 +741,10 @@ function montarEtapaMo(
         ? 0
         : null;
   const nomes = operadores.map((o) => o.nome);
+  const reaisUn =
+    base.modo === "por_un"
+      ? round4((moUn ?? 0) + (maqUn ?? 0))
+      : null;
   return {
     ...base,
     operadorIds: operadores.map((o) => o.id),
@@ -716,9 +757,12 @@ function montarEtapaMo(
     moReaisPorKg: moKg,
     moReaisPorUn: moUn,
     maquinaReaisPorKg: maqKg,
+    maquinaReaisPorUn: maqUn,
     consumiveisReaisPorKg: consumKg,
     reaisPorKg: base.modo === "por_kg" ? totalReaisPorKg(moKg, maqKg, consumKg) : null,
-    reaisPorUn: moUn,
+    reaisPorUn: base.modo === "por_un" && ((moUn != null && moUn > 0) || (maqUn != null && maqUn > 0))
+      ? reaisUn
+      : moUn,
     nota: notaBase,
   };
 }
@@ -810,35 +854,61 @@ export function calcularLinhaProcessoIndustrial(
   }
 
   const preKgH = kgHoraEfetivo(input.preLavagemKgHora, input.preLavagemEficienciaPct);
+  const preMaquinaKg = calcularMaquinaReaisKg(input.preLavagemMaquina, input.tarifaKwh, preKgH);
   if (etapaPreLavagemHabilitada(input)) {
-    if (preKgH == null) {
-      alertas.push("Pré-lavagem: informe kg/h e eficiência (%).");
-    } else {
-      const opsPre = resolverOperadoresLinha(input, input.preLavagemOperadorIds);
-      const moPre = moTotalOperadoresParalelos(input, opsPre, mapaUsado, (h) =>
-        reaisPorKgDeThroughput(h, preKgH),
+    if (preKgH == null && (input.preLavagemKgHora > 0 || input.preLavagemOperadorIds.length > 0)) {
+      alertas.push("Pré-lavagem: informe kg/h e eficiência (%) para MO e energia contínua.");
+    }
+    if (input.preLavagemMaquina.ativo && input.preLavagemMaquina.modoContinuo && preKgH == null) {
+      alertas.push("Pré-lavagem máquina contínua: informe kg/h e eficiência (%) para calcular energia.");
+    }
+    const opsPre = resolverOperadoresLinha(input, input.preLavagemOperadorIds);
+    const temMoPre = preKgH != null;
+    const moPre = temMoPre
+      ? moTotalOperadoresParalelos(input, opsPre, mapaUsado, (h) =>
+          reaisPorKgDeThroughput(h, preKgH),
+        )
+      : { mo: null, custoHoraUsado: null, regimeMo: null };
+    if (temMoPre || preMaquinaKg > 0 || input.preLavagemConsumiveisReaisKg > 0) {
+      const etapaPre = montarEtapaMo(
+        {
+          nome: "Pré-lavagem",
+          modo: "por_kg",
+          temMo: temMoPre,
+          temMaquina: input.preLavagemMaquina.ativo,
+          regimeMo: moPre.regimeMo,
+          custoHoraUsado: moPre.custoHoraUsado,
+          nota: input.preLavagemMaquina.ativo
+            ? temMoPre
+              ? "Operador + máquina"
+              : "Máquina"
+            : null,
+          minPorKg: preKgH != null ? minPorKgDeThroughput(preKgH) : null,
+          minPorUn: null,
+          maquinaReaisPorKg: preMaquinaKg > 0 ? preMaquinaKg : null,
+          consumiveisReaisPorKg:
+            input.preLavagemConsumiveisReaisKg > 0 ? input.preLavagemConsumiveisReaisKg : 0,
+        },
+        temMoPre ? opsPre : [],
+        temMoPre ? moPre : { mo: 0, custoHoraUsado: null, regimeMo: null },
+        input.preLavagemMaquina.ativo
+          ? temMoPre
+            ? "Operador + máquina"
+            : "Máquina"
+          : null,
       );
-      etapas.push(
-        montarEtapaMo(
-          {
-            nome: "Pré-lavagem",
-            modo: "por_kg",
-            temMo: true,
-            temMaquina: false,
-            regimeMo: moPre.regimeMo,
-            custoHoraUsado: moPre.custoHoraUsado,
-            nota: null,
-            minPorKg: minPorKgDeThroughput(preKgH),
-            minPorUn: null,
-            maquinaReaisPorKg: null,
-            consumiveisReaisPorKg:
-              input.preLavagemConsumiveisReaisKg > 0 ? input.preLavagemConsumiveisReaisKg : 0,
-          },
-          opsPre,
-          moPre,
-          null,
-        ),
-      );
+      if (!temMoPre) {
+        etapaPre.moReaisPorKg = 0;
+        etapaPre.operadorId = null;
+        etapaPre.operadorIds = [];
+        etapaPre.operadorNome = null;
+        etapaPre.reaisPorKg = totalReaisPorKg(
+          0,
+          etapaPre.maquinaReaisPorKg,
+          etapaPre.consumiveisReaisPorKg,
+        );
+      }
+      etapas.push(etapaPre);
     }
   }
 
@@ -895,6 +965,7 @@ export function calcularLinhaProcessoIndustrial(
       minPorUn: null,
       moReaisPorKg: 0,
       maquinaReaisPorKg: lavMaquinaKg > 0 ? lavMaquinaKg : null,
+      maquinaReaisPorUn: null,
       consumiveisReaisPorKg: null,
       moReaisPorUn: null,
       reaisPorKg: lavMaquinaKg,
@@ -971,6 +1042,20 @@ export function calcularLinhaProcessoIndustrial(
 
   const selagemMinBase =
     input.selagemUnPorCiclo > 0 ? round4(input.selagemMinPorCiclo / input.selagemUnPorCiclo) : 0;
+  const minEnergiaSelagem =
+    selagemMinBase > 0
+      ? selagemMinBase
+      : input.selagemMaquina.ativo &&
+          input.selagemMaquina.minutosCiclo > 0 &&
+          input.selagemUnPorCiclo > 0
+        ? round4(input.selagemMaquina.minutosCiclo / input.selagemUnPorCiclo)
+        : 0;
+  const selMaquinaUn = calcularMaquinaReaisUn(
+    input.selagemMaquina,
+    input.tarifaKwh,
+    minEnergiaSelagem,
+  );
+
   const opsEmb = resolverOperadoresLinha(input, input.embalagemOperadorIds);
   const moEmb = moTotalOperadoresParalelos(input, opsEmb, mapaUsado, (h) =>
     moPorMin(h, input.embalagemMinPorUn),
@@ -987,6 +1072,7 @@ export function calcularLinhaProcessoIndustrial(
       minPorKg: null,
       minPorUn: round4(input.embalagemMinPorUn),
       maquinaReaisPorKg: null,
+      maquinaReaisPorUn: null,
     },
     opsEmb,
     moEmb,
@@ -1009,33 +1095,50 @@ export function calcularLinhaProcessoIndustrial(
     minPorUn: 0,
     moReaisPorKg: null,
     maquinaReaisPorKg: null,
+    maquinaReaisPorUn: null,
     consumiveisReaisPorKg: null,
     moReaisPorUn: null,
     reaisPorKg: null,
     reaisPorUn: null,
   };
-  if (selagemMinBase > 0) {
+  if (selagemMinBase > 0 || selMaquinaUn > 0) {
     const opsSel = resolverOperadoresLinha(input, input.selagemOperadorIds);
-    const moSel = moTotalOperadoresParalelos(input, opsSel, mapaUsado, (h) =>
-      moPorMin(h, selagemMinBase),
-    );
+    const temMoSel = selagemMinBase > 0;
+    const moSel = temMoSel
+      ? moTotalOperadoresParalelos(input, opsSel, mapaUsado, (h) =>
+          moPorMin(h, selagemMinBase),
+        )
+      : { mo: 0, custoHoraUsado: null, regimeMo: null };
+    const notaSel =
+      selMaquinaUn > 0 && temMoSel
+        ? "Operador + seladora"
+        : selMaquinaUn > 0
+          ? "Seladora"
+          : "Manual";
     selagemEtapa = montarEtapaMo(
       {
         nome: "Selagem",
         modo: "por_un",
-        temMo: true,
-        temMaquina: false,
+        temMo: temMoSel,
+        temMaquina: input.selagemMaquina.ativo,
         regimeMo: moSel.regimeMo,
         custoHoraUsado: moSel.custoHoraUsado,
-        nota: "Manual",
+        nota: notaSel,
         minPorKg: null,
-        minPorUn: selagemMinBase,
+        minPorUn: temMoSel ? selagemMinBase : minEnergiaSelagem > 0 ? minEnergiaSelagem : 0,
         maquinaReaisPorKg: null,
+        maquinaReaisPorUn: selMaquinaUn > 0 ? selMaquinaUn : null,
       },
-      opsSel,
-      moSel,
-      "Manual",
+      temMoSel ? opsSel : [],
+      temMoSel ? moSel : { mo: 0, custoHoraUsado: null, regimeMo: null },
+      notaSel,
     );
+    if (!temMoSel) {
+      selagemEtapa.moReaisPorUn = 0;
+      selagemEtapa.operadorId = null;
+      selagemEtapa.operadorIds = [];
+      selagemEtapa.operadorNome = null;
+    }
     etapas.push(selagemEtapa);
   }
 

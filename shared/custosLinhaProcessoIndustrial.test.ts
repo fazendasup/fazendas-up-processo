@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   calcularLinhaProcessoIndustrial,
   calcularMaquinaReaisKg,
+  calcularMaquinaReaisUn,
   LINHA_PROCESSO_FLORES_PADRAO,
   LINHA_PROCESSO_INDUSTRIAL_PADRAO,
   LINHA_PROCESSO_MICROVERDES_PADRAO,
@@ -45,6 +46,24 @@ describe("calcularMaquinaReaisKg", () => {
       0.75,
     );
     expect(energia).toBeCloseTo(0.05, 4);
+  });
+
+  it("seladora: energia por unidade", () => {
+    const v = calcularMaquinaReaisUn(
+      {
+        ativo: true,
+        potenciaKw: 2,
+        modoContinuo: false,
+        minutosCiclo: 0,
+        kgPorCiclo: 1,
+        tarifaKwh: 0.89,
+        depreciacaoReaisKg: 0,
+        consumiveisReaisKg: 0,
+      },
+      0.89,
+      0.75,
+    );
+    expect(v).toBeCloseTo(2 * (0.75 / 60) * 0.89, 4);
   });
 });
 
@@ -178,6 +197,48 @@ describe("calcularLinhaProcessoIndustrial", () => {
     expect(m2.embalagemMinutosUn).toBeCloseTo(
       m1.embalagemMinutosUn + LINHA_PROCESSO_INDUSTRIAL_PADRAO.embalagemMinPorUn,
     );
+  });
+
+  it("pré-lavagem e seladora contabilizam energia de máquina", () => {
+    const r = calcularLinhaProcessoIndustrial(
+      {
+        ...LINHA_PROCESSO_INDUSTRIAL_PADRAO,
+        preLavagemKgHora: 18,
+        preLavagemEficienciaPct: 80,
+        preLavagemMaquina: {
+          ativo: true,
+          potenciaKw: 1.5,
+          modoContinuo: true,
+          minutosCiclo: 0,
+          kgPorCiclo: 1,
+          tarifaKwh: 0.89,
+          depreciacaoReaisKg: 0,
+          consumiveisReaisKg: 0,
+        },
+        lavagemMaquina: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO.lavagemMaquina, ativo: false },
+        secagemMaquina: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO.secagemMaquina, ativo: false },
+        selagemMinPorCiclo: 3,
+        selagemUnPorCiclo: 4,
+        selagemMaquina: {
+          ativo: true,
+          potenciaKw: 2,
+          modoContinuo: false,
+          minutosCiclo: 0,
+          kgPorCiclo: 1,
+          tarifaKwh: 0.89,
+          depreciacaoReaisKg: 0,
+          consumiveisReaisKg: 0,
+        },
+      },
+      { clt: 16, pj: 16, misto: 16 },
+    );
+    const pre = r.etapas.find((e) => e.nome === "Pré-lavagem");
+    // 1.5 kW × (1/14.4) h × 0.89 ≈ 0.0927
+    expect(pre?.maquinaReaisPorKg).toBeCloseTo(1.5 / 14.4 * 0.89, 3);
+    const sel = r.etapas.find((e) => e.nome === "Selagem");
+    // 2 kW × (0.75/60) h × 0.89 ≈ 0.02225
+    expect(sel?.maquinaReaisPorUn).toBeCloseTo(2 * (0.75 / 60) * 0.89, 3);
+    expect(sel?.reaisPorUn).toBeGreaterThan(sel?.moReaisPorUn ?? 0);
   });
 
   it("resumo capacidade: operador gargalo", () => {
