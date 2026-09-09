@@ -108,6 +108,16 @@ const linhaProcessoInput = z.object({
   preLavagemEficienciaPct: z.number().min(0).max(100),
   preLavagemOperadorIds: z.array(z.string().min(1)).min(1).default(["1"]),
   preLavagemConsumiveisReaisKg: z.number().nonnegative().default(0),
+  preLavagemMaquina: custoMaquinaInput.default({
+    ativo: false,
+    potenciaKw: 0,
+    modoContinuo: true,
+    minutosCiclo: 0,
+    kgPorCiclo: 1,
+    tarifaKwh: null,
+    depreciacaoReaisKg: 0,
+    consumiveisReaisKg: 0,
+  }),
   lavagemKgHora: z.number().nonnegative(),
   lavagemEficienciaPct: z.number().min(0).max(100),
   lavagemUsaMo: z.boolean().default(false),
@@ -126,6 +136,17 @@ const linhaProcessoInput = z.object({
   selagemMinPorCiclo: z.number().nonnegative(),
   selagemUnPorCiclo: z.number().positive(),
   selagemOperadorIds: z.array(z.string().min(1)).min(1).default(["1"]),
+  selagemMaquina: custoMaquinaInput.default({
+    ativo: false,
+    potenciaKw: 0,
+    modoContinuo: false,
+    minutosCiclo: 0,
+    kgPorCiclo: 1,
+    tarifaKwh: null,
+    depreciacaoReaisKg: 0,
+    consumiveisReaisKg: 0,
+  }),
+  rotuloEtapaColheita: z.string().max(64).optional(),
 });
 
 const processoModeloInput = z.object({
