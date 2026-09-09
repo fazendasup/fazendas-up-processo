@@ -11,6 +11,7 @@ import {
 import {
   calcularLinhaProcessoIndustrial,
   LINHA_PROCESSO_FLORES_PADRAO,
+  LINHA_PROCESSO_INDUSTRIAL_PADRAO,
   LINHA_PROCESSO_MICROVERDES_PADRAO,
 } from "./custosLinhaProcessoIndustrial";
 
@@ -106,6 +107,56 @@ describe("custosProdutoProcessoPadrao", () => {
     });
     expect(etapas.find((e) => e.tipo === "lavagem")?.custoPorKgProcessado).toBe(0.25);
     expect(etapas.find((e) => e.tipo === "logistica")?.custoPercentual).toBe(10);
+  });
+
+  it("perfil lavagem_embalagem NÃO inclui desfolhagem mesmo com corteMinutosUn", () => {
+    const etapas = etapasProcessoPadraoParaPerfil("lavagem_embalagem", "alface", {
+      embalagemMicroverdeUn: 0.95,
+      embalagemOutrosUn: 0.6,
+      lavagemReaisKg: 0.25,
+      lavagemMinutosUn: null,
+      embalagemMinutosUn: 3,
+      corteMinutosUn: 0.5,
+      adesivoCustoUn: null,
+      regimeMoPadrao: "qualquer",
+      incluirAdesivo: false,
+      logisticaPercentualPadrao: 10,
+    });
+    expect(etapas.some((e) => e.tipo === "descasque_corte")).toBe(false);
+  });
+
+  it("dois operadores na embalagem — ficha usa homem-minutos (2×)", () => {
+    const linha = {
+      ...LINHA_PROCESSO_INDUSTRIAL_PADRAO,
+      embalagemOperadorIds: ["1", "2"],
+      selagemMinPorUn: 0,
+      desfolhagemSegPorPe: 0,
+      operadores: [
+        { id: "1", nome: "A", regimeMo: "qualquer" as const },
+        { id: "2", nome: "B", regimeMo: "qualquer" as const },
+      ],
+    };
+    const calc = calcularLinhaProcessoIndustrial(linha, { clt: 30, pj: 30, misto: 30 });
+    const etapas = etapasProcessoPadraoParaPerfil(
+      "lavagem_embalagem",
+      "alface",
+      {
+        embalagemMicroverdeUn: 0.95,
+        embalagemOutrosUn: 0.6,
+        lavagemReaisKg: calc.processamentoLinhaMolhadaReaisKg,
+        lavagemMinutosUn: null,
+        embalagemMinutosUn: calc.embalagemSelagemMinPorUn,
+        corteMinutosUn: calc.desfolhagemMinPorUn,
+        adesivoCustoUn: null,
+        regimeMoPadrao: "qualquer",
+        incluirAdesivo: false,
+        logisticaPercentualPadrao: 10,
+      },
+      calc,
+    );
+    const embMo = etapas.find((e) => e.nome === "Embalagem (MO)");
+    expect(embMo?.minutosPorUnidade).toBeCloseTo(linha.embalagemMinPorUn * 2);
+    expect(etapas.some((e) => e.tipo === "descasque_corte")).toBe(false);
   });
 
   it("calcula R$/kg de lote de lavagem", () => {

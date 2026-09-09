@@ -461,12 +461,19 @@ export type ResumoCapacidadeLinha = {
 
 export type LinhaProcessoIndustrialResult = {
   etapas: EtapaLinhaBreakdown[];
+  /** Total R$/kg: linha molhada + (MO por_un ÷ kgRef, se houver). */
   processamentoReaisKg: number;
+  /**
+   * Só etapas por kg (pré-lavagem → secagem): MO + máquina + consumíveis.
+   * É o valor que vai para `lavagemReaisKg` na ficha — sem embalagem/desfolhagem.
+   */
+  processamentoLinhaMolhadaReaisKg: number;
   processamentoMoReaisKg: number;
   processamentoMoReaisUn: number;
   processamentoReaisUn: number;
   processamentoMaquinaReaisKg: number;
   processamentoConsumiveisReaisKg: number;
+  /** Homem-minutos (min de relógio × N operadores em paralelo). */
   desfolhagemMinPorUn: number;
   selagemMinPorUn: number;
   embalagemSelagemMinPorUn: number;
@@ -486,9 +493,10 @@ export function calcularResumoCapacidadeLinha(etapas: EtapaLinhaBreakdown[]): Re
   const porOperador = new Map<string, { id: string; nome: string; minPorKg: number; etapas: string[] }>();
   for (const e of etapas) {
     if (!e.temMo) continue;
-    const ids = e.operadorIds?.length ? e.operadorIds : e.operadorId ? [e.operadorId] : [];
-    const min = e.minPorKg ?? e.minPorUn;
+    // Só min/kg — misturar min/un distorce kg/h (embalagem não é kg).
+    const min = e.minPorKg;
     if (min == null || !(min > 0)) continue;
+    const ids = e.operadorIds?.length ? e.operadorIds : e.operadorId ? [e.operadorId] : [];
     for (const opId of ids) {
       const cur = porOperador.get(opId) ?? {
         id: opId,
@@ -1063,20 +1071,20 @@ export function calcularLinhaProcessoIndustrial(
     kgRef != null && processamentoReaisUn > 0
       ? round4(processamentoReaisUn / kgRef)
       : 0;
-  const processamentoMoReaisKg = round4(
-    porKg.reduce((s, e) => s + (e.moReaisPorKg ?? 0), 0) + moKgFromUn,
-  );
+  const moPorKgSomente = round4(porKg.reduce((s, e) => s + (e.moReaisPorKg ?? 0), 0));
+  const processamentoMoReaisKg = round4(moPorKgSomente + moKgFromUn);
   const processamentoMaquinaReaisKg = round4(
     porKg.reduce((s, e) => s + (e.maquinaReaisPorKg ?? 0), 0),
   );
   const processamentoConsumiveisReaisKg = round4(
     porKg.reduce((s, e) => s + (e.consumiveisReaisPorKg ?? 0), 0),
   );
-  const processamentoReaisKg = round4(
-    totalKgFromUn > 0
-      ? totalKgFromUn + processamentoMaquinaReaisKg + processamentoConsumiveisReaisKg
-      : processamentoMoReaisKg + processamentoMaquinaReaisKg + processamentoConsumiveisReaisKg,
+  /** Pré-lavagem → secagem (nunca inclui embalagem/desfolhagem). */
+  const processamentoLinhaMolhadaReaisKg = round4(
+    moPorKgSomente + processamentoMaquinaReaisKg + processamentoConsumiveisReaisKg,
   );
+  /** Sempre inclui MO por kg; com kgRef, soma também por_un convertido. */
+  const processamentoReaisKg = round4(processamentoLinhaMolhadaReaisKg + totalKgFromUn);
 
   const homemMinPorUnEtapa = (etapa: EtapaLinhaBreakdown) => {
     if (etapa.minPorUn == null) return 0;
@@ -1087,6 +1095,7 @@ export function calcularLinhaProcessoIndustrial(
   return {
     etapas,
     processamentoReaisKg,
+    processamentoLinhaMolhadaReaisKg,
     processamentoMoReaisKg,
     processamentoMoReaisUn,
     processamentoReaisUn,
@@ -1103,13 +1112,18 @@ export function calcularLinhaProcessoIndustrial(
   };
 }
 
+/**
+ * Campos comuns gravados no modelo / ficha.
+ * `lavagemReaisKg` = só linha molhada (por kg), nunca embalagem convertida.
+ * Minutos de embalagem/corte = homem-minutos (paralelo × N).
+ */
 export function modeloComumDeLinhaProcesso(result: LinhaProcessoIndustrialResult): {
   lavagemReaisKg: number;
   corteMinutosUn: number;
   embalagemMinutosUn: number;
 } {
   return {
-    lavagemReaisKg: result.processamentoReaisKg,
+    lavagemReaisKg: result.processamentoLinhaMolhadaReaisKg,
     corteMinutosUn: result.desfolhagemMinPorUn,
     embalagemMinutosUn: result.embalagemSelagemMinPorUn,
   };

@@ -126,7 +126,58 @@ describe("calcularLinhaProcessoIndustrial", () => {
     const pre = r.etapas.find((e) => e.nome === "Pré-lavagem");
     expect(pre?.consumiveisReaisPorKg).toBeCloseTo(0.05);
     const m = modeloComumDeLinhaProcesso(r);
-    expect(m.lavagemReaisKg).toBe(r.processamentoReaisKg);
+    expect(m.lavagemReaisKg).toBe(r.processamentoLinhaMolhadaReaisKg);
+    expect(m.lavagemReaisKg).toBeCloseTo(
+      r.processamentoMoReaisKg +
+        r.processamentoMaquinaReaisKg +
+        r.processamentoConsumiveisReaisKg,
+    );
+  });
+
+  it("kgPorUnidadeRef > 0: lavagemReaisKg só linha molhada; total inclui emb convertida", () => {
+    const r = calcularLinhaProcessoIndustrial({
+      ...LINHA_PROCESSO_INDUSTRIAL_PADRAO,
+      kgPorUnidadeRef: 0.12,
+      lavagemMaquina: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO.lavagemMaquina, ativo: false },
+      secagemMaquina: { ...LINHA_PROCESSO_INDUSTRIAL_PADRAO.secagemMaquina, ativo: false },
+    });
+    expect(r.processamentoLinhaMolhadaReaisKg).toBeGreaterThan(0);
+    expect(r.processamentoReaisKg).toBeGreaterThan(r.processamentoLinhaMolhadaReaisKg);
+    // MO por kg nunca some do total quando há kgRef
+    const moPorKg = r.etapas
+      .filter((e) => e.modo === "por_kg")
+      .reduce((s, e) => s + (e.moReaisPorKg ?? 0), 0);
+    expect(r.processamentoReaisKg).toBeCloseTo(
+      moPorKg +
+        r.processamentoMaquinaReaisKg +
+        r.processamentoConsumiveisReaisKg +
+        r.processamentoReaisUn / 0.12,
+    );
+    const m = modeloComumDeLinhaProcesso(r);
+    expect(m.lavagemReaisKg).toBe(r.processamentoLinhaMolhadaReaisKg);
+    expect(m.lavagemReaisKg).toBeLessThan(r.processamentoReaisKg);
+    // embalagem em homem-min (não misturada em lavagem)
+    expect(m.embalagemMinutosUn).toBe(r.embalagemSelagemMinPorUn);
+  });
+
+  it("dois ops na embalagem → homem-minutos dobram no modelo comum", () => {
+    const uma = calcularLinhaProcessoIndustrial({
+      ...LINHA_PROCESSO_INDUSTRIAL_PADRAO,
+      embalagemOperadorIds: ["1"],
+    });
+    const duas = calcularLinhaProcessoIndustrial({
+      ...LINHA_PROCESSO_INDUSTRIAL_PADRAO,
+      embalagemOperadorIds: ["1", "2"],
+      operadores: [
+        { id: "1", nome: "A", regimeMo: "qualquer" },
+        { id: "2", nome: "B", regimeMo: "qualquer" },
+      ],
+    });
+    const m1 = modeloComumDeLinhaProcesso(uma);
+    const m2 = modeloComumDeLinhaProcesso(duas);
+    expect(m2.embalagemMinutosUn).toBeCloseTo(
+      m1.embalagemMinutosUn + LINHA_PROCESSO_INDUSTRIAL_PADRAO.embalagemMinPorUn,
+    );
   });
 
   it("resumo capacidade: operador gargalo", () => {

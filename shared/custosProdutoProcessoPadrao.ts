@@ -331,8 +331,11 @@ function perfilUsaCorte(perfil: PerfilProcessoProduto): boolean {
 
 function minMoLinha(calc: LinhaProcessoIndustrialResult | null | undefined, nomeEtapa: string): number | null {
   if (!calc) return null;
-  const m = calc.etapas.find((e) => e.nome === nomeEtapa)?.minPorUn;
-  return m != null && m > 0 ? m : null;
+  const e = calc.etapas.find((x) => x.nome === nomeEtapa);
+  if (!e || e.minPorUn == null || !(e.minPorUn > 0)) return null;
+  // Homem-minutos: minuto de relógio × operadores em paralelo (alinha com custo da linha).
+  const n = e.operadorIds?.length || (e.operadorId ? 1 : 0);
+  return Math.round(e.minPorUn * Math.max(1, n) * 10000) / 10000;
 }
 
 function minMoColheitaOuSelecao(
@@ -443,7 +446,7 @@ export function etapasProcessoPadraoParaPerfil(
   }
 
   if (
-    (perfilUsaLavagem(perfil) || perfilUsaCorte(perfil)) &&
+    perfilUsaCorte(perfil) &&
     config.corteMinutosUn != null &&
     config.corteMinutosUn > 0
   ) {

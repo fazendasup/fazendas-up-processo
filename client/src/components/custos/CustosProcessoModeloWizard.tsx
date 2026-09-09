@@ -1295,7 +1295,7 @@ export function CustosProcessoModeloWizard() {
                         ? "MO seleção + embalagem → ficha"
                         : isRotaColheitaEmbalagem
                           ? "MO colheita + embalagem → ficha"
-                          : "Total R$/kg → ficha"}
+                          : "Lavagem (linha molhada) → ficha"}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="text-lg font-semibold tabular-nums text-emerald-700">
@@ -1315,7 +1315,17 @@ export function CustosProcessoModeloWizard() {
                         )}
                       </>
                     ) : (
-                      `${fmtMoney(linhaCalc.processamentoReaisKg)}/kg`
+                      <>
+                        {fmtMoney(linhaCalc.processamentoLinhaMolhadaReaisKg)}/kg
+                        {draft.linha.kgPorUnidadeRef > 0 &&
+                        linhaCalc.processamentoReaisKg >
+                          linhaCalc.processamentoLinhaMolhadaReaisKg + 1e-6 ? (
+                          <p className="text-xs font-normal text-muted-foreground mt-1">
+                            Total c/ emb. ≈ {fmtMoney(linhaCalc.processamentoReaisKg)}/kg (embalagem
+                            vai em min/un na ficha)
+                          </p>
+                        ) : null}
+                      </>
                     )}
                   </CardContent>
                 </Card>
