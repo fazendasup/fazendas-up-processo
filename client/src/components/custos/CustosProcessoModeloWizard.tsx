@@ -1366,91 +1366,148 @@ export function CustosProcessoModeloWizard() {
                   operadores e o R$/kg que vai para a ficha.
                 </AlertDescription>
               </Alert>
-              <div className={`grid gap-3 sm:grid-cols-2 ${isMicroverdes ? "lg:grid-cols-2" : "lg:grid-cols-4"}`}>
-                <Card>
-                  <CardHeader className="pb-1">
-                    <CardTitle className="text-xs text-muted-foreground">Processamento MO</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-lg font-semibold tabular-nums">
-                    {isRotaColheitaEmbalagem ? (
-                      <>
-                        {fmtMoney(linhaCalc.processamentoMoReaisUn)}/un
-                        {draft.linha.kgPorUnidadeRef > 0 ? (
-                          <p className="text-xs font-normal text-muted-foreground mt-1">
-                            ≈ {fmtMoney(linhaCalc.processamentoMoReaisKg)}/kg
-                            {isFlores
-                              ? ` (ref. ${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 }).format(rendimentoUnidadesPorKg(draft.linha.kgPorUnidadeRef) ?? 0)} potes/kg)`
-                              : ` (ref. ${draft.linha.kgPorUnidadeRef} kg/un)`}
-                          </p>
-                        ) : null}
-                      </>
-                    ) : (
-                      `${fmtMoney(linhaCalc.processamentoMoReaisKg)}/kg`
-                    )}
-                  </CardContent>
-                </Card>
-                {!isRotaColheitaEmbalagem ? (
+              {(() => {
+                const molhadaKg = linhaCalc.processamentoLinhaMolhadaReaisKg;
+                const moPorUn = linhaCalc.processamentoReaisUn;
+                const kgRef =
+                  draft.linha.kgPorUnidadeRef > 0 ? draft.linha.kgPorUnidadeRef : null;
+                const exemplosKg = kgRef != null ? [kgRef] : [0.12, 0.24];
+                return (
                   <>
-                    <Card>
-                      <CardHeader className="pb-1">
-                        <CardTitle className="text-xs text-muted-foreground">Máquina (energia+deprec.)</CardTitle>
-                      </CardHeader>
-                      <CardContent className="text-lg font-semibold tabular-nums">
-                        {fmtMoney(linhaCalc.processamentoMaquinaReaisKg)}/kg
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardHeader className="pb-1">
-                        <CardTitle className="text-xs text-muted-foreground">Consumíveis (pré-lav/enxague)</CardTitle>
-                      </CardHeader>
-                      <CardContent className="text-lg font-semibold tabular-nums">
-                        {fmtMoney(linhaCalc.processamentoConsumiveisReaisKg)}/kg
-                      </CardContent>
-                    </Card>
-                  </>
-                ) : null}
-                <Card>
-                  <CardHeader className="pb-1">
-                    <CardTitle className="text-xs text-muted-foreground">
-                      {isFlores
-                        ? "MO seleção + embalagem → ficha"
-                        : isRotaColheitaEmbalagem
-                          ? "MO colheita + embalagem → ficha"
-                          : "Lavagem (linha molhada) → ficha"}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-lg font-semibold tabular-nums text-emerald-700">
-                    {isRotaColheitaEmbalagem ? (
-                      <>
-                        {fmtMoney(linhaCalc.processamentoReaisUn)}/un
-                        {draft.linha.kgPorUnidadeRef > 0 ? (
-                          <p className="text-xs font-normal text-emerald-800/80 mt-1">
-                            ≈ {fmtMoney(linhaCalc.processamentoReaisKg)}/kg
-                          </p>
-                        ) : (
-                          <p className="text-xs font-normal text-amber-700 mt-1">
-                            {isFlores
-                              ? "Informe rendimento (potes/kg) no passo Base para ver R$/kg"
-                              : "Informe kg/un no passo Base para ver R$/kg"}
-                          </p>
-                        )}
-                      </>
+                    {!isRotaColheitaEmbalagem ? (
+                      <Card className="border-emerald-600/40 bg-emerald-50/40 dark:bg-emerald-950/20">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm">
+                            Custo total do processo (sem insumos de embalagem)
+                          </CardTitle>
+                          <CardDescription>
+                            MO + máquina + consumíveis de lavagem. Não inclui pote, filme nem adesivo
+                            (isso entra na ficha à parte).
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Linha molhada (pré → secagem)</p>
+                              <p className="text-2xl font-semibold tabular-nums text-emerald-800 dark:text-emerald-300">
+                                {fmtMoney(molhadaKg)}
+                                <span className="text-sm font-normal">/kg</span>
+                              </p>
+                              <p className="text-[11px] text-muted-foreground mt-0.5">
+                                → campo lavagem na ficha
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">
+                                MO por unidade (desfolha + emb. + selagem)
+                              </p>
+                              <p className="text-2xl font-semibold tabular-nums text-emerald-800 dark:text-emerald-300">
+                                {fmtMoney(moPorUn)}
+                                <span className="text-sm font-normal">/un</span>
+                              </p>
+                              <p className="text-[11px] text-muted-foreground mt-0.5">
+                                → minutos de MO na ficha ({linhaCalc.embalagemSelagemMinPorUn}
+                                min emb+sel
+                                {linhaCalc.desfolhagemMinPorUn > 0
+                                  ? ` + ${linhaCalc.desfolhagemMinPorUn} min desfolha`
+                                  : ""}
+                                )
+                              </p>
+                            </div>
+                          </div>
+                          <div className="rounded-md border bg-background/80 p-3 space-y-2">
+                            <p className="text-xs font-medium">Total processo no pote</p>
+                            {exemplosKg.map((kg) => {
+                              const totalUn = molhadaKg * kg + moPorUn;
+                              const totalKg = molhadaKg + moPorUn / kg;
+                              return (
+                                <div
+                                  key={kg}
+                                  className="flex flex-wrap items-baseline justify-between gap-2 text-sm"
+                                >
+                                  <span className="text-muted-foreground">
+                                    {kgRef != null ? "Ref. do modelo" : "Ex."}{" "}
+                                    {(kg * 1000).toLocaleString("pt-BR")} g
+                                  </span>
+                                  <span className="font-semibold tabular-nums">
+                                    {fmtMoney(totalUn)}/un
+                                    <span className="text-muted-foreground font-normal">
+                                      {" "}
+                                      · {fmtMoney(totalKg)}/kg
+                                    </span>
+                                  </span>
+                                </div>
+                              );
+                            })}
+                            {kgRef == null ? (
+                              <p className="text-[11px] text-amber-700">
+                                Informe kg/un no passo Base (ex. 0,12) para fixar um único total; os
+                                exemplos 120 g / 240 g usam a MO de unidade atual (inclui desfolha se
+                                houver).
+                              </p>
+                            ) : null}
+                          </div>
+                          <div className="grid gap-2 sm:grid-cols-3 text-xs text-muted-foreground">
+                            <p>
+                              MO linha:{" "}
+                              {fmtMoney(
+                                linhaCalc.etapas
+                                  .filter((e) => e.modo === "por_kg")
+                                  .reduce((s, e) => s + (e.moReaisPorKg ?? 0), 0),
+                              )}
+                              /kg
+                            </p>
+                            <p>Máquina: {fmtMoney(linhaCalc.processamentoMaquinaReaisKg)}/kg</p>
+                            <p>Consumíveis: {fmtMoney(linhaCalc.processamentoConsumiveisReaisKg)}/kg</p>
+                          </div>
+                        </CardContent>
+                      </Card>
                     ) : (
-                      <>
-                        {fmtMoney(linhaCalc.processamentoLinhaMolhadaReaisKg)}/kg
-                        {draft.linha.kgPorUnidadeRef > 0 &&
-                        linhaCalc.processamentoReaisKg >
-                          linhaCalc.processamentoLinhaMolhadaReaisKg + 1e-6 ? (
-                          <p className="text-xs font-normal text-muted-foreground mt-1">
-                            Total c/ emb. ≈ {fmtMoney(linhaCalc.processamentoReaisKg)}/kg (embalagem
-                            vai em min/un na ficha)
-                          </p>
-                        ) : null}
-                      </>
+                      <div className={`grid gap-3 sm:grid-cols-2 ${isMicroverdes ? "lg:grid-cols-2" : "lg:grid-cols-3"}`}>
+                        <Card>
+                          <CardHeader className="pb-1">
+                            <CardTitle className="text-xs text-muted-foreground">Processamento MO</CardTitle>
+                          </CardHeader>
+                          <CardContent className="text-lg font-semibold tabular-nums">
+                            {fmtMoney(linhaCalc.processamentoMoReaisUn)}/un
+                            {kgRef != null ? (
+                              <p className="text-xs font-normal text-muted-foreground mt-1">
+                                ≈ {fmtMoney(linhaCalc.processamentoMoReaisKg)}/kg
+                                {isFlores
+                                  ? ` (ref. ${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 }).format(rendimentoUnidadesPorKg(kgRef) ?? 0)} potes/kg)`
+                                  : ` (ref. ${kgRef} kg/un)`}
+                              </p>
+                            ) : null}
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardHeader className="pb-1">
+                            <CardTitle className="text-xs text-muted-foreground">
+                              {isFlores
+                                ? "MO seleção + embalagem → ficha"
+                                : "MO colheita + embalagem → ficha"}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="text-lg font-semibold tabular-nums text-emerald-700">
+                            {fmtMoney(linhaCalc.processamentoReaisUn)}/un
+                            {kgRef != null ? (
+                              <p className="text-xs font-normal text-emerald-800/80 mt-1">
+                                ≈ {fmtMoney(linhaCalc.processamentoReaisKg)}/kg
+                              </p>
+                            ) : (
+                              <p className="text-xs font-normal text-amber-700 mt-1">
+                                {isFlores
+                                  ? "Informe rendimento (potes/kg) no passo Base para ver R$/kg"
+                                  : "Informe kg/un no passo Base para ver R$/kg"}
+                              </p>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </div>
                     )}
-                  </CardContent>
-                </Card>
-              </div>
+                  </>
+                );
+              })()}
               {linhaCalc.resumoCapacidade.kgHoraMaxMo != null ? (
                 <div className="rounded-lg border p-3 bg-muted/20 space-y-2">
                   <p className="text-sm font-medium">Capacidade da linha (MO em série)</p>
