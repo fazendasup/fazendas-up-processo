@@ -215,9 +215,10 @@ type PedidosTab =
 
 export function Pedidos({
   abaInicial = "operacional",
-}: { abaInicial?: PedidosTab } = {}) {
+  somenteCompras = false,
+}: { abaInicial?: PedidosTab; somenteCompras?: boolean } = {}) {
   const utils = trpc.useUtils();
-  const [aba, setAba] = useState<PedidosTab>(abaInicial);
+  const [aba, setAba] = useState<PedidosTab>(somenteCompras ? "compras" : abaInicial);
   const [dia, setDia] = useState(diaOperacionalInicial);
   const [escopoDashboard, setEscopoDashboard] = useState<"dia" | "semana">(
     "dia",
@@ -1029,6 +1030,33 @@ export function Pedidos({
 
   return (
     <div className="space-y-5">
+      {somenteCompras ? (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-end gap-2">
+            <div>
+              <Label className="text-xs">Dia operacional</Label>
+              <Input
+                type="date"
+                value={dia}
+                onChange={e => setDia(e.target.value)}
+                className="h-9"
+              />
+            </div>
+            <Button variant="outline" onClick={() => setDia(hojeIso())}>
+              Hoje
+            </Button>
+          </div>
+          <ComprasArea
+            estoque={compras.data}
+            produtos={produtos.data ?? []}
+            isLoading={compras.isLoading}
+            isAdmin={canEditarComercial}
+            onUpdate={(payload: any) => atualizarCompra.mutate(payload)}
+            onSalvarMixFolha={(payload: any) => salvarMixFolha.mutate(payload)}
+          />
+        </div>
+      ) : (
+      <>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -2242,6 +2270,8 @@ export function Pedidos({
           />
         </TabsContent>
       </Tabs>
+      </>
+      )}
     </div>
   );
 }

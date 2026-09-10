@@ -27,7 +27,7 @@ function emptyForm(): MixForm {
   };
 }
 
-export function Mixes() {
+export function Mixes({ embedded = false }: { embedded?: boolean } = {}) {
   const utils = trpc.useUtils();
   const me = trpc.comercial.pedidos.me.useQuery(undefined, { staleTime: 60_000 });
   const canEdit =
@@ -137,11 +137,17 @@ export function Mixes() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        kicker="Comercial"
-        title="Mixes"
-        subtitle="Cadastre receitas (Crocante 1, Crocante 2…) com gramas de cada ingrediente e calcule quantos kg processar conforme a quantidade de mixes."
-      />
+      {embedded ? (
+        <p className="text-sm text-muted-foreground">
+          Cadastre receitas (Crocante 1, Mix KFC…) com gramas por mix e calcule quantos kg processar.
+        </p>
+      ) : (
+        <PageHeader
+          kicker="Comercial"
+          title="Mixes"
+          subtitle="Cadastre receitas (Crocante 1, Crocante 2…) com gramas de cada ingrediente e calcule quantos kg processar conforme a quantidade de mixes."
+        />
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
         <Card>
