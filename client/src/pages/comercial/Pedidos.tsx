@@ -20,7 +20,7 @@ import {
   Users,
   XCircle,
 } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import {
   isLiderColheitaPerfil,
@@ -218,6 +218,7 @@ export function Pedidos({
   somenteCompras = false,
 }: { abaInicial?: PedidosTab; somenteCompras?: boolean } = {}) {
   const utils = trpc.useUtils();
+  const [, setLocation] = useLocation();
   const [aba, setAba] = useState<PedidosTab>(somenteCompras ? "compras" : abaInicial);
   const [dia, setDia] = useState(diaOperacionalInicial);
   const [escopoDashboard, setEscopoDashboard] = useState<"dia" | "semana">(
@@ -1334,7 +1335,13 @@ export function Pedidos({
 
       <Tabs
         value={aba}
-        onValueChange={value => setAba(value as PedidosTab)}
+        onValueChange={value => {
+          if (value === "compras") {
+            setLocation("/comercial/estoque-vivo");
+            return;
+          }
+          setAba(value as PedidosTab);
+        }}
         className="space-y-4"
       >
         <TabsList className="flex h-auto flex-wrap">
@@ -1352,7 +1359,7 @@ export function Pedidos({
             <TabsTrigger value="produtos">Produtos</TabsTrigger>
           )}
           {!perfilOperacionalRestrito && (
-            <TabsTrigger value="compras">Estoque vivo / compras</TabsTrigger>
+            <TabsTrigger value="compras">Estoque vivo</TabsTrigger>
           )}
         </TabsList>
 
@@ -3731,6 +3738,15 @@ function ComprasArea({
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/30 px-3 py-2">
+        <p className="text-sm text-muted-foreground">
+          Receitas de mixes (Crocante, Mix KFC…) ficam na aba{" "}
+          <strong>Receitas / Mixes</strong>.
+        </p>
+        <Button asChild size="sm" variant="secondary">
+          <Link href="/comercial/estoque-vivo/mixes">Abrir receitas / mixes</Link>
+        </Button>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
