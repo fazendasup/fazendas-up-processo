@@ -109,7 +109,7 @@ const ANALISE_ADMIN_PREFIX: NavItem[] = [
 
 const ANALISE_COLHEITA: NavItem = {
   href: "/planejamento-colheita",
-  label: "Verde Torre",
+  label: "Projeção colheita",
   icon: Sprout,
 };
 

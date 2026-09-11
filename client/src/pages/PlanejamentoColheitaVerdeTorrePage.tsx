@@ -1,20 +1,38 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Header from "@/components/Header";
 import { HarvestPlannerVerdeTorre } from "@/components/HarvestPlannerVerdeTorre";
+import { TowerNeedsPlanner } from "@/components/TowerNeedsPlanner";
 import { useFazenda } from "@/contexts/FazendaContext";
 import {
   capacidadePorFaseInstalacao,
   linhaCapacidadeTorre,
 } from "@/lib/planejamentoContinuo";
-import { recommendedTowersPerDay } from "@shared/harvest";
+import { DEFAULT_HARVEST_PARAMS } from "@shared/harvest";
 import { torreEstaAtivaNoDashboard } from "@/lib/types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+const HARVEST_STORAGE_KEY = "fazendas-up:verde-torre-planner:v1";
+
+function readHarvestTowersPerDay(): number {
+  if (typeof window === "undefined") return DEFAULT_HARVEST_PARAMS.towersPerDay;
+  try {
+    const raw = localStorage.getItem(HARVEST_STORAGE_KEY);
+    if (!raw) return DEFAULT_HARVEST_PARAMS.towersPerDay;
+    const parsed = JSON.parse(raw) as { params?: { towersPerDay?: number } };
+    const v = Number(parsed?.params?.towersPerDay);
+    return Number.isFinite(v) && v > 0 ? v : DEFAULT_HARVEST_PARAMS.towersPerDay;
+  } catch {
+    return DEFAULT_HARVEST_PARAMS.towersPerDay;
+  }
+}
 
 /**
- * Planejamento Verde Torre — simulação jan–dez de colheita + faturamento bruto.
- * Domínio: @shared/harvest (simulateYear).
+ * Projeção de colheita — faturamento mensal + necessidade de torres por fase.
  */
 export default function PlanejamentoColheitaVerdeTorrePage() {
   const { data } = useFazenda();
+  const [aba, setAba] = useState<"projecao" | "torres">("projecao");
+  const [ritmoProjecao, setRitmoProjecao] = useState(readHarvestTowersPerDay);
 
   const prefill = useMemo(() => {
     const andares = data.andares ?? [];
@@ -82,15 +100,6 @@ export default function PlanejamentoColheitaVerdeTorrePage() {
       towersFromErp: towersFromErp > 0 ? towersFromErp : undefined,
       plantsPerTowerFromErp,
       sourceLabel: parts.length ? parts.join(" · ") : undefined,
-      suggestedTowersPerDay:
-        towersFromErp > 0
-          ? recommendedTowersPerDay({
-              towers: towersFromErp,
-              growthDays: 14,
-              sanitizeHours: 48,
-              skipSaturday: true,
-            })
-          : undefined,
     };
   }, [data.torres, data.andares, data.projetoTipo]);
 
@@ -102,13 +111,35 @@ export default function PlanejamentoColheitaVerdeTorrePage() {
           <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Análise · Planejamento
           </p>
-          <h1 className="text-2xl font-bold">Verde Torre — colheita mensal</h1>
+          <h1 className="text-2xl font-bold">Projeção de colheita</h1>
           <p className="text-sm text-muted-foreground">
-            Estima plantas, produtos finais e faturamento bruto mês a mês, com calendário real e
-            gargalo entre ciclo biológico e rotina de colheita.
+            Estima faturamento mês a mês e calcula quantas torres você precisa em
+            mudas, vegetativa e maturação conforme o ritmo e o tempo em cada fase.
           </p>
         </div>
-        <HarvestPlannerVerdeTorre prefill={prefill} />
+
+        <Tabs
+          value={aba}
+          onValueChange={v => {
+            const next = v as "projecao" | "torres";
+            setAba(next);
+            if (next === "torres") setRitmoProjecao(readHarvestTowersPerDay());
+          }}
+          className="space-y-4"
+        >
+          <TabsList>
+            <TabsTrigger value="projecao">Projeção e faturamento</TabsTrigger>
+            <TabsTrigger value="torres">Torres por fase</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="projecao" className="mt-0">
+            <HarvestPlannerVerdeTorre prefill={prefill} />
+          </TabsContent>
+
+          <TabsContent value="torres" className="mt-0">
+            <TowerNeedsPlanner matTowersPerDayFromHarvest={ritmoProjecao} />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
