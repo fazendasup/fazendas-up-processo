@@ -63,6 +63,7 @@ import {
   Briefcase,
   Truck,
   ShoppingBasket,
+  Sprout,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -107,6 +108,12 @@ const ANALISE_ADMIN_PREFIX: NavItem[] = [
   },
 ];
 
+const ANALISE_COLHEITA: NavItem = {
+  href: "/planejamento-colheita",
+  label: "Verde Torre",
+  icon: Sprout,
+};
+
 const ANALISE_ANALYTICS: NavItem = {
   href: "/analytics",
   label: "Analytics",
@@ -147,7 +154,7 @@ const COMERCIAL_ITEMS: NavItem[] = [
     comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
   },
   {
-    href: "/comercial/estoque-vivo/mixes",
+    href: "/comercial/mixes",
     label: "Mixes",
     icon: Package,
     requiredRole: "comercial",
@@ -321,7 +328,10 @@ export default function Header() {
     if (!isLoggedIn || activeProjetoId == null || (!canAccessProcesso && !canAccessComercial)) return [] as NavItem[];
     const list: NavItem[] = [];
     if (isAdmin) list.push(...ANALISE_ADMIN_PREFIX);
-    if (canAccessProcesso) list.push(ANALISE_ANALYTICS);
+    if (canAccessProcesso) {
+      list.push(ANALISE_COLHEITA);
+      list.push(ANALISE_ANALYTICS);
+    }
     if (!isComercial && canAccessProcesso) {
       list.push(ANALISE_TODOS);
       list.push(ANALISE_VISAO);

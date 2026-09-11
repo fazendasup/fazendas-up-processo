@@ -37,6 +37,9 @@ const Pedidos = lazy(() =>
 const EstoqueVivo = lazy(() =>
   import("./comercial/EstoqueVivo").then(m => ({ default: m.EstoqueVivo }))
 );
+const Mixes = lazy(() =>
+  import("./comercial/Mixes").then(m => ({ default: m.Mixes }))
+);
 const Entregas = lazy(() =>
   import("./comercial/Entregas").then(m => ({ default: m.Entregas }))
 );
@@ -86,9 +89,7 @@ export default function ComercialRoutes() {
           />
           <Route path="/comercial/estoque-vivo/mixes" component={EstoqueVivo} />
           <Route path="/comercial/estoque-vivo" component={EstoqueVivo} />
-          <Route path="/comercial/mixes">
-            <Redirect to="/comercial/estoque-vivo/mixes" />
-          </Route>
+          <Route path="/comercial/mixes" component={Mixes} />
           <Route path="/comercial/pedidos">
             <Pedidos />
           </Route>

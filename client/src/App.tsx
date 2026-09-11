@@ -35,6 +35,9 @@ const TarefasPage = lazy(() => import(/* @vite-ignore */"./pages/TarefasPage"));
 const PlanejamentoPage = lazy(() => import(/* @vite-ignore */"./pages/PlanejamentoPage"));
 const HojePage = lazy(() => import(/* @vite-ignore */"./pages/HojePage"));
 const CapacidadePage = lazy(() => import(/* @vite-ignore */"./pages/CapacidadePage"));
+const PlanejamentoColheitaVerdeTorrePage = lazy(() =>
+  import(/* @vite-ignore */"./pages/PlanejamentoColheitaVerdeTorrePage")
+);
 const CustosProducaoPage = lazy(() => import(/* @vite-ignore */"./pages/CustosProducaoPage"));
 const Inteligencia = lazy(() => import(/* @vite-ignore */"./pages/Inteligencia"));
 const VisaoPage = lazy(() => import(/* @vite-ignore */"./pages/VisaoPage"));
@@ -187,6 +190,11 @@ function Router() {
               <CapacidadePage />
             </ProtectedRoute>
           </Route>
+          <Route path="/planejamento-colheita">
+            <ProtectedRoute requiredRole="processo">
+              <PlanejamentoColheitaVerdeTorrePage />
+            </ProtectedRoute>
+          </Route>
           <Route path="/custos-producao">
             <ProtectedRoute requiredRole="comercial">
               <ModuloProjetoRouteGuard modulo="custos_producao">
@@ -210,7 +218,11 @@ function Router() {
               </ModuloProjetoRouteGuard>
             </ProtectedRoute>
           </Route>
-          <Route path="/comercial/:rest+">
+          {/**
+           * regexparam: `:rest+` só captura 1 segmento (o `+` vira nome do param).
+           * `/comercial/estoque-vivo/mixes` precisa de `*` — senão cai no 404.
+           */}
+          <Route path="/comercial/*">
             <ProtectedRoute requiredRole="comercial">
               <ModuloProjetoRouteGuard modulo="comercial">
                 <ComercialRoutes />
