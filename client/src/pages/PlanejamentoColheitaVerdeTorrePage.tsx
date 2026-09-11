@@ -1,38 +1,18 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Header from "@/components/Header";
-import { HarvestPlannerVerdeTorre } from "@/components/HarvestPlannerVerdeTorre";
-import { TowerNeedsPlanner } from "@/components/TowerNeedsPlanner";
+import { ProjecaoColheitaPanel } from "@/components/ProjecaoColheitaPanel";
 import { useFazenda } from "@/contexts/FazendaContext";
 import {
   capacidadePorFaseInstalacao,
   linhaCapacidadeTorre,
 } from "@/lib/planejamentoContinuo";
-import { DEFAULT_HARVEST_PARAMS } from "@shared/harvest";
 import { torreEstaAtivaNoDashboard } from "@/lib/types";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-const HARVEST_STORAGE_KEY = "fazendas-up:verde-torre-planner:v1";
-
-function readHarvestTowersPerDay(): number {
-  if (typeof window === "undefined") return DEFAULT_HARVEST_PARAMS.towersPerDay;
-  try {
-    const raw = localStorage.getItem(HARVEST_STORAGE_KEY);
-    if (!raw) return DEFAULT_HARVEST_PARAMS.towersPerDay;
-    const parsed = JSON.parse(raw) as { params?: { towersPerDay?: number } };
-    const v = Number(parsed?.params?.towersPerDay);
-    return Number.isFinite(v) && v > 0 ? v : DEFAULT_HARVEST_PARAMS.towersPerDay;
-  } catch {
-    return DEFAULT_HARVEST_PARAMS.towersPerDay;
-  }
-}
 
 /**
- * Projeção de colheita — faturamento mensal + necessidade de torres por fase.
+ * Projeção de colheita — página única: ritmo → torres → faturamento + energia.
  */
 export default function PlanejamentoColheitaVerdeTorrePage() {
   const { data } = useFazenda();
-  const [aba, setAba] = useState<"projecao" | "torres">("projecao");
-  const [ritmoProjecao, setRitmoProjecao] = useState(readHarvestTowersPerDay);
 
   const prefill = useMemo(() => {
     const andares = data.andares ?? [];
@@ -113,33 +93,11 @@ export default function PlanejamentoColheitaVerdeTorrePage() {
           </p>
           <h1 className="text-2xl font-bold">Projeção de colheita</h1>
           <p className="text-sm text-muted-foreground">
-            Estima faturamento mês a mês e calcula quantas torres você precisa em
-            mudas, vegetativa e maturação conforme o ritmo e o tempo em cada fase.
+            Ritmo de colheita, torres por fase, faturamento mensal e energia — tudo
+            integrado numa página.
           </p>
         </div>
-
-        <Tabs
-          value={aba}
-          onValueChange={v => {
-            const next = v as "projecao" | "torres";
-            setAba(next);
-            if (next === "torres") setRitmoProjecao(readHarvestTowersPerDay());
-          }}
-          className="space-y-4"
-        >
-          <TabsList>
-            <TabsTrigger value="projecao">Projeção e faturamento</TabsTrigger>
-            <TabsTrigger value="torres">Torres por fase</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="projecao" className="mt-0">
-            <HarvestPlannerVerdeTorre prefill={prefill} />
-          </TabsContent>
-
-          <TabsContent value="torres" className="mt-0">
-            <TowerNeedsPlanner matTowersPerDayFromHarvest={ritmoProjecao} />
-          </TabsContent>
-        </Tabs>
+        <ProjecaoColheitaPanel prefill={prefill} />
       </main>
     </div>
   );
