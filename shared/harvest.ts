@@ -72,14 +72,14 @@ export type HarvestResult = {
 export const DEFAULT_HARVEST_PARAMS: HarvestParams = {
   towers: 14,
   plantsPerTower: 324,
-  lossPercent: 10,
+  lossPercent: 0,
   growthDays: 14,
   sanitizeHours: 48,
   skipSaturday: true,
   towersPerDay: 1,
   weightPerPlantG: 40,
   weightPerProductG: 100,
-  salePrice: 8,
+  salePrice: 7.59,
 };
 
 const MONTH_LABELS_PT = [

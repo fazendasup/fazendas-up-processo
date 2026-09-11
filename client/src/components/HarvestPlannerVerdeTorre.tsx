@@ -32,6 +32,43 @@ import {
 import { Switch } from "@/components/ui/switch";
 
 const DOW = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const STORAGE_KEY = "fazendas-up:verde-torre-planner:v1";
+
+type StoredPlanner = {
+  params: HarvestParams;
+  year: number;
+};
+
+function readStoredPlanner(): StoredPlanner | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<StoredPlanner>;
+    if (!parsed || typeof parsed !== "object") return null;
+    const year =
+      typeof parsed.year === "number" && Number.isFinite(parsed.year)
+        ? Math.round(parsed.year)
+        : null;
+    if (year == null || !parsed.params || typeof parsed.params !== "object") return null;
+    return {
+      year,
+      params: { ...DEFAULT_HARVEST_PARAMS, ...parsed.params },
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredPlanner(params: HarvestParams, year: number) {
+  if (typeof window === "undefined") return;
+  try {
+    const payload: StoredPlanner = { params, year };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
 
 function money(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -63,38 +100,46 @@ export function HarvestPlannerVerdeTorre({
   prefill?: PrefillHint;
   initialYear?: number;
 }) {
-  const [year, setYear] = useState(initialYear);
+  const stored = useMemo(() => readStoredPlanner(), []);
+  const [year, setYear] = useState(() => stored?.year ?? initialYear);
   const [params, setParams] = useState<HarvestParams>(() => ({
     ...DEFAULT_HARVEST_PARAMS,
-    ...(prefill?.towersFromErp != null && prefill.towersFromErp > 0
-      ? { towers: prefill.towersFromErp }
-      : {}),
-    ...(prefill?.plantsPerTowerFromErp != null && prefill.plantsPerTowerFromErp > 0
-      ? { plantsPerTower: Math.round(prefill.plantsPerTowerFromErp) }
-      : {}),
+    ...(stored?.params ?? {}),
   }));
-  const [appliedErp, setAppliedErp] = useState(false);
 
   useEffect(() => {
-    if (appliedErp) return;
+    writeStoredPlanner(params, year);
+  }, [params, year]);
+
+  const applyErpTowers = () => {
     if (!prefill?.towersFromErp && !prefill?.plantsPerTowerFromErp) return;
-    setParams(p => ({
-      ...p,
-      ...(prefill.towersFromErp && prefill.towersFromErp > 0
-        ? { towers: prefill.towersFromErp }
-        : {}),
-      ...(prefill.plantsPerTowerFromErp && prefill.plantsPerTowerFromErp > 0
-        ? { plantsPerTower: Math.round(prefill.plantsPerTowerFromErp) }
-        : {}),
-      towersPerDay: recommendedTowersPerDay({
-        towers: prefill.towersFromErp ?? p.towers,
-        growthDays: p.growthDays,
-        sanitizeHours: p.sanitizeHours,
-        skipSaturday: p.skipSaturday,
-      }),
-    }));
-    setAppliedErp(true);
-  }, [prefill, appliedErp]);
+    setParams(p => {
+      const towers =
+        prefill.towersFromErp && prefill.towersFromErp > 0
+          ? prefill.towersFromErp
+          : p.towers;
+      const plantsPerTower =
+        prefill.plantsPerTowerFromErp && prefill.plantsPerTowerFromErp > 0
+          ? Math.round(prefill.plantsPerTowerFromErp)
+          : p.plantsPerTower;
+      return {
+        ...p,
+        towers,
+        plantsPerTower,
+        towersPerDay: recommendedTowersPerDay({
+          towers,
+          growthDays: p.growthDays,
+          sanitizeHours: p.sanitizeHours,
+          skipSaturday: p.skipSaturday,
+        }),
+      };
+    });
+  };
+
+  const resetPadrao = () => {
+    setParams({ ...DEFAULT_HARVEST_PARAMS });
+    setYear(new Date().getFullYear());
+  };
 
   const result = useMemo(() => simulateYear(params, year), [params, year]);
 
@@ -104,10 +149,26 @@ export function HarvestPlannerVerdeTorre({
 
   return (
     <div className="space-y-4">
-      {prefill?.sourceLabel ? (
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
-          Pré-preenchido com dados do ERP: {prefill.sourceLabel}. Ajuste livremente — é
-          simulação, sem amarrar estoque nem financeiro real.
+          Valores ficam salvos neste navegador. Padrão operacional: 14 torres, 324
+          plantas, perda 0%, 1 torre/dia, produto 100 g a R$ 7,59.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {prefill?.sourceLabel ? (
+            <Button type="button" size="sm" variant="secondary" onClick={applyErpTowers}>
+              Usar torres do ERP
+            </Button>
+          ) : null}
+          <Button type="button" size="sm" variant="outline" onClick={resetPadrao}>
+            Restaurar padrão
+          </Button>
+        </div>
+      </div>
+      {prefill?.sourceLabel ? (
+        <p className="text-xs text-muted-foreground">
+          ERP: {prefill.sourceLabel}. Não sobrescreve o que você já salvou — use o
+          botão acima se quiser sincronizar torres/plantas.
         </p>
       ) : null}
 
