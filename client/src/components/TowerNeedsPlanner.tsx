@@ -4,10 +4,22 @@ import {
   DEFAULT_TOWER_NEEDS_PARAMS,
   type TowerNeedsParams,
 } from "@shared/towerNeeds";
+import {
+  calculateScenarioEnergy,
+  DEFAULT_SCENARIO_ENERGY_PARAMS,
+  type ScenarioEnergyParams,
+} from "@shared/scenarioEnergy";
 import { DecimalInput } from "@/components/custos/DecimalInput";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -17,23 +29,24 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-const STORAGE_KEY = "fazendas-up:projecao-colheita-torres:v2";
+const TOWERS_KEY = "fazendas-up:projecao-colheita-torres:v2";
+const ENERGY_KEY = "fazendas-up:projecao-colheita-energia:v1";
 
-function readStored(): Partial<TowerNeedsParams> | null {
+function readJson<T>(key: string): Partial<T> | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return null;
-    return JSON.parse(raw) as Partial<TowerNeedsParams>;
+    return JSON.parse(raw) as Partial<T>;
   } catch {
     return null;
   }
 }
 
-function writeStored(params: TowerNeedsParams) {
+function writeJson(key: string, value: unknown) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(params));
+    localStorage.setItem(key, JSON.stringify(value));
   } catch {
     /* ignore */
   }
@@ -46,36 +59,54 @@ function fmt(n: number, d = 2) {
   });
 }
 
+function money(n: number) {
+  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
 export function TowerNeedsPlanner({
   matTowersPerDayFromHarvest,
 }: {
-  /** Ritmo da aba Projeção (torres mat/dia) — botão para sincronizar. */
   matTowersPerDayFromHarvest?: number;
 }) {
   const [params, setParams] = useState<TowerNeedsParams>(() => ({
     ...DEFAULT_TOWER_NEEDS_PARAMS,
-    ...(readStored() ?? {}),
+    ...(readJson<TowerNeedsParams>(TOWERS_KEY) ?? {}),
+  }));
+  const [energy, setEnergy] = useState<ScenarioEnergyParams>(() => ({
+    ...DEFAULT_SCENARIO_ENERGY_PARAMS,
+    ...(readJson<ScenarioEnergyParams>(ENERGY_KEY) ?? {}),
   }));
 
   useEffect(() => {
-    writeStored(params);
+    writeJson(TOWERS_KEY, params);
   }, [params]);
+  useEffect(() => {
+    writeJson(ENERGY_KEY, energy);
+  }, [energy]);
 
   const result = useMemo(() => calculateTowerNeeds(params), [params]);
+  const energyResult = useMemo(
+    () => calculateScenarioEnergy(result, energy),
+    [result, energy],
+  );
 
   const set = <K extends keyof TowerNeedsParams>(key: K, value: TowerNeedsParams[K]) => {
     setParams(p => ({ ...p, [key]: value }));
+  };
+  const setE = <K extends keyof ScenarioEnergyParams>(
+    key: K,
+    value: ScenarioEnergyParams[K],
+  ) => {
+    setEnergy(p => ({ ...p, [key]: value }));
   };
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <p className="max-w-3xl text-sm text-muted-foreground">
-          Informe o ritmo de colheita e os dias em cada fase. Estrutura padrão:{" "}
-          <strong>12 andares mudas</strong>, <strong>12 vegetativa</strong>,{" "}
-          <strong>9 maturação</strong>. Razões:{" "}
-          <strong>1 andar mudas → 1 torre vegetativa</strong>;{" "}
-          <strong>1 andar vegetativa → 3 andares maturação</strong>.
+          Ritmo de colheita + dias por fase (12/12/9 andares). Abaixo, custo de
+          energia do cenário (lâmpadas, bombas e refrigeração) com tarifa R${" "}
+          {fmt(energy.tariffReaisPerKwh, 2)}/kWh.
         </p>
         <div className="flex flex-wrap gap-2">
           {matTowersPerDayFromHarvest != null && matTowersPerDayFromHarvest > 0 ? (
@@ -92,7 +123,10 @@ export function TowerNeedsPlanner({
             type="button"
             size="sm"
             variant="outline"
-            onClick={() => setParams({ ...DEFAULT_TOWER_NEEDS_PARAMS })}
+            onClick={() => {
+              setParams({ ...DEFAULT_TOWER_NEEDS_PARAMS });
+              setEnergy({ ...DEFAULT_SCENARIO_ENERGY_PARAMS });
+            }}
           >
             Restaurar padrão
           </Button>
@@ -236,8 +270,247 @@ export function TowerNeedsPlanner({
               ))}
             </TableBody>
           </Table>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Tarifa e iluminação</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <Field label="Tarifa (R$/kWh)">
+              <DecimalInput
+                value={energy.tariffReaisPerKwh}
+                onChange={v => setE("tariffReaisPerKwh", v)}
+                fractionDigits={4}
+              />
+            </Field>
+            <Field label="Lâmpada (W)">
+              <DecimalInput
+                value={energy.lampWatts}
+                onChange={v => setE("lampWatts", v)}
+                integersOnly
+                fractionDigits={0}
+              />
+            </Field>
+            <Field label="Lâmpadas / andar mudas">
+              <DecimalInput
+                value={energy.lampsPerFloorMudas}
+                onChange={v => setE("lampsPerFloorMudas", v)}
+                integersOnly
+                fractionDigits={0}
+              />
+            </Field>
+            <Field label="Lâmpadas / andar vegetativa">
+              <DecimalInput
+                value={energy.lampsPerFloorVegetativa}
+                onChange={v => setE("lampsPerFloorVegetativa", v)}
+                integersOnly
+                fractionDigits={0}
+              />
+            </Field>
+            <Field label="Lâmpadas / andar maturação">
+              <DecimalInput
+                value={energy.lampsPerFloorMaturacao}
+                onChange={v => setE("lampsPerFloorMaturacao", v)}
+                integersOnly
+                fractionDigits={0}
+              />
+            </Field>
+            <Field label="Horas lâmpada / dia">
+              <DecimalInput
+                value={energy.lampHoursPerDay}
+                onChange={v => setE("lampHoursPerDay", v)}
+                fractionDigits={1}
+              />
+            </Field>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Bombas (1 CV · 220 V)</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            <Field label="CV por bomba">
+              <DecimalInput
+                value={energy.pumpCv}
+                onChange={v => setE("pumpCv", v)}
+                fractionDigits={2}
+              />
+            </Field>
+            <Field label="Rendimento elétrico da bomba">
+              <DecimalInput
+                value={energy.pumpEfficiency}
+                onChange={v => setE("pumpEfficiency", v)}
+                fractionDigits={2}
+              />
+            </Field>
+            <Field label="Horas bomba / dia">
+              <DecimalInput
+                value={energy.pumpHoursPerDay}
+                onChange={v => setE("pumpHoursPerDay", v)}
+                fractionDigits={1}
+              />
+            </Field>
+            <p className="text-xs text-muted-foreground">
+              Mudas/vegetativa: 1 bomba por torre. Maturação: 1 bomba para{" "}
+              {fmt(energy.matTowersPerPump, 0)} torres.
+            </p>
+            <Field label="Torres maturação por bomba">
+              <DecimalInput
+                value={energy.matTowersPerPump}
+                onChange={v => setE("matTowersPerPump", v)}
+                fractionDigits={1}
+              />
+            </Field>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Refrigeração (220 V trifásico)</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            <Field label="Evaporadoras">
+              <DecimalInput
+                value={energy.evaporators}
+                onChange={v => setE("evaporators", v)}
+                integersOnly
+                fractionDigits={0}
+              />
+            </Field>
+            <div className="space-y-1">
+              <Label className="text-xs">Condensadoras por evaporadora</Label>
+              <Select
+                value={String(energy.condensersPerEvaporator)}
+                onValueChange={v =>
+                  setE("condensersPerEvaporator", Number(v) === 1 ? 1 : 2)
+                }
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 condensadora</SelectItem>
+                  <SelectItem value="2">2 condensadoras</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Field label="Corrente condensadora (A)">
+              <DecimalInput
+                value={energy.condenserAmps}
+                onChange={v => setE("condenserAmps", v)}
+                integersOnly
+                fractionDigits={0}
+              />
+            </Field>
+            <Field label="Corrente evaporadora (A)">
+              <DecimalInput
+                value={energy.evaporatorAmps}
+                onChange={v => setE("evaporatorAmps", v)}
+                integersOnly
+                fractionDigits={0}
+              />
+            </Field>
+            <Field label="Fator de potência">
+              <DecimalInput
+                value={energy.powerFactor}
+                onChange={v => setE("powerFactor", v)}
+                fractionDigits={2}
+              />
+            </Field>
+            <Field label="Horas refrigeração / dia">
+              <DecimalInput
+                value={energy.refrigerationHoursPerDay}
+                onChange={v => setE("refrigerationHoursPerDay", v)}
+                fractionDigits={1}
+              />
+            </Field>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Energia / dia</p>
+            <p className="text-xl font-semibold tabular-nums">
+              {fmt(energyResult.kwhPerDay, 1)} kWh
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Custo / mês (30 d)</p>
+            <p className="text-xl font-semibold tabular-nums">
+              {money(energyResult.costPerMonth)}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Custo / ano</p>
+            <p className="text-xl font-semibold tabular-nums">
+              {money(energyResult.costPerYear)}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Detalhe do custo de energia</CardTitle>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Item</TableHead>
+                <TableHead className="text-right">Qtd</TableHead>
+                <TableHead className="text-right">W un.</TableHead>
+                <TableHead className="text-right">h/dia</TableHead>
+                <TableHead className="text-right">kWh/mês</TableHead>
+                <TableHead className="text-right">R$/mês</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {energyResult.lines.map(l => (
+                <TableRow key={l.id}>
+                  <TableCell className="font-medium">{l.label}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {fmt(l.qty, 1)} {l.unit}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {fmt(l.wattsEach, 0)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {fmt(l.hoursPerDay, 1)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {fmt(l.kwhPerMonth, 1)}
+                  </TableCell>
+                  <TableCell className="text-right font-semibold tabular-nums">
+                    {money(l.costPerMonth)}
+                  </TableCell>
+                </TableRow>
+              ))}
+              <TableRow>
+                <TableCell className="font-semibold" colSpan={4}>
+                  Total
+                </TableCell>
+                <TableCell className="text-right font-semibold tabular-nums">
+                  {fmt(energyResult.kwhPerMonth, 1)}
+                </TableCell>
+                <TableCell className="text-right font-semibold tabular-nums">
+                  {money(energyResult.costPerMonth)}
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
           <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-            {result.notes.map((n, i) => (
+            {energyResult.notes.map((n, i) => (
               <li key={i}>{n}</li>
             ))}
           </ul>
