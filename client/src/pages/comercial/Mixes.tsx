@@ -72,11 +72,27 @@ export function Mixes({ embedded = false }: { embedded?: boolean } = {}) {
   const produtoOptions = useMemo(
     () =>
       (produtos.data ?? [])
-        .filter((p: { ativo?: boolean }) => p.ativo !== false)
-        .map((p: { id: string; nome: string; sku?: string | null }) => ({
-          id: p.id,
-          nome: p.sku?.trim() ? `${p.nome} (${p.sku.trim()})` : p.nome,
-        })),
+        .filter((p: { statusContaAzul?: string | null }) => {
+          const st = (p.statusContaAzul ?? "ATIVO").toUpperCase();
+          return st === "ATIVO" || st === "ACTIVE";
+        })
+        .map(
+          (p: {
+            id: string;
+            nome: string;
+            sku?: string | null;
+            ativo?: boolean;
+            importadoOperacao?: boolean;
+          }) => {
+            const tags: string[] = [];
+            if (p.sku?.trim()) tags.push(p.sku.trim());
+            if (!p.importadoOperacao || p.ativo === false) tags.push("catálogo");
+            return {
+              id: p.id,
+              nome: tags.length ? `${p.nome} (${tags.join(" · ")})` : p.nome,
+            };
+          }
+        ),
     [produtos.data]
   );
 
