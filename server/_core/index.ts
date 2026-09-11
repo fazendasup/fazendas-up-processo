@@ -326,6 +326,18 @@ async function startServer() {
     }
   }
 
+  try {
+    const { ensureEstoqueVivoMixesTables } = await import(
+      "../comercial/ensure-estoque-vivo-mixes"
+    );
+    await ensureEstoqueVivoMixesTables();
+  } catch (e) {
+    console.error(
+      "[Server] ensureEstoqueVivoMixesTables falhou — salvar mixes pode falhar:",
+      e instanceof Error ? e.message : e,
+    );
+  }
+
   // Schema evolutivo (colunas/tabelas idempotentes) — fonte única partilhada com os testes.
   await applyRuntimeSchemaEnsures();
   try {

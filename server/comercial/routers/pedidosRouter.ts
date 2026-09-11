@@ -2436,6 +2436,11 @@ export const pedidosRouter = router({
     .use(podeConfigurarEstoqueVivo)
     .input(salvarMixEstoqueSchema)
     .mutation(async ({ ctx, input }) => {
+      const { ensureEstoqueVivoMixesTables } = await import(
+        "../ensure-estoque-vivo-mixes"
+      );
+      await ensureEstoqueVivoMixesTables();
+
       const compIds = Array.from(
         new Set(input.componentes.map(c => c.produtoId))
       );
