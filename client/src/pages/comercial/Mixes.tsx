@@ -39,9 +39,9 @@ export function Mixes({ embedded = false }: { embedded?: boolean } = {}) {
   const mixes = trpc.comercial.pedidos.listarMixesEstoqueVivo.useQuery();
   const produtos = trpc.comercial.pedidos.produtos.useQuery(
     {
-      // Receita de mix precisa do catálogo Conta Azul ativo, não só SKUs
-      // importados na operação (ex.: Repolho Roxo 150g vs 200g).
-      incluirInativos: false,
+      // Ingredientes do mix = catálogo Conta Azul (mesmo os ainda não
+      // importados na operação — ex.: Repolho roxo kg vs 200 g).
+      incluirInativos: true,
       apenasOperacao: false,
     },
     { staleTime: 60_000 }
