@@ -37,9 +37,15 @@ export function Mixes({ embedded = false }: { embedded?: boolean } = {}) {
     me.data?.perfil === "OPERACOES";
 
   const mixes = trpc.comercial.pedidos.listarMixesEstoqueVivo.useQuery();
-  const produtos = trpc.comercial.pedidos.produtos.useQuery(undefined, {
-    staleTime: 60_000,
-  });
+  const produtos = trpc.comercial.pedidos.produtos.useQuery(
+    {
+      // Receita de mix precisa do catálogo Conta Azul ativo, não só SKUs
+      // importados na operação (ex.: Repolho Roxo 150g vs 200g).
+      incluirInativos: false,
+      apenasOperacao: false,
+    },
+    { staleTime: 60_000 }
+  );
 
   const [form, setForm] = useState<MixForm | null>(null);
   const [mixCalcId, setMixCalcId] = useState("");
@@ -67,7 +73,10 @@ export function Mixes({ embedded = false }: { embedded?: boolean } = {}) {
     () =>
       (produtos.data ?? [])
         .filter((p: { ativo?: boolean }) => p.ativo !== false)
-        .map((p: { id: string; nome: string }) => ({ id: p.id, nome: p.nome })),
+        .map((p: { id: string; nome: string; sku?: string | null }) => ({
+          id: p.id,
+          nome: p.sku?.trim() ? `${p.nome} (${p.sku.trim()})` : p.nome,
+        })),
     [produtos.data]
   );
 
