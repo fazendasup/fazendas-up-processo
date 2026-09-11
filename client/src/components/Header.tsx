@@ -62,7 +62,6 @@ import {
   Sparkles,
   Briefcase,
   Truck,
-  ShoppingBasket,
   Sprout,
 } from "lucide-react";
 import { toast } from "sonner";
