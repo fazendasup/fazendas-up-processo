@@ -15,7 +15,7 @@ describe("scenarioEnergy helpers", () => {
 
   it("potência trifásica condensadora 50A 220V FP 0,85", () => {
     const w = threePhaseWatts(220, 50, 0.85);
-    expect(w).toBeCloseTo(Math.SQRT3 * 220 * 50 * 0.85, 4);
+    expect(w).toBeCloseTo(Math.sqrt(3) * 220 * 50 * 0.85, 4);
   });
 });
 

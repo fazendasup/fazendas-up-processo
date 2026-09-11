@@ -10,7 +10,8 @@
 import type { TowerNeedsResult } from "./towerNeeds";
 
 export const WATTS_POR_CV = 735.49875;
-export const SQRT3 = Math.SQRT3;
+/** √3 — evita depender de Math.SQRT3 em runtimes antigos. */
+export const SQRT3 = Math.sqrt(3);
 
 export type ScenarioEnergyParams = {
   /** R$ por kWh — padrão 0,89 */
