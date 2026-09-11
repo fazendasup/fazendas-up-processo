@@ -17,7 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-const STORAGE_KEY = "fazendas-up:projecao-colheita-torres:v1";
+const STORAGE_KEY = "fazendas-up:projecao-colheita-torres:v2";
 
 function readStored(): Partial<TowerNeedsParams> | null {
   if (typeof window === "undefined") return null;
@@ -71,8 +71,10 @@ export function TowerNeedsPlanner({
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <p className="max-w-3xl text-sm text-muted-foreground">
-          Informe o ritmo de colheita e os dias em cada fase. O cálculo usa as
-          razões da operação: <strong>1 andar mudas → 1 torre vegetativa</strong>;{" "}
+          Informe o ritmo de colheita e os dias em cada fase. Estrutura padrão:{" "}
+          <strong>12 andares mudas</strong>, <strong>12 vegetativa</strong>,{" "}
+          <strong>9 maturação</strong>. Razões:{" "}
+          <strong>1 andar mudas → 1 torre vegetativa</strong>;{" "}
           <strong>1 andar vegetativa → 3 andares maturação</strong>.
         </p>
         <div className="flex flex-wrap gap-2">

@@ -56,7 +56,7 @@ export const DEFAULT_TOWER_NEEDS_PARAMS: TowerNeedsParams = {
   daysMaturacao: 14,
   andaresMudas: 12,
   andaresVegetativa: 12,
-  andaresMaturacao: 6,
+  andaresMaturacao: 9,
   vegFloorToMatFloors: 3,
   mudFloorToVegTowers: 1,
 };
