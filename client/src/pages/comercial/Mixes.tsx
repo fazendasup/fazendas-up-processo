@@ -39,10 +39,9 @@ export function Mixes({ embedded = false }: { embedded?: boolean } = {}) {
   const mixes = trpc.comercial.pedidos.listarMixesEstoqueVivo.useQuery();
   const produtos = trpc.comercial.pedidos.produtos.useQuery(
     {
-      // Ingredientes do mix = catálogo Conta Azul (mesmo os ainda não
-      // importados na operação — ex.: Repolho roxo kg vs 200 g).
-      incluirInativos: true,
-      apenasOperacao: false,
+      // Mesma lista da aba Produtos (operação / vendidos).
+      incluirInativos: false,
+      apenasOperacao: true,
     },
     { staleTime: 60_000 }
   );
@@ -72,27 +71,11 @@ export function Mixes({ embedded = false }: { embedded?: boolean } = {}) {
   const produtoOptions = useMemo(
     () =>
       (produtos.data ?? [])
-        .filter((p: { statusContaAzul?: string | null }) => {
-          const st = (p.statusContaAzul ?? "ATIVO").toUpperCase();
-          return st === "ATIVO" || st === "ACTIVE";
-        })
-        .map(
-          (p: {
-            id: string;
-            nome: string;
-            sku?: string | null;
-            ativo?: boolean;
-            importadoOperacao?: boolean;
-          }) => {
-            const tags: string[] = [];
-            if (p.sku?.trim()) tags.push(p.sku.trim());
-            if (!p.importadoOperacao || p.ativo === false) tags.push("catálogo");
-            return {
-              id: p.id,
-              nome: tags.length ? `${p.nome} (${tags.join(" · ")})` : p.nome,
-            };
-          }
-        ),
+        .filter((p: { ativo?: boolean }) => p.ativo !== false)
+        .map((p: { id: string; nome: string; sku?: string | null }) => ({
+          id: p.id,
+          nome: p.sku?.trim() ? `${p.nome} (${p.sku.trim()})` : p.nome,
+        })),
     [produtos.data]
   );
 
@@ -411,6 +394,11 @@ export function Mixes({ embedded = false }: { embedded?: boolean } = {}) {
                   Soma: {gramasTotaisForm.toLocaleString("pt-BR")} g / mix
                 </span>
               </div>
+              <p className="text-[11px] text-muted-foreground">
+                Mesmos itens da aba <strong>Produtos</strong> (operação). Se
+                faltar algum (ex. Repolho roxo kg), importe-o em Pedidos →
+                Produtos a partir do Conta Azul.
+              </p>
               {form.componentes.map((comp, idx) => (
                 <div key={idx} className="flex flex-wrap items-center gap-2">
                   <select
