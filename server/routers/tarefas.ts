@@ -14,6 +14,7 @@ import {
   ymdInTimeZone,
   zonedStartOfDay,
   zonedDayOfWeek,
+  diffDaysYmd,
 } from "../zoned-day";
 
 type FuroRowLike = { andarId: number; perfilIndex: number; status: string };
@@ -243,23 +244,24 @@ export const tarefasRouter = router({
               pendente = true;
             }
           } else {
-            const ultima = new Date(ciclo.ultimaExecucao);
-            if (ciclo.frequencia === 'diaria' || ciclo.frequencia === 'diario') {
-              pendente = ultima < inicioDia;
-            }
-            else if (ciclo.frequencia === 'semanal' && Array.isArray(ciclo.diasSemana)) {
+            const ultimaYmd = ymdInTimeZone(new Date(ciclo.ultimaExecucao), tz);
+            if (ultimaYmd && ultimaYmd === ymdHoje) {
+              pendente = false;
+            } else if (ciclo.frequencia === 'diaria' || ciclo.frequencia === 'diario') {
+              pendente = !ultimaYmd || ultimaYmd < ymdHoje;
+            } else if (ciclo.frequencia === 'semanal' && Array.isArray(ciclo.diasSemana)) {
               pendente =
                 (ciclo.diasSemana as number[]).includes(zonedDayOfWeek(now, tz)) &&
-                ultima < inicioDia;
+                (!ultimaYmd || ultimaYmd < ymdHoje);
             } else if (ciclo.frequencia === 'quinzenal') {
-              pendente = Math.floor((inicioDia.getTime() - ultima.getTime()) / 86400000) >= 14;
+              pendente = !ultimaYmd || diffDaysYmd(ultimaYmd, ymdHoje) >= 14;
             } else if (ciclo.frequencia === 'mensal') {
-              pendente = Math.floor((inicioDia.getTime() - ultima.getTime()) / 86400000) >= 30;
+              pendente = !ultimaYmd || diffDaysYmd(ultimaYmd, ymdHoje) >= 30;
             } else if (
               (ciclo.frequencia === 'personalizada' || ciclo.frequencia === 'intervalo') &&
               ciclo.intervaloDias
             ) {
-              pendente = Math.floor((inicioDia.getTime() - ultima.getTime()) / 86400000) >= ciclo.intervaloDias;
+              pendente = !ultimaYmd || diffDaysYmd(ultimaYmd, ymdHoje) >= ciclo.intervaloDias;
             }
           }
           if (pendente) {

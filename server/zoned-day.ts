@@ -101,3 +101,14 @@ export function zonedDayOfWeek(ref: Date, timeZone: string): number {
   }).format(midnight);
   return WEEKDAY_SHORT_TO_DOW[w] ?? 0;
 }
+
+/** Diferença em dias de calendário entre duas datas yyyy-mm-dd (ymd2 - ymd1). */
+export function diffDaysYmd(ymd1: string, ymd2: string): number {
+  const [y1, m1, d1] = ymd1.split("-").map(Number);
+  const [y2, m2, d2] = ymd2.split("-").map(Number);
+  if (!y1 || !m1 || !d1 || !y2 || !m2 || !d2) return 0;
+  const u1 = Date.UTC(y1, m1 - 1, d1);
+  const u2 = Date.UTC(y2, m2 - 1, d2);
+  return Math.round((u2 - u1) / 86400000);
+}
+

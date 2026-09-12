@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Save, Trash2, Calculator } from "lucide-react";
 import { trpc } from "@/lib/trpc";
@@ -27,6 +27,26 @@ function emptyForm(): MixForm {
   };
 }
 
+function parseNum(raw: string | number | undefined | null): number {
+  const n = Number(String(raw ?? "").replace(",", "."));
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** kg = (qtd × g / 1000) / (1 − perda%) */
+function kgComPerda(qtdMixes: number, gramas: number, perdaPct: number): number {
+  if (qtdMixes <= 0 || gramas <= 0) return 0;
+  const p = Math.min(99.99, Math.max(0, perdaPct));
+  const fator = p > 0 && p < 100 ? 1 / (1 - p / 100) : 1;
+  return Math.ceil(((qtdMixes * gramas * fator) / 1000) * 1000) / 1000;
+}
+
+function gramasComPerda(qtdMixes: number, gramas: number, perdaPct: number): number {
+  if (qtdMixes <= 0 || gramas <= 0) return 0;
+  const p = Math.min(99.99, Math.max(0, perdaPct));
+  const fator = p > 0 && p < 100 ? 1 / (1 - p / 100) : 1;
+  return qtdMixes * gramas * fator;
+}
+
 export function Mixes({ embedded = false }: { embedded?: boolean } = {}) {
   const utils = trpc.useUtils();
   const me = trpc.comercial.pedidos.me.useQuery(undefined, { staleTime: 60_000 });
@@ -39,7 +59,6 @@ export function Mixes({ embedded = false }: { embedded?: boolean } = {}) {
   const mixes = trpc.comercial.pedidos.listarMixesEstoqueVivo.useQuery();
   const produtos = trpc.comercial.pedidos.produtos.useQuery(
     {
-      // Mesma lista da aba Produtos (operação / vendidos).
       incluirInativos: false,
       apenasOperacao: true,
     },
@@ -49,6 +68,8 @@ export function Mixes({ embedded = false }: { embedded?: boolean } = {}) {
   const [form, setForm] = useState<MixForm | null>(null);
   const [mixCalcId, setMixCalcId] = useState("");
   const [qtdMixes, setQtdMixes] = useState("100");
+  /** Perda % por ingrediente no cálculo (editável na tabela). */
+  const [perdasCalc, setPerdasCalc] = useState<Record<string, string>>({});
 
   const salvar = trpc.comercial.pedidos.salvarMixEstoqueVivo.useMutation({
     onSuccess: data => {
@@ -87,33 +108,66 @@ export function Mixes({ embedded = false }: { embedded?: boolean } = {}) {
       c => c.produtoId && Number(String(c.quantidade).replace(",", ".")) > 0
     );
 
-  const qtdNum = Number(String(qtdMixes).replace(",", "."));
-  const previewInput = useMemo(() => {
-    if (!Number.isFinite(qtdNum) || qtdNum <= 0) return null;
-    if (mixCalcId) {
-      return { mixId: mixCalcId, unidadesReferencia: qtdNum };
+  const qtdNum = parseNum(qtdMixes);
+
+  const mixSelecionado = useMemo(
+    () => (mixCalcId ? mixes.data?.find(m => m.id === mixCalcId) : undefined),
+    [mixCalcId, mixes.data]
+  );
+
+  const ingredientesCalc = useMemo(() => {
+    if (mixSelecionado) {
+      return mixSelecionado.componentes.map(c => ({
+        produtoId: c.produtoId,
+        nome: c.produtoNome,
+        gramas: Number(c.quantidade) || 0,
+      }));
     }
     if (formValid && form) {
-      return {
-        unidadesReferencia: qtdNum,
-        mix: {
-          nome: form.nome.trim(),
-          perdaPercentual: Number(String(form.perdaPercentual).replace(",", ".")) || 0,
-          ativo: form.ativo,
-          componentes: form.componentes.map(c => ({
-            produtoId: c.produtoId,
-            quantidade: Number(String(c.quantidade).replace(",", ".")),
-          })),
-        },
-      };
+      return form.componentes.map(c => ({
+        produtoId: c.produtoId,
+        nome: produtoOptions.find(p => p.id === c.produtoId)?.nome ?? "Produto",
+        gramas: parseNum(c.quantidade),
+      }));
     }
-    return null;
-  }, [form, formValid, mixCalcId, qtdNum]);
+    return [] as Array<{ produtoId: string; nome: string; gramas: number }>;
+  }, [mixSelecionado, formValid, form, produtoOptions]);
 
-  const preview = trpc.comercial.pedidos.previewMixEstoqueVivo.useQuery(
-    previewInput!,
-    { enabled: !!previewInput }
-  );
+  // Inicializa perda de cada ingrediente com a perda padrão do mix.
+  useEffect(() => {
+    if (ingredientesCalc.length === 0) return;
+    const padrao = mixSelecionado
+      ? String(mixSelecionado.perdaPercentual ?? 0)
+      : form?.perdaPercentual ?? "0";
+    setPerdasCalc(prev => {
+      const next = { ...prev };
+      let changed = false;
+      for (const ing of ingredientesCalc) {
+        if (next[ing.produtoId] == null) {
+          next[ing.produtoId] = padrao;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [ingredientesCalc, mixSelecionado, form?.perdaPercentual]);
+
+  const linhasCalc = useMemo(() => {
+    if (!(qtdNum > 0) || ingredientesCalc.length === 0) return [];
+    return ingredientesCalc.map(ing => {
+      const perda = parseNum(perdasCalc[ing.produtoId]);
+      const gramasTotais = gramasComPerda(qtdNum, ing.gramas, perda);
+      const kg = kgComPerda(qtdNum, ing.gramas, perda);
+      return {
+        produtoId: ing.produtoId,
+        nome: ing.nome,
+        gramas: ing.gramas,
+        perda,
+        gramasTotais,
+        kg,
+      };
+    });
+  }, [qtdNum, ingredientesCalc, perdasCalc]);
 
   const editar = (mix: {
     id: string;
@@ -123,6 +177,7 @@ export function Mixes({ embedded = false }: { embedded?: boolean } = {}) {
     componentes: Array<{ produtoId: string; quantidade: number }>;
   }) => {
     setMixCalcId(mix.id);
+    setPerdasCalc({});
     setForm({
       id: mix.id,
       nome: mix.nome,
@@ -167,6 +222,7 @@ export function Mixes({ embedded = false }: { embedded?: boolean } = {}) {
                   size="sm"
                   onClick={() => {
                     setMixCalcId("");
+                    setPerdasCalc({});
                     setForm(emptyForm());
                   }}
                 >
@@ -195,6 +251,7 @@ export function Mixes({ embedded = false }: { embedded?: boolean } = {}) {
                         className="min-w-0 flex-1 text-left"
                         onClick={() => {
                           setMixCalcId(mix.id);
+                          setPerdasCalc({});
                           setForm(null);
                         }}
                       >
@@ -258,6 +315,7 @@ export function Mixes({ embedded = false }: { embedded?: boolean } = {}) {
                   value={mixCalcId}
                   onChange={e => {
                     setMixCalcId(e.target.value);
+                    setPerdasCalc({});
                     setForm(null);
                   }}
                 >
@@ -284,54 +342,65 @@ export function Mixes({ embedded = false }: { embedded?: boolean } = {}) {
               </div>
             </div>
 
-            {preview.isFetching ? (
-              <p className="text-sm text-muted-foreground">Calculando…</p>
-            ) : preview.data?.linhas?.length ? (
+            {linhasCalc.length > 0 ? (
               <div className="overflow-x-auto rounded-lg border">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
                       <th className="px-3 py-2">Ingrediente</th>
                       <th className="px-3 py-2">g / mix</th>
+                      <th className="px-3 py-2">Perda %</th>
                       <th className="px-3 py-2">Total c/ perda</th>
                       <th className="px-3 py-2">Processar</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {preview.data.linhas.map(l => (
+                    {linhasCalc.map(l => (
                       <tr key={l.produtoId} className="border-b">
                         <td className="px-3 py-2 font-medium">{l.nome}</td>
                         <td className="px-3 py-2 tabular-nums">
-                          {(
-                            (mixes.data?.find(m => m.id === mixCalcId)?.componentes.find(
-                              c => c.produtoId === l.produtoId
-                            )?.quantidade ??
-                              form?.componentes.find(c => c.produtoId === l.produtoId)
-                                ?.quantidade) ||
-                            "—"
-                          ).toString()}
-                          g
+                          {l.gramas.toLocaleString("pt-BR")}g
+                        </td>
+                        <td className="px-3 py-2">
+                          <Input
+                            type="number"
+                            min={0}
+                            max={99.99}
+                            step={0.1}
+                            className="h-8 w-20 tabular-nums"
+                            value={perdasCalc[l.produtoId] ?? "0"}
+                            onChange={e =>
+                              setPerdasCalc(prev => ({
+                                ...prev,
+                                [l.produtoId]: e.target.value,
+                              }))
+                            }
+                            aria-label={`Perda % de ${l.nome}`}
+                          />
                         </td>
                         <td className="px-3 py-2 tabular-nums text-muted-foreground">
-                          {l.unidadesNecessarias.toLocaleString("pt-BR", {
+                          {l.gramasTotais.toLocaleString("pt-BR", {
                             maximumFractionDigits: 1,
                           })}{" "}
                           g
                         </td>
                         <td className="px-3 py-2 font-semibold tabular-nums">
-                          {l.comprarTexto}
+                          {l.kg.toLocaleString("pt-BR", {
+                            maximumFractionDigits: 3,
+                          })}{" "}
+                          kg
                         </td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
                     <tr className="bg-muted/30 text-xs font-semibold">
-                      <td className="px-3 py-2" colSpan={3}>
+                      <td className="px-3 py-2" colSpan={4}>
                         Total a processar
                       </td>
                       <td className="px-3 py-2">
-                        {preview.data.linhas
-                          .reduce((s, l) => s + (l.comprarValor ?? 0), 0)
+                        {linhasCalc
+                          .reduce((s, l) => s + l.kg, 0)
                           .toLocaleString("pt-BR", { maximumFractionDigits: 3 })}{" "}
                         kg
                       </td>
@@ -347,7 +416,8 @@ export function Mixes({ embedded = false }: { embedded?: boolean } = {}) {
             )}
             <p className="text-[11px] text-muted-foreground">
               Fórmula: (qtd mixes × gramas do item ÷ 1000) ÷ (1 − perda%). Ex.:
-              100 mixes × 30 g cenoura × perda 10% → 3,334 kg.
+              100 mixes × 30 g cenoura × perda 10% → 3,334 kg. Ajuste a perda por
+              ingrediente na coluna para recalcular o kg a comprar/processar.
             </p>
           </CardContent>
         </Card>

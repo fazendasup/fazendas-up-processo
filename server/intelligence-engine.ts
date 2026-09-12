@@ -84,8 +84,9 @@ function gerarHash(tipo: string, entidadeTipo: string, entidadeId: number | unde
 }
 
 function diasEntre(d1: Date, d2: Date): number {
-  const ms = d2.getTime() - d1.getTime();
-  return Math.floor(ms / 86400000);
+  const t1 = Date.UTC(d1.getFullYear(), d1.getMonth(), d1.getDate());
+  const t2 = Date.UTC(d2.getFullYear(), d2.getMonth(), d2.getDate());
+  return Math.round((t2 - t1) / 86400000);
 }
 
 function toDateStart(d: Date) {

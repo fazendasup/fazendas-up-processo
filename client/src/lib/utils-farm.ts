@@ -434,10 +434,20 @@ function ymdLocalDe(valor: string | Date | undefined | null): string | null {
   return `${y}-${m}-${day}`;
 }
 
+/** Diferença em dias de calendário entre duas datas YYYY-MM-DD (d2 - d1). */
+export function diferencaDiasCalendarioYmd(ymd1: string, ymd2: string): number {
+  const [y1, m1, d1] = ymd1.split("-").map(Number);
+  const [y2, m2, d2] = ymd2.split("-").map(Number);
+  if (!y1 || !m1 || !d1 || !y2 || !m2 || !d2) return 0;
+  const utc1 = Date.UTC(y1, m1 - 1, d1);
+  const utc2 = Date.UTC(y2, m2 - 1, d2);
+  return Math.round((utc2 - utc1) / 86400000);
+}
+
 /** Verifica se um ciclo está pendente hoje */
-export function cicloPendenteHoje(ciclo: CicloAplicacao): boolean {
+export function cicloPendenteHoje(ciclo: CicloAplicacao, dataReferencia?: Date): boolean {
   if (!ciclo.ativo) return false;
-  const hoje = new Date();
+  const hoje = dataReferencia ? new Date(dataReferencia) : new Date();
   const hojeDia = hoje.getDay();
   const hojeYmd = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
 
@@ -445,15 +455,9 @@ export function cicloPendenteHoje(ciclo: CicloAplicacao): boolean {
   const inicioYmd = ymdLocalDe(ciclo.dataInicio);
   if (inicioYmd && inicioYmd > hojeYmd) return false;
 
-  // Verificar se já foi executado hoje
-  if (ciclo.ultimaExecucao) {
-    const ultima = new Date(ciclo.ultimaExecucao);
-    const mesmodia =
-      ultima.getFullYear() === hoje.getFullYear() &&
-      ultima.getMonth() === hoje.getMonth() &&
-      ultima.getDate() === hoje.getDate();
-    if (mesmodia) return false;
-  }
+  // Verificar se já foi executado hoje (comparação por data de calendário local)
+  const ultimaYmd = ymdLocalDe(ciclo.ultimaExecucao);
+  if (ultimaYmd && ultimaYmd === hojeYmd) return false;
 
   if (ciclo.frequencia === 'diaria') return true;
 
@@ -462,13 +466,13 @@ export function cicloPendenteHoje(ciclo: CicloAplicacao): boolean {
   }
 
   if (ciclo.frequencia === 'quinzenal' || ciclo.frequencia === 'mensal' || ciclo.frequencia === 'personalizada') {
-    if (!ciclo.ultimaExecucao) {
+    if (!ultimaYmd) {
       // Sem execução: pendente só a partir da data de início
       if (!inicioYmd) return true;
       return inicioYmd <= hojeYmd;
     }
-    const ultima = new Date(ciclo.ultimaExecucao);
-    const diffDias = Math.floor((hoje.getTime() - ultima.getTime()) / (1000 * 60 * 60 * 24));
+    // Diferença em dias de calendário para não depender da hora/fuso em que foi executado
+    const diffDias = diferencaDiasCalendarioYmd(ultimaYmd, hojeYmd);
     const intervalo = ciclo.intervaloDias || (ciclo.frequencia === 'quinzenal' ? 14 : 30);
     return diffDias >= intervalo;
   }
