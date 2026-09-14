@@ -5,6 +5,8 @@ import {
   BarChart3,
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   ClipboardList,
   Clock,
   Copy,
@@ -35,7 +37,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConciliacaoContaAzulPanel } from "@/components/comercial/ConciliacaoContaAzulPanel";
-import { SearchSelect } from "@/components/ui/search-select";
+import { SearchMultiSelect, SearchSelect } from "@/components/ui/search-select";
 import {
   CLIENTES_ACUMULO_ALLOWLIST_LABELS,
   clientePodeAcumularPedidos,
@@ -227,7 +229,16 @@ export function Pedidos({
   );
   const [busca, setBusca] = useState("");
   const [agendaClienteFiltro, setAgendaClienteFiltro] = useState("");
-  const [dashboardClienteFiltro, setDashboardClienteFiltro] = useState("");
+  const [dashboardClienteFiltro, setDashboardClienteFiltro] = useState<string[]>(
+    []
+  );
+  const [avisoSemanaMinimizado, setAvisoSemanaMinimizado] = useState(() => {
+    try {
+      return localStorage.getItem("pedidos.avisoSemanaMinimizado") === "1";
+    } catch {
+      return false;
+    }
+  });
   const [clienteBusca, setClienteBusca] = useState("");
   const [clienteId, setClienteId] = useState("");
   const [pedidoEditId, setPedidoEditId] = useState<string | null>(null);
@@ -565,6 +576,8 @@ export function Pedidos({
       { value: string; label: string; description?: string }
     >();
     for (const grupo of gruposDashboardAll) {
+      // Só clientes com pedido ativo no período (não cancelados).
+      if (grupo.status === "CANCELADO") continue;
       const id = String(grupo.contaAzulCustomerId ?? "");
       if (!id || map.has(id)) continue;
       map.set(id, {
@@ -578,10 +591,21 @@ export function Pedidos({
     );
   }, [gruposDashboardAll]);
 
+  // Remove do filtro clientes que saíram do dia/semana atual.
+  useEffect(() => {
+    if (dashboardClienteFiltro.length === 0) return;
+    const validos = new Set(clientesDashboardFiltro.map(c => c.value));
+    const next = dashboardClienteFiltro.filter(id => validos.has(id));
+    if (next.length !== dashboardClienteFiltro.length) {
+      setDashboardClienteFiltro(next);
+    }
+  }, [clientesDashboardFiltro, dashboardClienteFiltro]);
+
   const gruposDashboard = useMemo(() => {
-    if (!dashboardClienteFiltro) return gruposDashboardAll;
-    return gruposDashboardAll.filter(
-      (g: any) => g.contaAzulCustomerId === dashboardClienteFiltro
+    if (dashboardClienteFiltro.length === 0) return gruposDashboardAll;
+    const selected = new Set(dashboardClienteFiltro);
+    return gruposDashboardAll.filter((g: any) =>
+      selected.has(g.contaAzulCustomerId)
     );
   }, [gruposDashboardAll, dashboardClienteFiltro]);
 
@@ -723,7 +747,7 @@ export function Pedidos({
       status,
       produtos,
       categorias,
-      filtradoPorCliente: Boolean(dashboardClienteFiltro),
+      filtradoPorCliente: dashboardClienteFiltro.length > 0,
     };
   }, [gruposDashboard, dashboardClienteFiltro]);
   const gruposAtivosDashboard = gruposDashboard.filter(
@@ -1040,6 +1064,21 @@ export function Pedidos({
     );
   }
 
+  function toggleAvisoSemanaMinimizado() {
+    setAvisoSemanaMinimizado(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem(
+          "pedidos.avisoSemanaMinimizado",
+          next ? "1" : "0"
+        );
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }
+
   function salvarPedidoAtual() {
     if (!clienteId) return toast.error("Selecione um cliente Conta Azul.");
     if (!tipoVenda) return toast.error("Tipo de venda é obrigatório.");
@@ -1284,11 +1323,11 @@ export function Pedidos({
 
       {/* Aviso de semana anterior ainda aberta (não bloqueia criação de pedidos) */}
       {bloqueioSemana ? (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/40">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="flex items-start gap-2">
+        <div className="rounded-lg border border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40">
+          <div className="flex flex-wrap items-start justify-between gap-3 p-4">
+            <div className="flex min-w-0 flex-1 items-start gap-2">
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
-              <div className="space-y-0.5">
+              <div className="min-w-0 space-y-0.5">
                 <p className="font-semibold text-amber-900 dark:text-amber-100">
                   {bloqueioSemana.fechada &&
                   (bloqueioSemana.conciliacaoPendente ||
@@ -1296,110 +1335,158 @@ export function Pedidos({
                     ? `Semana de ${bloqueioSemana.rotulo} fechada com conciliação pendente`
                     : `Semana de ${bloqueioSemana.rotulo} ainda não foi fechada`}
                 </p>
-                <p className="text-sm text-amber-800 dark:text-amber-200">
-                  {bloqueioSemana.pendentes > 0
-                    ? `Há ${bloqueioSemana.pendentes} pedido(s) sem definição de entregue/cancelado. Revise e feche a semana quando puder — a criação de novos pedidos continua liberada.`
-                    : bloqueioSemana.conciliacaoPendente ||
-                        statusSemana.data?.conciliacaoBloqueio?.conciliado ===
-                          false
-                      ? statusSemana.data?.bloqueioIgnoraConciliacao
-                        ? "Semana piloto (go-live): pode fechar sem conciliar o Conta Azul — os pedidos operacionais já foram revisados."
-                        : bloqueioSemana.fechada
-                          ? "A conciliação com o Conta Azul ainda tem divergências. Corrija abaixo ou use «Fechar sem conciliar» para validar a semana mesmo assim."
-                          : "Há conciliações pendentes com a Conta Azul. Corrija as divergências ou use «Fechar sem conciliar» se for seguro."
-                    : "Os pedidos já estão revisados, mas a semana ainda não foi fechada. Finalize o fechamento quando puder — a criação de novos pedidos continua liberada."}
-                </p>
-                {!canEditarComercial && (
-                  <p className="text-xs text-amber-700 dark:text-amber-300">
-                    Apenas usuários comerciais completos podem fechar a semana.
+                {avisoSemanaMinimizado ? (
+                  <p className="text-xs text-amber-800 dark:text-amber-200">
+                    {bloqueioSemana.pendentes > 0
+                      ? `${bloqueioSemana.pendentes} pedido(s) pendente(s)`
+                      : "Pedidos revisados"}
+                    {statusSemana.data?.conciliacaoBloqueio?.conciliado === false
+                      ? ` · ${
+                          statusSemana.data.conciliacaoBloqueio.resumo
+                            ?.divergentes ??
+                          (
+                            statusSemana.data.conciliacaoBloqueio.clientes ?? []
+                          ).filter(
+                            (c: any) =>
+                              c.status === "divergente" || c.divergente
+                          ).length
+                        } divergência(s)`
+                      : ""}
                   </p>
+                ) : (
+                  <>
+                    <p className="text-sm text-amber-800 dark:text-amber-200">
+                      {bloqueioSemana.pendentes > 0
+                        ? `Há ${bloqueioSemana.pendentes} pedido(s) sem definição de entregue/cancelado. Revise e feche a semana quando puder — a criação de novos pedidos continua liberada.`
+                        : bloqueioSemana.conciliacaoPendente ||
+                            statusSemana.data?.conciliacaoBloqueio?.conciliado ===
+                              false
+                          ? statusSemana.data?.bloqueioIgnoraConciliacao
+                            ? "Semana piloto (go-live): pode fechar sem conciliar o Conta Azul — os pedidos operacionais já foram revisados."
+                            : bloqueioSemana.fechada
+                              ? "A conciliação com o Conta Azul ainda tem divergências. Corrija abaixo ou use «Fechar sem conciliar» para validar a semana mesmo assim."
+                              : "Há conciliações pendentes com a Conta Azul. Corrija as divergências ou use «Fechar sem conciliar» se for seguro."
+                          : "Os pedidos já estão revisados, mas a semana ainda não foi fechada. Finalize o fechamento quando puder — a criação de novos pedidos continua liberada."}
+                    </p>
+                    {!canEditarComercial && (
+                      <p className="text-xs text-amber-700 dark:text-amber-300">
+                        Apenas usuários comerciais completos podem fechar a
+                        semana.
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={irParaSemanaPendente}>
-                Revisar semana de {bloqueioSemana.rotulo}
-              </Button>
-              {!perfilOperacionalRestrito &&
-                (bloqueioSemana.conciliacaoPendente ||
-                  statusSemana.data?.conciliacaoBloqueio?.conciliado ===
-                    false) && (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setAba("conciliacao");
-                    }}
-                  >
-                    Ver conciliação
-                  </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1 text-amber-900 dark:text-amber-100"
+                onClick={toggleAvisoSemanaMinimizado}
+              >
+                {avisoSemanaMinimizado ? (
+                  <>
+                    <ChevronDown className="h-4 w-4" /> Expandir
+                  </>
+                ) : (
+                  <>
+                    <ChevronUp className="h-4 w-4" /> Minimizar
+                  </>
                 )}
-              {canEditarComercial && bloqueioSemana.pendentes === 0 && (
+              </Button>
+              {!avisoSemanaMinimizado ? (
                 <>
-                  {statusSemana.data?.podeFecharBloqueio ? (
-                    <Button
-                      className="bg-amber-600 hover:bg-amber-700"
-                      disabled={fecharSemana.isPending}
-                      onClick={() => fecharSemanaBloqueante(false)}
-                    >
-                      {fecharSemana.isPending
-                        ? "Fechando..."
-                        : `Fechar semana ${bloqueioSemana.rotulo}`}
-                    </Button>
-                  ) : null}
-                  {statusSemana.data?.podeFecharSemConciliacaoBloqueio ? (
-                    <Button
-                      variant="outline"
-                      className="border-amber-400 text-amber-900 dark:text-amber-100"
-                      disabled={fecharSemana.isPending}
-                      onClick={() => fecharSemanaBloqueante(true)}
-                    >
-                      {fecharSemana.isPending
-                        ? "Fechando..."
-                        : bloqueioSemana.fechada
-                          ? "Validar sem conciliar"
-                          : "Fechar sem conciliar"}
-                    </Button>
-                  ) : !statusSemana.data?.podeFecharBloqueio &&
-                    !bloqueioSemana.fechada ? (
-                    <Button
-                      className="bg-amber-600 hover:bg-amber-700"
-                      disabled={fecharSemana.isPending}
-                      onClick={() => fecharSemanaBloqueante(false)}
-                    >
-                      {fecharSemana.isPending
-                        ? "Fechando..."
-                        : `Fechar semana ${bloqueioSemana.rotulo}`}
-                    </Button>
-                  ) : null}
+                  <Button variant="outline" onClick={irParaSemanaPendente}>
+                    Revisar semana de {bloqueioSemana.rotulo}
+                  </Button>
+                  {!perfilOperacionalRestrito &&
+                    (bloqueioSemana.conciliacaoPendente ||
+                      statusSemana.data?.conciliacaoBloqueio?.conciliado ===
+                        false) && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setAba("conciliacao");
+                        }}
+                      >
+                        Ver conciliação
+                      </Button>
+                    )}
+                  {canEditarComercial && bloqueioSemana.pendentes === 0 && (
+                    <>
+                      {statusSemana.data?.podeFecharBloqueio ? (
+                        <Button
+                          className="bg-amber-600 hover:bg-amber-700"
+                          disabled={fecharSemana.isPending}
+                          onClick={() => fecharSemanaBloqueante(false)}
+                        >
+                          {fecharSemana.isPending
+                            ? "Fechando..."
+                            : `Fechar semana ${bloqueioSemana.rotulo}`}
+                        </Button>
+                      ) : null}
+                      {statusSemana.data?.podeFecharSemConciliacaoBloqueio ? (
+                        <Button
+                          variant="outline"
+                          className="border-amber-400 text-amber-900 dark:text-amber-100"
+                          disabled={fecharSemana.isPending}
+                          onClick={() => fecharSemanaBloqueante(true)}
+                        >
+                          {fecharSemana.isPending
+                            ? "Fechando..."
+                            : bloqueioSemana.fechada
+                              ? "Validar sem conciliar"
+                              : "Fechar sem conciliar"}
+                        </Button>
+                      ) : !statusSemana.data?.podeFecharBloqueio &&
+                        !bloqueioSemana.fechada ? (
+                        <Button
+                          className="bg-amber-600 hover:bg-amber-700"
+                          disabled={fecharSemana.isPending}
+                          onClick={() => fecharSemanaBloqueante(false)}
+                        >
+                          {fecharSemana.isPending
+                            ? "Fechando..."
+                            : `Fechar semana ${bloqueioSemana.rotulo}`}
+                        </Button>
+                      ) : null}
+                    </>
+                  )}
                 </>
-              )}
+              ) : null}
             </div>
           </div>
-          {!isLiderColheita && statusSemana.data?.conciliacaoBloqueio && (
-            <PainelConciliacaoFechamento
-              conciliacao={statusSemana.data.conciliacaoBloqueio}
-              className="mt-3"
-              onIrConciliacao={contaAzulCustomerId => {
-                setClienteConciliacaoFoco(contaAzulCustomerId ?? null);
-                setAba("conciliacao");
-              }}
-              onConfigurarRegras={contaAzulCustomerId => {
-                setClienteRegrasId(contaAzulCustomerId);
-                setAba("regras");
-              }}
-            />
-          )}
+          {!avisoSemanaMinimizado &&
+            !isLiderColheita &&
+            statusSemana.data?.conciliacaoBloqueio && (
+              <div className="border-t border-amber-200 px-4 pb-4 dark:border-amber-900/60">
+                <PainelConciliacaoFechamento
+                  conciliacao={statusSemana.data.conciliacaoBloqueio}
+                  className="mt-3"
+                  onIrConciliacao={contaAzulCustomerId => {
+                    setClienteConciliacaoFoco(contaAzulCustomerId ?? null);
+                    setAba("conciliacao");
+                  }}
+                  onConfigurarRegras={contaAzulCustomerId => {
+                    setClienteRegrasId(contaAzulCustomerId);
+                    setAba("regras");
+                  }}
+                />
+              </div>
+            )}
         </div>
       ) : statusSemana.data?.semanaAtual ? (
-        <div className="rounded-lg border bg-muted/30 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+        <div className="rounded-lg border bg-muted/30">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
               {statusSemana.data.semanaAtual.fechada ? (
-                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
               ) : (
-                <Clock className="h-5 w-5 text-amber-600" />
+                <Clock className="h-5 w-5 shrink-0 text-amber-600" />
               )}
-              <div className="space-y-0.5">
+              <div className="min-w-0 space-y-0.5">
                 <p className="text-sm font-semibold">
                   Semana de {statusSemana.data.semanaAtual.rotulo}
                   {statusSemana.data.semanaAtual.fechada ? " · fechada" : ""}
@@ -1416,74 +1503,100 @@ export function Pedidos({
                 </p>
               </div>
             </div>
-            {canEditarComercial && (
-              <div className="flex flex-wrap gap-2">
-                {statusSemana.data.semanaAtual.fechada ? (
-                  <Button
-                    variant="outline"
-                    disabled={reabrirSemana.isPending}
-                    onClick={() => {
-                      if (
-                        window.confirm(
-                          `Reabrir a semana de ${statusSemana.data!.semanaAtual.rotulo} para ajustes?`
-                        )
-                      ) {
-                        reabrirSemana.mutate({ dia: diaDate });
-                      }
-                    }}
-                  >
-                    {reabrirSemana.isPending
-                      ? "Reabrindo..."
-                      : "Reabrir semana"}
-                  </Button>
-                ) : statusSemana.data.podeFecharSemanaAtual ? (
-                  <Button
-                    disabled={fecharSemana.isPending}
-                    onClick={() => fecharSemanaAtual(false)}
-                  >
-                    {fecharSemana.isPending ? "Fechando..." : "Fechar semana"}
-                  </Button>
-                ) : statusSemana.data.semanaAtual.totalPedidos > 0 &&
-                  statusSemana.data.semanaAtual.pendentes === 0 &&
-                  statusSemana.data.conciliacaoContaAzul?.conciliado === false ? (
-                  <Button
-                    variant="outline"
-                    disabled={fecharSemana.isPending}
-                    onClick={() => fecharSemanaAtual(true)}
-                  >
-                    {fecharSemana.isPending
-                      ? "Fechando..."
-                      : statusSemana.data.semanaAtualIgnoraConciliacao
-                        ? "Fechar semana (piloto)"
-                        : "Fechar sem conciliar"}
-                  </Button>
-                ) : statusSemana.data.semanaAtual.totalPedidos > 0 ? (
-                  <span className="text-xs text-muted-foreground">
-                    {statusSemana.data.semanaAtual.pendentes > 0
-                      ? "Defina entregue/cancelado em todos os pedidos para fechar."
-                      : statusSemana.data.conciliacaoContaAzul?.conciliado ===
-                          false
-                        ? "Corrija divergências com o Conta Azul antes de fechar."
-                        : "Revise a semana antes de fechar."}
-                  </span>
-                ) : null}
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1"
+                onClick={toggleAvisoSemanaMinimizado}
+              >
+                {avisoSemanaMinimizado ? (
+                  <>
+                    <ChevronDown className="h-4 w-4" /> Expandir
+                  </>
+                ) : (
+                  <>
+                    <ChevronUp className="h-4 w-4" /> Minimizar
+                  </>
+                )}
+              </Button>
+              {!avisoSemanaMinimizado && canEditarComercial ? (
+                <div className="flex flex-wrap gap-2">
+                  {statusSemana.data.semanaAtual.fechada ? (
+                    <Button
+                      variant="outline"
+                      disabled={reabrirSemana.isPending}
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `Reabrir a semana de ${statusSemana.data!.semanaAtual.rotulo} para ajustes?`
+                          )
+                        ) {
+                          reabrirSemana.mutate({ dia: diaDate });
+                        }
+                      }}
+                    >
+                      {reabrirSemana.isPending
+                        ? "Reabrindo..."
+                        : "Reabrir semana"}
+                    </Button>
+                  ) : statusSemana.data.podeFecharSemanaAtual ? (
+                    <Button
+                      disabled={fecharSemana.isPending}
+                      onClick={() => fecharSemanaAtual(false)}
+                    >
+                      {fecharSemana.isPending
+                        ? "Fechando..."
+                        : "Fechar semana"}
+                    </Button>
+                  ) : statusSemana.data.semanaAtual.totalPedidos > 0 &&
+                    statusSemana.data.semanaAtual.pendentes === 0 &&
+                    statusSemana.data.conciliacaoContaAzul?.conciliado ===
+                      false ? (
+                    <Button
+                      variant="outline"
+                      disabled={fecharSemana.isPending}
+                      onClick={() => fecharSemanaAtual(true)}
+                    >
+                      {fecharSemana.isPending
+                        ? "Fechando..."
+                        : statusSemana.data.semanaAtualIgnoraConciliacao
+                          ? "Fechar semana (piloto)"
+                          : "Fechar sem conciliar"}
+                    </Button>
+                  ) : statusSemana.data.semanaAtual.totalPedidos > 0 ? (
+                    <span className="text-xs text-muted-foreground">
+                      {statusSemana.data.semanaAtual.pendentes > 0
+                        ? "Defina entregue/cancelado em todos os pedidos para fechar."
+                        : statusSemana.data.conciliacaoContaAzul
+                              ?.conciliado === false
+                          ? "Corrija divergências com o Conta Azul antes de fechar."
+                          : "Revise a semana antes de fechar."}
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          </div>
+          {!avisoSemanaMinimizado &&
+            !isLiderColheita &&
+            statusSemana.data.conciliacaoContaAzul && (
+              <div className="border-t px-4 pb-4">
+                <PainelConciliacaoFechamento
+                  conciliacao={statusSemana.data.conciliacaoContaAzul}
+                  className="mt-3"
+                  onIrConciliacao={contaAzulCustomerId => {
+                    setClienteConciliacaoFoco(contaAzulCustomerId ?? null);
+                    setAba("conciliacao");
+                  }}
+                  onConfigurarRegras={contaAzulCustomerId => {
+                    setClienteRegrasId(contaAzulCustomerId);
+                    setAba("regras");
+                  }}
+                />
               </div>
             )}
-          </div>
-          {!isLiderColheita && statusSemana.data.conciliacaoContaAzul && (
-            <PainelConciliacaoFechamento
-              conciliacao={statusSemana.data.conciliacaoContaAzul}
-              className="mt-3"
-              onIrConciliacao={contaAzulCustomerId => {
-                setClienteConciliacaoFoco(contaAzulCustomerId ?? null);
-                setAba("conciliacao");
-              }}
-              onConfigurarRegras={contaAzulCustomerId => {
-                setClienteRegrasId(contaAzulCustomerId);
-                setAba("regras");
-              }}
-            />
-          )}
         </div>
       ) : null}
 
@@ -1528,27 +1641,6 @@ export function Pedidos({
                     : `${DIAS[diaDate.getDay()]} · ${dia}`}
                 </CardTitle>
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="w-full min-w-[200px] sm:w-64">
-                    <SearchSelect
-                      value={dashboardClienteFiltro}
-                      onValueChange={setDashboardClienteFiltro}
-                      options={clientesDashboardFiltro}
-                      placeholder="Filtrar cliente..."
-                      searchPlaceholder="Buscar cliente..."
-                      emptyText="Nenhum cliente no período."
-                    />
-                  </div>
-                  {dashboardClienteFiltro ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 text-xs"
-                      onClick={() => setDashboardClienteFiltro("")}
-                    >
-                      Limpar filtro
-                    </Button>
-                  ) : null}
                   <div className="inline-flex rounded-lg border bg-muted/40 p-0.5">
                     <Button
                       type="button"
@@ -1585,15 +1677,48 @@ export function Pedidos({
                   quando todas as linhas estiverem feitas.
                 </p>
               )}
-              {dashboardClienteFiltro ? (
-                <p className="text-xs font-medium text-cyan-800 dark:text-cyan-200">
-                  Filtro ativo: indicadores e lista abaixo refletem só este
-                  cliente.
-                </p>
-              ) : null}
             </CardHeader>
             <CardContent className="space-y-4">
               <PedidosKpiDashboard kpis={dashboardKpis} />
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/20 p-3">
+                <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <div className="min-w-0 flex-1 sm:max-w-md">
+                  <SearchMultiSelect
+                    values={dashboardClienteFiltro}
+                    onValuesChange={setDashboardClienteFiltro}
+                    options={clientesDashboardFiltro}
+                    placeholder="Filtrar clientes com pedido no dia..."
+                    searchPlaceholder="Buscar cliente..."
+                    emptyText="Nenhum cliente com pedido neste período."
+                    clearLabel="Limpar filtro de clientes"
+                  />
+                </div>
+                {dashboardClienteFiltro.length > 0 ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 text-xs"
+                    onClick={() => setDashboardClienteFiltro([])}
+                  >
+                    Limpar ({dashboardClienteFiltro.length})
+                  </Button>
+                ) : (
+                  <span className="text-xs text-muted-foreground">
+                    {clientesDashboardFiltro.length} cliente(s) com pedido
+                    {escopoDashboard === "semana" ? " na semana" : " no dia"}
+                  </span>
+                )}
+              </div>
+              {dashboardClienteFiltro.length > 0 ? (
+                <p className="text-xs font-medium text-cyan-800 dark:text-cyan-200">
+                  Filtro ativo: indicadores e lista abaixo refletem só{" "}
+                  {dashboardClienteFiltro.length === 1
+                    ? "o cliente selecionado"
+                    : `os ${dashboardClienteFiltro.length} clientes selecionados`}
+                  .
+                </p>
+              ) : null}
               {escopoDashboard === "semana" ? (
                 gruposDashboard.length === 0 ? (
                   <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
@@ -3182,6 +3307,7 @@ function PainelConciliacaoFechamento({
 }
 
 function RegrasResumo({ regra }: { regra: any }) {
+  const [aberto, setAberto] = useState(false);
   if (!regra) {
     return (
       <p className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs font-medium text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
@@ -3211,47 +3337,67 @@ function RegrasResumo({ regra }: { regra: any }) {
 
   return (
     <div className="rounded-xl border bg-card/80 p-2 shadow-sm">
-      <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-        Regras comerciais
-      </p>
-      <div className="grid gap-1.5 sm:grid-cols-2">
-        <RegraChip
-          label="Entrega"
-          value={entrega}
-          className="border-sky-200 bg-sky-50 text-sky-900 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-100"
-        />
-        <RegraChip
-          label="Tipo padrão"
-          value={tipoPadrao}
-          className="border-indigo-200 bg-indigo-50 text-indigo-900 dark:border-indigo-900 dark:bg-indigo-950/30 dark:text-indigo-100"
-        />
-        <RegraChip
-          label="Boleto"
-          value={boleto}
-          className="border-violet-200 bg-violet-50 text-violet-900 dark:border-violet-900 dark:bg-violet-950/30 dark:text-violet-100"
-        />
-        <RegraChip
-          label="Desc. boleto"
-          value={descontoBoleto}
-          className="border-fuchsia-200 bg-fuchsia-50 text-fuchsia-900 dark:border-fuchsia-900 dark:bg-fuchsia-950/30 dark:text-fuchsia-100"
-        />
-        <RegraChip
-          label="Faturamento"
-          value={acumulacao}
-          className="border-orange-200 bg-orange-50 text-orange-900 dark:border-orange-900 dark:bg-orange-950/30 dark:text-orange-100"
-        />
-        <RegraChip
-          label="Taxa"
-          value={entregaTaxa}
-          className="border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100"
-        />
-      </div>
-      {regra.observacoesGerais && (
-        <p className="mt-2 rounded-lg bg-muted/50 px-2 py-1.5 text-xs text-foreground">
-          <span className="font-semibold">Obs. comercial:</span>{" "}
-          {regra.observacoesGerais}
+      <button
+        type="button"
+        className="flex w-full items-center justify-between gap-2 text-left"
+        onClick={() => setAberto(v => !v)}
+      >
+        <p className="min-w-0 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+          Regras comerciais
+          {!aberto ? (
+            <span className="ml-2 font-semibold normal-case tracking-normal text-foreground">
+              · {entrega} · {entregaTaxa}
+            </span>
+          ) : null}
         </p>
-      )}
+        {aberto ? (
+          <ChevronUp className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        ) : (
+          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        )}
+      </button>
+      {aberto ? (
+        <>
+          <div className="mt-1.5 grid gap-1.5 sm:grid-cols-2">
+            <RegraChip
+              label="Entrega"
+              value={entrega}
+              className="border-sky-200 bg-sky-50 text-sky-900 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-100"
+            />
+            <RegraChip
+              label="Tipo padrão"
+              value={tipoPadrao}
+              className="border-indigo-200 bg-indigo-50 text-indigo-900 dark:border-indigo-900 dark:bg-indigo-950/30 dark:text-indigo-100"
+            />
+            <RegraChip
+              label="Boleto"
+              value={boleto}
+              className="border-violet-200 bg-violet-50 text-violet-900 dark:border-violet-900 dark:bg-violet-950/30 dark:text-violet-100"
+            />
+            <RegraChip
+              label="Desc. boleto"
+              value={descontoBoleto}
+              className="border-fuchsia-200 bg-fuchsia-50 text-fuchsia-900 dark:border-fuchsia-900 dark:bg-fuchsia-950/30 dark:text-fuchsia-100"
+            />
+            <RegraChip
+              label="Faturamento"
+              value={acumulacao}
+              className="border-orange-200 bg-orange-50 text-orange-900 dark:border-orange-900 dark:bg-orange-950/30 dark:text-orange-100"
+            />
+            <RegraChip
+              label="Taxa"
+              value={entregaTaxa}
+              className="border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100"
+            />
+          </div>
+          {regra.observacoesGerais && (
+            <p className="mt-2 rounded-lg bg-muted/50 px-2 py-1.5 text-xs text-foreground">
+              <span className="font-semibold">Obs. comercial:</span>{" "}
+              {regra.observacoesGerais}
+            </p>
+          )}
+        </>
+      ) : null}
     </div>
   );
 }
