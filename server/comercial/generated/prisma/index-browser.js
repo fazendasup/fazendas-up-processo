@@ -330,6 +330,7 @@ exports.Prisma.PedidoOperacionalItemScalarFieldEnum = {
   quantidade: 'quantidade',
   precoUnit: 'precoUnit',
   precoEspecial: 'precoEspecial',
+  pronto: 'pronto',
   observacoes: 'observacoes'
 };
 

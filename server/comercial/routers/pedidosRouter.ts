@@ -171,8 +171,19 @@ function prioridadeEntregaAutomatica(
   return minutosDoHorario(regra?.horarioMaximoEntrega) ?? periodoBase;
 }
 
+/** Ordem manual (1,2,3…) vem antes da prioridade automática de entrega. */
+function chaveOrdenacaoProducao(
+  prioridadeManual: number | null | undefined,
+  prioridadeAutomatica: number
+): number {
+  return prioridadeManual != null && Number.isFinite(prioridadeManual)
+    ? prioridadeManual
+    : 10_000 + prioridadeAutomatica;
+}
+
 function compararEntregaPorRegra(
   a: {
+    prioridadeEntrega?: number | null;
     cliente?: {
       nome?: string | null;
       regraComercial?: RegraOrdenacaoEntrega | null;
@@ -180,6 +191,7 @@ function compararEntregaPorRegra(
     criadoEm?: Date;
   },
   b: {
+    prioridadeEntrega?: number | null;
     cliente?: {
       nome?: string | null;
       regraComercial?: RegraOrdenacaoEntrega | null;
@@ -187,8 +199,14 @@ function compararEntregaPorRegra(
     criadoEm?: Date;
   }
 ): number {
-  const prioridadeA = prioridadeEntregaAutomatica(a.cliente?.regraComercial);
-  const prioridadeB = prioridadeEntregaAutomatica(b.cliente?.regraComercial);
+  const prioridadeA = chaveOrdenacaoProducao(
+    a.prioridadeEntrega,
+    prioridadeEntregaAutomatica(a.cliente?.regraComercial)
+  );
+  const prioridadeB = chaveOrdenacaoProducao(
+    b.prioridadeEntrega,
+    prioridadeEntregaAutomatica(b.cliente?.regraComercial)
+  );
   if (prioridadeA !== prioridadeB) return prioridadeA - prioridadeB;
   const nomeA = a.cliente?.nome ?? "";
   const nomeB = b.cliente?.nome ?? "";
@@ -1152,6 +1170,10 @@ export const pedidosRouter = router({
               });
             }
             if (input.itens.length > 0) {
+              const prontoPorProduto = new Map<string, boolean>();
+              for (const i of antes?.itens ?? []) {
+                if (i.pronto) prontoPorProduto.set(i.produtoId, true);
+              }
               await tx.pedidoOperacionalItem.createMany({
                 data: input.itens.map(item => {
                   const produto = produtoMap.get(item.produtoId)!;
@@ -1165,6 +1187,7 @@ export const pedidosRouter = router({
                     quantidade: new Prisma.Decimal(item.quantidade),
                     precoUnit: preco ?? null,
                     precoEspecial: Boolean(especial),
+                    pronto: prontoPorProduto.get(produto.id) ?? false,
                     observacoes: item.observacoes?.trim() || null,
                   };
                 }),
@@ -1691,7 +1714,8 @@ export const pedidosRouter = router({
           status: string;
           dataEntrega: Date;
           dataEntregaIso: string;
-          prioridadeEntrega: number;
+          prioridadeEntrega: number | null;
+          prioridadeAutomatica: number;
           pedidos: typeof pedidos;
           itens: unknown[];
           avarias: unknown[];
@@ -1707,6 +1731,9 @@ export const pedidosRouter = router({
         const key = escopoSemana
           ? `${p.contaAzulCustomerId}:${p.status}:${dataEntregaIso}`
           : `${p.contaAzulCustomerId}:${p.status}`;
+        const prioridadeAutomatica = prioridadeEntregaAutomatica(
+          p.cliente?.regraComercial
+        );
         const atual = grupos.get(key) ?? {
           contaAzulCustomerId: p.contaAzulCustomerId,
           cliente: pedido.cliente,
@@ -1714,9 +1741,8 @@ export const pedidosRouter = router({
           status: p.status,
           dataEntrega,
           dataEntregaIso,
-          prioridadeEntrega: prioridadeEntregaAutomatica(
-            p.cliente?.regraComercial
-          ),
+          prioridadeEntrega: null as number | null,
+          prioridadeAutomatica,
           pedidos: [],
           itens: [],
           avarias: [],
@@ -1724,6 +1750,13 @@ export const pedidosRouter = router({
           avisosAcumulo: [],
           volumeFaturamentoOculto: false,
         };
+        if (
+          p.prioridadeEntrega != null &&
+          (atual.prioridadeEntrega == null ||
+            p.prioridadeEntrega < atual.prioridadeEntrega)
+        ) {
+          atual.prioridadeEntrega = p.prioridadeEntrega;
+        }
         atual.pedidos.push(pedido);
         // Mesma fonte da agenda: itens salvos no pedido operacional (não trocar por
         // orçamento CA nem por entrega da semana anterior).
@@ -1731,6 +1764,7 @@ export const pedidosRouter = router({
           ...p.itens.map((i: any) => ({
             ...i,
             quantidade: Number(i.quantidade ?? 0) || 0,
+            pronto: Boolean(i.pronto),
             tipoVenda: p.tipoVenda,
           }))
         );
@@ -1750,7 +1784,18 @@ export const pedidosRouter = router({
           const db = b.dataEntrega.getTime();
           if (da !== db) return da - db;
         }
-        return a.prioridadeEntrega - b.prioridadeEntrega;
+        const pa = chaveOrdenacaoProducao(
+          a.prioridadeEntrega,
+          a.prioridadeAutomatica
+        );
+        const pb = chaveOrdenacaoProducao(
+          b.prioridadeEntrega,
+          b.prioridadeAutomatica
+        );
+        if (pa !== pb) return pa - pb;
+        const nomeA = (a.cliente as { nome?: string } | null)?.nome ?? "";
+        const nomeB = (b.cliente as { nome?: string } | null)?.nome ?? "";
+        return nomeA.localeCompare(nomeB, "pt-BR");
       });
     }),
 
@@ -1788,11 +1833,25 @@ export const pedidosRouter = router({
         where,
         select: { id: true, status: true },
       });
+      const pedidoIds = pedidos.map(p => p.id);
       await ctx.prisma!.$transaction(async tx => {
         await tx.pedidoOperacional.updateMany({
           where,
           data: { status: input.status, editadoPorId: usuario.id },
         });
+        if (pedidoIds.length > 0) {
+          if (input.status === "PRONTO" || input.status === "ENTREGUE") {
+            await tx.pedidoOperacionalItem.updateMany({
+              where: { pedidoId: { in: pedidoIds } },
+              data: { pronto: true },
+            });
+          } else if (input.status === "PENDENTE") {
+            await tx.pedidoOperacionalItem.updateMany({
+              where: { pedidoId: { in: pedidoIds } },
+              data: { pronto: false },
+            });
+          }
+        }
         for (const p of pedidos) {
           await registrarAuditoria(
             tx as any,
@@ -1805,6 +1864,99 @@ export const pedidosRouter = router({
         }
       });
       return { success: true, count: pedidos.length };
+    }),
+
+  atualizarItemPronto: comercialProcedure
+    .input(
+      z.object({
+        itemId: z.string().min(1),
+        pronto: z.boolean(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { ensureItemPedidoProntoColumn } = await import(
+        "../ensure-item-pedido-pronto"
+      );
+      await ensureItemPedidoProntoColumn();
+
+      const usuario = ctx.comercialUsuario;
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
+
+      const item = await ctx.prisma!.pedidoOperacionalItem.findUnique({
+        where: { id: input.itemId },
+        include: {
+          pedido: {
+            include: { itens: { select: { id: true, pronto: true } } },
+          },
+        },
+      });
+      if (!item)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Item do pedido não encontrado",
+        });
+      if (
+        item.pedido.status === "CANCELADO" ||
+        item.pedido.status === "ENTREGUE"
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Não é possível alterar linhas de um pedido cancelado ou já entregue.",
+        });
+      }
+
+      const statusAnterior = item.pedido.status;
+      let statusNovo = statusAnterior;
+
+      await ctx.prisma!.$transaction(async tx => {
+        await tx.pedidoOperacionalItem.update({
+          where: { id: item.id },
+          data: { pronto: input.pronto },
+        });
+
+        const itensAtualizados = item.pedido.itens.map(i =>
+          i.id === item.id ? { ...i, pronto: input.pronto } : i
+        );
+        const todosProntos =
+          itensAtualizados.length > 0 &&
+          itensAtualizados.every(i => i.pronto);
+
+        if (todosProntos && statusAnterior === "PENDENTE") {
+          statusNovo = "PRONTO";
+          await tx.pedidoOperacional.update({
+            where: { id: item.pedidoId },
+            data: { status: "PRONTO", editadoPorId: usuario.id },
+          });
+        } else if (!todosProntos && statusAnterior === "PRONTO") {
+          statusNovo = "PENDENTE";
+          await tx.pedidoOperacional.update({
+            where: { id: item.pedidoId },
+            data: { status: "PENDENTE", editadoPorId: usuario.id },
+          });
+        }
+
+        if (statusNovo !== statusAnterior) {
+          await registrarAuditoria(
+            tx as any,
+            item.pedidoId,
+            { id: usuario.id, nome: usuario.nome },
+            "status_por_itens",
+            { status: statusAnterior, itemId: item.id, pronto: !input.pronto },
+            { status: statusNovo, itemId: item.id, pronto: input.pronto }
+          );
+        }
+      });
+
+      return {
+        success: true,
+        status: statusNovo,
+        statusMudou: statusNovo !== statusAnterior,
+      };
     }),
 
   atualizarPrioridadeClienteDia: comercialProcedure

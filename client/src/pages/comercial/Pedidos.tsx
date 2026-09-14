@@ -8,6 +8,7 @@ import {
   ClipboardList,
   Clock,
   Copy,
+  ListOrdered,
   Package,
   PackageCheck,
   Plus,
@@ -226,6 +227,7 @@ export function Pedidos({
   );
   const [busca, setBusca] = useState("");
   const [agendaClienteFiltro, setAgendaClienteFiltro] = useState("");
+  const [dashboardClienteFiltro, setDashboardClienteFiltro] = useState("");
   const [clienteBusca, setClienteBusca] = useState("");
   const [clienteId, setClienteId] = useState("");
   const [pedidoEditId, setPedidoEditId] = useState<string | null>(null);
@@ -371,6 +373,27 @@ export function Pedidos({
   const mudarStatus =
     trpc.comercial.pedidos.atualizarStatusClienteDia.useMutation({
       onSuccess: () => {
+        void invalidarVisaoOperacionalDia();
+      },
+      onError: err => toast.error(err.message),
+    });
+  const mudarPrioridade =
+    trpc.comercial.pedidos.atualizarPrioridadeClienteDia.useMutation({
+      onSuccess: () => {
+        void invalidarVisaoOperacionalDia();
+      },
+      onError: err => toast.error(err.message),
+    });
+  const marcarItemPronto =
+    trpc.comercial.pedidos.atualizarItemPronto.useMutation({
+      onSuccess: result => {
+        if (result.statusMudou) {
+          toast.success(
+            result.status === "PRONTO"
+              ? "Todos os itens prontos — pedido marcado como pronto."
+              : "Pedido voltou para pendente."
+          );
+        }
         void invalidarVisaoOperacionalDia();
       },
       onError: err => toast.error(err.message),
@@ -535,8 +558,35 @@ export function Pedidos({
       setTipoVenda(regra.tipoVendaPadrao);
     }
   }, [pedidoEditId, regra?.tipoVendaPadrao]);
+  const gruposDashboardAll = (dashboard.data ?? []) as any[];
+  const clientesDashboardFiltro = useMemo(() => {
+    const map = new Map<
+      string,
+      { value: string; label: string; description?: string }
+    >();
+    for (const grupo of gruposDashboardAll) {
+      const id = String(grupo.contaAzulCustomerId ?? "");
+      if (!id || map.has(id)) continue;
+      map.set(id, {
+        value: id,
+        label: grupo.cliente?.nome ?? id,
+        description: grupo.cliente?.cnpjCpf || undefined,
+      });
+    }
+    return Array.from(map.values()).sort((a, b) =>
+      a.label.localeCompare(b.label, "pt-BR")
+    );
+  }, [gruposDashboardAll]);
+
+  const gruposDashboard = useMemo(() => {
+    if (!dashboardClienteFiltro) return gruposDashboardAll;
+    return gruposDashboardAll.filter(
+      (g: any) => g.contaAzulCustomerId === dashboardClienteFiltro
+    );
+  }, [gruposDashboardAll, dashboardClienteFiltro]);
+
   const dashboardKpis = useMemo(() => {
-    const grupos = dashboard.data ?? [];
+    const grupos = gruposDashboard;
     const status = STATUS.reduce<Record<string, number>>(
       (acc, s) => ({ ...acc, [s]: 0 }),
       {}
@@ -587,6 +637,10 @@ export function Pedidos({
         const quantidade = Number(item.quantidade ?? 0) || 0;
         const nome = item.produtoNome || "Produto sem nome";
         const categoria = item.categoria || "Sem categoria";
+        const itemPronto =
+          grupo.status === "PRONTO" ||
+          grupo.status === "ENTREGUE" ||
+          Boolean(item.pronto);
         const atual = produtosMap.get(nome) ?? {
           nome,
           categoria,
@@ -598,8 +652,8 @@ export function Pedidos({
           clientes: new Set<string>(),
         };
         atual.quantidade += quantidade;
-        if (grupo.status === "PRONTO") atual.pronto += quantidade;
-        else if (grupo.status === "ENTREGUE") atual.entregue += quantidade;
+        if (grupo.status === "ENTREGUE") atual.entregue += quantidade;
+        else if (itemPronto) atual.pronto += quantidade;
         else atual.pendente += quantidade;
         atual.linhas += 1;
         atual.clientes.add(grupo.contaAzulCustomerId);
@@ -611,13 +665,13 @@ export function Pedidos({
           entregue: 0,
         };
         cat.quantidade += quantidade;
-        if (grupo.status === "PRONTO") cat.pronto += quantidade;
-        else if (grupo.status === "ENTREGUE") cat.entregue += quantidade;
+        if (grupo.status === "ENTREGUE") cat.entregue += quantidade;
+        else if (itemPronto) cat.pronto += quantidade;
         else cat.pendente += quantidade;
         categoriasMap.set(categoria, cat);
         unidades += quantidade;
-        if (grupo.status === "PRONTO") unidadesPronto += quantidade;
-        else if (grupo.status === "ENTREGUE") unidadesEntregue += quantidade;
+        if (grupo.status === "ENTREGUE") unidadesEntregue += quantidade;
+        else if (itemPronto) unidadesPronto += quantidade;
         else unidadesPendente += quantidade;
         linhas += 1;
       }
@@ -669,9 +723,9 @@ export function Pedidos({
       status,
       produtos,
       categorias,
+      filtradoPorCliente: Boolean(dashboardClienteFiltro),
     };
-  }, [dashboard.data]);
-  const gruposDashboard = (dashboard.data ?? []) as any[];
+  }, [gruposDashboard, dashboardClienteFiltro]);
   const gruposAtivosDashboard = gruposDashboard.filter(
     grupo => grupo.status !== "CANCELADO"
   );
@@ -751,6 +805,17 @@ export function Pedidos({
 
   function renderGrupoDashboardCard(grupo: any) {
     const diaGrupo = diaDoGrupoDashboard(grupo);
+    const itens = (grupo.itens ?? []) as any[];
+    const itensProntos = itens.filter(
+      (i: any) =>
+        Boolean(i.pronto) ||
+        grupo.status === "PRONTO" ||
+        grupo.status === "ENTREGUE"
+    ).length;
+    const podeMarcarLinha =
+      canEditarComercial &&
+      grupo.status !== "CANCELADO" &&
+      grupo.status !== "ENTREGUE";
     return (
       <Card
         key={`${grupo.contaAzulCustomerId}-${grupo.status}-${grupo.dataEntregaIso ?? ""}`}
@@ -765,12 +830,50 @@ export function Pedidos({
               <p className="text-xs text-muted-foreground">
                 {grupo.cliente?.cnpjCpf || "Sem documento"} ·{" "}
                 {grupo.pedidos.length} pedido(s)
+                {itens.length > 0
+                  ? ` · ${itensProntos}/${itens.length} itens prontos`
+                  : ""}
                 {escopoDashboard === "semana" && grupo.dataEntregaIso
                   ? ` · ${fmtDate(`${grupo.dataEntregaIso}T12:00:00`)}`
                   : ""}
               </p>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1">
+                <ListOrdered className="h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  type="number"
+                  min={1}
+                  step={1}
+                  className="h-8 w-16 px-2 text-xs tabular-nums"
+                  placeholder="#"
+                  title="Ordem de produção (1 = primeiro)"
+                  disabled={!canEditarComercial || mudarPrioridade.isPending}
+                  defaultValue={
+                    grupo.prioridadeEntrega != null
+                      ? String(grupo.prioridadeEntrega)
+                      : ""
+                  }
+                  key={`prio-${grupo.contaAzulCustomerId}-${grupo.dataEntregaIso ?? dia}-${grupo.prioridadeEntrega ?? "x"}`}
+                  onBlur={e => {
+                    const raw = e.target.value.trim();
+                    const next =
+                      raw === ""
+                        ? null
+                        : Math.max(1, Math.floor(Number(raw)) || 1);
+                    const atual =
+                      grupo.prioridadeEntrega != null
+                        ? Number(grupo.prioridadeEntrega)
+                        : null;
+                    if (next === atual) return;
+                    mudarPrioridade.mutate({
+                      contaAzulCustomerId: grupo.contaAzulCustomerId,
+                      dia: diaGrupo,
+                      prioridadeEntrega: next,
+                    });
+                  }}
+                />
+              </div>
               <select
                 className={`h-8 rounded-md border px-2 text-xs font-semibold ${statusSelectClass(grupo.status)}`}
                 value={grupo.status}
@@ -809,29 +912,58 @@ export function Pedidos({
           <AlertaAvariasPedidoCopiado alertas={grupo.alertasAvariasPendentes} />
           <DestaqueObservacaoPedido pedidos={grupo.pedidos ?? []} />
           <div className="grid gap-2">
-            {grupo.itens.map((item: any) => {
+            {itens.map((item: any) => {
               const obsItem = observacaoOperacional(item.observacoes);
+              const linhaPronta =
+                Boolean(item.pronto) ||
+                grupo.status === "PRONTO" ||
+                grupo.status === "ENTREGUE";
               return (
                 <div
                   key={item.id}
-                  className="flex items-center gap-3 rounded-xl bg-sky-50/70 px-3 py-2.5 text-sm ring-1 ring-sky-100 dark:bg-sky-950/20 dark:ring-sky-900/50"
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm ring-1 ${
+                    linhaPronta
+                      ? "bg-emerald-50/80 ring-emerald-200 dark:bg-emerald-950/20 dark:ring-emerald-900/50"
+                      : "bg-sky-50/70 ring-sky-100 dark:bg-sky-950/20 dark:ring-sky-900/50"
+                  }`}
                 >
-                  <div className="flex h-12 w-14 shrink-0 flex-col items-center justify-center rounded-lg bg-white text-sky-900 shadow-sm ring-1 ring-sky-100 dark:bg-slate-950 dark:text-sky-100 dark:ring-sky-900">
+                  <div
+                    className={`flex h-12 w-14 shrink-0 flex-col items-center justify-center rounded-lg bg-white shadow-sm ring-1 ${
+                      linhaPronta
+                        ? "text-emerald-900 ring-emerald-100 dark:bg-slate-950 dark:text-emerald-100 dark:ring-emerald-900"
+                        : "text-sky-900 ring-sky-100 dark:bg-slate-950 dark:text-sky-100 dark:ring-sky-900"
+                    }`}
+                  >
                     <span className="text-lg font-extrabold leading-none">
                       {fmtQtd(item.quantidade)}
                     </span>
-                    <span className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-700 dark:text-sky-300">
+                    <span
+                      className={`mt-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                        linhaPronta
+                          ? "text-emerald-700 dark:text-emerald-300"
+                          : "text-sky-700 dark:text-sky-300"
+                      }`}
+                    >
                       Qtd.
                     </span>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-base font-extrabold leading-tight text-slate-950 dark:text-slate-50">
+                    <p
+                      className={`truncate text-base font-extrabold leading-tight text-slate-950 dark:text-slate-50 ${
+                        linhaPronta ? "line-through opacity-70" : ""
+                      }`}
+                    >
                       {item.produtoNome}
                     </p>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
                       {item.categoria ? (
                         <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground ring-1 ring-sky-100 dark:bg-slate-950/70 dark:ring-sky-900">
                           {item.categoria}
+                        </span>
+                      ) : null}
+                      {linhaPronta ? (
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-800">
+                          Pronto
                         </span>
                       ) : null}
                       {podeVerValores && item.precoUnit != null ? (
@@ -847,6 +979,28 @@ export function Pedidos({
                       ) : null}
                     </div>
                   </div>
+                  {podeMarcarLinha ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={linhaPronta ? "secondary" : "outline"}
+                      className={`h-9 shrink-0 gap-1 text-xs ${
+                        linhaPronta
+                          ? "border-emerald-300 text-emerald-800 dark:border-emerald-700 dark:text-emerald-200"
+                          : ""
+                      }`}
+                      disabled={marcarItemPronto.isPending}
+                      onClick={() =>
+                        marcarItemPronto.mutate({
+                          itemId: item.id,
+                          pronto: !linhaPronta,
+                        })
+                      }
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      {linhaPronta ? "Desfazer" : "Pronto"}
+                    </Button>
+                  ) : null}
                 </div>
               );
             })}
@@ -1373,32 +1527,68 @@ export function Pedidos({
                     ? `Semana ${semanaRotulo} · abertos`
                     : `${DIAS[diaDate.getDay()]} · ${dia}`}
                 </CardTitle>
-                <div className="inline-flex rounded-lg border bg-muted/40 p-0.5">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={escopoDashboard === "dia" ? "default" : "ghost"}
-                    className="h-8 px-3 text-xs"
-                    onClick={() => setEscopoDashboard("dia")}
-                  >
-                    Dia
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={escopoDashboard === "semana" ? "default" : "ghost"}
-                    className="h-8 px-3 text-xs"
-                    onClick={() => setEscopoDashboard("semana")}
-                  >
-                    Semana (pendentes)
-                  </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="w-full min-w-[200px] sm:w-64">
+                    <SearchSelect
+                      value={dashboardClienteFiltro}
+                      onValueChange={setDashboardClienteFiltro}
+                      options={clientesDashboardFiltro}
+                      placeholder="Filtrar cliente..."
+                      searchPlaceholder="Buscar cliente..."
+                      emptyText="Nenhum cliente no período."
+                    />
+                  </div>
+                  {dashboardClienteFiltro ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 text-xs"
+                      onClick={() => setDashboardClienteFiltro("")}
+                    >
+                      Limpar filtro
+                    </Button>
+                  ) : null}
+                  <div className="inline-flex rounded-lg border bg-muted/40 p-0.5">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={escopoDashboard === "dia" ? "default" : "ghost"}
+                      className="h-8 px-3 text-xs"
+                      onClick={() => setEscopoDashboard("dia")}
+                    >
+                      Dia
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={escopoDashboard === "semana" ? "default" : "ghost"}
+                      className="h-8 px-3 text-xs"
+                      onClick={() => setEscopoDashboard("semana")}
+                    >
+                      Semana (pendentes)
+                    </Button>
+                  </div>
                 </div>
               </div>
               {escopoDashboard === "semana" ? (
                 <p className="text-xs text-muted-foreground">
                   Pedidos ainda abertos (pendente ou pronto) de segunda a domingo
                   da data selecionada. Use «Abrir dia» para detalhar ou alterar
-                  itens.
+                  itens. Ordem (#) define a sequência de produção; marque cada
+                  linha como pronta.
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Ordem (#) = sequência de produção (1 primeiro). Marque
+                  produtos individuais como prontos — o pedido vira «Pronto»
+                  quando todas as linhas estiverem feitas.
+                </p>
+              )}
+              {dashboardClienteFiltro ? (
+                <p className="text-xs font-medium text-cyan-800 dark:text-cyan-200">
+                  Filtro ativo: indicadores e lista abaixo refletem só este
+                  cliente.
                 </p>
               ) : null}
             </CardHeader>

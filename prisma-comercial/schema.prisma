@@ -502,6 +502,8 @@ model PedidoOperacionalItem {
   quantidade      Decimal  @db.Decimal(12, 3)
   precoUnit       Decimal? @map("preco_unit") @db.Decimal(14, 2)
   precoEspecial   Boolean  @default(false) @map("preco_especial")
+  /** Linha já separada/produzida — atualiza o status do pedido quando todas ficam prontas. */
+  pronto          Boolean  @default(false)
   observacoes     String?  @db.Text
 
   pedido  PedidoOperacional @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
@@ -509,6 +511,7 @@ model PedidoOperacionalItem {
 
   @@index([pedidoId])
   @@index([produtoId])
+  @@index([pedidoId, pronto])
   @@map("pedidos_operacionais_itens")
 }
 

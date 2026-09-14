@@ -338,6 +338,18 @@ async function startServer() {
     );
   }
 
+  try {
+    const { ensureItemPedidoProntoColumn } = await import(
+      "../comercial/ensure-item-pedido-pronto"
+    );
+    await ensureItemPedidoProntoColumn();
+  } catch (e) {
+    console.error(
+      "[Server] ensureItemPedidoProntoColumn falhou — pronto por linha pode falhar:",
+      e instanceof Error ? e.message : e,
+    );
+  }
+
   // Schema evolutivo (colunas/tabelas idempotentes) — fonte única partilhada com os testes.
   await applyRuntimeSchemaEnsures();
   try {
