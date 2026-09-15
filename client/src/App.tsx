@@ -39,6 +39,7 @@ const PlanejamentoColheitaVerdeTorrePage = lazy(() =>
   import(/* @vite-ignore */"./pages/PlanejamentoColheitaVerdeTorrePage")
 );
 const CustosProducaoPage = lazy(() => import(/* @vite-ignore */"./pages/CustosProducaoPage"));
+const FinanceiroCfoPage = lazy(() => import(/* @vite-ignore */"./pages/FinanceiroCfoPage"));
 const Inteligencia = lazy(() => import(/* @vite-ignore */"./pages/Inteligencia"));
 const VisaoPage = lazy(() => import(/* @vite-ignore */"./pages/VisaoPage"));
 const AdministradorPage = lazy(() => import(/* @vite-ignore */"./pages/AdministradorPage"));
@@ -200,6 +201,15 @@ function Router() {
               <ModuloProjetoRouteGuard modulo="custos_producao">
                 <ComercialPerfilRouteGuard path="/custos-producao">
                   <CustosProducaoPage />
+                </ComercialPerfilRouteGuard>
+              </ModuloProjetoRouteGuard>
+            </ProtectedRoute>
+          </Route>
+          <Route path="/financeiro-cfo">
+            <ProtectedRoute requiredRole="comercial">
+              <ModuloProjetoRouteGuard modulo="custos_producao">
+                <ComercialPerfilRouteGuard path="/financeiro-cfo">
+                  <FinanceiroCfoPage />
                 </ComercialPerfilRouteGuard>
               </ModuloProjetoRouteGuard>
             </ProtectedRoute>

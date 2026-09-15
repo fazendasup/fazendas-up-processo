@@ -39,6 +39,7 @@ import { aplicacoesBancadaRouter } from "./aplicacoesBancada";
 import { caixasBancadaRouter } from "./caixasBancada";
 import { chatRouter } from "./chat";
 import { custosProducaoRouter } from "./custosProducao";
+import { financeiroCfoRouter } from "./financeiroCfo";
 import { comercialRouter } from "./comercial";
 
 export const appRouter = router({
@@ -78,6 +79,7 @@ export const appRouter = router({
   automacao: automacaoRouter,
   chat: chatRouter,
   custosProducao: custosProducaoRouter,
+  financeiroCfo: financeiroCfoRouter,
   comercial: comercialRouter,
 });
 

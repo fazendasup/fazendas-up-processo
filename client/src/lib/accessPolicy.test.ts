@@ -79,6 +79,7 @@ describe("accessPolicy", () => {
       expect(canAccessCommercialPath("/comercial/pedidos", perfil)).toBe(true);
       expect(canAccessCommercialPath("/comercial/acompanhamento-avarias", perfil)).toBe(true);
       expect(canAccessCommercialPath("/custos-producao", perfil)).toBe(true);
+      expect(canAccessCommercialPath("/financeiro-cfo", perfil)).toBe(true);
 
       expect(canAccessCommercialPath("/comercial/configuracoes", perfil)).toBe(false);
       expect(canAccessCommercialPath("/projetos", perfil)).toBe(false);

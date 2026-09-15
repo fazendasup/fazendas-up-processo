@@ -49,6 +49,7 @@ import {
   ShieldCheck,
   BarChart3,
   Coins,
+  Landmark,
   BookOpen,
   Package,
   FolderKanban,
@@ -123,6 +124,14 @@ const ANALISE_CUSTOS: NavItem = {
   href: "/custos-producao",
   label: "Custos de produção",
   icon: Coins,
+  requiredRole: "comercial",
+  comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
+};
+
+const ANALISE_FINANCEIRO_CFO: NavItem = {
+  href: "/financeiro-cfo",
+  label: "Análise financeira",
+  icon: Landmark,
   requiredRole: "comercial",
   comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
 };
@@ -321,7 +330,10 @@ export default function Header() {
       list.push(ANALISE_TODOS);
       list.push(ANALISE_VISAO);
     }
-    if (canAccessComercial) list.push(ANALISE_CUSTOS);
+    if (canAccessComercial) {
+      list.push(ANALISE_CUSTOS);
+      list.push(ANALISE_FINANCEIRO_CFO);
+    }
     return list.filter(item => {
       if (item.requiredRole === "admin" && !isAdmin) return false;
       if (item.requiredRole === "comercial" && !canAccessComercial)

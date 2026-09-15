@@ -60,6 +60,14 @@ const PAGINAS_MODULO: ChatPageEntry[] = [
     blocoSnapshot: "Visão do cultivo",
   },
   {
+    rota: "/financeiro-cfo",
+    nome: "Análise financeira (CFO)",
+    area: "custos",
+    descricao:
+      "Fluxo de caixa Conta Azul, setores, recuperação e oportunidades de compra.",
+    blocoSnapshot: "Análise financeira CFO",
+  },
+  {
     rota: "/custos-producao",
     nome: "Custos — Painel CFO",
     area: "custos_producao",
