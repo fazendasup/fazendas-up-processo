@@ -827,6 +827,53 @@ export const custosProducaoItens = mysqlTable("custos_producao_itens", {
 export type CustoProducaoItemRow = typeof custosProducaoItens.$inferSelect;
 export type InsertCustoProducaoItem = typeof custosProducaoItens.$inferInsert;
 
+/**
+ * Classificação editável do Financeiro Conta Azul (por projeto).
+ * `tipo=parcela` → chave = id da parcela CA; `tipo=fornecedor` → chave = nome do fornecedor.
+ */
+export const financeiroCaClassificacoes = mysqlTable(
+  "financeiro_ca_classificacoes",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    projetoId: int("projetoId").notNull(),
+    tipo: mysqlEnum("tipo", ["parcela", "fornecedor"]).notNull(),
+    chave: varchar("chave", { length: 191 }).notNull(),
+    rubricaOverride: varchar("rubricaOverride", { length: 191 }),
+    centroCustoOverride: varchar("centroCustoOverride", { length: 191 }),
+    excluido: boolean("excluido").notNull().default(false),
+    nota: text("nota"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  t => ({
+    uq: uniqueIndex("uq_fin_ca_class_proj_tipo_chave").on(t.projetoId, t.tipo, t.chave),
+  }),
+);
+
+export type FinanceiroCaClassificacaoRow = typeof financeiroCaClassificacoes.$inferSelect;
+export type InsertFinanceiroCaClassificacao = typeof financeiroCaClassificacoes.$inferInsert;
+
+/** Lançamentos manuais (acrescentar despesa/receita fora do Conta Azul) para relatórios. */
+export const financeiroCaAjustesManuais = mysqlTable("financeiro_ca_ajustes_manuais", {
+  id: int("id").autoincrement().primaryKey(),
+  projetoId: int("projetoId").notNull(),
+  tipo: mysqlEnum("tipo", ["pagar", "receber"]).notNull().default("pagar"),
+  descricao: varchar("descricao", { length: 255 }).notNull(),
+  contraparte: varchar("contraparte", { length: 191 }),
+  rubrica: varchar("rubrica", { length: 191 }).notNull(),
+  centroCusto: varchar("centroCusto", { length: 191 }),
+  valor: decimal("valor", { precision: 14, scale: 2 }).notNull(),
+  dataCompetencia: varchar("dataCompetencia", { length: 10 }),
+  dataVencimento: varchar("dataVencimento", { length: 10 }),
+  nota: text("nota"),
+  ativo: boolean("ativo").notNull().default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type FinanceiroCaAjusteManualRow = typeof financeiroCaAjustesManuais.$inferSelect;
+export type InsertFinanceiroCaAjusteManual = typeof financeiroCaAjustesManuais.$inferInsert;
+
 /** Equipes de mão de obra — CLT vs PJ, processamento ou overhead fixo. */
 export const custosMoEquipes = mysqlTable("custos_mo_equipes", {
   id: int("id").autoincrement().primaryKey(),

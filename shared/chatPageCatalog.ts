@@ -61,11 +61,11 @@ const PAGINAS_MODULO: ChatPageEntry[] = [
   },
   {
     rota: "/financeiro-cfo",
-    nome: "Análise financeira (CFO)",
+    nome: "Financeiro Conta Azul",
     area: "custos",
     descricao:
-      "Fluxo de caixa Conta Azul, setores, recuperação e oportunidades de compra.",
-    blocoSnapshot: "Análise financeira CFO",
+      "Rúbricas, centros de custo, classificação editável, inspeção e exportações.",
+    blocoSnapshot: "Financeiro Conta Azul",
   },
   {
     rota: "/custos-producao",

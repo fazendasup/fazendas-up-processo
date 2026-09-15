@@ -1,12 +1,21 @@
 import { z } from "zod";
 import {
   custosProducaoModuleProcedure,
+  projetoIdFromCtx,
   router,
 } from "../_core/trpc";
 import { analisarFinanceiroCfoContaAzul } from "../financeiroContaAzulFluxo";
+import {
+  deleteFinanceiroCaClassificacao,
+  insertFinanceiroCaAjusteManual,
+  listFinanceiroCaAjustesManuais,
+  listFinanceiroCaClassificacoes,
+  softDeleteFinanceiroCaAjusteManual,
+  upsertFinanceiroCaClassificacao,
+} from "../financeiroClassificacaoDb";
 
 export const financeiroCfoRouter = router({
-  /** Análise CFO: fluxo, setores, oportunidades e plano de ações (Conta Azul). */
+  /** Pacote financeiro Conta Azul + classificação editável do projeto. */
   analise: custosProducaoModuleProcedure
     .input(
       z.object({
@@ -14,7 +23,7 @@ export const financeiroCfoRouter = router({
         fim: z.coerce.date(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const inicio = new Date(input.inicio);
       inicio.setHours(0, 0, 0, 0);
       const fim = new Date(input.fim);
@@ -27,6 +36,71 @@ export const financeiroCfoRouter = router({
       if (dias > 120) {
         throw new Error("Período máximo de 120 dias por análise.");
       }
-      return analisarFinanceiroCfoContaAzul(inicio, fim);
+      return analisarFinanceiroCfoContaAzul(
+        inicio,
+        fim,
+        projetoIdFromCtx(ctx),
+      );
+    }),
+
+  listClassificacoes: custosProducaoModuleProcedure.query(async ({ ctx }) => {
+    return listFinanceiroCaClassificacoes(projetoIdFromCtx(ctx));
+  }),
+
+  salvarClassificacao: custosProducaoModuleProcedure
+    .input(
+      z.object({
+        tipo: z.enum(["parcela", "fornecedor"]),
+        chave: z.string().min(1).max(191),
+        rubricaOverride: z.string().max(191).nullable().optional(),
+        centroCustoOverride: z.string().max(191).nullable().optional(),
+        excluido: z.boolean().optional(),
+        nota: z.string().max(2000).nullable().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return upsertFinanceiroCaClassificacao(projetoIdFromCtx(ctx), input);
+    }),
+
+  removerClassificacao: custosProducaoModuleProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      await deleteFinanceiroCaClassificacao(projetoIdFromCtx(ctx), input.id);
+      return { ok: true as const };
+    }),
+
+  listAjustesManuais: custosProducaoModuleProcedure.query(async ({ ctx }) => {
+    return listFinanceiroCaAjustesManuais(projetoIdFromCtx(ctx));
+  }),
+
+  criarAjusteManual: custosProducaoModuleProcedure
+    .input(
+      z.object({
+        tipo: z.enum(["pagar", "receber"]).default("pagar"),
+        descricao: z.string().min(1).max(255),
+        contraparte: z.string().max(191).nullable().optional(),
+        rubrica: z.string().min(1).max(191),
+        centroCusto: z.string().max(191).nullable().optional(),
+        valor: z.number().finite(),
+        dataCompetencia: z.string().max(10).nullable().optional(),
+        dataVencimento: z.string().max(10).nullable().optional(),
+        nota: z.string().max(2000).nullable().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return insertFinanceiroCaAjusteManual(projetoIdFromCtx(ctx), {
+        ...input,
+        valor: String(input.valor),
+      });
+    }),
+
+  excluirAjusteManual: custosProducaoModuleProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      await softDeleteFinanceiroCaAjusteManual(
+        projetoIdFromCtx(ctx),
+        input.id,
+      );
+      return { ok: true as const };
     }),
 });

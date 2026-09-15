@@ -1,104 +1,35 @@
 /**
- * Classificação setorial e motor de insights financeiros (visão CFO).
- * Dados tipicamente vindos da Conta Azul (receber / pagar / saldos).
+ * Financeiro Conta Azul — visão ERP / CFO.
+ *
+ * Fonte da verdade: categorias, centros de custo e rateio da API.
+ * Heurística de “setor/criticidade” NÃO entra em decisão de corte.
  */
 
-export const SETORES_FINANCEIROS = [
-  "aluguel_imoveis",
-  "insumos_producao",
-  "embalagens",
-  "terceiros_servicos",
-  "folha_pessoal",
-  "logistica_frete",
-  "energia_utilidades",
-  "impostos_taxas",
-  "financeiro_juros",
-  "marketing_comercial",
-  "manutencao",
-  "tecnologia",
-  "fornecedores_diversos",
-  "outros",
-] as const;
+export const RUBRICA_SEM_CATEGORIA = "Sem rúbrica no Conta Azul";
+export const CENTRO_CUSTO_SEM = "Sem centro de custo";
+export const DRE_SEM_MAPEAMENTO = "Sem entrada DRE mapeada";
 
-export type SetorFinanceiro = (typeof SETORES_FINANCEIROS)[number];
+export type FonteClassificacao =
+  | "rateio_api"
+  | "listagem_categoria"
+  | "sem_classificacao"
+  | "override_manual"
+  | "ajuste_manual";
 
-export const LABEL_SETOR_FINANCEIRO: Record<SetorFinanceiro, string> = {
-  aluguel_imoveis: "Aluguel / imóveis",
-  insumos_producao: "Insumos de produção",
-  embalagens: "Embalagens",
-  terceiros_servicos: "Terceiros / serviços",
-  folha_pessoal: "Folha / pessoal",
-  logistica_frete: "Logística / frete",
-  energia_utilidades: "Energia / utilidades",
-  impostos_taxas: "Impostos / taxas",
-  financeiro_juros: "Financeiro / juros",
-  marketing_comercial: "Marketing / comercial",
-  manutencao: "Manutenção",
-  tecnologia: "Tecnologia / software",
-  fornecedores_diversos: "Fornecedores diversos",
-  outros: "Outros",
+export type ConfiancaClassificacao = "alta" | "media" | "baixa";
+
+export type RateioCentro = {
+  id: string | null;
+  nome: string | null;
+  valor: number;
 };
 
-/** Criticidade para caixa em prejuízo: o que não pode parar vs o que dá para segurar. */
-export type CriticidadeDesembolso = "essencial" | "negociavel" | "adiavel";
-
-export const CRITICIDADE_POR_SETOR: Record<SetorFinanceiro, CriticidadeDesembolso> = {
-  aluguel_imoveis: "essencial",
-  insumos_producao: "essencial",
-  embalagens: "negociavel",
-  terceiros_servicos: "negociavel",
-  folha_pessoal: "essencial",
-  logistica_frete: "negociavel",
-  energia_utilidades: "essencial",
-  impostos_taxas: "essencial",
-  financeiro_juros: "essencial",
-  marketing_comercial: "adiavel",
-  manutencao: "negociavel",
-  tecnologia: "negociavel",
-  fornecedores_diversos: "negociavel",
-  outros: "adiavel",
+export type RateioLinha = {
+  categoriaId: string | null;
+  categoriaNome: string | null;
+  valor: number;
+  centros: RateioCentro[];
 };
-
-export function normalizarTextoFinanceiro(texto: string): string {
-  return texto
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-}
-
-export function classificarSetorFinanceiro(texto: string): SetorFinanceiro {
-  const t = normalizarTextoFinanceiro(texto);
-  if (/aluguel|locacao|imovel|galpao|condominio|iptu/.test(t)) return "aluguel_imoveis";
-  if (/embalag|rotulo|adesivo|caixa de|sacola|filme stretch|bandeja plast/.test(t))
-    return "embalagens";
-  if (
-    /semente|muda|substrato|nutri|fertiliz|defens|biologic|insumo|foliar|hidropon|fert/.test(
-      t,
-    )
-  )
-    return "insumos_producao";
-  if (
-    /consult|bpo|contabil|advog|jurid|auditor|servico|terceiriz|honor|prestacao/.test(t)
-  )
-    return "terceiros_servicos";
-  if (/salari|folha|encarg|pro labore|clt|pj |rh |beneficio|vale refeic|fgts|inss/.test(t))
-    return "folha_pessoal";
-  if (/combust|diesel|gasolina|frete|transporte|logist|entrega|correios|motoboy/.test(t))
-    return "logistica_frete";
-  if (/energia|luz|eletric|agua|esgoto|gas natural|utilidade|internet fibra/.test(t))
-    return "energia_utilidades";
-  if (/imposto|iss|icms|pis|cofins|irpj|csll|simples|das |guia |tribut/.test(t))
-    return "impostos_taxas";
-  if (/juros|financ|tarifa banc|anuidade|emprest|cheque especial|iof/.test(t))
-    return "financeiro_juros";
-  if (/marketing|publicid|anuncio|meta ads|google ads|instagram|influencer|brinde/.test(t))
-    return "marketing_comercial";
-  if (/manut|peca|ferrament|reparo|conserto|oficina/.test(t)) return "manutencao";
-  if (/software|saas|assinatura|cloud|hosting|microsoft|google workspace|erp/.test(t))
-    return "tecnologia";
-  if (/fornecedor|compra|mercadoria|atacado/.test(t)) return "fornecedores_diversos";
-  return "outros";
-}
 
 export type ParcelaFinanceiraNorm = {
   id: string;
@@ -111,54 +42,158 @@ export type ParcelaFinanceiraNorm = {
   dataVencimento: string | null;
   dataPagamento: string | null;
   dataCompetencia: string | null;
+  /** Rúbrica efetiva (CA ou override). */
   categoria: string | null;
+  categorias: string[];
+  centrosCusto: string[];
+  centroCusto: string | null;
+  /** Snapshot Conta Azul antes de override. */
+  categoriaOriginal: string | null;
+  centroCustoOriginal: string | null;
   contraparte: string | null;
-  setor: SetorFinanceiro;
-  criticidade: CriticidadeDesembolso;
+  rateio: RateioLinha[];
+  fonteClassificacao: FonteClassificacao;
+  confiancaClassificacao: ConfiancaClassificacao;
+  entradaDre: string | null;
+  editadoManual: boolean;
+  excluido: boolean;
+  notaClassificacao: string | null;
+  origem: "conta_azul" | "ajuste_manual";
+  ajusteManualId?: number | null;
+};
+
+export type ClassificacaoOverride = {
+  tipo: "parcela" | "fornecedor";
+  chave: string;
+  rubricaOverride?: string | null;
+  centroCustoOverride?: string | null;
+  excluido?: boolean;
+  nota?: string | null;
+};
+
+export type AjusteManualInput = {
+  id: number;
+  tipo: "pagar" | "receber";
+  descricao: string;
+  contraparte?: string | null;
+  rubrica: string;
+  centroCusto?: string | null;
+  valor: number;
+  dataCompetencia?: string | null;
+  dataVencimento?: string | null;
+  nota?: string | null;
+};
+
+export type DimensaoFinanceiraAgg = {
+  chave: string;
+  label: string;
+  pago: number;
+  emAberto: number;
+  total: number;
+  qtd: number;
+  pctDoDesembolso: number;
+  semAlocacao: boolean;
+  /** Quanto do total veio de rateio API (confiança alta). */
+  valorComRateio: number;
+  valorSemRateio: number;
+  entradaDre?: string | null;
+};
+
+export type MatrizRubricaCentro = {
+  rubrica: string;
+  centroCusto: string;
+  total: number;
+  qtd: number;
+  pctDoDesembolso: number;
+};
+
+export type GrupoDreAgg = {
+  entradaDre: string;
+  label: string;
+  total: number;
+  pago: number;
+  emAberto: number;
+  qtd: number;
+  pctDoDesembolso: number;
+  rubricas: DimensaoFinanceiraAgg[];
+};
+
+export type FornecedorAgg = {
+  nome: string;
+  rubricas: string[];
+  total: number;
+  pago: number;
+  emAberto: number;
+  qtd: number;
+  pctDoDesembolso: number;
+};
+
+export type AgingBucket = {
+  chave: string;
+  label: string;
+  valor: number;
+  qtd: number;
+};
+
+export type QualidadeAlocacao = {
+  totalTitulosPagar: number;
+  comRateioApi: number;
+  semRubrica: number;
+  semCentroCusto: number;
+  valorTotal: number;
+  valorComRateioApi: number;
+  valorSemRubrica: number;
+  valorSemCentroCusto: number;
+  pctTitulosComRateioApi: number;
+  pctTitulosSemRubrica: number;
+  pctTitulosSemCentroCusto: number;
+  pctValorComRateioApi: number;
+  pctValorSemRubrica: number;
+  pctValorSemCentroCusto: number;
+  /** true se a base ainda não serve para decisão de CFO. */
+  baseConfiavelParaDecisao: boolean;
+  motivoBloqueioDecisao: string | null;
+};
+
+export type ResumoCaixaCfo = {
+  entradasPrevistas: number;
+  entradasRealizadas: number;
+  saidasPrevistas: number;
+  saidasRealizadas: number;
+  aReceberEmAberto: number;
+  aPagarEmAberto: number;
+  saldoPeriodoRealizado: number;
+  gapCaixaPrevisto: number;
+  coberturaReceberSobrePagar: number | null;
+};
+
+export type SemanaFluxo = {
+  inicioSemana: string;
+  entradasPrevistas: number;
+  saidasPrevistas: number;
+  entradasRealizadas: number;
+  saidasRealizadas: number;
+  saldoLiquidoPrevisto: number;
+  saldoLiquidoRealizado: number;
 };
 
 export type InsightCfo = {
   id: string;
   severidade: "critica" | "alta" | "media" | "oportunidade";
-  tipo:
-    | "caixa"
-    | "descasamento"
-    | "setor"
-    | "fornecedor"
-    | "compra"
-    | "recuperacao"
-    | "escala";
+  tipo: "caixa" | "descasamento" | "alocacao" | "integridade";
   titulo: string;
   analise: string;
   acaoSimples: string;
   acaoComplexa?: string;
   impactoEstimado?: number | null;
-  setor?: SetorFinanceiro | null;
-};
-
-export type SetorAgg = {
-  setor: SetorFinanceiro;
-  label: string;
-  criticidade: CriticidadeDesembolso;
-  pago: number;
-  emAberto: number;
-  total: number;
-  qtd: number;
-  pctDoDesembolso: number;
-};
-
-export type FornecedorAgg = {
-  nome: string;
-  setor: SetorFinanceiro;
-  total: number;
-  pago: number;
-  emAberto: number;
-  qtd: number;
-  pctDoDesembolso: number;
 };
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
+}
+
+function valorTitulo(p: ParcelaFinanceiraNorm): number {
+  return p.valor > 0 ? p.valor : p.valorPago;
 }
 
 function semanaKey(ymd: string | null): string | null {
@@ -170,15 +205,80 @@ function semanaKey(ymd: string | null): string | null {
   return d.toISOString().slice(0, 10);
 }
 
-export type SemanaFluxo = {
-  inicioSemana: string;
-  entradasPrevistas: number;
-  saidasPrevistas: number;
-  entradasRealizadas: number;
-  saidasRealizadas: number;
-  saldoLiquidoPrevisto: number;
-  saldoLiquidoRealizado: number;
-};
+export function labelEntradaDre(codigo: string | null | undefined): string {
+  if (!codigo?.trim()) return DRE_SEM_MAPEAMENTO;
+  const map: Record<string, string> = {
+    RECEITA_OPERACIONAL_BRUTA: "Receita operacional bruta",
+    DEDUCOES_RECEITA: "Deduções da receita",
+    CUSTO_SERVICOS_PRESTADOS: "Custo dos serviços / produtos",
+    DESPESAS_OPERACIONAIS: "Despesas operacionais",
+    DESPESAS_ADMINISTRATIVAS: "Despesas administrativas",
+    DESPESAS_COMERCIAIS: "Despesas comerciais",
+    DESPESAS_TRIBUTARIAS: "Despesas tributárias",
+    DESPESAS_FINANCEIRAS: "Despesas financeiras",
+    OUTRAS_RECEITAS: "Outras receitas",
+    OUTRAS_DESPESAS: "Outras despesas",
+  };
+  return map[codigo] ?? codigo.replace(/_/g, " ").toLowerCase();
+}
+
+/**
+ * Expande uma parcela em linhas de alocação com valor.
+ * Prioridade: rateio API → categoria da listagem (valor integral) → sem rúbrica.
+ */
+export function linhasAlocacaoRubrica(
+  p: ParcelaFinanceiraNorm,
+): Array<{ rubrica: string; centro: string; valor: number; comRateio: boolean }> {
+  const vTotal = valorTitulo(p);
+  const out: Array<{
+    rubrica: string;
+    centro: string;
+    valor: number;
+    comRateio: boolean;
+  }> = [];
+
+  if (p.rateio.length > 0) {
+    for (const r of p.rateio) {
+      const rubrica = r.categoriaNome?.trim() || RUBRICA_SEM_CATEGORIA;
+      const valorLinha = r.valor > 0 ? r.valor : 0;
+      if (r.centros.length > 0) {
+        for (const c of r.centros) {
+          out.push({
+            rubrica,
+            centro: c.nome?.trim() || CENTRO_CUSTO_SEM,
+            valor: c.valor > 0 ? c.valor : valorLinha,
+            comRateio: true,
+          });
+        }
+      } else {
+        out.push({
+          rubrica,
+          centro: p.centroCusto?.trim() || CENTRO_CUSTO_SEM,
+          valor: valorLinha > 0 ? valorLinha : vTotal,
+          comRateio: true,
+        });
+      }
+    }
+    const soma = out.reduce((s, x) => s + x.valor, 0);
+    if (soma <= 0 && vTotal > 0) {
+      out.push({
+        rubrica: p.categoria?.trim() || RUBRICA_SEM_CATEGORIA,
+        centro: p.centroCusto?.trim() || CENTRO_CUSTO_SEM,
+        valor: vTotal,
+        comRateio: true,
+      });
+    }
+    return out;
+  }
+
+  out.push({
+    rubrica: p.categoria?.trim() || RUBRICA_SEM_CATEGORIA,
+    centro: p.centroCusto?.trim() || CENTRO_CUSTO_SEM,
+    valor: vTotal,
+    comRateio: false,
+  });
+  return out;
+}
 
 export function montarFluxoPorSemana(
   parcelas: ParcelaFinanceiraNorm[],
@@ -226,64 +326,216 @@ export function montarFluxoPorSemana(
     .sort((a, b) => a.inicioSemana.localeCompare(b.inicioSemana));
 }
 
-export function agregarPorSetor(pagar: ParcelaFinanceiraNorm[]): SetorAgg[] {
-  const map = new Map<SetorFinanceiro, SetorAgg>();
+export function agregarPorRubrica(pagar: ParcelaFinanceiraNorm[]): DimensaoFinanceiraAgg[] {
+  const map = new Map<string, DimensaoFinanceiraAgg & { _dre?: string | null }>();
   let totalGeral = 0;
+
   for (const p of pagar) {
-    const v = p.valor > 0 ? p.valor : p.valorPago;
-    totalGeral += v;
-    const cur = map.get(p.setor) ?? {
-      setor: p.setor,
-      label: LABEL_SETOR_FINANCEIRO[p.setor],
-      criticidade: CRITICIDADE_POR_SETOR[p.setor],
-      pago: 0,
-      emAberto: 0,
-      total: 0,
-      qtd: 0,
-      pctDoDesembolso: 0,
-    };
-    cur.pago += p.valorPago;
-    cur.emAberto += p.valorEmAberto;
-    cur.total += v;
-    cur.qtd += 1;
-    map.set(p.setor, cur);
+    const linhas = linhasAlocacaoRubrica(p);
+    const fatorAberto =
+      valorTitulo(p) > 0 ? p.valorEmAberto / valorTitulo(p) : 0;
+    const fatorPago = valorTitulo(p) > 0 ? p.valorPago / valorTitulo(p) : 0;
+
+    for (const lin of linhas) {
+      totalGeral += lin.valor;
+      const cur = map.get(lin.rubrica) ?? {
+        chave: lin.rubrica,
+        label: lin.rubrica,
+        pago: 0,
+        emAberto: 0,
+        total: 0,
+        qtd: 0,
+        pctDoDesembolso: 0,
+        semAlocacao: lin.rubrica === RUBRICA_SEM_CATEGORIA,
+        valorComRateio: 0,
+        valorSemRateio: 0,
+        entradaDre: p.entradaDre,
+        _dre: p.entradaDre,
+      };
+      cur.total += lin.valor;
+      cur.pago += lin.valor * fatorPago;
+      cur.emAberto += lin.valor * fatorAberto;
+      cur.qtd += 1;
+      if (lin.comRateio) cur.valorComRateio += lin.valor;
+      else cur.valorSemRateio += lin.valor;
+      if (!cur.entradaDre && p.entradaDre) cur.entradaDre = p.entradaDre;
+      map.set(lin.rubrica, cur);
+    }
   }
+
+  return Array.from(map.values())
+    .map(({ _dre: _ignored, ...s }) => ({
+      ...s,
+      pago: round2(s.pago),
+      emAberto: round2(s.emAberto),
+      total: round2(s.total),
+      valorComRateio: round2(s.valorComRateio),
+      valorSemRateio: round2(s.valorSemRateio),
+      pctDoDesembolso: totalGeral > 0 ? round2((s.total / totalGeral) * 100) : 0,
+    }))
+    .sort((a, b) => b.total - a.total);
+}
+
+export function agregarPorCentroCusto(
+  pagar: ParcelaFinanceiraNorm[],
+): DimensaoFinanceiraAgg[] {
+  const map = new Map<string, DimensaoFinanceiraAgg>();
+  let totalGeral = 0;
+
+  for (const p of pagar) {
+    const linhas = linhasAlocacaoRubrica(p);
+    const fatorAberto =
+      valorTitulo(p) > 0 ? p.valorEmAberto / valorTitulo(p) : 0;
+    const fatorPago = valorTitulo(p) > 0 ? p.valorPago / valorTitulo(p) : 0;
+
+    for (const lin of linhas) {
+      totalGeral += lin.valor;
+      const cur = map.get(lin.centro) ?? {
+        chave: lin.centro,
+        label: lin.centro,
+        pago: 0,
+        emAberto: 0,
+        total: 0,
+        qtd: 0,
+        pctDoDesembolso: 0,
+        semAlocacao: lin.centro === CENTRO_CUSTO_SEM,
+        valorComRateio: 0,
+        valorSemRateio: 0,
+      };
+      cur.total += lin.valor;
+      cur.pago += lin.valor * fatorPago;
+      cur.emAberto += lin.valor * fatorAberto;
+      cur.qtd += 1;
+      if (lin.comRateio) cur.valorComRateio += lin.valor;
+      else cur.valorSemRateio += lin.valor;
+      map.set(lin.centro, cur);
+    }
+  }
+
   return Array.from(map.values())
     .map(s => ({
       ...s,
       pago: round2(s.pago),
       emAberto: round2(s.emAberto),
       total: round2(s.total),
+      valorComRateio: round2(s.valorComRateio),
+      valorSemRateio: round2(s.valorSemRateio),
       pctDoDesembolso: totalGeral > 0 ? round2((s.total / totalGeral) * 100) : 0,
     }))
     .sort((a, b) => b.total - a.total);
 }
 
+export function agregarMatrizRubricaCentro(
+  pagar: ParcelaFinanceiraNorm[],
+): MatrizRubricaCentro[] {
+  const map = new Map<string, MatrizRubricaCentro>();
+  let totalGeral = 0;
+  for (const p of pagar) {
+    for (const lin of linhasAlocacaoRubrica(p)) {
+      totalGeral += lin.valor;
+      const key = `${lin.rubrica}||${lin.centro}`;
+      const cur = map.get(key) ?? {
+        rubrica: lin.rubrica,
+        centroCusto: lin.centro,
+        total: 0,
+        qtd: 0,
+        pctDoDesembolso: 0,
+      };
+      cur.total += lin.valor;
+      cur.qtd += 1;
+      map.set(key, cur);
+    }
+  }
+  return Array.from(map.values())
+    .map(r => ({
+      ...r,
+      total: round2(r.total),
+      pctDoDesembolso: totalGeral > 0 ? round2((r.total / totalGeral) * 100) : 0,
+    }))
+    .sort((a, b) => b.total - a.total);
+}
+
+export function agregarPorGrupoDre(
+  pagar: ParcelaFinanceiraNorm[],
+  rubricas: DimensaoFinanceiraAgg[],
+): GrupoDreAgg[] {
+  const byDre = new Map<string, GrupoDreAgg>();
+  let totalGeral = 0;
+
+  for (const p of pagar) {
+    const dre = p.entradaDre?.trim() || DRE_SEM_MAPEAMENTO;
+    for (const lin of linhasAlocacaoRubrica(p)) {
+      totalGeral += lin.valor;
+      const cur = byDre.get(dre) ?? {
+        entradaDre: dre,
+        label: labelEntradaDre(dre === DRE_SEM_MAPEAMENTO ? null : dre),
+        total: 0,
+        pago: 0,
+        emAberto: 0,
+        qtd: 0,
+        pctDoDesembolso: 0,
+        rubricas: [],
+      };
+      cur.total += lin.valor;
+      cur.qtd += 1;
+      byDre.set(dre, cur);
+    }
+  }
+
+  const rubricasPorDre = new Map<string, DimensaoFinanceiraAgg[]>();
+  for (const r of rubricas) {
+    const dre = r.entradaDre?.trim() || DRE_SEM_MAPEAMENTO;
+    const list = rubricasPorDre.get(dre) ?? [];
+    list.push(r);
+    rubricasPorDre.set(dre, list);
+  }
+
+  return Array.from(byDre.values())
+    .map(g => ({
+      ...g,
+      total: round2(g.total),
+      pctDoDesembolso: totalGeral > 0 ? round2((g.total / totalGeral) * 100) : 0,
+      rubricas: (rubricasPorDre.get(g.entradaDre) ?? []).slice(0, 40),
+    }))
+    .sort((a, b) => b.total - a.total);
+}
+
 export function agregarPorFornecedor(pagar: ParcelaFinanceiraNorm[]): FornecedorAgg[] {
-  const map = new Map<string, FornecedorAgg>();
+  const map = new Map<
+    string,
+    FornecedorAgg & { _rubricas: Map<string, number> }
+  >();
   let totalGeral = 0;
   for (const p of pagar) {
     const nome = (p.contraparte || "Sem fornecedor").trim() || "Sem fornecedor";
-    const v = p.valor > 0 ? p.valor : p.valorPago;
+    const v = valorTitulo(p);
     totalGeral += v;
     const cur = map.get(nome) ?? {
       nome,
-      setor: p.setor,
+      rubricas: [],
       total: 0,
       pago: 0,
       emAberto: 0,
       qtd: 0,
       pctDoDesembolso: 0,
+      _rubricas: new Map<string, number>(),
     };
     cur.total += v;
     cur.pago += p.valorPago;
     cur.emAberto += p.valorEmAberto;
     cur.qtd += 1;
+    for (const lin of linhasAlocacaoRubrica(p)) {
+      cur._rubricas.set(lin.rubrica, (cur._rubricas.get(lin.rubrica) ?? 0) + lin.valor);
+    }
     map.set(nome, cur);
   }
   return Array.from(map.values())
-    .map(f => ({
+    .map(({ _rubricas, ...f }) => ({
       ...f,
+      rubricas: Array.from(_rubricas.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 4)
+        .map(([n]) => n),
       total: round2(f.total),
       pago: round2(f.pago),
       emAberto: round2(f.emAberto),
@@ -292,113 +544,119 @@ export function agregarPorFornecedor(pagar: ParcelaFinanceiraNorm[]): Fornecedor
     .sort((a, b) => b.total - a.total);
 }
 
-export type OportunidadeCompra = {
-  id: string;
-  setor: SetorFinanceiro;
-  titulo: string;
-  motivo: string;
-  fornecedoresComparados: string[];
-  economiaPotencialEstimada: number | null;
-  acao: string;
-};
+export function montarAging(
+  parcelas: ParcelaFinanceiraNorm[],
+  referenciaYmd: string,
+): AgingBucket[] {
+  const buckets: AgingBucket[] = [
+    { chave: "a_vencer", label: "A vencer", valor: 0, qtd: 0 },
+    { chave: "1_7", label: "1–7 dias atrasado", valor: 0, qtd: 0 },
+    { chave: "8_15", label: "8–15 dias", valor: 0, qtd: 0 },
+    { chave: "16_30", label: "16–30 dias", valor: 0, qtd: 0 },
+    { chave: "31_60", label: "31–60 dias", valor: 0, qtd: 0 },
+    { chave: "60_mais", label: "> 60 dias", valor: 0, qtd: 0 },
+    { chave: "sem_vencimento", label: "Sem vencimento", valor: 0, qtd: 0 },
+  ];
+  const byKey = new Map(buckets.map(b => [b.chave, b]));
+  const ref = new Date(`${referenciaYmd}T12:00:00`);
 
-/** Compara fornecedores no mesmo setor — “dinheiro na mesa” sem API de marketplace. */
-export function detectarOportunidadesCompra(
-  pagar: ParcelaFinanceiraNorm[],
-): OportunidadeCompra[] {
-  const porSetor = new Map<SetorFinanceiro, Map<string, { total: number; qtd: number }>>();
-  for (const p of pagar) {
-    if (p.tipo !== "pagar") continue;
-    const forn = (p.contraparte || "").trim();
-    if (!forn) continue;
-    const v = p.valorPago > 0 ? p.valorPago : p.valor;
-    if (v <= 0) continue;
-    if (!porSetor.has(p.setor)) porSetor.set(p.setor, new Map());
-    const m = porSetor.get(p.setor)!;
-    const cur = m.get(forn) ?? { total: 0, qtd: 0 };
-    cur.total += v;
-    cur.qtd += 1;
-    m.set(forn, cur);
-  }
-
-  const out: OportunidadeCompra[] = [];
-  for (const [setor, fornMap] of Array.from(porSetor.entries())) {
-    if (setor === "folha_pessoal" || setor === "impostos_taxas" || setor === "aluguel_imoveis") {
+  for (const p of parcelas) {
+    if (p.valorEmAberto <= 0) continue;
+    const venc = p.dataVencimento;
+    if (!venc) {
+      const b = byKey.get("sem_vencimento")!;
+      b.valor += p.valorEmAberto;
+      b.qtd += 1;
       continue;
     }
-    const lista = Array.from(fornMap.entries())
-      .map(([nome, d]) => ({
-        nome,
-        total: d.total,
-        ticket: d.total / Math.max(1, d.qtd),
-        qtd: d.qtd,
-      }))
-      .sort((a, b) => b.total - a.total);
-    if (lista.length < 2) {
-      if (lista[0] && lista[0].total >= 2000) {
-        out.push({
-          id: `mono-${setor}`,
-          setor,
-          titulo: `Monopsônio em ${LABEL_SETOR_FINANCEIRO[setor]}`,
-          motivo: `${lista[0].nome} concentra 100% do gasto setorial (~R$ ${lista[0].total.toFixed(0)}). Sem concorrência interna no Conta Azul.`,
-          fornecedoresComparados: [lista[0].nome],
-          economiaPotencialEstimada: round2(lista[0].total * 0.08),
-          acao: "Cotação com 2–3 alternativas (preço, prazo, frete CIF/FOB) e meta de -8% no próximo ciclo.",
-        });
-      }
-      continue;
-    }
-    const top = lista[0]!;
-    const segundo = lista[1]!;
-    const ticketMedio =
-      lista.reduce((s, x) => s + x.ticket, 0) / Math.max(1, lista.length);
-    const totalSetor = lista.reduce((s, x) => s + x.total, 0);
-    const pctTop = totalSetor > 0 ? top.total / totalSetor : 0;
-
-    if (top.ticket > ticketMedio * 1.25 && top.total >= 500) {
-      const economia = round2((top.ticket - ticketMedio) * top.qtd);
-      out.push({
-        id: `var-${setor}-${top.nome}`,
-        setor,
-        titulo: `Ticket acima da média: ${top.nome}`,
-        motivo: `Em ${LABEL_SETOR_FINANCEIRO[setor]}, ticket médio de ${top.nome} (~R$ ${top.ticket.toFixed(0)}) está ${((top.ticket / ticketMedio - 1) * 100).toFixed(0)}% acima da média dos outros (${lista.length} fornecedores).`,
-        fornecedoresComparados: lista.slice(0, 4).map(x => x.nome),
-        economiaPotencialEstimada: economia > 0 ? economia : round2(top.total * 0.05),
-        acao: `Renegociar com ${top.nome} alinhando ao patamar de ${segundo.nome}, ou migrar volume parcial (preço + prazo + frete).`,
-      });
-    }
-    if (pctTop >= 0.55 && lista.length >= 2) {
-      out.push({
-        id: `conc-${setor}`,
-        setor,
-        titulo: `Concentração alta em ${top.nome}`,
-        motivo: `${(pctTop * 100).toFixed(0)}% do setor ${LABEL_SETOR_FINANCEIRO[setor]} em um único fornecedor — risco de preço e ruptura.`,
-        fornecedoresComparados: lista.slice(0, 3).map(x => x.nome),
-        economiaPotencialEstimada: round2(top.total * 0.05),
-        acao: "Dividir volume 70/30 com segundo fornecedor e pedir desconto por volume comprometido + frete incluso.",
-      });
-    }
+    const d = new Date(`${venc}T12:00:00`);
+    const dias = Math.floor((ref.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+    let key = "a_vencer";
+    if (dias >= 1 && dias <= 7) key = "1_7";
+    else if (dias >= 8 && dias <= 15) key = "8_15";
+    else if (dias >= 16 && dias <= 30) key = "16_30";
+    else if (dias >= 31 && dias <= 60) key = "31_60";
+    else if (dias > 60) key = "60_mais";
+    const b = byKey.get(key)!;
+    b.valor += p.valorEmAberto;
+    b.qtd += 1;
   }
-  return out.sort(
-    (a, b) =>
-      (b.economiaPotencialEstimada ?? 0) - (a.economiaPotencialEstimada ?? 0),
-  );
+
+  return buckets.map(b => ({ ...b, valor: round2(b.valor) }));
 }
 
-export type ResumoCaixaCfo = {
-  entradasPrevistas: number;
-  entradasRealizadas: number;
-  saidasPrevistas: number;
-  saidasRealizadas: number;
-  aReceberEmAberto: number;
-  aPagarEmAberto: number;
-  aPagarEssencialEmAberto: number;
-  aPagarAdiavelEmAberto: number;
-  aPagarNegociavelEmAberto: number;
-  saldoPeriodoRealizado: number;
-  gapCaixaPrevisto: number;
-  coberturaReceberSobrePagar: number | null;
-};
+export function medirQualidadeAlocacao(
+  pagar: ParcelaFinanceiraNorm[],
+): QualidadeAlocacao {
+  let comRateioApi = 0;
+  let semRubrica = 0;
+  let semCentroCusto = 0;
+  let valorTotal = 0;
+  let valorComRateioApi = 0;
+  let valorSemRubrica = 0;
+  let valorSemCentroCusto = 0;
+
+  for (const p of pagar) {
+    const v = valorTitulo(p);
+    valorTotal += v;
+    if (p.fonteClassificacao === "rateio_api") {
+      comRateioApi += 1;
+      valorComRateioApi += v;
+    }
+    const temRubrica =
+      p.rateio.some(r => !!r.categoriaNome?.trim()) || !!p.categoria?.trim();
+    const temCc =
+      p.rateio.some(r => r.centros.some(c => !!c.nome?.trim())) ||
+      !!p.centroCusto?.trim();
+    if (!temRubrica) {
+      semRubrica += 1;
+      valorSemRubrica += v;
+    }
+    if (!temCc) {
+      semCentroCusto += 1;
+      valorSemCentroCusto += v;
+    }
+  }
+
+  const n = pagar.length;
+  const pctValorSemRubrica =
+    valorTotal > 0 ? round2((valorSemRubrica / valorTotal) * 100) : 0;
+  const pctValorComRateioApi =
+    valorTotal > 0 ? round2((valorComRateioApi / valorTotal) * 100) : 0;
+
+  let baseConfiavelParaDecisao = true;
+  let motivoBloqueioDecisao: string | null = null;
+  if (n === 0) {
+    baseConfiavelParaDecisao = false;
+    motivoBloqueioDecisao = "Não há títulos a pagar no período.";
+  } else if (pctValorSemRubrica >= 20) {
+    baseConfiavelParaDecisao = false;
+    motivoBloqueioDecisao = `${pctValorSemRubrica}% do valor a pagar está sem rúbrica Conta Azul. Classifique no CA antes de decidir corte, prioridade ou alocação.`;
+  } else if (pctValorComRateioApi < 50 && pctValorSemRubrica >= 5) {
+    baseConfiavelParaDecisao = false;
+    motivoBloqueioDecisao = `Só ${pctValorComRateioApi}% do valor tem rateio detalhado da API. Sem rateio, não dá para cravar quanto foi em cada rúbrica/CC.`;
+  }
+
+  return {
+    totalTitulosPagar: n,
+    comRateioApi,
+    semRubrica,
+    semCentroCusto,
+    valorTotal: round2(valorTotal),
+    valorComRateioApi: round2(valorComRateioApi),
+    valorSemRubrica: round2(valorSemRubrica),
+    valorSemCentroCusto: round2(valorSemCentroCusto),
+    pctTitulosComRateioApi: n > 0 ? round2((comRateioApi / n) * 100) : 0,
+    pctTitulosSemRubrica: n > 0 ? round2((semRubrica / n) * 100) : 0,
+    pctTitulosSemCentroCusto: n > 0 ? round2((semCentroCusto / n) * 100) : 0,
+    pctValorComRateioApi,
+    pctValorSemRubrica,
+    pctValorSemCentroCusto:
+      valorTotal > 0 ? round2((valorSemCentroCusto / valorTotal) * 100) : 0,
+    baseConfiavelParaDecisao,
+    motivoBloqueioDecisao,
+  };
+}
 
 export function resumirCaixa(
   receber: ParcelaFinanceiraNorm[],
@@ -413,18 +671,6 @@ export function resumirCaixa(
   const saidasRealizadas = sum(pagar, p => p.valorPago);
   const aReceberEmAberto = sum(receber, p => p.valorEmAberto);
   const aPagarEmAberto = sum(pagar, p => p.valorEmAberto);
-  const aPagarEssencialEmAberto = sum(
-    pagar.filter(p => p.criticidade === "essencial"),
-    p => p.valorEmAberto,
-  );
-  const aPagarAdiavelEmAberto = sum(
-    pagar.filter(p => p.criticidade === "adiavel"),
-    p => p.valorEmAberto,
-  );
-  const aPagarNegociavelEmAberto = sum(
-    pagar.filter(p => p.criticidade === "negociavel"),
-    p => p.valorEmAberto,
-  );
 
   return {
     entradasPrevistas,
@@ -433,42 +679,57 @@ export function resumirCaixa(
     saidasRealizadas,
     aReceberEmAberto,
     aPagarEmAberto,
-    aPagarEssencialEmAberto,
-    aPagarAdiavelEmAberto,
-    aPagarNegociavelEmAberto,
     saldoPeriodoRealizado: round2(entradasRealizadas - saidasRealizadas),
     gapCaixaPrevisto: round2(entradasPrevistas - saidasPrevistas),
     coberturaReceberSobrePagar:
-      aPagarEmAberto > 0
-        ? round2(aReceberEmAberto / aPagarEmAberto)
-        : null,
+      aPagarEmAberto > 0 ? round2(aReceberEmAberto / aPagarEmAberto) : null,
   };
 }
 
+/** Só fatos de caixa e integridade — zero “consultoria” inventada. */
 export function gerarInsightsCfo(input: {
   resumo: ResumoCaixaCfo;
-  setores: SetorAgg[];
-  fornecedores: FornecedorAgg[];
-  oportunidadesCompra: OportunidadeCompra[];
+  qualidadeAlocacao: QualidadeAlocacao;
   saldoContas?: number | null;
 }): InsightCfo[] {
+  const { resumo, qualidadeAlocacao, saldoContas } = input;
   const insights: InsightCfo[] = [];
-  const { resumo, setores, fornecedores, oportunidadesCompra, saldoContas } = input;
+
+  if (!qualidadeAlocacao.baseConfiavelParaDecisao && qualidadeAlocacao.motivoBloqueioDecisao) {
+    insights.push({
+      id: "integridade-base",
+      severidade: "critica",
+      tipo: "integridade",
+      titulo: "Base Conta Azul insuficiente para decisão de CFO",
+      analise: qualidadeAlocacao.motivoBloqueioDecisao,
+      acaoSimples:
+        "No Conta Azul: complete categoria + centro de custo (rateio) nos títulos sem classificação.",
+      acaoComplexa:
+        "Padronize o plano de contas e obrigue rateio na inclusão de contas a pagar. Sem isso, qualquer insight de corte é chute.",
+      impactoEstimado: qualidadeAlocacao.valorSemRubrica,
+    });
+  }
+
+  if (qualidadeAlocacao.pctValorSemCentroCusto >= 25) {
+    insights.push({
+      id: "alocacao-cc",
+      severidade: "alta",
+      tipo: "alocacao",
+      titulo: "Centro de custo pouco preenchido",
+      analise: `${qualidadeAlocacao.pctValorSemCentroCusto}% do valor a pagar sem CC — não dá para saber se o gasto está no local certo.`,
+      acaoSimples: "Complete CC nos maiores títulos (aba Razão / Lançamentos).",
+    });
+  }
 
   if (resumo.saldoPeriodoRealizado < 0) {
     insights.push({
       id: "prejuizo-periodo",
       severidade: "critica",
-      tipo: "recuperacao",
-      titulo: "Período no vermelho (caixa realizado)",
-      analise: `Saídas realizadas superam entradas em R$ ${Math.abs(resumo.saldoPeriodoRealizado).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}. Em operação deficitária, cada dia de atraso no receber e cada desembolso adiável conta.`,
+      tipo: "caixa",
+      titulo: "Caixa realizado negativo no período",
+      analise: `Saídas realizadas − entradas = R$ ${resumo.saldoPeriodoRealizado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}.`,
       acaoSimples:
-        "Congelar despesas adiáveis (marketing, extras) e priorizar cobrança dos maiores a receber esta semana.",
-      acaoComplexa:
-        "Montar plano 30-60-90: (1) acelerar recebíveis / renegociar prazos de clientes, (2) alongar pagar negociáveis 15–30 dias, (3) cotar insumos/embalagens com meta de -5 a -10%.",
-      impactoEstimado: round2(
-        resumo.aPagarAdiavelEmAberto + resumo.aPagarNegociavelEmAberto * 0.3,
-      ),
+        "Olhe a aba Rúbricas (valores rateados) e a aging de receber — sem inventar corte por fornecedor.",
     });
   }
 
@@ -477,11 +738,9 @@ export function gerarInsightsCfo(input: {
       id: "gap-previsto",
       severidade: "alta",
       tipo: "descasamento",
-      titulo: "Descasamento previsto no período",
-      analise: `Vencimentos de pagar excedem receber em R$ ${Math.abs(resumo.gapCaixaPrevisto).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}.`,
-      acaoSimples: "Reordenar pagamentos: essenciais primeiro; negociar data dos negociáveis.",
-      acaoComplexa:
-        "Alinhar calendário de faturamento (boleto/PIX antecipado) com a curva semanal de desembolsos — use o fluxo por semana nesta página.",
+      titulo: "Vencimentos: pagar > receber no período",
+      analise: `Gap previsto R$ ${resumo.gapCaixaPrevisto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}.`,
+      acaoSimples: "Cruze fluxo semanal com aging a receber.",
       impactoEstimado: Math.abs(resumo.gapCaixaPrevisto),
     });
   }
@@ -494,98 +753,9 @@ export function gerarInsightsCfo(input: {
       id: "cobertura-baixa",
       severidade: "alta",
       tipo: "caixa",
-      titulo: "A receber não cobre a pagar em aberto",
-      analise: `Cobertura ${resumo.coberturaReceberSobrePagar.toFixed(2)}× (ideal ≥ 1,0). Há risco de rombo mesmo cobrando tudo em dia.`,
-      acaoSimples: "Lista top 10 a receber e cobrança ativa hoje (WhatsApp/telefone).",
-      acaoComplexa:
-        "Revisar prazo médio de recebimento vs pagamento por cliente grande; antecipar faturamento ou pedir sinal em pedidos grandes.",
-    });
-  }
-
-  if (resumo.aPagarAdiavelEmAberto > 0) {
-    insights.push({
-      id: "adiavel",
-      severidade: "oportunidade",
-      tipo: "recuperacao",
-      titulo: "Caixa que dá para segurar agora",
-      analise: `R$ ${resumo.aPagarAdiavelEmAberto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} em aberto classificado como adiável (marketing, extras).`,
-      acaoSimples: "Suspender ou parcelar esses títulos até o caixa estabilizar.",
-      impactoEstimado: resumo.aPagarAdiavelEmAberto,
-    });
-  }
-
-  if (resumo.aPagarEssencialEmAberto > 0) {
-    insights.push({
-      id: "essencial",
-      severidade: "media",
-      tipo: "caixa",
-      titulo: "Desembolsos essenciais protegidos",
-      analise: `R$ ${resumo.aPagarEssencialEmAberto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} em folha, energia, insumos, aluguel e impostos — não cortar; no máximo renegociar prazo sem risco operacional.`,
-      acaoSimples: "Reservar saldo de contas para esses vencimentos antes de qualquer outro pagamento.",
-      setor: null,
-    });
-  }
-
-  for (const s of setores.slice(0, 5)) {
-    if (s.pctDoDesembolso < 12) continue;
-    if (s.criticidade === "essencial") {
-      insights.push({
-        id: `setor-ess-${s.setor}`,
-        severidade: "media",
-        tipo: "setor",
-        titulo: `${s.label} pesa ${s.pctDoDesembolso}% do desembolso`,
-        analise: `Essencial, mas volumoso (R$ ${s.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}). Redução vem de eficiência e cotação, não de corte abrupto.`,
-        acaoSimples: "Auditar 3 maiores títulos do setor e validar se há desperdício ou preço fora de mercado.",
-        acaoComplexa:
-          s.setor === "insumos_producao"
-            ? "Contrato de fornecimento com preço travado + frete incluso; estoque mínimo para não comprar emergencial."
-            : "Benchmark de preço e renegociação trimestral com cláusula de volume.",
-        setor: s.setor,
-        impactoEstimado: round2(s.total * 0.05),
-      });
-    } else if (s.criticidade === "adiavel" || s.criticidade === "negociavel") {
-      insights.push({
-        id: `setor-corte-${s.setor}`,
-        severidade: s.criticidade === "adiavel" ? "oportunidade" : "alta",
-        tipo: "setor",
-        titulo: `Espaço para aliviar: ${s.label}`,
-        analise: `${s.pctDoDesembolso}% do caixa (R$ ${s.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}) em rubrica ${s.criticidade}.`,
-        acaoSimples:
-          s.criticidade === "adiavel"
-            ? "Pausar novos gastos e renegociar o que já venceu."
-            : "Pedir 15–30 dias extras ou desconto à vista se houver caixa pontual.",
-        setor: s.setor,
-        impactoEstimado: round2(s.total * (s.criticidade === "adiavel" ? 0.5 : 0.15)),
-      });
-    }
-  }
-
-  for (const f of fornecedores.slice(0, 3)) {
-    if (f.pctDoDesembolso < 15) continue;
-    insights.push({
-      id: `forn-${f.nome}`,
-      severidade: "media",
-      tipo: "fornecedor",
-      titulo: `Dependência: ${f.nome}`,
-      analise: `${f.pctDoDesembolso}% do desembolso (R$ ${f.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}). Poder de barganha e risco de ruptura.`,
-      acaoSimples: "Agendar conversa de renegociação (preço, prazo, frete) com meta clara.",
-      acaoComplexa: "Qualificar fornecedor B e transferir 20–30% do volume em 60 dias.",
-      impactoEstimado: round2(f.total * 0.07),
-    });
-  }
-
-  for (const op of oportunidadesCompra.slice(0, 6)) {
-    insights.push({
-      id: `compra-${op.id}`,
-      severidade: "oportunidade",
-      tipo: "compra",
-      titulo: op.titulo,
-      analise: op.motivo,
-      acaoSimples: op.acao,
-      acaoComplexa:
-        "Registrar cotação com preço unitário, prazo de pagamento e frete; escolher pelo custo total desembarcado, não só preço de tabela.",
-      impactoEstimado: op.economiaPotencialEstimada,
-      setor: op.setor,
+      titulo: "A receber em aberto não cobre a pagar",
+      analise: `Cobertura ${resumo.coberturaReceberSobrePagar.toFixed(2)}×.`,
+      acaoSimples: "Priorize cobrança pelos maiores títulos da aging.",
     });
   }
 
@@ -594,24 +764,9 @@ export function gerarInsightsCfo(input: {
       id: "saldo-insuficiente",
       severidade: "critica",
       tipo: "caixa",
-      titulo: "Saldo em contas < contas a pagar em aberto",
-      analise: `Saldo atual ~R$ ${saldoContas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} vs a pagar R$ ${resumo.aPagarEmAberto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}.`,
-      acaoSimples: "Priorizar essenciais e acelerar recebimentos antes do próximo lote de vencimentos.",
-      acaoComplexa: "Linha de crédito emergencial só como ponte; foco em ciclo financeiro (DSO/DPO).",
-    });
-  }
-
-  if (resumo.saldoPeriodoRealizado >= 0 && resumo.gapCaixaPrevisto >= 0) {
-    insights.push({
-      id: "escala",
-      severidade: "oportunidade",
-      tipo: "escala",
-      titulo: "Caixa estável — momento de estruturar escala",
-      analise:
-        "Entradas e saídas estão alinhadas no período. Use a folga para travar preços de insumos e alongar visibilidade de fluxo em 8–12 semanas.",
-      acaoSimples: "Criar reserva mínima (ex.: 2 semanas de despesas essenciais).",
-      acaoComplexa:
-        "Política de compras: cotação tripla acima de valor X; prazo mínimo de pagar ≥ prazo médio de receber + 7 dias.",
+      titulo: "Saldo em contas < a pagar em aberto",
+      analise: `Saldo ~R$ ${saldoContas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} vs a pagar R$ ${resumo.aPagarEmAberto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}.`,
+      acaoSimples: "Use aging + rúbricas rateadas para priorizar o que é obrigação real.",
     });
   }
 
@@ -640,18 +795,82 @@ export function normalizarParcela(input: {
   dataPagamento?: string | null;
   dataCompetencia?: string | null;
   categoria?: string | null;
+  categorias?: string[] | null;
+  centrosCusto?: string[] | null;
   contraparte?: string | null;
+  rateio?: RateioLinha[] | null;
+  fonteClassificacao?: FonteClassificacao | null;
+  entradaDre?: string | null;
+  origem?: "conta_azul" | "ajuste_manual" | null;
+  ajusteManualId?: number | null;
 }): ParcelaFinanceiraNorm {
-  const texto = [input.descricao, input.categoria, input.contraparte]
-    .filter(Boolean)
-    .join(" ");
-  const setor = classificarSetorFinanceiro(texto);
+  const categorias = (input.categorias ?? [])
+    .map(c => c.trim())
+    .filter(Boolean);
+  const centrosCusto = (input.centrosCusto ?? [])
+    .map(c => c.trim())
+    .filter(Boolean);
+  const rateio = (input.rateio ?? []).map(r => ({
+    categoriaId: r.categoriaId,
+    categoriaNome: r.categoriaNome?.trim() || null,
+    valor: round2(Number(r.valor) || 0),
+    centros: (r.centros ?? []).map(c => ({
+      id: c.id,
+      nome: c.nome?.trim() || null,
+      valor: round2(Number(c.valor) || 0),
+    })),
+  }));
+
+  const categoriaFromRateio = rateio.find(r => r.categoriaNome)?.categoriaNome ?? null;
+  const categoria =
+    categoriaFromRateio || input.categoria?.trim() || categorias[0] || null;
+  const centroFromRateio =
+    rateio.flatMap(r => r.centros).find(c => c.nome)?.nome ?? null;
+  const centroCusto = centroFromRateio || centrosCusto[0] || null;
+
+  let fonte: FonteClassificacao =
+    input.fonteClassificacao ??
+    (rateio.length > 0
+      ? "rateio_api"
+      : categoria
+        ? "listagem_categoria"
+        : "sem_classificacao");
+
+  const confianca: ConfiancaClassificacao =
+    fonte === "rateio_api" ||
+    fonte === "override_manual" ||
+    fonte === "ajuste_manual"
+      ? "alta"
+      : fonte === "listagem_categoria"
+        ? "media"
+        : "baixa";
+
   const valor = Number(input.valor ?? 0) || 0;
   const valorPago = Number(input.valorPago ?? 0) || 0;
   const valorEmAberto =
     input.valorEmAberto != null
       ? Number(input.valorEmAberto) || 0
       : Math.max(0, valor - valorPago);
+
+  const catsNomes = [
+    ...new Set(
+      [
+        ...categorias,
+        ...rateio.map(r => r.categoriaNome).filter(Boolean),
+        categoria,
+      ].filter(Boolean) as string[],
+    ),
+  ];
+  const ccsNomes = [
+    ...new Set(
+      [
+        ...centrosCusto,
+        ...rateio.flatMap(r => r.centros.map(c => c.nome).filter(Boolean)),
+        centroCusto,
+      ].filter(Boolean) as string[],
+    ),
+  ];
+
   return {
     id: input.id,
     tipo: input.tipo,
@@ -663,9 +882,136 @@ export function normalizarParcela(input: {
     dataVencimento: input.dataVencimento?.slice(0, 10) ?? null,
     dataPagamento: input.dataPagamento?.slice(0, 10) ?? null,
     dataCompetencia: input.dataCompetencia?.slice(0, 10) ?? null,
-    categoria: input.categoria ?? null,
+    categoria,
+    categorias: catsNomes,
+    centrosCusto: ccsNomes,
+    centroCusto,
+    categoriaOriginal: categoria,
+    centroCustoOriginal: centroCusto,
     contraparte: input.contraparte ?? null,
-    setor,
-    criticidade: CRITICIDADE_POR_SETOR[setor],
+    rateio,
+    fonteClassificacao: fonte,
+    confiancaClassificacao: confianca,
+    entradaDre: input.entradaDre?.trim() || null,
+    editadoManual: false,
+    excluido: false,
+    notaClassificacao: null,
+    origem: input.origem ?? "conta_azul",
+    ajusteManualId: input.ajusteManualId ?? null,
   };
+}
+
+export function normalizarChaveFornecedor(nome: string): string {
+  return nome.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+/** Aplica overrides de parcela/fornecedor. Parcela ganha de fornecedor. */
+export function aplicarEdicoesClassificacao(
+  parcelas: ParcelaFinanceiraNorm[],
+  overrides: ClassificacaoOverride[],
+): ParcelaFinanceiraNorm[] {
+  const byParcela = new Map<string, ClassificacaoOverride>();
+  const byFornecedor = new Map<string, ClassificacaoOverride>();
+  for (const o of overrides) {
+    if (o.tipo === "parcela") byParcela.set(o.chave.trim(), o);
+    else byFornecedor.set(normalizarChaveFornecedor(o.chave), o);
+  }
+
+  return parcelas.map(p => {
+    const oForn = p.contraparte
+      ? byFornecedor.get(normalizarChaveFornecedor(p.contraparte))
+      : undefined;
+    const oParc = byParcela.get(p.id);
+    const o = oParc ?? oForn;
+    if (!o) return p;
+
+    const rubrica = o.rubricaOverride?.trim() || p.categoria;
+    const centro = o.centroCustoOverride?.trim() || p.centroCusto;
+    const editado =
+      !!o.rubricaOverride?.trim() ||
+      !!o.centroCustoOverride?.trim() ||
+      !!o.excluido ||
+      !!o.nota?.trim();
+
+    return {
+      ...p,
+      categoria: rubrica,
+      centroCusto: centro,
+      categorias: rubrica
+        ? Array.from(new Set([rubrica, ...p.categorias]))
+        : p.categorias,
+      centrosCusto: centro
+        ? Array.from(new Set([centro, ...p.centrosCusto]))
+        : p.centrosCusto,
+      editadoManual: editado,
+      excluido: !!o.excluido,
+      notaClassificacao: o.nota?.trim() || null,
+      fonteClassificacao: o.rubricaOverride?.trim()
+        ? "override_manual"
+        : p.fonteClassificacao,
+      confiancaClassificacao: o.rubricaOverride?.trim()
+        ? "alta"
+        : p.confiancaClassificacao,
+      // Se override de rúbrica, rateio visual fica como 1 linha com valor total
+      rateio:
+        o.rubricaOverride?.trim()
+          ? [
+              {
+                categoriaId: null,
+                categoriaNome: rubrica,
+                valor: p.valor > 0 ? p.valor : p.valorPago,
+                centros: centro
+                  ? [
+                      {
+                        id: null,
+                        nome: centro,
+                        valor: p.valor > 0 ? p.valor : p.valorPago,
+                      },
+                    ]
+                  : [],
+              },
+            ]
+          : p.rateio,
+    };
+  });
+}
+
+export function ajusteManualParaParcela(a: AjusteManualInput): ParcelaFinanceiraNorm {
+  const valor = round2(Number(a.valor) || 0);
+  return normalizarParcela({
+    id: `manual-${a.id}`,
+    tipo: a.tipo,
+    descricao: a.descricao,
+    valor,
+    valorPago: valor,
+    valorEmAberto: 0,
+    status: "MANUAL",
+    dataVencimento: a.dataVencimento ?? a.dataCompetencia ?? null,
+    dataPagamento: a.dataCompetencia ?? a.dataVencimento ?? null,
+    dataCompetencia: a.dataCompetencia ?? null,
+    categoria: a.rubrica,
+    categorias: [a.rubrica],
+    centrosCusto: a.centroCusto ? [a.centroCusto] : [],
+    contraparte: a.contraparte ?? null,
+    fonteClassificacao: "ajuste_manual",
+    origem: "ajuste_manual",
+    ajusteManualId: a.id,
+    rateio: [
+      {
+        categoriaId: null,
+        categoriaNome: a.rubrica,
+        valor,
+        centros: a.centroCusto
+          ? [{ id: null, nome: a.centroCusto, valor }]
+          : [],
+      },
+    ],
+  });
+}
+
+/** Linhas ativas para agregação/relatório (exclui marcados). */
+export function parcelasAtivasParaRelatorio(
+  parcelas: ParcelaFinanceiraNorm[],
+): ParcelaFinanceiraNorm[] {
+  return parcelas.filter(p => !p.excluido);
 }
