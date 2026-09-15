@@ -3753,10 +3753,36 @@ function ProdutosArea({
       },
       onError: e => toast.error(e.message),
     });
+  const repararInativos =
+    trpc.comercial.pedidos.repararProdutosInativosContaAzul.useMutation({
+      onSuccess: r => {
+        const n = r.reparo.desativados;
+        toast.success(
+          n === 0
+            ? "Nenhum produto inativo do Conta Azul estava ativo na operação."
+            : `${n} produto(s) inativo(s) no Conta Azul foram desativados na operação.`,
+          n > 0 && r.reparo.nomes.length
+            ? {
+                description: r.reparo.nomes.slice(0, 8).join(", ") +
+                  (r.reparo.nomes.length > 8 ? "…" : ""),
+              }
+            : undefined,
+        );
+        void utils.comercial.pedidos.catalogoContaAzul.invalidate();
+        void utils.comercial.pedidos.produtos.invalidate();
+      },
+      onError: e => toast.error(e.message),
+    });
   const importar = trpc.comercial.pedidos.importarProdutosContaAzul.useMutation(
     {
       onSuccess: r => {
-        toast.success(`${r.importados} produto(s) ativado(s) na operação.`);
+        const extra =
+          r.ignoradosInativosCa > 0
+            ? ` (${r.ignoradosInativosCa} ignorado(s) por estarem inativos no Conta Azul)`
+            : "";
+        toast.success(
+          `${r.importados} produto(s) ativado(s) na operação.${extra}`,
+        );
         setSelecionados([]);
         void utils.comercial.pedidos.catalogoContaAzul.invalidate();
         void utils.comercial.pedidos.produtos.invalidate();
@@ -3784,16 +3810,37 @@ function ProdutosArea({
             <CardTitle className="flex items-center gap-2 text-base">
               <Package className="h-4 w-4" /> Disponíveis no Conta Azul
             </CardTitle>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={!canEdit || sincronizar.isPending}
-              onClick={() => sincronizar.mutate()}
-            >
-              {sincronizar.isPending
-                ? "Sincronizando…"
-                : "Sincronizar catálogo"}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!canEdit || sincronizar.isPending}
+                onClick={() => sincronizar.mutate()}
+              >
+                {sincronizar.isPending
+                  ? "Sincronizando…"
+                  : "Sincronizar catálogo"}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!canEdit || repararInativos.isPending}
+                onClick={() => {
+                  if (
+                    !window.confirm(
+                      "Desativar na operação todos os produtos que estão INATIVOS no Conta Azul? (sincroniza o catálogo antes)",
+                    )
+                  ) {
+                    return;
+                  }
+                  repararInativos.mutate({ sincronizarAntes: true });
+                }}
+              >
+                {repararInativos.isPending
+                  ? "Reparando…"
+                  : "Desativar inativos do CA"}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             {!canEdit && (
