@@ -61,8 +61,10 @@ import {
   listarProdutosFaltantesVenda,
 } from "../lib/produto-operacional.js";
 import {
+  desativarProdutosInativosNoContaAzul,
   importarProdutosParaOperacao,
   iniciarSincronizacaoCatalogoProdutosEmBackground,
+  sincronizarCatalogoProdutosContaAzul,
 } from "../integrations/conta-azul/produtos-sync.service.js";
 const podeConfigurarEstoqueVivo = comercialRequirePerfis(
   "ADMIN",
@@ -804,6 +806,39 @@ export const pedidosRouter = router({
     .mutation(async ({ ctx, input }) =>
       importarProdutosParaOperacao(ctx.prisma!, input.produtoIds)
     ),
+
+  /**
+   * Repara: desativa na operação produtos INATIVOS no Conta Azul.
+   * Use após sync do catálogo para atualizar statusContaAzul.
+   */
+  repararProdutosInativosContaAzul: comercialProcedure
+    .use(podeConfigurarEstoqueVivo)
+    .input(
+      z
+        .object({
+          sincronizarAntes: z.boolean().default(true),
+        })
+        .default({ sincronizarAntes: true }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.comercialEnv) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Ambiente comercial indisponível.",
+        });
+      }
+      let sync: Awaited<
+        ReturnType<typeof sincronizarCatalogoProdutosContaAzul>
+      > | null = null;
+      if (input.sincronizarAntes) {
+        sync = await sincronizarCatalogoProdutosContaAzul(
+          ctx.prisma!,
+          ctx.comercialEnv,
+        );
+      }
+      const reparo = await desativarProdutosInativosNoContaAzul(ctx.prisma!);
+      return { sync, reparo };
+    }),
 
   salvarProduto: comercialProcedure
     .use(podeConfigurarEstoqueVivo)

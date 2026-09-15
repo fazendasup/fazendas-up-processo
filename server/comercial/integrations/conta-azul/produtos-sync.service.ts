@@ -113,6 +113,8 @@ async function upsertProdutoCatalogo(
     where: { contaAzulProdutoId: item.id },
   });
   if (existenteCa) {
+    const status = (item.status ?? "").toUpperCase();
+    const inativoNoCa = status.length > 0 && status !== "ATIVO" && status !== "ACTIVE";
     await prisma.produtoComercial.update({
       where: { id: existenteCa.id },
       data: {
@@ -121,6 +123,8 @@ async function upsertProdutoCatalogo(
         statusContaAzul: dataBase.statusContaAzul,
         precoBase: dataBase.precoBase,
         sincronizadoEm: dataBase.sincronizadoEm,
+        // Produto inativo no Conta Azul não pode permanecer ativo na operação.
+        ...(inativoNoCa ? { ativo: false, importadoOperacao: false } : {}),
       },
     });
     return "atualizado";
@@ -226,20 +230,75 @@ export function iniciarSincronizacaoCatalogoProdutosEmBackground(
 export async function importarProdutosParaOperacao(
   prisma: PrismaClient,
   produtoIds: string[],
-): Promise<{ importados: number }> {
+): Promise<{ importados: number; ignoradosInativosCa: number }> {
   const unicos = Array.from(new Set(produtoIds.filter(Boolean)));
-  if (unicos.length === 0) return { importados: 0 };
+  if (unicos.length === 0) return { importados: 0, ignoradosInativosCa: 0 };
 
   const produtos = await prisma.produtoComercial.findMany({
     where: { id: { in: unicos }, contaAzulProdutoId: { not: null } },
-    select: { id: true },
+    select: { id: true, statusContaAzul: true, nome: true },
   });
-  if (produtos.length === 0) throw new Error("Nenhum produto do catálogo Conta Azul encontrado para importar.");
+  if (produtos.length === 0) {
+    throw new Error("Nenhum produto do catálogo Conta Azul encontrado para importar.");
+  }
+
+  const elegiveis = produtos.filter(p => {
+    const st = (p.statusContaAzul ?? "ATIVO").toUpperCase();
+    return st === "ATIVO" || st === "ACTIVE";
+  });
+  const ignoradosInativosCa = produtos.length - elegiveis.length;
+  if (elegiveis.length === 0) {
+    throw new Error(
+      "Nenhum dos produtos selecionados está ATIVO no Conta Azul. Não é possível ativar na operação.",
+    );
+  }
 
   await prisma.produtoComercial.updateMany({
-    where: { id: { in: produtos.map((p) => p.id) } },
+    where: { id: { in: elegiveis.map(p => p.id) } },
     data: { importadoOperacao: true, ativo: true },
   });
 
-  return { importados: produtos.length };
+  return { importados: elegiveis.length, ignoradosInativosCa };
+}
+
+/**
+ * Desativa na operação produtos que estão INATIVOS no Conta Azul
+ * (corrigindo importações em massa que forçavam ativo=true).
+ */
+export async function desativarProdutosInativosNoContaAzul(
+  prisma: PrismaClient,
+): Promise<{ desativados: number; ids: string[]; nomes: string[] }> {
+  const todos = await prisma.produtoComercial.findMany({
+    where: {
+      contaAzulProdutoId: { not: null },
+      OR: [{ ativo: true }, { importadoOperacao: true }],
+    },
+    select: {
+      id: true,
+      nome: true,
+      statusContaAzul: true,
+      ativo: true,
+      importadoOperacao: true,
+    },
+  });
+
+  const alvos = todos.filter(p => {
+    const st = (p.statusContaAzul ?? "").toUpperCase();
+    return st.length > 0 && st !== "ATIVO" && st !== "ACTIVE";
+  });
+
+  if (alvos.length === 0) {
+    return { desativados: 0, ids: [], nomes: [] };
+  }
+
+  await prisma.produtoComercial.updateMany({
+    where: { id: { in: alvos.map(p => p.id) } },
+    data: { ativo: false, importadoOperacao: false },
+  });
+
+  return {
+    desativados: alvos.length,
+    ids: alvos.map(p => p.id),
+    nomes: alvos.map(p => p.nome),
+  };
 }
