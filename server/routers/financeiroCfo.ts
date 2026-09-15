@@ -4,7 +4,10 @@ import {
   projetoIdFromCtx,
   router,
 } from "../_core/trpc";
-import { analisarFinanceiroCfoContaAzul } from "../financeiroContaAzulFluxo";
+import {
+  analisarFinanceiroCfoContaAzul,
+  buscarParcelaDetalheFinanceiro,
+} from "../financeiroContaAzulFluxo";
 import {
   deleteFinanceiroCaClassificacao,
   insertFinanceiroCaAjusteManual,
@@ -13,6 +16,7 @@ import {
   softDeleteFinanceiroCaAjusteManual,
   upsertFinanceiroCaClassificacao,
 } from "../financeiroClassificacaoDb";
+import { aplicarEdicoesClassificacao } from "@shared/financeiroCfoInsights";
 
 export const financeiroCfoRouter = router({
   /** Pacote financeiro Conta Azul + classificação editável do projeto. */
@@ -41,6 +45,37 @@ export const financeiroCfoRouter = router({
         fim,
         projetoIdFromCtx(ctx),
       );
+    }),
+
+  /** Rateio Conta Azul de um título — sob demanda ao inspecionar. */
+  parcelaDetalhe: custosProducaoModuleProcedure
+    .input(
+      z.object({
+        parcelaId: z.string().min(1),
+        tipo: z.enum(["pagar", "receber"]).default("pagar"),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const det = await buscarParcelaDetalheFinanceiro(
+        input.parcelaId,
+        input.tipo,
+      );
+      if (!det) return null;
+      const classifs = await listFinanceiroCaClassificacoes(
+        projetoIdFromCtx(ctx),
+      );
+      const [aplicada] = aplicarEdicoesClassificacao(
+        [det],
+        classifs.map(c => ({
+          tipo: c.tipo,
+          chave: c.chave,
+          rubricaOverride: c.rubricaOverride,
+          centroCustoOverride: c.centroCustoOverride,
+          excluido: c.excluido,
+          nota: c.nota,
+        })),
+      );
+      return aplicada ?? det;
     }),
 
   listClassificacoes: custosProducaoModuleProcedure.query(async ({ ctx }) => {

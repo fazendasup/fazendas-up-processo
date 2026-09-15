@@ -110,9 +110,6 @@ type ParcelaDetalheCa = {
   };
 };
 
-/** Limite de enriquecimento por análise (throttle CA ~200ms/req). */
-const MAX_ENRIQUECER_PAGAR = 80;
-
 async function fetchParcelasPaginated(
   pathBase: string,
   inicio: Date,
@@ -179,37 +176,6 @@ async function fetchParcelasPaginated(
   return { itens, aviso };
 }
 
-async function fetchCatalogoCategorias(): Promise<Map<string, CategoriaCa>> {
-  const map = new Map<string, CategoriaCa>();
-  try {
-    const env = getComercialEnv();
-    const prisma = getComercialPrisma();
-    const cred = await ensureValidAccessToken(prisma, env);
-    if (!cred?.accessToken) return map;
-    const http = createContaAzulHttp(env, cred.accessToken);
-    for (let pagina = 1; pagina <= 20; pagina++) {
-      const qs = new URLSearchParams({
-        pagina: String(pagina),
-        tamanho_pagina: "100",
-        permite_apenas_filhos: "false",
-      });
-      const res = await contaAzulGet<{ itens?: CategoriaCa[] }>(
-        http,
-        `/v1/categorias?${qs.toString()}`,
-      );
-      const batch = res.itens ?? [];
-      for (const c of batch) {
-        if (c.id) map.set(c.id, c);
-        if (c.nome?.trim()) map.set(`nome:${c.nome.trim().toLowerCase()}`, c);
-      }
-      if (batch.length < 100) break;
-    }
-  } catch {
-    /* catálogo opcional — DRE fica sem mapeamento */
-  }
-  return map;
-}
-
 function resolverEntradaDre(
   catalogo: Map<string, CategoriaCa>,
   categoriaId: string | null,
@@ -257,6 +223,71 @@ function rateioDeDetalhe(det: ParcelaDetalheCa): RateioLinha[] {
     .filter(r => r.categoriaNome || r.valor > 0 || r.centros.length > 0);
 }
 
+/** Rateio detalhado sob demanda (não bloqueia a listagem). */
+export async function buscarParcelaDetalheFinanceiro(
+  parcelaId: string,
+  tipo: "pagar" | "receber" = "pagar",
+): Promise<ParcelaFinanceiraNorm | null> {
+  if (!parcelaId || parcelaId.startsWith("manual-")) return null;
+  const det = await fetchParcelaDetalhe(parcelaId);
+  if (!det) return null;
+  const rateio = rateioDeDetalhe(det);
+  const catNome =
+    rateio.find(r => r.categoriaNome)?.categoriaNome ||
+    det.categorias?.[0]?.nome ||
+    null;
+  const centros = [
+    ...new Set(
+      [
+        ...(det.centros_custo ?? []).map(c => c.nome?.trim() || ""),
+        ...rateio.flatMap(r => r.centros.map(c => c.nome || "")),
+      ].filter(Boolean),
+    ),
+  ];
+  const categorias = [
+    ...new Set(
+      [
+        ...(det.categorias ?? []).map(c => c.nome?.trim() || ""),
+        ...rateio.map(r => r.categoriaNome || ""),
+      ].filter(Boolean),
+    ),
+  ];
+  const contraparte =
+    tipo === "pagar"
+      ? det.fornecedor?.nome ?? null
+      : det.cliente?.nome ?? null;
+  return normalizarParcela({
+    id: det.id || parcelaId,
+    tipo,
+    descricao: det.descricao,
+    valor: Number(det.total ?? det.valor ?? 0),
+    valorPago: Number(det.pago ?? det.valor_pago ?? 0),
+    valorEmAberto: Number(
+      det.nao_pago ??
+        Math.max(
+          0,
+          Number(det.total ?? det.valor ?? 0) -
+            Number(det.pago ?? det.valor_pago ?? 0),
+        ),
+    ),
+    status: det.status,
+    dataVencimento: det.data_vencimento,
+    dataPagamento: det.data_pagamento,
+    dataCompetencia: det.data_competencia,
+    categoria: catNome,
+    categorias,
+    centrosCusto: centros,
+    contraparte,
+    rateio,
+    fonteClassificacao:
+      rateio.length > 0
+        ? "rateio_api"
+        : catNome
+          ? "listagem_categoria"
+          : "sem_classificacao",
+  });
+}
+
 async function fetchSaldosContas(): Promise<{
   contas: Array<{ id: string; nome: string; saldo: number | null }>;
   saldoTotal: number | null;
@@ -284,34 +315,23 @@ async function fetchSaldosContas(): Promise<{
     };
   }
 
-  const contas: Array<{ id: string; nome: string; saldo: number | null }> = [];
-  let saldoTotal = 0;
-  let algumSaldo = false;
-
-  for (const c of lista.slice(0, 30)) {
-    if (!c.id) continue;
-    if (c.ativo === false) continue;
-    let saldo: number | null = null;
-    try {
-      const s = await contaAzulGet<{ saldo?: number; saldo_atual?: number }>(
-        http,
-        `/v1/conta-financeira/${c.id}/saldo-atual`,
-      );
-      const n = Number(s.saldo_atual ?? s.saldo);
-      if (Number.isFinite(n)) {
-        saldo = round2(n);
-        saldoTotal += n;
-        algumSaldo = true;
-      }
-    } catch {
-      /* conta sem saldo */
-    }
-    contas.push({ id: c.id, nome: c.nome?.trim() || c.id, saldo });
-  }
+  /** Só nomes — saldo por conta é lento na API e não bloqueia o pacote. */
+  const contas = lista
+    .filter(c => c.id && c.ativo !== false)
+    .slice(0, 40)
+    .map(c => ({
+      id: c.id!,
+      nome: c.nome?.trim() || c.id!,
+      saldo: null as number | null,
+    }));
 
   return {
     contas,
-    saldoTotal: algumSaldo ? round2(saldoTotal) : null,
+    saldoTotal: null,
+    aviso:
+      contas.length > 0
+        ? "Saldos por conta omitidos nesta carga rápida; use o Conta Azul para saldo atual."
+        : undefined,
   };
 }
 
@@ -356,118 +376,13 @@ function mapParcelaListagem(
   });
 }
 
-async function enriquecerPagarComRateio(
-  pagar: ParcelaFinanceiraNorm[],
-  catalogo: Map<string, CategoriaCa>,
-): Promise<{
-  parcelas: ParcelaFinanceiraNorm[];
-  enriquecidas: number;
-  falhas: number;
-  aviso?: string;
-}> {
-  const ordenadas = [...pagar].sort(
-    (a, b) =>
-      (b.valor > 0 ? b.valor : b.valorPago) -
-      (a.valor > 0 ? a.valor : a.valorPago),
-  );
-  const alvo = ordenadas.slice(0, MAX_ENRIQUECER_PAGAR);
-  const restoIds = new Set(ordenadas.slice(MAX_ENRIQUECER_PAGAR).map(p => p.id));
-  const byId = new Map(pagar.map(p => [p.id, p]));
-
-  let enriquecidas = 0;
-  let falhas = 0;
-
-  for (const base of alvo) {
-    const det = await fetchParcelaDetalhe(base.id);
-    if (!det) {
-      falhas += 1;
-      continue;
-    }
-    const rateio = rateioDeDetalhe(det);
-    const catNome =
-      rateio.find(r => r.categoriaNome)?.categoriaNome ||
-      det.categorias?.[0]?.nome ||
-      base.categoria;
-    const catId =
-      rateio.find(r => r.categoriaId)?.categoriaId ||
-      det.categorias?.[0]?.id ||
-      null;
-    const centros = [
-      ...new Set(
-        [
-          ...(det.centros_custo ?? []).map(c => c.nome?.trim() || ""),
-          ...rateio.flatMap(r => r.centros.map(c => c.nome || "")),
-        ].filter(Boolean),
-      ),
-    ];
-    const categorias = [
-      ...new Set(
-        [
-          ...(det.categorias ?? []).map(c => c.nome?.trim() || ""),
-          ...rateio.map(r => r.categoriaNome || ""),
-        ].filter(Boolean),
-      ),
-    ];
-
-    byId.set(
-      base.id,
-      normalizarParcela({
-        id: base.id,
-        tipo: "pagar",
-        descricao: det.descricao || base.descricao,
-        valor: Number(det.total ?? det.valor ?? base.valor),
-        valorPago: Number(det.pago ?? det.valor_pago ?? base.valorPago),
-        valorEmAberto: Number(
-          det.nao_pago ??
-            Math.max(
-              0,
-              Number(det.total ?? det.valor ?? base.valor) -
-                Number(det.pago ?? det.valor_pago ?? base.valorPago),
-            ),
-        ),
-        status: det.status || base.status,
-        dataVencimento: det.data_vencimento || base.dataVencimento,
-        dataPagamento: det.data_pagamento || base.dataPagamento,
-        dataCompetencia: det.data_competencia || base.dataCompetencia,
-        categoria: catNome,
-        categorias,
-        centrosCusto: centros,
-        contraparte: det.fornecedor?.nome || base.contraparte,
-        rateio,
-        fonteClassificacao:
-          rateio.length > 0
-            ? "rateio_api"
-            : catNome
-              ? "listagem_categoria"
-              : "sem_classificacao",
-        entradaDre: resolverEntradaDre(catalogo, catId, catNome ?? null),
-      }),
-    );
-    if (rateio.length > 0) enriquecidas += 1;
-  }
-
-  const aviso =
-    restoIds.size > 0
-      ? `Rateio detalhado buscado nos ${MAX_ENRIQUECER_PAGAR} maiores títulos a pagar (${restoIds.size} restantes usam só a categoria da listagem).`
-      : falhas > 0
-        ? `${falhas} parcela(s) sem detalhe de rateio na API.`
-        : undefined;
-
-  return {
-    parcelas: Array.from(byId.values()),
-    enriquecidas,
-    falhas,
-    aviso,
-  };
-}
-
 export async function analisarFinanceiroCfoContaAzul(
   inicio: Date,
   fim: Date,
   projetoId: number,
 ) {
   const prisma = getComercialPrisma();
-  const [pagarFetch, receberFetch, saldos, lastSync, catalogo, classifs, ajustes] =
+  const [pagarFetch, receberFetch, saldos, lastSync, classifs, ajustes] =
     await Promise.all([
       fetchParcelasPaginated(
         "/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar",
@@ -485,10 +400,12 @@ export async function analisarFinanceiroCfoContaAzul(
         orderBy: { dataExecucao: "desc" },
         select: { dataExecucao: true, statusExecucao: true },
       }),
-      fetchCatalogoCategorias(),
       listFinanceiroCaClassificacoes(projetoId),
       listFinanceiroCaAjustesManuais(projetoId),
     ]);
+
+  /** Catálogo DRE é opcional — não bloqueia se a API de categorias estiver lenta. */
+  const catalogo = new Map<string, CategoriaCa>();
 
   let pagar = pagarFetch.itens
     .map(i => mapParcelaListagem(i, "pagar", catalogo))
@@ -496,9 +413,6 @@ export async function analisarFinanceiroCfoContaAzul(
   let receber = receberFetch.itens
     .map(i => mapParcelaListagem(i, "receber", catalogo))
     .filter((x): x is ParcelaFinanceiraNorm => !!x);
-
-  const enrich = await enriquecerPagarComRateio(pagar, catalogo);
-  pagar = enrich.parcelas;
 
   const overrides: ClassificacaoOverride[] = classifs.map(c => ({
     tipo: c.tipo,
@@ -556,7 +470,7 @@ export async function analisarFinanceiroCfoContaAzul(
     pagarFetch.aviso,
     receberFetch.aviso,
     saldos.aviso,
-    enrich.aviso,
+    "Rateio detalhado carrega ao abrir cada lançamento (carga rápida da listagem).",
   ].filter(Boolean) as string[];
 
   const sortPorValor = (a: ParcelaFinanceiraNorm, b: ParcelaFinanceiraNorm) =>
@@ -601,9 +515,10 @@ export async function analisarFinanceiroCfoContaAzul(
     contasFinanceiras: saldos.contas,
     saldoContasTotal: saldos.saldoTotal,
     metaEnriquecimento: {
-      maxParcelas: MAX_ENRIQUECER_PAGAR,
-      comRateioApi: enrich.enriquecidas,
-      falhasDetalhe: enrich.falhas,
+      maxParcelas: 0,
+      comRateioApi: 0,
+      falhasDetalhe: 0,
+      sobDemanda: true as const,
     },
     classificacoes: classifs,
     ajustesManuais: ajustes,

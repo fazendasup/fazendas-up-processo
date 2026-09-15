@@ -103,7 +103,9 @@ export default function FinanceiroCfoPage() {
   const [busca, setBusca] = useState("");
   const [filtroRubrica, setFiltroRubrica] = useState<string | null>(null);
   const [mostrarExcluidos, setMostrarExcluidos] = useState(false);
-  const [selecionada, setSelecionada] = useState<ParcelaFinanceiraNorm | null>(null);
+  const [selecionadaId, setSelecionadaId] = useState<string | null>(null);
+  const [selecionadaBase, setSelecionadaBase] =
+    useState<ParcelaFinanceiraNorm | null>(null);
 
   const [editRubrica, setEditRubrica] = useState("");
   const [editCentro, setEditCentro] = useState("");
@@ -132,10 +134,47 @@ export default function FinanceiroCfoPage() {
   });
   const data = analise.data;
 
+  const detalheQuery = trpc.financeiroCfo.parcelaDetalhe.useQuery(
+    {
+      parcelaId: selecionadaId ?? "",
+      tipo: selecionadaBase?.tipo === "receber" ? "receber" : "pagar",
+    },
+    {
+      enabled:
+        !!selecionadaId &&
+        !selecionadaId.startsWith("manual-") &&
+        !!selecionadaBase,
+      staleTime: 60_000,
+      retry: 1,
+    },
+  );
+
+  const selecionada = useMemo(() => {
+    if (!selecionadaBase) return null;
+    const det = detalheQuery.data;
+    if (!det) return selecionadaBase;
+    return {
+      ...selecionadaBase,
+      ...det,
+      // Mantém overrides já aplicados na listagem se o detalhe não trouxer nota
+      notaClassificacao:
+        det.notaClassificacao ?? selecionadaBase.notaClassificacao,
+      editadoManual: det.editadoManual || selecionadaBase.editadoManual,
+      excluido: det.excluido || selecionadaBase.excluido,
+      categoriaOriginal:
+        selecionadaBase.categoriaOriginal ?? det.categoriaOriginal,
+      centroCustoOriginal:
+        selecionadaBase.centroCustoOriginal ?? det.centroCustoOriginal,
+    };
+  }, [selecionadaBase, detalheQuery.data]);
+
   const salvarClass = trpc.financeiroCfo.salvarClassificacao.useMutation({
     onSuccess: async () => {
       toast.success("Classificação salva");
       await utils.financeiroCfo.analise.invalidate();
+      if (selecionadaId) {
+        await utils.financeiroCfo.parcelaDetalhe.invalidate();
+      }
     },
     onError: e => toast.error(e.message),
   });
@@ -161,19 +200,26 @@ export default function FinanceiroCfoPage() {
   const excluirAjuste = trpc.financeiroCfo.excluirAjusteManual.useMutation({
     onSuccess: async () => {
       toast.success("Lançamento removido");
-      setSelecionada(null);
+      setSelecionadaId(null);
+      setSelecionadaBase(null);
       await utils.financeiroCfo.analise.invalidate();
     },
     onError: e => toast.error(e.message),
   });
 
   const abrirDetalhe = (p: ParcelaFinanceiraNorm) => {
-    setSelecionada(p);
+    setSelecionadaBase(p);
+    setSelecionadaId(p.id);
     setEditRubrica(p.categoria || "");
     setEditCentro(p.centroCusto || "");
     setEditNota(p.notaClassificacao || "");
     setEditExcluido(!!p.excluido);
     setAplicarFornecedor(false);
+  };
+
+  const fecharDetalhe = () => {
+    setSelecionadaId(null);
+    setSelecionadaBase(null);
   };
 
   const lancamentos = useMemo(() => {
@@ -370,7 +416,7 @@ export default function FinanceiroCfoPage() {
 
         {analise.isLoading ? (
           <p className="text-sm text-muted-foreground">
-            Carregando títulos e rateio Conta Azul (pode levar alguns segundos)…
+            Carregando títulos Conta Azul…
           </p>
         ) : null}
 
@@ -442,9 +488,8 @@ export default function FinanceiroCfoPage() {
                       Contas a pagar — clique para inspecionar
                     </CardTitle>
                     <p className="text-xs text-muted-foreground">
-                      Rateio Conta Azul nos maiores títulos ·{" "}
-                      {data.metaEnriquecimento.comRateioApi} com detalhe de rateio
-                      · {data.contagens.editados} editado(s) ·{" "}
+                      Clique para inspecionar (rateio Conta Azul sob demanda) ·{" "}
+                      {data.contagens.editados} editado(s) ·{" "}
                       {data.contagens.excluidos} excluído(s)
                     </p>
                   </CardHeader>
@@ -502,7 +547,7 @@ export default function FinanceiroCfoPage() {
                               key={p.id}
                               className={`cursor-pointer border-b align-top hover:bg-muted/50 ${
                                 p.excluido ? "opacity-50 line-through" : ""
-                              } ${selecionada?.id === p.id ? "bg-muted/60" : ""}`}
+                              } ${selecionadaId === p.id ? "bg-muted/60" : ""}`}
                               onClick={() => abrirDetalhe(p)}
                             >
                               <td className="max-w-[220px] px-2 py-2">
@@ -967,9 +1012,9 @@ export default function FinanceiroCfoPage() {
       </main>
 
       <Sheet
-        open={!!selecionada}
+        open={!!selecionadaBase}
         onOpenChange={open => {
-          if (!open) setSelecionada(null);
+          if (!open) fecharDetalhe();
         }}
       >
         <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
@@ -980,6 +1025,11 @@ export default function FinanceiroCfoPage() {
                 <SheetDescription>
                   {fonteLabel(selecionada.fonteClassificacao)} · confiança{" "}
                   {confiancaLabel(selecionada.confiancaClassificacao)}
+                  {detalheQuery.isFetching
+                    ? " · buscando rateio…"
+                    : detalheQuery.isSuccess && detalheQuery.data
+                      ? " · rateio carregado"
+                      : ""}
                 </SheetDescription>
               </SheetHeader>
               <div className="mt-4 space-y-4 text-sm">

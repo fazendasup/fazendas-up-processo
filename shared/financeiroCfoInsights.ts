@@ -631,10 +631,7 @@ export function medirQualidadeAlocacao(
     motivoBloqueioDecisao = "Não há títulos a pagar no período.";
   } else if (pctValorSemRubrica >= 20) {
     baseConfiavelParaDecisao = false;
-    motivoBloqueioDecisao = `${pctValorSemRubrica}% do valor a pagar está sem rúbrica Conta Azul. Classifique no CA antes de decidir corte, prioridade ou alocação.`;
-  } else if (pctValorComRateioApi < 50 && pctValorSemRubrica >= 5) {
-    baseConfiavelParaDecisao = false;
-    motivoBloqueioDecisao = `Só ${pctValorComRateioApi}% do valor tem rateio detalhado da API. Sem rateio, não dá para cravar quanto foi em cada rúbrica/CC.`;
+    motivoBloqueioDecisao = `${pctValorSemRubrica}% do valor a pagar está sem rúbrica Conta Azul. Classifique no CA (ou aqui) antes de decidir corte, prioridade ou alocação.`;
   }
 
   return {
