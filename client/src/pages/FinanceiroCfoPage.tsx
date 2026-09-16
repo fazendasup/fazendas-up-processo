@@ -15,6 +15,21 @@ import {
   Tags,
   Wallet,
 } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ComposedChart,
+  Legend,
+  Line,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import Header from "@/components/Header";
@@ -36,6 +51,23 @@ import { exportObjectRows, exportTableDocument } from "@/lib/exportTableDocument
 import type { ParcelaFinanceiraNorm } from "@shared/financeiroCfoInsights";
 import { RUBRICA_SEM_CATEGORIA } from "@shared/financeiroCfoInsights";
 
+const CHART_GREEN = "#059669";
+const CHART_RED = "#dc2626";
+const CHART_SKY = "#0284c7";
+const CHART_AMBER = "#d97706";
+const CHART_VIOLET = "#7c3aed";
+const PIE_COLORS = [
+  "#059669",
+  "#0284c7",
+  "#d97706",
+  "#7c3aed",
+  "#db2777",
+  "#0d9488",
+  "#4f46e5",
+  "#ca8a04",
+  "#64748b",
+];
+
 function isoLocal(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -43,13 +75,36 @@ function isoLocal(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-function inicioMesAtual(): string {
+function mesAtualYm(): string {
   const d = new Date();
-  return isoLocal(new Date(d.getFullYear(), d.getMonth(), 1));
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-function hojeIso(): string {
-  return isoLocal(new Date());
+/** Limites do mês; no mês corrente fecha em hoje. */
+function boundsDoMes(ym: string): { inicio: string; fim: string } {
+  const [ys, ms] = ym.split("-");
+  const y = Number(ys);
+  const m = Number(ms);
+  if (!Number.isFinite(y) || !Number.isFinite(m) || m < 1 || m > 12) {
+    const hoje = new Date();
+    return {
+      inicio: isoLocal(new Date(hoje.getFullYear(), hoje.getMonth(), 1)),
+      fim: isoLocal(hoje),
+    };
+  }
+  const inicio = isoLocal(new Date(y, m - 1, 1));
+  const fimMes = isoLocal(new Date(y, m, 0));
+  const hoje = new Date();
+  if (y === hoje.getFullYear() && m === hoje.getMonth() + 1) {
+    return { inicio, fim: isoLocal(hoje) };
+  }
+  return { inicio, fim: fimMes };
+}
+
+function labelMes(ym: string): string {
+  const [ys, ms] = ym.split("-");
+  const d = new Date(Number(ys), Number(ms) - 1, 1);
+  return d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 }
 
 function fmtMoney(n: number | null | undefined): string {
@@ -57,11 +112,23 @@ function fmtMoney(n: number | null | undefined): string {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function fmtMoneyShort(n: number): string {
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `${(n / 1_000).toFixed(0)}k`;
+  return String(Math.round(n));
+}
+
 function fmtDate(ymd: string | null | undefined): string {
   if (!ymd) return "—";
   const [y, m, d] = ymd.split("-");
   if (!y || !m || !d) return ymd;
   return `${d}/${m}/${y}`;
+}
+
+function fmtDiaCurto(ymd: string): string {
+  const [, , d] = ymd.split("-");
+  return d ?? ymd;
 }
 
 function downloadJson(filename: string, data: unknown) {
@@ -98,8 +165,16 @@ function fonteLabel(f: string): string {
 }
 
 export default function FinanceiroCfoPage() {
-  const [inicio, setInicio] = useState(inicioMesAtual);
-  const [fim, setFim] = useState(hojeIso);
+  const [mes, setMes] = useState(mesAtualYm);
+  const [modoPeriodo, setModoPeriodo] = useState<"mes" | "custom">("mes");
+  const [inicioCustom, setInicioCustom] = useState(() => boundsDoMes(mesAtualYm()).inicio);
+  const [fimCustom, setFimCustom] = useState(() => boundsDoMes(mesAtualYm()).fim);
+
+  const { inicio, fim } = useMemo(() => {
+    if (modoPeriodo === "mes") return boundsDoMes(mes);
+    return { inicio: inicioCustom, fim: fimCustom };
+  }, [modoPeriodo, mes, inicioCustom, fimCustom]);
+
   const [busca, setBusca] = useState("");
   const [filtroRubrica, setFiltroRubrica] = useState<string | null>(null);
   const [mostrarExcluidos, setMostrarExcluidos] = useState(false);
@@ -108,14 +183,12 @@ export default function FinanceiroCfoPage() {
     useState<ParcelaFinanceiraNorm | null>(null);
 
   const [editRubrica, setEditRubrica] = useState("");
-  const [editCentro, setEditCentro] = useState("");
   const [editNota, setEditNota] = useState("");
   const [editExcluido, setEditExcluido] = useState(false);
   const [aplicarFornecedor, setAplicarFornecedor] = useState(false);
 
   const [novoDesc, setNovoDesc] = useState("");
   const [novoRubrica, setNovoRubrica] = useState("");
-  const [novoCentro, setNovoCentro] = useState("");
   const [novoValor, setNovoValor] = useState("");
   const [novoFornecedor, setNovoFornecedor] = useState("");
 
@@ -156,15 +229,12 @@ export default function FinanceiroCfoPage() {
     return {
       ...selecionadaBase,
       ...det,
-      // Mantém overrides já aplicados na listagem se o detalhe não trouxer nota
       notaClassificacao:
         det.notaClassificacao ?? selecionadaBase.notaClassificacao,
       editadoManual: det.editadoManual || selecionadaBase.editadoManual,
       excluido: det.excluido || selecionadaBase.excluido,
       categoriaOriginal:
         selecionadaBase.categoriaOriginal ?? det.categoriaOriginal,
-      centroCustoOriginal:
-        selecionadaBase.centroCustoOriginal ?? det.centroCustoOriginal,
     };
   }, [selecionadaBase, detalheQuery.data]);
 
@@ -172,9 +242,7 @@ export default function FinanceiroCfoPage() {
     onSuccess: async () => {
       toast.success("Classificação salva");
       await utils.financeiroCfo.analise.invalidate();
-      if (selecionadaId) {
-        await utils.financeiroCfo.parcelaDetalhe.invalidate();
-      }
+      if (selecionadaId) await utils.financeiroCfo.parcelaDetalhe.invalidate();
     },
     onError: e => toast.error(e.message),
   });
@@ -190,7 +258,6 @@ export default function FinanceiroCfoPage() {
       toast.success("Lançamento manual criado");
       setNovoDesc("");
       setNovoRubrica("");
-      setNovoCentro("");
       setNovoValor("");
       setNovoFornecedor("");
       await utils.financeiroCfo.analise.invalidate();
@@ -211,7 +278,6 @@ export default function FinanceiroCfoPage() {
     setSelecionadaBase(p);
     setSelecionadaId(p.id);
     setEditRubrica(p.categoria || "");
-    setEditCentro(p.centroCusto || "");
     setEditNota(p.notaClassificacao || "");
     setEditExcluido(!!p.excluido);
     setAplicarFornecedor(false);
@@ -237,7 +303,6 @@ export default function FinanceiroCfoPage() {
         p.contraparte,
         p.categoria,
         p.categoriaOriginal,
-        p.centroCusto,
         p.notaClassificacao,
         p.id,
       ]
@@ -248,7 +313,86 @@ export default function FinanceiroCfoPage() {
     });
   }, [data?.lancamentosPagar, busca, filtroRubrica, mostrarExcluidos]);
 
+  const chartFluxo = useMemo(
+    () =>
+      (data?.fluxoDias ?? []).map(d => ({
+        ...d,
+        dia: fmtDiaCurto(d.data),
+      })),
+    [data?.fluxoDias],
+  );
+
+  const chartRubricas = useMemo(
+    () =>
+      (data?.rubricas ?? []).slice(0, 10).map(r => ({
+        nome:
+          r.label.length > 28 ? `${r.label.slice(0, 26)}…` : r.label,
+        full: r.label,
+        chave: r.chave,
+        total: r.total,
+        pct: r.pctDoDesembolso,
+      })),
+    [data?.rubricas],
+  );
+
+  const chartDre = useMemo(
+    () =>
+      (data?.gruposDre ?? [])
+        .filter(g => g.total > 0)
+        .slice(0, 8)
+        .map(g => ({
+          name: g.label.length > 22 ? `${g.label.slice(0, 20)}…` : g.label,
+          value: g.total,
+        })),
+    [data?.gruposDre],
+  );
+
+  const chartFornecedores = useMemo(
+    () =>
+      (data?.fornecedores ?? []).slice(0, 8).map(f => ({
+        nome: f.nome.length > 22 ? `${f.nome.slice(0, 20)}…` : f.nome,
+        total: f.total,
+      })),
+    [data?.fornecedores],
+  );
+
+  const chartAgingPagar = useMemo(
+    () =>
+      (data?.agingPagar ?? [])
+        .filter(b => b.valor > 0)
+        .map(b => ({ label: b.label, valor: b.valor, qtd: b.qtd })),
+    [data?.agingPagar],
+  );
+
+  const chartAgingReceber = useMemo(
+    () =>
+      (data?.agingReceber ?? [])
+        .filter(b => b.valor > 0)
+        .map(b => ({ label: b.label, valor: b.valor, qtd: b.qtd })),
+    [data?.agingReceber],
+  );
+
+  const chartCaixaResumo = useMemo(() => {
+    if (!data) return [];
+    return [
+      {
+        nome: "Entradas",
+        realizadas: data.resumo.entradasRealizadas,
+        previstas: data.resumo.entradasPrevistas,
+      },
+      {
+        nome: "Saídas",
+        realizadas: data.resumo.saidasRealizadas,
+        previstas: data.resumo.saidasPrevistas,
+      },
+    ];
+  }, [data]);
+
   const exportBase = `${inicio}_${fim}`;
+  const periodoLabel =
+    modoPeriodo === "mes"
+      ? labelMes(mes)
+      : `${fmtDate(inicio)} → ${fmtDate(fim)}`;
 
   const exportLancamentos = (format: "csv" | "pdf" | "json") => {
     const rows = lancamentos.map(p => ({
@@ -257,8 +401,6 @@ export default function FinanceiroCfoPage() {
       fornecedor: p.contraparte ?? "",
       rubrica: p.categoria ?? "",
       rubrica_original_ca: p.categoriaOriginal ?? "",
-      centro_custo: p.centroCusto ?? "",
-      centro_original_ca: p.centroCustoOriginal ?? "",
       valor: p.valor,
       pago: p.valorPago,
       em_aberto: p.valorEmAberto,
@@ -278,7 +420,7 @@ export default function FinanceiroCfoPage() {
     }
     exportObjectRows(rows, {
       title: "Lançamentos a pagar",
-      subtitle: `Período ${inicio} → ${fim}`,
+      subtitle: periodoLabel,
       filename: `financeiro-lancamentos-${exportBase}`,
       format,
       orientation: "landscape",
@@ -294,8 +436,6 @@ export default function FinanceiroCfoPage() {
       em_aberto: r.emAberto,
       total: r.total,
       pct: r.pctDoDesembolso,
-      com_rateio: r.valorComRateio,
-      sem_rateio: r.valorSemRateio,
     }));
     if (format === "json") {
       downloadJson(`financeiro-rubricas-${exportBase}.json`, rows);
@@ -303,28 +443,31 @@ export default function FinanceiroCfoPage() {
     }
     exportObjectRows(rows, {
       title: "Desembolso por rúbrica",
-      subtitle: `Período ${inicio} → ${fim}`,
+      subtitle: periodoLabel,
       filename: `financeiro-rubricas-${exportBase}`,
       format,
     });
   };
 
-  const exportMatriz = (format: "csv" | "pdf" | "json") => {
-    const rows = (data?.matrizRubricaCentro ?? []).map(m => ({
-      rubrica: m.rubrica,
-      centro_custo: m.centroCusto,
-      total: m.total,
-      titulos: m.qtd,
-      pct: m.pctDoDesembolso,
+  const exportFluxo = (format: "csv" | "pdf" | "json") => {
+    const rows = (data?.fluxoDias ?? []).map(d => ({
+      data: d.data,
+      entradas_previstas: d.entradasPrevistas,
+      saidas_previstas: d.saidasPrevistas,
+      saldo_previsto: d.saldoLiquidoPrevisto,
+      entradas_realizadas: d.entradasRealizadas,
+      saidas_realizadas: d.saidasRealizadas,
+      saldo_realizado: d.saldoLiquidoRealizado,
+      saldo_acumulado: d.saldoAcumuladoRealizado,
     }));
     if (format === "json") {
-      downloadJson(`financeiro-matriz-${exportBase}.json`, rows);
+      downloadJson(`financeiro-fluxo-diario-${exportBase}.json`, rows);
       return;
     }
     exportObjectRows(rows, {
-      title: "Matriz rúbrica × centro de custo",
-      subtitle: `Período ${inicio} → ${fim}`,
-      filename: `financeiro-matriz-${exportBase}`,
+      title: "Fluxo diário",
+      subtitle: periodoLabel,
+      filename: `financeiro-fluxo-diario-${exportBase}`,
       format,
       orientation: "landscape",
     });
@@ -337,11 +480,9 @@ export default function FinanceiroCfoPage() {
       resumo: data.resumo,
       qualidadeAlocacao: data.qualidadeAlocacao,
       rubricas: data.rubricas,
-      centrosCusto: data.centrosCusto,
-      matrizRubricaCentro: data.matrizRubricaCentro,
       gruposDre: data.gruposDre,
       fornecedores: data.fornecedores,
-      fluxoSemanas: data.fluxoSemanas,
+      fluxoDias: data.fluxoDias,
       agingPagar: data.agingPagar,
       agingReceber: data.agingReceber,
       lancamentosPagar: data.lancamentosPagar,
@@ -362,32 +503,64 @@ export default function FinanceiroCfoPage() {
               Conta Azul
             </p>
             <h1 className="font-display text-2xl font-bold tracking-tight">
-              Financeiro
+              Análise financeira
             </h1>
-            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-              Inspeção por rúbrica e centro de custo, detalhe de cada compra,
-              classificação editável e exportação de relatórios (CSV, PDF, JSON).
+            <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+              KPIs e fluxo diário por rúbrica — visão clara do caixa no período.
             </p>
           </div>
+
           <div className="flex flex-wrap items-end gap-2 rounded-xl border bg-card p-3">
-            <div>
-              <Label className="text-xs">Início</Label>
-              <Input
-                type="date"
-                className="h-9 w-[150px]"
-                value={inicio}
-                onChange={e => setInicio(e.target.value)}
-              />
+            <div className="flex gap-1 rounded-lg bg-muted p-0.5">
+              <Button
+                size="sm"
+                variant={modoPeriodo === "mes" ? "default" : "ghost"}
+                className="h-8"
+                onClick={() => setModoPeriodo("mes")}
+              >
+                Mês
+              </Button>
+              <Button
+                size="sm"
+                variant={modoPeriodo === "custom" ? "default" : "ghost"}
+                className="h-8"
+                onClick={() => setModoPeriodo("custom")}
+              >
+                Datas
+              </Button>
             </div>
-            <div>
-              <Label className="text-xs">Fim</Label>
-              <Input
-                type="date"
-                className="h-9 w-[150px]"
-                value={fim}
-                onChange={e => setFim(e.target.value)}
-              />
-            </div>
+            {modoPeriodo === "mes" ? (
+              <div>
+                <Label className="text-xs">Mês</Label>
+                <Input
+                  type="month"
+                  className="h-9 w-[160px]"
+                  value={mes}
+                  onChange={e => setMes(e.target.value)}
+                />
+              </div>
+            ) : (
+              <>
+                <div>
+                  <Label className="text-xs">Início</Label>
+                  <Input
+                    type="date"
+                    className="h-9 w-[150px]"
+                    value={inicioCustom}
+                    onChange={e => setInicioCustom(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Fim</Label>
+                  <Input
+                    type="date"
+                    className="h-9 w-[150px]"
+                    value={fimCustom}
+                    onChange={e => setFimCustom(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
             <Button
               size="sm"
               className="h-9 gap-1"
@@ -431,66 +604,445 @@ export default function FinanceiroCfoPage() {
             {!data.qualidadeAlocacao.baseConfiavelParaDecisao ? (
               <Card className="border-amber-300 bg-amber-50">
                 <CardContent className="space-y-1 p-4 text-sm text-amber-950">
-                  <p className="font-semibold">Classificação incompleta no Conta Azul</p>
+                  <p className="font-semibold">Classificação incompleta</p>
                   <p className="text-xs">
                     {data.qualidadeAlocacao.motivoBloqueioDecisao}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Você pode corrigir rúbrica/CC aqui (ajuste manual) — isso vale
-                    para relatórios deste sistema, não regrava o Conta Azul.
                   </p>
                 </CardContent>
               </Card>
             ) : null}
 
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               <Kpi
                 icon={<ArrowUpRight className="h-4 w-4 text-emerald-600" />}
-                label="Entradas realizadas"
+                label="Entradas"
                 value={fmtMoney(data.resumo.entradasRealizadas)}
+                hint={`Prev. ${fmtMoney(data.resumo.entradasPrevistas)}`}
               />
               <Kpi
                 icon={<ArrowDownRight className="h-4 w-4 text-red-600" />}
-                label="Saídas realizadas"
+                label="Saídas"
                 value={fmtMoney(data.resumo.saidasRealizadas)}
+                hint={`Prev. ${fmtMoney(data.resumo.saidasPrevistas)}`}
               />
               <Kpi
                 icon={<Wallet className="h-4 w-4 text-sky-600" />}
                 label="Saldo período"
                 value={fmtMoney(data.resumo.saldoPeriodoRealizado)}
-                highlight={data.resumo.saldoPeriodoRealizado < 0 ? "bad" : "good"}
+                highlight={
+                  data.resumo.saldoPeriodoRealizado < 0 ? "bad" : "good"
+                }
+              />
+              <Kpi
+                icon={<ArrowDownRight className="h-4 w-4 text-amber-600" />}
+                label="A pagar"
+                value={fmtMoney(data.resumo.aPagarEmAberto)}
+              />
+              <Kpi
+                icon={<ArrowUpRight className="h-4 w-4 text-emerald-700" />}
+                label="A receber"
+                value={fmtMoney(data.resumo.aReceberEmAberto)}
               />
               <Kpi
                 icon={<Tags className="h-4 w-4" />}
-                label="% valor com rateio API"
+                label="Com rateio"
                 value={`${data.qualidadeAlocacao.pctValorComRateioApi}%`}
                 hint={`${data.qualidadeAlocacao.pctValorSemRubrica}% sem rúbrica`}
               />
             </div>
 
-            <Tabs defaultValue="lancamentos" className="space-y-4">
+            <Tabs defaultValue="visao" className="space-y-4">
               <TabsList className="flex h-auto flex-wrap">
+                <TabsTrigger value="visao">Visão</TabsTrigger>
                 <TabsTrigger value="lancamentos">Lançamentos</TabsTrigger>
-                <TabsTrigger value="rubricas">Rúbricas</TabsTrigger>
-                <TabsTrigger value="centros">Centros</TabsTrigger>
-                <TabsTrigger value="matriz">Matriz</TabsTrigger>
-                <TabsTrigger value="aging">Aging</TabsTrigger>
-                <TabsTrigger value="fluxo">Fluxo</TabsTrigger>
                 <TabsTrigger value="classificacao">Classificação</TabsTrigger>
                 <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
                 <TabsTrigger value="alertas">Alertas</TabsTrigger>
               </TabsList>
 
+              <TabsContent value="visao" className="space-y-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2">
+                    <div>
+                      <CardTitle className="text-base">Fluxo diário</CardTitle>
+                      <p className="text-xs text-muted-foreground">
+                        Entradas e saídas realizadas · linha = saldo acumulado ·{" "}
+                        {periodoLabel}
+                      </p>
+                    </div>
+                    <ExportButtons
+                      onCsv={() => exportFluxo("csv")}
+                      onPdf={() => exportFluxo("pdf")}
+                      onJson={() => exportFluxo("json")}
+                    />
+                  </CardHeader>
+                  <CardContent className="h-[300px] pt-0">
+                    {chartFluxo.length === 0 ? (
+                      <EmptyChart />
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart
+                          data={chartFluxo}
+                          margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis
+                            dataKey="dia"
+                            tick={{ fontSize: 11 }}
+                            interval="preserveStartEnd"
+                          />
+                          <YAxis
+                            yAxisId="bar"
+                            tick={{ fontSize: 11 }}
+                            tickFormatter={fmtMoneyShort}
+                            width={44}
+                          />
+                          <YAxis
+                            yAxisId="line"
+                            orientation="right"
+                            tick={{ fontSize: 11 }}
+                            tickFormatter={fmtMoneyShort}
+                            width={44}
+                          />
+                          <Tooltip
+                            formatter={(v: number, name: string) => [
+                              fmtMoney(v),
+                              name,
+                            ]}
+                            labelFormatter={(_, payload) => {
+                              const row = payload?.[0]?.payload as
+                                | { data?: string }
+                                | undefined;
+                              return row?.data ? fmtDate(row.data) : "";
+                            }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: 12 }} />
+                          <Bar
+                            yAxisId="bar"
+                            dataKey="entradasRealizadas"
+                            name="Entradas"
+                            fill={CHART_GREEN}
+                            radius={[2, 2, 0, 0]}
+                            maxBarSize={18}
+                          />
+                          <Bar
+                            yAxisId="bar"
+                            dataKey="saidasRealizadas"
+                            name="Saídas"
+                            fill={CHART_RED}
+                            radius={[2, 2, 0, 0]}
+                            maxBarSize={18}
+                          />
+                          <Line
+                            yAxisId="line"
+                            type="monotone"
+                            dataKey="saldoAcumuladoRealizado"
+                            name="Saldo acum."
+                            stroke={CHART_SKY}
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">
+                        Top rúbricas (desembolso)
+                      </CardTitle>
+                      <p className="text-xs text-muted-foreground">
+                        Clique na barra para filtrar lançamentos
+                      </p>
+                    </CardHeader>
+                    <CardContent className="h-[280px] pt-0">
+                      {chartRubricas.length === 0 ? (
+                        <EmptyChart />
+                      ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={chartRubricas}
+                            layout="vertical"
+                            margin={{ top: 4, right: 12, left: 4, bottom: 4 }}
+                          >
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              horizontal={false}
+                            />
+                            <XAxis
+                              type="number"
+                              tick={{ fontSize: 11 }}
+                              tickFormatter={fmtMoneyShort}
+                            />
+                            <YAxis
+                              type="category"
+                              dataKey="nome"
+                              width={110}
+                              tick={{ fontSize: 11 }}
+                            />
+                            <Tooltip
+                              formatter={(v: number) => fmtMoney(v)}
+                              labelFormatter={(_, payload) => {
+                                const row = payload?.[0]?.payload as
+                                  | { full?: string }
+                                  | undefined;
+                                return row?.full ?? "";
+                              }}
+                            />
+                            <Bar
+                              dataKey="total"
+                              name="Total"
+                              fill={CHART_VIOLET}
+                              radius={[0, 4, 4, 0]}
+                              cursor="pointer"
+                              onClick={(row: { chave?: string }) => {
+                                if (row?.chave) setFiltroRubrica(row.chave);
+                              }}
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">Composição DRE</CardTitle>
+                      <p className="text-xs text-muted-foreground">
+                        Desembolso agrupado por entrada DRE
+                      </p>
+                    </CardHeader>
+                    <CardContent className="h-[280px] pt-0">
+                      {chartDre.length === 0 ? (
+                        <EmptyChart />
+                      ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={chartDre}
+                              dataKey="value"
+                              nameKey="name"
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={58}
+                              outerRadius={92}
+                              paddingAngle={2}
+                            >
+                              {chartDre.map((_, i) => (
+                                <Cell
+                                  key={i}
+                                  fill={PIE_COLORS[i % PIE_COLORS.length]}
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip formatter={(v: number) => fmtMoney(v)} />
+                            <Legend
+                              wrapperStyle={{ fontSize: 11 }}
+                              layout="vertical"
+                              align="right"
+                              verticalAlign="middle"
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">
+                        Previsto × realizado
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[260px] pt-0">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={chartCaixaResumo}
+                          margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            vertical={false}
+                          />
+                          <XAxis dataKey="nome" tick={{ fontSize: 12 }} />
+                          <YAxis
+                            tick={{ fontSize: 11 }}
+                            tickFormatter={fmtMoneyShort}
+                            width={44}
+                          />
+                          <Tooltip formatter={(v: number) => fmtMoney(v)} />
+                          <Legend wrapperStyle={{ fontSize: 12 }} />
+                          <Bar
+                            dataKey="previstas"
+                            name="Previsto"
+                            fill="#94a3b8"
+                            radius={[4, 4, 0, 0]}
+                            maxBarSize={40}
+                          />
+                          <Bar
+                            dataKey="realizadas"
+                            name="Realizado"
+                            fill={CHART_SKY}
+                            radius={[4, 4, 0, 0]}
+                            maxBarSize={40}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">
+                        Top fornecedores
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[260px] pt-0">
+                      {chartFornecedores.length === 0 ? (
+                        <EmptyChart />
+                      ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={chartFornecedores}
+                            layout="vertical"
+                            margin={{ top: 4, right: 12, left: 4, bottom: 4 }}
+                          >
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              horizontal={false}
+                            />
+                            <XAxis
+                              type="number"
+                              tick={{ fontSize: 11 }}
+                              tickFormatter={fmtMoneyShort}
+                            />
+                            <YAxis
+                              type="category"
+                              dataKey="nome"
+                              width={100}
+                              tick={{ fontSize: 11 }}
+                            />
+                            <Tooltip formatter={(v: number) => fmtMoney(v)} />
+                            <Bar
+                              dataKey="total"
+                              fill={CHART_AMBER}
+                              radius={[0, 4, 4, 0]}
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">Aging a pagar</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[240px] pt-0">
+                      {chartAgingPagar.length === 0 ? (
+                        <EmptyChart />
+                      ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={chartAgingPagar}>
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              vertical={false}
+                            />
+                            <XAxis
+                              dataKey="label"
+                              tick={{ fontSize: 10 }}
+                              interval={0}
+                              angle={-20}
+                              textAnchor="end"
+                              height={56}
+                            />
+                            <YAxis
+                              tick={{ fontSize: 11 }}
+                              tickFormatter={fmtMoneyShort}
+                              width={40}
+                            />
+                            <Tooltip formatter={(v: number) => fmtMoney(v)} />
+                            <Bar
+                              dataKey="valor"
+                              fill={CHART_RED}
+                              radius={[4, 4, 0, 0]}
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">Aging a receber</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[240px] pt-0">
+                      {chartAgingReceber.length === 0 ? (
+                        <EmptyChart />
+                      ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={chartAgingReceber}>
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              vertical={false}
+                            />
+                            <XAxis
+                              dataKey="label"
+                              tick={{ fontSize: 10 }}
+                              interval={0}
+                              angle={-20}
+                              textAnchor="end"
+                              height={56}
+                            />
+                            <YAxis
+                              tick={{ fontSize: 11 }}
+                              tickFormatter={fmtMoneyShort}
+                              width={40}
+                            />
+                            <Tooltip formatter={(v: number) => fmtMoney(v)} />
+                            <Bar
+                              dataKey="valor"
+                              fill={CHART_GREEN}
+                              radius={[4, 4, 0, 0]}
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {filtroRubrica ? (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1"
+                      onClick={() => setFiltroRubrica(null)}
+                    >
+                      <Filter className="h-3.5 w-3.5" />
+                      Filtro: {filtroRubrica}
+                    </Button>
+                    <span className="text-xs text-muted-foreground">
+                      Aberto na aba Lançamentos
+                    </span>
+                  </div>
+                ) : null}
+              </TabsContent>
+
               <TabsContent value="lancamentos" className="space-y-3">
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base">
-                      Contas a pagar — clique para inspecionar
+                      Contas a pagar
                     </CardTitle>
                     <p className="text-xs text-muted-foreground">
-                      Clique para inspecionar (rateio Conta Azul sob demanda) ·{" "}
-                      {data.contagens.editados} editado(s) ·{" "}
-                      {data.contagens.excluidos} excluído(s)
+                      Clique para inspecionar · {data.contagens.editados}{" "}
+                      editado(s) · {data.contagens.excluidos} excluído(s)
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -499,7 +1051,7 @@ export default function FinanceiroCfoPage() {
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                           className="h-9 pl-8"
-                          placeholder="Buscar descrição, fornecedor, rúbrica, id…"
+                          placeholder="Buscar descrição, fornecedor, rúbrica…"
                           value={busca}
                           onChange={e => setBusca(e.target.value)}
                         />
@@ -529,16 +1081,15 @@ export default function FinanceiroCfoPage() {
                       />
                     </div>
                     <div className="overflow-x-auto">
-                      <table className="w-full min-w-[980px] text-sm">
+                      <table className="w-full min-w-[820px] text-sm">
                         <thead>
                           <tr className="border-b text-left text-xs uppercase text-muted-foreground">
                             <th className="px-2 py-2">Descrição</th>
                             <th className="px-2 py-2">Fornecedor</th>
                             <th className="px-2 py-2">Rúbrica</th>
-                            <th className="px-2 py-2">CC</th>
                             <th className="px-2 py-2">Venc.</th>
                             <th className="px-2 py-2">Total</th>
-                            <th className="px-2 py-2">Fonte</th>
+                            <th className="px-2 py-2">Confiança</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -550,34 +1101,31 @@ export default function FinanceiroCfoPage() {
                               } ${selecionadaId === p.id ? "bg-muted/60" : ""}`}
                               onClick={() => abrirDetalhe(p)}
                             >
-                              <td className="max-w-[220px] px-2 py-2">
-                                <p className="truncate font-medium">{p.descricao}</p>
+                              <td className="max-w-[240px] px-2 py-2">
+                                <p className="truncate font-medium">
+                                  {p.descricao}
+                                </p>
                                 <p className="text-[10px] text-muted-foreground">
                                   {p.status}
                                   {p.editadoManual ? " · editado" : ""}
-                                  {p.origem === "ajuste_manual" ? " · manual" : ""}
+                                  {p.origem === "ajuste_manual"
+                                    ? " · manual"
+                                    : ""}
                                 </p>
                               </td>
                               <td className="max-w-[150px] truncate px-2 py-2">
                                 {p.contraparte || "—"}
                               </td>
-                              <td className="max-w-[160px] px-2 py-2">
+                              <td className="max-w-[180px] px-2 py-2">
                                 <p
                                   className={
-                                    !p.categoria ? "font-medium text-amber-700" : ""
+                                    !p.categoria
+                                      ? "font-medium text-amber-700"
+                                      : ""
                                   }
                                 >
                                   {p.categoria || "Sem rúbrica"}
                                 </p>
-                                {p.categoriaOriginal &&
-                                p.categoriaOriginal !== p.categoria ? (
-                                  <p className="text-[10px] text-muted-foreground">
-                                    CA: {p.categoriaOriginal}
-                                  </p>
-                                ) : null}
-                              </td>
-                              <td className="max-w-[120px] truncate px-2 py-2">
-                                {p.centroCusto || "—"}
                               </td>
                               <td className="whitespace-nowrap px-2 py-2 text-xs">
                                 {fmtDate(p.dataVencimento)}
@@ -602,200 +1150,15 @@ export default function FinanceiroCfoPage() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="rubricas" className="space-y-3">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <div>
-                      <CardTitle className="text-base">Por rúbrica</CardTitle>
-                      <p className="text-xs text-muted-foreground">
-                        Clique para filtrar lançamentos
-                      </p>
-                    </div>
-                    <ExportButtons
-                      onCsv={() => exportRubricas("csv")}
-                      onPdf={() => exportRubricas("pdf")}
-                      onJson={() => exportRubricas("json")}
-                    />
-                  </CardHeader>
-                  <CardContent className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                          <th className="px-2 py-2">Rúbrica</th>
-                          <th className="px-2 py-2">DRE</th>
-                          <th className="px-2 py-2">Qtd</th>
-                          <th className="px-2 py-2">Total</th>
-                          <th className="px-2 py-2">%</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(data.rubricas ?? []).map(r => (
-                          <tr
-                            key={r.chave}
-                            className="cursor-pointer border-b hover:bg-muted/40"
-                            onClick={() => setFiltroRubrica(r.chave)}
-                          >
-                            <td className="px-2 py-2 font-medium">{r.label}</td>
-                            <td className="px-2 py-2 text-xs text-muted-foreground">
-                              {r.entradaDre || "—"}
-                            </td>
-                            <td className="px-2 py-2 tabular-nums">{r.qtd}</td>
-                            <td className="px-2 py-2 font-semibold tabular-nums">
-                              {fmtMoney(r.total)}
-                            </td>
-                            <td className="px-2 py-2 tabular-nums">
-                              {r.pctDoDesembolso}%
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="centros" className="space-y-3">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">Por centro de custo</CardTitle>
-                  </CardHeader>
-                  <CardContent className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                          <th className="px-2 py-2">Centro</th>
-                          <th className="px-2 py-2">Qtd</th>
-                          <th className="px-2 py-2">Total</th>
-                          <th className="px-2 py-2">%</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(data.centrosCusto ?? []).map(c => (
-                          <tr key={c.chave} className="border-b">
-                            <td className="px-2 py-2 font-medium">{c.label}</td>
-                            <td className="px-2 py-2 tabular-nums">{c.qtd}</td>
-                            <td className="px-2 py-2 font-semibold tabular-nums">
-                              {fmtMoney(c.total)}
-                            </td>
-                            <td className="px-2 py-2 tabular-nums">
-                              {c.pctDoDesembolso}%
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="matriz" className="space-y-3">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-base">
-                      Rúbrica × centro de custo
-                    </CardTitle>
-                    <ExportButtons
-                      onCsv={() => exportMatriz("csv")}
-                      onPdf={() => exportMatriz("pdf")}
-                      onJson={() => exportMatriz("json")}
-                    />
-                  </CardHeader>
-                  <CardContent className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                          <th className="px-2 py-2">Rúbrica</th>
-                          <th className="px-2 py-2">Centro</th>
-                          <th className="px-2 py-2">Total</th>
-                          <th className="px-2 py-2">%</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(data.matrizRubricaCentro ?? []).map(m => (
-                          <tr
-                            key={`${m.rubrica}-${m.centroCusto}`}
-                            className="border-b"
-                          >
-                            <td className="px-2 py-2">{m.rubrica}</td>
-                            <td className="px-2 py-2">{m.centroCusto}</td>
-                            <td className="px-2 py-2 font-semibold tabular-nums">
-                              {fmtMoney(m.total)}
-                            </td>
-                            <td className="px-2 py-2 tabular-nums">
-                              {m.pctDoDesembolso}%
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="aging" className="space-y-3">
-                <div className="grid gap-3 lg:grid-cols-2">
-                  <AgingCard titulo="A pagar em aberto" buckets={data.agingPagar} />
-                  <AgingCard titulo="A receber em aberto" buckets={data.agingReceber} />
-                </div>
-              </TabsContent>
-
-              <TabsContent value="fluxo" className="space-y-3">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">Fluxo semanal</CardTitle>
-                  </CardHeader>
-                  <CardContent className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                          <th className="px-2 py-2">Semana</th>
-                          <th className="px-2 py-2">Ent. prev.</th>
-                          <th className="px-2 py-2">Sai. prev.</th>
-                          <th className="px-2 py-2">Saldo prev.</th>
-                          <th className="px-2 py-2">Ent. real.</th>
-                          <th className="px-2 py-2">Sai. real.</th>
-                          <th className="px-2 py-2">Saldo real.</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(data.fluxoSemanas ?? []).map(s => (
-                          <tr key={s.inicioSemana} className="border-b">
-                            <td className="px-2 py-2">{fmtDate(s.inicioSemana)}</td>
-                            <td className="px-2 py-2 tabular-nums">
-                              {fmtMoney(s.entradasPrevistas)}
-                            </td>
-                            <td className="px-2 py-2 tabular-nums">
-                              {fmtMoney(s.saidasPrevistas)}
-                            </td>
-                            <td className="px-2 py-2 font-semibold tabular-nums">
-                              {fmtMoney(s.saldoLiquidoPrevisto)}
-                            </td>
-                            <td className="px-2 py-2 tabular-nums">
-                              {fmtMoney(s.entradasRealizadas)}
-                            </td>
-                            <td className="px-2 py-2 tabular-nums">
-                              {fmtMoney(s.saidasRealizadas)}
-                            </td>
-                            <td className="px-2 py-2 font-semibold tabular-nums">
-                              {fmtMoney(s.saldoLiquidoRealizado)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
               <TabsContent value="classificacao" className="space-y-3">
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base">
-                      Acrescentar lançamento manual
+                      Lançamento manual
                     </CardTitle>
                     <p className="text-xs text-muted-foreground">
-                      Para despesas/receitas que não estão no Conta Azul, ou
-                      correções de relatório.
+                      Despesas/receitas fora do Conta Azul ou correções de
+                      relatório.
                     </p>
                   </CardHeader>
                   <CardContent className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -804,7 +1167,6 @@ export default function FinanceiroCfoPage() {
                       <Input
                         value={novoDesc}
                         onChange={e => setNovoDesc(e.target.value)}
-                        placeholder="Ex.: Ajuste embalagem Plazom"
                       />
                     </div>
                     <div>
@@ -825,14 +1187,6 @@ export default function FinanceiroCfoPage() {
                       />
                     </div>
                     <div>
-                      <Label className="text-xs">Centro de custo</Label>
-                      <Input
-                        list="centros-sugestoes"
-                        value={novoCentro}
-                        onChange={e => setNovoCentro(e.target.value)}
-                      />
-                    </div>
-                    <div>
                       <Label className="text-xs">Fornecedor</Label>
                       <Input
                         value={novoFornecedor}
@@ -845,7 +1199,11 @@ export default function FinanceiroCfoPage() {
                         disabled={criarAjuste.isPending}
                         onClick={() => {
                           const valor = Number(novoValor);
-                          if (!novoDesc.trim() || !novoRubrica.trim() || !Number.isFinite(valor)) {
+                          if (
+                            !novoDesc.trim() ||
+                            !novoRubrica.trim() ||
+                            !Number.isFinite(valor)
+                          ) {
                             toast.error("Preencha descrição, rúbrica e valor");
                             return;
                           }
@@ -853,7 +1211,6 @@ export default function FinanceiroCfoPage() {
                             tipo: "pagar",
                             descricao: novoDesc,
                             rubrica: novoRubrica,
-                            centroCusto: novoCentro || null,
                             contraparte: novoFornecedor || null,
                             valor,
                             dataCompetencia: fim,
@@ -870,14 +1227,14 @@ export default function FinanceiroCfoPage() {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base">
-                      Regras e overrides salvos
+                      Overrides salvos
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
                     {(data.classificacoes ?? []).length === 0 ? (
                       <p className="text-sm text-muted-foreground">
-                        Nenhuma classificação manual ainda. Abra um lançamento e
-                        salve rúbrica/CC.
+                        Nenhuma classificação manual. Abra um lançamento e salve
+                        a rúbrica.
                       </p>
                     ) : (
                       (data.classificacoes ?? []).map(c => (
@@ -890,7 +1247,7 @@ export default function FinanceiroCfoPage() {
                               {c.tipo}: {c.chave}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {c.rubricaOverride || "—"} · {c.centroCustoOverride || "—"}
+                              {c.rubricaOverride || "—"}
                               {c.excluido ? " · excluído" : ""}
                             </p>
                           </div>
@@ -915,10 +1272,6 @@ export default function FinanceiroCfoPage() {
                       <Download className="h-4 w-4" />
                       Exportar
                     </CardTitle>
-                    <p className="text-xs text-muted-foreground">
-                      CSV (Excel), PDF e JSON — com a classificação editada
-                      aplicada.
-                    </p>
                   </CardHeader>
                   <CardContent className="grid gap-3 sm:grid-cols-2">
                     <ReportExportCard
@@ -934,19 +1287,19 @@ export default function FinanceiroCfoPage() {
                       onJson={() => exportRubricas("json")}
                     />
                     <ReportExportCard
-                      title="Matriz rúbrica × CC"
-                      onCsv={() => exportMatriz("csv")}
-                      onPdf={() => exportMatriz("pdf")}
-                      onJson={() => exportMatriz("json")}
+                      title="Fluxo diário"
+                      onCsv={() => exportFluxo("csv")}
+                      onPdf={() => exportFluxo("pdf")}
+                      onJson={() => exportFluxo("json")}
                     />
                     <Card>
                       <CardContent className="space-y-2 p-4">
                         <p className="font-semibold">Pacote completo (JSON)</p>
-                        <p className="text-xs text-muted-foreground">
-                          Resumo, rúbricas, matriz, aging, lançamentos e
-                          classificações — ideal para BI / auditoria.
-                        </p>
-                        <Button size="sm" variant="outline" onClick={exportPacoteCompleto}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={exportPacoteCompleto}
+                        >
                           <FileJson className="mr-1 h-3.5 w-3.5" />
                           Baixar pacote
                         </Button>
@@ -961,26 +1314,26 @@ export default function FinanceiroCfoPage() {
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2 text-base">
                       <Lightbulb className="h-4 w-4" />
-                      Alertas factuais
+                      Alertas
                     </CardTitle>
-                    <p className="text-xs text-muted-foreground">
-                      Só caixa e integridade de classificação — sem “cortar
-                      embalagem”.
-                    </p>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {(data.insights ?? []).length === 0 ? (
                       <p className="text-sm text-muted-foreground">Sem alertas.</p>
                     ) : (
                       data.insights.map(ins => (
-                        <div key={ins.id} className="rounded-xl border p-3 text-sm">
+                        <div
+                          key={ins.id}
+                          className="rounded-xl border p-3 text-sm"
+                        >
                           <p className="text-[10px] font-bold uppercase opacity-60">
                             {ins.severidade} · {ins.tipo}
                           </p>
                           <p className="font-semibold">{ins.titulo}</p>
                           <p className="mt-1 opacity-90">{ins.analise}</p>
                           <p className="mt-2 text-xs">
-                            <span className="font-bold">Ação:</span> {ins.acaoSimples}
+                            <span className="font-bold">Ação:</span>{" "}
+                            {ins.acaoSimples}
                           </p>
                         </div>
                       ))
@@ -995,17 +1348,11 @@ export default function FinanceiroCfoPage() {
                 <option key={r} value={r} />
               ))}
             </datalist>
-            <datalist id="centros-sugestoes">
-              {(data.centrosSugestoes ?? []).map(c => (
-                <option key={c} value={c} />
-              ))}
-            </datalist>
 
             <p className="text-[11px] text-muted-foreground">
-              {data.contagens.parcelasReceber} a receber ·{" "}
+              {periodoLabel} · {data.contagens.parcelasReceber} a receber ·{" "}
               {data.contagens.parcelasPagar} a pagar · {data.contagens.rubricas}{" "}
-              rúbrica(s) · {data.contagens.manuais} manual(is) · período{" "}
-              {data.periodo.inicio} → {data.periodo.fim}
+              rúbrica(s)
             </p>
           </>
         ) : null}
@@ -1050,7 +1397,9 @@ export default function FinanceiroCfoPage() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Pago</p>
-                    <p className="tabular-nums">{fmtMoney(selecionada.valorPago)}</p>
+                    <p className="tabular-nums">
+                      {fmtMoney(selecionada.valorPago)}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Em aberto</p>
@@ -1067,15 +1416,11 @@ export default function FinanceiroCfoPage() {
                     <p>{fmtDate(selecionada.dataPagamento)}</p>
                   </div>
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">ID Conta Azul</p>
-                  <p className="break-all font-mono text-xs">{selecionada.id}</p>
-                </div>
 
                 {selecionada.rateio.length > 0 ? (
                   <div>
                     <p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">
-                      Rateio
+                      Rateio (rúbricas)
                     </p>
                     <div className="space-y-2">
                       {selecionada.rateio.map((r, i) => (
@@ -1086,29 +1431,20 @@ export default function FinanceiroCfoPage() {
                               {fmtMoney(r.valor)}
                             </span>
                           </div>
-                          {r.centros.map((c, j) => (
-                            <p
-                              key={j}
-                              className="text-xs text-muted-foreground"
-                            >
-                              CC {c.nome || "—"}: {fmtMoney(c.valor)}
-                            </p>
-                          ))}
                         </div>
                       ))}
                     </div>
                   </div>
                 ) : (
                   <p className="text-xs text-amber-700">
-                    Sem rateio detalhado da API neste título (usou categoria da
-                    listagem, se houver).
+                    Sem rateio detalhado neste título.
                   </p>
                 )}
 
                 {selecionada.origem !== "ajuste_manual" ? (
                   <div className="space-y-3 rounded-xl border p-3">
                     <p className="text-xs font-semibold uppercase text-muted-foreground">
-                      Editar classificação (deste sistema)
+                      Editar classificação
                     </p>
                     <div>
                       <Label className="text-xs">Rúbrica</Label>
@@ -1122,14 +1458,6 @@ export default function FinanceiroCfoPage() {
                           Original CA: {selecionada.categoriaOriginal}
                         </p>
                       ) : null}
-                    </div>
-                    <div>
-                      <Label className="text-xs">Centro de custo</Label>
-                      <Input
-                        list="centros-sugestoes"
-                        value={editCentro}
-                        onChange={e => setEditCentro(e.target.value)}
-                      />
                     </div>
                     <div>
                       <Label className="text-xs">Nota</Label>
@@ -1150,10 +1478,11 @@ export default function FinanceiroCfoPage() {
                       <label className="flex items-center gap-2 text-xs">
                         <Checkbox
                           checked={aplicarFornecedor}
-                          onCheckedChange={v => setAplicarFornecedor(v === true)}
+                          onCheckedChange={v =>
+                            setAplicarFornecedor(v === true)
+                          }
                         />
-                        Aplicar também a todo o fornecedor «
-                        {selecionada.contraparte}»
+                        Aplicar também ao fornecedor «{selecionada.contraparte}»
                       </label>
                     ) : null}
                     <div className="flex flex-wrap gap-2">
@@ -1163,14 +1492,13 @@ export default function FinanceiroCfoPage() {
                         onClick={() => {
                           const payload = {
                             rubricaOverride: editRubrica || null,
-                            centroCustoOverride: editCentro || null,
                             excluido: editExcluido,
                             nota: editNota || null,
                           };
                           if (aplicarFornecedor && selecionada.contraparte) {
                             salvarClass.mutate({
                               tipo: "fornecedor",
-                              chave: selecionada.contraparte,
+                              chave: selecionada.contraparte.trim().toLowerCase(),
                               ...payload,
                             });
                           } else {
@@ -1193,18 +1521,17 @@ export default function FinanceiroCfoPage() {
                               title: selecionada.descricao,
                               subtitle: selecionada.id,
                               filename: `lancamento-${selecionada.id.slice(0, 8)}`,
-                              headers: [
-                                "Campo",
-                                "Valor",
-                              ],
+                              headers: ["Campo", "Valor"],
                               rows: [
                                 ["Descrição", selecionada.descricao],
                                 ["Fornecedor", selecionada.contraparte ?? ""],
                                 ["Rúbrica", selecionada.categoria ?? ""],
-                                ["CC", selecionada.centroCusto ?? ""],
                                 ["Total", String(selecionada.valor)],
                                 ["Pago", String(selecionada.valorPago)],
-                                ["Vencimento", selecionada.dataVencimento ?? ""],
+                                [
+                                  "Vencimento",
+                                  selecionada.dataVencimento ?? "",
+                                ],
                               ],
                             },
                             "csv",
@@ -1238,6 +1565,14 @@ export default function FinanceiroCfoPage() {
   );
 }
 
+function EmptyChart() {
+  return (
+    <p className="flex h-full items-center justify-center text-sm text-muted-foreground">
+      Sem dados no período.
+    </p>
+  );
+}
+
 function Kpi({
   icon,
   label,
@@ -1255,10 +1590,10 @@ function Kpi({
     <Card>
       <CardContent className="flex items-start gap-3 p-4">
         <div className="mt-0.5">{icon}</div>
-        <div>
+        <div className="min-w-0">
           <p className="text-xs text-muted-foreground">{label}</p>
           <p
-            className={`text-lg font-bold tabular-nums ${
+            className={`truncate text-lg font-bold tabular-nums ${
               highlight === "bad"
                 ? "text-red-700"
                 : highlight === "good"
@@ -1269,7 +1604,7 @@ function Kpi({
             {value}
           </p>
           {hint ? (
-            <p className="text-[11px] text-muted-foreground">{hint}</p>
+            <p className="truncate text-[11px] text-muted-foreground">{hint}</p>
           ) : null}
         </div>
       </CardContent>
@@ -1320,36 +1655,6 @@ function ReportExportCard({
       <CardContent className="space-y-2 p-4">
         <p className="font-semibold">{title}</p>
         <ExportButtons onCsv={onCsv} onPdf={onPdf} onJson={onJson} />
-      </CardContent>
-    </Card>
-  );
-}
-
-function AgingCard({
-  titulo,
-  buckets,
-}: {
-  titulo: string;
-  buckets: Array<{ chave: string; label: string; valor: number; qtd: number }>;
-}) {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">{titulo}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {buckets.map(b => (
-          <div
-            key={b.chave}
-            className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
-          >
-            <div>
-              <p className="font-medium">{b.label}</p>
-              <p className="text-[11px] text-muted-foreground">{b.qtd} título(s)</p>
-            </div>
-            <p className="font-semibold tabular-nums">{fmtMoney(b.valor)}</p>
-          </div>
-        ))}
       </CardContent>
     </Card>
   );

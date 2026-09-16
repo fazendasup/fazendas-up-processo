@@ -177,6 +177,18 @@ export type SemanaFluxo = {
   saldoLiquidoRealizado: number;
 };
 
+export type DiaFluxo = {
+  data: string;
+  entradasPrevistas: number;
+  saidasPrevistas: number;
+  entradasRealizadas: number;
+  saidasRealizadas: number;
+  saldoLiquidoPrevisto: number;
+  saldoLiquidoRealizado: number;
+  /** Saldo realizado acumulado no período (ordenado por data). */
+  saldoAcumuladoRealizado: number;
+};
+
 export type InsightCfo = {
   id: string;
   severidade: "critica" | "alta" | "media" | "oportunidade";
@@ -324,6 +336,90 @@ export function montarFluxoPorSemana(
       saldoLiquidoRealizado: round2(s.entradasRealizadas - s.saidasRealizadas),
     }))
     .sort((a, b) => a.inicioSemana.localeCompare(b.inicioSemana));
+}
+
+function cadaDiaYmd(inicioYmd: string, fimYmd: string): string[] {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(inicioYmd) || !/^\d{4}-\d{2}-\d{2}$/.test(fimYmd)) {
+    return [];
+  }
+  const out: string[] = [];
+  const cur = new Date(`${inicioYmd}T12:00:00`);
+  const end = new Date(`${fimYmd}T12:00:00`);
+  if (end.getTime() < cur.getTime()) return [];
+  while (cur.getTime() <= end.getTime()) {
+    const y = cur.getFullYear();
+    const m = String(cur.getMonth() + 1).padStart(2, "0");
+    const d = String(cur.getDate()).padStart(2, "0");
+    out.push(`${y}-${m}-${d}`);
+    cur.setDate(cur.getDate() + 1);
+  }
+  return out;
+}
+
+/** Fluxo diário contínuo no intervalo (dias sem movimento ficam zerados). */
+export function montarFluxoPorDia(
+  parcelas: ParcelaFinanceiraNorm[],
+  inicioYmd: string,
+  fimYmd: string,
+): DiaFluxo[] {
+  const dias = cadaDiaYmd(inicioYmd, fimYmd);
+  const map = new Map<string, DiaFluxo>();
+  for (const data of dias) {
+    map.set(data, {
+      data,
+      entradasPrevistas: 0,
+      saidasPrevistas: 0,
+      entradasRealizadas: 0,
+      saidasRealizadas: 0,
+      saldoLiquidoPrevisto: 0,
+      saldoLiquidoRealizado: 0,
+      saldoAcumuladoRealizado: 0,
+    });
+  }
+
+  const bump = (ymd: string | null, fn: (row: DiaFluxo) => void) => {
+    if (!ymd || !map.has(ymd)) return;
+    fn(map.get(ymd)!);
+  };
+
+  for (const p of parcelas) {
+    if (p.tipo === "receber") {
+      bump(p.dataVencimento, r => {
+        r.entradasPrevistas += p.valor;
+      });
+      bump(p.dataPagamento, r => {
+        r.entradasRealizadas += p.valorPago;
+      });
+    } else {
+      bump(p.dataVencimento, r => {
+        r.saidasPrevistas += p.valor;
+      });
+      bump(p.dataPagamento, r => {
+        r.saidasRealizadas += p.valorPago;
+      });
+    }
+  }
+
+  let acum = 0;
+  return dias.map(data => {
+    const s = map.get(data)!;
+    const entradasPrevistas = round2(s.entradasPrevistas);
+    const saidasPrevistas = round2(s.saidasPrevistas);
+    const entradasRealizadas = round2(s.entradasRealizadas);
+    const saidasRealizadas = round2(s.saidasRealizadas);
+    const saldoLiquidoRealizado = round2(entradasRealizadas - saidasRealizadas);
+    acum = round2(acum + saldoLiquidoRealizado);
+    return {
+      data,
+      entradasPrevistas,
+      saidasPrevistas,
+      entradasRealizadas,
+      saidasRealizadas,
+      saldoLiquidoPrevisto: round2(entradasPrevistas - saidasPrevistas),
+      saldoLiquidoRealizado,
+      saldoAcumuladoRealizado: acum,
+    };
+  });
 }
 
 export function agregarPorRubrica(pagar: ParcelaFinanceiraNorm[]): DimensaoFinanceiraAgg[] {
@@ -700,7 +796,7 @@ export function gerarInsightsCfo(input: {
       titulo: "Base Conta Azul insuficiente para decisão de CFO",
       analise: qualidadeAlocacao.motivoBloqueioDecisao,
       acaoSimples:
-        "No Conta Azul: complete categoria + centro de custo (rateio) nos títulos sem classificação.",
+        "No Conta Azul: complete a categoria (rúbrica) nos títulos sem classificação.",
       acaoComplexa:
         "Padronize o plano de contas e obrigue rateio na inclusão de contas a pagar. Sem isso, qualquer insight de corte é chute.",
       impactoEstimado: qualidadeAlocacao.valorSemRubrica,
@@ -737,7 +833,7 @@ export function gerarInsightsCfo(input: {
       tipo: "descasamento",
       titulo: "Vencimentos: pagar > receber no período",
       analise: `Gap previsto R$ ${resumo.gapCaixaPrevisto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}.`,
-      acaoSimples: "Cruze fluxo semanal com aging a receber.",
+      acaoSimples: "Cruze o fluxo diário com aging a receber.",
       impactoEstimado: Math.abs(resumo.gapCaixaPrevisto),
     });
   }

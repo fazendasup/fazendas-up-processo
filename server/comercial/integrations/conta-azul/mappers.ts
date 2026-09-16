@@ -478,8 +478,15 @@ export type ContaAzulProdutoResumo = {
   tipo: string | null;
 };
 
-/** Item de GET /v1/produtos (OpenAPI Conta Azul — inventário). */
-export function mapProdutoContaAzulItem(raw: unknown): ContaAzulProdutoResumo | null {
+/**
+ * Item de GET /v1/produtos (OpenAPI Conta Azul — inventário).
+ * `statusHint`: quando a listagem filtra por status=ATIVO|INATIVO, a API às vezes
+ * omite `status` no item — o hint evita tratar inativo como ativo no sync.
+ */
+export function mapProdutoContaAzulItem(
+  raw: unknown,
+  statusHint?: "ATIVO" | "INATIVO",
+): ContaAzulProdutoResumo | null {
   if (!raw || typeof raw !== "object") return null;
   const item = raw as Record<string, unknown>;
   const id = typeof item.id === "string" ? item.id : null;
@@ -498,7 +505,11 @@ export function mapProdutoContaAzulItem(raw: unknown): ContaAzulProdutoResumo | 
       : typeof valorRaw === "string"
         ? Number(valorRaw)
         : null;
-  const status = typeof item.status === "string" ? item.status.toUpperCase().trim() : null;
+  let status = typeof item.status === "string" ? item.status.toUpperCase().trim() : null;
+  if (!status && typeof item.ativo === "boolean") {
+    status = item.ativo ? "ATIVO" : "INATIVO";
+  }
+  if (!status && statusHint) status = statusHint;
   return {
     id,
     nome,

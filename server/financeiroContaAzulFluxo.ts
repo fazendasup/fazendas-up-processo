@@ -17,6 +17,7 @@ import {
   gerarInsightsCfo,
   medirQualidadeAlocacao,
   montarAging,
+  montarFluxoPorDia,
   montarFluxoPorSemana,
   normalizarParcela,
   parcelasAtivasParaRelatorio,
@@ -456,8 +457,12 @@ export async function analisarFinanceiroCfoContaAzul(
   const gruposDre = agregarPorGrupoDre(pagarAtivos, rubricas);
   const qualidadeAlocacao = medirQualidadeAlocacao(pagarAtivos);
   const fornecedores = agregarPorFornecedor(pagarAtivos);
-  const fluxoSemanas = montarFluxoPorSemana([...receberAtivos, ...pagarAtivos]);
-  const refAging = isoDateLocal(fim);
+  const periodoInicio = isoDateLocal(inicio);
+  const periodoFim = isoDateLocal(fim);
+  const todasAtivas = [...receberAtivos, ...pagarAtivos];
+  const fluxoDias = montarFluxoPorDia(todasAtivas, periodoInicio, periodoFim);
+  const fluxoSemanas = montarFluxoPorSemana(todasAtivas);
+  const refAging = periodoFim;
   const agingPagar = montarAging(pagarAtivos, refAging);
   const agingReceber = montarAging(receberAtivos, refAging);
   const insights = gerarInsightsCfo({
@@ -498,8 +503,8 @@ export async function analisarFinanceiroCfoContaAzul(
 
   return {
     periodo: {
-      inicio: isoDateLocal(inicio),
-      fim: isoDateLocal(fim),
+      inicio: periodoInicio,
+      fim: periodoFim,
     },
     resumo,
     rubricas,
@@ -508,6 +513,7 @@ export async function analisarFinanceiroCfoContaAzul(
     gruposDre,
     qualidadeAlocacao,
     fornecedores: fornecedores.slice(0, 100),
+    fluxoDias,
     fluxoSemanas,
     agingPagar,
     agingReceber,

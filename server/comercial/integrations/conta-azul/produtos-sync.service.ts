@@ -60,7 +60,7 @@ async function fetchProdutosContaAzulPorEndpoint(
       const batch = itensProdutoPage(res);
       recebidosStatus += batch.length;
       for (const raw of batch) {
-        const mapped = mapProdutoContaAzulItem(raw);
+        const mapped = mapProdutoContaAzulItem(raw, status);
         if (mapped) porId.set(mapped.id, mapped);
       }
       if (batch.length === 0) break;
@@ -243,13 +243,13 @@ export async function importarProdutosParaOperacao(
   }
 
   const elegiveis = produtos.filter(p => {
-    const st = (p.statusContaAzul ?? "ATIVO").toUpperCase();
+    const st = (p.statusContaAzul ?? "").toUpperCase();
     return st === "ATIVO" || st === "ACTIVE";
   });
   const ignoradosInativosCa = produtos.length - elegiveis.length;
   if (elegiveis.length === 0) {
     throw new Error(
-      "Nenhum dos produtos selecionados está ATIVO no Conta Azul. Não é possível ativar na operação.",
+      "Nenhum dos produtos selecionados está ATIVO no Conta Azul (status ausente conta como não elegível). Não é possível ativar na operação.",
     );
   }
 

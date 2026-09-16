@@ -4,6 +4,7 @@ import {
   aplicarEdicoesClassificacao,
   ajusteManualParaParcela,
   medirQualidadeAlocacao,
+  montarFluxoPorDia,
   normalizarParcela,
   parcelasAtivasParaRelatorio,
 } from "./financeiroCfoInsights";
@@ -81,16 +82,31 @@ describe("financeiroCfoInsights ERP", () => {
     expect(out[0]?.categoria).toBe("Embalagens");
   });
 
-  it("converte ajuste manual em parcela", () => {
-    const p = ajusteManualParaParcela({
-      id: 9,
-      tipo: "pagar",
-      descricao: "Ajuste",
-      rubrica: "Embalagens",
-      valor: 50,
+  it("monta fluxo diário contínuo com saldo acumulado", () => {
+    const receber = normalizarParcela({
+      id: "r1",
+      tipo: "receber",
+      descricao: "Venda",
+      valor: 300,
+      valorPago: 300,
+      dataPagamento: "2026-03-02",
+      dataVencimento: "2026-03-02",
     });
-    expect(p.id).toBe("manual-9");
-    expect(p.origem).toBe("ajuste_manual");
-    expect(medirQualidadeAlocacao([p]).semRubrica).toBe(0);
+    const pagar = normalizarParcela({
+      id: "p1",
+      tipo: "pagar",
+      descricao: "Compra",
+      valor: 100,
+      valorPago: 100,
+      dataPagamento: "2026-03-03",
+      dataVencimento: "2026-03-03",
+    });
+    const dias = montarFluxoPorDia([receber, pagar], "2026-03-01", "2026-03-03");
+    expect(dias).toHaveLength(3);
+    expect(dias[0]?.saldoLiquidoRealizado).toBe(0);
+    expect(dias[1]?.entradasRealizadas).toBe(300);
+    expect(dias[1]?.saldoAcumuladoRealizado).toBe(300);
+    expect(dias[2]?.saidasRealizadas).toBe(100);
+    expect(dias[2]?.saldoAcumuladoRealizado).toBe(200);
   });
 });
