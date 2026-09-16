@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
+  agregarPorFornecedor,
   agregarPorRubrica,
   aplicarEdicoesClassificacao,
   ajusteManualParaParcela,
+  ehPagamentoPessoalOuEquipe,
   medirQualidadeAlocacao,
   montarFluxoPorDia,
   normalizarParcela,
   parcelasAtivasParaRelatorio,
+  pareceNomeEmpresa,
+  pareceNomePessoaFisica,
 } from "./financeiroCfoInsights";
 
 describe("financeiroCfoInsights ERP", () => {
@@ -108,5 +112,54 @@ describe("financeiroCfoInsights ERP", () => {
     expect(dias[1]?.saldoAcumuladoRealizado).toBe(300);
     expect(dias[2]?.saidasRealizadas).toBe(100);
     expect(dias[2]?.saldoAcumuladoRealizado).toBe(200);
+  });
+
+  it("converte ajuste manual em parcela", () => {
+    const p = ajusteManualParaParcela({
+      id: 9,
+      tipo: "pagar",
+      descricao: "Ajuste",
+      rubrica: "Embalagens",
+      valor: 50,
+    });
+    expect(p.id).toBe("manual-9");
+    expect(p.origem).toBe("ajuste_manual");
+    expect(medirQualidadeAlocacao([p]).semRubrica).toBe(0);
+  });
+
+  it("exclui funcionários do ranking de fornecedores", () => {
+    const funcionario = normalizarParcela({
+      id: "f1",
+      tipo: "pagar",
+      descricao: "Pagamento",
+      valor: 5000,
+      contraparte: "Adson Bruno Tolentino Lopes",
+    });
+    const empresa = normalizarParcela({
+      id: "e1",
+      tipo: "pagar",
+      descricao: "Embalagens",
+      valor: 1200,
+      contraparte: "PLASZOM ZOMER INDUSTRIA LTDA",
+    });
+    const folha = normalizarParcela({
+      id: "f2",
+      tipo: "pagar",
+      descricao: "Salário setembro",
+      valor: 3000,
+      categoria: "Folha de pagamento",
+      contraparte: "Fornecedor Genérico ME",
+    });
+    expect(
+      ehPagamentoPessoalOuEquipe(funcionario, [
+        "ADSON BRUNO TOLENTINO LOPES",
+      ]),
+    ).toBe(true);
+    expect(pareceNomePessoaFisica("JANIO ANDRADE TORRES")).toBe(true);
+    expect(pareceNomeEmpresa("PLASZOM ZOMER INDUSTRIA LTDA")).toBe(true);
+    const top = agregarPorFornecedor([funcionario, empresa, folha], {
+      nomesEquipe: ["ADSON BRUNO TOLENTINO LOPES"],
+    });
+    expect(top.map(t => t.nome)).toEqual(["PLASZOM ZOMER INDUSTRIA LTDA"]);
   });
 });

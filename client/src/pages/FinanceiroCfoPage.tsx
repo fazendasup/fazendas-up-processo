@@ -349,10 +349,13 @@ export default function FinanceiroCfoPage() {
 
   const chartFornecedores = useMemo(
     () =>
-      (data?.fornecedores ?? []).slice(0, 8).map(f => ({
-        nome: f.nome.length > 22 ? `${f.nome.slice(0, 20)}…` : f.nome,
-        total: f.total,
-      })),
+      (data?.fornecedores ?? [])
+        .filter(f => f.nome !== "Sem fornecedor")
+        .slice(0, 8)
+        .map(f => ({
+          nome: f.nome.length > 22 ? `${f.nome.slice(0, 20)}…` : f.nome,
+          total: f.total,
+        })),
     [data?.fornecedores],
   );
 
@@ -637,11 +640,13 @@ export default function FinanceiroCfoPage() {
                 icon={<ArrowDownRight className="h-4 w-4 text-amber-600" />}
                 label="A pagar"
                 value={fmtMoney(data.resumo.aPagarEmAberto)}
+                hint={`${data.contagens.parcelasPagar} título(s)`}
               />
               <Kpi
                 icon={<ArrowUpRight className="h-4 w-4 text-emerald-700" />}
                 label="A receber"
                 value={fmtMoney(data.resumo.aReceberEmAberto)}
+                hint={`${data.contagens.parcelasReceber} título(s)`}
               />
               <Kpi
                 icon={<Tags className="h-4 w-4" />}
@@ -899,6 +904,9 @@ export default function FinanceiroCfoPage() {
                       <CardTitle className="text-base">
                         Top fornecedores
                       </CardTitle>
+                      <p className="text-xs text-muted-foreground">
+                        Empresas · exclui folha, pró-labore e equipe
+                      </p>
                     </CardHeader>
                     <CardContent className="h-[260px] pt-0">
                       {chartFornecedores.length === 0 ? (

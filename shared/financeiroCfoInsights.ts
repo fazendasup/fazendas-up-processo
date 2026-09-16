@@ -128,6 +128,82 @@ export type FornecedorAgg = {
   pctDoDesembolso: number;
 };
 
+/** Normaliza nome para comparar equipe Conta Azul ↔ cadastro MO. */
+export function normalizarNomeContraparte(nome: string): string {
+  return nome
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const MARCADOR_EMPRESA_RE =
+  /\b(ltda|me|mei|eireli|s ?a|ss|indust\w*|comerc\w*|servic\w*|transport\w*|distribuid\w*|atacado|empreendiment\w*|associac\w*|cooperativ\w*|fazenda|agro\w*|holding|tecnolog\w*|soluc\w*|solution\w*)\b/i;
+
+const FOLHA_TEXTO_RE =
+  /\b(salario|folha(\s+de\s+pagamento)?|pro[\s-]?labore|ferias|13[\soº°]|decimo(\s+terceiro)?|fgts|inss|vale[\s-]*(transporte|refeicao|alimentacao)|rescisao|holerite|encargos(\s+sociais)?|adiantamento(\s+(salarial|quinzenal))?|beneficio|beneficios|colaborador|funcionario|pessoal)\b/i;
+
+export function pareceNomeEmpresa(nome: string): boolean {
+  return MARCADOR_EMPRESA_RE.test(normalizarNomeContraparte(nome));
+}
+
+/** Nome típico de pessoa física (sem marcador de empresa). */
+export function pareceNomePessoaFisica(nome: string): boolean {
+  const t = nome.trim();
+  if (!t || /^sem fornecedor$/i.test(t)) return false;
+  if (pareceNomeEmpresa(t)) return false;
+  const parts = t.split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return false;
+  if (!/^[\p{L}\s.'’-]+$/u.test(t)) return false;
+  return true;
+}
+
+export function textoSugereFolhaOuPessoal(
+  ...partes: Array<string | null | undefined>
+): boolean {
+  const blob = normalizarNomeContraparte(partes.filter(Boolean).join(" "));
+  return blob.length > 0 && FOLHA_TEXTO_RE.test(blob);
+}
+
+/**
+ * Pagamentos a funcionários / pró-labore / folha — não entram em “top fornecedores”.
+ * Conta Azul cadastra colaborador como fornecedor (PF); filtramos por equipe MO,
+ * palavras de folha e nomes tipicamente pessoais.
+ */
+export function ehPagamentoPessoalOuEquipe(
+  p: ParcelaFinanceiraNorm,
+  nomesEquipeNorm: Iterable<string> = [],
+): boolean {
+  const equipe = new Set(
+    Array.from(nomesEquipeNorm)
+      .map(normalizarNomeContraparte)
+      .filter(n => n.length >= 3),
+  );
+  const contraparte = (p.contraparte || "").trim();
+  if (contraparte) {
+    const n = normalizarNomeContraparte(contraparte);
+    if (equipe.has(n)) return true;
+    for (const eq of Array.from(equipe)) {
+      if (eq.length < 8) continue;
+      if (n.includes(eq) || eq.includes(n)) return true;
+    }
+  }
+  if (
+    textoSugereFolhaOuPessoal(
+      p.descricao,
+      p.categoria,
+      ...(p.categorias ?? []),
+      p.entradaDre,
+    )
+  ) {
+    return true;
+  }
+  if (contraparte && pareceNomePessoaFisica(contraparte)) return true;
+  return false;
+}
+
 export type AgingBucket = {
   chave: string;
   label: string;
@@ -596,13 +672,19 @@ export function agregarPorGrupoDre(
     .sort((a, b) => b.total - a.total);
 }
 
-export function agregarPorFornecedor(pagar: ParcelaFinanceiraNorm[]): FornecedorAgg[] {
+export function agregarPorFornecedor(
+  pagar: ParcelaFinanceiraNorm[],
+  opts?: { excluirPessoal?: boolean; nomesEquipe?: string[] },
+): FornecedorAgg[] {
+  const excluirPessoal = opts?.excluirPessoal !== false;
+  const nomesEquipe = opts?.nomesEquipe ?? [];
   const map = new Map<
     string,
     FornecedorAgg & { _rubricas: Map<string, number> }
   >();
   let totalGeral = 0;
   for (const p of pagar) {
+    if (excluirPessoal && ehPagamentoPessoalOuEquipe(p, nomesEquipe)) continue;
     const nome = (p.contraparte || "Sem fornecedor").trim() || "Sem fornecedor";
     const v = valorTitulo(p);
     totalGeral += v;

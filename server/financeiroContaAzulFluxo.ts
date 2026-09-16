@@ -31,6 +31,8 @@ import {
   listFinanceiroCaAjustesManuais,
   listFinanceiroCaClassificacoes,
 } from "./financeiroClassificacaoDb";
+import * as moEquipeDb from "./custosMoEquipeDb";
+import { colaboradoresFolha052026 } from "@shared/custosMoEquipeFolha052026";
 
 function isoDateLocal(d: Date): string {
   const y = d.getFullYear();
@@ -111,6 +113,24 @@ type ParcelaDetalheCa = {
   };
 };
 
+async function fetchParcelasPagina(
+  http: ReturnType<typeof createContaAzulHttp>,
+  pathBase: string,
+  qs: URLSearchParams,
+): Promise<BuscaParcelasResponse> {
+  return contaAzulGet<BuscaParcelasResponse>(
+    http,
+    `${pathBase}?${qs.toString()}`,
+  );
+}
+
+/**
+ * Busca parcelas do período.
+ * Conta Azul exige data_vencimento_*; se também mandamos data_pagamento_*,
+ * a API combina em AND e **some títulos em aberto** (sem pagamento).
+ * Por isso: (1) vencimento no intervalo; (2) pagamento no intervalo com
+ * janela ampla de vencimento — depois unimos por id.
+ */
 async function fetchParcelasPaginated(
   pathBase: string,
   inicio: Date,
@@ -128,53 +148,68 @@ async function fetchParcelasPaginated(
   const http = createContaAzulHttp(env, cred.accessToken);
   const vencDe = isoDateLocal(inicio);
   const vencAte = isoDateLocal(fim);
-  const pagDe = isoDateLocal(inicio);
-  const pagAte = isoDateLocal(fim);
+  const pagDe = vencDe;
+  const pagAte = vencAte;
+  // Janela ampla só para achar baixas no mês com vencimento fora do mês.
+  const vencAmploDe = isoDateLocal(
+    new Date(inicio.getFullYear() - 2, inicio.getMonth(), inicio.getDate()),
+  );
 
-  const itens: ParcelaCaRaw[] = [];
   const tamanho = 200;
   const maxPaginas = 40;
-  let aviso: string | undefined;
+  const avisos: string[] = [];
+  const porId = new Map<string, ParcelaCaRaw>();
 
-  for (let pagina = 1; pagina <= maxPaginas; pagina++) {
+  const coletar = async (
+    label: string,
+    buildQs: (pagina: number) => URLSearchParams,
+  ) => {
+    for (let pagina = 1; pagina <= maxPaginas; pagina++) {
+      const qs = buildQs(pagina);
+      let res: BuscaParcelasResponse;
+      try {
+        res = await fetchParcelasPagina(http, pathBase, qs);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (pagina === 1) {
+          avisos.push(`${label}: ${msg}`);
+        }
+        break;
+      }
+      const batch = res.itens ?? [];
+      for (const item of batch) {
+        if (item.id) porId.set(item.id, item);
+      }
+      if (batch.length < tamanho) break;
+    }
+  };
+
+  await coletar("vencimento", pagina => {
     const qs = new URLSearchParams({
       pagina: String(pagina),
       tamanho_pagina: String(tamanho),
       data_vencimento_de: vencDe,
       data_vencimento_ate: vencAte,
+    });
+    return qs;
+  });
+
+  await coletar("pagamento", pagina => {
+    const qs = new URLSearchParams({
+      pagina: String(pagina),
+      tamanho_pagina: String(tamanho),
+      data_vencimento_de: vencAmploDe,
+      data_vencimento_ate: vencAte,
       data_pagamento_de: pagDe,
       data_pagamento_ate: pagAte,
     });
-    let res: BuscaParcelasResponse;
-    try {
-      res = await contaAzulGet<BuscaParcelasResponse>(
-        http,
-        `${pathBase}?${qs.toString()}`,
-      );
-    } catch (e) {
-      if (pagina === 1 && /\(400\)/.test(e instanceof Error ? e.message : "")) {
-        const qs2 = new URLSearchParams({
-          pagina: String(pagina),
-          tamanho_pagina: String(tamanho),
-          data_vencimento_de: vencDe,
-          data_vencimento_ate: vencAte,
-        });
-        res = await contaAzulGet<BuscaParcelasResponse>(
-          http,
-          `${pathBase}?${qs2.toString()}`,
-        );
-        aviso =
-          "Filtro por data de pagamento indisponível em parte das consultas; usando vencimento.";
-      } else {
-        throw e;
-      }
-    }
-    const batch = res.itens ?? [];
-    itens.push(...batch);
-    if (batch.length < tamanho) break;
-  }
+    return qs;
+  });
 
-  return { itens, aviso };
+  return {
+    itens: Array.from(porId.values()),
+    aviso: avisos.length ? avisos.join(" · ") : undefined,
+  };
 }
 
 function resolverEntradaDre(
@@ -383,7 +418,7 @@ export async function analisarFinanceiroCfoContaAzul(
   projetoId: number,
 ) {
   const prisma = getComercialPrisma();
-  const [pagarFetch, receberFetch, saldos, lastSync, classifs, ajustes] =
+  const [pagarFetch, receberFetch, saldos, lastSync, classifs, ajustes, equipesMo] =
     await Promise.all([
       fetchParcelasPaginated(
         "/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar",
@@ -403,6 +438,7 @@ export async function analisarFinanceiroCfoContaAzul(
       }),
       listFinanceiroCaClassificacoes(projetoId),
       listFinanceiroCaAjustesManuais(projetoId),
+      moEquipeDb.listMoEquipes(projetoId).catch(() => []),
     ]);
 
   /** Catálogo DRE é opcional — não bloqueia se a API de categorias estiver lenta. */
@@ -456,7 +492,18 @@ export async function analisarFinanceiroCfoContaAzul(
   const matrizRubricaCentro = agregarMatrizRubricaCentro(pagarAtivos).slice(0, 120);
   const gruposDre = agregarPorGrupoDre(pagarAtivos, rubricas);
   const qualidadeAlocacao = medirQualidadeAlocacao(pagarAtivos);
-  const fornecedores = agregarPorFornecedor(pagarAtivos);
+  const nomesEquipe = Array.from(
+    new Set(
+      [
+        ...equipesMo.map(e => e.nome),
+        ...colaboradoresFolha052026().map(c => c.nome),
+      ].filter(Boolean),
+    ),
+  );
+  const fornecedores = agregarPorFornecedor(pagarAtivos, {
+    excluirPessoal: true,
+    nomesEquipe,
+  });
   const periodoInicio = isoDateLocal(inicio);
   const periodoFim = isoDateLocal(fim);
   const todasAtivas = [...receberAtivos, ...pagarAtivos];
