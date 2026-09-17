@@ -130,6 +130,33 @@ describe("montarComparativoDesembolsoMes", () => {
     expect(out.totais.pagoEmAtraso).toBe(1040);
     expect(out.totais.pagoAMais).toBe(0);
   });
+
+  it("insumos/materiais sem projeção ficam não programada, não atraso", () => {
+    const out = montarComparativoDesembolsoMes({
+      mesYm: "2026-09",
+      linhasProjecao: [],
+      parcelasPagarMes: [
+        parcela({
+          id: "m1",
+          descricao: "Sem nota",
+          rubrica: "Materiais de Uso e Consumo",
+          valorPago: 397.89,
+          dataPagamento: "2026-09-05",
+        }),
+        parcela({
+          id: "i1",
+          descricao: "Cimento",
+          rubrica: "Insumos de Construção",
+          valorPago: 230,
+          dataPagamento: "2026-09-06",
+        }),
+      ],
+    });
+
+    expect(out.rubricas.every(r => r.status === "nao_programada")).toBe(true);
+    expect(out.totais.pagoEmAtraso).toBe(0);
+    expect(out.totais.pagoAMais).toBe(397.89 + 230);
+  });
 });
 
 describe("montarComparativoReceitaMes", () => {

@@ -161,6 +161,25 @@ export function ehCreditoOuDescontoObtido(
 }
 
 /**
+ * Rúbricas em que "pago sem projeção no mês" costuma ser atraso da competência
+ * anterior (folha, vale, utilidades, aluguel). NÃO inclui insumos/materiais —
+ * esses, sem projeção, são "não programada".
+ */
+export function ehRubricaTipicaDeAtrasoMensal(
+  descricao: string,
+  rubrica?: string | null,
+): boolean {
+  const d = textoNatureza(descricao, rubrica);
+  return (
+    /\b(aluguel|locacao|energia|eletrica|eletricidade|luz|agua|esgoto|gas|internet|banda[\s-]?larga|telefone|celular|telecom|condominio|iptu|seguro|folha(\s+de\s+pagamento)?|salarios?|remuneracao|holerite|pro[\s-]?labore|adiantamento\s+salarial|plano\s+(de\s+)?saude|vale[\s-]*(transporte|refeicao|alimentacao)|contabil(idade)?|software|assinatura|saas|hospedagem|dominio|limpeza|conservacao|seguranca|vigilancia|manutencao(\s+predial)?|contador|escritorio\s+contabil)\b/.test(
+      d,
+    ) ||
+    /\bterceir(o|a|izados?)(\s+fixo)?\b/.test(d) ||
+    /\b(prestador|fornecedor|servico)\s+fixo\b/.test(d)
+  );
+}
+
+/**
  * Despesas essenciais que tendem a se repetir todo mês → já projetar ativas.
  * Inclui utilidades, folha/salário, terceiro fixo, combustível, insumos
  * de legumes/folhosas/flores e rúbricas operacionais recorrentes.

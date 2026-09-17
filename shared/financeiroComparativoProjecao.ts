@@ -4,7 +4,7 @@
  */
 import {
   ehCreditoOuDescontoObtido,
-  ehDespesaEssencialRecorrente,
+  ehRubricaTipicaDeAtrasoMensal,
   labelMesYm,
   mesPagamentoParcela,
   valorPagoParcela,
@@ -101,7 +101,7 @@ function labelRubrica(rubrica: string | null | undefined): string {
 
 function ehRecorrenteEsperada(rubrica: string): boolean {
   if (rubrica === RUBRICA_SEM) return false;
-  return ehDespesaEssencialRecorrente("", rubrica, null);
+  return ehRubricaTipicaDeAtrasoMensal("", rubrica);
 }
 
 function statusRubrica(
