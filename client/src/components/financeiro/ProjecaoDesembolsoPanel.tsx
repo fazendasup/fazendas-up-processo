@@ -17,7 +17,74 @@ import {
 import {
   addMonthsYm,
   sugerirValorAoAtivarProjecao,
+  type LinhaProjecao,
 } from "@shared/financeiroProjecaoDesembolso";
+
+type ProjecaoData = {
+  mesInicioYm: string;
+  colunas: Array<{
+    mesYm: string;
+    label: string;
+    custom: boolean;
+    contaNoTotal: boolean;
+  }>;
+  linhas: LinhaProjecao[];
+  totaisPorMes: Array<{ mesYm: string; total: number }>;
+  totalGeral: number;
+  avisos?: string[];
+};
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+function aplicarPatchCelula(
+  data: ProjecaoData,
+  patch: {
+    linhaId: string;
+    mesYm: string;
+    ativo?: boolean;
+    valorOverride?: number | null;
+  },
+): ProjecaoData {
+  const mesesNoTotal = new Set(
+    data.colunas.filter(c => c.contaNoTotal).map(c => c.mesYm),
+  );
+  const linhas = data.linhas.map(lin => {
+    if (lin.id !== patch.linhaId) return lin;
+    const celulas = lin.celulas.map(c => {
+      if (c.mesYm !== patch.mesYm) return c;
+      const valorEfetivo =
+        patch.valorOverride != null && Number.isFinite(patch.valorOverride)
+          ? round2(patch.valorOverride)
+          : c.valorEfetivo;
+      const ativo = patch.ativo == null ? c.ativo : patch.ativo;
+      return { ...c, valorEfetivo, ativo };
+    });
+    const totalAtivo = round2(
+      celulas
+        .filter(c => c.ativo && mesesNoTotal.has(c.mesYm))
+        .reduce((s, c) => s + c.valorEfetivo, 0),
+    );
+    return { ...lin, celulas, totalAtivo };
+  });
+  const totaisPorMes = data.colunas.map(col => ({
+    mesYm: col.mesYm,
+    total: round2(
+      linhas.reduce((s, lin) => {
+        const c = lin.celulas.find(x => x.mesYm === col.mesYm);
+        if (!c || !c.ativo) return s;
+        return s + c.valorEfetivo;
+      }, 0),
+    ),
+  }));
+  const totalGeral = round2(
+    totaisPorMes
+      .filter(t => mesesNoTotal.has(t.mesYm))
+      .reduce((s, t) => s + t.total, 0),
+  );
+  return { ...data, linhas, totaisPorMes, totalGeral };
+}
 
 const RUBRICA_SEM = "__sem_rubrica__";
 const RUBRICA_TODAS = "__todas__";
@@ -89,26 +156,56 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
 
   const proj = trpc.financeiroCfo.projecaoDesembolso.useQuery(
     { mesInicioYm },
-    { staleTime: 30_000, retry: 1 },
+    { staleTime: 5 * 60_000, retry: 1, refetchOnWindowFocus: false },
   );
 
+  const patchCacheCelula = (patch: {
+    linhaId: string;
+    mesYm: string;
+    ativo?: boolean;
+    valorOverride?: number | null;
+  }) => {
+    utils.financeiroCfo.projecaoDesembolso.setData({ mesInicioYm }, prev => {
+      if (!prev) return prev;
+      return aplicarPatchCelula(prev as ProjecaoData, patch);
+    });
+  };
+
   const salvarCelula = trpc.financeiroCfo.salvarCelulaProjecao.useMutation({
-    onSuccess: async () => {
-      await utils.financeiroCfo.projecaoDesembolso.invalidate();
+    onMutate: async input => {
+      await utils.financeiroCfo.projecaoDesembolso.cancel({ mesInicioYm });
+      const previous = utils.financeiroCfo.projecaoDesembolso.getData({
+        mesInicioYm,
+      });
+      patchCacheCelula({
+        linhaId: input.linhaId,
+        mesYm: input.mesYm,
+        ativo: input.ativo ?? undefined,
+        valorOverride: input.valorOverride,
+      });
+      return { previous };
     },
-    onError: e => toast.error(e.message),
+    onError: (e, _input, ctx) => {
+      if (ctx?.previous) {
+        utils.financeiroCfo.projecaoDesembolso.setData(
+          { mesInicioYm },
+          ctx.previous,
+        );
+      }
+      toast.error(e.message);
+    },
   });
   const addCol = trpc.financeiroCfo.adicionarColunaProjecao.useMutation({
     onSuccess: async () => {
       toast.success("Coluna adicionada");
-      await utils.financeiroCfo.projecaoDesembolso.invalidate();
+      await utils.financeiroCfo.projecaoDesembolso.invalidate({ mesInicioYm });
     },
     onError: e => toast.error(e.message),
   });
   const remCol = trpc.financeiroCfo.removerColunaProjecao.useMutation({
     onSuccess: async () => {
       toast.success("Coluna removida");
-      await utils.financeiroCfo.projecaoDesembolso.invalidate();
+      await utils.financeiroCfo.projecaoDesembolso.invalidate({ mesInicioYm });
     },
     onError: e => toast.error(e.message),
   });
@@ -117,20 +214,24 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
       toast.success("Linha adicionada");
       setNovaLinhaDesc("");
       setNovaLinhaRubrica("");
-      await utils.financeiroCfo.projecaoDesembolso.invalidate();
+      await utils.financeiroCfo.projecaoDesembolso.invalidate({ mesInicioYm });
     },
     onError: e => toast.error(e.message),
   });
   const remLinha = trpc.financeiroCfo.removerLinhaProjecao.useMutation({
     onSuccess: async () => {
       toast.success("Linha removida");
-      await utils.financeiroCfo.projecaoDesembolso.invalidate();
+      await utils.financeiroCfo.projecaoDesembolso.invalidate({ mesInicioYm });
     },
     onError: e => toast.error(e.message),
   });
 
-  const data = proj.data;
+  const data = proj.data as ProjecaoData | undefined;
   const cellKey = (linhaId: string, mesYm: string) => `${linhaId}||${mesYm}`;
+  const celulaPendente = (linhaId: string, mesYm: string) =>
+    salvarCelula.isPending &&
+    salvarCelula.variables?.linhaId === linhaId &&
+    salvarCelula.variables?.mesYm === mesYm;
 
   const rubricasDisponiveis = useMemo(() => {
     const set = new Set<string>();
@@ -270,20 +371,52 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
     <div className="space-y-4">
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Projeção de desembolso</CardTitle>
-          <p className="text-xs text-muted-foreground">
-            Base = pago no mês anterior · essenciais já projetados · demais
-            você marca se continua · total = 3 meses à frente
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Recorrente {resumoNatureza.recorrente} · parcela{" "}
-            {resumoNatureza.parcela} · único {resumoNatureza.unico} · manual{" "}
-            {resumoNatureza.manual} · total
-            {filtroAtivo ? " filtrado" : ""}{" "}
-            <span className="font-semibold text-foreground">
-              {fmtMoney(totaisFiltrados.geral)}
-            </span>
-          </p>
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <CardTitle className="text-base">Projeção de desembolso</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Base = pago no mês anterior · essenciais já projetados · demais
+                você marca se continua · total = 3 meses à frente
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Recorrente {resumoNatureza.recorrente} · parcela{" "}
+                {resumoNatureza.parcela} · único {resumoNatureza.unico} · manual{" "}
+                {resumoNatureza.manual} · total
+                {filtroAtivo ? " filtrado" : ""}{" "}
+                <span className="font-semibold text-foreground">
+                  {fmtMoney(totaisFiltrados.geral)}
+                </span>
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 shrink-0"
+              disabled={proj.isFetching}
+              onClick={() => {
+                void (async () => {
+                  try {
+                    const fresh =
+                      await utils.financeiroCfo.projecaoDesembolso.fetch({
+                        mesInicioYm,
+                        forceRefreshCa: true,
+                      });
+                    utils.financeiroCfo.projecaoDesembolso.setData(
+                      { mesInicioYm },
+                      fresh,
+                    );
+                    toast.success("Base Conta Azul atualizada");
+                  } catch (e) {
+                    toast.error(
+                      e instanceof Error ? e.message : "Falha ao atualizar",
+                    );
+                  }
+                })();
+              }}
+            >
+              {proj.isFetching ? "Atualizando…" : "Atualizar base CA"}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-end gap-2 rounded-lg border bg-muted/20 p-2">
@@ -526,7 +659,7 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                               {cel.editavel ? (
                                 <Checkbox
                                   checked={cel.ativo}
-                                  disabled={salvarCelula.isPending}
+                                  disabled={celulaPendente(lin.id, cel.mesYm)}
                                   onCheckedChange={v => {
                                     const ativar = v === true;
                                     const valor = ativar
@@ -561,7 +694,10 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                                   className="h-8 w-[100px] text-right"
                                   type="number"
                                   step="0.01"
-                                  disabled={!cel.ativo || salvarCelula.isPending}
+                                  disabled={
+                                    !cel.ativo ||
+                                    celulaPendente(lin.id, cel.mesYm)
+                                  }
                                   placeholder={
                                     cel.valorBase > 0
                                       ? String(cel.valorBase)

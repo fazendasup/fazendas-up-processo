@@ -10,8 +10,7 @@ import {
   upsertProjecaoCelula,
 } from "./financeiroProjecaoDb";
 import {
-  addMonthsYm,
-  mesesProjecaoPadrao,
+  mesAnteriorProjecao,
   montarProjecaoDesembolso,
   type ParcelaBaseProjecao,
 } from "@shared/financeiroProjecaoDesembolso";
@@ -39,46 +38,83 @@ function toBase(p: ParcelaFinanceiraNorm): ParcelaBaseProjecao {
   };
 }
 
+type CacheEntry = {
+  at: number;
+  parcelas: ParcelaBaseProjecao[];
+};
+
+/** Cache curto das parcelas CA da projeção — evita refetch de ~10s a cada checkbox. */
+const CACHE_TTL_MS = 5 * 60_000;
+const parcelasCache = new Map<string, CacheEntry>();
+
+function cacheKey(projetoId: number, mesYm: string): string {
+  return `${projetoId}:${mesYm}`;
+}
+
+async function carregarParcelasBaseMes(
+  projetoId: number,
+  mesYm: string,
+  forceRefresh = false,
+): Promise<ParcelaBaseProjecao[]> {
+  const key = cacheKey(projetoId, mesYm);
+  const hit = parcelasCache.get(key);
+  if (!forceRefresh && hit && Date.now() - hit.at < CACHE_TTL_MS) {
+    return hit.parcelas;
+  }
+  const { inicio, fim } = boundsMesYm(mesYm);
+  const raw = await buscarParcelasPagarParaProjecao(inicio, fim, projetoId);
+  const parcelas = raw.map(toBase);
+  parcelasCache.set(key, { at: Date.now(), parcelas });
+  return parcelas;
+}
+
+export function invalidarCacheProjecaoParcelas(
+  projetoId?: number,
+  mesYm?: string,
+): void {
+  if (projetoId == null) {
+    parcelasCache.clear();
+    return;
+  }
+  if (mesYm) {
+    parcelasCache.delete(cacheKey(projetoId, mesYm));
+    return;
+  }
+  const prefix = `${projetoId}:`;
+  for (const k of Array.from(parcelasCache.keys())) {
+    if (k.startsWith(prefix)) parcelasCache.delete(k);
+  }
+}
+
 export async function carregarProjecaoDesembolso(
   projetoId: number,
   mesInicioYm: string,
+  opts?: { forceRefreshCa?: boolean },
 ) {
   if (!/^\d{4}-\d{2}$/.test(mesInicioYm)) {
     throw new Error("Mês inicial inválido (AAAA-MM).");
   }
 
-  const [colunasDb, linhasDb, celulasDb] = await Promise.all([
+  const mesContextoYm = mesAnteriorProjecao(mesInicioYm);
+
+  const [colunasDb, linhasDb, celulasDb, parcelasContexto] = await Promise.all([
     listProjecaoColunas(projetoId),
     listProjecaoLinhasManuais(projetoId),
     listProjecaoCelulaOverrides(projetoId),
+    carregarParcelasBaseMes(
+      projetoId,
+      mesContextoYm,
+      opts?.forceRefreshCa === true,
+    ),
   ]);
 
   const colunasExtraYm = colunasDb.map(c => c.mesYm);
-  const mesesPadrao = mesesProjecaoPadrao(mesInicioYm);
-  const mesesGrade = Array.from(
-    new Set([...mesesPadrao, ...colunasExtraYm]),
-  ).sort();
-
-  const horizonteInicio = boundsMesYm(mesesGrade[0]!).inicio;
-  const horizonteFim = boundsMesYm(mesesGrade[mesesGrade.length - 1]!).fim;
-
-  const histInicioYm = addMonthsYm(mesesPadrao[0]!, -3);
-  const histInicio = boundsMesYm(histInicioYm).inicio;
-  const histFim = new Date(horizonteInicio);
-  histFim.setDate(histFim.getDate() - 1);
-
-  const [parcelasHorizonte, parcelasHist] = await Promise.all([
-    buscarParcelasPagarParaProjecao(horizonteInicio, horizonteFim, projetoId),
-    histFim.getTime() >= histInicio.getTime()
-      ? buscarParcelasPagarParaProjecao(histInicio, histFim, projetoId)
-      : Promise.resolve([] as ParcelaFinanceiraNorm[]),
-  ]);
 
   const grade = montarProjecaoDesembolso({
     mesInicioYm,
     colunasExtraYm,
-    parcelas: parcelasHorizonte.map(toBase),
-    historico: parcelasHist.map(toBase),
+    parcelas: parcelasContexto,
+    historico: [],
     linhasManuais: linhasDb.map(l => ({
       id: l.id,
       descricao: l.descricao,

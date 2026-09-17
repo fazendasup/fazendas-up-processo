@@ -151,11 +151,17 @@ export const financeiroCfoRouter = router({
 
   /** Projeção de desembolso (mês ant. + 3 meses, editável). */
   projecaoDesembolso: custosProducaoModuleProcedure
-    .input(z.object({ mesInicioYm: z.string().regex(/^\d{4}-\d{2}$/) }))
+    .input(
+      z.object({
+        mesInicioYm: z.string().regex(/^\d{4}-\d{2}$/),
+        forceRefreshCa: z.boolean().optional(),
+      }),
+    )
     .query(async ({ ctx, input }) =>
       carregarProjecaoDesembolso(
         projetoIdFromCtx(ctx),
         input.mesInicioYm,
+        { forceRefreshCa: input.forceRefreshCa === true },
       ),
     ),
 
