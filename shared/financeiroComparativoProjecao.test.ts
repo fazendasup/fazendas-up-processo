@@ -74,6 +74,97 @@ describe("montarComparativoDesembolsoMes", () => {
     expect(out.totais.desvio).toBe(-200);
     expect(out.linhas[0]?.matchStatus).toBe("matched");
   });
+
+  it("casa PIX projetado com Folha realizada (mesma pessoa/rúbrica/valor)", () => {
+    const realizado = parcela({
+      id: "folha-set",
+      descricao: "13/17 – Folha de Pagamento",
+      fornecedor: "Adson Bruno Tolentino Lopes",
+      rubrica: "Pró-labore",
+      valor: 12_982.74,
+      valorPago: 12_982.74,
+      dataPagamento: "2026-09-10",
+    });
+
+    const out = montarComparativoDesembolsoMes({
+      mesYm: "2026-09",
+      linhasProjecao: [
+        {
+          id: "proj:pix-adson",
+          label: "PIX ENVIADO DES: ADSON BRUNO TOLENTINO LOPES",
+          fornecedor: null,
+          rubrica: "Pró-labore",
+          natureza: "recorrente",
+          origemLinha: "projetado",
+          totalAtivo: 12_982.74,
+          celulas: [
+            {
+              mesYm: "2026-09",
+              valorBase: 12_982.74,
+              valorEfetivo: 12_982.74,
+              ativo: true,
+              editavel: true,
+              origem: "projetado",
+              parcelaId: null,
+            },
+          ],
+        },
+      ],
+      parcelasPagarMes: [realizado],
+    });
+
+    expect(out.linhas).toHaveLength(1);
+    expect(out.linhas[0]?.matchStatus).toBe("matched");
+    expect(out.linhas[0]?.projetado).toBe(12_982.74);
+    expect(out.linhas[0]?.realizado).toBe(12_982.74);
+    expect(out.linhas[0]?.desvio).toBe(0);
+  });
+
+  it("não cruza duas pessoas diferentes na mesma rúbrica", () => {
+    const out = montarComparativoDesembolsoMes({
+      mesYm: "2026-09",
+      linhasProjecao: [
+        {
+          id: "proj:a",
+          label: "PIX ENVIADO DES: JOAO SILVA",
+          fornecedor: null,
+          rubrica: "Pró-labore",
+          natureza: "recorrente",
+          origemLinha: "projetado",
+          totalAtivo: 5000,
+          celulas: [
+            {
+              mesYm: "2026-09",
+              valorBase: 5000,
+              valorEfetivo: 5000,
+              ativo: true,
+              editavel: true,
+              origem: "projetado",
+              parcelaId: null,
+            },
+          ],
+        },
+      ],
+      parcelasPagarMes: [
+        parcela({
+          id: "folha-b",
+          descricao: "Folha de Pagamento",
+          fornecedor: "Maria Souza",
+          rubrica: "Pró-labore",
+          valorPago: 5000,
+          dataPagamento: "2026-09-10",
+        }),
+      ],
+    });
+
+    expect(out.linhas).toHaveLength(2);
+    expect(out.linhas.some(l => l.matchStatus === "somente_projecao")).toBe(
+      true,
+    );
+    expect(out.linhas.some(l => l.matchStatus === "somente_realizado")).toBe(
+      true,
+    );
+  });
 });
 
 describe("montarComparativoReceitaMes", () => {
