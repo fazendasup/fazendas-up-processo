@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CheckCheck, Filter, Lock, Plus, Trash2, X } from "lucide-react";
+import { CheckCheck, Filter, Lock, Minus, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -488,6 +488,42 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
     );
   };
 
+  const mesesProjecaoAtivos = useMemo(
+    () =>
+      (data?.colunas ?? []).filter(
+        c => c.contaNoTotal && !mesesOcultos.includes(c.mesYm),
+      ),
+    [data?.colunas, mesesOcultos],
+  );
+
+  const proximoMesDisponivel = useMemo(() => {
+    const cols = data?.colunas ?? [];
+    if (cols.length === 0) return addMonthsYm(mesInicioYm, 3);
+    const ultimo = cols[cols.length - 1]!.mesYm;
+    return addMonthsYm(ultimo, 1);
+  }, [data?.colunas, mesInicioYm]);
+
+  const ultimoMesRemovivel = useMemo(() => {
+    const extras = (data?.colunas ?? []).filter(c => c.custom);
+    return extras.length ? extras[extras.length - 1]! : null;
+  }, [data?.colunas]);
+
+  const adicionarProximoMes = () => {
+    const ym = proximoMesDisponivel;
+    setNovaColunaYm(addMonthsYm(ym, 1));
+    addCol.mutate({ mesYm: ym });
+  };
+
+  const removerUltimoMesExtra = () => {
+    if (!ultimoMesRemovivel) {
+      toast.message(
+        "Só é possível remover meses extras. Os 3 meses padrão ficam; desative o checkbox para ocultar.",
+      );
+      return;
+    }
+    remCol.mutate({ mesYm: ultimoMesRemovivel.mesYm });
+  };
+
   if (proj.isLoading) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -643,10 +679,10 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                 className="h-9 gap-1"
                 disabled={salvarLote.isPending || linhasFiltradas.length === 0}
                 onClick={() => marcar3MesesFiltradas(true)}
-                title="Marca os 3 meses à frente em todas as linhas filtradas"
+                title="Marca todos os meses à frente nas linhas filtradas"
               >
                 <CheckCheck className="h-3.5 w-3.5" />
-                Marcar 3 meses (filtradas)
+                Marcar meses à frente ({mesesProjecaoAtivos.length})
               </Button>
               <Button
                 size="sm"
@@ -655,39 +691,100 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                 disabled={salvarLote.isPending || linhasFiltradas.length === 0}
                 onClick={() => marcar3MesesFiltradas(false)}
               >
-                Desmarcar 3 meses
+                Desmarcar meses à frente
               </Button>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground">
-              Colunas (mês):
-            </span>
-            {data.colunas.map(c => {
-              const visivel = !mesesOcultos.includes(c.mesYm);
-              return (
-                <label
-                  key={c.mesYm}
-                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-1 text-xs ${
-                    visivel
-                      ? "border-primary/30 bg-primary/5"
-                      : "border-dashed opacity-60"
-                  }`}
+          <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-semibold">Meses de projeção</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Ative/desative colunas · adicione mais meses à frente ou
+                  remova extras
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 gap-1"
+                  disabled={addCol.isPending}
+                  onClick={adicionarProximoMes}
                 >
-                  <Checkbox
-                    checked={visivel}
-                    onCheckedChange={() => toggleMesVisivel(c.mesYm)}
-                  />
-                  {c.label}
-                </label>
-              );
-            })}
+                  <Plus className="h-3.5 w-3.5" />
+                  + Mês ({proximoMesDisponivel.slice(5)})
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 gap-1 text-muted-foreground"
+                  disabled={remCol.isPending || !ultimoMesRemovivel}
+                  onClick={removerUltimoMesExtra}
+                  title={
+                    ultimoMesRemovivel
+                      ? `Remover ${ultimoMesRemovivel.label}`
+                      : "Nenhum mês extra para remover"
+                  }
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                  − Mês extra
+                </Button>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {data.colunas.map(c => {
+                const visivel = !mesesOcultos.includes(c.mesYm);
+                return (
+                  <label
+                    key={c.mesYm}
+                    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-1.5 text-xs ${
+                      visivel
+                        ? c.contaNoTotal
+                          ? "border-primary/40 bg-primary/5"
+                          : "border-muted-foreground/30 bg-background"
+                        : "border-dashed opacity-50"
+                    }`}
+                  >
+                    <Checkbox
+                      checked={visivel}
+                      onCheckedChange={() => toggleMesVisivel(c.mesYm)}
+                    />
+                    <span className="whitespace-nowrap">{c.label}</span>
+                    <span className="text-[9px] text-muted-foreground">
+                      {c.contaNoTotal
+                        ? c.custom
+                          ? "extra"
+                          : "projeção"
+                        : "contexto"}
+                    </span>
+                    {c.custom && visivel ? (
+                      <button
+                        type="button"
+                        className="ml-0.5 text-muted-foreground hover:text-red-600"
+                        title="Remover este mês da projeção"
+                        onClick={e => {
+                          e.preventDefault();
+                          remCol.mutate({ mesYm: c.mesYm });
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    ) : null}
+                  </label>
+                );
+              })}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {mesesProjecaoAtivos.length} mês(es) à frente no total · use +
+              Mês para estender (dez, jan…)
+            </p>
           </div>
 
           <div className="flex flex-wrap items-end gap-2">
             <div>
-              <Label className="text-xs">Nova coluna (mês)</Label>
+              <Label className="text-xs">Ou escolher mês específico</Label>
               <Input
                 type="month"
                 className="h-9 w-[150px]"
@@ -703,7 +800,7 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
               onClick={() => addCol.mutate({ mesYm: novaColunaYm })}
             >
               <Plus className="h-3.5 w-3.5" />
-              Coluna
+              Ativar mês
             </Button>
             <div className="min-w-[180px] flex-1">
               <Label className="text-xs">Nova linha</Label>
@@ -750,7 +847,7 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                   <th className="w-[26%] px-3 py-2">Desembolso</th>
                   <th className="w-[8%] px-2 py-2">Tipo</th>
                   <th className="w-[7%] px-1 py-2 text-center normal-case">
-                    3 meses
+                    Meses
                   </th>
                   {colunasVisiveis.map(c => (
                     <th key={c.mesYm} className="px-2 py-2 text-right">
@@ -838,8 +935,8 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                             }
                             title={
                               todosAtivos
-                                ? "Desmarcar os 3 meses à frente"
-                                : "Marcar os 3 meses à frente de uma vez"
+                                ? "Desmarcar todos os meses à frente"
+                                : "Marcar todos os meses à frente de uma vez"
                             }
                             onClick={() => marcar3MesesLinha(lin)}
                           >
@@ -848,7 +945,7 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                               ? "OK"
                               : algunsAtivos
                                 ? "Completar"
-                                : "Marcar"}
+                                : `+${alvos.length}`}
                           </Button>
                         );
                       })()}
