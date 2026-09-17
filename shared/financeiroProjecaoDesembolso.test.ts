@@ -6,10 +6,37 @@ import {
 } from "./financeiroProjecaoDesembolso";
 
 describe("financeiroProjecaoDesembolso", () => {
-  it("detecta parcela e recorrente", () => {
-    expect(detectarNaturezaDesembolso("Aluguel (2/12)", 1)).toBe("parcela");
+  it("parcela só para cartão/boleto; folha e aluguel n/m não são parcela", () => {
+    expect(
+      detectarNaturezaDesembolso("Compra notebook cartão 3/12", 1),
+    ).toBe("parcela");
+    expect(
+      detectarNaturezaDesembolso("Boleto parcelado equipamento", 1),
+    ).toBe("parcela");
+    expect(
+      detectarNaturezaDesembolso("14/17 - Folha de Pagamento", 1, {
+        rubrica: "Folha",
+      }),
+    ).toBe("unico");
+    expect(
+      detectarNaturezaDesembolso("14/17 - Folha de Pagamento", 3, {
+        rubrica: "Folha",
+      }),
+    ).toBe("recorrente");
+    expect(detectarNaturezaDesembolso("10/12 - ALUGUEL REF. TARUMA", 2)).toBe(
+      "recorrente",
+    );
     expect(detectarNaturezaDesembolso("Energia elétrica", 3)).toBe("recorrente");
-    expect(detectarNaturezaDesembolso("Notebook novo", 1)).toBe("unico");
+    expect(detectarNaturezaDesembolso("Notebook à vista", 1)).toBe("unico");
+  });
+
+  it("horizonte = mês anterior + 3 meses", () => {
+    expect(mesesProjecaoPadrao("2026-09")).toEqual([
+      "2026-08",
+      "2026-09",
+      "2026-10",
+      "2026-11",
+    ]);
   });
 
   it("trava célula executada e permite override na projetada", () => {
@@ -18,9 +45,9 @@ describe("financeiroProjecaoDesembolso", () => {
       parcelas: [
         {
           id: "p1",
-          descricao: "Aluguel (1/12)",
-          fornecedor: "Imobiliaria X",
-          rubrica: "Aluguel",
+          descricao: "Cartão Visa 1/6 notebook",
+          fornecedor: "Loja X",
+          rubrica: "Equipamentos",
           valor: 5000,
           valorPago: 5000,
           valorEmAberto: 0,
@@ -30,9 +57,9 @@ describe("financeiroProjecaoDesembolso", () => {
         },
         {
           id: "p2",
-          descricao: "Aluguel (2/12)",
-          fornecedor: "Imobiliaria X",
-          rubrica: "Aluguel",
+          descricao: "Cartão Visa 2/6 notebook",
+          fornecedor: "Loja X",
+          rubrica: "Equipamentos",
           valor: 5000,
           valorPago: 0,
           valorEmAberto: 5000,
@@ -51,7 +78,8 @@ describe("financeiroProjecaoDesembolso", () => {
       ],
     });
 
-    expect(mesesProjecaoPadrao("2026-09")).toEqual([
+    expect(grade.colunas.map(c => c.mesYm)).toEqual([
+      "2026-08",
       "2026-09",
       "2026-10",
       "2026-11",

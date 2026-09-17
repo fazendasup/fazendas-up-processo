@@ -122,13 +122,14 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Projeção de desembolso</CardTitle>
           <p className="text-xs text-muted-foreground">
-            3 meses a partir de {mesInicioYm} · editável só o previsto/projetado ·
-            executado fica travado
+            Mês anterior + 3 meses (ref. {mesInicioYm}) · editável só o
+            previsto/projetado · executado fica travado
           </p>
           <p className="text-xs text-muted-foreground">
-            {resumoNatureza.parcela} parcela(s) · {resumoNatureza.recorrente}{" "}
-            recorrente(s) · {resumoNatureza.unico} único(s) ·{" "}
-            {resumoNatureza.manual} manual(is) · total ativo{" "}
+            Parcela = cartão/boleto parcelado · {resumoNatureza.parcela} ·
+            recorrente {resumoNatureza.recorrente} · único{" "}
+            {resumoNatureza.unico} · manual {resumoNatureza.manual} · total
+            ativo{" "}
             <span className="font-semibold text-foreground">
               {fmtMoney(data.totalGeral)}
             </span>

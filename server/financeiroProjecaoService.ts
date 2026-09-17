@@ -11,6 +11,7 @@ import {
 } from "./financeiroProjecaoDb";
 import {
   addMonthsYm,
+  mesesProjecaoPadrao,
   montarProjecaoDesembolso,
   type ParcelaBaseProjecao,
 } from "@shared/financeiroProjecaoDesembolso";
@@ -53,19 +54,15 @@ export async function carregarProjecaoDesembolso(
   ]);
 
   const colunasExtraYm = colunasDb.map(c => c.mesYm);
+  const mesesPadrao = mesesProjecaoPadrao(mesInicioYm);
   const mesesGrade = Array.from(
-    new Set([
-      mesInicioYm,
-      addMonthsYm(mesInicioYm, 1),
-      addMonthsYm(mesInicioYm, 2),
-      ...colunasExtraYm,
-    ]),
+    new Set([...mesesPadrao, ...colunasExtraYm]),
   ).sort();
 
   const horizonteInicio = boundsMesYm(mesesGrade[0]!).inicio;
   const horizonteFim = boundsMesYm(mesesGrade[mesesGrade.length - 1]!).fim;
 
-  const histInicioYm = addMonthsYm(mesInicioYm, -3);
+  const histInicioYm = addMonthsYm(mesesPadrao[0]!, -3);
   const histInicio = boundsMesYm(histInicioYm).inicio;
   const histFim = new Date(horizonteInicio);
   histFim.setDate(histFim.getDate() - 1);
@@ -102,9 +99,11 @@ export async function carregarProjecaoDesembolso(
     mesInicioYm,
     ...grade,
     avisos: [
+      "Horizonte: mês anterior + 3 meses (a partir do mês selecionado).",
+      "Parcela = cartão/boleto/financiamento parcelado (não confunde com folha 14/17).",
       "Executado = já pago no Conta Azul (somente leitura).",
       "Previsto CA = título aberto com vencimento no mês.",
-      "Projetado = recorrência/parcela estimada a partir do histórico.",
+      "Projetado = recorrência estimada a partir do histórico.",
     ],
   };
 }

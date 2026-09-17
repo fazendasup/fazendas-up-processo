@@ -36,7 +36,7 @@ export type LinhaProjecao = {
 export type ColunaProjecao = {
   mesYm: string;
   label: string;
-  /** Coluna criada pelo usuário (além das 3 padrão). */
+  /** Coluna criada pelo usuário (além do padrão mês ant. + 3 meses). */
   custom: boolean;
 };
 
@@ -91,24 +91,61 @@ export function addMonthsYm(ym: string, delta: number): string {
   return mesYmFromDate(d);
 }
 
-export function mesesProjecaoPadrao(mesInicioYm: string, qtd = 3): string[] {
-  return Array.from({ length: qtd }, (_, i) => addMonthsYm(mesInicioYm, i));
+/**
+ * Horizonte padrão: mês anterior + 3 meses (referência inclusive).
+ * Ex.: ref 2026-09 → ago, set, out, nov.
+ */
+export function mesesProjecaoPadrao(mesRefYm: string): string[] {
+  return [-1, 0, 1, 2].map(d => addMonthsYm(mesRefYm, d));
 }
 
-/** Detecta padrão (2/12), 3 de 6, parcela 1/10 etc. */
+function textoNatureza(
+  descricao: string,
+  rubrica?: string | null,
+  fornecedor?: string | null,
+): string {
+  return [descricao, rubrica, fornecedor]
+    .filter(Boolean)
+    .join(" ")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase();
+}
+
+/**
+ * "Parcela" = parcelamento de cartão/boleto/financiamento.
+ * Números tipo 14/17 em folha ou aluguel NÃO contam como parcela de cartão.
+ */
 export function detectarNaturezaDesembolso(
   descricao: string,
   ocorrenciasMeses: number,
+  extra?: { rubrica?: string | null; fornecedor?: string | null },
 ): NaturezaDesembolso {
-  const d = descricao.toLowerCase();
+  const d = textoNatureza(descricao, extra?.rubrica, extra?.fornecedor);
+
   if (
-    /\(\s*\d+\s*\/\s*\d+\s*\)/.test(d) ||
-    /\b\d+\s*\/\s*\d+\b/.test(d) ||
-    /\bparcela\b/.test(d) ||
-    /\b\d+\s+de\s+\d+\b/.test(d)
+    /\b(folha(\s+de\s+pagamento)?|salario|pro[\s-]?labore|holerite|fgts|inss|adiantamento\s+salarial)\b/.test(
+      d,
+    )
   ) {
+    return ocorrenciasMeses >= 2 ? "recorrente" : "unico";
+  }
+
+  const sinalCartaoBoleto =
+    /\b(cartao|credito|visa|master|mastercard|elo|amex|hipercard)\b/.test(d) ||
+    /\bparcelado\b/.test(d) ||
+    /\bfinanciamento\b/.test(d) ||
+    (/\bboleto\b/.test(d) &&
+      /\b(parcela|parcelas|parcelado|parcelamento)\b/.test(d)) ||
+    (/\bparcela\b/.test(d) &&
+      /\b(cartao|credito|boleto|financi)\b/.test(d));
+
+  const temFracao = /\(\s*\d+\s*\/\s*\d+\s*\)/.test(d) || /\b\d+\s*\/\s*\d+\b/.test(d);
+
+  if (sinalCartaoBoleto || (temFracao && /\b(cartao|credito|boleto|parcelado|financi)\b/.test(d))) {
     return "parcela";
   }
+
   if (ocorrenciasMeses >= 2) return "recorrente";
   return "unico";
 }
@@ -156,10 +193,10 @@ function hashSerie(key: string): string {
 }
 
 export function montarColunasProjecao(
-  mesInicioYm: string,
+  mesRefYm: string,
   colunasExtraYm: string[] = [],
 ): ColunaProjecao[] {
-  const padrao = new Set(mesesProjecaoPadrao(mesInicioYm, 3));
+  const padrao = new Set(mesesProjecaoPadrao(mesRefYm));
   const all = [...padrao, ...colunasExtraYm.filter(Boolean)];
   const uniq = Array.from(new Set(all)).sort();
   return uniq.map(mesYm => ({
@@ -248,7 +285,10 @@ export function montarProjecaoDesembolso(input: {
     if (!mes || !mesesSet.has(mes)) continue;
     const key = chaveSerie(p);
     const nMeses = ocorrenciasPorSerie.get(key)?.size ?? 1;
-    const natureza = detectarNaturezaDesembolso(p.descricao, nMeses);
+    const natureza = detectarNaturezaDesembolso(p.descricao, nMeses, {
+      rubrica: p.rubrica,
+      fornecedor: p.fornecedor,
+    });
     const linhaId = `ca:${p.id}`;
     seriesJaNaGrade.add(key);
 
@@ -310,7 +350,10 @@ export function montarProjecaoDesembolso(input: {
     const valorProj = media && media.n > 0 ? round2(media.soma / media.n) : 0;
     if (valorProj <= 0) continue;
 
-    const natureza = detectarNaturezaDesembolso(meta.label, meses.size);
+    const natureza = detectarNaturezaDesembolso(meta.label, meses.size, {
+      rubrica: meta.rubrica,
+      fornecedor: meta.fornecedor,
+    });
     if (natureza === "unico") continue;
 
     const linhaId = hashSerie(key);

@@ -874,7 +874,7 @@ export const financeiroCaAjustesManuais = mysqlTable("financeiro_ca_ajustes_manu
 export type FinanceiroCaAjusteManualRow = typeof financeiroCaAjustesManuais.$inferSelect;
 export type InsertFinanceiroCaAjusteManual = typeof financeiroCaAjustesManuais.$inferInsert;
 
-/** Colunas extras na projeção de desembolso (além dos 3 meses padrão). */
+/** Colunas extras na projeção de desembolso (além do padrão mês ant. + 3 meses). */
 export const financeiroProjecaoColunas = mysqlTable(
   "financeiro_projecao_colunas",
   {
