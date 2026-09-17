@@ -209,7 +209,7 @@ describe("montarComparativoDesembolsoMes", () => {
 });
 
 describe("montarComparativoReceitaMes", () => {
-  it("separa a receber do mês do vencido e quebra vendas/orçamentos", () => {
+  it("separa a receber do vencido só dentro do mês (ignora meses anteriores)", () => {
     const out = montarComparativoReceitaMes({
       mesYm: "2026-09",
       parcelasReceberMes: [
@@ -232,15 +232,26 @@ describe("montarComparativoReceitaMes", () => {
           dataPagamento: null,
           dataVencimento: "2026-09-25",
         }),
-      ],
-      parcelasReceberExtras: [
         parcela({
-          id: "r-vencido",
+          id: "r-vencido-mes",
           descricao: "NF 123",
           fornecedor: "Cliente C atrasado",
           valor: 2_000,
           valorPago: 0,
           valorEmAberto: 2_000,
+          status: "EM_ABERTO",
+          dataPagamento: null,
+          dataVencimento: "2026-09-10",
+        }),
+      ],
+      // Atrasados de outros meses não devem entrar
+      parcelasReceberExtras: [
+        parcela({
+          id: "r-outro-mes",
+          descricao: "Antigo",
+          valor: 9_999,
+          valorPago: 0,
+          valorEmAberto: 9_999,
           status: "EM_ABERTO",
           dataPagamento: null,
           dataVencimento: "2026-08-10",
@@ -257,13 +268,12 @@ describe("montarComparativoReceitaMes", () => {
     });
 
     expect(out.fonte).toBe("conta_azul");
-    expect(out.previsto).toBe(11_000);
+    expect(out.previsto).toBe(13_000);
     expect(out.recebido).toBe(6_000);
     expect(out.aReceberNoMes).toBe(5_000);
     expect(out.vencido).toBe(2_000);
     expect(out.aReceber).toBe(7_000);
-    expect(out.pipelineMes).toBe(11_000); // sem vencido
-    expect(out.pipelineComVencido).toBe(13_000);
+    expect(out.pipelineMes).toBe(13_000);
     expect(out.vencidosDetalhe).toHaveLength(1);
     expect(out.vencidosDetalhe[0].fornecedor).toBe("Cliente C atrasado");
     expect(out.vendasCompetencia.vendasFaturadas).toBe(1_200);
@@ -273,8 +283,8 @@ describe("montarComparativoReceitaMes", () => {
     expect(out.projecaoVendas.mediaAteMesmoDia2m).toBe(1_900);
     expect(out.projecaoVendas.aindaEntraProjetado).toBe(1_300);
     expect(out.projecaoVendas.projecaoMesTotal).toBe(3_000);
-    expect(out.gapVsProjecaoVendas).toBe(3_000 - 11_000);
-    expect(out.gapFinal).toBe(11_000 - 11_000);
+    expect(out.gapVsProjecaoVendas).toBe(3_000 - 13_000);
+    expect(out.gapFinal).toBe(0);
   });
 });
 

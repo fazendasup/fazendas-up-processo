@@ -475,12 +475,12 @@ export default function FinanceiroComparativoPage() {
                 <Kpi
                   title="A receber (mês)"
                   value={fmtMoney(r?.aReceberNoMes)}
-                  hint="Em aberto com vencimento neste mês — sem atrasados"
+                  hint="Em aberto com vencimento neste mês e data ainda não passou"
                 />
                 <Kpi
-                  title="Vencido (atraso)"
+                  title="Vencido no mês"
                   value={fmtMoney(r?.vencido)}
-                  hint="Em aberto com vencimento em meses anteriores"
+                  hint="Em aberto com vencimento neste mês e data já passou"
                   tone={(r?.vencido ?? 0) > 0 ? "up" : "neutral"}
                 />
               </div>
@@ -493,7 +493,7 @@ export default function FinanceiroComparativoPage() {
                     onClick={() => setVencidosAberto(v => !v)}
                   >
                     <span className="text-sm font-medium">
-                      De onde vem o vencido ({r!.vencidosDetalhe.length} título
+                      Vencidos deste mês ({r!.vencidosDetalhe.length} título
                       {r!.vencidosDetalhe.length === 1 ? "" : "s"})
                     </span>
                     {vencidosAberto ? (
@@ -540,7 +540,7 @@ export default function FinanceiroComparativoPage() {
                           <tfoot>
                             <tr className="border-t">
                               <td colSpan={2} className="pt-2 text-xs text-muted-foreground">
-                                Soma = KPI Vencido (atraso)
+                                Soma = KPI Vencido no mês
                               </td>
                               <td className="pt-2 text-right tabular-nums font-semibold">
                                 {fmtMoney(r?.vencido)}
@@ -558,7 +558,7 @@ export default function FinanceiroComparativoPage() {
                 <Kpi
                   title="Gap final (mês)"
                   value={fmtMoney(r?.gapFinal)}
-                  hint="Previsto − (recebido + a receber do mês)"
+                  hint="Previsto − (recebido + a receber + vencido do mês)"
                   tone={
                     (r?.gapFinal ?? 0) > 0
                       ? "up"
@@ -576,7 +576,7 @@ export default function FinanceiroComparativoPage() {
                 <Kpi
                   title="Gap caixa (mês)"
                   value={fmtMoney(caixa?.gapCaixaMes)}
-                  hint="(Recebido + a receber do mês) − desembolso projetado"
+                  hint="(Recebido + a receber + vencido do mês) − desembolso projetado"
                 />
               </div>
             </section>
@@ -587,9 +587,8 @@ export default function FinanceiroComparativoPage() {
                 Vendas e orçamentos (competência)
               </h2>
               <p className="text-xs text-muted-foreground">
-                Orçamentos até o dia 15 entram neste mês; após o dia 15, no mês
-                seguinte. Orçamentos do mês anterior após o dia 15 também entram
-                aqui.
+                Orçamentos contam só até o dia 15 deste mês. Após o dia 15, só
+                entram quando virarem venda.
               </p>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 <Kpi
@@ -600,15 +599,15 @@ export default function FinanceiroComparativoPage() {
                 <Kpi
                   title="Orçamentos no mês"
                   value={fmtMoney(r?.vendasCompetencia?.orcamentos)}
-                  hint="Orçamentos ≤ dia 15 + spill do mês anterior (>15)"
+                  hint="Somente orçamentos deste mês até o dia 15"
                 />
                 <Kpi
                   title="Já no mês"
                   value={fmtMoney(r?.vendasCompetencia?.total)}
                   hint={
                     r?.projecaoVendas
-                      ? `Média até o dia ${r.projecaoVendas.diasPassados} nos 2m: ${fmtMoney(r.projecaoVendas.mediaAteMesmoDia2m)}`
-                      : "Vendas + orçamentos da competência"
+                      ? `Vendas + orçamentos ≤15. Média até o dia ${r.projecaoVendas.diasPassados} nos 2m: ${fmtMoney(r.projecaoVendas.mediaAteMesmoDia2m)}`
+                      : "Vendas faturadas + orçamentos ≤ dia 15"
                   }
                 />
                 <Kpi
@@ -628,7 +627,7 @@ export default function FinanceiroComparativoPage() {
                 <Kpi
                   title="Gap vs proj. vendas"
                   value={fmtMoney(r?.gapVsProjecaoVendas)}
-                  hint="Projeção vendas − (recebido + a receber do mês)"
+                  hint="Projeção vendas − (recebido + a receber + vencido do mês)"
                   tone={
                     (r?.gapVsProjecaoVendas ?? 0) > 0
                       ? "up"

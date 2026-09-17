@@ -23,31 +23,27 @@ describe("mesCompetenciaVendaOrcamento", () => {
     );
   });
 
-  it("orçamento após dia 15 vai para o mês seguinte", () => {
-    expect(mesCompetenciaVendaOrcamento("2026-09-16", "orcamento")).toBe(
-      "2026-10",
-    );
-    expect(mesCompetenciaVendaOrcamento("2026-12-31", "orcamento")).toBe(
-      "2027-01",
-    );
+  it("orçamento após dia 15 não entra", () => {
+    expect(mesCompetenciaVendaOrcamento("2026-09-16", "orcamento")).toBeNull();
+    expect(mesCompetenciaVendaOrcamento("2026-12-31", "orcamento")).toBeNull();
   });
 });
 
 describe("agregarVendasPorCompetencia", () => {
-  it("soma vendas e orçamentos com regra do dia 15", () => {
+  it("soma vendas e orçamentos ≤15 (ignora orçamento após dia 15 e spill)", () => {
     const map = agregarVendasPorCompetencia([
       { dataPedidoIso: "2026-09-10", status: "venda", valorLiquido: 1_000 },
       { dataPedidoIso: "2026-09-14", status: "orcamento", valorLiquido: 500 },
       { dataPedidoIso: "2026-09-20", status: "orcamento", valorLiquido: 300 },
       { dataPedidoIso: "2026-08-20", status: "orcamento", valorLiquido: 200 },
     ]);
-    expect(map.get("2026-09")).toBe(1_700); // 1000 + 500 + 200 (ago spill)
-    expect(map.get("2026-10")).toBe(300);
+    expect(map.get("2026-09")).toBe(1_500); // 1000 + 500
+    expect(map.get("2026-10")).toBeUndefined();
   });
 });
 
 describe("agregarVendasPorCompetenciaDetalhe", () => {
-  it("separa vendas faturadas de orçamentos na competência", () => {
+  it("separa vendas faturadas de orçamentos ≤15", () => {
     const map = agregarVendasPorCompetenciaDetalhe([
       { dataPedidoIso: "2026-09-10", status: "venda", valorLiquido: 1_000 },
       { dataPedidoIso: "2026-09-14", status: "orcamento", valorLiquido: 500 },
@@ -55,8 +51,8 @@ describe("agregarVendasPorCompetenciaDetalhe", () => {
     ]);
     expect(map.get("2026-09")).toEqual({
       vendas: 1_000,
-      orcamentos: 700,
-      total: 1_700,
+      orcamentos: 500,
+      total: 1_500,
     });
   });
 });
@@ -78,7 +74,6 @@ describe("somarVendasAteDia / somarVendasUltimosNDias", () => {
 
 describe("montarProjecaoVendasRestanteMes", () => {
   it("projeta o restante pela média dos últimos N dias dos 2 meses anteriores", () => {
-    // restam 13 dias; ago restante 1.400; jul restante 1.200 → média 1.300
     const out = montarProjecaoVendasRestanteMes({
       mesYm: "2026-09",
       hojeYm: "2026-09",

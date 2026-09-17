@@ -1,9 +1,9 @@
 /**
  * Projeção de vendas no restante do mês.
  * Restante = média do que foi vendido nos últimos N dias dos 2 meses anteriores
- * (N = dias que faltam no mês atual). Orçamentos: ≤15 no mês; >15 no seguinte.
+ * (N = dias que faltam no mês atual).
+ * Orçamentos: só entram no mês se data ≤ dia 15 (após o dia 15 não contam até virar venda).
  */
-import { addMonthsYm } from "./financeiroProjecaoDesembolso";
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
@@ -20,35 +20,32 @@ export type StatusPedidoVendaOrcamento = "venda" | "orcamento";
 /**
  * Mês de competência para o comparativo de vendas.
  * - venda: mês civil de `dataPedido`
- * - orçamento: dia ≤ 15 → mesmo mês; dia > 15 → mês seguinte
+ * - orçamento: dia ≤ 15 → mesmo mês; dia > 15 → não entra (null)
  */
 export function mesCompetenciaVendaOrcamento(
   dataPedidoIso: string,
   status: StatusPedidoVendaOrcamento,
-): string {
+): string | null {
   const ym = dataPedidoIso.slice(0, 7);
   if (!/^\d{4}-\d{2}$/.test(ym)) return ym;
   if (status === "venda") return ym;
   const day = Number(dataPedidoIso.slice(8, 10));
-  if (!Number.isFinite(day) || day <= 15) return ym;
-  return addMonthsYm(ym, 1);
+  if (!Number.isFinite(day) || day > 15) return null;
+  return ym;
 }
 
 /**
  * Dia dentro do mês de competência (p/ séries “até o dia” / “últimos N dias”).
- * Spill de orçamento (mês anterior → competência seguinte) conta como dia 1.
  */
 export function diaNoMesCompetencia(
   dataPedidoIso: string,
   status: StatusPedidoVendaOrcamento,
-): { mesYm: string; dia: number } {
+): { mesYm: string; dia: number } | null {
   const mesYm = mesCompetenciaVendaOrcamento(dataPedidoIso, status);
-  const pedidoYm = dataPedidoIso.slice(0, 7);
+  if (!mesYm) return null;
   const day = Number(dataPedidoIso.slice(8, 10));
-  if (pedidoYm === mesYm && Number.isFinite(day) && day >= 1) {
-    return { mesYm, dia: Math.min(31, Math.floor(day)) };
-  }
-  return { mesYm, dia: 1 };
+  if (!Number.isFinite(day) || day < 1) return { mesYm, dia: 1 };
+  return { mesYm, dia: Math.min(31, Math.floor(day)) };
 }
 
 export type PedidoCompetenciaInput = {
@@ -59,6 +56,7 @@ export type PedidoCompetenciaInput = {
 
 export type TotaisCompetenciaMes = {
   vendas: number;
+  /** Orçamentos com data no mês e dia ≤ 15. */
   orcamentos: number;
   total: number;
 };
@@ -75,6 +73,7 @@ export function agregarVendasPorCompetenciaDetalhe(
   for (const p of pedidos) {
     if (!Number.isFinite(p.valorLiquido) || p.valorLiquido === 0) continue;
     const mes = mesCompetenciaVendaOrcamento(p.dataPedidoIso, p.status);
+    if (!mes) continue;
     const acc = map.get(mes) ?? emptyTotais();
     if (p.status === "venda") acc.vendas = round2(acc.vendas + p.valorLiquido);
     else acc.orcamentos = round2(acc.orcamentos + p.valorLiquido);
@@ -84,7 +83,7 @@ export function agregarVendasPorCompetenciaDetalhe(
   return map;
 }
 
-/** Soma total por competência (venda + orçamento com regra dia 15). */
+/** Soma total por competência (venda + orçamento ≤15). */
 export function agregarVendasPorCompetencia(
   pedidos: PedidoCompetenciaInput[],
 ): Map<string, number> {
@@ -103,13 +102,14 @@ export function agregarVendasPorDiaCompetencia(
   const map = new Map<string, Map<number, number>>();
   for (const p of pedidos) {
     if (!Number.isFinite(p.valorLiquido) || p.valorLiquido === 0) continue;
-    const { mesYm, dia } = diaNoMesCompetencia(p.dataPedidoIso, p.status);
-    let porDia = map.get(mesYm);
+    const ref = diaNoMesCompetencia(p.dataPedidoIso, p.status);
+    if (!ref) continue;
+    let porDia = map.get(ref.mesYm);
     if (!porDia) {
       porDia = new Map();
-      map.set(mesYm, porDia);
+      map.set(ref.mesYm, porDia);
     }
-    porDia.set(dia, round2((porDia.get(dia) ?? 0) + p.valorLiquido));
+    porDia.set(ref.dia, round2((porDia.get(ref.dia) ?? 0) + p.valorLiquido));
   }
   return map;
 }

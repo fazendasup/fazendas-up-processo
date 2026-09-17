@@ -96,34 +96,33 @@ export type ComparativoReceitaMes = {
   fonte: "conta_azul";
   previsto: number;
   recebido: number;
-  /** Em aberto com vencimento no mês (sem atrasados). */
+  /** Em aberto com vencimento no mês e ainda não vencido (data ≥ hoje). */
   aReceberNoMes: number;
-  /** Em aberto com vencimento anterior ao mês (atraso de clientes). */
+  /** Em aberto com vencimento no mês e data já passou (atraso dentro do mês). */
   vencido: number;
   /** Lista dos títulos que somam `vencido` (Conta Azul). */
   vencidosDetalhe: ComparativoReceitaDetalheVencido[];
-  /**
-   * @deprecated Preferir aReceberNoMes; mantido = mês + vencido só p/ referência.
-   */
+  /** aReceberNoMes + vencido (só competência do mês). */
   aReceber: number;
-  /** recebido + aReceberNoMes (sem vencido). */
-  pipelineMes: number;
   /** recebido + aReceberNoMes + vencido. */
+  pipelineMes: number;
+  /** Alias de pipelineMes (sem atrasados de outros meses). */
   pipelineComVencido: number;
   gapRecebimento: number;
   gapRecebimentoPct: number | null;
-  /** previsto − (recebido + a receber do mês). */
+  /** previsto − pipelineMes. */
   gapFinal: number;
   pctRecebidoDoPrevisto: number | null;
-  /** Quebra do “já no mês”: vendas faturadas × orçamentos (regra dia 15). */
+  /** Quebra do “já no mês”: vendas faturadas × orçamentos ≤15 (sem spill). */
   vendasCompetencia: {
     vendasFaturadas: number;
+    /** Só orçamentos com data neste mês até o dia 15. */
     orcamentos: number;
     total: number;
   };
-  /** Projeção de vendas (média diária 2m × dias restantes). */
+  /** Projeção de vendas (últimos N dias dos 2 meses anteriores). */
   projecaoVendas: ProjecaoVendasRestanteMes;
-  /** projecaoMesTotal − pipelineMes (sem vencido). */
+  /** projecaoMesTotal − pipelineMes. */
   gapVsProjecaoVendas: number;
 };
 
@@ -314,7 +313,7 @@ export function montarComparativoDesembolsoMes(input: {
 export function montarComparativoReceitaMes(input: {
   mesYm: string;
   parcelasReceberMes: ParcelaBaseProjecao[];
-  /** Parcelas extras (ex.: vencidos de meses anteriores). */
+  /** @deprecated Ignorado — vencidos de outros meses não entram mais. */
   parcelasReceberExtras?: ParcelaBaseProjecao[];
   /** Vendas faturadas no mês (competência). */
   vendasFaturadasMes?: number;
@@ -333,12 +332,12 @@ export function montarComparativoReceitaMes(input: {
   const { mesYm } = input;
   const mes1 = mesAnteriorProjecao(mesYm);
   const mes2 = mesAnteriorProjecao(mes1);
+  const hojeYm = input.hojeYm ?? mesYm;
+  const diaHoje = input.diaHoje ?? 31;
+  const hojeIso = `${hojeYm}-${String(Math.min(Math.max(1, Math.floor(diaHoje)), 31)).padStart(2, "0")}`;
 
   const porId = new Map<string, ParcelaBaseProjecao>();
-  for (const p of [
-    ...input.parcelasReceberMes,
-    ...(input.parcelasReceberExtras ?? []),
-  ]) {
+  for (const p of input.parcelasReceberMes) {
     porId.set(p.id, p);
   }
 
@@ -353,22 +352,30 @@ export function montarComparativoReceitaMes(input: {
     const vencMes = vencYm === mesYm;
     const pagMes = mesPagamentoParcela(p) === mesYm;
     const aberto = p.valorEmAberto > 0.009;
+    const vencIso = (p.dataVencimento ?? "").slice(0, 10);
 
     if (vencMes) {
       const valorTitulo = round2(
         p.valor > 0 ? p.valor : p.valorPago + p.valorEmAberto,
       );
       if (valorTitulo > 0) previsto += valorTitulo;
-      if (aberto) aReceberNoMes += p.valorEmAberto;
-    } else if (aberto && vencYm && vencYm < mesYm) {
-      vencido += p.valorEmAberto;
-      vencidosDetalhe.push({
-        id: p.id,
-        descricao: p.descricao,
-        fornecedor: p.fornecedor,
-        valorEmAberto: round2(p.valorEmAberto),
-        dataVencimento: p.dataVencimento,
-      });
+      if (aberto) {
+        // Vencido do mês: em aberto e data de vencimento já passou (só no mês).
+        const jaVenceu =
+          mesYm < hojeYm || (mesYm === hojeYm && !!vencIso && vencIso < hojeIso);
+        if (jaVenceu) {
+          vencido += p.valorEmAberto;
+          vencidosDetalhe.push({
+            id: p.id,
+            descricao: p.descricao,
+            fornecedor: p.fornecedor,
+            valorEmAberto: round2(p.valorEmAberto),
+            dataVencimento: p.dataVencimento,
+          });
+        } else {
+          aReceberNoMes += p.valorEmAberto;
+        }
+      }
     }
 
     if (pagMes) {
@@ -384,8 +391,8 @@ export function montarComparativoReceitaMes(input: {
   aReceberNoMes = round2(aReceberNoMes);
   vencido = round2(vencido);
   const aReceber = round2(aReceberNoMes + vencido);
-  const pipelineMes = round2(recebido + aReceberNoMes);
-  const pipelineComVencido = round2(recebido + aReceber);
+  const pipelineMes = round2(recebido + aReceber);
+  const pipelineComVencido = pipelineMes;
   const gapRecebimento = round2(previsto - recebido);
   const gapFinal = round2(previsto - pipelineMes);
 
@@ -395,8 +402,6 @@ export function montarComparativoReceitaMes(input: {
     input.vendasMesAtual ?? vendasFaturadas + orcamentos,
   );
 
-  const hojeYm = input.hojeYm ?? mesYm;
-  const diaHoje = input.diaHoje ?? 31;
   const projecaoVendas = montarProjecaoVendasRestanteMes({
     mesYm,
     hojeYm,

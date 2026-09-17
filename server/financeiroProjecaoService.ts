@@ -1,7 +1,6 @@
 import {
   buscarParcelasPagarParaProjecao,
   buscarParcelasReceberParaComparativo,
-  buscarParcelasReceberPorVencimento,
 } from "./financeiroContaAzulFluxo";
 import {
   addProjecaoColuna,
@@ -14,7 +13,6 @@ import {
   upsertProjecaoCelula,
 } from "./financeiroProjecaoDb";
 import {
-  addMonthsYm,
   mesAnteriorProjecao,
   montarProjecaoDesembolso,
   type ParcelaBaseProjecao,
@@ -174,7 +172,7 @@ export async function carregarProjecaoDesembolso(
 }
 
 /**
- * Totais de vendas + orçamentos por competência (orçamento ≤15 no mês; >15 no seguinte).
+ * Totais de vendas + orçamentos ≤15 por competência.
  * Também calcula “até o mesmo dia” e “últimos N dias” dos 2 meses anteriores.
  */
 async function carregarTotaisVendasCompetencia(
@@ -282,39 +280,27 @@ export async function carregarComparativoProjecao(
   }
 
   const { inicio: iniMes, fim: fimMes } = boundsMesYm(mesYm);
-  // Vencidos: títulos com vencimento nos 24 meses anteriores ao mês atual.
-  const { inicio: iniVencidos } = boundsMesYm(addMonthsYm(mesYm, -24));
-  const fimVencidos = new Date(iniMes);
-  fimVencidos.setDate(fimVencidos.getDate() - 1);
-  fimVencidos.setHours(23, 59, 59, 999);
 
   const hojeIso = diaIsoAmericaSp();
   const hojeYm = mesIsoAmericaSp();
   const diaHoje = Number(hojeIso.slice(8, 10));
 
-  const [grade, pagarMes, receberMes, receberVencidos, vendas] =
-    await Promise.all([
-      carregarProjecaoDesembolso(projetoId, mesYm, {
-        forceRefreshCa: opts?.forceRefreshCa,
-      }),
-      carregarParcelasBaseMes(projetoId, mesYm, opts?.forceRefreshCa === true),
-      buscarParcelasReceberParaComparativo(iniMes, fimMes, projetoId).then(r =>
-        r.map(toBase),
-      ),
-      buscarParcelasReceberPorVencimento(
-        iniVencidos,
-        fimVencidos,
-        projetoId,
-      ).then(r => r.map(toBase)),
-      carregarTotaisVendasCompetencia(mesYm, { hojeYm, diaHoje }),
-    ]);
+  const [grade, pagarMes, receberMes, vendas] = await Promise.all([
+    carregarProjecaoDesembolso(projetoId, mesYm, {
+      forceRefreshCa: opts?.forceRefreshCa,
+    }),
+    carregarParcelasBaseMes(projetoId, mesYm, opts?.forceRefreshCa === true),
+    buscarParcelasReceberParaComparativo(iniMes, fimMes, projetoId).then(r =>
+      r.map(toBase),
+    ),
+    carregarTotaisVendasCompetencia(mesYm, { hojeYm, diaHoje }),
+  ]);
 
   const comparativo = montarFinanceiroComparativo({
     mesYm,
     linhasProjecao: grade.linhas,
     parcelasPagarMes: pagarMes,
     parcelasReceberMes: receberMes,
-    parcelasReceberExtras: receberVencidos.filter(p => p.valorEmAberto > 0.009),
     vendasFaturadasMes: vendas.vendasFaturadasMes,
     orcamentosCompetenciaMes: vendas.orcamentosCompetenciaMes,
     vendasMesAtual: vendas.vendasMesAtual,
@@ -331,9 +317,9 @@ export async function carregarComparativoProjecao(
     avisos: [
       "Desembolso: comparativo por rúbrica (projeção × pago Conta Azul).",
       "Descontos obtidos e transferências entre contas não entram (não são despesa).",
-      "A receber = só títulos em aberto com vencimento no mês (sem atrasados).",
-      "Vencido = títulos em aberto com vencimento em meses anteriores (lista abaixo).",
-      "Vendas = pedidos faturados; orçamentos ≤ dia 15 entram no mês; após o dia 15, no mês seguinte.",
+      "A receber = em aberto com vencimento no mês e data ainda não passou.",
+      "Vencido = em aberto com vencimento neste mês e data já passou (sem meses anteriores).",
+      "Vendas = pedidos faturados; orçamentos só entram até o dia 15 do mês.",
       "Ainda entra = média do que foi vendido nos últimos N dias dos 2 meses anteriores (N = dias restantes).",
     ],
   };
