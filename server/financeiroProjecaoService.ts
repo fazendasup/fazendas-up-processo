@@ -183,10 +183,9 @@ export async function carregarComparativoProjecao(
   return {
     ...comparativo,
     avisos: [
-      "Desembolso projetado = células marcadas na grade de projeção para o mês.",
-      "Desembolso realizado = contas a pagar baixadas no Conta Azul no mês.",
-      "Receita: previsto / recebido / a receber = contas a receber do Conta Azul.",
-      "Previsto = vencimento no mês · Recebido = data de pagamento no mês · A receber = em aberto com vencimento no mês.",
+      "Desembolso: comparativo agregado por rúbrica (projeção marcada × pago no Conta Azul).",
+      "Não programada = rúbrica paga sem estar na projeção.",
+      "Receita: somente totais do Conta Azul (previsto / recebido / a receber).",
     ],
   };
 }

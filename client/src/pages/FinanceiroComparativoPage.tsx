@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { ComparativoDesembolsoLinha } from "@shared/financeiroComparativoProjecao";
+import type { StatusRubricaComparativo } from "@shared/financeiroComparativoProjecao";
 
 function mesAtualYm(): string {
   const d = new Date();
@@ -40,6 +40,19 @@ function fmtPct(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "—";
   const sign = n > 0 ? "+" : "";
   return `${sign}${n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
+}
+
+function statusLabel(s: StatusRubricaComparativo): string {
+  switch (s) {
+    case "em_dia":
+      return "Em dia";
+    case "faltando":
+      return "Falta pagar";
+    case "pago_a_mais":
+      return "Pago a mais";
+    case "nao_programada":
+      return "Não programada";
+  }
 }
 
 function Kpi({
@@ -78,33 +91,20 @@ function Kpi({
   );
 }
 
-function matchLabel(s: ComparativoDesembolsoLinha["matchStatus"]): string {
-  switch (s) {
-    case "matched":
-      return "Projetado + pago";
-    case "somente_projecao":
-      return "Só projeção";
-    default:
-      return "Só realizado";
-  }
-}
-
 export default function FinanceiroComparativoPage() {
   const [mes, setMes] = useState(mesAtualYm);
   const utils = trpc.useUtils();
 
   const q = trpc.financeiroCfo.comparativoProjecao.useQuery(
     { mesYm: mes },
-    {
-      staleTime: 60_000,
-    },
+    { staleTime: 60_000 },
   );
 
   const d = q.data?.desembolso;
   const r = q.data?.receita;
   const caixa = q.data?.caixa;
 
-  const linhasTabela = useMemo(() => d?.linhas ?? [], [d?.linhas]);
+  const rubricas = useMemo(() => d?.rubricas ?? [], [d?.rubricas]);
 
   const recarregarCa = async () => {
     try {
@@ -124,7 +124,7 @@ export default function FinanceiroComparativoPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="mx-auto max-w-[1400px] space-y-6 px-4 py-6">
+      <main className="mx-auto max-w-[1200px] space-y-6 px-4 py-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <Link
@@ -135,10 +135,10 @@ export default function FinanceiroComparativoPage() {
               Financeiro Conta Azul
             </Link>
             <h1 className="text-2xl font-semibold tracking-tight">
-              Comparativo projeção × realizado
+              Comparativo por rúbrica
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Desvio de desembolso e visão de receita para{" "}
+              Projeção × pago no Conta Azul —{" "}
               <span className="capitalize">{labelMes(mes)}</span>.
             </p>
           </div>
@@ -198,63 +198,141 @@ export default function FinanceiroComparativoPage() {
                 <Kpi
                   title="Projetado"
                   value={fmtMoney(d?.totais.projetado)}
-                  hint="Células marcadas na grade"
+                  hint="Soma das rúbricas marcadas"
                 />
                 <Kpi
-                  title="Já desembolsado"
-                  value={fmtMoney(d?.totais.realizado)}
+                  title="Já pago"
+                  value={fmtMoney(d?.totais.pago)}
                   hint={
-                    d?.totais.pctRealizadoDoProjetado != null
-                      ? `${fmtPct(d.totais.pctRealizadoDoProjetado).replace("+", "")} do projetado`
-                      : undefined
+                    d?.totais.pctPagoDoProjetado != null
+                      ? `${fmtPct(d.totais.pctPagoDoProjetado).replace("+", "")} do projetado`
+                      : "Conta Azul no mês"
                   }
                 />
                 <Kpi
-                  title="Falta desembolsar"
-                  value={fmtMoney(d?.totais.restanteADesembolsar)}
-                  hint="Projetado − realizado (mín. 0)"
-                  tone="neutral"
+                  title="Ainda não pago"
+                  value={fmtMoney(d?.totais.naoPago)}
+                  hint="Projetado − pago (por rúbrica)"
                 />
                 <Kpi
-                  title="Desvio"
-                  value={fmtMoney(d?.totais.desvio)}
-                  hint={fmtPct(d?.totais.desvioPct)}
-                  tone={
-                    (d?.totais.desvio ?? 0) > 0
-                      ? "up"
-                      : (d?.totais.desvio ?? 0) < 0
-                        ? "down"
-                        : "neutral"
-                  }
+                  title="Pago a mais"
+                  value={fmtMoney(d?.totais.pagoAMais)}
+                  hint="Soma do que passou do plano"
+                  tone={(d?.totais.pagoAMais ?? 0) > 0 ? "up" : "neutral"}
                 />
               </div>
             </section>
 
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Por rúbrica</CardTitle>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                {rubricas.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Sem projeção marcada nem pagamentos no mês.
+                  </p>
+                ) : (
+                  <table className="w-full min-w-[640px] text-sm">
+                    <thead>
+                      <tr className="border-b text-left text-xs text-muted-foreground">
+                        <th className="py-2 pr-2 font-medium">Rúbrica</th>
+                        <th className="py-2 pr-2 text-right font-medium">
+                          Projetado
+                        </th>
+                        <th className="py-2 pr-2 text-right font-medium">
+                          Pago
+                        </th>
+                        <th className="py-2 pr-2 text-right font-medium">
+                          Não pago
+                        </th>
+                        <th className="py-2 pr-2 text-right font-medium">
+                          Pago a mais
+                        </th>
+                        <th className="py-2 font-medium">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rubricas.map(rub => {
+                        const aMais = rub.status === "pago_a_mais";
+                        const falta = rub.status === "faltando";
+                        const extra = rub.status === "nao_programada";
+                        return (
+                          <tr
+                            key={rub.rubrica}
+                            className="border-b border-border/60 last:border-0"
+                          >
+                            <td className="py-2 pr-2 font-medium">
+                              {rub.rubrica}
+                            </td>
+                            <td className="py-2 pr-2 text-right tabular-nums">
+                              {fmtMoney(rub.projetado)}
+                            </td>
+                            <td className="py-2 pr-2 text-right tabular-nums">
+                              {fmtMoney(rub.pago)}
+                            </td>
+                            <td className="py-2 pr-2 text-right tabular-nums">
+                              {fmtMoney(rub.naoPago)}
+                            </td>
+                            <td
+                              className={`py-2 pr-2 text-right tabular-nums ${
+                                aMais || extra ? "text-red-600" : ""
+                              }`}
+                            >
+                              {fmtMoney(rub.pagoAMais)}
+                            </td>
+                            <td
+                              className={`py-2 text-xs ${
+                                aMais || extra
+                                  ? "text-red-600"
+                                  : falta
+                                    ? "text-amber-700"
+                                    : "text-emerald-700"
+                              }`}
+                            >
+                              <span className="inline-flex items-center gap-0.5">
+                                {aMais || extra ? (
+                                  <ArrowUpRight className="h-3.5 w-3.5" />
+                                ) : falta ? (
+                                  <ArrowDownRight className="h-3.5 w-3.5" />
+                                ) : null}
+                                {statusLabel(rub.status)}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </CardContent>
+            </Card>
+
             <section className="space-y-3">
               <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                 <TrendingUp className="h-4 w-4" />
-                Receita Conta Azul (a receber)
+                Receita Conta Azul (totais)
               </h2>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Kpi
-                  title="Previsto (CA)"
+                  title="Previsto"
                   value={fmtMoney(r?.previsto)}
-                  hint="Títulos com vencimento no mês"
+                  hint="Vencimento no mês"
                 />
                 <Kpi
-                  title="Recebido (CA)"
+                  title="Recebido"
                   value={fmtMoney(r?.recebido)}
                   hint={
                     r?.pctRecebidoDoPrevisto != null
                       ? `${fmtPct(r.pctRecebidoDoPrevisto).replace("+", "")} do previsto`
-                      : "Baixas com pagamento no mês"
+                      : "Pagamento no mês"
                   }
                   tone="down"
                 />
                 <Kpi
-                  title="A receber (CA)"
+                  title="A receber"
                   value={fmtMoney(r?.aReceber)}
-                  hint="Em aberto com vencimento no mês"
+                  hint="Em aberto no mês"
                 />
                 <Kpi
                   title="Gap final"
@@ -269,192 +347,25 @@ export default function FinanceiroComparativoPage() {
                   }
                 />
               </div>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <Kpi
-                  title="Gap recebimento"
-                  value={fmtMoney(r?.gapRecebimento)}
-                  hint="Previsto − recebido"
-                />
+              <div className="grid gap-3 sm:grid-cols-2">
                 <Kpi
                   title="Saldo caixa realizado"
                   value={fmtMoney(caixa?.saldoRealizado)}
-                  hint="Recebido CA − desembolsado no mês"
-                  tone={
-                    (caixa?.saldoRealizado ?? 0) >= 0 ? "down" : "up"
-                  }
+                  hint="Recebido − desembolso pago"
+                  tone={(caixa?.saldoRealizado ?? 0) >= 0 ? "down" : "up"}
                 />
                 <Kpi
-                  title="Gap caixa (pipeline − proj. desembolso)"
+                  title="Gap caixa"
                   value={fmtMoney(caixa?.gapCaixaMes)}
                   hint="(Recebido + a receber) − desembolso projetado"
                 />
               </div>
             </section>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">
-                  Títulos a receber (Conta Azul)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="overflow-x-auto">
-                {(r?.linhas?.length ?? 0) === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Nenhum título a receber no Conta Azul para este mês.
-                  </p>
-                ) : (
-                  <table className="w-full min-w-[720px] text-sm">
-                    <thead>
-                      <tr className="border-b text-left text-xs text-muted-foreground">
-                        <th className="py-2 pr-2 font-medium">Descrição</th>
-                        <th className="py-2 pr-2 font-medium">Cliente</th>
-                        <th className="py-2 pr-2 text-right font-medium">
-                          Previsto
-                        </th>
-                        <th className="py-2 pr-2 text-right font-medium">
-                          Recebido
-                        </th>
-                        <th className="py-2 pr-2 text-right font-medium">
-                          A receber
-                        </th>
-                        <th className="py-2 font-medium">Venc. / Pag.</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(r?.linhas ?? []).slice(0, 80).map(lin => (
-                        <tr
-                          key={lin.parcelaId}
-                          className="border-b border-border/60 last:border-0"
-                        >
-                          <td className="max-w-[260px] truncate py-2 pr-2 font-medium">
-                            {lin.label}
-                          </td>
-                          <td className="max-w-[160px] truncate py-2 pr-2 text-xs text-muted-foreground">
-                            {lin.cliente || "—"}
-                          </td>
-                          <td className="py-2 pr-2 text-right tabular-nums">
-                            {fmtMoney(lin.previsto)}
-                          </td>
-                          <td className="py-2 pr-2 text-right tabular-nums text-emerald-700">
-                            {fmtMoney(lin.recebido)}
-                          </td>
-                          <td className="py-2 pr-2 text-right tabular-nums">
-                            {fmtMoney(lin.aReceber)}
-                          </td>
-                          <td className="py-2 text-xs text-muted-foreground">
-                            {lin.vencimento?.slice(0, 10) || "—"}
-                            {lin.pagamento
-                              ? ` · pago ${lin.pagamento.slice(0, 10)}`
-                              : ""}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">
-                  Desvio por linha (desembolso)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="overflow-x-auto">
-                {linhasTabela.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Sem linhas projetadas marcadas nem pagamentos no mês.
-                  </p>
-                ) : (
-                  <table className="w-full min-w-[720px] text-sm">
-                    <thead>
-                      <tr className="border-b text-left text-xs text-muted-foreground">
-                        <th className="py-2 pr-2 font-medium">Descrição</th>
-                        <th className="py-2 pr-2 font-medium">Rúbrica</th>
-                        <th className="py-2 pr-2 text-right font-medium">
-                          Projetado
-                        </th>
-                        <th className="py-2 pr-2 text-right font-medium">
-                          Realizado
-                        </th>
-                        <th className="py-2 pr-2 text-right font-medium">
-                          Restante
-                        </th>
-                        <th className="py-2 pr-2 text-right font-medium">
-                          Desvio
-                        </th>
-                        <th className="py-2 font-medium">Match</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {linhasTabela.map(lin => {
-                        const estouro = lin.desvio > 0;
-                        const abaixo = lin.desvio < 0;
-                        return (
-                          <tr
-                            key={lin.linhaId}
-                            className="border-b border-border/60 last:border-0"
-                          >
-                            <td className="max-w-[280px] py-2 pr-2">
-                              <div className="truncate font-medium">
-                                {lin.label}
-                              </div>
-                              {lin.fornecedor ? (
-                                <div className="truncate text-xs text-muted-foreground">
-                                  {lin.fornecedor}
-                                </div>
-                              ) : null}
-                            </td>
-                            <td className="py-2 pr-2 text-xs text-muted-foreground">
-                              {lin.rubrica || "—"}
-                            </td>
-                            <td className="py-2 pr-2 text-right tabular-nums">
-                              {fmtMoney(lin.projetado)}
-                            </td>
-                            <td className="py-2 pr-2 text-right tabular-nums">
-                              {fmtMoney(lin.realizado)}
-                            </td>
-                            <td className="py-2 pr-2 text-right tabular-nums">
-                              {fmtMoney(lin.restanteADesembolsar)}
-                            </td>
-                            <td
-                              className={`py-2 pr-2 text-right tabular-nums ${
-                                estouro
-                                  ? "text-red-600"
-                                  : abaixo
-                                    ? "text-emerald-700"
-                                    : ""
-                              }`}
-                            >
-                              <span className="inline-flex items-center justify-end gap-0.5">
-                                {estouro ? (
-                                  <ArrowUpRight className="h-3.5 w-3.5" />
-                                ) : abaixo ? (
-                                  <ArrowDownRight className="h-3.5 w-3.5" />
-                                ) : null}
-                                {fmtMoney(lin.desvio)}
-                                <span className="text-xs text-muted-foreground">
-                                  {fmtPct(lin.desvioPct)}
-                                </span>
-                              </span>
-                            </td>
-                            <td className="py-2 text-xs text-muted-foreground">
-                              {matchLabel(lin.matchStatus)}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                )}
-              </CardContent>
-            </Card>
-
             <p className="flex items-start gap-2 text-xs text-muted-foreground">
               <TrendingDown className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              Desvio positivo no desembolso = gastou mais que o projetado. Receita
-              vem só do Conta Azul (contas a receber). Ajuste a grade em{" "}
+              “Não programada” = rúbrica paga no Conta Azul sem estar marcada na
+              projeção. Ajuste a grade em{" "}
               <Link href="/financeiro-cfo" className="underline">
                 Projeção de desembolso
               </Link>
