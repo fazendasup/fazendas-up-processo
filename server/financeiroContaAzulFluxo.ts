@@ -14,6 +14,7 @@ import {
   agregarPorRubrica,
   aplicarEdicoesClassificacao,
   ajusteManualParaParcela,
+  detectarConflitosRubricaPorDestino,
   gerarInsightsCfo,
   medirQualidadeAlocacao,
   montarAging,
@@ -528,6 +529,10 @@ export async function analisarFinanceiroCfoContaAzul(
   });
 
   let comparativo = null as ReturnType<typeof montarComparativoCustoMes> | null;
+  let conflitosRubricaDestino: ReturnType<
+    typeof detectarConflitosRubricaPorDestino
+  > = [];
+  let pagarPrevAtivos: ParcelaFinanceiraNorm[] = [];
   if (compararMesAnterior) {
     let pagarPrev = pagarPrevFetch.itens
       .map(i => mapParcelaListagem(i, "pagar", catalogo))
@@ -546,14 +551,20 @@ export async function analisarFinanceiroCfoContaAzul(
         pagarPrev.push(p);
       }
     }
-    const rubricasPrev = agregarPorRubrica(
-      parcelasAtivasParaRelatorio(pagarPrev),
-    );
+    pagarPrevAtivos = parcelasAtivasParaRelatorio(pagarPrev);
+    const rubricasPrev = agregarPorRubrica(pagarPrevAtivos);
     comparativo = montarComparativoCustoMes(rubricas, rubricasPrev, {
       inicio: isoDateLocal(prev.inicio),
       fim: isoDateLocal(prev.fim),
     });
   }
+
+  conflitosRubricaDestino = detectarConflitosRubricaPorDestino(
+    compararMesAnterior
+      ? [...pagarAtivos, ...pagarPrevAtivos]
+      : pagarAtivos,
+    { excluirPessoal: true, nomesEquipe },
+  ).slice(0, 80);
 
   const kpisReducao = montarKpisReducaoCusto({
     rubricas,
@@ -616,6 +627,7 @@ export async function analisarFinanceiroCfoContaAzul(
     resumo,
     kpisReducao,
     comparativo,
+    conflitosRubricaDestino,
     rubricas,
     centrosCusto,
     matrizRubricaCentro,

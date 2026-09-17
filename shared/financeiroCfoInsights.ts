@@ -128,6 +128,33 @@ export type FornecedorAgg = {
   pctDoDesembolso: number;
 };
 
+/** Rúbrica usada em um destino (fornecedor) em um ou mais meses. */
+export type RubricaNoDestino = {
+  rubrica: string;
+  total: number;
+  qtd: number;
+  meses: string[];
+  exemplos: Array<{
+    id: string;
+    descricao: string;
+    valor: number;
+    mesYm: string;
+  }>;
+};
+
+/**
+ * Mesmo destino (fornecedor) com rúbricas diferentes entre meses —
+ * ex.: ago vs set — para o usuário alinhar a classificação.
+ */
+export type ConflitoRubricaDestino = {
+  chave: string;
+  destino: string;
+  rubricas: RubricaNoDestino[];
+  total: number;
+  qtd: number;
+  meses: string[];
+};
+
 /** Normaliza nome para comparar equipe Conta Azul ↔ cadastro MO. */
 export function normalizarNomeContraparte(nome: string): string {
   return nome
@@ -857,6 +884,107 @@ export function agregarPorFornecedor(
       pctDoDesembolso: totalGeral > 0 ? round2((f.total / totalGeral) * 100) : 0,
     }))
     .sort((a, b) => b.total - a.total);
+}
+
+function mesYmParcelaAnalise(p: ParcelaFinanceiraNorm): string | null {
+  const ref =
+    p.dataPagamento || p.dataCompetencia || p.dataVencimento || null;
+  if (!ref || !/^\d{4}-\d{2}/.test(ref)) return null;
+  return ref.slice(0, 7);
+}
+
+/**
+ * Destinos (fornecedor) com ≥2 rúbricas distintas no período (ex.: ago+set).
+ * Ajuda a achar classificação inconsistente do mesmo pagamento de saída.
+ */
+export function detectarConflitosRubricaPorDestino(
+  parcelas: ParcelaFinanceiraNorm[],
+  opts?: { excluirPessoal?: boolean; nomesEquipe?: string[] },
+): ConflitoRubricaDestino[] {
+  const excluirPessoal = opts?.excluirPessoal !== false;
+  const nomesEquipe = opts?.nomesEquipe ?? [];
+
+  type Acc = {
+    destino: string;
+    byRubrica: Map<
+      string,
+      {
+        total: number;
+        qtd: number;
+        meses: Set<string>;
+        exemplos: RubricaNoDestino["exemplos"];
+      }
+    >;
+  };
+
+  const byDestino = new Map<string, Acc>();
+
+  for (const p of parcelas) {
+    if (p.tipo !== "pagar") continue;
+    if (excluirPessoal && ehPagamentoPessoalOuEquipe(p, nomesEquipe)) continue;
+    const destino = (p.contraparte || "").trim();
+    if (!destino || /^sem fornecedor$/i.test(destino)) continue;
+    const mesYm = mesYmParcelaAnalise(p);
+    if (!mesYm) continue;
+
+    const chave = normalizarChaveFornecedor(destino);
+    const cur = byDestino.get(chave) ?? {
+      destino,
+      byRubrica: new Map(),
+    };
+    if (!byDestino.has(chave)) byDestino.set(chave, cur);
+
+    for (const lin of linhasAlocacaoRubrica(p)) {
+      const rubrica = lin.rubrica?.trim() || RUBRICA_SEM_CATEGORIA;
+      const valor = lin.valor > 0 ? lin.valor : valorTitulo(p);
+      if (valor <= 0) continue;
+      const r = cur.byRubrica.get(rubrica) ?? {
+        total: 0,
+        qtd: 0,
+        meses: new Set<string>(),
+        exemplos: [],
+      };
+      r.total += valor;
+      r.qtd += 1;
+      r.meses.add(mesYm);
+      if (r.exemplos.length < 4) {
+        r.exemplos.push({
+          id: p.id,
+          descricao: p.descricao,
+          valor: round2(valor),
+          mesYm,
+        });
+      }
+      cur.byRubrica.set(rubrica, r);
+    }
+  }
+
+  const out: ConflitoRubricaDestino[] = [];
+  for (const [chave, acc] of Array.from(byDestino.entries())) {
+    if (acc.byRubrica.size < 2) continue;
+    const rubricas: RubricaNoDestino[] = Array.from(acc.byRubrica.entries())
+      .map(([rubrica, r]) => ({
+        rubrica,
+        total: round2(r.total),
+        qtd: r.qtd,
+        meses: Array.from(r.meses).sort(),
+        exemplos: r.exemplos,
+      }))
+      .sort((a, b) => b.total - a.total);
+    const meses = Array.from(
+      new Set(rubricas.flatMap(r => r.meses)),
+    ).sort();
+    out.push({
+      chave,
+      destino: acc.destino,
+      rubricas,
+      total: round2(rubricas.reduce((s, r) => s + r.total, 0)),
+      qtd: rubricas.reduce((s, r) => s + r.qtd, 0),
+      meses,
+    });
+  }
+
+  return out.sort((a, b) => b.total - a.total);
 }
 
 export function montarAging(

@@ -136,6 +136,10 @@ export default function FinanceiroCfoPage() {
   const [novoRubrica, setNovoRubrica] = useState("");
   const [novoValor, setNovoValor] = useState("");
   const [novoFornecedor, setNovoFornecedor] = useState("");
+  const [draftRubricaDestino, setDraftRubricaDestino] = useState<
+    Record<string, string>
+  >({});
+  const [tabAtiva, setTabAtiva] = useState("projecao");
 
   const utils = trpc.useUtils();
   const queryInput = useMemo(
@@ -154,6 +158,21 @@ export default function FinanceiroCfoPage() {
   const data = analise.data;
   const kpis = data?.kpisReducao;
   const gaps = data?.comparativo?.gapsPorImpacto ?? [];
+  const conflitosRubrica = data?.conflitosRubricaDestino ?? [];
+
+  useEffect(() => {
+    const list = data?.conflitosRubricaDestino;
+    if (!list?.length) return;
+    setDraftRubricaDestino(prev => {
+      const next = { ...prev };
+      for (const c of list) {
+        if (next[c.chave] == null) {
+          next[c.chave] = c.rubricas[0]?.rubrica ?? "";
+        }
+      }
+      return next;
+    });
+  }, [data?.conflitosRubricaDestino]);
 
   const salvarClass = trpc.financeiroCfo.salvarClassificacao.useMutation({
     onSuccess: async () => {
@@ -244,6 +263,31 @@ export default function FinanceiroCfoPage() {
     } finally {
       setSavingId(null);
     }
+  };
+
+  const aplicarRubricaDestino = async (chave: string, destino: string) => {
+    const rubrica = (draftRubricaDestino[chave] ?? "").trim();
+    if (!rubrica) {
+      toast.error("Informe a rúbrica correta");
+      return;
+    }
+    setSavingId(`dest:${chave}`);
+    try {
+      await salvarClass.mutateAsync({
+        tipo: "fornecedor",
+        chave: destino,
+        rubricaOverride: rubrica,
+      });
+      toast.success(`Rúbrica aplicada a ${destino}`);
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const verLancamentosDestino = (destino: string) => {
+    setBusca(destino);
+    setFiltroRubrica(null);
+    setTabAtiva("lancamentos");
   };
 
   const toggleExcluido = async (p: ParcelaFinanceiraNorm) => {
@@ -464,9 +508,19 @@ export default function FinanceiroCfoPage() {
               </p>
             ) : null}
 
-            <Tabs defaultValue="projecao" className="space-y-4">
+            <Tabs
+              value={tabAtiva}
+              onValueChange={setTabAtiva}
+              className="space-y-4"
+            >
               <TabsList className="flex h-auto flex-wrap">
                 <TabsTrigger value="projecao">Projeção</TabsTrigger>
+                <TabsTrigger value="rubricas">
+                  Rúbricas
+                  {conflitosRubrica.length > 0
+                    ? ` (${conflitosRubrica.length})`
+                    : ""}
+                </TabsTrigger>
                 <TabsTrigger value="gaps">Gaps de custo</TabsTrigger>
                 <TabsTrigger value="lancamentos">
                   Lançamentos ({lancamentos.length})
@@ -478,6 +532,140 @@ export default function FinanceiroCfoPage() {
 
               <TabsContent value="projecao" className="space-y-3">
                 <ProjecaoDesembolsoPanel mesInicioYm={mes} />
+              </TabsContent>
+
+              <TabsContent value="rubricas" className="space-y-3">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">
+                      Análise de rúbricas por destino
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      Mesmo fornecedor (saída) com rúbricas diferentes entre o
+                      mês atual e o anterior
+                      {compararMesAnterior ? "" : " — ative “Comparar mês anterior” para cruzar ago×set"}
+                      . Aplique a rúbrica correta no destino ou abra os
+                      lançamentos.
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {!compararMesAnterior ? (
+                      <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                        Com “Comparar mês anterior” ativo, a checagem usa os dois
+                        meses juntos (ex.: agosto + setembro).
+                      </p>
+                    ) : null}
+                    {conflitosRubrica.length === 0 ? (
+                      <p className="py-6 text-sm text-muted-foreground">
+                        Nenhum destino com rúbricas conflitantes neste recorte.
+                      </p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full min-w-[880px] text-sm">
+                          <thead>
+                            <tr className="border-b text-left text-xs uppercase text-muted-foreground">
+                              <th className="px-2 py-2">Destino (fornecedor)</th>
+                              <th className="px-2 py-2">Meses</th>
+                              <th className="px-2 py-2">Rúbricas usadas</th>
+                              <th className="px-2 py-2">Total</th>
+                              <th className="px-2 py-2 w-[220px]">
+                                Aplicar rúbrica
+                              </th>
+                              <th className="px-2 py-2" />
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {conflitosRubrica.map(c => (
+                              <tr key={c.chave} className="border-b align-top">
+                                <td className="px-2 py-2">
+                                  <p className="font-medium">{c.destino}</p>
+                                  <p className="text-[10px] text-muted-foreground">
+                                    {c.qtd} lançamento(s)
+                                  </p>
+                                </td>
+                                <td className="px-2 py-2 text-xs tabular-nums">
+                                  {c.meses.join(" · ")}
+                                </td>
+                                <td className="px-2 py-2">
+                                  <ul className="space-y-1">
+                                    {c.rubricas.map(r => (
+                                      <li
+                                        key={r.rubrica}
+                                        className="text-xs leading-snug"
+                                      >
+                                        <button
+                                          type="button"
+                                          className="font-medium text-sky-700 hover:underline"
+                                          onClick={() =>
+                                            setDraftRubricaDestino(prev => ({
+                                              ...prev,
+                                              [c.chave]: r.rubrica,
+                                            }))
+                                          }
+                                        >
+                                          {r.rubrica}
+                                        </button>
+                                        <span className="text-muted-foreground">
+                                          {" "}
+                                          · {fmtMoney(r.total)} · {r.qtd}x ·{" "}
+                                          {r.meses.join(", ")}
+                                        </span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </td>
+                                <td className="px-2 py-2 font-semibold tabular-nums">
+                                  {fmtMoney(c.total)}
+                                </td>
+                                <td className="px-2 py-2">
+                                  <div className="flex flex-col gap-1">
+                                    <Input
+                                      list="rubricas-sugestoes"
+                                      className="h-8"
+                                      value={draftRubricaDestino[c.chave] ?? ""}
+                                      onChange={e =>
+                                        setDraftRubricaDestino(prev => ({
+                                          ...prev,
+                                          [c.chave]: e.target.value,
+                                        }))
+                                      }
+                                      disabled={savingId === `dest:${c.chave}`}
+                                    />
+                                    <Button
+                                      size="sm"
+                                      className="h-8"
+                                      disabled={savingId === `dest:${c.chave}`}
+                                      onClick={() =>
+                                        void aplicarRubricaDestino(
+                                          c.chave,
+                                          c.destino,
+                                        )
+                                      }
+                                    >
+                                      Aplicar no destino
+                                    </Button>
+                                  </div>
+                                </td>
+                                <td className="px-2 py-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-8"
+                                    onClick={() =>
+                                      verLancamentosDestino(c.destino)
+                                    }
+                                  >
+                                    Ver lançamentos
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               <TabsContent value="gaps" className="space-y-4">

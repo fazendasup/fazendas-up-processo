@@ -5,6 +5,7 @@ import {
   aplicarEdicoesClassificacao,
   ajusteManualParaParcela,
   compararRubricasCusto,
+  detectarConflitosRubricaPorDestino,
   ehPagamentoPessoalOuEquipe,
   medirQualidadeAlocacao,
   montarFluxoPorDia,
@@ -226,5 +227,56 @@ describe("financeiroCfoInsights ERP", () => {
     expect(kpis.gastoTotal).toBe(2000);
     expect(kpis.deltaGasto).toBe(1000);
     expect(kpis.maiorAumento?.rubrica).toBe("Embalagens");
+  });
+
+  it("detecta mesmo destino com rúbricas diferentes entre meses", () => {
+    const conflitos = detectarConflitosRubricaPorDestino([
+      normalizarParcela({
+        id: "a1",
+        tipo: "pagar",
+        descricao: "Pedido ago",
+        valor: 1000,
+        valorPago: 1000,
+        categoria: "Insumos",
+        contraparte: "Horta Sul Ltda",
+        dataPagamento: "2026-08-10",
+      }),
+      normalizarParcela({
+        id: "a2",
+        tipo: "pagar",
+        descricao: "Pedido set",
+        valor: 1200,
+        valorPago: 1200,
+        categoria: "Folhosas",
+        contraparte: "Horta Sul Ltda",
+        dataPagamento: "2026-09-12",
+      }),
+      normalizarParcela({
+        id: "b1",
+        tipo: "pagar",
+        descricao: "Aluguel",
+        valor: 5000,
+        valorPago: 5000,
+        categoria: "Aluguel",
+        contraparte: "Imob X",
+        dataPagamento: "2026-08-05",
+      }),
+      normalizarParcela({
+        id: "b2",
+        tipo: "pagar",
+        descricao: "Aluguel",
+        valor: 5000,
+        valorPago: 5000,
+        categoria: "Aluguel",
+        contraparte: "Imob X",
+        dataPagamento: "2026-09-05",
+      }),
+    ]);
+    expect(conflitos).toHaveLength(1);
+    expect(conflitos[0]?.destino).toBe("Horta Sul Ltda");
+    expect(conflitos[0]?.rubricas.map(r => r.rubrica).sort()).toEqual([
+      "Folhosas",
+      "Insumos",
+    ]);
   });
 });
