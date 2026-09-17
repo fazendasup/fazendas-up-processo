@@ -80,6 +80,10 @@ export type ParcelaBaseProjecao = {
   descricao: string;
   fornecedor: string | null;
   rubrica: string | null;
+  /** Categoria como veio do Conta Azul (antes de override local). */
+  rubricaOriginal?: string | null;
+  /** true se a rúbrica foi alterada no nosso sistema. */
+  rubricaEditadaLocal?: boolean;
   valor: number;
   valorPago: number;
   valorEmAberto: number;

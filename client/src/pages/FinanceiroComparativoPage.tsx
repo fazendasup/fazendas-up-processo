@@ -410,6 +410,24 @@ export default function FinanceiroComparativoPage() {
                                                     .filter(Boolean)
                                                     .join(" · ")}
                                                 </span>
+                                                {det.rubricaEditadaLocal ? (
+                                                  <span className="mt-0.5 block text-[10px] text-amber-700">
+                                                    Rúbrica editada aqui · no
+                                                    Conta Azul:{" "}
+                                                    {det.rubricaContaAzul ||
+                                                      "—"}
+                                                  </span>
+                                                ) : det.rubricaContaAzul ? (
+                                                  <span className="mt-0.5 block text-[10px] text-muted-foreground">
+                                                    Categoria CA:{" "}
+                                                    {det.rubricaContaAzul}
+                                                  </span>
+                                                ) : (
+                                                  <span className="mt-0.5 block text-[10px] text-amber-700">
+                                                    Sem categoria no Conta Azul
+                                                    — busque pela NFe/descrição
+                                                  </span>
+                                                )}
                                               </span>
                                               <span className="shrink-0 tabular-nums">
                                                 {fmtMoney(det.valor)}

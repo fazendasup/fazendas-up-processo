@@ -28,11 +28,18 @@ function boundsMesYm(ym: string): { inicio: Date; fim: Date } {
 }
 
 function toBase(p: ParcelaFinanceiraNorm): ParcelaBaseProjecao {
+  const original = p.categoriaOriginal?.trim() || null;
+  const atual = p.categoria?.trim() || null;
   return {
     id: p.id,
     descricao: p.descricao,
     fornecedor: p.contraparte,
-    rubrica: p.categoria,
+    rubrica: atual,
+    rubricaOriginal: original,
+    rubricaEditadaLocal:
+      !!original &&
+      !!atual &&
+      original.toLowerCase() !== atual.toLowerCase(),
     valor: p.valor,
     valorPago: p.valorPago,
     valorEmAberto: p.valorEmAberto,

@@ -35,6 +35,12 @@ export type ComparativoDesembolsoDetalhe = {
   valor: number;
   /** Data de pagamento (só origem pago). */
   dataPagamento: string | null;
+  /** Categoria no Conta Azul (antes de edição local). */
+  rubricaContaAzul: string | null;
+  /** Rúbrica usada no comparativo (pode ser override nosso). */
+  rubricaUsada: string | null;
+  /** true se divergiu da categoria original do CA. */
+  rubricaEditadaLocal: boolean;
 };
 
 export type ComparativoDesembolsoRubrica = {
@@ -166,6 +172,9 @@ export function montarComparativoDesembolsoMes(input: {
       fornecedor: lin.fornecedor,
       valor,
       dataPagamento: null,
+      rubricaContaAzul: null,
+      rubricaUsada: lin.rubrica,
+      rubricaEditadaLocal: false,
     });
   }
 
@@ -183,6 +192,9 @@ export function montarComparativoDesembolsoMes(input: {
       fornecedor: p.fornecedor,
       valor: pago,
       dataPagamento: p.dataPagamento,
+      rubricaContaAzul: p.rubricaOriginal?.trim() || p.rubrica,
+      rubricaUsada: p.rubrica,
+      rubricaEditadaLocal: p.rubricaEditadaLocal === true,
     });
   }
 
