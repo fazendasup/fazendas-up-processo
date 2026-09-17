@@ -316,11 +316,8 @@ export async function carregarComparativoProjecao(
     ...comparativo,
     avisos: [
       "Desembolso: comparativo por rúbrica (projeção × pago Conta Azul).",
-      "Descontos obtidos e transferências entre contas não entram (não são despesa).",
-      "A receber = em aberto com vencimento no mês e data ainda não passou.",
-      "Vencido = em aberto com vencimento neste mês e data já passou (sem meses anteriores).",
-      "Vendas = pedidos faturados; orçamentos só entram até o dia 15 do mês.",
-      "Ainda entra = média do que foi vendido nos últimos N dias dos 2 meses anteriores (N = dias restantes).",
+      "Caixa = Conta Azul por vencimento. Volume = pedidos por data (não é o mesmo que a receber).",
+      "Orçamentos só até o dia 15. Ainda entra = média dos últimos N dias dos 2 meses anteriores.",
     ],
   };
 }

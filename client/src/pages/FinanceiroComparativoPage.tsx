@@ -452,36 +452,46 @@ export default function FinanceiroComparativoPage() {
             </Card>
 
             <section className="space-y-3">
-              <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                <TrendingUp className="h-4 w-4" />
-                Contas a receber (Conta Azul)
-              </h2>
+              <div>
+                <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  <TrendingUp className="h-4 w-4" />
+                  1. Caixa — o que ainda entra neste mês
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Conta Azul por <strong>vencimento</strong>: dinheiro já baixado
+                  vs o que ainda está em aberto neste mês.
+                </p>
+              </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Kpi
-                  title="Previsto no mês"
-                  value={fmtMoney(r?.previsto)}
-                  hint="Títulos com vencimento no mês"
-                />
-                <Kpi
-                  title="Recebido no mês"
+                  title="Já recebido"
                   value={fmtMoney(r?.recebido)}
                   hint={
                     r?.pctRecebidoDoPrevisto != null
-                      ? `${fmtPct(r.pctRecebidoDoPrevisto).replace("+", "")} do previsto`
-                      : "Baixas no mês"
+                      ? `${fmtPct(r.pctRecebidoDoPrevisto).replace("+", "")} do previsto (${fmtMoney(r.previsto)})`
+                      : `Previsto do mês: ${fmtMoney(r?.previsto)}`
                   }
                   tone="down"
                 />
                 <Kpi
-                  title="A receber (mês)"
+                  title="Ainda a receber"
                   value={fmtMoney(r?.aReceberNoMes)}
-                  hint="Em aberto com vencimento neste mês e data ainda não passou"
+                  hint="Em aberto, vence neste mês, data ainda não passou"
                 />
                 <Kpi
-                  title="Vencido no mês"
+                  title="Vencido neste mês"
                   value={fmtMoney(r?.vencido)}
-                  hint="Em aberto com vencimento neste mês e data já passou"
+                  hint="Em aberto, venceu neste mês e a data já passou"
                   tone={(r?.vencido ?? 0) > 0 ? "up" : "neutral"}
+                />
+                <Kpi
+                  title="Total em aberto no mês"
+                  value={fmtMoney(
+                    r != null
+                      ? (r.aReceberNoMes ?? 0) + (r.vencido ?? 0)
+                      : null,
+                  )}
+                  hint="Ainda a receber + vencido — o que falta entrar deste mês"
                 />
               </div>
 
@@ -493,8 +503,7 @@ export default function FinanceiroComparativoPage() {
                     onClick={() => setVencidosAberto(v => !v)}
                   >
                     <span className="text-sm font-medium">
-                      Vencidos deste mês ({r!.vencidosDetalhe.length} título
-                      {r!.vencidosDetalhe.length === 1 ? "" : "s"})
+                      Quem está vencido neste mês ({r!.vencidosDetalhe.length})
                     </span>
                     {vencidosAberto ? (
                       <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -508,14 +517,23 @@ export default function FinanceiroComparativoPage() {
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="text-left text-xs text-muted-foreground">
-                              <th className="pb-2 pr-3 font-medium">Cliente / descrição</th>
-                              <th className="pb-2 pr-3 font-medium">Vencimento</th>
-                              <th className="pb-2 text-right font-medium">Em aberto</th>
+                              <th className="pb-2 pr-3 font-medium">
+                                Cliente / descrição
+                              </th>
+                              <th className="pb-2 pr-3 font-medium">
+                                Vencimento
+                              </th>
+                              <th className="pb-2 text-right font-medium">
+                                Em aberto
+                              </th>
                             </tr>
                           </thead>
                           <tbody>
                             {r!.vencidosDetalhe.map(v => (
-                              <tr key={v.id} className="border-t border-border/60">
+                              <tr
+                                key={v.id}
+                                className="border-t border-border/60"
+                              >
                                 <td className="py-2 pr-3">
                                   <div className="font-medium">
                                     {v.fornecedor || "—"}
@@ -539,8 +557,11 @@ export default function FinanceiroComparativoPage() {
                           </tbody>
                           <tfoot>
                             <tr className="border-t">
-                              <td colSpan={2} className="pt-2 text-xs text-muted-foreground">
-                                Soma = KPI Vencido no mês
+                              <td
+                                colSpan={2}
+                                className="pt-2 text-xs text-muted-foreground"
+                              >
+                                Soma = vencido neste mês
                               </td>
                               <td className="pt-2 text-right tabular-nums font-semibold">
                                 {fmtMoney(r?.vencido)}
@@ -554,97 +575,81 @@ export default function FinanceiroComparativoPage() {
                 </Card>
               ) : null}
 
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <Kpi
-                  title="Gap final (mês)"
-                  value={fmtMoney(r?.gapFinal)}
-                  hint="Previsto − (recebido + a receber + vencido do mês)"
-                  tone={
-                    (r?.gapFinal ?? 0) > 0
-                      ? "up"
-                      : (r?.gapFinal ?? 0) < 0
-                        ? "down"
-                        : "neutral"
-                  }
-                />
-                <Kpi
-                  title="Saldo caixa realizado"
+                  title="Saldo caixa (recebido − pago)"
                   value={fmtMoney(caixa?.saldoRealizado)}
-                  hint="Recebido − desembolso pago"
+                  hint="Só o que já baixou no Conta Azul neste mês"
                   tone={(caixa?.saldoRealizado ?? 0) >= 0 ? "down" : "up"}
                 />
                 <Kpi
-                  title="Gap caixa (mês)"
+                  title="Caixa previsto vs desembolso"
                   value={fmtMoney(caixa?.gapCaixaMes)}
-                  hint="(Recebido + a receber + vencido do mês) − desembolso projetado"
+                  hint="(Recebido + em aberto do mês) − desembolso projetado"
                 />
               </div>
             </section>
 
             <section className="space-y-3">
-              <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                <Wallet className="h-4 w-4" />
-                Vendas e orçamentos (competência)
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                Orçamentos contam só até o dia 15 deste mês. Após o dia 15, só
-                entram quando virarem venda.
-              </p>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+              <div>
+                <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  <Wallet className="h-4 w-4" />
+                  2. Volume do mês — faturado + orçamento
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Pedidos por <strong>data do pedido</strong>. Isso{" "}
+                  <strong>não é o mesmo</strong> que “a receber”: uma venda de
+                  R$ 37 mil pode já ter sido paga ou vencer em outro mês — por
+                  isso o em aberto do Conta Azul pode ser bem menor.
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <Kpi
-                  title="Vendas faturadas"
+                  title="Já faturado (volume)"
                   value={fmtMoney(r?.vendasCompetencia?.vendasFaturadas)}
-                  hint="Pedidos já faturados/aprovados no mês"
+                  hint="Pedidos faturados/aprovados neste mês — volume, não caixa"
                 />
                 <Kpi
-                  title="Orçamentos no mês"
+                  title="Orçamentos ≤ dia 15"
                   value={fmtMoney(r?.vendasCompetencia?.orcamentos)}
-                  hint="Somente orçamentos deste mês até o dia 15"
+                  hint="Só orçamentos deste mês até o dia 15 (cautela acumula)"
                 />
                 <Kpi
-                  title="Já no mês"
+                  title="Soma até agora"
                   value={fmtMoney(r?.vendasCompetencia?.total)}
                   hint={
                     r?.projecaoVendas
-                      ? `Vendas + orçamentos ≤15. Média até o dia ${r.projecaoVendas.diasPassados} nos 2m: ${fmtMoney(r.projecaoVendas.mediaAteMesmoDia2m)}`
-                      : "Vendas faturadas + orçamentos ≤ dia 15"
+                      ? `Faturado + orçamentos. Nos 2 meses anteriores, até o dia ${r.projecaoVendas.diasPassados}: média ${fmtMoney(r.projecaoVendas.mediaAteMesmoDia2m)}`
+                      : "Faturado + orçamentos ≤15"
                   }
                 />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
                 <Kpi
-                  title="Ainda entra (proj.)"
+                  title={
+                    r?.projecaoVendas
+                      ? `Ainda entra (média dos últimos ${r.projecaoVendas.diasRestantes} dias)`
+                      : "Ainda entra (projeção)"
+                  }
                   value={fmtMoney(r?.projecaoVendas?.aindaEntraProjetado)}
                   hint={
                     r?.projecaoVendas
-                      ? `Média dos últimos ${r.projecaoVendas.diasRestantes}d em ${labelMes(r.projecaoVendas.mesesMedia2m[0]).slice(0, 3)} (${fmtMoney(r.projecaoVendas.vendasRestanteMesAnterior2)}) e ${labelMes(r.projecaoVendas.mesesMedia2m[1]).slice(0, 3)} (${fmtMoney(r.projecaoVendas.vendasRestanteMesAnterior1)})`
+                      ? `Média do que entrou no fim de ${labelMes(r.projecaoVendas.mesesMedia2m[0])} (${fmtMoney(r.projecaoVendas.vendasRestanteMesAnterior2)}) e ${labelMes(r.projecaoVendas.mesesMedia2m[1])} (${fmtMoney(r.projecaoVendas.vendasRestanteMesAnterior1)})`
                       : "Média dos últimos N dias dos 2 meses anteriores"
                   }
                 />
                 <Kpi
-                  title="Projeção do mês"
+                  title="Projeção de fechar o mês"
                   value={fmtMoney(r?.projecaoVendas?.projecaoMesTotal)}
-                  hint="Já no mês + ainda entra"
-                />
-                <Kpi
-                  title="Gap vs proj. vendas"
-                  value={fmtMoney(r?.gapVsProjecaoVendas)}
-                  hint="Projeção vendas − (recebido + a receber + vencido do mês)"
-                  tone={
-                    (r?.gapVsProjecaoVendas ?? 0) > 0
-                      ? "up"
-                      : (r?.gapVsProjecaoVendas ?? 0) < 0
-                        ? "down"
-                        : "neutral"
-                  }
+                  hint="Soma até agora + ainda entra (projeção de volume)"
                 />
               </div>
             </section>
 
             <p className="flex items-start gap-2 text-xs text-muted-foreground">
               <TrendingDown className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              “Pago em atraso” = rúbrica recorrente (ex. vale-transporte) paga no
-              mês sem estar na projeção — tipicamente competência do mês
-              anterior. “Não programada” = gasto fora do plano. Descontos
-              obtidos não entram como desembolso. Ajuste a grade em{" "}
+              Desembolso: “pago em atraso” = rúbrica recorrente paga sem estar na
+              projeção; “não programada” = gasto fora do plano. Ajuste a grade em{" "}
               <Link href="/financeiro-cfo" className="underline">
                 Projeção de desembolso
               </Link>
