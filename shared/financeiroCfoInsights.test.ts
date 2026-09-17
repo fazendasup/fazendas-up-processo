@@ -4,13 +4,16 @@ import {
   agregarPorRubrica,
   aplicarEdicoesClassificacao,
   ajusteManualParaParcela,
+  compararRubricasCusto,
   ehPagamentoPessoalOuEquipe,
   medirQualidadeAlocacao,
   montarFluxoPorDia,
+  montarKpisReducaoCusto,
   normalizarParcela,
   parcelasAtivasParaRelatorio,
   pareceNomeEmpresa,
   pareceNomePessoaFisica,
+  periodoComparavelAnterior,
 } from "./financeiroCfoInsights";
 
 describe("financeiroCfoInsights ERP", () => {
@@ -161,5 +164,67 @@ describe("financeiroCfoInsights ERP", () => {
       nomesEquipe: ["ADSON BRUNO TOLENTINO LOPES"],
     });
     expect(top.map(t => t.nome)).toEqual(["PLASZOM ZOMER INDUSTRIA LTDA"]);
+  });
+
+  it("compara rúbricas MoM e monta KPIs de redução", () => {
+    const prev = periodoComparavelAnterior(
+      new Date("2026-09-01T00:00:00"),
+      new Date("2026-09-15T23:59:59"),
+    );
+    expect(prev.inicio.getMonth()).toBe(7); // agosto = 7
+    expect(prev.fim.getDate()).toBe(15);
+
+    const atual = agregarPorRubrica([
+      normalizarParcela({
+        id: "1",
+        tipo: "pagar",
+        descricao: "A",
+        valor: 1500,
+        categoria: "Embalagens",
+      }),
+      normalizarParcela({
+        id: "2",
+        tipo: "pagar",
+        descricao: "B",
+        valor: 500,
+        categoria: "Frete",
+      }),
+    ]);
+    const anterior = agregarPorRubrica([
+      normalizarParcela({
+        id: "3",
+        tipo: "pagar",
+        descricao: "C",
+        valor: 1000,
+        categoria: "Embalagens",
+      }),
+    ]);
+    const gaps = compararRubricasCusto(atual, anterior);
+    const emb = gaps.find(g => g.rubrica === "Embalagens");
+    expect(emb?.delta).toBe(500);
+    const kpis = montarKpisReducaoCusto({
+      rubricas: atual,
+      qualidade: medirQualidadeAlocacao([
+        normalizarParcela({
+          id: "1",
+          tipo: "pagar",
+          descricao: "A",
+          valor: 1500,
+          categoria: "Embalagens",
+        }),
+      ]),
+      aPagarEmAberto: 200,
+      titulosPagar: 2,
+      comparativo: {
+        periodoAnterior: { inicio: "2026-08-01", fim: "2026-08-15" },
+        gastoAnterior: 1000,
+        rubricasAnterior: anterior,
+        gaps,
+        gapsPorImpacto: gaps,
+      },
+    });
+    expect(kpis.gastoTotal).toBe(2000);
+    expect(kpis.deltaGasto).toBe(1000);
+    expect(kpis.maiorAumento?.rubrica).toBe("Embalagens");
   });
 });

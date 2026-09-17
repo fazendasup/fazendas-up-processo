@@ -874,6 +874,60 @@ export const financeiroCaAjustesManuais = mysqlTable("financeiro_ca_ajustes_manu
 export type FinanceiroCaAjusteManualRow = typeof financeiroCaAjustesManuais.$inferSelect;
 export type InsertFinanceiroCaAjusteManual = typeof financeiroCaAjustesManuais.$inferInsert;
 
+/** Colunas extras na projeção de desembolso (além dos 3 meses padrão). */
+export const financeiroProjecaoColunas = mysqlTable(
+  "financeiro_projecao_colunas",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    projetoId: int("projetoId").notNull(),
+    mesYm: varchar("mesYm", { length: 7 }).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  t => ({
+    uq: uniqueIndex("uq_fin_proj_col_proj_mes").on(t.projetoId, t.mesYm),
+  }),
+);
+
+/** Linhas manuais da projeção de desembolso. */
+export const financeiroProjecaoLinhas = mysqlTable("financeiro_projecao_linhas", {
+  id: int("id").autoincrement().primaryKey(),
+  projetoId: int("projetoId").notNull(),
+  descricao: varchar("descricao", { length: 255 }).notNull(),
+  fornecedor: varchar("fornecedor", { length: 191 }),
+  rubrica: varchar("rubrica", { length: 191 }),
+  natureza: mysqlEnum("natureza", ["parcela", "recorrente", "unico", "manual"])
+    .notNull()
+    .default("manual"),
+  ativo: boolean("ativo").notNull().default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+/** Overrides de célula (valor / ativo) na projeção. */
+export const financeiroProjecaoCelulas = mysqlTable(
+  "financeiro_projecao_celulas",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    projetoId: int("projetoId").notNull(),
+    linhaId: varchar("linhaId", { length: 191 }).notNull(),
+    mesYm: varchar("mesYm", { length: 7 }).notNull(),
+    valorOverride: decimal("valorOverride", { precision: 14, scale: 2 }),
+    ativo: boolean("ativo"),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  t => ({
+    uq: uniqueIndex("uq_fin_proj_cel_proj_linha_mes").on(
+      t.projetoId,
+      t.linhaId,
+      t.mesYm,
+    ),
+  }),
+);
+
+export type FinanceiroProjecaoColunaRow = typeof financeiroProjecaoColunas.$inferSelect;
+export type FinanceiroProjecaoLinhaRow = typeof financeiroProjecaoLinhas.$inferSelect;
+export type FinanceiroProjecaoCelulaRow = typeof financeiroProjecaoCelulas.$inferSelect;
+
 /** Equipes de mão de obra — CLT vs PJ, processamento ou overhead fixo. */
 export const custosMoEquipes = mysqlTable("custos_mo_equipes", {
   id: int("id").autoincrement().primaryKey(),

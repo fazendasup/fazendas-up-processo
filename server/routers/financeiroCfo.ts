@@ -17,6 +17,14 @@ import {
   upsertFinanceiroCaClassificacao,
 } from "../financeiroClassificacaoDb";
 import { aplicarEdicoesClassificacao } from "@shared/financeiroCfoInsights";
+import {
+  addProjecaoColuna,
+  carregarProjecaoDesembolso,
+  insertProjecaoLinhaManual,
+  removeProjecaoColuna,
+  softDeleteProjecaoLinhaManual,
+  upsertProjecaoCelula,
+} from "../financeiroProjecaoService";
 
 export const financeiroCfoRouter = router({
   /** Pacote financeiro Conta Azul + classificação editável do projeto. */
@@ -25,6 +33,7 @@ export const financeiroCfoRouter = router({
       z.object({
         inicio: z.coerce.date(),
         fim: z.coerce.date(),
+        compararMesAnterior: z.boolean().default(true),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -44,6 +53,7 @@ export const financeiroCfoRouter = router({
         inicio,
         fim,
         projetoIdFromCtx(ctx),
+        { compararMesAnterior: input.compararMesAnterior },
       );
     }),
 
@@ -136,6 +146,64 @@ export const financeiroCfoRouter = router({
         projetoIdFromCtx(ctx),
         input.id,
       );
+      return { ok: true as const };
+    }),
+
+  /** Projeção de desembolso (3 meses + colunas/linhas editáveis). */
+  projecaoDesembolso: custosProducaoModuleProcedure
+    .input(z.object({ mesInicioYm: z.string().regex(/^\d{4}-\d{2}$/) }))
+    .query(async ({ ctx, input }) =>
+      carregarProjecaoDesembolso(
+        projetoIdFromCtx(ctx),
+        input.mesInicioYm,
+      ),
+    ),
+
+  salvarCelulaProjecao: custosProducaoModuleProcedure
+    .input(
+      z.object({
+        linhaId: z.string().min(1).max(191),
+        mesYm: z.string().regex(/^\d{4}-\d{2}$/),
+        valorOverride: z.number().finite().nullable().optional(),
+        ativo: z.boolean().nullable().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) =>
+      upsertProjecaoCelula(projetoIdFromCtx(ctx), input),
+    ),
+
+  adicionarColunaProjecao: custosProducaoModuleProcedure
+    .input(z.object({ mesYm: z.string().regex(/^\d{4}-\d{2}$/) }))
+    .mutation(async ({ ctx, input }) =>
+      addProjecaoColuna(projetoIdFromCtx(ctx), input.mesYm),
+    ),
+
+  removerColunaProjecao: custosProducaoModuleProcedure
+    .input(z.object({ mesYm: z.string().regex(/^\d{4}-\d{2}$/) }))
+    .mutation(async ({ ctx, input }) => {
+      await removeProjecaoColuna(projetoIdFromCtx(ctx), input.mesYm);
+      return { ok: true as const };
+    }),
+
+  adicionarLinhaProjecao: custosProducaoModuleProcedure
+    .input(
+      z.object({
+        descricao: z.string().min(1).max(255),
+        fornecedor: z.string().max(191).nullable().optional(),
+        rubrica: z.string().max(191).nullable().optional(),
+        natureza: z
+          .enum(["parcela", "recorrente", "unico", "manual"])
+          .optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) =>
+      insertProjecaoLinhaManual(projetoIdFromCtx(ctx), input),
+    ),
+
+  removerLinhaProjecao: custosProducaoModuleProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      await softDeleteProjecaoLinhaManual(projetoIdFromCtx(ctx), input.id);
       return { ok: true as const };
     }),
 });

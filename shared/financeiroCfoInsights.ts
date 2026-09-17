@@ -243,6 +243,41 @@ export type ResumoCaixaCfo = {
   coberturaReceberSobrePagar: number | null;
 };
 
+/** Gap de desembolso por rúbrica (mês atual × período comparável). */
+export type GapRubricaCusto = {
+  rubrica: string;
+  atual: number;
+  anterior: number;
+  delta: number;
+  deltaPct: number | null;
+  qtdAtual: number;
+  qtdAnterior: number;
+};
+
+/** KPIs para analista de redução de custo. */
+export type KpisReducaoCusto = {
+  gastoTotal: number;
+  gastoAnterior: number | null;
+  deltaGasto: number | null;
+  deltaGastoPct: number | null;
+  aPagarEmAberto: number;
+  titulosPagar: number;
+  valorSemRubrica: number;
+  pctSemRubrica: number;
+  concentracaoTop3Pct: number;
+  maiorAumento: GapRubricaCusto | null;
+  maiorQueda: GapRubricaCusto | null;
+};
+
+export type ComparativoCustoMes = {
+  periodoAnterior: { inicio: string; fim: string };
+  gastoAnterior: number;
+  rubricasAnterior: DimensaoFinanceiraAgg[];
+  gaps: GapRubricaCusto[];
+  /** Gaps ordenados por |delta| desc — foco operacional. */
+  gapsPorImpacto: GapRubricaCusto[];
+};
+
 export type SemanaFluxo = {
   inicioSemana: string;
   entradasPrevistas: number;
@@ -546,6 +581,108 @@ export function agregarPorRubrica(pagar: ParcelaFinanceiraNorm[]): DimensaoFinan
       pctDoDesembolso: totalGeral > 0 ? round2((s.total / totalGeral) * 100) : 0,
     }))
     .sort((a, b) => b.total - a.total);
+}
+
+/** Desloca o intervalo exatamente 1 mês (mesmo dia → dia), para MoM alinhado. */
+export function periodoComparavelAnterior(
+  inicio: Date,
+  fim: Date,
+): { inicio: Date; fim: Date } {
+  const i = new Date(inicio);
+  const f = new Date(fim);
+  i.setMonth(i.getMonth() - 1);
+  f.setMonth(f.getMonth() - 1);
+  i.setHours(0, 0, 0, 0);
+  f.setHours(23, 59, 59, 999);
+  return { inicio: i, fim: f };
+}
+
+export function compararRubricasCusto(
+  atual: DimensaoFinanceiraAgg[],
+  anterior: DimensaoFinanceiraAgg[],
+): GapRubricaCusto[] {
+  const mapAnt = new Map(anterior.map(r => [r.chave, r]));
+  const chaves = new Set([
+    ...atual.map(r => r.chave),
+    ...anterior.map(r => r.chave),
+  ]);
+  const gaps: GapRubricaCusto[] = [];
+  for (const chave of Array.from(chaves)) {
+    const a = atual.find(r => r.chave === chave);
+    const b = mapAnt.get(chave);
+    const atualV = a?.total ?? 0;
+    const anteriorV = b?.total ?? 0;
+    const delta = round2(atualV - anteriorV);
+    gaps.push({
+      rubrica: a?.label ?? b?.label ?? chave,
+      atual: atualV,
+      anterior: anteriorV,
+      delta,
+      deltaPct:
+        anteriorV > 0
+          ? round2((delta / anteriorV) * 100)
+          : atualV > 0
+            ? 100
+            : null,
+      qtdAtual: a?.qtd ?? 0,
+      qtdAnterior: b?.qtd ?? 0,
+    });
+  }
+  return gaps.sort((x, y) => y.delta - x.delta);
+}
+
+export function montarComparativoCustoMes(
+  atual: DimensaoFinanceiraAgg[],
+  anterior: DimensaoFinanceiraAgg[],
+  periodoAnterior: { inicio: string; fim: string },
+): ComparativoCustoMes {
+  const gaps = compararRubricasCusto(atual, anterior);
+  const gastoAnterior = round2(anterior.reduce((s, r) => s + r.total, 0));
+  return {
+    periodoAnterior,
+    gastoAnterior,
+    rubricasAnterior: anterior,
+    gaps,
+    gapsPorImpacto: [...gaps].sort(
+      (a, b) => Math.abs(b.delta) - Math.abs(a.delta),
+    ),
+  };
+}
+
+export function montarKpisReducaoCusto(input: {
+  rubricas: DimensaoFinanceiraAgg[];
+  qualidade: QualidadeAlocacao;
+  aPagarEmAberto: number;
+  titulosPagar: number;
+  comparativo: ComparativoCustoMes | null;
+}): KpisReducaoCusto {
+  const gastoTotal = round2(input.rubricas.reduce((s, r) => s + r.total, 0));
+  const top3 = input.rubricas.slice(0, 3).reduce((s, r) => s + r.total, 0);
+  const gaps = input.comparativo?.gaps ?? [];
+  const aumentos = gaps.filter(g => g.delta > 0);
+  const quedas = gaps.filter(g => g.delta < 0);
+  const gastoAnterior = input.comparativo?.gastoAnterior ?? null;
+  const deltaGasto =
+    gastoAnterior == null ? null : round2(gastoTotal - gastoAnterior);
+  return {
+    gastoTotal,
+    gastoAnterior,
+    deltaGasto,
+    deltaGastoPct:
+      gastoAnterior != null && gastoAnterior > 0 && deltaGasto != null
+        ? round2((deltaGasto / gastoAnterior) * 100)
+        : gastoAnterior === 0 && gastoTotal > 0
+          ? 100
+          : null,
+    aPagarEmAberto: round2(input.aPagarEmAberto),
+    titulosPagar: input.titulosPagar,
+    valorSemRubrica: input.qualidade.valorSemRubrica,
+    pctSemRubrica: input.qualidade.pctValorSemRubrica,
+    concentracaoTop3Pct:
+      gastoTotal > 0 ? round2((top3 / gastoTotal) * 100) : 0,
+    maiorAumento: aumentos[0] ?? null,
+    maiorQueda: quedas.length ? quedas[quedas.length - 1]! : null,
+  };
 }
 
 export function agregarPorCentroCusto(
