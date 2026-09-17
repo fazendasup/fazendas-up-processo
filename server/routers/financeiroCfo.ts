@@ -178,6 +178,31 @@ export const financeiroCfoRouter = router({
       upsertProjecaoCelula(projetoIdFromCtx(ctx), input),
     ),
 
+  /** Marca várias células de uma vez (ex.: 3 meses à frente). */
+  salvarCelulasProjecaoLote: custosProducaoModuleProcedure
+    .input(
+      z.object({
+        celulas: z
+          .array(
+            z.object({
+              linhaId: z.string().min(1).max(191),
+              mesYm: z.string().regex(/^\d{4}-\d{2}$/),
+              valorOverride: z.number().finite().nullable().optional(),
+              ativo: z.boolean().nullable().optional(),
+            }),
+          )
+          .min(1)
+          .max(300),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const projetoId = projetoIdFromCtx(ctx);
+      await Promise.all(
+        input.celulas.map(c => upsertProjecaoCelula(projetoId, c)),
+      );
+      return { ok: true as const, qtd: input.celulas.length };
+    }),
+
   adicionarColunaProjecao: custosProducaoModuleProcedure
     .input(z.object({ mesYm: z.string().regex(/^\d{4}-\d{2}$/) }))
     .mutation(async ({ ctx, input }) =>

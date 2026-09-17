@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Filter, Lock, Plus, Trash2, X } from "lucide-react";
+import { CheckCheck, Filter, Lock, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -86,6 +86,18 @@ function aplicarPatchCelula(
   return { ...data, linhas, totaisPorMes, totalGeral };
 }
 
+function aplicarPatchesCelulas(
+  data: ProjecaoData,
+  patches: Array<{
+    linhaId: string;
+    mesYm: string;
+    ativo?: boolean;
+    valorOverride?: number | null;
+  }>,
+): ProjecaoData {
+  return patches.reduce((acc, p) => aplicarPatchCelula(acc, p), data);
+}
+
 const RUBRICA_SEM = "__sem_rubrica__";
 const RUBRICA_TODAS = "__todas__";
 const TIPO_TODOS = "__todos__";
@@ -154,6 +166,8 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
     Record<string, FiltroMesCelula>
   >({});
 
+  const [loteLinhaId, setLoteLinhaId] = useState<string | null>(null);
+
   const proj = trpc.financeiroCfo.projecaoDesembolso.useQuery(
     { mesInicioYm },
     { staleTime: 5 * 60_000, retry: 1, refetchOnWindowFocus: false },
@@ -168,6 +182,20 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
     utils.financeiroCfo.projecaoDesembolso.setData({ mesInicioYm }, prev => {
       if (!prev) return prev;
       return aplicarPatchCelula(prev as ProjecaoData, patch);
+    });
+  };
+
+  const patchCacheLote = (
+    patches: Array<{
+      linhaId: string;
+      mesYm: string;
+      ativo?: boolean;
+      valorOverride?: number | null;
+    }>,
+  ) => {
+    utils.financeiroCfo.projecaoDesembolso.setData({ mesInicioYm }, prev => {
+      if (!prev) return prev;
+      return aplicarPatchesCelulas(prev as ProjecaoData, patches);
     });
   };
 
@@ -194,6 +222,34 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
       }
       toast.error(e.message);
     },
+  });
+
+  const salvarLote = trpc.financeiroCfo.salvarCelulasProjecaoLote.useMutation({
+    onMutate: async input => {
+      await utils.financeiroCfo.projecaoDesembolso.cancel({ mesInicioYm });
+      const previous = utils.financeiroCfo.projecaoDesembolso.getData({
+        mesInicioYm,
+      });
+      patchCacheLote(
+        input.celulas.map(c => ({
+          linhaId: c.linhaId,
+          mesYm: c.mesYm,
+          ativo: c.ativo ?? undefined,
+          valorOverride: c.valorOverride,
+        })),
+      );
+      return { previous };
+    },
+    onError: (e, _input, ctx) => {
+      if (ctx?.previous) {
+        utils.financeiroCfo.projecaoDesembolso.setData(
+          { mesInicioYm },
+          ctx.previous,
+        );
+      }
+      toast.error(e.message);
+    },
+    onSettled: () => setLoteLinhaId(null),
   });
   const addCol = trpc.financeiroCfo.adicionarColunaProjecao.useMutation({
     onSuccess: async () => {
@@ -229,9 +285,94 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
   const data = proj.data as ProjecaoData | undefined;
   const cellKey = (linhaId: string, mesYm: string) => `${linhaId}||${mesYm}`;
   const celulaPendente = (linhaId: string, mesYm: string) =>
-    salvarCelula.isPending &&
-    salvarCelula.variables?.linhaId === linhaId &&
-    salvarCelula.variables?.mesYm === mesYm;
+    (salvarCelula.isPending &&
+      salvarCelula.variables?.linhaId === linhaId &&
+      salvarCelula.variables?.mesYm === mesYm) ||
+    (salvarLote.isPending && loteLinhaId === linhaId);
+
+  const celulasEditaveis3Meses = (lin: LinhaProjecao) => {
+    if (!data) return [];
+    return lin.celulas.filter(c => {
+      if (!c.editavel) return false;
+      const col = data.colunas.find(x => x.mesYm === c.mesYm);
+      return !!col?.contaNoTotal;
+    });
+  };
+
+  const marcar3MesesLinha = (lin: LinhaProjecao, forcarAtivar?: boolean) => {
+    const alvos = celulasEditaveis3Meses(lin);
+    if (alvos.length === 0) {
+      toast.message("Nenhum mês editável nesta linha");
+      return;
+    }
+    const todosAtivos = alvos.every(c => c.ativo);
+    const ativar = forcarAtivar ?? !todosAtivos;
+    const celulas = alvos.map(cel => {
+      const valor = ativar
+        ? sugerirValorAoAtivarProjecao(cel, lin.celulas)
+        : cel.valorEfetivo;
+      return {
+        linhaId: lin.id,
+        mesYm: cel.mesYm,
+        ativo: ativar,
+        valorOverride: valor,
+      };
+    });
+    setDraftValor(prev => {
+      const next = { ...prev };
+      for (const c of celulas) {
+        if (ativar && c.valorOverride != null && c.valorOverride > 0) {
+          next[cellKey(c.linhaId, c.mesYm)] = String(c.valorOverride);
+        }
+      }
+      return next;
+    });
+    setLoteLinhaId(lin.id);
+    salvarLote.mutate({ celulas });
+  };
+
+  const marcar3MesesFiltradas = (ativar: boolean) => {
+    if (!data) return;
+    const celulas: Array<{
+      linhaId: string;
+      mesYm: string;
+      ativo: boolean;
+      valorOverride: number;
+    }> = [];
+    for (const lin of linhasFiltradas) {
+      for (const cel of celulasEditaveis3Meses(lin)) {
+        if (ativar === cel.ativo) continue;
+        const valor = ativar
+          ? sugerirValorAoAtivarProjecao(cel, lin.celulas)
+          : cel.valorEfetivo;
+        celulas.push({
+          linhaId: lin.id,
+          mesYm: cel.mesYm,
+          ativo: ativar,
+          valorOverride: valor,
+        });
+      }
+    }
+    if (celulas.length === 0) {
+      toast.message(
+        ativar
+          ? "Todas as linhas filtradas já estão marcadas"
+          : "Nada para desmarcar nas linhas filtradas",
+      );
+      return;
+    }
+    setDraftValor(prev => {
+      const next = { ...prev };
+      for (const c of celulas) {
+        if (ativar && c.valorOverride > 0) {
+          next[cellKey(c.linhaId, c.mesYm)] = String(c.valorOverride);
+        }
+      }
+      return next;
+    });
+    setLoteLinhaId("__lote__");
+    salvarLote.mutate({ celulas });
+  };
 
   const rubricasDisponiveis = useMemo(() => {
     const set = new Set<string>();
@@ -495,6 +636,28 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
             <div className="self-center pb-2 text-xs text-muted-foreground">
               {linhasFiltradas.length} de {data.linhas.length} linha(s)
             </div>
+            <div className="flex flex-wrap gap-1 pb-0.5">
+              <Button
+                size="sm"
+                variant="secondary"
+                className="h-9 gap-1"
+                disabled={salvarLote.isPending || linhasFiltradas.length === 0}
+                onClick={() => marcar3MesesFiltradas(true)}
+                title="Marca os 3 meses à frente em todas as linhas filtradas"
+              >
+                <CheckCheck className="h-3.5 w-3.5" />
+                Marcar 3 meses (filtradas)
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-9 gap-1 text-muted-foreground"
+                disabled={salvarLote.isPending || linhasFiltradas.length === 0}
+                onClick={() => marcar3MesesFiltradas(false)}
+              >
+                Desmarcar 3 meses
+              </Button>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -586,6 +749,9 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                 <tr className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
                   <th className="w-[26%] px-3 py-2">Desembolso</th>
                   <th className="w-[8%] px-2 py-2">Tipo</th>
+                  <th className="w-[7%] px-1 py-2 text-center normal-case">
+                    3 meses
+                  </th>
                   {colunasVisiveis.map(c => (
                     <th key={c.mesYm} className="px-2 py-2 text-right">
                       <div className="flex flex-col items-end gap-1">
@@ -646,6 +812,46 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                     </td>
                     <td className="px-2 py-2 text-xs text-muted-foreground">
                       {naturezaLabel(lin.natureza)}
+                    </td>
+                    <td className="px-1 py-2 text-center">
+                      {(() => {
+                        const alvos = celulasEditaveis3Meses(lin);
+                        if (alvos.length === 0) {
+                          return (
+                            <span className="text-[10px] text-muted-foreground">
+                              —
+                            </span>
+                          );
+                        }
+                        const todosAtivos = alvos.every(c => c.ativo);
+                        const algunsAtivos =
+                          !todosAtivos && alvos.some(c => c.ativo);
+                        return (
+                          <Button
+                            size="sm"
+                            variant={todosAtivos ? "secondary" : "outline"}
+                            className="h-8 px-2 text-[11px]"
+                            disabled={
+                              salvarLote.isPending &&
+                              (loteLinhaId === lin.id ||
+                                loteLinhaId === "__lote__")
+                            }
+                            title={
+                              todosAtivos
+                                ? "Desmarcar os 3 meses à frente"
+                                : "Marcar os 3 meses à frente de uma vez"
+                            }
+                            onClick={() => marcar3MesesLinha(lin)}
+                          >
+                            <CheckCheck className="mr-1 h-3.5 w-3.5" />
+                            {todosAtivos
+                              ? "OK"
+                              : algunsAtivos
+                                ? "Completar"
+                                : "Marcar"}
+                          </Button>
+                        );
+                      })()}
                     </td>
                     {colunasVisiveis.map(col => {
                       const cel = lin.celulas.find(c => c.mesYm === col.mesYm);
@@ -770,7 +976,7 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
               </tbody>
               <tfoot>
                 <tr className="bg-muted/30 font-semibold">
-                  <td className="px-2 py-2" colSpan={2}>
+                  <td className="px-2 py-2" colSpan={3}>
                     Total (3 meses à frente)
                     {filtroAtivo ? " · filtro" : ""}
                   </td>
