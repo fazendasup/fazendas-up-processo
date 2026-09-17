@@ -28,6 +28,8 @@ import {
 } from "@shared/financeiroProjecaoVendas";
 import {
   diaIsoAmericaSp,
+  fimDiaAmericaSp,
+  inicioDiaAmericaSp,
   mesIsoAmericaSp,
 } from "@shared/comercial/periodo-america-sp";
 import type { ParcelaFinanceiraNorm } from "@shared/financeiroCfoInsights";
@@ -41,6 +43,18 @@ function boundsMesYm(ym: string): { inicio: Date; fim: Date } {
   const inicio = new Date(y, m - 1, 1, 0, 0, 0, 0);
   const fim = new Date(y, m, 0, 23, 59, 59, 999);
   return { inicio, fim };
+}
+
+/** Limites do mês no calendário America/Sao_Paulo (alinhado ao Conta Azul). */
+function boundsMesYmAmericaSp(ym: string): { inicio: Date; fim: Date } {
+  const [y, m] = ym.split("-").map(Number);
+  const ultimoDia = new Date(y, m, 0).getDate();
+  return {
+    inicio: inicioDiaAmericaSp(`${ym}-01`),
+    fim: fimDiaAmericaSp(
+      `${ym}-${String(ultimoDia).padStart(2, "0")}`,
+    ),
+  };
 }
 
 function toBase(p: ParcelaFinanceiraNorm): ParcelaBaseProjecao {
@@ -190,8 +204,8 @@ async function carregarTotaisVendasCompetencia(
   const mes1 = mesAnteriorProjecao(mesYm);
   const mes2 = mesAnteriorProjecao(mes1);
   const mes3 = mesAnteriorProjecao(mes2);
-  const { inicio } = boundsMesYm(mes3);
-  const { fim } = boundsMesYm(mesYm);
+  const { inicio } = boundsMesYmAmericaSp(mes3);
+  const { fim } = boundsMesYmAmericaSp(mesYm);
 
   const prisma = getComercialPrisma();
   const pedidos = await prisma.pedido.findMany({
@@ -279,7 +293,7 @@ export async function carregarComparativoProjecao(
     throw new Error("Mês inválido (AAAA-MM).");
   }
 
-  const { inicio: iniMes, fim: fimMes } = boundsMesYm(mesYm);
+  const { inicio: iniMes, fim: fimMes } = boundsMesYmAmericaSp(mesYm);
 
   const hojeIso = diaIsoAmericaSp();
   const hojeYm = mesIsoAmericaSp();
@@ -315,9 +329,10 @@ export async function carregarComparativoProjecao(
   return {
     ...comparativo,
     avisos: [
-      "Desembolso: comparativo por rúbrica (projeção × pago Conta Azul).",
-      "Caixa = Conta Azul por vencimento. Volume = pedidos por data (não é o mesmo que a receber).",
-      "Orçamentos só até o dia 15. Ainda entra = média dos últimos N dias dos 2 meses anteriores.",
+      "Caixa (já recebido / a receber / vencido) = Conta Azul ao vivo por vencimento e pagamento.",
+      "Já faturado = pedidos sincronizados da Conta Azul (status venda). Se divergir, rode sync comercial.",
+      "Orçamentos ≤ dia 15 (regra interna) — não batem com o total de orçamentos do Conta Azul.",
+      "Desembolso: exclusões locais de rúbrica continuam valendo só no lado pagar.",
     ],
   };
 }

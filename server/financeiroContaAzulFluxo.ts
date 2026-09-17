@@ -154,9 +154,13 @@ async function fetchParcelasPaginated(
   const vencAte = isoDateLocal(fim);
   const pagDe = vencDe;
   const pagAte = vencAte;
-  // Janela ampla só para achar baixas no mês com vencimento fora do mês.
+  // Janela ampla de vencimento p/ achar baixas no mês com vencimento fora do mês
+  // (atrasados de antes e antecipações com vencimento futuro).
   const vencAmploDe = isoDateLocal(
     new Date(inicio.getFullYear() - 2, inicio.getMonth(), inicio.getDate()),
+  );
+  const vencAmploAte = isoDateLocal(
+    new Date(fim.getFullYear() + 2, fim.getMonth(), fim.getDate()),
   );
 
   const tamanho = 200;
@@ -203,7 +207,7 @@ async function fetchParcelasPaginated(
       pagina: String(pagina),
       tamanho_pagina: String(tamanho),
       data_vencimento_de: vencAmploDe,
-      data_vencimento_ate: vencAte,
+      data_vencimento_ate: vencAmploAte,
       data_pagamento_de: pagDe,
       data_pagamento_ate: pagAte,
     });
@@ -738,7 +742,8 @@ export async function buscarParcelasReceberParaComparativo(
       nota: c.nota,
     })),
   );
-  return parcelasAtivasParaRelatorio(receber);
+  // Não remove “excluído” local: o comparativo de caixa deve bater com o Conta Azul.
+  return receber.map(p => (p.excluido ? { ...p, excluido: false } : p));
 }
 
 /**
