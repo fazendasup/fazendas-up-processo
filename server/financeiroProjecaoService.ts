@@ -1,6 +1,7 @@
 import {
   buscarParcelasPagarParaProjecao,
   buscarParcelasReceberParaComparativo,
+  buscarParcelasReceberPorVencimento,
 } from "./financeiroContaAzulFluxo";
 import {
   addProjecaoColuna,
@@ -13,11 +14,15 @@ import {
   upsertProjecaoCelula,
 } from "./financeiroProjecaoDb";
 import {
+  addMonthsYm,
   mesAnteriorProjecao,
   montarProjecaoDesembolso,
   type ParcelaBaseProjecao,
 } from "@shared/financeiroProjecaoDesembolso";
-import { montarFinanceiroComparativo } from "@shared/financeiroComparativoProjecao";
+import {
+  montarFinanceiroComparativo,
+  somarRecebidoNoMes,
+} from "@shared/financeiroComparativoProjecao";
 import type { ParcelaFinanceiraNorm } from "@shared/financeiroCfoInsights";
 
 function boundsMesYm(ym: string): { inicio: Date; fim: Date } {
@@ -157,7 +162,7 @@ export async function carregarProjecaoDesembolso(
 
 /**
  * Compara a projeção marcada no mês com o desembolsado Conta Azul,
- * e a receita (previsto / recebido / a receber) direto do Conta Azul.
+ * e a receita (previsto / recebido / a receber + vencido) do Conta Azul.
  */
 export async function carregarComparativoProjecao(
   projetoId: number,
@@ -169,22 +174,46 @@ export async function carregarComparativoProjecao(
   }
 
   const { inicio: iniMes, fim: fimMes } = boundsMesYm(mesYm);
+  const mes1 = mesAnteriorProjecao(mesYm);
+  const mes2 = mesAnteriorProjecao(mes1);
+  const { inicio: iniM1, fim: fimM1 } = boundsMesYm(mes1);
+  const { inicio: iniM2, fim: fimM2 } = boundsMesYm(mes2);
+  // Vencidos: títulos com vencimento nos 24 meses anteriores ao mês atual.
+  const { inicio: iniVencidos } = boundsMesYm(addMonthsYm(mesYm, -24));
+  const fimVencidos = new Date(iniMes);
+  fimVencidos.setDate(fimVencidos.getDate() - 1);
+  fimVencidos.setHours(23, 59, 59, 999);
 
-  const [grade, pagarMes, receberMes] = await Promise.all([
-    carregarProjecaoDesembolso(projetoId, mesYm, {
-      forceRefreshCa: opts?.forceRefreshCa,
-    }),
-    carregarParcelasBaseMes(projetoId, mesYm, opts?.forceRefreshCa === true),
-    buscarParcelasReceberParaComparativo(iniMes, fimMes, projetoId).then(r =>
-      r.map(toBase),
-    ),
-  ]);
+  const [grade, pagarMes, receberMes, receberVencidos, receberM1, receberM2] =
+    await Promise.all([
+      carregarProjecaoDesembolso(projetoId, mesYm, {
+        forceRefreshCa: opts?.forceRefreshCa,
+      }),
+      carregarParcelasBaseMes(projetoId, mesYm, opts?.forceRefreshCa === true),
+      buscarParcelasReceberParaComparativo(iniMes, fimMes, projetoId).then(r =>
+        r.map(toBase),
+      ),
+      buscarParcelasReceberPorVencimento(
+        iniVencidos,
+        fimVencidos,
+        projetoId,
+      ).then(r => r.map(toBase)),
+      buscarParcelasReceberParaComparativo(iniM1, fimM1, projetoId).then(r =>
+        r.map(toBase),
+      ),
+      buscarParcelasReceberParaComparativo(iniM2, fimM2, projetoId).then(r =>
+        r.map(toBase),
+      ),
+    ]);
 
   const comparativo = montarFinanceiroComparativo({
     mesYm,
     linhasProjecao: grade.linhas,
     parcelasPagarMes: pagarMes,
     parcelasReceberMes: receberMes,
+    parcelasReceberExtras: receberVencidos.filter(p => p.valorEmAberto > 0.009),
+    recebidoMesAnterior1: somarRecebidoNoMes(receberM1, mes1),
+    recebidoMesAnterior2: somarRecebidoNoMes(receberM2, mes2),
   });
 
   return {
@@ -192,8 +221,8 @@ export async function carregarComparativoProjecao(
     avisos: [
       "Desembolso: comparativo por rúbrica (projeção × pago Conta Azul).",
       "Descontos obtidos e transferências entre contas não entram (não são despesa).",
-      "Pago em atraso = recorrente essencial pago no mês sem projeção (ex. competência do mês anterior).",
-      "Receita: somente totais Conta Azul.",
+      "Receita: a receber = em aberto no mês + vencido (meses anteriores).",
+      "Projeção média 2m = média do recebido nos dois meses anteriores.",
     ],
   };
 }

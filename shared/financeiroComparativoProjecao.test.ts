@@ -209,7 +209,7 @@ describe("montarComparativoDesembolsoMes", () => {
 });
 
 describe("montarComparativoReceitaMes", () => {
-  it("só totais Conta Azul", () => {
+  it("inclui vencido em aberto e média de 2 meses", () => {
     const out = montarComparativoReceitaMes({
       mesYm: "2026-09",
       parcelasReceberMes: [
@@ -218,13 +218,46 @@ describe("montarComparativoReceitaMes", () => {
           descricao: "Cliente A",
           valor: 6_000,
           valorPago: 6_000,
+          valorEmAberto: 0,
           dataPagamento: "2026-09-05",
           dataVencimento: "2026-09-05",
         }),
+        parcela({
+          id: "r-aberto",
+          descricao: "Cliente B",
+          valor: 5_000,
+          valorPago: 0,
+          valorEmAberto: 5_000,
+          status: "EM_ABERTO",
+          dataPagamento: null,
+          dataVencimento: "2026-09-25",
+        }),
       ],
+      parcelasReceberExtras: [
+        parcela({
+          id: "r-vencido",
+          descricao: "Cliente C atrasado",
+          valor: 2_000,
+          valorPago: 0,
+          valorEmAberto: 2_000,
+          status: "EM_ABERTO",
+          dataPagamento: null,
+          dataVencimento: "2026-08-10",
+        }),
+      ],
+      recebidoMesAnterior1: 10_000,
+      recebidoMesAnterior2: 8_000,
     });
+
+    expect(out.fonte).toBe("conta_azul");
+    expect(out.previsto).toBe(11_000);
     expect(out.recebido).toBe(6_000);
-    expect(out.previsto).toBe(6_000);
+    expect(out.aReceberNoMes).toBe(5_000);
+    expect(out.vencido).toBe(2_000);
+    expect(out.aReceber).toBe(7_000);
+    expect(out.pipelineMes).toBe(13_000);
+    expect(out.projecaoMedia2m).toBe(9_000);
+    expect(out.gapVsMedia2m).toBe(9_000 - 13_000);
   });
 });
 

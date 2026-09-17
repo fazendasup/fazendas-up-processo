@@ -740,3 +740,69 @@ export async function buscarParcelasReceberParaComparativo(
   );
   return parcelasAtivasParaRelatorio(receber);
 }
+
+/**
+ * Títulos a receber com vencimento em [inicio, fim] (só filtro de vencimento).
+ * Usado para trazer vencidos em aberto de meses anteriores.
+ */
+export async function buscarParcelasReceberPorVencimento(
+  inicio: Date,
+  fim: Date,
+  projetoId: number,
+): Promise<ParcelaFinanceiraNorm[]> {
+  const env = getComercialEnv();
+  const prisma = getComercialPrisma();
+  const cred = await ensureValidAccessToken(prisma, env);
+  if (!cred?.accessToken) {
+    throw new Error(
+      "Conta Azul não conectado. Configure em Comercial → Configurações.",
+    );
+  }
+  const http = createContaAzulHttp(env, cred.accessToken);
+  const vencDe = isoDateLocal(inicio);
+  const vencAte = isoDateLocal(fim);
+  const tamanho = 200;
+  const maxPaginas = 40;
+  const porId = new Map<string, ParcelaCaRaw>();
+
+  for (let pagina = 1; pagina <= maxPaginas; pagina++) {
+    const qs = new URLSearchParams({
+      pagina: String(pagina),
+      tamanho_pagina: String(tamanho),
+      data_vencimento_de: vencDe,
+      data_vencimento_ate: vencAte,
+    });
+    try {
+      const res = await fetchParcelasPagina(
+        http,
+        "/v1/financeiro/eventos-financeiros/contas-a-receber/buscar",
+        qs,
+      );
+      const batch = res.itens ?? [];
+      for (const item of batch) {
+        if (item.id) porId.set(item.id, item);
+      }
+      if (batch.length < tamanho) break;
+    } catch {
+      break;
+    }
+  }
+
+  const classifs = await listFinanceiroCaClassificacoes(projetoId);
+  const catalogo = new Map<string, CategoriaCa>();
+  let receber = Array.from(porId.values())
+    .map(i => mapParcelaListagem(i, "receber", catalogo))
+    .filter((x): x is ParcelaFinanceiraNorm => !!x);
+  receber = aplicarEdicoesClassificacao(
+    receber,
+    classifs.map(c => ({
+      tipo: c.tipo,
+      chave: c.chave,
+      rubricaOverride: c.rubricaOverride,
+      centroCustoOverride: c.centroCustoOverride,
+      excluido: c.excluido,
+      nota: c.nota,
+    })),
+  );
+  return parcelasAtivasParaRelatorio(receber);
+}

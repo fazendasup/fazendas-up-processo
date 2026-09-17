@@ -6,6 +6,7 @@ import {
   ehNaoDesembolsoCusto,
   ehRubricaTipicaDeAtrasoMensal,
   labelMesYm,
+  mesAnteriorProjecao,
   mesPagamentoParcela,
   valorPagoParcela,
   type LinhaProjecao,
@@ -83,12 +84,26 @@ export type ComparativoReceitaMes = {
   fonte: "conta_azul";
   previsto: number;
   recebido: number;
+  /** Em aberto com vencimento no mês. */
+  aReceberNoMes: number;
+  /** Em aberto com vencimento anterior ao mês (atraso de clientes). */
+  vencido: number;
+  /** aReceberNoMes + vencido. */
   aReceber: number;
   pipelineMes: number;
   gapRecebimento: number;
   gapRecebimentoPct: number | null;
   gapFinal: number;
   pctRecebidoDoPrevisto: number | null;
+  /**
+   * Projeção de entrada (média do recebido dos 2 meses anteriores).
+   * Útil para comparar com o que ainda está a receber + vencido.
+   */
+  projecaoMedia2m: number;
+  /** Meses usados na média (ym). */
+  mesesMedia2m: [string, string];
+  /** projecaoMedia2m − (recebido + aReceber) — positivo = abaixo da média. */
+  gapVsMedia2m: number;
 };
 
 export type FinanceiroComparativoPayload = {
@@ -278,25 +293,46 @@ export function montarComparativoDesembolsoMes(input: {
 export function montarComparativoReceitaMes(input: {
   mesYm: string;
   parcelasReceberMes: ParcelaBaseProjecao[];
+  /** Parcelas extras (ex.: vencidos de meses anteriores). */
+  parcelasReceberExtras?: ParcelaBaseProjecao[];
+  /** Recebido no mês −1 (p/ média). */
+  recebidoMesAnterior1?: number;
+  /** Recebido no mês −2 (p/ média). */
+  recebidoMesAnterior2?: number;
 }): ComparativoReceitaMes {
-  const { mesYm, parcelasReceberMes } = input;
+  const { mesYm } = input;
+  const mes1 = mesAnteriorProjecao(mesYm);
+  const mes2 = mesAnteriorProjecao(mes1);
+
+  const porId = new Map<string, ParcelaBaseProjecao>();
+  for (const p of [
+    ...input.parcelasReceberMes,
+    ...(input.parcelasReceberExtras ?? []),
+  ]) {
+    porId.set(p.id, p);
+  }
 
   let previsto = 0;
   let recebido = 0;
-  let aReceber = 0;
+  let aReceberNoMes = 0;
+  let vencido = 0;
 
-  for (const p of parcelasReceberMes) {
-    const vencMes = mesVencimentoParcela(p) === mesYm;
+  for (const p of Array.from(porId.values())) {
+    const vencYm = mesVencimentoParcela(p);
+    const vencMes = vencYm === mesYm;
     const pagMes = mesPagamentoParcela(p) === mesYm;
-    if (!vencMes && !pagMes) continue;
+    const aberto = p.valorEmAberto > 0.009;
 
     if (vencMes) {
       const valorTitulo = round2(
         p.valor > 0 ? p.valor : p.valorPago + p.valorEmAberto,
       );
       if (valorTitulo > 0) previsto += valorTitulo;
-      if (p.valorEmAberto > 0.009) aReceber += p.valorEmAberto;
+      if (aberto) aReceberNoMes += p.valorEmAberto;
+    } else if (aberto && vencYm && vencYm < mesYm) {
+      vencido += p.valorEmAberto;
     }
+
     if (pagMes) {
       const pago = valorPagoParcela(p);
       if (pago > 0) recebido += pago;
@@ -305,10 +341,19 @@ export function montarComparativoReceitaMes(input: {
 
   previsto = round2(previsto);
   recebido = round2(recebido);
-  aReceber = round2(aReceber);
+  aReceberNoMes = round2(aReceberNoMes);
+  vencido = round2(vencido);
+  const aReceber = round2(aReceberNoMes + vencido);
   const pipelineMes = round2(recebido + aReceber);
   const gapRecebimento = round2(previsto - recebido);
   const gapFinal = round2(previsto - pipelineMes);
+
+  const r1 = round2(input.recebidoMesAnterior1 ?? 0);
+  const r2 = round2(input.recebidoMesAnterior2 ?? 0);
+  const nMedia = (r1 > 0 ? 1 : 0) + (r2 > 0 ? 1 : 0);
+  const projecaoMedia2m =
+    nMedia > 0 ? round2((r1 + r2) / nMedia) : 0;
+  const gapVsMedia2m = round2(projecaoMedia2m - pipelineMes);
 
   return {
     mesYm,
@@ -316,6 +361,8 @@ export function montarComparativoReceitaMes(input: {
     fonte: "conta_azul",
     previsto,
     recebido,
+    aReceberNoMes,
+    vencido,
     aReceber,
     pipelineMes,
     gapRecebimento,
@@ -323,7 +370,23 @@ export function montarComparativoReceitaMes(input: {
     gapFinal,
     pctRecebidoDoPrevisto:
       previsto > 0 ? round2((recebido / previsto) * 100) : null,
+    projecaoMedia2m,
+    mesesMedia2m: [mes2, mes1],
+    gapVsMedia2m,
   };
+}
+
+/** Soma do recebido (baixa) em um mês a partir das parcelas. */
+export function somarRecebidoNoMes(
+  parcelas: ParcelaBaseProjecao[],
+  mesYm: string,
+): number {
+  let s = 0;
+  for (const p of parcelas) {
+    if (mesPagamentoParcela(p) !== mesYm) continue;
+    s += valorPagoParcela(p);
+  }
+  return round2(s);
 }
 
 export function montarFinanceiroComparativo(input: {
@@ -331,6 +394,9 @@ export function montarFinanceiroComparativo(input: {
   linhasProjecao: LinhaProjecao[];
   parcelasPagarMes: ParcelaBaseProjecao[];
   parcelasReceberMes: ParcelaBaseProjecao[];
+  parcelasReceberExtras?: ParcelaBaseProjecao[];
+  recebidoMesAnterior1?: number;
+  recebidoMesAnterior2?: number;
 }): FinanceiroComparativoPayload {
   const desembolso = montarComparativoDesembolsoMes({
     mesYm: input.mesYm,
@@ -340,6 +406,9 @@ export function montarFinanceiroComparativo(input: {
   const receita = montarComparativoReceitaMes({
     mesYm: input.mesYm,
     parcelasReceberMes: input.parcelasReceberMes,
+    parcelasReceberExtras: input.parcelasReceberExtras,
+    recebidoMesAnterior1: input.recebidoMesAnterior1,
+    recebidoMesAnterior2: input.recebidoMesAnterior2,
   });
   return {
     mesYm: input.mesYm,

@@ -455,7 +455,7 @@ export default function FinanceiroComparativoPage() {
                 <TrendingUp className="h-4 w-4" />
                 Receita Conta Azul (totais)
               </h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 <Kpi
                   title="Previsto"
                   value={fmtMoney(r?.previsto)}
@@ -472,14 +472,36 @@ export default function FinanceiroComparativoPage() {
                   tone="down"
                 />
                 <Kpi
-                  title="A receber"
-                  value={fmtMoney(r?.aReceber)}
-                  hint="Em aberto no mês"
+                  title="A receber (mês)"
+                  value={fmtMoney(r?.aReceberNoMes)}
+                  hint="Em aberto c/ vencimento no mês"
                 />
+                <Kpi
+                  title="Vencido"
+                  value={fmtMoney(r?.vencido)}
+                  hint="Em aberto com vencimento anterior"
+                  tone={(r?.vencido ?? 0) > 0 ? "up" : "neutral"}
+                />
+                <Kpi
+                  title="A receber (total)"
+                  value={fmtMoney(r?.aReceber)}
+                  hint="Mês + vencido"
+                />
+                <Kpi
+                  title="Projeção média 2m"
+                  value={fmtMoney(r?.projecaoMedia2m)}
+                  hint={
+                    r
+                      ? `Média do recebido em ${labelMes(r.mesesMedia2m[0])} e ${labelMes(r.mesesMedia2m[1])}`
+                      : "Média do recebido"
+                  }
+                />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Kpi
                   title="Gap final"
                   value={fmtMoney(r?.gapFinal)}
-                  hint="Previsto − (recebido + a receber)"
+                  hint="Previsto − (recebido + a receber total)"
                   tone={
                     (r?.gapFinal ?? 0) > 0
                       ? "up"
@@ -488,8 +510,18 @@ export default function FinanceiroComparativoPage() {
                         : "neutral"
                   }
                 />
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
+                <Kpi
+                  title="Gap vs média 2m"
+                  value={fmtMoney(r?.gapVsMedia2m)}
+                  hint="Média 2m − (recebido + a receber total)"
+                  tone={
+                    (r?.gapVsMedia2m ?? 0) > 0
+                      ? "up"
+                      : (r?.gapVsMedia2m ?? 0) < 0
+                        ? "down"
+                        : "neutral"
+                  }
+                />
                 <Kpi
                   title="Saldo caixa realizado"
                   value={fmtMoney(caixa?.saldoRealizado)}
@@ -499,7 +531,7 @@ export default function FinanceiroComparativoPage() {
                 <Kpi
                   title="Gap caixa"
                   value={fmtMoney(caixa?.gapCaixaMes)}
-                  hint="(Recebido + a receber) − desembolso projetado"
+                  hint="(Recebido + a receber total) − desembolso projetado"
                 />
               </div>
             </section>
