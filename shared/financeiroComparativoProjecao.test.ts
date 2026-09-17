@@ -158,6 +158,24 @@ describe("montarComparativoDesembolsoMes", () => {
     expect(out.totais.pagoEmAtraso).toBe(0);
     expect(out.totais.pagoAMais).toBe(397.89 + 230);
   });
+
+  it("manutenção de equipamentos sem projeção é não programada", () => {
+    const out = montarComparativoDesembolsoMes({
+      mesYm: "2026-09",
+      linhasProjecao: [],
+      parcelasPagarMes: [
+        parcela({
+          id: "manut",
+          descricao: "COCIL",
+          rubrica: "Manutenção de Equipamentos",
+          valorPago: 786.9,
+          dataPagamento: "2026-09-10",
+        }),
+      ],
+    });
+    expect(out.rubricas[0]?.status).toBe("nao_programada");
+    expect(out.totais.pagoEmAtraso).toBe(0);
+  });
 });
 
 describe("montarComparativoReceitaMes", () => {

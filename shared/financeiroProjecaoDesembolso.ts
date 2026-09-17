@@ -174,8 +174,10 @@ export function ehRubricaTipicaDeAtrasoMensal(
   rubrica?: string | null,
 ): boolean {
   const d = textoNatureza(descricao, rubrica);
+  // Só competência mensal típica (folha, vale, utilidades, aluguel…).
+  // NÃO inclui manutenção de equipamentos, insumos, materiais etc.
   return (
-    /\b(aluguel|locacao|energia|eletrica|eletricidade|luz|agua|esgoto|gas|internet|banda[\s-]?larga|telefone|celular|telecom|condominio|iptu|seguro|folha(\s+de\s+pagamento)?|salarios?|remuneracao|holerite|pro[\s-]?labore|adiantamento\s+salarial|plano\s+(de\s+)?saude|vale[\s-]*(transporte|refeicao|alimentacao)|contabil(idade)?|software|assinatura|saas|hospedagem|dominio|limpeza|conservacao|seguranca|vigilancia|manutencao(\s+predial)?|contador|escritorio\s+contabil)\b/.test(
+    /\b(aluguel|locacao|energia|eletrica|eletricidade|luz|agua|esgoto|gas|internet|banda[\s-]?larga|telefone|celular|telecom|condominio|iptu|seguro|folha(\s+de\s+pagamento)?|salarios?|remuneracao|holerite|pro[\s-]?labore|adiantamento\s+salarial|plano\s+(de\s+)?saude|vale[\s-]*(transporte|refeicao|alimentacao)|contabil(idade)?|software|assinatura|saas|hospedagem|dominio|limpeza|conservacao|seguranca|vigilancia|manutencao\s+predial|contador|escritorio\s+contabil)\b/.test(
       d,
     ) ||
     /\bterceir(o|a|izados?)(\s+fixo)?\b/.test(d) ||
