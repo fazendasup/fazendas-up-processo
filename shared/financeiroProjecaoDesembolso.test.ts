@@ -33,6 +33,24 @@ describe("financeiroProjecaoDesembolso", () => {
     expect(ehDespesaEssencialRecorrente("ALUGUEL REF. TARUMA", "Aluguel")).toBe(
       true,
     );
+    expect(ehDespesaEssencialRecorrente("Pagamento salário", "Folha")).toBe(
+      true,
+    );
+    expect(
+      ehDespesaEssencialRecorrente("Serviço mensal", "Terceiro fixo"),
+    ).toBe(true);
+    expect(ehDespesaEssencialRecorrente("Abastecimento", "Combustível")).toBe(
+      true,
+    );
+    expect(
+      ehDespesaEssencialRecorrente("Compra semana", "Folhosas", "Horta Sul"),
+    ).toBe(true);
+    expect(
+      ehDespesaEssencialRecorrente("Pedido", "Legumes", "Fornecedor XYZ"),
+    ).toBe(true);
+    expect(
+      ehDespesaEssencialRecorrente("Mix flores", "Flores comestíveis"),
+    ).toBe(true);
     expect(ehDespesaEssencialRecorrente("Compra notebook", "Equipamentos")).toBe(
       false,
     );

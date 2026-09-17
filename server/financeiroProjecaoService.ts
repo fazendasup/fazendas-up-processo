@@ -136,7 +136,7 @@ export async function carregarProjecaoDesembolso(
     ...grade,
     avisos: [
       "Base = somente o que foi PAGO no mês anterior (sem previsão aberta do Conta Azul).",
-      "Essenciais (energia, aluguel, água, internet, folha…) já entram como projetado recorrente.",
+      "Essenciais (energia, aluguel, salário, terceiro fixo, combustível, legumes/folhosas/flores…) já entram como projetado recorrente.",
       "Demais itens: valor sugerido — marque o checkbox se vai continuar.",
       "Total da projeção = só os 3 meses à frente (mês anterior não entra).",
       "Mês anterior = contexto executado (somente leitura).",

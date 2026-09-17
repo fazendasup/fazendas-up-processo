@@ -143,6 +143,8 @@ function textoNatureza(
 
 /**
  * Despesas essenciais que tendem a se repetir todo mês → já projetar ativas.
+ * Inclui utilidades, folha/salário, terceiro fixo, combustível e insumos
+ * de legumes/folhosas/flores.
  */
 export function ehDespesaEssencialRecorrente(
   descricao: string,
@@ -150,9 +152,29 @@ export function ehDespesaEssencialRecorrente(
   fornecedor?: string | null,
 ): boolean {
   const d = textoNatureza(descricao, rubrica, fornecedor);
-  return /\b(aluguel|locacao|energia|eletrica|eletricidade|luz|agua|esgoto|gas|internet|banda[\s-]?larga|telefone|celular|telecom|condominio|iptu|seguro|folha(\s+de\s+pagamento)?|salario|pro[\s-]?labore|plano\s+(de\s+)?saude|vale[\s-]*(transporte|refeicao|alimentacao)|contabil(idade)?|software|assinatura|saas|hospedagem|dominio|limpeza|conservacao|seguranca|vigilancia|manutencao(\s+predial)?|contador|escritorio\s+contabil)\b/.test(
-    d,
-  );
+
+  const utilidadesFolha =
+    /\b(aluguel|locacao|energia|eletrica|eletricidade|luz|agua|esgoto|gas|internet|banda[\s-]?larga|telefone|celular|telecom|condominio|iptu|seguro|folha(\s+de\s+pagamento)?|salario|remuneracao|holerite|pro[\s-]?labore|adiantamento\s+salarial|plano\s+(de\s+)?saude|vale[\s-]*(transporte|refeicao|alimentacao)|contabil(idade)?|software|assinatura|saas|hospedagem|dominio|limpeza|conservacao|seguranca|vigilancia|manutencao(\s+predial)?|contador|escritorio\s+contabil)\b/.test(
+      d,
+    );
+
+  const terceiroFixo =
+    /\bterceir(o|a|izados?)(\s+fixo)?\b/.test(d) ||
+    /\b(prestador|fornecedor|servico)\s+fixo\b/.test(d) ||
+    /\bfixo\s+(mensal|terceir)/.test(d) ||
+    /\b(pj|mei)\s+fix[oa]\b/.test(d);
+
+  const combustivel =
+    /\b(combustivel|combustiveis|diesel|gasolina|etanol|alcool\s+combustivel|abastecimento|posto\s+de\s+combustivel)\b/.test(
+      d,
+    );
+
+  const insumosHorta =
+    /\b(legume|legumes|folhosa|folhosas|hortifruti|horti[\s-]?fruti|hortalica|hortalicas|verdura|verduras|alface|rucula|microverde|microverdes|flor(es)?(\s+comestiveis?)?|mudas?|sementes?|insumo\s+agricola|materia[\s-]?prima\s+(agricola|horta))\b/.test(
+      d,
+    );
+
+  return utilidadesFolha || terceiroFixo || combustivel || insumosHorta;
 }
 
 /**
