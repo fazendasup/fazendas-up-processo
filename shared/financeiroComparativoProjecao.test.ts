@@ -65,6 +65,16 @@ describe("ehCreditoOuDescontoObtido", () => {
   });
 });
 
+describe("ehTransferenciaEntreContas", () => {
+  it("reconhece transferência entre contas", () => {
+    expect(
+      ehTransferenciaEntreContas("", "Transferência entre contas"),
+    ).toBe(true);
+    expect(ehNaoDesembolsoCusto("", "Transferência entre contas")).toBe(true);
+    expect(ehTransferenciaEntreContas("Compra", "Insumos")).toBe(false);
+  });
+});
+
 describe("montarComparativoDesembolsoMes", () => {
   it("agrega por rúbrica e ignora descontos obtidos", () => {
     const out = montarComparativoDesembolsoMes({
@@ -159,6 +169,24 @@ describe("montarComparativoDesembolsoMes", () => {
     expect(out.rubricas.every(r => r.status === "nao_programada")).toBe(true);
     expect(out.totais.pagoEmAtraso).toBe(0);
     expect(out.totais.pagoAMais).toBe(397.89 + 230);
+  });
+
+  it("ignora transferência entre contas no desembolso", () => {
+    const out = montarComparativoDesembolsoMes({
+      mesYm: "2026-09",
+      linhasProjecao: [],
+      parcelasPagarMes: [
+        parcela({
+          id: "t1",
+          descricao: "Pagamento via agência",
+          rubrica: "Transferência entre contas",
+          valorPago: 170,
+          dataPagamento: "2026-09-10",
+        }),
+      ],
+    });
+    expect(out.rubricas).toHaveLength(0);
+    expect(out.totais.pago).toBe(0);
   });
 
   it("manutenção de equipamentos sem projeção é não programada", () => {
