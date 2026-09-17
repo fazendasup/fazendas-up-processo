@@ -179,7 +179,7 @@ export function montarComparativoDesembolsoMes(input: {
   }
 
   for (const p of parcelasPagarMes) {
-    if (ehCreditoOuDescontoObtido(p.descricao, p.rubrica)) continue;
+    if (ehNaoDesembolsoCusto(p.descricao, p.rubrica)) continue;
     const pago = valorPagoParcela(p);
     if (pago <= 0) continue;
     if (mesPagamentoParcela(p) !== mesYm) continue;
