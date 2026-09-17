@@ -6,6 +6,8 @@ import {
 } from "./financeiroComparativoProjecao";
 import {
   ehCreditoOuDescontoObtido,
+  ehNaoDesembolsoCusto,
+  ehTransferenciaEntreContas,
   type LinhaProjecao,
   type ParcelaBaseProjecao,
 } from "./financeiroProjecaoDesembolso";

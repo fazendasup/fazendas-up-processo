@@ -164,6 +164,31 @@ export function ehCreditoOuDescontoObtido(
   );
 }
 
+/** Movimentação interna de caixa — não é despesa operacional. */
+export function ehTransferenciaEntreContas(
+  descricao: string,
+  rubrica?: string | null,
+): boolean {
+  const d = textoNatureza(descricao, rubrica);
+  return (
+    /\btransferencias?\s+entre\s+contas?\b/.test(d) ||
+    /\btransf(\.|erencia)?\s+entre\s+contas?\b/.test(d) ||
+    /\baplicacao\s+(financeira|em\s+investimento)\b/.test(d) ||
+    /\bresgate\s+(de\s+)?(aplicacao|investimento)\b/.test(d)
+  );
+}
+
+/** Não conta como desembolso de custo (desconto obtido, transferência etc.). */
+export function ehNaoDesembolsoCusto(
+  descricao: string,
+  rubrica?: string | null,
+): boolean {
+  return (
+    ehCreditoOuDescontoObtido(descricao, rubrica) ||
+    ehTransferenciaEntreContas(descricao, rubrica)
+  );
+}
+
 /**
  * Rúbricas em que "pago sem projeção no mês" costuma ser atraso da competência
  * anterior (folha, vale, utilidades, aluguel). NÃO inclui insumos/materiais —
@@ -444,6 +469,7 @@ export function montarProjecaoDesembolso(input: {
   const pagosContexto = input.parcelas.filter(p => {
     if (!statusExecutado(p)) return false;
     if (ehCreditoOuDescontoObtido(p.descricao, p.rubrica)) return false;
+    if (ehTransferenciaEntreContas(p.descricao, p.rubrica)) return false;
     return mesPagamentoParcela(p) === mesContextoYm;
   });
 

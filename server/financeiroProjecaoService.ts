@@ -191,7 +191,7 @@ export async function carregarComparativoProjecao(
     ...comparativo,
     avisos: [
       "Desembolso: comparativo por rúbrica (projeção × pago Conta Azul).",
-      "Descontos obtidos não entram (não são saída de caixa).",
+      "Descontos obtidos e transferências entre contas não entram (não são despesa).",
       "Pago em atraso = recorrente essencial pago no mês sem projeção (ex. competência do mês anterior).",
       "Receita: somente totais Conta Azul.",
     ],

@@ -3,7 +3,7 @@
  * e totais de receita Conta Azul (sem listar lançamentos).
  */
 import {
-  ehCreditoOuDescontoObtido,
+  ehNaoDesembolsoCusto,
   ehRubricaTipicaDeAtrasoMensal,
   labelMesYm,
   mesPagamentoParcela,
@@ -157,7 +157,7 @@ export function montarComparativoDesembolsoMes(input: {
   };
 
   for (const lin of linhasProjecao) {
-    if (ehCreditoOuDescontoObtido(lin.label, lin.rubrica)) continue;
+    if (ehNaoDesembolsoCusto(lin.label, lin.rubrica)) continue;
     const cel = lin.celulas.find(c => c.mesYm === mesYm);
     if (!cel?.ativo || !Number.isFinite(cel.valorEfetivo) || cel.valorEfetivo <= 0) {
       continue;
