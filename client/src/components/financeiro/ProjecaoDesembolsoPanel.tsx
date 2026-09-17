@@ -1,5 +1,14 @@
 import { useMemo, useState } from "react";
-import { CheckCheck, Filter, Lock, Minus, Plus, Trash2, X } from "lucide-react";
+import {
+  CheckCheck,
+  ChevronsUpDown,
+  Filter,
+  Lock,
+  Minus,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -7,6 +16,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -99,7 +113,6 @@ function aplicarPatchesCelulas(
 }
 
 const RUBRICA_SEM = "__sem_rubrica__";
-const RUBRICA_TODAS = "__todas__";
 const TIPO_TODOS = "__todos__";
 const ORDEM_IMPACTO = "impacto";
 const ORDEM_RUBRICA_AZ = "rubrica_az";
@@ -157,7 +170,7 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
     addMonthsYm(mesInicioYm, 3),
   );
   const [draftValor, setDraftValor] = useState<Record<string, string>>({});
-  const [filtroRubrica, setFiltroRubrica] = useState<string>(RUBRICA_TODAS);
+  const [filtroRubricas, setFiltroRubricas] = useState<string[]>([]);
   const [filtroBusca, setFiltroBusca] = useState("");
   const [filtroTipo, setFiltroTipo] = useState<string>(TIPO_TODOS);
   const [ordemLinhas, setOrdemLinhas] = useState<OrdemLinhas>(ORDEM_IMPACTO);
@@ -165,6 +178,7 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
   const [filtroPorMes, setFiltroPorMes] = useState<
     Record<string, FiltroMesCelula>
   >({});
+  const [rubricaMenuAberto, setRubricaMenuAberto] = useState(false);
 
   const [loteLinhaId, setLoteLinhaId] = useState<string | null>(null);
 
@@ -398,11 +412,12 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
   const linhasFiltradas = useMemo(() => {
     const linhas = data?.linhas ?? [];
     const q = filtroBusca.trim().toLowerCase();
+    const rubricasSel = new Set(filtroRubricas);
     let list = linhas.filter(l => {
-      if (filtroRubrica === RUBRICA_SEM) {
-        if (l.rubrica?.trim()) return false;
-      } else if (filtroRubrica !== RUBRICA_TODAS) {
-        if ((l.rubrica?.trim() || "") !== filtroRubrica) return false;
+      if (rubricasSel.size > 0) {
+        const rub = l.rubrica?.trim() || "";
+        const chave = rub ? rub : RUBRICA_SEM;
+        if (!rubricasSel.has(chave)) return false;
       }
       if (filtroTipo !== TIPO_TODOS && l.natureza !== filtroTipo) return false;
       if (q) {
@@ -439,7 +454,7 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
     return list;
   }, [
     data?.linhas,
-    filtroRubrica,
+    filtroRubricas,
     filtroTipo,
     filtroBusca,
     filtroPorMes,
@@ -476,12 +491,27 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
   }, [linhasFiltradas]);
 
   const limparFiltros = () => {
-    setFiltroRubrica(RUBRICA_TODAS);
+    setFiltroRubricas([]);
     setFiltroTipo(TIPO_TODOS);
     setFiltroBusca("");
     setOrdemLinhas(ORDEM_IMPACTO);
     setMesesOcultos([]);
     setFiltroPorMes({});
+  };
+
+  const toggleRubricaFiltro = (chave: string) => {
+    setFiltroRubricas(prev =>
+      prev.includes(chave) ? prev.filter(r => r !== chave) : [...prev, chave],
+    );
+  };
+
+  const labelFiltroRubricas = () => {
+    if (filtroRubricas.length === 0) return "Todas as rúbricas";
+    if (filtroRubricas.length === 1) {
+      const k = filtroRubricas[0]!;
+      return k === RUBRICA_SEM ? "Sem rúbrica" : k;
+    }
+    return `${filtroRubricas.length} rúbricas`;
   };
 
   const toggleMesVisivel = (mesYm: string) => {
@@ -539,7 +569,7 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
   if (!data) return null;
 
   const filtroAtivo =
-    filtroRubrica !== RUBRICA_TODAS ||
+    filtroRubricas.length > 0 ||
     filtroTipo !== TIPO_TODOS ||
     filtroBusca.trim().length > 0 ||
     ordemLinhas !== ORDEM_IMPACTO ||
@@ -623,25 +653,70 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                 </SelectContent>
               </Select>
             </div>
-            <div className="min-w-[200px]">
-              <Label className="text-xs">Rúbrica (A–Z)</Label>
-              <Select value={filtroRubrica} onValueChange={setFiltroRubrica}>
-                <SelectTrigger className="h-9">
-                  <Filter className="mr-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  <SelectValue placeholder="Todas as rúbricas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={RUBRICA_TODAS}>Todas as rúbricas</SelectItem>
-                  {rubricasDisponiveis.temSem ? (
-                    <SelectItem value={RUBRICA_SEM}>Sem rúbrica</SelectItem>
-                  ) : null}
-                  {rubricasDisponiveis.nomes.map(r => (
-                    <SelectItem key={r} value={r}>
-                      {r}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="min-w-[220px]">
+              <Label className="text-xs">Rúbricas (múltipla · A–Z)</Label>
+              <Popover open={rubricaMenuAberto} onOpenChange={setRubricaMenuAberto}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="h-9 w-full justify-between font-normal"
+                  >
+                    <span className="flex min-w-0 items-center gap-1 truncate">
+                      <Filter className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <span className="truncate">{labelFiltroRubricas()}</span>
+                    </span>
+                    <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-2" align="start">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-xs text-muted-foreground">
+                      Selecione uma ou mais
+                    </p>
+                    {filtroRubricas.length > 0 ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setFiltroRubricas([])}
+                      >
+                        Limpar
+                      </Button>
+                    ) : null}
+                  </div>
+                  <div className="max-h-64 space-y-1 overflow-y-auto">
+                    {rubricasDisponiveis.temSem ? (
+                      <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted">
+                        <Checkbox
+                          checked={filtroRubricas.includes(RUBRICA_SEM)}
+                          onCheckedChange={() =>
+                            toggleRubricaFiltro(RUBRICA_SEM)
+                          }
+                        />
+                        Sem rúbrica
+                      </label>
+                    ) : null}
+                    {rubricasDisponiveis.nomes.map(r => (
+                      <label
+                        key={r}
+                        className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted"
+                      >
+                        <Checkbox
+                          checked={filtroRubricas.includes(r)}
+                          onCheckedChange={() => toggleRubricaFiltro(r)}
+                        />
+                        <span className="truncate">{r}</span>
+                      </label>
+                    ))}
+                    {rubricasDisponiveis.nomes.length === 0 &&
+                    !rubricasDisponiveis.temSem ? (
+                      <p className="px-2 py-3 text-xs text-muted-foreground">
+                        Nenhuma rúbrica na grade.
+                      </p>
+                    ) : null}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="min-w-[160px]">
               <Label className="text-xs">Ordenar</Label>
