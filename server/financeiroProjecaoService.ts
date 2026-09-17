@@ -99,7 +99,8 @@ export async function carregarProjecaoDesembolso(
     mesInicioYm,
     ...grade,
     avisos: [
-      "Horizonte: mês anterior + 3 meses (a partir do mês selecionado).",
+      "Horizonte: mês anterior (contexto) + 3 meses à frente.",
+      "Total da projeção = só os 3 meses à frente (mês anterior não entra).",
       "Parcela = cartão/boleto/financiamento parcelado (não confunde com folha 14/17).",
       "Executado = já pago no Conta Azul (somente leitura).",
       "Previsto CA = título aberto com vencimento no mês.",

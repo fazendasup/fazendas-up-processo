@@ -29,7 +29,7 @@ export type LinhaProjecao = {
   natureza: NaturezaDesembolso;
   origemLinha: "conta_azul" | "projetado" | "manual";
   celulas: CelulaProjecao[];
-  /** Soma só das células ativas. */
+  /** Soma das células ativas nos meses que entram no total (sem mês anterior). */
   totalAtivo: number;
 };
 
@@ -38,6 +38,8 @@ export type ColunaProjecao = {
   label: string;
   /** Coluna criada pelo usuário (além do padrão mês ant. + 3 meses). */
   custom: boolean;
+  /** Entra no total da projeção (false = mês anterior, só contexto). */
+  contaNoTotal: boolean;
 };
 
 export type OverrideCelulaProjecao = {
@@ -97,6 +99,15 @@ export function addMonthsYm(ym: string, delta: number): string {
  */
 export function mesesProjecaoPadrao(mesRefYm: string): string[] {
   return [-1, 0, 1, 2].map(d => addMonthsYm(mesRefYm, d));
+}
+
+/** Meses que entram no total: os 3 à frente (ref + 2), sem o mês anterior. */
+export function mesesProjecaoNoTotal(mesRefYm: string): string[] {
+  return [0, 1, 2].map(d => addMonthsYm(mesRefYm, d));
+}
+
+export function mesAnteriorProjecao(mesRefYm: string): string {
+  return addMonthsYm(mesRefYm, -1);
 }
 
 function textoNatureza(
@@ -197,12 +208,15 @@ export function montarColunasProjecao(
   colunasExtraYm: string[] = [],
 ): ColunaProjecao[] {
   const padrao = new Set(mesesProjecaoPadrao(mesRefYm));
+  const mesAnt = mesAnteriorProjecao(mesRefYm);
   const all = [...padrao, ...colunasExtraYm.filter(Boolean)];
   const uniq = Array.from(new Set(all)).sort();
   return uniq.map(mesYm => ({
     mesYm,
     label: labelMesYm(mesYm),
     custom: !padrao.has(mesYm),
+    // Mês anterior = contexto; 3 à frente (+ extras) entram no total.
+    contaNoTotal: mesYm !== mesAnt,
   }));
 }
 
@@ -245,6 +259,15 @@ export function montarProjecaoDesembolso(input: {
     input.colunasExtraYm ?? [],
   );
   const mesesSet = new Set(colunas.map(c => c.mesYm));
+  const mesesNoTotal = new Set(
+    colunas.filter(c => c.contaNoTotal).map(c => c.mesYm),
+  );
+  const somaAtivaNoTotal = (celulas: CelulaProjecao[]) =>
+    round2(
+      celulas
+        .filter(c => c.ativo && mesesNoTotal.has(c.mesYm))
+        .reduce((s, c) => s + c.valorEfetivo, 0),
+    );
   const ovMap = new Map(
     (input.overrides ?? []).map(o => [overrideKey(o.linhaId, o.mesYm), o]),
   );
@@ -334,9 +357,7 @@ export function montarProjecaoDesembolso(input: {
       natureza,
       origemLinha: "conta_azul",
       celulas,
-      totalAtivo: round2(
-        celulas.filter(c => c.ativo).reduce((s, c) => s + c.valorEfetivo, 0),
-      ),
+      totalAtivo: somaAtivaNoTotal(celulas),
     });
   }
 
@@ -378,9 +399,7 @@ export function montarProjecaoDesembolso(input: {
       natureza,
       origemLinha: "projetado",
       celulas,
-      totalAtivo: round2(
-        celulas.filter(c => c.ativo).reduce((s, c) => s + c.valorEfetivo, 0),
-      ),
+      totalAtivo: somaAtivaNoTotal(celulas),
     });
   }
 
@@ -407,9 +426,7 @@ export function montarProjecaoDesembolso(input: {
       natureza: m.natureza ?? "manual",
       origemLinha: "manual",
       celulas,
-      totalAtivo: round2(
-        celulas.filter(c => c.ativo).reduce((s, c) => s + c.valorEfetivo, 0),
-      ),
+      totalAtivo: somaAtivaNoTotal(celulas),
     });
   }
 
@@ -430,6 +447,10 @@ export function montarProjecaoDesembolso(input: {
     colunas,
     linhas,
     totaisPorMes,
-    totalGeral: round2(totaisPorMes.reduce((s, t) => s + t.total, 0)),
+    totalGeral: round2(
+      totaisPorMes
+        .filter(t => mesesNoTotal.has(t.mesYm))
+        .reduce((s, t) => s + t.total, 0),
+    ),
   };
 }

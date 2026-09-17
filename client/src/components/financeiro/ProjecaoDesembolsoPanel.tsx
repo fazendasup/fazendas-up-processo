@@ -122,14 +122,14 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Projeção de desembolso</CardTitle>
           <p className="text-xs text-muted-foreground">
-            Mês anterior + 3 meses (ref. {mesInicioYm}) · editável só o
-            previsto/projetado · executado fica travado
+            Mês anterior (contexto) + 3 meses à frente (ref. {mesInicioYm}) ·
+            total só dos 3 à frente · editável só previsto/projetado
           </p>
           <p className="text-xs text-muted-foreground">
             Parcela = cartão/boleto parcelado · {resumoNatureza.parcela} ·
             recorrente {resumoNatureza.recorrente} · único{" "}
             {resumoNatureza.unico} · manual {resumoNatureza.manual} · total
-            ativo{" "}
+            projeção{" "}
             <span className="font-semibold text-foreground">
               {fmtMoney(data.totalGeral)}
             </span>
@@ -202,17 +202,24 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                   <th className="w-[7%] px-2 py-2">Tipo</th>
                   {data.colunas.map(c => (
                     <th key={c.mesYm} className="px-2 py-2 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <span className="whitespace-nowrap">{c.label}</span>
-                        {c.custom ? (
-                          <button
-                            type="button"
-                            className="text-muted-foreground hover:text-red-600"
-                            title="Remover coluna"
-                            onClick={() => remCol.mutate({ mesYm: c.mesYm })}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
+                      <div className="flex flex-col items-end gap-0.5">
+                        <div className="flex items-center justify-end gap-1">
+                          <span className="whitespace-nowrap">{c.label}</span>
+                          {c.custom ? (
+                            <button
+                              type="button"
+                              className="text-muted-foreground hover:text-red-600"
+                              title="Remover coluna"
+                              onClick={() => remCol.mutate({ mesYm: c.mesYm })}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          ) : null}
+                        </div>
+                        {!c.contaNoTotal ? (
+                          <span className="text-[9px] font-normal normal-case text-muted-foreground">
+                            contexto
+                          </span>
                         ) : null}
                       </div>
                     </th>
@@ -329,16 +336,27 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
               <tfoot>
                 <tr className="bg-muted/30 font-semibold">
                   <td className="px-2 py-2" colSpan={2}>
-                    Total ativo
+                    Total (3 meses à frente)
                   </td>
-                  {data.totaisPorMes.map(t => (
-                    <td
-                      key={t.mesYm}
-                      className="px-2 py-2 text-right tabular-nums"
-                    >
-                      {fmtMoney(t.total)}
-                    </td>
-                  ))}
+                  {data.totaisPorMes.map(t => {
+                    const col = data.colunas.find(c => c.mesYm === t.mesYm);
+                    const noTotal = col?.contaNoTotal !== false;
+                    return (
+                      <td
+                        key={t.mesYm}
+                        className={`px-2 py-2 text-right tabular-nums ${
+                          noTotal ? "" : "text-muted-foreground/70"
+                        }`}
+                      >
+                        {fmtMoney(t.total)}
+                        {!noTotal ? (
+                          <span className="mt-0.5 block text-[9px] font-normal">
+                            fora do total
+                          </span>
+                        ) : null}
+                      </td>
+                    );
+                  })}
                   <td className="px-2 py-2 text-right tabular-nums">
                     {fmtMoney(data.totalGeral)}
                   </td>
