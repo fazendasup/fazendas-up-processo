@@ -127,7 +127,7 @@ export default function FinanceiroCfoPage() {
 
   const [busca, setBusca] = useState("");
   const [filtroRubrica, setFiltroRubrica] = useState<string | null>(null);
-  const [mostrarExcluidos, setMostrarExcluidos] = useState(false);
+  const [ocultarExcluidos, setOcultarExcluidos] = useState(false);
   const [somenteSemRubrica, setSomenteSemRubrica] = useState(false);
   const [draftRubrica, setDraftRubrica] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -186,7 +186,7 @@ export default function FinanceiroCfoPage() {
     const list = data?.lancamentosPagar ?? [];
     const q = busca.trim().toLowerCase();
     return list.filter(p => {
-      if (!mostrarExcluidos && p.excluido) return false;
+      if (ocultarExcluidos && p.excluido) return false;
       if (somenteSemRubrica && p.categoria?.trim()) return false;
       if (filtroRubrica) {
         const rub = p.categoria?.trim() || RUBRICA_SEM_CATEGORIA;
@@ -203,9 +203,14 @@ export default function FinanceiroCfoPage() {
     data?.lancamentosPagar,
     busca,
     filtroRubrica,
-    mostrarExcluidos,
+    ocultarExcluidos,
     somenteSemRubrica,
   ]);
+
+  const qtdExcluidos = useMemo(
+    () => (data?.lancamentosPagar ?? []).filter(p => p.excluido).length,
+    [data?.lancamentosPagar],
+  );
 
   const chartGaps = useMemo(
     () =>
@@ -255,7 +260,11 @@ export default function FinanceiroCfoPage() {
         excluido: !p.excluido,
         nota: p.notaClassificacao,
       });
-      toast.success(p.excluido ? "Reincluído nos totais" : "Excluído dos totais");
+      toast.success(
+        p.excluido
+          ? "Reincluído nos totais — despesa reativada"
+          : "Fora dos totais — desmarque a caixa para reativar",
+      );
     } finally {
       setSavingId(null);
     }
@@ -662,10 +671,17 @@ export default function FinanceiroCfoPage() {
                       </label>
                       <label className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Checkbox
-                          checked={mostrarExcluidos}
-                          onCheckedChange={v => setMostrarExcluidos(v === true)}
+                          checked={ocultarExcluidos}
+                          onCheckedChange={v =>
+                            setOcultarExcluidos(v === true)
+                          }
                         />
-                        Excluídos
+                        Ocultar ignorados
+                        {qtdExcluidos > 0 ? (
+                          <span className="rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                            {qtdExcluidos}
+                          </span>
+                        ) : null}
                       </label>
                       <ExportMini
                         onCsv={() => exportLancamentos("csv")}
@@ -682,7 +698,9 @@ export default function FinanceiroCfoPage() {
                             <th className="px-2 py-2 w-[220px]">Rúbrica</th>
                             <th className="px-2 py-2">Venc.</th>
                             <th className="px-2 py-2">Valor</th>
-                            <th className="px-2 py-2">Fora</th>
+                            <th className="px-2 py-2" title="Ignorar nos totais (pode reativar)">
+                              Ignorar
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
@@ -736,14 +754,25 @@ export default function FinanceiroCfoPage() {
                                 {fmtMoney(p.valor)}
                               </td>
                               <td className="px-2 py-1.5">
-                                <Checkbox
-                                  checked={!!p.excluido}
-                                  disabled={savingId === p.id}
-                                  onCheckedChange={() =>
-                                    void toggleExcluido(p)
-                                  }
-                                  aria-label="Excluir dos totais"
-                                />
+                                <div className="flex flex-col items-start gap-0.5">
+                                  <Checkbox
+                                    checked={!!p.excluido}
+                                    disabled={savingId === p.id}
+                                    onCheckedChange={() =>
+                                      void toggleExcluido(p)
+                                    }
+                                    aria-label={
+                                      p.excluido
+                                        ? "Reativar nos totais"
+                                        : "Ignorar nos totais"
+                                    }
+                                  />
+                                  {p.excluido ? (
+                                    <span className="text-[10px] font-medium text-amber-700">
+                                      fora · clique p/ reativar
+                                    </span>
+                                  ) : null}
+                                </div>
                               </td>
                             </tr>
                           ))}
