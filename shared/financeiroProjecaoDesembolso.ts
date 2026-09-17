@@ -246,7 +246,7 @@ export function detectarNaturezaDesembolso(
   return "unico";
 }
 
-function chaveSerie(p: ParcelaBaseProjecao): string {
+export function chaveSerie(p: ParcelaBaseProjecao): string {
   const forn = (p.fornecedor || "").trim().toLowerCase();
   const rub = (p.rubrica || "").trim().toLowerCase();
   const desc = p.descricao
@@ -281,7 +281,7 @@ export function mesPagamentoParcela(p: ParcelaBaseProjecao): string | null {
   return ref.slice(0, 7);
 }
 
-function valorPagoParcela(p: ParcelaBaseProjecao): number {
+export function valorPagoParcela(p: ParcelaBaseProjecao): number {
   if (p.valorPago > 0) return round2(p.valorPago);
   if (statusExecutado(p) && p.valor > 0) return round2(p.valor);
   return 0;
@@ -291,12 +291,17 @@ function overrideKey(linhaId: string, mesYm: string): string {
   return `${linhaId}||${mesYm}`;
 }
 
-function hashSerie(key: string): string {
+export function hashSerie(key: string): string {
   let h = 0;
   for (let i = 0; i < key.length; i++) {
     h = (h * 31 + key.charCodeAt(i)) | 0;
   }
   return `proj:${Math.abs(h).toString(36)}`;
+}
+
+/** ID estável da linha de projeção a partir da parcela (mesmo hash da grade). */
+export function linhaIdProjecaoDeParcela(p: ParcelaBaseProjecao): string {
+  return hashSerie(chaveSerie(p));
 }
 
 export function montarColunasProjecao(

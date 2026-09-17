@@ -68,6 +68,14 @@ const PAGINAS_MODULO: ChatPageEntry[] = [
     blocoSnapshot: "Financeiro Conta Azul",
   },
   {
+    rota: "/financeiro-cfo/comparativo",
+    nome: "Comparativo projeção × realizado",
+    area: "custos",
+    descricao:
+      "Desvio de desembolso, quanto falta pagar, receita baseline vs já entrou / a entrar.",
+    blocoSnapshot: "Comparativo financeiro",
+  },
+  {
     rota: "/custos-producao",
     nome: "Custos — Painel CFO",
     area: "custos_producao",

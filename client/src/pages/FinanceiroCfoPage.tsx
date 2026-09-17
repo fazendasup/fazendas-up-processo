@@ -377,7 +377,13 @@ export default function FinanceiroCfoPage() {
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
               Gaps vs mês anterior, edição rápida de rúbrica e foco no que
-              aumentou de custo.
+              mais pesa no caixa.{" "}
+              <a
+                href="/financeiro-cfo/comparativo"
+                className="font-medium text-foreground underline-offset-2 hover:underline"
+              >
+                Abrir comparativo projeção × realizado
+              </a>
             </p>
           </div>
 

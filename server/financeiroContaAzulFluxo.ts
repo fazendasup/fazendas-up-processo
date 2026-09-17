@@ -708,3 +708,35 @@ export async function buscarParcelasPagarParaProjecao(
   );
   return parcelasAtivasParaRelatorio(pagar);
 }
+
+/** Contas a receber normalizadas + overrides (comparativo de receita). */
+export async function buscarParcelasReceberParaComparativo(
+  inicio: Date,
+  fim: Date,
+  projetoId: number,
+): Promise<ParcelaFinanceiraNorm[]> {
+  const [fetch, classifs] = await Promise.all([
+    fetchParcelasPaginated(
+      "/v1/financeiro/eventos-financeiros/contas-a-receber/buscar",
+      inicio,
+      fim,
+    ),
+    listFinanceiroCaClassificacoes(projetoId),
+  ]);
+  const catalogo = new Map<string, CategoriaCa>();
+  let receber = fetch.itens
+    .map(i => mapParcelaListagem(i, "receber", catalogo))
+    .filter((x): x is ParcelaFinanceiraNorm => !!x);
+  receber = aplicarEdicoesClassificacao(
+    receber,
+    classifs.map(c => ({
+      tipo: c.tipo,
+      chave: c.chave,
+      rubricaOverride: c.rubricaOverride,
+      centroCustoOverride: c.centroCustoOverride,
+      excluido: c.excluido,
+      nota: c.nota,
+    })),
+  );
+  return parcelasAtivasParaRelatorio(receber);
+}

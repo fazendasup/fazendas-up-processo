@@ -420,6 +420,14 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
         if (!rubricasSel.has(chave)) return false;
       }
       if (filtroTipo !== TIPO_TODOS && l.natureza !== filtroTipo) return false;
+      // Recorrente no filtro = classificado como tal E com projeção marcada
+      // (evita listar essenciais/histórico que o usuário desmarcou).
+      if (
+        filtroTipo === "recorrente" &&
+        !l.celulas.some(c => c.editavel && c.ativo)
+      ) {
+        return false;
+      }
       if (q) {
         const blob = [l.label, l.fornecedor, l.rubrica]
           .filter(Boolean)
@@ -646,7 +654,9 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={TIPO_TODOS}>Todos os tipos</SelectItem>
-                  <SelectItem value="recorrente">Recorrente</SelectItem>
+                  <SelectItem value="recorrente">
+                    Recorrente (marcados)
+                  </SelectItem>
                   <SelectItem value="parcela">Parcela</SelectItem>
                   <SelectItem value="unico">Único</SelectItem>
                   <SelectItem value="manual">Manual</SelectItem>

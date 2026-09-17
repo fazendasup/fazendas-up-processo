@@ -19,6 +19,7 @@ import {
 import { aplicarEdicoesClassificacao } from "@shared/financeiroCfoInsights";
 import {
   addProjecaoColuna,
+  carregarComparativoProjecao,
   carregarProjecaoDesembolso,
   insertProjecaoLinhaManual,
   removeProjecaoColuna,
@@ -163,6 +164,20 @@ export const financeiroCfoRouter = router({
         input.mesInicioYm,
         { forceRefreshCa: input.forceRefreshCa === true },
       ),
+    ),
+
+  /** Projeção × realizado (desembolso) + receita baseline × caixa. */
+  comparativoProjecao: custosProducaoModuleProcedure
+    .input(
+      z.object({
+        mesYm: z.string().regex(/^\d{4}-\d{2}$/),
+        forceRefreshCa: z.boolean().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) =>
+      carregarComparativoProjecao(projetoIdFromCtx(ctx), input.mesYm, {
+        forceRefreshCa: input.forceRefreshCa === true,
+      }),
     ),
 
   salvarCelulaProjecao: custosProducaoModuleProcedure

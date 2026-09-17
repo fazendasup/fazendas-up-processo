@@ -1,4 +1,7 @@
-import { buscarParcelasPagarParaProjecao } from "./financeiroContaAzulFluxo";
+import {
+  buscarParcelasPagarParaProjecao,
+  buscarParcelasReceberParaComparativo,
+} from "./financeiroContaAzulFluxo";
 import {
   addProjecaoColuna,
   insertProjecaoLinhaManual,
@@ -14,6 +17,7 @@ import {
   montarProjecaoDesembolso,
   type ParcelaBaseProjecao,
 } from "@shared/financeiroProjecaoDesembolso";
+import { montarFinanceiroComparativo } from "@shared/financeiroComparativoProjecao";
 import type { ParcelaFinanceiraNorm } from "@shared/financeiroCfoInsights";
 
 function boundsMesYm(ym: string): { inicio: Date; fim: Date } {
@@ -140,6 +144,49 @@ export async function carregarProjecaoDesembolso(
       "Demais itens: valor sugerido — marque o checkbox se vai continuar.",
       "Total da projeção = só os 3 meses à frente (mês anterior não entra).",
       "Mês anterior = contexto executado (somente leitura).",
+    ],
+  };
+}
+
+/**
+ * Compara a projeção marcada no mês com o desembolsado Conta Azul,
+ * e a receita (previsto / recebido / a receber) direto do Conta Azul.
+ */
+export async function carregarComparativoProjecao(
+  projetoId: number,
+  mesYm: string,
+  opts?: { forceRefreshCa?: boolean },
+) {
+  if (!/^\d{4}-\d{2}$/.test(mesYm)) {
+    throw new Error("Mês inválido (AAAA-MM).");
+  }
+
+  const { inicio: iniMes, fim: fimMes } = boundsMesYm(mesYm);
+
+  const [grade, pagarMes, receberMes] = await Promise.all([
+    carregarProjecaoDesembolso(projetoId, mesYm, {
+      forceRefreshCa: opts?.forceRefreshCa,
+    }),
+    carregarParcelasBaseMes(projetoId, mesYm, opts?.forceRefreshCa === true),
+    buscarParcelasReceberParaComparativo(iniMes, fimMes, projetoId).then(r =>
+      r.map(toBase),
+    ),
+  ]);
+
+  const comparativo = montarFinanceiroComparativo({
+    mesYm,
+    linhasProjecao: grade.linhas,
+    parcelasPagarMes: pagarMes,
+    parcelasReceberMes: receberMes,
+  });
+
+  return {
+    ...comparativo,
+    avisos: [
+      "Desembolso projetado = células marcadas na grade de projeção para o mês.",
+      "Desembolso realizado = contas a pagar baixadas no Conta Azul no mês.",
+      "Receita: previsto / recebido / a receber = contas a receber do Conta Azul.",
+      "Previsto = vencimento no mês · Recebido = data de pagamento no mês · A receber = em aberto com vencimento no mês.",
     ],
   };
 }
