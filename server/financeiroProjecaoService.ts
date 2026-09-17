@@ -21,7 +21,11 @@ import {
 } from "@shared/financeiroProjecaoDesembolso";
 import { montarFinanceiroComparativo } from "@shared/financeiroComparativoProjecao";
 import {
-  agregarVendasPorCompetencia,
+  agregarVendasPorCompetenciaDetalhe,
+  agregarVendasPorDiaCompetencia,
+  diasNoMesYm,
+  somarVendasAteDia,
+  somarVendasUltimosNDias,
   type PedidoCompetenciaInput,
 } from "@shared/financeiroProjecaoVendas";
 import {
@@ -171,12 +175,19 @@ export async function carregarProjecaoDesembolso(
 
 /**
  * Totais de vendas + orçamentos por competência (orçamento ≤15 no mês; >15 no seguinte).
- * Busca desde M−3 para capturar spill de orçamentos após dia 15.
+ * Também calcula “até o mesmo dia” e “últimos N dias” dos 2 meses anteriores.
  */
-async function carregarTotaisVendasCompetencia(mesYm: string): Promise<{
+async function carregarTotaisVendasCompetencia(
+  mesYm: string,
+  opts: { hojeYm: string; diaHoje: number },
+): Promise<{
+  vendasFaturadasMes: number;
+  orcamentosCompetenciaMes: number;
   vendasMesAtual: number;
-  vendasMesAnterior1: number;
-  vendasMesAnterior2: number;
+  vendasAteDiaMesAnterior1: number;
+  vendasAteDiaMesAnterior2: number;
+  vendasRestanteMesAnterior1: number;
+  vendasRestanteMesAnterior2: number;
 }> {
   const mes1 = mesAnteriorProjecao(mesYm);
   const mes2 = mesAnteriorProjecao(mes1);
@@ -215,11 +226,45 @@ async function carregarTotaisVendasCompetencia(mesYm: string): Promise<{
     });
   }
 
-  const porMes = agregarVendasPorCompetencia(items);
+  const porMes = agregarVendasPorCompetenciaDetalhe(items);
+  const porDia = agregarVendasPorDiaCompetencia(items);
+  const atual = porMes.get(mesYm) ?? { vendas: 0, orcamentos: 0, total: 0 };
+
+  const diasNoMesRef = diasNoMesYm(mesYm);
+  let diasRestantes: number;
+  let diaCorte: number;
+  if (mesYm < opts.hojeYm) {
+    diasRestantes = 0;
+    diaCorte = diasNoMesRef;
+  } else if (mesYm > opts.hojeYm) {
+    diasRestantes = diasNoMesRef;
+    diaCorte = 0;
+  } else {
+    diaCorte = Math.min(Math.max(1, opts.diaHoje), diasNoMesRef);
+    diasRestantes = Math.max(0, diasNoMesRef - diaCorte);
+  }
+
+  const d1 = diasNoMesYm(mes1);
+  const d2 = diasNoMesYm(mes2);
+  const ate1 = Math.min(diaCorte, d1);
+  const ate2 = Math.min(diaCorte, d2);
+
   return {
-    vendasMesAtual: porMes.get(mesYm) ?? 0,
-    vendasMesAnterior1: porMes.get(mes1) ?? 0,
-    vendasMesAnterior2: porMes.get(mes2) ?? 0,
+    vendasFaturadasMes: atual.vendas,
+    orcamentosCompetenciaMes: atual.orcamentos,
+    vendasMesAtual: atual.total,
+    vendasAteDiaMesAnterior1: somarVendasAteDia(porDia.get(mes1), ate1),
+    vendasAteDiaMesAnterior2: somarVendasAteDia(porDia.get(mes2), ate2),
+    vendasRestanteMesAnterior1: somarVendasUltimosNDias(
+      porDia.get(mes1),
+      d1,
+      diasRestantes,
+    ),
+    vendasRestanteMesAnterior2: somarVendasUltimosNDias(
+      porDia.get(mes2),
+      d2,
+      diasRestantes,
+    ),
   };
 }
 
@@ -261,7 +306,7 @@ export async function carregarComparativoProjecao(
         fimVencidos,
         projetoId,
       ).then(r => r.map(toBase)),
-      carregarTotaisVendasCompetencia(mesYm),
+      carregarTotaisVendasCompetencia(mesYm, { hojeYm, diaHoje }),
     ]);
 
   const comparativo = montarFinanceiroComparativo({
@@ -270,9 +315,13 @@ export async function carregarComparativoProjecao(
     parcelasPagarMes: pagarMes,
     parcelasReceberMes: receberMes,
     parcelasReceberExtras: receberVencidos.filter(p => p.valorEmAberto > 0.009),
+    vendasFaturadasMes: vendas.vendasFaturadasMes,
+    orcamentosCompetenciaMes: vendas.orcamentosCompetenciaMes,
     vendasMesAtual: vendas.vendasMesAtual,
-    vendasMesAnterior1: vendas.vendasMesAnterior1,
-    vendasMesAnterior2: vendas.vendasMesAnterior2,
+    vendasAteDiaMesAnterior1: vendas.vendasAteDiaMesAnterior1,
+    vendasAteDiaMesAnterior2: vendas.vendasAteDiaMesAnterior2,
+    vendasRestanteMesAnterior1: vendas.vendasRestanteMesAnterior1,
+    vendasRestanteMesAnterior2: vendas.vendasRestanteMesAnterior2,
     hojeYm,
     diaHoje,
   });
@@ -282,9 +331,10 @@ export async function carregarComparativoProjecao(
     avisos: [
       "Desembolso: comparativo por rúbrica (projeção × pago Conta Azul).",
       "Descontos obtidos e transferências entre contas não entram (não são despesa).",
-      "Receita: a receber = em aberto no mês + vencido (meses anteriores).",
-      "Projeção de vendas = média diária dos 2 meses anteriores × dias restantes.",
-      "Orçamentos até o dia 15 entram no mês; após o dia 15, no mês seguinte.",
+      "A receber = só títulos em aberto com vencimento no mês (sem atrasados).",
+      "Vencido = títulos em aberto com vencimento em meses anteriores (lista abaixo).",
+      "Vendas = pedidos faturados; orçamentos ≤ dia 15 entram no mês; após o dia 15, no mês seguinte.",
+      "Ainda entra = média do que foi vendido nos últimos N dias dos 2 meses anteriores (N = dias restantes).",
     ],
   };
 }

@@ -209,7 +209,7 @@ describe("montarComparativoDesembolsoMes", () => {
 });
 
 describe("montarComparativoReceitaMes", () => {
-  it("inclui vencido em aberto e projeção de vendas", () => {
+  it("separa a receber do mês do vencido e quebra vendas/orçamentos", () => {
     const out = montarComparativoReceitaMes({
       mesYm: "2026-09",
       parcelasReceberMes: [
@@ -236,7 +236,8 @@ describe("montarComparativoReceitaMes", () => {
       parcelasReceberExtras: [
         parcela({
           id: "r-vencido",
-          descricao: "Cliente C atrasado",
+          descricao: "NF 123",
+          fornecedor: "Cliente C atrasado",
           valor: 2_000,
           valorPago: 0,
           valorEmAberto: 2_000,
@@ -245,9 +246,12 @@ describe("montarComparativoReceitaMes", () => {
           dataVencimento: "2026-08-10",
         }),
       ],
-      vendasMesAtual: 1_700,
-      vendasMesAnterior1: 3_100,
-      vendasMesAnterior2: 3_100,
+      vendasFaturadasMes: 1_200,
+      orcamentosCompetenciaMes: 500,
+      vendasAteDiaMesAnterior1: 2_000,
+      vendasAteDiaMesAnterior2: 1_800,
+      vendasRestanteMesAnterior1: 1_400,
+      vendasRestanteMesAnterior2: 1_200,
       hojeYm: "2026-09",
       diaHoje: 17,
     });
@@ -258,11 +262,19 @@ describe("montarComparativoReceitaMes", () => {
     expect(out.aReceberNoMes).toBe(5_000);
     expect(out.vencido).toBe(2_000);
     expect(out.aReceber).toBe(7_000);
-    expect(out.pipelineMes).toBe(13_000);
-    expect(out.projecaoVendas.mediaDiaria2m).toBe(100);
+    expect(out.pipelineMes).toBe(11_000); // sem vencido
+    expect(out.pipelineComVencido).toBe(13_000);
+    expect(out.vencidosDetalhe).toHaveLength(1);
+    expect(out.vencidosDetalhe[0].fornecedor).toBe("Cliente C atrasado");
+    expect(out.vendasCompetencia.vendasFaturadas).toBe(1_200);
+    expect(out.vendasCompetencia.orcamentos).toBe(500);
+    expect(out.vendasCompetencia.total).toBe(1_700);
+    expect(out.projecaoVendas.mediaRestante2m).toBe(1_300);
+    expect(out.projecaoVendas.mediaAteMesmoDia2m).toBe(1_900);
     expect(out.projecaoVendas.aindaEntraProjetado).toBe(1_300);
     expect(out.projecaoVendas.projecaoMesTotal).toBe(3_000);
-    expect(out.gapVsProjecaoVendas).toBe(3_000 - 13_000);
+    expect(out.gapVsProjecaoVendas).toBe(3_000 - 11_000);
+    expect(out.gapFinal).toBe(11_000 - 11_000);
   });
 });
 

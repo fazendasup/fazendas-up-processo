@@ -82,26 +82,48 @@ export type ComparativoDesembolsoMes = {
   };
 };
 
+export type ComparativoReceitaDetalheVencido = {
+  id: string;
+  descricao: string;
+  fornecedor: string | null;
+  valorEmAberto: number;
+  dataVencimento: string | null;
+};
+
 export type ComparativoReceitaMes = {
   mesYm: string;
   labelMes: string;
   fonte: "conta_azul";
   previsto: number;
   recebido: number;
-  /** Em aberto com vencimento no mês. */
+  /** Em aberto com vencimento no mês (sem atrasados). */
   aReceberNoMes: number;
   /** Em aberto com vencimento anterior ao mês (atraso de clientes). */
   vencido: number;
-  /** aReceberNoMes + vencido. */
+  /** Lista dos títulos que somam `vencido` (Conta Azul). */
+  vencidosDetalhe: ComparativoReceitaDetalheVencido[];
+  /**
+   * @deprecated Preferir aReceberNoMes; mantido = mês + vencido só p/ referência.
+   */
   aReceber: number;
+  /** recebido + aReceberNoMes (sem vencido). */
   pipelineMes: number;
+  /** recebido + aReceberNoMes + vencido. */
+  pipelineComVencido: number;
   gapRecebimento: number;
   gapRecebimentoPct: number | null;
+  /** previsto − (recebido + a receber do mês). */
   gapFinal: number;
   pctRecebidoDoPrevisto: number | null;
+  /** Quebra do “já no mês”: vendas faturadas × orçamentos (regra dia 15). */
+  vendasCompetencia: {
+    vendasFaturadas: number;
+    orcamentos: number;
+    total: number;
+  };
   /** Projeção de vendas (média diária 2m × dias restantes). */
   projecaoVendas: ProjecaoVendasRestanteMes;
-  /** projecaoMesTotal − pipeline (recebido + a receber total). */
+  /** projecaoMesTotal − pipelineMes (sem vencido). */
   gapVsProjecaoVendas: number;
 };
 
@@ -294,10 +316,16 @@ export function montarComparativoReceitaMes(input: {
   parcelasReceberMes: ParcelaBaseProjecao[];
   /** Parcelas extras (ex.: vencidos de meses anteriores). */
   parcelasReceberExtras?: ParcelaBaseProjecao[];
-  /** Vendas+orçamentos (competência dia 15) no mês. */
+  /** Vendas faturadas no mês (competência). */
+  vendasFaturadasMes?: number;
+  /** Orçamentos com competência no mês (≤15 ou spill do mês anterior). */
+  orcamentosCompetenciaMes?: number;
+  /** Total competência mês (vendas + orçamentos); se omitido = soma dos dois. */
   vendasMesAtual?: number;
-  vendasMesAnterior1?: number;
-  vendasMesAnterior2?: number;
+  vendasAteDiaMesAnterior1?: number;
+  vendasAteDiaMesAnterior2?: number;
+  vendasRestanteMesAnterior1?: number;
+  vendasRestanteMesAnterior2?: number;
   /** Calendário America/SP — default: assume mês fechado se omitido. */
   hojeYm?: string;
   diaHoje?: number;
@@ -318,6 +346,7 @@ export function montarComparativoReceitaMes(input: {
   let recebido = 0;
   let aReceberNoMes = 0;
   let vencido = 0;
+  const vencidosDetalhe: ComparativoReceitaDetalheVencido[] = [];
 
   for (const p of Array.from(porId.values())) {
     const vencYm = mesVencimentoParcela(p);
@@ -333,6 +362,13 @@ export function montarComparativoReceitaMes(input: {
       if (aberto) aReceberNoMes += p.valorEmAberto;
     } else if (aberto && vencYm && vencYm < mesYm) {
       vencido += p.valorEmAberto;
+      vencidosDetalhe.push({
+        id: p.id,
+        descricao: p.descricao,
+        fornecedor: p.fornecedor,
+        valorEmAberto: round2(p.valorEmAberto),
+        dataVencimento: p.dataVencimento,
+      });
     }
 
     if (pagMes) {
@@ -341,14 +377,23 @@ export function montarComparativoReceitaMes(input: {
     }
   }
 
+  vencidosDetalhe.sort((a, b) => b.valorEmAberto - a.valorEmAberto);
+
   previsto = round2(previsto);
   recebido = round2(recebido);
   aReceberNoMes = round2(aReceberNoMes);
   vencido = round2(vencido);
   const aReceber = round2(aReceberNoMes + vencido);
-  const pipelineMes = round2(recebido + aReceber);
+  const pipelineMes = round2(recebido + aReceberNoMes);
+  const pipelineComVencido = round2(recebido + aReceber);
   const gapRecebimento = round2(previsto - recebido);
   const gapFinal = round2(previsto - pipelineMes);
+
+  const vendasFaturadas = round2(input.vendasFaturadasMes ?? 0);
+  const orcamentos = round2(input.orcamentosCompetenciaMes ?? 0);
+  const vendasMesAtual = round2(
+    input.vendasMesAtual ?? vendasFaturadas + orcamentos,
+  );
 
   const hojeYm = input.hojeYm ?? mesYm;
   const diaHoje = input.diaHoje ?? 31;
@@ -356,9 +401,11 @@ export function montarComparativoReceitaMes(input: {
     mesYm,
     hojeYm,
     diaHoje,
-    vendasMesAtual: input.vendasMesAtual ?? 0,
-    vendasMesAnterior1: input.vendasMesAnterior1 ?? 0,
-    vendasMesAnterior2: input.vendasMesAnterior2 ?? 0,
+    vendasMesAtual,
+    vendasAteDiaMesAnterior1: input.vendasAteDiaMesAnterior1 ?? 0,
+    vendasAteDiaMesAnterior2: input.vendasAteDiaMesAnterior2 ?? 0,
+    vendasRestanteMesAnterior1: input.vendasRestanteMesAnterior1 ?? 0,
+    vendasRestanteMesAnterior2: input.vendasRestanteMesAnterior2 ?? 0,
     mesAnterior1Ym: mes1,
     mesAnterior2Ym: mes2,
   });
@@ -374,13 +421,20 @@ export function montarComparativoReceitaMes(input: {
     recebido,
     aReceberNoMes,
     vencido,
+    vencidosDetalhe,
     aReceber,
     pipelineMes,
+    pipelineComVencido,
     gapRecebimento,
     gapRecebimentoPct: desvioPct(-gapRecebimento, previsto),
     gapFinal,
     pctRecebidoDoPrevisto:
       previsto > 0 ? round2((recebido / previsto) * 100) : null,
+    vendasCompetencia: {
+      vendasFaturadas,
+      orcamentos,
+      total: vendasMesAtual,
+    },
     projecaoVendas,
     gapVsProjecaoVendas,
   };
@@ -405,9 +459,13 @@ export function montarFinanceiroComparativo(input: {
   parcelasPagarMes: ParcelaBaseProjecao[];
   parcelasReceberMes: ParcelaBaseProjecao[];
   parcelasReceberExtras?: ParcelaBaseProjecao[];
+  vendasFaturadasMes?: number;
+  orcamentosCompetenciaMes?: number;
   vendasMesAtual?: number;
-  vendasMesAnterior1?: number;
-  vendasMesAnterior2?: number;
+  vendasAteDiaMesAnterior1?: number;
+  vendasAteDiaMesAnterior2?: number;
+  vendasRestanteMesAnterior1?: number;
+  vendasRestanteMesAnterior2?: number;
   hojeYm?: string;
   diaHoje?: number;
 }): FinanceiroComparativoPayload {
@@ -420,9 +478,13 @@ export function montarFinanceiroComparativo(input: {
     mesYm: input.mesYm,
     parcelasReceberMes: input.parcelasReceberMes,
     parcelasReceberExtras: input.parcelasReceberExtras,
+    vendasFaturadasMes: input.vendasFaturadasMes,
+    orcamentosCompetenciaMes: input.orcamentosCompetenciaMes,
     vendasMesAtual: input.vendasMesAtual,
-    vendasMesAnterior1: input.vendasMesAnterior1,
-    vendasMesAnterior2: input.vendasMesAnterior2,
+    vendasAteDiaMesAnterior1: input.vendasAteDiaMesAnterior1,
+    vendasAteDiaMesAnterior2: input.vendasAteDiaMesAnterior2,
+    vendasRestanteMesAnterior1: input.vendasRestanteMesAnterior1,
+    vendasRestanteMesAnterior2: input.vendasRestanteMesAnterior2,
     hojeYm: input.hojeYm,
     diaHoje: input.diaHoje,
   });
@@ -432,6 +494,7 @@ export function montarFinanceiroComparativo(input: {
     receita,
     caixa: {
       saldoRealizado: round2(receita.recebido - desembolso.totais.pago),
+      /** Caixa do mês: sem misturar vencido de meses anteriores. */
       gapCaixaMes: round2(
         receita.pipelineMes - desembolso.totais.projetado,
       ),

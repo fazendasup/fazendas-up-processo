@@ -1,6 +1,7 @@
 /**
- * Projeção de vendas no restante do mês com base na média dos 2 meses anteriores.
- * Orçamentos: até dia 15 contam no mês; após dia 15, no mês seguinte (cautela acumula).
+ * Projeção de vendas no restante do mês.
+ * Restante = média do que foi vendido nos últimos N dias dos 2 meses anteriores
+ * (N = dias que faltam no mês atual). Orçamentos: ≤15 no mês; >15 no seguinte.
  */
 import { addMonthsYm } from "./financeiroProjecaoDesembolso";
 
@@ -33,109 +34,207 @@ export function mesCompetenciaVendaOrcamento(
   return addMonthsYm(ym, 1);
 }
 
+/**
+ * Dia dentro do mês de competência (p/ séries “até o dia” / “últimos N dias”).
+ * Spill de orçamento (mês anterior → competência seguinte) conta como dia 1.
+ */
+export function diaNoMesCompetencia(
+  dataPedidoIso: string,
+  status: StatusPedidoVendaOrcamento,
+): { mesYm: string; dia: number } {
+  const mesYm = mesCompetenciaVendaOrcamento(dataPedidoIso, status);
+  const pedidoYm = dataPedidoIso.slice(0, 7);
+  const day = Number(dataPedidoIso.slice(8, 10));
+  if (pedidoYm === mesYm && Number.isFinite(day) && day >= 1) {
+    return { mesYm, dia: Math.min(31, Math.floor(day)) };
+  }
+  return { mesYm, dia: 1 };
+}
+
 export type PedidoCompetenciaInput = {
   dataPedidoIso: string;
   status: StatusPedidoVendaOrcamento;
   valorLiquido: number;
 };
 
-/** Soma valor líquido por mês de competência (venda + orçamento com regra dia 15). */
-export function agregarVendasPorCompetencia(
+export type TotaisCompetenciaMes = {
+  vendas: number;
+  orcamentos: number;
+  total: number;
+};
+
+function emptyTotais(): TotaisCompetenciaMes {
+  return { vendas: 0, orcamentos: 0, total: 0 };
+}
+
+/** Soma valor líquido por mês de competência, separando venda e orçamento. */
+export function agregarVendasPorCompetenciaDetalhe(
   pedidos: PedidoCompetenciaInput[],
-): Map<string, number> {
-  const map = new Map<string, number>();
+): Map<string, TotaisCompetenciaMes> {
+  const map = new Map<string, TotaisCompetenciaMes>();
   for (const p of pedidos) {
     if (!Number.isFinite(p.valorLiquido) || p.valorLiquido === 0) continue;
     const mes = mesCompetenciaVendaOrcamento(p.dataPedidoIso, p.status);
-    map.set(mes, round2((map.get(mes) ?? 0) + p.valorLiquido));
+    const acc = map.get(mes) ?? emptyTotais();
+    if (p.status === "venda") acc.vendas = round2(acc.vendas + p.valorLiquido);
+    else acc.orcamentos = round2(acc.orcamentos + p.valorLiquido);
+    acc.total = round2(acc.vendas + acc.orcamentos);
+    map.set(mes, acc);
   }
   return map;
 }
 
+/** Soma total por competência (venda + orçamento com regra dia 15). */
+export function agregarVendasPorCompetencia(
+  pedidos: PedidoCompetenciaInput[],
+): Map<string, number> {
+  const detalhe = agregarVendasPorCompetenciaDetalhe(pedidos);
+  const map = new Map<string, number>();
+  for (const [mes, t] of Array.from(detalhe.entries())) {
+    map.set(mes, t.total);
+  }
+  return map;
+}
+
+/** Mapa mês → (dia → total líquido). */
+export function agregarVendasPorDiaCompetencia(
+  pedidos: PedidoCompetenciaInput[],
+): Map<string, Map<number, number>> {
+  const map = new Map<string, Map<number, number>>();
+  for (const p of pedidos) {
+    if (!Number.isFinite(p.valorLiquido) || p.valorLiquido === 0) continue;
+    const { mesYm, dia } = diaNoMesCompetencia(p.dataPedidoIso, p.status);
+    let porDia = map.get(mesYm);
+    if (!porDia) {
+      porDia = new Map();
+      map.set(mesYm, porDia);
+    }
+    porDia.set(dia, round2((porDia.get(dia) ?? 0) + p.valorLiquido));
+  }
+  return map;
+}
+
+/** Soma do dia 1 até `diaAte` (inclusive) no mês. */
+export function somarVendasAteDia(
+  porDia: Map<number, number> | undefined,
+  diaAte: number,
+): number {
+  if (!porDia || diaAte < 1) return 0;
+  let s = 0;
+  const limite = Math.floor(diaAte);
+  for (let d = 1; d <= limite; d++) s += porDia.get(d) ?? 0;
+  return round2(s);
+}
+
+/**
+ * Soma dos últimos `nDias` dias do mês (ex.: n=13 num mês de 31 → dias 19–31).
+ */
+export function somarVendasUltimosNDias(
+  porDia: Map<number, number> | undefined,
+  diasNoMes: number,
+  nDias: number,
+): number {
+  if (!porDia || nDias <= 0 || diasNoMes <= 0) return 0;
+  const n = Math.min(Math.floor(nDias), diasNoMes);
+  const inicio = diasNoMes - n + 1;
+  let s = 0;
+  for (let d = inicio; d <= diasNoMes; d++) s += porDia.get(d) ?? 0;
+  return round2(s);
+}
+
 export type ProjecaoVendasRestanteMes = {
-  /** Média do líquido de vendas dos 2 meses anteriores. */
-  mediaVendas2m: number;
-  /** Média da média diária dos 2 meses (líquido / dias do mês). */
-  mediaDiaria2m: number;
   mesesMedia2m: [string, string];
   diasNoMes: number;
   diasPassados: number;
   diasRestantes: number;
-  /** Vendas líquidas já registradas no mês (até hoje, se mês atual). */
+  /** Vendas+orçamentos já na competência do mês. */
   vendasJaNoMes: number;
-  /** Quanto ainda deve entrar: mediaDiaria2m × diasRestantes. */
+  /** Média do que entrou até o mesmo dia nos 2 meses anteriores. */
+  mediaAteMesmoDia2m: number;
+  vendasAteDiaMesAnterior1: number;
+  vendasAteDiaMesAnterior2: number;
+  /**
+   * Média do que entrou nos últimos `diasRestantes` dias dos 2 meses anteriores
+   * (= projeção do que ainda entra).
+   */
+  mediaRestante2m: number;
+  vendasRestanteMesAnterior1: number;
+  vendasRestanteMesAnterior2: number;
   aindaEntraProjetado: number;
   /** vendasJaNoMes + aindaEntraProjetado. */
   projecaoMesTotal: number;
 };
 
+function mediaDeDois(a: number, b: number): number {
+  const temA = a > 0;
+  const temB = b > 0;
+  const n = (temA ? 1 : 0) + (temB ? 1 : 0);
+  if (n === 0) return 0;
+  return round2(((temA ? a : 0) + (temB ? b : 0)) / n);
+}
+
 /**
- * @param mesYm mês de referência do comparativo
- * @param hojeYm mês civil atual (America/SP), ex. 2026-09
- * @param diaHoje dia do mês atual (1–31) em America/SP
+ * Projeta o restante do mês pela média do que foi vendido nos últimos N dias
+ * dos 2 meses anteriores (N = dias restantes no mês de referência).
  */
 export function montarProjecaoVendasRestanteMes(input: {
   mesYm: string;
   hojeYm: string;
   diaHoje: number;
   vendasMesAtual: number;
-  vendasMesAnterior1: number;
-  vendasMesAnterior2: number;
+  vendasAteDiaMesAnterior1: number;
+  vendasAteDiaMesAnterior2: number;
+  vendasRestanteMesAnterior1: number;
+  vendasRestanteMesAnterior2: number;
   mesAnterior1Ym: string;
   mesAnterior2Ym: string;
 }): ProjecaoVendasRestanteMes {
-  const d1 = diasNoMesYm(input.mesAnterior1Ym);
-  const d2 = diasNoMesYm(input.mesAnterior2Ym);
-  const diaria1 = d1 > 0 ? input.vendasMesAnterior1 / d1 : 0;
-  const diaria2 = d2 > 0 ? input.vendasMesAnterior2 / d2 : 0;
-  const tem1 = input.vendasMesAnterior1 > 0;
-  const tem2 = input.vendasMesAnterior2 > 0;
-  const n = (tem1 ? 1 : 0) + (tem2 ? 1 : 0);
-  const mediaDiaria2m =
-    n > 0
-      ? round2(((tem1 ? diaria1 : 0) + (tem2 ? diaria2 : 0)) / n)
-      : 0;
-  const mediaVendas2m =
-    n > 0
-      ? round2(
-          ((tem1 ? input.vendasMesAnterior1 : 0) +
-            (tem2 ? input.vendasMesAnterior2 : 0)) /
-            n,
-        )
-      : 0;
-
   const diasNoMes = diasNoMesYm(input.mesYm);
   let diasPassados: number;
   let diasRestantes: number;
   let vendasJaNoMes = round2(input.vendasMesAtual);
 
   if (input.mesYm < input.hojeYm) {
-    // Mês passado: já fechou
     diasPassados = diasNoMes;
     diasRestantes = 0;
   } else if (input.mesYm > input.hojeYm) {
-    // Mês futuro: nada vendido ainda; projeta o mês inteiro pela média diária
     diasPassados = 0;
     diasRestantes = diasNoMes;
     vendasJaNoMes = 0;
   } else {
-    // Mês corrente
     const dia = Math.min(Math.max(1, Math.floor(input.diaHoje)), diasNoMes);
     diasPassados = dia;
     diasRestantes = Math.max(0, diasNoMes - dia);
   }
 
-  const aindaEntraProjetado = round2(mediaDiaria2m * diasRestantes);
+  const vendasAteDiaMesAnterior1 = round2(input.vendasAteDiaMesAnterior1);
+  const vendasAteDiaMesAnterior2 = round2(input.vendasAteDiaMesAnterior2);
+  const vendasRestanteMesAnterior1 = round2(input.vendasRestanteMesAnterior1);
+  const vendasRestanteMesAnterior2 = round2(input.vendasRestanteMesAnterior2);
+
+  const mediaAteMesmoDia2m = mediaDeDois(
+    vendasAteDiaMesAnterior1,
+    vendasAteDiaMesAnterior2,
+  );
+  const mediaRestante2m =
+    diasRestantes > 0
+      ? mediaDeDois(vendasRestanteMesAnterior1, vendasRestanteMesAnterior2)
+      : 0;
+  const aindaEntraProjetado = mediaRestante2m;
   const projecaoMesTotal = round2(vendasJaNoMes + aindaEntraProjetado);
 
   return {
-    mediaVendas2m,
-    mediaDiaria2m,
     mesesMedia2m: [input.mesAnterior2Ym, input.mesAnterior1Ym],
     diasNoMes,
     diasPassados,
     diasRestantes,
     vendasJaNoMes,
+    mediaAteMesmoDia2m,
+    vendasAteDiaMesAnterior1,
+    vendasAteDiaMesAnterior2,
+    mediaRestante2m,
+    vendasRestanteMesAnterior1,
+    vendasRestanteMesAnterior2,
     aindaEntraProjetado,
     projecaoMesTotal,
   };
