@@ -143,8 +143,8 @@ function textoNatureza(
 
 /**
  * Despesas essenciais que tendem a se repetir todo mês → já projetar ativas.
- * Inclui utilidades, folha/salário, terceiro fixo, combustível e insumos
- * de legumes/folhosas/flores.
+ * Inclui utilidades, folha/salário, terceiro fixo, combustível, insumos
+ * de legumes/folhosas/flores e rúbricas operacionais recorrentes.
  */
 export function ehDespesaEssencialRecorrente(
   descricao: string,
@@ -154,7 +154,7 @@ export function ehDespesaEssencialRecorrente(
   const d = textoNatureza(descricao, rubrica, fornecedor);
 
   const utilidadesFolha =
-    /\b(aluguel|locacao|energia|eletrica|eletricidade|luz|agua|esgoto|gas|internet|banda[\s-]?larga|telefone|celular|telecom|condominio|iptu|seguro|folha(\s+de\s+pagamento)?|salario|remuneracao|holerite|pro[\s-]?labore|adiantamento\s+salarial|plano\s+(de\s+)?saude|vale[\s-]*(transporte|refeicao|alimentacao)|contabil(idade)?|software|assinatura|saas|hospedagem|dominio|limpeza|conservacao|seguranca|vigilancia|manutencao(\s+predial)?|contador|escritorio\s+contabil)\b/.test(
+    /\b(aluguel|locacao|energia|eletrica|eletricidade|luz|agua|esgoto|gas|internet|banda[\s-]?larga|telefone|celular|telecom|condominio|iptu|seguro|folha(\s+de\s+pagamento)?|salarios?|remuneracao|holerite|pro[\s-]?labore|adiantamento\s+salarial|plano\s+(de\s+)?saude|vale[\s-]*(transporte|refeicao|alimentacao)|contabil(idade)?|software|assinatura|saas|hospedagem|dominio|limpeza|conservacao|seguranca|vigilancia|manutencao(\s+predial)?|contador|escritorio\s+contabil)\b/.test(
       d,
     );
 
@@ -174,7 +174,28 @@ export function ehDespesaEssencialRecorrente(
       d,
     );
 
-  return utilidadesFolha || terceiroFixo || combustivel || insumosHorta;
+  const operacionaisRecorrentes =
+    /\blanches?\s+e\s+refeicoes?\b/.test(d) ||
+    /\brefeicoes?\b/.test(d) ||
+    /\blanches?\b/.test(d) ||
+    /\binsumo(\s+de)?\s+embalagens?\b/.test(d) ||
+    /\bembalagens?\b/.test(d) ||
+    /\banuidade\s+(do\s+)?cartao\b/.test(d) ||
+    /\binsumo\s+lavagem(\s+industrial)?\b/.test(d) ||
+    /\binsumo\s+producao\b/.test(d) ||
+    /\btarifas?\s+bancarias?\b/.test(d) ||
+    /\bmateriais?\s+de\s+uso\s+e\s+consumo\b/.test(d) ||
+    /\buso\s+e\s+consumo\b/.test(d) ||
+    // Rúbrica genérica "Insumo" / "Insumos" (palavra isolada ou início)
+    /(^|[\s|/·\-])insumos?([\s|/·\-]|$)/.test(d);
+
+  return (
+    utilidadesFolha ||
+    terceiroFixo ||
+    combustivel ||
+    insumosHorta ||
+    operacionaisRecorrentes
+  );
 }
 
 /**

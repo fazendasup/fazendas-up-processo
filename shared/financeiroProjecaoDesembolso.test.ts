@@ -51,6 +51,29 @@ describe("financeiroProjecaoDesembolso", () => {
     expect(
       ehDespesaEssencialRecorrente("Mix flores", "Flores comestíveis"),
     ).toBe(true);
+    expect(
+      ehDespesaEssencialRecorrente("Marmita equipe", "Lanches e Refeições"),
+    ).toBe(true);
+    expect(
+      ehDespesaEssencialRecorrente("Caixas", "Insumo de Embalagens"),
+    ).toBe(true);
+    expect(ehDespesaEssencialRecorrente("Folha set", "Salários")).toBe(true);
+    expect(
+      ehDespesaEssencialRecorrente("Anuidade", "Anuidade Cartão"),
+    ).toBe(true);
+    expect(
+      ehDespesaEssencialRecorrente("Sabão", "Insumo lavagem industrial"),
+    ).toBe(true);
+    expect(ehDespesaEssencialRecorrente("Compra", "Insumo")).toBe(true);
+    expect(
+      ehDespesaEssencialRecorrente("TED", "Tarifas Bancárias"),
+    ).toBe(true);
+    expect(
+      ehDespesaEssencialRecorrente("MP", "Insumo produção"),
+    ).toBe(true);
+    expect(
+      ehDespesaEssencialRecorrente("Papel", "Materiais de Uso e Consumo"),
+    ).toBe(true);
     expect(ehDespesaEssencialRecorrente("Compra notebook", "Equipamentos")).toBe(
       false,
     );
