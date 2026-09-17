@@ -1,9 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, Fragment } from "react";
 import { Link } from "wouter";
 import {
   ArrowDownRight,
   ArrowLeft,
   ArrowUpRight,
+  ChevronDown,
+  ChevronRight,
   RefreshCcw,
   TrendingDown,
   TrendingUp,
@@ -107,6 +109,16 @@ export default function FinanceiroComparativoPage() {
   const caixa = q.data?.caixa;
 
   const rubricas = useMemo(() => d?.rubricas ?? [], [d?.rubricas]);
+  const [abertas, setAbertas] = useState<Set<string>>(() => new Set());
+
+  const toggleRubrica = (rubrica: string) => {
+    setAbertas(prev => {
+      const next = new Set(prev);
+      if (next.has(rubrica)) next.delete(rubrica);
+      else next.add(rubrica);
+      return next;
+    });
+  };
 
   const recarregarCa = async () => {
     try {
@@ -234,6 +246,10 @@ export default function FinanceiroComparativoPage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Por rúbrica</CardTitle>
+                <p className="text-xs font-normal text-muted-foreground">
+                  Clique na rúbrica para ver as linhas projetadas e os títulos
+                  pagos no Conta Azul.
+                </p>
               </CardHeader>
               <CardContent className="overflow-x-auto">
                 {rubricas.length === 0 ? (
@@ -266,51 +282,148 @@ export default function FinanceiroComparativoPage() {
                         const falta = rub.status === "faltando";
                         const extra = rub.status === "nao_programada";
                         const atraso = rub.status === "pago_em_atraso";
+                        const aberta = abertas.has(rub.rubrica);
+                        const projetados = (rub.detalhes ?? []).filter(
+                          x => x.origem === "projetado",
+                        );
+                        const pagos = (rub.detalhes ?? []).filter(
+                          x => x.origem === "pago",
+                        );
                         return (
-                          <tr
-                            key={rub.rubrica}
-                            className="border-b border-border/60 last:border-0"
-                          >
-                            <td className="py-2 pr-2 font-medium">
-                              {rub.rubrica}
-                            </td>
-                            <td className="py-2 pr-2 text-right tabular-nums">
-                              {fmtMoney(rub.projetado)}
-                            </td>
-                            <td className="py-2 pr-2 text-right tabular-nums">
-                              {fmtMoney(rub.pago)}
-                            </td>
-                            <td className="py-2 pr-2 text-right tabular-nums">
-                              {fmtMoney(rub.naoPago)}
-                            </td>
-                            <td
-                              className={`py-2 pr-2 text-right tabular-nums ${
-                                aMais || extra ? "text-red-600" : ""
-                              }`}
-                            >
-                              {fmtMoney(rub.pagoAMais)}
-                            </td>
-                            <td
-                              className={`py-2 text-xs ${
-                                aMais || extra
-                                  ? "text-red-600"
-                                  : atraso
-                                    ? "text-amber-700"
-                                    : falta
+                          <Fragment key={rub.rubrica}>
+                            <tr className="border-b border-border/60 last:border-0">
+                              <td className="py-2 pr-2">
+                                <button
+                                  type="button"
+                                  className="flex max-w-full items-center gap-1 text-left font-medium hover:underline"
+                                  onClick={() => toggleRubrica(rub.rubrica)}
+                                >
+                                  {aberta ? (
+                                    <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                  ) : (
+                                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                  )}
+                                  <span className="truncate">{rub.rubrica}</span>
+                                </button>
+                              </td>
+                              <td className="py-2 pr-2 text-right tabular-nums">
+                                {fmtMoney(rub.projetado)}
+                              </td>
+                              <td className="py-2 pr-2 text-right tabular-nums">
+                                {fmtMoney(rub.pago)}
+                              </td>
+                              <td className="py-2 pr-2 text-right tabular-nums">
+                                {fmtMoney(rub.naoPago)}
+                              </td>
+                              <td
+                                className={`py-2 pr-2 text-right tabular-nums ${
+                                  aMais || extra ? "text-red-600" : ""
+                                }`}
+                              >
+                                {fmtMoney(rub.pagoAMais)}
+                              </td>
+                              <td
+                                className={`py-2 text-xs ${
+                                  aMais || extra
+                                    ? "text-red-600"
+                                    : atraso
                                       ? "text-amber-700"
-                                      : "text-emerald-700"
-                              }`}
-                            >
-                              <span className="inline-flex items-center gap-0.5">
-                                {aMais || extra ? (
-                                  <ArrowUpRight className="h-3.5 w-3.5" />
-                                ) : falta || atraso ? (
-                                  <ArrowDownRight className="h-3.5 w-3.5" />
-                                ) : null}
-                                {statusLabel(rub.status)}
-                              </span>
-                            </td>
-                          </tr>
+                                      : falta
+                                        ? "text-amber-700"
+                                        : "text-emerald-700"
+                                }`}
+                              >
+                                <span className="inline-flex items-center gap-0.5">
+                                  {aMais || extra ? (
+                                    <ArrowUpRight className="h-3.5 w-3.5" />
+                                  ) : falta || atraso ? (
+                                    <ArrowDownRight className="h-3.5 w-3.5" />
+                                  ) : null}
+                                  {statusLabel(rub.status)}
+                                </span>
+                              </td>
+                            </tr>
+                            {aberta ? (
+                              <tr className="border-b border-border/40 bg-muted/30">
+                                <td colSpan={6} className="px-3 py-2">
+                                  <div className="grid gap-3 md:grid-cols-2">
+                                    <div>
+                                      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                        Projetado ({projetados.length})
+                                      </p>
+                                      {projetados.length === 0 ? (
+                                        <p className="text-xs text-muted-foreground">
+                                          Nada marcado na grade.
+                                        </p>
+                                      ) : (
+                                        <ul className="space-y-1">
+                                          {projetados.map(det => (
+                                            <li
+                                              key={det.id}
+                                              className="flex items-start justify-between gap-2 text-xs"
+                                            >
+                                              <span className="min-w-0">
+                                                <span className="block truncate font-medium">
+                                                  {det.label}
+                                                </span>
+                                                {det.fornecedor ? (
+                                                  <span className="text-muted-foreground">
+                                                    {det.fornecedor}
+                                                  </span>
+                                                ) : null}
+                                              </span>
+                                              <span className="shrink-0 tabular-nums">
+                                                {fmtMoney(det.valor)}
+                                              </span>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      )}
+                                    </div>
+                                    <div>
+                                      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                        Pago Conta Azul ({pagos.length})
+                                      </p>
+                                      {pagos.length === 0 ? (
+                                        <p className="text-xs text-muted-foreground">
+                                          Nenhum pagamento no mês.
+                                        </p>
+                                      ) : (
+                                        <ul className="space-y-1">
+                                          {pagos.map(det => (
+                                            <li
+                                              key={det.id}
+                                              className="flex items-start justify-between gap-2 text-xs"
+                                            >
+                                              <span className="min-w-0">
+                                                <span className="block truncate font-medium">
+                                                  {det.label}
+                                                </span>
+                                                <span className="text-muted-foreground">
+                                                  {[
+                                                    det.fornecedor,
+                                                    det.dataPagamento?.slice(
+                                                      0,
+                                                      10,
+                                                    ),
+                                                  ]
+                                                    .filter(Boolean)
+                                                    .join(" · ")}
+                                                </span>
+                                              </span>
+                                              <span className="shrink-0 tabular-nums">
+                                                {fmtMoney(det.valor)}
+                                              </span>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            ) : null}
+                          </Fragment>
                         );
                       })}
                     </tbody>

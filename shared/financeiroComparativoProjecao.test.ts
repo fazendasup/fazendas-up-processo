@@ -106,6 +106,7 @@ describe("montarComparativoDesembolsoMes", () => {
 
     const mat = out.rubricas.find(r => r.rubrica === "Materiais para Revenda")!;
     expect(mat.status).toBe("nao_programada");
+    expect(mat.detalhes.some(d => d.origem === "pago")).toBe(true);
   });
 
   it("marca vale-transporte pago sem projeção como atraso, não não-programada", () => {

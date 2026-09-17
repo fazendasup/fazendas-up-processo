@@ -26,6 +26,17 @@ export type StatusRubricaComparativo =
   | "pago_em_atraso"
   | "nao_programada";
 
+export type ComparativoDesembolsoDetalhe = {
+  id: string;
+  /** Projetado na grade ou pago no Conta Azul. */
+  origem: "projetado" | "pago";
+  label: string;
+  fornecedor: string | null;
+  valor: number;
+  /** Data de pagamento (só origem pago). */
+  dataPagamento: string | null;
+};
+
 export type ComparativoDesembolsoRubrica = {
   rubrica: string;
   projetado: number;
@@ -39,6 +50,8 @@ export type ComparativoDesembolsoRubrica = {
   desvio: number;
   desvioPct: number | null;
   status: StatusRubricaComparativo;
+  /** Linhas da grade + títulos pagos (para expandir na UI). */
+  detalhes: ComparativoDesembolsoDetalhe[];
 };
 
 export type ComparativoDesembolsoMes = {
@@ -129,6 +142,13 @@ export function montarComparativoDesembolsoMes(input: {
   const { mesYm, linhasProjecao, parcelasPagarMes } = input;
   const projetadoPor = new Map<string, number>();
   const pagoPor = new Map<string, number>();
+  const detalhesPor = new Map<string, ComparativoDesembolsoDetalhe[]>();
+
+  const pushDetalhe = (rub: string, d: ComparativoDesembolsoDetalhe) => {
+    const list = detalhesPor.get(rub) ?? [];
+    list.push(d);
+    detalhesPor.set(rub, list);
+  };
 
   for (const lin of linhasProjecao) {
     if (ehCreditoOuDescontoObtido(lin.label, lin.rubrica)) continue;
@@ -137,7 +157,16 @@ export function montarComparativoDesembolsoMes(input: {
       continue;
     }
     const rub = labelRubrica(lin.rubrica);
-    projetadoPor.set(rub, round2((projetadoPor.get(rub) ?? 0) + cel.valorEfetivo));
+    const valor = round2(cel.valorEfetivo);
+    projetadoPor.set(rub, round2((projetadoPor.get(rub) ?? 0) + valor));
+    pushDetalhe(rub, {
+      id: `proj:${lin.id}`,
+      origem: "projetado",
+      label: lin.label,
+      fornecedor: lin.fornecedor,
+      valor,
+      dataPagamento: null,
+    });
   }
 
   for (const p of parcelasPagarMes) {
@@ -147,6 +176,14 @@ export function montarComparativoDesembolsoMes(input: {
     if (mesPagamentoParcela(p) !== mesYm) continue;
     const rub = labelRubrica(p.rubrica);
     pagoPor.set(rub, round2((pagoPor.get(rub) ?? 0) + pago));
+    pushDetalhe(rub, {
+      id: `pago:${p.id}`,
+      origem: "pago",
+      label: p.descricao,
+      fornecedor: p.fornecedor,
+      valor: pago,
+      dataPagamento: p.dataPagamento,
+    });
   }
 
   const chaves = new Set([
@@ -165,6 +202,10 @@ export function montarComparativoDesembolsoMes(input: {
       status === "pago_em_atraso"
         ? 0
         : round2(Math.max(0, pago - projetado));
+    const detalhes = [...(detalhesPor.get(rub) ?? [])].sort((a, b) => {
+      if (a.origem !== b.origem) return a.origem === "projetado" ? -1 : 1;
+      return b.valor - a.valor;
+    });
     rubricas.push({
       rubrica: rub,
       projetado,
@@ -175,6 +216,7 @@ export function montarComparativoDesembolsoMes(input: {
       desvioPct:
         status === "pago_em_atraso" ? null : desvioPct(desvio, projetado),
       status,
+      detalhes,
     });
   }
 
