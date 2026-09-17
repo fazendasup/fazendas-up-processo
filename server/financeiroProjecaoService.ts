@@ -99,12 +99,11 @@ export async function carregarProjecaoDesembolso(
     mesInicioYm,
     ...grade,
     avisos: [
-      "Horizonte: mês anterior (contexto) + 3 meses à frente.",
+      "Base = somente o que foi PAGO no mês anterior (sem previsão aberta do Conta Azul).",
+      "Essenciais (energia, aluguel, água, internet, folha…) já entram como projetado recorrente.",
+      "Demais itens: valor sugerido — marque o checkbox se vai continuar.",
       "Total da projeção = só os 3 meses à frente (mês anterior não entra).",
-      "Parcela = cartão/boleto/financiamento parcelado (não confunde com folha 14/17).",
-      "Executado = já pago no Conta Azul (somente leitura).",
-      "Previsto CA = título aberto com vencimento no mês.",
-      "Projetado = recorrência estimada a partir do histórico.",
+      "Mês anterior = contexto executado (somente leitura).",
     ],
   };
 }

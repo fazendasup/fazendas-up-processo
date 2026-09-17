@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Lock, Plus, Trash2 } from "lucide-react";
+import { Filter, Lock, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { addMonthsYm } from "@shared/financeiroProjecaoDesembolso";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  addMonthsYm,
+  sugerirValorAoAtivarProjecao,
+} from "@shared/financeiroProjecaoDesembolso";
+
+const RUBRICA_SEM = "__sem_rubrica__";
+const RUBRICA_TODAS = "__todas__";
 
 function fmtMoney(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "—";
@@ -31,8 +44,6 @@ function origemLabel(o: string): string {
   switch (o) {
     case "executado":
       return "Executado";
-    case "previsto_ca":
-      return "Previsto CA";
     case "projetado":
       return "Projetado";
     default:
@@ -48,6 +59,7 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
     addMonthsYm(mesInicioYm, 3),
   );
   const [draftValor, setDraftValor] = useState<Record<string, string>>({});
+  const [filtroRubrica, setFiltroRubrica] = useState<string>(RUBRICA_TODAS);
 
   const proj = trpc.financeiroCfo.projecaoDesembolso.useQuery(
     { mesInicioYm },
@@ -94,13 +106,54 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
   const data = proj.data;
   const cellKey = (linhaId: string, mesYm: string) => `${linhaId}||${mesYm}`;
 
+  const rubricasDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    let temSem = false;
+    for (const l of data?.linhas ?? []) {
+      const r = l.rubrica?.trim();
+      if (r) set.add(r);
+      else temSem = true;
+    }
+    return {
+      nomes: Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR")),
+      temSem,
+    };
+  }, [data?.linhas]);
+
+  const linhasFiltradas = useMemo(() => {
+    const linhas = data?.linhas ?? [];
+    if (filtroRubrica === RUBRICA_TODAS) return linhas;
+    if (filtroRubrica === RUBRICA_SEM) {
+      return linhas.filter(l => !l.rubrica?.trim());
+    }
+    return linhas.filter(l => (l.rubrica?.trim() || "") === filtroRubrica);
+  }, [data?.linhas, filtroRubrica]);
+
+  const totaisFiltrados = useMemo(() => {
+    if (!data) {
+      return { porMes: [] as Array<{ mesYm: string; total: number }>, geral: 0 };
+    }
+    const porMes = data.colunas.map(col => {
+      const total = linhasFiltradas.reduce((s, lin) => {
+        const c = lin.celulas.find(x => x.mesYm === col.mesYm);
+        if (!c || !c.ativo) return s;
+        return s + c.valorEfetivo;
+      }, 0);
+      return { mesYm: col.mesYm, total };
+    });
+    const geral = porMes
+      .filter(t => data.colunas.find(c => c.mesYm === t.mesYm)?.contaNoTotal)
+      .reduce((s, t) => s + t.total, 0);
+    return { porMes, geral };
+  }, [data, linhasFiltradas]);
+
   const resumoNatureza = useMemo(() => {
     const map = { parcela: 0, recorrente: 0, unico: 0, manual: 0 };
-    for (const l of data?.linhas ?? []) {
+    for (const l of linhasFiltradas) {
       map[l.natureza] = (map[l.natureza] ?? 0) + 1;
     }
     return map;
-  }, [data?.linhas]);
+  }, [linhasFiltradas]);
 
   if (proj.isLoading) {
     return (
@@ -110,11 +163,11 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
     );
   }
   if (proj.isError) {
-    return (
-      <p className="text-sm text-red-700">{proj.error.message}</p>
-    );
+    return <p className="text-sm text-red-700">{proj.error.message}</p>;
   }
   if (!data) return null;
+
+  const filtroAtivo = filtroRubrica !== RUBRICA_TODAS;
 
   return (
     <div className="space-y-4">
@@ -122,20 +175,57 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Projeção de desembolso</CardTitle>
           <p className="text-xs text-muted-foreground">
-            Mês anterior (contexto) + 3 meses à frente (ref. {mesInicioYm}) ·
-            total só dos 3 à frente · editável só previsto/projetado
+            Base = pago no mês anterior · essenciais já projetados · demais
+            você marca se continua · total = 3 meses à frente
           </p>
           <p className="text-xs text-muted-foreground">
-            Parcela = cartão/boleto parcelado · {resumoNatureza.parcela} ·
-            recorrente {resumoNatureza.recorrente} · único{" "}
-            {resumoNatureza.unico} · manual {resumoNatureza.manual} · total
-            projeção{" "}
+            Recorrente {resumoNatureza.recorrente} · parcela{" "}
+            {resumoNatureza.parcela} · único {resumoNatureza.unico} · manual{" "}
+            {resumoNatureza.manual} · total
+            {filtroAtivo ? " filtrado" : ""}{" "}
             <span className="font-semibold text-foreground">
-              {fmtMoney(data.totalGeral)}
+              {fmtMoney(totaisFiltrados.geral)}
             </span>
           </p>
         </CardHeader>
         <CardContent className="space-y-3">
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="min-w-[220px]">
+              <Label className="text-xs">Filtrar por rúbrica</Label>
+              <Select value={filtroRubrica} onValueChange={setFiltroRubrica}>
+                <SelectTrigger className="h-9">
+                  <Filter className="mr-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <SelectValue placeholder="Todas as rúbricas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={RUBRICA_TODAS}>Todas as rúbricas</SelectItem>
+                  {rubricasDisponiveis.temSem ? (
+                    <SelectItem value={RUBRICA_SEM}>Sem rúbrica</SelectItem>
+                  ) : null}
+                  {rubricasDisponiveis.nomes.map(r => (
+                    <SelectItem key={r} value={r}>
+                      {r}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {filtroAtivo ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-9 gap-1 text-muted-foreground"
+                onClick={() => setFiltroRubrica(RUBRICA_TODAS)}
+              >
+                <X className="h-3.5 w-3.5" />
+                Limpar filtro
+              </Button>
+            ) : null}
+            <div className="self-center pb-2 text-xs text-muted-foreground">
+              {linhasFiltradas.length} de {data.linhas.length} linha(s)
+            </div>
+          </div>
+
           <div className="flex flex-wrap items-end gap-2">
             <div>
               <Label className="text-xs">Nova coluna (mês)</Label>
@@ -218,7 +308,7 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                         </div>
                         {!c.contaNoTotal ? (
                           <span className="text-[9px] font-normal normal-case text-muted-foreground">
-                            contexto
+                            pago · contexto
                           </span>
                         ) : null}
                       </div>
@@ -229,7 +319,7 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                 </tr>
               </thead>
               <tbody>
-                {data.linhas.map(lin => (
+                {linhasFiltradas.map(lin => (
                   <tr key={lin.id} className="border-b align-top">
                     <td className="px-3 py-2">
                       <p className="break-words font-medium leading-snug">
@@ -255,14 +345,30 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                                   checked={cel.ativo}
                                   disabled={salvarCelula.isPending}
                                   onCheckedChange={v => {
+                                    const ativar = v === true;
+                                    const valor = ativar
+                                      ? sugerirValorAoAtivarProjecao(
+                                          cel,
+                                          lin.celulas,
+                                        )
+                                      : cel.valorEfetivo;
+                                    if (ativar && valor > 0) {
+                                      setDraftValor(prev => ({
+                                        ...prev,
+                                        [k]: String(valor),
+                                      }));
+                                    }
                                     salvarCelula.mutate({
                                       linhaId: lin.id,
                                       mesYm: cel.mesYm,
-                                      ativo: v === true,
-                                      valorOverride: cel.valorEfetivo,
+                                      ativo: ativar,
+                                      valorOverride: ativar
+                                        ? valor
+                                        : cel.valorEfetivo,
                                     });
                                   }}
-                                  aria-label="Ativar na projeção"
+                                  aria-label="Incluir na projeção"
+                                  title="Marcar se vai continuar"
                                 />
                               ) : (
                                 <Lock className="h-3 w-3 text-muted-foreground" />
@@ -273,11 +379,18 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                                   type="number"
                                   step="0.01"
                                   disabled={!cel.ativo || salvarCelula.isPending}
+                                  placeholder={
+                                    cel.valorBase > 0
+                                      ? String(cel.valorBase)
+                                      : undefined
+                                  }
                                   value={
                                     draft ??
-                                    (cel.valorEfetivo
+                                    (cel.ativo && cel.valorEfetivo
                                       ? String(cel.valorEfetivo)
-                                      : "")
+                                      : cel.ativo && cel.valorBase
+                                        ? String(cel.valorBase)
+                                        : "")
                                   }
                                   onChange={e =>
                                     setDraftValor(prev => ({
@@ -300,13 +413,16 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                                   }}
                                 />
                               ) : (
-                                <span className="tabular-nums font-medium">
+                                <span className="font-medium tabular-nums">
                                   {fmtMoney(cel.valorEfetivo)}
                                 </span>
                               )}
                             </div>
                             <span className="text-[10px] text-muted-foreground">
                               {origemLabel(cel.origem)}
+                              {cel.editavel && !cel.ativo
+                                ? " · marque p/ continuar"
+                                : ""}
                             </span>
                           </div>
                         </td>
@@ -337,8 +453,9 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                 <tr className="bg-muted/30 font-semibold">
                   <td className="px-2 py-2" colSpan={2}>
                     Total (3 meses à frente)
+                    {filtroAtivo ? " · filtro" : ""}
                   </td>
-                  {data.totaisPorMes.map(t => {
+                  {totaisFiltrados.porMes.map(t => {
                     const col = data.colunas.find(c => c.mesYm === t.mesYm);
                     const noTotal = col?.contaNoTotal !== false;
                     return (
@@ -358,16 +475,17 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                     );
                   })}
                   <td className="px-2 py-2 text-right tabular-nums">
-                    {fmtMoney(data.totalGeral)}
+                    {fmtMoney(totaisFiltrados.geral)}
                   </td>
                   <td />
                 </tr>
               </tfoot>
             </table>
-            {data.linhas.length === 0 ? (
+            {linhasFiltradas.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
-                Sem desembolsos neste horizonte. Adicione uma linha ou confira o
-                Conta Azul.
+                {filtroAtivo
+                  ? "Nenhuma linha com essa rúbrica."
+                  : "Sem pagamentos executados no mês anterior. Confira o Conta Azul ou adicione uma linha."}
               </p>
             ) : null}
           </div>

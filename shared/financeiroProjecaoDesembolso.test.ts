@@ -1,13 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   detectarNaturezaDesembolso,
+  ehDespesaEssencialRecorrente,
   montarProjecaoDesembolso,
   mesesProjecaoNoTotal,
   mesesProjecaoPadrao,
+  sugerirValorAoAtivarProjecao,
 } from "./financeiroProjecaoDesembolso";
 
 describe("financeiroProjecaoDesembolso", () => {
-  it("parcela só para cartão/boleto; folha e aluguel n/m não são parcela", () => {
+  it("parcela só para cartão/boleto; essenciais são recorrentes", () => {
     expect(
       detectarNaturezaDesembolso("Compra notebook cartão 3/12", 1),
     ).toBe("parcela");
@@ -18,17 +20,22 @@ describe("financeiroProjecaoDesembolso", () => {
       detectarNaturezaDesembolso("14/17 - Folha de Pagamento", 1, {
         rubrica: "Folha",
       }),
-    ).toBe("unico");
-    expect(
-      detectarNaturezaDesembolso("14/17 - Folha de Pagamento", 3, {
-        rubrica: "Folha",
-      }),
     ).toBe("recorrente");
-    expect(detectarNaturezaDesembolso("10/12 - ALUGUEL REF. TARUMA", 2)).toBe(
+    expect(detectarNaturezaDesembolso("10/12 - ALUGUEL REF. TARUMA", 1)).toBe(
       "recorrente",
     );
-    expect(detectarNaturezaDesembolso("Energia elétrica", 3)).toBe("recorrente");
+    expect(detectarNaturezaDesembolso("Energia elétrica", 1)).toBe("recorrente");
     expect(detectarNaturezaDesembolso("Notebook à vista", 1)).toBe("unico");
+  });
+
+  it("detecta rúbricas essenciais", () => {
+    expect(ehDespesaEssencialRecorrente("Conta luz", "Energia")).toBe(true);
+    expect(ehDespesaEssencialRecorrente("ALUGUEL REF. TARUMA", "Aluguel")).toBe(
+      true,
+    );
+    expect(ehDespesaEssencialRecorrente("Compra notebook", "Equipamentos")).toBe(
+      false,
+    );
   });
 
   it("horizonte = mês anterior + 3 meses; total só 3 à frente", () => {
@@ -45,103 +52,105 @@ describe("financeiroProjecaoDesembolso", () => {
     ]);
   });
 
-  it("trava célula executada e permite override na projetada", () => {
+  it("só usa o que foi pago no mês anterior; ignora previsão CA", () => {
     const grade = montarProjecaoDesembolso({
       mesInicioYm: "2026-09",
       parcelas: [
         {
-          id: "p1",
-          descricao: "Cartão Visa 1/6 notebook",
-          fornecedor: "Loja X",
-          rubrica: "Equipamentos",
+          id: "pago-ago",
+          descricao: "Compra produto",
+          fornecedor: "Fornecedor X",
+          rubrica: "Insumos",
           valor: 5000,
           valorPago: 5000,
           valorEmAberto: 0,
           status: "RECEBIDO",
-          dataVencimento: "2026-09-10",
-          dataPagamento: "2026-09-09",
+          dataVencimento: "2026-08-10",
+          dataPagamento: "2026-08-09",
         },
         {
-          id: "p2",
-          descricao: "Cartão Visa 2/6 notebook",
-          fornecedor: "Loja X",
-          rubrica: "Equipamentos",
-          valor: 5000,
+          id: "aberto-set",
+          descricao: "Título aberto Conta Azul",
+          fornecedor: "Fornecedor Y",
+          rubrica: "Insumos",
+          valor: 9000,
           valorPago: 0,
-          valorEmAberto: 5000,
+          valorEmAberto: 9000,
           status: "EM_ABERTO",
-          dataVencimento: "2026-10-10",
+          dataVencimento: "2026-09-15",
           dataPagamento: null,
-        },
-      ],
-      overrides: [
-        {
-          linhaId: "ca:p2",
-          mesYm: "2026-10",
-          valorOverride: 4800,
-          ativo: true,
         },
       ],
     });
 
-    expect(grade.colunas.map(c => c.mesYm)).toEqual([
-      "2026-08",
-      "2026-09",
-      "2026-10",
-      "2026-11",
-    ]);
-    expect(grade.colunas.find(c => c.mesYm === "2026-08")?.contaNoTotal).toBe(
-      false,
-    );
-    expect(grade.colunas.find(c => c.mesYm === "2026-09")?.contaNoTotal).toBe(
-      true,
-    );
-    const set = grade.linhas.find(l => l.id === "ca:p1");
-    const out = grade.linhas.find(l => l.id === "ca:p2");
-    expect(set?.celulas.find(c => c.mesYm === "2026-09")?.editavel).toBe(false);
-    expect(out?.celulas.find(c => c.mesYm === "2026-10")?.valorEfetivo).toBe(
-      4800,
-    );
-    expect(out?.natureza).toBe("parcela");
+    expect(grade.linhas).toHaveLength(1);
+    const lin = grade.linhas[0]!;
+    const ago = lin.celulas.find(c => c.mesYm === "2026-08");
+    const set = lin.celulas.find(c => c.mesYm === "2026-09");
+    expect(ago?.origem).toBe("executado");
+    expect(ago?.editavel).toBe(false);
+    expect(ago?.valorEfetivo).toBe(5000);
+    expect(set?.origem).toBe("projetado");
+    expect(set?.ativo).toBe(false); // não essencial → usuário decide
+    expect(set?.valorBase).toBe(5000);
+    expect(grade.totalGeral).toBe(0);
   });
 
-  it("totalGeral ignora o mês anterior", () => {
+  it("essenciais (energia/aluguel) já entram projetados ativos", () => {
     const grade = montarProjecaoDesembolso({
       mesInicioYm: "2026-09",
       parcelas: [
         {
-          id: "ago",
-          descricao: "Aluguel ago",
-          fornecedor: "Imob",
-          rubrica: "Aluguel",
-          valor: 10000,
-          valorPago: 10000,
+          id: "energia",
+          descricao: "Conta de energia",
+          fornecedor: "CPFL",
+          rubrica: "Energia elétrica",
+          valor: 1200,
+          valorPago: 1200,
           valorEmAberto: 0,
           status: "RECEBIDO",
-          dataVencimento: "2026-08-05",
-          dataPagamento: "2026-08-05",
+          dataVencimento: "2026-08-20",
+          dataPagamento: "2026-08-18",
         },
         {
-          id: "set",
-          descricao: "Aluguel set",
+          id: "aluguel",
+          descricao: "ALUGUEL REF. TARUMA",
           fornecedor: "Imob",
           rubrica: "Aluguel",
-          valor: 10000,
-          valorPago: 0,
-          valorEmAberto: 10000,
-          status: "EM_ABERTO",
-          dataVencimento: "2026-09-05",
-          dataPagamento: null,
+          valor: 17400,
+          valorPago: 17400,
+          valorEmAberto: 0,
+          status: "RECEBIDO",
+          dataVencimento: "2026-08-10",
+          dataPagamento: "2026-08-10",
         },
       ],
     });
-    const ago = grade.totaisPorMes.find(t => t.mesYm === "2026-08");
-    const set = grade.totaisPorMes.find(t => t.mesYm === "2026-09");
-    expect(ago?.total).toBe(10000);
-    expect(set?.total).toBe(10000);
-    expect(grade.totalGeral).toBe(10000);
-    expect(grade.linhas.find(l => l.id === "ca:ago")?.totalAtivo).toBe(0);
-    expect(grade.linhas.find(l => l.id === "ca:set")?.totalAtivo).toBe(10000);
+
+    expect(grade.linhas).toHaveLength(2);
+    for (const lin of grade.linhas) {
+      expect(lin.natureza).toBe("recorrente");
+      const set = lin.celulas.find(c => c.mesYm === "2026-09");
+      expect(set?.ativo).toBe(true);
+      expect(set?.origem).toBe("projetado");
+      expect(set?.editavel).toBe(true);
+      const ago = lin.celulas.find(c => c.mesYm === "2026-08");
+      expect(ago?.editavel).toBe(false);
+    }
+    // 3 meses × (1200+17400) = 55800
+    expect(grade.totalGeral).toBe(55800);
+  });
+
+  it("sugere valor ao ativar a partir da base da linha", () => {
+    expect(
+      sugerirValorAoAtivarProjecao(
+        { mesYm: "2026-10", valorBase: 0, valorEfetivo: 0 },
+        [
+          { mesYm: "2026-08", valorBase: 1000, valorEfetivo: 1000 },
+          { mesYm: "2026-10", valorBase: 0, valorEfetivo: 0 },
+        ],
+      ),
+    ).toBe(1000);
   });
 
   it("aceita linha e coluna manuais", () => {

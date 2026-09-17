@@ -1,13 +1,13 @@
 /**
- * Projeção de desembolso (contas a pagar) — grade editável.
- * Células já executadas (pagas) são somente leitura; previstas/projetadas editáveis.
+ * Projeção de desembolso — base = o que foi PAGO no mês anterior.
+ * Sem títulos abertos do Conta Azul. Essenciais (energia, aluguel…) já entram
+ * como projetado recorrente; demais ficam sugeridos para o usuário ativar.
  */
 
 export type NaturezaDesembolso = "parcela" | "recorrente" | "unico" | "manual";
 
 export type OrigemCelulaProjecao =
   | "executado"
-  | "previsto_ca"
   | "projetado"
   | "manual";
 
@@ -32,6 +32,24 @@ export type LinhaProjecao = {
   /** Soma das células ativas nos meses que entram no total (sem mês anterior). */
   totalAtivo: number;
 };
+
+/** Sugere valor ao ativar célula vazia: base da célula → outras células da linha. */
+export function sugerirValorAoAtivarProjecao(
+  celula: Pick<CelulaProjecao, "mesYm" | "valorBase" | "valorEfetivo">,
+  celulasLinha: Array<
+    Pick<CelulaProjecao, "mesYm" | "valorBase" | "valorEfetivo">
+  >,
+): number {
+  if (celula.valorEfetivo > 0) return round2(celula.valorEfetivo);
+  if (celula.valorBase > 0) return round2(celula.valorBase);
+  const outros = celulasLinha
+    .filter(c => c.mesYm !== celula.mesYm)
+    .map(c => (c.valorEfetivo > 0 ? c.valorEfetivo : c.valorBase))
+    .filter(v => v > 0);
+  if (outros.length === 0) return 0;
+  const soma = outros.reduce((s, v) => s + v, 0);
+  return round2(soma / outros.length);
+}
 
 export type ColunaProjecao = {
   mesYm: string;
@@ -124,6 +142,20 @@ function textoNatureza(
 }
 
 /**
+ * Despesas essenciais que tendem a se repetir todo mês → já projetar ativas.
+ */
+export function ehDespesaEssencialRecorrente(
+  descricao: string,
+  rubrica?: string | null,
+  fornecedor?: string | null,
+): boolean {
+  const d = textoNatureza(descricao, rubrica, fornecedor);
+  return /\b(aluguel|locacao|energia|eletrica|eletricidade|luz|agua|esgoto|gas|internet|banda[\s-]?larga|telefone|celular|telecom|condominio|iptu|seguro|folha(\s+de\s+pagamento)?|salario|pro[\s-]?labore|plano\s+(de\s+)?saude|vale[\s-]*(transporte|refeicao|alimentacao)|contabil(idade)?|software|assinatura|saas|hospedagem|dominio|limpeza|conservacao|seguranca|vigilancia|manutencao(\s+predial)?|contador|escritorio\s+contabil)\b/.test(
+    d,
+  );
+}
+
+/**
  * "Parcela" = parcelamento de cartão/boleto/financiamento.
  * Números tipo 14/17 em folha ou aluguel NÃO contam como parcela de cartão.
  */
@@ -133,6 +165,12 @@ export function detectarNaturezaDesembolso(
   extra?: { rubrica?: string | null; fornecedor?: string | null },
 ): NaturezaDesembolso {
   const d = textoNatureza(descricao, extra?.rubrica, extra?.fornecedor);
+
+  if (
+    ehDespesaEssencialRecorrente(descricao, extra?.rubrica, extra?.fornecedor)
+  ) {
+    return "recorrente";
+  }
 
   if (
     /\b(folha(\s+de\s+pagamento)?|salario|pro[\s-]?labore|holerite|fgts|inss|adiantamento\s+salarial)\b/.test(
@@ -151,9 +189,13 @@ export function detectarNaturezaDesembolso(
     (/\bparcela\b/.test(d) &&
       /\b(cartao|credito|boleto|financi)\b/.test(d));
 
-  const temFracao = /\(\s*\d+\s*\/\s*\d+\s*\)/.test(d) || /\b\d+\s*\/\s*\d+\b/.test(d);
+  const temFracao =
+    /\(\s*\d+\s*\/\s*\d+\s*\)/.test(d) || /\b\d+\s*\/\s*\d+\b/.test(d);
 
-  if (sinalCartaoBoleto || (temFracao && /\b(cartao|credito|boleto|parcelado|financi)\b/.test(d))) {
+  if (
+    sinalCartaoBoleto ||
+    (temFracao && /\b(cartao|credito|boleto|parcelado|financi)\b/.test(d))
+  ) {
     return "parcela";
   }
 
@@ -173,22 +215,33 @@ function chaveSerie(p: ParcelaBaseProjecao): string {
   return `${forn}|${rub}|${desc.slice(0, 80)}`;
 }
 
-function statusExecutado(p: ParcelaBaseProjecao): boolean {
+export function statusExecutado(p: ParcelaBaseProjecao): boolean {
   const st = (p.status || "").toUpperCase();
   if (
     st.includes("RECEBIDO") ||
     st.includes("QUITADO") ||
-    st.includes("PAGO")
+    st.includes("PAGO") ||
+    st.includes("BAIXAD") ||
+    st.includes("LIQUID") ||
+    st.includes("ACQUIT")
   ) {
     return p.valorEmAberto <= 0.009 || p.valorPago > 0;
   }
+  if (p.dataPagamento && p.valorEmAberto <= 0.009) return true;
   return p.valorEmAberto <= 0.009 && p.valorPago > 0;
 }
 
-function mesDaParcela(p: ParcelaBaseProjecao): string | null {
-  const ref = p.dataVencimento || p.dataPagamento || p.dataVencimento;
+/** Mês em que o dinheiro saiu (pagamento). */
+export function mesPagamentoParcela(p: ParcelaBaseProjecao): string | null {
+  const ref = p.dataPagamento || (statusExecutado(p) ? p.dataVencimento : null);
   if (!ref || !/^\d{4}-\d{2}/.test(ref)) return null;
   return ref.slice(0, 7);
+}
+
+function valorPagoParcela(p: ParcelaBaseProjecao): number {
+  if (p.valorPago > 0) return round2(p.valorPago);
+  if (statusExecutado(p) && p.valor > 0) return round2(p.valor);
+  return 0;
 }
 
 function overrideKey(linhaId: string, mesYm: string): string {
@@ -215,7 +268,6 @@ export function montarColunasProjecao(
     mesYm,
     label: labelMesYm(mesYm),
     custom: !padrao.has(mesYm),
-    // Mês anterior = contexto; 3 à frente (+ extras) entram no total.
     contaNoTotal: mesYm !== mesAnt,
   }));
 }
@@ -237,14 +289,28 @@ function aplicarOverride(
   };
 }
 
+type SeriePago = {
+  key: string;
+  label: string;
+  fornecedor: string | null;
+  rubrica: string | null;
+  valorPago: number;
+  parcelaIds: string[];
+  natureza: NaturezaDesembolso;
+  essencial: boolean;
+};
+
 /**
- * Monta a grade: parcelas CA no horizonte + séries recorrentes projetadas + linhas manuais.
+ * Monta a grade a partir do que foi PAGO no mês anterior.
+ * - Coluna contexto (mês ant.): só executado, travada.
+ * - 3 meses à frente: projeção; essenciais já ativos; demais sugeridos inativos.
+ * - Não inclui previsão/títulos abertos do Conta Azul.
  */
 export function montarProjecaoDesembolso(input: {
   mesInicioYm: string;
   colunasExtraYm?: string[];
   parcelas: ParcelaBaseProjecao[];
-  /** Parcelas dos meses anteriores (histórico) para detectar recorrência. */
+  /** Histórico opcional (reforça natureza recorrente). */
   historico?: ParcelaBaseProjecao[];
   linhasManuais?: LinhaManualProjecao[];
   overrides?: OverrideCelulaProjecao[];
@@ -258,10 +324,10 @@ export function montarProjecaoDesembolso(input: {
     input.mesInicioYm,
     input.colunasExtraYm ?? [],
   );
-  const mesesSet = new Set(colunas.map(c => c.mesYm));
   const mesesNoTotal = new Set(
     colunas.filter(c => c.contaNoTotal).map(c => c.mesYm),
   );
+  const mesContextoYm = mesAnteriorProjecao(input.mesInicioYm);
   const somaAtivaNoTotal = (celulas: CelulaProjecao[]) =>
     round2(
       celulas
@@ -274,116 +340,77 @@ export function montarProjecaoDesembolso(input: {
 
   const historico = input.historico ?? [];
   const ocorrenciasPorSerie = new Map<string, Set<string>>();
-  const valorMedioPorSerie = new Map<string, { soma: number; n: number }>();
-  const metaSerie = new Map<
-    string,
-    { label: string; fornecedor: string | null; rubrica: string | null }
-  >();
-
   for (const p of [...historico, ...input.parcelas]) {
-    const mes = mesDaParcela(p);
+    if (!statusExecutado(p)) continue;
+    const mes = mesPagamentoParcela(p);
     if (!mes) continue;
     const key = chaveSerie(p);
     if (!ocorrenciasPorSerie.has(key)) ocorrenciasPorSerie.set(key, new Set());
     ocorrenciasPorSerie.get(key)!.add(mes);
-    const acc = valorMedioPorSerie.get(key) ?? { soma: 0, n: 0 };
-    acc.soma += p.valor > 0 ? p.valor : p.valorPago;
-    acc.n += 1;
-    valorMedioPorSerie.set(key, acc);
-    if (!metaSerie.has(key)) {
-      metaSerie.set(key, {
-        label: p.descricao,
-        fornecedor: p.fornecedor,
-        rubrica: p.rubrica,
-      });
-    }
   }
 
-  const linhas: LinhaProjecao[] = [];
-  const seriesJaNaGrade = new Set<string>();
+  const pagosContexto = input.parcelas.filter(p => {
+    if (!statusExecutado(p)) return false;
+    return mesPagamentoParcela(p) === mesContextoYm;
+  });
 
-  // 1) Uma linha por parcela CA cujo vencimento cai nas colunas
-  for (const p of input.parcelas) {
-    const mes = mesDaParcela(p);
-    if (!mes || !mesesSet.has(mes)) continue;
+  const seriesMap = new Map<string, SeriePago>();
+  for (const p of pagosContexto) {
     const key = chaveSerie(p);
+    const pago = valorPagoParcela(p);
+    if (pago <= 0) continue;
+    const cur = seriesMap.get(key);
+    if (cur) {
+      cur.valorPago = round2(cur.valorPago + pago);
+      cur.parcelaIds.push(p.id);
+      continue;
+    }
     const nMeses = ocorrenciasPorSerie.get(key)?.size ?? 1;
+    const essencial = ehDespesaEssencialRecorrente(
+      p.descricao,
+      p.rubrica,
+      p.fornecedor,
+    );
     const natureza = detectarNaturezaDesembolso(p.descricao, nMeses, {
       rubrica: p.rubrica,
       fornecedor: p.fornecedor,
     });
-    const linhaId = `ca:${p.id}`;
-    seriesJaNaGrade.add(key);
-
-    const celulas: CelulaProjecao[] = colunas.map(col => {
-      if (col.mesYm !== mes) {
-        return {
-          mesYm: col.mesYm,
-          valorBase: 0,
-          valorEfetivo: 0,
-          ativo: false,
-          editavel: true,
-          origem: "projetado" as const,
-          parcelaId: null,
-        };
-      }
-      const executado = statusExecutado(p);
-      const valorBase = round2(
-        executado
-          ? p.valorPago > 0
-            ? p.valorPago
-            : p.valor
-          : p.valorEmAberto > 0
-            ? p.valorEmAberto
-            : p.valor,
-      );
-      const base: CelulaProjecao = {
-        mesYm: col.mesYm,
-        valorBase,
-        valorEfetivo: valorBase,
-        ativo: true,
-        editavel: !executado,
-        origem: executado ? "executado" : "previsto_ca",
-        parcelaId: p.id,
-      };
-      return aplicarOverride(base, ovMap.get(overrideKey(linhaId, col.mesYm)));
-    });
-
-    linhas.push({
-      id: linhaId,
+    seriesMap.set(key, {
+      key,
       label: p.descricao,
       fornecedor: p.fornecedor,
       rubrica: p.rubrica,
-      natureza,
-      origemLinha: "conta_azul",
-      celulas,
-      totalAtivo: somaAtivaNoTotal(celulas),
+      valorPago: pago,
+      parcelaIds: [p.id],
+      natureza: essencial ? "recorrente" : natureza,
+      essencial,
     });
   }
 
-  // 2) Projetar séries recorrentes/parcelas sem título futuro no horizonte
-  for (const [key, meses] of Array.from(ocorrenciasPorSerie.entries())) {
-    if (seriesJaNaGrade.has(key)) continue;
-    if (meses.size < 2) continue;
-    const meta = metaSerie.get(key);
-    if (!meta) continue;
-    const media = valorMedioPorSerie.get(key);
-    const valorProj = media && media.n > 0 ? round2(media.soma / media.n) : 0;
-    if (valorProj <= 0) continue;
+  const linhas: LinhaProjecao[] = [];
 
-    const natureza = detectarNaturezaDesembolso(meta.label, meses.size, {
-      rubrica: meta.rubrica,
-      fornecedor: meta.fornecedor,
-    });
-    if (natureza === "unico") continue;
+  for (const serie of Array.from(seriesMap.values())) {
+    const linhaId = hashSerie(serie.key);
+    const valor = serie.valorPago;
+    const autoAtivar = serie.essencial || serie.natureza === "recorrente";
 
-    const linhaId = hashSerie(key);
     const celulas: CelulaProjecao[] = colunas.map(col => {
+      if (col.mesYm === mesContextoYm) {
+        return {
+          mesYm: col.mesYm,
+          valorBase: valor,
+          valorEfetivo: valor,
+          ativo: true,
+          editavel: false,
+          origem: "executado" as const,
+          parcelaId: serie.parcelaIds[0] ?? null,
+        };
+      }
       const base: CelulaProjecao = {
         mesYm: col.mesYm,
-        valorBase: valorProj,
-        valorEfetivo: valorProj,
-        ativo: true,
+        valorBase: valor,
+        valorEfetivo: valor,
+        ativo: autoAtivar,
         editavel: true,
         origem: "projetado",
         parcelaId: null,
@@ -393,29 +420,30 @@ export function montarProjecaoDesembolso(input: {
 
     linhas.push({
       id: linhaId,
-      label: meta.label,
-      fornecedor: meta.fornecedor,
-      rubrica: meta.rubrica,
-      natureza,
+      label: serie.label,
+      fornecedor: serie.fornecedor,
+      rubrica: serie.rubrica,
+      natureza: serie.natureza,
       origemLinha: "projetado",
       celulas,
       totalAtivo: somaAtivaNoTotal(celulas),
     });
   }
 
-  // 3) Linhas manuais
   for (const m of input.linhasManuais ?? []) {
     const linhaId = `manual:${m.id}`;
     const celulas: CelulaProjecao[] = colunas.map(col => {
+      const noContexto = col.mesYm === mesContextoYm;
       const base: CelulaProjecao = {
         mesYm: col.mesYm,
         valorBase: 0,
         valorEfetivo: 0,
-        ativo: true,
-        editavel: true,
-        origem: "manual",
+        ativo: !noContexto,
+        editavel: !noContexto,
+        origem: noContexto ? "executado" : "manual",
         parcelaId: null,
       };
+      if (noContexto) return base;
       return aplicarOverride(base, ovMap.get(overrideKey(linhaId, col.mesYm)));
     });
     linhas.push({
