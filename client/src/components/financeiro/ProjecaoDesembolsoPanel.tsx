@@ -252,15 +252,17 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
     onSettled: () => setLoteLinhaId(null),
   });
   const addCol = trpc.financeiroCfo.adicionarColunaProjecao.useMutation({
-    onSuccess: async () => {
-      toast.success("Coluna adicionada");
+    onSuccess: async (_data, vars) => {
+      toast.success(`Mês ${vars.mesYm} ativado na projeção`);
+      setMesesOcultos(prev => prev.filter(m => m !== vars.mesYm));
       await utils.financeiroCfo.projecaoDesembolso.invalidate({ mesInicioYm });
     },
     onError: e => toast.error(e.message),
   });
   const remCol = trpc.financeiroCfo.removerColunaProjecao.useMutation({
-    onSuccess: async () => {
-      toast.success("Coluna removida");
+    onSuccess: async (_data, vars) => {
+      toast.success(`Mês ${vars.mesYm} removido da projeção`);
+      setMesesOcultos(prev => prev.filter(m => m !== vars.mesYm));
       await utils.financeiroCfo.projecaoDesembolso.invalidate({ mesInicioYm });
     },
     onError: e => toast.error(e.message),
