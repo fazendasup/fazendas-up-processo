@@ -488,12 +488,12 @@ export default function FinanceiroComparativoPage() {
                   hint="Mês + vencido"
                 />
                 <Kpi
-                  title="Projeção média 2m"
-                  value={fmtMoney(r?.projecaoMedia2m)}
+                  title="Projeção vendas"
+                  value={fmtMoney(r?.projecaoVendas?.projecaoMesTotal)}
                   hint={
-                    r
-                      ? `Média do recebido em ${labelMes(r.mesesMedia2m[0])} e ${labelMes(r.mesesMedia2m[1])}`
-                      : "Média do recebido"
+                    r?.projecaoVendas
+                      ? `Já no mês ${fmtMoney(r.projecaoVendas.vendasJaNoMes)} + ainda entra ${fmtMoney(r.projecaoVendas.aindaEntraProjetado)} (${r.projecaoVendas.diasRestantes}d × média diária)`
+                      : "Média diária 2m × dias restantes"
                   }
                 />
               </div>
@@ -511,13 +511,13 @@ export default function FinanceiroComparativoPage() {
                   }
                 />
                 <Kpi
-                  title="Gap vs média 2m"
-                  value={fmtMoney(r?.gapVsMedia2m)}
-                  hint="Média 2m − (recebido + a receber total)"
+                  title="Gap vs proj. vendas"
+                  value={fmtMoney(r?.gapVsProjecaoVendas)}
+                  hint="Projeção vendas − (recebido + a receber total)"
                   tone={
-                    (r?.gapVsMedia2m ?? 0) > 0
+                    (r?.gapVsProjecaoVendas ?? 0) > 0
                       ? "up"
-                      : (r?.gapVsMedia2m ?? 0) < 0
+                      : (r?.gapVsProjecaoVendas ?? 0) < 0
                         ? "down"
                         : "neutral"
                   }
@@ -541,7 +541,8 @@ export default function FinanceiroComparativoPage() {
               “Pago em atraso” = rúbrica recorrente (ex. vale-transporte) paga no
               mês sem estar na projeção — tipicamente competência do mês
               anterior. “Não programada” = gasto fora do plano. Descontos
-              obtidos não entram como desembolso. Ajuste a grade em{" "}
+              obtidos não entram como desembolso. Orçamentos até o dia 15
+              entram no mês; após o dia 15, no mês seguinte. Ajuste a grade em{" "}
               <Link href="/financeiro-cfo" className="underline">
                 Projeção de desembolso
               </Link>

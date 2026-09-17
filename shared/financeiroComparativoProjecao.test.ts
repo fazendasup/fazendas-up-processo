@@ -209,7 +209,7 @@ describe("montarComparativoDesembolsoMes", () => {
 });
 
 describe("montarComparativoReceitaMes", () => {
-  it("inclui vencido em aberto e média de 2 meses", () => {
+  it("inclui vencido em aberto e projeção de vendas", () => {
     const out = montarComparativoReceitaMes({
       mesYm: "2026-09",
       parcelasReceberMes: [
@@ -245,8 +245,11 @@ describe("montarComparativoReceitaMes", () => {
           dataVencimento: "2026-08-10",
         }),
       ],
-      recebidoMesAnterior1: 10_000,
-      recebidoMesAnterior2: 8_000,
+      vendasMesAtual: 1_700,
+      vendasMesAnterior1: 3_100,
+      vendasMesAnterior2: 3_100,
+      hojeYm: "2026-09",
+      diaHoje: 17,
     });
 
     expect(out.fonte).toBe("conta_azul");
@@ -256,8 +259,10 @@ describe("montarComparativoReceitaMes", () => {
     expect(out.vencido).toBe(2_000);
     expect(out.aReceber).toBe(7_000);
     expect(out.pipelineMes).toBe(13_000);
-    expect(out.projecaoMedia2m).toBe(9_000);
-    expect(out.gapVsMedia2m).toBe(9_000 - 13_000);
+    expect(out.projecaoVendas.mediaDiaria2m).toBe(100);
+    expect(out.projecaoVendas.aindaEntraProjetado).toBe(1_300);
+    expect(out.projecaoVendas.projecaoMesTotal).toBe(3_000);
+    expect(out.gapVsProjecaoVendas).toBe(3_000 - 13_000);
   });
 });
 

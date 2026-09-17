@@ -12,6 +12,10 @@ import {
   type LinhaProjecao,
   type ParcelaBaseProjecao,
 } from "./financeiroProjecaoDesembolso";
+import {
+  montarProjecaoVendasRestanteMes,
+  type ProjecaoVendasRestanteMes,
+} from "./financeiroProjecaoVendas";
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
@@ -95,15 +99,10 @@ export type ComparativoReceitaMes = {
   gapRecebimentoPct: number | null;
   gapFinal: number;
   pctRecebidoDoPrevisto: number | null;
-  /**
-   * Projeção de entrada (média do recebido dos 2 meses anteriores).
-   * Útil para comparar com o que ainda está a receber + vencido.
-   */
-  projecaoMedia2m: number;
-  /** Meses usados na média (ym). */
-  mesesMedia2m: [string, string];
-  /** projecaoMedia2m − (recebido + aReceber) — positivo = abaixo da média. */
-  gapVsMedia2m: number;
+  /** Projeção de vendas (média diária 2m × dias restantes). */
+  projecaoVendas: ProjecaoVendasRestanteMes;
+  /** projecaoMesTotal − pipeline (recebido + a receber total). */
+  gapVsProjecaoVendas: number;
 };
 
 export type FinanceiroComparativoPayload = {
@@ -295,10 +294,13 @@ export function montarComparativoReceitaMes(input: {
   parcelasReceberMes: ParcelaBaseProjecao[];
   /** Parcelas extras (ex.: vencidos de meses anteriores). */
   parcelasReceberExtras?: ParcelaBaseProjecao[];
-  /** Recebido no mês −1 (p/ média). */
-  recebidoMesAnterior1?: number;
-  /** Recebido no mês −2 (p/ média). */
-  recebidoMesAnterior2?: number;
+  /** Vendas+orçamentos (competência dia 15) no mês. */
+  vendasMesAtual?: number;
+  vendasMesAnterior1?: number;
+  vendasMesAnterior2?: number;
+  /** Calendário America/SP — default: assume mês fechado se omitido. */
+  hojeYm?: string;
+  diaHoje?: number;
 }): ComparativoReceitaMes {
   const { mesYm } = input;
   const mes1 = mesAnteriorProjecao(mesYm);
@@ -348,12 +350,21 @@ export function montarComparativoReceitaMes(input: {
   const gapRecebimento = round2(previsto - recebido);
   const gapFinal = round2(previsto - pipelineMes);
 
-  const r1 = round2(input.recebidoMesAnterior1 ?? 0);
-  const r2 = round2(input.recebidoMesAnterior2 ?? 0);
-  const nMedia = (r1 > 0 ? 1 : 0) + (r2 > 0 ? 1 : 0);
-  const projecaoMedia2m =
-    nMedia > 0 ? round2((r1 + r2) / nMedia) : 0;
-  const gapVsMedia2m = round2(projecaoMedia2m - pipelineMes);
+  const hojeYm = input.hojeYm ?? mesYm;
+  const diaHoje = input.diaHoje ?? 31;
+  const projecaoVendas = montarProjecaoVendasRestanteMes({
+    mesYm,
+    hojeYm,
+    diaHoje,
+    vendasMesAtual: input.vendasMesAtual ?? 0,
+    vendasMesAnterior1: input.vendasMesAnterior1 ?? 0,
+    vendasMesAnterior2: input.vendasMesAnterior2 ?? 0,
+    mesAnterior1Ym: mes1,
+    mesAnterior2Ym: mes2,
+  });
+  const gapVsProjecaoVendas = round2(
+    projecaoVendas.projecaoMesTotal - pipelineMes,
+  );
 
   return {
     mesYm,
@@ -370,9 +381,8 @@ export function montarComparativoReceitaMes(input: {
     gapFinal,
     pctRecebidoDoPrevisto:
       previsto > 0 ? round2((recebido / previsto) * 100) : null,
-    projecaoMedia2m,
-    mesesMedia2m: [mes2, mes1],
-    gapVsMedia2m,
+    projecaoVendas,
+    gapVsProjecaoVendas,
   };
 }
 
@@ -395,8 +405,11 @@ export function montarFinanceiroComparativo(input: {
   parcelasPagarMes: ParcelaBaseProjecao[];
   parcelasReceberMes: ParcelaBaseProjecao[];
   parcelasReceberExtras?: ParcelaBaseProjecao[];
-  recebidoMesAnterior1?: number;
-  recebidoMesAnterior2?: number;
+  vendasMesAtual?: number;
+  vendasMesAnterior1?: number;
+  vendasMesAnterior2?: number;
+  hojeYm?: string;
+  diaHoje?: number;
 }): FinanceiroComparativoPayload {
   const desembolso = montarComparativoDesembolsoMes({
     mesYm: input.mesYm,
@@ -407,8 +420,11 @@ export function montarFinanceiroComparativo(input: {
     mesYm: input.mesYm,
     parcelasReceberMes: input.parcelasReceberMes,
     parcelasReceberExtras: input.parcelasReceberExtras,
-    recebidoMesAnterior1: input.recebidoMesAnterior1,
-    recebidoMesAnterior2: input.recebidoMesAnterior2,
+    vendasMesAtual: input.vendasMesAtual,
+    vendasMesAnterior1: input.vendasMesAnterior1,
+    vendasMesAnterior2: input.vendasMesAnterior2,
+    hojeYm: input.hojeYm,
+    diaHoje: input.diaHoje,
   });
   return {
     mesYm: input.mesYm,
