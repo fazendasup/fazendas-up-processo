@@ -313,7 +313,7 @@ export default function FinanceiroCfoPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="container max-w-6xl space-y-5 py-6">
+      <main className="mx-auto w-full max-w-[100rem] space-y-5 px-3 py-6 sm:px-5 md:px-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -322,7 +322,7 @@ export default function FinanceiroCfoPage() {
             <h1 className="font-display text-2xl font-bold tracking-tight">
               Análise financeira
             </h1>
-            <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
               Gaps vs mês anterior, edição rápida de rúbrica e foco no que
               aumentou de custo.
             </p>

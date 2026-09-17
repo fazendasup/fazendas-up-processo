@@ -195,15 +195,15 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
           </div>
 
           <div className="overflow-x-auto rounded-lg border">
-            <table className="w-full min-w-[720px] text-sm">
+            <table className="w-full min-w-[960px] table-fixed text-sm">
               <thead>
                 <tr className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
-                  <th className="px-2 py-2">Desembolso</th>
-                  <th className="px-2 py-2">Tipo</th>
+                  <th className="w-[28%] px-3 py-2">Desembolso</th>
+                  <th className="w-[7%] px-2 py-2">Tipo</th>
                   {data.colunas.map(c => (
                     <th key={c.mesYm} className="px-2 py-2 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <span>{c.label}</span>
+                        <span className="whitespace-nowrap">{c.label}</span>
                         {c.custom ? (
                           <button
                             type="button"
@@ -224,9 +224,11 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
               <tbody>
                 {data.linhas.map(lin => (
                   <tr key={lin.id} className="border-b align-top">
-                    <td className="max-w-[200px] px-2 py-2">
-                      <p className="truncate font-medium">{lin.label}</p>
-                      <p className="truncate text-[10px] text-muted-foreground">
+                    <td className="px-3 py-2">
+                      <p className="break-words font-medium leading-snug">
+                        {lin.label}
+                      </p>
+                      <p className="mt-0.5 break-words text-[10px] text-muted-foreground">
                         {[lin.fornecedor, lin.rubrica].filter(Boolean).join(" · ") ||
                           "—"}
                       </p>
