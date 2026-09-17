@@ -21,6 +21,25 @@ import {
 
 const RUBRICA_SEM = "__sem_rubrica__";
 const RUBRICA_TODAS = "__todas__";
+const TIPO_TODOS = "__todos__";
+const ORDEM_IMPACTO = "impacto";
+const ORDEM_RUBRICA_AZ = "rubrica_az";
+const ORDEM_RUBRICA_ZA = "rubrica_za";
+const ORDEM_DESC_AZ = "desembolso_az";
+const MES_FILTRO_TODOS = "todos";
+const MES_FILTRO_ATIVOS = "ativos";
+const MES_FILTRO_INATIVOS = "inativos";
+
+type OrdemLinhas =
+  | typeof ORDEM_IMPACTO
+  | typeof ORDEM_RUBRICA_AZ
+  | typeof ORDEM_RUBRICA_ZA
+  | typeof ORDEM_DESC_AZ;
+
+type FiltroMesCelula =
+  | typeof MES_FILTRO_TODOS
+  | typeof MES_FILTRO_ATIVOS
+  | typeof MES_FILTRO_INATIVOS;
 
 function fmtMoney(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "—";
@@ -60,6 +79,13 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
   );
   const [draftValor, setDraftValor] = useState<Record<string, string>>({});
   const [filtroRubrica, setFiltroRubrica] = useState<string>(RUBRICA_TODAS);
+  const [filtroBusca, setFiltroBusca] = useState("");
+  const [filtroTipo, setFiltroTipo] = useState<string>(TIPO_TODOS);
+  const [ordemLinhas, setOrdemLinhas] = useState<OrdemLinhas>(ORDEM_IMPACTO);
+  const [mesesOcultos, setMesesOcultos] = useState<string[]>([]);
+  const [filtroPorMes, setFiltroPorMes] = useState<
+    Record<string, FiltroMesCelula>
+  >({});
 
   const proj = trpc.financeiroCfo.projecaoDesembolso.useQuery(
     { mesInicioYm },
@@ -120,14 +146,61 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
     };
   }, [data?.linhas]);
 
+  const colunasVisiveis = useMemo(() => {
+    const ocultos = new Set(mesesOcultos);
+    return (data?.colunas ?? []).filter(c => !ocultos.has(c.mesYm));
+  }, [data?.colunas, mesesOcultos]);
+
   const linhasFiltradas = useMemo(() => {
     const linhas = data?.linhas ?? [];
-    if (filtroRubrica === RUBRICA_TODAS) return linhas;
-    if (filtroRubrica === RUBRICA_SEM) {
-      return linhas.filter(l => !l.rubrica?.trim());
+    const q = filtroBusca.trim().toLowerCase();
+    let list = linhas.filter(l => {
+      if (filtroRubrica === RUBRICA_SEM) {
+        if (l.rubrica?.trim()) return false;
+      } else if (filtroRubrica !== RUBRICA_TODAS) {
+        if ((l.rubrica?.trim() || "") !== filtroRubrica) return false;
+      }
+      if (filtroTipo !== TIPO_TODOS && l.natureza !== filtroTipo) return false;
+      if (q) {
+        const blob = [l.label, l.fornecedor, l.rubrica]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!blob.includes(q)) return false;
+      }
+      for (const [mesYm, modo] of Object.entries(filtroPorMes)) {
+        if (modo === MES_FILTRO_TODOS) continue;
+        const cel = l.celulas.find(c => c.mesYm === mesYm);
+        if (!cel) return false;
+        if (modo === MES_FILTRO_ATIVOS && !cel.ativo) return false;
+        if (modo === MES_FILTRO_INATIVOS && cel.ativo) return false;
+      }
+      return true;
+    });
+
+    list = [...list];
+    if (ordemLinhas === ORDEM_RUBRICA_AZ) {
+      list.sort((a, b) =>
+        (a.rubrica || "￿").localeCompare(b.rubrica || "￿", "pt-BR"),
+      );
+    } else if (ordemLinhas === ORDEM_RUBRICA_ZA) {
+      list.sort((a, b) =>
+        (b.rubrica || "").localeCompare(a.rubrica || "", "pt-BR"),
+      );
+    } else if (ordemLinhas === ORDEM_DESC_AZ) {
+      list.sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
+    } else {
+      list.sort((a, b) => b.totalAtivo - a.totalAtivo);
     }
-    return linhas.filter(l => (l.rubrica?.trim() || "") === filtroRubrica);
-  }, [data?.linhas, filtroRubrica]);
+    return list;
+  }, [
+    data?.linhas,
+    filtroRubrica,
+    filtroTipo,
+    filtroBusca,
+    filtroPorMes,
+    ordemLinhas,
+  ]);
 
   const totaisFiltrados = useMemo(() => {
     if (!data) {
@@ -142,10 +215,13 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
       return { mesYm: col.mesYm, total };
     });
     const geral = porMes
-      .filter(t => data.colunas.find(c => c.mesYm === t.mesYm)?.contaNoTotal)
+      .filter(t => {
+        if (mesesOcultos.includes(t.mesYm)) return false;
+        return data.colunas.find(c => c.mesYm === t.mesYm)?.contaNoTotal;
+      })
       .reduce((s, t) => s + t.total, 0);
     return { porMes, geral };
-  }, [data, linhasFiltradas]);
+  }, [data, linhasFiltradas, mesesOcultos]);
 
   const resumoNatureza = useMemo(() => {
     const map = { parcela: 0, recorrente: 0, unico: 0, manual: 0 };
@@ -154,6 +230,21 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
     }
     return map;
   }, [linhasFiltradas]);
+
+  const limparFiltros = () => {
+    setFiltroRubrica(RUBRICA_TODAS);
+    setFiltroTipo(TIPO_TODOS);
+    setFiltroBusca("");
+    setOrdemLinhas(ORDEM_IMPACTO);
+    setMesesOcultos([]);
+    setFiltroPorMes({});
+  };
+
+  const toggleMesVisivel = (mesYm: string) => {
+    setMesesOcultos(prev =>
+      prev.includes(mesYm) ? prev.filter(m => m !== mesYm) : [...prev, mesYm],
+    );
+  };
 
   if (proj.isLoading) {
     return (
@@ -167,7 +258,13 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
   }
   if (!data) return null;
 
-  const filtroAtivo = filtroRubrica !== RUBRICA_TODAS;
+  const filtroAtivo =
+    filtroRubrica !== RUBRICA_TODAS ||
+    filtroTipo !== TIPO_TODOS ||
+    filtroBusca.trim().length > 0 ||
+    ordemLinhas !== ORDEM_IMPACTO ||
+    mesesOcultos.length > 0 ||
+    Object.values(filtroPorMes).some(v => v !== MES_FILTRO_TODOS);
 
   return (
     <div className="space-y-4">
@@ -189,9 +286,33 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
           </p>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex flex-wrap items-end gap-2">
-            <div className="min-w-[220px]">
-              <Label className="text-xs">Filtrar por rúbrica</Label>
+          <div className="flex flex-wrap items-end gap-2 rounded-lg border bg-muted/20 p-2">
+            <div className="min-w-[160px] flex-1">
+              <Label className="text-xs">Desembolso</Label>
+              <Input
+                className="h-9"
+                placeholder="Buscar descrição / fornecedor…"
+                value={filtroBusca}
+                onChange={e => setFiltroBusca(e.target.value)}
+              />
+            </div>
+            <div className="min-w-[140px]">
+              <Label className="text-xs">Tipo</Label>
+              <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={TIPO_TODOS}>Todos os tipos</SelectItem>
+                  <SelectItem value="recorrente">Recorrente</SelectItem>
+                  <SelectItem value="parcela">Parcela</SelectItem>
+                  <SelectItem value="unico">Único</SelectItem>
+                  <SelectItem value="manual">Manual</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-[200px]">
+              <Label className="text-xs">Rúbrica (A–Z)</Label>
               <Select value={filtroRubrica} onValueChange={setFiltroRubrica}>
                 <SelectTrigger className="h-9">
                   <Filter className="mr-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
@@ -210,20 +331,62 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                 </SelectContent>
               </Select>
             </div>
+            <div className="min-w-[160px]">
+              <Label className="text-xs">Ordenar</Label>
+              <Select
+                value={ordemLinhas}
+                onValueChange={v => setOrdemLinhas(v as OrdemLinhas)}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ORDEM_IMPACTO}>Por valor (maior)</SelectItem>
+                  <SelectItem value={ORDEM_RUBRICA_AZ}>Rúbrica A–Z</SelectItem>
+                  <SelectItem value={ORDEM_RUBRICA_ZA}>Rúbrica Z–A</SelectItem>
+                  <SelectItem value={ORDEM_DESC_AZ}>Desembolso A–Z</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             {filtroAtivo ? (
               <Button
                 size="sm"
                 variant="ghost"
                 className="h-9 gap-1 text-muted-foreground"
-                onClick={() => setFiltroRubrica(RUBRICA_TODAS)}
+                onClick={limparFiltros}
               >
                 <X className="h-3.5 w-3.5" />
-                Limpar filtro
+                Limpar
               </Button>
             ) : null}
             <div className="self-center pb-2 text-xs text-muted-foreground">
               {linhasFiltradas.length} de {data.linhas.length} linha(s)
             </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">
+              Colunas (mês):
+            </span>
+            {data.colunas.map(c => {
+              const visivel = !mesesOcultos.includes(c.mesYm);
+              return (
+                <label
+                  key={c.mesYm}
+                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-1 text-xs ${
+                    visivel
+                      ? "border-primary/30 bg-primary/5"
+                      : "border-dashed opacity-60"
+                  }`}
+                >
+                  <Checkbox
+                    checked={visivel}
+                    onCheckedChange={() => toggleMesVisivel(c.mesYm)}
+                  />
+                  {c.label}
+                </label>
+              );
+            })}
           </div>
 
           <div className="flex flex-wrap items-end gap-2">
@@ -285,14 +448,14 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
           </div>
 
           <div className="overflow-x-auto rounded-lg border">
-            <table className="w-full min-w-[960px] table-fixed text-sm">
+            <table className="w-full min-w-[720px] table-fixed text-sm">
               <thead>
                 <tr className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
-                  <th className="w-[28%] px-3 py-2">Desembolso</th>
-                  <th className="w-[7%] px-2 py-2">Tipo</th>
-                  {data.colunas.map(c => (
+                  <th className="w-[26%] px-3 py-2">Desembolso</th>
+                  <th className="w-[8%] px-2 py-2">Tipo</th>
+                  {colunasVisiveis.map(c => (
                     <th key={c.mesYm} className="px-2 py-2 text-right">
-                      <div className="flex flex-col items-end gap-0.5">
+                      <div className="flex flex-col items-end gap-1">
                         <div className="flex items-center justify-end gap-1">
                           <span className="whitespace-nowrap">{c.label}</span>
                           {c.custom ? (
@@ -310,7 +473,25 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                           <span className="text-[9px] font-normal normal-case text-muted-foreground">
                             pago · contexto
                           </span>
-                        ) : null}
+                        ) : (
+                          <select
+                            className="h-6 max-w-[110px] rounded border bg-background px-1 text-[10px] font-normal normal-case"
+                            value={filtroPorMes[c.mesYm] ?? MES_FILTRO_TODOS}
+                            onChange={e =>
+                              setFiltroPorMes(prev => ({
+                                ...prev,
+                                [c.mesYm]: e.target.value as FiltroMesCelula,
+                              }))
+                            }
+                            title="Filtrar linhas neste mês"
+                          >
+                            <option value={MES_FILTRO_TODOS}>Todos</option>
+                            <option value={MES_FILTRO_ATIVOS}>Só ativos</option>
+                            <option value={MES_FILTRO_INATIVOS}>
+                              Só inativos
+                            </option>
+                          </select>
+                        )}
                       </div>
                     </th>
                   ))}
@@ -333,7 +514,9 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                     <td className="px-2 py-2 text-xs text-muted-foreground">
                       {naturezaLabel(lin.natureza)}
                     </td>
-                    {lin.celulas.map(cel => {
+                    {colunasVisiveis.map(col => {
+                      const cel = lin.celulas.find(c => c.mesYm === col.mesYm);
+                      if (!cel) return <td key={col.mesYm} />;
                       const k = cellKey(lin.id, cel.mesYm);
                       const draft = draftValor[k];
                       return (
@@ -455,17 +638,19 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                     Total (3 meses à frente)
                     {filtroAtivo ? " · filtro" : ""}
                   </td>
-                  {totaisFiltrados.porMes.map(t => {
-                    const col = data.colunas.find(c => c.mesYm === t.mesYm);
-                    const noTotal = col?.contaNoTotal !== false;
+                  {colunasVisiveis.map(col => {
+                    const t = totaisFiltrados.porMes.find(
+                      x => x.mesYm === col.mesYm,
+                    );
+                    const noTotal = col.contaNoTotal !== false;
                     return (
                       <td
-                        key={t.mesYm}
+                        key={col.mesYm}
                         className={`px-2 py-2 text-right tabular-nums ${
                           noTotal ? "" : "text-muted-foreground/70"
                         }`}
                       >
-                        {fmtMoney(t.total)}
+                        {fmtMoney(t?.total ?? 0)}
                         {!noTotal ? (
                           <span className="mt-0.5 block text-[9px] font-normal">
                             fora do total
@@ -484,7 +669,7 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
             {linhasFiltradas.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
                 {filtroAtivo
-                  ? "Nenhuma linha com essa rúbrica."
+                  ? "Nenhuma linha com esses filtros."
                   : "Sem pagamentos executados no mês anterior. Confira o Conta Azul ou adicione uma linha."}
               </p>
             ) : null}
