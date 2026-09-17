@@ -525,12 +525,12 @@ export function montarProjecaoDesembolso(input: {
         mesYm: col.mesYm,
         valorBase: 0,
         valorEfetivo: 0,
+        // Contexto (mês ant.) começa desmarcado; meses à frente sugeridos ativos.
         ativo: !noContexto,
-        editavel: !noContexto,
-        origem: noContexto ? "executado" : "manual",
+        editavel: true,
+        origem: "manual",
         parcelaId: null,
       };
-      if (noContexto) return base;
       return aplicarOverride(base, ovMap.get(overrideKey(linhaId, col.mesYm)));
     });
     linhas.push({
