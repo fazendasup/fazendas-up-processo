@@ -3,6 +3,8 @@
  * e totais de receita Conta Azul (sem listar lançamentos).
  */
 import {
+  ehCreditoOuDescontoObtido,
+  ehDespesaEssencialRecorrente,
   labelMesYm,
   mesPagamentoParcela,
   valorPagoParcela,
@@ -20,6 +22,8 @@ export type StatusRubricaComparativo =
   | "em_dia"
   | "faltando"
   | "pago_a_mais"
+  /** Essencial/recorrente pago no mês sem projeção (ex.: atraso do mês anterior). */
+  | "pago_em_atraso"
   | "nao_programada";
 
 export type ComparativoDesembolsoRubrica = {
@@ -29,7 +33,7 @@ export type ComparativoDesembolsoRubrica = {
   pago: number;
   /** Projetado − pago (mín. 0). */
   naoPago: number;
-  /** Pago − projetado (mín. 0). */
+  /** Pago − projetado (mín. 0); 0 se for atraso de recorrente. */
   pagoAMais: number;
   /** pago − projetado. */
   desvio: number;
@@ -46,6 +50,8 @@ export type ComparativoDesembolsoMes = {
     pago: number;
     naoPago: number;
     pagoAMais: number;
+    /** Pagamentos de recorrentes sem projeção no mês (atraso). */
+    pagoEmAtraso: number;
     desvio: number;
     desvioPct: number | null;
     pctPagoDoProjetado: number | null;
@@ -56,11 +62,8 @@ export type ComparativoReceitaMes = {
   mesYm: string;
   labelMes: string;
   fonte: "conta_azul";
-  /** Títulos com vencimento no mês (Conta Azul). */
   previsto: number;
-  /** Baixas com pagamento no mês. */
   recebido: number;
-  /** Em aberto com vencimento no mês. */
   aReceber: number;
   pipelineMes: number;
   gapRecebimento: number;
@@ -96,11 +99,19 @@ function labelRubrica(rubrica: string | null | undefined): string {
   return t || RUBRICA_SEM;
 }
 
+function ehRecorrenteEsperada(rubrica: string): boolean {
+  if (rubrica === RUBRICA_SEM) return false;
+  return ehDespesaEssencialRecorrente("", rubrica, null);
+}
+
 function statusRubrica(
   projetado: number,
   pago: number,
+  rubrica: string,
 ): StatusRubricaComparativo {
-  if (projetado <= 0 && pago > 0) return "nao_programada";
+  if (projetado <= 0 && pago > 0) {
+    return ehRecorrenteEsperada(rubrica) ? "pago_em_atraso" : "nao_programada";
+  }
   if (pago > projetado + 0.009) return "pago_a_mais";
   if (pago < projetado - 0.009) return "faltando";
   return "em_dia";
@@ -108,6 +119,7 @@ function statusRubrica(
 
 /**
  * Agrega projeção marcada e pagamentos Conta Azul por rúbrica.
+ * Ignora créditos/descontos obtidos (não são desembolso).
  */
 export function montarComparativoDesembolsoMes(input: {
   mesYm: string;
@@ -119,6 +131,7 @@ export function montarComparativoDesembolsoMes(input: {
   const pagoPor = new Map<string, number>();
 
   for (const lin of linhasProjecao) {
+    if (ehCreditoOuDescontoObtido(lin.label, lin.rubrica)) continue;
     const cel = lin.celulas.find(c => c.mesYm === mesYm);
     if (!cel?.ativo || !Number.isFinite(cel.valorEfetivo) || cel.valorEfetivo <= 0) {
       continue;
@@ -128,6 +141,7 @@ export function montarComparativoDesembolsoMes(input: {
   }
 
   for (const p of parcelasPagarMes) {
+    if (ehCreditoOuDescontoObtido(p.descricao, p.rubrica)) continue;
     const pago = valorPagoParcela(p);
     if (pago <= 0) continue;
     if (mesPagamentoParcela(p) !== mesYm) continue;
@@ -145,16 +159,22 @@ export function montarComparativoDesembolsoMes(input: {
     const projetado = projetadoPor.get(rub) ?? 0;
     const pago = pagoPor.get(rub) ?? 0;
     if (projetado <= 0 && pago <= 0) continue;
+    const status = statusRubrica(projetado, pago, rub);
     const desvio = round2(pago - projetado);
+    const pagoAMais =
+      status === "pago_em_atraso"
+        ? 0
+        : round2(Math.max(0, pago - projetado));
     rubricas.push({
       rubrica: rub,
       projetado,
       pago,
       naoPago: round2(Math.max(0, projetado - pago)),
-      pagoAMais: round2(Math.max(0, pago - projetado)),
-      desvio,
-      desvioPct: desvioPct(desvio, projetado),
-      status: statusRubrica(projetado, pago),
+      pagoAMais,
+      desvio: status === "pago_em_atraso" ? 0 : desvio,
+      desvioPct:
+        status === "pago_em_atraso" ? null : desvioPct(desvio, projetado),
+      status,
     });
   }
 
@@ -164,17 +184,25 @@ export function montarComparativoDesembolsoMes(input: {
         ? 0
         : s === "pago_a_mais"
           ? 1
-          : s === "faltando"
+          : s === "pago_em_atraso"
             ? 2
-            : 3;
+            : s === "faltando"
+              ? 3
+              : 4;
     const dr = rank(a.status) - rank(b.status);
     if (dr !== 0) return dr;
-    return Math.abs(b.desvio) - Math.abs(a.desvio);
+    return Math.abs(b.pagoAMais || b.desvio) - Math.abs(a.pagoAMais || a.desvio);
   });
 
   const projetado = round2(rubricas.reduce((s, r) => s + r.projetado, 0));
   const pago = round2(rubricas.reduce((s, r) => s + r.pago, 0));
-  const desvio = round2(pago - projetado);
+  const pagoEmAtraso = round2(
+    rubricas
+      .filter(r => r.status === "pago_em_atraso")
+      .reduce((s, r) => s + r.pago, 0),
+  );
+  const pagoNoPlano = round2(pago - pagoEmAtraso);
+  const desvio = round2(pagoNoPlano - projetado);
   return {
     mesYm,
     labelMes: labelMesYm(mesYm),
@@ -182,21 +210,17 @@ export function montarComparativoDesembolsoMes(input: {
     totais: {
       projetado,
       pago,
-      naoPago: round2(Math.max(0, projetado - pago)),
-      pagoAMais: round2(
-        rubricas.reduce((s, r) => s + r.pagoAMais, 0),
-      ),
+      naoPago: round2(Math.max(0, projetado - pagoNoPlano)),
+      pagoAMais: round2(rubricas.reduce((s, r) => s + r.pagoAMais, 0)),
+      pagoEmAtraso,
       desvio,
       desvioPct: desvioPct(desvio, projetado),
       pctPagoDoProjetado:
-        projetado > 0 ? round2((pago / projetado) * 100) : null,
+        projetado > 0 ? round2((pagoNoPlano / projetado) * 100) : null,
     },
   };
 }
 
-/**
- * Totais Conta Azul (contas a receber) — sem listar títulos.
- */
 export function montarComparativoReceitaMes(input: {
   mesYm: string;
   parcelasReceberMes: ParcelaBaseProjecao[];

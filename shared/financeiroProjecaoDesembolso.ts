@@ -142,6 +142,25 @@ function textoNatureza(
 }
 
 /**
+ * Créditos/descontos obtidos no Conta Azul — não são saída de caixa.
+ * Não devem entrar na projeção nem no comparativo de desembolso.
+ */
+export function ehCreditoOuDescontoObtido(
+  descricao: string,
+  rubrica?: string | null,
+): boolean {
+  const d = textoNatureza(descricao, rubrica);
+  return (
+    /\bdescontos?\s+incondicionais?\s+obtidos?\b/.test(d) ||
+    /\bdescontos?\s+obtidos?\b/.test(d) ||
+    /\bdesconto\s+obtido\b/.test(d) ||
+    /\babatimentos?\s+obtidos?\b/.test(d) ||
+    /\bdescontos?\s+financeiros?\s+obtidos?\b/.test(d) ||
+    /\bjuros\s+(e\s+)?descontos?\s+obtidos?\b/.test(d)
+  );
+}
+
+/**
  * Despesas essenciais que tendem a se repetir todo mês → já projetar ativas.
  * Inclui utilidades, folha/salário, terceiro fixo, combustível, insumos
  * de legumes/folhosas/flores e rúbricas operacionais recorrentes.
@@ -399,6 +418,7 @@ export function montarProjecaoDesembolso(input: {
 
   const pagosContexto = input.parcelas.filter(p => {
     if (!statusExecutado(p)) return false;
+    if (ehCreditoOuDescontoObtido(p.descricao, p.rubrica)) return false;
     return mesPagamentoParcela(p) === mesContextoYm;
   });
 

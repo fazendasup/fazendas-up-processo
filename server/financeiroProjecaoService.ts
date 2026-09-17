@@ -183,9 +183,10 @@ export async function carregarComparativoProjecao(
   return {
     ...comparativo,
     avisos: [
-      "Desembolso: comparativo agregado por rúbrica (projeção marcada × pago no Conta Azul).",
-      "Não programada = rúbrica paga sem estar na projeção.",
-      "Receita: somente totais do Conta Azul (previsto / recebido / a receber).",
+      "Desembolso: comparativo por rúbrica (projeção × pago Conta Azul).",
+      "Descontos obtidos não entram (não são saída de caixa).",
+      "Pago em atraso = recorrente essencial pago no mês sem projeção (ex. competência do mês anterior).",
+      "Receita: somente totais Conta Azul.",
     ],
   };
 }

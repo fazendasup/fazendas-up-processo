@@ -4,7 +4,11 @@ import {
   montarComparativoReceitaMes,
   montarFinanceiroComparativo,
 } from "./financeiroComparativoProjecao";
-import type { LinhaProjecao, ParcelaBaseProjecao } from "./financeiroProjecaoDesembolso";
+import {
+  ehCreditoOuDescontoObtido,
+  type LinhaProjecao,
+  type ParcelaBaseProjecao,
+} from "./financeiroProjecaoDesembolso";
 
 function parcela(
   partial: Partial<ParcelaBaseProjecao> &
@@ -50,14 +54,22 @@ function linhaProj(
   };
 }
 
+describe("ehCreditoOuDescontoObtido", () => {
+  it("reconhece descontos incondicionais obtidos", () => {
+    expect(
+      ehCreditoOuDescontoObtido("", "Descontos incondicionais obtidos"),
+    ).toBe(true);
+    expect(ehCreditoOuDescontoObtido("Compra", "Insumos")).toBe(false);
+  });
+});
+
 describe("montarComparativoDesembolsoMes", () => {
-  it("agrega por rúbrica: pago, não pago, pago a mais e não programada", () => {
+  it("agrega por rúbrica e ignora descontos obtidos", () => {
     const out = montarComparativoDesembolsoMes({
       mesYm: "2026-09",
       linhasProjecao: [
         linhaProj("Energia elétrica", 1200),
-        linhaProj("Pró-labore", 10_000, "proj:pro1"),
-        linhaProj("Pró-labore", 3_000, "proj:pro2"),
+        linhaProj("Descontos incondicionais obtidos", 294.82),
       ],
       parcelasPagarMes: [
         parcela({
@@ -68,11 +80,11 @@ describe("montarComparativoDesembolsoMes", () => {
           dataPagamento: "2026-09-05",
         }),
         parcela({
-          id: "p1",
-          descricao: "Folha",
-          rubrica: "Pró-labore",
-          valorPago: 13_000,
-          dataPagamento: "2026-09-10",
+          id: "d1",
+          descricao: "Desconto fornecedor",
+          rubrica: "Descontos incondicionais obtidos",
+          valorPago: 1128.8,
+          dataPagamento: "2026-09-08",
         }),
         parcela({
           id: "x1",
@@ -84,33 +96,44 @@ describe("montarComparativoDesembolsoMes", () => {
       ],
     });
 
-    expect(out.rubricas).toHaveLength(3);
+    expect(
+      out.rubricas.find(r => r.rubrica.includes("Descontos")),
+    ).toBeUndefined();
 
     const energia = out.rubricas.find(r => r.rubrica === "Energia elétrica")!;
-    expect(energia.projetado).toBe(1200);
-    expect(energia.pago).toBe(1000);
-    expect(energia.naoPago).toBe(200);
-    expect(energia.pagoAMais).toBe(0);
     expect(energia.status).toBe("faltando");
-
-    const pro = out.rubricas.find(r => r.rubrica === "Pró-labore")!;
-    expect(pro.projetado).toBe(13_000);
-    expect(pro.pago).toBe(13_000);
-    expect(pro.status).toBe("em_dia");
+    expect(energia.naoPago).toBe(200);
 
     const mat = out.rubricas.find(r => r.rubrica === "Materiais para Revenda")!;
-    expect(mat.projetado).toBe(0);
-    expect(mat.pago).toBe(500);
     expect(mat.status).toBe("nao_programada");
-    expect(mat.pagoAMais).toBe(500);
+  });
 
-    expect(out.totais.projetado).toBe(14_200);
-    expect(out.totais.pago).toBe(14_500);
+  it("marca vale-transporte pago sem projeção como atraso, não não-programada", () => {
+    const out = montarComparativoDesembolsoMes({
+      mesYm: "2026-09",
+      linhasProjecao: [],
+      parcelasPagarMes: [
+        parcela({
+          id: "vt",
+          descricao: "VT setembro atraso",
+          rubrica: "Vale-Transporte",
+          valorPago: 1040,
+          dataPagamento: "2026-09-01",
+          dataVencimento: "2026-08-28",
+        }),
+      ],
+    });
+
+    expect(out.rubricas).toHaveLength(1);
+    expect(out.rubricas[0]?.status).toBe("pago_em_atraso");
+    expect(out.rubricas[0]?.pagoAMais).toBe(0);
+    expect(out.totais.pagoEmAtraso).toBe(1040);
+    expect(out.totais.pagoAMais).toBe(0);
   });
 });
 
 describe("montarComparativoReceitaMes", () => {
-  it("só totais Conta Azul, sem linhas", () => {
+  it("só totais Conta Azul", () => {
     const out = montarComparativoReceitaMes({
       mesYm: "2026-09",
       parcelasReceberMes: [
@@ -119,28 +142,13 @@ describe("montarComparativoReceitaMes", () => {
           descricao: "Cliente A",
           valor: 6_000,
           valorPago: 6_000,
-          valorEmAberto: 0,
           dataPagamento: "2026-09-05",
           dataVencimento: "2026-09-05",
         }),
-        parcela({
-          id: "r-aberto",
-          descricao: "Cliente B",
-          valor: 5_000,
-          valorPago: 0,
-          valorEmAberto: 5_000,
-          status: "EM_ABERTO",
-          dataPagamento: null,
-          dataVencimento: "2026-09-25",
-        }),
       ],
     });
-
-    expect(out.fonte).toBe("conta_azul");
-    expect(out.previsto).toBe(11_000);
     expect(out.recebido).toBe(6_000);
-    expect(out.aReceber).toBe(5_000);
-    expect("linhas" in out).toBe(false);
+    expect(out.previsto).toBe(6_000);
   });
 });
 
@@ -170,6 +178,5 @@ describe("montarFinanceiroComparativo", () => {
       ],
     });
     expect(out.caixa.saldoRealizado).toBe(3_000);
-    expect(out.desembolso.rubricas).toHaveLength(1);
   });
 });

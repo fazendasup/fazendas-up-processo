@@ -50,6 +50,8 @@ function statusLabel(s: StatusRubricaComparativo): string {
       return "Falta pagar";
     case "pago_a_mais":
       return "Pago a mais";
+    case "pago_em_atraso":
+      return "Pago em atraso";
     case "nao_programada":
       return "Não programada";
   }
@@ -194,7 +196,7 @@ export default function FinanceiroComparativoPage() {
                 <Wallet className="h-4 w-4" />
                 Desembolso
               </h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 <Kpi
                   title="Projetado"
                   value={fmtMoney(d?.totais.projetado)}
@@ -205,20 +207,26 @@ export default function FinanceiroComparativoPage() {
                   value={fmtMoney(d?.totais.pago)}
                   hint={
                     d?.totais.pctPagoDoProjetado != null
-                      ? `${fmtPct(d.totais.pctPagoDoProjetado).replace("+", "")} do projetado`
+                      ? `${fmtPct(d.totais.pctPagoDoProjetado).replace("+", "")} do plano (sem atraso)`
                       : "Conta Azul no mês"
                   }
                 />
                 <Kpi
                   title="Ainda não pago"
                   value={fmtMoney(d?.totais.naoPago)}
-                  hint="Projetado − pago (por rúbrica)"
+                  hint="Projetado − pago no plano"
                 />
                 <Kpi
                   title="Pago a mais"
                   value={fmtMoney(d?.totais.pagoAMais)}
-                  hint="Soma do que passou do plano"
+                  hint="Passou do plano (não inclui atraso)"
                   tone={(d?.totais.pagoAMais ?? 0) > 0 ? "up" : "neutral"}
+                />
+                <Kpi
+                  title="Pago em atraso"
+                  value={fmtMoney(d?.totais.pagoEmAtraso)}
+                  hint="Recorrente sem projeção no mês"
+                  tone={(d?.totais.pagoEmAtraso ?? 0) > 0 ? "up" : "neutral"}
                 />
               </div>
             </section>
@@ -257,6 +265,7 @@ export default function FinanceiroComparativoPage() {
                         const aMais = rub.status === "pago_a_mais";
                         const falta = rub.status === "faltando";
                         const extra = rub.status === "nao_programada";
+                        const atraso = rub.status === "pago_em_atraso";
                         return (
                           <tr
                             key={rub.rubrica}
@@ -285,15 +294,17 @@ export default function FinanceiroComparativoPage() {
                               className={`py-2 text-xs ${
                                 aMais || extra
                                   ? "text-red-600"
-                                  : falta
+                                  : atraso
                                     ? "text-amber-700"
-                                    : "text-emerald-700"
+                                    : falta
+                                      ? "text-amber-700"
+                                      : "text-emerald-700"
                               }`}
                             >
                               <span className="inline-flex items-center gap-0.5">
                                 {aMais || extra ? (
                                   <ArrowUpRight className="h-3.5 w-3.5" />
-                                ) : falta ? (
+                                ) : falta || atraso ? (
                                   <ArrowDownRight className="h-3.5 w-3.5" />
                                 ) : null}
                                 {statusLabel(rub.status)}
@@ -364,8 +375,10 @@ export default function FinanceiroComparativoPage() {
 
             <p className="flex items-start gap-2 text-xs text-muted-foreground">
               <TrendingDown className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              “Não programada” = rúbrica paga no Conta Azul sem estar marcada na
-              projeção. Ajuste a grade em{" "}
+              “Pago em atraso” = rúbrica recorrente (ex. vale-transporte) paga no
+              mês sem estar na projeção — tipicamente competência do mês
+              anterior. “Não programada” = gasto fora do plano. Descontos
+              obtidos não entram como desembolso. Ajuste a grade em{" "}
               <Link href="/financeiro-cfo" className="underline">
                 Projeção de desembolso
               </Link>
