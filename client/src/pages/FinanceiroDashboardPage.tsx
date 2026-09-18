@@ -660,13 +660,6 @@ export default function FinanceiroDashboardPage() {
                     href={kpiHref("executado")}
                   />
                   <Kpi
-                    title="Quanto ainda cabe"
-                    value={fmtMoney(aindaCabe)}
-                    hint="Restante do plano − não planejado + saldo liberado"
-                    tone={aindaCabe >= 0 ? "down" : "up"}
-                    href={kpiHref("ainda-cabe")}
-                  />
-                  <Kpi
                     title="Não planejado"
                     value={fmtMoney(naoPlanejado)}
                     hint="Pago fora da grade (atraso / além do plano)"
@@ -679,6 +672,13 @@ export default function FinanceiroDashboardPage() {
                     hint="Rúbricas concluídas com pagamento a menos"
                     tone={saldoLiberado > 0.009 ? "down" : "neutral"}
                     href={kpiHref("saldo-liberado")}
+                  />
+                  <Kpi
+                    title="Quanto ainda cabe"
+                    value={fmtMoney(aindaCabe)}
+                    hint="Restante do plano − não planejado + saldo liberado"
+                    tone={aindaCabe >= 0 ? "down" : "up"}
+                    href={kpiHref("ainda-cabe")}
                   />
               </div>
 
