@@ -446,11 +446,18 @@ export async function buscarParcelaDetalheFinanceiro(
   });
 }
 
-async function fetchSaldosContas(): Promise<{
+async function fetchSaldosContas(opts?: {
+  /** Busca saldo-atual por conta (mais lento; use no dashboard). */
+  incluirSaldoAtual?: boolean;
+  /** Máximo de contas a consultar saldo. Default 25. */
+  maxContas?: number;
+}): Promise<{
   contas: Array<{ id: string; nome: string; saldo: number | null }>;
   saldoTotal: number | null;
   aviso?: string;
 }> {
+  const incluirSaldo = opts?.incluirSaldoAtual === true;
+  const maxContas = opts?.maxContas ?? 25;
   const env = getComercialEnv();
   const prisma = getComercialPrisma();
   const cred = await ensureValidAccessToken(prisma, env);
@@ -473,24 +480,75 @@ async function fetchSaldosContas(): Promise<{
     };
   }
 
-  /** Só nomes — saldo por conta é lento na API e não bloqueia o pacote. */
-  const contas = lista
+  const base = lista
     .filter(c => c.id && c.ativo !== false)
-    .slice(0, 40)
-    .map(c => ({
-      id: c.id!,
-      nome: c.nome?.trim() || c.id!,
-      saldo: null as number | null,
-    }));
+    .slice(0, maxContas);
+
+  if (!incluirSaldo) {
+    return {
+      contas: base.map(c => ({
+        id: c.id!,
+        nome: c.nome?.trim() || c.id!,
+        saldo: null as number | null,
+      })),
+      saldoTotal: null,
+      aviso:
+        base.length > 0
+          ? "Saldos por conta omitidos nesta carga rápida; use o Conta Azul para saldo atual."
+          : undefined,
+    };
+  }
+
+  const contas: Array<{ id: string; nome: string; saldo: number | null }> = [];
+  const concurrency = 5;
+  for (let i = 0; i < base.length; i += concurrency) {
+    const chunk = base.slice(i, i + concurrency);
+    const part = await Promise.all(
+      chunk.map(async c => {
+        const id = c.id!;
+        const nome = c.nome?.trim() || id;
+        try {
+          const sal = await contaAzulGet<{ saldo_atual?: number }>(
+            http,
+            `/v1/conta-financeira/${encodeURIComponent(id)}/saldo-atual`,
+          );
+          const n = Number(sal?.saldo_atual);
+          return {
+            id,
+            nome,
+            saldo: Number.isFinite(n) ? round2(n) : null,
+          };
+        } catch {
+          return { id, nome, saldo: null as number | null };
+        }
+      }),
+    );
+    contas.push(...part);
+  }
+
+  const comSaldo = contas.filter(c => c.saldo != null);
+  const saldoTotal =
+    comSaldo.length > 0
+      ? round2(comSaldo.reduce((s, c) => s + (c.saldo ?? 0), 0))
+      : null;
 
   return {
     contas,
-    saldoTotal: null,
+    saldoTotal,
     aviso:
-      contas.length > 0
-        ? "Saldos por conta omitidos nesta carga rápida; use o Conta Azul para saldo atual."
+      saldoTotal == null && contas.length > 0
+        ? "Não foi possível obter saldo atual das contas no Conta Azul."
         : undefined,
   };
+}
+
+/** Saldo consolidado das contas financeiras ativas no Conta Azul. */
+export async function buscarSaldoContasAzul(): Promise<{
+  saldoTotal: number | null;
+  contas: Array<{ id: string; nome: string; saldo: number | null }>;
+  aviso?: string;
+}> {
+  return fetchSaldosContas({ incluirSaldoAtual: true, maxContas: 30 });
 }
 
 function mapParcelaListagem(

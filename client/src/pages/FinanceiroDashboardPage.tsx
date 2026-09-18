@@ -106,9 +106,9 @@ function Kpi({
         </p>
       ) : null}
       {href ? (
-        <p className="mt-2 text-[10px] font-medium uppercase tracking-wide text-primary/80">
+        <span className="mt-3 inline-flex items-center rounded-md border border-primary/35 bg-primary/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
           Ver composição →
-        </p>
+        </span>
       ) : null}
     </CardContent>
   );
@@ -448,9 +448,12 @@ export default function FinanceiroDashboardPage() {
     }
   };
 
-  const aindaCabe = des?.naoPago ?? 0;
+  const aindaCabeBruto = des?.naoPago ?? 0;
   const naoPlanejado = (des?.pagoEmAtraso ?? 0) + (des?.pagoAMais ?? 0);
   const saldoLiberado = des?.abateConcluidas ?? 0;
+  const aindaCabe =
+    Math.round((aindaCabeBruto - naoPlanejado + saldoLiberado) * 100) / 100;
+  const saldoContaAzul = data?.saldoContaAzul ?? null;
   const pieStroke = theme === "dark" ? "#0f172a" : "#fff";
 
   return (
@@ -559,19 +562,18 @@ export default function FinanceiroDashboardPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 text-sm">
-          <Link
-            href="/financeiro-cfo/comparativo"
-            className="rounded-md border px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+        <div className="flex flex-wrap gap-2">
+          <Button asChild size="sm" className="h-9 font-semibold shadow-sm">
+            <Link href="/financeiro-cfo/comparativo">Comparativo por rúbrica</Link>
+          </Button>
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+            className="h-9 border-primary/40 font-semibold text-primary hover:bg-primary/10"
           >
-            Comparativo por rúbrica
-          </Link>
-          <Link
-            href="/financeiro-cfo/analise"
-            className="rounded-md border px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            Análise Conta Azul
-          </Link>
+            <Link href="/financeiro-cfo/analise">Análise Conta Azul</Link>
+          </Button>
         </div>
 
         {q.isLoading ? (
@@ -615,8 +617,8 @@ export default function FinanceiroDashboardPage() {
                   <Kpi
                     title="Quanto ainda cabe"
                     value={fmtMoney(aindaCabe)}
-                    hint="Plano − executado (ainda não saiu do projetado)"
-                    tone="down"
+                    hint="Restante do plano − não planejado + saldo liberado"
+                    tone={aindaCabe >= 0 ? "down" : "up"}
                     href={kpiHref("ainda-cabe")}
                   />
                   <Kpi
@@ -632,6 +634,19 @@ export default function FinanceiroDashboardPage() {
                     hint="Rúbricas concluídas com pagamento a menos"
                     tone={saldoLiberado > 0.009 ? "down" : "neutral"}
                     href={kpiHref("saldo-liberado")}
+                  />
+                  <Kpi
+                    title="Saldo Conta Azul"
+                    value={fmtMoney(saldoContaAzul)}
+                    hint="Saldo atual das contas financeiras (ao vivo)"
+                    tone={
+                      saldoContaAzul == null
+                        ? "neutral"
+                        : saldoContaAzul >= 0
+                          ? "down"
+                          : "up"
+                    }
+                    href={kpiHref("saldo-conta-azul")}
                   />
                 </div>
 

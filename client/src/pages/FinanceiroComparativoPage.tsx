@@ -241,13 +241,12 @@ export default function FinanceiroComparativoPage() {
       <main className="mx-auto max-w-[1200px] space-y-6 px-4 py-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <Link
-              href="/financeiro-cfo"
-              className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Dashboard financeiro
-            </Link>
+            <Button asChild variant="outline" size="sm" className="mb-3 h-9 border-primary/40 font-semibold text-primary hover:bg-primary/10">
+              <Link href="/financeiro-cfo">
+                <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+                Dashboard financeiro
+              </Link>
+            </Button>
             <h1 className="text-2xl font-semibold tracking-tight">
               Comparativo por rúbrica
             </h1>
@@ -314,12 +313,6 @@ export default function FinanceiroComparativoPage() {
             </Button>
           </div>
         </div>
-
-        {q.data?.avisos?.length ? (
-          <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100">
-            {q.data.avisos.join(" · ")}
-          </div>
-        ) : null}
 
         {q.isLoading ? (
           <p className="text-sm text-muted-foreground">Carregando…</p>
@@ -829,9 +822,9 @@ export default function FinanceiroComparativoPage() {
               já pagas, use <strong>Concluir</strong> se pagou a menos — o
               restante vira saldo e abate o “Caixa previsto vs desembolso”.
               Ajuste em{" "}
-              <Link href="/financeiro-cfo/analise" className="underline">
-                Análise Conta Azul
-              </Link>
+              <Button asChild variant="link" className="h-auto p-0 text-xs font-semibold">
+                <Link href="/financeiro-cfo/analise">Análise Conta Azul</Link>
+              </Button>
               .
             </p>
           </>

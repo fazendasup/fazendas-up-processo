@@ -59,14 +59,24 @@ export default function FinanceiroKpiDetalhePage() {
       <Header />
       <main className="mx-auto w-full max-w-[1100px] space-y-5 px-4 py-6">
         <div className="flex flex-wrap items-center gap-3">
-          <Button variant="outline" size="sm" asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 border-primary/40 font-semibold text-primary hover:bg-primary/10"
+            asChild
+          >
             <Link href={backHref}>
               <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
               Dashboard
             </Link>
           </Button>
 
-          <Button variant="ghost" size="sm" asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 font-semibold"
+            asChild
+          >
             <Link
               href={`/financeiro-cfo/comparativo?mes=${encodeURIComponent(
                 data?.mesYm ??

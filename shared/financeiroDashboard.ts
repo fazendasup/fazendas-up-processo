@@ -109,6 +109,9 @@ export type FinanceiroDashboardPayload = {
     saldoRealizado: number;
     gapCaixaMes: number;
   };
+  /** Saldo consolidado das contas financeiras no Conta Azul (ao vivo). */
+  saldoContaAzul: number | null;
+  contasContaAzul?: Array<{ id: string; nome: string; saldo: number | null }>;
   desembolsoTotais: {
     projetado: number;
     /** Projetado após abate de rúbricas concluídas (pago a menos). */

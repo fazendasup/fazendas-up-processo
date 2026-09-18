@@ -404,21 +404,21 @@ export default function FinanceiroCfoPage() {
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
               Gaps vs mês anterior, edição rápida de rúbrica e foco no que
-              mais pesa no caixa.{" "}
-              <a
-                href="/financeiro-cfo"
-                className="font-medium text-foreground underline-offset-2 hover:underline"
-              >
-                Dashboard
-              </a>
-              {" · "}
-              <a
-                href="/financeiro-cfo/comparativo"
-                className="font-medium text-foreground underline-offset-2 hover:underline"
-              >
-                Comparativo projeção × realizado
-              </a>
+              mais pesa no caixa.
             </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button asChild size="sm" className="h-9 font-semibold shadow-sm">
+                <a href="/financeiro-cfo">Dashboard</a>
+              </Button>
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className="h-9 border-primary/40 font-semibold text-primary hover:bg-primary/10"
+              >
+                <a href="/financeiro-cfo/comparativo">Comparativo projeção × realizado</a>
+              </Button>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-end gap-3 rounded-xl border bg-card p-3">
@@ -472,12 +472,6 @@ export default function FinanceiroCfoPage() {
 
         {data && kpis ? (
           <>
-            {data.avisos?.length ? (
-              <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                {data.avisos.join(" · ")}
-              </p>
-            ) : null}
-
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               <Kpi
                 icon={<Wallet className="h-4 w-4 text-sky-600" />}

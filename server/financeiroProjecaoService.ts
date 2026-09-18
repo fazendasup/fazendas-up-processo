@@ -2,6 +2,7 @@ import {
   buscarBaixasReceberPorPeriodoPagamento,
   buscarParcelasPagarParaProjecao,
   buscarParcelasReceberParaComparativo,
+  buscarSaldoContasAzul,
   fetchCatalogoCategorias,
   idsCategoriasReceitaVendas,
 } from "./financeiroContaAzulFluxo";
@@ -626,6 +627,7 @@ export async function carregarFinanceiroDashboard(
     pagarPeriodo,
     receberPeriodo,
     rubricasConcluidas,
+    saldoCa,
   ] = await Promise.all([
     carregarProjecaoDesembolso(projetoId, mes2, { forceRefreshCa: force }),
     carregarProjecaoDesembolso(projetoId, mesYm, { forceRefreshCa: force }),
@@ -693,6 +695,11 @@ export async function carregarFinanceiroDashboard(
           projetoId,
         ).then(r => r.map(toBase)),
     listRubricasMesConcluidas(projetoId, mesYm),
+    buscarSaldoContasAzul().catch(() => ({
+      saldoTotal: null as number | null,
+      contas: [] as Array<{ id: string; nome: string; saldo: number | null }>,
+      aviso: "Falha ao consultar saldo Conta Azul.",
+    })),
   ]);
 
   const desembolsoDe = (
@@ -859,6 +866,7 @@ export async function carregarFinanceiroDashboard(
     "Projeção de fechar (caixa) = recebido + ainda entra (sem a receber).",
     "Faturado/orçamento = volume de pedidos — não some com recebido.",
   ];
+  if (saldoCa.aviso) avisos.push(saldoCa.aviso);
 
   // Dia/semana/ano: KPIs de caixa no intervalo; plano/mapa ficam no mês âncora.
   if (!periodo.planoAlinhadoAoPeriodo) {
@@ -918,6 +926,8 @@ export async function carregarFinanceiroDashboard(
       saldoRealizado,
       gapCaixaMes,
     },
+    saldoContaAzul: saldoCa.saldoTotal,
+    contasContaAzul: saldoCa.contas,
     desembolsoTotais: desembolsoTotaisOut,
     desembolsoPorRubrica: dMes.rubricas
       .map(r =>
@@ -1068,6 +1078,12 @@ export async function carregarDashboardKpiDetalhe(
     }
 
     if (kpi === "ainda-cabe") {
+      const naoPlanejado =
+        (d.totais.pagoEmAtraso ?? 0) + (d.totais.pagoAMais ?? 0);
+      const saldoLib = d.totais.abateConcluidas ?? 0;
+      const aindaCabeAjustado = Math.round(
+        (d.totais.naoPago - naoPlanejado + saldoLib) * 100,
+      ) / 100;
       const linhas: DashboardKpiLinha[] = d.rubricas
         .filter(r => r.naoPago > 0.009)
         .map(r => ({
@@ -1082,8 +1098,8 @@ export async function carregarDashboardKpiDetalhe(
       return linhasDe(
         linhas,
         "Quanto ainda cabe",
-        "Por rúbrica: o que falta sair do plano (projetado − pago, mín. 0).",
-        d.totais.naoPago,
+        "Restante do plano − não planejado + saldo liberado. Linhas = o que ainda falta por rúbrica (antes do ajuste).",
+        aindaCabeAjustado,
       );
     }
 
@@ -1138,6 +1154,27 @@ export async function carregarDashboardKpiDetalhe(
       "Pagamentos fora da grade (atraso de recorrente, além do plano ou sem programação).",
       Math.round(((d.totais.pagoEmAtraso ?? 0) + (d.totais.pagoAMais ?? 0)) * 100) /
         100,
+    );
+  }
+
+  if (kpi === "saldo-conta-azul") {
+    const saldos = await buscarSaldoContasAzul();
+    const linhas: DashboardKpiLinha[] = (saldos.contas ?? [])
+      .filter(c => c.saldo != null)
+      .map(c => ({
+        id: c.id,
+        titulo: c.nome,
+        subtitulo: "Conta financeira Conta Azul",
+        valor: c.saldo ?? 0,
+        meta: null,
+        grupo: null,
+      }))
+      .sort((a, b) => b.valor - a.valor);
+    return linhasDe(
+      linhas,
+      "Saldo Conta Azul",
+      "Saldo atual consolidado das contas financeiras ativas no Conta Azul.",
+      saldos.saldoTotal ?? 0,
     );
   }
 
