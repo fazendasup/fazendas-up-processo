@@ -48,22 +48,39 @@ async function upsertComercialUsuario(input: {
   const email = input.email.toLowerCase().trim();
   const senhaHash = input.senhaTemporaria ? await hashComercialPassword(input.senhaTemporaria) : undefined;
 
-  await prisma.usuario.upsert({
-    where: { email },
-    create: {
-      nome: input.nome,
-      email,
-      senhaHash: senhaHash ?? (await hashComercialPassword(`Fup@${Date.now()}`)),
-      perfil: input.perfil,
-      status: "ATIVO",
-    },
-    update: {
-      nome: input.nome,
-      perfil: input.perfil,
-      status: "ATIVO",
-      ...(senhaHash ? { senhaHash } : {}),
-    },
-  });
+  if (input.perfil === "FINANCEIRO") {
+    const { ensurePerfilFinanceiroEnum } = await import("../comercial/ensure-perfil-financeiro");
+    await ensurePerfilFinanceiroEnum();
+  }
+
+  try {
+    await prisma.usuario.upsert({
+      where: { email },
+      create: {
+        nome: input.nome,
+        email,
+        senhaHash: senhaHash ?? (await hashComercialPassword(`Fup@${Date.now()}`)),
+        perfil: input.perfil,
+        status: "ATIVO",
+      },
+      update: {
+        nome: input.nome,
+        perfil: input.perfil,
+        status: "ATIVO",
+        ...(senhaHash ? { senhaHash } : {}),
+      },
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("Data truncated") && msg.includes("perfil")) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message:
+          "O banco comercial ainda não aceita o perfil FINANCEIRO. Reinicie o servidor (migrate) ou rode: npm run comercial:migrate",
+      });
+    }
+    throw e;
+  }
 }
 
 async function appendComercialPerfis<T extends { email: string | null; role: string }>(rows: T[]) {

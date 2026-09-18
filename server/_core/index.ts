@@ -350,6 +350,18 @@ async function startServer() {
     );
   }
 
+  try {
+    const { ensurePerfilFinanceiroEnum } = await import(
+      "../comercial/ensure-perfil-financeiro"
+    );
+    await ensurePerfilFinanceiroEnum();
+  } catch (e) {
+    console.error(
+      "[Server] ensurePerfilFinanceiroEnum falhou — perfil Financeiro pode falhar ao criar usuário:",
+      e instanceof Error ? e.message : e,
+    );
+  }
+
   // Schema evolutivo (colunas/tabelas idempotentes) — fonte única partilhada com os testes.
   await applyRuntimeSchemaEnsures();
   try {
