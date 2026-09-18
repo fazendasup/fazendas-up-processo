@@ -29,6 +29,7 @@ import {
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import Header from "@/components/Header";
+import { FinanceiroCfoNav } from "@/components/financeiro/FinanceiroCfoNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -406,18 +407,8 @@ export default function FinanceiroCfoPage() {
               Gaps vs mês anterior, edição rápida de rúbrica e foco no que
               mais pesa no caixa.
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button asChild size="sm" className="h-9 font-semibold shadow-sm">
-                <a href="/financeiro-cfo">Dashboard</a>
-              </Button>
-              <Button
-                asChild
-                size="sm"
-                variant="outline"
-                className="h-9 border-primary/40 font-semibold text-primary hover:bg-primary/10"
-              >
-                <a href="/financeiro-cfo/comparativo">Comparativo projeção × realizado</a>
-              </Button>
+            <div className="mt-3">
+              <FinanceiroCfoNav active="analise" />
             </div>
           </div>
 

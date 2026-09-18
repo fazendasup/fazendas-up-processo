@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import Header from "@/components/Header";
+import { FinanceiroCfoNav } from "@/components/financeiro/FinanceiroCfoNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -241,12 +242,7 @@ export default function FinanceiroComparativoPage() {
       <main className="mx-auto max-w-[1200px] space-y-6 px-4 py-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <Button asChild variant="outline" size="sm" className="mb-3 h-9 border-primary/40 font-semibold text-primary hover:bg-primary/10">
-              <Link href="/financeiro-cfo">
-                <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-                Dashboard financeiro
-              </Link>
-            </Button>
+            <FinanceiroCfoNav active="comparativo" className="mb-3" />
             <h1 className="text-2xl font-semibold tracking-tight">
               Comparativo por rúbrica
             </h1>

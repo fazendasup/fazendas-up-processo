@@ -21,6 +21,7 @@ import {
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import Header from "@/components/Header";
+import { FinanceiroCfoNav } from "@/components/financeiro/FinanceiroCfoNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -608,19 +609,7 @@ export default function FinanceiroDashboardPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Button asChild size="sm" className="h-9 font-semibold shadow-sm">
-            <Link href="/financeiro-cfo/comparativo">Comparativo por rúbrica</Link>
-          </Button>
-          <Button
-            asChild
-            size="sm"
-            variant="outline"
-            className="h-9 border-primary/40 font-semibold text-primary hover:bg-primary/10"
-          >
-            <Link href="/financeiro-cfo/analise">Análise Conta Azul</Link>
-          </Button>
-        </div>
+        <FinanceiroCfoNav active="dashboard" />
 
         {q.isLoading ? (
           <p className="text-sm text-muted-foreground">Carregando dashboard…</p>
