@@ -81,7 +81,7 @@ function statusLabel(s: StatusRubricaComparativo): string {
     case "pago_a_mais":
       return "Pago a mais";
     case "pago_em_atraso":
-      return "Pago em atraso";
+      return "Fora do plano";
     case "nao_programada":
       return "Não programada";
   }
@@ -331,7 +331,7 @@ export default function FinanceiroComparativoPage() {
                   value={fmtMoney(d?.totais.pago)}
                   hint={
                     d?.totais.pctPagoDoProjetado != null
-                      ? `${fmtPct(d.totais.pctPagoDoProjetado).replace("+", "")} do plano (sem atraso)`
+                      ? `${fmtPct(d.totais.pctPagoDoProjetado).replace("+", "")} do plano (sem fora do plano)`
                       : "Conta Azul no mês"
                   }
                 />
@@ -343,13 +343,13 @@ export default function FinanceiroComparativoPage() {
                 <Kpi
                   title="Pago a mais"
                   value={fmtMoney(d?.totais.pagoAMais)}
-                  hint="Passou do plano (não inclui atraso)"
+                  hint="Passou do plano (não inclui fora do plano)"
                   tone={(d?.totais.pagoAMais ?? 0) > 0 ? "up" : "neutral"}
                 />
                 <Kpi
-                  title="Pago em atraso"
+                  title="Fora do plano"
                   value={fmtMoney(d?.totais.pagoEmAtraso)}
-                  hint="Recorrente sem projeção no mês"
+                  hint="Recorrente pago sem estar na projeção deste mês"
                   tone={(d?.totais.pagoEmAtraso ?? 0) > 0 ? "up" : "neutral"}
                 />
               </div>
@@ -763,10 +763,10 @@ export default function FinanceiroComparativoPage() {
 
             <p className="flex items-start gap-2 text-xs text-muted-foreground">
               <TrendingDown className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              Desembolso: “pago em atraso” = rúbrica recorrente paga sem estar na
-              projeção; “não programada” = gasto fora do plano. Ajuste a grade em{" "}
-              <Link href="/financeiro-cfo" className="underline">
-                Projeção de desembolso
+              Desembolso: “fora do plano” = rúbrica recorrente paga sem estar na
+              projeção; “não programada” = gasto sem linha na grade. Ajuste em{" "}
+              <Link href="/financeiro-cfo/analise" className="underline">
+                Análise Conta Azul
               </Link>
               .
             </p>

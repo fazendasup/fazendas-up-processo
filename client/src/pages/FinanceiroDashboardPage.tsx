@@ -1,8 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "wouter";
 import {
-  ArrowDownRight,
-  ArrowUpRight,
   BarChart3,
   RefreshCcw,
   TrendingUp,
@@ -68,6 +66,75 @@ function fmtPct(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "—";
   const sign = n > 0 ? "+" : "";
   return `${sign}${n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
+}
+
+function labelGapVendas(desvio: number | null | undefined): {
+  title: string;
+  value: string;
+  hint: string;
+  tone: "up" | "down" | "neutral";
+} {
+  const d = desvio ?? 0;
+  if (d < -0.009) {
+    return {
+      title: "Falta para a projeção",
+      value: fmtMoney(Math.abs(d)),
+      hint: "Quanto ainda falta no volume para fechar a projeção do mês",
+      tone: "up",
+    };
+  }
+  if (d > 0.009) {
+    return {
+      title: "Acima da projeção",
+      value: fmtMoney(d),
+      hint: "Realizado já passou a projeção de fechar o mês",
+      tone: "down",
+    };
+  }
+  return {
+    title: "Na projeção",
+    value: fmtMoney(0),
+    hint: "Realizado igual à projeção",
+    tone: "neutral",
+  };
+}
+
+function labelGapDesembolso(desvio: number | null | undefined): {
+  title: string;
+  value: string;
+  hint: string;
+  tone: "up" | "down" | "neutral";
+} {
+  const d = desvio ?? 0;
+  if (d > 0.009) {
+    return {
+      title: "Pagou além do plano",
+      value: fmtMoney(d),
+      hint: "Pago − projetado (gastou mais que a grade)",
+      tone: "up",
+    };
+  }
+  if (d < -0.009) {
+    return {
+      title: "Ainda cabe no plano",
+      value: fmtMoney(Math.abs(d)),
+      hint: "Projetado − pago (ainda não gastou tudo do plano)",
+      tone: "down",
+    };
+  }
+  return {
+    title: "No plano",
+    value: fmtMoney(0),
+    hint: "Pago igual ao projetado",
+    tone: "neutral",
+  };
+}
+
+function textoVsProjecao(desvio: number, aberto: boolean): string {
+  if (!aberto) return "—";
+  if (desvio < -0.009) return `faltam ${fmtMoney(Math.abs(desvio))}`;
+  if (desvio > 0.009) return `+${fmtMoney(desvio).replace("R$", "").trim()}`;
+  return "ok";
 }
 
 function Kpi({
@@ -242,10 +309,8 @@ export default function FinanceiroDashboardPage() {
     }
   };
 
-  const desvioVendasTone =
-    (atual?.desvioVendas ?? 0) >= 0 ? "down" : "up";
-  const desvioDesTone =
-    (atual?.desvioDesembolso ?? 0) <= 0 ? "down" : "up";
+  const gapVendas = labelGapVendas(atual?.desvioVendas);
+  const gapDesembolso = labelGapDesembolso(atual?.desvioDesembolso);
 
   return (
     <div className="min-h-screen bg-background">
@@ -346,14 +411,10 @@ export default function FinanceiroDashboardPage() {
                   hint={`Faturado ${fmtMoney(atual?.vendasFaturadas)} · orç. ${fmtMoney(atual?.orcamentos)}`}
                 />
                 <Kpi
-                  title="Desvio vendas"
-                  value={fmtMoney(atual?.desvioVendas)}
-                  hint={
-                    atual?.desvioVendasPct != null
-                      ? `${fmtPct(atual.desvioVendasPct)} vs projeção`
-                      : "Real − projetado"
-                  }
-                  tone={desvioVendasTone}
+                  title={gapVendas.title}
+                  value={gapVendas.value}
+                  hint={gapVendas.hint}
+                  tone={gapVendas.tone}
                 />
                 <Kpi
                   title="Caixa previsto vs desembolso"
@@ -430,8 +491,19 @@ export default function FinanceiroDashboardPage() {
                                 accent: CHART.blue.stroke,
                               },
                               {
-                                label: "Desvio",
-                                value: `${fmtMoney(row.desvioVendas)} (${fmtPct(row.desvioVendasPct)})`,
+                                label:
+                                  row.desvioVendas < 0
+                                    ? "Falta p/ projeção"
+                                    : row.desvioVendas > 0
+                                      ? "Acima da projeção"
+                                      : "vs projeção",
+                                value:
+                                  row.aberto
+                                    ? textoVsProjecao(
+                                        row.desvioVendas,
+                                        row.aberto,
+                                      )
+                                    : "—",
                                 muted: true,
                               },
                             ]}
@@ -538,8 +610,13 @@ export default function FinanceiroDashboardPage() {
                                 accent: "#b45309",
                               },
                               {
-                                label: "Desvio",
-                                value: `${fmtMoney(row.desvioDesembolso)} (${fmtPct(row.desvioDesembolsoPct)})`,
+                                label:
+                                  row.desvioDesembolso > 0
+                                    ? "Além do plano"
+                                    : row.desvioDesembolso < 0
+                                      ? "Cabe no plano"
+                                      : "vs plano",
+                                value: fmtMoney(Math.abs(row.desvioDesembolso)),
                                 muted: true,
                               },
                             ]}
@@ -603,18 +680,15 @@ export default function FinanceiroDashboardPage() {
                 />
                 <Kpi title="Ainda não pago" value={fmtMoney(des?.naoPago)} />
                 <Kpi
-                  title="Desvio (pago − plano)"
-                  value={fmtMoney(atual?.desvioDesembolso)}
-                  hint={
-                    atual?.desvioDesembolsoPct != null
-                      ? fmtPct(atual.desvioDesembolsoPct)
-                      : undefined
-                  }
-                  tone={desvioDesTone}
+                  title={gapDesembolso.title}
+                  value={gapDesembolso.value}
+                  hint={gapDesembolso.hint}
+                  tone={gapDesembolso.tone}
                 />
                 <Kpi
-                  title="Pago em atraso"
+                  title="Fora do plano"
                   value={fmtMoney(des?.pagoEmAtraso)}
+                  hint="Recorrente pago sem estar na projeção deste mês"
                   tone={(des?.pagoEmAtraso ?? 0) > 0 ? "up" : "neutral"}
                 />
               </div>
@@ -802,7 +876,7 @@ export default function FinanceiroDashboardPage() {
                         Vendas proj.
                       </th>
                       <th className="py-2 pr-2 text-right font-medium">
-                        Desvio
+                        vs projeção
                       </th>
                       <th className="py-2 pr-2 text-right font-medium">
                         Desemb. pago
@@ -833,15 +907,8 @@ export default function FinanceiroDashboardPage() {
                         <td className="py-2 pr-2 text-right tabular-nums text-muted-foreground">
                           {fmtMoney(m.vendasProjetado)}
                         </td>
-                        <td className="py-2 pr-2 text-right tabular-nums">
-                          <span className="inline-flex items-center justify-end gap-0.5">
-                            {m.desvioVendas > 0 ? (
-                              <ArrowUpRight className="h-3 w-3 text-emerald-600" />
-                            ) : m.desvioVendas < 0 ? (
-                              <ArrowDownRight className="h-3 w-3 text-red-600" />
-                            ) : null}
-                            {fmtMoney(m.desvioVendas)}
-                          </span>
+                        <td className="py-2 pr-2 text-right tabular-nums text-muted-foreground">
+                          {textoVsProjecao(m.desvioVendas, m.aberto)}
                         </td>
                         <td className="py-2 pr-2 text-right tabular-nums">
                           {fmtMoney(m.desembolsoPago)}
