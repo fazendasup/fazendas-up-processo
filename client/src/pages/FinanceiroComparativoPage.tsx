@@ -748,9 +748,16 @@ export default function FinanceiroComparativoPage() {
                   }
                   value={fmtMoney(r?.projecaoVendas?.aindaEntraProjetado)}
                   hint={
-                    r?.projecaoVendas
-                      ? `Média das baixas de receita de vendas no fim de ${labelMes(r.projecaoVendas.mesesMedia2m[0])} (${fmtMoney(r.projecaoVendas.vendasRestanteMesAnterior2)}) e ${labelMes(r.projecaoVendas.mesesMedia2m[1])} (${fmtMoney(r.projecaoVendas.vendasRestanteMesAnterior1)})`
-                      : "Média das baixas de vendas nos últimos N dias · 2 meses"
+                    r?.projecaoVendas?.janelasAindaEntra
+                      ? (() => {
+                          const [j2, j1] = r.projecaoVendas.janelasAindaEntra;
+                          const fmt = (iso: string) => {
+                            const [y, m, d] = iso.split("-");
+                            return `${d}/${m}`;
+                          };
+                          return `Pagamento ${fmt(j2.inicioIso)}–${fmt(j2.fimIso)} = ${fmtMoney(j2.total)} · ${fmt(j1.inicioIso)}–${fmt(j1.fimIso)} = ${fmtMoney(j1.total)} (venda e/ou frete). Média = ${fmtMoney(r.projecaoVendas.aindaEntraProjetado)}`;
+                        })()
+                      : "Média das baixas venda/frete nos últimos N dias · 2 meses"
                   }
                 />
                 <Kpi

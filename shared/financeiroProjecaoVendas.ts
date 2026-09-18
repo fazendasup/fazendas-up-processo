@@ -16,6 +16,25 @@ export function diasNoMesYm(ym: string): number {
   return new Date(y, m, 0).getDate();
 }
 
+/**
+ * Últimos `nDias` dias civis do mês (ISO).
+ * Ex.: ago/2026 + 12 → 20/08–31/08.
+ */
+export function intervaloUltimosNDiasMesYm(
+  mesYm: string,
+  nDias: number,
+): { inicioIso: string; fimIso: string } | null {
+  if (!/^\d{4}-\d{2}$/.test(mesYm) || nDias <= 0) return null;
+  const diasNoMes = diasNoMesYm(mesYm);
+  const n = Math.min(Math.floor(nDias), diasNoMes);
+  if (n <= 0) return null;
+  const diaInicio = diasNoMes - n + 1;
+  return {
+    inicioIso: `${mesYm}-${String(diaInicio).padStart(2, "0")}`,
+    fimIso: `${mesYm}-${String(diasNoMes).padStart(2, "0")}`,
+  };
+}
+
 export type StatusPedidoVendaOrcamento = "venda" | "orcamento";
 
 export const DIA_LIMITE_ORCAMENTO_PADRAO = 15;
@@ -204,6 +223,14 @@ export type ProjecaoVendasRestanteMes = {
   mediaRestante2m: number;
   vendasRestanteMesAnterior1: number;
   vendasRestanteMesAnterior2: number;
+  /**
+   * Janelas exatas usadas na média (data de pagamento Conta Azul).
+   * [mês−2, mês−1] — mesmos índices de `mesesMedia2m`.
+   */
+  janelasAindaEntra: [
+    { mesYm: string; inicioIso: string; fimIso: string; total: number },
+    { mesYm: string; inicioIso: string; fimIso: string; total: number },
+  ];
   aindaEntraProjetado: number;
   /**
    * No fluxo de caixa: recebido + aindaEntraProjetado
@@ -273,6 +300,23 @@ export function montarProjecaoVendasRestanteMes(input: {
   const aindaEntraProjetado = mediaRestante2m;
   const projecaoMesTotal = round2(vendasJaNoMes + aindaEntraProjetado);
 
+  const j2 = intervaloUltimosNDiasMesYm(input.mesAnterior2Ym, diasRestantes);
+  const j1 = intervaloUltimosNDiasMesYm(input.mesAnterior1Ym, diasRestantes);
+  const janelasAindaEntra: ProjecaoVendasRestanteMes["janelasAindaEntra"] = [
+    {
+      mesYm: input.mesAnterior2Ym,
+      inicioIso: j2?.inicioIso ?? `${input.mesAnterior2Ym}-01`,
+      fimIso: j2?.fimIso ?? `${input.mesAnterior2Ym}-01`,
+      total: vendasRestanteMesAnterior2,
+    },
+    {
+      mesYm: input.mesAnterior1Ym,
+      inicioIso: j1?.inicioIso ?? `${input.mesAnterior1Ym}-01`,
+      fimIso: j1?.fimIso ?? `${input.mesAnterior1Ym}-01`,
+      total: vendasRestanteMesAnterior1,
+    },
+  ];
+
   return {
     mesesMedia2m: [input.mesAnterior2Ym, input.mesAnterior1Ym],
     diasNoMes,
@@ -285,6 +329,7 @@ export function montarProjecaoVendasRestanteMes(input: {
     mediaRestante2m,
     vendasRestanteMesAnterior1,
     vendasRestanteMesAnterior2,
+    janelasAindaEntra,
     aindaEntraProjetado,
     projecaoMesTotal,
   };

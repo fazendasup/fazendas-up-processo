@@ -1315,6 +1315,12 @@ export async function carregarDashboardKpiDetalhe(
     const linhas: DashboardKpiLinha[] = [];
     let t1 = 0;
     let t2 = 0;
+    const janela1 = boundsUltimosNDiasMesYm(mes1, n);
+    const janela2 = boundsUltimosNDiasMesYm(mes2, n);
+    const fmtIso = (d: Date) => diaIsoAmericaSp(d);
+    const labelJanela = (ini: Date, fim: Date) =>
+      `${fmtDataBr(fmtIso(ini))}–${fmtDataBr(fmtIso(fim))}`;
+
     for (const p of b1) {
       if (!ehReceitaVendasCaixa(p)) continue;
       const pago = valorPagoParcela(p);
@@ -1325,7 +1331,7 @@ export async function carregarDashboardKpiDetalhe(
         titulo: p.descricao,
         subtitulo: p.fornecedor,
         valor: pago,
-        meta: `${mes1} · ${fmtDataBr(p.dataPagamento) ?? ""}`,
+        meta: `${labelMesYm(mes1)} · pag. ${fmtDataBr(p.dataPagamento) ?? "?"}`,
         grupo: p.rubrica,
       });
     }
@@ -1339,7 +1345,7 @@ export async function carregarDashboardKpiDetalhe(
         titulo: p.descricao,
         subtitulo: p.fornecedor,
         valor: pago,
-        meta: `${mes2} · ${fmtDataBr(p.dataPagamento) ?? ""}`,
+        meta: `${labelMesYm(mes2)} · pag. ${fmtDataBr(p.dataPagamento) ?? "?"}`,
         grupo: p.rubrica,
       });
     }
@@ -1348,10 +1354,31 @@ export async function carregarDashboardKpiDetalhe(
       t1 > 0 && t2 > 0
         ? Math.round(((t1 + t2) / 2) * 100) / 100
         : Math.round((t1 || t2) * 100) / 100;
+
+    // Resumo no topo: janelas exatas para reproduzir no Conta Azul
+    linhas.unshift(
+      {
+        id: `resumo:${mes2}`,
+        titulo: `${labelMesYm(mes2)} · pagamento ${labelJanela(janela2.inicio, janela2.fim)}`,
+        subtitulo: "Filtro Conta Azul: data de pagamento (não vencimento) · venda e/ou frete",
+        valor: Math.round(t2 * 100) / 100,
+        meta: "base da média",
+        grupo: "Resumo",
+      },
+      {
+        id: `resumo:${mes1}`,
+        titulo: `${labelMesYm(mes1)} · pagamento ${labelJanela(janela1.inicio, janela1.fim)}`,
+        subtitulo: "Filtro Conta Azul: data de pagamento (não vencimento) · venda e/ou frete",
+        valor: Math.round(t1 * 100) / 100,
+        meta: "base da média",
+        grupo: "Resumo",
+      },
+    );
+
     return {
       ...base,
       titulo: "Projetado de vendas (caixa)",
-      descricao: `Baixas "Receitas de Vendas" nos últimos ${n} dias de ${labelMesYm(mes2)} e ${labelMesYm(mes1)}. Total mostra a média usada no KPI.`,
+      descricao: `Média das baixas com data de pagamento nos últimos ${n} dias de ${labelMesYm(mes2)} (${labelJanela(janela2.inicio, janela2.fim)}) e ${labelMesYm(mes1)} (${labelJanela(janela1.inicio, janela1.fim)}). Só venda e/ou frete. Total = média.`,
       total: media,
       linhas,
     };

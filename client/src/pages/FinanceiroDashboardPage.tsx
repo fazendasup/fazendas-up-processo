@@ -787,8 +787,15 @@ export default function FinanceiroDashboardPage() {
                   title="Projetado de vendas (caixa)"
                   value={fmtMoney(pv?.aindaEntraProjetado)}
                   hint={
-                    pv && pv.diasRestantes > 0
-                      ? `Média venda/frete · últimos ${pv.diasRestantes} dias dos 2 meses ant.`
+                    pv?.janelasAindaEntra && pv.diasRestantes > 0
+                      ? (() => {
+                          const [j2, j1] = pv.janelasAindaEntra;
+                          const fmt = (iso: string) => {
+                            const [, m, d] = iso.split("-");
+                            return `${d}/${m}`;
+                          };
+                          return `Pag. ${fmt(j2.inicioIso)}–${fmt(j2.fimIso)} ${fmtMoney(j2.total)} · ${fmt(j1.inicioIso)}–${fmt(j1.fimIso)} ${fmtMoney(j1.total)}`;
+                        })()
                       : "Sem dias restantes neste mês"
                   }
                   href={kpiHref("proj-vendas")}

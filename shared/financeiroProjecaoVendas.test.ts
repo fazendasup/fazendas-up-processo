@@ -132,6 +132,19 @@ describe("montarProjecaoVendasRestanteMes", () => {
     expect(out.aindaEntraProjetado).toBe(1_300);
     expect(out.vendasJaNoMes).toBe(1_700);
     expect(out.projecaoMesTotal).toBe(3_000);
+    // 13 dias restantes → últimos 13 de jul/ago: dia 19–31
+    expect(out.janelasAindaEntra[0]).toMatchObject({
+      mesYm: "2026-07",
+      inicioIso: "2026-07-19",
+      fimIso: "2026-07-31",
+      total: 1_200,
+    });
+    expect(out.janelasAindaEntra[1]).toMatchObject({
+      mesYm: "2026-08",
+      inicioIso: "2026-08-19",
+      fimIso: "2026-08-31",
+      total: 1_400,
+    });
   });
 
   it("mês passado não projeta restante", () => {
