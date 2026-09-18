@@ -466,9 +466,10 @@ export function somarRecebidoNoMes(
 }
 
 /**
- * Soma das baixas (data de pagamento) nos últimos `nDias` dias civis do mês.
- * Ex.: n=13 num mês de 30 → pagamentos nos dias 18–30.
- * Usa caixa real Conta Azul — não volume faturado (que pode cair só no mês seguinte).
+ * Soma das baixas nos últimos `nDias` dias do mês (receita de vendas em caixa).
+ * 1) Se houver data_pagamento nos últimos N dias → soma exata.
+ * 2) Senão, estima pela média do recebido do mês × (N / dias do mês)
+ *    — usa o mesmo recebido Conta Azul que já aparece no dashboard.
  */
 export function somarRecebidoUltimosNDias(
   parcelas: ParcelaBaseProjecao[],
@@ -480,14 +481,37 @@ export function somarRecebidoUltimosNDias(
   const diasNoMes = new Date(y, m, 0).getDate();
   const n = Math.min(Math.floor(nDias), diasNoMes);
   const diaInicio = diasNoMes - n + 1;
+
+  let comDataNosUltimos = 0;
+  let totalMes = 0;
+
+  for (const p of parcelas) {
+    const pago = valorPagoParcela(p);
+    if (pago <= 0) continue;
+    const dp = (p.dataPagamento ?? "").slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}/.test(dp) && dp.slice(0, 7) === mesYm) {
+      totalMes += pago;
+      const dia = Number(dp.slice(8, 10));
+      if (Number.isFinite(dia) && dia >= diaInicio && dia <= diasNoMes) {
+        comDataNosUltimos += pago;
+      }
+      continue;
+    }
+    if (mesPagamentoParcela(p) === mesYm) {
+      totalMes += pago;
+    }
+  }
+
+  if (comDataNosUltimos > 0) return round2(comDataNosUltimos);
+  if (totalMes <= 0 || diasNoMes <= 0) return 0;
+  // Sem granularidade de dia: proporção do recebido do mês (média de caixa).
+  return round2((totalMes * n) / diasNoMes);
+}
+
+/** Soma todos os valores pagos das parcelas (já filtradas pela API de baixas). */
+export function somarValorPagoParcelas(parcelas: ParcelaBaseProjecao[]): number {
   let s = 0;
   for (const p of parcelas) {
-    // Só baixa com data de pagamento — evita usar vencimento (venda ≠ caixa).
-    const dp = (p.dataPagamento ?? "").slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}/.test(dp)) continue;
-    if (dp.slice(0, 7) !== mesYm) continue;
-    const dia = Number(dp.slice(8, 10));
-    if (!Number.isFinite(dia) || dia < diaInicio || dia > diasNoMes) continue;
     const pago = valorPagoParcela(p);
     if (pago > 0) s += pago;
   }

@@ -1,4 +1,5 @@
 import {
+  buscarBaixasReceberPorPeriodoPagamento,
   buscarParcelasPagarParaProjecao,
   buscarParcelasReceberParaComparativo,
 } from "./financeiroContaAzulFluxo";
@@ -23,6 +24,7 @@ import {
   montarComparativoReceitaMes,
   montarFinanceiroComparativo,
   somarRecebidoUltimosNDias,
+  somarValorPagoParcelas,
 } from "@shared/financeiroComparativoProjecao";
 import {
   montarSerieDashboard3Meses,
@@ -67,6 +69,35 @@ function boundsMesYmAmericaSp(ym: string): { inicio: Date; fim: Date } {
       `${ym}-${String(ultimoDia).padStart(2, "0")}`,
     ),
   };
+}
+
+/** Últimos N dias civis do mês (America/SP). */
+function boundsUltimosNDiasMesYm(
+  mesYm: string,
+  nDias: number,
+): { inicio: Date; fim: Date } {
+  const [y, m] = mesYm.split("-").map(Number);
+  const diasNoMes = new Date(y, m, 0).getDate();
+  const n = Math.min(Math.max(0, Math.floor(nDias)), diasNoMes);
+  if (n <= 0) {
+    const vazio = inicioDiaAmericaSp(`${mesYm}-01`);
+    return { inicio: vazio, fim: vazio };
+  }
+  const diaInicio = diasNoMes - n + 1;
+  return {
+    inicio: inicioDiaAmericaSp(
+      `${mesYm}-${String(diaInicio).padStart(2, "0")}`,
+    ),
+    fim: fimDiaAmericaSp(`${mesYm}-${String(diasNoMes).padStart(2, "0")}`),
+  };
+}
+
+function mediaDeDoisPositivos(a: number, b: number): number {
+  const temA = a > 0;
+  const temB = b > 0;
+  const n = (temA ? 1 : 0) + (temB ? 1 : 0);
+  if (n === 0) return 0;
+  return Math.round((((temA ? a : 0) + (temB ? b : 0)) / n) * 100) / 100;
 }
 
 function toBase(p: ParcelaFinanceiraNorm): ParcelaBaseProjecao {
@@ -394,7 +425,7 @@ export async function carregarComparativoProjecao(
       : null,
   };
 
-  const [grade, pagarMes, receberMes, receber1, receber2, vendas] =
+  const [grade, pagarMes, receberMes, baixas1, baixas2, receber1, receber2, vendas] =
     await Promise.all([
       carregarProjecaoDesembolso(projetoId, mesYm, {
         forceRefreshCa: opts?.forceRefreshCa,
@@ -403,6 +434,20 @@ export async function carregarComparativoProjecao(
       buscarParcelasReceberParaComparativo(iniMes, fimMes, projetoId).then(r =>
         r.map(toBase),
       ),
+      diasRestantes > 0
+        ? buscarBaixasReceberPorPeriodoPagamento(
+            boundsUltimosNDiasMesYm(mes1, diasRestantes).inicio,
+            boundsUltimosNDiasMesYm(mes1, diasRestantes).fim,
+            projetoId,
+          ).then(r => r.map(toBase))
+        : Promise.resolve([] as ParcelaBaseProjecao[]),
+      diasRestantes > 0
+        ? buscarBaixasReceberPorPeriodoPagamento(
+            boundsUltimosNDiasMesYm(mes2, diasRestantes).inicio,
+            boundsUltimosNDiasMesYm(mes2, diasRestantes).fim,
+            projetoId,
+          ).then(r => r.map(toBase))
+        : Promise.resolve([] as ParcelaBaseProjecao[]),
       buscarParcelasReceberParaComparativo(
         boundsMesYmAmericaSp(mes1).inicio,
         boundsMesYmAmericaSp(mes1).fim,
@@ -420,16 +465,17 @@ export async function carregarComparativoProjecao(
       }),
     ]);
 
-  const recebidoRestante1 = somarRecebidoUltimosNDias(
-    receber1,
-    mes1,
-    diasRestantes,
-  );
-  const recebidoRestante2 = somarRecebidoUltimosNDias(
-    receber2,
-    mes2,
-    diasRestantes,
-  );
+  // Preferência: baixas no período (API). Fallback: média do recebido do mês × N/dias.
+  const recebidoRestante1 = (() => {
+    const viaApi = somarValorPagoParcelas(baixas1);
+    if (viaApi > 0) return viaApi;
+    return somarRecebidoUltimosNDias(receber1, mes1, diasRestantes);
+  })();
+  const recebidoRestante2 = (() => {
+    const viaApi = somarValorPagoParcelas(baixas2);
+    if (viaApi > 0) return viaApi;
+    return somarRecebidoUltimosNDias(receber2, mes2, diasRestantes);
+  })();
 
   const comparativo = montarFinanceiroComparativo({
     mesYm,
@@ -496,6 +542,8 @@ export async function carregarFinanceiroDashboard(
     receber2,
     receber1,
     receberMes,
+    baixasRest1,
+    baixasRest2,
     vendas,
   ] = await Promise.all([
     carregarProjecaoDesembolso(projetoId, mes2, { forceRefreshCa: force }),
@@ -518,6 +566,36 @@ export async function carregarFinanceiroDashboard(
       bounds(mesYm).fim,
       projetoId,
     ).then(r => r.map(toBase)),
+    (async () => {
+      const diasNoMesRef = diasNoMesYm(mesYm);
+      let n = 0;
+      if (mesYm < hojeYm) n = 0;
+      else if (mesYm > hojeYm) n = diasNoMesRef;
+      else {
+        const diaCorte = Math.min(Math.max(1, diaHoje), diasNoMesRef);
+        n = Math.max(0, diasNoMesRef - diaCorte);
+      }
+      if (n <= 0) return [] as ParcelaBaseProjecao[];
+      const b = boundsUltimosNDiasMesYm(mes1, n);
+      return (await buscarBaixasReceberPorPeriodoPagamento(b.inicio, b.fim, projetoId)).map(
+        toBase,
+      );
+    })(),
+    (async () => {
+      const diasNoMesRef = diasNoMesYm(mesYm);
+      let n = 0;
+      if (mesYm < hojeYm) n = 0;
+      else if (mesYm > hojeYm) n = diasNoMesRef;
+      else {
+        const diaCorte = Math.min(Math.max(1, diaHoje), diasNoMesRef);
+        n = Math.max(0, diasNoMesRef - diaCorte);
+      }
+      if (n <= 0) return [] as ParcelaBaseProjecao[];
+      const b = boundsUltimosNDiasMesYm(mes2, n);
+      return (await buscarBaixasReceberPorPeriodoPagamento(b.inicio, b.fim, projetoId)).map(
+        toBase,
+      );
+    })(),
     carregarTotaisVendasCompetencia(mesYm, { hojeYm, diaHoje }),
   ]);
 
@@ -554,16 +632,16 @@ export async function carregarFinanceiroDashboard(
     const diaCorte = Math.min(Math.max(1, diaHoje), diasNoMesRef);
     diasRestantes = Math.max(0, diasNoMesRef - diaCorte);
   }
-  const recebidoRestante1 = somarRecebidoUltimosNDias(
-    receber1,
-    mes1,
-    diasRestantes,
-  );
-  const recebidoRestante2 = somarRecebidoUltimosNDias(
-    receber2,
-    mes2,
-    diasRestantes,
-  );
+  const recebidoRestante1 = (() => {
+    const viaApi = somarValorPagoParcelas(baixasRest1);
+    if (viaApi > 0) return viaApi;
+    return somarRecebidoUltimosNDias(receber1, mes1, diasRestantes);
+  })();
+  const recebidoRestante2 = (() => {
+    const viaApi = somarValorPagoParcelas(baixasRest2);
+    if (viaApi > 0) return viaApi;
+    return somarRecebidoUltimosNDias(receber2, mes2, diasRestantes);
+  })();
   const mediaVolumeRestante =
     diasRestantes > 0
       ? (() => {

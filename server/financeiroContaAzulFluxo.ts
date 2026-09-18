@@ -750,6 +750,81 @@ export async function buscarParcelasReceberParaComparativo(
 }
 
 /**
+ * Só baixas a receber com data_pagamento em [inicio, fim].
+ * Conta Azul exige data_vencimento_*: usamos janela ampla de vencimento.
+ * Ideal p/ “ainda entra” — o filtro da API já limita o período de caixa,
+ * mesmo quando a listagem omite data_pagamento no JSON.
+ */
+export async function buscarBaixasReceberPorPeriodoPagamento(
+  inicio: Date,
+  fim: Date,
+  projetoId: number,
+): Promise<ParcelaFinanceiraNorm[]> {
+  const env = getComercialEnv();
+  const prisma = getComercialPrisma();
+  const cred = await ensureValidAccessToken(prisma, env);
+  if (!cred?.accessToken) {
+    throw new Error(
+      "Conta Azul não conectado. Configure em Comercial → Configurações.",
+    );
+  }
+  const http = createContaAzulHttp(env, cred.accessToken);
+  const pathBase =
+    "/v1/financeiro/eventos-financeiros/contas-a-receber/buscar";
+  const pagDe = isoDateLocal(inicio);
+  const pagAte = isoDateLocal(fim);
+  const vencAmploDe = isoDateLocal(
+    new Date(inicio.getFullYear() - 2, inicio.getMonth(), inicio.getDate()),
+  );
+  const vencAmploAte = isoDateLocal(
+    new Date(fim.getFullYear() + 2, fim.getMonth(), fim.getDate()),
+  );
+  const tamanho = 200;
+  const maxPaginas = 40;
+  const porId = new Map<string, ParcelaCaRaw>();
+
+  for (let pagina = 1; pagina <= maxPaginas; pagina++) {
+    const qs = new URLSearchParams({
+      pagina: String(pagina),
+      tamanho_pagina: String(tamanho),
+      data_vencimento_de: vencAmploDe,
+      data_vencimento_ate: vencAmploAte,
+      data_pagamento_de: pagDe,
+      data_pagamento_ate: pagAte,
+    });
+    let res: BuscaParcelasResponse;
+    try {
+      res = await fetchParcelasPagina(http, pathBase, qs);
+    } catch {
+      break;
+    }
+    const batch = res.itens ?? [];
+    for (const item of batch) {
+      if (item.id) porId.set(item.id, item);
+    }
+    if (batch.length < tamanho) break;
+  }
+
+  const classifs = await listFinanceiroCaClassificacoes(projetoId);
+  const catalogo = new Map<string, CategoriaCa>();
+  let receber = Array.from(porId.values())
+    .map(i => mapParcelaListagem(i, "receber", catalogo))
+    .filter((x): x is ParcelaFinanceiraNorm => !!x);
+  receber = aplicarEdicoesClassificacao(
+    receber,
+    classifs.map(c => ({
+      tipo: c.tipo,
+      chave: c.chave,
+      rubricaOverride: c.rubricaOverride,
+      centroCustoOverride: c.centroCustoOverride,
+      excluido: c.excluido,
+      nota: c.nota,
+    })),
+  );
+  return receber.map(p => (p.excluido ? { ...p, excluido: false } : p));
+}
+
+/**
  * Títulos a receber com vencimento em [inicio, fim] (só filtro de vencimento).
  * Usado para trazer vencidos em aberto de meses anteriores.
  */

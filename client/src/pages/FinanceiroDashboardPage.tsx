@@ -755,7 +755,7 @@ export default function FinanceiroDashboardPage() {
                   value={fmtMoney(pv?.aindaEntraProjetado)}
                   hint={
                     pv
-                      ? `Média das baixas Conta Azul nos últimos ${pv.diasRestantes} dia(s) · 2 meses (não é faturamento)`
+                      ? `Média do recebido Conta Azul nos últimos ${pv.diasRestantes} dia(s) · jul/ago (caixa de vendas)`
                       : undefined
                   }
                 />

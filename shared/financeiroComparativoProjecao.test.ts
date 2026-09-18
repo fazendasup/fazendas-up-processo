@@ -289,8 +289,8 @@ describe("montarComparativoReceitaMes", () => {
     expect(out.gapFinal).toBe(0);
   });
 
-  it("soma baixas só nos últimos N dias do mês (caixa)", () => {
-    const parcelas = [
+  it("soma baixas com data nos últimos N dias; senão proporção do recebido", () => {
+    const comData = [
       parcela({
         id: "cedo",
         valorPago: 1_000,
@@ -303,16 +303,21 @@ describe("montarComparativoReceitaMes", () => {
         dataPagamento: "2026-08-25",
         dataVencimento: "2026-08-20",
       }),
+    ];
+    expect(somarRecebidoUltimosNDias(comData, "2026-08", 13)).toBe(2_500);
+
+    const semData = [
       parcela({
-        id: "sem-data",
+        id: "a",
         status: "RECEBIDO",
-        valorPago: 9_999,
+        valorPago: 31_000,
         dataPagamento: null,
-        dataVencimento: "2026-08-28",
+        dataVencimento: "2026-08-10",
       }),
     ];
-    // Agosto tem 31 dias; últimos 13 → dias 19–31
-    expect(somarRecebidoUltimosNDias(parcelas, "2026-08", 13)).toBe(2_500);
+    expect(somarRecebidoUltimosNDias(semData, "2026-08", 13)).toBe(
+      Math.round(((31_000 * 13) / 31) * 100) / 100,
+    );
   });
 
   it("conta recebido quitado mesmo sem data_pagamento (listagem CA)", () => {
