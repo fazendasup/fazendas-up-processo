@@ -703,7 +703,7 @@ export default function FinanceiroDashboardPage() {
                 <Kpi
                   title="Previsto (CA)"
                   value={fmtMoney(rec?.previsto)}
-                  hint="Títulos com vencimento no mês"
+                  hint="Títulos Conta Azul com vencimento neste mês"
                 />
                 <Kpi
                   title="Já recebido"
@@ -716,38 +716,55 @@ export default function FinanceiroDashboardPage() {
                   tone="down"
                 />
                 <Kpi
-                  title="Em aberto no mês"
-                  value={fmtMoney(rec?.aReceber)}
-                  hint={`A receber ${fmtMoney(rec?.aReceberNoMes)} · vencido ${fmtMoney(rec?.vencido)}`}
+                  title="Ainda a receber"
+                  value={fmtMoney(rec?.aReceberNoMes)}
+                  hint="Em aberto, vence neste mês, data ainda não passou"
                 />
+                <Kpi
+                  title="Vencido neste mês"
+                  value={fmtMoney(rec?.vencido)}
+                  hint="Em aberto, venceu neste mês e a data já passou"
+                  tone={(rec?.vencido ?? 0) > 0 ? "up" : "neutral"}
+                />
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Kpi
                   title="Saldo caixa (recebido − pago)"
                   value={fmtMoney(data?.caixa.saldoRealizado)}
+                  hint="Só o que já baixou no Conta Azul neste mês"
                   tone={
                     (data?.caixa.saldoRealizado ?? 0) >= 0 ? "down" : "up"
                   }
                 />
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-3">
                 <Kpi
                   title="Já faturado"
                   value={fmtMoney(rec?.vendasCompetencia.vendasFaturadas)}
+                  hint="Pedidos faturados — volume, não é o mesmo que recebido"
                 />
                 <Kpi
                   title="Orçamentos no mês"
                   value={fmtMoney(rec?.vendasCompetencia.orcamentos)}
+                  hint="Volume de orçamento (só conta se virar venda / caixa depois)"
                 />
                 <Kpi
                   title="Ainda entra (proj.)"
                   value={fmtMoney(pv?.aindaEntraProjetado)}
                   hint={
                     pv
-                      ? `Média dos últimos ${pv.diasRestantes} dia(s) · 2 meses`
+                      ? `Média dos últimos ${pv.diasRestantes} dia(s) · 2 meses — projeção de volume novo`
                       : undefined
                   }
                 />
               </div>
+
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                <strong className="text-foreground">Não some tudo.</strong>{" "}
+                Conta Azul (previsto ≈ recebido + a receber + vencido) é{" "}
+                <em>caixa por vencimento</em>. Faturado, orçamento e “ainda
+                entra” são <em>volume de pedidos</em> — outra conta. Orçamento e
+                “ainda entra” ainda não são dinheiro recebido.
+              </p>
             </section>
 
             <ChartShell
