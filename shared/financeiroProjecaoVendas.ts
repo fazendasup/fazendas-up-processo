@@ -206,7 +206,8 @@ export type ProjecaoVendasRestanteMes = {
   vendasRestanteMesAnterior2: number;
   aindaEntraProjetado: number;
   /**
-   * No fluxo de caixa: (recebido + em aberto do mês) + aindaEntraProjetado.
+   * No fluxo de caixa: recebido + aindaEntraProjetado
+   * (sem somar a receber — evita redundância com o padrão de baixas).
    * (Preenchido em montarComparativoReceitaMes; aqui só vendasJaNoMes + aindaEntra.)
    */
   projecaoMesTotal: number;

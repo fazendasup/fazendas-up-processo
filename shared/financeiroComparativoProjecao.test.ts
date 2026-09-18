@@ -339,9 +339,9 @@ describe("montarComparativoReceitaMes", () => {
     expect(out.projecaoVendas.mediaRestante2m).toBe(1_300);
     expect(out.projecaoVendas.mediaAteMesmoDia2m).toBe(1_900);
     expect(out.projecaoVendas.aindaEntraProjetado).toBe(1_300);
-    // Caixa: recebido + em aberto + ainda entra
-    expect(out.projecaoVendas.projecaoMesTotal).toBe(6_000 + 7_000 + 1_300);
-    expect(out.gapVsProjecaoVendas).toBe(1_300);
+    // Caixa: recebido + ainda entra (sem a receber)
+    expect(out.projecaoVendas.projecaoMesTotal).toBe(6_000 + 1_300);
+    expect(out.gapVsProjecaoVendas).toBe(6_000 + 1_300 - 13_000);
     expect(out.gapFinal).toBe(0);
   });
 
@@ -464,7 +464,7 @@ describe("montarFinanceiroComparativo", () => {
       diaHoje: 17,
     });
     expect(out.caixa.saldoRealizado).toBe(3_000);
-    // Projeção caixa: recebido 5k + em aberto 0 + ainda entra 3k = 8k; − desembolso 2k
+    // Projeção caixa: recebido 5k + ainda entra 3k = 8k; − desembolso 2k
     expect(out.receita.projecaoVendas.aindaEntraProjetado).toBe(3_000);
     expect(out.receita.projecaoVendas.projecaoMesTotal).toBe(8_000);
     expect(out.caixa.gapCaixaMes).toBe(6_000);

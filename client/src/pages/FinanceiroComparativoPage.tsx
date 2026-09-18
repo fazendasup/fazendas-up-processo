@@ -692,7 +692,7 @@ export default function FinanceiroComparativoPage() {
                 <Kpi
                   title="Caixa previsto vs desembolso"
                   value={fmtMoney(caixa?.gapCaixaMes)}
-                  hint="Projeção caixa (recebido + aberto + ainda entra) − desembolso projetado"
+                  hint="Projeção caixa (recebido + ainda entra) − desembolso projetado"
                   tone={
                     (caixa?.gapCaixaMes ?? 0) >= 0
                       ? "down"
@@ -756,7 +756,7 @@ export default function FinanceiroComparativoPage() {
                 <Kpi
                   title="Projeção de fechar (caixa)"
                   value={fmtMoney(r?.projecaoVendas?.projecaoMesTotal)}
-                  hint="Recebido + em aberto + ainda entra (caixa). Orçamentos não entram."
+                  hint="Recebido + ainda entra (caixa). Não soma a receber — evita duplicar com o padrão histórico. Orçamentos não entram."
                 />
               </div>
             </section>

@@ -803,7 +803,7 @@ export async function carregarFinanceiroDashboard(
             .join(" · ")
         );
       })(),
-      "Projeção de fechar (caixa) = recebido + em aberto + ainda entra.",
+      "Projeção de fechar (caixa) = recebido + ainda entra (sem a receber).",
       "Faturado/orçamento = volume de pedidos — não some com recebido.",
     ],
   } satisfies FinanceiroDashboardPayload;
@@ -1089,7 +1089,7 @@ export async function carregarDashboardKpiDetalhe(
     return linhasDe(
       linhas,
       "Saldo projetado do mês",
-      "Receita caixa projetada (recebido + em aberto + ainda entra) − desembolso projetado. Este é o resultado de caixa esperado ao fechar o mês.",
+      "Receita caixa projetada (recebido + ainda entra) − desembolso projetado. Este é o resultado de caixa esperado ao fechar o mês.",
       gap,
     );
   }

@@ -488,10 +488,11 @@ export function montarComparativoReceitaMes(input: {
     mesAnterior1Ym: mes1,
     mesAnterior2Ym: mes2,
   });
-  // Projeção de fechar o mês em caixa: já no pipeline CA + o que ainda entra.
-  // Orçamentos ficam só em vendasCompetencia (pipeline comercial).
+  // Projeção de fechar o mês em caixa: já recebido + o que ainda entra
+  // (média dos últimos N dias). Não soma "a receber" — evita duplicar
+  // com o padrão histórico de baixas. Orçamentos ficam só em vendasCompetencia.
   const projecaoMesTotal = round2(
-    recebido + aReceber + projecaoVendasBase.aindaEntraProjetado,
+    recebido + projecaoVendasBase.aindaEntraProjetado,
   );
   const projecaoVendas = { ...projecaoVendasBase, projecaoMesTotal };
   const gapVsProjecaoVendas = round2(projecaoMesTotal - pipelineMes);

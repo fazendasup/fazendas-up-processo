@@ -665,9 +665,9 @@ export default function FinanceiroDashboardPage() {
                   Entradas — caixa e vendas
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Camadas do caixa: recebido, em aberto e ainda entra. A soma
-                  delas é a receita projetada usada no saldo abaixo — não
-                  misture com faturado/orçamento (volume).
+                  Camadas do caixa: recebido e ainda entra. A soma delas é a
+                  receita projetada usada no saldo abaixo (a receber não entra —
+                  evita duplicar). Não misture com faturado/orçamento (volume).
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -726,7 +726,7 @@ export default function FinanceiroDashboardPage() {
                 hint={
                   pv && des
                     ? `Receita caixa projetada ${fmtMoney(pv.projecaoMesTotal)} − desembolso plano ${fmtMoney(des.projetado)}`
-                    : "Receita (recebido + aberto + ainda entra) − desembolso projetado"
+                    : "Receita (recebido + ainda entra) − desembolso projetado"
                 }
                 tone={
                   (data?.caixa.gapCaixaMes ?? 0) >= 0 ? "down" : "up"
