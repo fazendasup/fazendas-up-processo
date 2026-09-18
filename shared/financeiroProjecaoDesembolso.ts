@@ -84,6 +84,8 @@ export type ParcelaBaseProjecao = {
   rubricaOriginal?: string | null;
   /** true se a rúbrica foi alterada no nosso sistema. */
   rubricaEditadaLocal?: boolean;
+  /** Grupo DRE Conta Azul (ex.: RECEITA_OPERACIONAL_BRUTA). */
+  entradaDre?: string | null;
   valor: number;
   valorPago: number;
   valorEmAberto: number;
@@ -91,6 +93,48 @@ export type ParcelaBaseProjecao = {
   dataVencimento: string | null;
   dataPagamento: string | null;
 };
+
+/** Código DRE Conta Azul = receita operacional bruta (vendas/serviços). */
+export const ENTRADA_DRE_RECEITA_VENDAS = "RECEITA_OPERACIONAL_BRUTA";
+
+function textoClassificacaoReceita(
+  descricao?: string | null,
+  rubrica?: string | null,
+): string {
+  return [descricao, rubrica]
+    .filter(Boolean)
+    .join(" ")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase();
+}
+
+/**
+ * Parcela de contas a receber que é receita de vendas (caixa operacional).
+ * Prioridade: entrada_dre Conta Azul; senão heurística por rúbrica/descrição.
+ */
+export function ehReceitaVendasCaixa(
+  p: Pick<ParcelaBaseProjecao, "descricao" | "rubrica" | "entradaDre">,
+): boolean {
+  const dre = (p.entradaDre ?? "").trim().toUpperCase();
+  if (dre === ENTRADA_DRE_RECEITA_VENDAS) return true;
+  if (dre) return false;
+
+  const t = textoClassificacaoReceita(p.descricao, p.rubrica);
+  if (!t) return false;
+  if (
+    /\b(juros|rendiment|aplicacao|aplicacao financeira|emprestimo|mutuo|m.?utuo|transferencia|adiantamento salarial|outras receitas|receita financeira|recupera[cç][aã]o de despesa|indeniza|reembolso|devolucao de capital)\b/.test(
+      t,
+    )
+  ) {
+    return false;
+  }
+  return (
+    /\b(venda|vendas|faturamento|mercadoria|produto|produtos|servico|servicos|receita operacional|receita de venda|receitas de venda)\b/.test(
+      t,
+    ) || /\bvenda(s)?\b/.test((p.rubrica ?? "").toLowerCase())
+  );
+}
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;

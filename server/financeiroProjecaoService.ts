@@ -113,6 +113,7 @@ function toBase(p: ParcelaFinanceiraNorm): ParcelaBaseProjecao {
       !!original &&
       !!atual &&
       original.toLowerCase() !== atual.toLowerCase(),
+    entradaDre: p.entradaDre?.trim() || null,
     valor: p.valor,
     valorPago: p.valorPago,
     valorEmAberto: p.valorEmAberto,
@@ -502,7 +503,7 @@ export async function carregarComparativoProjecao(
     },
     avisos: [
       "Caixa (já recebido / a receber / vencido) = Conta Azul ao vivo por vencimento e pagamento.",
-      "Ainda entra = média do que entrou em caixa (baixas) nos últimos N dias dos 2 meses anteriores — não é volume faturado.",
+      "Ainda entra = média das baixas de receita de vendas (DRE operacional) nos últimos N dias dos 2 meses anteriores.",
       "Já faturado = pedidos sincronizados (status venda). Orçamento ainda não é caixa.",
       `Orçamentos: até o dia ${vendas.diaLimiteOrcamento}` +
         (filtroOrcamento.clienteIdsOrcamento?.length
@@ -642,22 +643,9 @@ export async function carregarFinanceiroDashboard(
     if (viaApi > 0) return viaApi;
     return somarRecebidoUltimosNDias(receber2, mes2, diasRestantes);
   })();
-  const mediaVolumeRestante =
+  const mediaCaixaRestante =
     diasRestantes > 0
-      ? (() => {
-          const a = vendas.vendasRestanteMesAnterior1 > 0;
-          const b = vendas.vendasRestanteMesAnterior2 > 0;
-          const n = (a ? 1 : 0) + (b ? 1 : 0);
-          if (n === 0) return 0;
-          return (
-            Math.round(
-              (((a ? vendas.vendasRestanteMesAnterior1 : 0) +
-                (b ? vendas.vendasRestanteMesAnterior2 : 0)) /
-                n) *
-                100,
-            ) / 100
-          );
-        })()
+      ? mediaDeDoisPositivos(recebidoRestante1, recebidoRestante2)
       : 0;
 
   const r2 = receitaDe(mes2, receber2);
@@ -715,8 +703,8 @@ export async function carregarFinanceiroDashboard(
         vendasFaturadas: vMes.vendas,
         orcamentos: vMes.orcamentos,
         vendasReal: vMes.total,
-        // Série/gráfico de volume: faturado+orç + média volume restante (2m).
-        vendasProjetado: vMes.total + mediaVolumeRestante,
+        // Projeção alinhada ao “ainda entra” (média caixa vendas, não volume).
+        vendasProjetado: vMes.total + mediaCaixaRestante,
         desembolsoProjetado: dMes.totais.projetado,
         desembolsoPago: dMes.totais.pago,
         previsto: rMes.previsto,
@@ -752,7 +740,7 @@ export async function carregarFinanceiroDashboard(
       vendasCompetencia: rMes.vendasCompetencia,
     },
     avisos: [
-      "Dashboard: ainda entra = média do que entrou em caixa (baixas CA) nos últimos N dias · 2 meses.",
+      "Dashboard: ainda entra = média das baixas de receita de vendas (Conta Azul DRE) nos últimos N dias · 2 meses.",
       "Projeção de fechar (caixa) = recebido + em aberto + ainda entra.",
       "Faturado/orçamento = volume de pedidos — não some com recebido.",
     ],

@@ -84,6 +84,73 @@ type CategoriaCa = {
   considera_custo_dre?: boolean;
 };
 
+type CatalogoCategoriasCache = {
+  at: number;
+  map: Map<string, CategoriaCa>;
+};
+
+const CATALOGO_TTL_MS = 15 * 60_000;
+let catalogoCategoriasCache: CatalogoCategoriasCache | null = null;
+
+type CategoriasBuscaResponse = {
+  itens?: CategoriaCa[];
+  itens_totais?: number;
+};
+
+/**
+ * Catálogo Conta Azul (GET /v1/categorias) — resolve entrada_dre das rúbricas.
+ * Cache curto; falha silenciosa (mapa vazio) para não bloquear o dashboard.
+ */
+async function fetchCatalogoCategorias(): Promise<Map<string, CategoriaCa>> {
+  if (
+    catalogoCategoriasCache &&
+    Date.now() - catalogoCategoriasCache.at < CATALOGO_TTL_MS
+  ) {
+    return catalogoCategoriasCache.map;
+  }
+  const map = new Map<string, CategoriaCa>();
+  try {
+    const env = getComercialEnv();
+    const prisma = getComercialPrisma();
+    const cred = await ensureValidAccessToken(prisma, env);
+    if (!cred?.accessToken) {
+      catalogoCategoriasCache = { at: Date.now(), map };
+      return map;
+    }
+    const http = createContaAzulHttp(env, cred.accessToken);
+    const tamanho = 100;
+    const maxPaginas = 30;
+    for (let pagina = 1; pagina <= maxPaginas; pagina++) {
+      const qs = new URLSearchParams({
+        pagina: String(pagina),
+        tamanho_pagina: String(tamanho),
+        permite_apenas_filhos: "false",
+      });
+      let res: CategoriasBuscaResponse;
+      try {
+        res = await contaAzulGet<CategoriasBuscaResponse>(
+          http,
+          `/v1/categorias?${qs.toString()}`,
+        );
+      } catch {
+        break;
+      }
+      const batch = res.itens ?? [];
+      for (const cat of batch) {
+        if (cat.id) map.set(cat.id, cat);
+        if (cat.nome?.trim()) {
+          map.set(`nome:${cat.nome.trim().toLowerCase()}`, cat);
+        }
+      }
+      if (batch.length < tamanho) break;
+    }
+  } catch {
+    // catálogo opcional
+  }
+  catalogoCategoriasCache = { at: Date.now(), map };
+  return map;
+}
+
 type ParcelaDetalheCa = {
   id?: string;
   descricao?: string;
@@ -471,8 +538,8 @@ export async function analisarFinanceiroCfoContaAzul(
         : Promise.resolve({ itens: [] as ParcelaCaRaw[], aviso: undefined }),
     ]);
 
-  /** Catálogo DRE é opcional — não bloqueia se a API de categorias estiver lenta. */
-  const catalogo = new Map<string, CategoriaCa>();
+  /** Catálogo DRE — resolve entrada_dre; não bloqueia se a API falhar. */
+  const catalogo = await fetchCatalogoCategorias();
 
   let pagar = pagarFetch.itens
     .map(i => mapParcelaListagem(i, "pagar", catalogo))
@@ -698,7 +765,7 @@ export async function buscarParcelasPagarParaProjecao(
     ),
     listFinanceiroCaClassificacoes(projetoId),
   ]);
-  const catalogo = new Map<string, CategoriaCa>();
+  const catalogo = await fetchCatalogoCategorias();
   let pagar = fetch.itens
     .map(i => mapParcelaListagem(i, "pagar", catalogo))
     .filter((x): x is ParcelaFinanceiraNorm => !!x);
@@ -730,7 +797,7 @@ export async function buscarParcelasReceberParaComparativo(
     ),
     listFinanceiroCaClassificacoes(projetoId),
   ]);
-  const catalogo = new Map<string, CategoriaCa>();
+  const catalogo = await fetchCatalogoCategorias();
   let receber = fetch.itens
     .map(i => mapParcelaListagem(i, "receber", catalogo))
     .filter((x): x is ParcelaFinanceiraNorm => !!x);
@@ -805,8 +872,10 @@ export async function buscarBaixasReceberPorPeriodoPagamento(
     if (batch.length < tamanho) break;
   }
 
-  const classifs = await listFinanceiroCaClassificacoes(projetoId);
-  const catalogo = new Map<string, CategoriaCa>();
+  const [classifs, catalogo] = await Promise.all([
+    listFinanceiroCaClassificacoes(projetoId),
+    fetchCatalogoCategorias(),
+  ]);
   let receber = Array.from(porId.values())
     .map(i => mapParcelaListagem(i, "receber", catalogo))
     .filter((x): x is ParcelaFinanceiraNorm => !!x);
@@ -872,7 +941,7 @@ export async function buscarParcelasReceberPorVencimento(
   }
 
   const classifs = await listFinanceiroCaClassificacoes(projetoId);
-  const catalogo = new Map<string, CategoriaCa>();
+  const catalogo = await fetchCatalogoCategorias();
   let receber = Array.from(porId.values())
     .map(i => mapParcelaListagem(i, "receber", catalogo))
     .filter((x): x is ParcelaFinanceiraNorm => !!x);

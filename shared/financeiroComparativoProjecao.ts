@@ -4,6 +4,7 @@
  */
 import {
   ehNaoDesembolsoCusto,
+  ehReceitaVendasCaixa,
   ehRubricaTipicaDeAtrasoMensal,
   labelMesYm,
   mesAnteriorProjecao,
@@ -466,10 +467,9 @@ export function somarRecebidoNoMes(
 }
 
 /**
- * Soma das baixas nos últimos `nDias` dias do mês (receita de vendas em caixa).
+ * Soma das baixas nos últimos `nDias` dias do mês (somente receita de vendas).
  * 1) Se houver data_pagamento nos últimos N dias → soma exata.
- * 2) Senão, estima pela média do recebido do mês × (N / dias do mês)
- *    — usa o mesmo recebido Conta Azul que já aparece no dashboard.
+ * 2) Senão, estima pela média do recebido do mês × (N / dias do mês).
  */
 export function somarRecebidoUltimosNDias(
   parcelas: ParcelaBaseProjecao[],
@@ -486,6 +486,7 @@ export function somarRecebidoUltimosNDias(
   let totalMes = 0;
 
   for (const p of parcelas) {
+    if (!ehReceitaVendasCaixa(p)) continue;
     const pago = valorPagoParcela(p);
     if (pago <= 0) continue;
     const dp = (p.dataPagamento ?? "").slice(0, 10);
@@ -508,10 +509,11 @@ export function somarRecebidoUltimosNDias(
   return round2((totalMes * n) / diasNoMes);
 }
 
-/** Soma todos os valores pagos das parcelas (já filtradas pela API de baixas). */
+/** Soma valores pagos — só receita de vendas (ainda entra / média de caixa). */
 export function somarValorPagoParcelas(parcelas: ParcelaBaseProjecao[]): number {
   let s = 0;
   for (const p of parcelas) {
+    if (!ehReceitaVendasCaixa(p)) continue;
     const pago = valorPagoParcela(p);
     if (pago > 0) s += pago;
   }

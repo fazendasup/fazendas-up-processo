@@ -8,6 +8,7 @@ import {
 import {
   ehCreditoOuDescontoObtido,
   ehNaoDesembolsoCusto,
+  ehReceitaVendasCaixa,
   ehTransferenciaEntreContas,
   type LinhaProjecao,
   type ParcelaBaseProjecao,
@@ -63,6 +64,42 @@ describe("ehCreditoOuDescontoObtido", () => {
       ehCreditoOuDescontoObtido("", "Descontos incondicionais obtidos"),
     ).toBe(true);
     expect(ehCreditoOuDescontoObtido("Compra", "Insumos")).toBe(false);
+  });
+});
+
+describe("ehReceitaVendasCaixa", () => {
+  it("aceita DRE operacional e rejeita outras entradas", () => {
+    expect(
+      ehReceitaVendasCaixa({
+        descricao: "x",
+        rubrica: "Qualquer",
+        entradaDre: "RECEITA_OPERACIONAL_BRUTA",
+      }),
+    ).toBe(true);
+    expect(
+      ehReceitaVendasCaixa({
+        descricao: "x",
+        rubrica: "Vendas",
+        entradaDre: "OUTRAS_RECEITAS",
+      }),
+    ).toBe(false);
+  });
+
+  it("sem DRE: heurística por rúbrica de vendas", () => {
+    expect(
+      ehReceitaVendasCaixa({
+        descricao: "Pedido 1",
+        rubrica: "Vendas de produtos",
+        entradaDre: null,
+      }),
+    ).toBe(true);
+    expect(
+      ehReceitaVendasCaixa({
+        descricao: "Rendimento CDB",
+        rubrica: "Juros recebidos",
+        entradaDre: null,
+      }),
+    ).toBe(false);
   });
 });
 
@@ -318,6 +355,26 @@ describe("montarComparativoReceitaMes", () => {
     expect(somarRecebidoUltimosNDias(semData, "2026-08", 13)).toBe(
       Math.round(((31_000 * 13) / 31) * 100) / 100,
     );
+  });
+
+  it("ignora baixas que não são receita de vendas", () => {
+    const misto = [
+      parcela({
+        id: "venda",
+        rubrica: "Vendas",
+        entradaDre: "RECEITA_OPERACIONAL_BRUTA",
+        valorPago: 2_000,
+        dataPagamento: "2026-08-25",
+      }),
+      parcela({
+        id: "juros",
+        rubrica: "Juros",
+        entradaDre: "OUTRAS_RECEITAS",
+        valorPago: 9_000,
+        dataPagamento: "2026-08-26",
+      }),
+    ];
+    expect(somarRecebidoUltimosNDias(misto, "2026-08", 13)).toBe(2_000);
   });
 
   it("conta recebido quitado mesmo sem data_pagamento (listagem CA)", () => {

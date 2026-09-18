@@ -749,8 +749,8 @@ export default function FinanceiroComparativoPage() {
                   value={fmtMoney(r?.projecaoVendas?.aindaEntraProjetado)}
                   hint={
                     r?.projecaoVendas
-                      ? `Média das baixas Conta Azul no fim de ${labelMes(r.projecaoVendas.mesesMedia2m[0])} (${fmtMoney(r.projecaoVendas.vendasRestanteMesAnterior2)}) e ${labelMes(r.projecaoVendas.mesesMedia2m[1])} (${fmtMoney(r.projecaoVendas.vendasRestanteMesAnterior1)})`
-                      : "Média das baixas nos últimos N dias · 2 meses"
+                      ? `Média das baixas de receita de vendas no fim de ${labelMes(r.projecaoVendas.mesesMedia2m[0])} (${fmtMoney(r.projecaoVendas.vendasRestanteMesAnterior2)}) e ${labelMes(r.projecaoVendas.mesesMedia2m[1])} (${fmtMoney(r.projecaoVendas.vendasRestanteMesAnterior1)})`
+                      : "Média das baixas de vendas nos últimos N dias · 2 meses"
                   }
                 />
                 <Kpi

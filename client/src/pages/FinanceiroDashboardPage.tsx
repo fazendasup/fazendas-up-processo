@@ -755,7 +755,7 @@ export default function FinanceiroDashboardPage() {
                   value={fmtMoney(pv?.aindaEntraProjetado)}
                   hint={
                     pv
-                      ? `Média do recebido Conta Azul nos últimos ${pv.diasRestantes} dia(s) · jul/ago (caixa de vendas)`
+                      ? `Média do recebido de vendas (DRE) nos últimos ${pv.diasRestantes} dia(s) · jul/ago`
                       : undefined
                   }
                 />
