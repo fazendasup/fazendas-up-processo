@@ -132,6 +132,7 @@ export type FinanceiroComparativoPayload = {
   receita: ComparativoReceitaMes;
   caixa: {
     saldoRealizado: number;
+    /** Projeção de fechar o mês (volume) − desembolso projetado. */
     gapCaixaMes: number;
   };
 };
@@ -501,9 +502,9 @@ export function montarFinanceiroComparativo(input: {
     receita,
     caixa: {
       saldoRealizado: round2(receita.recebido - desembolso.totais.pago),
-      /** Caixa do mês: sem misturar vencido de meses anteriores. */
+      /** Projeção de volume do mês vs desembolso planejado. */
       gapCaixaMes: round2(
-        receita.pipelineMes - desembolso.totais.projetado,
+        receita.projecaoVendas.projecaoMesTotal - desembolso.totais.projetado,
       ),
     },
   };

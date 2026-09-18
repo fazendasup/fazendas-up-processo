@@ -692,7 +692,12 @@ export default function FinanceiroComparativoPage() {
                 <Kpi
                   title="Caixa previsto vs desembolso"
                   value={fmtMoney(caixa?.gapCaixaMes)}
-                  hint="(Recebido + em aberto do mês) − desembolso projetado"
+                  hint="Projeção de fechar o mês − desembolso projetado"
+                  tone={
+                    (caixa?.gapCaixaMes ?? 0) >= 0
+                      ? "down"
+                      : "up"
+                  }
                 />
               </div>
             </section>

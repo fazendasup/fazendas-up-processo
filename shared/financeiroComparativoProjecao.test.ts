@@ -346,7 +346,17 @@ describe("montarFinanceiroComparativo", () => {
           dataVencimento: "2026-09-02",
         }),
       ],
+      vendasMesAtual: 10_000,
+      vendasAteDiaMesAnterior1: 8_000,
+      vendasAteDiaMesAnterior2: 7_000,
+      vendasRestanteMesAnterior1: 4_000,
+      vendasRestanteMesAnterior2: 2_000,
+      hojeYm: "2026-09",
+      diaHoje: 17,
     });
     expect(out.caixa.saldoRealizado).toBe(3_000);
+    // Projeção do mês (10k + média restante 3k) − desembolso projetado 2k
+    expect(out.receita.projecaoVendas.projecaoMesTotal).toBe(13_000);
+    expect(out.caixa.gapCaixaMes).toBe(11_000);
   });
 });
