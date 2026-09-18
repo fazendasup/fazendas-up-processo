@@ -118,6 +118,32 @@ describe("ehReceitaVendasCaixa", () => {
       }),
     ).toBe(true);
   });
+
+  it("aceita frete recebido e 2ª categoria no rateio", () => {
+    expect(
+      ehReceitaVendasCaixa({
+        descricao: "Frete NF 4002",
+        rubrica: "Fretes recebidos",
+        entradaDre: null,
+      }),
+    ).toBe(true);
+    expect(
+      ehReceitaVendasCaixa({
+        descricao: "Venda 4903 / NF-e:4002",
+        rubrica: "Fretes recebidos",
+        categorias: ["Fretes recebidos", "Receitas de Vendas"],
+        entradaDre: null,
+      }),
+    ).toBe(true);
+    expect(
+      ehReceitaVendasCaixa({
+        descricao: "Venda 4903 / NF-e:4002",
+        rubrica: "Receitas de Vendas",
+        categorias: ["Receitas de Vendas", "Fretes recebidos"],
+        entradaDre: null,
+      }),
+    ).toBe(true);
+  });
 });
 
 describe("ehTransferenciaEntreContas", () => {

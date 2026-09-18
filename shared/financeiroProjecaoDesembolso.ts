@@ -84,6 +84,11 @@ export type ParcelaBaseProjecao = {
   rubricaOriginal?: string | null;
   /** true se a rúbrica foi alterada no nosso sistema. */
   rubricaEditadaLocal?: boolean;
+  /**
+   * Todas as categorias do título (listagem CA).
+   * Venda com rateio vendas+frete traz as duas aqui.
+   */
+  categorias?: string[];
   /** Grupo DRE Conta Azul (ex.: RECEITA_OPERACIONAL_BRUTA). */
   entradaDre?: string | null;
   valor: number;
@@ -123,24 +128,25 @@ function textoClassificacaoReceita(
 }
 
 /**
- * Parcela de contas a receber = receita de vendas (caixa operacional).
+ * Parcela de contas a receber = receita operacional de caixa
+ * (vendas + frete recebido).
  *
  * No Conta Azul a venda aparece assim:
  *   categoria = "Receitas de Vendas"
  *   descrição = "Venda 4903 / NF-e:4002"
+ * Frete no rateio ou título próprio: "Fretes recebidos" / "Frete".
  *
- * Aceita categoria "Receitas de Vendas" (e afins) ou descrição "Venda N / NF-e".
+ * Aceita se **qualquer** categoria (ou a rúbrica principal) for venda ou frete.
+ * O valor do título conta **uma vez** (total), não soma rateio em dobro.
  * Rejeita investimento/aporte e DRE não-operacional (OUTRAS_RECEITAS etc.).
  */
 export function ehReceitaVendasCaixa(
-  p: Pick<ParcelaBaseProjecao, "descricao" | "rubrica" | "entradaDre">,
+  p: Pick<
+    ParcelaBaseProjecao,
+    "descricao" | "rubrica" | "entradaDre" | "categorias"
+  >,
 ): boolean {
   const t = textoClassificacaoReceita(p.descricao, p.rubrica);
-  const rubrica = (p.rubrica ?? "")
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
-    .trim();
   const descricao = (p.descricao ?? "")
     .normalize("NFD")
     .replace(/\p{M}/gu, "")
@@ -160,12 +166,36 @@ export function ehReceitaVendasCaixa(
   if (dre && ENTRADAS_DRE_NAO_VENDA.has(dre)) return false;
   if (dre && /^(DESPESA|CUSTO|DEDUC|OUTRAS_)/.test(dre)) return false;
 
-  // Categoria canônica do Conta Azul: "Receitas de Vendas"
-  if (
-    /^receitas?\s+de\s+vendas?$/.test(rubrica) ||
-    /^venda(s)?\s+de\s+(produtos?|mercadorias?)$/.test(rubrica)
-  ) {
-    return true;
+  const labels = [
+    p.rubrica,
+    ...(p.categorias ?? []),
+  ]
+    .map(s =>
+      (s ?? "")
+        .normalize("NFD")
+        .replace(/\p{M}/gu, "")
+        .toLowerCase()
+        .trim(),
+    )
+    .filter(Boolean);
+
+  for (const rubrica of labels) {
+    // Categoria canônica: "Receitas de Vendas"
+    if (
+      /^receitas?\s+de\s+vendas?$/.test(rubrica) ||
+      /^venda(s)?\s+de\s+(produtos?|mercadorias?)$/.test(rubrica)
+    ) {
+      return true;
+    }
+    // Frete recebido (título próprio ou 2ª categoria no rateio)
+    if (
+      /^fretes?\s+recebidos?$/.test(rubrica) ||
+      /^frete(\s+de\s+venda)?$/.test(rubrica) ||
+      /^receita\s+de\s+frete$/.test(rubrica) ||
+      /^frete\s+sobre\s+venda$/.test(rubrica)
+    ) {
+      return true;
+    }
   }
 
   // Descrição típica: "Venda 4903 / NF-e:4002"
@@ -176,8 +206,17 @@ export function ehReceitaVendasCaixa(
     return true;
   }
 
+  // Descrição explícita de frete recebido
+  if (/\bfrete(s)?\s+recebido/.test(descricao) || /^frete\b/.test(descricao)) {
+    return true;
+  }
+
   if (dre === ENTRADA_DRE_RECEITA_VENDAS) {
-    return /\b(venda|vendas|faturamento|mercadoria|produto|servico)\b/.test(t);
+    const blob = [t, ...labels].join(" ");
+    if (/\b(venda|vendas|faturamento|mercadoria|produto|servico)\b/.test(blob)) {
+      return true;
+    }
+    if (/\bfrete/.test(blob)) return true;
   }
 
   return false;

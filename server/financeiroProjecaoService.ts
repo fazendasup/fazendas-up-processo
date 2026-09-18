@@ -114,6 +114,17 @@ function mediaDeDoisPositivos(a: number, b: number): number {
 function toBase(p: ParcelaFinanceiraNorm): ParcelaBaseProjecao {
   const original = p.categoriaOriginal?.trim() || null;
   const atual = p.categoria?.trim() || null;
+  const categorias = Array.from(
+    new Set(
+      [
+        ...(p.categorias ?? []),
+        atual,
+        original,
+      ]
+        .map(s => (s ?? "").trim())
+        .filter(Boolean),
+    ),
+  );
   return {
     id: p.id,
     descricao: p.descricao,
@@ -124,6 +135,7 @@ function toBase(p: ParcelaFinanceiraNorm): ParcelaBaseProjecao {
       !!original &&
       !!atual &&
       original.toLowerCase() !== atual.toLowerCase(),
+    categorias: categorias.length ? categorias : undefined,
     entradaDre: p.entradaDre?.trim() || null,
     valor: p.valor,
     valorPago: p.valorPago,
@@ -532,7 +544,7 @@ export async function carregarComparativoProjecao(
     },
     avisos: [
       "Caixa (já recebido / a receber / vencido) = Conta Azul ao vivo por vencimento e pagamento.",
-      `Ainda entra = média das baixas (sem investimento/aporte${idsVendas.length ? `; DRE vendas no catálogo: ${idsVendas.length} cat.` : ""}).`,
+      `Ainda entra = média das baixas (vendas + frete, sem investimento/aporte${idsVendas.length ? `; DRE vendas no catálogo: ${idsVendas.length} cat.` : ""}).`,
       avisoCats,
       "Já faturado = pedidos sincronizados (status venda). Orçamento ainda não é caixa.",
       `Orçamentos: até o dia ${vendas.diaLimiteOrcamento}` +
@@ -817,7 +829,7 @@ export async function carregarFinanceiroDashboard(
   let desembolsoTotaisOut = { ...dMes.totais };
   let saldoRealizado = mesAtual.saldoCaixa;
   const avisos: string[] = [
-    `Ainda entra = baixas do período sem investimento/aporte${idsVendas.length ? ` (catálogo DRE vendas: ${idsVendas.length})` : ""}.`,
+      `Ainda entra = baixas do período (vendas + frete, sem investimento/aporte)${idsVendas.length ? ` (catálogo DRE vendas: ${idsVendas.length})` : ""}.`,
     (() => {
       const cats = resumirBaixasPorCategoria(
         [...baixasRest1, ...baixasRest2],

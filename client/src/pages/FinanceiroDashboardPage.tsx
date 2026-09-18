@@ -788,7 +788,7 @@ export default function FinanceiroDashboardPage() {
                   value={fmtMoney(pv?.aindaEntraProjetado)}
                   hint={
                     pv && pv.diasRestantes > 0
-                      ? `Média "Receitas de Vendas" · últimos ${pv.diasRestantes} dias jul/ago`
+                      ? `Média vendas+frete · últimos ${pv.diasRestantes} dias dos 2 meses ant.`
                       : "Sem dias restantes neste mês"
                   }
                   href={kpiHref("proj-vendas")}
