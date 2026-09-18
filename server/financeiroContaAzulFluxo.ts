@@ -25,6 +25,8 @@ import {
   normalizarParcela,
   parcelasAtivasParaRelatorio,
   periodoComparavelAnterior,
+  limitarPeriodoComparativoRubricas,
+  parcelaNoComparativoRubricas,
   resumirCaixa,
   type AjusteManualInput,
   type ClassificacaoOverride,
@@ -540,7 +542,11 @@ export async function analisarFinanceiroCfoContaAzul(
 ) {
   const compararMesAnterior = opts?.compararMesAnterior !== false;
   const prisma = getComercialPrisma();
-  const prev = periodoComparavelAnterior(inicio, fim);
+  const prevRaw = periodoComparavelAnterior(inicio, fim);
+  const prev = compararMesAnterior
+    ? limitarPeriodoComparativoRubricas(prevRaw.inicio, prevRaw.fim)
+    : null;
+  const buscarMesAnterior = !!prev;
 
   const [
     pagarFetch,
@@ -571,7 +577,7 @@ export async function analisarFinanceiroCfoContaAzul(
       listFinanceiroCaClassificacoes(projetoId),
       listFinanceiroCaAjustesManuais(projetoId),
       moEquipeDb.listMoEquipes(projetoId).catch(() => []),
-      compararMesAnterior
+      buscarMesAnterior && prev
         ? fetchParcelasPaginated(
             "/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar",
             prev.inicio,
@@ -649,7 +655,7 @@ export async function analisarFinanceiroCfoContaAzul(
     typeof detectarConflitosRubricaPorDestino
   > = [];
   let pagarPrevAtivos: ParcelaFinanceiraNorm[] = [];
-  if (compararMesAnterior) {
+  if (buscarMesAnterior && prev) {
     let pagarPrev = pagarPrevFetch.itens
       .map(i => mapParcelaListagem(i, "pagar", catalogo))
       .filter((x): x is ParcelaFinanceiraNorm => !!x);
@@ -667,7 +673,9 @@ export async function analisarFinanceiroCfoContaAzul(
         pagarPrev.push(p);
       }
     }
-    pagarPrevAtivos = parcelasAtivasParaRelatorio(pagarPrev);
+    pagarPrevAtivos = parcelasAtivasParaRelatorio(pagarPrev).filter(p =>
+      parcelaNoComparativoRubricas(p),
+    );
     const rubricasPrev = agregarPorRubrica(pagarPrevAtivos);
     comparativo = montarComparativoCustoMes(rubricas, rubricasPrev, {
       inicio: isoDateLocal(prev.inicio),
@@ -676,7 +684,7 @@ export async function analisarFinanceiroCfoContaAzul(
   }
 
   conflitosRubricaDestino = detectarConflitosRubricaPorDestino(
-    compararMesAnterior
+    buscarMesAnterior
       ? [...pagarAtivos, ...pagarPrevAtivos]
       : pagarAtivos,
     { excluirPessoal: true, nomesEquipe },

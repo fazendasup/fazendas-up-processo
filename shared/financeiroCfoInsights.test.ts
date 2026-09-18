@@ -15,6 +15,7 @@ import {
   pareceNomeEmpresa,
   pareceNomePessoaFisica,
   periodoComparavelAnterior,
+  limitarPeriodoComparativoRubricas,
 } from "./financeiroCfoInsights";
 
 describe("financeiroCfoInsights ERP", () => {
@@ -175,6 +176,20 @@ describe("financeiroCfoInsights ERP", () => {
     expect(prev.inicio.getMonth()).toBe(7); // agosto = 7
     expect(prev.fim.getDate()).toBe(15);
 
+    const prevClamped = limitarPeriodoComparativoRubricas(
+      prev.inicio,
+      prev.fim,
+    );
+    expect(prevClamped).not.toBeNull();
+    expect(prevClamped!.inicio.getMonth()).toBe(7);
+    expect(prevClamped!.inicio.getDate()).toBe(1);
+
+    const jul = periodoComparavelAnterior(
+      new Date("2026-08-01T00:00:00"),
+      new Date("2026-08-15T23:59:59"),
+    );
+    expect(limitarPeriodoComparativoRubricas(jul.inicio, jul.fim)).toBeNull();
+
     const atual = agregarPorRubrica([
       normalizarParcela({
         id: "1",
@@ -278,5 +293,31 @@ describe("financeiroCfoInsights ERP", () => {
       "Folhosas",
       "Insumos",
     ]);
+  });
+
+  it("ignora lançamentos anteriores a 01/08/2026 no conflito de rúbricas", () => {
+    const conflitos = detectarConflitosRubricaPorDestino([
+      normalizarParcela({
+        id: "jul",
+        tipo: "pagar",
+        descricao: "Pedido jul",
+        valor: 1000,
+        valorPago: 1000,
+        categoria: "Insumos",
+        contraparte: "Horta Norte Ltda",
+        dataPagamento: "2026-07-20",
+      }),
+      normalizarParcela({
+        id: "ago",
+        tipo: "pagar",
+        descricao: "Pedido ago",
+        valor: 1200,
+        valorPago: 1200,
+        categoria: "Folhosas",
+        contraparte: "Horta Norte Ltda",
+        dataPagamento: "2026-08-10",
+      }),
+    ]);
+    expect(conflitos).toHaveLength(0);
   });
 });

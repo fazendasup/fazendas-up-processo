@@ -624,6 +624,62 @@ export function periodoComparavelAnterior(
   return { inicio: i, fim: f };
 }
 
+/**
+ * Corte da análise de rúbricas / comparativo MoM: só considera
+ * lançamentos a partir de 01/08/2026 (dados anteriores ficam de fora).
+ */
+export const COMPARATIVO_RUBRICAS_DESDE_ISO = "2026-08-01";
+
+function parseIsoLocalMeioDia(ymd: string): Date {
+  const [y, m, d] = ymd.split("-").map(Number);
+  return new Date(y, m - 1, d, 12, 0, 0, 0);
+}
+
+/**
+ * Recorta [inicio, fim] para ≥ COMPARATIVO_RUBRICAS_DESDE_ISO.
+ * Retorna null se o período inteiro for anterior ao corte.
+ */
+export function limitarPeriodoComparativoRubricas(
+  inicio: Date,
+  fim: Date,
+  desdeIso: string = COMPARATIVO_RUBRICAS_DESDE_ISO,
+): { inicio: Date; fim: Date } | null {
+  const corte = parseIsoLocalMeioDia(desdeIso);
+  corte.setHours(0, 0, 0, 0);
+  const f = new Date(fim);
+  f.setHours(23, 59, 59, 999);
+  if (f.getTime() < corte.getTime()) return null;
+  const i = new Date(inicio);
+  i.setHours(0, 0, 0, 0);
+  const ini = i.getTime() < corte.getTime() ? new Date(corte) : i;
+  if (ini.getTime() > f.getTime()) return null;
+  return { inicio: ini, fim: f };
+}
+
+/** Data de referência da parcela para o comparativo de rúbricas (YYYY-MM-DD). */
+export function dataRefParcelaComparativo(
+  p: Pick<
+    ParcelaFinanceiraNorm,
+    "dataPagamento" | "dataCompetencia" | "dataVencimento"
+  >,
+): string | null {
+  const ref =
+    p.dataPagamento || p.dataCompetencia || p.dataVencimento || null;
+  if (!ref || !/^\d{4}-\d{2}-\d{2}/.test(ref)) return null;
+  return ref.slice(0, 10);
+}
+
+export function parcelaNoComparativoRubricas(
+  p: Pick<
+    ParcelaFinanceiraNorm,
+    "dataPagamento" | "dataCompetencia" | "dataVencimento"
+  >,
+  desdeIso: string = COMPARATIVO_RUBRICAS_DESDE_ISO,
+): boolean {
+  const ref = dataRefParcelaComparativo(p);
+  return !!ref && ref >= desdeIso;
+}
+
 export function compararRubricasCusto(
   atual: DimensaoFinanceiraAgg[],
   anterior: DimensaoFinanceiraAgg[],
@@ -896,13 +952,23 @@ function mesYmParcelaAnalise(p: ParcelaFinanceiraNorm): string | null {
 /**
  * Destinos (fornecedor) com ≥2 rúbricas distintas no período (ex.: ago+set).
  * Ajuda a achar classificação inconsistente do mesmo pagamento de saída.
+ * Por padrão ignora lançamentos anteriores a COMPARATIVO_RUBRICAS_DESDE_ISO.
  */
 export function detectarConflitosRubricaPorDestino(
   parcelas: ParcelaFinanceiraNorm[],
-  opts?: { excluirPessoal?: boolean; nomesEquipe?: string[] },
+  opts?: {
+    excluirPessoal?: boolean;
+    nomesEquipe?: string[];
+    /** ISO YYYY-MM-DD; default 2026-08-01. Passar `null` desliga o corte. */
+    desdeIso?: string | null;
+  },
 ): ConflitoRubricaDestino[] {
   const excluirPessoal = opts?.excluirPessoal !== false;
   const nomesEquipe = opts?.nomesEquipe ?? [];
+  const desdeIso =
+    opts && "desdeIso" in opts
+      ? opts.desdeIso
+      : COMPARATIVO_RUBRICAS_DESDE_ISO;
 
   type Acc = {
     destino: string;
@@ -922,6 +988,7 @@ export function detectarConflitosRubricaPorDestino(
   for (const p of parcelas) {
     if (p.tipo !== "pagar") continue;
     if (excluirPessoal && ehPagamentoPessoalOuEquipe(p, nomesEquipe)) continue;
+    if (desdeIso && !parcelaNoComparativoRubricas(p, desdeIso)) continue;
     const destino = (p.contraparte || "").trim();
     if (!destino || /^sem fornecedor$/i.test(destino)) continue;
     const mesYm = mesYmParcelaAnalise(p);

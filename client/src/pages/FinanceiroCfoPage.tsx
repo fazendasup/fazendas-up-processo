@@ -556,9 +556,12 @@ export default function FinanceiroCfoPage() {
                     <p className="text-xs text-muted-foreground">
                       Mesmo fornecedor (saída) com rúbricas diferentes entre o
                       mês atual e o anterior
-                      {compararMesAnterior ? "" : " — ative “Comparar mês anterior” para cruzar ago×set"}
-                      . Aplique a rúbrica correta no destino ou abra os
-                      lançamentos.
+                      {compararMesAnterior
+                        ? ""
+                        : " — ative “Comparar mês anterior” para cruzar ago×set"}
+                      . Comparativo só a partir de{" "}
+                      <strong>01/08/2026</strong>. Aplique a rúbrica correta no
+                      destino ou abra os lançamentos.
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-3">
