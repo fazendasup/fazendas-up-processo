@@ -405,21 +405,25 @@ export function montarComparativoReceitaMes(input: {
     input.vendasMesAtual ?? vendasFaturadas + orcamentos,
   );
 
-  const projecaoVendas = montarProjecaoVendasRestanteMes({
+  const projecaoVendasBase = montarProjecaoVendasRestanteMes({
     mesYm,
     hojeYm,
     diaHoje,
     vendasMesAtual,
     vendasAteDiaMesAnterior1: input.vendasAteDiaMesAnterior1 ?? 0,
     vendasAteDiaMesAnterior2: input.vendasAteDiaMesAnterior2 ?? 0,
+    // Estes dois campos passam a ser baixas Conta Azul (caixa), não volume.
     vendasRestanteMesAnterior1: input.vendasRestanteMesAnterior1 ?? 0,
     vendasRestanteMesAnterior2: input.vendasRestanteMesAnterior2 ?? 0,
     mesAnterior1Ym: mes1,
     mesAnterior2Ym: mes2,
   });
-  const gapVsProjecaoVendas = round2(
-    projecaoVendas.projecaoMesTotal - pipelineMes,
+  // Projeção de fechar o mês em caixa: já no pipeline CA + o que ainda entra.
+  const projecaoMesTotal = round2(
+    recebido + aReceber + projecaoVendasBase.aindaEntraProjetado,
   );
+  const projecaoVendas = { ...projecaoVendasBase, projecaoMesTotal };
+  const gapVsProjecaoVendas = round2(projecaoMesTotal - pipelineMes);
 
   return {
     mesYm,
@@ -457,6 +461,35 @@ export function somarRecebidoNoMes(
   for (const p of parcelas) {
     if (mesPagamentoParcela(p) !== mesYm) continue;
     s += valorPagoParcela(p);
+  }
+  return round2(s);
+}
+
+/**
+ * Soma das baixas (data de pagamento) nos últimos `nDias` dias civis do mês.
+ * Ex.: n=13 num mês de 30 → pagamentos nos dias 18–30.
+ * Usa caixa real Conta Azul — não volume faturado (que pode cair só no mês seguinte).
+ */
+export function somarRecebidoUltimosNDias(
+  parcelas: ParcelaBaseProjecao[],
+  mesYm: string,
+  nDias: number,
+): number {
+  if (!/^\d{4}-\d{2}$/.test(mesYm) || nDias <= 0) return 0;
+  const [y, m] = mesYm.split("-").map(Number);
+  const diasNoMes = new Date(y, m, 0).getDate();
+  const n = Math.min(Math.floor(nDias), diasNoMes);
+  const diaInicio = diasNoMes - n + 1;
+  let s = 0;
+  for (const p of parcelas) {
+    // Só baixa com data de pagamento — evita usar vencimento (venda ≠ caixa).
+    const dp = (p.dataPagamento ?? "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}/.test(dp)) continue;
+    if (dp.slice(0, 7) !== mesYm) continue;
+    const dia = Number(dp.slice(8, 10));
+    if (!Number.isFinite(dia) || dia < diaInicio || dia > diasNoMes) continue;
+    const pago = valorPagoParcela(p);
+    if (pago > 0) s += pago;
   }
   return round2(s);
 }

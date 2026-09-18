@@ -3,6 +3,7 @@ import {
   montarComparativoDesembolsoMes,
   montarComparativoReceitaMes,
   montarFinanceiroComparativo,
+  somarRecebidoUltimosNDias,
 } from "./financeiroComparativoProjecao";
 import {
   ehCreditoOuDescontoObtido,
@@ -282,9 +283,36 @@ describe("montarComparativoReceitaMes", () => {
     expect(out.projecaoVendas.mediaRestante2m).toBe(1_300);
     expect(out.projecaoVendas.mediaAteMesmoDia2m).toBe(1_900);
     expect(out.projecaoVendas.aindaEntraProjetado).toBe(1_300);
-    expect(out.projecaoVendas.projecaoMesTotal).toBe(3_000);
-    expect(out.gapVsProjecaoVendas).toBe(3_000 - 13_000);
+    // Caixa: recebido + em aberto + ainda entra
+    expect(out.projecaoVendas.projecaoMesTotal).toBe(6_000 + 7_000 + 1_300);
+    expect(out.gapVsProjecaoVendas).toBe(1_300);
     expect(out.gapFinal).toBe(0);
+  });
+
+  it("soma baixas só nos últimos N dias do mês (caixa)", () => {
+    const parcelas = [
+      parcela({
+        id: "cedo",
+        valorPago: 1_000,
+        dataPagamento: "2026-08-05",
+        dataVencimento: "2026-08-05",
+      }),
+      parcela({
+        id: "tarde",
+        valorPago: 2_500,
+        dataPagamento: "2026-08-25",
+        dataVencimento: "2026-08-20",
+      }),
+      parcela({
+        id: "sem-data",
+        status: "RECEBIDO",
+        valorPago: 9_999,
+        dataPagamento: null,
+        dataVencimento: "2026-08-28",
+      }),
+    ];
+    // Agosto tem 31 dias; últimos 13 → dias 19–31
+    expect(somarRecebidoUltimosNDias(parcelas, "2026-08", 13)).toBe(2_500);
   });
 
   it("conta recebido quitado mesmo sem data_pagamento (listagem CA)", () => {
@@ -355,8 +383,9 @@ describe("montarFinanceiroComparativo", () => {
       diaHoje: 17,
     });
     expect(out.caixa.saldoRealizado).toBe(3_000);
-    // Projeção do mês (10k + média restante 3k) − desembolso projetado 2k
-    expect(out.receita.projecaoVendas.projecaoMesTotal).toBe(13_000);
-    expect(out.caixa.gapCaixaMes).toBe(11_000);
+    // Projeção caixa: recebido 5k + em aberto 0 + ainda entra 3k = 8k; − desembolso 2k
+    expect(out.receita.projecaoVendas.aindaEntraProjetado).toBe(3_000);
+    expect(out.receita.projecaoVendas.projecaoMesTotal).toBe(8_000);
+    expect(out.caixa.gapCaixaMes).toBe(6_000);
   });
 });

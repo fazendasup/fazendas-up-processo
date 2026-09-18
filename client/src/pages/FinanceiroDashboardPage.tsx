@@ -397,11 +397,11 @@ export default function FinanceiroDashboardPage() {
               </h2>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Kpi
-                  title="Projeção de fechar o mês"
-                  value={fmtMoney(atual?.vendasProjetado)}
+                  title="Projeção de fechar (caixa)"
+                  value={fmtMoney(pv?.projecaoMesTotal)}
                   hint={
                     pv
-                      ? `Já no mês ${fmtMoney(pv.vendasJaNoMes)} + ainda entra ${fmtMoney(pv.aindaEntraProjetado)}`
+                      ? `Recebido + em aberto + ainda entra ${fmtMoney(pv.aindaEntraProjetado)}`
                       : undefined
                   }
                 />
@@ -413,13 +413,16 @@ export default function FinanceiroDashboardPage() {
                 <Kpi
                   title={gapVendas.title}
                   value={gapVendas.value}
-                  hint={gapVendas.hint}
+                  hint={
+                    gapVendas.hint +
+                    " (volume: faturado+orçamento vs projeção de volume)"
+                  }
                   tone={gapVendas.tone}
                 />
                 <Kpi
                   title="Caixa previsto vs desembolso"
                   value={fmtMoney(data?.caixa.gapCaixaMes)}
-                  hint="Projeção do mês − desembolso projetado"
+                  hint="Projeção caixa − desembolso projetado"
                   tone={
                     (data?.caixa.gapCaixaMes ?? 0) >= 0 ? "down" : "up"
                   }
@@ -748,11 +751,11 @@ export default function FinanceiroDashboardPage() {
                   hint="Volume de orçamento (só conta se virar venda / caixa depois)"
                 />
                 <Kpi
-                  title="Ainda entra (proj.)"
+                  title="Ainda entra (caixa proj.)"
                   value={fmtMoney(pv?.aindaEntraProjetado)}
                   hint={
                     pv
-                      ? `Média dos últimos ${pv.diasRestantes} dia(s) · 2 meses — projeção de volume novo`
+                      ? `Média das baixas Conta Azul nos últimos ${pv.diasRestantes} dia(s) · 2 meses (não é faturamento)`
                       : undefined
                   }
                 />

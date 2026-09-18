@@ -198,14 +198,17 @@ export type ProjecaoVendasRestanteMes = {
   vendasAteDiaMesAnterior1: number;
   vendasAteDiaMesAnterior2: number;
   /**
-   * Média do que entrou nos últimos `diasRestantes` dias dos 2 meses anteriores
-   * (= projeção do que ainda entra).
+   * Média do que **entrou em caixa** (baixas Conta Azul) nos últimos
+   * `diasRestantes` dias dos 2 meses anteriores — não é volume faturado.
    */
   mediaRestante2m: number;
   vendasRestanteMesAnterior1: number;
   vendasRestanteMesAnterior2: number;
   aindaEntraProjetado: number;
-  /** vendasJaNoMes + aindaEntraProjetado. */
+  /**
+   * No fluxo de caixa: (recebido + em aberto do mês) + aindaEntraProjetado.
+   * (Preenchido em montarComparativoReceitaMes; aqui só vendasJaNoMes + aindaEntra.)
+   */
   projecaoMesTotal: number;
 };
 
@@ -218,8 +221,10 @@ function mediaDeDois(a: number, b: number): number {
 }
 
 /**
- * Projeta o restante do mês pela média do que foi vendido nos últimos N dias
- * dos 2 meses anteriores (N = dias restantes no mês de referência).
+ * Projeta o restante do mês pela média do que **entrou em caixa**
+ * (baixas) nos últimos N dias dos 2 meses anteriores
+ * (N = dias restantes no mês de referência).
+ * Os campos `vendasRestante*` recebem esses totais de caixa.
  */
 export function montarProjecaoVendasRestanteMes(input: {
   mesYm: string;

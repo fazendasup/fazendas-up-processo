@@ -692,7 +692,7 @@ export default function FinanceiroComparativoPage() {
                 <Kpi
                   title="Caixa previsto vs desembolso"
                   value={fmtMoney(caixa?.gapCaixaMes)}
-                  hint="Projeção de fechar o mês − desembolso projetado"
+                  hint="Projeção caixa (recebido + aberto + ainda entra) − desembolso projetado"
                   tone={
                     (caixa?.gapCaixaMes ?? 0) >= 0
                       ? "down"
@@ -742,21 +742,21 @@ export default function FinanceiroComparativoPage() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <Kpi
                   title={
-                    r?.projecaoVendas
-                      ? `Ainda entra (média dos últimos ${r.projecaoVendas.diasRestantes} dias)`
-                      : "Ainda entra (projeção)"
+                    r?.projecaoVendas && r.projecaoVendas.diasRestantes > 0
+                      ? `Ainda entra caixa (últimos ${r.projecaoVendas.diasRestantes} dias)`
+                      : "Ainda entra (caixa)"
                   }
                   value={fmtMoney(r?.projecaoVendas?.aindaEntraProjetado)}
                   hint={
                     r?.projecaoVendas
-                      ? `Média do que entrou no fim de ${labelMes(r.projecaoVendas.mesesMedia2m[0])} (${fmtMoney(r.projecaoVendas.vendasRestanteMesAnterior2)}) e ${labelMes(r.projecaoVendas.mesesMedia2m[1])} (${fmtMoney(r.projecaoVendas.vendasRestanteMesAnterior1)})`
-                      : "Média dos últimos N dias dos 2 meses anteriores"
+                      ? `Média das baixas Conta Azul no fim de ${labelMes(r.projecaoVendas.mesesMedia2m[0])} (${fmtMoney(r.projecaoVendas.vendasRestanteMesAnterior2)}) e ${labelMes(r.projecaoVendas.mesesMedia2m[1])} (${fmtMoney(r.projecaoVendas.vendasRestanteMesAnterior1)})`
+                      : "Média das baixas nos últimos N dias · 2 meses"
                   }
                 />
                 <Kpi
-                  title="Projeção de fechar o mês"
+                  title="Projeção de fechar (caixa)"
                   value={fmtMoney(r?.projecaoVendas?.projecaoMesTotal)}
-                  hint="Soma até agora + ainda entra (projeção de volume)"
+                  hint="Recebido + em aberto + ainda entra (caixa)"
                 />
               </div>
             </section>

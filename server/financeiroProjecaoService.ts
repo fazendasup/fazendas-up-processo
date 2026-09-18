@@ -22,6 +22,7 @@ import {
   montarComparativoDesembolsoMes,
   montarComparativoReceitaMes,
   montarFinanceiroComparativo,
+  somarRecebidoUltimosNDias,
 } from "@shared/financeiroComparativoProjecao";
 import {
   montarSerieDashboard3Meses,
@@ -375,6 +376,16 @@ export async function carregarComparativoProjecao(
   const hojeIso = diaIsoAmericaSp();
   const hojeYm = mesIsoAmericaSp();
   const diaHoje = Number(hojeIso.slice(8, 10));
+  const mes1 = mesAnteriorProjecao(mesYm);
+  const mes2 = mesAnteriorProjecao(mes1);
+  const diasNoMesRef = diasNoMesYm(mesYm);
+  let diasRestantes: number;
+  if (mesYm < hojeYm) diasRestantes = 0;
+  else if (mesYm > hojeYm) diasRestantes = diasNoMesRef;
+  else {
+    const diaCorte = Math.min(Math.max(1, diaHoje), diasNoMesRef);
+    diasRestantes = Math.max(0, diasNoMesRef - diaCorte);
+  }
   const filtroOrcamento: FiltroOrcamentoCompetencia = {
     diaLimiteOrcamento:
       opts?.diaLimiteOrcamento ?? DIA_LIMITE_ORCAMENTO_PADRAO,
@@ -383,20 +394,42 @@ export async function carregarComparativoProjecao(
       : null,
   };
 
-  const [grade, pagarMes, receberMes, vendas] = await Promise.all([
-    carregarProjecaoDesembolso(projetoId, mesYm, {
-      forceRefreshCa: opts?.forceRefreshCa,
-    }),
-    carregarParcelasBaseMes(projetoId, mesYm, opts?.forceRefreshCa === true),
-    buscarParcelasReceberParaComparativo(iniMes, fimMes, projetoId).then(r =>
-      r.map(toBase),
-    ),
-    carregarTotaisVendasCompetencia(mesYm, {
-      hojeYm,
-      diaHoje,
-      filtroOrcamento,
-    }),
-  ]);
+  const [grade, pagarMes, receberMes, receber1, receber2, vendas] =
+    await Promise.all([
+      carregarProjecaoDesembolso(projetoId, mesYm, {
+        forceRefreshCa: opts?.forceRefreshCa,
+      }),
+      carregarParcelasBaseMes(projetoId, mesYm, opts?.forceRefreshCa === true),
+      buscarParcelasReceberParaComparativo(iniMes, fimMes, projetoId).then(r =>
+        r.map(toBase),
+      ),
+      buscarParcelasReceberParaComparativo(
+        boundsMesYmAmericaSp(mes1).inicio,
+        boundsMesYmAmericaSp(mes1).fim,
+        projetoId,
+      ).then(r => r.map(toBase)),
+      buscarParcelasReceberParaComparativo(
+        boundsMesYmAmericaSp(mes2).inicio,
+        boundsMesYmAmericaSp(mes2).fim,
+        projetoId,
+      ).then(r => r.map(toBase)),
+      carregarTotaisVendasCompetencia(mesYm, {
+        hojeYm,
+        diaHoje,
+        filtroOrcamento,
+      }),
+    ]);
+
+  const recebidoRestante1 = somarRecebidoUltimosNDias(
+    receber1,
+    mes1,
+    diasRestantes,
+  );
+  const recebidoRestante2 = somarRecebidoUltimosNDias(
+    receber2,
+    mes2,
+    diasRestantes,
+  );
 
   const comparativo = montarFinanceiroComparativo({
     mesYm,
@@ -408,8 +441,8 @@ export async function carregarComparativoProjecao(
     vendasMesAtual: vendas.vendasMesAtual,
     vendasAteDiaMesAnterior1: vendas.vendasAteDiaMesAnterior1,
     vendasAteDiaMesAnterior2: vendas.vendasAteDiaMesAnterior2,
-    vendasRestanteMesAnterior1: vendas.vendasRestanteMesAnterior1,
-    vendasRestanteMesAnterior2: vendas.vendasRestanteMesAnterior2,
+    vendasRestanteMesAnterior1: recebidoRestante1,
+    vendasRestanteMesAnterior2: recebidoRestante2,
     hojeYm,
     diaHoje,
   });
@@ -423,12 +456,12 @@ export async function carregarComparativoProjecao(
     },
     avisos: [
       "Caixa (já recebido / a receber / vencido) = Conta Azul ao vivo por vencimento e pagamento.",
-      "Já faturado = pedidos sincronizados da Conta Azul (status venda). Se divergir, rode sync comercial.",
+      "Ainda entra = média do que entrou em caixa (baixas) nos últimos N dias dos 2 meses anteriores — não é volume faturado.",
+      "Já faturado = pedidos sincronizados (status venda). Orçamento ainda não é caixa.",
       `Orçamentos: até o dia ${vendas.diaLimiteOrcamento}` +
         (filtroOrcamento.clienteIdsOrcamento?.length
           ? ` · ${filtroOrcamento.clienteIdsOrcamento.length} cliente(s) selecionado(s)`
           : " · todos os clientes"),
-      "Desembolso: exclusões locais de rúbrica continuam valendo só no lado pagar.",
     ],
   };
 }
@@ -513,6 +546,42 @@ export async function carregarFinanceiroDashboard(
   const d1 = desembolsoDe(mes1, gradeSerie.linhas, pagar1);
   const dMes = desembolsoDe(mesYm, gradeAtual.linhas, pagarMes);
 
+  const diasNoMesRef = diasNoMesYm(mesYm);
+  let diasRestantes: number;
+  if (mesYm < hojeYm) diasRestantes = 0;
+  else if (mesYm > hojeYm) diasRestantes = diasNoMesRef;
+  else {
+    const diaCorte = Math.min(Math.max(1, diaHoje), diasNoMesRef);
+    diasRestantes = Math.max(0, diasNoMesRef - diaCorte);
+  }
+  const recebidoRestante1 = somarRecebidoUltimosNDias(
+    receber1,
+    mes1,
+    diasRestantes,
+  );
+  const recebidoRestante2 = somarRecebidoUltimosNDias(
+    receber2,
+    mes2,
+    diasRestantes,
+  );
+  const mediaVolumeRestante =
+    diasRestantes > 0
+      ? (() => {
+          const a = vendas.vendasRestanteMesAnterior1 > 0;
+          const b = vendas.vendasRestanteMesAnterior2 > 0;
+          const n = (a ? 1 : 0) + (b ? 1 : 0);
+          if (n === 0) return 0;
+          return (
+            Math.round(
+              (((a ? vendas.vendasRestanteMesAnterior1 : 0) +
+                (b ? vendas.vendasRestanteMesAnterior2 : 0)) /
+                n) *
+                100,
+            ) / 100
+          );
+        })()
+      : 0;
+
   const r2 = receitaDe(mes2, receber2);
   const r1 = receitaDe(mes1, receber1);
   const rMes = montarComparativoReceitaMes({
@@ -523,8 +592,8 @@ export async function carregarFinanceiroDashboard(
     vendasMesAtual: vendas.vendasMesAtual,
     vendasAteDiaMesAnterior1: vendas.vendasAteDiaMesAnterior1,
     vendasAteDiaMesAnterior2: vendas.vendasAteDiaMesAnterior2,
-    vendasRestanteMesAnterior1: vendas.vendasRestanteMesAnterior1,
-    vendasRestanteMesAnterior2: vendas.vendasRestanteMesAnterior2,
+    vendasRestanteMesAnterior1: recebidoRestante1,
+    vendasRestanteMesAnterior2: recebidoRestante2,
     hojeYm,
     diaHoje,
   });
@@ -568,7 +637,8 @@ export async function carregarFinanceiroDashboard(
         vendasFaturadas: vMes.vendas,
         orcamentos: vMes.orcamentos,
         vendasReal: vMes.total,
-        vendasProjetado: rMes.projecaoVendas.projecaoMesTotal,
+        // Série/gráfico de volume: faturado+orç + média volume restante (2m).
+        vendasProjetado: vMes.total + mediaVolumeRestante,
         desembolsoProjetado: dMes.totais.projetado,
         desembolsoPago: dMes.totais.pago,
         previsto: rMes.previsto,
@@ -604,9 +674,9 @@ export async function carregarFinanceiroDashboard(
       vendasCompetencia: rMes.vendasCompetencia,
     },
     avisos: [
-      "Dashboard: projeção de vendas (mês aberto) × realizado dos 3 meses.",
-      "Desembolso projetado = grade de projeção; pago = Conta Azul.",
-      "Caixa = recebido Conta Azul − desembolso pago no mês.",
+      "Dashboard: ainda entra = média do que entrou em caixa (baixas CA) nos últimos N dias · 2 meses.",
+      "Projeção de fechar (caixa) = recebido + em aberto + ainda entra.",
+      "Faturado/orçamento = volume de pedidos — não some com recebido.",
     ],
   } satisfies FinanceiroDashboardPayload;
 }
