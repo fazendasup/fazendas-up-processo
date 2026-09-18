@@ -90,8 +90,19 @@ export type DesembolsoRubricaDashboard = {
 export type FinanceiroDashboardPayload = {
   mesYm: string;
   labelMes: string;
+  /** Recorte ativo do filtro de data (dia/semana/mês/ano). */
+  periodo: {
+    granularidade: "dia" | "semana" | "mes" | "ano";
+    ref: string;
+    inicioIso: string;
+    fimIso: string;
+    label: string;
+    mesYmAncora: string;
+    /** false = plano/mapa ainda são do mês âncora; caixa é do período. */
+    planoAlinhadoAoPeriodo: boolean;
+  };
   serie3Meses: FinanceiroDashboardSerieMes[];
-  /** Totais do mês selecionado (atalho para KPIs). */
+  /** Totais do mês âncora (série / plano). */
   mesAtual: FinanceiroDashboardSerieMes;
   projecaoVendas: ProjecaoVendasRestanteMes;
   caixa: {

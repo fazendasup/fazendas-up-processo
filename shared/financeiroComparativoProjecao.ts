@@ -542,6 +542,7 @@ export function agregarReceitaCaixaPeriodo(input: {
   vencido: number;
   aReceber: number;
   previsto: number;
+  pctRecebidoDoPrevisto: number | null;
 } {
   const { inicioIso, fimIso, hojeIso } = input;
   let recebido = 0;
@@ -594,12 +595,16 @@ export function agregarReceitaCaixaPeriodo(input: {
 
   aReceberNoMes = round2(aReceberNoMes);
   vencido = round2(vencido);
+  const previstoR = round2(previsto);
+  const recebidoR = round2(recebido);
   return {
-    recebido: round2(recebido),
+    recebido: recebidoR,
     aReceberNoMes,
     vencido,
     aReceber: round2(aReceberNoMes + vencido),
-    previsto: round2(previsto),
+    previsto: previstoR,
+    pctRecebidoDoPrevisto:
+      previstoR > 0 ? round2((recebidoR / previstoR) * 100) : null,
   };
 }
 
@@ -611,7 +616,7 @@ export function somarDesembolsoPagoPeriodo(
 ): number {
   let total = 0;
   for (const p of parcelasPagar) {
-    if (ehNaoDesembolsoCusto(p)) continue;
+    if (ehNaoDesembolsoCusto(p.descricao, p.rubrica)) continue;
     const pago = valorPagoParcela(p);
     if (pago <= 0) continue;
     let pagRef = (p.dataPagamento ?? "").slice(0, 10);

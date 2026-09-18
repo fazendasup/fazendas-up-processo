@@ -37,11 +37,22 @@ import {
   montarMapaAcaoDesembolso,
   type DesembolsoRubricaDashboard,
 } from "@shared/financeiroDashboard";
+import {
+  DASHBOARD_GRANULARIDADES,
+  isDashboardGranularidade,
+  refDefaultDashboard,
+  type DashboardGranularidade,
+} from "@shared/financeiroPeriodoDashboard";
+import {
+  diaIsoAmericaSp,
+} from "@shared/comercial/periodo-america-sp";
 
-function mesAtualYm(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
+const GRANULARIDADE_LABEL: Record<DashboardGranularidade, string> = {
+  dia: "Dia",
+  semana: "Semana",
+  mes: "Mês",
+  ano: "Ano",
+};
 
 function fmtMoney(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "—";
@@ -297,11 +308,24 @@ function MapaPainel({
 
 export default function FinanceiroDashboardPage() {
   const search = typeof window !== "undefined" ? window.location.search : "";
-  const mesFromUrl = (() => {
-    const m = new URLSearchParams(search).get("mes");
-    return m && /^\d{4}-\d{2}$/.test(m) ? m : null;
-  })();
-  const [mes, setMes] = useState(mesFromUrl ?? mesAtualYm);
+  const paramsUrl = new URLSearchParams(search);
+  const gFromUrl = paramsUrl.get("g");
+  const refFromUrl = paramsUrl.get("ref");
+  const mesFromUrl = paramsUrl.get("mes");
+
+  const granularidadeInicial: DashboardGranularidade =
+    gFromUrl && isDashboardGranularidade(gFromUrl) ? gFromUrl : "mes";
+  const refInicial =
+    refFromUrl && refFromUrl.length >= 4
+      ? refFromUrl
+      : mesFromUrl && /^\d{4}-\d{2}$/.test(mesFromUrl)
+        ? mesFromUrl
+        : refDefaultDashboard(granularidadeInicial);
+
+  const [granularidade, setGranularidade] = useState<DashboardGranularidade>(
+    granularidadeInicial,
+  );
+  const [ref, setRef] = useState(refInicial);
   const utils = trpc.useUtils();
   const { theme } = useTheme();
   const chartTheme = useMemo(
@@ -318,18 +342,28 @@ export default function FinanceiroDashboardPage() {
   const corPagar = theme === "dark" ? "#fb7185" : "#e11d48";
   const corRevisar = theme === "dark" ? "#fbbf24" : "#d97706";
 
-  const kpiHref = (kpi: string) =>
-    `/financeiro-cfo/kpi/${kpi}?mes=${encodeURIComponent(mes)}`;
-
-  const q = trpc.financeiroCfo.dashboard.useQuery(
-    { mesYm: mes },
-    { staleTime: 60_000 },
+  const queryInput = useMemo(
+    () => ({ granularidade, ref }),
+    [granularidade, ref],
   );
+
+  const kpiHref = (kpi: string) =>
+    `/financeiro-cfo/kpi/${kpi}?g=${encodeURIComponent(granularidade)}&ref=${encodeURIComponent(ref)}`;
+
+  const q = trpc.financeiroCfo.dashboard.useQuery(queryInput, {
+    staleTime: 60_000,
+  });
 
   const data = q.data;
   const pv = data?.projecaoVendas;
   const rec = data?.receita;
   const des = data?.desembolsoTotais;
+  const periodoLabel = data?.periodo?.label;
+
+  const trocarGranularidade = (g: DashboardGranularidade) => {
+    setGranularidade(g);
+    setRef(refDefaultDashboard(g));
+  };
 
   /** Mapa: proteger (essencial) × reduzir (não essencial). */
   const mapaAcao = useMemo(
@@ -403,10 +437,10 @@ export default function FinanceiroDashboardPage() {
     try {
       toast.message("Recarregando Conta Azul…");
       const next = await utils.financeiroCfo.dashboard.fetch({
-        mesYm: mes,
+        ...queryInput,
         forceRefreshCa: true,
       });
-      utils.financeiroCfo.dashboard.setData({ mesYm: mes }, next);
+      utils.financeiroCfo.dashboard.setData(queryInput, next);
     } catch (e) {
       toast.error(
         e instanceof Error ? e.message : "Falha ao recarregar Conta Azul",
@@ -432,37 +466,95 @@ export default function FinanceiroDashboardPage() {
             </h1>
             <p className="mt-1 max-w-xl text-sm text-muted-foreground">
               Desembolso do plano, entradas de caixa e tendência em 3 meses.
+              {periodoLabel ? (
+                <>
+                  {" "}
+                  Período:{" "}
+                  <span className="font-medium text-foreground">
+                    {periodoLabel}
+                  </span>
+                  .
+                </>
+              ) : null}
             </p>
           </div>
-          <div className="flex flex-wrap items-end gap-3">
-            <div>
-              <Label className="text-xs">Mês</Label>
-              <Input
-                type="month"
-                className="h-9 w-[160px]"
-                value={mes}
-                onChange={e => setMes(e.target.value)}
-              />
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex flex-wrap justify-end rounded-lg border bg-muted/40 p-1">
+              {DASHBOARD_GRANULARIDADES.map(g => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => trocarGranularidade(g)}
+                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${
+                    granularidade === g
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {GRANULARIDADE_LABEL[g]}
+                </button>
+              ))}
             </div>
-            <Button
-              variant="outline"
-              className="h-9"
-              disabled={q.isFetching}
-              onClick={() => void q.refetch()}
-            >
-              <RefreshCcw
-                className={`mr-1.5 h-3.5 w-3.5 ${q.isFetching ? "animate-spin" : ""}`}
-              />
-              Atualizar
-            </Button>
-            <Button
-              variant="secondary"
-              className="h-9"
-              disabled={q.isFetching}
-              onClick={() => void recarregarCa()}
-            >
-              Recarregar CA
-            </Button>
+            <div className="flex flex-wrap items-end gap-3">
+              <div>
+                <Label className="text-xs">
+                  {granularidade === "dia"
+                    ? "Dia"
+                    : granularidade === "semana"
+                      ? "Qualquer dia da semana"
+                      : granularidade === "ano"
+                        ? "Ano"
+                        : "Mês"}
+                </Label>
+                {granularidade === "mes" ? (
+                  <Input
+                    type="month"
+                    className="h-9 w-[160px]"
+                    value={ref}
+                    onChange={e => setRef(e.target.value)}
+                  />
+                ) : granularidade === "ano" ? (
+                  <Input
+                    type="number"
+                    min={2020}
+                    max={2100}
+                    className="h-9 w-[120px]"
+                    value={ref}
+                    onChange={e => {
+                      const v = e.target.value.replace(/\D/g, "").slice(0, 4);
+                      setRef(v || diaIsoAmericaSp().slice(0, 4));
+                    }}
+                  />
+                ) : (
+                  <Input
+                    type="date"
+                    className="h-9 w-[160px]"
+                    value={ref}
+                    max={diaIsoAmericaSp()}
+                    onChange={e => setRef(e.target.value)}
+                  />
+                )}
+              </div>
+              <Button
+                variant="outline"
+                className="h-9"
+                disabled={q.isFetching}
+                onClick={() => void q.refetch()}
+              >
+                <RefreshCcw
+                  className={`mr-1.5 h-3.5 w-3.5 ${q.isFetching ? "animate-spin" : ""}`}
+                />
+                Atualizar
+              </Button>
+              <Button
+                variant="secondary"
+                className="h-9"
+                disabled={q.isFetching}
+                onClick={() => void recarregarCa()}
+              >
+                Recarregar CA
+              </Button>
+            </div>
           </div>
         </div>
 

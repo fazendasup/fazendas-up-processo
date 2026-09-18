@@ -8,11 +8,11 @@ import {
   isDashboardKpiId,
   type DashboardKpiId,
 } from "@shared/financeiroDashboardKpi";
-
-function mesAtualYm(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
+import {
+  isDashboardGranularidade,
+  refDefaultDashboard,
+  type DashboardGranularidade,
+} from "@shared/financeiroPeriodoDashboard";
 
 function fmtMoney(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "—";
@@ -34,18 +34,25 @@ export default function FinanceiroKpiDetalhePage() {
   const params = useParams<{ kpi?: string }>();
   const search = useSearch();
   const qs = parseSearch(search);
-  const mesYm =
-    qs.mes && /^\d{4}-\d{2}$/.test(qs.mes) ? qs.mes : mesAtualYm();
+  const granularidade: DashboardGranularidade =
+    qs.g && isDashboardGranularidade(qs.g) ? qs.g : "mes";
+  const ref =
+    qs.ref && qs.ref.length >= 4
+      ? qs.ref
+      : qs.mes && /^\d{4}-\d{2}$/.test(qs.mes)
+        ? qs.mes
+        : refDefaultDashboard(granularidade);
   const kpiRaw = params.kpi ?? "";
   const kpiOk = isDashboardKpiId(kpiRaw);
   const kpi = (kpiOk ? kpiRaw : "entrou") as DashboardKpiId;
 
   const q = trpc.financeiroCfo.dashboardKpiDetalhe.useQuery(
-    { mesYm, kpi },
+    { granularidade, ref, kpi },
     { enabled: kpiOk, staleTime: 30_000 },
   );
 
   const data = q.data;
+  const backHref = `/financeiro-cfo?g=${encodeURIComponent(granularidade)}&ref=${encodeURIComponent(ref)}`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -53,13 +60,19 @@ export default function FinanceiroKpiDetalhePage() {
       <main className="mx-auto w-full max-w-[1100px] space-y-5 px-4 py-6">
         <div className="flex flex-wrap items-center gap-3">
           <Button variant="outline" size="sm" asChild>
-            <Link href={`/financeiro-cfo?mes=${mesYm}`}>
+            <Link href={backHref}>
               <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
               Dashboard
             </Link>
           </Button>
+
           <Button variant="ghost" size="sm" asChild>
-            <Link href={`/financeiro-cfo/comparativo?mes=${mesYm}`}>
+            <Link
+              href={`/financeiro-cfo/comparativo?mes=${encodeURIComponent(
+                data?.mesYm ??
+                  (granularidade === "mes" ? ref : ref.slice(0, 7)),
+              )}`}
+            >
               Comparativo
             </Link>
           </Button>

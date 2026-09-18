@@ -29,6 +29,7 @@ import {
   upsertProjecaoCelula,
 } from "../financeiroProjecaoService";
 import { DASHBOARD_KPI_IDS } from "@shared/financeiroDashboardKpi";
+import { DASHBOARD_GRANULARIDADES } from "@shared/financeiroPeriodoDashboard";
 
 export const financeiroCfoRouter = router({
   /** Pacote financeiro Conta Azul + classificação editável do projeto. */
@@ -189,35 +190,50 @@ export const financeiroCfoRouter = router({
       }),
     ),
 
-  /** Dashboard principal: série 3 meses + snapshot do mês. */
+  /** Dashboard principal: série 3 meses + snapshot do período. */
   dashboard: custosProducaoModuleProcedure
     .input(
       z.object({
-        mesYm: z.string().regex(/^\d{4}-\d{2}$/),
+        granularidade: z.enum(DASHBOARD_GRANULARIDADES).default("mes"),
+        /** dia/semana: YYYY-MM-DD · mes: YYYY-MM · ano: YYYY */
+        ref: z.string().min(4).max(10).optional(),
+        /** Alias legado — equivalente a granularidade=mes + ref. */
+        mesYm: z.string().regex(/^\d{4}-\d{2}$/).optional(),
         forceRefreshCa: z.boolean().optional(),
       }),
     )
-    .query(async ({ ctx, input }) =>
-      carregarFinanceiroDashboard(projetoIdFromCtx(ctx), input.mesYm, {
+    .query(async ({ ctx, input }) => {
+      const ref = input.ref ?? input.mesYm;
+      if (!ref) throw new Error("Informe ref ou mesYm.");
+      return carregarFinanceiroDashboard(projetoIdFromCtx(ctx), {
+        granularidade: input.granularidade,
+        ref,
         forceRefreshCa: input.forceRefreshCa === true,
-      }),
-    ),
+      });
+    }),
 
   /** Linhas por trás de um KPI do dashboard. */
   dashboardKpiDetalhe: custosProducaoModuleProcedure
     .input(
       z.object({
-        mesYm: z.string().regex(/^\d{4}-\d{2}$/),
+        granularidade: z.enum(DASHBOARD_GRANULARIDADES).default("mes"),
+        ref: z.string().min(4).max(10).optional(),
+        mesYm: z.string().regex(/^\d{4}-\d{2}$/).optional(),
         kpi: z.enum(DASHBOARD_KPI_IDS),
       }),
     )
-    .query(async ({ ctx, input }) =>
-      carregarDashboardKpiDetalhe(
+    .query(async ({ ctx, input }) => {
+      const ref = input.ref ?? input.mesYm;
+      if (!ref) throw new Error("Informe ref ou mesYm.");
+      return carregarDashboardKpiDetalhe(
         projetoIdFromCtx(ctx),
-        input.mesYm,
+        {
+          granularidade: input.granularidade,
+          ref,
+        },
         input.kpi,
-      ),
-    ),
+      );
+    }),
 
   salvarCelulaProjecao: custosProducaoModuleProcedure
     .input(

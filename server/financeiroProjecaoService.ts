@@ -24,10 +24,12 @@ import {
   type ParcelaBaseProjecao,
 } from "@shared/financeiroProjecaoDesembolso";
 import {
+  agregarReceitaCaixaPeriodo,
   montarComparativoDesembolsoMes,
   montarComparativoReceitaMes,
   montarFinanceiroComparativo,
   resumirBaixasPorCategoria,
+  somarDesembolsoPagoPeriodo,
   somarRecebidoUltimosNDias,
   somarValorPagoParcelas,
 } from "@shared/financeiroComparativoProjecao";
@@ -36,6 +38,11 @@ import {
   montarSerieDashboard3Meses,
   type FinanceiroDashboardPayload,
 } from "@shared/financeiroDashboard";
+import {
+  resolverPeriodoDashboard,
+  type DashboardGranularidade,
+  type PeriodoDashboardResolvido,
+} from "@shared/financeiroPeriodoDashboard";
 import type {
   DashboardKpiDetalhe,
   DashboardKpiId,
@@ -62,13 +69,6 @@ import { OrigemPedido } from "./comercial/generated/prisma/index.js";
 import { getComercialPrisma } from "./comercial/db";
 import { composicaoDoPedidoParaDashboard } from "./comercial/lib/composicao-valor.js";
 import { classificarStatusPedido } from "./comercial/lib/pedido-status.js";
-
-function boundsMesYm(ym: string): { inicio: Date; fim: Date } {
-  const [y, m] = ym.split("-").map(Number);
-  const inicio = new Date(y, m - 1, 1, 0, 0, 0, 0);
-  const fim = new Date(y, m, 0, 23, 59, 59, 999);
-  return { inicio, fim };
-}
 
 /** Limites do mês no calendário America/Sao_Paulo (alinhado ao Conta Azul). */
 function boundsMesYmAmericaSp(ym: string): { inicio: Date; fim: Date } {
@@ -157,7 +157,7 @@ async function carregarParcelasBaseMes(
   if (!forceRefresh && hit && Date.now() - hit.at < CACHE_TTL_MS) {
     return hit.parcelas;
   }
-  const { inicio, fim } = boundsMesYm(mesYm);
+  const { inicio, fim } = boundsMesYmAmericaSp(mesYm);
   const raw = await buscarParcelasPagarParaProjecao(inicio, fim, projetoId);
   const parcelas = raw.map(toBase);
   parcelasCache.set(key, { at: Date.now(), parcelas });
@@ -544,15 +544,42 @@ export async function carregarComparativoProjecao(
 }
 
 /**
- * Dashboard principal: série de 3 meses + snapshot do mês selecionado.
+ * Dashboard principal: série 3 meses (âncora) + snapshot do período.
  */
+export type CarregarFinanceiroDashboardInput = {
+  granularidade?: DashboardGranularidade;
+  /** dia/semana: YYYY-MM-DD · mes: YYYY-MM · ano: YYYY */
+  ref?: string;
+  /** Alias legado de ref quando granularidade=mes. */
+  mesYm?: string;
+  forceRefreshCa?: boolean;
+};
+
 export async function carregarFinanceiroDashboard(
   projetoId: number,
-  mesYm: string,
-  opts?: { forceRefreshCa?: boolean },
+  mesYmOuInput: string | CarregarFinanceiroDashboardInput,
+  optsLegacy?: { forceRefreshCa?: boolean },
 ) {
+  const input: CarregarFinanceiroDashboardInput =
+    typeof mesYmOuInput === "string"
+      ? {
+          granularidade: "mes",
+          ref: mesYmOuInput,
+          forceRefreshCa: optsLegacy?.forceRefreshCa,
+        }
+      : mesYmOuInput;
+
+  const granularidade = input.granularidade ?? "mes";
+  const refBruta = input.ref ?? input.mesYm;
+  if (!refBruta) throw new Error("Informe ref ou mesYm.");
+
+  const periodo: PeriodoDashboardResolvido = resolverPeriodoDashboard(
+    granularidade,
+    refBruta,
+  );
+  const mesYm = periodo.mesYmAncora;
   if (!/^\d{4}-\d{2}$/.test(mesYm)) {
-    throw new Error("Mês inválido (AAAA-MM).");
+    throw new Error("Mês âncora inválido (AAAA-MM).");
   }
 
   const mes1 = mesAnteriorProjecao(mesYm);
@@ -560,7 +587,7 @@ export async function carregarFinanceiroDashboard(
   const hojeIso = diaIsoAmericaSp();
   const hojeYm = mesIsoAmericaSp();
   const diaHoje = Number(hojeIso.slice(8, 10));
-  const force = opts?.forceRefreshCa === true;
+  const force = input.forceRefreshCa === true;
 
   const bounds = (ym: string) => boundsMesYmAmericaSp(ym);
 
@@ -579,6 +606,8 @@ export async function carregarFinanceiroDashboard(
     baixasRest1,
     baixasRest2,
     vendas,
+    pagarPeriodo,
+    receberPeriodo,
   ] = await Promise.all([
     carregarProjecaoDesembolso(projetoId, mes2, { forceRefreshCa: force }),
     carregarProjecaoDesembolso(projetoId, mesYm, { forceRefreshCa: force }),
@@ -631,6 +660,20 @@ export async function carregarFinanceiroDashboard(
       ).map(toBase);
     })(),
     carregarTotaisVendasCompetencia(mesYm, { hojeYm, diaHoje }),
+    periodo.planoAlinhadoAoPeriodo
+      ? Promise.resolve([] as ParcelaBaseProjecao[])
+      : buscarParcelasPagarParaProjecao(
+          periodo.inicio,
+          periodo.fim,
+          projetoId,
+        ).then(r => r.map(toBase)),
+    periodo.planoAlinhadoAoPeriodo
+      ? Promise.resolve([] as ParcelaBaseProjecao[])
+      : buscarParcelasReceberParaComparativo(
+          periodo.inicio,
+          periodo.fim,
+          projetoId,
+        ).then(r => r.map(toBase)),
   ]);
 
   const desembolsoDe = (
@@ -752,17 +795,108 @@ export async function carregarFinanceiroDashboard(
     (rMes.projecaoVendas.projecaoMesTotal - dMes.totais.projetado) * 100,
   ) / 100;
 
+  const periodoMeta = {
+    granularidade: periodo.granularidade,
+    ref: periodo.ref,
+    inicioIso: periodo.inicioIso,
+    fimIso: periodo.fimIso,
+    label: periodo.label,
+    mesYmAncora: periodo.mesYmAncora,
+    planoAlinhadoAoPeriodo: periodo.planoAlinhadoAoPeriodo,
+  };
+
+  let receitaOut = {
+    previsto: rMes.previsto,
+    recebido: rMes.recebido,
+    aReceberNoMes: rMes.aReceberNoMes,
+    vencido: rMes.vencido,
+    aReceber: rMes.aReceber,
+    pctRecebidoDoPrevisto: rMes.pctRecebidoDoPrevisto,
+    vendasCompetencia: rMes.vendasCompetencia,
+  };
+  let desembolsoTotaisOut = { ...dMes.totais };
+  let saldoRealizado = mesAtual.saldoCaixa;
+  const avisos: string[] = [
+    `Ainda entra = baixas do período sem investimento/aporte${idsVendas.length ? ` (catálogo DRE vendas: ${idsVendas.length})` : ""}.`,
+    (() => {
+      const cats = resumirBaixasPorCategoria(
+        [...baixasRest1, ...baixasRest2],
+        { top: 6 },
+      );
+      if (!cats.length) return "Sem baixas nos últimos N dias de jul/ago.";
+      return (
+        "Categorias nas baixas: " +
+        cats
+          .map(
+            c =>
+              `${c.rubrica} R$ ${c.total.toLocaleString("pt-BR")}${c.incluido ? "" : " [excluída]"}`,
+          )
+          .join(" · ")
+      );
+    })(),
+    "Projeção de fechar (caixa) = recebido + ainda entra (sem a receber).",
+    "Faturado/orçamento = volume de pedidos — não some com recebido.",
+  ];
+
+  // Dia/semana/ano: KPIs de caixa no intervalo; plano/mapa ficam no mês âncora.
+  if (!periodo.planoAlinhadoAoPeriodo) {
+    const caixaPeriodo = agregarReceitaCaixaPeriodo({
+      parcelasReceber: receberPeriodo,
+      inicioIso: periodo.inicioIso,
+      fimIso: periodo.fimIso,
+      hojeIso,
+    });
+    const pagoPeriodo = somarDesembolsoPagoPeriodo(
+      pagarPeriodo,
+      periodo.inicioIso,
+      periodo.fimIso,
+    );
+    receitaOut = {
+      ...receitaOut,
+      previsto: caixaPeriodo.previsto,
+      recebido: caixaPeriodo.recebido,
+      aReceberNoMes: caixaPeriodo.aReceberNoMes,
+      vencido: caixaPeriodo.vencido,
+      aReceber: caixaPeriodo.aReceber,
+      pctRecebidoDoPrevisto: caixaPeriodo.pctRecebidoDoPrevisto,
+    };
+    desembolsoTotaisOut = {
+      ...desembolsoTotaisOut,
+      pago: pagoPeriodo,
+      desvio: Math.round((pagoPeriodo - desembolsoTotaisOut.projetado) * 100) / 100,
+      desvioPct:
+        desembolsoTotaisOut.projetado > 0
+          ? Math.round(
+              ((pagoPeriodo - desembolsoTotaisOut.projetado) /
+                desembolsoTotaisOut.projetado) *
+                10_000,
+            ) / 100
+          : null,
+      pctPagoDoProjetado:
+        desembolsoTotaisOut.projetado > 0
+          ? Math.round((pagoPeriodo / desembolsoTotaisOut.projetado) * 10_000) /
+            100
+          : null,
+    };
+    saldoRealizado =
+      Math.round((caixaPeriodo.recebido - pagoPeriodo) * 100) / 100;
+    avisos.unshift(
+      `Caixa filtrado: ${periodo.label}. Plano / mapa / saldo projetado = mês ${labelMesYm(mesYm)}.`,
+    );
+  }
+
   return {
     mesYm,
     labelMes: labelMesYm(mesYm),
+    periodo: periodoMeta,
     serie3Meses,
     mesAtual,
     projecaoVendas: rMes.projecaoVendas,
     caixa: {
-      saldoRealizado: mesAtual.saldoCaixa,
+      saldoRealizado,
       gapCaixaMes,
     },
-    desembolsoTotais: dMes.totais,
+    desembolsoTotais: desembolsoTotaisOut,
     desembolsoPorRubrica: dMes.rubricas
       .map(r =>
         classificarRubricaDashboard({
@@ -776,36 +910,8 @@ export async function carregarFinanceiroDashboard(
       )
       .filter((r): r is NonNullable<typeof r> => r != null)
       .sort((a, b) => b.valorAcao - a.valorAcao),
-    receita: {
-      previsto: rMes.previsto,
-      recebido: rMes.recebido,
-      aReceberNoMes: rMes.aReceberNoMes,
-      vencido: rMes.vencido,
-      aReceber: rMes.aReceber,
-      pctRecebidoDoPrevisto: rMes.pctRecebidoDoPrevisto,
-      vendasCompetencia: rMes.vendasCompetencia,
-    },
-    avisos: [
-      `Ainda entra = baixas do período sem investimento/aporte${idsVendas.length ? ` (catálogo DRE vendas: ${idsVendas.length})` : ""}.`,
-      (() => {
-        const cats = resumirBaixasPorCategoria(
-          [...baixasRest1, ...baixasRest2],
-          { top: 6 },
-        );
-        if (!cats.length) return "Sem baixas nos últimos N dias de jul/ago.";
-        return (
-          "Categorias nas baixas: " +
-          cats
-            .map(
-              c =>
-                `${c.rubrica} R$ ${c.total.toLocaleString("pt-BR")}${c.incluido ? "" : " [excluída]"}`,
-            )
-            .join(" · ")
-        );
-      })(),
-      "Projeção de fechar (caixa) = recebido + ainda entra (sem a receber).",
-      "Faturado/orçamento = volume de pedidos — não some com recebido.",
-    ],
+    receita: receitaOut,
+    avisos,
   } satisfies FinanceiroDashboardPayload;
 }
 
@@ -821,9 +927,24 @@ function fmtDataBr(iso: string | null | undefined): string | null {
  */
 export async function carregarDashboardKpiDetalhe(
   projetoId: number,
-  mesYm: string,
+  mesYmOuInput:
+    | string
+    | {
+        granularidade?: DashboardGranularidade;
+        ref?: string;
+        mesYm?: string;
+      },
   kpi: DashboardKpiId,
 ): Promise<DashboardKpiDetalhe> {
+  const raw =
+    typeof mesYmOuInput === "string"
+      ? { granularidade: "mes" as const, ref: mesYmOuInput }
+      : mesYmOuInput;
+  const granularidade = raw.granularidade ?? "mes";
+  const refBruta = raw.ref ?? raw.mesYm;
+  if (!refBruta) throw new Error("Informe ref ou mesYm.");
+  const periodo = resolverPeriodoDashboard(granularidade, refBruta);
+  const mesYm = periodo.mesYmAncora;
   if (!/^\d{4}-\d{2}$/.test(mesYm)) {
     throw new Error("Mês inválido (AAAA-MM).");
   }
@@ -831,7 +952,9 @@ export async function carregarDashboardKpiDetalhe(
   const hojeIso = diaIsoAmericaSp();
   const hojeYm = mesIsoAmericaSp();
   const diaHoje = Number(hojeIso.slice(8, 10));
-  const labelMes = labelMesYm(mesYm);
+  const labelMes = periodo.planoAlinhadoAoPeriodo
+    ? labelMesYm(mesYm)
+    : periodo.label;
   const base = {
     kpi,
     mesYm,
@@ -968,7 +1091,9 @@ export async function carregarDashboardKpiDetalhe(
   }
 
   if (kpi === "entrou" || kpi === "a-receber" || kpi === "em-atraso") {
-    const bounds = boundsMesYmAmericaSp(mesYm);
+    const bounds = periodo.planoAlinhadoAoPeriodo
+      ? boundsMesYmAmericaSp(mesYm)
+      : { inicio: periodo.inicio, fim: periodo.fim };
     const receber = (
       await buscarParcelasReceberParaComparativo(
         bounds.inicio,
@@ -976,6 +1101,56 @@ export async function carregarDashboardKpiDetalhe(
         projetoId,
       )
     ).map(toBase);
+
+    if (!periodo.planoAlinhadoAoPeriodo) {
+      const caixa = agregarReceitaCaixaPeriodo({
+        parcelasReceber: receber,
+        inicioIso: periodo.inicioIso,
+        fimIso: periodo.fimIso,
+        hojeIso,
+      });
+      if (kpi === "entrou") {
+        const linhas: DashboardKpiLinha[] = receber
+          .filter(p => {
+            const dp = (p.dataPagamento ?? p.dataVencimento ?? "").slice(0, 10);
+            return (
+              valorPagoParcela(p) > 0.009 &&
+              dp >= periodo.inicioIso &&
+              dp <= periodo.fimIso
+            );
+          })
+          .map(p => ({
+            id: p.id,
+            titulo: p.descricao,
+            subtitulo: p.fornecedor,
+            valor: valorPagoParcela(p),
+            meta: (p.dataPagamento ?? p.dataVencimento ?? "").slice(0, 10),
+            grupo: p.rubrica ?? undefined,
+          }))
+          .sort((a, b) => b.valor - a.valor);
+        return linhasDe(
+          linhas,
+          "Entrou (recebido)",
+          `Baixas Conta Azul em ${periodo.label}.`,
+          caixa.recebido,
+        );
+      }
+      if (kpi === "em-atraso") {
+        return linhasDe(
+          [],
+          "Em atraso",
+          `Vencidos em aberto no período ${periodo.label}.`,
+          caixa.vencido,
+        );
+      }
+      return linhasDe(
+        [],
+        "A receber no período",
+        `Em aberto com vencimento em ${periodo.label}.`,
+        caixa.aReceberNoMes,
+      );
+    }
+
     const r = montarComparativoReceitaMes({
       mesYm,
       parcelasReceberMes: receber,
