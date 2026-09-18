@@ -424,70 +424,79 @@ export default function FinanceiroDashboardPage() {
                     ) : (
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                         <div className="relative mx-auto h-48 w-full max-w-[220px] shrink-0 sm:mx-0">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={pizzaDesembolso}
-                                dataKey="value"
-                                nameKey="name"
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={52}
-                                outerRadius={78}
-                                paddingAngle={
-                                  pizzaDesembolso.length > 1 ? 2 : 0
-                                }
-                                stroke={pieStroke}
-                                strokeWidth={2}
-                                isAnimationActive
-                              >
-                                {pizzaDesembolso.map((_, i) => (
-                                  <Cell
-                                    key={i}
-                                    fill={pieSliceSolidFill(i)}
-                                  />
-                                ))}
-                              </Pie>
-                              <Tooltip
-                                content={({ active, payload }) => {
-                                  const row = payload?.[0]?.payload as
-                                    | (typeof pizzaDesembolso)[number]
-                                    | undefined;
-                                  if (!active || !row) return null;
-                                  return (
-                                    <ChartTip
-                                      active
-                                      label={row.name}
-                                      rows={[
-                                        {
-                                          label: "No plano",
-                                          value: fmtMoney(row.value),
-                                          accent: CHART.blue.stroke,
-                                        },
-                                        {
-                                          label: "Já pago",
-                                          value: fmtMoney(row.pago),
-                                          accent: CHART.green.dark,
-                                        },
-                                        {
-                                          label: "Do plano",
-                                          value: `${row.pct}%`,
-                                          muted: true,
-                                        },
-                                      ]}
-                                    />
-                                  );
-                                }}
-                              />
-                            </PieChart>
-                          </ResponsiveContainer>
-                          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                          {/* Centro atrás do gráfico; o furo do donut deixa ver o total. */}
+                          <div className="pointer-events-none absolute inset-0 z-0 flex flex-col items-center justify-center">
                             <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                               Plano
                             </p>
                             <p className="text-sm font-semibold tabular-nums">
                               {fmtMoneyShort(des?.projetado ?? 0)}
                             </p>
+                          </div>
+                          <div className="relative z-10 h-full w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={pizzaDesembolso}
+                                  dataKey="value"
+                                  nameKey="name"
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={52}
+                                  outerRadius={78}
+                                  paddingAngle={
+                                    pizzaDesembolso.length > 1 ? 2 : 0
+                                  }
+                                  stroke={pieStroke}
+                                  strokeWidth={2}
+                                  isAnimationActive
+                                >
+                                  {pizzaDesembolso.map((_, i) => (
+                                    <Cell
+                                      key={i}
+                                      fill={pieSliceSolidFill(i)}
+                                    />
+                                  ))}
+                                </Pie>
+                                <Tooltip
+                                  wrapperStyle={{
+                                    zIndex: 40,
+                                    outline: "none",
+                                    pointerEvents: "none",
+                                  }}
+                                  allowEscapeViewBox={{ x: true, y: true }}
+                                  content={({ active, payload }) => {
+                                    const row = payload?.[0]?.payload as
+                                      | (typeof pizzaDesembolso)[number]
+                                      | undefined;
+                                    if (!active || !row) return null;
+                                    return (
+                                      <ChartTip
+                                        active
+                                        label={row.name}
+                                        rows={[
+                                          {
+                                            label: "No plano",
+                                            value: fmtMoney(row.value),
+                                            accent: CHART.blue.stroke,
+                                          },
+                                          {
+                                            label: "Já pago",
+                                            value: fmtMoney(row.pago),
+                                            accent: CHART.green.dark,
+                                          },
+                                          {
+                                            label: "Do plano",
+                                            value: `${row.pct}%`,
+                                            muted: true,
+                                          },
+                                        ]}
+                                      />
+                                    );
+                                  }}
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
                           </div>
                         </div>
                         <ul className="min-w-0 flex-1 space-y-1.5 text-[11px]">
