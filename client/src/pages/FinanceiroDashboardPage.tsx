@@ -135,8 +135,8 @@ function ChartTip({
 }) {
   if (!active || !rows.length) return null;
   return (
-    <div className="rounded-xl border border-border/80 bg-card/95 px-3.5 py-2.5 shadow-lg backdrop-blur-md">
-      <p className="mb-1.5 text-xs font-semibold capitalize text-foreground">
+    <div className="relative z-50 min-w-[11rem] rounded-xl border border-border/80 bg-card px-3.5 py-2.5 shadow-lg">
+      <p className="mb-1.5 truncate text-xs font-semibold text-foreground">
         {label}
       </p>
       <ul className="space-y-1">
@@ -158,7 +158,7 @@ function ChartTip({
               ) : null}
               {r.label}
             </span>
-            <span className="tabular-nums font-semibold text-foreground">
+            <span className="shrink-0 tabular-nums font-semibold text-foreground">
               {r.value}
             </span>
           </li>
