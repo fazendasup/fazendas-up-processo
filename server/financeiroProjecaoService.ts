@@ -247,14 +247,20 @@ async function carregarTotaisVendasCompetencia(
     if (cls !== "venda" && cls !== "orcamento") continue;
     const liquido = composicaoDoPedidoParaDashboard(p).valorLiquido;
     if (!Number.isFinite(liquido) || liquido === 0) continue;
-    if (cls === "orcamento" && p.clienteId) {
+    const dataPedidoIso = diaIsoAmericaSp(p.dataPedido);
+    // Lista do filtro: só clientes com orçamento no mês selecionado.
+    if (
+      cls === "orcamento" &&
+      p.clienteId &&
+      dataPedidoIso.slice(0, 7) === mesYm
+    ) {
       clientesMap.set(
         p.clienteId,
         p.cliente?.nome?.trim() || p.clienteId,
       );
     }
     items.push({
-      dataPedidoIso: diaIsoAmericaSp(p.dataPedido),
+      dataPedidoIso,
       status: cls,
       valorLiquido: liquido,
       clienteId: p.clienteId,

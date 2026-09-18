@@ -171,6 +171,16 @@ export default function FinanceiroComparativoPage() {
     [orcFiltros?.clientesOpcoes],
   );
 
+  // Remove da seleção clientes que não têm orçamento neste mês.
+  useEffect(() => {
+    if (!orcFiltros?.clientesOpcoes) return;
+    const valid = new Set(orcFiltros.clientesOpcoes.map(c => c.id));
+    setClienteIdsOrcamento(prev => {
+      const next = prev.filter(id => valid.has(id));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [orcFiltros?.clientesOpcoes]);
+
   const rubricas = useMemo(() => d?.rubricas ?? [], [d?.rubricas]);
   const [abertas, setAbertas] = useState<Set<string>>(() => new Set());
   const [vencidosAberto, setVencidosAberto] = useState(false);
