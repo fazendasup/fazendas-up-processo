@@ -334,6 +334,8 @@ describe("montarComparativoReceitaMes", () => {
     expect(out.vendasCompetencia.vendasFaturadas).toBe(1_200);
     expect(out.vendasCompetencia.orcamentos).toBe(500);
     expect(out.vendasCompetencia.total).toBe(1_700);
+    // Orçamento não entra no "já no mês" da projeção
+    expect(out.projecaoVendas.vendasJaNoMes).toBe(1_200);
     expect(out.projecaoVendas.mediaRestante2m).toBe(1_300);
     expect(out.projecaoVendas.mediaAteMesmoDia2m).toBe(1_900);
     expect(out.projecaoVendas.aindaEntraProjetado).toBe(1_300);

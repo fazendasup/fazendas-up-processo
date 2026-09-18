@@ -756,7 +756,7 @@ export default function FinanceiroComparativoPage() {
                 <Kpi
                   title="Projeção de fechar (caixa)"
                   value={fmtMoney(r?.projecaoVendas?.projecaoMesTotal)}
-                  hint="Recebido + em aberto + ainda entra (caixa)"
+                  hint="Recebido + em aberto + ainda entra (caixa). Orçamentos não entram."
                 />
               </div>
             </section>

@@ -735,9 +735,9 @@ export async function carregarFinanceiroDashboard(
         mesYm,
         vendasFaturadas: vMes.vendas,
         orcamentos: vMes.orcamentos,
-        vendasReal: vMes.total,
-        // Projeção alinhada ao “ainda entra” (média caixa vendas, não volume).
-        vendasProjetado: vMes.total + mediaCaixaRestante,
+        vendasReal: vMes.vendas,
+        // Projetado = faturado + ainda entra (caixa). Orçamento não entra.
+        vendasProjetado: vMes.vendas + mediaCaixaRestante,
         desembolsoProjetado: dMes.totais.projetado,
         desembolsoPago: dMes.totais.pago,
         previsto: rMes.previsto,

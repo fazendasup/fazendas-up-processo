@@ -468,6 +468,7 @@ export function montarComparativoReceitaMes(input: {
 
   const vendasFaturadas = round2(input.vendasFaturadasMes ?? 0);
   const orcamentos = round2(input.orcamentosCompetenciaMes ?? 0);
+  // Volume do mês (exibição): faturado + orçamento.
   const vendasMesAtual = round2(
     input.vendasMesAtual ?? vendasFaturadas + orcamentos,
   );
@@ -476,7 +477,9 @@ export function montarComparativoReceitaMes(input: {
     mesYm,
     hojeYm,
     diaHoje,
-    vendasMesAtual,
+    // Projetado de fechar NÃO inclui orçamento — só volume já faturado
+    // (a projeção de caixa sobrescreve projecaoMesTotal abaixo).
+    vendasMesAtual: vendasFaturadas,
     vendasAteDiaMesAnterior1: input.vendasAteDiaMesAnterior1 ?? 0,
     vendasAteDiaMesAnterior2: input.vendasAteDiaMesAnterior2 ?? 0,
     // Estes dois campos passam a ser baixas Conta Azul (caixa), não volume.
@@ -486,6 +489,7 @@ export function montarComparativoReceitaMes(input: {
     mesAnterior2Ym: mes2,
   });
   // Projeção de fechar o mês em caixa: já no pipeline CA + o que ainda entra.
+  // Orçamentos ficam só em vendasCompetencia (pipeline comercial).
   const projecaoMesTotal = round2(
     recebido + aReceber + projecaoVendasBase.aindaEntraProjetado,
   );
@@ -519,6 +523,105 @@ export function montarComparativoReceitaMes(input: {
     projecaoVendas,
     gapVsProjecaoVendas,
   };
+}
+
+/**
+ * Totais de caixa no intervalo [inicioIso, fimIso] (dias America/SP).
+ * Recebido = baixas com pagamento no intervalo.
+ * Em aberto = vencimento no intervalo (no prazo vs atrasado vs hoje).
+ */
+export function agregarReceitaCaixaPeriodo(input: {
+  parcelasReceber: ParcelaBaseProjecao[];
+  inicioIso: string;
+  fimIso: string;
+  hojeIso: string;
+}): {
+  recebido: number;
+  aReceberNoMes: number;
+  vencido: number;
+  aReceber: number;
+  previsto: number;
+} {
+  const { inicioIso, fimIso, hojeIso } = input;
+  let recebido = 0;
+  let aReceberNoMes = 0;
+  let vencido = 0;
+  let previsto = 0;
+  const porId = new Map<string, ParcelaBaseProjecao>();
+  for (const p of input.parcelasReceber) {
+    if (!porId.has(p.id)) porId.set(p.id, p);
+  }
+
+  for (const p of Array.from(porId.values())) {
+    const vencIso = (p.dataVencimento ?? "").slice(0, 10);
+    const pagIso = (p.dataPagamento ?? "").slice(0, 10);
+    const aberto = p.valorEmAberto > 0.009;
+
+    const vencNoPeriodo =
+      !!vencIso &&
+      /^\d{4}-\d{2}-\d{2}$/.test(vencIso) &&
+      vencIso >= inicioIso &&
+      vencIso <= fimIso;
+
+    if (vencNoPeriodo) {
+      const valorTitulo = round2(
+        p.valor > 0 ? p.valor : p.valorPago + p.valorEmAberto,
+      );
+      if (valorTitulo > 0) previsto += valorTitulo;
+      if (aberto) {
+        const jaVenceu = !!vencIso && vencIso < hojeIso;
+        if (jaVenceu) vencido += p.valorEmAberto;
+        else aReceberNoMes += p.valorEmAberto;
+      }
+    }
+
+    let pagRef = pagIso;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(pagRef)) {
+      const mesPag = mesPagamentoParcela(p);
+      if (mesPag && vencIso && vencIso.startsWith(mesPag)) pagRef = vencIso;
+      else if (mesPag) pagRef = `${mesPag}-01`;
+    }
+    if (
+      /^\d{4}-\d{2}-\d{2}$/.test(pagRef) &&
+      pagRef >= inicioIso &&
+      pagRef <= fimIso
+    ) {
+      const pago = valorPagoParcela(p);
+      if (pago > 0) recebido += pago;
+    }
+  }
+
+  aReceberNoMes = round2(aReceberNoMes);
+  vencido = round2(vencido);
+  return {
+    recebido: round2(recebido),
+    aReceberNoMes,
+    vencido,
+    aReceber: round2(aReceberNoMes + vencido),
+    previsto: round2(previsto),
+  };
+}
+
+/** Soma valor pago de a-pagar com data de pagamento no intervalo. */
+export function somarDesembolsoPagoPeriodo(
+  parcelasPagar: ParcelaBaseProjecao[],
+  inicioIso: string,
+  fimIso: string,
+): number {
+  let total = 0;
+  for (const p of parcelasPagar) {
+    if (ehNaoDesembolsoCusto(p)) continue;
+    const pago = valorPagoParcela(p);
+    if (pago <= 0) continue;
+    let pagRef = (p.dataPagamento ?? "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(pagRef)) {
+      const mesPag = mesPagamentoParcela(p);
+      if (!mesPag) continue;
+      pagRef = `${mesPag}-15`;
+    }
+    if (pagRef >= inicioIso && pagRef <= fimIso) total += pago;
+  }
+  return round2(total);
 }
 
 /** Soma do recebido (baixa) em um mês a partir das parcelas. */
