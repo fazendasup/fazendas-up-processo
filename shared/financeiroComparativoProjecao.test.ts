@@ -20,7 +20,7 @@ function parcela(
 ): ParcelaBaseProjecao {
   return {
     fornecedor: partial.fornecedor ?? "Cliente",
-    rubrica: partial.rubrica ?? "Vendas",
+    rubrica: partial.rubrica ?? "Receitas de Vendas",
     valor: partial.valor ?? 0,
     valorPago: partial.valorPago ?? 0,
     valorEmAberto: partial.valorEmAberto ?? 0,
