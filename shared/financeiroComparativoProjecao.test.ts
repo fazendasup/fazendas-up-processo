@@ -68,14 +68,24 @@ describe("ehCreditoOuDescontoObtido", () => {
 });
 
 describe("ehReceitaVendasCaixa", () => {
-  it("aceita DRE operacional e rejeita outras entradas", () => {
+  it("aceita categoria Receitas de Vendas (Conta Azul)", () => {
     expect(
       ehReceitaVendasCaixa({
-        descricao: "x",
-        rubrica: "Qualquer",
+        descricao: "Venda 4903 / NF-e:4002",
+        rubrica: "Receitas de Vendas",
+        entradaDre: null,
+      }),
+    ).toBe(true);
+    expect(
+      ehReceitaVendasCaixa({
+        descricao: "Venda 4903 / NF-e:4002",
+        rubrica: "Receitas de Vendas",
         entradaDre: "RECEITA_OPERACIONAL_BRUTA",
       }),
     ).toBe(true);
+  });
+
+  it("rejeita OUTRAS_RECEITAS e investimento/aporte", () => {
     expect(
       ehReceitaVendasCaixa({
         descricao: "x",
@@ -83,9 +93,6 @@ describe("ehReceitaVendasCaixa", () => {
         entradaDre: "OUTRAS_RECEITAS",
       }),
     ).toBe(false);
-  });
-
-  it("exclui investimento/aporte mesmo com DRE de venda", () => {
     expect(
       ehReceitaVendasCaixa({
         descricao: "Aporte sócio 404 mil",
@@ -95,35 +102,21 @@ describe("ehReceitaVendasCaixa", () => {
     ).toBe(false);
     expect(
       ehReceitaVendasCaixa({
-        descricao: "Integralização de capital",
-        rubrica: "Outras receitas",
+        descricao: "Cliente Hortifruti",
+        rubrica: "Recebimento",
         entradaDre: null,
       }),
     ).toBe(false);
   });
 
-  it("sem DRE: inclui receber genérico; exclui juros", () => {
+  it("aceita descrição Venda N / NF-e sem DRE", () => {
     expect(
       ehReceitaVendasCaixa({
-        descricao: "Cliente Hortifruti",
-        rubrica: "Recebimento",
+        descricao: "Venda 12 / NF-e:99",
+        rubrica: null,
         entradaDre: null,
       }),
     ).toBe(true);
-    expect(
-      ehReceitaVendasCaixa({
-        descricao: "Pedido 12",
-        rubrica: "Vendas de produtos",
-        entradaDre: null,
-      }),
-    ).toBe(true);
-    expect(
-      ehReceitaVendasCaixa({
-        descricao: "Rendimento CDB",
-        rubrica: "Juros recebidos",
-        entradaDre: null,
-      }),
-    ).toBe(false);
   });
 });
 

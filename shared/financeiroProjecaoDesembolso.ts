@@ -125,19 +125,28 @@ function textoClassificacaoReceita(
 /**
  * Parcela de contas a receber = receita de vendas (caixa operacional).
  *
- * Contas a receber misturam venda, aporte, juros, etc. Regra prática:
- * 1. Investimento / aporte / capital / mútuo → nunca
- * 2. DRE RECEITA_OPERACIONAL_BRUTA → sim
- * 3. DRE OUTRAS_RECEITAS / despesa / dedução → não
- * 4. Sem DRE → sim (receber genérico), exceto padrões não-venda
+ * No Conta Azul a venda aparece assim:
+ *   categoria = "Receitas de Vendas"
+ *   descrição = "Venda 4903 / NF-e:4002"
  *
- * Não exigir a palavra "venda" na rúbrica: no Conta Azul a categoria
- * costuma ser outro nome e isso zerava o ainda-entra.
+ * Aceita categoria "Receitas de Vendas" (e afins) ou descrição "Venda N / NF-e".
+ * Rejeita investimento/aporte e DRE não-operacional (OUTRAS_RECEITAS etc.).
  */
 export function ehReceitaVendasCaixa(
   p: Pick<ParcelaBaseProjecao, "descricao" | "rubrica" | "entradaDre">,
 ): boolean {
   const t = textoClassificacaoReceita(p.descricao, p.rubrica);
+  const rubrica = (p.rubrica ?? "")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .trim();
+  const descricao = (p.descricao ?? "")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .trim();
+
   if (
     t &&
     /\b(investimento|investimentos|aporte|aportes|integraliza|capital social|entrada de capital|aumento de capital|m.?utuo|emprestimo|emprestimos|financiamento|socios?|quotista|quotistas)\b/.test(
@@ -148,23 +157,30 @@ export function ehReceitaVendasCaixa(
   }
 
   const dre = (p.entradaDre ?? "").trim().toUpperCase();
-  if (dre === ENTRADA_DRE_RECEITA_VENDAS) return true;
   if (dre && ENTRADAS_DRE_NAO_VENDA.has(dre)) return false;
-  if (dre) {
-    if (/^(DESPESA|CUSTO|DEDUC|OUTRAS_)/.test(dre)) return false;
-    return false;
+  if (dre && /^(DESPESA|CUSTO|DEDUC|OUTRAS_)/.test(dre)) return false;
+
+  // Categoria canônica do Conta Azul: "Receitas de Vendas"
+  if (
+    /^receitas?\s+de\s+vendas?$/.test(rubrica) ||
+    /^venda(s)?\s+de\s+(produtos?|mercadorias?)$/.test(rubrica)
+  ) {
+    return true;
   }
 
+  // Descrição típica: "Venda 4903 / NF-e:4002"
   if (
-    t &&
-    /\b(juros|rendiment|aplicacao financeira|transferencia entre contas|adiantamento salarial|outras receitas|receita financeira|recupera[cç][aã]o de despesa|indeniza|reembolso de despesa|devolucao de capital)\b/.test(
-      t,
-    )
+    /^(venda|orcamento)\s+\d+/.test(descricao) ||
+    /\bnf-?e\s*:?\s*\d+/.test(descricao)
   ) {
-    return false;
+    return true;
   }
-  // Sem DRE resolvido: conta a receber do período entra (investimento já cortado acima).
-  return true;
+
+  if (dre === ENTRADA_DRE_RECEITA_VENDAS) {
+    return /\b(venda|vendas|faturamento|mercadoria|produto|servico)\b/.test(t);
+  }
+
+  return false;
 }
 
 function round2(n: number): number {

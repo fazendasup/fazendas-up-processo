@@ -755,7 +755,7 @@ export default function FinanceiroDashboardPage() {
                   value={fmtMoney(pv?.aindaEntraProjetado)}
                   hint={
                     pv
-                      ? `Média das baixas (sem investimento/aporte) nos últimos ${pv.diasRestantes} dia(s) · jul/ago`
+                      ? `Só categoria "Receitas de Vendas" · média últimos ${pv.diasRestantes} dia(s) jul/ago`
                       : undefined
                   }
                 />
