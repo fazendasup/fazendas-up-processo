@@ -2,7 +2,8 @@
  * Projeção de vendas no restante do mês.
  * Restante = média do que foi vendido nos últimos N dias dos 2 meses anteriores
  * (N = dias que faltam no mês atual).
- * Orçamentos: só entram no mês se data ≤ dia 15 (após o dia 15 não contam até virar venda).
+ * Orçamentos: entram no mês se data ≤ diaLimite (default 15); após isso não contam
+ * até virar venda. Opcionalmente filtrados por cliente.
  */
 
 function round2(n: number): number {
@@ -17,20 +18,40 @@ export function diasNoMesYm(ym: string): number {
 
 export type StatusPedidoVendaOrcamento = "venda" | "orcamento";
 
+export const DIA_LIMITE_ORCAMENTO_PADRAO = 15;
+
+export type FiltroOrcamentoCompetencia = {
+  /** Dia máximo do mês em que orçamento entra (1–31). Default 15. */
+  diaLimiteOrcamento?: number;
+  /**
+   * Se informado e não vazio: só orçamentos desses clientes.
+   * Vazio/omitido = todos os clientes.
+   */
+  clienteIdsOrcamento?: string[] | null;
+};
+
+function diaLimiteEfetivo(opts?: FiltroOrcamentoCompetencia): number {
+  const d = opts?.diaLimiteOrcamento ?? DIA_LIMITE_ORCAMENTO_PADRAO;
+  if (!Number.isFinite(d)) return DIA_LIMITE_ORCAMENTO_PADRAO;
+  return Math.min(31, Math.max(1, Math.floor(d)));
+}
+
 /**
  * Mês de competência para o comparativo de vendas.
  * - venda: mês civil de `dataPedido`
- * - orçamento: dia ≤ 15 → mesmo mês; dia > 15 → não entra (null)
+ * - orçamento: dia ≤ limite → mesmo mês; dia > limite → não entra (null)
  */
 export function mesCompetenciaVendaOrcamento(
   dataPedidoIso: string,
   status: StatusPedidoVendaOrcamento,
+  opts?: FiltroOrcamentoCompetencia,
 ): string | null {
   const ym = dataPedidoIso.slice(0, 7);
   if (!/^\d{4}-\d{2}$/.test(ym)) return ym;
   if (status === "venda") return ym;
   const day = Number(dataPedidoIso.slice(8, 10));
-  if (!Number.isFinite(day) || day > 15) return null;
+  const limite = diaLimiteEfetivo(opts);
+  if (!Number.isFinite(day) || day > limite) return null;
   return ym;
 }
 
@@ -40,8 +61,9 @@ export function mesCompetenciaVendaOrcamento(
 export function diaNoMesCompetencia(
   dataPedidoIso: string,
   status: StatusPedidoVendaOrcamento,
+  opts?: FiltroOrcamentoCompetencia,
 ): { mesYm: string; dia: number } | null {
-  const mesYm = mesCompetenciaVendaOrcamento(dataPedidoIso, status);
+  const mesYm = mesCompetenciaVendaOrcamento(dataPedidoIso, status, opts);
   if (!mesYm) return null;
   const day = Number(dataPedidoIso.slice(8, 10));
   if (!Number.isFinite(day) || day < 1) return { mesYm, dia: 1 };
@@ -52,11 +74,13 @@ export type PedidoCompetenciaInput = {
   dataPedidoIso: string;
   status: StatusPedidoVendaOrcamento;
   valorLiquido: number;
+  clienteId?: string | null;
+  clienteNome?: string | null;
 };
 
 export type TotaisCompetenciaMes = {
   vendas: number;
-  /** Orçamentos com data no mês e dia ≤ 15. */
+  /** Orçamentos com data no mês e dia ≤ limite (e filtro de cliente). */
   orcamentos: number;
   total: number;
 };
@@ -65,14 +89,29 @@ function emptyTotais(): TotaisCompetenciaMes {
   return { vendas: 0, orcamentos: 0, total: 0 };
 }
 
+function orcamentoClientePermitido(
+  p: PedidoCompetenciaInput,
+  opts?: FiltroOrcamentoCompetencia,
+): boolean {
+  const ids = opts?.clienteIdsOrcamento;
+  if (ids == null || ids.length === 0) return true;
+  const id = (p.clienteId ?? "").trim();
+  if (!id) return false;
+  return ids.includes(id);
+}
+
 /** Soma valor líquido por mês de competência, separando venda e orçamento. */
 export function agregarVendasPorCompetenciaDetalhe(
   pedidos: PedidoCompetenciaInput[],
+  opts?: FiltroOrcamentoCompetencia,
 ): Map<string, TotaisCompetenciaMes> {
   const map = new Map<string, TotaisCompetenciaMes>();
   for (const p of pedidos) {
     if (!Number.isFinite(p.valorLiquido) || p.valorLiquido === 0) continue;
-    const mes = mesCompetenciaVendaOrcamento(p.dataPedidoIso, p.status);
+    if (p.status === "orcamento" && !orcamentoClientePermitido(p, opts)) {
+      continue;
+    }
+    const mes = mesCompetenciaVendaOrcamento(p.dataPedidoIso, p.status, opts);
     if (!mes) continue;
     const acc = map.get(mes) ?? emptyTotais();
     if (p.status === "venda") acc.vendas = round2(acc.vendas + p.valorLiquido);
@@ -83,11 +122,12 @@ export function agregarVendasPorCompetenciaDetalhe(
   return map;
 }
 
-/** Soma total por competência (venda + orçamento ≤15). */
+/** Soma total por competência (venda + orçamento filtrado). */
 export function agregarVendasPorCompetencia(
   pedidos: PedidoCompetenciaInput[],
+  opts?: FiltroOrcamentoCompetencia,
 ): Map<string, number> {
-  const detalhe = agregarVendasPorCompetenciaDetalhe(pedidos);
+  const detalhe = agregarVendasPorCompetenciaDetalhe(pedidos, opts);
   const map = new Map<string, number>();
   for (const [mes, t] of Array.from(detalhe.entries())) {
     map.set(mes, t.total);
@@ -98,11 +138,15 @@ export function agregarVendasPorCompetencia(
 /** Mapa mês → (dia → total líquido). */
 export function agregarVendasPorDiaCompetencia(
   pedidos: PedidoCompetenciaInput[],
+  opts?: FiltroOrcamentoCompetencia,
 ): Map<string, Map<number, number>> {
   const map = new Map<string, Map<number, number>>();
   for (const p of pedidos) {
     if (!Number.isFinite(p.valorLiquido) || p.valorLiquido === 0) continue;
-    const ref = diaNoMesCompetencia(p.dataPedidoIso, p.status);
+    if (p.status === "orcamento" && !orcamentoClientePermitido(p, opts)) {
+      continue;
+    }
+    const ref = diaNoMesCompetencia(p.dataPedidoIso, p.status, opts);
     if (!ref) continue;
     let porDia = map.get(ref.mesYm);
     if (!porDia) {

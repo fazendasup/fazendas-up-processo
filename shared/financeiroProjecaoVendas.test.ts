@@ -14,7 +14,7 @@ describe("mesCompetenciaVendaOrcamento", () => {
     expect(mesCompetenciaVendaOrcamento("2026-09-20", "venda")).toBe("2026-09");
   });
 
-  it("orçamento até dia 15 fica no mês", () => {
+  it("orçamento até dia limite fica no mês", () => {
     expect(mesCompetenciaVendaOrcamento("2026-09-01", "orcamento")).toBe(
       "2026-09",
     );
@@ -23,9 +23,22 @@ describe("mesCompetenciaVendaOrcamento", () => {
     );
   });
 
-  it("orçamento após dia 15 não entra", () => {
+  it("orçamento após dia limite não entra", () => {
     expect(mesCompetenciaVendaOrcamento("2026-09-16", "orcamento")).toBeNull();
     expect(mesCompetenciaVendaOrcamento("2026-12-31", "orcamento")).toBeNull();
+  });
+
+  it("respeita diaLimiteOrcamento customizado", () => {
+    expect(
+      mesCompetenciaVendaOrcamento("2026-09-20", "orcamento", {
+        diaLimiteOrcamento: 20,
+      }),
+    ).toBe("2026-09");
+    expect(
+      mesCompetenciaVendaOrcamento("2026-09-21", "orcamento", {
+        diaLimiteOrcamento: 20,
+      }),
+    ).toBeNull();
   });
 });
 
@@ -39,6 +52,33 @@ describe("agregarVendasPorCompetencia", () => {
     ]);
     expect(map.get("2026-09")).toBe(1_500); // 1000 + 500
     expect(map.get("2026-10")).toBeUndefined();
+  });
+
+  it("filtra orçamentos por cliente", () => {
+    const map = agregarVendasPorCompetencia(
+      [
+        {
+          dataPedidoIso: "2026-09-10",
+          status: "venda",
+          valorLiquido: 1_000,
+          clienteId: "a",
+        },
+        {
+          dataPedidoIso: "2026-09-10",
+          status: "orcamento",
+          valorLiquido: 500,
+          clienteId: "licco",
+        },
+        {
+          dataPedidoIso: "2026-09-10",
+          status: "orcamento",
+          valorLiquido: 200,
+          clienteId: "outro",
+        },
+      ],
+      { clienteIdsOrcamento: ["licco"] },
+    );
+    expect(map.get("2026-09")).toEqual(1_500); // venda 1000 + orc licco 500
   });
 });
 

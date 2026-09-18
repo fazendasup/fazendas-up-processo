@@ -21,9 +21,11 @@ import { montarFinanceiroComparativo } from "@shared/financeiroComparativoProjec
 import {
   agregarVendasPorCompetenciaDetalhe,
   agregarVendasPorDiaCompetencia,
+  DIA_LIMITE_ORCAMENTO_PADRAO,
   diasNoMesYm,
   somarVendasAteDia,
   somarVendasUltimosNDias,
+  type FiltroOrcamentoCompetencia,
   type PedidoCompetenciaInput,
 } from "@shared/financeiroProjecaoVendas";
 import {
@@ -186,12 +188,16 @@ export async function carregarProjecaoDesembolso(
 }
 
 /**
- * Totais de vendas + orçamentos ≤15 por competência.
+ * Totais de vendas + orçamentos (dia limite + clientes configuráveis).
  * Também calcula “até o mesmo dia” e “últimos N dias” dos 2 meses anteriores.
  */
 async function carregarTotaisVendasCompetencia(
   mesYm: string,
-  opts: { hojeYm: string; diaHoje: number },
+  opts: {
+    hojeYm: string;
+    diaHoje: number;
+    filtroOrcamento?: FiltroOrcamentoCompetencia;
+  },
 ): Promise<{
   vendasFaturadasMes: number;
   orcamentosCompetenciaMes: number;
@@ -200,7 +206,14 @@ async function carregarTotaisVendasCompetencia(
   vendasAteDiaMesAnterior2: number;
   vendasRestanteMesAnterior1: number;
   vendasRestanteMesAnterior2: number;
+  clientesOrcamentoOpcoes: Array<{ id: string; nome: string }>;
+  diaLimiteOrcamento: number;
 }> {
+  const filtro: FiltroOrcamentoCompetencia = {
+    diaLimiteOrcamento:
+      opts.filtroOrcamento?.diaLimiteOrcamento ?? DIA_LIMITE_ORCAMENTO_PADRAO,
+    clienteIdsOrcamento: opts.filtroOrcamento?.clienteIdsOrcamento ?? null,
+  };
   const mes1 = mesAnteriorProjecao(mesYm);
   const mes2 = mesAnteriorProjecao(mes1);
   const mes3 = mesAnteriorProjecao(mes2);
@@ -222,24 +235,35 @@ async function carregarTotaisVendasCompetencia(
       valorDesconto: true,
       valorLiquido: true,
       composicaoDetalhada: true,
+      clienteId: true,
+      cliente: { select: { id: true, nome: true } },
     },
   });
 
   const items: PedidoCompetenciaInput[] = [];
+  const clientesMap = new Map<string, string>();
   for (const p of pedidos) {
     const cls = classificarStatusPedido(p.statusPedido);
     if (cls !== "venda" && cls !== "orcamento") continue;
     const liquido = composicaoDoPedidoParaDashboard(p).valorLiquido;
     if (!Number.isFinite(liquido) || liquido === 0) continue;
+    if (cls === "orcamento" && p.clienteId) {
+      clientesMap.set(
+        p.clienteId,
+        p.cliente?.nome?.trim() || p.clienteId,
+      );
+    }
     items.push({
       dataPedidoIso: diaIsoAmericaSp(p.dataPedido),
       status: cls,
       valorLiquido: liquido,
+      clienteId: p.clienteId,
+      clienteNome: p.cliente?.nome ?? null,
     });
   }
 
-  const porMes = agregarVendasPorCompetenciaDetalhe(items);
-  const porDia = agregarVendasPorDiaCompetencia(items);
+  const porMes = agregarVendasPorCompetenciaDetalhe(items, filtro);
+  const porDia = agregarVendasPorDiaCompetencia(items, filtro);
   const atual = porMes.get(mesYm) ?? { vendas: 0, orcamentos: 0, total: 0 };
 
   const diasNoMesRef = diasNoMesYm(mesYm);
@@ -261,6 +285,10 @@ async function carregarTotaisVendasCompetencia(
   const ate1 = Math.min(diaCorte, d1);
   const ate2 = Math.min(diaCorte, d2);
 
+  const clientesOrcamentoOpcoes = Array.from(clientesMap.entries())
+    .map(([id, nome]) => ({ id, nome }))
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+
   return {
     vendasFaturadasMes: atual.vendas,
     orcamentosCompetenciaMes: atual.orcamentos,
@@ -277,6 +305,8 @@ async function carregarTotaisVendasCompetencia(
       d2,
       diasRestantes,
     ),
+    clientesOrcamentoOpcoes,
+    diaLimiteOrcamento: filtro.diaLimiteOrcamento ?? DIA_LIMITE_ORCAMENTO_PADRAO,
   };
 }
 
@@ -287,7 +317,11 @@ async function carregarTotaisVendasCompetencia(
 export async function carregarComparativoProjecao(
   projetoId: number,
   mesYm: string,
-  opts?: { forceRefreshCa?: boolean },
+  opts?: {
+    forceRefreshCa?: boolean;
+    diaLimiteOrcamento?: number;
+    clienteIdsOrcamento?: string[];
+  },
 ) {
   if (!/^\d{4}-\d{2}$/.test(mesYm)) {
     throw new Error("Mês inválido (AAAA-MM).");
@@ -298,6 +332,13 @@ export async function carregarComparativoProjecao(
   const hojeIso = diaIsoAmericaSp();
   const hojeYm = mesIsoAmericaSp();
   const diaHoje = Number(hojeIso.slice(8, 10));
+  const filtroOrcamento: FiltroOrcamentoCompetencia = {
+    diaLimiteOrcamento:
+      opts?.diaLimiteOrcamento ?? DIA_LIMITE_ORCAMENTO_PADRAO,
+    clienteIdsOrcamento: opts?.clienteIdsOrcamento?.length
+      ? opts.clienteIdsOrcamento
+      : null,
+  };
 
   const [grade, pagarMes, receberMes, vendas] = await Promise.all([
     carregarProjecaoDesembolso(projetoId, mesYm, {
@@ -307,7 +348,11 @@ export async function carregarComparativoProjecao(
     buscarParcelasReceberParaComparativo(iniMes, fimMes, projetoId).then(r =>
       r.map(toBase),
     ),
-    carregarTotaisVendasCompetencia(mesYm, { hojeYm, diaHoje }),
+    carregarTotaisVendasCompetencia(mesYm, {
+      hojeYm,
+      diaHoje,
+      filtroOrcamento,
+    }),
   ]);
 
   const comparativo = montarFinanceiroComparativo({
@@ -328,10 +373,18 @@ export async function carregarComparativoProjecao(
 
   return {
     ...comparativo,
+    orcamentoFiltros: {
+      diaLimiteOrcamento: vendas.diaLimiteOrcamento,
+      clienteIdsOrcamento: filtroOrcamento.clienteIdsOrcamento ?? [],
+      clientesOpcoes: vendas.clientesOrcamentoOpcoes,
+    },
     avisos: [
       "Caixa (já recebido / a receber / vencido) = Conta Azul ao vivo por vencimento e pagamento.",
       "Já faturado = pedidos sincronizados da Conta Azul (status venda). Se divergir, rode sync comercial.",
-      "Orçamentos ≤ dia 15 (regra interna) — não batem com o total de orçamentos do Conta Azul.",
+      `Orçamentos: até o dia ${vendas.diaLimiteOrcamento}` +
+        (filtroOrcamento.clienteIdsOrcamento?.length
+          ? ` · ${filtroOrcamento.clienteIdsOrcamento.length} cliente(s) selecionado(s)`
+          : " · todos os clientes"),
       "Desembolso: exclusões locais de rúbrica continuam valendo só no lado pagar.",
     ],
   };

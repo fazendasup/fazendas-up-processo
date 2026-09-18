@@ -172,11 +172,17 @@ export const financeiroCfoRouter = router({
       z.object({
         mesYm: z.string().regex(/^\d{4}-\d{2}$/),
         forceRefreshCa: z.boolean().optional(),
+        /** Dia máximo do mês para contar orçamento (1–31). Default 15. */
+        diaLimiteOrcamento: z.number().int().min(1).max(31).optional(),
+        /** Se vazio/omitido = todos; senão só esses clientes. */
+        clienteIdsOrcamento: z.array(z.string().min(1).max(64)).max(200).optional(),
       }),
     )
     .query(async ({ ctx, input }) =>
       carregarComparativoProjecao(projetoIdFromCtx(ctx), input.mesYm, {
         forceRefreshCa: input.forceRefreshCa === true,
+        diaLimiteOrcamento: input.diaLimiteOrcamento,
+        clienteIdsOrcamento: input.clienteIdsOrcamento,
       }),
     ),
 

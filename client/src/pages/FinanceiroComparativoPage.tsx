@@ -1,4 +1,4 @@
-import { useMemo, useState, Fragment } from "react";
+import { useMemo, useState, Fragment, useEffect } from "react";
 import { Link } from "wouter";
 import {
   ArrowDownRight,
@@ -18,7 +18,35 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchMultiSelect } from "@/components/ui/search-select";
 import type { StatusRubricaComparativo } from "@shared/financeiroComparativoProjecao";
+import { DIA_LIMITE_ORCAMENTO_PADRAO } from "@shared/financeiroProjecaoVendas";
+
+const LS_DIA_ORC = "financeiro.comparativo.diaLimiteOrcamento";
+const LS_CLIENTES_ORC = "financeiro.comparativo.clienteIdsOrcamento";
+
+function lerDiaLimiteOrcamento(): number {
+  try {
+    const raw = localStorage.getItem(LS_DIA_ORC);
+    const n = raw ? Number(raw) : DIA_LIMITE_ORCAMENTO_PADRAO;
+    if (!Number.isFinite(n)) return DIA_LIMITE_ORCAMENTO_PADRAO;
+    return Math.min(31, Math.max(1, Math.floor(n)));
+  } catch {
+    return DIA_LIMITE_ORCAMENTO_PADRAO;
+  }
+}
+
+function lerClienteIdsOrcamento(): string[] {
+  try {
+    const raw = localStorage.getItem(LS_CLIENTES_ORC);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((x): x is string => typeof x === "string" && !!x);
+  } catch {
+    return [];
+  }
+}
 
 function mesAtualYm(): string {
   const d = new Date();
@@ -97,16 +125,51 @@ function Kpi({
 
 export default function FinanceiroComparativoPage() {
   const [mes, setMes] = useState(mesAtualYm);
+  const [diaLimiteOrcamento, setDiaLimiteOrcamento] = useState(lerDiaLimiteOrcamento);
+  const [clienteIdsOrcamento, setClienteIdsOrcamento] = useState(
+    lerClienteIdsOrcamento,
+  );
   const utils = trpc.useUtils();
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_DIA_ORC, String(diaLimiteOrcamento));
+    } catch {
+      /* ignore */
+    }
+  }, [diaLimiteOrcamento]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_CLIENTES_ORC, JSON.stringify(clienteIdsOrcamento));
+    } catch {
+      /* ignore */
+    }
+  }, [clienteIdsOrcamento]);
+
   const q = trpc.financeiroCfo.comparativoProjecao.useQuery(
-    { mesYm: mes },
+    {
+      mesYm: mes,
+      diaLimiteOrcamento,
+      clienteIdsOrcamento:
+        clienteIdsOrcamento.length > 0 ? clienteIdsOrcamento : undefined,
+    },
     { staleTime: 60_000 },
   );
 
   const d = q.data?.desembolso;
   const r = q.data?.receita;
   const caixa = q.data?.caixa;
+  const orcFiltros = q.data?.orcamentoFiltros;
+
+  const clientesOpcoes = useMemo(
+    () =>
+      (orcFiltros?.clientesOpcoes ?? []).map(c => ({
+        value: c.id,
+        label: c.nome,
+      })),
+    [orcFiltros?.clientesOpcoes],
+  );
 
   const rubricas = useMemo(() => d?.rubricas ?? [], [d?.rubricas]);
   const [abertas, setAbertas] = useState<Set<string>>(() => new Set());
@@ -127,8 +190,19 @@ export default function FinanceiroComparativoPage() {
       const data = await utils.financeiroCfo.comparativoProjecao.fetch({
         mesYm: mes,
         forceRefreshCa: true,
+        diaLimiteOrcamento,
+        clienteIdsOrcamento:
+          clienteIdsOrcamento.length > 0 ? clienteIdsOrcamento : undefined,
       });
-      utils.financeiroCfo.comparativoProjecao.setData({ mesYm: mes }, data);
+      utils.financeiroCfo.comparativoProjecao.setData(
+        {
+          mesYm: mes,
+          diaLimiteOrcamento,
+          clienteIdsOrcamento:
+            clienteIdsOrcamento.length > 0 ? clienteIdsOrcamento : undefined,
+        },
+        data,
+      );
     } catch (e) {
       toast.error(
         e instanceof Error ? e.message : "Falha ao recarregar Conta Azul",
@@ -165,6 +239,33 @@ export default function FinanceiroComparativoPage() {
                 className="h-9 w-[160px]"
                 value={mes}
                 onChange={e => setMes(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Orçamento até o dia</Label>
+              <Input
+                type="number"
+                min={1}
+                max={31}
+                className="h-9 w-[100px]"
+                value={diaLimiteOrcamento}
+                onChange={e => {
+                  const n = Number(e.target.value);
+                  if (!Number.isFinite(n)) return;
+                  setDiaLimiteOrcamento(Math.min(31, Math.max(1, Math.floor(n))));
+                }}
+              />
+            </div>
+            <div className="min-w-[220px] max-w-[320px] flex-1">
+              <Label className="text-xs">Clientes no orçamento</Label>
+              <SearchMultiSelect
+                values={clienteIdsOrcamento}
+                onValuesChange={setClienteIdsOrcamento}
+                options={clientesOpcoes}
+                placeholder="Todos os clientes"
+                searchPlaceholder="Buscar cliente…"
+                emptyText="Nenhum cliente com orçamento no período."
+                clearLabel="Todos (limpar filtro)"
               />
             </div>
             <Button
@@ -597,10 +698,9 @@ export default function FinanceiroComparativoPage() {
                   2. Volume do mês — faturado + orçamento
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Pedidos por <strong>data do pedido</strong>. Isso{" "}
-                  <strong>não é o mesmo</strong> que “a receber”: uma venda de
-                  R$ 37 mil pode já ter sido paga ou vencer em outro mês — por
-                  isso o em aberto do Conta Azul pode ser bem menor.
+                  Pedidos por <strong>data do pedido</strong>. Orçamentos usam a
+                  janela e os clientes escolhidos acima. Isso{" "}
+                  <strong>não é o mesmo</strong> que “a receber” no Conta Azul.
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -610,9 +710,13 @@ export default function FinanceiroComparativoPage() {
                   hint="Pedidos faturados/aprovados neste mês — volume, não caixa"
                 />
                 <Kpi
-                  title="Orçamentos ≤ dia 15"
+                  title={`Orçamentos ≤ dia ${diaLimiteOrcamento}`}
                   value={fmtMoney(r?.vendasCompetencia?.orcamentos)}
-                  hint="Só orçamentos deste mês até o dia 15 (cautela acumula)"
+                  hint={
+                    clienteIdsOrcamento.length > 0
+                      ? `${clienteIdsOrcamento.length} cliente(s) selecionado(s)`
+                      : "Todos os clientes · só até o dia limite"
+                  }
                 />
                 <Kpi
                   title="Soma até agora"
