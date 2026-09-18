@@ -204,17 +204,19 @@ function roundMoney(n: number): number {
 }
 
 /**
- * Média de faturamento (venda + frete) dos 3 meses até `mesYm`,
- * via baixas Conta Azul — exclui transferência e investimento/aporte.
+ * Média de faturamento (venda + frete) dos 3 meses imediatamente
+ * anteriores a `mesAtualYm` (não inclui o mês atual).
+ * Ex.: mesAtualYm=2026-09 → jun, jul, ago/2026.
+ * Fonte: baixas Conta Azul — exclui transferência e investimento/aporte.
  */
 async function carregarMediaFaturamento3Meses(
   projetoId: number,
-  mesYm: string,
+  mesAtualYm: string,
 ): Promise<{
   mensal: number;
   meses: Array<{ mesYm: string; vendas: number }>;
 }> {
-  const m2 = mesYm;
+  const m2 = mesAnteriorProjecao(mesAtualYm);
   const m1 = mesAnteriorProjecao(m2);
   const m0 = mesAnteriorProjecao(m1);
   const lista = [m0, m1, m2];
@@ -245,11 +247,10 @@ async function carregarMediaFaturamento3Meses(
     }),
   );
 
-  const comValor = meses.filter(m => m.vendas > 0);
-  const base = comValor.length > 0 ? comValor : meses;
+  // Sempre divide pelos 3 meses do horizonte (mês zerado puxa a média para baixo).
   const mensal =
-    base.length > 0
-      ? roundMoney(base.reduce((s, m) => s + m.vendas, 0) / base.length)
+    meses.length > 0
+      ? roundMoney(meses.reduce((s, m) => s + m.vendas, 0) / meses.length)
       : 0;
 
   return { mensal, meses };
@@ -300,7 +301,9 @@ export async function carregarProjecaoDesembolso(
     })),
   });
 
-  const fat = await carregarMediaFaturamento3Meses(projetoId, mesContextoYm);
+  // Média dos 3 meses anteriores ao mês de referência da projeção
+  // (ex.: set → jun/jul/ago), não o mês contexto nem o mês atual.
+  const fat = await carregarMediaFaturamento3Meses(projetoId, mesInicioYm);
   const mesesHorizonte = grade.colunas.filter(c => c.contaNoTotal).length;
   const mediaFaturamentoTotalHorizonte = roundMoney(
     fat.mensal * mesesHorizonte,
@@ -320,7 +323,7 @@ export async function carregarProjecaoDesembolso(
       "Essenciais (energia, aluguel, salário, insumos, lanches, embalagens, tarifas bancárias, combustível, hortifruti…) já entram como projetado recorrente.",
       "Demais itens: valor sugerido — marque o checkbox se vai continuar.",
       "Total da projeção = só os 3 meses à frente (mês anterior não entra).",
-      "Média fat. = baixas a receber (venda + frete) dos 3 meses até o mês contexto; sem transferência/investimento; total = média × meses da projeção.",
+      "Média fat. = baixas a receber (venda + frete) dos 3 meses anteriores ao mês atual; sem transferência/investimento; total = média × meses da projeção.",
       "Mês anterior = contexto executado (somente leitura).",
     ],
   };

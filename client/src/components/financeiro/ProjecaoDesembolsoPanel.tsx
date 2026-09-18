@@ -1217,7 +1217,21 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                             {fmtMoney(data.mediaFaturamento.totalHorizonte)}
                             <span className="block text-[9px]">
                               ({fmtMoney(data.mediaFaturamento.mensal)}/mês ·
-                              venda+frete)
+                              venda+frete
+                              {data.mediaFaturamento.meses?.length
+                                ? ` · ${data.mediaFaturamento.meses
+                                    .map(m => {
+                                      const [y, mo] = m.mesYm.split("-");
+                                      return new Date(
+                                        Number(y),
+                                        Number(mo) - 1,
+                                        1,
+                                      ).toLocaleDateString("pt-BR", {
+                                        month: "short",
+                                      });
+                                    })
+                                    .join(", ")}`
+                                : ""})
                             </span>
                           </div>
                           <div
