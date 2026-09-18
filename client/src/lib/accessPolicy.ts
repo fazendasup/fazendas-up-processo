@@ -28,15 +28,27 @@ export function ocultarValoresComerciais(perfil: string | null | undefined): boo
 }
 
 /** Destino logo após login (seleção de projeto para admin; home do módulo para comercial). */
-export function homeForUserRole(role: string | null | undefined): string {
+export function homeForUserRole(
+  role: string | null | undefined,
+  comercialPerfil?: string | null,
+): string {
   if (isOperationalAdminRole(role)) return "/projetos";
-  if (role === "comercial") return "/comercial";
+  if (role === "comercial") {
+    if (isFinanceiroPerfil(comercialPerfil)) return "/financeiro-cfo";
+    return "/comercial";
+  }
   return "/";
 }
 
 /** Painel operacional quando o projeto já está selecionado (Dashboard no menu). */
-export function dashboardPathForUserRole(role: string | null | undefined): string {
-  if (role === "comercial") return "/comercial";
+export function dashboardPathForUserRole(
+  role: string | null | undefined,
+  comercialPerfil?: string | null,
+): string {
+  if (role === "comercial") {
+    if (isFinanceiroPerfil(comercialPerfil)) return "/financeiro-cfo";
+    return "/comercial";
+  }
   return "/";
 }
 

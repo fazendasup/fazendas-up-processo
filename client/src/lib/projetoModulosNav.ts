@@ -7,6 +7,7 @@ export const HREF_PARA_MODULO: Partial<Record<string, ModuloContratavel>> = {
   "/inteligencia": "inteligencia",
   "/visao": "visao_cultivo",
   "/custos-producao": "custos_producao",
+  "/financeiro-cfo": "custos_producao",
   "/comercial": "comercial",
 };
 

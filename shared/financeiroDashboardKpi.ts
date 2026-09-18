@@ -6,6 +6,7 @@ export const DASHBOARD_KPI_IDS = [
   "executado",
   "ainda-cabe",
   "nao-planejado",
+  "saldo-liberado",
   "saldo-projetado",
   "entrou",
   "a-receber",

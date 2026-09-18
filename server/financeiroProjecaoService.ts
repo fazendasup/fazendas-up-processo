@@ -1002,15 +1002,24 @@ export async function carregarDashboardKpiDetalhe(
     kpi === "plano" ||
     kpi === "executado" ||
     kpi === "ainda-cabe" ||
-    kpi === "nao-planejado"
+    kpi === "nao-planejado" ||
+    kpi === "saldo-liberado"
   ) {
     const grade = await carregarProjecaoDesembolso(projetoId, mesYm);
     const pagar = await carregarParcelasBaseMes(projetoId, mesYm);
-    const d = montarComparativoDesembolsoMes({
+    const dBase = montarComparativoDesembolsoMes({
       mesYm,
       linhasProjecao: grade.linhas,
       parcelasPagarMes: pagar,
     });
+    const concluidas =
+      kpi === "saldo-liberado" || kpi === "ainda-cabe"
+        ? await listRubricasMesConcluidas(projetoId, mesYm)
+        : [];
+    const d =
+      concluidas.length > 0
+        ? aplicarRubricasConcluidas(dBase, concluidas)
+        : dBase;
 
     if (kpi === "plano") {
       const linhas: DashboardKpiLinha[] = [];
@@ -1075,6 +1084,26 @@ export async function carregarDashboardKpiDetalhe(
         "Quanto ainda cabe",
         "Por rúbrica: o que falta sair do plano (projetado − pago, mín. 0).",
         d.totais.naoPago,
+      );
+    }
+
+    if (kpi === "saldo-liberado") {
+      const linhas: DashboardKpiLinha[] = d.rubricas
+        .filter(r => (r.saldoLiberado ?? 0) > 0.009)
+        .map(r => ({
+          id: `saldo:${r.rubrica}`,
+          titulo: r.rubrica,
+          subtitulo: `Projetado ${r.projetado.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} · pago ${r.pago.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`,
+          valor: r.saldoLiberado ?? 0,
+          meta: "concluida",
+          grupo: r.rubrica,
+        }))
+        .sort((a, b) => b.valor - a.valor);
+      return linhasDe(
+        linhas,
+        "Saldo liberado",
+        "Rúbricas marcadas como concluídas em que o pagamento ficou abaixo do plano — o restante vira saldo e abate o desembolso projetado.",
+        d.totais.abateConcluidas ?? 0,
       );
     }
 

@@ -128,7 +128,13 @@ export default function FinanceiroCfoPage() {
     enabled: user?.role === "comercial",
     staleTime: 60_000,
   });
-  const somenteAnaliseFinanceira = isFinanceiroPerfil(comercialMe.data?.perfil);
+  const perfilFromAuth =
+    user && "comercialPerfil" in user
+      ? ((user as { comercialPerfil?: string | null }).comercialPerfil ?? null)
+      : null;
+  const somenteAnaliseFinanceira = isFinanceiroPerfil(
+    comercialMe.data?.perfil ?? perfilFromAuth,
+  );
 
   const [mes, setMes] = useState(mesAtualYm);
   const [compararMesAnterior, setCompararMesAnterior] = useState(true);

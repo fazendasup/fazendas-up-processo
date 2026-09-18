@@ -69,7 +69,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { navPermitidoPorModulo } from "@/lib/projetoModulosNav";
-import { canAccessCommercialPath, dashboardPathForUserRole, roleLabel as labelForRole } from "@/lib/accessPolicy";
+import { canAccessCommercialPath, dashboardPathForUserRole, roleLabel as labelForRole, isFinanceiroPerfil } from "@/lib/accessPolicy";
 const FarmAssistantSheet = lazy(() =>
   import(/* @vite-ignore */ "@/components/FarmAssistantSheet").then(m => ({
     default: m.FarmAssistantSheet,
@@ -287,13 +287,21 @@ export default function Header() {
     refetchInterval: 60000,
   });
   const comercialMe = trpc.comercial.pedidos.me.useQuery(undefined, {
-    enabled: Boolean(isLoggedIn && activeProjetoId && isComercial && modulosAtivos?.comercial),
+    enabled: Boolean(isLoggedIn && activeProjetoId && isComercial),
     staleTime: 60_000,
   });
-  const comercialPerfil = isAdmin ? "ADMIN" : (comercialMe.data?.perfil ?? null);
+  const comercialPerfilFromAuth =
+    user && "comercialPerfil" in user
+      ? ((user as { comercialPerfil?: string | null }).comercialPerfil ?? null)
+      : null;
+  const comercialPerfil = isAdmin
+    ? "ADMIN"
+    : (comercialMe.data?.perfil ?? comercialPerfilFromAuth);
+  const isPerfilFinanceiro = isFinanceiroPerfil(comercialPerfil);
 
   const operacaoItems = useMemo(() => {
     if (!isLoggedIn || activeProjetoId == null || (!canAccessProcesso && !canAccessComercial)) return [] as NavItem[];
+    if (isPerfilFinanceiro) return [] as NavItem[];
     return OPERACAO_ITEMS.filter(item => {
       if (!canAccessProcesso && item.requiredRole !== "comercial") return false;
       if (item.requiredRole === "admin" && !isAdmin) return false;
@@ -313,6 +321,7 @@ export default function Header() {
     comercialPerfil,
     isAdmin,
     isLoggedIn,
+    isPerfilFinanceiro,
     activeProjeto?.tipo,
     activeProjetoId,
     modulosAtivos,
@@ -321,18 +330,22 @@ export default function Header() {
   const analiseItems = useMemo(() => {
     if (!isLoggedIn || activeProjetoId == null || (!canAccessProcesso && !canAccessComercial)) return [] as NavItem[];
     const list: NavItem[] = [];
-    if (isAdmin) list.push(...ANALISE_ADMIN_PREFIX);
-    if (canAccessProcesso) {
-      list.push(ANALISE_COLHEITA);
-      list.push(ANALISE_ANALYTICS);
-    }
-    if (!isComercial && canAccessProcesso) {
-      list.push(ANALISE_TODOS);
-      list.push(ANALISE_VISAO);
-    }
-    if (canAccessComercial) {
-      list.push(ANALISE_CUSTOS);
+    if (isPerfilFinanceiro) {
       list.push(ANALISE_FINANCEIRO_CFO);
+    } else {
+      if (isAdmin) list.push(...ANALISE_ADMIN_PREFIX);
+      if (canAccessProcesso) {
+        list.push(ANALISE_COLHEITA);
+        list.push(ANALISE_ANALYTICS);
+      }
+      if (!isComercial && canAccessProcesso) {
+        list.push(ANALISE_TODOS);
+        list.push(ANALISE_VISAO);
+      }
+      if (canAccessComercial) {
+        list.push(ANALISE_CUSTOS);
+        list.push(ANALISE_FINANCEIRO_CFO);
+      }
     }
     return list.filter(item => {
       if (item.requiredRole === "admin" && !isAdmin) return false;
@@ -350,6 +363,7 @@ export default function Header() {
     isAdmin,
     isComercial,
     isLoggedIn,
+    isPerfilFinanceiro,
     activeProjetoId,
     modulosAtivos,
   ]);
@@ -357,12 +371,13 @@ export default function Header() {
   const comercialItems = useMemo(() => {
     if (!isLoggedIn || activeProjetoId == null || !canAccessComercial)
       return [] as NavItem[];
+    if (isPerfilFinanceiro) return [] as NavItem[];
     return COMERCIAL_ITEMS.filter(item => {
       if (item.comercialPerfis && !isAdmin && (!comercialPerfil || !item.comercialPerfis.includes(comercialPerfil as any))) return false;
       if (!canAccessCommercialPath(item.href, comercialPerfil)) return false;
       return navPermitidoPorModulo(item.href, modulosAtivos);
     });
-  }, [activeProjetoId, canAccessComercial, comercialPerfil, isAdmin, isLoggedIn, modulosAtivos]);
+  }, [activeProjetoId, canAccessComercial, comercialPerfil, isAdmin, isLoggedIn, isPerfilFinanceiro, modulosAtivos]);
 
   const sistemaItems = useMemo(() => {
     if (!isLoggedIn) return [] as NavItem[];
@@ -420,13 +435,19 @@ export default function Header() {
   const displayName = user?.name?.trim() || "Usuário";
   /** Evita "Administrador" em cima e "ADMINISTRADOR" embaixo quando o nome já é o papel */
   const showRoleLine = displayName.toLowerCase() !== roleLabel.toLowerCase();
+  const homeHref =
+    activeProjetoId != null
+      ? dashboardPathForUserRole(user?.role, comercialPerfil)
+      : "/projetos";
+  /** Perfil financeiro: sempre menu Análise → Financeiro (não colapsar num único botão). */
+  const analiseAsDropdown = analiseItems.length > 1 || isPerfilFinanceiro;
 
   return (
     <header className="app-header-shell">
       <div className="app-header-toolbar flex h-[3.25rem] w-full min-w-0 max-w-full flex-nowrap items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:thin]">
         {/* Logo */}
         <Link
-          href={activeProjetoId != null ? dashboardPathForUserRole(user?.role) : "/projetos"}
+          href={homeHref}
           className="flex items-center gap-2 no-underline shrink-0 group"
         >
           <div className="app-logo-mark w-9 h-9 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-[1.03]">
@@ -538,7 +559,7 @@ export default function Header() {
           )}
 
           {analiseItems.length > 0 &&
-            (analiseItems.length > 1 ? (
+            (analiseAsDropdown ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -850,7 +871,7 @@ export default function Header() {
                         </DropdownMenuSubContent>
                       </DropdownMenuSub>
                     )}
-                    {analiseItems.length > 1 && (
+                    {analiseAsDropdown && analiseItems.length > 0 && (
                       <DropdownMenuSub>
                         <DropdownMenuSubTrigger className="py-2.5">
                           <LineChart className="w-4 h-4" />
@@ -889,7 +910,8 @@ export default function Header() {
                         </DropdownMenuSubContent>
                       </DropdownMenuSub>
                     )}
-                    {analiseItems.length === 1 &&
+                    {!analiseAsDropdown &&
+                      analiseItems.length === 1 &&
                       (() => {
                         const a = analiseItems[0];
                         const Ic = a.icon;

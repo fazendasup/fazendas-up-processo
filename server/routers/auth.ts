@@ -18,10 +18,23 @@ function normalizeLoginEmail(value: unknown) {
 }
 
 export const authRouter = router({
-    me: publicProcedure.query(opts => {
+    me: publicProcedure.query(async opts => {
       if (!opts.ctx.user) return null;
       const { passwordHash, ...safeUser } = opts.ctx.user;
-      return safeUser;
+      let comercialPerfil: string | null = null;
+      if (safeUser.role === "comercial" && safeUser.email) {
+        try {
+          const { getComercialPrisma } = await import("../comercial/db");
+          const cu = await getComercialPrisma().usuario.findFirst({
+            where: { email: safeUser.email.toLowerCase().trim(), status: "ATIVO" },
+            select: { perfil: true },
+          });
+          comercialPerfil = cu?.perfil ?? null;
+        } catch {
+          comercialPerfil = null;
+        }
+      }
+      return { ...safeUser, comercialPerfil };
     }),
     login: publicProcedure
       .input(z.object({
@@ -108,9 +121,23 @@ export const authRouter = router({
         } catch (e) {
           console.warn("[Auth] Falha ao atualizar lastSignedIn (sessão já foi criada):", e);
         }
+        let comercialPerfil: string | null = null;
+        if (user.role === "comercial" && user.email) {
+          try {
+            const { getComercialPrisma } = await import("../comercial/db");
+            const cu = await getComercialPrisma().usuario.findFirst({
+              where: { email: user.email.toLowerCase().trim(), status: "ATIVO" },
+              select: { perfil: true },
+            });
+            comercialPerfil = cu?.perfil ?? null;
+          } catch (e) {
+            console.warn("[Auth] Falha ao resolver perfil comercial no login:", e);
+          }
+        }
         return {
           success: true,
           user: { id: user.id, name: user.name, email: user.email, role: user.role },
+          comercialPerfil,
         };
       }),
     logout: publicProcedure.mutation(({ ctx }) => {

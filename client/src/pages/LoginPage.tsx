@@ -41,7 +41,7 @@ export default function LoginPage() {
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: (data) => {
       setActiveProjetoId(null);
-      window.location.href = homeForUserRole(data.user.role);
+      window.location.href = homeForUserRole(data.user.role, data.comercialPerfil);
     },
     onError: (err) => {
       setError(loginErrorMessage(err.message));

@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { EMPTY_OPERATIONAL_COUNTS, useProjeto } from "@/contexts/ProjetoContext";
 import { useRole } from "@/hooks/useRole";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Link, useLocation } from "wouter";
 import { FolderKanban, Plus, RefreshCw, ArrowRightLeft, Pencil, Archive, ArchiveRestore, Trash2 } from "lucide-react";
@@ -47,8 +48,12 @@ import { dashboardPathForUserRole } from "@/lib/accessPolicy";
 export { NOME_PROJETO_FAZENDA_LEGADO };
 
 /** Navega no tick seguinte para o estado `activeProjetoId` já estar aplicado (evita `ProjetoOnboardingRedirect` voltar a `/projetos`). */
-function goHomeAfterProjetoAck(setLocation: (path: string, opts?: { replace?: boolean }) => void, role: string | null | undefined) {
-  queueMicrotask(() => setLocation(dashboardPathForUserRole(role)));
+function goHomeAfterProjetoAck(
+  setLocation: (path: string, opts?: { replace?: boolean }) => void,
+  role: string | null | undefined,
+  comercialPerfil?: string | null,
+) {
+  queueMicrotask(() => setLocation(dashboardPathForUserRole(role, comercialPerfil)));
 }
 
 function labelTipoProjeto(t: string) {
@@ -78,6 +83,13 @@ export default function ProjetosPage() {
   const { isAdmin, isPlatformAdmin, role } = useRole();
   const utils = trpc.useUtils();
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
+  const comercialPerfil =
+    user && "comercialPerfil" in user
+      ? ((user as { comercialPerfil?: string | null }).comercialPerfil ?? null)
+      : null;
+
+  const goHome = () => goHomeAfterProjetoAck(setLocation, role, comercialPerfil);
 
   const form = useForm<CreateProjetoValues>({
     resolver: zodResolver(createProjetoSchema),
@@ -139,7 +151,7 @@ export default function ProjetosPage() {
       await utils.projetos.list.invalidate();
       await utils.projetos.operationalCounts.invalidate();
       switchProjeto(vars.toProjetoId);
-      goHomeAfterProjetoAck(setLocation, role);
+      goHome();
     },
     onError: (err) => toast.error(err.message || "Não foi possível mover os dados"),
   });
@@ -162,7 +174,7 @@ export default function ProjetosPage() {
       await utils.projetos.operationalCounts.invalidate();
       switchProjeto(data.id);
       form.reset({ nome: "", tipo: "fazenda_vertical", descricao: "", endereco: "", usarCaixaAgua: false });
-      goHomeAfterProjetoAck(setLocation, role);
+      goHome();
     },
     onError: (err) => {
       toast.error(err.message || "Não foi possível criar o projeto");
@@ -436,7 +448,7 @@ export default function ProjetosPage() {
                         Arquivado
                       </Button>
                     ) : ativo ? (
-                      <Button type="button" size="sm" onClick={() => goHomeAfterProjetoAck(setLocation, role)}>
+                      <Button type="button" size="sm" onClick={() => goHome()}>
                         Entrar no painel
                       </Button>
                     ) : (
@@ -446,7 +458,7 @@ export default function ProjetosPage() {
                         disabled={isSwitching}
                         onClick={() => {
                           switchProjeto(p.id);
-                          goHomeAfterProjetoAck(setLocation, role);
+                          goHome();
                         }}
                       >
                         Entrar no painel

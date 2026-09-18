@@ -450,6 +450,7 @@ export default function FinanceiroDashboardPage() {
 
   const aindaCabe = des?.naoPago ?? 0;
   const naoPlanejado = (des?.pagoEmAtraso ?? 0) + (des?.pagoAMais ?? 0);
+  const saldoLiberado = des?.abateConcluidas ?? 0;
   const pieStroke = theme === "dark" ? "#0f172a" : "#fff";
 
   return (
@@ -624,6 +625,13 @@ export default function FinanceiroDashboardPage() {
                     hint="Pago fora da grade (atraso / além do plano)"
                     tone={naoPlanejado > 0.009 ? "up" : "neutral"}
                     href={kpiHref("nao-planejado")}
+                  />
+                  <Kpi
+                    title="Saldo liberado"
+                    value={fmtMoney(saldoLiberado)}
+                    hint="Rúbricas concluídas com pagamento a menos"
+                    tone={saldoLiberado > 0.009 ? "down" : "neutral"}
+                    href={kpiHref("saldo-liberado")}
                   />
                 </div>
 

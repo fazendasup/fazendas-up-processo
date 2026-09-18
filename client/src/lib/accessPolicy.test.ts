@@ -12,6 +12,7 @@ describe("accessPolicy", () => {
     expect(homeForUserRole("admin")).toBe("/projetos");
     expect(homeForUserRole("platform_admin")).toBe("/projetos");
     expect(homeForUserRole("comercial")).toBe("/comercial");
+    expect(homeForUserRole("comercial", "FINANCEIRO")).toBe("/financeiro-cfo");
     expect(homeForUserRole("user")).toBe("/");
   });
 
@@ -20,6 +21,7 @@ describe("accessPolicy", () => {
     expect(dashboardPathForUserRole("platform_admin")).toBe("/");
     expect(dashboardPathForUserRole("user")).toBe("/");
     expect(dashboardPathForUserRole("comercial")).toBe("/comercial");
+    expect(dashboardPathForUserRole("comercial", "FINANCEIRO")).toBe("/financeiro-cfo");
   });
 
   it("mantem promoter restrito a pedidos e acompanhamento de avarias", () => {

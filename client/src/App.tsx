@@ -57,7 +57,11 @@ const NotFound = lazy(() => import(/* @vite-ignore */"./pages/NotFound"));
 
 function RoleRootRoute() {
   const { user } = useAuth();
-  if (user?.role === "comercial") return <Redirect to="/comercial" />;
+  if (user?.role === "comercial") {
+    const comercialPerfil =
+      "comercialPerfil" in user ? (user.comercialPerfil as string | null) : null;
+    return <Redirect to={homeForUserRole("comercial", comercialPerfil)} />;
+  }
   if (user && !isProcessAccessRole(user.role)) {
     return <Redirect to={homeForUserRole(user.role)} />;
   }
@@ -75,17 +79,25 @@ function ComercialPerfilRouteGuard({ path, children }: { path: string; children:
     staleTime: 60_000,
   });
   if (user?.role !== "comercial") return <>{children}</>;
-  if (!me.data) return <RoutePageFallback />;
-  if (!canAccessCommercialPath(path, me.data.perfil)) {
-    return <Redirect to={homeForCommercialPerfil(me.data.perfil)} />;
+  const perfilFromAuth =
+    user && "comercialPerfil" in user ? (user.comercialPerfil as string | null) : null;
+  const perfil = me.data?.perfil ?? perfilFromAuth;
+  if (!perfil) {
+    if (me.isLoading || (!me.isError && !me.isFetched)) return <RoutePageFallback />;
+    return <Redirect to="/login" />;
+  }
+  if (!canAccessCommercialPath(path, perfil)) {
+    return <Redirect to={homeForCommercialPerfil(perfil)} />;
   }
   return <>{children}</>;
 }
 
 function ProjetosRoute() {
   const { user } = useAuth();
-  if (user && homeForUserRole(user.role) !== "/projetos") {
-    return <Redirect to={homeForUserRole(user.role)} />;
+  const comercialPerfil =
+    user && "comercialPerfil" in user ? (user.comercialPerfil as string | null) : null;
+  if (user && homeForUserRole(user.role, comercialPerfil) !== "/projetos") {
+    return <Redirect to={homeForUserRole(user.role, comercialPerfil)} />;
   }
   return <ProjetosPage />;
 }

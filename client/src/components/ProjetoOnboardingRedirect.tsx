@@ -24,15 +24,19 @@ export function ProjetoOnboardingRedirect({ children }: { children: React.ReactN
     const isAdmin = isOperationalAdminRole(user.role);
     if (isProjetos && isAdmin) return;
 
+    const comercialPerfil =
+      "comercialPerfil" in user ? (user.comercialPerfil as string | null) : null;
+    const home = homeForUserRole(user.role, comercialPerfil);
+
     if (!isAdmin && activeProjetoId != null && isProjetos) {
-      setLocation(homeForUserRole(user.role), { replace: true });
+      setLocation(home, { replace: true });
       return;
     }
 
     const projetosAtivos = projetos.filter(p => p.status === "ativo");
     if (!isAdmin && activeProjetoId == null && projetosAtivos.length > 0) {
       switchProjeto(projetosAtivos[0]!.id);
-      setLocation(homeForUserRole(user.role), { replace: true });
+      setLocation(home, { replace: true });
       return;
     }
 
