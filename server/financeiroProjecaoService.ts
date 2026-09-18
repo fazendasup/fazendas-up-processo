@@ -755,6 +755,14 @@ export async function carregarFinanceiroDashboard(
       gapCaixaMes,
     },
     desembolsoTotais: dMes.totais,
+    desembolsoPorRubrica: dMes.rubricas
+      .map(r => ({
+        rubrica: r.rubrica,
+        projetado: r.projetado,
+        pago: r.pago,
+      }))
+      .filter(r => r.projetado > 0.009 || r.pago > 0.009)
+      .sort((a, b) => b.projetado - a.projetado),
     receita: {
       previsto: rMes.previsto,
       recebido: rMes.recebido,

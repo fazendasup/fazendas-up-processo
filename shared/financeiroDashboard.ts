@@ -77,6 +77,12 @@ export type FinanceiroDashboardPayload = {
     desvioPct: number | null;
     pctPagoDoProjetado: number | null;
   };
+  /** Composição do plano por rúbrica (para gráfico do dashboard). */
+  desembolsoPorRubrica: Array<{
+    rubrica: string;
+    projetado: number;
+    pago: number;
+  }>;
   receita: {
     previsto: number;
     recebido: number;
