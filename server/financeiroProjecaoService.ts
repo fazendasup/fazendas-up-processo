@@ -15,9 +15,18 @@ import {
 import {
   mesAnteriorProjecao,
   montarProjecaoDesembolso,
+  labelMesYm,
   type ParcelaBaseProjecao,
 } from "@shared/financeiroProjecaoDesembolso";
-import { montarFinanceiroComparativo } from "@shared/financeiroComparativoProjecao";
+import {
+  montarComparativoDesembolsoMes,
+  montarComparativoReceitaMes,
+  montarFinanceiroComparativo,
+} from "@shared/financeiroComparativoProjecao";
+import {
+  montarSerieDashboard3Meses,
+  type FinanceiroDashboardPayload,
+} from "@shared/financeiroDashboard";
 import {
   agregarVendasPorCompetenciaDetalhe,
   agregarVendasPorDiaCompetencia,
@@ -208,6 +217,12 @@ async function carregarTotaisVendasCompetencia(
   vendasRestanteMesAnterior2: number;
   clientesOrcamentoOpcoes: Array<{ id: string; nome: string }>;
   diaLimiteOrcamento: number;
+  porMes: Array<{
+    mesYm: string;
+    vendas: number;
+    orcamentos: number;
+    total: number;
+  }>;
 }> {
   const filtro: FiltroOrcamentoCompetencia = {
     diaLimiteOrcamento:
@@ -313,6 +328,28 @@ async function carregarTotaisVendasCompetencia(
     ),
     clientesOrcamentoOpcoes,
     diaLimiteOrcamento: filtro.diaLimiteOrcamento ?? DIA_LIMITE_ORCAMENTO_PADRAO,
+    porMes: [
+      {
+        mesYm: mes2,
+        vendas: (porMes.get(mes2) ?? { vendas: 0, orcamentos: 0, total: 0 }).vendas,
+        orcamentos: (porMes.get(mes2) ?? { vendas: 0, orcamentos: 0, total: 0 })
+          .orcamentos,
+        total: (porMes.get(mes2) ?? { vendas: 0, orcamentos: 0, total: 0 }).total,
+      },
+      {
+        mesYm: mes1,
+        vendas: (porMes.get(mes1) ?? { vendas: 0, orcamentos: 0, total: 0 }).vendas,
+        orcamentos: (porMes.get(mes1) ?? { vendas: 0, orcamentos: 0, total: 0 })
+          .orcamentos,
+        total: (porMes.get(mes1) ?? { vendas: 0, orcamentos: 0, total: 0 }).total,
+      },
+      {
+        mesYm,
+        vendas: atual.vendas,
+        orcamentos: atual.orcamentos,
+        total: atual.total,
+      },
+    ],
   };
 }
 
@@ -394,6 +431,184 @@ export async function carregarComparativoProjecao(
       "Desembolso: exclusões locais de rúbrica continuam valendo só no lado pagar.",
     ],
   };
+}
+
+/**
+ * Dashboard principal: série de 3 meses + snapshot do mês selecionado.
+ */
+export async function carregarFinanceiroDashboard(
+  projetoId: number,
+  mesYm: string,
+  opts?: { forceRefreshCa?: boolean },
+) {
+  if (!/^\d{4}-\d{2}$/.test(mesYm)) {
+    throw new Error("Mês inválido (AAAA-MM).");
+  }
+
+  const mes1 = mesAnteriorProjecao(mesYm);
+  const mes2 = mesAnteriorProjecao(mes1);
+  const hojeIso = diaIsoAmericaSp();
+  const hojeYm = mesIsoAmericaSp();
+  const diaHoje = Number(hojeIso.slice(8, 10));
+  const force = opts?.forceRefreshCa === true;
+
+  const bounds = (ym: string) => boundsMesYmAmericaSp(ym);
+
+  const [
+    gradeSerie,
+    gradeAtual,
+    pagar2,
+    pagar1,
+    pagarMes,
+    receber2,
+    receber1,
+    receberMes,
+    vendas,
+  ] = await Promise.all([
+    carregarProjecaoDesembolso(projetoId, mes2, { forceRefreshCa: force }),
+    carregarProjecaoDesembolso(projetoId, mesYm, { forceRefreshCa: force }),
+    carregarParcelasBaseMes(projetoId, mes2, force),
+    carregarParcelasBaseMes(projetoId, mes1, force),
+    carregarParcelasBaseMes(projetoId, mesYm, force),
+    buscarParcelasReceberParaComparativo(
+      bounds(mes2).inicio,
+      bounds(mes2).fim,
+      projetoId,
+    ).then(r => r.map(toBase)),
+    buscarParcelasReceberParaComparativo(
+      bounds(mes1).inicio,
+      bounds(mes1).fim,
+      projetoId,
+    ).then(r => r.map(toBase)),
+    buscarParcelasReceberParaComparativo(
+      bounds(mesYm).inicio,
+      bounds(mesYm).fim,
+      projetoId,
+    ).then(r => r.map(toBase)),
+    carregarTotaisVendasCompetencia(mesYm, { hojeYm, diaHoje }),
+  ]);
+
+  const desembolsoDe = (
+    ym: string,
+    linhas: typeof gradeSerie.linhas,
+    pagar: typeof pagarMes,
+  ) =>
+    montarComparativoDesembolsoMes({
+      mesYm: ym,
+      linhasProjecao: linhas,
+      parcelasPagarMes: pagar,
+    });
+
+  const receitaDe = (ym: string, receber: typeof receberMes) =>
+    montarComparativoReceitaMes({
+      mesYm: ym,
+      parcelasReceberMes: receber,
+      hojeYm,
+      diaHoje,
+    });
+
+  // Grade série (início em mes−2) tem células dos 3 meses; mês atual
+  // usa a grade “oficial” do comparativo para o projetado do mês.
+  const d2 = desembolsoDe(mes2, gradeSerie.linhas, pagar2);
+  const d1 = desembolsoDe(mes1, gradeSerie.linhas, pagar1);
+  const dMes = desembolsoDe(mesYm, gradeAtual.linhas, pagarMes);
+
+  const r2 = receitaDe(mes2, receber2);
+  const r1 = receitaDe(mes1, receber1);
+  const rMes = montarComparativoReceitaMes({
+    mesYm,
+    parcelasReceberMes: receberMes,
+    vendasFaturadasMes: vendas.vendasFaturadasMes,
+    orcamentosCompetenciaMes: vendas.orcamentosCompetenciaMes,
+    vendasMesAtual: vendas.vendasMesAtual,
+    vendasAteDiaMesAnterior1: vendas.vendasAteDiaMesAnterior1,
+    vendasAteDiaMesAnterior2: vendas.vendasAteDiaMesAnterior2,
+    vendasRestanteMesAnterior1: vendas.vendasRestanteMesAnterior1,
+    vendasRestanteMesAnterior2: vendas.vendasRestanteMesAnterior2,
+    hojeYm,
+    diaHoje,
+  });
+
+  const vPor = new Map(vendas.porMes.map(v => [v.mesYm, v]));
+  const v2 = vPor.get(mes2) ?? { vendas: 0, orcamentos: 0, total: 0 };
+  const v1 = vPor.get(mes1) ?? { vendas: 0, orcamentos: 0, total: 0 };
+  const vMes = vPor.get(mesYm) ?? {
+    vendas: vendas.vendasFaturadasMes,
+    orcamentos: vendas.orcamentosCompetenciaMes,
+    total: vendas.vendasMesAtual,
+  };
+
+  const serie3Meses = montarSerieDashboard3Meses({
+    mesYm,
+    meses: [
+      {
+        mesYm: mes2,
+        vendasFaturadas: v2.vendas,
+        orcamentos: v2.orcamentos,
+        vendasReal: v2.total,
+        desembolsoProjetado: d2.totais.projetado,
+        desembolsoPago: d2.totais.pago,
+        previsto: r2.previsto,
+        recebido: r2.recebido,
+        aReceber: r2.aReceber,
+      },
+      {
+        mesYm: mes1,
+        vendasFaturadas: v1.vendas,
+        orcamentos: v1.orcamentos,
+        vendasReal: v1.total,
+        desembolsoProjetado: d1.totais.projetado,
+        desembolsoPago: d1.totais.pago,
+        previsto: r1.previsto,
+        recebido: r1.recebido,
+        aReceber: r1.aReceber,
+      },
+      {
+        mesYm,
+        vendasFaturadas: vMes.vendas,
+        orcamentos: vMes.orcamentos,
+        vendasReal: vMes.total,
+        vendasProjetado: rMes.projecaoVendas.projecaoMesTotal,
+        desembolsoProjetado: dMes.totais.projetado,
+        desembolsoPago: dMes.totais.pago,
+        previsto: rMes.previsto,
+        recebido: rMes.recebido,
+        aReceber: rMes.aReceber,
+      },
+    ],
+  });
+
+  const mesAtual = serie3Meses[2]!;
+  const gapCaixaMes = Math.round(
+    (rMes.projecaoVendas.projecaoMesTotal - dMes.totais.projetado) * 100,
+  ) / 100;
+
+  return {
+    mesYm,
+    labelMes: labelMesYm(mesYm),
+    serie3Meses,
+    mesAtual,
+    projecaoVendas: rMes.projecaoVendas,
+    caixa: {
+      saldoRealizado: mesAtual.saldoCaixa,
+      gapCaixaMes,
+    },
+    desembolsoTotais: dMes.totais,
+    receita: {
+      previsto: rMes.previsto,
+      recebido: rMes.recebido,
+      aReceberNoMes: rMes.aReceberNoMes,
+      vencido: rMes.vencido,
+      aReceber: rMes.aReceber,
+      pctRecebidoDoPrevisto: rMes.pctRecebidoDoPrevisto,
+      vendasCompetencia: rMes.vendasCompetencia,
+    },
+    avisos: [
+      "Dashboard: projeção de vendas (mês aberto) × realizado dos 3 meses.",
+      "Desembolso projetado = grade de projeção; pago = Conta Azul.",
+      "Caixa = recebido Conta Azul − desembolso pago no mês.",
+    ],
+  } satisfies FinanceiroDashboardPayload;
 }
 
 export {

@@ -379,10 +379,17 @@ export default function FinanceiroCfoPage() {
               Gaps vs mês anterior, edição rápida de rúbrica e foco no que
               mais pesa no caixa.{" "}
               <a
+                href="/financeiro-cfo"
+                className="font-medium text-foreground underline-offset-2 hover:underline"
+              >
+                Dashboard
+              </a>
+              {" · "}
+              <a
                 href="/financeiro-cfo/comparativo"
                 className="font-medium text-foreground underline-offset-2 hover:underline"
               >
-                Abrir comparativo projeção × realizado
+                Comparativo projeção × realizado
               </a>
             </p>
           </div>

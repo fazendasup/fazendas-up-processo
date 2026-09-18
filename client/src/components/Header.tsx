@@ -130,7 +130,7 @@ const ANALISE_CUSTOS: NavItem = {
 
 const ANALISE_FINANCEIRO_CFO: NavItem = {
   href: "/financeiro-cfo",
-  label: "Financeiro Conta Azul",
+  label: "Financeiro",
   icon: Landmark,
   requiredRole: "comercial",
   comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
