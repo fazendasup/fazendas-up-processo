@@ -45,6 +45,12 @@ type ProjecaoData = {
   linhas: LinhaProjecao[];
   totaisPorMes: Array<{ mesYm: string; total: number }>;
   totalGeral: number;
+  mediaFaturamento?: {
+    mensal: number;
+    totalHorizonte: number;
+    meses: Array<{ mesYm: string; vendas: number }>;
+    mesesHorizonte: number;
+  };
   avisos?: string[];
 };
 
@@ -979,6 +985,12 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                     </th>
                   ))}
                   <th className="px-2 py-2 text-right">Total</th>
+                  <th className="px-2 py-2 text-right">
+                    <span className="block">Média fat.</span>
+                    <span className="block text-[9px] font-normal normal-case text-muted-foreground">
+                      3 meses × horizonte
+                    </span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -1171,6 +1183,9 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                     <td className="px-2 py-2 text-right font-semibold tabular-nums">
                       {fmtMoney(lin.totalAtivo)}
                     </td>
+                    <td className="px-2 py-2 text-right text-muted-foreground tabular-nums">
+                      —
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -1203,6 +1218,21 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                   })}
                   <td className="px-2 py-2 text-right tabular-nums">
                     {fmtMoney(totaisFiltrados.geral)}
+                  </td>
+                  <td className="px-2 py-2 text-right tabular-nums">
+                    {data.mediaFaturamento ? (
+                      <div>
+                        <span>
+                          {fmtMoney(data.mediaFaturamento.totalHorizonte)}
+                        </span>
+                        <span className="mt-0.5 block text-[9px] font-normal text-muted-foreground">
+                          {fmtMoney(data.mediaFaturamento.mensal)}
+                          /mês · {data.mediaFaturamento.mesesHorizonte}m
+                        </span>
+                      </div>
+                    ) : (
+                      "—"
+                    )}
                   </td>
                 </tr>
               </tfoot>

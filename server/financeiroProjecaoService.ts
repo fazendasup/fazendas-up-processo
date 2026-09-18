@@ -243,14 +243,42 @@ export async function carregarProjecaoDesembolso(
     })),
   });
 
+  const hojeYm = mesIsoAmericaSp();
+  const diaHoje = Number(diaIsoAmericaSp().slice(8, 10));
+  // Média de faturamento: 3 meses fechados até o mês contexto (base da projeção).
+  const vendas3m = await carregarTotaisVendasCompetencia(mesContextoYm, {
+    hojeYm,
+    diaHoje,
+  });
+  const vendasPorMes = vendas3m.porMes.map(m => m.vendas);
+  const mediaFaturamentoMensal =
+    vendasPorMes.length > 0
+      ? Math.round(
+          (vendasPorMes.reduce((s, v) => s + v, 0) / vendasPorMes.length) * 100,
+        ) / 100
+      : 0;
+  const mesesHorizonte = grade.colunas.filter(c => c.contaNoTotal).length;
+  const mediaFaturamentoTotalHorizonte =
+    Math.round(mediaFaturamentoMensal * mesesHorizonte * 100) / 100;
+
   return {
     mesInicioYm,
     ...grade,
+    mediaFaturamento: {
+      mensal: mediaFaturamentoMensal,
+      totalHorizonte: mediaFaturamentoTotalHorizonte,
+      meses: vendas3m.porMes.map(m => ({
+        mesYm: m.mesYm,
+        vendas: m.vendas,
+      })),
+      mesesHorizonte,
+    },
     avisos: [
       "Base = somente o que foi PAGO no mês anterior (sem previsão aberta do Conta Azul).",
       "Essenciais (energia, aluguel, salário, insumos, lanches, embalagens, tarifas bancárias, combustível, hortifruti…) já entram como projetado recorrente.",
       "Demais itens: valor sugerido — marque o checkbox se vai continuar.",
       "Total da projeção = só os 3 meses à frente (mês anterior não entra).",
+      "Média fat. = média de vendas Conta Azul dos 3 meses até o mês contexto; total = média × meses da projeção.",
       "Mês anterior = contexto executado (somente leitura).",
     ],
   };

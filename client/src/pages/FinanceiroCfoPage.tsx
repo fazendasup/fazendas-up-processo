@@ -468,7 +468,7 @@ export default function FinanceiroCfoPage() {
                 icon={<Wallet className="h-4 w-4 text-sky-600" />}
                 label="Gasto do mês"
                 value={fmtMoney(kpis.gastoTotal)}
-                hint={periodoLabel}
+                hint={`${periodoLabel} · só pago, sem transferências`}
               />
               <Kpi
                 icon={

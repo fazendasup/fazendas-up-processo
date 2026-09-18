@@ -207,6 +207,7 @@ describe("financeiroCfoInsights ERP", () => {
         tipo: "pagar",
         descricao: "A",
         valor: 1500,
+        valorPago: 1500,
         categoria: "Embalagens",
       }),
       normalizarParcela({
@@ -214,6 +215,7 @@ describe("financeiroCfoInsights ERP", () => {
         tipo: "pagar",
         descricao: "B",
         valor: 500,
+        valorPago: 500,
         categoria: "Frete",
       }),
     ]);
@@ -223,6 +225,7 @@ describe("financeiroCfoInsights ERP", () => {
         tipo: "pagar",
         descricao: "C",
         valor: 1000,
+        valorPago: 1000,
         categoria: "Embalagens",
       }),
     ]);
@@ -237,6 +240,7 @@ describe("financeiroCfoInsights ERP", () => {
           tipo: "pagar",
           descricao: "A",
           valor: 1500,
+          valorPago: 1500,
           categoria: "Embalagens",
         }),
       ]),

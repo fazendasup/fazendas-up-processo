@@ -6,6 +6,7 @@
  */
 
 import { periodoMesAnterior } from "./comercial/periodo-america-sp";
+import { ehNaoDesembolsoCusto } from "./financeiroProjecaoDesembolso";
 
 export const RUBRICA_SEM_CATEGORIA = "Sem rúbrica no Conta Azul";
 export const CENTRO_CUSTO_SEM = "Sem centro de custo";
@@ -689,8 +690,9 @@ export function compararRubricasCusto(
   for (const chave of Array.from(chaves)) {
     const a = atual.find(r => r.chave === chave);
     const b = mapAnt.get(chave);
-    const atualV = a?.total ?? 0;
-    const anteriorV = b?.total ?? 0;
+    // Custo de verdade = valor pago (não o título cheio em aberto).
+    const atualV = a?.pago ?? 0;
+    const anteriorV = b?.pago ?? 0;
     const delta = round2(atualV - anteriorV);
     gaps.push({
       rubrica: a?.label ?? b?.label ?? chave,
@@ -716,7 +718,7 @@ export function montarComparativoCustoMes(
   periodoAnterior: { inicio: string; fim: string },
 ): ComparativoCustoMes {
   const gaps = compararRubricasCusto(atual, anterior);
-  const gastoAnterior = round2(anterior.reduce((s, r) => s + r.total, 0));
+  const gastoAnterior = round2(anterior.reduce((s, r) => s + r.pago, 0));
   return {
     periodoAnterior,
     gastoAnterior,
@@ -735,8 +737,8 @@ export function montarKpisReducaoCusto(input: {
   titulosPagar: number;
   comparativo: ComparativoCustoMes | null;
 }): KpisReducaoCusto {
-  const gastoTotal = round2(input.rubricas.reduce((s, r) => s + r.total, 0));
-  const top3 = input.rubricas.slice(0, 3).reduce((s, r) => s + r.total, 0);
+  const gastoTotal = round2(input.rubricas.reduce((s, r) => s + r.pago, 0));
+  const top3 = input.rubricas.slice(0, 3).reduce((s, r) => s + r.pago, 0);
   const gaps = input.comparativo?.gaps ?? [];
   const aumentos = gaps.filter(g => g.delta > 0);
   const quedas = gaps.filter(g => g.delta < 0);
@@ -1517,4 +1519,15 @@ export function parcelasAtivasParaRelatorio(
   parcelas: ParcelaFinanceiraNorm[],
 ): ParcelaFinanceiraNorm[] {
   return parcelas.filter(p => !p.excluido);
+}
+
+/**
+ * Desembolso de custo operacional: ignora transferência entre contas,
+ * aplicação/resgate e descontos obtidos.
+ */
+export function parcelaEhCustoOperacional(
+  p: Pick<ParcelaFinanceiraNorm, "descricao" | "categoria" | "categorias">,
+): boolean {
+  const rubrica = p.categoria ?? p.categorias?.[0] ?? null;
+  return !ehNaoDesembolsoCusto(p.descricao, rubrica);
 }

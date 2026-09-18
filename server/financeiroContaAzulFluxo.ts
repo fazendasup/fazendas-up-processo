@@ -23,6 +23,7 @@ import {
   montarFluxoPorSemana,
   montarKpisReducaoCusto,
   normalizarParcela,
+  parcelaEhCustoOperacional,
   parcelasAtivasParaRelatorio,
   periodoComparavelAnterior,
   limitarPeriodoComparativoRubricas,
@@ -709,13 +710,14 @@ export async function analisarFinanceiroCfoContaAzul(
   const pagarAtivos = parcelasAtivasParaRelatorio(pagar);
   const receberAtivos = parcelasAtivasParaRelatorio(receber);
   const excluidos = [...pagar, ...receber].filter(p => p.excluido);
+  const pagarCusto = pagarAtivos.filter(parcelaEhCustoOperacional);
 
   const resumo = resumirCaixa(receberAtivos, pagarAtivos);
-  const rubricas = agregarPorRubrica(pagarAtivos);
-  const centrosCusto = agregarPorCentroCusto(pagarAtivos);
-  const matrizRubricaCentro = agregarMatrizRubricaCentro(pagarAtivos).slice(0, 120);
-  const gruposDre = agregarPorGrupoDre(pagarAtivos, rubricas);
-  const qualidadeAlocacao = medirQualidadeAlocacao(pagarAtivos);
+  const rubricas = agregarPorRubrica(pagarCusto);
+  const centrosCusto = agregarPorCentroCusto(pagarCusto);
+  const matrizRubricaCentro = agregarMatrizRubricaCentro(pagarCusto).slice(0, 120);
+  const gruposDre = agregarPorGrupoDre(pagarCusto, rubricas);
+  const qualidadeAlocacao = medirQualidadeAlocacao(pagarCusto);
   const nomesEquipe = Array.from(
     new Set(
       [
@@ -724,7 +726,7 @@ export async function analisarFinanceiroCfoContaAzul(
       ].filter(Boolean),
     ),
   );
-  const fornecedores = agregarPorFornecedor(pagarAtivos, {
+  const fornecedores = agregarPorFornecedor(pagarCusto, {
     excluirPessoal: true,
     nomesEquipe,
   });
@@ -752,9 +754,9 @@ export async function analisarFinanceiroCfoContaAzul(
         pagarPrev.push(p);
       }
     }
-    pagarPrevAtivos = parcelasAtivasParaRelatorio(pagarPrev).filter(p =>
-      parcelaNoComparativoRubricas(p),
-    );
+    pagarPrevAtivos = parcelasAtivasParaRelatorio(pagarPrev)
+      .filter(p => parcelaNoComparativoRubricas(p))
+      .filter(parcelaEhCustoOperacional);
     const rubricasPrev = agregarPorRubrica(pagarPrevAtivos);
     comparativo = montarComparativoCustoMes(rubricas, rubricasPrev, {
       inicio: isoDateLocal(prev.inicio),
