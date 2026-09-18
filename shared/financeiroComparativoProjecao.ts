@@ -24,6 +24,33 @@ function round2(n: number): number {
 
 const RUBRICA_SEM = "(Sem rúbrica)";
 
+/** Resumo por categoria das baixas (p/ aviso do ainda-entra). */
+export function resumirBaixasPorCategoria(
+  parcelas: ParcelaBaseProjecao[],
+  opts?: { soVendas?: boolean; top?: number },
+): Array<{ rubrica: string; total: number; qtd: number; incluido: boolean }> {
+  const map = new Map<
+    string,
+    { total: number; qtd: number; incluido: boolean }
+  >();
+  for (const p of parcelas) {
+    const pago = valorPagoParcela(p);
+    if (pago <= 0) continue;
+    const incluido = ehReceitaVendasCaixa(p);
+    if (opts?.soVendas && !incluido) continue;
+    const rubrica = (p.rubrica || RUBRICA_SEM).trim() || RUBRICA_SEM;
+    const cur = map.get(rubrica) ?? { total: 0, qtd: 0, incluido };
+    cur.total = round2(cur.total + pago);
+    cur.qtd += 1;
+    cur.incluido = incluido;
+    map.set(rubrica, cur);
+  }
+  return [...map.entries()]
+    .map(([rubrica, v]) => ({ rubrica, ...v }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, opts?.top ?? 8);
+}
+
 export type StatusRubricaComparativo =
   | "em_dia"
   | "faltando"

@@ -25,6 +25,7 @@ import {
   montarComparativoDesembolsoMes,
   montarComparativoReceitaMes,
   montarFinanceiroComparativo,
+  resumirBaixasPorCategoria,
   somarRecebidoUltimosNDias,
   somarValorPagoParcelas,
 } from "@shared/financeiroComparativoProjecao";
@@ -430,8 +431,7 @@ export async function carregarComparativoProjecao(
 
   const catalogo = await fetchCatalogoCategorias();
   const idsVendas = idsCategoriasReceitaVendas(catalogo);
-  const optsBaixas =
-    idsVendas.length > 0 ? { idsCategorias: idsVendas } : undefined;
+  // Sempre busca todas as baixas do período; filtro de vendas/investimento no cliente.
 
   const [grade, pagarMes, receberMes, baixas1, baixas2, receber1, receber2, vendas] =
     await Promise.all([
@@ -447,7 +447,6 @@ export async function carregarComparativoProjecao(
             boundsUltimosNDiasMesYm(mes1, diasRestantes).inicio,
             boundsUltimosNDiasMesYm(mes1, diasRestantes).fim,
             projetoId,
-            optsBaixas,
           ).then(r => r.map(toBase))
         : Promise.resolve([] as ParcelaBaseProjecao[]),
       diasRestantes > 0
@@ -455,7 +454,6 @@ export async function carregarComparativoProjecao(
             boundsUltimosNDiasMesYm(mes2, diasRestantes).inicio,
             boundsUltimosNDiasMesYm(mes2, diasRestantes).fim,
             projetoId,
-            optsBaixas,
           ).then(r => r.map(toBase))
         : Promise.resolve([] as ParcelaBaseProjecao[]),
       buscarParcelasReceberParaComparativo(
@@ -487,6 +485,20 @@ export async function carregarComparativoProjecao(
     return somarRecebidoUltimosNDias(receber2, mes2, diasRestantes);
   })();
 
+  const catsBaixas = resumirBaixasPorCategoria([...baixas1, ...baixas2], {
+    top: 6,
+  });
+  const avisoCats =
+    catsBaixas.length > 0
+      ? "Categorias nas baixas jul/ago (últimos N dias): " +
+        catsBaixas
+          .map(
+            c =>
+              `${c.rubrica} R$ ${c.total.toLocaleString("pt-BR")}${c.incluido ? "" : " [excluída]"}`,
+          )
+          .join(" · ")
+      : "Sem baixas no período dos 2 meses anteriores.";
+
   const comparativo = montarFinanceiroComparativo({
     mesYm,
     linhasProjecao: grade.linhas,
@@ -512,9 +524,8 @@ export async function carregarComparativoProjecao(
     },
     avisos: [
       "Caixa (já recebido / a receber / vencido) = Conta Azul ao vivo por vencimento e pagamento.",
-      idsVendas.length > 0
-        ? `Ainda entra = baixas só de categorias DRE receita operacional (${idsVendas.length} cat.) nos últimos N dias · 2 meses — exclui investimento/aporte.`
-        : "Ainda entra = baixas com rúbrica/descrição de venda (catálogo DRE vazio) — exclui investimento/aporte.",
+      `Ainda entra = média das baixas (sem investimento/aporte${idsVendas.length ? `; DRE vendas no catálogo: ${idsVendas.length} cat.` : ""}).`,
+      avisoCats,
       "Já faturado = pedidos sincronizados (status venda). Orçamento ainda não é caixa.",
       `Orçamentos: até o dia ${vendas.diaLimiteOrcamento}` +
         (filtroOrcamento.clienteIdsOrcamento?.length
@@ -547,8 +558,6 @@ export async function carregarFinanceiroDashboard(
 
   const catalogo = await fetchCatalogoCategorias();
   const idsVendas = idsCategoriasReceitaVendas(catalogo);
-  const optsBaixas =
-    idsVendas.length > 0 ? { idsCategorias: idsVendas } : undefined;
 
   const [
     gradeSerie,
@@ -595,12 +604,7 @@ export async function carregarFinanceiroDashboard(
       if (n <= 0) return [] as ParcelaBaseProjecao[];
       const b = boundsUltimosNDiasMesYm(mes1, n);
       return (
-        await buscarBaixasReceberPorPeriodoPagamento(
-          b.inicio,
-          b.fim,
-          projetoId,
-          optsBaixas,
-        )
+        await buscarBaixasReceberPorPeriodoPagamento(b.inicio, b.fim, projetoId)
       ).map(toBase);
     })(),
     (async () => {
@@ -615,12 +619,7 @@ export async function carregarFinanceiroDashboard(
       if (n <= 0) return [] as ParcelaBaseProjecao[];
       const b = boundsUltimosNDiasMesYm(mes2, n);
       return (
-        await buscarBaixasReceberPorPeriodoPagamento(
-          b.inicio,
-          b.fim,
-          projetoId,
-          optsBaixas,
-        )
+        await buscarBaixasReceberPorPeriodoPagamento(b.inicio, b.fim, projetoId)
       ).map(toBase);
     })(),
     carregarTotaisVendasCompetencia(mesYm, { hojeYm, diaHoje }),
@@ -766,9 +765,23 @@ export async function carregarFinanceiroDashboard(
       vendasCompetencia: rMes.vendasCompetencia,
     },
     avisos: [
-      idsVendas.length > 0
-        ? `Dashboard: ainda entra = baixas DRE receita operacional (${idsVendas.length} cat.) · exclui investimento/aporte.`
-        : "Dashboard: ainda entra = só rúbricas de venda (catálogo DRE vazio) · exclui investimento/aporte.",
+      `Ainda entra = baixas do período sem investimento/aporte${idsVendas.length ? ` (catálogo DRE vendas: ${idsVendas.length})` : ""}.`,
+      (() => {
+        const cats = resumirBaixasPorCategoria(
+          [...baixasRest1, ...baixasRest2],
+          { top: 6 },
+        );
+        if (!cats.length) return "Sem baixas nos últimos N dias de jul/ago.";
+        return (
+          "Categorias nas baixas: " +
+          cats
+            .map(
+              c =>
+                `${c.rubrica} R$ ${c.total.toLocaleString("pt-BR")}${c.incluido ? "" : " [excluída]"}`,
+            )
+            .join(" · ")
+        );
+      })(),
       "Projeção de fechar (caixa) = recebido + em aberto + ainda entra.",
       "Faturado/orçamento = volume de pedidos — não some com recebido.",
     ],

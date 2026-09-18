@@ -125,11 +125,14 @@ function textoClassificacaoReceita(
 /**
  * Parcela de contas a receber = receita de vendas (caixa operacional).
  *
- * Regras (nessa ordem):
- * 1. Rúbrica/descrição de investimento/aporte/capital → nunca (mesmo com DRE de venda)
- * 2. entrada_dre === RECEITA_OPERACIONAL_BRUTA → sim
- * 3. outro entrada_dre → não
- * 4. sem DRE → só se indicar venda/produto/serviço
+ * Contas a receber misturam venda, aporte, juros, etc. Regra prática:
+ * 1. Investimento / aporte / capital / mútuo → nunca
+ * 2. DRE RECEITA_OPERACIONAL_BRUTA → sim
+ * 3. DRE OUTRAS_RECEITAS / despesa / dedução → não
+ * 4. Sem DRE → sim (receber genérico), exceto padrões não-venda
+ *
+ * Não exigir a palavra "venda" na rúbrica: no Conta Azul a categoria
+ * costuma ser outro nome e isso zerava o ainda-entra.
  */
 export function ehReceitaVendasCaixa(
   p: Pick<ParcelaBaseProjecao, "descricao" | "rubrica" | "entradaDre">,
@@ -137,7 +140,7 @@ export function ehReceitaVendasCaixa(
   const t = textoClassificacaoReceita(p.descricao, p.rubrica);
   if (
     t &&
-    /\b(investimento|investimentos|aporte|aportes|integraliza|capital social|entrada de capital|aumento de capital|m.?utuo|emprestimo|emprestimos|financiamento|socios?|quotista|quotistas|transferencia entre contas|adiantamento salarial)\b/.test(
+    /\b(investimento|investimentos|aporte|aportes|integraliza|capital social|entrada de capital|aumento de capital|m.?utuo|emprestimo|emprestimos|financiamento|socios?|quotista|quotistas)\b/.test(
       t,
     )
   ) {
@@ -152,17 +155,16 @@ export function ehReceitaVendasCaixa(
     return false;
   }
 
-  if (!t) return false;
   if (
-    /\b(juros|rendiment|aplicacao financeira|outras receitas|receita financeira|recupera[cç][aã]o de despesa|indeniza|reembolso|devolucao de capital|salarial)\b/.test(
+    t &&
+    /\b(juros|rendiment|aplicacao financeira|transferencia entre contas|adiantamento salarial|outras receitas|receita financeira|recupera[cç][aã]o de despesa|indeniza|reembolso de despesa|devolucao de capital)\b/.test(
       t,
     )
   ) {
     return false;
   }
-  return /\b(venda|vendas|faturamento|mercadoria|produto|produtos|servico|servicos|receita operacional|receita de venda|receitas de venda|prestacao de servicos?)\b/.test(
-    t,
-  );
+  // Sem DRE resolvido: conta a receber do período entra (investimento já cortado acima).
+  return true;
 }
 
 function round2(n: number): number {

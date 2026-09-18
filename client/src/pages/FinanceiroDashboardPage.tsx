@@ -755,7 +755,7 @@ export default function FinanceiroDashboardPage() {
                   value={fmtMoney(pv?.aindaEntraProjetado)}
                   hint={
                     pv
-                      ? `Média do recebido de vendas (categoria DRE) nos últimos ${pv.diasRestantes} dia(s) · jul/ago — sem investimento`
+                      ? `Média das baixas (sem investimento/aporte) nos últimos ${pv.diasRestantes} dia(s) · jul/ago`
                       : undefined
                   }
                 />

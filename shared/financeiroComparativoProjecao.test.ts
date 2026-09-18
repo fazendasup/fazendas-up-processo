@@ -102,7 +102,14 @@ describe("ehReceitaVendasCaixa", () => {
     ).toBe(false);
   });
 
-  it("sem DRE: só rúbrica de venda; rejeita receber genérico", () => {
+  it("sem DRE: inclui receber genérico; exclui juros", () => {
+    expect(
+      ehReceitaVendasCaixa({
+        descricao: "Cliente Hortifruti",
+        rubrica: "Recebimento",
+        entradaDre: null,
+      }),
+    ).toBe(true);
     expect(
       ehReceitaVendasCaixa({
         descricao: "Pedido 12",
@@ -110,13 +117,6 @@ describe("ehReceitaVendasCaixa", () => {
         entradaDre: null,
       }),
     ).toBe(true);
-    expect(
-      ehReceitaVendasCaixa({
-        descricao: "Cliente Hortifruti",
-        rubrica: "Recebimento",
-        entradaDre: null,
-      }),
-    ).toBe(false);
     expect(
       ehReceitaVendasCaixa({
         descricao: "Rendimento CDB",
