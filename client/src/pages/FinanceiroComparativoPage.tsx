@@ -274,7 +274,7 @@ export default function FinanceiroComparativoPage() {
                 options={clientesOpcoes}
                 placeholder="Todos os clientes"
                 searchPlaceholder="Buscar cliente…"
-                emptyText="Nenhum cliente com orçamento no período."
+                emptyText="Nenhum cliente com orçamento neste mês."
                 clearLabel="Todos (limpar filtro)"
               />
             </div>
@@ -575,12 +575,17 @@ export default function FinanceiroComparativoPage() {
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Kpi
+                  title="Previsto no mês"
+                  value={fmtMoney(r?.previsto)}
+                  hint="Títulos com vencimento no mês"
+                />
+                <Kpi
                   title="Já recebido"
                   value={fmtMoney(r?.recebido)}
                   hint={
                     r?.pctRecebidoDoPrevisto != null
-                      ? `${fmtPct(r.pctRecebidoDoPrevisto).replace("+", "")} do previsto (${fmtMoney(r.previsto)})`
-                      : `Previsto do mês: ${fmtMoney(r?.previsto)}`
+                      ? `${fmtPct(r.pctRecebidoDoPrevisto).replace("+", "")} do previsto`
+                      : "Baixas no mês"
                   }
                   tone="down"
                 />
@@ -594,15 +599,6 @@ export default function FinanceiroComparativoPage() {
                   value={fmtMoney(r?.vencido)}
                   hint="Em aberto, venceu neste mês e a data já passou"
                   tone={(r?.vencido ?? 0) > 0 ? "up" : "neutral"}
-                />
-                <Kpi
-                  title="Total em aberto no mês"
-                  value={fmtMoney(
-                    r != null
-                      ? (r.aReceberNoMes ?? 0) + (r.vencido ?? 0)
-                      : null,
-                  )}
-                  hint="Ainda a receber + vencido — o que falta entrar deste mês"
                 />
               </div>
 
