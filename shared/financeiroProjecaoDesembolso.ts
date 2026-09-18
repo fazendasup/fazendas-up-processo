@@ -123,38 +123,46 @@ function textoClassificacaoReceita(
 }
 
 /**
- * Parcela de contas a receber que é receita de vendas (caixa operacional).
+ * Parcela de contas a receber = receita de vendas (caixa operacional).
  *
- * - Com `entrada_dre`: só RECEITA_OPERACIONAL_BRUTA.
- * - Sem DRE (catálogo falhou / sem categoria): inclui, exceto padrões
- *   claramente não-venda (juros, empréstimo, transferência…).
- *   Contas a receber da fazenda são majoritariamente venda; exigir a
- *   palavra "venda" na rúbrica zerava o “ainda entra”.
+ * Regras (nessa ordem):
+ * 1. Rúbrica/descrição de investimento/aporte/capital → nunca (mesmo com DRE de venda)
+ * 2. entrada_dre === RECEITA_OPERACIONAL_BRUTA → sim
+ * 3. outro entrada_dre → não
+ * 4. sem DRE → só se indicar venda/produto/serviço
  */
 export function ehReceitaVendasCaixa(
   p: Pick<ParcelaBaseProjecao, "descricao" | "rubrica" | "entradaDre">,
 ): boolean {
-  const dre = (p.entradaDre ?? "").trim().toUpperCase();
-  if (dre === ENTRADA_DRE_RECEITA_VENDAS) return true;
-  if (dre && ENTRADAS_DRE_NAO_VENDA.has(dre)) return false;
-  if (dre) {
-    // Código DRE desconhecido: se parece despesa/custo, fora; senão, fora
-    // por segurança (só operacional bruta conta como venda).
-    if (/^(DESPESA|CUSTO|DEDUC)/.test(dre)) return false;
-    return false;
-  }
-
   const t = textoClassificacaoReceita(p.descricao, p.rubrica);
   if (
     t &&
-    /\b(juros|rendiment|aplicacao financeira|emprestimo|mutuo|m.?utuo|transferencia entre contas|adiantamento salarial|outras receitas|receita financeira|recupera[cç][aã]o de despesa|indeniza[cç]|reembolso de despesa|devolucao de capital)\b/.test(
+    /\b(investimento|investimentos|aporte|aportes|integraliza|capital social|entrada de capital|aumento de capital|m.?utuo|emprestimo|emprestimos|financiamento|socios?|quotista|quotistas|transferencia entre contas|adiantamento salarial)\b/.test(
       t,
     )
   ) {
     return false;
   }
-  // Sem DRE: conta a receber genérica → trata como caixa de vendas.
-  return true;
+
+  const dre = (p.entradaDre ?? "").trim().toUpperCase();
+  if (dre === ENTRADA_DRE_RECEITA_VENDAS) return true;
+  if (dre && ENTRADAS_DRE_NAO_VENDA.has(dre)) return false;
+  if (dre) {
+    if (/^(DESPESA|CUSTO|DEDUC|OUTRAS_)/.test(dre)) return false;
+    return false;
+  }
+
+  if (!t) return false;
+  if (
+    /\b(juros|rendiment|aplicacao financeira|outras receitas|receita financeira|recupera[cç][aã]o de despesa|indeniza|reembolso|devolucao de capital|salarial)\b/.test(
+      t,
+    )
+  ) {
+    return false;
+  }
+  return /\b(venda|vendas|faturamento|mercadoria|produto|produtos|servico|servicos|receita operacional|receita de venda|receitas de venda|prestacao de servicos?)\b/.test(
+    t,
+  );
 }
 
 function round2(n: number): number {

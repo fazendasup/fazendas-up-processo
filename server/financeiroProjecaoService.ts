@@ -2,6 +2,8 @@ import {
   buscarBaixasReceberPorPeriodoPagamento,
   buscarParcelasPagarParaProjecao,
   buscarParcelasReceberParaComparativo,
+  fetchCatalogoCategorias,
+  idsCategoriasReceitaVendas,
 } from "./financeiroContaAzulFluxo";
 import {
   addProjecaoColuna,
@@ -426,6 +428,11 @@ export async function carregarComparativoProjecao(
       : null,
   };
 
+  const catalogo = await fetchCatalogoCategorias();
+  const idsVendas = idsCategoriasReceitaVendas(catalogo);
+  const optsBaixas =
+    idsVendas.length > 0 ? { idsCategorias: idsVendas } : undefined;
+
   const [grade, pagarMes, receberMes, baixas1, baixas2, receber1, receber2, vendas] =
     await Promise.all([
       carregarProjecaoDesembolso(projetoId, mesYm, {
@@ -440,6 +447,7 @@ export async function carregarComparativoProjecao(
             boundsUltimosNDiasMesYm(mes1, diasRestantes).inicio,
             boundsUltimosNDiasMesYm(mes1, diasRestantes).fim,
             projetoId,
+            optsBaixas,
           ).then(r => r.map(toBase))
         : Promise.resolve([] as ParcelaBaseProjecao[]),
       diasRestantes > 0
@@ -447,6 +455,7 @@ export async function carregarComparativoProjecao(
             boundsUltimosNDiasMesYm(mes2, diasRestantes).inicio,
             boundsUltimosNDiasMesYm(mes2, diasRestantes).fim,
             projetoId,
+            optsBaixas,
           ).then(r => r.map(toBase))
         : Promise.resolve([] as ParcelaBaseProjecao[]),
       buscarParcelasReceberParaComparativo(
@@ -503,7 +512,9 @@ export async function carregarComparativoProjecao(
     },
     avisos: [
       "Caixa (já recebido / a receber / vencido) = Conta Azul ao vivo por vencimento e pagamento.",
-      "Ainda entra = média das baixas de receita de vendas (DRE operacional) nos últimos N dias dos 2 meses anteriores.",
+      idsVendas.length > 0
+        ? `Ainda entra = baixas só de categorias DRE receita operacional (${idsVendas.length} cat.) nos últimos N dias · 2 meses — exclui investimento/aporte.`
+        : "Ainda entra = baixas com rúbrica/descrição de venda (catálogo DRE vazio) — exclui investimento/aporte.",
       "Já faturado = pedidos sincronizados (status venda). Orçamento ainda não é caixa.",
       `Orçamentos: até o dia ${vendas.diaLimiteOrcamento}` +
         (filtroOrcamento.clienteIdsOrcamento?.length
@@ -533,6 +544,11 @@ export async function carregarFinanceiroDashboard(
   const force = opts?.forceRefreshCa === true;
 
   const bounds = (ym: string) => boundsMesYmAmericaSp(ym);
+
+  const catalogo = await fetchCatalogoCategorias();
+  const idsVendas = idsCategoriasReceitaVendas(catalogo);
+  const optsBaixas =
+    idsVendas.length > 0 ? { idsCategorias: idsVendas } : undefined;
 
   const [
     gradeSerie,
@@ -578,9 +594,14 @@ export async function carregarFinanceiroDashboard(
       }
       if (n <= 0) return [] as ParcelaBaseProjecao[];
       const b = boundsUltimosNDiasMesYm(mes1, n);
-      return (await buscarBaixasReceberPorPeriodoPagamento(b.inicio, b.fim, projetoId)).map(
-        toBase,
-      );
+      return (
+        await buscarBaixasReceberPorPeriodoPagamento(
+          b.inicio,
+          b.fim,
+          projetoId,
+          optsBaixas,
+        )
+      ).map(toBase);
     })(),
     (async () => {
       const diasNoMesRef = diasNoMesYm(mesYm);
@@ -593,9 +614,14 @@ export async function carregarFinanceiroDashboard(
       }
       if (n <= 0) return [] as ParcelaBaseProjecao[];
       const b = boundsUltimosNDiasMesYm(mes2, n);
-      return (await buscarBaixasReceberPorPeriodoPagamento(b.inicio, b.fim, projetoId)).map(
-        toBase,
-      );
+      return (
+        await buscarBaixasReceberPorPeriodoPagamento(
+          b.inicio,
+          b.fim,
+          projetoId,
+          optsBaixas,
+        )
+      ).map(toBase);
     })(),
     carregarTotaisVendasCompetencia(mesYm, { hojeYm, diaHoje }),
   ]);
@@ -740,7 +766,9 @@ export async function carregarFinanceiroDashboard(
       vendasCompetencia: rMes.vendasCompetencia,
     },
     avisos: [
-      "Dashboard: ainda entra = média das baixas de receita de vendas (Conta Azul DRE) nos últimos N dias · 2 meses.",
+      idsVendas.length > 0
+        ? `Dashboard: ainda entra = baixas DRE receita operacional (${idsVendas.length} cat.) · exclui investimento/aporte.`
+        : "Dashboard: ainda entra = só rúbricas de venda (catálogo DRE vazio) · exclui investimento/aporte.",
       "Projeção de fechar (caixa) = recebido + em aberto + ainda entra.",
       "Faturado/orçamento = volume de pedidos — não some com recebido.",
     ],

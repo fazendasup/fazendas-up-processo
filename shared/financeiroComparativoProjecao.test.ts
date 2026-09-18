@@ -85,14 +85,38 @@ describe("ehReceitaVendasCaixa", () => {
     ).toBe(false);
   });
 
-  it("sem DRE: inclui receber genérico e exclui juros/não-venda", () => {
+  it("exclui investimento/aporte mesmo com DRE de venda", () => {
+    expect(
+      ehReceitaVendasCaixa({
+        descricao: "Aporte sócio 404 mil",
+        rubrica: "Investimento",
+        entradaDre: "RECEITA_OPERACIONAL_BRUTA",
+      }),
+    ).toBe(false);
+    expect(
+      ehReceitaVendasCaixa({
+        descricao: "Integralização de capital",
+        rubrica: "Outras receitas",
+        entradaDre: null,
+      }),
+    ).toBe(false);
+  });
+
+  it("sem DRE: só rúbrica de venda; rejeita receber genérico", () => {
+    expect(
+      ehReceitaVendasCaixa({
+        descricao: "Pedido 12",
+        rubrica: "Vendas de produtos",
+        entradaDre: null,
+      }),
+    ).toBe(true);
     expect(
       ehReceitaVendasCaixa({
         descricao: "Cliente Hortifruti",
         rubrica: "Recebimento",
         entradaDre: null,
       }),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       ehReceitaVendasCaixa({
         descricao: "Rendimento CDB",

@@ -99,24 +99,33 @@ type CategoriasBuscaResponse = {
 
 /**
  * Catálogo Conta Azul (GET /v1/categorias) — resolve entrada_dre das rúbricas.
- * Cache curto; falha silenciosa (mapa vazio) para não bloquear o dashboard.
- * Tenta folhas (permite_apenas_filhos=true) — é nelas que o DRE costuma vir.
+ * Sempre mescla folhas + árvore. Não cacheia mapa vazio por muito tempo.
  */
-async function fetchCatalogoCategorias(): Promise<Map<string, CategoriaCa>> {
+export async function fetchCatalogoCategorias(): Promise<
+  Map<string, CategoriaCa>
+> {
   if (
     catalogoCategoriasCache &&
+    catalogoCategoriasCache.map.size > 0 &&
     Date.now() - catalogoCategoriasCache.at < CATALOGO_TTL_MS
   ) {
     return catalogoCategoriasCache.map;
   }
+  if (
+    catalogoCategoriasCache &&
+    catalogoCategoriasCache.map.size === 0 &&
+    Date.now() - catalogoCategoriasCache.at < 30_000
+  ) {
+    return catalogoCategoriasCache.map;
+  }
+
   const map = new Map<string, CategoriaCa>();
   try {
     const env = getComercialEnv();
     const prisma = getComercialPrisma();
     const cred = await ensureValidAccessToken(prisma, env);
     if (!cred?.accessToken) {
-      // Não cacheia vazio por token ausente por muito tempo — tenta de novo cedo.
-      catalogoCategoriasCache = { at: Date.now() - CATALOGO_TTL_MS + 30_000, map };
+      catalogoCategoriasCache = { at: Date.now(), map };
       return map;
     }
     const http = createContaAzulHttp(env, cred.accessToken);
@@ -141,23 +150,47 @@ async function fetchCatalogoCategorias(): Promise<Map<string, CategoriaCa>> {
         }
         const batch = res.itens ?? [];
         for (const cat of batch) {
-          if (cat.id) map.set(cat.id, cat);
+          if (cat.id) {
+            const prev = map.get(cat.id);
+            // Prefere entrada_dre preenchida se já tínhamos o id.
+            if (!prev?.entrada_dre || cat.entrada_dre) {
+              map.set(cat.id, { ...prev, ...cat });
+            }
+          }
           if (cat.nome?.trim()) {
-            map.set(`nome:${cat.nome.trim().toLowerCase()}`, cat);
+            const key = `nome:${cat.nome.trim().toLowerCase()}`;
+            const prev = map.get(key);
+            if (!prev?.entrada_dre || cat.entrada_dre) {
+              map.set(key, { ...prev, ...cat });
+            }
           }
         }
         if (batch.length < tamanho) break;
       }
     };
 
-    // Folhas primeiro (DRE preenchido); depois árvore completa.
     await coletar(true);
-    if (map.size === 0) await coletar(false);
+    await coletar(false);
   } catch {
     // catálogo opcional
   }
   catalogoCategoriasCache = { at: Date.now(), map };
   return map;
+}
+
+/** IDs de categorias com DRE = receita operacional bruta (vendas). */
+export function idsCategoriasReceitaVendas(
+  catalogo: Map<string, CategoriaCa>,
+): string[] {
+  const ids = new Set<string>();
+  for (const [key, cat] of catalogo) {
+    if (key.startsWith("nome:")) continue;
+    const dre = (cat.entrada_dre ?? "").trim().toUpperCase();
+    if (dre === "RECEITA_OPERACIONAL_BRUTA" && cat.id) {
+      ids.add(cat.id);
+    }
+  }
+  return Array.from(ids);
 }
 
 type ParcelaDetalheCa = {
@@ -830,11 +863,15 @@ export async function buscarParcelasReceberParaComparativo(
  * Conta Azul exige data_vencimento_*: usamos janela ampla de vencimento.
  * Ideal p/ “ainda entra” — o filtro da API já limita o período de caixa,
  * mesmo quando a listagem omite data_pagamento no JSON.
+ *
+ * Se `idsCategorias` for passado, a API restringe a essas categorias
+ * (ex.: só RECEITA_OPERACIONAL_BRUTA).
  */
 export async function buscarBaixasReceberPorPeriodoPagamento(
   inicio: Date,
   fim: Date,
   projetoId: number,
+  opts?: { idsCategorias?: string[] },
 ): Promise<ParcelaFinanceiraNorm[]> {
   const env = getComercialEnv();
   const prisma = getComercialPrisma();
@@ -858,6 +895,7 @@ export async function buscarBaixasReceberPorPeriodoPagamento(
   const tamanho = 200;
   const maxPaginas = 40;
   const porId = new Map<string, ParcelaCaRaw>();
+  const idsCat = (opts?.idsCategorias ?? []).filter(Boolean);
 
   for (let pagina = 1; pagina <= maxPaginas; pagina++) {
     const qs = new URLSearchParams({
@@ -868,6 +906,9 @@ export async function buscarBaixasReceberPorPeriodoPagamento(
       data_pagamento_de: pagDe,
       data_pagamento_ate: pagAte,
     });
+    for (const id of idsCat) {
+      qs.append("ids_categorias", id);
+    }
     let res: BuscaParcelasResponse;
     try {
       res = await fetchParcelasPagina(http, pathBase, qs);
