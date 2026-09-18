@@ -286,6 +286,40 @@ describe("montarComparativoReceitaMes", () => {
     expect(out.gapVsProjecaoVendas).toBe(3_000 - 13_000);
     expect(out.gapFinal).toBe(0);
   });
+
+  it("conta recebido quitado mesmo sem data_pagamento (listagem CA)", () => {
+    const out = montarComparativoReceitaMes({
+      mesYm: "2026-09",
+      parcelasReceberMes: [
+        parcela({
+          id: "r-quitado-sem-data-pag",
+          descricao: "Cliente pago",
+          status: "RECEBIDO",
+          valor: 43_000,
+          valorPago: 43_000,
+          valorEmAberto: 0,
+          dataPagamento: null,
+          dataVencimento: "2026-09-08",
+        }),
+        parcela({
+          id: "r-aberto",
+          descricao: "Em aberto",
+          valor: 5_000,
+          valorPago: 0,
+          valorEmAberto: 5_000,
+          status: "EM_ABERTO",
+          dataPagamento: null,
+          dataVencimento: "2026-09-25",
+        }),
+      ],
+      hojeYm: "2026-09",
+      diaHoje: 17,
+    });
+    expect(out.previsto).toBe(48_000);
+    expect(out.recebido).toBe(43_000);
+    expect(out.aReceberNoMes).toBe(5_000);
+    expect(out.vencido).toBe(0);
+  });
 });
 
 describe("montarFinanceiroComparativo", () => {

@@ -352,9 +352,9 @@ export function montarComparativoReceitaMes(input: {
     const vencMes = vencYm === mesYm;
     const aberto = p.valorEmAberto > 0.009;
     const vencIso = (p.dataVencimento ?? "").slice(0, 10);
-    // Recebido alinhado ao Conta Azul: só com data_pagamento no mês (sem fallback).
-    const pagYm = (p.dataPagamento ?? "").slice(0, 7);
-    const pagMes = /^\d{4}-\d{2}$/.test(pagYm) && pagYm === mesYm;
+    // Listagem CA costuma omitir data_pagamento: mesPagamentoParcela faz
+    // fallback para vencimento quando o título já está quitado.
+    const pagMes = mesPagamentoParcela(p) === mesYm;
 
     if (vencMes) {
       const valorTitulo = round2(

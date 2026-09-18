@@ -37,12 +37,11 @@ import {
 } from "./financeiroClassificacaoDb";
 import * as moEquipeDb from "./custosMoEquipeDb";
 import { colaboradoresFolha052026 } from "@shared/custosMoEquipeFolha052026";
+import { diaIsoAmericaSp } from "@shared/comercial/periodo-america-sp";
 
+/** Calendário America/Sao_Paulo — evita deslocar o mês em máquinas UTC/UTC-4. */
 function isoDateLocal(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return diaIsoAmericaSp(d);
 }
 
 function round2(n: number): number {
@@ -186,7 +185,11 @@ async function fetchParcelasPaginated(
       }
       const batch = res.itens ?? [];
       for (const item of batch) {
-        if (item.id) porId.set(item.id, item);
+        if (!item.id) continue;
+        const prev = porId.get(item.id);
+        // Não sobrescrever um registro que já tem data_pagamento com outro sem.
+        if (prev?.data_pagamento && !item.data_pagamento) continue;
+        porId.set(item.id, item);
       }
       if (batch.length < tamanho) break;
     }
