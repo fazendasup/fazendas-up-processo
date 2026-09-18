@@ -28,7 +28,6 @@ import {
   type TipoFichaCustoProduto,
 } from "@shared/custosProduto";
 import { calcularRentabilidade, type LinhaRentabilidadeResultado } from "@shared/custosRentabilidade";
-import type { LinhaRentabilidadeResultado } from "@shared/custosRentabilidade";
 import {
   somarOverheadItensIncluidos,
   type ModoOverheadRentabilidade,
