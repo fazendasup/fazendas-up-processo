@@ -1028,6 +1028,72 @@ export async function carregarDashboardKpiDetalhe(
     );
   }
 
+  if (kpi === "saldo-projetado") {
+    const dash = await carregarFinanceiroDashboard(projetoId, mesYm);
+    const receitaProj = dash.projecaoVendas.projecaoMesTotal;
+    const desembolsoProj = dash.desembolsoTotais.projetado;
+    const gap = dash.caixa.gapCaixaMes;
+    const linhas: DashboardKpiLinha[] = [
+      {
+        id: "entrou",
+        titulo: "Entrou (recebido)",
+        subtitulo: "Baixas Conta Azul no mês",
+        valor: dash.receita.recebido,
+        meta: "+ receita",
+        grupo: "Receita caixa",
+      },
+      {
+        id: "a-receber",
+        titulo: "A receber (no prazo)",
+        subtitulo: "Em aberto, ainda não venceu",
+        valor: dash.receita.aReceberNoMes,
+        meta: "+ receita",
+        grupo: "Receita caixa",
+      },
+      {
+        id: "em-atraso",
+        titulo: "Em atraso",
+        subtitulo: "Em aberto, já venceu neste mês",
+        valor: dash.receita.vencido,
+        meta: "+ receita",
+        grupo: "Receita caixa",
+      },
+      {
+        id: "ainda-entra",
+        titulo: "Ainda entra (proj. vendas)",
+        subtitulo:
+          dash.projecaoVendas.diasRestantes > 0
+            ? `Média Receitas de Vendas · últimos ${dash.projecaoVendas.diasRestantes} dias`
+            : "Sem dias restantes",
+        valor: dash.projecaoVendas.aindaEntraProjetado,
+        meta: "+ receita",
+        grupo: "Receita caixa",
+      },
+      {
+        id: "receita-total",
+        titulo: "Receita caixa projetada",
+        subtitulo: "Soma das camadas acima",
+        valor: receitaProj,
+        meta: "subtotal",
+        grupo: "Receita caixa",
+      },
+      {
+        id: "desembolso",
+        titulo: "Desembolso plano (projetado)",
+        subtitulo: "Grade ativa de desembolso",
+        valor: -desembolsoProj,
+        meta: "− despesa",
+        grupo: "Despesa",
+      },
+    ];
+    return linhasDe(
+      linhas,
+      "Saldo projetado do mês",
+      "Receita caixa projetada (recebido + em aberto + ainda entra) − desembolso projetado. Este é o resultado de caixa esperado ao fechar o mês.",
+      gap,
+    );
+  }
+
   if (kpi === "proj-vendas") {
     const mes1 = mesAnteriorProjecao(mesYm);
     const mes2 = mesAnteriorProjecao(mes1);
