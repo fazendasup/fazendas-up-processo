@@ -609,7 +609,61 @@ export default function FinanceiroDashboardPage() {
           </div>
         </div>
 
-        <FinanceiroCfoNav active="dashboard" />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <FinanceiroCfoNav active="dashboard" />
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-medium text-muted-foreground">
+              Âncora saldo
+            </span>
+            <Input
+              className="h-8 w-[120px] text-xs"
+              inputMode="decimal"
+              placeholder="R$ inicial"
+              title="Saldo total na data (todas as contas)"
+              value={saldoInicialTxt}
+              onChange={e => setSaldoInicialTxt(e.target.value)}
+            />
+            <Input
+              type="date"
+              className="h-8 w-[138px] text-xs"
+              title="Data do saldo informado"
+              value={saldoData}
+              onChange={e => setSaldoData(e.target.value)}
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-8 px-2.5 text-xs"
+              disabled={salvarConfigSaldos.isPending}
+              onClick={salvarSaldoBancario}
+            >
+              {salvarConfigSaldos.isPending ? "…" : "Salvar"}
+            </Button>
+            {(data?.bradescoConfig?.saldoInicial != null ||
+              data?.bradescoConfig?.saldoInicialData ||
+              saldoInicialTxt ||
+              saldoData) && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-8 px-2 text-xs text-muted-foreground"
+                disabled={salvarConfigSaldos.isPending}
+                onClick={() => {
+                  setSaldoInicialTxt("");
+                  setSaldoData("");
+                  salvarConfigSaldos.mutate({
+                    saldoBancarioInicial: null,
+                    saldoBancarioInicialData: null,
+                  });
+                }}
+              >
+                Limpar
+              </Button>
+            )}
+          </div>
+        </div>
 
         {q.isLoading ? (
           <p className="text-sm text-muted-foreground">Carregando dashboard…</p>
@@ -631,7 +685,7 @@ export default function FinanceiroDashboardPage() {
                   Totais do plano × composição por rúbrica.
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
                   <Kpi
                     title="Plano (projetado)"
                     value={fmtMoney(des?.projetado)}
@@ -669,86 +723,23 @@ export default function FinanceiroDashboardPage() {
                     tone={aindaCabe >= 0 ? "down" : "up"}
                     href={kpiHref("ainda-cabe")}
                   />
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-[1fr_1.4fr]">
-                <Kpi
-                  title="Saldo disponível"
-                  value={fmtMoney(saldoContaAzul)}
-                  hint={
-                    data?.movimentosSaldo
-                      ? `Inicial + R$ ${data.movimentosSaldo.recebido.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} recebido − R$ ${data.movimentosSaldo.pago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} pago`
-                      : "Informe o saldo inicial abaixo (todas as contas)"
-                  }
-                  tone={
-                    saldoContaAzul == null
-                      ? "neutral"
-                      : saldoContaAzul >= 0
-                        ? "down"
-                        : "up"
-                  }
-                  href={kpiHref("saldo-conta-azul")}
-                />
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-semibold tracking-tight">
-                      Âncora do saldo bancário
-                    </CardTitle>
-                    <p className="text-xs font-normal text-muted-foreground">
-                      Digite o saldo total (Conta Azul + Bradesco + demais) na
-                      data escolhida. O sistema aplica as baixas de todas as
-                      contas a partir dessa data.
-                    </p>
-                  </CardHeader>
-                  <CardContent className="flex flex-wrap items-end gap-3 pt-0">
-                    <div>
-                      <Label className="text-xs">Saldo inicial (R$)</Label>
-                      <Input
-                        className="h-9 w-[160px]"
-                        inputMode="decimal"
-                        placeholder="0,00"
-                        value={saldoInicialTxt}
-                        onChange={e => setSaldoInicialTxt(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Data do saldo</Label>
-                      <Input
-                        type="date"
-                        className="h-9 w-[160px]"
-                        value={saldoData}
-                        onChange={e => setSaldoData(e.target.value)}
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      className="h-9"
-                      disabled={salvarConfigSaldos.isPending}
-                      onClick={salvarSaldoBancario}
-                    >
-                      {salvarConfigSaldos.isPending ? "Salvando…" : "Salvar"}
-                    </Button>
-                    {(data?.bradescoConfig?.saldoInicial != null ||
-                      data?.bradescoConfig?.saldoInicialData) && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-9 text-muted-foreground"
-                        disabled={salvarConfigSaldos.isPending}
-                        onClick={() => {
-                          setSaldoInicialTxt("");
-                          setSaldoData("");
-                          salvarConfigSaldos.mutate({
-                            saldoBancarioInicial: null,
-                            saldoBancarioInicialData: null,
-                          });
-                        }}
-                      >
-                        Limpar
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
+                  <Kpi
+                    title="Saldo disponível"
+                    value={fmtMoney(saldoContaAzul)}
+                    hint={
+                      data?.movimentosSaldo
+                        ? `+${fmtMoneyShort(data.movimentosSaldo.recebido)} rec. −${fmtMoneyShort(data.movimentosSaldo.pago)} pag.`
+                        : "Defina a âncora no topo"
+                    }
+                    tone={
+                      saldoContaAzul == null
+                        ? "neutral"
+                        : saldoContaAzul >= 0
+                          ? "down"
+                          : "up"
+                    }
+                    href={kpiHref("saldo-conta-azul")}
+                  />
               </div>
 
               <Card>
