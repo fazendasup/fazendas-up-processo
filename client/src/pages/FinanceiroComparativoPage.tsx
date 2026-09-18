@@ -2,7 +2,6 @@ import { useMemo, useState, Fragment, useEffect } from "react";
 import { Link } from "wouter";
 import {
   ArrowDownRight,
-  ArrowLeft,
   ArrowUpRight,
   Check,
   ChevronDown,
