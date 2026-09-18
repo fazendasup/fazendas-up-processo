@@ -1227,8 +1227,18 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                         </span>
                         <span className="mt-0.5 block text-[9px] font-normal text-muted-foreground">
                           {fmtMoney(data.mediaFaturamento.mensal)}
-                          /mês · {data.mediaFaturamento.mesesHorizonte}m
+                          /mês · venda+frete
                         </span>
+                        {data.mediaFaturamento.meses?.length ? (
+                          <span className="mt-0.5 block text-[9px] font-normal text-muted-foreground">
+                            {data.mediaFaturamento.meses
+                              .map(
+                                m =>
+                                  `${m.mesYm.slice(5)} ${fmtMoney(m.vendas)}`,
+                              )
+                              .join(" · ")}
+                          </span>
+                        ) : null}
                       </div>
                     ) : (
                       "—"
