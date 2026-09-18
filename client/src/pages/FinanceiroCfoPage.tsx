@@ -468,7 +468,7 @@ export default function FinanceiroCfoPage() {
                 icon={<Wallet className="h-4 w-4 text-sky-600" />}
                 label="Gasto do mês"
                 value={fmtMoney(kpis.gastoTotal)}
-                hint={`${periodoLabel} · só pago, sem transferências`}
+                hint={`${periodoLabel} · saiu da conta (pago) · sem transferência`}
               />
               <Kpi
                 icon={
@@ -530,8 +530,15 @@ export default function FinanceiroCfoPage() {
                 {fmtDate(data.comparativo.periodoAnterior.inicio)} →{" "}
                 {fmtDate(data.comparativo.periodoAnterior.fim)} · gasto ant.{" "}
                 {fmtMoney(data.comparativo.gastoAnterior)}
+                {" · "}
+                critério: data de pagamento (dinheiro que saiu da conta).
               </p>
-            ) : null}
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Gasto = baixas com data de pagamento no período, sem
+                transferência entre contas / investimento / desconto obtido.
+              </p>
+            )}
 
             <Tabs
               value={tabAtiva}

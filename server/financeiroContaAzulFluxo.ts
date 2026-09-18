@@ -23,6 +23,7 @@ import {
   montarFluxoPorSemana,
   montarKpisReducaoCusto,
   normalizarParcela,
+  parcelaDespesaExecutadaNoPeriodo,
   parcelaEhCustoOperacional,
   parcelasAtivasParaRelatorio,
   periodoComparavelAnterior,
@@ -710,7 +711,13 @@ export async function analisarFinanceiroCfoContaAzul(
   const pagarAtivos = parcelasAtivasParaRelatorio(pagar);
   const receberAtivos = parcelasAtivasParaRelatorio(receber);
   const excluidos = [...pagar, ...receber].filter(p => p.excluido);
-  const pagarCusto = pagarAtivos.filter(parcelaEhCustoOperacional);
+
+  const periodoInicio = isoDateLocal(inicio);
+  const periodoFim = isoDateLocal(fim);
+  /** Só o que já saiu da conta no período (pago), sem transferência/investimento. */
+  const pagarCusto = pagarAtivos.filter(p =>
+    parcelaDespesaExecutadaNoPeriodo(p, periodoInicio, periodoFim),
+  );
 
   const resumo = resumirCaixa(receberAtivos, pagarAtivos);
   const rubricas = agregarPorRubrica(pagarCusto);
@@ -754,13 +761,17 @@ export async function analisarFinanceiroCfoContaAzul(
         pagarPrev.push(p);
       }
     }
+    const prevInicio = isoDateLocal(prev.inicio);
+    const prevFim = isoDateLocal(prev.fim);
     pagarPrevAtivos = parcelasAtivasParaRelatorio(pagarPrev)
       .filter(p => parcelaNoComparativoRubricas(p))
-      .filter(parcelaEhCustoOperacional);
+      .filter(p =>
+        parcelaDespesaExecutadaNoPeriodo(p, prevInicio, prevFim),
+      );
     const rubricasPrev = agregarPorRubrica(pagarPrevAtivos);
     comparativo = montarComparativoCustoMes(rubricas, rubricasPrev, {
-      inicio: isoDateLocal(prev.inicio),
-      fim: isoDateLocal(prev.fim),
+      inicio: prevInicio,
+      fim: prevFim,
     });
   }
 
@@ -779,8 +790,7 @@ export async function analisarFinanceiroCfoContaAzul(
     comparativo,
   });
 
-  const periodoInicio = isoDateLocal(inicio);
-  const periodoFim = isoDateLocal(fim);
+  // periodoInicio/periodoFim já definidos acima para filtrar despesa executada.
   const todasAtivas = [...receberAtivos, ...pagarAtivos];
   const fluxoDias = montarFluxoPorDia(todasAtivas, periodoInicio, periodoFim);
   const fluxoSemanas = montarFluxoPorSemana(todasAtivas);

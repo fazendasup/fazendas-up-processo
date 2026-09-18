@@ -1531,3 +1531,29 @@ export function parcelaEhCustoOperacional(
   const rubrica = p.categoria ?? p.categorias?.[0] ?? null;
   return !ehNaoDesembolsoCusto(p.descricao, rubrica);
 }
+
+/**
+ * Despesa já executada no período = dinheiro que saiu da conta.
+ * Critério: data de pagamento dentro do intervalo + valor pago > 0 +
+ * custo operacional (sem transferência/investimento/desconto obtido).
+ */
+export function parcelaDespesaExecutadaNoPeriodo(
+  p: Pick<
+    ParcelaFinanceiraNorm,
+    | "descricao"
+    | "categoria"
+    | "categorias"
+    | "dataPagamento"
+    | "valorPago"
+    | "excluido"
+  >,
+  inicioIso: string,
+  fimIso: string,
+): boolean {
+  if (p.excluido) return false;
+  if (!parcelaEhCustoOperacional(p)) return false;
+  const dp = (p.dataPagamento ?? "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dp)) return false;
+  if (dp < inicioIso || dp > fimIso) return false;
+  return Number(p.valorPago ?? 0) > 0.009;
+}
