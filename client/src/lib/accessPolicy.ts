@@ -8,6 +8,7 @@ export type ComercialPerfil =
   | "COMERCIAL"
   | "GERENTE_COMERCIAL"
   | "LOGISTICA"
+  | "FINANCEIRO"
   | "ADMIN";
 
 export function isPromoterPerfil(perfil: string | null | undefined): boolean {
@@ -16,6 +17,10 @@ export function isPromoterPerfil(perfil: string | null | undefined): boolean {
 
 export function isLiderColheitaPerfil(perfil: string | null | undefined): boolean {
   return perfil === "LIDER_COLHEITA";
+}
+
+export function isFinanceiroPerfil(perfil: string | null | undefined): boolean {
+  return perfil === "FINANCEIRO";
 }
 
 export function ocultarValoresComerciais(perfil: string | null | undefined): boolean {
@@ -36,12 +41,16 @@ export function dashboardPathForUserRole(role: string | null | undefined): strin
 }
 
 export function homeForCommercialPerfil(perfil: string | null | undefined): string {
+  if (isFinanceiroPerfil(perfil)) return "/financeiro-cfo";
   if (perfil === "LOGISTICA") return "/comercial/entregador";
   if (isLiderColheitaPerfil(perfil)) return "/comercial/pedidos";
   return isPromoterPerfil(perfil) ? "/comercial/acompanhamento-avarias" : "/comercial/dashboard";
 }
 
 export function canAccessCommercialPath(path: string, perfil: string | null | undefined): boolean {
+  if (isFinanceiroPerfil(perfil)) {
+    return path === "/financeiro-cfo" || path.startsWith("/financeiro-cfo/");
+  }
   if (perfil === "LOGISTICA") {
     const allowed = ["/comercial/entregas", "/comercial/entregador"];
     return allowed.some((allowedPath) => path === allowedPath || path.startsWith(`${allowedPath}/`));
@@ -84,6 +93,7 @@ export function roleLabel(role: AppUserRole | string | null | undefined, comerci
   if (role === "platform_admin") return "Equipe FUP";
   if (isOperationalAdminRole(role)) return "Administrador";
   if (role === "comercial") {
+    if (isFinanceiroPerfil(comercialPerfil)) return "Financeiro";
     if (comercialPerfil === "LOGISTICA") return "Logística";
     if (isLiderColheitaPerfil(comercialPerfil)) return "Líder de colheita";
     return isPromoterPerfil(comercialPerfil) ? "Promoter" : "Comercial";

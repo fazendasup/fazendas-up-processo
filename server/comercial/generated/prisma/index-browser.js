@@ -795,6 +795,7 @@ exports.PerfilUsuario = exports.$Enums.PerfilUsuario = {
   COMERCIAL: 'COMERCIAL',
   OPERACOES: 'OPERACOES',
   LOGISTICA: 'LOGISTICA',
+  FINANCEIRO: 'FINANCEIRO',
   ADMIN: 'ADMIN'
 };
 

@@ -61,6 +61,21 @@ describe("accessPolicy", () => {
     expect(canAccessCommercialPath("/comercial/clientes", "LOGISTICA")).toBe(false);
   });
 
+  it("limita financeiro somente a analise financeiro-cfo", () => {
+    expect(homeForCommercialPerfil("FINANCEIRO")).toBe("/financeiro-cfo");
+    expect(roleLabel("comercial", "FINANCEIRO")).toBe("Financeiro");
+
+    expect(canAccessCommercialPath("/financeiro-cfo", "FINANCEIRO")).toBe(true);
+    expect(canAccessCommercialPath("/financeiro-cfo/comparativo", "FINANCEIRO")).toBe(true);
+    expect(canAccessCommercialPath("/financeiro-cfo/analise", "FINANCEIRO")).toBe(true);
+    expect(canAccessCommercialPath("/financeiro-cfo/kpi/recebido", "FINANCEIRO")).toBe(true);
+
+    expect(canAccessCommercialPath("/comercial/dashboard", "FINANCEIRO")).toBe(false);
+    expect(canAccessCommercialPath("/comercial/pedidos", "FINANCEIRO")).toBe(false);
+    expect(canAccessCommercialPath("/custos-producao", "FINANCEIRO")).toBe(false);
+    expect(canAccessCommercialPath("/estoque", "FINANCEIRO")).toBe(false);
+  });
+
   it("limita comercial/operacoes as paginas comerciais liberadas", () => {
     for (const perfil of ["COMERCIAL", "OPERACOES"] as const) {
       expect(homeForCommercialPerfil(perfil)).toBe("/comercial/dashboard");

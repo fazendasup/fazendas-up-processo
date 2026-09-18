@@ -1,9 +1,12 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import {
   custosProducaoModuleProcedure,
   projetoIdFromCtx,
   router,
 } from "../_core/trpc";
+import { resolveComercialUsuario } from "../comercial/resolve-usuario";
+import type { User } from "../../drizzle/schema";
 import {
   analisarFinanceiroCfoContaAzul,
   buscarParcelaDetalheFinanceiro,
@@ -31,6 +34,18 @@ import {
 import { upsertRubricaMesConcluida } from "../financeiroProjecaoDb";
 import { DASHBOARD_KPI_IDS } from "@shared/financeiroDashboardKpi";
 import { DASHBOARD_GRANULARIDADES } from "@shared/financeiroPeriodoDashboard";
+
+async function assertNaoPerfilSomenteAnalise(user: User) {
+  if (user.role !== "comercial") return;
+  const comercialUsuario = await resolveComercialUsuario(user);
+  if (comercialUsuario?.perfil === "FINANCEIRO") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message:
+        "Perfil financeiro não edita rúbricas, gaps, lançamentos ou ajustes.",
+    });
+  }
+}
 
 export const financeiroCfoRouter = router({
   /** Pacote financeiro Conta Azul + classificação editável do projeto. */
@@ -110,12 +125,14 @@ export const financeiroCfoRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertNaoPerfilSomenteAnalise(ctx.user);
       return upsertFinanceiroCaClassificacao(projetoIdFromCtx(ctx), input);
     }),
 
   removerClassificacao: custosProducaoModuleProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
+      await assertNaoPerfilSomenteAnalise(ctx.user);
       await deleteFinanceiroCaClassificacao(projetoIdFromCtx(ctx), input.id);
       return { ok: true as const };
     }),
@@ -139,6 +156,7 @@ export const financeiroCfoRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertNaoPerfilSomenteAnalise(ctx.user);
       return insertFinanceiroCaAjusteManual(projetoIdFromCtx(ctx), {
         ...input,
         valor: String(input.valor),
@@ -148,6 +166,7 @@ export const financeiroCfoRouter = router({
   excluirAjusteManual: custosProducaoModuleProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
+      await assertNaoPerfilSomenteAnalise(ctx.user);
       await softDeleteFinanceiroCaAjusteManual(
         projetoIdFromCtx(ctx),
         input.id,

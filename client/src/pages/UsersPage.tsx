@@ -25,7 +25,7 @@ import { motion } from 'framer-motion';
 import { useRole } from '@/hooks/useRole';
 
 type GlobalAppRole = 'user' | 'admin' | 'platform_admin' | 'comercial' | 'visitante';
-type RoleOption = GlobalAppRole | 'promoter' | 'lider_colheita' | 'logistica';
+type RoleOption = GlobalAppRole | 'promoter' | 'lider_colheita' | 'logistica' | 'financeiro';
 type ProjetoRole = 'admin' | 'operador' | 'visualizador';
 type UserProjectAccess = { id: number; nome: string; role: string };
 type ManageableProject = {
@@ -37,13 +37,18 @@ type ManageableProject = {
 };
 
 function appRoleFromOption(role: RoleOption): GlobalAppRole {
-  return role === 'promoter' || role === 'lider_colheita' || role === 'logistica' ? 'comercial' : role;
+  return role === 'promoter' || role === 'lider_colheita' || role === 'logistica' || role === 'financeiro'
+    ? 'comercial'
+    : role;
 }
 
-function comercialPerfilFromOption(role: RoleOption): 'PROMOTER' | 'LIDER_COLHEITA' | 'LOGISTICA' | 'COMERCIAL' | undefined {
+function comercialPerfilFromOption(
+  role: RoleOption,
+): 'PROMOTER' | 'LIDER_COLHEITA' | 'LOGISTICA' | 'FINANCEIRO' | 'COMERCIAL' | undefined {
   if (role === 'promoter') return 'PROMOTER';
   if (role === 'lider_colheita') return 'LIDER_COLHEITA';
   if (role === 'logistica') return 'LOGISTICA';
+  if (role === 'financeiro') return 'FINANCEIRO';
   if (role === 'comercial') return 'COMERCIAL';
   return undefined;
 }
@@ -52,6 +57,7 @@ function roleOptionForUser(user: { role: string; comercialPerfil?: string | null
   if (user.role === 'comercial' && user.comercialPerfil === 'PROMOTER') return 'promoter';
   if (user.role === 'comercial' && user.comercialPerfil === 'LIDER_COLHEITA') return 'lider_colheita';
   if (user.role === 'comercial' && user.comercialPerfil === 'LOGISTICA') return 'logistica';
+  if (user.role === 'comercial' && user.comercialPerfil === 'FINANCEIRO') return 'financeiro';
   if (['user', 'admin', 'platform_admin', 'comercial', 'visitante'].includes(user.role)) {
     return user.role as GlobalAppRole;
   }
@@ -167,6 +173,9 @@ function UsersContent() {
       msg = 'Alterar para Líder de colheita? Terá acesso somente a Pedidos e Acompanhamento de avarias, sem números de vendas.';
     } else if (next === 'logistica') {
       msg = 'Alterar para Logística? Terá acesso somente ao modo entregador das entregas.';
+    } else if (next === 'financeiro') {
+      msg =
+        'Alterar para Financeiro? Terá acesso somente à análise financeira (dashboard, comparativo e projeção) nos projetos vinculados.';
     } else if (next === 'visitante') {
       msg = 'Alterar para Visitante? Poderá visualizar o projeto vinculado e extrair relatórios, mas não editar nem acionar operações.';
     } else {
@@ -355,6 +364,7 @@ function UsersContent() {
                       <SelectItem value="promoter">Promoter</SelectItem>
                       <SelectItem value="lider_colheita">Líder de colheita</SelectItem>
                       <SelectItem value="logistica">Logística</SelectItem>
+                      <SelectItem value="financeiro">Financeiro</SelectItem>
                       {isPlatformAdmin && (
                         <SelectItem value="platform_admin">Equipa da plataforma</SelectItem>
                       )}
@@ -613,6 +623,7 @@ function UsersContent() {
                         <SelectItem value="promoter">Promoter</SelectItem>
                         <SelectItem value="lider_colheita">Líder de colheita</SelectItem>
                         <SelectItem value="logistica">Logística</SelectItem>
+                        <SelectItem value="financeiro">Financeiro</SelectItem>
                         {isPlatformAdmin && (
                           <SelectItem value="platform_admin">Equipa da plataforma</SelectItem>
                         )}

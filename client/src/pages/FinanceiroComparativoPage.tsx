@@ -809,16 +809,9 @@ export default function FinanceiroComparativoPage() {
                   }
                   value={fmtMoney(r?.projecaoVendas?.aindaEntraProjetado)}
                   hint={
-                    r?.projecaoVendas?.janelasAindaEntra
-                      ? (() => {
-                          const [j2, j1] = r.projecaoVendas.janelasAindaEntra;
-                          const fmt = (iso: string) => {
-                            const [y, m, d] = iso.split("-");
-                            return `${d}/${m}`;
-                          };
-                          return `Pagamento ${fmt(j2.inicioIso)}–${fmt(j2.fimIso)} = ${fmtMoney(j2.total)} · ${fmt(j1.inicioIso)}–${fmt(j1.fimIso)} = ${fmtMoney(j1.total)} (venda e/ou frete). Média = ${fmtMoney(r.projecaoVendas.aindaEntraProjetado)}`;
-                        })()
-                      : "Média das baixas venda/frete nos últimos N dias · 2 meses"
+                    r?.projecaoVendas && r.projecaoVendas.diasRestantes > 0
+                      ? `Média venda/frete · últimos ${r.projecaoVendas.diasRestantes} dias dos 2 meses ant.`
+                      : "Sem dias restantes neste mês"
                   }
                 />
                 <Kpi

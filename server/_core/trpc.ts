@@ -233,7 +233,9 @@ const requireEstoqueAccess = t.middleware(async ({ ctx, next }) => {
     !comercialUsuario ||
     comercialUsuario.perfil === "PROMOTER" ||
     comercialUsuario.perfil === "VENDEDOR" ||
-    comercialUsuario.perfil === "LIDER_COLHEITA"
+    comercialUsuario.perfil === "LIDER_COLHEITA" ||
+    comercialUsuario.perfil === "FINANCEIRO" ||
+    comercialUsuario.perfil === "LOGISTICA"
   ) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Perfil restrito acessa somente Pedidos e Acompanhamento de avarias." });
   }
@@ -256,7 +258,9 @@ const requireOperationalOrCommercialEditor = t.middleware(async ({ ctx, next }) 
     !comercialUsuario ||
     comercialUsuario.perfil === "PROMOTER" ||
     comercialUsuario.perfil === "VENDEDOR" ||
-    comercialUsuario.perfil === "LIDER_COLHEITA"
+    comercialUsuario.perfil === "LIDER_COLHEITA" ||
+    comercialUsuario.perfil === "FINANCEIRO" ||
+    comercialUsuario.perfil === "LOGISTICA"
   ) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Perfil restrito acessa somente Pedidos e Acompanhamento de avarias." });
   }
@@ -347,6 +351,12 @@ const requireComercialModule = t.middleware(async ({ ctx, next, path }) => {
     !path.startsWith("comercial.entregas")
   ) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Logística acessa somente Entregas e Modo entregador." });
+  }
+  if (comercialUsuario.perfil === "FINANCEIRO" && path !== "comercial.pedidos.me") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Perfil financeiro acessa somente a análise financeira.",
+    });
   }
   let comercialEnv;
   try {

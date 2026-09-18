@@ -39,6 +39,8 @@ import { exportObjectRows } from "@/lib/exportTableDocument";
 import type { ParcelaFinanceiraNorm } from "@shared/financeiroCfoInsights";
 import { RUBRICA_SEM_CATEGORIA } from "@shared/financeiroCfoInsights";
 import { ProjecaoDesembolsoPanel } from "@/components/financeiro/ProjecaoDesembolsoPanel";
+import { isFinanceiroPerfil } from "@/lib/accessPolicy";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 const CHART_UP = "#dc2626";
 const CHART_DOWN = "#059669";
@@ -121,6 +123,13 @@ function downloadJson(filename: string, data: unknown) {
 }
 
 export default function FinanceiroCfoPage() {
+  const { user } = useAuth();
+  const comercialMe = trpc.comercial.pedidos.me.useQuery(undefined, {
+    enabled: user?.role === "comercial",
+    staleTime: 60_000,
+  });
+  const somenteAnaliseFinanceira = isFinanceiroPerfil(comercialMe.data?.perfil);
+
   const [mes, setMes] = useState(mesAtualYm);
   const [compararMesAnterior, setCompararMesAnterior] = useState(true);
   const { inicio, fim } = useMemo(() => boundsDoMes(mes), [mes]);
@@ -140,6 +149,18 @@ export default function FinanceiroCfoPage() {
     Record<string, string>
   >({});
   const [tabAtiva, setTabAtiva] = useState("projecao");
+
+  useEffect(() => {
+    if (!somenteAnaliseFinanceira) return;
+    const bloqueadas = new Set([
+      "rubricas",
+      "gaps",
+      "lancamentos",
+      "ajustes",
+      "alertas",
+    ]);
+    if (bloqueadas.has(tabAtiva)) setTabAtiva("projecao");
+  }, [somenteAnaliseFinanceira, tabAtiva]);
 
   const utils = trpc.useUtils();
   const queryInput = useMemo(
@@ -528,18 +549,22 @@ export default function FinanceiroCfoPage() {
             >
               <TabsList className="flex h-auto flex-wrap">
                 <TabsTrigger value="projecao">Projeção</TabsTrigger>
-                <TabsTrigger value="rubricas">
-                  Rúbricas
-                  {conflitosRubrica.length > 0
-                    ? ` (${conflitosRubrica.length})`
-                    : ""}
-                </TabsTrigger>
-                <TabsTrigger value="gaps">Gaps de custo</TabsTrigger>
-                <TabsTrigger value="lancamentos">
-                  Lançamentos ({lancamentos.length})
-                </TabsTrigger>
-                <TabsTrigger value="ajustes">Ajustes</TabsTrigger>
-                <TabsTrigger value="alertas">Alertas</TabsTrigger>
+                {!somenteAnaliseFinanceira ? (
+                  <>
+                    <TabsTrigger value="rubricas">
+                      Rúbricas
+                      {conflitosRubrica.length > 0
+                        ? ` (${conflitosRubrica.length})`
+                        : ""}
+                    </TabsTrigger>
+                    <TabsTrigger value="gaps">Gaps de custo</TabsTrigger>
+                    <TabsTrigger value="lancamentos">
+                      Lançamentos ({lancamentos.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="ajustes">Ajustes</TabsTrigger>
+                    <TabsTrigger value="alertas">Alertas</TabsTrigger>
+                  </>
+                ) : null}
                 <TabsTrigger value="export">Exportar</TabsTrigger>
               </TabsList>
 

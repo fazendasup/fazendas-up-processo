@@ -80,7 +80,7 @@ type NavItem = {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   requiredRole?: "admin" | "comercial";
-  comercialPerfis?: Array<"VENDEDOR" | "PROMOTER" | "LIDER_COLHEITA" | "OPERACOES" | "COMERCIAL" | "GERENTE_COMERCIAL" | "LOGISTICA" | "ADMIN">;
+  comercialPerfis?: Array<"VENDEDOR" | "PROMOTER" | "LIDER_COLHEITA" | "OPERACOES" | "COMERCIAL" | "GERENTE_COMERCIAL" | "LOGISTICA" | "FINANCEIRO" | "ADMIN">;
   projetoTipo?: "fazenda_vertical" | "hidroponia";
 };
 
@@ -133,7 +133,7 @@ const ANALISE_FINANCEIRO_CFO: NavItem = {
   label: "Financeiro",
   icon: Landmark,
   requiredRole: "comercial",
-  comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
+  comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "FINANCEIRO", "ADMIN"],
 };
 
 const ANALISE_TODOS: NavItem = {
