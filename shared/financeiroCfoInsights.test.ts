@@ -170,23 +170,34 @@ describe("financeiroCfoInsights ERP", () => {
 
   it("compara rúbricas MoM e monta KPIs de redução", () => {
     const prev = periodoComparavelAnterior(
-      new Date("2026-09-01T00:00:00"),
-      new Date("2026-09-15T23:59:59"),
+      new Date("2026-09-01T00:00:00-03:00"),
+      new Date("2026-09-15T23:59:59.999-03:00"),
     );
-    expect(prev.inicio.getMonth()).toBe(7); // agosto = 7
-    expect(prev.fim.getDate()).toBe(15);
+    expect(prev.inicio.getUTCMonth()).toBe(7); // agosto (Date em -03)
+    // Fim civil = 15/ago (America/Sao_Paulo)
+    expect(
+      new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Sao_Paulo",
+        day: "2-digit",
+      }).format(prev.fim),
+    ).toBe("15");
 
     const prevClamped = limitarPeriodoComparativoRubricas(
       prev.inicio,
       prev.fim,
     );
     expect(prevClamped).not.toBeNull();
-    expect(prevClamped!.inicio.getMonth()).toBe(7);
-    expect(prevClamped!.inicio.getDate()).toBe(1);
+    expect(
+      new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Sao_Paulo",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(prevClamped!.inicio),
+    ).toBe("08-01");
 
     const jul = periodoComparavelAnterior(
-      new Date("2026-08-01T00:00:00"),
-      new Date("2026-08-15T23:59:59"),
+      new Date("2026-08-01T00:00:00-03:00"),
+      new Date("2026-08-15T23:59:59.999-03:00"),
     );
     expect(limitarPeriodoComparativoRubricas(jul.inicio, jul.fim)).toBeNull();
 

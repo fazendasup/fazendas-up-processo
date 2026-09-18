@@ -5,6 +5,8 @@
  * Heurística de “setor/criticidade” NÃO entra em decisão de corte.
  */
 
+import { periodoMesAnterior } from "./comercial/periodo-america-sp";
+
 export const RUBRICA_SEM_CATEGORIA = "Sem rúbrica no Conta Azul";
 export const CENTRO_CUSTO_SEM = "Sem centro de custo";
 export const DRE_SEM_MAPEAMENTO = "Sem entrada DRE mapeada";
@@ -610,18 +612,12 @@ export function agregarPorRubrica(pagar: ParcelaFinanceiraNorm[]): DimensaoFinan
     .sort((a, b) => b.total - a.total);
 }
 
-/** Desloca o intervalo exatamente 1 mês (mesmo dia → dia), para MoM alinhado. */
+/** Desloca o intervalo exatamente 1 mês (mesmo dia civil SP → dia), para MoM alinhado. */
 export function periodoComparavelAnterior(
   inicio: Date,
   fim: Date,
 ): { inicio: Date; fim: Date } {
-  const i = new Date(inicio);
-  const f = new Date(fim);
-  i.setMonth(i.getMonth() - 1);
-  f.setMonth(f.getMonth() - 1);
-  i.setHours(0, 0, 0, 0);
-  f.setHours(23, 59, 59, 999);
-  return { inicio: i, fim: f };
+  return periodoMesAnterior(inicio, fim);
 }
 
 /**
