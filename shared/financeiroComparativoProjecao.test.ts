@@ -85,11 +85,11 @@ describe("ehReceitaVendasCaixa", () => {
     ).toBe(false);
   });
 
-  it("sem DRE: heurística por rúbrica de vendas", () => {
+  it("sem DRE: inclui receber genérico e exclui juros/não-venda", () => {
     expect(
       ehReceitaVendasCaixa({
-        descricao: "Pedido 1",
-        rubrica: "Vendas de produtos",
+        descricao: "Cliente Hortifruti",
+        rubrica: "Recebimento",
         entradaDre: null,
       }),
     ).toBe(true);

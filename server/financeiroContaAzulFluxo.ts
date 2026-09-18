@@ -100,6 +100,7 @@ type CategoriasBuscaResponse = {
 /**
  * Catálogo Conta Azul (GET /v1/categorias) — resolve entrada_dre das rúbricas.
  * Cache curto; falha silenciosa (mapa vazio) para não bloquear o dashboard.
+ * Tenta folhas (permite_apenas_filhos=true) — é nelas que o DRE costuma vir.
  */
 async function fetchCatalogoCategorias(): Promise<Map<string, CategoriaCa>> {
   if (
@@ -114,36 +115,44 @@ async function fetchCatalogoCategorias(): Promise<Map<string, CategoriaCa>> {
     const prisma = getComercialPrisma();
     const cred = await ensureValidAccessToken(prisma, env);
     if (!cred?.accessToken) {
-      catalogoCategoriasCache = { at: Date.now(), map };
+      // Não cacheia vazio por token ausente por muito tempo — tenta de novo cedo.
+      catalogoCategoriasCache = { at: Date.now() - CATALOGO_TTL_MS + 30_000, map };
       return map;
     }
     const http = createContaAzulHttp(env, cred.accessToken);
     const tamanho = 100;
     const maxPaginas = 30;
-    for (let pagina = 1; pagina <= maxPaginas; pagina++) {
-      const qs = new URLSearchParams({
-        pagina: String(pagina),
-        tamanho_pagina: String(tamanho),
-        permite_apenas_filhos: "false",
-      });
-      let res: CategoriasBuscaResponse;
-      try {
-        res = await contaAzulGet<CategoriasBuscaResponse>(
-          http,
-          `/v1/categorias?${qs.toString()}`,
-        );
-      } catch {
-        break;
-      }
-      const batch = res.itens ?? [];
-      for (const cat of batch) {
-        if (cat.id) map.set(cat.id, cat);
-        if (cat.nome?.trim()) {
-          map.set(`nome:${cat.nome.trim().toLowerCase()}`, cat);
+
+    const coletar = async (permiteApenasFilhos: boolean) => {
+      for (let pagina = 1; pagina <= maxPaginas; pagina++) {
+        const qs = new URLSearchParams({
+          pagina: String(pagina),
+          tamanho_pagina: String(tamanho),
+          permite_apenas_filhos: permiteApenasFilhos ? "true" : "false",
+        });
+        let res: CategoriasBuscaResponse;
+        try {
+          res = await contaAzulGet<CategoriasBuscaResponse>(
+            http,
+            `/v1/categorias?${qs.toString()}`,
+          );
+        } catch {
+          break;
         }
+        const batch = res.itens ?? [];
+        for (const cat of batch) {
+          if (cat.id) map.set(cat.id, cat);
+          if (cat.nome?.trim()) {
+            map.set(`nome:${cat.nome.trim().toLowerCase()}`, cat);
+          }
+        }
+        if (batch.length < tamanho) break;
       }
-      if (batch.length < tamanho) break;
-    }
+    };
+
+    // Folhas primeiro (DRE preenchido); depois árvore completa.
+    await coletar(true);
+    if (map.size === 0) await coletar(false);
   } catch {
     // catálogo opcional
   }
