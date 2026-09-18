@@ -657,7 +657,7 @@ export default function FinanceiroComparativoPage() {
                                     : "—"}
                                 </td>
                                 <td className="py-2 text-right tabular-nums font-medium text-red-600">
-                                  {fmtMoney(v.valorEmAberto)}
+                                  {fmtMoney(v.valor)}
                                 </td>
                               </tr>
                             ))}

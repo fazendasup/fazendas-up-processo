@@ -76,11 +76,13 @@ function Kpi({
   value,
   hint,
   tone,
+  href,
 }: {
   title: string;
   value: string;
   hint?: string;
   tone?: "up" | "down" | "neutral";
+  href?: string;
 }) {
   const toneCls =
     tone === "up"
@@ -88,23 +90,36 @@ function Kpi({
       : tone === "down"
         ? "text-emerald-700"
         : "text-foreground";
-  return (
-    <Card>
-      <CardContent className="p-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {title}
+  const body = (
+    <CardContent className="p-4">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {title}
+      </p>
+      <p className={`mt-1 text-xl font-semibold tabular-nums ${toneCls}`}>
+        {value}
+      </p>
+      {hint ? (
+        <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
+          {hint}
         </p>
-        <p className={`mt-1 text-xl font-semibold tabular-nums ${toneCls}`}>
-          {value}
+      ) : null}
+      {href ? (
+        <p className="mt-2 text-[10px] font-medium uppercase tracking-wide text-primary/80">
+          Ver composição →
         </p>
-        {hint ? (
-          <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
-            {hint}
-          </p>
-        ) : null}
-      </CardContent>
-    </Card>
+      ) : null}
+    </CardContent>
   );
+  if (href) {
+    return (
+      <Link href={href} className="block rounded-xl outline-none ring-offset-background transition hover:opacity-95 focus-visible:ring-2 focus-visible:ring-ring">
+        <Card className="h-full cursor-pointer transition hover:border-primary/40 hover:shadow-sm">
+          {body}
+        </Card>
+      </Link>
+    );
+  }
+  return <Card>{body}</Card>;
 }
 
 type TipRow = { label: string; value: string; muted?: boolean; accent?: string };
@@ -178,7 +193,12 @@ function ChartShell({
 }
 
 export default function FinanceiroDashboardPage() {
-  const [mes, setMes] = useState(mesAtualYm);
+  const search = typeof window !== "undefined" ? window.location.search : "";
+  const mesFromUrl = (() => {
+    const m = new URLSearchParams(search).get("mes");
+    return m && /^\d{4}-\d{2}$/.test(m) ? m : null;
+  })();
+  const [mes, setMes] = useState(mesFromUrl ?? mesAtualYm);
   const utils = trpc.useUtils();
   const { theme } = useTheme();
   const chartTheme = useMemo(
@@ -191,6 +211,9 @@ export default function FinanceiroDashboardPage() {
     chartAxisYProps,
   } = chartTheme;
   const lineActiveStroke = theme === "dark" ? "#0f172a" : "#fff";
+
+  const kpiHref = (kpi: string) =>
+    `/financeiro-cfo/kpi/${kpi}?mes=${encodeURIComponent(mes)}`;
 
   const q = trpc.financeiroCfo.dashboard.useQuery(
     { mesYm: mes },
@@ -355,6 +378,7 @@ export default function FinanceiroDashboardPage() {
                     title="Plano (projetado)"
                     value={fmtMoney(des?.projetado)}
                     hint="Soma ativa da grade de desembolso"
+                    href={kpiHref("plano")}
                   />
                   <Kpi
                     title="Executado (pago)"
@@ -364,18 +388,21 @@ export default function FinanceiroDashboardPage() {
                         ? `${fmtPct(des.pctPagoDoProjetado).replace("+", "")} do plano`
                         : "Baixas a pagar no mês"
                     }
+                    href={kpiHref("executado")}
                   />
                   <Kpi
                     title="Quanto ainda cabe"
                     value={fmtMoney(aindaCabe)}
                     hint="Plano − executado (ainda não saiu do projetado)"
                     tone="down"
+                    href={kpiHref("ainda-cabe")}
                   />
                   <Kpi
                     title="Não planejado"
                     value={fmtMoney(naoPlanejado)}
                     hint="Pago fora da grade (atraso / além do plano)"
                     tone={naoPlanejado > 0.009 ? "up" : "neutral"}
+                    href={kpiHref("nao-planejado")}
                   />
                 </div>
 
@@ -510,17 +537,20 @@ export default function FinanceiroDashboardPage() {
                   value={fmtMoney(rec?.recebido)}
                   hint="Baixas Conta Azul neste mês"
                   tone="down"
+                  href={kpiHref("entrou")}
                 />
                 <Kpi
                   title="A receber (no prazo)"
                   value={fmtMoney(rec?.aReceberNoMes)}
                   hint="Em aberto, vence neste mês, ainda não venceu"
+                  href={kpiHref("a-receber")}
                 />
                 <Kpi
                   title="Em atraso"
                   value={fmtMoney(rec?.vencido)}
                   hint="Em aberto, venceu neste mês e a data já passou"
                   tone={(rec?.vencido ?? 0) > 0.009 ? "up" : "neutral"}
+                  href={kpiHref("em-atraso")}
                 />
                 <Kpi
                   title="Projetado de vendas (caixa)"
@@ -530,6 +560,7 @@ export default function FinanceiroDashboardPage() {
                       ? `Média "Receitas de Vendas" · últimos ${pv.diasRestantes} dias jul/ago`
                       : "Sem dias restantes neste mês"
                   }
+                  href={kpiHref("proj-vendas")}
                 />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -537,11 +568,13 @@ export default function FinanceiroDashboardPage() {
                   title="Vendas já faturadas"
                   value={fmtMoney(rec?.vendasCompetencia.vendasFaturadas)}
                   hint="Volume de pedidos venda no mês (não é caixa)"
+                  href={kpiHref("faturado")}
                 />
                 <Kpi
                   title="Orçamentos no mês"
                   value={fmtMoney(rec?.vendasCompetencia.orcamentos)}
                   hint="Pipeline — só vira caixa depois de virar venda/NF"
+                  href={kpiHref("orcamentos")}
                 />
               </div>
             </section>

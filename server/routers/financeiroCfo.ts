@@ -20,6 +20,7 @@ import { aplicarEdicoesClassificacao } from "@shared/financeiroCfoInsights";
 import {
   addProjecaoColuna,
   carregarComparativoProjecao,
+  carregarDashboardKpiDetalhe,
   carregarFinanceiroDashboard,
   carregarProjecaoDesembolso,
   insertProjecaoLinhaManual,
@@ -27,6 +28,7 @@ import {
   softDeleteProjecaoLinhaManual,
   upsertProjecaoCelula,
 } from "../financeiroProjecaoService";
+import { DASHBOARD_KPI_IDS } from "@shared/financeiroDashboardKpi";
 
 export const financeiroCfoRouter = router({
   /** Pacote financeiro Conta Azul + classificação editável do projeto. */
@@ -199,6 +201,22 @@ export const financeiroCfoRouter = router({
       carregarFinanceiroDashboard(projetoIdFromCtx(ctx), input.mesYm, {
         forceRefreshCa: input.forceRefreshCa === true,
       }),
+    ),
+
+  /** Linhas por trás de um KPI do dashboard. */
+  dashboardKpiDetalhe: custosProducaoModuleProcedure
+    .input(
+      z.object({
+        mesYm: z.string().regex(/^\d{4}-\d{2}$/),
+        kpi: z.enum(DASHBOARD_KPI_IDS),
+      }),
+    )
+    .query(async ({ ctx, input }) =>
+      carregarDashboardKpiDetalhe(
+        projetoIdFromCtx(ctx),
+        input.mesYm,
+        input.kpi,
+      ),
     ),
 
   salvarCelulaProjecao: custosProducaoModuleProcedure

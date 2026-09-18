@@ -110,6 +110,17 @@ export type ComparativoDesembolsoMes = {
   };
 };
 
+export type ComparativoReceitaDetalheTitulo = {
+  id: string;
+  descricao: string;
+  fornecedor: string | null;
+  valor: number;
+  dataVencimento: string | null;
+  dataPagamento?: string | null;
+  rubrica?: string | null;
+};
+
+/** @deprecated Use ComparativoReceitaDetalheTitulo */
 export type ComparativoReceitaDetalheVencido = {
   id: string;
   descricao: string;
@@ -129,7 +140,11 @@ export type ComparativoReceitaMes = {
   /** Em aberto com vencimento no mês e data já passou (atraso dentro do mês). */
   vencido: number;
   /** Lista dos títulos que somam `vencido` (Conta Azul). */
-  vencidosDetalhe: ComparativoReceitaDetalheVencido[];
+  vencidosDetalhe: ComparativoReceitaDetalheTitulo[];
+  /** Baixas que somam `recebido`. */
+  recebidosDetalhe: ComparativoReceitaDetalheTitulo[];
+  /** Em aberto no prazo que somam `aReceberNoMes`. */
+  aReceberDetalhe: ComparativoReceitaDetalheTitulo[];
   /** aReceberNoMes + vencido (só competência do mês). */
   aReceber: number;
   /** recebido + aReceberNoMes + vencido. */
@@ -374,7 +389,9 @@ export function montarComparativoReceitaMes(input: {
   let recebido = 0;
   let aReceberNoMes = 0;
   let vencido = 0;
-  const vencidosDetalhe: ComparativoReceitaDetalheVencido[] = [];
+  const vencidosDetalhe: ComparativoReceitaDetalheTitulo[] = [];
+  const recebidosDetalhe: ComparativoReceitaDetalheTitulo[] = [];
+  const aReceberDetalhe: ComparativoReceitaDetalheTitulo[] = [];
 
   for (const p of Array.from(porId.values())) {
     const vencYm = mesVencimentoParcela(p);
@@ -400,22 +417,44 @@ export function montarComparativoReceitaMes(input: {
             id: p.id,
             descricao: p.descricao,
             fornecedor: p.fornecedor,
-            valorEmAberto: round2(p.valorEmAberto),
+            valor: round2(p.valorEmAberto),
             dataVencimento: p.dataVencimento,
+            rubrica: p.rubrica,
           });
         } else {
           aReceberNoMes += p.valorEmAberto;
+          aReceberDetalhe.push({
+            id: p.id,
+            descricao: p.descricao,
+            fornecedor: p.fornecedor,
+            valor: round2(p.valorEmAberto),
+            dataVencimento: p.dataVencimento,
+            rubrica: p.rubrica,
+          });
         }
       }
     }
 
     if (pagMes) {
       const pago = valorPagoParcela(p);
-      if (pago > 0) recebido += pago;
+      if (pago > 0) {
+        recebido += pago;
+        recebidosDetalhe.push({
+          id: p.id,
+          descricao: p.descricao,
+          fornecedor: p.fornecedor,
+          valor: round2(pago),
+          dataVencimento: p.dataVencimento,
+          dataPagamento: p.dataPagamento,
+          rubrica: p.rubrica,
+        });
+      }
     }
   }
 
-  vencidosDetalhe.sort((a, b) => b.valorEmAberto - a.valorEmAberto);
+  vencidosDetalhe.sort((a, b) => b.valor - a.valor);
+  recebidosDetalhe.sort((a, b) => b.valor - a.valor);
+  aReceberDetalhe.sort((a, b) => b.valor - a.valor);
 
   previsto = round2(previsto);
   recebido = round2(recebido);
@@ -462,6 +501,8 @@ export function montarComparativoReceitaMes(input: {
     aReceberNoMes,
     vencido,
     vencidosDetalhe,
+    recebidosDetalhe,
+    aReceberDetalhe,
     aReceber,
     pipelineMes,
     pipelineComVencido,

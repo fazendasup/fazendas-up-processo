@@ -16,9 +16,11 @@ import {
   upsertProjecaoCelula,
 } from "./financeiroProjecaoDb";
 import {
+  ehReceitaVendasCaixa,
   mesAnteriorProjecao,
   montarProjecaoDesembolso,
   labelMesYm,
+  valorPagoParcela,
   type ParcelaBaseProjecao,
 } from "@shared/financeiroProjecaoDesembolso";
 import {
@@ -33,6 +35,11 @@ import {
   montarSerieDashboard3Meses,
   type FinanceiroDashboardPayload,
 } from "@shared/financeiroDashboard";
+import type {
+  DashboardKpiDetalhe,
+  DashboardKpiId,
+  DashboardKpiLinha,
+} from "@shared/financeiroDashboardKpi";
 import {
   agregarVendasPorCompetenciaDetalhe,
   agregarVendasPorDiaCompetencia,
@@ -794,6 +801,362 @@ export async function carregarFinanceiroDashboard(
       "Faturado/orçamento = volume de pedidos — não some com recebido.",
     ],
   } satisfies FinanceiroDashboardPayload;
+}
+
+function fmtDataBr(iso: string | null | undefined): string | null {
+  const s = (iso ?? "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+  const [y, m, d] = s.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+/**
+ * Linhas por trás de cada KPI do dashboard (auditoria do número).
+ */
+export async function carregarDashboardKpiDetalhe(
+  projetoId: number,
+  mesYm: string,
+  kpi: DashboardKpiId,
+): Promise<DashboardKpiDetalhe> {
+  if (!/^\d{4}-\d{2}$/.test(mesYm)) {
+    throw new Error("Mês inválido (AAAA-MM).");
+  }
+
+  const hojeIso = diaIsoAmericaSp();
+  const hojeYm = mesIsoAmericaSp();
+  const diaHoje = Number(hojeIso.slice(8, 10));
+  const labelMes = labelMesYm(mesYm);
+  const base = {
+    kpi,
+    mesYm,
+    labelMes,
+  };
+
+  const linhasDe = (
+    rows: DashboardKpiLinha[],
+    titulo: string,
+    descricao: string,
+    total?: number,
+  ): DashboardKpiDetalhe => ({
+    ...base,
+    titulo,
+    descricao,
+    total:
+      total ??
+      Math.round(rows.reduce((s, r) => s + r.valor, 0) * 100) / 100,
+    linhas: rows,
+  });
+
+  if (
+    kpi === "plano" ||
+    kpi === "executado" ||
+    kpi === "ainda-cabe" ||
+    kpi === "nao-planejado"
+  ) {
+    const grade = await carregarProjecaoDesembolso(projetoId, mesYm);
+    const pagar = await carregarParcelasBaseMes(projetoId, mesYm);
+    const d = montarComparativoDesembolsoMes({
+      mesYm,
+      linhasProjecao: grade.linhas,
+      parcelasPagarMes: pagar,
+    });
+
+    if (kpi === "plano") {
+      const linhas: DashboardKpiLinha[] = [];
+      for (const rub of d.rubricas) {
+        for (const det of rub.detalhes.filter(x => x.origem === "projetado")) {
+          linhas.push({
+            id: det.id,
+            titulo: det.label,
+            subtitulo: det.fornecedor,
+            valor: det.valor,
+            meta: null,
+            grupo: rub.rubrica,
+          });
+        }
+      }
+      linhas.sort((a, b) => b.valor - a.valor);
+      return linhasDe(
+        linhas,
+        "Plano (projetado)",
+        "Linhas ativas da grade de desembolso neste mês.",
+        d.totais.projetado,
+      );
+    }
+
+    if (kpi === "executado") {
+      const linhas: DashboardKpiLinha[] = [];
+      for (const rub of d.rubricas) {
+        for (const det of rub.detalhes.filter(x => x.origem === "pago")) {
+          linhas.push({
+            id: det.id,
+            titulo: det.label,
+            subtitulo: det.fornecedor,
+            valor: det.valor,
+            meta: fmtDataBr(det.dataPagamento),
+            grupo: rub.rubrica,
+          });
+        }
+      }
+      linhas.sort((a, b) => b.valor - a.valor);
+      return linhasDe(
+        linhas,
+        "Executado (pago)",
+        "Baixas a pagar Conta Azul neste mês.",
+        d.totais.pago,
+      );
+    }
+
+    if (kpi === "ainda-cabe") {
+      const linhas: DashboardKpiLinha[] = d.rubricas
+        .filter(r => r.naoPago > 0.009)
+        .map(r => ({
+          id: `cabe:${r.rubrica}`,
+          titulo: r.rubrica,
+          subtitulo: `Projetado ${r.projetado.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} · pago ${r.pago.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`,
+          valor: r.naoPago,
+          meta: r.status,
+          grupo: r.rubrica,
+        }))
+        .sort((a, b) => b.valor - a.valor);
+      return linhasDe(
+        linhas,
+        "Quanto ainda cabe",
+        "Por rúbrica: o que falta sair do plano (projetado − pago, mín. 0).",
+        d.totais.naoPago,
+      );
+    }
+
+    // nao-planejado
+    const linhas: DashboardKpiLinha[] = [];
+    for (const rub of d.rubricas) {
+      if (
+        rub.status !== "pago_em_atraso" &&
+        rub.status !== "pago_a_mais" &&
+        rub.status !== "nao_programada"
+      ) {
+        continue;
+      }
+      for (const det of rub.detalhes.filter(x => x.origem === "pago")) {
+        if (rub.status === "pago_a_mais" && rub.projetado > 0.009) {
+          // Só o excedente como linha sintética no fim — lista pagamentos da rúbrica
+        }
+        linhas.push({
+          id: det.id,
+          titulo: det.label,
+          subtitulo: det.fornecedor,
+          valor: det.valor,
+          meta: rub.status,
+          grupo: rub.rubrica,
+        });
+      }
+    }
+    linhas.sort((a, b) => b.valor - a.valor);
+    return linhasDe(
+      linhas,
+      "Não planejado",
+      "Pagamentos fora da grade (atraso de recorrente, além do plano ou sem programação).",
+      Math.round(((d.totais.pagoEmAtraso ?? 0) + (d.totais.pagoAMais ?? 0)) * 100) /
+        100,
+    );
+  }
+
+  if (kpi === "entrou" || kpi === "a-receber" || kpi === "em-atraso") {
+    const bounds = boundsMesYmAmericaSp(mesYm);
+    const receber = (
+      await buscarParcelasReceberParaComparativo(
+        bounds.inicio,
+        bounds.fim,
+        projetoId,
+      )
+    ).map(toBase);
+    const r = montarComparativoReceitaMes({
+      mesYm,
+      parcelasReceberMes: receber,
+      hojeYm,
+      diaHoje,
+    });
+
+    if (kpi === "entrou") {
+      return linhasDe(
+        r.recebidosDetalhe.map(t => ({
+          id: t.id,
+          titulo: t.descricao,
+          subtitulo: t.fornecedor,
+          valor: t.valor,
+          meta: fmtDataBr(t.dataPagamento) ?? fmtDataBr(t.dataVencimento),
+          grupo: t.rubrica ?? null,
+        })),
+        "Entrou (recebido)",
+        "Baixas Conta Azul com pagamento neste mês.",
+        r.recebido,
+      );
+    }
+    if (kpi === "a-receber") {
+      return linhasDe(
+        r.aReceberDetalhe.map(t => ({
+          id: t.id,
+          titulo: t.descricao,
+          subtitulo: t.fornecedor,
+          valor: t.valor,
+          meta: fmtDataBr(t.dataVencimento),
+          grupo: t.rubrica ?? null,
+        })),
+        "A receber (no prazo)",
+        "Em aberto, vencimento neste mês, data ainda não passou.",
+        r.aReceberNoMes,
+      );
+    }
+    return linhasDe(
+      r.vencidosDetalhe.map(t => ({
+        id: t.id,
+        titulo: t.descricao,
+        subtitulo: t.fornecedor,
+        valor: t.valor,
+        meta: fmtDataBr(t.dataVencimento),
+        grupo: t.rubrica ?? null,
+      })),
+      "Em atraso",
+      "Em aberto, venceu neste mês e a data já passou.",
+      r.vencido,
+    );
+  }
+
+  if (kpi === "proj-vendas") {
+    const mes1 = mesAnteriorProjecao(mesYm);
+    const mes2 = mesAnteriorProjecao(mes1);
+    const diasNoMesRef = diasNoMesYm(mesYm);
+    let n = 0;
+    if (mesYm < hojeYm) n = 0;
+    else if (mesYm > hojeYm) n = diasNoMesRef;
+    else {
+      const diaCorte = Math.min(Math.max(1, diaHoje), diasNoMesRef);
+      n = Math.max(0, diasNoMesRef - diaCorte);
+    }
+    if (n <= 0) {
+      return linhasDe(
+        [],
+        "Projetado de vendas (caixa)",
+        "Sem dias restantes neste mês — média zerada.",
+        0,
+      );
+    }
+    const [b1, b2] = await Promise.all([
+      buscarBaixasReceberPorPeriodoPagamento(
+        boundsUltimosNDiasMesYm(mes1, n).inicio,
+        boundsUltimosNDiasMesYm(mes1, n).fim,
+        projetoId,
+      ).then(r => r.map(toBase)),
+      buscarBaixasReceberPorPeriodoPagamento(
+        boundsUltimosNDiasMesYm(mes2, n).inicio,
+        boundsUltimosNDiasMesYm(mes2, n).fim,
+        projetoId,
+      ).then(r => r.map(toBase)),
+    ]);
+    const linhas: DashboardKpiLinha[] = [];
+    let t1 = 0;
+    let t2 = 0;
+    for (const p of b1) {
+      if (!ehReceitaVendasCaixa(p)) continue;
+      const pago = valorPagoParcela(p);
+      if (pago <= 0) continue;
+      t1 += pago;
+      linhas.push({
+        id: `${mes1}:${p.id}`,
+        titulo: p.descricao,
+        subtitulo: p.fornecedor,
+        valor: pago,
+        meta: `${mes1} · ${fmtDataBr(p.dataPagamento) ?? ""}`,
+        grupo: p.rubrica,
+      });
+    }
+    for (const p of b2) {
+      if (!ehReceitaVendasCaixa(p)) continue;
+      const pago = valorPagoParcela(p);
+      if (pago <= 0) continue;
+      t2 += pago;
+      linhas.push({
+        id: `${mes2}:${p.id}`,
+        titulo: p.descricao,
+        subtitulo: p.fornecedor,
+        valor: pago,
+        meta: `${mes2} · ${fmtDataBr(p.dataPagamento) ?? ""}`,
+        grupo: p.rubrica,
+      });
+    }
+    linhas.sort((a, b) => b.valor - a.valor);
+    const media =
+      t1 > 0 && t2 > 0
+        ? Math.round(((t1 + t2) / 2) * 100) / 100
+        : Math.round((t1 || t2) * 100) / 100;
+    return {
+      ...base,
+      titulo: "Projetado de vendas (caixa)",
+      descricao: `Baixas "Receitas de Vendas" nos últimos ${n} dias de ${labelMesYm(mes2)} e ${labelMesYm(mes1)}. Total mostra a média usada no KPI.`,
+      total: media,
+      linhas,
+    };
+  }
+
+  // faturado | orcamentos
+  const vendas = await carregarTotaisVendasCompetencia(mesYm, {
+    hojeYm,
+    diaHoje,
+  });
+  const prisma = getComercialPrisma();
+  const { inicio, fim } = boundsMesYmAmericaSp(mesYm);
+  const pedidos = await prisma.pedido.findMany({
+    where: {
+      origemPedido: OrigemPedido.CONTA_AZUL,
+      dataPedido: { gte: inicio, lte: fim },
+    },
+    select: {
+      id: true,
+      dataPedido: true,
+      statusPedido: true,
+      valorTotal: true,
+      valorBruto: true,
+      valorFrete: true,
+      valorDesconto: true,
+      valorLiquido: true,
+      composicaoDetalhada: true,
+      cliente: { select: { nome: true } },
+    },
+    orderBy: { dataPedido: "desc" },
+    take: 500,
+  });
+  const alvo = kpi === "faturado" ? "venda" : "orcamento";
+  const linhas: DashboardKpiLinha[] = [];
+  for (const p of pedidos) {
+    const cls = classificarStatusPedido(p.statusPedido);
+    if (cls !== alvo) continue;
+    const liquido = composicaoDoPedidoParaDashboard(p).valorLiquido;
+    if (!Number.isFinite(liquido) || liquido === 0) continue;
+    const dataIso = diaIsoAmericaSp(p.dataPedido);
+    if (dataIso.slice(0, 7) !== mesYm) continue;
+    if (alvo === "orcamento") {
+      const dia = Number(dataIso.slice(8, 10));
+      if (dia > vendas.diaLimiteOrcamento) continue;
+    }
+    linhas.push({
+      id: p.id,
+      titulo: p.cliente?.nome?.trim() || "Cliente",
+      subtitulo: p.statusPedido,
+      valor: liquido,
+      meta: fmtDataBr(dataIso),
+      grupo: alvo,
+    });
+  }
+  return linhasDe(
+    linhas,
+    kpi === "faturado" ? "Vendas já faturadas" : "Orçamentos no mês",
+    kpi === "faturado"
+      ? "Pedidos com status venda neste mês (volume, não caixa)."
+      : `Orçamentos no mês até o dia ${vendas.diaLimiteOrcamento} (pipeline).`,
+    kpi === "faturado"
+      ? vendas.vendasFaturadasMes
+      : vendas.orcamentosCompetenciaMes,
+  );
 }
 
 export {
