@@ -989,6 +989,22 @@ export const custosMoConfig = mysqlTable("custos_mo_config", {
 export type CustoMoConfigRow = typeof custosMoConfig.$inferSelect;
 export type InsertCustoMoConfig = typeof custosMoConfig.$inferInsert;
 
+/**
+ * Config de saldos bancários do Financeiro (Conta Azul / Bradesco).
+ * Bradesco: saldo inicial + data âncora; o sistema aplica baixas CA dessa conta.
+ */
+export const financeiroCaConfig = mysqlTable("financeiro_ca_config", {
+  projetoId: int("projetoId").primaryKey(),
+  contaAzulContaId: varchar("contaAzulContaId", { length: 64 }),
+  bradescoContaId: varchar("bradescoContaId", { length: 64 }),
+  bradescoSaldoInicial: decimal("bradescoSaldoInicial", { precision: 14, scale: 2 }),
+  bradescoSaldoInicialData: varchar("bradescoSaldoInicialData", { length: 10 }),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type FinanceiroCaConfigRow = typeof financeiroCaConfig.$inferSelect;
+export type InsertFinanceiroCaConfig = typeof financeiroCaConfig.$inferInsert;
+
 /** Valores comuns de processo industrial (embalagem, minutos MO) por projeto. */
 export const custosProdutosProcessoConfig = mysqlTable("custos_produtos_processo_config", {
   projetoId: int("projetoId").primaryKey(),

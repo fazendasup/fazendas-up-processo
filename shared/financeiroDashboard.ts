@@ -109,9 +109,25 @@ export type FinanceiroDashboardPayload = {
     saldoRealizado: number;
     gapCaixaMes: number;
   };
-  /** Saldo consolidado das contas financeiras no Conta Azul (ao vivo). */
+  /**
+   * Saldo Conta Azul PJ (carteira/cobranças) — não inclui Bradesco nem
+   * investimentos.
+   */
   saldoContaAzul: number | null;
-  contasContaAzul?: Array<{ id: string; nome: string; saldo: number | null }>;
+  /** Saldo Bradesco (API ao vivo ou inicial + baixas da conta). */
+  saldoBradesco: number | null;
+  saldoBradescoFonte: "api" | "manual_mais_movimentos" | null;
+  bradescoConfig: {
+    saldoInicial: number | null;
+    saldoInicialData: string | null;
+    contaId: string | null;
+  };
+  contasContaAzul?: Array<{
+    id: string;
+    nome: string;
+    saldo: number | null;
+    grupo?: "conta_azul" | "bradesco" | "outro";
+  }>;
   desembolsoTotais: {
     projetado: number;
     /** Projetado após abate de rúbricas concluídas (pago a menos). */

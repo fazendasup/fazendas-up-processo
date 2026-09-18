@@ -2,10 +2,10 @@ import {
   buscarBaixasReceberPorPeriodoPagamento,
   buscarParcelasPagarParaProjecao,
   buscarParcelasReceberParaComparativo,
-  buscarSaldoContasAzul,
   fetchCatalogoCategorias,
   idsCategoriasReceitaVendas,
 } from "./financeiroContaAzulFluxo";
+import { buscarSaldosBancarios } from "./financeiroSaldosBancarios";
 import {
   addProjecaoColuna,
   insertProjecaoLinhaManual,
@@ -695,10 +695,27 @@ export async function carregarFinanceiroDashboard(
           projetoId,
         ).then(r => r.map(toBase)),
     listRubricasMesConcluidas(projetoId, mesYm),
-    buscarSaldoContasAzul().catch(() => ({
-      saldoTotal: null as number | null,
-      contas: [] as Array<{ id: string; nome: string; saldo: number | null }>,
-      aviso: "Falha ao consultar saldo Conta Azul.",
+    buscarSaldosBancarios(projetoId).catch(() => ({
+      saldoContaAzul: null as number | null,
+      saldoBradesco: null as number | null,
+      saldoBradescoFonte: null as
+        | "api"
+        | "manual_mais_movimentos"
+        | null,
+      contas: [] as Array<{
+        id: string;
+        nome: string;
+        saldo: number | null;
+        grupo: "conta_azul" | "bradesco" | "outro";
+        tipo: string | null;
+        banco: string | null;
+      }>,
+      bradescoConfig: {
+        saldoInicial: null as number | null,
+        saldoInicialData: null as string | null,
+        contaId: null as string | null,
+      },
+      aviso: "Falha ao consultar saldos bancários.",
     })),
   ]);
 
@@ -926,8 +943,16 @@ export async function carregarFinanceiroDashboard(
       saldoRealizado,
       gapCaixaMes,
     },
-    saldoContaAzul: saldoCa.saldoTotal,
-    contasContaAzul: saldoCa.contas,
+    saldoContaAzul: saldoCa.saldoContaAzul,
+    saldoBradesco: saldoCa.saldoBradesco,
+    saldoBradescoFonte: saldoCa.saldoBradescoFonte,
+    bradescoConfig: saldoCa.bradescoConfig,
+    contasContaAzul: saldoCa.contas.map(c => ({
+      id: c.id,
+      nome: c.nome,
+      saldo: c.saldo,
+      grupo: c.grupo,
+    })),
     desembolsoTotais: desembolsoTotaisOut,
     desembolsoPorRubrica: dMes.rubricas
       .map(r =>
@@ -1158,13 +1183,13 @@ export async function carregarDashboardKpiDetalhe(
   }
 
   if (kpi === "saldo-conta-azul") {
-    const saldos = await buscarSaldoContasAzul();
-    const linhas: DashboardKpiLinha[] = (saldos.contas ?? [])
-      .filter(c => c.saldo != null)
+    const saldos = await buscarSaldosBancarios(projetoId);
+    const linhas: DashboardKpiLinha[] = saldos.contas
+      .filter(c => c.grupo === "conta_azul" && c.saldo != null)
       .map(c => ({
         id: c.id,
         titulo: c.nome,
-        subtitulo: "Conta financeira Conta Azul",
+        subtitulo: c.tipo ?? "Conta Azul PJ",
         valor: c.saldo ?? 0,
         meta: null,
         grupo: null,
@@ -1173,8 +1198,56 @@ export async function carregarDashboardKpiDetalhe(
     return linhasDe(
       linhas,
       "Saldo Conta Azul",
-      "Saldo atual consolidado das contas financeiras ativas no Conta Azul.",
-      saldos.saldoTotal ?? 0,
+      "Saldo da carteira Conta Azul (cobranças / saldo disponível), sem Bradesco.",
+      saldos.saldoContaAzul ?? 0,
+    );
+  }
+
+  if (kpi === "saldo-bradesco") {
+    const saldos = await buscarSaldosBancarios(projetoId);
+    const fonte =
+      saldos.saldoBradescoFonte === "manual_mais_movimentos"
+        ? "Saldo inicial informado + recebido − pago (baixas CA da conta Bradesco)."
+        : "Saldo atual da conta Bradesco no Conta Azul.";
+    const linhas: DashboardKpiLinha[] = saldos.contas
+      .filter(c => c.grupo === "bradesco" && c.saldo != null)
+      .map(c => ({
+        id: c.id,
+        titulo: c.nome,
+        subtitulo: c.banco ?? "Bradesco",
+        valor: c.saldo ?? 0,
+        meta: null,
+        grupo: null,
+      }))
+      .sort((a, b) => b.valor - a.valor);
+    if (
+      saldos.saldoBradescoFonte === "manual_mais_movimentos" &&
+      saldos.bradescoConfig.saldoInicial != null
+    ) {
+      linhas.unshift({
+        id: "bradesco-inicial",
+        titulo: "Saldo inicial informado",
+        subtitulo: saldos.bradescoConfig.saldoInicialData
+          ? `Âncora ${fmtDataBr(saldos.bradescoConfig.saldoInicialData)}`
+          : null,
+        valor: saldos.bradescoConfig.saldoInicial,
+        meta: null,
+        grupo: null,
+      });
+      linhas.push({
+        id: "bradesco-calculado",
+        titulo: "Saldo calculado (inicial + movimentos)",
+        subtitulo: fonte,
+        valor: saldos.saldoBradesco ?? 0,
+        meta: null,
+        grupo: null,
+      });
+    }
+    return linhasDe(
+      linhas,
+      "Saldo Bradesco",
+      fonte,
+      saldos.saldoBradesco ?? 0,
     );
   }
 

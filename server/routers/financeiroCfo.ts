@@ -32,6 +32,10 @@ import {
   upsertProjecaoCelula,
 } from "../financeiroProjecaoService";
 import { upsertRubricaMesConcluida } from "../financeiroProjecaoDb";
+import {
+  getFinanceiroCaConfig,
+  upsertFinanceiroCaConfig,
+} from "../financeiroConfigDb";
 import { DASHBOARD_KPI_IDS } from "@shared/financeiroDashboardKpi";
 import { DASHBOARD_GRANULARIDADES } from "@shared/financeiroPeriodoDashboard";
 
@@ -340,4 +344,45 @@ export const financeiroCfoRouter = router({
     .mutation(async ({ ctx, input }) =>
       upsertRubricaMesConcluida(projetoIdFromCtx(ctx), input),
     ),
+
+  /** Config de saldos Conta Azul / Bradesco (saldo inicial + data âncora). */
+  configSaldos: custosProducaoModuleProcedure.query(async ({ ctx }) => {
+    const projetoId = projetoIdFromCtx(ctx);
+    const row = await getFinanceiroCaConfig(projetoId);
+    return {
+      contaAzulContaId: row?.contaAzulContaId ?? null,
+      bradescoContaId: row?.bradescoContaId ?? null,
+      bradescoSaldoInicial:
+        row?.bradescoSaldoInicial != null
+          ? Number(row.bradescoSaldoInicial)
+          : null,
+      bradescoSaldoInicialData: row?.bradescoSaldoInicialData ?? null,
+    };
+  }),
+
+  salvarConfigSaldos: custosProducaoModuleProcedure
+    .input(
+      z.object({
+        contaAzulContaId: z.string().max(64).nullable().optional(),
+        bradescoContaId: z.string().max(64).nullable().optional(),
+        bradescoSaldoInicial: z.number().finite().nullable().optional(),
+        bradescoSaldoInicialData: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .nullable()
+          .optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const row = await upsertFinanceiroCaConfig(projetoIdFromCtx(ctx), input);
+      return {
+        contaAzulContaId: row.contaAzulContaId ?? null,
+        bradescoContaId: row.bradescoContaId ?? null,
+        bradescoSaldoInicial:
+          row.bradescoSaldoInicial != null
+            ? Number(row.bradescoSaldoInicial)
+            : null,
+        bradescoSaldoInicialData: row.bradescoSaldoInicialData ?? null,
+      };
+    }),
 });

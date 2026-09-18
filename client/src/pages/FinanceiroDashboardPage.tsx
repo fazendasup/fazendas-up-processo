@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import {
   ArrowDownRight,
@@ -454,7 +454,54 @@ export default function FinanceiroDashboardPage() {
   const aindaCabe =
     Math.round((aindaCabeBruto - naoPlanejado + saldoLiberado) * 100) / 100;
   const saldoContaAzul = data?.saldoContaAzul ?? null;
+  const saldoBradesco = data?.saldoBradesco ?? null;
   const pieStroke = theme === "dark" ? "#0f172a" : "#fff";
+
+  const [bradInicial, setBradInicial] = useState("");
+  const [bradData, setBradData] = useState("");
+
+  useEffect(() => {
+    const cfg = data?.bradescoConfig;
+    if (!cfg) return;
+    setBradInicial(
+      cfg.saldoInicial != null && Number.isFinite(cfg.saldoInicial)
+        ? String(cfg.saldoInicial)
+        : "",
+    );
+    setBradData(cfg.saldoInicialData ?? "");
+  }, [data?.bradescoConfig]);
+
+  const salvarConfigSaldos = trpc.financeiroCfo.salvarConfigSaldos.useMutation({
+    onSuccess: async () => {
+      toast.success("Configuração de saldo Bradesco salva");
+      await q.refetch();
+    },
+    onError: e => {
+      toast.error(e.message || "Falha ao salvar saldo Bradesco");
+    },
+  });
+
+  const salvarBradesco = () => {
+    const t = bradInicial.trim();
+    let n: number | null = null;
+    if (t !== "") {
+      n = t.includes(",")
+        ? Number(t.replace(/\./g, "").replace(",", "."))
+        : Number(t);
+      if (!Number.isFinite(n)) {
+        toast.error("Informe um valor numérico válido para o saldo inicial");
+        return;
+      }
+    }
+    if (n != null && !/^\d{4}-\d{2}-\d{2}$/.test(bradData)) {
+      toast.error("Informe a data âncora do saldo inicial");
+      return;
+    }
+    salvarConfigSaldos.mutate({
+      bradescoSaldoInicial: n,
+      bradescoSaldoInicialData: n == null ? null : bradData,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -596,8 +643,7 @@ export default function FinanceiroDashboardPage() {
                   Totais do plano × composição por rúbrica.
                 </p>
               </div>
-              <div className="grid gap-4 lg:grid-cols-2">
-                <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
                   <Kpi
                     title="Plano (projetado)"
                     value={fmtMoney(des?.projetado)}
@@ -635,22 +681,103 @@ export default function FinanceiroDashboardPage() {
                     tone={saldoLiberado > 0.009 ? "down" : "neutral"}
                     href={kpiHref("saldo-liberado")}
                   />
-                  <Kpi
-                    title="Saldo Conta Azul"
-                    value={fmtMoney(saldoContaAzul)}
-                    hint="Saldo atual das contas financeiras (ao vivo)"
-                    tone={
-                      saldoContaAzul == null
-                        ? "neutral"
-                        : saldoContaAzul >= 0
-                          ? "down"
-                          : "up"
-                    }
-                    href={kpiHref("saldo-conta-azul")}
-                  />
-                </div>
+              </div>
 
-                <Card>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Kpi
+                  title="Saldo disponível"
+                  value={fmtMoney(saldoContaAzul)}
+                  hint="Conta Azul PJ (carteira / cobranças)"
+                  tone={
+                    saldoContaAzul == null
+                      ? "neutral"
+                      : saldoContaAzul >= 0
+                        ? "down"
+                        : "up"
+                  }
+                  href={kpiHref("saldo-conta-azul")}
+                />
+                <Kpi
+                  title="Saldo Bradesco"
+                  value={fmtMoney(saldoBradesco)}
+                  hint={
+                    data?.saldoBradescoFonte === "manual_mais_movimentos"
+                      ? "Inicial + baixas CA da conta (recebido − pago)"
+                      : "Saldo atual da conta Bradesco no Conta Azul"
+                  }
+                  tone={
+                    saldoBradesco == null
+                      ? "neutral"
+                      : saldoBradesco >= 0
+                        ? "down"
+                        : "up"
+                  }
+                  href={kpiHref("saldo-bradesco")}
+                />
+              </div>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold tracking-tight">
+                    Âncora do saldo Bradesco
+                  </CardTitle>
+                  <p className="text-xs font-normal text-muted-foreground">
+                    Informe o saldo na data escolhida; o sistema aplica as
+                    baixas da conta Bradesco resgatadas pela API a partir
+                    dessa data.
+                  </p>
+                </CardHeader>
+                <CardContent className="flex flex-wrap items-end gap-3 pt-0">
+                  <div>
+                    <Label className="text-xs">Saldo inicial (R$)</Label>
+                    <Input
+                      className="h-9 w-[160px]"
+                      inputMode="decimal"
+                      placeholder="0,00"
+                      value={bradInicial}
+                      onChange={e => setBradInicial(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Data do saldo</Label>
+                    <Input
+                      type="date"
+                      className="h-9 w-[160px]"
+                      value={bradData}
+                      onChange={e => setBradData(e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    className="h-9"
+                    disabled={salvarConfigSaldos.isPending}
+                    onClick={salvarBradesco}
+                  >
+                    {salvarConfigSaldos.isPending ? "Salvando…" : "Salvar"}
+                  </Button>
+                  {(data?.bradescoConfig?.saldoInicial != null ||
+                    data?.bradescoConfig?.saldoInicialData) && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-9 text-muted-foreground"
+                      disabled={salvarConfigSaldos.isPending}
+                      onClick={() => {
+                        setBradInicial("");
+                        setBradData("");
+                        salvarConfigSaldos.mutate({
+                          bradescoSaldoInicial: null,
+                          bradescoSaldoInicialData: null,
+                        });
+                      }}
+                    >
+                      Usar só API
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
                   <CardHeader className="pb-1">
                     <CardTitle className="text-base tracking-tight">
                       Plano por rúbrica
@@ -662,12 +789,12 @@ export default function FinanceiroDashboardPage() {
                   </CardHeader>
                   <CardContent className="pt-1">
                     {pizzaDesembolso.length === 0 ? (
-                      <div className="flex min-h-[12rem] items-center justify-center rounded-xl border border-dashed px-3 text-center text-xs text-muted-foreground">
+                      <div className="flex min-h-[10rem] items-center justify-center rounded-xl border border-dashed px-3 text-center text-xs text-muted-foreground">
                         Sem rúbricas no plano deste mês.
                       </div>
                     ) : (
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                        <div className="relative mx-auto h-48 w-full max-w-[220px] shrink-0 sm:mx-0">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                        <div className="relative mx-auto h-44 w-full max-w-[200px] shrink-0 sm:mx-0">
                           {/* Centro atrás do gráfico; o furo do donut deixa ver o total. */}
                           <div className="pointer-events-none absolute inset-0 z-0 flex flex-col items-center justify-center">
                             <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -686,8 +813,8 @@ export default function FinanceiroDashboardPage() {
                                   nameKey="name"
                                   cx="50%"
                                   cy="50%"
-                                  innerRadius={52}
-                                  outerRadius={78}
+                                  innerRadius={48}
+                                  outerRadius={72}
                                   paddingAngle={
                                     pizzaDesembolso.length > 1 ? 2 : 0
                                   }
@@ -743,7 +870,7 @@ export default function FinanceiroDashboardPage() {
                             </ResponsiveContainer>
                           </div>
                         </div>
-                        <ul className="min-w-0 flex-1 space-y-1.5 text-[11px]">
+                        <ul className="grid min-w-0 flex-1 grid-cols-1 gap-x-6 gap-y-1.5 text-[11px] sm:grid-cols-2">
                           {pizzaDesembolso.map((row, i) => (
                             <li
                               key={row.name}
@@ -768,8 +895,7 @@ export default function FinanceiroDashboardPage() {
                       </div>
                     )}
                   </CardContent>
-                </Card>
-              </div>
+              </Card>
             </section>
 
             {/* 2) Entradas — vencido separado */}

@@ -542,12 +542,26 @@ async function fetchSaldosContas(opts?: {
   };
 }
 
-/** Saldo consolidado das contas financeiras ativas no Conta Azul. */
-export async function buscarSaldoContasAzul(): Promise<{
+/**
+ * Saldo Conta Azul PJ (carteira/cobranças). Com projetoId, classifica contas
+ * e exclui Bradesco/outros; sem projetoId, mantém listagem bruta (legado).
+ */
+export async function buscarSaldoContasAzul(projetoId?: number): Promise<{
   saldoTotal: number | null;
   contas: Array<{ id: string; nome: string; saldo: number | null }>;
   aviso?: string;
 }> {
+  if (projetoId != null) {
+    const { buscarSaldosBancarios } = await import("./financeiroSaldosBancarios");
+    const s = await buscarSaldosBancarios(projetoId);
+    return {
+      saldoTotal: s.saldoContaAzul,
+      contas: s.contas
+        .filter(c => c.grupo === "conta_azul")
+        .map(c => ({ id: c.id, nome: c.nome, saldo: c.saldo })),
+      aviso: s.aviso,
+    };
+  }
   return fetchSaldosContas({ incluirSaldoAtual: true, maxContas: 30 });
 }
 
