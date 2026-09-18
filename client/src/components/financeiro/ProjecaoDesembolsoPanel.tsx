@@ -985,12 +985,6 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                     </th>
                   ))}
                   <th className="px-2 py-2 text-right">Total</th>
-                  <th className="px-2 py-2 text-right">
-                    <span className="block">Média fat.</span>
-                    <span className="block text-[9px] font-normal normal-case text-muted-foreground">
-                      3 meses × horizonte
-                    </span>
-                  </th>
                 </tr>
               </thead>
               <tbody>
