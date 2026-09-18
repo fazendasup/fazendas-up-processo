@@ -1177,9 +1177,6 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                     <td className="px-2 py-2 text-right font-semibold tabular-nums">
                       {fmtMoney(lin.totalAtivo)}
                     </td>
-                    <td className="px-2 py-2 text-right text-muted-foreground tabular-nums">
-                      —
-                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -1211,32 +1208,45 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                     );
                   })}
                   <td className="px-2 py-2 text-right tabular-nums">
-                    {fmtMoney(totaisFiltrados.geral)}
-                  </td>
-                  <td className="px-2 py-2 text-right tabular-nums">
-                    {data.mediaFaturamento ? (
-                      <div>
-                        <span>
-                          {fmtMoney(data.mediaFaturamento.totalHorizonte)}
-                        </span>
-                        <span className="mt-0.5 block text-[9px] font-normal text-muted-foreground">
-                          {fmtMoney(data.mediaFaturamento.mensal)}
-                          /mês · venda+frete
-                        </span>
-                        {data.mediaFaturamento.meses?.length ? (
-                          <span className="mt-0.5 block text-[9px] font-normal text-muted-foreground">
-                            {data.mediaFaturamento.meses
-                              .map(
-                                m =>
-                                  `${m.mesYm.slice(5)} ${fmtMoney(m.vendas)}`,
-                              )
-                              .join(" · ")}
-                          </span>
-                        ) : null}
-                      </div>
-                    ) : (
-                      "—"
-                    )}
+                    <div className="space-y-0.5">
+                      <div>{fmtMoney(totaisFiltrados.geral)}</div>
+                      {data.mediaFaturamento ? (
+                        <>
+                          <div className="text-[10px] font-normal text-muted-foreground">
+                            − fat. médio{" "}
+                            {fmtMoney(data.mediaFaturamento.totalHorizonte)}
+                            <span className="block text-[9px]">
+                              ({fmtMoney(data.mediaFaturamento.mensal)}/mês ·
+                              venda+frete)
+                            </span>
+                          </div>
+                          <div
+                            className={`text-[11px] ${
+                              totaisFiltrados.geral -
+                                data.mediaFaturamento.totalHorizonte >
+                              0.009
+                                ? "text-red-600"
+                                : "text-emerald-700"
+                            }`}
+                          >
+                            {totaisFiltrados.geral -
+                              data.mediaFaturamento.totalHorizonte >
+                            0.009
+                              ? "Necessário "
+                              : "Sobra "}
+                            {fmtMoney(
+                              Math.abs(
+                                Math.round(
+                                  (totaisFiltrados.geral -
+                                    data.mediaFaturamento.totalHorizonte) *
+                                    100,
+                                ) / 100,
+                              ),
+                            )}
+                          </div>
+                        </>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               </tfoot>
