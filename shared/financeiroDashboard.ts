@@ -2,7 +2,12 @@
  * Dashboard financeiro — série de 3 meses (mes−2, mes−1, mês)
  * com projeção × real (vendas e desembolso) e caixa.
  */
-import { labelMesYm, mesAnteriorProjecao } from "./financeiroProjecaoDesembolso";
+import {
+  ehDespesaEssencialRecorrente,
+  labelMesYm,
+  mesAnteriorProjecao,
+} from "./financeiroProjecaoDesembolso";
+import type { StatusRubricaComparativo } from "./financeiroComparativoProjecao";
 import type { ProjecaoVendasRestanteMes } from "./financeiroProjecaoVendas";
 
 function round2(n: number): number {
@@ -56,6 +61,32 @@ export type FinanceiroDashboardMesInput = {
   aReceber: number;
 };
 
+/** Ação sugerida no mapa essencial × cortável. */
+export type AcaoDesembolsoDashboard =
+  | "pagar"
+  | "revisar"
+  | "negociar"
+  | "cortar";
+
+export type DesembolsoRubricaDashboard = {
+  rubrica: string;
+  projetado: number;
+  pago: number;
+  naoPago: number;
+  pagoAMais: number;
+  status: StatusRubricaComparativo;
+  /** Heurística: folha, utilidades, insumos operacionais, etc. */
+  essencial: boolean;
+  /**
+   * pagar = essencial em aberto · revisar = essencial acima do plano ·
+   * negociar = não essencial em aberto (pode segurar) ·
+   * cortar = não essencial com volume/estouro (reduzir).
+   */
+  acao: AcaoDesembolsoDashboard;
+  /** Valor em R$ da ação (falta, excesso ou volume cortável). */
+  valorAcao: number;
+};
+
 export type FinanceiroDashboardPayload = {
   mesYm: string;
   labelMes: string;
@@ -77,12 +108,11 @@ export type FinanceiroDashboardPayload = {
     desvioPct: number | null;
     pctPagoDoProjetado: number | null;
   };
-  /** Composição do plano por rúbrica (para gráfico do dashboard). */
-  desembolsoPorRubrica: Array<{
-    rubrica: string;
-    projetado: number;
-    pago: number;
-  }>;
+  /**
+   * Rúbricas do mês com criticidade e gaps — base do mapa
+   * “proteger × reduzir”.
+   */
+  desembolsoPorRubrica: DesembolsoRubricaDashboard[];
   receita: {
     previsto: number;
     recebido: number;
@@ -153,4 +183,113 @@ export function montarSerieDashboard3Meses(input: {
       saldoCaixa: round2(m.recebido - m.desembolsoPago),
     };
   });
+}
+
+const MIN_ACAO = 0.5;
+
+/**
+ * Classifica rúbrica do comparativo para o mapa de ação do dashboard.
+ * Essencial usa a mesma heurística da projeção de desembolso.
+ * Retorna null só se não houver volume (nem plano nem pago).
+ */
+export function classificarRubricaDashboard(input: {
+  rubrica: string;
+  projetado: number;
+  pago: number;
+  naoPago: number;
+  pagoAMais: number;
+  status: StatusRubricaComparativo;
+}): DesembolsoRubricaDashboard | null {
+  const volume = Math.max(input.projetado, input.pago);
+  if (volume <= MIN_ACAO) return null;
+
+  const essencial = ehDespesaEssencialRecorrente(input.rubrica, input.rubrica);
+  const falta = Math.max(0, input.naoPago);
+  const excesso = Math.max(0, input.pagoAMais);
+
+  let acao: AcaoDesembolsoDashboard = essencial ? "revisar" : "cortar";
+  let valorAcao = round2(Math.max(input.pago, input.projetado));
+
+  if (essencial) {
+    if (falta > MIN_ACAO) {
+      acao = "pagar";
+      valorAcao = falta;
+    } else if (excesso > MIN_ACAO) {
+      acao = "revisar";
+      valorAcao = excesso;
+    } else {
+      // Em dia — não entra no mapa de urgência (filtrado depois).
+      acao = "revisar";
+      valorAcao = 0;
+    }
+  } else if (falta > MIN_ACAO && falta >= excesso) {
+    acao = "negociar";
+    valorAcao = falta;
+  } else if (excesso > MIN_ACAO) {
+    acao = "cortar";
+    valorAcao = excesso;
+  } else {
+    acao = "cortar";
+    valorAcao = round2(Math.max(input.pago, input.projetado));
+  }
+
+  return {
+    rubrica: input.rubrica,
+    projetado: round2(input.projetado),
+    pago: round2(input.pago),
+    naoPago: round2(falta),
+    pagoAMais: round2(excesso),
+    status: input.status,
+    essencial,
+    acao,
+    valorAcao: round2(valorAcao),
+  };
+}
+
+/** Painéis do mapa: proteger (essencial) × reduzir (não essencial). */
+export function montarMapaAcaoDesembolso(
+  rubricas: DesembolsoRubricaDashboard[],
+  top = 6,
+): {
+  proteger: DesembolsoRubricaDashboard[];
+  reduzir: DesembolsoRubricaDashboard[];
+  totalProteger: number;
+  totalReduzir: number;
+} {
+  const urgente = (r: DesembolsoRubricaDashboard) => r.valorAcao > MIN_ACAO;
+
+  const proteger = rubricas
+    .filter(
+      r =>
+        urgente(r) &&
+        r.essencial &&
+        (r.acao === "pagar" || (r.acao === "revisar" && r.pagoAMais > MIN_ACAO)),
+    )
+    .sort((a, b) => {
+      const rank = (x: DesembolsoRubricaDashboard) =>
+        x.acao === "pagar" ? 2 : 1;
+      return rank(b) - rank(a) || b.valorAcao - a.valorAcao;
+    })
+    .slice(0, top);
+
+  const reduzir = rubricas
+    .filter(
+      r =>
+        urgente(r) &&
+        !r.essencial &&
+        (r.acao === "negociar" || r.acao === "cortar"),
+    )
+    .sort((a, b) => {
+      const rank = (x: DesembolsoRubricaDashboard) =>
+        x.acao === "negociar" ? 2 : 1;
+      return rank(b) - rank(a) || b.valorAcao - a.valorAcao;
+    })
+    .slice(0, top);
+
+  return {
+    proteger,
+    reduzir,
+    totalProteger: round2(proteger.reduce((s, r) => s + r.valorAcao, 0)),
+    totalReduzir: round2(reduzir.reduce((s, r) => s + r.valorAcao, 0)),
+  };
 }

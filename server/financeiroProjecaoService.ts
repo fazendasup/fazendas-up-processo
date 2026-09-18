@@ -32,6 +32,7 @@ import {
   somarValorPagoParcelas,
 } from "@shared/financeiroComparativoProjecao";
 import {
+  classificarRubricaDashboard,
   montarSerieDashboard3Meses,
   type FinanceiroDashboardPayload,
 } from "@shared/financeiroDashboard";
@@ -763,13 +764,18 @@ export async function carregarFinanceiroDashboard(
     },
     desembolsoTotais: dMes.totais,
     desembolsoPorRubrica: dMes.rubricas
-      .map(r => ({
-        rubrica: r.rubrica,
-        projetado: r.projetado,
-        pago: r.pago,
-      }))
-      .filter(r => r.projetado > 0.009 || r.pago > 0.009)
-      .sort((a, b) => b.projetado - a.projetado),
+      .map(r =>
+        classificarRubricaDashboard({
+          rubrica: r.rubrica,
+          projetado: r.projetado,
+          pago: r.pago,
+          naoPago: r.naoPago,
+          pagoAMais: r.pagoAMais,
+          status: r.status,
+        }),
+      )
+      .filter((r): r is NonNullable<typeof r> => r != null)
+      .sort((a, b) => b.valorAcao - a.valorAcao),
     receita: {
       previsto: rMes.previsto,
       recebido: rMes.recebido,

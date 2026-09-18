@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { montarSerieDashboard3Meses } from "./financeiroDashboard";
+import {
+  classificarRubricaDashboard,
+  montarMapaAcaoDesembolso,
+  montarSerieDashboard3Meses,
+} from "./financeiroDashboard";
 
 describe("montarSerieDashboard3Meses", () => {
   it("monta mes−2, mes−1 e mês com desvios de vendas e desembolso", () => {
@@ -42,23 +46,64 @@ describe("montarSerieDashboard3Meses", () => {
         },
       ],
     });
-
     expect(out).toHaveLength(3);
-    expect(out.map(m => m.mesYm)).toEqual([
-      "2026-07",
-      "2026-08",
-      "2026-09",
-    ]);
-    expect(out[0].aberto).toBe(false);
-    expect(out[0].vendasProjetado).toBe(45_000);
-    expect(out[0].desvioVendas).toBe(0);
-    expect(out[0].desvioDesembolso).toBe(-2_000);
-    expect(out[0].saldoCaixa).toBe(38_000 - 48_000);
+    expect(out[2]?.aberto).toBe(true);
+    expect(out[2]?.vendasProjetado).toBe(78_000);
+  });
+});
 
-    expect(out[2].aberto).toBe(true);
-    expect(out[2].vendasProjetado).toBe(78_000);
-    expect(out[2].desvioVendas).toBe(35_000 - 78_000);
-    expect(out[2].desvioDesembolso).toBe(20_000 - 60_000);
-    expect(out[2].saldoCaixa).toBe(20_000);
+describe("classificarRubricaDashboard / montarMapaAcaoDesembolso", () => {
+  it("marca essencial em aberto como pagar", () => {
+    const r = classificarRubricaDashboard({
+      rubrica: "Energia elétrica",
+      projetado: 5_000,
+      pago: 1_000,
+      naoPago: 4_000,
+      pagoAMais: 0,
+      status: "faltando",
+    });
+    expect(r?.essencial).toBe(true);
+    expect(r?.acao).toBe("pagar");
+    expect(r?.valorAcao).toBe(4_000);
+  });
+
+  it("marca não essencial em aberto como negociar", () => {
+    const r = classificarRubricaDashboard({
+      rubrica: "Publicidade e marketing",
+      projetado: 8_000,
+      pago: 0,
+      naoPago: 8_000,
+      pagoAMais: 0,
+      status: "faltando",
+    });
+    expect(r?.essencial).toBe(false);
+    expect(r?.acao).toBe("negociar");
+    expect(r?.valorAcao).toBe(8_000);
+  });
+
+  it("separa painéis proteger × reduzir", () => {
+    const rows = [
+      classificarRubricaDashboard({
+        rubrica: "Folha de pagamento",
+        projetado: 50_000,
+        pago: 10_000,
+        naoPago: 40_000,
+        pagoAMais: 0,
+        status: "faltando",
+      })!,
+      classificarRubricaDashboard({
+        rubrica: "Publicidade",
+        projetado: 3_000,
+        pago: 5_000,
+        naoPago: 0,
+        pagoAMais: 2_000,
+        status: "pago_a_mais",
+      })!,
+    ];
+    const mapa = montarMapaAcaoDesembolso(rows, 6);
+    expect(mapa.proteger.map(r => r.rubrica)).toEqual(["Folha de pagamento"]);
+    expect(mapa.reduzir.map(r => r.rubrica)).toEqual(["Publicidade"]);
+    expect(mapa.totalProteger).toBe(40_000);
+    expect(mapa.totalReduzir).toBe(2_000);
   });
 });

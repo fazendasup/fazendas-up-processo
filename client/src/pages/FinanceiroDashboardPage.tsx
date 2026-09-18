@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import {
   ArrowDownRight,
@@ -8,14 +8,11 @@ import {
 } from "lucide-react";
 import {
   Bar,
+  BarChart,
   CartesianGrid,
   Cell,
-  ComposedChart,
-  Legend,
-  Line,
   Pie,
   PieChart,
-  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -33,23 +30,17 @@ import {
   buildChartTheme,
   chartAnimation,
   CHART,
-  ChartBarFillDefs,
-  barFillUrl,
   pieLegendDotColor,
   pieSliceSolidFill,
 } from "@/components/comercial/charts";
+import {
+  montarMapaAcaoDesembolso,
+  type DesembolsoRubricaDashboard,
+} from "@shared/financeiroDashboard";
 
 function mesAtualYm(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function labelMesCurto(ym: string): string {
-  const [y, m] = ym.split("-").map(Number);
-  const nome = new Date(y, m - 1, 1).toLocaleDateString("pt-BR", {
-    month: "short",
-  });
-  return `${nome.replace(".", "")}/${String(y).slice(2)}`;
 }
 
 function fmtMoney(n: number | null | undefined): string {
@@ -168,27 +159,139 @@ function ChartTip({
   );
 }
 
-function ChartShell({
-  title,
-  description,
-  children,
+function labelAcaoDesembolso(
+  acao: DesembolsoRubricaDashboard["acao"],
+): string {
+  switch (acao) {
+    case "pagar":
+      return "Pagar agora (essencial)";
+    case "revisar":
+      return "Revisar (essencial acima do plano)";
+    case "negociar":
+      return "Negociar / adiar (não essencial)";
+    case "cortar":
+      return "Reduzir / cortar";
+  }
+}
+
+function MapaPainel({
+  titulo,
+  subtitulo,
+  vazio,
+  data,
+  chartGridProps,
+  chartAxisXProps,
+  chartAxisYProps,
 }: {
-  title: string;
-  description?: string;
-  children: ReactNode;
+  titulo: string;
+  subtitulo: string;
+  vazio: string;
+  data: Array<{
+    name: string;
+    full: string;
+    valor: number;
+    acao: DesembolsoRubricaDashboard["acao"];
+    projetado: number;
+    pago: number;
+    naoPago: number;
+    pagoAMais: number;
+    fill: string;
+  }>;
+  chartGridProps: ReturnType<typeof buildChartTheme>["chartGridProps"];
+  chartAxisXProps: ReturnType<typeof buildChartTheme>["chartAxisXProps"];
+  chartAxisYProps: ReturnType<typeof buildChartTheme>["chartAxisYProps"];
 }) {
   return (
-    <Card>
-      <CardHeader className="pb-1">
-        <CardTitle className="text-base tracking-tight">{title}</CardTitle>
-        {description ? (
-          <p className="text-xs font-normal leading-relaxed text-muted-foreground">
-            {description}
-          </p>
-        ) : null}
-      </CardHeader>
-      <CardContent className="h-[320px] pt-2">{children}</CardContent>
-    </Card>
+    <div className="min-w-0 space-y-2">
+      <div>
+        <p className="text-sm font-semibold tracking-tight text-foreground">
+          {titulo}
+        </p>
+        <p className="text-[11px] text-muted-foreground">{subtitulo}</p>
+      </div>
+      {data.length === 0 ? (
+        <div className="flex h-[260px] items-center justify-center rounded-md border border-dashed border-border/60 px-3 text-center text-xs text-muted-foreground">
+          {vazio}
+        </div>
+      ) : (
+        <div className="h-[260px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              layout="vertical"
+              data={data}
+              margin={{ top: 4, right: 12, left: 0, bottom: 0 }}
+            >
+              <CartesianGrid {...chartGridProps} horizontal={false} />
+              <XAxis
+                type="number"
+                {...chartAxisXProps}
+                tickFormatter={fmtMoneyShort}
+              />
+              <YAxis
+                type="category"
+                dataKey="name"
+                width={96}
+                {...chartAxisYProps}
+                tick={{ fontSize: 10 }}
+              />
+              <Tooltip
+                cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
+                content={({ active, payload }) => {
+                  const row = payload?.[0]?.payload as
+                    | (typeof data)[number]
+                    | undefined;
+                  if (!row) return null;
+                  return (
+                    <ChartTip
+                      active={active}
+                      label={row.full}
+                      rows={[
+                        {
+                          label: labelAcaoDesembolso(row.acao),
+                          value: fmtMoney(row.valor),
+                          accent: row.fill,
+                        },
+                        {
+                          label: "No plano",
+                          value: fmtMoney(row.projetado),
+                          muted: true,
+                        },
+                        {
+                          label: "Já pago",
+                          value: fmtMoney(row.pago),
+                          muted: true,
+                        },
+                        {
+                          label: "Falta",
+                          value: fmtMoney(row.naoPago),
+                          muted: true,
+                        },
+                        {
+                          label: "Acima do plano",
+                          value: fmtMoney(row.pagoAMais),
+                          muted: true,
+                        },
+                      ]}
+                    />
+                  );
+                }}
+              />
+              <Bar
+                dataKey="valor"
+                name="Ação"
+                radius={[0, 4, 4, 0]}
+                maxBarSize={18}
+                {...chartAnimation}
+              >
+                {data.map(d => (
+                  <Cell key={d.full} fill={d.fill} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -210,7 +313,10 @@ export default function FinanceiroDashboardPage() {
     chartAxisXProps,
     chartAxisYProps,
   } = chartTheme;
-  const lineActiveStroke = theme === "dark" ? "#0f172a" : "#fff";
+  const corNegociar = theme === "dark" ? "#94a3b8" : "#64748b";
+  const corCortar = theme === "dark" ? "#34d399" : "#059669";
+  const corPagar = theme === "dark" ? "#fb7185" : "#e11d48";
+  const corRevisar = theme === "dark" ? "#fbbf24" : "#d97706";
 
   const kpiHref = (kpi: string) =>
     `/financeiro-cfo/kpi/${kpi}?mes=${encodeURIComponent(mes)}`;
@@ -225,20 +331,43 @@ export default function FinanceiroDashboardPage() {
   const rec = data?.receita;
   const des = data?.desembolsoTotais;
 
-  const serie = useMemo(
-    () =>
-      (data?.serie3Meses ?? []).map(m => ({
-        mesYm: m.mesYm,
-        nome: labelMesCurto(m.mesYm),
-        full: m.labelMes,
-        aberto: m.aberto,
-        recebido: m.recebido,
-        desembolsoPago: m.desembolsoPago,
-        saldo: m.saldoCaixa,
-        vendasFaturadas: m.vendasFaturadas,
-      })),
-    [data?.serie3Meses],
+  /** Mapa: proteger (essencial) × reduzir (não essencial). */
+  const mapaAcao = useMemo(
+    () => montarMapaAcaoDesembolso(data?.desembolsoPorRubrica ?? [], 6),
+    [data?.desembolsoPorRubrica],
   );
+
+  const chartProteger = useMemo(() => {
+    const fillOf = (acao: DesembolsoRubricaDashboard["acao"]) =>
+      acao === "pagar" ? corPagar : corRevisar;
+    return mapaAcao.proteger.map(r => ({
+      name: r.rubrica.length > 18 ? `${r.rubrica.slice(0, 16)}…` : r.rubrica,
+      full: r.rubrica,
+      valor: r.valorAcao,
+      acao: r.acao,
+      projetado: r.projetado,
+      pago: r.pago,
+      naoPago: r.naoPago,
+      pagoAMais: r.pagoAMais,
+      fill: fillOf(r.acao),
+    }));
+  }, [mapaAcao.proteger, corPagar, corRevisar]);
+
+  const chartReduzir = useMemo(() => {
+    const fillOf = (acao: DesembolsoRubricaDashboard["acao"]) =>
+      acao === "negociar" ? corNegociar : corCortar;
+    return mapaAcao.reduzir.map(r => ({
+      name: r.rubrica.length > 18 ? `${r.rubrica.slice(0, 16)}…` : r.rubrica,
+      full: r.rubrica,
+      valor: r.valorAcao,
+      acao: r.acao,
+      projetado: r.projetado,
+      pago: r.pago,
+      naoPago: r.naoPago,
+      pagoAMais: r.pagoAMais,
+      fill: fillOf(r.acao),
+    }));
+  }, [mapaAcao.reduzir, corNegociar, corCortar]);
 
   const pizzaDesembolso = useMemo(() => {
     const rows = data?.desembolsoPorRubrica ?? [];
@@ -588,100 +717,53 @@ export default function FinanceiroDashboardPage() {
               </div>
             </section>
 
-            {/* 3) Um gráfico: tendência 3 meses (o que os KPIs do mês não mostram) */}
-            <ChartShell
-              title="Tendência 3 meses — entrou × saiu"
-              description="Barras = recebido · linha = desembolso pago. Saldo no tooltip."
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart
-                  data={serie}
-                  margin={{ top: 12, right: 16, left: 4, bottom: 4 }}
-                >
-                  <ChartBarFillDefs prefix="fin-fluxo" />
-                  <CartesianGrid {...chartGridProps} />
-                  <XAxis dataKey="nome" {...chartAxisXProps} />
-                  <YAxis
-                    {...chartAxisYProps}
-                    tickFormatter={fmtMoneyShort}
-                    width={52}
-                  />
-                  <ReferenceLine
-                    y={0}
-                    stroke="currentColor"
-                    strokeOpacity={0.3}
-                    strokeDasharray="4 4"
-                  />
-                  <Tooltip
-                    cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
-                    content={({ active, payload, label }) => {
-                      const row = payload?.[0]?.payload as
-                        | (typeof serie)[number]
-                        | undefined;
-                      if (!row) return null;
-                      return (
-                        <ChartTip
-                          active={active}
-                          label={String(label)}
-                          rows={[
-                            {
-                              label: "Entrou",
-                              value: fmtMoney(row.recebido),
-                              accent: CHART.blue.stroke,
-                            },
-                            {
-                              label: "Saiu",
-                              value: fmtMoney(row.desembolsoPago),
-                              accent: "#b45309",
-                            },
-                            {
-                              label: "Saldo (entrou − saiu)",
-                              value: fmtMoney(row.saldo),
-                              accent:
-                                row.saldo >= 0 ? CHART.green.dark : "#dc2626",
-                            },
-                            {
-                              label: "Faturado (volume)",
-                              value: fmtMoney(row.vendasFaturadas),
-                              muted: true,
-                            },
-                          ]}
-                        />
-                      );
-                    }}
-                  />
-                  <Legend
-                    verticalAlign="top"
-                    height={28}
-                    iconType="circle"
-                    wrapperStyle={{ fontSize: 11, fontWeight: 600 }}
-                  />
-                  <Bar
-                    dataKey="recebido"
-                    name="Entrou"
-                    fill={barFillUrl("fin-fluxo", "blue")}
-                    radius={[6, 6, 2, 2]}
-                    maxBarSize={36}
-                    {...chartAnimation}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="desembolsoPago"
-                    name="Saiu"
-                    stroke="#b45309"
-                    strokeWidth={2.5}
-                    dot={{
-                      r: 5,
-                      strokeWidth: 2,
-                      stroke: lineActiveStroke,
-                      fill: "#b45309",
-                    }}
-                    activeDot={{ r: 7 }}
-                    {...chartAnimation}
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </ChartShell>
+            {/* 3) Mapa de ação: essencial (proteger) × cortável (reduzir) */}
+            <Card>
+              <CardHeader className="pb-1">
+                <CardTitle className="text-base tracking-tight">
+                  Mapa de ação — essencial × cortável
+                </CardTitle>
+                <p className="text-xs font-normal leading-relaxed text-muted-foreground">
+                  Esquerda: o que não pode falhar (folha, utilidades, insumos
+                  operacionais). Direita: onde dá para segurar ou cortar. Heurística
+                  alinhada à projeção de desembolso.
+                </p>
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-semibold">
+                  <span style={{ color: corPagar }}>
+                    Pagar {fmtMoney(mapaAcao.proteger.filter(r => r.acao === "pagar").reduce((s, r) => s + r.valorAcao, 0))}
+                  </span>
+                  <span style={{ color: corRevisar }}>
+                    Revisar essencial {fmtMoney(mapaAcao.proteger.filter(r => r.acao === "revisar").reduce((s, r) => s + r.valorAcao, 0))}
+                  </span>
+                  <span style={{ color: corNegociar }}>
+                    Negociar/adiar {fmtMoney(mapaAcao.reduzir.filter(r => r.acao === "negociar").reduce((s, r) => s + r.valorAcao, 0))}
+                  </span>
+                  <span style={{ color: corCortar }}>
+                    Cortar {fmtMoney(mapaAcao.reduzir.filter(r => r.acao === "cortar").reduce((s, r) => s + r.valorAcao, 0))}
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="grid gap-6 pt-3 md:grid-cols-2">
+                <MapaPainel
+                  titulo="Não deixar de pagar"
+                  subtitulo="Essenciais em aberto ou acima do plano"
+                  vazio="Nenhuma essencial urgente neste mês."
+                  data={chartProteger}
+                  chartGridProps={chartGridProps}
+                  chartAxisXProps={chartAxisXProps}
+                  chartAxisYProps={chartAxisYProps}
+                />
+                <MapaPainel
+                  titulo="Onde reduzir custo"
+                  subtitulo="Não essenciais — adiar, renegociar ou cortar"
+                  vazio="Sem volume cortável relevante."
+                  data={chartReduzir}
+                  chartGridProps={chartGridProps}
+                  chartAxisXProps={chartAxisXProps}
+                  chartAxisYProps={chartAxisYProps}
+                />
+              </CardContent>
+            </Card>
 
             <p className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
               <Wallet className="mt-0.5 h-3.5 w-3.5 shrink-0" />
