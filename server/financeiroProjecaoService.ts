@@ -20,6 +20,7 @@ import {
 } from "./financeiroProjecaoDb";
 import {
   ehReceitaVendasCaixa,
+  ehTransferenciaEntreContas,
   mesAnteriorProjecao,
   montarProjecaoDesembolso,
   labelMesYm,
@@ -198,6 +199,62 @@ export function invalidarCacheProjecaoParcelas(
   }
 }
 
+function roundMoney(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+/**
+ * Média de faturamento (venda + frete) dos 3 meses até `mesYm`,
+ * via baixas Conta Azul — exclui transferência e investimento/aporte.
+ */
+async function carregarMediaFaturamento3Meses(
+  projetoId: number,
+  mesYm: string,
+): Promise<{
+  mensal: number;
+  meses: Array<{ mesYm: string; vendas: number }>;
+}> {
+  const m2 = mesYm;
+  const m1 = mesAnteriorProjecao(m2);
+  const m0 = mesAnteriorProjecao(m1);
+  const lista = [m0, m1, m2];
+
+  const meses = await Promise.all(
+    lista.map(async ym => {
+      const { inicio, fim } = boundsMesYmAmericaSp(ym);
+      let vendas = 0;
+      try {
+        const raw = await buscarBaixasReceberPorPeriodoPagamento(
+          inicio,
+          fim,
+          projetoId,
+        );
+        for (const p of raw.map(toBase)) {
+          if (ehTransferenciaEntreContas(p.descricao, p.rubrica)) continue;
+          if (!ehReceitaVendasCaixa(p)) continue;
+          const pago = valorPagoParcela(p);
+          if (pago > 0) vendas += pago;
+        }
+      } catch (err) {
+        console.error(
+          `[financeiro] mediaFaturamento ${ym}:`,
+          err instanceof Error ? err.message : err,
+        );
+      }
+      return { mesYm: ym, vendas: roundMoney(vendas) };
+    }),
+  );
+
+  const comValor = meses.filter(m => m.vendas > 0);
+  const base = comValor.length > 0 ? comValor : meses;
+  const mensal =
+    base.length > 0
+      ? roundMoney(base.reduce((s, m) => s + m.vendas, 0) / base.length)
+      : 0;
+
+  return { mensal, meses };
+}
+
 export async function carregarProjecaoDesembolso(
   projetoId: number,
   mesInicioYm: string,
@@ -243,34 +300,19 @@ export async function carregarProjecaoDesembolso(
     })),
   });
 
-  const hojeYm = mesIsoAmericaSp();
-  const diaHoje = Number(diaIsoAmericaSp().slice(8, 10));
-  // Média de faturamento: 3 meses fechados até o mês contexto (base da projeção).
-  const vendas3m = await carregarTotaisVendasCompetencia(mesContextoYm, {
-    hojeYm,
-    diaHoje,
-  });
-  const vendasPorMes = vendas3m.porMes.map(m => m.vendas);
-  const mediaFaturamentoMensal =
-    vendasPorMes.length > 0
-      ? Math.round(
-          (vendasPorMes.reduce((s, v) => s + v, 0) / vendasPorMes.length) * 100,
-        ) / 100
-      : 0;
+  const fat = await carregarMediaFaturamento3Meses(projetoId, mesContextoYm);
   const mesesHorizonte = grade.colunas.filter(c => c.contaNoTotal).length;
-  const mediaFaturamentoTotalHorizonte =
-    Math.round(mediaFaturamentoMensal * mesesHorizonte * 100) / 100;
+  const mediaFaturamentoTotalHorizonte = roundMoney(
+    fat.mensal * mesesHorizonte,
+  );
 
   return {
     mesInicioYm,
     ...grade,
     mediaFaturamento: {
-      mensal: mediaFaturamentoMensal,
+      mensal: fat.mensal,
       totalHorizonte: mediaFaturamentoTotalHorizonte,
-      meses: vendas3m.porMes.map(m => ({
-        mesYm: m.mesYm,
-        vendas: m.vendas,
-      })),
+      meses: fat.meses,
       mesesHorizonte,
     },
     avisos: [
@@ -278,7 +320,7 @@ export async function carregarProjecaoDesembolso(
       "Essenciais (energia, aluguel, salário, insumos, lanches, embalagens, tarifas bancárias, combustível, hortifruti…) já entram como projetado recorrente.",
       "Demais itens: valor sugerido — marque o checkbox se vai continuar.",
       "Total da projeção = só os 3 meses à frente (mês anterior não entra).",
-      "Média fat. = média de vendas Conta Azul dos 3 meses até o mês contexto; total = média × meses da projeção.",
+      "Média fat. = baixas a receber (venda + frete) dos 3 meses até o mês contexto; sem transferência/investimento; total = média × meses da projeção.",
       "Mês anterior = contexto executado (somente leitura).",
     ],
   };
