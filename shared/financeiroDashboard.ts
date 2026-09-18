@@ -111,6 +111,9 @@ export type FinanceiroDashboardPayload = {
   };
   desembolsoTotais: {
     projetado: number;
+    /** Projetado após abate de rúbricas concluídas (pago a menos). */
+    projetadoEfetivo?: number;
+    abateConcluidas?: number;
     pago: number;
     naoPago: number;
     pagoAMais: number;

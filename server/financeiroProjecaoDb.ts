@@ -4,9 +4,11 @@ import {
   financeiroProjecaoCelulas,
   financeiroProjecaoColunas,
   financeiroProjecaoLinhas,
+  financeiroProjecaoRubricasMes,
   type FinanceiroProjecaoCelulaRow,
   type FinanceiroProjecaoColunaRow,
   type FinanceiroProjecaoLinhaRow,
+  type FinanceiroProjecaoRubricaMesRow,
 } from "../drizzle/schema";
 import { getDb } from "./db";
 
@@ -47,6 +49,17 @@ export async function ensureFinanceiroProjecaoTables(): Promise<void> {
   PRIMARY KEY (\`id\`),
   UNIQUE KEY \`uq_fin_proj_cel_proj_linha_mes\` (\`projetoId\`,\`linhaId\`,\`mesYm\`),
   KEY \`idx_fin_proj_cel_proj\` (\`projetoId\`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+    `CREATE TABLE IF NOT EXISTS \`financeiro_projecao_rubricas_mes\` (
+  \`id\` int AUTO_INCREMENT NOT NULL,
+  \`projetoId\` int NOT NULL,
+  \`mesYm\` varchar(7) NOT NULL,
+  \`rubrica\` varchar(191) NOT NULL,
+  \`concluida\` tinyint(1) NOT NULL DEFAULT 0,
+  \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (\`id\`),
+  UNIQUE KEY \`uq_fin_proj_rub_proj_mes_rub\` (\`projetoId\`,\`mesYm\`,\`rubrica\`),
+  KEY \`idx_fin_proj_rub_proj_mes\` (\`projetoId\`,\`mesYm\`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
   ];
 
@@ -284,5 +297,84 @@ export async function upsertProjecaoCelula(
     )
     .limit(1);
   if (!rows[0]) throw new Error("Falha ao salvar célula.");
+  return rows[0];
+}
+
+/** Rúbricas marcadas como concluídas no mês (saldo liberado se pago a menos). */
+export async function listRubricasMesConcluidas(
+  projetoId: number,
+  mesYm: string,
+): Promise<string[]> {
+  await ensureFinanceiroProjecaoTables();
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select()
+    .from(financeiroProjecaoRubricasMes)
+    .where(
+      and(
+        eq(financeiroProjecaoRubricasMes.projetoId, projetoId),
+        eq(financeiroProjecaoRubricasMes.mesYm, mesYm),
+        eq(financeiroProjecaoRubricasMes.concluida, true),
+      ),
+    );
+  return rows.map(r => r.rubrica);
+}
+
+export async function upsertRubricaMesConcluida(
+  projetoId: number,
+  input: { mesYm: string; rubrica: string; concluida: boolean },
+): Promise<FinanceiroProjecaoRubricaMesRow> {
+  await ensureFinanceiroProjecaoTables();
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const mesYm = input.mesYm.trim();
+  const rubrica = input.rubrica.trim();
+  if (!/^\d{4}-\d{2}$/.test(mesYm)) throw new Error("Mês inválido (AAAA-MM).");
+  if (!rubrica) throw new Error("Rúbrica obrigatória.");
+
+  const existing = await db
+    .select()
+    .from(financeiroProjecaoRubricasMes)
+    .where(
+      and(
+        eq(financeiroProjecaoRubricasMes.projetoId, projetoId),
+        eq(financeiroProjecaoRubricasMes.mesYm, mesYm),
+        eq(financeiroProjecaoRubricasMes.rubrica, rubrica),
+      ),
+    )
+    .limit(1);
+
+  if (existing[0]) {
+    await db
+      .update(financeiroProjecaoRubricasMes)
+      .set({ concluida: input.concluida })
+      .where(eq(financeiroProjecaoRubricasMes.id, existing[0].id));
+    const updated = await db
+      .select()
+      .from(financeiroProjecaoRubricasMes)
+      .where(eq(financeiroProjecaoRubricasMes.id, existing[0].id))
+      .limit(1);
+    return updated[0]!;
+  }
+
+  await db.insert(financeiroProjecaoRubricasMes).values({
+    projetoId,
+    mesYm,
+    rubrica,
+    concluida: input.concluida,
+  });
+  const rows = await db
+    .select()
+    .from(financeiroProjecaoRubricasMes)
+    .where(
+      and(
+        eq(financeiroProjecaoRubricasMes.projetoId, projetoId),
+        eq(financeiroProjecaoRubricasMes.mesYm, mesYm),
+        eq(financeiroProjecaoRubricasMes.rubrica, rubrica),
+      ),
+    )
+    .limit(1);
+  if (!rows[0]) throw new Error("Falha ao salvar rúbrica.");
   return rows[0];
 }

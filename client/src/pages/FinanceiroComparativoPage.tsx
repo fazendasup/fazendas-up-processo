@@ -4,6 +4,7 @@ import {
   ArrowDownRight,
   ArrowLeft,
   ArrowUpRight,
+  Check,
   ChevronDown,
   ChevronRight,
   RefreshCcw,
@@ -185,6 +186,16 @@ export default function FinanceiroComparativoPage() {
   const [abertas, setAbertas] = useState<Set<string>>(() => new Set());
   const [vencidosAberto, setVencidosAberto] = useState(false);
 
+  const marcarConcluida = trpc.financeiroCfo.marcarRubricaConcluida.useMutation({
+    onSuccess: async () => {
+      await q.refetch();
+      void utils.financeiroCfo.dashboard.invalidate();
+    },
+    onError: e => {
+      toast.error(e.message || "Falha ao marcar rúbrica");
+    },
+  });
+
   const toggleRubrica = (rubrica: string) => {
     setAbertas(prev => {
       const next = new Set(prev);
@@ -192,6 +203,10 @@ export default function FinanceiroComparativoPage() {
       else next.add(rubrica);
       return next;
     });
+  };
+
+  const toggleConcluida = (rubrica: string, concluida: boolean) => {
+    marcarConcluida.mutate({ mesYm: mes, rubrica, concluida: !concluida });
   };
 
   const recarregarCa = async () => {
@@ -385,7 +400,8 @@ export default function FinanceiroComparativoPage() {
                         <th className="py-2 pr-2 text-right font-medium">
                           Pago a mais
                         </th>
-                        <th className="py-2 font-medium">Status</th>
+                        <th className="py-2 pr-2 font-medium">Status</th>
+                        <th className="py-2 font-medium">Concluída</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -394,6 +410,8 @@ export default function FinanceiroComparativoPage() {
                         const falta = rub.status === "faltando";
                         const extra = rub.status === "nao_programada";
                         const atraso = rub.status === "pago_em_atraso";
+                        const concluida = rub.concluida === true;
+                        const podeConcluir = rub.pago > 0.009 && rub.projetado > 0.009;
                         const aberta = abertas.has(rub.rubrica);
                         const projetados = (rub.detalhes ?? []).filter(
                           x => x.origem === "projetado",
@@ -403,7 +421,11 @@ export default function FinanceiroComparativoPage() {
                         );
                         return (
                           <Fragment key={rub.rubrica}>
-                            <tr className="border-b border-border/60 last:border-0">
+                            <tr
+                              className={`border-b border-border/60 last:border-0 ${
+                                concluida ? "bg-emerald-50/40 dark:bg-emerald-950/20" : ""
+                              }`}
+                            >
                               <td className="py-2 pr-2">
                                 <button
                                   type="button"
@@ -417,6 +439,11 @@ export default function FinanceiroComparativoPage() {
                                   )}
                                   <span className="truncate">{rub.rubrica}</span>
                                 </button>
+                                {concluida && (rub.saldoLiberado ?? 0) > 0.009 ? (
+                                  <p className="mt-0.5 pl-5 text-[10px] text-emerald-700">
+                                    Saldo liberado {fmtMoney(rub.saldoLiberado)}
+                                  </p>
+                                ) : null}
                               </td>
                               <td className="py-2 pr-2 text-right tabular-nums">
                                 {fmtMoney(rub.projetado)}
@@ -435,29 +462,59 @@ export default function FinanceiroComparativoPage() {
                                 {fmtMoney(rub.pagoAMais)}
                               </td>
                               <td
-                                className={`py-2 text-xs ${
-                                  aMais || extra
-                                    ? "text-red-600"
-                                    : atraso
-                                      ? "text-amber-700"
-                                      : falta
+                                className={`py-2 pr-2 text-xs ${
+                                  concluida
+                                    ? "text-emerald-700"
+                                    : aMais || extra
+                                      ? "text-red-600"
+                                      : atraso
                                         ? "text-amber-700"
-                                        : "text-emerald-700"
+                                        : falta
+                                          ? "text-amber-700"
+                                          : "text-emerald-700"
                                 }`}
                               >
                                 <span className="inline-flex items-center gap-0.5">
-                                  {aMais || extra ? (
+                                  {concluida ? (
+                                    <Check className="h-3.5 w-3.5" />
+                                  ) : aMais || extra ? (
                                     <ArrowUpRight className="h-3.5 w-3.5" />
                                   ) : falta || atraso ? (
                                     <ArrowDownRight className="h-3.5 w-3.5" />
                                   ) : null}
-                                  {statusLabel(rub.status)}
+                                  {concluida ? "Concluída" : statusLabel(rub.status)}
                                 </span>
+                              </td>
+                              <td className="py-2">
+                                {podeConcluir || concluida ? (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant={concluida ? "secondary" : "outline"}
+                                    className="h-7 gap-1 px-2 text-[11px]"
+                                    disabled={marcarConcluida.isPending}
+                                    title={
+                                      concluida
+                                        ? "Desmarcar concluída (volta a cobrar o não pago no plano)"
+                                        : "Marcar concluída: se pagou a menos, libera saldo e abate o desembolso"
+                                    }
+                                    onClick={() =>
+                                      toggleConcluida(rub.rubrica, concluida)
+                                    }
+                                  >
+                                    <Check className="h-3 w-3" />
+                                    {concluida ? "Feita" : "Concluir"}
+                                  </Button>
+                                ) : (
+                                  <span className="text-[10px] text-muted-foreground">
+                                    —
+                                  </span>
+                                )}
                               </td>
                             </tr>
                             {aberta ? (
                               <tr className="border-b border-border/40 bg-muted/30">
-                                <td colSpan={6} className="px-3 py-2">
+                                <td colSpan={7} className="px-3 py-2">
                                   <div className="grid gap-3 md:grid-cols-2">
                                     <div>
                                       <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -692,7 +749,11 @@ export default function FinanceiroComparativoPage() {
                 <Kpi
                   title="Caixa previsto vs desembolso"
                   value={fmtMoney(caixa?.gapCaixaMes)}
-                  hint="Projeção caixa (recebido + ainda entra) − desembolso projetado"
+                  hint={
+                    d?.totais.abateConcluidas && d.totais.abateConcluidas > 0.009
+                      ? `Receita caixa − desembolso efetivo (plano ${fmtMoney(d.totais.projetado)} − saldo liberado ${fmtMoney(d.totais.abateConcluidas)})`
+                      : "Projeção caixa (recebido + ainda entra) − desembolso projetado"
+                  }
                   tone={
                     (caixa?.gapCaixaMes ?? 0) >= 0
                       ? "down"
@@ -771,7 +832,10 @@ export default function FinanceiroComparativoPage() {
             <p className="flex items-start gap-2 text-xs text-muted-foreground">
               <TrendingDown className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               Desembolso: “fora do plano” = rúbrica recorrente paga sem estar na
-              projeção; “não programada” = gasto sem linha na grade. Ajuste em{" "}
+              projeção; “não programada” = gasto sem linha na grade. Em rúbricas
+              já pagas, use <strong>Concluir</strong> se pagou a menos — o
+              restante vira saldo e abate o “Caixa previsto vs desembolso”.
+              Ajuste em{" "}
               <Link href="/financeiro-cfo/analise" className="underline">
                 Análise Conta Azul
               </Link>

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  aplicarRubricasConcluidas,
   montarComparativoDesembolsoMes,
   montarComparativoReceitaMes,
   montarFinanceiroComparativo,
@@ -513,5 +514,34 @@ describe("montarFinanceiroComparativo", () => {
     expect(out.receita.projecaoVendas.aindaEntraProjetado).toBe(3_000);
     expect(out.receita.projecaoVendas.projecaoMesTotal).toBe(8_000);
     expect(out.caixa.gapCaixaMes).toBe(6_000);
+  });
+});
+
+describe("aplicarRubricasConcluidas", () => {
+  it("abate naoPago de rúbrica concluída no projetado efetivo", () => {
+    const base = montarComparativoDesembolsoMes({
+      mesYm: "2026-09",
+      linhasProjecao: [linhaProj("Energia elétrica", 1_200)],
+      parcelasPagarMes: [
+        parcela({
+          id: "e1",
+          descricao: "CPFL",
+          rubrica: "Energia elétrica",
+          valorPago: 1_000,
+          dataPagamento: "2026-09-05",
+          dataVencimento: "2026-09-05",
+        }),
+      ],
+    });
+    expect(base.rubricas[0]?.naoPago).toBe(200);
+    expect(base.totais.projetado).toBe(1_200);
+
+    const out = aplicarRubricasConcluidas(base, ["Energia elétrica"]);
+    expect(out.rubricas[0]?.concluida).toBe(true);
+    expect(out.rubricas[0]?.saldoLiberado).toBe(200);
+    expect(out.rubricas[0]?.naoPago).toBe(0);
+    expect(out.totais.abateConcluidas).toBe(200);
+    expect(out.totais.projetadoEfetivo).toBe(1_000);
+    expect(out.totais.naoPago).toBe(0);
   });
 });

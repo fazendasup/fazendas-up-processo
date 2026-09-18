@@ -91,6 +91,13 @@ export type ComparativoDesembolsoRubrica = {
   status: StatusRubricaComparativo;
   /** Linhas da grade + títulos pagos (para expandir na UI). */
   detalhes: ComparativoDesembolsoDetalhe[];
+  /**
+   * Marcada como concluída no mês: o que faltava pagar vira saldo liberado
+   * e abate o desembolso projetado (ex.: pago a menos de propósito).
+   */
+  concluida?: boolean;
+  /** Quando concluída e pago < projetado: = naoPago (saldo liberado). */
+  saldoLiberado?: number;
 };
 
 export type ComparativoDesembolsoMes = {
@@ -99,6 +106,13 @@ export type ComparativoDesembolsoMes = {
   rubricas: ComparativoDesembolsoRubrica[];
   totais: {
     projetado: number;
+    /**
+     * Projetado após abater saldo liberado das rúbricas concluídas
+     * (pago a menos). Usado em gapCaixaMes.
+     */
+    projetadoEfetivo: number;
+    /** Soma dos naoPago das rúbricas concluídas. */
+    abateConcluidas: number;
     pago: number;
     naoPago: number;
     pagoAMais: number;
@@ -339,9 +353,15 @@ export function montarComparativoDesembolsoMes(input: {
   return {
     mesYm,
     labelMes: labelMesYm(mesYm),
-    rubricas,
+    rubricas: rubricas.map(r => ({
+      ...r,
+      concluida: false,
+      saldoLiberado: 0,
+    })),
     totais: {
       projetado,
+      projetadoEfetivo: projetado,
+      abateConcluidas: 0,
       pago,
       naoPago: round2(Math.max(0, projetado - pagoNoPlano)),
       pagoAMais: round2(rubricas.reduce((s, r) => s + r.pagoAMais, 0)),
@@ -350,6 +370,63 @@ export function montarComparativoDesembolsoMes(input: {
       desvioPct: desvioPct(desvio, projetado),
       pctPagoDoProjetado:
         projetado > 0 ? round2((pagoNoPlano / projetado) * 100) : null,
+    },
+  };
+}
+
+/**
+ * Aplica marcas de rúbrica concluída: o que faltava pagar vira saldo liberado
+ * e abate o desembolso projetado (gap caixa previsto vs desembolso).
+ */
+export function aplicarRubricasConcluidas(
+  desembolso: ComparativoDesembolsoMes,
+  concluidas: Iterable<string>,
+): ComparativoDesembolsoMes {
+  const set = new Set(
+    Array.from(concluidas)
+      .map(s => s.trim())
+      .filter(Boolean),
+  );
+  if (set.size === 0) return desembolso;
+
+  let abate = 0;
+  const rubricas = desembolso.rubricas.map(r => {
+    const concluida = set.has(r.rubrica);
+    const saldoLiberado =
+      concluida && r.naoPago > 0.009 ? round2(r.naoPago) : 0;
+    if (saldoLiberado > 0) abate += saldoLiberado;
+    return {
+      ...r,
+      concluida,
+      saldoLiberado,
+      // Concluída: não conta mais como “falta pagar” nos KPIs/mapa.
+      naoPago: concluida ? 0 : r.naoPago,
+      status:
+        concluida && r.status === "faltando" ? ("em_dia" as const) : r.status,
+    };
+  });
+  abate = round2(abate);
+  const projetadoEfetivo = round2(desembolso.totais.projetado - abate);
+  const naoPago = round2(rubricas.reduce((s, r) => s + r.naoPago, 0));
+  const pagoNoPlano = round2(
+    desembolso.totais.pago - desembolso.totais.pagoEmAtraso,
+  );
+  const desvio = round2(pagoNoPlano - projetadoEfetivo);
+
+  return {
+    ...desembolso,
+    rubricas,
+    totais: {
+      ...desembolso.totais,
+      projetadoEfetivo,
+      abateConcluidas: abate,
+      naoPago,
+      desvio,
+      desvioPct: desvioPct(desvio, projetadoEfetivo),
+      pctPagoDoProjetado:
+        projetadoEfetivo > 0
+          ? round2((pagoNoPlano / projetadoEfetivo) * 100)
+          : null,
     },
   };
 }
@@ -717,12 +794,20 @@ export function montarFinanceiroComparativo(input: {
   vendasRestanteMesAnterior2?: number;
   hojeYm?: string;
   diaHoje?: number;
+  /** Rúbricas marcadas como concluídas neste mês. */
+  rubricasConcluidas?: string[];
 }): FinanceiroComparativoPayload {
-  const desembolso = montarComparativoDesembolsoMes({
+  let desembolso = montarComparativoDesembolsoMes({
     mesYm: input.mesYm,
     linhasProjecao: input.linhasProjecao,
     parcelasPagarMes: input.parcelasPagarMes,
   });
+  if (input.rubricasConcluidas?.length) {
+    desembolso = aplicarRubricasConcluidas(
+      desembolso,
+      input.rubricasConcluidas,
+    );
+  }
   const receita = montarComparativoReceitaMes({
     mesYm: input.mesYm,
     parcelasReceberMes: input.parcelasReceberMes,
@@ -743,9 +828,10 @@ export function montarFinanceiroComparativo(input: {
     receita,
     caixa: {
       saldoRealizado: round2(receita.recebido - desembolso.totais.pago),
-      /** Projeção de volume do mês vs desembolso planejado. */
+      /** Projeção de caixa do mês vs desembolso efetivo (após abate concluídas). */
       gapCaixaMes: round2(
-        receita.projecaoVendas.projecaoMesTotal - desembolso.totais.projetado,
+        receita.projecaoVendas.projecaoMesTotal -
+          desembolso.totais.projetadoEfetivo,
       ),
     },
   };

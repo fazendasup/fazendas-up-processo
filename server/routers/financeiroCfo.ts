@@ -28,6 +28,7 @@ import {
   softDeleteProjecaoLinhaManual,
   upsertProjecaoCelula,
 } from "../financeiroProjecaoService";
+import { upsertRubricaMesConcluida } from "../financeiroProjecaoDb";
 import { DASHBOARD_KPI_IDS } from "@shared/financeiroDashboardKpi";
 import { DASHBOARD_GRANULARIDADES } from "@shared/financeiroPeriodoDashboard";
 
@@ -307,4 +308,17 @@ export const financeiroCfoRouter = router({
       await softDeleteProjecaoLinhaManual(projetoIdFromCtx(ctx), input.id);
       return { ok: true as const };
     }),
+
+  /** Marca rúbrica do comparativo como concluída (pago a menos vira saldo). */
+  marcarRubricaConcluida: custosProducaoModuleProcedure
+    .input(
+      z.object({
+        mesYm: z.string().regex(/^\d{4}-\d{2}$/),
+        rubrica: z.string().min(1).max(191),
+        concluida: z.boolean(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) =>
+      upsertRubricaMesConcluida(projetoIdFromCtx(ctx), input),
+    ),
 });

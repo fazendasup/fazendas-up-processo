@@ -11,9 +11,11 @@ import {
   listProjecaoCelulaOverrides,
   listProjecaoColunas,
   listProjecaoLinhasManuais,
+  listRubricasMesConcluidas,
   removeProjecaoColuna,
   softDeleteProjecaoLinhaManual,
   upsertProjecaoCelula,
+  upsertRubricaMesConcluida,
 } from "./financeiroProjecaoDb";
 import {
   ehReceitaVendasCaixa,
@@ -25,6 +27,7 @@ import {
 } from "@shared/financeiroProjecaoDesembolso";
 import {
   agregarReceitaCaixaPeriodo,
+  aplicarRubricasConcluidas,
   montarComparativoDesembolsoMes,
   montarComparativoReceitaMes,
   montarFinanceiroComparativo,
@@ -453,7 +456,7 @@ export async function carregarComparativoProjecao(
   const idsVendas = idsCategoriasReceitaVendas(catalogo);
   // Sempre busca todas as baixas do período; filtro de vendas/investimento no cliente.
 
-  const [grade, pagarMes, receberMes, baixas1, baixas2, receber1, receber2, vendas] =
+  const [grade, pagarMes, receberMes, baixas1, baixas2, receber1, receber2, vendas, rubricasConcluidas] =
     await Promise.all([
       carregarProjecaoDesembolso(projetoId, mesYm, {
         forceRefreshCa: opts?.forceRefreshCa,
@@ -491,6 +494,7 @@ export async function carregarComparativoProjecao(
         diaHoje,
         filtroOrcamento,
       }),
+      listRubricasMesConcluidas(projetoId, mesYm),
     ]);
 
   // Preferência: baixas no período (API). Fallback: média do recebido do mês × N/dias.
@@ -533,6 +537,7 @@ export async function carregarComparativoProjecao(
     vendasRestanteMesAnterior2: recebidoRestante2,
     hojeYm,
     diaHoje,
+    rubricasConcluidas,
   });
 
   return {
@@ -620,6 +625,7 @@ export async function carregarFinanceiroDashboard(
     vendas,
     pagarPeriodo,
     receberPeriodo,
+    rubricasConcluidas,
   ] = await Promise.all([
     carregarProjecaoDesembolso(projetoId, mes2, { forceRefreshCa: force }),
     carregarProjecaoDesembolso(projetoId, mesYm, { forceRefreshCa: force }),
@@ -686,6 +692,7 @@ export async function carregarFinanceiroDashboard(
           periodo.fim,
           projetoId,
         ).then(r => r.map(toBase)),
+    listRubricasMesConcluidas(projetoId, mesYm),
   ]);
 
   const desembolsoDe = (
@@ -711,7 +718,10 @@ export async function carregarFinanceiroDashboard(
   // usa a grade “oficial” do comparativo para o projetado do mês.
   const d2 = desembolsoDe(mes2, gradeSerie.linhas, pagar2);
   const d1 = desembolsoDe(mes1, gradeSerie.linhas, pagar1);
-  const dMes = desembolsoDe(mesYm, gradeAtual.linhas, pagarMes);
+  const dMes = aplicarRubricasConcluidas(
+    desembolsoDe(mesYm, gradeAtual.linhas, pagarMes),
+    rubricasConcluidas,
+  );
 
   const diasNoMesRef = diasNoMesYm(mesYm);
   let diasRestantes: number;
@@ -793,7 +803,7 @@ export async function carregarFinanceiroDashboard(
         vendasReal: vMes.vendas,
         // Projetado = faturado + ainda entra (caixa). Orçamento não entra.
         vendasProjetado: vMes.vendas + mediaCaixaRestante,
-        desembolsoProjetado: dMes.totais.projetado,
+        desembolsoProjetado: dMes.totais.projetadoEfetivo,
         desembolsoPago: dMes.totais.pago,
         previsto: rMes.previsto,
         recebido: rMes.recebido,
@@ -804,7 +814,7 @@ export async function carregarFinanceiroDashboard(
 
   const mesAtual = serie3Meses[2]!;
   const gapCaixaMes = Math.round(
-    (rMes.projecaoVendas.projecaoMesTotal - dMes.totais.projetado) * 100,
+    (rMes.projecaoVendas.projecaoMesTotal - dMes.totais.projetadoEfetivo) * 100,
   ) / 100;
 
   const periodoMeta = {

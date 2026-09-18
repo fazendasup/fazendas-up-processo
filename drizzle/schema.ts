@@ -928,6 +928,32 @@ export type FinanceiroProjecaoColunaRow = typeof financeiroProjecaoColunas.$infe
 export type FinanceiroProjecaoLinhaRow = typeof financeiroProjecaoLinhas.$inferSelect;
 export type FinanceiroProjecaoCelulaRow = typeof financeiroProjecaoCelulas.$inferSelect;
 
+/**
+ * Rúbrica do comparativo marcada como concluída no mês
+ * (pago a menos vira saldo liberado e abate o desembolso projetado).
+ */
+export const financeiroProjecaoRubricasMes = mysqlTable(
+  "financeiro_projecao_rubricas_mes",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    projetoId: int("projetoId").notNull(),
+    mesYm: varchar("mesYm", { length: 7 }).notNull(),
+    rubrica: varchar("rubrica", { length: 191 }).notNull(),
+    concluida: boolean("concluida").notNull().default(false),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  t => ({
+    uq: uniqueIndex("uq_fin_proj_rub_proj_mes_rub").on(
+      t.projetoId,
+      t.mesYm,
+      t.rubrica,
+    ),
+  }),
+);
+
+export type FinanceiroProjecaoRubricaMesRow =
+  typeof financeiroProjecaoRubricasMes.$inferSelect;
+
 /** Equipes de mão de obra — CLT vs PJ, processamento ou overhead fixo. */
 export const custosMoEquipes = mysqlTable("custos_mo_equipes", {
   id: int("id").autoincrement().primaryKey(),
