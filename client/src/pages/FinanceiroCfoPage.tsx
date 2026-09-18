@@ -526,7 +526,7 @@ export default function FinanceiroCfoPage() {
 
             {data.comparativo ? (
               <p className="text-xs text-muted-foreground">
-                Comparando com{" "}
+                Mesmo período do mês anterior:{" "}
                 {fmtDate(data.comparativo.periodoAnterior.inicio)} →{" "}
                 {fmtDate(data.comparativo.periodoAnterior.fim)} · gasto ant.{" "}
                 {fmtMoney(data.comparativo.gastoAnterior)}
