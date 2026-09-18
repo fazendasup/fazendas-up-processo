@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "wouter";
 import {
   ArrowDownRight,
@@ -9,10 +9,13 @@ import {
   Wallet,
 } from "lucide-react";
 import {
+  Area,
   Bar,
-  BarChart,
   CartesianGrid,
+  ComposedChart,
   Legend,
+  Line,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -25,15 +28,27 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-const CHART_REAL = "#0f766e";
-const CHART_PROJ = "#94a3b8";
-const CHART_PAGO = "#b45309";
-const CHART_DESP_PROJ = "#cbd5e1";
+import { useTheme } from "@/contexts/ThemeContext";
+import {
+  buildChartTheme,
+  chartAnimation,
+  CHART,
+  ChartAreaUnderLineDefs,
+  ChartBarFillDefs,
+  barFillUrl,
+} from "@/components/comercial/charts";
 
 function mesAtualYm(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function labelMesCurto(ym: string): string {
+  const [y, m] = ym.split("-").map(Number);
+  const nome = new Date(y, m - 1, 1).toLocaleDateString("pt-BR", {
+    month: "short",
+  });
+  return `${nome.replace(".", "")}/${String(y).slice(2)}`;
 }
 
 function fmtMoney(n: number | null | undefined): string {
@@ -43,7 +58,8 @@ function fmtMoney(n: number | null | undefined): string {
 
 function fmtMoneyShort(n: number): string {
   const abs = Math.abs(n);
-  if (abs >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000_000)
+    return `${(n / 1_000_000).toFixed(1).replace(".", ",")}M`;
   if (abs >= 1_000) return `${(n / 1_000).toFixed(0)}k`;
   return n.toFixed(0);
 }
@@ -90,9 +106,93 @@ function Kpi({
   );
 }
 
+type TipRow = { label: string; value: string; muted?: boolean; accent?: string };
+
+function ChartTip({
+  active,
+  label,
+  rows,
+}: {
+  active?: boolean;
+  label?: string;
+  rows: TipRow[];
+}) {
+  if (!active || !rows.length) return null;
+  return (
+    <div className="rounded-xl border border-border/80 bg-card/95 px-3.5 py-2.5 shadow-lg backdrop-blur-md">
+      <p className="mb-1.5 text-xs font-semibold capitalize text-foreground">
+        {label}
+      </p>
+      <ul className="space-y-1">
+        {rows.map(r => (
+          <li
+            key={r.label}
+            className="flex items-baseline justify-between gap-6 text-[12px]"
+          >
+            <span
+              className={
+                r.muted ? "text-muted-foreground" : "font-medium text-foreground"
+              }
+            >
+              {r.accent ? (
+                <span
+                  className="mr-1.5 inline-block h-2 w-2 rounded-full"
+                  style={{ background: r.accent }}
+                />
+              ) : null}
+              {r.label}
+            </span>
+            <span className="tabular-nums font-semibold text-foreground">
+              {r.value}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function ChartShell({
+  title,
+  description,
+  children,
+  className,
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <Card className={className}>
+      <CardHeader className="pb-1">
+        <CardTitle className="text-base tracking-tight">{title}</CardTitle>
+        {description ? (
+          <p className="text-xs font-normal leading-relaxed text-muted-foreground">
+            {description}
+          </p>
+        ) : null}
+      </CardHeader>
+      <CardContent className="h-[320px] pt-2">{children}</CardContent>
+    </Card>
+  );
+}
+
 export default function FinanceiroDashboardPage() {
   const [mes, setMes] = useState(mesAtualYm);
   const utils = trpc.useUtils();
+  const { theme } = useTheme();
+  const chartTheme = useMemo(
+    () => buildChartTheme(theme === "dark" ? "dark" : "light"),
+    [theme],
+  );
+  const {
+    chartGridProps,
+    chartAxisXProps,
+    chartAxisYProps,
+    chartTooltipCursorLine,
+  } = chartTheme;
+  const lineActiveStroke = theme === "dark" ? "#0f172a" : "#fff";
 
   const q = trpc.financeiroCfo.dashboard.useQuery(
     { mesYm: mes },
@@ -105,35 +205,24 @@ export default function FinanceiroDashboardPage() {
   const rec = data?.receita;
   const des = data?.desembolsoTotais;
 
-  const chartVendas = useMemo(
+  const serie = useMemo(
     () =>
       (data?.serie3Meses ?? []).map(m => ({
-        nome: m.labelMes.replace(/ de /i, "/").slice(0, 8),
-        real: m.vendasReal,
-        projetado: m.vendasProjetado,
+        mesYm: m.mesYm,
+        nome: labelMesCurto(m.mesYm),
         full: m.labelMes,
-      })),
-    [data?.serie3Meses],
-  );
-
-  const chartDesembolso = useMemo(
-    () =>
-      (data?.serie3Meses ?? []).map(m => ({
-        nome: m.labelMes.replace(/ de /i, "/").slice(0, 8),
-        pago: m.desembolsoPago,
-        projetado: m.desembolsoProjetado,
-        full: m.labelMes,
-      })),
-    [data?.serie3Meses],
-  );
-
-  const chartCaixa = useMemo(
-    () =>
-      (data?.serie3Meses ?? []).map(m => ({
-        nome: m.labelMes.replace(/ de /i, "/").slice(0, 8),
+        aberto: m.aberto,
+        vendasReal: m.vendasReal,
+        vendasProjetado: m.vendasProjetado,
+        desvioVendas: m.desvioVendas,
+        desvioVendasPct: m.desvioVendasPct,
+        desembolsoPago: m.desembolsoPago,
+        desembolsoProjetado: m.desembolsoProjetado,
+        desvioDesembolso: m.desvioDesembolso,
+        desvioDesembolsoPct: m.desvioDesembolsoPct,
         recebido: m.recebido,
         saldo: m.saldoCaixa,
-        full: m.labelMes,
+        aReceber: m.aReceber,
       })),
     [data?.serie3Meses],
   );
@@ -278,98 +367,219 @@ export default function FinanceiroDashboardPage() {
             </section>
 
             <div className="grid gap-4 lg:grid-cols-2">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">
-                    Vendas — 3 meses (projeção × real)
-                  </CardTitle>
-                  <p className="text-xs font-normal text-muted-foreground">
-                    Nos meses fechados, projetado = realizado. No mês aberto,
-                    projetado = fechar o mês.
-                  </p>
-                </CardHeader>
-                <CardContent className="h-[280px] pt-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={chartVendas}
-                      margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="nome" tick={{ fontSize: 11 }} />
-                      <YAxis
-                        tick={{ fontSize: 11 }}
-                        tickFormatter={fmtMoneyShort}
-                        width={44}
-                      />
-                      <Tooltip
-                        formatter={(v: number) => fmtMoney(v)}
-                        labelFormatter={(_, p) =>
-                          (p?.[0]?.payload as { full?: string })?.full ?? ""
-                        }
-                      />
-                      <Legend />
-                      <Bar
-                        dataKey="projetado"
-                        name="Projetado"
-                        fill={CHART_PROJ}
-                        radius={[3, 3, 0, 0]}
-                      />
-                      <Bar
-                        dataKey="real"
-                        name="Real"
-                        fill={CHART_REAL}
-                        radius={[3, 3, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
+              <ChartShell
+                title="Vendas — trajetória 3 meses"
+                description="Área = realizado · linha tracejada = projeção de fechar. No mês aberto o gap fica explícito."
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart
+                    data={serie}
+                    margin={{ top: 12, right: 12, left: 4, bottom: 4 }}
+                  >
+                    <ChartAreaUnderLineDefs
+                      prefix="fin-vendas"
+                      colorMid={CHART.green.mid}
+                    />
+                    <defs>
+                      <linearGradient
+                        id="fin-vendas-proj-area"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="0%"
+                          stopColor={CHART.blue.mid}
+                          stopOpacity={0.14}
+                        />
+                        <stop
+                          offset="100%"
+                          stopColor={CHART.blue.mid}
+                          stopOpacity={0}
+                        />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid {...chartGridProps} />
+                    <XAxis dataKey="nome" {...chartAxisXProps} />
+                    <YAxis
+                      {...chartAxisYProps}
+                      tickFormatter={fmtMoneyShort}
+                      width={48}
+                    />
+                    <Tooltip
+                      cursor={chartTooltipCursorLine}
+                      content={({ active, payload, label }) => {
+                        const row = payload?.[0]?.payload as
+                          | (typeof serie)[number]
+                          | undefined;
+                        if (!row) return null;
+                        return (
+                          <ChartTip
+                            active={active}
+                            label={String(label)}
+                            rows={[
+                              {
+                                label: "Realizado",
+                                value: fmtMoney(row.vendasReal),
+                                accent: CHART.green.dark,
+                              },
+                              {
+                                label: "Projetado",
+                                value: fmtMoney(row.vendasProjetado),
+                                accent: CHART.blue.stroke,
+                              },
+                              {
+                                label: "Desvio",
+                                value: `${fmtMoney(row.desvioVendas)} (${fmtPct(row.desvioVendasPct)})`,
+                                muted: true,
+                              },
+                            ]}
+                          />
+                        );
+                      }}
+                    />
+                    <Legend
+                      verticalAlign="top"
+                      height={28}
+                      iconType="circle"
+                      wrapperStyle={{ fontSize: 11, fontWeight: 600 }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="vendasProjetado"
+                      name="Projeção"
+                      stroke="none"
+                      fill="url(#fin-vendas-proj-area)"
+                      legendType="none"
+                      {...chartAnimation}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="vendasReal"
+                      name="Realizado"
+                      stroke="none"
+                      fill="url(#fin-vendas-area)"
+                      legendType="none"
+                      {...chartAnimation}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="vendasProjetado"
+                      name="Projeção"
+                      stroke={CHART.blue.stroke}
+                      strokeWidth={2.25}
+                      strokeDasharray="6 4"
+                      dot={{
+                        r: 4,
+                        strokeWidth: 2,
+                        stroke: lineActiveStroke,
+                        fill: CHART.blue.stroke,
+                      }}
+                      activeDot={{ r: 6 }}
+                      {...chartAnimation}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="vendasReal"
+                      name="Realizado"
+                      stroke={CHART.green.dark}
+                      strokeWidth={2.75}
+                      dot={{
+                        r: 4.5,
+                        strokeWidth: 2,
+                        stroke: lineActiveStroke,
+                        fill: CHART.green.dark,
+                      }}
+                      activeDot={{ r: 7 }}
+                      {...chartAnimation}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </ChartShell>
 
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">
-                    Desembolso — 3 meses (plano × pago)
-                  </CardTitle>
-                  <p className="text-xs font-normal text-muted-foreground">
-                    Projetado na grade × baixas no Conta Azul.
-                  </p>
-                </CardHeader>
-                <CardContent className="h-[280px] pt-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={chartDesembolso}
-                      margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="nome" tick={{ fontSize: 11 }} />
-                      <YAxis
-                        tick={{ fontSize: 11 }}
-                        tickFormatter={fmtMoneyShort}
-                        width={44}
-                      />
-                      <Tooltip
-                        formatter={(v: number) => fmtMoney(v)}
-                        labelFormatter={(_, p) =>
-                          (p?.[0]?.payload as { full?: string })?.full ?? ""
-                        }
-                      />
-                      <Legend />
-                      <Bar
-                        dataKey="projetado"
-                        name="Projetado"
-                        fill={CHART_DESP_PROJ}
-                        radius={[3, 3, 0, 0]}
-                      />
-                      <Bar
-                        dataKey="pago"
-                        name="Pago"
-                        fill={CHART_PAGO}
-                        radius={[3, 3, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
+              <ChartShell
+                title="Desembolso — plano × executado"
+                description="Barras = pago no Conta Azul · linha = projetado na grade."
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart
+                    data={serie}
+                    margin={{ top: 12, right: 12, left: 4, bottom: 4 }}
+                  >
+                    <ChartBarFillDefs prefix="fin-des" />
+                    <CartesianGrid {...chartGridProps} />
+                    <XAxis dataKey="nome" {...chartAxisXProps} />
+                    <YAxis
+                      {...chartAxisYProps}
+                      tickFormatter={fmtMoneyShort}
+                      width={48}
+                    />
+                    <Tooltip
+                      cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
+                      content={({ active, payload, label }) => {
+                        const row = payload?.[0]?.payload as
+                          | (typeof serie)[number]
+                          | undefined;
+                        if (!row) return null;
+                        return (
+                          <ChartTip
+                            active={active}
+                            label={String(label)}
+                            rows={[
+                              {
+                                label: "Pago",
+                                value: fmtMoney(row.desembolsoPago),
+                                accent: CHART.green.dark,
+                              },
+                              {
+                                label: "Projetado",
+                                value: fmtMoney(row.desembolsoProjetado),
+                                accent: "#b45309",
+                              },
+                              {
+                                label: "Desvio",
+                                value: `${fmtMoney(row.desvioDesembolso)} (${fmtPct(row.desvioDesembolsoPct)})`,
+                                muted: true,
+                              },
+                            ]}
+                          />
+                        );
+                      }}
+                    />
+                    <Legend
+                      verticalAlign="top"
+                      height={28}
+                      iconType="circle"
+                      wrapperStyle={{ fontSize: 11, fontWeight: 600 }}
+                    />
+                    <Bar
+                      dataKey="desembolsoPago"
+                      name="Pago"
+                      fill={barFillUrl("fin-des", "green")}
+                      radius={[6, 6, 2, 2]}
+                      maxBarSize={42}
+                      {...chartAnimation}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="desembolsoProjetado"
+                      name="Projetado"
+                      stroke="#b45309"
+                      strokeWidth={2.5}
+                      strokeDasharray="5 4"
+                      dot={{
+                        r: 5,
+                        strokeWidth: 2,
+                        stroke: lineActiveStroke,
+                        fill: "#b45309",
+                      }}
+                      activeDot={{ r: 7 }}
+                      {...chartAnimation}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </ChartShell>
             </div>
 
             <section className="space-y-3">
@@ -466,48 +676,115 @@ export default function FinanceiroDashboardPage() {
               </div>
             </section>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">
-                  Recebido e saldo — 3 meses
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="h-[260px] pt-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={chartCaixa}
-                    margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="nome" tick={{ fontSize: 11 }} />
-                    <YAxis
-                      tick={{ fontSize: 11 }}
-                      tickFormatter={fmtMoneyShort}
-                      width={44}
-                    />
-                    <Tooltip
-                      formatter={(v: number) => fmtMoney(v)}
-                      labelFormatter={(_, p) =>
-                        (p?.[0]?.payload as { full?: string })?.full ?? ""
-                      }
-                    />
-                    <Legend />
-                    <Bar
-                      dataKey="recebido"
-                      name="Recebido"
-                      fill={CHART_REAL}
-                      radius={[3, 3, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="saldo"
-                      name="Saldo caixa"
-                      fill={CHART_PAGO}
-                      radius={[3, 3, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+            <ChartShell
+              title="Caixa — recebido e saldo em 3 meses"
+              description="Área = recebido Conta Azul · linha = saldo (recebido − desembolso pago). Linha zero de referência."
+              className="lg:col-span-2"
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={serie}
+                  margin={{ top: 12, right: 16, left: 4, bottom: 4 }}
+                >
+                  <ChartAreaUnderLineDefs
+                    prefix="fin-caixa"
+                    colorMid={CHART.blue.mid}
+                  />
+                  <CartesianGrid {...chartGridProps} />
+                  <XAxis dataKey="nome" {...chartAxisXProps} />
+                  <YAxis
+                    {...chartAxisYProps}
+                    tickFormatter={fmtMoneyShort}
+                    width={52}
+                  />
+                  <ReferenceLine
+                    y={0}
+                    stroke="currentColor"
+                    strokeOpacity={0.35}
+                    strokeDasharray="4 4"
+                  />
+                  <Tooltip
+                    cursor={chartTooltipCursorLine}
+                    content={({ active, payload, label }) => {
+                      const row = payload?.[0]?.payload as
+                        | (typeof serie)[number]
+                        | undefined;
+                      if (!row) return null;
+                      return (
+                        <ChartTip
+                          active={active}
+                          label={String(label)}
+                          rows={[
+                            {
+                              label: "Recebido",
+                              value: fmtMoney(row.recebido),
+                              accent: CHART.blue.stroke,
+                            },
+                            {
+                              label: "Em aberto",
+                              value: fmtMoney(row.aReceber),
+                              muted: true,
+                            },
+                            {
+                              label: "Saldo caixa",
+                              value: fmtMoney(row.saldo),
+                              accent:
+                                row.saldo >= 0
+                                  ? CHART.green.dark
+                                  : "#dc2626",
+                            },
+                          ]}
+                        />
+                      );
+                    }}
+                  />
+                  <Legend
+                    verticalAlign="top"
+                    height={28}
+                    iconType="circle"
+                    wrapperStyle={{ fontSize: 11, fontWeight: 600 }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="recebido"
+                    name="Recebido"
+                    stroke="none"
+                    fill="url(#fin-caixa-area)"
+                    legendType="none"
+                    {...chartAnimation}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="recebido"
+                    name="Recebido"
+                    stroke={CHART.blue.stroke}
+                    strokeWidth={2.25}
+                    dot={{
+                      r: 4,
+                      strokeWidth: 2,
+                      stroke: lineActiveStroke,
+                      fill: CHART.blue.stroke,
+                    }}
+                    {...chartAnimation}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="saldo"
+                    name="Saldo caixa"
+                    stroke={CHART.green.dark}
+                    strokeWidth={2.75}
+                    dot={{
+                      r: 5,
+                      strokeWidth: 2,
+                      stroke: lineActiveStroke,
+                      fill: CHART.green.dark,
+                    }}
+                    activeDot={{ r: 7 }}
+                    {...chartAnimation}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </ChartShell>
 
             <Card>
               <CardHeader className="pb-2">
