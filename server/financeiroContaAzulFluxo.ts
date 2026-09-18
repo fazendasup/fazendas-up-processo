@@ -24,7 +24,6 @@ import {
   montarKpisReducaoCusto,
   normalizarParcela,
   parcelaDespesaExecutadaNoPeriodo,
-  parcelaEhCustoOperacional,
   parcelasAtivasParaRelatorio,
   periodoComparavelAnterior,
   limitarPeriodoComparativoRubricas,
