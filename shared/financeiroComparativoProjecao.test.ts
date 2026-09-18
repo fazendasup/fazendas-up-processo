@@ -119,6 +119,25 @@ describe("ehReceitaVendasCaixa", () => {
     ).toBe(true);
   });
 
+  it("aceita só venda (sem frete) e venda+frete", () => {
+    expect(
+      ehReceitaVendasCaixa({
+        descricao: "Venda 100 / NF-e:1",
+        rubrica: "Receitas de Vendas",
+        categorias: ["Receitas de Vendas"],
+        entradaDre: null,
+      }),
+    ).toBe(true);
+    expect(
+      ehReceitaVendasCaixa({
+        descricao: "Venda 100 / NF-e:1",
+        rubrica: "Receitas de Vendas",
+        categorias: ["Receitas de Vendas", "Fretes recebidos"],
+        entradaDre: null,
+      }),
+    ).toBe(true);
+  });
+
   it("aceita frete recebido e 2ª categoria no rateio", () => {
     expect(
       ehReceitaVendasCaixa({

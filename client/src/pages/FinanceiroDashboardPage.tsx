@@ -766,20 +766,20 @@ export default function FinanceiroDashboardPage() {
                 <Kpi
                   title="Entrou (recebido)"
                   value={fmtMoney(rec?.recebido)}
-                  hint="Baixas Conta Azul neste mês"
+                  hint="Baixas de venda e/ou frete neste mês"
                   tone="down"
                   href={kpiHref("entrou")}
                 />
                 <Kpi
                   title="A receber (no prazo)"
                   value={fmtMoney(rec?.aReceberNoMes)}
-                  hint="Em aberto, vence neste mês, ainda não venceu"
+                  hint="Venda e/ou frete em aberto, vence neste mês"
                   href={kpiHref("a-receber")}
                 />
                 <Kpi
                   title="Em atraso"
                   value={fmtMoney(rec?.vencido)}
-                  hint="Em aberto, venceu neste mês e a data já passou"
+                  hint="Venda e/ou frete em aberto, venceu neste mês"
                   tone={(rec?.vencido ?? 0) > 0.009 ? "up" : "neutral"}
                   href={kpiHref("em-atraso")}
                 />
@@ -788,7 +788,7 @@ export default function FinanceiroDashboardPage() {
                   value={fmtMoney(pv?.aindaEntraProjetado)}
                   hint={
                     pv && pv.diasRestantes > 0
-                      ? `Média vendas+frete · últimos ${pv.diasRestantes} dias dos 2 meses ant.`
+                      ? `Média venda/frete · últimos ${pv.diasRestantes} dias dos 2 meses ant.`
                       : "Sem dias restantes neste mês"
                   }
                   href={kpiHref("proj-vendas")}

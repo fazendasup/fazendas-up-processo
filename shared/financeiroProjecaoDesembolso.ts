@@ -128,16 +128,14 @@ function textoClassificacaoReceita(
 }
 
 /**
- * Parcela de contas a receber = receita operacional de caixa
- * (vendas + frete recebido).
+ * Parcela de contas a receber = receita operacional de caixa.
  *
- * No Conta Azul a venda aparece assim:
- *   categoria = "Receitas de Vendas"
- *   descrição = "Venda 4903 / NF-e:4002"
- * Frete no rateio ou título próprio: "Fretes recebidos" / "Frete".
+ * Conta nestes casos (valor do título **uma vez**, sem dobrar rateio):
+ *  - só "Receitas de Vendas"
+ *  - "Receitas de Vendas" + "Fretes recebidos" (rateio)
+ *  - título só de "Fretes recebidos"
  *
- * Aceita se **qualquer** categoria (ou a rúbrica principal) for venda ou frete.
- * O valor do título conta **uma vez** (total), não soma rateio em dobro.
+ * Aceita se **qualquer** categoria for venda ou frete.
  * Rejeita investimento/aporte e DRE não-operacional (OUTRAS_RECEITAS etc.).
  */
 export function ehReceitaVendasCaixa(

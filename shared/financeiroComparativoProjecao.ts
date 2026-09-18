@@ -394,6 +394,9 @@ export function montarComparativoReceitaMes(input: {
   const aReceberDetalhe: ComparativoReceitaDetalheTitulo[] = [];
 
   for (const p of Array.from(porId.values())) {
+    // Venda, venda+frete ou só frete — mesmo critério do ainda entra.
+    if (!ehReceitaVendasCaixa(p)) continue;
+
     const vencYm = mesVencimentoParcela(p);
     const vencMes = vencYm === mesYm;
     const aberto = p.valorEmAberto > 0.009;
@@ -555,6 +558,8 @@ export function agregarReceitaCaixaPeriodo(input: {
   }
 
   for (const p of Array.from(porId.values())) {
+    if (!ehReceitaVendasCaixa(p)) continue;
+
     const vencIso = (p.dataVencimento ?? "").slice(0, 10);
     const pagIso = (p.dataPagamento ?? "").slice(0, 10);
     const aberto = p.valorEmAberto > 0.009;

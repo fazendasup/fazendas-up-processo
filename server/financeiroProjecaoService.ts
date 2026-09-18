@@ -829,7 +829,7 @@ export async function carregarFinanceiroDashboard(
   let desembolsoTotaisOut = { ...dMes.totais };
   let saldoRealizado = mesAtual.saldoCaixa;
   const avisos: string[] = [
-      `Ainda entra = baixas do período (vendas + frete, sem investimento/aporte)${idsVendas.length ? ` (catálogo DRE vendas: ${idsVendas.length})` : ""}.`,
+      `Ainda entra = baixas do período (só venda, ou venda+frete; sem aporte)${idsVendas.length ? ` (catálogo DRE vendas: ${idsVendas.length})` : ""}.`,
     (() => {
       const cats = resumirBaixasPorCategoria(
         [...baixasRest1, ...baixasRest2],
