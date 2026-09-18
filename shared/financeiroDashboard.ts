@@ -110,13 +110,19 @@ export type FinanceiroDashboardPayload = {
     gapCaixaMes: number;
   };
   /**
-   * Saldo Conta Azul PJ (carteira/cobranças) — não inclui Bradesco nem
-   * investimentos.
+   * Saldo bancário consolidado (todas as contas):
+   * saldo inicial manual + recebido − pago (baixas CA desde a data âncora).
    */
   saldoContaAzul: number | null;
-  /** Saldo Bradesco (API ao vivo ou inicial + baixas da conta). */
+  /** Mesmo valor de saldoContaAzul (nome explícito). */
+  saldoBancario: number | null;
+  /** @deprecated Mantido nulo — saldo único consolidado. */
   saldoBradesco: number | null;
-  saldoBradescoFonte: "api" | "manual_mais_movimentos" | null;
+  saldoBradescoFonte: "manual_mais_movimentos" | null;
+  movimentosSaldo: {
+    recebido: number;
+    pago: number;
+  } | null;
   bradescoConfig: {
     saldoInicial: number | null;
     saldoInicialData: string | null;

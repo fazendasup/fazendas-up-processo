@@ -345,26 +345,33 @@ export const financeiroCfoRouter = router({
       upsertRubricaMesConcluida(projetoIdFromCtx(ctx), input),
     ),
 
-  /** Config de saldos Conta Azul / Bradesco (saldo inicial + data âncora). */
+  /** Âncora do saldo bancário consolidado (todas as contas). */
   configSaldos: custosProducaoModuleProcedure.query(async ({ ctx }) => {
     const projetoId = projetoIdFromCtx(ctx);
     const row = await getFinanceiroCaConfig(projetoId);
+    const inicial =
+      row?.saldoBancarioInicial ?? row?.bradescoSaldoInicial ?? null;
+    const data =
+      row?.saldoBancarioInicialData ?? row?.bradescoSaldoInicialData ?? null;
     return {
-      contaAzulContaId: row?.contaAzulContaId ?? null,
-      bradescoContaId: row?.bradescoContaId ?? null,
-      bradescoSaldoInicial:
-        row?.bradescoSaldoInicial != null
-          ? Number(row.bradescoSaldoInicial)
-          : null,
-      bradescoSaldoInicialData: row?.bradescoSaldoInicialData ?? null,
+      saldoBancarioInicial: inicial != null ? Number(inicial) : null,
+      saldoBancarioInicialData: data,
+      // aliases legados
+      bradescoSaldoInicial: inicial != null ? Number(inicial) : null,
+      bradescoSaldoInicialData: data,
     };
   }),
 
   salvarConfigSaldos: custosProducaoModuleProcedure
     .input(
       z.object({
-        contaAzulContaId: z.string().max(64).nullable().optional(),
-        bradescoContaId: z.string().max(64).nullable().optional(),
+        saldoBancarioInicial: z.number().finite().nullable().optional(),
+        saldoBancarioInicialData: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .nullable()
+          .optional(),
+        /** @deprecated use saldoBancarioInicial */
         bradescoSaldoInicial: z.number().finite().nullable().optional(),
         bradescoSaldoInicialData: z
           .string()
@@ -374,15 +381,25 @@ export const financeiroCfoRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const row = await upsertFinanceiroCaConfig(projetoIdFromCtx(ctx), input);
+      const row = await upsertFinanceiroCaConfig(projetoIdFromCtx(ctx), {
+        saldoBancarioInicial:
+          input.saldoBancarioInicial !== undefined
+            ? input.saldoBancarioInicial
+            : input.bradescoSaldoInicial,
+        saldoBancarioInicialData:
+          input.saldoBancarioInicialData !== undefined
+            ? input.saldoBancarioInicialData
+            : input.bradescoSaldoInicialData,
+      });
+      const inicial =
+        row.saldoBancarioInicial ?? row.bradescoSaldoInicial ?? null;
+      const data =
+        row.saldoBancarioInicialData ?? row.bradescoSaldoInicialData ?? null;
       return {
-        contaAzulContaId: row.contaAzulContaId ?? null,
-        bradescoContaId: row.bradescoContaId ?? null,
-        bradescoSaldoInicial:
-          row.bradescoSaldoInicial != null
-            ? Number(row.bradescoSaldoInicial)
-            : null,
-        bradescoSaldoInicialData: row.bradescoSaldoInicialData ?? null,
+        saldoBancarioInicial: inicial != null ? Number(inicial) : null,
+        saldoBancarioInicialData: data,
+        bradescoSaldoInicial: inicial != null ? Number(inicial) : null,
+        bradescoSaldoInicialData: data,
       };
     }),
 });

@@ -990,8 +990,9 @@ export type CustoMoConfigRow = typeof custosMoConfig.$inferSelect;
 export type InsertCustoMoConfig = typeof custosMoConfig.$inferInsert;
 
 /**
- * Config de saldos bancários do Financeiro (Conta Azul / Bradesco).
- * Bradesco: saldo inicial + data âncora; o sistema aplica baixas CA dessa conta.
+ * Config de saldos bancários do Financeiro.
+ * Saldo consolidado (todas as contas): inicial + data âncora; baixas CA abatem.
+ * Campos bradesco* são legado (mesmo significado).
  */
 export const financeiroCaConfig = mysqlTable("financeiro_ca_config", {
   projetoId: int("projetoId").primaryKey(),
@@ -999,6 +1000,8 @@ export const financeiroCaConfig = mysqlTable("financeiro_ca_config", {
   bradescoContaId: varchar("bradescoContaId", { length: 64 }),
   bradescoSaldoInicial: decimal("bradescoSaldoInicial", { precision: 14, scale: 2 }),
   bradescoSaldoInicialData: varchar("bradescoSaldoInicialData", { length: 10 }),
+  saldoBancarioInicial: decimal("saldoBancarioInicial", { precision: 14, scale: 2 }),
+  saldoBancarioInicialData: varchar("saldoBancarioInicialData", { length: 10 }),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 

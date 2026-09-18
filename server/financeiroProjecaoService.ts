@@ -696,12 +696,11 @@ export async function carregarFinanceiroDashboard(
         ).then(r => r.map(toBase)),
     listRubricasMesConcluidas(projetoId, mesYm),
     buscarSaldosBancarios(projetoId).catch(() => ({
+      saldoBancario: null as number | null,
       saldoContaAzul: null as number | null,
       saldoBradesco: null as number | null,
-      saldoBradescoFonte: null as
-        | "api"
-        | "manual_mais_movimentos"
-        | null,
+      saldoBradescoFonte: null as "manual_mais_movimentos" | null,
+      movimentos: null as { recebido: number; pago: number } | null,
       contas: [] as Array<{
         id: string;
         nome: string;
@@ -943,16 +942,13 @@ export async function carregarFinanceiroDashboard(
       saldoRealizado,
       gapCaixaMes,
     },
-    saldoContaAzul: saldoCa.saldoContaAzul,
-    saldoBradesco: saldoCa.saldoBradesco,
+    saldoContaAzul: saldoCa.saldoBancario ?? saldoCa.saldoContaAzul,
+    saldoBancario: saldoCa.saldoBancario ?? saldoCa.saldoContaAzul,
+    saldoBradesco: null,
     saldoBradescoFonte: saldoCa.saldoBradescoFonte,
+    movimentosSaldo: saldoCa.movimentos,
     bradescoConfig: saldoCa.bradescoConfig,
-    contasContaAzul: saldoCa.contas.map(c => ({
-      id: c.id,
-      nome: c.nome,
-      saldo: c.saldo,
-      grupo: c.grupo,
-    })),
+    contasContaAzul: [],
     desembolsoTotais: desembolsoTotaisOut,
     desembolsoPorRubrica: dMes.rubricas
       .map(r =>
@@ -1184,48 +1180,10 @@ export async function carregarDashboardKpiDetalhe(
 
   if (kpi === "saldo-conta-azul") {
     const saldos = await buscarSaldosBancarios(projetoId);
-    const linhas: DashboardKpiLinha[] = saldos.contas
-      .filter(c => c.grupo === "conta_azul" && c.saldo != null)
-      .map(c => ({
-        id: c.id,
-        titulo: c.nome,
-        subtitulo: c.tipo ?? "Conta Azul PJ",
-        valor: c.saldo ?? 0,
-        meta: null,
-        grupo: null,
-      }))
-      .sort((a, b) => b.valor - a.valor);
-    return linhasDe(
-      linhas,
-      "Saldo Conta Azul",
-      "Saldo da carteira Conta Azul (cobranças / saldo disponível), sem Bradesco.",
-      saldos.saldoContaAzul ?? 0,
-    );
-  }
-
-  if (kpi === "saldo-bradesco") {
-    const saldos = await buscarSaldosBancarios(projetoId);
-    const fonte =
-      saldos.saldoBradescoFonte === "manual_mais_movimentos"
-        ? "Saldo inicial informado + recebido − pago (baixas CA da conta Bradesco)."
-        : "Saldo atual da conta Bradesco no Conta Azul.";
-    const linhas: DashboardKpiLinha[] = saldos.contas
-      .filter(c => c.grupo === "bradesco" && c.saldo != null)
-      .map(c => ({
-        id: c.id,
-        titulo: c.nome,
-        subtitulo: c.banco ?? "Bradesco",
-        valor: c.saldo ?? 0,
-        meta: null,
-        grupo: null,
-      }))
-      .sort((a, b) => b.valor - a.valor);
-    if (
-      saldos.saldoBradescoFonte === "manual_mais_movimentos" &&
-      saldos.bradescoConfig.saldoInicial != null
-    ) {
-      linhas.unshift({
-        id: "bradesco-inicial",
+    const linhas: DashboardKpiLinha[] = [];
+    if (saldos.bradescoConfig.saldoInicial != null) {
+      linhas.push({
+        id: "saldo-inicial",
         titulo: "Saldo inicial informado",
         subtitulo: saldos.bradescoConfig.saldoInicialData
           ? `Âncora ${fmtDataBr(saldos.bradescoConfig.saldoInicialData)}`
@@ -1234,20 +1192,40 @@ export async function carregarDashboardKpiDetalhe(
         meta: null,
         grupo: null,
       });
+    }
+    if (saldos.movimentos) {
       linhas.push({
-        id: "bradesco-calculado",
-        titulo: "Saldo calculado (inicial + movimentos)",
-        subtitulo: fonte,
-        valor: saldos.saldoBradesco ?? 0,
+        id: "mov-recebido",
+        titulo: "Recebido (todas as contas)",
+        subtitulo: "Baixas a receber desde a âncora",
+        valor: saldos.movimentos.recebido,
+        meta: null,
+        grupo: null,
+      });
+      linhas.push({
+        id: "mov-pago",
+        titulo: "Pago (todas as contas)",
+        subtitulo: "Baixas a pagar desde a âncora",
+        valor: -saldos.movimentos.pago,
+        meta: null,
+        grupo: null,
+      });
+    }
+    if (saldos.saldoBancario != null) {
+      linhas.push({
+        id: "saldo-calculado",
+        titulo: "Saldo atual calculado",
+        subtitulo: "Inicial + recebido − pago",
+        valor: saldos.saldoBancario,
         meta: null,
         grupo: null,
       });
     }
     return linhasDe(
       linhas,
-      "Saldo Bradesco",
-      fonte,
-      saldos.saldoBradesco ?? 0,
+      "Saldo disponível",
+      "Saldo bancário consolidado (todas as contas): valor manual na data âncora + movimentações Conta Azul.",
+      saldos.saldoBancario ?? 0,
     );
   }
 

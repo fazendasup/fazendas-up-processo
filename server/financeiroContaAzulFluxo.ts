@@ -543,8 +543,8 @@ async function fetchSaldosContas(opts?: {
 }
 
 /**
- * Saldo Conta Azul PJ (carteira/cobranças). Com projetoId, classifica contas
- * e exclui Bradesco/outros; sem projetoId, mantém listagem bruta (legado).
+ * Saldo bancário consolidado (manual + movimentos). Com projetoId usa a
+ * âncora gravada; sem projetoId, listagem bruta legado da API.
  */
 export async function buscarSaldoContasAzul(projetoId?: number): Promise<{
   saldoTotal: number | null;
@@ -555,10 +555,17 @@ export async function buscarSaldoContasAzul(projetoId?: number): Promise<{
     const { buscarSaldosBancarios } = await import("./financeiroSaldosBancarios");
     const s = await buscarSaldosBancarios(projetoId);
     return {
-      saldoTotal: s.saldoContaAzul,
-      contas: s.contas
-        .filter(c => c.grupo === "conta_azul")
-        .map(c => ({ id: c.id, nome: c.nome, saldo: c.saldo })),
+      saldoTotal: s.saldoBancario,
+      contas:
+        s.saldoBancario != null
+          ? [
+              {
+                id: "saldo-bancario",
+                nome: "Saldo disponível (todas as contas)",
+                saldo: s.saldoBancario,
+              },
+            ]
+          : [],
       aviso: s.aviso,
     };
   }

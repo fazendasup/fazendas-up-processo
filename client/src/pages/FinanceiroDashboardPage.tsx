@@ -453,36 +453,35 @@ export default function FinanceiroDashboardPage() {
   const saldoLiberado = des?.abateConcluidas ?? 0;
   const aindaCabe =
     Math.round((aindaCabeBruto - naoPlanejado + saldoLiberado) * 100) / 100;
-  const saldoContaAzul = data?.saldoContaAzul ?? null;
-  const saldoBradesco = data?.saldoBradesco ?? null;
+  const saldoContaAzul = data?.saldoBancario ?? data?.saldoContaAzul ?? null;
   const pieStroke = theme === "dark" ? "#0f172a" : "#fff";
 
-  const [bradInicial, setBradInicial] = useState("");
-  const [bradData, setBradData] = useState("");
+  const [saldoInicialTxt, setSaldoInicialTxt] = useState("");
+  const [saldoData, setSaldoData] = useState("");
 
   useEffect(() => {
     const cfg = data?.bradescoConfig;
     if (!cfg) return;
-    setBradInicial(
+    setSaldoInicialTxt(
       cfg.saldoInicial != null && Number.isFinite(cfg.saldoInicial)
         ? String(cfg.saldoInicial)
         : "",
     );
-    setBradData(cfg.saldoInicialData ?? "");
+    setSaldoData(cfg.saldoInicialData ?? "");
   }, [data?.bradescoConfig]);
 
   const salvarConfigSaldos = trpc.financeiroCfo.salvarConfigSaldos.useMutation({
     onSuccess: async () => {
-      toast.success("Configuração de saldo Bradesco salva");
+      toast.success("Saldo bancário salvo");
       await q.refetch();
     },
     onError: e => {
-      toast.error(e.message || "Falha ao salvar saldo Bradesco");
+      toast.error(e.message || "Falha ao salvar saldo bancário");
     },
   });
 
-  const salvarBradesco = () => {
-    const t = bradInicial.trim();
+  const salvarSaldoBancario = () => {
+    const t = saldoInicialTxt.trim();
     let n: number | null = null;
     if (t !== "") {
       n = t.includes(",")
@@ -493,13 +492,13 @@ export default function FinanceiroDashboardPage() {
         return;
       }
     }
-    if (n != null && !/^\d{4}-\d{2}-\d{2}$/.test(bradData)) {
+    if (n != null && !/^\d{4}-\d{2}-\d{2}$/.test(saldoData)) {
       toast.error("Informe a data âncora do saldo inicial");
       return;
     }
     salvarConfigSaldos.mutate({
-      bradescoSaldoInicial: n,
-      bradescoSaldoInicialData: n == null ? null : bradData,
+      saldoBancarioInicial: n,
+      saldoBancarioInicialData: n == null ? null : saldoData,
     });
   };
 
@@ -683,11 +682,15 @@ export default function FinanceiroDashboardPage() {
                   />
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-[1fr_1.4fr]">
                 <Kpi
                   title="Saldo disponível"
                   value={fmtMoney(saldoContaAzul)}
-                  hint="Conta Azul PJ (carteira / cobranças)"
+                  hint={
+                    data?.movimentosSaldo
+                      ? `Inicial + R$ ${data.movimentosSaldo.recebido.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} recebido − R$ ${data.movimentosSaldo.pago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} pago`
+                      : "Informe o saldo inicial abaixo (todas as contas)"
+                  }
                   tone={
                     saldoContaAzul == null
                       ? "neutral"
@@ -697,85 +700,67 @@ export default function FinanceiroDashboardPage() {
                   }
                   href={kpiHref("saldo-conta-azul")}
                 />
-                <Kpi
-                  title="Saldo Bradesco"
-                  value={fmtMoney(saldoBradesco)}
-                  hint={
-                    data?.saldoBradescoFonte === "manual_mais_movimentos"
-                      ? "Inicial + baixas CA da conta (recebido − pago)"
-                      : "Saldo atual da conta Bradesco no Conta Azul"
-                  }
-                  tone={
-                    saldoBradesco == null
-                      ? "neutral"
-                      : saldoBradesco >= 0
-                        ? "down"
-                        : "up"
-                  }
-                  href={kpiHref("saldo-bradesco")}
-                />
-              </div>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold tracking-tight">
-                    Âncora do saldo Bradesco
-                  </CardTitle>
-                  <p className="text-xs font-normal text-muted-foreground">
-                    Informe o saldo na data escolhida; o sistema aplica as
-                    baixas da conta Bradesco resgatadas pela API a partir
-                    dessa data.
-                  </p>
-                </CardHeader>
-                <CardContent className="flex flex-wrap items-end gap-3 pt-0">
-                  <div>
-                    <Label className="text-xs">Saldo inicial (R$)</Label>
-                    <Input
-                      className="h-9 w-[160px]"
-                      inputMode="decimal"
-                      placeholder="0,00"
-                      value={bradInicial}
-                      onChange={e => setBradInicial(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Data do saldo</Label>
-                    <Input
-                      type="date"
-                      className="h-9 w-[160px]"
-                      value={bradData}
-                      onChange={e => setBradData(e.target.value)}
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    className="h-9"
-                    disabled={salvarConfigSaldos.isPending}
-                    onClick={salvarBradesco}
-                  >
-                    {salvarConfigSaldos.isPending ? "Salvando…" : "Salvar"}
-                  </Button>
-                  {(data?.bradescoConfig?.saldoInicial != null ||
-                    data?.bradescoConfig?.saldoInicialData) && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold tracking-tight">
+                      Âncora do saldo bancário
+                    </CardTitle>
+                    <p className="text-xs font-normal text-muted-foreground">
+                      Digite o saldo total (Conta Azul + Bradesco + demais) na
+                      data escolhida. O sistema aplica as baixas de todas as
+                      contas a partir dessa data.
+                    </p>
+                  </CardHeader>
+                  <CardContent className="flex flex-wrap items-end gap-3 pt-0">
+                    <div>
+                      <Label className="text-xs">Saldo inicial (R$)</Label>
+                      <Input
+                        className="h-9 w-[160px]"
+                        inputMode="decimal"
+                        placeholder="0,00"
+                        value={saldoInicialTxt}
+                        onChange={e => setSaldoInicialTxt(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Data do saldo</Label>
+                      <Input
+                        type="date"
+                        className="h-9 w-[160px]"
+                        value={saldoData}
+                        onChange={e => setSaldoData(e.target.value)}
+                      />
+                    </div>
                     <Button
                       type="button"
-                      variant="ghost"
-                      className="h-9 text-muted-foreground"
+                      className="h-9"
                       disabled={salvarConfigSaldos.isPending}
-                      onClick={() => {
-                        setBradInicial("");
-                        setBradData("");
-                        salvarConfigSaldos.mutate({
-                          bradescoSaldoInicial: null,
-                          bradescoSaldoInicialData: null,
-                        });
-                      }}
+                      onClick={salvarSaldoBancario}
                     >
-                      Usar só API
+                      {salvarConfigSaldos.isPending ? "Salvando…" : "Salvar"}
                     </Button>
-                  )}
-                </CardContent>
-              </Card>
+                    {(data?.bradescoConfig?.saldoInicial != null ||
+                      data?.bradescoConfig?.saldoInicialData) && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-9 text-muted-foreground"
+                        disabled={salvarConfigSaldos.isPending}
+                        onClick={() => {
+                          setSaldoInicialTxt("");
+                          setSaldoData("");
+                          salvarConfigSaldos.mutate({
+                            saldoBancarioInicial: null,
+                            saldoBancarioInicialData: null,
+                          });
+                        }}
+                      >
+                        Limpar
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
 
               <Card>
                   <CardHeader className="pb-1">
