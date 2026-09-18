@@ -1,4 +1,4 @@
-import { useMemo, useState, Fragment, useEffect } from "react";
+import { useMemo, useState, Fragment } from "react";
 import { Link } from "wouter";
 import {
   ArrowDownRight,
@@ -8,7 +8,6 @@ import {
   ChevronRight,
   RefreshCcw,
   TrendingDown,
-  TrendingUp,
   Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -19,35 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SearchMultiSelect } from "@/components/ui/search-select";
 import type { StatusRubricaComparativo } from "@shared/financeiroComparativoProjecao";
-import { DIA_LIMITE_ORCAMENTO_PADRAO } from "@shared/financeiroProjecaoVendas";
-
-const LS_DIA_ORC = "financeiro.comparativo.diaLimiteOrcamento";
-const LS_CLIENTES_ORC = "financeiro.comparativo.clienteIdsOrcamento";
-
-function lerDiaLimiteOrcamento(): number {
-  try {
-    const raw = localStorage.getItem(LS_DIA_ORC);
-    const n = raw ? Number(raw) : DIA_LIMITE_ORCAMENTO_PADRAO;
-    if (!Number.isFinite(n)) return DIA_LIMITE_ORCAMENTO_PADRAO;
-    return Math.min(31, Math.max(1, Math.floor(n)));
-  } catch {
-    return DIA_LIMITE_ORCAMENTO_PADRAO;
-  }
-}
-
-function lerClienteIdsOrcamento(): string[] {
-  try {
-    const raw = localStorage.getItem(LS_CLIENTES_ORC);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((x): x is string => typeof x === "string" && !!x);
-  } catch {
-    return [];
-  }
-}
 
 function mesAtualYm(): string {
   const d = new Date();
@@ -126,65 +97,17 @@ function Kpi({
 
 export default function FinanceiroComparativoPage() {
   const [mes, setMes] = useState(mesAtualYm);
-  const [diaLimiteOrcamento, setDiaLimiteOrcamento] = useState(lerDiaLimiteOrcamento);
-  const [clienteIdsOrcamento, setClienteIdsOrcamento] = useState(
-    lerClienteIdsOrcamento,
-  );
   const utils = trpc.useUtils();
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(LS_DIA_ORC, String(diaLimiteOrcamento));
-    } catch {
-      /* ignore */
-    }
-  }, [diaLimiteOrcamento]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(LS_CLIENTES_ORC, JSON.stringify(clienteIdsOrcamento));
-    } catch {
-      /* ignore */
-    }
-  }, [clienteIdsOrcamento]);
-
   const q = trpc.financeiroCfo.comparativoProjecao.useQuery(
-    {
-      mesYm: mes,
-      diaLimiteOrcamento,
-      clienteIdsOrcamento:
-        clienteIdsOrcamento.length > 0 ? clienteIdsOrcamento : undefined,
-    },
+    { mesYm: mes },
     { staleTime: 60_000 },
   );
 
   const d = q.data?.desembolso;
-  const r = q.data?.receita;
-  const caixa = q.data?.caixa;
-  const orcFiltros = q.data?.orcamentoFiltros;
-
-  const clientesOpcoes = useMemo(
-    () =>
-      (orcFiltros?.clientesOpcoes ?? []).map(c => ({
-        value: c.id,
-        label: c.nome,
-      })),
-    [orcFiltros?.clientesOpcoes],
-  );
-
-  // Remove da seleção clientes que não têm orçamento neste mês.
-  useEffect(() => {
-    if (!orcFiltros?.clientesOpcoes) return;
-    const valid = new Set(orcFiltros.clientesOpcoes.map(c => c.id));
-    setClienteIdsOrcamento(prev => {
-      const next = prev.filter(id => valid.has(id));
-      return next.length === prev.length ? prev : next;
-    });
-  }, [orcFiltros?.clientesOpcoes]);
 
   const rubricas = useMemo(() => d?.rubricas ?? [], [d?.rubricas]);
   const [abertas, setAbertas] = useState<Set<string>>(() => new Set());
-  const [vencidosAberto, setVencidosAberto] = useState(false);
 
   const marcarConcluida = trpc.financeiroCfo.marcarRubricaConcluida.useMutation({
     onSuccess: async () => {
@@ -215,19 +138,8 @@ export default function FinanceiroComparativoPage() {
       const data = await utils.financeiroCfo.comparativoProjecao.fetch({
         mesYm: mes,
         forceRefreshCa: true,
-        diaLimiteOrcamento,
-        clienteIdsOrcamento:
-          clienteIdsOrcamento.length > 0 ? clienteIdsOrcamento : undefined,
       });
-      utils.financeiroCfo.comparativoProjecao.setData(
-        {
-          mesYm: mes,
-          diaLimiteOrcamento,
-          clienteIdsOrcamento:
-            clienteIdsOrcamento.length > 0 ? clienteIdsOrcamento : undefined,
-        },
-        data,
-      );
+      utils.financeiroCfo.comparativoProjecao.setData({ mesYm: mes }, data);
     } catch (e) {
       toast.error(
         e instanceof Error ? e.message : "Falha ao recarregar Conta Azul",
@@ -258,33 +170,6 @@ export default function FinanceiroComparativoPage() {
                 className="h-9 w-[160px]"
                 value={mes}
                 onChange={e => setMes(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Orçamento até o dia</Label>
-              <Input
-                type="number"
-                min={1}
-                max={31}
-                className="h-9 w-[100px]"
-                value={diaLimiteOrcamento}
-                onChange={e => {
-                  const n = Number(e.target.value);
-                  if (!Number.isFinite(n)) return;
-                  setDiaLimiteOrcamento(Math.min(31, Math.max(1, Math.floor(n))));
-                }}
-              />
-            </div>
-            <div className="min-w-[220px] max-w-[320px] flex-1">
-              <Label className="text-xs">Clientes no orçamento</Label>
-              <SearchMultiSelect
-                values={clienteIdsOrcamento}
-                onValuesChange={setClienteIdsOrcamento}
-                options={clientesOpcoes}
-                placeholder="Todos os clientes"
-                searchPlaceholder="Buscar cliente…"
-                emptyText="Nenhum cliente com orçamento neste mês."
-                clearLabel="Todos (limpar filtro)"
               />
             </div>
             <Button
@@ -607,216 +492,12 @@ export default function FinanceiroComparativoPage() {
               </CardContent>
             </Card>
 
-            <section className="space-y-3">
-              <div>
-                <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                  <TrendingUp className="h-4 w-4" />
-                  1. Caixa — o que ainda entra neste mês
-                </h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Conta Azul por <strong>vencimento</strong>: dinheiro já baixado
-                  vs o que ainda está em aberto neste mês.
-                </p>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <Kpi
-                  title="Previsto no mês"
-                  value={fmtMoney(r?.previsto)}
-                  hint="Títulos com vencimento no mês"
-                />
-                <Kpi
-                  title="Já recebido"
-                  value={fmtMoney(r?.recebido)}
-                  hint={
-                    r?.pctRecebidoDoPrevisto != null
-                      ? `${fmtPct(r.pctRecebidoDoPrevisto).replace("+", "")} do previsto`
-                      : "Baixas no mês"
-                  }
-                  tone="down"
-                />
-                <Kpi
-                  title="Ainda a receber"
-                  value={fmtMoney(r?.aReceberNoMes)}
-                  hint="Em aberto, vence neste mês, data ainda não passou"
-                />
-                <Kpi
-                  title="Vencido neste mês"
-                  value={fmtMoney(r?.vencido)}
-                  hint="Em aberto, venceu neste mês e a data já passou"
-                  tone={(r?.vencido ?? 0) > 0 ? "up" : "neutral"}
-                />
-              </div>
-
-              {(r?.vencidosDetalhe?.length ?? 0) > 0 ? (
-                <Card>
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-between px-4 py-3 text-left"
-                    onClick={() => setVencidosAberto(v => !v)}
-                  >
-                    <span className="text-sm font-medium">
-                      Quem está vencido neste mês ({r!.vencidosDetalhe.length})
-                    </span>
-                    {vencidosAberto ? (
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </button>
-                  {vencidosAberto ? (
-                    <CardContent className="border-t pt-3">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="text-left text-xs text-muted-foreground">
-                              <th className="pb-2 pr-3 font-medium">
-                                Cliente / descrição
-                              </th>
-                              <th className="pb-2 pr-3 font-medium">
-                                Vencimento
-                              </th>
-                              <th className="pb-2 text-right font-medium">
-                                Em aberto
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {r!.vencidosDetalhe.map(v => (
-                              <tr
-                                key={v.id}
-                                className="border-t border-border/60"
-                              >
-                                <td className="py-2 pr-3">
-                                  <div className="font-medium">
-                                    {v.fornecedor || "—"}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {v.descricao}
-                                  </div>
-                                </td>
-                                <td className="py-2 pr-3 tabular-nums text-muted-foreground">
-                                  {v.dataVencimento
-                                    ? new Date(
-                                        `${v.dataVencimento.slice(0, 10)}T12:00:00`,
-                                      ).toLocaleDateString("pt-BR")
-                                    : "—"}
-                                </td>
-                                <td className="py-2 text-right tabular-nums font-medium text-red-600">
-                                  {fmtMoney(v.valor)}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                          <tfoot>
-                            <tr className="border-t">
-                              <td
-                                colSpan={2}
-                                className="pt-2 text-xs text-muted-foreground"
-                              >
-                                Soma = vencido neste mês
-                              </td>
-                              <td className="pt-2 text-right tabular-nums font-semibold">
-                                {fmtMoney(r?.vencido)}
-                              </td>
-                            </tr>
-                          </tfoot>
-                        </table>
-                      </div>
-                    </CardContent>
-                  ) : null}
-                </Card>
-              ) : null}
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Kpi
-                  title="Saldo caixa (recebido − pago)"
-                  value={fmtMoney(caixa?.saldoRealizado)}
-                  hint="Só o que já baixou no Conta Azul neste mês"
-                  tone={(caixa?.saldoRealizado ?? 0) >= 0 ? "down" : "up"}
-                />
-                <Kpi
-                  title="Caixa previsto vs desembolso"
-                  value={fmtMoney(caixa?.gapCaixaMes)}
-                  hint={
-                    d?.totais.abateConcluidas && d.totais.abateConcluidas > 0.009
-                      ? `Receita caixa − desembolso efetivo (plano ${fmtMoney(d.totais.projetado)} − saldo liberado ${fmtMoney(d.totais.abateConcluidas)})`
-                      : "Projeção caixa (recebido + ainda entra) − desembolso projetado"
-                  }
-                  tone={
-                    (caixa?.gapCaixaMes ?? 0) >= 0
-                      ? "down"
-                      : "up"
-                  }
-                />
-              </div>
-            </section>
-
-            <section className="space-y-3">
-              <div>
-                <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                  <Wallet className="h-4 w-4" />
-                  2. Volume do mês — faturado + orçamento
-                </h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Pedidos por <strong>data do pedido</strong>. Orçamentos usam a
-                  janela e os clientes escolhidos acima. Isso{" "}
-                  <strong>não é o mesmo</strong> que “a receber” no Conta Azul.
-                </p>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <Kpi
-                  title="Já faturado (volume)"
-                  value={fmtMoney(r?.vendasCompetencia?.vendasFaturadas)}
-                  hint="Pedidos faturados/aprovados neste mês — volume, não caixa"
-                />
-                <Kpi
-                  title={`Orçamentos ≤ dia ${diaLimiteOrcamento}`}
-                  value={fmtMoney(r?.vendasCompetencia?.orcamentos)}
-                  hint={
-                    clienteIdsOrcamento.length > 0
-                      ? `${clienteIdsOrcamento.length} cliente(s) selecionado(s)`
-                      : "Todos os clientes · só até o dia limite"
-                  }
-                />
-                <Kpi
-                  title="Soma até agora"
-                  value={fmtMoney(r?.vendasCompetencia?.total)}
-                  hint={
-                    r?.projecaoVendas
-                      ? `Faturado + orçamentos. Nos 2 meses anteriores, até o dia ${r.projecaoVendas.diasPassados}: média ${fmtMoney(r.projecaoVendas.mediaAteMesmoDia2m)}`
-                      : "Faturado + orçamentos ≤15"
-                  }
-                />
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Kpi
-                  title={
-                    r?.projecaoVendas && r.projecaoVendas.diasRestantes > 0
-                      ? `Ainda entra caixa (últimos ${r.projecaoVendas.diasRestantes} dias)`
-                      : "Ainda entra (caixa)"
-                  }
-                  value={fmtMoney(r?.projecaoVendas?.aindaEntraProjetado)}
-                  hint={
-                    r?.projecaoVendas && r.projecaoVendas.diasRestantes > 0
-                      ? `Média venda/frete · últimos ${r.projecaoVendas.diasRestantes} dias dos 2 meses ant.`
-                      : "Sem dias restantes neste mês"
-                  }
-                />
-                <Kpi
-                  title="Projeção de fechar (caixa)"
-                  value={fmtMoney(r?.projecaoVendas?.projecaoMesTotal)}
-                  hint="Recebido + ainda entra (caixa). Não soma a receber — evita duplicar com o padrão histórico. Orçamentos não entram."
-                />
-              </div>
-            </section>
-
             <p className="flex items-start gap-2 text-xs text-muted-foreground">
               <TrendingDown className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               Desembolso: “fora do plano” = rúbrica recorrente paga sem estar na
               projeção; “não programada” = gasto sem linha na grade. Em rúbricas
               já pagas, use <strong>Concluir</strong> se pagou a menos — o
-              restante vira saldo e abate o “Caixa previsto vs desembolso”.
-              Ajuste em{" "}
+              restante vira saldo liberado no dashboard. Ajuste em{" "}
               <Button asChild variant="link" className="h-auto p-0 text-xs font-semibold">
                 <Link href="/financeiro-cfo/analise">Análise Conta Azul</Link>
               </Button>

@@ -335,6 +335,69 @@ async function fetchParcelasPaginated(
   };
 }
 
+/**
+ * Só baixas a pagar com data_pagamento em [inicio, fim].
+ * Listagem CA costuma omitir data_pagamento no JSON — o filtro da API
+ * já limita o caixa; usamos isso para “gasto executado”.
+ */
+async function fetchBaixasPagarPorPagamento(
+  inicio: Date,
+  fim: Date,
+): Promise<{ itens: ParcelaCaRaw[]; aviso?: string }> {
+  const env = getComercialEnv();
+  const prisma = getComercialPrisma();
+  const cred = await ensureValidAccessToken(prisma, env);
+  if (!cred?.accessToken) {
+    throw new Error(
+      "Conta Azul não conectado. Configure em Comercial → Configurações.",
+    );
+  }
+  const http = createContaAzulHttp(env, cred.accessToken);
+  const pagDe = isoDateLocal(inicio);
+  const pagAte = isoDateLocal(fim);
+  const anoDe = Math.max(2000, Number(pagDe.slice(0, 4)) - 2);
+  const anoAte = Number(pagAte.slice(0, 4)) + 2;
+  const vencAmploDe = `${anoDe}-01-01`;
+  const vencAmploAte = `${anoAte}-12-31`;
+  const tamanho = 200;
+  const maxPaginas = 40;
+  const porId = new Map<string, ParcelaCaRaw>();
+  const avisos: string[] = [];
+
+  for (let pagina = 1; pagina <= maxPaginas; pagina++) {
+    const qs = new URLSearchParams({
+      pagina: String(pagina),
+      tamanho_pagina: String(tamanho),
+      data_vencimento_de: vencAmploDe,
+      data_vencimento_ate: vencAmploAte,
+      data_pagamento_de: pagDe,
+      data_pagamento_ate: pagAte,
+    });
+    let res: BuscaParcelasResponse;
+    try {
+      res = await fetchParcelasPagina(
+        http,
+        "/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar",
+        qs,
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (pagina === 1) avisos.push(`baixas pagar: ${msg}`);
+      break;
+    }
+    const batch = res.itens ?? [];
+    for (const item of batch) {
+      if (item.id) porId.set(item.id, item);
+    }
+    if (batch.length < tamanho) break;
+  }
+
+  return {
+    itens: Array.from(porId.values()),
+    aviso: avisos.length ? avisos.join(" · ") : undefined,
+  };
+}
+
 function resolverEntradaDre(
   catalogo: Map<string, CategoriaCa>,
   categoriaId: string | null,
@@ -622,11 +685,18 @@ export async function analisarFinanceiroCfoContaAzul(
 ) {
   const compararMesAnterior = opts?.compararMesAnterior !== false;
   const prisma = getComercialPrisma();
-  const prevRaw = periodoComparavelAnterior(inicio, fim);
+  // Normaliza para calendário America/Sao_Paulo (evita 31/07 no MoM).
+  const periodoInicio = isoDateLocal(inicio);
+  const periodoFim = isoDateLocal(fim);
+  const inicioSp = new Date(`${periodoInicio}T00:00:00-03:00`);
+  const fimSp = new Date(`${periodoFim}T23:59:59.999-03:00`);
+  const prevRaw = periodoComparavelAnterior(inicioSp, fimSp);
   const prev = compararMesAnterior
     ? limitarPeriodoComparativoRubricas(prevRaw.inicio, prevRaw.fim)
     : null;
   const buscarMesAnterior = !!prev;
+  const prevInicio = prev ? isoDateLocal(prev.inicio) : null;
+  const prevFim = prev ? isoDateLocal(prev.fim) : null;
 
   const [
     pagarFetch,
@@ -636,17 +706,18 @@ export async function analisarFinanceiroCfoContaAzul(
     classifs,
     ajustes,
     equipesMo,
-    pagarPrevFetch,
+    pagarBaixasFetch,
+    pagarBaixasPrevFetch,
   ] = await Promise.all([
       fetchParcelasPaginated(
         "/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar",
-        inicio,
-        fim,
+        inicioSp,
+        fimSp,
       ),
       fetchParcelasPaginated(
         "/v1/financeiro/eventos-financeiros/contas-a-receber/buscar",
-        inicio,
-        fim,
+        inicioSp,
+        fimSp,
       ),
       fetchSaldosContas(),
       prisma.execucaoApi.findFirst({
@@ -657,12 +728,9 @@ export async function analisarFinanceiroCfoContaAzul(
       listFinanceiroCaClassificacoes(projetoId),
       listFinanceiroCaAjustesManuais(projetoId),
       moEquipeDb.listMoEquipes(projetoId).catch(() => []),
+      fetchBaixasPagarPorPagamento(inicioSp, fimSp),
       buscarMesAnterior && prev
-        ? fetchParcelasPaginated(
-            "/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar",
-            prev.inicio,
-            prev.fim,
-          )
+        ? fetchBaixasPagarPorPagamento(prev.inicio, prev.fim)
         : Promise.resolve({ itens: [] as ParcelaCaRaw[], aviso: undefined }),
     ]);
 
@@ -711,11 +779,26 @@ export async function analisarFinanceiroCfoContaAzul(
   const receberAtivos = parcelasAtivasParaRelatorio(receber);
   const excluidos = [...pagar, ...receber].filter(p => p.excluido);
 
-  const periodoInicio = isoDateLocal(inicio);
-  const periodoFim = isoDateLocal(fim);
-  /** Só o que já saiu da conta no período (pago), sem transferência/investimento. */
-  const pagarCusto = pagarAtivos.filter(p =>
-    parcelaDespesaExecutadaNoPeriodo(p, periodoInicio, periodoFim),
+  // periodoInicio/periodoFim já normalizados no topo (calendário SP).
+  /** Gasto = baixas filtradas por data_pagamento na API (listagem omite o campo). */
+  let pagarCusto = pagarBaixasFetch.itens
+    .map(i => mapParcelaListagem(i, "pagar", catalogo))
+    .filter((x): x is ParcelaFinanceiraNorm => !!x);
+  pagarCusto = aplicarEdicoesClassificacao(pagarCusto, overrides);
+  for (const a of ajustesNorm) {
+    const p = ajusteManualParaParcela(a);
+    if (p.tipo !== "pagar") continue;
+    const ref =
+      p.dataPagamento || p.dataCompetencia || p.dataVencimento || "";
+    if (ref >= periodoInicio && ref <= periodoFim) {
+      if (a.nota) p.notaClassificacao = a.nota;
+      pagarCusto.push(p);
+    }
+  }
+  pagarCusto = parcelasAtivasParaRelatorio(pagarCusto).filter(p =>
+    parcelaDespesaExecutadaNoPeriodo(p, periodoInicio, periodoFim, {
+      aceitarSemDataPagamento: true,
+    }),
   );
 
   const resumo = resumirCaixa(receberAtivos, pagarAtivos);
@@ -742,8 +825,8 @@ export async function analisarFinanceiroCfoContaAzul(
     typeof detectarConflitosRubricaPorDestino
   > = [];
   let pagarPrevAtivos: ParcelaFinanceiraNorm[] = [];
-  if (buscarMesAnterior && prev) {
-    let pagarPrev = pagarPrevFetch.itens
+  if (buscarMesAnterior && prev && prevInicio && prevFim) {
+    let pagarPrev = pagarBaixasPrevFetch.itens
       .map(i => mapParcelaListagem(i, "pagar", catalogo))
       .filter((x): x is ParcelaFinanceiraNorm => !!x);
     pagarPrev = aplicarEdicoesClassificacao(pagarPrev, overrides);
@@ -751,21 +834,18 @@ export async function analisarFinanceiroCfoContaAzul(
       const p = ajusteManualParaParcela(a);
       if (p.tipo !== "pagar") continue;
       const ref =
-        p.dataCompetencia || p.dataVencimento || p.dataPagamento || "";
-      if (
-        ref >= isoDateLocal(prev.inicio) &&
-        ref <= isoDateLocal(prev.fim)
-      ) {
+        p.dataPagamento || p.dataCompetencia || p.dataVencimento || "";
+      if (ref >= prevInicio && ref <= prevFim) {
         if (a.nota) p.notaClassificacao = a.nota;
         pagarPrev.push(p);
       }
     }
-    const prevInicio = isoDateLocal(prev.inicio);
-    const prevFim = isoDateLocal(prev.fim);
     pagarPrevAtivos = parcelasAtivasParaRelatorio(pagarPrev)
       .filter(p => parcelaNoComparativoRubricas(p))
       .filter(p =>
-        parcelaDespesaExecutadaNoPeriodo(p, prevInicio, prevFim),
+        parcelaDespesaExecutadaNoPeriodo(p, prevInicio, prevFim, {
+          aceitarSemDataPagamento: true,
+        }),
       );
     const rubricasPrev = agregarPorRubrica(pagarPrevAtivos);
     comparativo = montarComparativoCustoMes(rubricas, rubricasPrev, {
@@ -805,7 +885,8 @@ export async function analisarFinanceiroCfoContaAzul(
   const avisos = [
     pagarFetch.aviso,
     receberFetch.aviso,
-    pagarPrevFetch.aviso,
+    pagarBaixasFetch.aviso,
+    pagarBaixasPrevFetch.aviso,
     saldos.aviso,
     "Rateio detalhado carrega ao abrir o detalhe do lançamento.",
   ].filter(Boolean) as string[];

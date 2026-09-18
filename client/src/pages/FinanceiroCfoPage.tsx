@@ -1,8 +1,6 @@
-﻿import { useEffect, useMemo, useState, type ReactNode } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
-  ArrowDownRight,
-  ArrowUpRight,
   Download,
   FileJson,
   FileSpreadsheet,
@@ -12,9 +10,6 @@ import {
   Plus,
   RefreshCcw,
   Search,
-  TrendingDown,
-  TrendingUp,
-  Wallet,
 } from "lucide-react";
 import {
   Bar,
@@ -184,7 +179,6 @@ export default function FinanceiroCfoPage() {
     retry: 1,
   });
   const data = analise.data;
-  const kpis = data?.kpisReducao;
   const gaps = data?.comparativo?.gapsPorImpacto ?? [];
   const conflitosRubrica = data?.conflitosRubricaDestino ?? [];
 
@@ -461,85 +455,8 @@ export default function FinanceiroCfoPage() {
           </p>
         ) : null}
 
-        {data && kpis ? (
+        {data ? (
           <>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-              <Kpi
-                icon={<Wallet className="h-4 w-4 text-sky-600" />}
-                label="Gasto do mês"
-                value={fmtMoney(kpis.gastoTotal)}
-                hint={`${periodoLabel} · saiu da conta (pago) · sem transferência`}
-              />
-              <Kpi
-                icon={
-                  (kpis.deltaGasto ?? 0) > 0 ? (
-                    <TrendingUp className="h-4 w-4 text-red-600" />
-                  ) : (
-                    <TrendingDown className="h-4 w-4 text-emerald-600" />
-                  )
-                }
-                label="Δ vs mês ant."
-                value={
-                  kpis.deltaGasto == null
-                    ? "—"
-                    : `${kpis.deltaGasto > 0 ? "+" : ""}${fmtMoney(kpis.deltaGasto)}`
-                }
-                hint={fmtPct(kpis.deltaGastoPct)}
-                highlight={
-                  kpis.deltaGasto == null
-                    ? undefined
-                    : kpis.deltaGasto > 0
-                      ? "bad"
-                      : "good"
-                }
-              />
-              <Kpi
-                icon={<AlertTriangle className="h-4 w-4 text-amber-600" />}
-                label="Sem rúbrica"
-                value={fmtMoney(kpis.valorSemRubrica)}
-                hint={`${kpis.pctSemRubrica}% do gasto`}
-                highlight={kpis.pctSemRubrica >= 10 ? "bad" : undefined}
-              />
-              <Kpi
-                icon={<Filter className="h-4 w-4" />}
-                label="Top 3 rúbricas"
-                value={`${kpis.concentracaoTop3Pct}%`}
-                hint="Concentração do gasto"
-              />
-              <Kpi
-                icon={<ArrowUpRight className="h-4 w-4 text-red-600" />}
-                label="Maior alta"
-                value={
-                  kpis.maiorAumento
-                    ? fmtMoney(kpis.maiorAumento.delta)
-                    : "—"
-                }
-                hint={kpis.maiorAumento?.rubrica}
-              />
-              <Kpi
-                icon={<ArrowDownRight className="h-4 w-4 text-amber-700" />}
-                label="A pagar"
-                value={fmtMoney(kpis.aPagarEmAberto)}
-                hint={`${kpis.titulosPagar} título(s)`}
-              />
-            </div>
-
-            {data.comparativo ? (
-              <p className="text-xs text-muted-foreground">
-                Mesmo período do mês anterior:{" "}
-                {fmtDate(data.comparativo.periodoAnterior.inicio)} →{" "}
-                {fmtDate(data.comparativo.periodoAnterior.fim)} · gasto ant.{" "}
-                {fmtMoney(data.comparativo.gastoAnterior)}
-                {" · "}
-                critério: data de pagamento (dinheiro que saiu da conta).
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Gasto = baixas com data de pagamento no período, sem
-                transferência entre contas / investimento / desconto obtido.
-              </p>
-            )}
-
             <Tabs
               value={tabAtiva}
               onValueChange={setTabAtiva}
@@ -1172,45 +1089,6 @@ export default function FinanceiroCfoPage() {
         ) : null}
       </main>
     </div>
-  );
-}
-
-function Kpi({
-  icon,
-  label,
-  value,
-  hint,
-  highlight,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string;
-  hint?: string;
-  highlight?: "good" | "bad";
-}) {
-  return (
-    <Card>
-      <CardContent className="flex items-start gap-3 p-4">
-        <div className="mt-0.5">{icon}</div>
-        <div className="min-w-0">
-          <p className="text-xs text-muted-foreground">{label}</p>
-          <p
-            className={`truncate text-lg font-bold tabular-nums ${
-              highlight === "bad"
-                ? "text-red-700"
-                : highlight === "good"
-                  ? "text-emerald-700"
-                  : ""
-            }`}
-          >
-            {value}
-          </p>
-          {hint ? (
-            <p className="truncate text-[11px] text-muted-foreground">{hint}</p>
-          ) : null}
-        </div>
-      </CardContent>
-    </Card>
   );
 }
 

@@ -5,7 +5,7 @@
  * Heurística de “setor/criticidade” NÃO entra em decisão de corte.
  */
 
-import { periodoMesAnterior } from "./comercial/periodo-america-sp";
+import { periodoMesAnterior, diaIsoAmericaSp, inicioDiaAmericaSp, fimDiaAmericaSp } from "./comercial/periodo-america-sp";
 import { ehNaoDesembolsoCusto } from "./financeiroProjecaoDesembolso";
 
 export const RUBRICA_SEM_CATEGORIA = "Sem rúbrica no Conta Azul";
@@ -627,13 +627,8 @@ export function periodoComparavelAnterior(
  */
 export const COMPARATIVO_RUBRICAS_DESDE_ISO = "2026-08-01";
 
-function parseIsoLocalMeioDia(ymd: string): Date {
-  const [y, m, d] = ymd.split("-").map(Number);
-  return new Date(y, m - 1, d, 12, 0, 0, 0);
-}
-
 /**
- * Recorta [inicio, fim] para ≥ COMPARATIVO_RUBRICAS_DESDE_ISO.
+ * Recorta [inicio, fim] para ≥ COMPARATIVO_RUBRICAS_DESDE_ISO (calendário SP).
  * Retorna null se o período inteiro for anterior ao corte.
  */
 export function limitarPeriodoComparativoRubricas(
@@ -641,16 +636,15 @@ export function limitarPeriodoComparativoRubricas(
   fim: Date,
   desdeIso: string = COMPARATIVO_RUBRICAS_DESDE_ISO,
 ): { inicio: Date; fim: Date } | null {
-  const corte = parseIsoLocalMeioDia(desdeIso);
-  corte.setHours(0, 0, 0, 0);
-  const f = new Date(fim);
-  f.setHours(23, 59, 59, 999);
-  if (f.getTime() < corte.getTime()) return null;
-  const i = new Date(inicio);
-  i.setHours(0, 0, 0, 0);
-  const ini = i.getTime() < corte.getTime() ? new Date(corte) : i;
-  if (ini.getTime() > f.getTime()) return null;
-  return { inicio: ini, fim: f };
+  const fimIso = diaIsoAmericaSp(fim);
+  if (fimIso < desdeIso) return null;
+  const iniIso = diaIsoAmericaSp(inicio);
+  const iniClamped = iniIso < desdeIso ? desdeIso : iniIso;
+  if (iniClamped > fimIso) return null;
+  return {
+    inicio: inicioDiaAmericaSp(iniClamped),
+    fim: fimDiaAmericaSp(fimIso),
+  };
 }
 
 /** Data de referência da parcela para o comparativo de rúbricas (YYYY-MM-DD). */
@@ -1534,8 +1528,9 @@ export function parcelaEhCustoOperacional(
 
 /**
  * Despesa já executada no período = dinheiro que saiu da conta.
- * Critério: data de pagamento dentro do intervalo + valor pago > 0 +
- * custo operacional (sem transferência/investimento/desconto obtido).
+ * - Com data_pagamento: precisa cair no intervalo.
+ * - Sem data_pagamento (listagem CA costuma omitir): aceita se `aceitarSemDataPagamento`
+ *   e valorPago > 0 — o chamador deve ter buscado via filtro de pagamento da API.
  */
 export function parcelaDespesaExecutadaNoPeriodo(
   p: Pick<
@@ -1549,11 +1544,14 @@ export function parcelaDespesaExecutadaNoPeriodo(
   >,
   inicioIso: string,
   fimIso: string,
+  opts?: { aceitarSemDataPagamento?: boolean },
 ): boolean {
   if (p.excluido) return false;
   if (!parcelaEhCustoOperacional(p)) return false;
+  if (Number(p.valorPago ?? 0) <= 0.009) return false;
   const dp = (p.dataPagamento ?? "").slice(0, 10);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dp)) return false;
-  if (dp < inicioIso || dp > fimIso) return false;
-  return Number(p.valorPago ?? 0) > 0.009;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dp)) {
+    return dp >= inicioIso && dp <= fimIso;
+  }
+  return opts?.aceitarSemDataPagamento === true;
 }
