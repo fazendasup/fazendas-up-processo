@@ -1,13 +1,12 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "wouter";
 import {
-  BarChart3,
+  ArrowDownRight,
+  ArrowUpRight,
   RefreshCcw,
-  TrendingUp,
   Wallet,
 } from "lucide-react";
 import {
-  Area,
   Bar,
   CartesianGrid,
   ComposedChart,
@@ -31,7 +30,6 @@ import {
   buildChartTheme,
   chartAnimation,
   CHART,
-  ChartAreaUnderLineDefs,
   ChartBarFillDefs,
   barFillUrl,
 } from "@/components/comercial/charts";
@@ -66,75 +64,6 @@ function fmtPct(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "—";
   const sign = n > 0 ? "+" : "";
   return `${sign}${n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
-}
-
-function labelGapVendas(desvio: number | null | undefined): {
-  title: string;
-  value: string;
-  hint: string;
-  tone: "up" | "down" | "neutral";
-} {
-  const d = desvio ?? 0;
-  if (d < -0.009) {
-    return {
-      title: "Falta para a projeção",
-      value: fmtMoney(Math.abs(d)),
-      hint: "Quanto ainda falta no volume para fechar a projeção do mês",
-      tone: "up",
-    };
-  }
-  if (d > 0.009) {
-    return {
-      title: "Acima da projeção",
-      value: fmtMoney(d),
-      hint: "Realizado já passou a projeção de fechar o mês",
-      tone: "down",
-    };
-  }
-  return {
-    title: "Na projeção",
-    value: fmtMoney(0),
-    hint: "Realizado igual à projeção",
-    tone: "neutral",
-  };
-}
-
-function labelGapDesembolso(desvio: number | null | undefined): {
-  title: string;
-  value: string;
-  hint: string;
-  tone: "up" | "down" | "neutral";
-} {
-  const d = desvio ?? 0;
-  if (d > 0.009) {
-    return {
-      title: "Pagou além do plano",
-      value: fmtMoney(d),
-      hint: "Pago − projetado (gastou mais que a grade)",
-      tone: "up",
-    };
-  }
-  if (d < -0.009) {
-    return {
-      title: "Ainda cabe no plano",
-      value: fmtMoney(Math.abs(d)),
-      hint: "Projetado − pago (ainda não gastou tudo do plano)",
-      tone: "down",
-    };
-  }
-  return {
-    title: "No plano",
-    value: fmtMoney(0),
-    hint: "Pago igual ao projetado",
-    tone: "neutral",
-  };
-}
-
-function textoVsProjecao(desvio: number, aberto: boolean): string {
-  if (!aberto) return "—";
-  if (desvio < -0.009) return `faltam ${fmtMoney(Math.abs(desvio))}`;
-  if (desvio > 0.009) return `+${fmtMoney(desvio).replace("R$", "").trim()}`;
-  return "ok";
 }
 
 function Kpi({
@@ -223,15 +152,13 @@ function ChartShell({
   title,
   description,
   children,
-  className,
 }: {
   title: string;
   description?: string;
   children: ReactNode;
-  className?: string;
 }) {
   return (
-    <Card className={className}>
+    <Card>
       <CardHeader className="pb-1">
         <CardTitle className="text-base tracking-tight">{title}</CardTitle>
         {description ? (
@@ -257,7 +184,6 @@ export default function FinanceiroDashboardPage() {
     chartGridProps,
     chartAxisXProps,
     chartAxisYProps,
-    chartTooltipCursorLine,
   } = chartTheme;
   const lineActiveStroke = theme === "dark" ? "#0f172a" : "#fff";
 
@@ -267,7 +193,6 @@ export default function FinanceiroDashboardPage() {
   );
 
   const data = q.data;
-  const atual = data?.mesAtual;
   const pv = data?.projecaoVendas;
   const rec = data?.receita;
   const des = data?.desembolsoTotais;
@@ -279,17 +204,10 @@ export default function FinanceiroDashboardPage() {
         nome: labelMesCurto(m.mesYm),
         full: m.labelMes,
         aberto: m.aberto,
-        vendasReal: m.vendasReal,
-        vendasProjetado: m.vendasProjetado,
-        desvioVendas: m.desvioVendas,
-        desvioVendasPct: m.desvioVendasPct,
-        desembolsoPago: m.desembolsoPago,
-        desembolsoProjetado: m.desembolsoProjetado,
-        desvioDesembolso: m.desvioDesembolso,
-        desvioDesembolsoPct: m.desvioDesembolsoPct,
         recebido: m.recebido,
+        desembolsoPago: m.desembolsoPago,
         saldo: m.saldoCaixa,
-        aReceber: m.aReceber,
+        vendasFaturadas: m.vendasFaturadas,
       })),
     [data?.serie3Meses],
   );
@@ -309,13 +227,14 @@ export default function FinanceiroDashboardPage() {
     }
   };
 
-  const gapVendas = labelGapVendas(atual?.desvioVendas);
-  const gapDesembolso = labelGapDesembolso(atual?.desvioDesembolso);
+  const desvioDes = des?.desvio ?? 0;
+  const faltaPagar = des?.naoPago ?? 0;
+  const aEntrarTitulos = (rec?.aReceberNoMes ?? 0) + (rec?.vencido ?? 0);
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="mx-auto w-full max-w-[1100px] space-y-6 px-4 py-6">
+      <main className="mx-auto w-full max-w-[1100px] space-y-8 px-4 py-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -325,7 +244,7 @@ export default function FinanceiroDashboardPage() {
               Dashboard
             </h1>
             <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-              Projeção × real em 3 meses, desembolso, caixa e faturamento.
+              Desembolso do plano, entradas de caixa e tendência em 3 meses.
             </p>
           </div>
           <div className="flex flex-wrap items-end gap-3">
@@ -375,12 +294,6 @@ export default function FinanceiroDashboardPage() {
           </Link>
         </div>
 
-        {data?.avisos?.length ? (
-          <div className="rounded-md border border-border/80 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-            {data.avisos.join(" · ")}
-          </div>
-        ) : null}
-
         {q.isLoading ? (
           <p className="text-sm text-muted-foreground">Carregando dashboard…</p>
         ) : q.isError ? (
@@ -390,400 +303,121 @@ export default function FinanceiroDashboardPage() {
           </p>
         ) : (
           <>
+            {/* 1) Desembolso — só indicadores do mês */}
             <section className="space-y-3">
-              <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                <TrendingUp className="h-4 w-4" />
-                Mês selecionado — projeção × real
-              </h2>
+              <div>
+                <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  <ArrowDownRight className="h-4 w-4" />
+                  Desembolso — plano do mês
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Grade de projeção × o que já saiu no Conta Azul.
+                </p>
+              </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Kpi
-                  title="Projeção de fechar (caixa)"
-                  value={fmtMoney(pv?.projecaoMesTotal)}
-                  hint={
-                    pv
-                      ? `Recebido + em aberto + ainda entra ${fmtMoney(pv.aindaEntraProjetado)}`
-                      : undefined
-                  }
-                />
-                <Kpi
-                  title="Realizado (volume)"
-                  value={fmtMoney(atual?.vendasReal)}
-                  hint={`Faturado ${fmtMoney(atual?.vendasFaturadas)} · orç. ${fmtMoney(atual?.orcamentos)}`}
-                />
-                <Kpi
-                  title={gapVendas.title}
-                  value={gapVendas.value}
-                  hint={
-                    gapVendas.hint +
-                    " (volume: faturado+orçamento vs projeção de volume)"
-                  }
-                  tone={gapVendas.tone}
-                />
-                <Kpi
-                  title="Caixa previsto vs desembolso"
-                  value={fmtMoney(data?.caixa.gapCaixaMes)}
-                  hint="Projeção caixa − desembolso projetado"
-                  tone={
-                    (data?.caixa.gapCaixaMes ?? 0) >= 0 ? "down" : "up"
-                  }
-                />
-              </div>
-            </section>
-
-            <div className="grid gap-4 lg:grid-cols-2">
-              <ChartShell
-                title="Vendas — trajetória 3 meses"
-                description="Área = realizado · linha tracejada = projeção de fechar. No mês aberto o gap fica explícito."
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart
-                    data={serie}
-                    margin={{ top: 12, right: 12, left: 4, bottom: 4 }}
-                  >
-                    <ChartAreaUnderLineDefs
-                      prefix="fin-vendas"
-                      colorMid={CHART.green.mid}
-                    />
-                    <defs>
-                      <linearGradient
-                        id="fin-vendas-proj-area"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="0%"
-                          stopColor={CHART.blue.mid}
-                          stopOpacity={0.14}
-                        />
-                        <stop
-                          offset="100%"
-                          stopColor={CHART.blue.mid}
-                          stopOpacity={0}
-                        />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid {...chartGridProps} />
-                    <XAxis dataKey="nome" {...chartAxisXProps} />
-                    <YAxis
-                      {...chartAxisYProps}
-                      tickFormatter={fmtMoneyShort}
-                      width={48}
-                    />
-                    <Tooltip
-                      cursor={chartTooltipCursorLine}
-                      content={({ active, payload, label }) => {
-                        const row = payload?.[0]?.payload as
-                          | (typeof serie)[number]
-                          | undefined;
-                        if (!row) return null;
-                        return (
-                          <ChartTip
-                            active={active}
-                            label={String(label)}
-                            rows={[
-                              {
-                                label: "Realizado",
-                                value: fmtMoney(row.vendasReal),
-                                accent: CHART.green.dark,
-                              },
-                              {
-                                label: "Projetado",
-                                value: fmtMoney(row.vendasProjetado),
-                                accent: CHART.blue.stroke,
-                              },
-                              {
-                                label:
-                                  row.desvioVendas < 0
-                                    ? "Falta p/ projeção"
-                                    : row.desvioVendas > 0
-                                      ? "Acima da projeção"
-                                      : "vs projeção",
-                                value:
-                                  row.aberto
-                                    ? textoVsProjecao(
-                                        row.desvioVendas,
-                                        row.aberto,
-                                      )
-                                    : "—",
-                                muted: true,
-                              },
-                            ]}
-                          />
-                        );
-                      }}
-                    />
-                    <Legend
-                      verticalAlign="top"
-                      height={28}
-                      iconType="circle"
-                      wrapperStyle={{ fontSize: 11, fontWeight: 600 }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="vendasProjetado"
-                      name="Projeção"
-                      stroke="none"
-                      fill="url(#fin-vendas-proj-area)"
-                      legendType="none"
-                      {...chartAnimation}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="vendasReal"
-                      name="Realizado"
-                      stroke="none"
-                      fill="url(#fin-vendas-area)"
-                      legendType="none"
-                      {...chartAnimation}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="vendasProjetado"
-                      name="Projeção"
-                      stroke={CHART.blue.stroke}
-                      strokeWidth={2.25}
-                      strokeDasharray="6 4"
-                      dot={{
-                        r: 4,
-                        strokeWidth: 2,
-                        stroke: lineActiveStroke,
-                        fill: CHART.blue.stroke,
-                      }}
-                      activeDot={{ r: 6 }}
-                      {...chartAnimation}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="vendasReal"
-                      name="Realizado"
-                      stroke={CHART.green.dark}
-                      strokeWidth={2.75}
-                      dot={{
-                        r: 4.5,
-                        strokeWidth: 2,
-                        stroke: lineActiveStroke,
-                        fill: CHART.green.dark,
-                      }}
-                      activeDot={{ r: 7 }}
-                      {...chartAnimation}
-                    />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </ChartShell>
-
-              <ChartShell
-                title="Desembolso — plano × executado"
-                description="Barras = pago no Conta Azul · linha = projetado na grade."
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart
-                    data={serie}
-                    margin={{ top: 12, right: 12, left: 4, bottom: 4 }}
-                  >
-                    <ChartBarFillDefs prefix="fin-des" />
-                    <CartesianGrid {...chartGridProps} />
-                    <XAxis dataKey="nome" {...chartAxisXProps} />
-                    <YAxis
-                      {...chartAxisYProps}
-                      tickFormatter={fmtMoneyShort}
-                      width={48}
-                    />
-                    <Tooltip
-                      cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
-                      content={({ active, payload, label }) => {
-                        const row = payload?.[0]?.payload as
-                          | (typeof serie)[number]
-                          | undefined;
-                        if (!row) return null;
-                        return (
-                          <ChartTip
-                            active={active}
-                            label={String(label)}
-                            rows={[
-                              {
-                                label: "Pago",
-                                value: fmtMoney(row.desembolsoPago),
-                                accent: CHART.green.dark,
-                              },
-                              {
-                                label: "Projetado",
-                                value: fmtMoney(row.desembolsoProjetado),
-                                accent: "#b45309",
-                              },
-                              {
-                                label:
-                                  row.desvioDesembolso > 0
-                                    ? "Além do plano"
-                                    : row.desvioDesembolso < 0
-                                      ? "Cabe no plano"
-                                      : "vs plano",
-                                value: fmtMoney(Math.abs(row.desvioDesembolso)),
-                                muted: true,
-                              },
-                            ]}
-                          />
-                        );
-                      }}
-                    />
-                    <Legend
-                      verticalAlign="top"
-                      height={28}
-                      iconType="circle"
-                      wrapperStyle={{ fontSize: 11, fontWeight: 600 }}
-                    />
-                    <Bar
-                      dataKey="desembolsoPago"
-                      name="Pago"
-                      fill={barFillUrl("fin-des", "green")}
-                      radius={[6, 6, 2, 2]}
-                      maxBarSize={42}
-                      {...chartAnimation}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="desembolsoProjetado"
-                      name="Projetado"
-                      stroke="#b45309"
-                      strokeWidth={2.5}
-                      strokeDasharray="5 4"
-                      dot={{
-                        r: 5,
-                        strokeWidth: 2,
-                        stroke: lineActiveStroke,
-                        fill: "#b45309",
-                      }}
-                      activeDot={{ r: 7 }}
-                      {...chartAnimation}
-                    />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </ChartShell>
-            </div>
-
-            <section className="space-y-3">
-              <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                <Wallet className="h-4 w-4" />
-                Desembolso do mês
-              </h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                <Kpi
-                  title="Projetado"
+                  title="Plano (projetado)"
                   value={fmtMoney(des?.projetado)}
+                  hint="Soma ativa da grade de desembolso"
                 />
                 <Kpi
-                  title="Já pago"
+                  title="Executado (pago)"
                   value={fmtMoney(des?.pago)}
                   hint={
                     des?.pctPagoDoProjetado != null
                       ? `${fmtPct(des.pctPagoDoProjetado).replace("+", "")} do plano`
-                      : undefined
+                      : "Baixas a pagar no mês"
                   }
                 />
-                <Kpi title="Ainda não pago" value={fmtMoney(des?.naoPago)} />
                 <Kpi
-                  title={gapDesembolso.title}
-                  value={gapDesembolso.value}
-                  hint={gapDesembolso.hint}
-                  tone={gapDesembolso.tone}
+                  title="Desvio"
+                  value={fmtMoney(desvioDes)}
+                  hint={
+                    desvioDes > 0.009
+                      ? "Pago acima do plano"
+                      : desvioDes < -0.009
+                        ? "Pago abaixo do plano"
+                        : "Pago = plano"
+                  }
+                  tone={
+                    desvioDes > 0.009
+                      ? "up"
+                      : desvioDes < -0.009
+                        ? "down"
+                        : "neutral"
+                  }
                 />
                 <Kpi
-                  title="Fora do plano"
-                  value={fmtMoney(des?.pagoEmAtraso)}
-                  hint="Recorrente pago sem estar na projeção deste mês"
-                  tone={(des?.pagoEmAtraso ?? 0) > 0 ? "up" : "neutral"}
+                  title="Quanto falta"
+                  value={fmtMoney(faltaPagar)}
+                  hint="Plano − executado (o que ainda não saiu do projetado)"
                 />
               </div>
             </section>
 
+            {/* 2) Entradas — indicadores, sem misturar com desembolso */}
             <section className="space-y-3">
-              <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                <BarChart3 className="h-4 w-4" />
-                Caixa e faturamento
-              </h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  <ArrowUpRight className="h-4 w-4" />
+                  Entradas — caixa e vendas
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Não some os três: títulos em aberto e projeção de vendas são
+                  camadas diferentes.
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <Kpi
-                  title="Previsto (CA)"
-                  value={fmtMoney(rec?.previsto)}
-                  hint="Títulos Conta Azul com vencimento neste mês"
-                />
-                <Kpi
-                  title="Já recebido"
+                  title="Entrou (recebido)"
                   value={fmtMoney(rec?.recebido)}
-                  hint={
-                    rec?.pctRecebidoDoPrevisto != null
-                      ? `${fmtPct(rec.pctRecebidoDoPrevisto).replace("+", "")} do previsto`
-                      : "Baixas no mês"
-                  }
+                  hint="Baixas Conta Azul neste mês"
                   tone="down"
                 />
                 <Kpi
-                  title="Ainda a receber"
-                  value={fmtMoney(rec?.aReceberNoMes)}
-                  hint="Em aberto, vence neste mês, data ainda não passou"
-                />
-                <Kpi
-                  title="Vencido neste mês"
-                  value={fmtMoney(rec?.vencido)}
-                  hint="Em aberto, venceu neste mês e a data já passou"
-                  tone={(rec?.vencido ?? 0) > 0 ? "up" : "neutral"}
-                />
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <Kpi
-                  title="Saldo caixa (recebido − pago)"
-                  value={fmtMoney(data?.caixa.saldoRealizado)}
-                  hint="Só o que já baixou no Conta Azul neste mês"
-                  tone={
-                    (data?.caixa.saldoRealizado ?? 0) >= 0 ? "down" : "up"
+                  title="Projetado a entrar (títulos)"
+                  value={fmtMoney(aEntrarTitulos)}
+                  hint={
+                    (rec?.vencido ?? 0) > 0
+                      ? `Em aberto no mês · ${fmtMoney(rec?.vencido)} já vencido`
+                      : "Em aberto com vencimento neste mês"
                   }
                 />
                 <Kpi
-                  title="Já faturado"
+                  title="Projetado de vendas (caixa)"
+                  value={fmtMoney(pv?.aindaEntraProjetado)}
+                  hint={
+                    pv && pv.diasRestantes > 0
+                      ? `Média "Receitas de Vendas" · últimos ${pv.diasRestantes} dias jul/ago — não some com títulos`
+                      : "Sem dias restantes neste mês"
+                  }
+                />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Kpi
+                  title="Vendas já faturadas"
                   value={fmtMoney(rec?.vendasCompetencia.vendasFaturadas)}
-                  hint="Pedidos faturados — volume, não é o mesmo que recebido"
+                  hint="Volume de pedidos venda no mês (não é caixa)"
                 />
                 <Kpi
                   title="Orçamentos no mês"
                   value={fmtMoney(rec?.vendasCompetencia.orcamentos)}
-                  hint="Volume de orçamento (só conta se virar venda / caixa depois)"
-                />
-                <Kpi
-                  title="Ainda entra (caixa proj.)"
-                  value={fmtMoney(pv?.aindaEntraProjetado)}
-                  hint={
-                    pv
-                      ? `Só categoria "Receitas de Vendas" · média últimos ${pv.diasRestantes} dia(s) jul/ago`
-                      : undefined
-                  }
+                  hint="Pipeline — só vira caixa depois de virar venda/NF"
                 />
               </div>
-
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                <strong className="text-foreground">Não some tudo.</strong>{" "}
-                Conta Azul (previsto ≈ recebido + a receber + vencido) é{" "}
-                <em>caixa por vencimento</em>. Faturado, orçamento e “ainda
-                entra” são <em>volume de pedidos</em> — outra conta. Orçamento e
-                “ainda entra” ainda não são dinheiro recebido.
-              </p>
             </section>
 
+            {/* 3) Um gráfico: tendência 3 meses (o que os KPIs do mês não mostram) */}
             <ChartShell
-              title="Caixa — recebido e saldo em 3 meses"
-              description="Área = recebido Conta Azul · linha = saldo (recebido − desembolso pago). Linha zero de referência."
-              className="lg:col-span-2"
+              title="Tendência 3 meses — entrou × saiu"
+              description="Barras = recebido · linha = desembolso pago. Saldo no tooltip."
             >
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
                   data={serie}
                   margin={{ top: 12, right: 16, left: 4, bottom: 4 }}
                 >
-                  <ChartAreaUnderLineDefs
-                    prefix="fin-caixa"
-                    colorMid={CHART.blue.mid}
-                  />
+                  <ChartBarFillDefs prefix="fin-fluxo" />
                   <CartesianGrid {...chartGridProps} />
                   <XAxis dataKey="nome" {...chartAxisXProps} />
                   <YAxis
@@ -794,11 +428,11 @@ export default function FinanceiroDashboardPage() {
                   <ReferenceLine
                     y={0}
                     stroke="currentColor"
-                    strokeOpacity={0.35}
+                    strokeOpacity={0.3}
                     strokeDasharray="4 4"
                   />
                   <Tooltip
-                    cursor={chartTooltipCursorLine}
+                    cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
                     content={({ active, payload, label }) => {
                       const row = payload?.[0]?.payload as
                         | (typeof serie)[number]
@@ -810,22 +444,25 @@ export default function FinanceiroDashboardPage() {
                           label={String(label)}
                           rows={[
                             {
-                              label: "Recebido",
+                              label: "Entrou",
                               value: fmtMoney(row.recebido),
                               accent: CHART.blue.stroke,
                             },
                             {
-                              label: "Em aberto",
-                              value: fmtMoney(row.aReceber),
-                              muted: true,
+                              label: "Saiu",
+                              value: fmtMoney(row.desembolsoPago),
+                              accent: "#b45309",
                             },
                             {
-                              label: "Saldo caixa",
+                              label: "Saldo (entrou − saiu)",
                               value: fmtMoney(row.saldo),
                               accent:
-                                row.saldo >= 0
-                                  ? CHART.green.dark
-                                  : "#dc2626",
+                                row.saldo >= 0 ? CHART.green.dark : "#dc2626",
+                            },
+                            {
+                              label: "Faturado (volume)",
+                              value: fmtMoney(row.vendasFaturadas),
+                              muted: true,
                             },
                           ]}
                         />
@@ -838,40 +475,25 @@ export default function FinanceiroDashboardPage() {
                     iconType="circle"
                     wrapperStyle={{ fontSize: 11, fontWeight: 600 }}
                   />
-                  <Area
-                    type="monotone"
+                  <Bar
                     dataKey="recebido"
-                    name="Recebido"
-                    stroke="none"
-                    fill="url(#fin-caixa-area)"
-                    legendType="none"
+                    name="Entrou"
+                    fill={barFillUrl("fin-fluxo", "blue")}
+                    radius={[6, 6, 2, 2]}
+                    maxBarSize={36}
                     {...chartAnimation}
                   />
                   <Line
                     type="monotone"
-                    dataKey="recebido"
-                    name="Recebido"
-                    stroke={CHART.blue.stroke}
-                    strokeWidth={2.25}
-                    dot={{
-                      r: 4,
-                      strokeWidth: 2,
-                      stroke: lineActiveStroke,
-                      fill: CHART.blue.stroke,
-                    }}
-                    {...chartAnimation}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="saldo"
-                    name="Saldo caixa"
-                    stroke={CHART.green.dark}
-                    strokeWidth={2.75}
+                    dataKey="desembolsoPago"
+                    name="Saiu"
+                    stroke="#b45309"
+                    strokeWidth={2.5}
                     dot={{
                       r: 5,
                       strokeWidth: 2,
                       stroke: lineActiveStroke,
-                      fill: CHART.green.dark,
+                      fill: "#b45309",
                     }}
                     activeDot={{ r: 7 }}
                     {...chartAnimation}
@@ -880,77 +502,20 @@ export default function FinanceiroDashboardPage() {
               </ResponsiveContainer>
             </ChartShell>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Resumo da série</CardTitle>
-              </CardHeader>
-              <CardContent className="overflow-x-auto">
-                <table className="w-full min-w-[640px] text-sm">
-                  <thead>
-                    <tr className="border-b text-left text-xs text-muted-foreground">
-                      <th className="py-2 pr-2 font-medium">Mês</th>
-                      <th className="py-2 pr-2 text-right font-medium">
-                        Vendas real
-                      </th>
-                      <th className="py-2 pr-2 text-right font-medium">
-                        Vendas proj.
-                      </th>
-                      <th className="py-2 pr-2 text-right font-medium">
-                        vs projeção
-                      </th>
-                      <th className="py-2 pr-2 text-right font-medium">
-                        Desemb. pago
-                      </th>
-                      <th className="py-2 pr-2 text-right font-medium">
-                        Desemb. proj.
-                      </th>
-                      <th className="py-2 text-right font-medium">Saldo</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(data?.serie3Meses ?? []).map(m => (
-                      <tr
-                        key={m.mesYm}
-                        className={`border-b border-border/60 ${m.aberto ? "bg-muted/30" : ""}`}
-                      >
-                        <td className="py-2 pr-2 font-medium capitalize">
-                          {m.labelMes}
-                          {m.aberto ? (
-                            <span className="ml-1.5 text-[10px] font-normal uppercase text-muted-foreground">
-                              foco
-                            </span>
-                          ) : null}
-                        </td>
-                        <td className="py-2 pr-2 text-right tabular-nums">
-                          {fmtMoney(m.vendasReal)}
-                        </td>
-                        <td className="py-2 pr-2 text-right tabular-nums text-muted-foreground">
-                          {fmtMoney(m.vendasProjetado)}
-                        </td>
-                        <td className="py-2 pr-2 text-right tabular-nums text-muted-foreground">
-                          {textoVsProjecao(m.desvioVendas, m.aberto)}
-                        </td>
-                        <td className="py-2 pr-2 text-right tabular-nums">
-                          {fmtMoney(m.desembolsoPago)}
-                        </td>
-                        <td className="py-2 pr-2 text-right tabular-nums text-muted-foreground">
-                          {fmtMoney(m.desembolsoProjetado)}
-                        </td>
-                        <td
-                          className={`py-2 text-right tabular-nums font-medium ${
-                            m.saldoCaixa >= 0
-                              ? "text-emerald-700"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {fmtMoney(m.saldoCaixa)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </CardContent>
-            </Card>
+            <p className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
+              <Wallet className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>
+                Detalhe por rúbrica e baixas fica no{" "}
+                <Link
+                  href="/financeiro-cfo/comparativo"
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  comparativo
+                </Link>
+                . Orçamento e “projetado de vendas” não devem ser somados aos
+                títulos em aberto.
+              </span>
+            </p>
           </>
         )}
       </main>
