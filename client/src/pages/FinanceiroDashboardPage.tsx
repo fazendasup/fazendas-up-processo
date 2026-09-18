@@ -657,23 +657,6 @@ export default function FinanceiroDashboardPage() {
               </div>
             </section>
 
-            {/* Resultado projetado: receita caixa − desembolso plano */}
-            <section>
-              <Kpi
-                title="Saldo projetado do mês"
-                value={fmtMoney(data?.caixa.gapCaixaMes)}
-                hint={
-                  pv && des
-                    ? `Receita caixa projetada ${fmtMoney(pv.projecaoMesTotal)} − desembolso plano ${fmtMoney(des.projetado)}`
-                    : "Receita (recebido + aberto + ainda entra) − desembolso projetado"
-                }
-                tone={
-                  (data?.caixa.gapCaixaMes ?? 0) >= 0 ? "down" : "up"
-                }
-                href={kpiHref("saldo-projetado")}
-              />
-            </section>
-
             {/* 2) Entradas — vencido separado */}
             <section className="space-y-3">
               <div>
@@ -683,7 +666,7 @@ export default function FinanceiroDashboardPage() {
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Camadas do caixa: recebido, em aberto e ainda entra. A soma
-                  delas é a receita projetada usada no saldo acima — não
+                  delas é a receita projetada usada no saldo abaixo — não
                   misture com faturado/orçamento (volume).
                 </p>
               </div>
@@ -733,6 +716,23 @@ export default function FinanceiroDashboardPage() {
                   href={kpiHref("orcamentos")}
                 />
               </div>
+            </section>
+
+            {/* Resultado projetado: receita caixa − desembolso plano */}
+            <section>
+              <Kpi
+                title="Saldo projetado do mês"
+                value={fmtMoney(data?.caixa.gapCaixaMes)}
+                hint={
+                  pv && des
+                    ? `Receita caixa projetada ${fmtMoney(pv.projecaoMesTotal)} − desembolso plano ${fmtMoney(des.projetado)}`
+                    : "Receita (recebido + aberto + ainda entra) − desembolso projetado"
+                }
+                tone={
+                  (data?.caixa.gapCaixaMes ?? 0) >= 0 ? "down" : "up"
+                }
+                href={kpiHref("saldo-projetado")}
+              />
             </section>
 
             {/* 3) Mapa de ação: essencial (proteger) × cortável (reduzir) */}
