@@ -1217,7 +1217,7 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                             {fmtMoney(data.mediaFaturamento.totalHorizonte)}
                             <span className="block text-[9px]">
                               ({fmtMoney(data.mediaFaturamento.mensal)}/mês ·
-                              venda+frete
+                              vendas líquido
                               {data.mediaFaturamento.meses?.length
                                 ? ` · ${data.mediaFaturamento.meses
                                     .map(m => {

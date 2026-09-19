@@ -204,13 +204,15 @@ function roundMoney(n: number): number {
 }
 
 /**
- * Média de faturamento (venda + frete) dos 3 meses imediatamente
- * anteriores a `mesAtualYm` (não inclui o mês atual).
- * Ex.: mesAtualYm=2026-09 → jun, jul, ago/2026.
- * Fonte: baixas Conta Azul — exclui transferência e investimento/aporte.
+ * Média de faturamento dos 3 meses imediatamente anteriores a `mesAtualYm`
+ * (não inclui o mês atual). Ex.: 2026-09 → jun, jul, ago.
+ *
+ * Fonte: pedidos Conta Azul por **mês da venda** (data do pedido),
+ * valor líquido = bruto + frete − desconto — mesmo critério do
+ * relatório “Total de vendas por mês” do Conta Azul.
  */
 async function carregarMediaFaturamento3Meses(
-  projetoId: number,
+  _projetoId: number,
   mesAtualYm: string,
 ): Promise<{
   mensal: number;
@@ -220,34 +222,49 @@ async function carregarMediaFaturamento3Meses(
   const m1 = mesAnteriorProjecao(m2);
   const m0 = mesAnteriorProjecao(m1);
   const lista = [m0, m1, m2];
+  const porMes = new Map(lista.map(ym => [ym, 0]));
 
-  const meses = await Promise.all(
-    lista.map(async ym => {
-      const { inicio, fim } = boundsMesYmAmericaSp(ym);
-      let vendas = 0;
-      try {
-        const raw = await buscarBaixasReceberPorPeriodoPagamento(
-          inicio,
-          fim,
-          projetoId,
-        );
-        for (const p of raw.map(toBase)) {
-          if (ehTransferenciaEntreContas(p.descricao, p.rubrica)) continue;
-          if (!ehReceitaVendasCaixa(p)) continue;
-          const pago = valorPagoParcela(p);
-          if (pago > 0) vendas += pago;
-        }
-      } catch (err) {
-        console.error(
-          `[financeiro] mediaFaturamento ${ym}:`,
-          err instanceof Error ? err.message : err,
-        );
-      }
-      return { mesYm: ym, vendas: roundMoney(vendas) };
-    }),
-  );
+  const { inicio } = boundsMesYmAmericaSp(m0);
+  const { fim } = boundsMesYmAmericaSp(m2);
 
-  // Sempre divide pelos 3 meses do horizonte (mês zerado puxa a média para baixo).
+  try {
+    const prisma = getComercialPrisma();
+    const pedidos = await prisma.pedido.findMany({
+      where: {
+        origemPedido: OrigemPedido.CONTA_AZUL,
+        dataPedido: { gte: inicio, lte: fim },
+      },
+      select: {
+        dataPedido: true,
+        statusPedido: true,
+        valorTotal: true,
+        valorBruto: true,
+        valorFrete: true,
+        valorDesconto: true,
+        valorLiquido: true,
+        composicaoDetalhada: true,
+      },
+    });
+
+    for (const p of pedidos) {
+      if (classificarStatusPedido(p.statusPedido) !== "venda") continue;
+      const liquido = composicaoDoPedidoParaDashboard(p).valorLiquido;
+      if (!Number.isFinite(liquido) || liquido === 0) continue;
+      const ym = diaIsoAmericaSp(p.dataPedido).slice(0, 7);
+      if (!porMes.has(ym)) continue;
+      porMes.set(ym, (porMes.get(ym) ?? 0) + liquido);
+    }
+  } catch (err) {
+    console.error(
+      `[financeiro] mediaFaturamento pedidos:`,
+      err instanceof Error ? err.message : err,
+    );
+  }
+
+  const meses = lista.map(ym => ({
+    mesYm: ym,
+    vendas: roundMoney(porMes.get(ym) ?? 0),
+  }));
   const mensal =
     meses.length > 0
       ? roundMoney(meses.reduce((s, m) => s + m.vendas, 0) / meses.length)
@@ -323,7 +340,7 @@ export async function carregarProjecaoDesembolso(
       "Essenciais (energia, aluguel, salário, insumos, lanches, embalagens, tarifas bancárias, combustível, hortifruti…) já entram como projetado recorrente.",
       "Demais itens: valor sugerido — marque o checkbox se vai continuar.",
       "Total da projeção = só os 3 meses à frente (mês anterior não entra).",
-      "Média fat. = baixas a receber (venda + frete) dos 3 meses anteriores ao mês atual; sem transferência/investimento; total = média × meses da projeção.",
+      "Média fat. = vendas Conta Azul (líquido = bruto + frete − desconto) dos 3 meses anteriores ao mês atual, por data do pedido; total = média × meses da projeção.",
       "Mês anterior = contexto executado (somente leitura).",
     ],
   };
@@ -909,8 +926,14 @@ export async function carregarFinanceiroDashboard(
   });
 
   const mesAtual = serie3Meses[2]!;
+  const naoPlanejadoDash = Math.round(
+    ((dMes.totais.pagoEmAtraso ?? 0) + (dMes.totais.pagoAMais ?? 0)) * 100,
+  ) / 100;
   const gapCaixaMes = Math.round(
-    (rMes.projecaoVendas.projecaoMesTotal - dMes.totais.projetadoEfetivo) * 100,
+    (rMes.projecaoVendas.projecaoMesTotal -
+      dMes.totais.projetadoEfetivo -
+      naoPlanejadoDash) *
+      100,
   ) / 100;
 
   const periodoMeta = {
@@ -1418,7 +1441,16 @@ export async function carregarDashboardKpiDetalhe(
   if (kpi === "saldo-projetado") {
     const dash = await carregarFinanceiroDashboard(projetoId, mesYm);
     const receitaProj = dash.projecaoVendas.projecaoMesTotal;
-    const desembolsoProj = dash.desembolsoTotais.projetado;
+    const desembolsoPlano = dash.desembolsoTotais.projetado;
+    const saldoLib = dash.desembolsoTotais.abateConcluidas ?? 0;
+    const naoPlanejado = Math.round(
+      ((dash.desembolsoTotais.pagoEmAtraso ?? 0) +
+        (dash.desembolsoTotais.pagoAMais ?? 0)) *
+        100,
+    ) / 100;
+    const desembolsoEfetivo =
+      dash.desembolsoTotais.projetadoEfetivo ??
+      Math.round((desembolsoPlano - saldoLib) * 100) / 100;
     const gap = dash.caixa.gapCaixaMes;
     const linhas: DashboardKpiLinha[] = [
       {
@@ -1426,22 +1458,6 @@ export async function carregarDashboardKpiDetalhe(
         titulo: "Entrou (recebido)",
         subtitulo: "Baixas Conta Azul no mês",
         valor: dash.receita.recebido,
-        meta: "+ receita",
-        grupo: "Receita caixa",
-      },
-      {
-        id: "a-receber",
-        titulo: "A receber (no prazo)",
-        subtitulo: "Em aberto, ainda não venceu",
-        valor: dash.receita.aReceberNoMes,
-        meta: "+ receita",
-        grupo: "Receita caixa",
-      },
-      {
-        id: "em-atraso",
-        titulo: "Em atraso",
-        subtitulo: "Em aberto, já venceu neste mês",
-        valor: dash.receita.vencido,
         meta: "+ receita",
         grupo: "Receita caixa",
       },
@@ -1459,24 +1475,56 @@ export async function carregarDashboardKpiDetalhe(
       {
         id: "receita-total",
         titulo: "Receita caixa projetada",
-        subtitulo: "Soma das camadas acima",
+        subtitulo: "Recebido + ainda entra (não soma a receber)",
         valor: receitaProj,
         meta: "subtotal",
         grupo: "Receita caixa",
       },
       {
-        id: "desembolso",
-        titulo: "Desembolso plano (projetado)",
+        id: "desembolso-plano",
+        titulo: "Desembolso plano",
         subtitulo: "Grade ativa de desembolso",
-        valor: -desembolsoProj,
+        valor: -desembolsoPlano,
         meta: "− despesa",
         grupo: "Despesa",
       },
+      ...(saldoLib > 0.009
+        ? [
+            {
+              id: "saldo-liberado",
+              titulo: "Saldo liberado (rúbricas concluídas)",
+              subtitulo: "Abate do plano — pagou a menos e marcou Concluir",
+              valor: saldoLib,
+              meta: "+ abate",
+              grupo: "Despesa",
+            } satisfies DashboardKpiLinha,
+          ]
+        : []),
+      {
+        id: "desembolso-efetivo",
+        titulo: "Desembolso efetivo",
+        subtitulo: "Plano − saldo liberado",
+        valor: -desembolsoEfetivo,
+        meta: "subtotal",
+        grupo: "Despesa",
+      },
+      ...(naoPlanejado > 0.009
+        ? [
+            {
+              id: "nao-planejado",
+              titulo: "Não planejado",
+              subtitulo: "Fora do plano + pago a mais (já saiu da conta)",
+              valor: -naoPlanejado,
+              meta: "− despesa",
+              grupo: "Despesa",
+            } satisfies DashboardKpiLinha,
+          ]
+        : []),
     ];
     return linhasDe(
       linhas,
       "Saldo projetado do mês",
-      "Receita caixa projetada (recebido + ainda entra) − desembolso projetado. Este é o resultado de caixa esperado ao fechar o mês.",
+      "Receita caixa − desembolso efetivo (plano − saldo liberado) − não planejado. Resultado de caixa esperado ao fechar o mês.",
       gap,
     );
   }

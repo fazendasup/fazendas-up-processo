@@ -510,10 +510,50 @@ describe("montarFinanceiroComparativo", () => {
       diaHoje: 17,
     });
     expect(out.caixa.saldoRealizado).toBe(3_000);
-    // Projeção caixa: recebido 5k + ainda entra 3k = 8k; − desembolso 2k
+    // Projeção caixa: recebido 5k + ainda entra 3k = 8k; − desembolso 2k; sem não planejado
     expect(out.receita.projecaoVendas.aindaEntraProjetado).toBe(3_000);
     expect(out.receita.projecaoVendas.projecaoMesTotal).toBe(8_000);
     expect(out.caixa.gapCaixaMes).toBe(6_000);
+  });
+
+  it("abate nao planejado (fora do plano + pago a mais) no saldo projetado", () => {
+    const out = montarFinanceiroComparativo({
+      mesYm: "2026-09",
+      linhasProjecao: [linhaProj("Insumos", 2_000)],
+      parcelasPagarMes: [
+        parcela({
+          id: "p-plano",
+          descricao: "No plano",
+          rubrica: "Insumos",
+          valorPago: 2_500,
+          dataPagamento: "2026-09-01",
+        }),
+        parcela({
+          id: "p-fora",
+          descricao: "Avulso sem linha",
+          rubrica: "Outros",
+          valorPago: 400,
+          dataPagamento: "2026-09-03",
+        }),
+      ],
+      parcelasReceberMes: [
+        parcela({
+          id: "r",
+          descricao: "Rec",
+          valor: 10_000,
+          valorPago: 10_000,
+          dataPagamento: "2026-09-02",
+          dataVencimento: "2026-09-02",
+        }),
+      ],
+      hojeYm: "2026-09",
+      diaHoje: 28,
+    });
+    // pago a mais 500 (Insumos) + não programada 400 (Outros) = 900
+    expect(out.desembolso.totais.pagoAMais).toBe(900);
+    expect(out.desembolso.totais.pagoEmAtraso).toBe(0);
+    // receita 10k − plano 2k − não planejado 900 = 7.1k
+    expect(out.caixa.gapCaixaMes).toBe(7_100);
   });
 });
 

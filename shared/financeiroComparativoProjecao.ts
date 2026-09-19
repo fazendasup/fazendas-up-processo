@@ -822,16 +822,23 @@ export function montarFinanceiroComparativo(input: {
     hojeYm: input.hojeYm,
     diaHoje: input.diaHoje,
   });
+  const naoPlanejado = round2(
+    desembolso.totais.pagoEmAtraso + desembolso.totais.pagoAMais,
+  );
   return {
     mesYm: input.mesYm,
     desembolso,
     receita,
     caixa: {
       saldoRealizado: round2(receita.recebido - desembolso.totais.pago),
-      /** Projeção de caixa do mês vs desembolso efetivo (após abate concluídas). */
+      /**
+       * Receita caixa projetada − desembolso efetivo − não planejado
+       * (fora do plano + pago a mais).
+       */
       gapCaixaMes: round2(
         receita.projecaoVendas.projecaoMesTotal -
-          desembolso.totais.projetadoEfetivo,
+          desembolso.totais.projetadoEfetivo -
+          naoPlanejado,
       ),
     },
   };

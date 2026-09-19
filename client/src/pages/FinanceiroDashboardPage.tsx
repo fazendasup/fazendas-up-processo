@@ -924,15 +924,31 @@ export default function FinanceiroDashboardPage() {
               </div>
             </section>
 
-            {/* Resultado projetado: receita caixa − desembolso plano */}
+            {/* Resultado projetado: receita caixa − desembolso efetivo */}
             <section>
               <Kpi
                 title="Saldo projetado do mês"
                 value={fmtMoney(data?.caixa.gapCaixaMes)}
                 hint={
                   pv && des
-                    ? `Receita caixa projetada ${fmtMoney(pv.projecaoMesTotal)} − desembolso plano ${fmtMoney(des.projetado)}`
-                    : "Receita (recebido + ainda entra) − desembolso projetado"
+                    ? (() => {
+                        const parts = [
+                          `Receita caixa ${fmtMoney(pv.projecaoMesTotal)}`,
+                          `− plano ${fmtMoney(des.projetado)}`,
+                        ];
+                        if (saldoLiberado > 0.009) {
+                          parts.push(
+                            `+ saldo liberado ${fmtMoney(saldoLiberado)}`,
+                          );
+                        }
+                        if (naoPlanejado > 0.009) {
+                          parts.push(
+                            `− não planejado ${fmtMoney(naoPlanejado)}`,
+                          );
+                        }
+                        return parts.join(" ");
+                      })()
+                    : "Receita caixa − desembolso efetivo − não planejado"
                 }
                 tone={
                   (data?.caixa.gapCaixaMes ?? 0) >= 0 ? "down" : "up"
