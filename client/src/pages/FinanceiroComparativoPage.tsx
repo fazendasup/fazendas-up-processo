@@ -10,6 +10,16 @@ import {
   TrendingDown,
   Wallet,
 } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import Header from "@/components/Header";
@@ -19,6 +29,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { StatusRubricaComparativo } from "@shared/financeiroComparativoProjecao";
+
+const COR_EXECUTADO = "#059669";
+const COR_FALTA = "#d97706";
+const COR_PASSOU = "#dc2626";
+const COR_SALDO = "#0ea5e9";
 
 function mesAtualYm(): string {
   const d = new Date();
@@ -38,10 +53,27 @@ function fmtMoney(n: number | null | undefined): string {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function fmtMoneyShort(n: number): string {
+  if (!Number.isFinite(n)) return "—";
+  if (Math.abs(n) >= 1_000_000) {
+    return `R$ ${(n / 1_000_000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}M`;
+  }
+  if (Math.abs(n) >= 1_000) {
+    return `R$ ${(n / 1_000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}k`;
+  }
+  return fmtMoney(n);
+}
+
 function fmtPct(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "—";
   const sign = n > 0 ? "+" : "";
   return `${sign}${n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
+}
+
+function encurtarNome(s: string, max = 22): string {
+  const t = s.trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, max - 1)}…`;
 }
 
 function statusLabel(s: StatusRubricaComparativo): string {
@@ -108,6 +140,43 @@ export default function FinanceiroComparativoPage() {
 
   const rubricas = useMemo(() => d?.rubricas ?? [], [d?.rubricas]);
   const [abertas, setAbertas] = useState<Set<string>>(() => new Set());
+
+  const chartAindaFalta = useMemo(() => {
+    return rubricas
+      .filter(
+        r =>
+          r.concluida !== true &&
+          r.projetado > 0.009 &&
+          (r.naoPago > 0.009 || r.pagoAMais > 0.009 || r.pago > 0.009),
+      )
+      .map(r => {
+        const executado = Math.round(Math.min(r.pago, r.projetado) * 100) / 100;
+        return {
+          name: encurtarNome(r.rubrica),
+          full: r.rubrica,
+          executado,
+          falta: Math.round(r.naoPago * 100) / 100,
+          passou: Math.round(r.pagoAMais * 100) / 100,
+        };
+      })
+      .filter(r => r.executado + r.falta + r.passou > 0.009)
+      .sort((a, b) => b.falta + b.passou - (a.falta + a.passou))
+      .slice(0, 14);
+  }, [rubricas]);
+
+  const chartConcluidas = useMemo(() => {
+    return rubricas
+      .filter(r => r.concluida === true && (r.pago > 0.009 || (r.saldoLiberado ?? 0) > 0.009))
+      .map(r => ({
+        name: encurtarNome(r.rubrica),
+        full: r.rubrica,
+        pago: Math.round(r.pago * 100) / 100,
+        saldo: Math.round((r.saldoLiberado ?? 0) * 100) / 100,
+        projetado: Math.round(r.projetado * 100) / 100,
+      }))
+      .sort((a, b) => b.pago + b.saldo - (a.pago + a.saldo))
+      .slice(0, 14);
+  }, [rubricas]);
 
   const marcarConcluida = trpc.financeiroCfo.marcarRubricaConcluida.useMutation({
     onSuccess: async () => {
@@ -491,6 +560,179 @@ export default function FinanceiroComparativoPage() {
                 )}
               </CardContent>
             </Card>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">
+                    Ainda falta pagar
+                  </CardTitle>
+                  <p className="text-xs font-normal text-muted-foreground">
+                    Rúbricas em aberto: o que já saiu (executado), o que falta e
+                    o que já passou do plano.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  {chartAindaFalta.length === 0 ? (
+                    <p className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+                      Nenhuma rúbrica com saldo em aberto neste mês.
+                    </p>
+                  ) : (
+                    <div
+                      className="w-full"
+                      style={{
+                        height: Math.max(280, chartAindaFalta.length * 36),
+                      }}
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          layout="vertical"
+                          data={chartAindaFalta}
+                          margin={{ top: 4, right: 16, left: 4, bottom: 4 }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            horizontal={false}
+                            className="stroke-border/60"
+                          />
+                          <XAxis
+                            type="number"
+                            tickFormatter={fmtMoneyShort}
+                            tick={{ fontSize: 10 }}
+                          />
+                          <YAxis
+                            type="category"
+                            dataKey="name"
+                            width={110}
+                            tick={{ fontSize: 10 }}
+                          />
+                          <Tooltip
+                            cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
+                            formatter={(value: number, name: string) => [
+                              fmtMoney(value),
+                              name,
+                            ]}
+                            labelFormatter={(_, payload) =>
+                              (payload?.[0]?.payload as { full?: string } | undefined)
+                                ?.full ?? ""
+                            }
+                          />
+                          <Legend wrapperStyle={{ fontSize: 11 }} />
+                          <Bar
+                            dataKey="executado"
+                            name="Executado"
+                            stackId="a"
+                            fill={COR_EXECUTADO}
+                            radius={[0, 0, 0, 0]}
+                            maxBarSize={18}
+                          />
+                          <Bar
+                            dataKey="falta"
+                            name="Falta pagar"
+                            stackId="a"
+                            fill={COR_FALTA}
+                            maxBarSize={18}
+                          />
+                          <Bar
+                            dataKey="passou"
+                            name="Passou do plano"
+                            stackId="a"
+                            fill={COR_PASSOU}
+                            radius={[0, 4, 4, 0]}
+                            maxBarSize={18}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">
+                    Executado / concluído
+                  </CardTitle>
+                  <p className="text-xs font-normal text-muted-foreground">
+                    Rúbricas marcadas como concluídas: valor pago e saldo
+                    liberado (quando pagou a menos).
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  {chartConcluidas.length === 0 ? (
+                    <p className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+                      Nenhuma rúbrica concluída neste mês. Use{" "}
+                      <strong className="mx-1">Concluir</strong> na tabela.
+                    </p>
+                  ) : (
+                    <div
+                      className="w-full"
+                      style={{
+                        height: Math.max(280, chartConcluidas.length * 36),
+                      }}
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          layout="vertical"
+                          data={chartConcluidas}
+                          margin={{ top: 4, right: 16, left: 4, bottom: 4 }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            horizontal={false}
+                            className="stroke-border/60"
+                          />
+                          <XAxis
+                            type="number"
+                            tickFormatter={fmtMoneyShort}
+                            tick={{ fontSize: 10 }}
+                          />
+                          <YAxis
+                            type="category"
+                            dataKey="name"
+                            width={110}
+                            tick={{ fontSize: 10 }}
+                          />
+                          <Tooltip
+                            cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
+                            formatter={(value: number, name: string) => [
+                              fmtMoney(value),
+                              name,
+                            ]}
+                            labelFormatter={(_, payload) => {
+                              const row = payload?.[0]?.payload as
+                                | {
+                                    full?: string;
+                                    projetado?: number;
+                                  }
+                                | undefined;
+                              if (!row?.full) return "";
+                              return `${row.full} · plano ${fmtMoney(row.projetado)}`;
+                            }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: 11 }} />
+                          <Bar
+                            dataKey="pago"
+                            name="Pago"
+                            stackId="b"
+                            fill={COR_EXECUTADO}
+                            maxBarSize={18}
+                          />
+                          <Bar
+                            dataKey="saldo"
+                            name="Saldo liberado"
+                            stackId="b"
+                            fill={COR_SALDO}
+                            radius={[0, 4, 4, 0]}
+                            maxBarSize={18}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
 
             <p className="flex items-start gap-2 text-xs text-muted-foreground">
               <TrendingDown className="mt-0.5 h-3.5 w-3.5 shrink-0" />
