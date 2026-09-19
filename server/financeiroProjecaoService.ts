@@ -1,6 +1,7 @@
 import {
   buscarBaixasReceberPorPeriodoPagamento,
   buscarParcelasPagarParaProjecao,
+  buscarParcelasPagarHistoricoVencimento,
   buscarParcelasReceberParaComparativo,
   fetchCatalogoCategorias,
   idsCategoriasReceitaVendas,
@@ -719,6 +720,7 @@ export async function carregarFinanceiroDashboard(
     receberPeriodo,
     rubricasConcluidas,
     saldoCa,
+    pagarImpostosHistorico,
   ] = await Promise.all([
     carregarProjecaoDesembolso(projetoId, mes2, { forceRefreshCa: force }),
     carregarProjecaoDesembolso(projetoId, mesYm, { forceRefreshCa: force }),
@@ -812,6 +814,10 @@ export async function carregarFinanceiroDashboard(
       },
       aviso: "Falha ao consultar saldos bancários.",
     })),
+    // Único indicador com histórico completo (não só mês âncora).
+    buscarParcelasPagarHistoricoVencimento(projetoId, {
+      vencAteIso: hojeIso,
+    }).then(r => r.map(toBase)),
   ]);
 
   const desembolsoDe = (
@@ -1034,7 +1040,7 @@ export async function carregarFinanceiroDashboard(
   }
 
   const impostosEncargosAtrasados = agregarImpostosEncargosAtrasados(
-    [...pagar2, ...pagar1, ...pagarMes, ...pagarPeriodo],
+    pagarImpostosHistorico,
     hojeIso,
   );
 
@@ -1648,17 +1654,12 @@ export async function carregarDashboardKpiDetalhe(
   }
 
   if (kpi === "impostos-atrasados") {
-    const mes1 = mesAnteriorProjecao(mesYm);
-    const mes2 = mesAnteriorProjecao(mes1);
-    const [pagar2, pagar1, pagarMes] = await Promise.all([
-      carregarParcelasBaseMes(projetoId, mes2),
-      carregarParcelasBaseMes(projetoId, mes1),
-      carregarParcelasBaseMes(projetoId, mesYm),
-    ]);
-    const agg = agregarImpostosEncargosAtrasados(
-      [...pagar2, ...pagar1, ...pagarMes],
-      hojeIso,
-    );
+    const pagarHist = (
+      await buscarParcelasPagarHistoricoVencimento(projetoId, {
+        vencAteIso: hojeIso,
+      })
+    ).map(toBase);
+    const agg = agregarImpostosEncargosAtrasados(pagarHist, hojeIso);
     return linhasDe(
       agg.detalhes.map(t => ({
         id: t.id,
@@ -1669,7 +1670,7 @@ export async function carregarDashboardKpiDetalhe(
         grupo: t.rubrica,
       })),
       "Impostos e encargos atrasados",
-      "Contas a pagar em aberto, com vencimento já passado, classificadas como imposto/tributo/encargo (DAS, FGTS, INSS, etc.). Janela: mês atual + 2 anteriores.",
+      "Contas a pagar em aberto, com vencimento já passado, classificadas como imposto/tributo/encargo (DAS, FGTS, INSS, etc.). Varre todo o histórico (desde 2020) — único KPI do dashboard com período completo.",
       agg.total,
     );
   }

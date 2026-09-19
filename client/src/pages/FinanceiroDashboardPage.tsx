@@ -932,7 +932,8 @@ export default function FinanceiroDashboardPage() {
                   Obrigações — impostos e encargos
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Títulos a pagar em atraso (DAS, FGTS, INSS e afins).
+                  Títulos a pagar em atraso (DAS, FGTS, INSS e afins) — todo o
+                  histórico em aberto, não só o mês atual.
                 </p>
               </div>
               <Kpi
@@ -940,7 +941,7 @@ export default function FinanceiroDashboardPage() {
                 value={fmtMoney(data?.impostosEncargosAtrasados?.total)}
                 hint={
                   (data?.impostosEncargosAtrasados?.qtd ?? 0) > 0
-                    ? `${data!.impostosEncargosAtrasados.qtd} título(s) em aberto com vencimento passado`
+                    ? `${data!.impostosEncargosAtrasados.qtd} título(s) em aberto com vencimento passado · período completo`
                     : "Nenhum título tributário/encargo vencido em aberto"
                 }
                 tone={

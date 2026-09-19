@@ -1004,6 +1004,81 @@ export async function buscarParcelasPagarParaProjecao(
   return parcelasAtivasParaRelatorio(pagar);
 }
 
+/**
+ * Contas a pagar por vencimento em janela longa (histórico completo).
+ * Uso exclusivo do KPI de impostos/encargos — único indicador do dashboard
+ * que varre todo o período, não só o mês âncora.
+ */
+export async function buscarParcelasPagarHistoricoVencimento(
+  projetoId: number,
+  opts?: { vencDeIso?: string; vencAteIso?: string },
+): Promise<ParcelaFinanceiraNorm[]> {
+  const vencDe = opts?.vencDeIso ?? "2020-01-01";
+  const vencAte = opts?.vencAteIso ?? diaIsoAmericaSp();
+  const env = getComercialEnv();
+  const prisma = getComercialPrisma();
+  const cred = await ensureValidAccessToken(prisma, env);
+  if (!cred?.accessToken) {
+    throw new Error(
+      "Conta Azul não conectado. Configure em Comercial → Configurações.",
+    );
+  }
+  const http = createContaAzulHttp(env, cred.accessToken);
+  const [classifs, catalogo] = await Promise.all([
+    listFinanceiroCaClassificacoes(projetoId),
+    fetchCatalogoCategorias(),
+  ]);
+  const tamanho = 200;
+  const maxPaginas = 80;
+  const porId = new Map<string, ParcelaCaRaw>();
+
+  for (let pagina = 1; pagina <= maxPaginas; pagina++) {
+    const qs = new URLSearchParams({
+      pagina: String(pagina),
+      tamanho_pagina: String(tamanho),
+      data_vencimento_de: vencDe,
+      data_vencimento_ate: vencAte,
+    });
+    let res: BuscaParcelasResponse;
+    try {
+      res = await fetchParcelasPagina(
+        http,
+        "/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar",
+        qs,
+      );
+    } catch (e) {
+      if (pagina === 1) {
+        console.error(
+          "[financeiro] pagar historico vencimento:",
+          e instanceof Error ? e.message : e,
+        );
+      }
+      break;
+    }
+    const batch = res.itens ?? [];
+    for (const item of batch) {
+      if (item.id) porId.set(item.id, item);
+    }
+    if (batch.length < tamanho) break;
+  }
+
+  let pagar = Array.from(porId.values())
+    .map(i => mapParcelaListagem(i, "pagar", catalogo))
+    .filter((x): x is ParcelaFinanceiraNorm => !!x);
+  pagar = aplicarEdicoesClassificacao(
+    pagar,
+    classifs.map(c => ({
+      tipo: c.tipo,
+      chave: c.chave,
+      rubricaOverride: c.rubricaOverride,
+      centroCustoOverride: c.centroCustoOverride,
+      excluido: c.excluido,
+      nota: c.nota,
+    })),
+  );
+  return parcelasAtivasParaRelatorio(pagar);
+}
+
 /** Contas a receber normalizadas + overrides (comparativo de receita). */
 export async function buscarParcelasReceberParaComparativo(
   inicio: Date,
