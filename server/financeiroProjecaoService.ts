@@ -25,6 +25,7 @@ import {
   montarProjecaoDesembolso,
   labelMesYm,
   valorPagoParcela,
+  agregarImpostosEncargosAtrasados,
   type ParcelaBaseProjecao,
 } from "@shared/financeiroProjecaoDesembolso";
 import {
@@ -769,7 +770,12 @@ export async function carregarFinanceiroDashboard(
         await buscarBaixasReceberPorPeriodoPagamento(b.inicio, b.fim, projetoId)
       ).map(toBase);
     })(),
-    carregarTotaisVendasCompetencia(mesYm, { hojeYm, diaHoje }),
+    carregarTotaisVendasCompetencia(mesYm, {
+      hojeYm,
+      diaHoje,
+      // Dashboard: orçamento do mês inteiro (sem corte no dia 15).
+      filtroOrcamento: { diaLimiteOrcamento: 31 },
+    }),
     periodo.planoAlinhadoAoPeriodo
       ? Promise.resolve([] as ParcelaBaseProjecao[])
       : buscarParcelasPagarParaProjecao(
@@ -1027,6 +1033,11 @@ export async function carregarFinanceiroDashboard(
     );
   }
 
+  const impostosEncargosAtrasados = agregarImpostosEncargosAtrasados(
+    [...pagar2, ...pagar1, ...pagarMes, ...pagarPeriodo],
+    hojeIso,
+  );
+
   return {
     mesYm,
     labelMes: labelMesYm(mesYm),
@@ -1060,6 +1071,10 @@ export async function carregarFinanceiroDashboard(
       .filter((r): r is NonNullable<typeof r> => r != null)
       .sort((a, b) => b.valorAcao - a.valorAcao),
     receita: receitaOut,
+    impostosEncargosAtrasados: {
+      total: impostosEncargosAtrasados.total,
+      qtd: impostosEncargosAtrasados.qtd,
+    },
     avisos,
   } satisfies FinanceiroDashboardPayload;
 }
@@ -1632,10 +1647,41 @@ export async function carregarDashboardKpiDetalhe(
     };
   }
 
+  if (kpi === "impostos-atrasados") {
+    const mes1 = mesAnteriorProjecao(mesYm);
+    const mes2 = mesAnteriorProjecao(mes1);
+    const [pagar2, pagar1, pagarMes] = await Promise.all([
+      carregarParcelasBaseMes(projetoId, mes2),
+      carregarParcelasBaseMes(projetoId, mes1),
+      carregarParcelasBaseMes(projetoId, mesYm),
+    ]);
+    const agg = agregarImpostosEncargosAtrasados(
+      [...pagar2, ...pagar1, ...pagarMes],
+      hojeIso,
+    );
+    return linhasDe(
+      agg.detalhes.map(t => ({
+        id: t.id,
+        titulo: t.descricao,
+        subtitulo: [t.fornecedor, t.rubrica].filter(Boolean).join(" · ") || null,
+        valor: t.valor,
+        meta: fmtDataBr(t.dataVencimento),
+        grupo: t.rubrica,
+      })),
+      "Impostos e encargos atrasados",
+      "Contas a pagar em aberto, com vencimento já passado, classificadas como imposto/tributo/encargo (DAS, FGTS, INSS, etc.). Janela: mês atual + 2 anteriores.",
+      agg.total,
+    );
+  }
+
   // faturado | orcamentos
+  if (kpi !== "faturado" && kpi !== "orcamentos") {
+    throw new Error(`KPI sem detalhe: ${kpi}`);
+  }
   const vendas = await carregarTotaisVendasCompetencia(mesYm, {
     hojeYm,
     diaHoje,
+    filtroOrcamento: { diaLimiteOrcamento: 31 },
   });
   const prisma = getComercialPrisma();
   const { inicio, fim } = boundsMesYmAmericaSp(mesYm);
@@ -1668,10 +1714,6 @@ export async function carregarDashboardKpiDetalhe(
     if (!Number.isFinite(liquido) || liquido === 0) continue;
     const dataIso = diaIsoAmericaSp(p.dataPedido);
     if (dataIso.slice(0, 7) !== mesYm) continue;
-    if (alvo === "orcamento") {
-      const dia = Number(dataIso.slice(8, 10));
-      if (dia > vendas.diaLimiteOrcamento) continue;
-    }
     linhas.push({
       id: p.id,
       titulo: p.cliente?.nome?.trim() || "Cliente",
@@ -1686,7 +1728,7 @@ export async function carregarDashboardKpiDetalhe(
     kpi === "faturado" ? "Vendas já faturadas" : "Orçamentos no mês",
     kpi === "faturado"
       ? "Pedidos com status venda neste mês (volume, não caixa)."
-      : `Orçamentos no mês até o dia ${vendas.diaLimiteOrcamento} (pipeline).`,
+      : "Todos os orçamentos com data de pedido neste mês (pipeline).",
     kpi === "faturado"
       ? vendas.vendasFaturadasMes
       : vendas.orcamentosCompetenciaMes,

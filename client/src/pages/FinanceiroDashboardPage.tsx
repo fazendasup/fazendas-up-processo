@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import {
+  AlertTriangle,
   ArrowDownRight,
   ArrowUpRight,
   RefreshCcw,
@@ -918,10 +919,37 @@ export default function FinanceiroDashboardPage() {
                 <Kpi
                   title="Orçamentos no mês"
                   value={fmtMoney(rec?.vendasCompetencia.orcamentos)}
-                  hint="Pipeline — só vira caixa depois de virar venda/NF"
+                  hint="Pipeline total do mês (todos os dias)"
                   href={kpiHref("orcamentos")}
                 />
               </div>
+            </section>
+
+            <section className="space-y-3">
+              <div>
+                <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  <AlertTriangle className="h-4 w-4" />
+                  Obrigações — impostos e encargos
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Títulos a pagar em atraso (DAS, FGTS, INSS e afins).
+                </p>
+              </div>
+              <Kpi
+                title="Impostos e encargos atrasados"
+                value={fmtMoney(data?.impostosEncargosAtrasados?.total)}
+                hint={
+                  (data?.impostosEncargosAtrasados?.qtd ?? 0) > 0
+                    ? `${data!.impostosEncargosAtrasados.qtd} título(s) em aberto com vencimento passado`
+                    : "Nenhum título tributário/encargo vencido em aberto"
+                }
+                tone={
+                  (data?.impostosEncargosAtrasados?.total ?? 0) > 0.009
+                    ? "up"
+                    : "neutral"
+                }
+                href={kpiHref("impostos-atrasados")}
+              />
             </section>
 
             {/* Resultado projetado: receita caixa − desembolso efetivo */}

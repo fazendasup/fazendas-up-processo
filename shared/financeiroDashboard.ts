@@ -165,6 +165,11 @@ export type FinanceiroDashboardPayload = {
       total: number;
     };
   };
+  /** Contas a pagar: impostos/encargos em aberto com vencimento já passado. */
+  impostosEncargosAtrasados: {
+    total: number;
+    qtd: number;
+  };
   avisos: string[];
 };
 

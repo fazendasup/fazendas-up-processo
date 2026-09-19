@@ -15,6 +15,7 @@ export const DASHBOARD_KPI_IDS = [
   "proj-vendas",
   "faturado",
   "orcamentos",
+  "impostos-atrasados",
 ] as const;
 
 export type DashboardKpiId = (typeof DASHBOARD_KPI_IDS)[number];

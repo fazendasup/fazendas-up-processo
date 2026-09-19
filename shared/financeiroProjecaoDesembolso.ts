@@ -318,6 +318,79 @@ export function ehNaoDesembolsoCusto(
 }
 
 /**
+ * Impostos, taxas e encargos sociais (folha/patronal/tributos).
+ * Usado p/ alertar títulos em atraso no dashboard.
+ */
+export function ehImpostoOuEncargo(
+  descricao: string,
+  rubrica?: string | null,
+  entradaDre?: string | null,
+): boolean {
+  const dre = (entradaDre ?? "").trim().toUpperCase();
+  if (
+    dre === "DESPESAS_TRIBUTARIAS" ||
+    dre === "IMPOSTOS" ||
+    dre === "ENCARGOS_SOCIAIS" ||
+    dre.includes("TRIBUT")
+  ) {
+    return true;
+  }
+  const d = textoNatureza(descricao, rubrica);
+  return /\b(impostos?|tributos?|encargos?(\s+sociais)?|simples\s+nacional|\bdas\b|darf|gae|gnre|dctf|fgts|inss|pis(\s*\/\s*pasep)?|cofins|csll|irrf|irpj|\biss\b|\bicms\b|\bipi\b|\bgps\b|sefiz|sefip|esocial|contribuicao(oes)?(\s+(previdenciaria|social|sindical))?|taxa\s+(municipal|estadual|federal)|iptu|ipva|issqn)\b/.test(
+    d,
+  );
+}
+
+export type ImpostoEncargoAtrasadoDetalhe = {
+  id: string;
+  descricao: string;
+  fornecedor: string | null;
+  rubrica: string | null;
+  valor: number;
+  dataVencimento: string | null;
+};
+
+/** Títulos a pagar em aberto, vencidos, classificados como imposto/encargo. */
+export function agregarImpostosEncargosAtrasados(
+  parcelas: ParcelaBaseProjecao[],
+  hojeIso: string,
+): {
+  total: number;
+  qtd: number;
+  detalhes: ImpostoEncargoAtrasadoDetalhe[];
+} {
+  const porId = new Map<string, ParcelaBaseProjecao>();
+  for (const p of parcelas) {
+    if (!porId.has(p.id)) porId.set(p.id, p);
+  }
+  const detalhes: ImpostoEncargoAtrasadoDetalhe[] = [];
+  for (const p of Array.from(porId.values())) {
+    if (p.valorEmAberto <= 0.009) continue;
+    const venc = (p.dataVencimento ?? "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(venc) || venc >= hojeIso) continue;
+    if (!ehImpostoOuEncargo(p.descricao, p.rubrica, p.entradaDre)) continue;
+    detalhes.push({
+      id: p.id,
+      descricao: p.descricao || p.rubrica || "Imposto/encargo",
+      fornecedor: p.fornecedor ?? null,
+      rubrica: p.rubrica ?? null,
+      valor: Math.round(p.valorEmAberto * 100) / 100,
+      dataVencimento: venc,
+    });
+  }
+  detalhes.sort((a, b) => {
+    const da = a.dataVencimento ?? "";
+    const db = b.dataVencimento ?? "";
+    if (da !== db) return da.localeCompare(db);
+    return b.valor - a.valor;
+  });
+  const total = Math.round(
+    detalhes.reduce((s, d) => s + d.valor, 0) * 100,
+  ) / 100;
+  return { total, qtd: detalhes.length, detalhes };
+}
+
+/**
  * Rúbricas em que "pago sem projeção no mês" costuma ser atraso da competência
  * anterior (folha, vale, utilidades, aluguel). NÃO inclui insumos/materiais —
  * esses, sem projeção, são "não programada".

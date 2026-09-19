@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  agregarImpostosEncargosAtrasados,
   detectarNaturezaDesembolso,
   ehDespesaEssencialRecorrente,
+  ehImpostoOuEncargo,
   montarProjecaoDesembolso,
   mesesProjecaoNoTotal,
   mesesProjecaoPadrao,
@@ -217,5 +219,58 @@ describe("financeiroProjecaoDesembolso", () => {
       1500,
     );
     expect(grade.totalGeral).toBe(1500);
+  });
+
+  it("detecta imposto/encargo e agrega atrasados", () => {
+    expect(ehImpostoOuEncargo("DAS Simples Nacional", "Impostos")).toBe(true);
+    expect(ehImpostoOuEncargo("FGTS folha", "Encargos sociais")).toBe(true);
+    expect(ehImpostoOuEncargo("Compra insumos", "Insumos")).toBe(false);
+    expect(
+      ehImpostoOuEncargo("Qualquer", "X", "DESPESAS_TRIBUTARIAS"),
+    ).toBe(true);
+
+    const agg = agregarImpostosEncargosAtrasados(
+      [
+        {
+          id: "1",
+          descricao: "DAS 08/2026",
+          rubrica: "Impostos",
+          valor: 2000,
+          valorPago: 0,
+          valorEmAberto: 2000,
+          status: "EM_ABERTO",
+          dataVencimento: "2026-09-10",
+          dataPagamento: null,
+          fornecedor: "Receita Federal",
+        },
+        {
+          id: "2",
+          descricao: "Insumos",
+          rubrica: "Insumos",
+          valor: 500,
+          valorPago: 0,
+          valorEmAberto: 500,
+          status: "EM_ABERTO",
+          dataVencimento: "2026-09-01",
+          dataPagamento: null,
+          fornecedor: null,
+        },
+        {
+          id: "3",
+          descricao: "FGTS",
+          rubrica: "Encargos",
+          valor: 800,
+          valorPago: 0,
+          valorEmAberto: 800,
+          status: "EM_ABERTO",
+          dataVencimento: "2026-09-20",
+          dataPagamento: null,
+          fornecedor: null,
+        },
+      ],
+      "2026-09-18",
+    );
+    expect(agg.qtd).toBe(1);
+    expect(agg.total).toBe(2000);
   });
 });
