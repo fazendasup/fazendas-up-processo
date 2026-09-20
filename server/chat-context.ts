@@ -111,11 +111,14 @@ export function buildCompactFazendaSnapshotMarkdown(
     inteligencia?: ModuleAssistantResumo | null;
     visao?: ModuleAssistantResumo | null;
     automacao?: ModuleAssistantResumo | null;
+    /** Quando true, coloca Financeiro no topo e omite JSON pesado de comercial/custos. */
+    priorizarFinanceiro?: boolean;
   },
 ): string {
   const varById = new Map(data.variedades.map((v) => [v.id, v.nome]));
   const torreNome = (id: number | null | undefined) =>
     id == null ? "" : data.torres.find((t) => t.id === id)?.nome ?? `torre#${id}`;
+  const priorizarFin = Boolean(opts.priorizarFinanceiro && opts.financeiro);
 
   const andaresPorTorre = new Map<number, number>();
   for (const a of data.andares) {
@@ -130,15 +133,14 @@ export function buildCompactFazendaSnapshotMarkdown(
   lines.push(`- **Tipo:** ${data.projetoTipo ?? "desconhecido"}`);
   lines.push("");
 
-  lines.push(formatChatPageCatalogMarkdown(opts.projetoModulos));
-  lines.push("");
-
   lines.push("## Módulos / dados disponíveis neste resumo");
   lines.push(`- **Estoque:** ${opts.estoqueItens ? "disponível neste resumo" : "não incluído"}`);
   lines.push(
     `- **Comercial:** ${
       opts.comercial?.disponivel
-        ? "disponível neste resumo"
+        ? priorizarFin
+          ? "resumo curto (detalhe omitido — pergunta priorizou Financeiro)"
+          : "disponível neste resumo"
         : opts.comercial
           ? `não disponível (${opts.comercial.motivo})`
           : "não incluído"
@@ -147,7 +149,9 @@ export function buildCompactFazendaSnapshotMarkdown(
   lines.push(
     `- **Custos de produção:** ${
       opts.custos?.disponivel
-        ? "disponível neste resumo"
+        ? priorizarFin
+          ? "resumo curto (detalhe omitido — pergunta priorizou Financeiro)"
+          : "disponível neste resumo"
         : opts.custos
           ? `não disponível (${opts.custos.motivo})`
           : "não incluído"
@@ -156,7 +160,7 @@ export function buildCompactFazendaSnapshotMarkdown(
   lines.push(
     `- **Financeiro Conta Azul:** ${
       opts.financeiro?.disponivel
-        ? "disponível neste resumo"
+        ? "disponível neste resumo (números abaixo)"
         : opts.financeiro
           ? `não disponível (${opts.financeiro.motivo})`
           : "não carregado nesta mensagem — se o usuário perguntar sobre financeiro/caixa/desembolso/saldo, os dados entram no próximo turno"
@@ -191,6 +195,23 @@ export function buildCompactFazendaSnapshotMarkdown(
   );
   lines.push("");
 
+  // Financeiro primeiro: evita corte pelo limite de tamanho (mapa + comercial + custos).
+  if (opts.financeiro) {
+    renderModulePaginas(lines, "Financeiro Conta Azul — contexto por página", opts.financeiro);
+  }
+
+  if (!priorizarFin) {
+    lines.push(formatChatPageCatalogMarkdown(opts.projetoModulos));
+    lines.push("");
+  } else {
+    lines.push("## Mapa de páginas (Financeiro)");
+    lines.push("- **Financeiro — Dashboard** — rota `/financeiro-cfo`");
+    lines.push("- **Financeiro — Comparativo** — rota `/financeiro-cfo/comparativo`");
+    lines.push("- **Financeiro — Análise Conta Azul** — rota `/financeiro-cfo/analise`");
+    lines.push("- **Financeiro — Detalhe de KPI** — rota `/financeiro-cfo/kpi/:kpi`");
+    lines.push("");
+  }
+
   if (opts.comercial?.disponivel) {
     const c = opts.comercial;
     lines.push("## Comercial (Conta Azul / carteira / pedidos)");
@@ -216,7 +237,7 @@ export function buildCompactFazendaSnapshotMarkdown(
       for (const insight of c.insights) lines.push(`  - ${insight}`);
     }
     lines.push("");
-    if (c.paginas) {
+    if (!priorizarFin && c.paginas) {
       lines.push("## Comercial — contexto completo por página");
       lines.push(
         "Use estes blocos para responder perguntas e tirar insights sobre Dashboard, Relatórios, Clientes, Oportunidades, Pedidos, Mensagens, Execuções e Configurações comerciais.",
@@ -227,11 +248,19 @@ export function buildCompactFazendaSnapshotMarkdown(
     }
   }
 
-  renderModulePaginas(lines, "Custos de produção — contexto por página", opts.custos);
-  renderModulePaginas(lines, "Financeiro Conta Azul — contexto por página", opts.financeiro);
-  renderModulePaginas(lines, "Inteligência operacional", opts.inteligencia);
-  renderModulePaginas(lines, "Visão do cultivo", opts.visao);
-  renderModulePaginas(lines, "Automação", opts.automacao);
+  if (!priorizarFin) {
+    renderModulePaginas(lines, "Custos de produção — contexto por página", opts.custos);
+  } else if (opts.custos?.disponivel && opts.custos.insights?.length) {
+    lines.push("## Custos de produção (sinais)");
+    for (const insight of opts.custos.insights) lines.push(`- ${insight}`);
+    lines.push("");
+  }
+
+  if (!priorizarFin) {
+    renderModulePaginas(lines, "Inteligência operacional", opts.inteligencia);
+    renderModulePaginas(lines, "Visão do cultivo", opts.visao);
+    renderModulePaginas(lines, "Automação", opts.automacao);
+  }
 
   if (opts.estoqueItens) {
     const criticos = opts.estoqueItens.filter((i) => i.status === "critico").length;

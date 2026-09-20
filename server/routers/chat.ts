@@ -775,7 +775,7 @@ export const chatRouter = router({
         [...input.messages].reverse().find((m) => m.role === "user")?.content ?? "";
       // Conta Azul é pesado — só carrega quando a pergunta pede financeiro (evita timeout).
       const querFinanceiro =
-        /\b(financeir|conta\s*azul|desembolso|caixa|saldo\s*(banc|projet)|or[cç]amento|imposto|encarg|comparativo|rubrica|kpi|faturamento|receita\s*(prevista|recebida)|gap\s*de\s*caixa)\b/i.test(
+        /\b(financeir|conta\s*azul|desembolso|caixa|saldo\s*(banc|projet)|or[cç]amento|imposto|encarg|comparativo|rubrica|kpi|faturamento|receita\s*(prevista|recebida)|gap\s*de\s*caixa|insight|n[uú]mero|analis[ae]|an[aá]lise)\b/i.test(
           ultimaPergunta,
         );
 
@@ -833,6 +833,7 @@ export const chatRouter = router({
         inteligencia,
         visao,
         automacao,
+        priorizarFinanceiro: querFinanceiro,
       });
 
       const messages = input.messages.map((m) => ({
