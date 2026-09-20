@@ -22,7 +22,6 @@ import {
   refDefaultDashboard,
   type DashboardGranularidade,
 } from "@shared/financeiroPeriodoDashboard";
-import { diaIsoAmericaSp } from "@shared/comercial/periodo-america-sp";
 
 function fmtMoney(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "—";
