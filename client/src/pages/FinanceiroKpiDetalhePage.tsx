@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Link, useParams, useSearch } from "wouter";
 import { ArrowLeft } from "lucide-react";
 import { trpc } from "@/lib/trpc";
@@ -5,8 +6,13 @@ import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  type ColumnFilterDef,
+  useColumnTableFilters,
+} from "@/lib/columnTableFilters";
+import {
   isDashboardKpiId,
   type DashboardKpiId,
+  type DashboardKpiLinha,
 } from "@shared/financeiroDashboardKpi";
 import {
   isDashboardGranularidade,
@@ -29,6 +35,23 @@ function parseSearch(search: string): Record<string, string> {
   }
   return out;
 }
+
+const KPI_LINHAS_COLUMNS: ColumnFilterDef<DashboardKpiLinha>[] = [
+  { key: "titulo", label: "Descrição", value: r => r.titulo },
+  {
+    key: "subtitulo",
+    label: "Cliente / forn.",
+    value: r => r.subtitulo || "—",
+  },
+  { key: "grupo", label: "Grupo", value: r => r.grupo || "—" },
+  { key: "meta", label: "Meta", value: r => r.meta || "—" },
+  {
+    key: "valor",
+    label: "Valor",
+    value: r => r.valor,
+    optionLabel: r => fmtMoney(r.valor),
+  },
+];
 
 export default function FinanceiroKpiDetalhePage() {
   const params = useParams<{ kpi?: string }>();
@@ -53,6 +76,26 @@ export default function FinanceiroKpiDetalhePage() {
 
   const data = q.data;
   const backHref = `/financeiro-cfo?g=${encodeURIComponent(granularidade)}&ref=${encodeURIComponent(ref)}`;
+
+  const {
+    hasColumnFilters,
+    clearColumnFilters,
+    filterAndSortRows,
+    renderColumnHeader,
+  } = useColumnTableFilters(`kpi-${kpi}`);
+
+  const linhasFiltradas = useMemo(
+    () => filterAndSortRows(data?.linhas ?? [], KPI_LINHAS_COLUMNS),
+    [data?.linhas, filterAndSortRows],
+  );
+
+  const totalFiltrado = useMemo(
+    () =>
+      Math.round(
+        linhasFiltradas.reduce((s, l) => s + (Number(l.valor) || 0), 0) * 100,
+      ) / 100,
+    [linhasFiltradas],
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -110,35 +153,86 @@ export default function FinanceiroKpiDetalhePage() {
                 {data.descricao}
               </p>
               <p className="mt-3 text-xl font-semibold tabular-nums">
-                Total: {fmtMoney(data.total)}
+                Total:{" "}
+                {fmtMoney(hasColumnFilters ? totalFiltrado : data.total)}
                 <span className="ml-2 text-sm font-normal text-muted-foreground">
-                  · {data.linhas.length} linha(s)
+                  · {linhasFiltradas.length}
+                  {hasColumnFilters ? ` de ${data.linhas.length}` : ""} linha(s)
                 </span>
               </p>
             </div>
 
             <Card>
-              <CardHeader className="pb-2">
+              <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 pb-2">
                 <CardTitle className="text-base">Composição do número</CardTitle>
+                {hasColumnFilters ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={clearColumnFilters}
+                  >
+                    Limpar filtros
+                  </Button>
+                ) : null}
               </CardHeader>
               <CardContent className="overflow-x-auto">
                 {data.linhas.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     Nenhuma linha encontrada para este KPI.
                   </p>
+                ) : linhasFiltradas.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Nenhum resultado com os filtros atuais.
+                  </p>
                 ) : (
                   <table className="w-full min-w-[640px] text-sm">
                     <thead>
                       <tr className="border-b text-left text-xs text-muted-foreground">
-                        <th className="py-2 pr-2 font-medium">Descrição</th>
-                        <th className="py-2 pr-2 font-medium">Cliente / forn.</th>
-                        <th className="py-2 pr-2 font-medium">Grupo</th>
-                        <th className="py-2 pr-2 font-medium">Meta</th>
-                        <th className="py-2 text-right font-medium">Valor</th>
+                        <th className="py-2 pr-2 font-medium">
+                          {renderColumnHeader(
+                            "titulo",
+                            "Descrição",
+                            data.linhas,
+                            KPI_LINHAS_COLUMNS,
+                          )}
+                        </th>
+                        <th className="py-2 pr-2 font-medium">
+                          {renderColumnHeader(
+                            "subtitulo",
+                            "Cliente / forn.",
+                            data.linhas,
+                            KPI_LINHAS_COLUMNS,
+                          )}
+                        </th>
+                        <th className="py-2 pr-2 font-medium">
+                          {renderColumnHeader(
+                            "grupo",
+                            "Grupo",
+                            data.linhas,
+                            KPI_LINHAS_COLUMNS,
+                          )}
+                        </th>
+                        <th className="py-2 pr-2 font-medium">
+                          {renderColumnHeader(
+                            "meta",
+                            "Meta",
+                            data.linhas,
+                            KPI_LINHAS_COLUMNS,
+                          )}
+                        </th>
+                        <th className="py-2 text-right font-medium">
+                          {renderColumnHeader(
+                            "valor",
+                            "Valor",
+                            data.linhas,
+                            KPI_LINHAS_COLUMNS,
+                            "right",
+                          )}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {data.linhas.map(l => (
+                      {linhasFiltradas.map(l => (
                         <tr
                           key={l.id}
                           className="border-b border-border/60 align-top"

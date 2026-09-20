@@ -32,7 +32,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { exportObjectRows } from "@/lib/exportTableDocument";
-import type { ParcelaFinanceiraNorm } from "@shared/financeiroCfoInsights";
+import {
+  type ColumnFilterDef,
+  useColumnTableFilters,
+} from "@/lib/columnTableFilters";
+import type {
+  ConflitoRubricaDestino,
+  GapRubricaCusto,
+  ParcelaFinanceiraNorm,
+} from "@shared/financeiroCfoInsights";
 import { RUBRICA_SEM_CATEGORIA } from "@shared/financeiroCfoInsights";
 import { ProjecaoDesembolsoPanel } from "@/components/financeiro/ProjecaoDesembolsoPanel";
 import { isFinanceiroPerfil } from "@/lib/accessPolicy";
@@ -40,6 +48,57 @@ import { useAuth } from "@/_core/hooks/useAuth";
 
 const CHART_UP = "#dc2626";
 const CHART_DOWN = "#059669";
+
+const CONFLITOS_COLUMNS: ColumnFilterDef<ConflitoRubricaDestino>[] = [
+  { key: "destino", label: "Destino", value: r => r.destino },
+  {
+    key: "meses",
+    label: "Meses",
+    value: r => r.meses.join(" · "),
+  },
+  {
+    key: "rubricas",
+    label: "Rúbricas usadas",
+    value: r => r.rubricas.map(x => x.rubrica).join(", "),
+  },
+  {
+    key: "total",
+    label: "Total",
+    value: r => r.total,
+    optionLabel: r => fmtMoney(r.total),
+  },
+];
+
+const GAPS_COLUMNS: ColumnFilterDef<GapRubricaCusto>[] = [
+  { key: "rubrica", label: "Rúbrica", value: r => r.rubrica },
+  {
+    key: "atual",
+    label: "Atual",
+    value: r => r.atual,
+    optionLabel: r => fmtMoney(r.atual),
+  },
+  {
+    key: "anterior",
+    label: "Anterior",
+    value: r => r.anterior,
+    optionLabel: r => fmtMoney(r.anterior),
+  },
+  {
+    key: "delta",
+    label: "Δ R$",
+    value: r => r.delta,
+    optionLabel: r => {
+      const sign = r.delta > 0 ? "+" : "";
+      return `${sign}${fmtMoney(r.delta)}`;
+    },
+  },
+  {
+    key: "deltaPct",
+    label: "Δ %",
+    value: r => r.deltaPct,
+    optionLabel: r => fmtPct(r.deltaPct),
+  },
+];
 
 function isoLocal(d: Date): string {
   const y = d.getFullYear();
@@ -248,6 +307,84 @@ export default function FinanceiroCfoPage() {
     somenteSemRubrica,
   ]);
 
+  const {
+    hasColumnFilters: hasConflitosFilters,
+    clearColumnFilters: clearConflitosFilters,
+    filterAndSortRows: filterConflitos,
+    renderColumnHeader: renderConflitosHeader,
+  } = useColumnTableFilters("cfo-conflitos");
+
+  const {
+    hasColumnFilters: hasGapsFilters,
+    clearColumnFilters: clearGapsFilters,
+    filterAndSortRows: filterGaps,
+    renderColumnHeader: renderGapsHeader,
+  } = useColumnTableFilters("cfo-gaps");
+
+  const {
+    hasColumnFilters: hasLancamentosFilters,
+    clearColumnFilters: clearLancamentosFilters,
+    filterAndSortRows: filterLancamentos,
+    renderColumnHeader: renderLancamentosHeader,
+  } = useColumnTableFilters("cfo-lancamentos");
+
+  const lancamentosColumns = useMemo<ColumnFilterDef<ParcelaFinanceiraNorm>[]>(
+    () => [
+      { key: "descricao", label: "Descrição", value: r => r.descricao },
+      {
+        key: "fornecedor",
+        label: "Fornecedor",
+        value: r => r.contraparte || "—",
+      },
+      {
+        key: "rubrica",
+        label: "Rúbrica",
+        value: r => {
+          const rub = (draftRubrica[r.id] ?? r.categoria ?? "").trim();
+          return rub || "—";
+        },
+      },
+      {
+        key: "venc",
+        label: "Venc.",
+        value: r => r.dataVencimento || "—",
+        optionLabel: r => fmtDate(r.dataVencimento),
+      },
+      {
+        key: "valor",
+        label: "Valor",
+        value: r => r.valor,
+        optionLabel: r => fmtMoney(r.valor),
+      },
+      {
+        key: "ignorar",
+        label: "Ignorar",
+        value: r => (r.excluido ? "Sim" : "Não"),
+      },
+    ],
+    [draftRubrica],
+  );
+
+  const conflitosFiltrados = useMemo(
+    () => filterConflitos(conflitosRubrica, CONFLITOS_COLUMNS),
+    [conflitosRubrica, filterConflitos],
+  );
+
+  const gapsFiltrados = useMemo(
+    () => filterGaps(gaps, GAPS_COLUMNS),
+    [gaps, filterGaps],
+  );
+
+  const gapsExibidos = useMemo(
+    () => gapsFiltrados.slice(0, 40),
+    [gapsFiltrados],
+  );
+
+  const lancamentosFiltrados = useMemo(
+    () => filterLancamentos(lancamentos, lancamentosColumns),
+    [lancamentos, filterLancamentos, lancamentosColumns],
+  );
+
   const qtdExcluidos = useMemo(
     () => (data?.lancamentosPagar ?? []).filter(p => p.excluido).length,
     [data?.lancamentosPagar],
@@ -362,7 +499,7 @@ export default function FinanceiroCfoPage() {
   };
 
   const exportLancamentos = (format: "csv" | "pdf" | "json") => {
-    const rows = lancamentos.map(p => ({
+    const rows = lancamentosFiltrados.map(p => ({
       descricao: p.descricao,
       fornecedor: p.contraparte ?? "",
       rubrica: p.categoria ?? "",
@@ -489,20 +626,37 @@ export default function FinanceiroCfoPage() {
 
               <TabsContent value="rubricas" className="space-y-3">
                 <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">
-                      Análise de rúbricas por destino
-                    </CardTitle>
-                    <p className="text-xs text-muted-foreground">
-                      Mesmo fornecedor (saída) com rúbricas diferentes entre o
-                      mês atual e o anterior
-                      {compararMesAnterior
-                        ? ""
-                        : " — ative “Comparar mês anterior” para cruzar ago×set"}
-                      . Comparativo só a partir de{" "}
-                      <strong>01/08/2026</strong>. Aplique a rúbrica correta no
-                      destino ou abra os lançamentos.
-                    </p>
+                  <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 pb-2">
+                    <div>
+                      <CardTitle className="text-base">
+                        Análise de rúbricas por destino
+                      </CardTitle>
+                      <p className="text-xs text-muted-foreground">
+                        Mesmo fornecedor (saída) com rúbricas diferentes entre o
+                        mês atual e o anterior
+                        {compararMesAnterior
+                          ? ""
+                          : " — ative “Comparar mês anterior” para cruzar ago×set"}
+                        . Comparativo só a partir de{" "}
+                        <strong>01/08/2026</strong>. Aplique a rúbrica correta no
+                        destino ou abra os lançamentos.
+                      </p>
+                      {hasConflitosFilters ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {conflitosFiltrados.length} de{" "}
+                          {conflitosRubrica.length} destino(s)
+                        </p>
+                      ) : null}
+                    </div>
+                    {hasConflitosFilters ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={clearConflitosFilters}
+                      >
+                        Limpar filtros
+                      </Button>
+                    ) : null}
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {!compararMesAnterior ? (
@@ -515,15 +669,47 @@ export default function FinanceiroCfoPage() {
                       <p className="py-6 text-sm text-muted-foreground">
                         Nenhum destino com rúbricas conflitantes neste recorte.
                       </p>
+                    ) : conflitosFiltrados.length === 0 ? (
+                      <p className="py-6 text-sm text-muted-foreground">
+                        Nenhum resultado com os filtros atuais.
+                      </p>
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full min-w-[880px] text-sm">
                           <thead>
                             <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                              <th className="px-2 py-2">Destino (fornecedor)</th>
-                              <th className="px-2 py-2">Meses</th>
-                              <th className="px-2 py-2">Rúbricas usadas</th>
-                              <th className="px-2 py-2">Total</th>
+                              <th className="px-2 py-2">
+                                {renderConflitosHeader(
+                                  "destino",
+                                  "Destino (fornecedor)",
+                                  conflitosRubrica,
+                                  CONFLITOS_COLUMNS,
+                                )}
+                              </th>
+                              <th className="px-2 py-2">
+                                {renderConflitosHeader(
+                                  "meses",
+                                  "Meses",
+                                  conflitosRubrica,
+                                  CONFLITOS_COLUMNS,
+                                )}
+                              </th>
+                              <th className="px-2 py-2">
+                                {renderConflitosHeader(
+                                  "rubricas",
+                                  "Rúbricas usadas",
+                                  conflitosRubrica,
+                                  CONFLITOS_COLUMNS,
+                                )}
+                              </th>
+                              <th className="px-2 py-2">
+                                {renderConflitosHeader(
+                                  "total",
+                                  "Total",
+                                  conflitosRubrica,
+                                  CONFLITOS_COLUMNS,
+                                )}
+                              </th>
                               <th className="px-2 py-2 w-[220px]">
                                 Aplicar rúbrica
                               </th>
@@ -531,7 +717,7 @@ export default function FinanceiroCfoPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            {conflitosRubrica.map(c => (
+                            {conflitosFiltrados.map(c => (
                               <tr key={c.chave} className="border-b align-top">
                                 <td className="px-2 py-2">
                                   <p className="font-medium">{c.destino}</p>
@@ -636,11 +822,27 @@ export default function FinanceiroCfoPage() {
                           Clique para filtrar lançamentos · ordenado por
                           impacto (|Δ|)
                         </p>
+                        {hasGapsFilters ? (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {gapsFiltrados.length} de {gaps.length} gap(s)
+                          </p>
+                        ) : null}
                       </div>
-                      <ExportMini
-                        onCsv={() => exportGaps("csv")}
-                        onPdf={() => exportGaps("pdf")}
-                      />
+                      <div className="flex flex-wrap items-center gap-2">
+                        {hasGapsFilters ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={clearGapsFilters}
+                          >
+                            Limpar filtros
+                          </Button>
+                        ) : null}
+                        <ExportMini
+                          onCsv={() => exportGaps("csv")}
+                          onPdf={() => exportGaps("pdf")}
+                        />
+                      </div>
                     </CardHeader>
                     <CardContent className="overflow-x-auto pt-0">
                       {!compararMesAnterior ? (
@@ -651,19 +853,58 @@ export default function FinanceiroCfoPage() {
                         <p className="py-6 text-sm text-muted-foreground">
                           Sem dados comparáveis.
                         </p>
+                      ) : gapsExibidos.length === 0 ? (
+                        <p className="py-6 text-sm text-muted-foreground">
+                          Nenhum resultado com os filtros atuais.
+                        </p>
                       ) : (
                         <table className="w-full min-w-[640px] text-sm">
                           <thead>
                             <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                              <th className="px-2 py-2">Rúbrica</th>
-                              <th className="px-2 py-2">Atual</th>
-                              <th className="px-2 py-2">Anterior</th>
-                              <th className="px-2 py-2">Δ R$</th>
-                              <th className="px-2 py-2">Δ %</th>
+                              <th className="px-2 py-2">
+                                {renderGapsHeader(
+                                  "rubrica",
+                                  "Rúbrica",
+                                  gaps,
+                                  GAPS_COLUMNS,
+                                )}
+                              </th>
+                              <th className="px-2 py-2">
+                                {renderGapsHeader(
+                                  "atual",
+                                  "Atual",
+                                  gaps,
+                                  GAPS_COLUMNS,
+                                )}
+                              </th>
+                              <th className="px-2 py-2">
+                                {renderGapsHeader(
+                                  "anterior",
+                                  "Anterior",
+                                  gaps,
+                                  GAPS_COLUMNS,
+                                )}
+                              </th>
+                              <th className="px-2 py-2">
+                                {renderGapsHeader(
+                                  "delta",
+                                  "Δ R$",
+                                  gaps,
+                                  GAPS_COLUMNS,
+                                )}
+                              </th>
+                              <th className="px-2 py-2">
+                                {renderGapsHeader(
+                                  "deltaPct",
+                                  "Δ %",
+                                  gaps,
+                                  GAPS_COLUMNS,
+                                )}
+                              </th>
                             </tr>
                           </thead>
                           <tbody>
-                            {gaps.slice(0, 40).map(g => (
+                            {gapsExibidos.map(g => (
                               <tr
                                 key={g.rubrica}
                                 className="cursor-pointer border-b hover:bg-muted/50"
@@ -772,14 +1013,31 @@ export default function FinanceiroCfoPage() {
 
               <TabsContent value="lancamentos" className="space-y-3">
                 <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">
-                      Contas a pagar — edição rápida
-                    </CardTitle>
-                    <p className="text-xs text-muted-foreground">
-                      Altere a rúbrica e pressione Enter ou saia do campo para
-                      salvar · 1 clique no “excluir” tira do total
-                    </p>
+                  <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 pb-2">
+                    <div>
+                      <CardTitle className="text-base">
+                        Contas a pagar — edição rápida
+                      </CardTitle>
+                      <p className="text-xs text-muted-foreground">
+                        Altere a rúbrica e pressione Enter ou saia do campo para
+                        salvar · 1 clique no “excluir” tira do total
+                      </p>
+                      {hasLancamentosFilters ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {lancamentosFiltrados.length} de {lancamentos.length}{" "}
+                          lançamento(s)
+                        </p>
+                      ) : null}
+                    </div>
+                    {hasLancamentosFilters ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={clearLancamentosFilters}
+                      >
+                        Limpar filtros
+                      </Button>
+                    ) : null}
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
@@ -837,18 +1095,61 @@ export default function FinanceiroCfoPage() {
                       <table className="w-full min-w-[900px] text-sm">
                         <thead>
                           <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                            <th className="px-2 py-2">Descrição</th>
-                            <th className="px-2 py-2">Fornecedor</th>
-                            <th className="px-2 py-2 w-[220px]">Rúbrica</th>
-                            <th className="px-2 py-2">Venc.</th>
-                            <th className="px-2 py-2">Valor</th>
-                            <th className="px-2 py-2" title="Ignorar nos totais (pode reativar)">
-                              Ignorar
+                            <th className="px-2 py-2">
+                              {renderLancamentosHeader(
+                                "descricao",
+                                "Descrição",
+                                lancamentos,
+                                lancamentosColumns,
+                              )}
+                            </th>
+                            <th className="px-2 py-2">
+                              {renderLancamentosHeader(
+                                "fornecedor",
+                                "Fornecedor",
+                                lancamentos,
+                                lancamentosColumns,
+                              )}
+                            </th>
+                            <th className="px-2 py-2 w-[220px]">
+                              {renderLancamentosHeader(
+                                "rubrica",
+                                "Rúbrica",
+                                lancamentos,
+                                lancamentosColumns,
+                              )}
+                            </th>
+                            <th className="px-2 py-2">
+                              {renderLancamentosHeader(
+                                "venc",
+                                "Venc.",
+                                lancamentos,
+                                lancamentosColumns,
+                              )}
+                            </th>
+                            <th className="px-2 py-2">
+                              {renderLancamentosHeader(
+                                "valor",
+                                "Valor",
+                                lancamentos,
+                                lancamentosColumns,
+                              )}
+                            </th>
+                            <th
+                              className="px-2 py-2"
+                              title="Ignorar nos totais (pode reativar)"
+                            >
+                              {renderLancamentosHeader(
+                                "ignorar",
+                                "Ignorar",
+                                lancamentos,
+                                lancamentosColumns,
+                              )}
                             </th>
                           </tr>
                         </thead>
                         <tbody>
-                          {lancamentos.map(p => (
+                          {lancamentosFiltrados.map(p => (
                             <tr
                               key={p.id}
                               className={`border-b align-middle ${
@@ -922,7 +1223,7 @@ export default function FinanceiroCfoPage() {
                           ))}
                         </tbody>
                       </table>
-                      {lancamentos.length === 0 ? (
+                      {lancamentosFiltrados.length === 0 ? (
                         <p className="py-8 text-center text-sm text-muted-foreground">
                           Nenhum lançamento com esses filtros.
                         </p>

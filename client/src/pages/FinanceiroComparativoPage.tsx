@@ -22,13 +22,58 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import {
+  type ColumnFilterDef,
+  useColumnTableFilters,
+} from "@/lib/columnTableFilters";
 import Header from "@/components/Header";
 import { FinanceiroCfoNav } from "@/components/financeiro/FinanceiroCfoNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { StatusRubricaComparativo } from "@shared/financeiroComparativoProjecao";
+import type {
+  ComparativoDesembolsoRubrica,
+  StatusRubricaComparativo,
+} from "@shared/financeiroComparativoProjecao";
+
+const RUBRICAS_COLUMNS: ColumnFilterDef<ComparativoDesembolsoRubrica>[] = [
+  { key: "rubrica", label: "Rúbrica", value: r => r.rubrica },
+  {
+    key: "projetado",
+    label: "Projetado",
+    value: r => r.projetado,
+    optionLabel: r => fmtMoney(r.projetado),
+  },
+  {
+    key: "pago",
+    label: "Pago",
+    value: r => r.pago,
+    optionLabel: r => fmtMoney(r.pago),
+  },
+  {
+    key: "naoPago",
+    label: "Não pago",
+    value: r => r.naoPago,
+    optionLabel: r => fmtMoney(r.naoPago),
+  },
+  {
+    key: "pagoAMais",
+    label: "Pago a mais",
+    value: r => r.pagoAMais,
+    optionLabel: r => fmtMoney(r.pagoAMais),
+  },
+  {
+    key: "status",
+    label: "Status",
+    value: r => statusLabel(r.status),
+  },
+  {
+    key: "concluida",
+    label: "Concluída",
+    value: r => (r.concluida === true ? "Sim" : "Não"),
+  },
+];
 
 const COR_EXECUTADO = "#059669";
 const COR_FALTA = "#d97706";
@@ -141,8 +186,20 @@ export default function FinanceiroComparativoPage() {
   const rubricas = useMemo(() => d?.rubricas ?? [], [d?.rubricas]);
   const [abertas, setAbertas] = useState<Set<string>>(() => new Set());
 
+  const {
+    hasColumnFilters,
+    clearColumnFilters,
+    filterAndSortRows,
+    renderColumnHeader,
+  } = useColumnTableFilters("comparativo-rubricas");
+
+  const rubricasFiltradas = useMemo(
+    () => filterAndSortRows(rubricas, RUBRICAS_COLUMNS),
+    [rubricas, filterAndSortRows],
+  );
+
   const chartAindaFalta = useMemo(() => {
-    return rubricas
+    return rubricasFiltradas
       .filter(
         r =>
           r.concluida !== true &&
@@ -162,10 +219,10 @@ export default function FinanceiroComparativoPage() {
       .filter(r => r.executado + r.falta + r.passou > 0.009)
       .sort((a, b) => b.falta + b.passou - (a.falta + a.passou))
       .slice(0, 14);
-  }, [rubricas]);
+  }, [rubricasFiltradas]);
 
   const chartConcluidas = useMemo(() => {
-    return rubricas
+    return rubricasFiltradas
       .filter(r => r.concluida === true && (r.pago > 0.009 || (r.saldoLiberado ?? 0) > 0.009))
       .map(r => ({
         name: encurtarNome(r.rubrica),
@@ -176,7 +233,7 @@ export default function FinanceiroComparativoPage() {
       }))
       .sort((a, b) => b.pago + b.saldo - (a.pago + a.saldo))
       .slice(0, 14);
-  }, [rubricas]);
+  }, [rubricasFiltradas]);
 
   const marcarConcluida = trpc.financeiroCfo.marcarRubricaConcluida.useMutation({
     onSuccess: async () => {
@@ -313,41 +370,106 @@ export default function FinanceiroComparativoPage() {
             </section>
 
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Por rúbrica</CardTitle>
-                <p className="text-xs font-normal text-muted-foreground">
-                  Clique na rúbrica para ver as linhas projetadas e os títulos
-                  pagos no Conta Azul.
-                </p>
+              <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 pb-2">
+                <div>
+                  <CardTitle className="text-base">Por rúbrica</CardTitle>
+                  <p className="text-xs font-normal text-muted-foreground">
+                    Clique na rúbrica para ver as linhas projetadas e os títulos
+                    pagos no Conta Azul.
+                  </p>
+                  {hasColumnFilters ? (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {rubricasFiltradas.length} de {rubricas.length} rúbrica(s)
+                    </p>
+                  ) : null}
+                </div>
+                {hasColumnFilters ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={clearColumnFilters}
+                  >
+                    Limpar filtros
+                  </Button>
+                ) : null}
               </CardHeader>
               <CardContent className="overflow-x-auto">
                 {rubricas.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     Sem projeção marcada nem pagamentos no mês.
                   </p>
+                ) : rubricasFiltradas.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Nenhum resultado com os filtros atuais.
+                  </p>
                 ) : (
                   <table className="w-full min-w-[640px] text-sm">
                     <thead>
                       <tr className="border-b text-left text-xs text-muted-foreground">
-                        <th className="py-2 pr-2 font-medium">Rúbrica</th>
-                        <th className="py-2 pr-2 text-right font-medium">
-                          Projetado
+                        <th className="py-2 pr-2 font-medium">
+                          {renderColumnHeader(
+                            "rubrica",
+                            "Rúbrica",
+                            rubricas,
+                            RUBRICAS_COLUMNS,
+                          )}
                         </th>
                         <th className="py-2 pr-2 text-right font-medium">
-                          Pago
+                          {renderColumnHeader(
+                            "projetado",
+                            "Projetado",
+                            rubricas,
+                            RUBRICAS_COLUMNS,
+                            "right",
+                          )}
                         </th>
                         <th className="py-2 pr-2 text-right font-medium">
-                          Não pago
+                          {renderColumnHeader(
+                            "pago",
+                            "Pago",
+                            rubricas,
+                            RUBRICAS_COLUMNS,
+                            "right",
+                          )}
                         </th>
                         <th className="py-2 pr-2 text-right font-medium">
-                          Pago a mais
+                          {renderColumnHeader(
+                            "naoPago",
+                            "Não pago",
+                            rubricas,
+                            RUBRICAS_COLUMNS,
+                            "right",
+                          )}
                         </th>
-                        <th className="py-2 pr-2 font-medium">Status</th>
-                        <th className="py-2 font-medium">Concluída</th>
+                        <th className="py-2 pr-2 text-right font-medium">
+                          {renderColumnHeader(
+                            "pagoAMais",
+                            "Pago a mais",
+                            rubricas,
+                            RUBRICAS_COLUMNS,
+                            "right",
+                          )}
+                        </th>
+                        <th className="py-2 pr-2 font-medium">
+                          {renderColumnHeader(
+                            "status",
+                            "Status",
+                            rubricas,
+                            RUBRICAS_COLUMNS,
+                          )}
+                        </th>
+                        <th className="py-2 font-medium">
+                          {renderColumnHeader(
+                            "concluida",
+                            "Concluída",
+                            rubricas,
+                            RUBRICAS_COLUMNS,
+                          )}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {rubricas.map(rub => {
+                      {rubricasFiltradas.map(rub => {
                         const aMais = rub.status === "pago_a_mais";
                         const falta = rub.status === "faltando";
                         const extra = rub.status === "nao_programada";

@@ -11,6 +11,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import {
+  type ColumnFilterDef,
+  useColumnTableFilters,
+} from "@/lib/columnTableFilters";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -156,6 +160,21 @@ function naturezaLabel(n: string): string {
       return "Manual";
   }
 }
+
+const PROJECAO_COLUMNS: ColumnFilterDef<LinhaProjecao>[] = [
+  { key: "desembolso", label: "Desembolso", value: r => r.label },
+  {
+    key: "tipo",
+    label: "Tipo",
+    value: r => naturezaLabel(r.natureza),
+  },
+  {
+    key: "total",
+    label: "Total",
+    value: r => r.totalAtivo,
+    optionLabel: r => fmtMoney(r.totalAtivo),
+  },
+];
 
 function origemLabel(o: string): string {
   switch (o) {
@@ -415,7 +434,7 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
     return (data?.colunas ?? []).filter(c => !ocultos.has(c.mesYm));
   }, [data?.colunas, mesesOcultos]);
 
-  const linhasFiltradas = useMemo(() => {
+  const linhasAposFiltrosPainel = useMemo(() => {
     const linhas = data?.linhas ?? [];
     const q = filtroBusca.trim().toLowerCase();
     const rubricasSel = new Set(filtroRubricas);
@@ -474,6 +493,18 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
     filtroPorMes,
     ordemLinhas,
   ]);
+
+  const {
+    hasColumnFilters,
+    clearColumnFilters,
+    filterAndSortRows,
+    renderColumnHeader,
+  } = useColumnTableFilters("projecao-desembolso");
+
+  const linhasFiltradas = useMemo(
+    () => filterAndSortRows(linhasAposFiltrosPainel, PROJECAO_COLUMNS),
+    [linhasAposFiltrosPainel, filterAndSortRows],
+  );
 
   const totaisFiltrados = useMemo(() => {
     if (!data) {
@@ -934,11 +965,41 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
           </div>
 
           <div className="overflow-x-auto rounded-lg border">
+            {hasColumnFilters ? (
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-muted/20 px-3 py-2">
+                <p className="text-xs text-muted-foreground">
+                  {linhasFiltradas.length} de {linhasAposFiltrosPainel.length} na
+                  grade
+                </p>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs"
+                  onClick={clearColumnFilters}
+                >
+                  Limpar filtros
+                </Button>
+              </div>
+            ) : null}
             <table className="w-full min-w-[720px] table-fixed text-sm">
               <thead>
                 <tr className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
-                  <th className="w-[26%] px-3 py-2">Desembolso</th>
-                  <th className="w-[8%] px-2 py-2">Tipo</th>
+                  <th className="w-[26%] px-3 py-2 normal-case">
+                    {renderColumnHeader(
+                      "desembolso",
+                      "Desembolso",
+                      linhasAposFiltrosPainel,
+                      PROJECAO_COLUMNS,
+                    )}
+                  </th>
+                  <th className="w-[8%] px-2 py-2 normal-case">
+                    {renderColumnHeader(
+                      "tipo",
+                      "Tipo",
+                      linhasAposFiltrosPainel,
+                      PROJECAO_COLUMNS,
+                    )}
+                  </th>
                   <th className="w-[7%] px-1 py-2 text-center normal-case">
                     Meses
                   </th>
@@ -984,7 +1045,15 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                       </div>
                     </th>
                   ))}
-                  <th className="px-2 py-2 text-right">Total</th>
+                  <th className="px-2 py-2 text-right normal-case">
+                    {renderColumnHeader(
+                      "total",
+                      "Total",
+                      linhasAposFiltrosPainel,
+                      PROJECAO_COLUMNS,
+                      "right",
+                    )}
+                  </th>
                 </tr>
               </thead>
               <tbody>
