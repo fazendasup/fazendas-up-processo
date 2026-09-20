@@ -97,7 +97,10 @@ export function ColumnHeaderFilter({
 }) {
   const [search, setSearch] = useState("");
   const selectedSet = new Set(selected ?? []);
-  const hasSelection = selected != null;
+  /** Filtro ativo de verdade = há valores marcados. */
+  const hasActiveFilter = selected != null && selected.length > 0;
+  /** Modo "escolhendo": limpou tudo e ainda não marcou nada. */
+  const pickingMode = selected != null && selected.length === 0;
   const visibleOptions = options.filter((option) =>
     option.label.toLowerCase().includes(search.trim().toLowerCase()),
   );
@@ -117,7 +120,7 @@ export function ColumnHeaderFilter({
         }}
         className={[
           "inline-flex w-full items-center justify-between gap-2 rounded-md px-2 py-1 text-xs font-bold transition",
-          hasSelection || sortDirection
+          hasActiveFilter || sortDirection || pickingMode
             ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
             : "bg-transparent text-foreground hover:bg-muted",
         ].join(" ")}
@@ -191,17 +194,20 @@ export function ColumnHeaderFilter({
               </button>
             </div>
             <span className="text-xs font-semibold text-muted-foreground">
-              {hasSelection
-                ? selectedSet.size === 0
-                  ? "Nenhum selecionado"
-                  : `${selectedSet.size}/${options.length}`
-                : `Todos (${options.length})`}
+              {hasActiveFilter
+                ? `${selectedSet.size}/${options.length}`
+                : pickingMode
+                  ? "Marque o que ver"
+                  : `Todos (${options.length})`}
             </span>
           </div>
           <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
             {visibleOptions.length ? (
               visibleOptions.map((option) => {
-                const checked = !hasSelection || selectedSet.has(option.value);
+                // Sem filtro: todos marcados. Após "Limpar todos": nenhum marcado
+                // até o usuário escolher o que quer ver.
+                const checked =
+                  selected == null || selectedSet.has(option.value);
                 return (
                   <button
                     key={option.value}
@@ -245,7 +251,10 @@ export function useColumnTableFilters(tableId: string) {
   const currentFilters = columnFilters[tableId] ?? {};
 
   const hasColumnFilters = useMemo(
-    () => Object.values(currentFilters).some((f) => f.selected != null),
+    () =>
+      Object.values(currentFilters).some(
+        (f) => f.selected != null && f.selected.length > 0,
+      ),
     [currentFilters],
   );
 
@@ -315,12 +324,17 @@ export function useColumnTableFilters(tableId: string) {
 
   const filterAndSortRows = useCallback(
     <T,>(rows: T[], columns: ColumnFilterDef<T>[]): T[] => {
+      // Lista vazia = "limpar todos" (desmarcado para escolher) → ainda mostra tudo
+      // até o usuário marcar ao menos um valor.
       const activeColumns = columns
         .map((column) => ({
           ...column,
           selected: currentFilters[column.key]?.selected,
         }))
-        .filter((column) => column.selected != null);
+        .filter(
+          (column) =>
+            column.selected != null && column.selected.length > 0,
+        );
 
       let out = rows;
       if (activeColumns.length > 0) {

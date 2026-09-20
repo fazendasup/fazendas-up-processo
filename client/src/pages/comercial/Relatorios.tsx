@@ -254,7 +254,8 @@ function ColumnHeaderFilter({
 }) {
   const [search, setSearch] = useState("");
   const selectedSet = new Set(selected ?? []);
-  const hasSelection = selected != null;
+  const hasActiveFilter = selected != null && selected.length > 0;
+  const pickingMode = selected != null && selected.length === 0;
   const visibleOptions = options.filter(option =>
     option.label.toLowerCase().includes(search.trim().toLowerCase())
   );
@@ -274,7 +275,7 @@ function ColumnHeaderFilter({
         }}
         className={[
           "inline-flex w-full items-center justify-between gap-2 rounded-md px-2 py-1 text-xs font-bold transition",
-          hasSelection || sortDirection
+          hasActiveFilter || sortDirection || pickingMode
             ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
             : "bg-transparent text-slate-900 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-white/10",
         ].join(" ")}
@@ -345,17 +346,18 @@ function ColumnHeaderFilter({
               </button>
             </div>
             <span className="text-xs font-semibold text-slate-500">
-              {hasSelection
-                ? selectedSet.size === 0
-                  ? "Nenhum selecionado"
-                  : `${selectedSet.size}/${options.length}`
-                : `Todos (${options.length})`}
+              {hasActiveFilter
+                ? `${selectedSet.size}/${options.length}`
+                : pickingMode
+                  ? "Marque o que ver"
+                  : `Todos (${options.length})`}
             </span>
           </div>
           <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
             {visibleOptions.length ? (
               visibleOptions.map(option => {
-                const checked = !hasSelection || selectedSet.has(option.value);
+                const checked =
+                  selected == null || selectedSet.has(option.value);
                 return (
                   <button
                     key={option.value}
@@ -838,7 +840,7 @@ export function Relatorios() {
   };
   const hasColumnFilters = (id: string) =>
     Object.values(columnFilters[id] ?? {}).some(
-      filter => filter.selected != null
+      filter => filter.selected != null && filter.selected.length > 0
     );
   const toggleColumnValue = (id: string, key: string, value: string) => {
     const column = columnsByReport[id]?.find(c => c.key === key);
@@ -951,7 +953,9 @@ export function Relatorios() {
         ...column,
         selected: current[column.key]?.selected,
       }))
-      .filter(column => column.selected != null);
+      .filter(
+        column => column.selected != null && column.selected.length > 0
+      );
 
     if (!activeColumns.length) return rows;
 
