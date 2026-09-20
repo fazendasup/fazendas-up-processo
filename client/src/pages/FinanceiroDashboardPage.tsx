@@ -589,7 +589,6 @@ export default function FinanceiroDashboardPage() {
                     type="date"
                     className="h-9 w-[160px]"
                     value={ref}
-                    max={diaIsoAmericaSp()}
                     onChange={e => setRef(e.target.value)}
                   />
                 )}

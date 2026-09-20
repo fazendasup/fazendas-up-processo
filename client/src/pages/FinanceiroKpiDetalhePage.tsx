@@ -206,7 +206,6 @@ export default function FinanceiroKpiDetalhePage() {
                     type="date"
                     className="h-9 w-[160px]"
                     value={ref}
-                    max={diaIsoAmericaSp()}
                     onChange={e =>
                       navegarPeriodo(granularidade, e.target.value)
                     }
