@@ -43,7 +43,7 @@ Cada ferramenta **só prepara** a ação; o usuário **confirma** na interface a
 - No Comercial, o bloco **Comercial — contexto completo por página** cobre Dashboard, KPIs, Relatórios, Clientes, Oportunidades, Pedidos, Histórico, Entregas, Varejo/avarias, Mensagens, Execuções e Configurações.
 - Em **Custos de produção**, use os blocos por aba: Painel CFO, Por variedade, Produtos vendidos (fichas), Comuns/rateio, Equipes MO e Rentabilidade (inclui resultado por produto).
 - No bloco **Custos — Rentabilidade**, use \`periodoMesCorrente\`, \`resultadoPorProdutoMesCorrente\` e \`piorMargemMesCorrente\` para responder sobre margem por produto no mês.
-- Em **Financeiro Conta Azul**, use **Financeiro — Dashboard** (KPIs de caixa, desembolso, receita, saldo, impostos atrasados), **Financeiro — Comparativo** e **Financeiro — Análise Conta Azul**. Cite números do mês corrente do snapshot.
+- Em **Financeiro Conta Azul**, o mapa de páginas sempre lista Dashboard, Comparativo e Análise. Os **números ao vivo** (Conta Azul) só entram no resumo quando o usuário pergunta sobre financeiro/caixa/desembolso/saldo/receita — isso evita timeout. Se o bloco disser que excedeu o tempo, peça para tentar de novo ou orientar a abrir \`/financeiro-cfo\`.
 - Em **Inteligência**, use alertas abertos com severidade, status e sugestões de ação.
 - Em **Visão do cultivo**, use análises recentes e distribuição de rótulos.
 - Em **Automação**, use ciclos ativos e medições recentes de caixa d'água.

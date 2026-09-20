@@ -159,7 +159,7 @@ export function buildCompactFazendaSnapshotMarkdown(
         ? "disponível neste resumo"
         : opts.financeiro
           ? `não disponível (${opts.financeiro.motivo})`
-          : "não incluído"
+          : "não carregado nesta mensagem — se o usuário perguntar sobre financeiro/caixa/desembolso/saldo, os dados entram no próximo turno"
     }`,
   );
   lines.push(

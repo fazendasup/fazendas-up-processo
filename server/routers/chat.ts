@@ -770,8 +770,25 @@ export const chatRouter = router({
 
       const pid = projetoIdFromCtx(ctx);
       const projeto = await db.getProjetoRow(pid);
-      // Assistente recebe dados de todas as áreas (mapa de páginas completo),
-      // independentemente dos módulos contratados na UI do projeto.
+      const modulos = ctx.projetoModulos;
+      const ultimaPergunta =
+        [...input.messages].reverse().find((m) => m.role === "user")?.content ?? "";
+      // Conta Azul é pesado — só carrega quando a pergunta pede financeiro (evita timeout).
+      const querFinanceiro =
+        /\b(financeir|conta\s*azul|desembolso|caixa|saldo\s*(banc|projet)|or[cç]amento|imposto|encarg|comparativo|rubrica|kpi|faturamento|receita\s*(prevista|recebida)|gap\s*de\s*caixa)\b/i.test(
+          ultimaPergunta,
+        );
+
+      const withTimeout = <T,>(
+        promise: Promise<T>,
+        ms: number,
+        onTimeout: () => T,
+      ): Promise<T> =>
+        Promise.race([
+          promise,
+          new Promise<T>((resolve) => setTimeout(() => resolve(onTimeout()), ms)),
+        ]);
+
       const [
         data,
         bancadas,
@@ -784,20 +801,31 @@ export const chatRouter = router({
       ] = await Promise.all([
         db.loadFullFazendaData(pid),
         db.getAllBancadas(pid),
-        buildEstoqueAssistantResumo(pid, true),
-        buildComercialAssistantResumo(true, ctx.user),
-        buildCustosAssistantResumo(pid, true),
-        buildFinanceiroAssistantResumo(pid, true),
-        buildInteligenciaAssistantResumo(pid, true),
-        buildVisaoAssistantResumo(pid, true),
+        buildEstoqueAssistantResumo(pid, Boolean(modulos?.estoque)),
+        buildComercialAssistantResumo(Boolean(modulos?.comercial), ctx.user),
+        buildCustosAssistantResumo(pid, Boolean(modulos?.custos_producao)),
+        querFinanceiro
+          ? withTimeout(
+              buildFinanceiroAssistantResumo(pid, true),
+              18_000,
+              () =>
+                ({
+                  disponivel: false as const,
+                  motivo:
+                    "consulta ao Conta Azul excedeu o tempo limite; tente de novo ou abra /financeiro-cfo",
+                }) satisfies Awaited<ReturnType<typeof buildFinanceiroAssistantResumo>>,
+            )
+          : Promise.resolve(null),
+        buildInteligenciaAssistantResumo(pid, Boolean(modulos?.inteligencia)),
+        buildVisaoAssistantResumo(pid, Boolean(modulos?.visao_cultivo)),
       ]);
-      const automacao = buildAutomacaoAssistantResumo(data, true);
+      const automacao = buildAutomacaoAssistantResumo(data, Boolean(modulos?.automacao));
 
       const resumoOperacionalMarkdown = buildCompactFazendaSnapshotMarkdown(data, {
         projetoId: pid,
         projetoNome: projeto?.nome ?? `Projeto ${pid}`,
         bancadas,
-        projetoModulos: null,
+        projetoModulos: modulos ?? null,
         estoqueItens,
         comercial,
         custos,
