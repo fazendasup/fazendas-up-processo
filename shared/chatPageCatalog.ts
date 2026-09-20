@@ -61,19 +61,34 @@ const PAGINAS_MODULO: ChatPageEntry[] = [
   },
   {
     rota: "/financeiro-cfo",
-    nome: "Financeiro Conta Azul",
-    area: "custos",
+    nome: "Financeiro — Dashboard",
+    area: "custos_producao",
     descricao:
-      "Rúbricas, centros de custo, classificação editável, inspeção e exportações.",
-    blocoSnapshot: "Financeiro Conta Azul",
+      "KPIs de caixa, desembolso, receita, orçamentos do mês, impostos atrasados e saldo bancário.",
+    blocoSnapshot: "Financeiro — Dashboard",
   },
   {
     rota: "/financeiro-cfo/comparativo",
-    nome: "Comparativo projeção × realizado",
-    area: "custos",
+    nome: "Financeiro — Comparativo",
+    area: "custos_producao",
     descricao:
       "Desvio de desembolso, quanto falta pagar, receita baseline vs já entrou / a entrar.",
-    blocoSnapshot: "Comparativo financeiro",
+    blocoSnapshot: "Financeiro — Comparativo",
+  },
+  {
+    rota: "/financeiro-cfo/analise",
+    nome: "Financeiro — Análise Conta Azul",
+    area: "custos_producao",
+    descricao:
+      "Rúbricas, centros de custo, classificação editável, inspeção e exportações.",
+    blocoSnapshot: "Financeiro — Análise Conta Azul",
+  },
+  {
+    rota: "/financeiro-cfo/kpi/:kpi",
+    nome: "Financeiro — Detalhe de KPI",
+    area: "custos_producao",
+    descricao: "Composição do número por trás de cada KPI do dashboard (linhas e filtros).",
+    blocoSnapshot: "Financeiro — Dashboard",
   },
   {
     rota: "/custos-producao",
@@ -217,26 +232,24 @@ const PAGINAS_MODULO: ChatPageEntry[] = [
   },
 ];
 
-function moduloAtivo(modulos: ModulosProjetoMap | null | undefined, area: ChatPageEntry["area"]): boolean {
-  if (area === "core" || area === "admin") return true;
-  if (!modulos) return false;
-  return modulos[area] === true;
+/**
+ * Catálogo completo para o assistente: todas as páginas do sistema,
+ * independentemente dos módulos contratados na UI do projeto.
+ */
+export function buildChatPageCatalog(
+  _modulos?: ModulosProjetoMap | null | undefined,
+): ChatPageEntry[] {
+  return [...PAGINAS_CORE, ...PAGINAS_MODULO];
 }
 
-/** Catálogo de páginas do sistema para orientar o assistente sobre onde encontrar cada informação. */
-export function buildChatPageCatalog(modulos: ModulosProjetoMap | null | undefined): ChatPageEntry[] {
-  const out: ChatPageEntry[] = [...PAGINAS_CORE];
-  for (const p of PAGINAS_MODULO) {
-    if (moduloAtivo(modulos, p.area)) out.push(p);
-  }
-  return out;
-}
-
-export function formatChatPageCatalogMarkdown(modulos: ModulosProjetoMap | null | undefined): string {
+export function formatChatPageCatalogMarkdown(
+  modulos?: ModulosProjetoMap | null | undefined,
+): string {
   const pages = buildChatPageCatalog(modulos);
   const lines: string[] = [
     "## Mapa de páginas do sistema",
     "Use esta tabela para indicar ao usuário **onde** encontrar cada tipo de informação na interface.",
+    "O assistente tem acesso ao mapa **completo** (todas as áreas), inclusive Financeiro.",
     "",
   ];
   for (const p of pages) {

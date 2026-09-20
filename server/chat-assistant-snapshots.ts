@@ -664,3 +664,88 @@ export function buildAutomacaoAssistantResumo(
     },
   };
 }
+
+/** Resumo do Financeiro Conta Azul (dashboard do mês corrente) para o assistente. */
+export async function buildFinanceiroAssistantResumo(
+  pid: number,
+  enabled: boolean,
+): Promise<ModuleAssistantResumo | null> {
+  if (!enabled) return null;
+  try {
+    const { carregarFinanceiroDashboard } = await import("./financeiroProjecaoService");
+    const { mesIsoAmericaSp } = await import("@shared/comercial/periodo-america-sp");
+    const mesYm = mesIsoAmericaSp();
+
+    const dashboard = await carregarFinanceiroDashboard(pid, {
+      granularidade: "mes",
+      ref: mesYm,
+      forceRefreshCa: false,
+    });
+
+    const rubricasCriticas = (dashboard.desembolsoPorRubrica ?? [])
+      .filter((r) => r.naoPago > 0 || r.acao === "cortar" || r.acao === "negociar")
+      .slice(0, 12)
+      .map((r) => ({
+        rubrica: r.rubrica,
+        essencial: r.essencial,
+        acao: r.acao,
+        projetado: r.projetado,
+        pago: r.pago,
+        naoPago: r.naoPago,
+        valorAcao: r.valorAcao,
+      }));
+
+    const insights = [
+      `Mês ${dashboard.labelMes} (${mesYm}): gap de caixa R$ ${dashboard.caixa.gapCaixaMes.toFixed(2)}.`,
+      `Saldo bancário consolidado: ${
+        dashboard.saldoBancario != null
+          ? `R$ ${dashboard.saldoBancario.toFixed(2)}`
+          : "não configurado"
+      }.`,
+      `Desembolso: projetado R$ ${dashboard.desembolsoTotais.projetado.toFixed(2)}; pago R$ ${dashboard.desembolsoTotais.pago.toFixed(2)}; em aberto R$ ${dashboard.desembolsoTotais.naoPago.toFixed(2)}.`,
+      `Receita: previsto R$ ${dashboard.receita.previsto.toFixed(2)}; recebido R$ ${dashboard.receita.recebido.toFixed(2)}.`,
+      dashboard.impostosEncargosAtrasados
+        ? `Impostos/encargos atrasados: R$ ${dashboard.impostosEncargosAtrasados.total.toFixed(2)} (${dashboard.impostosEncargosAtrasados.qtd} título(s)).`
+        : "",
+    ].filter(Boolean);
+
+    const dashboardBlock = {
+      mesYm,
+      labelMes: dashboard.labelMes,
+      periodo: dashboard.periodo,
+      caixa: dashboard.caixa,
+      saldoBancario: dashboard.saldoBancario,
+      saldoContaAzul: dashboard.saldoContaAzul,
+      movimentosSaldo: dashboard.movimentosSaldo,
+      desembolsoTotais: dashboard.desembolsoTotais,
+      receita: dashboard.receita,
+      impostosEncargosAtrasados: dashboard.impostosEncargosAtrasados,
+      serie3Meses: dashboard.serie3Meses,
+      projecaoVendas: dashboard.projecaoVendas,
+      rubricasCriticas,
+    };
+
+    return {
+      disponivel: true,
+      insights,
+      paginas: {
+        "Financeiro — Dashboard": dashboardBlock,
+        "Financeiro — Comparativo": {
+          ...dashboardBlock,
+          nota: "Números do mês alinhados ao dashboard; detalhe de rúbricas em rubricasCriticas e desembolsoTotais.",
+        },
+        "Financeiro — Análise Conta Azul": {
+          nota:
+            "Classificação editável e inspeção de títulos ficam na página /financeiro-cfo/analise. Use o Dashboard deste resumo para números do mês corrente.",
+          rubricasCriticas,
+          desembolsoTotais: dashboard.desembolsoTotais,
+        },
+      },
+    };
+  } catch (err) {
+    return {
+      disponivel: false,
+      motivo: err instanceof Error ? err.message : String(err),
+    };
+  }
+}

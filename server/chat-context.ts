@@ -107,6 +107,7 @@ export function buildCompactFazendaSnapshotMarkdown(
     estoqueItens?: EstoqueAssistantItem[] | null;
     comercial?: ComercialAssistantResumo | null;
     custos?: ModuleAssistantResumo | null;
+    financeiro?: ModuleAssistantResumo | null;
     inteligencia?: ModuleAssistantResumo | null;
     visao?: ModuleAssistantResumo | null;
     automacao?: ModuleAssistantResumo | null;
@@ -132,15 +133,15 @@ export function buildCompactFazendaSnapshotMarkdown(
   lines.push(formatChatPageCatalogMarkdown(opts.projetoModulos));
   lines.push("");
 
-  lines.push("## Módulos contratados / dados disponíveis");
-  lines.push(`- **Estoque:** ${opts.estoqueItens ? "disponível neste resumo" : "não incluído ou módulo inativo"}`);
+  lines.push("## Módulos / dados disponíveis neste resumo");
+  lines.push(`- **Estoque:** ${opts.estoqueItens ? "disponível neste resumo" : "não incluído"}`);
   lines.push(
     `- **Comercial:** ${
       opts.comercial?.disponivel
         ? "disponível neste resumo"
         : opts.comercial
           ? `não disponível (${opts.comercial.motivo})`
-          : "não incluído ou módulo inativo"
+          : "não incluído"
     }`,
   );
   lines.push(
@@ -149,7 +150,16 @@ export function buildCompactFazendaSnapshotMarkdown(
         ? "disponível neste resumo"
         : opts.custos
           ? `não disponível (${opts.custos.motivo})`
-          : "não incluído ou módulo inativo"
+          : "não incluído"
+    }`,
+  );
+  lines.push(
+    `- **Financeiro Conta Azul:** ${
+      opts.financeiro?.disponivel
+        ? "disponível neste resumo"
+        : opts.financeiro
+          ? `não disponível (${opts.financeiro.motivo})`
+          : "não incluído"
     }`,
   );
   lines.push(
@@ -158,7 +168,7 @@ export function buildCompactFazendaSnapshotMarkdown(
         ? "disponível neste resumo"
         : opts.inteligencia
           ? `não disponível (${opts.inteligencia.motivo})`
-          : "não incluído ou módulo inativo"
+          : "não incluído"
     }`,
   );
   lines.push(
@@ -167,7 +177,7 @@ export function buildCompactFazendaSnapshotMarkdown(
         ? "disponível neste resumo"
         : opts.visao
           ? `não disponível (${opts.visao.motivo})`
-          : "não incluído ou módulo inativo"
+          : "não incluído"
     }`,
   );
   lines.push(
@@ -176,7 +186,7 @@ export function buildCompactFazendaSnapshotMarkdown(
         ? "disponível neste resumo"
         : opts.automacao
           ? `não disponível (${opts.automacao.motivo})`
-          : "não incluído ou módulo inativo"
+          : "não incluído"
     }`,
   );
   lines.push("");
@@ -218,6 +228,7 @@ export function buildCompactFazendaSnapshotMarkdown(
   }
 
   renderModulePaginas(lines, "Custos de produção — contexto por página", opts.custos);
+  renderModulePaginas(lines, "Financeiro Conta Azul — contexto por página", opts.financeiro);
   renderModulePaginas(lines, "Inteligência operacional", opts.inteligencia);
   renderModulePaginas(lines, "Visão do cultivo", opts.visao);
   renderModulePaginas(lines, "Automação", opts.automacao);

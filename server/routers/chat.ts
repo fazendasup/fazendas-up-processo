@@ -14,6 +14,7 @@ import { buildCompactFazendaSnapshotMarkdown } from "../chat-context";
 import {
   buildAutomacaoAssistantResumo,
   buildCustosAssistantResumo,
+  buildFinanceiroAssistantResumo,
   buildInteligenciaAssistantResumo,
   buildVisaoAssistantResumo,
 } from "../chat-assistant-snapshots";
@@ -769,26 +770,38 @@ export const chatRouter = router({
 
       const pid = projetoIdFromCtx(ctx);
       const projeto = await db.getProjetoRow(pid);
-      const modulos = ctx.projetoModulos;
-      const [data, bancadas, estoqueItens, comercial, custos, inteligencia, visao] = await Promise.all([
+      // Assistente recebe dados de todas as áreas (mapa de páginas completo),
+      // independentemente dos módulos contratados na UI do projeto.
+      const [
+        data,
+        bancadas,
+        estoqueItens,
+        comercial,
+        custos,
+        financeiro,
+        inteligencia,
+        visao,
+      ] = await Promise.all([
         db.loadFullFazendaData(pid),
         db.getAllBancadas(pid),
-        buildEstoqueAssistantResumo(pid, Boolean(modulos?.estoque)),
-        buildComercialAssistantResumo(Boolean(modulos?.comercial), ctx.user),
-        buildCustosAssistantResumo(pid, Boolean(modulos?.custos_producao)),
-        buildInteligenciaAssistantResumo(pid, Boolean(modulos?.inteligencia)),
-        buildVisaoAssistantResumo(pid, Boolean(modulos?.visao_cultivo)),
+        buildEstoqueAssistantResumo(pid, true),
+        buildComercialAssistantResumo(true, ctx.user),
+        buildCustosAssistantResumo(pid, true),
+        buildFinanceiroAssistantResumo(pid, true),
+        buildInteligenciaAssistantResumo(pid, true),
+        buildVisaoAssistantResumo(pid, true),
       ]);
-      const automacao = buildAutomacaoAssistantResumo(data, Boolean(modulos?.automacao));
+      const automacao = buildAutomacaoAssistantResumo(data, true);
 
       const resumoOperacionalMarkdown = buildCompactFazendaSnapshotMarkdown(data, {
         projetoId: pid,
         projetoNome: projeto?.nome ?? `Projeto ${pid}`,
         bancadas,
-        projetoModulos: modulos ?? null,
+        projetoModulos: null,
         estoqueItens,
         comercial,
         custos,
+        financeiro,
         inteligencia,
         visao,
         automacao,
