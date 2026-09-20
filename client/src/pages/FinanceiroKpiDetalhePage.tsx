@@ -1,10 +1,12 @@
 import { useMemo } from "react";
-import { Link, useParams, useSearch } from "wouter";
+import { Link, useLocation, useParams, useSearch } from "wouter";
 import { ArrowLeft } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   type ColumnFilterDef,
   useColumnTableFilters,
@@ -15,10 +17,12 @@ import {
   type DashboardKpiLinha,
 } from "@shared/financeiroDashboardKpi";
 import {
+  DASHBOARD_GRANULARIDADES,
   isDashboardGranularidade,
   refDefaultDashboard,
   type DashboardGranularidade,
 } from "@shared/financeiroPeriodoDashboard";
+import { diaIsoAmericaSp } from "@shared/comercial/periodo-america-sp";
 
 function fmtMoney(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "—";
@@ -35,6 +39,13 @@ function parseSearch(search: string): Record<string, string> {
   }
   return out;
 }
+
+const GRANULARIDADE_LABEL: Record<DashboardGranularidade, string> = {
+  dia: "Dia",
+  semana: "Semana",
+  mes: "Mês",
+  ano: "Ano",
+};
 
 const KPI_LINHAS_COLUMNS: ColumnFilterDef<DashboardKpiLinha>[] = [
   { key: "titulo", label: "Descrição", value: r => r.titulo },
@@ -56,6 +67,7 @@ const KPI_LINHAS_COLUMNS: ColumnFilterDef<DashboardKpiLinha>[] = [
 export default function FinanceiroKpiDetalhePage() {
   const params = useParams<{ kpi?: string }>();
   const search = useSearch();
+  const [, setLocation] = useLocation();
   const qs = parseSearch(search);
   const granularidade: DashboardGranularidade =
     qs.g && isDashboardGranularidade(qs.g) ? qs.g : "mes";
@@ -68,6 +80,16 @@ export default function FinanceiroKpiDetalhePage() {
   const kpiRaw = params.kpi ?? "";
   const kpiOk = isDashboardKpiId(kpiRaw);
   const kpi = (kpiOk ? kpiRaw : "entrou") as DashboardKpiId;
+
+  const navegarPeriodo = (g: DashboardGranularidade, r: string) => {
+    setLocation(
+      `/financeiro-cfo/kpi/${encodeURIComponent(kpi)}?g=${encodeURIComponent(g)}&ref=${encodeURIComponent(r)}`,
+    );
+  };
+
+  const trocarGranularidade = (g: DashboardGranularidade) => {
+    navegarPeriodo(g, refDefaultDashboard(g));
+  };
 
   const q = trpc.financeiroCfo.dashboardKpiDetalhe.useQuery(
     { granularidade, ref, kpi },
@@ -101,34 +123,98 @@ export default function FinanceiroKpiDetalhePage() {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="mx-auto w-full max-w-[1100px] space-y-5 px-4 py-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 border-primary/40 font-semibold text-primary hover:bg-primary/10"
-            asChild
-          >
-            <Link href={backHref}>
-              <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-              Dashboard
-            </Link>
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 font-semibold"
-            asChild
-          >
-            <Link
-              href={`/financeiro-cfo/comparativo?mes=${encodeURIComponent(
-                data?.mesYm ??
-                  (granularidade === "mes" ? ref : ref.slice(0, 7)),
-              )}`}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 border-primary/40 font-semibold text-primary hover:bg-primary/10"
+              asChild
             >
-              Comparativo
-            </Link>
-          </Button>
+              <Link href={backHref}>
+                <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+                Dashboard
+              </Link>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 font-semibold"
+              asChild
+            >
+              <Link
+                href={`/financeiro-cfo/comparativo?mes=${encodeURIComponent(
+                  data?.mesYm ??
+                    (granularidade === "mes" ? ref : ref.slice(0, 7)),
+                )}`}
+              >
+                Comparativo
+              </Link>
+            </Button>
+          </div>
+
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex flex-wrap justify-end rounded-lg border bg-muted/40 p-1">
+              {DASHBOARD_GRANULARIDADES.map(g => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => trocarGranularidade(g)}
+                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${
+                    granularidade === g
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {GRANULARIDADE_LABEL[g]}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-end gap-2">
+              <div>
+                <Label className="text-xs">
+                  {granularidade === "dia"
+                    ? "Dia"
+                    : granularidade === "semana"
+                      ? "Dia da semana"
+                      : granularidade === "ano"
+                        ? "Ano"
+                        : "Mês"}
+                </Label>
+                {granularidade === "mes" ? (
+                  <Input
+                    type="month"
+                    className="h-9 w-[160px]"
+                    value={ref}
+                    onChange={e => navegarPeriodo("mes", e.target.value)}
+                  />
+                ) : granularidade === "ano" ? (
+                  <Input
+                    type="number"
+                    min={2020}
+                    max={2100}
+                    className="h-9 w-[120px]"
+                    value={ref}
+                    onChange={e => {
+                      const v = e.target.value.replace(/\D/g, "").slice(0, 4);
+                      if (v.length === 4) navegarPeriodo("ano", v);
+                    }}
+                  />
+                ) : (
+                  <Input
+                    type="date"
+                    className="h-9 w-[160px]"
+                    value={ref}
+                    max={diaIsoAmericaSp()}
+                    onChange={e =>
+                      navegarPeriodo(granularidade, e.target.value)
+                    }
+                  />
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
         {!kpiOk ? (
@@ -232,23 +318,20 @@ export default function FinanceiroKpiDetalhePage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {linhasFiltradas.map(l => (
-                        <tr
-                          key={l.id}
-                          className="border-b border-border/60 align-top"
-                        >
-                          <td className="py-2 pr-2 font-medium">{l.titulo}</td>
+                      {linhasFiltradas.map(linha => (
+                        <tr key={linha.id} className="border-b border-border/60">
+                          <td className="py-2 pr-2 font-medium">{linha.titulo}</td>
                           <td className="py-2 pr-2 text-muted-foreground">
-                            {l.subtitulo || "—"}
+                            {linha.subtitulo || "—"}
                           </td>
                           <td className="py-2 pr-2 text-muted-foreground">
-                            {l.grupo || "—"}
+                            {linha.grupo || "—"}
                           </td>
                           <td className="py-2 pr-2 text-muted-foreground">
-                            {l.meta || "—"}
+                            {linha.meta || "—"}
                           </td>
-                          <td className="py-2 text-right tabular-nums font-medium">
-                            {fmtMoney(l.valor)}
+                          <td className="py-2 text-right tabular-nums font-semibold">
+                            {fmtMoney(linha.valor)}
                           </td>
                         </tr>
                       ))}

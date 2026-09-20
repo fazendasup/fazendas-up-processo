@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   aplicarRubricasConcluidas,
+  listarContasEmAbertoPorVencimento,
   montarComparativoDesembolsoMes,
   montarComparativoReceitaMes,
   montarFinanceiroComparativo,
@@ -583,5 +584,60 @@ describe("aplicarRubricasConcluidas", () => {
     expect(out.totais.abateConcluidas).toBe(200);
     expect(out.totais.projetadoEfetivo).toBe(1_000);
     expect(out.totais.naoPago).toBe(0);
+  });
+});
+
+describe("listarContasEmAbertoPorVencimento", () => {
+  it("soma contas a pagar e receber em aberto no dia", () => {
+    const pagar = listarContasEmAbertoPorVencimento({
+      modo: "pagar",
+      inicioIso: "2026-09-20",
+      fimIso: "2026-09-20",
+      parcelas: [
+        parcela({
+          id: "p1",
+          descricao: "Fornecedor A",
+          rubrica: "Insumos",
+          valorEmAberto: 100,
+          dataVencimento: "2026-09-20",
+          dataPagamento: null,
+        }),
+        parcela({
+          id: "p2",
+          descricao: "Outro dia",
+          rubrica: "Insumos",
+          valorEmAberto: 50,
+          dataVencimento: "2026-09-21",
+          dataPagamento: null,
+        }),
+        parcela({
+          id: "p3",
+          descricao: "Transferencia entre contas",
+          rubrica: "Transferencias",
+          valorEmAberto: 999,
+          dataVencimento: "2026-09-20",
+          dataPagamento: null,
+        }),
+      ],
+    });
+    expect(pagar.qtd).toBe(1);
+    expect(pagar.total).toBe(100);
+
+    const receber = listarContasEmAbertoPorVencimento({
+      modo: "receber",
+      inicioIso: "2026-09-20",
+      fimIso: "2026-09-20",
+      parcelas: [
+        parcela({
+          id: "r1",
+          descricao: "Cliente X",
+          valorEmAberto: 340,
+          dataVencimento: "2026-09-20",
+          dataPagamento: null,
+        }),
+      ],
+    });
+    expect(receber.qtd).toBe(1);
+    expect(receber.total).toBe(340);
   });
 });

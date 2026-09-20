@@ -75,6 +75,13 @@ function fmtPct(n: number | null | undefined): string {
   return `${sign}${n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
 }
 
+function fmtDataBrLocal(iso: string): string {
+  const s = iso.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return iso;
+  const [y, m, d] = s.split("-");
+  return `${d}/${m}/${y}`;
+}
+
 function Kpi({
   title,
   value,
@@ -675,6 +682,60 @@ export default function FinanceiroDashboardPage() {
           </p>
         ) : (
           <>
+            {/* Contas do dia — sempre o dia civil America/SP */}
+            <section className="space-y-3">
+              <div>
+                <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  <Wallet className="h-4 w-4" />
+                  Contas do dia
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Em aberto com vencimento hoje
+                  {data?.contasDoDia?.dataIso
+                    ? ` (${fmtDataBrLocal(data.contasDoDia.dataIso)})`
+                    : ""}
+                  . Clique para ver a composição; no detalhe dá para filtrar por
+                  dia, semana, mês ou ano.
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Kpi
+                  title="Contas a pagar (hoje)"
+                  value={fmtMoney(data?.contasDoDia?.aPagar.total)}
+                  hint={
+                    (data?.contasDoDia?.aPagar.qtd ?? 0) > 0
+                      ? `${data!.contasDoDia.aPagar.qtd} título(s) vencendo hoje`
+                      : "Nenhum título a pagar com vencimento hoje"
+                  }
+                  tone={
+                    (data?.contasDoDia?.aPagar.total ?? 0) > 0.009
+                      ? "up"
+                      : "neutral"
+                  }
+                  href={`/financeiro-cfo/kpi/contas-pagar?g=dia&ref=${encodeURIComponent(
+                    data?.contasDoDia?.dataIso ?? diaIsoAmericaSp(),
+                  )}`}
+                />
+                <Kpi
+                  title="Contas a receber (hoje)"
+                  value={fmtMoney(data?.contasDoDia?.aReceber.total)}
+                  hint={
+                    (data?.contasDoDia?.aReceber.qtd ?? 0) > 0
+                      ? `${data!.contasDoDia.aReceber.qtd} título(s) vencendo hoje`
+                      : "Nenhum título a receber com vencimento hoje"
+                  }
+                  tone={
+                    (data?.contasDoDia?.aReceber.total ?? 0) > 0.009
+                      ? "down"
+                      : "neutral"
+                  }
+                  href={`/financeiro-cfo/kpi/contas-receber?g=dia&ref=${encodeURIComponent(
+                    data?.contasDoDia?.dataIso ?? diaIsoAmericaSp(),
+                  )}`}
+                />
+              </div>
+            </section>
+
             {/* 1) Desembolso — KPIs + donut por rúbrica */}
             <section className="space-y-3">
               <div>

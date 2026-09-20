@@ -170,6 +170,12 @@ export type FinanceiroDashboardPayload = {
     total: number;
     qtd: number;
   };
+  /** Contas a pagar / receber em aberto com vencimento no dia de hoje (America/SP). */
+  contasDoDia: {
+    dataIso: string;
+    aPagar: { total: number; qtd: number };
+    aReceber: { total: number; qtd: number };
+  };
   avisos: string[];
 };
 

@@ -32,6 +32,7 @@ import {
 import {
   agregarReceitaCaixaPeriodo,
   aplicarRubricasConcluidas,
+  listarContasEmAbertoPorVencimento,
   montarComparativoDesembolsoMes,
   montarComparativoReceitaMes,
   montarFinanceiroComparativo,
@@ -718,6 +719,8 @@ export async function carregarFinanceiroDashboard(
     vendas,
     pagarPeriodo,
     receberPeriodo,
+    pagarHoje,
+    receberHoje,
     rubricasConcluidas,
     saldoCa,
     pagarImpostosHistorico,
@@ -790,6 +793,21 @@ export async function carregarFinanceiroDashboard(
       : buscarParcelasReceberParaComparativo(
           periodo.inicio,
           periodo.fim,
+          projetoId,
+        ).then(r => r.map(toBase)),
+    // Contas a pagar/receber do dia (sempre America/SP de hoje).
+    mesYm === hojeYm
+      ? Promise.resolve(null as ParcelaBaseProjecao[] | null)
+      : buscarParcelasPagarParaProjecao(
+          inicioDiaAmericaSp(hojeIso),
+          fimDiaAmericaSp(hojeIso),
+          projetoId,
+        ).then(r => r.map(toBase)),
+    mesYm === hojeYm
+      ? Promise.resolve(null as ParcelaBaseProjecao[] | null)
+      : buscarParcelasReceberParaComparativo(
+          inicioDiaAmericaSp(hojeIso),
+          fimDiaAmericaSp(hojeIso),
           projetoId,
         ).then(r => r.map(toBase)),
     listRubricasMesConcluidas(projetoId, mesYm),
@@ -1044,6 +1062,21 @@ export async function carregarFinanceiroDashboard(
     hojeIso,
   );
 
+  const srcPagarHoje = pagarHoje ?? pagarMes;
+  const srcReceberHoje = receberHoje ?? receberMes;
+  const contasPagarDia = listarContasEmAbertoPorVencimento({
+    parcelas: srcPagarHoje,
+    inicioIso: hojeIso,
+    fimIso: hojeIso,
+    modo: "pagar",
+  });
+  const contasReceberDia = listarContasEmAbertoPorVencimento({
+    parcelas: srcReceberHoje,
+    inicioIso: hojeIso,
+    fimIso: hojeIso,
+    modo: "receber",
+  });
+
   return {
     mesYm,
     labelMes: labelMesYm(mesYm),
@@ -1080,6 +1113,11 @@ export async function carregarFinanceiroDashboard(
     impostosEncargosAtrasados: {
       total: impostosEncargosAtrasados.total,
       qtd: impostosEncargosAtrasados.qtd,
+    },
+    contasDoDia: {
+      dataIso: hojeIso,
+      aPagar: { total: contasPagarDia.total, qtd: contasPagarDia.qtd },
+      aReceber: { total: contasReceberDia.total, qtd: contasReceberDia.qtd },
     },
     avisos,
   } satisfies FinanceiroDashboardPayload;
@@ -1392,15 +1430,55 @@ export async function carregarDashboardKpiDetalhe(
         );
       }
       if (kpi === "em-atraso") {
+        const linhas: DashboardKpiLinha[] = receber
+          .filter(p => {
+            if (!ehReceitaVendasCaixa(p) || p.valorEmAberto <= 0.009) return false;
+            const venc = (p.dataVencimento ?? "").slice(0, 10);
+            return (
+              /^\d{4}-\d{2}-\d{2}$/.test(venc) &&
+              venc >= periodo.inicioIso &&
+              venc <= periodo.fimIso &&
+              venc < hojeIso
+            );
+          })
+          .map(p => ({
+            id: p.id,
+            titulo: p.descricao,
+            subtitulo: p.fornecedor,
+            valor: p.valorEmAberto,
+            meta: fmtDataBr(p.dataVencimento),
+            grupo: p.rubrica ?? null,
+          }))
+          .sort((a, b) => b.valor - a.valor);
         return linhasDe(
-          [],
+          linhas,
           "Em atraso",
           `Vencidos em aberto no período ${periodo.label}.`,
           caixa.vencido,
         );
       }
+      const linhas: DashboardKpiLinha[] = receber
+        .filter(p => {
+          if (!ehReceitaVendasCaixa(p) || p.valorEmAberto <= 0.009) return false;
+          const venc = (p.dataVencimento ?? "").slice(0, 10);
+          return (
+            /^\d{4}-\d{2}-\d{2}$/.test(venc) &&
+            venc >= periodo.inicioIso &&
+            venc <= periodo.fimIso &&
+            venc >= hojeIso
+          );
+        })
+        .map(p => ({
+          id: p.id,
+          titulo: p.descricao,
+          subtitulo: p.fornecedor,
+          valor: p.valorEmAberto,
+          meta: fmtDataBr(p.dataVencimento),
+          grupo: p.rubrica ?? null,
+        }))
+        .sort((a, b) => b.valor - a.valor);
       return linhasDe(
-        [],
+        linhas,
         "A receber no período",
         `Em aberto com vencimento em ${periodo.label}.`,
         caixa.aReceberNoMes,
@@ -1651,6 +1729,55 @@ export async function carregarDashboardKpiDetalhe(
       total: media,
       linhas,
     };
+  }
+
+  if (kpi === "contas-pagar" || kpi === "contas-receber") {
+    const bounds = periodo.planoAlinhadoAoPeriodo
+      ? boundsMesYmAmericaSp(mesYm)
+      : { inicio: periodo.inicio, fim: periodo.fim };
+    const parcelas =
+      kpi === "contas-pagar"
+        ? (
+            await buscarParcelasPagarParaProjecao(
+              bounds.inicio,
+              bounds.fim,
+              projetoId,
+            )
+          ).map(toBase)
+        : (
+            await buscarParcelasReceberParaComparativo(
+              bounds.inicio,
+              bounds.fim,
+              projetoId,
+            )
+          ).map(toBase);
+    const agg = listarContasEmAbertoPorVencimento({
+      parcelas,
+      inicioIso: periodo.inicioIso,
+      fimIso: periodo.fimIso,
+      modo: kpi === "contas-pagar" ? "pagar" : "receber",
+    });
+    const titulo =
+      kpi === "contas-pagar"
+        ? "Contas a pagar"
+        : "Contas a receber";
+    const descricao =
+      kpi === "contas-pagar"
+        ? `Títulos a pagar em aberto com vencimento em ${periodo.label}.`
+        : `Títulos a receber em aberto com vencimento em ${periodo.label}.`;
+    return linhasDe(
+      agg.linhas.map(t => ({
+        id: t.id,
+        titulo: t.descricao,
+        subtitulo: t.fornecedor,
+        valor: t.valor,
+        meta: fmtDataBr(t.dataVencimento),
+        grupo: t.rubrica,
+      })),
+      titulo,
+      descricao,
+      agg.total,
+    );
   }
 
   if (kpi === "impostos-atrasados") {

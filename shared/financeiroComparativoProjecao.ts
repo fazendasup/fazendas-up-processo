@@ -690,6 +690,62 @@ export function agregarReceitaCaixaPeriodo(input: {
   };
 }
 
+export type ContaEmAbertoPorVencimentoLinha = {
+  id: string;
+  descricao: string;
+  fornecedor: string | null;
+  rubrica: string | null;
+  valor: number;
+  dataVencimento: string | null;
+};
+
+/**
+ * Contas em aberto com vencimento no intervalo [inicioIso, fimIso].
+ * - pagar: exclui créditos/transferências
+ * - receber: todos os títulos a receber em aberto no vencimento
+ */
+export function listarContasEmAbertoPorVencimento(input: {
+  parcelas: ParcelaBaseProjecao[];
+  inicioIso: string;
+  fimIso: string;
+  modo: "pagar" | "receber";
+}): {
+  total: number;
+  qtd: number;
+  linhas: ContaEmAbertoPorVencimentoLinha[];
+} {
+  const { inicioIso, fimIso, modo } = input;
+  const porId = new Map<string, ParcelaBaseProjecao>();
+  for (const p of input.parcelas) {
+    if (!porId.has(p.id)) porId.set(p.id, p);
+  }
+
+  const linhas: ContaEmAbertoPorVencimentoLinha[] = [];
+  for (const p of Array.from(porId.values())) {
+    if (p.valorEmAberto <= 0.009) continue;
+    if (
+      modo === "pagar" &&
+      ehNaoDesembolsoCusto(p.descricao, p.rubrica)
+    ) {
+      continue;
+    }
+    const vencIso = (p.dataVencimento ?? "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(vencIso)) continue;
+    if (vencIso < inicioIso || vencIso > fimIso) continue;
+    linhas.push({
+      id: p.id,
+      descricao: p.descricao,
+      fornecedor: p.fornecedor,
+      rubrica: p.rubrica,
+      valor: round2(p.valorEmAberto),
+      dataVencimento: vencIso,
+    });
+  }
+  linhas.sort((a, b) => b.valor - a.valor);
+  const total = round2(linhas.reduce((s, l) => s + l.valor, 0));
+  return { total, qtd: linhas.length, linhas };
+}
+
 /** Soma valor pago de a-pagar com data de pagamento no intervalo. */
 export function somarDesembolsoPagoPeriodo(
   parcelasPagar: ParcelaBaseProjecao[],
