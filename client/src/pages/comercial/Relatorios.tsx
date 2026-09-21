@@ -54,11 +54,11 @@ import {
   type PeriodoPreset,
 } from "@/lib/comercial/periodo";
 import {
+  diaIsoAmericaSp,
   labelMesYmCurto,
   listarMesesProjecaoAFrente,
   mesIsoAmericaSp,
 } from "@shared/comercial/periodo-america-sp";
-import { diaIsoAmericaSp } from "@shared/comercial/periodo-america-sp";
 import { trpc } from "@/lib/trpc";
 import { isTrpcAbortError } from "@/lib/trpc-fetch";
 import { ExportMenu } from "@/components/ui/export-menu";
@@ -134,6 +134,10 @@ function diasCivis(inicio: Date | string, fim: Date | string): number {
   const a = new Date(`${diaIsoAmericaSp(new Date(inicio))}T12:00:00-03:00`);
   const b = new Date(`${diaIsoAmericaSp(new Date(fim))}T12:00:00-03:00`);
   return Math.round((b.getTime() - a.getTime()) / 86_400_000) + 1;
+}
+
+function roundMoney(v: number) {
+  return Math.round(v * 100) / 100;
 }
 
 function slugFilename(title: string) {
@@ -678,7 +682,6 @@ export function Relatorios() {
         nMesesBase: 0,
         produtos: [] as Array<{
           produto: string;
-          categoria: string | null;
           quantidadeMediaMensal: number;
           valorMediaMensal: number;
           quantidadeProjetada: number;
@@ -698,16 +701,25 @@ export function Relatorios() {
       base.mesesBase[base.mesesBase.length - 1] ??
       mesIsoAmericaSp(inicio);
     const mesesProj = listarMesesProjecaoAFrente(ultimoBase, nMesesProjecao);
-    const produtos = (base.produtos ?? []).map((p: any) => ({
-      produto: String(p.produto),
-      categoria: (p.categoria as string | null) ?? null,
-      quantidadeTotal: Number(p.quantidadeTotal ?? 0),
-      valorBrutoTotal: Number(p.valorBrutoTotal ?? 0),
-      quantidadeMediaMensal: Number(p.quantidadeMediaMensal ?? 0),
-      valorMediaMensal: Number(p.valorMediaMensal ?? 0),
-      quantidadeProjetada: Number(p.quantidadeMediaMensal ?? 0) * nMesesProjecao,
-      valorProjetado: Number(p.valorMediaMensal ?? 0) * nMesesProjecao,
-    }));
+    const produtos = (base.produtos ?? []).map((p: any) => {
+      const qtdMedia = roundMoney(Number(p.quantidadeMediaMensal ?? 0));
+      const valorMedia = roundMoney(Number(p.valorMediaMensal ?? 0));
+      return {
+        produto: String(p.produto),
+        quantidadeTotal: roundMoney(Number(p.quantidadeTotal ?? 0)),
+        valorBrutoTotal: roundMoney(Number(p.valorBrutoTotal ?? 0)),
+        quantidadeMediaMensal: qtdMedia,
+        valorMediaMensal: valorMedia,
+        quantidadeProjetada: roundMoney(qtdMedia * nMesesProjecao),
+        valorProjetado: roundMoney(valorMedia * nMesesProjecao),
+      };
+    });
+    const qtdMediaTotal = roundMoney(
+      Number(base.totais?.quantidadeMediaMensal ?? 0)
+    );
+    const valorMediaTotal = roundMoney(
+      Number(base.totais?.valorMediaMensal ?? 0)
+    );
     return {
       mesesBase: base.mesesBase as string[],
       mesesProjecao: mesesProj,
@@ -715,12 +727,10 @@ export function Relatorios() {
       nMesesBase: Number(base.nMesesBase ?? base.mesesBase.length ?? 1),
       produtos,
       totais: {
-        quantidadeMediaMensal: Number(base.totais?.quantidadeMediaMensal ?? 0),
-        valorMediaMensal: Number(base.totais?.valorMediaMensal ?? 0),
-        quantidadeProjetada:
-          Number(base.totais?.quantidadeMediaMensal ?? 0) * nMesesProjecao,
-        valorProjetado:
-          Number(base.totais?.valorMediaMensal ?? 0) * nMesesProjecao,
+        quantidadeMediaMensal: qtdMediaTotal,
+        valorMediaMensal: valorMediaTotal,
+        quantidadeProjetada: roundMoney(qtdMediaTotal * nMesesProjecao),
+        valorProjetado: roundMoney(valorMediaTotal * nMesesProjecao),
       },
     };
   }, [data?.projecaoVolume, nMesesProjecao, inicio]);
@@ -1215,7 +1225,6 @@ export function Relatorios() {
   ];
   const projecaoVolumeColumns: ColumnFilterDef<any>[] = [
     { key: "produto", label: "Produto", value: r => r.produto },
-    { key: "categoria", label: "Categoria", value: r => r.categoria },
     {
       key: "qtdMedia",
       label: "Média un./mês",
@@ -3156,7 +3165,6 @@ export function Relatorios() {
                 projecaoVolumeView.produtos
               ).map(r => ({
                 produto: r.produto,
-                categoria: r.categoria,
                 "média un./mês": r.quantidadeMediaMensal,
                 "média R$/mês": r.valorMediaMensal,
                 "projeção un.": r.quantidadeProjetada,
@@ -3270,13 +3278,6 @@ export function Relatorios() {
                       <th className="px-3 py-2 text-left">
                         {columnHeader("projecao-volume", "produto", "Produto")}
                       </th>
-                      <th className="px-3 py-2 text-left">
-                        {columnHeader(
-                          "projecao-volume",
-                          "categoria",
-                          "Categoria"
-                        )}
-                      </th>
                       <th className="px-3 py-2 text-right">
                         {columnHeader(
                           "projecao-volume",
@@ -3318,9 +3319,6 @@ export function Relatorios() {
                     ).map(r => (
                       <tr key={r.produto}>
                         <td className="px-3 py-2 font-semibold">{r.produto}</td>
-                        <td className="px-3 py-2 text-slate-600 dark:text-slate-300">
-                          {r.categoria ?? "—"}
-                        </td>
                         <td className="px-3 py-2 text-right">
                           {fmtNumber(r.quantidadeMediaMensal)}
                         </td>
