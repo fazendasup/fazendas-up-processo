@@ -19,6 +19,8 @@ import {
   upsertProjecaoCelula,
   upsertRubricaMesConcluida,
 } from "./financeiroProjecaoDb";
+import { listFinanceiroCaRubricasMeta } from "./financeiroClassificacaoDb";
+import { mapaComportamentoPorRubrica } from "@shared/financeiroRubricaComportamento";
 import {
   ehReceitaVendasCaixa,
   ehTransferenciaEntreContas,
@@ -1083,6 +1085,15 @@ export async function carregarFinanceiroDashboard(
     modo: "receber",
   });
 
+  const rubricasMetaRows = await listFinanceiroCaRubricasMeta(projetoId);
+  const comportamentoMap = mapaComportamentoPorRubrica(
+    rubricasMetaRows.map(r => ({
+      rubrica: r.rubrica,
+      comportamentoCusto: r.comportamentoCusto ?? null,
+      nota: r.nota,
+    })),
+  );
+
   return {
     mesYm,
     labelMes: labelMesYm(mesYm),
@@ -1111,6 +1122,7 @@ export async function carregarFinanceiroDashboard(
           naoPago: r.naoPago,
           pagoAMais: r.pagoAMais,
           status: r.status,
+          comportamentoMap,
         }),
       )
       .filter((r): r is NonNullable<typeof r> => r != null)

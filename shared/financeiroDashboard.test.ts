@@ -53,7 +53,7 @@ describe("montarSerieDashboard3Meses", () => {
 });
 
 describe("classificarRubricaDashboard / montarMapaAcaoDesembolso", () => {
-  it("marca essencial em aberto como pagar", () => {
+  it("marca custo fixo em aberto como pagar", () => {
     const r = classificarRubricaDashboard({
       rubrica: "Energia elétrica",
       projetado: 5_000,
@@ -62,12 +62,13 @@ describe("classificarRubricaDashboard / montarMapaAcaoDesembolso", () => {
       pagoAMais: 0,
       status: "faltando",
     });
+    expect(r?.comportamentoCusto).toBe("fixo");
     expect(r?.essencial).toBe(true);
     expect(r?.acao).toBe("pagar");
     expect(r?.valorAcao).toBe(4_000);
   });
 
-  it("marca não essencial em aberto como negociar", () => {
+  it("marca custo variável em aberto como negociar", () => {
     const r = classificarRubricaDashboard({
       rubrica: "Publicidade e marketing",
       projetado: 8_000,
@@ -76,12 +77,28 @@ describe("classificarRubricaDashboard / montarMapaAcaoDesembolso", () => {
       pagoAMais: 0,
       status: "faltando",
     });
+    expect(r?.comportamentoCusto).toBe("variavel");
     expect(r?.essencial).toBe(false);
     expect(r?.acao).toBe("negociar");
     expect(r?.valorAcao).toBe(8_000);
   });
 
-  it("separa painéis proteger × reduzir", () => {
+  it("respeita override de comportamento no mapa", () => {
+    const comportamentoMap = new Map([["publicidade", "fixo" as const]]);
+    const r = classificarRubricaDashboard({
+      rubrica: "Publicidade",
+      projetado: 3_000,
+      pago: 0,
+      naoPago: 3_000,
+      pagoAMais: 0,
+      status: "faltando",
+      comportamentoMap,
+    });
+    expect(r?.comportamentoCusto).toBe("fixo");
+    expect(r?.acao).toBe("pagar");
+  });
+
+  it("separa painéis fixo × variável", () => {
     const rows = [
       classificarRubricaDashboard({
         rubrica: "Folha de pagamento",

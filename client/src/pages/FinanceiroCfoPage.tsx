@@ -43,6 +43,7 @@ import type {
 } from "@shared/financeiroCfoInsights";
 import { RUBRICA_SEM_CATEGORIA } from "@shared/financeiroCfoInsights";
 import { ProjecaoDesembolsoPanel } from "@/components/financeiro/ProjecaoDesembolsoPanel";
+import { RubricasComportamentoPanel } from "@/components/financeiro/RubricasComportamentoPanel";
 import { isFinanceiroPerfil } from "@/lib/accessPolicy";
 import { useAuth } from "@/_core/hooks/useAuth";
 
@@ -601,6 +602,7 @@ export default function FinanceiroCfoPage() {
             >
               <TabsList className="flex h-auto flex-wrap">
                 <TabsTrigger value="projecao">Projeção</TabsTrigger>
+                <TabsTrigger value="comportamento">Fixo × variável</TabsTrigger>
                 {!somenteAnaliseFinanceira ? (
                   <>
                     <TabsTrigger value="rubricas">
@@ -622,6 +624,14 @@ export default function FinanceiroCfoPage() {
 
               <TabsContent value="projecao" className="space-y-3">
                 <ProjecaoDesembolsoPanel mesInicioYm={mes} />
+              </TabsContent>
+
+              <TabsContent value="comportamento" className="space-y-3">
+                <RubricasComportamentoPanel
+                  inicio={inicio}
+                  fim={fim}
+                  readOnly={somenteAnaliseFinanceira}
+                />
               </TabsContent>
 
               <TabsContent value="rubricas" className="space-y-3">

@@ -853,6 +853,34 @@ export const financeiroCaClassificacoes = mysqlTable(
 export type FinanceiroCaClassificacaoRow = typeof financeiroCaClassificacoes.$inferSelect;
 export type InsertFinanceiroCaClassificacao = typeof financeiroCaClassificacoes.$inferInsert;
 
+/**
+ * Meta por rúbrica Conta Azul (por projeto): custo fixo × variável editável.
+ * `comportamentoCusto` null = usar heurística do sistema.
+ */
+export const financeiroCaRubricasMeta = mysqlTable(
+  "financeiro_ca_rubricas_meta",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    projetoId: int("projetoId").notNull(),
+    rubrica: varchar("rubrica", { length: 191 }).notNull(),
+    comportamentoCusto: mysqlEnum("comportamentoCusto", [
+      "fixo",
+      "variavel",
+    ]),
+    nota: text("nota"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  t => ({
+    uq: uniqueIndex("uq_fin_ca_rub_meta_proj_rub").on(t.projetoId, t.rubrica),
+  }),
+);
+
+export type FinanceiroCaRubricaMetaRow =
+  typeof financeiroCaRubricasMeta.$inferSelect;
+export type InsertFinanceiroCaRubricaMeta =
+  typeof financeiroCaRubricasMeta.$inferInsert;
+
 /** Lançamentos manuais (acrescentar despesa/receita fora do Conta Azul) para relatórios. */
 export const financeiroCaAjustesManuais = mysqlTable("financeiro_ca_ajustes_manuais", {
   id: int("id").autoincrement().primaryKey(),

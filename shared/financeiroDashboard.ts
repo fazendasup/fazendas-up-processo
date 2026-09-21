@@ -3,12 +3,15 @@
  * com projeção × real (vendas e desembolso) e caixa.
  */
 import {
-  ehDespesaEssencialRecorrente,
   labelMesYm,
   mesAnteriorProjecao,
 } from "./financeiroProjecaoDesembolso";
 import type { StatusRubricaComparativo } from "./financeiroComparativoProjecao";
 import type { ProjecaoVendasRestanteMes } from "./financeiroProjecaoVendas";
+import {
+  comportamentoDaRubrica,
+  type ComportamentoCusto,
+} from "./financeiroRubricaComportamento";
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
@@ -61,7 +64,7 @@ export type FinanceiroDashboardMesInput = {
   aReceber: number;
 };
 
-/** Ação sugerida no mapa essencial × cortável. */
+/** Ação sugerida no mapa custo fixo × variável. */
 export type AcaoDesembolsoDashboard =
   | "pagar"
   | "revisar"
@@ -75,18 +78,19 @@ export type DesembolsoRubricaDashboard = {
   naoPago: number;
   pagoAMais: number;
   status: StatusRubricaComparativo;
-  /** Heurística: folha, utilidades, insumos operacionais, etc. */
+  /** Custo fixo × variável (heurística ou override do projeto). */
+  comportamentoCusto: ComportamentoCusto;
+  /** Alias legado: true quando comportamentoCusto === "fixo". */
   essencial: boolean;
   /**
-   * pagar = essencial em aberto · revisar = essencial acima do plano ·
-   * negociar = não essencial em aberto (pode segurar) ·
-   * cortar = não essencial com volume/estouro (reduzir).
+   * pagar = fixo em aberto · revisar = fixo acima do plano ·
+   * negociar = variável em aberto (pode segurar) ·
+   * cortar = variável com volume/estouro (reduzir).
    */
   acao: AcaoDesembolsoDashboard;
   /** Valor em R$ da ação (falta, excesso ou volume cortável). */
   valorAcao: number;
 };
-
 export type FinanceiroDashboardPayload = {
   mesYm: string;
   labelMes: string;
@@ -239,7 +243,7 @@ const MIN_ACAO = 0.5;
 
 /**
  * Classifica rúbrica do comparativo para o mapa de ação do dashboard.
- * Essencial usa a mesma heurística da projeção de desembolso.
+ * Fixo/variável: heurística + overrides do projeto.
  * Retorna null só se não houver volume (nem plano nem pago).
  */
 export function classificarRubricaDashboard(input: {
@@ -249,11 +253,18 @@ export function classificarRubricaDashboard(input: {
   naoPago: number;
   pagoAMais: number;
   status: StatusRubricaComparativo;
+  /** Mapa chave normalizada → override (null = heurística). */
+  comportamentoMap?: Map<string, ComportamentoCusto | null> | null;
 }): DesembolsoRubricaDashboard | null {
   const volume = Math.max(input.projetado, input.pago);
   if (volume <= MIN_ACAO) return null;
 
-  const essencial = ehDespesaEssencialRecorrente(input.rubrica, input.rubrica);
+  const comportamentoCusto = comportamentoDaRubrica(
+    input.rubrica,
+    input.comportamentoMap,
+    input.rubrica,
+  );
+  const essencial = comportamentoCusto === "fixo";
   const falta = Math.max(0, input.naoPago);
   const excesso = Math.max(0, input.pagoAMais);
 
@@ -290,13 +301,14 @@ export function classificarRubricaDashboard(input: {
     naoPago: round2(falta),
     pagoAMais: round2(excesso),
     status: input.status,
+    comportamentoCusto,
     essencial,
     acao,
     valorAcao: round2(valorAcao),
   };
 }
 
-/** Painéis do mapa: proteger (essencial) × reduzir (não essencial). */
+/** Painéis do mapa: custo fixo × custo variável. */
 export function montarMapaAcaoDesembolso(
   rubricas: DesembolsoRubricaDashboard[],
   top = 6,

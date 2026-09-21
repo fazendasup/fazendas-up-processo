@@ -3,12 +3,15 @@ import { sql } from "drizzle-orm";
 import {
   financeiroCaAjustesManuais,
   financeiroCaClassificacoes,
+  financeiroCaRubricasMeta,
   type FinanceiroCaAjusteManualRow,
   type FinanceiroCaClassificacaoRow,
+  type FinanceiroCaRubricaMetaRow,
   type InsertFinanceiroCaAjusteManual,
   type InsertFinanceiroCaClassificacao,
 } from "../drizzle/schema";
 import { getDb } from "./db";
+import type { ComportamentoCusto } from "@shared/financeiroRubricaComportamento";
 
 export async function ensureFinanceiroCaTables(): Promise<void> {
   const db = await getDb();
@@ -58,6 +61,25 @@ export async function ensureFinanceiroCaTables(): Promise<void> {
     const msg = err instanceof Error ? err.message : String(err);
     if (!/already exists|ER_TABLE_EXISTS/i.test(msg)) {
       console.error("[Database] ensureFinanceiroCaTables ajustes:", err);
+    }
+  }
+  try {
+    await db.execute(sql.raw(`CREATE TABLE IF NOT EXISTS \`financeiro_ca_rubricas_meta\` (
+  \`id\` int AUTO_INCREMENT NOT NULL,
+  \`projetoId\` int NOT NULL,
+  \`rubrica\` varchar(191) NOT NULL,
+  \`comportamentoCusto\` enum('fixo','variavel') NULL,
+  \`nota\` text,
+  \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (\`id\`),
+  UNIQUE KEY \`uq_fin_ca_rub_meta_proj_rub\` (\`projetoId\`,\`rubrica\`),
+  KEY \`idx_fin_ca_rub_meta_proj\` (\`projetoId\`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!/already exists|ER_TABLE_EXISTS/i.test(msg)) {
+      console.error("[Database] ensureFinanceiroCaTables rubricas_meta:", err);
     }
   }
 }
@@ -232,4 +254,100 @@ export async function softDeleteFinanceiroCaAjusteManual(
   id: number,
 ): Promise<void> {
   await updateFinanceiroCaAjusteManual(projetoId, id, { ativo: false });
+}
+
+export async function listFinanceiroCaRubricasMeta(
+  projetoId: number,
+): Promise<FinanceiroCaRubricaMetaRow[]> {
+  await ensureFinanceiroCaTables();
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(financeiroCaRubricasMeta)
+    .where(eq(financeiroCaRubricasMeta.projetoId, projetoId))
+    .orderBy(asc(financeiroCaRubricasMeta.rubrica));
+}
+
+export async function upsertFinanceiroCaRubricaMeta(
+  projetoId: number,
+  input: {
+    rubrica: string;
+    comportamentoCusto?: ComportamentoCusto | null;
+    nota?: string | null;
+  },
+): Promise<FinanceiroCaRubricaMetaRow> {
+  await ensureFinanceiroCaTables();
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rubrica = input.rubrica.trim();
+  if (!rubrica) throw new Error("Rúbrica obrigatória.");
+
+  const existing = await db
+    .select()
+    .from(financeiroCaRubricasMeta)
+    .where(
+      and(
+        eq(financeiroCaRubricasMeta.projetoId, projetoId),
+        eq(financeiroCaRubricasMeta.rubrica, rubrica),
+      ),
+    )
+    .limit(1);
+
+  const comportamento =
+    input.comportamentoCusto === undefined
+      ? existing[0]?.comportamentoCusto ?? null
+      : input.comportamentoCusto;
+
+  if (existing[0]) {
+    await db
+      .update(financeiroCaRubricasMeta)
+      .set({
+        comportamentoCusto: comportamento,
+        nota:
+          input.nota === undefined ? existing[0].nota : input.nota,
+      })
+      .where(eq(financeiroCaRubricasMeta.id, existing[0].id));
+    const row = await db
+      .select()
+      .from(financeiroCaRubricasMeta)
+      .where(eq(financeiroCaRubricasMeta.id, existing[0].id))
+      .limit(1);
+    return row[0]!;
+  }
+
+  await db.insert(financeiroCaRubricasMeta).values({
+    projetoId,
+    rubrica,
+    comportamentoCusto: comportamento,
+    nota: input.nota ?? null,
+  });
+  const row = await db
+    .select()
+    .from(financeiroCaRubricasMeta)
+    .where(
+      and(
+        eq(financeiroCaRubricasMeta.projetoId, projetoId),
+        eq(financeiroCaRubricasMeta.rubrica, rubrica),
+      ),
+    )
+    .limit(1);
+  return row[0]!;
+}
+
+export async function deleteFinanceiroCaRubricaMeta(
+  projetoId: number,
+  rubrica: string,
+): Promise<void> {
+  await ensureFinanceiroCaTables();
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .delete(financeiroCaRubricasMeta)
+    .where(
+      and(
+        eq(financeiroCaRubricasMeta.projetoId, projetoId),
+        eq(financeiroCaRubricasMeta.rubrica, rubrica.trim()),
+      ),
+    );
 }

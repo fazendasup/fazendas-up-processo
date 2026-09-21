@@ -190,13 +190,13 @@ function labelAcaoDesembolso(
 ): string {
   switch (acao) {
     case "pagar":
-      return "Pagar agora (essencial)";
+      return "Pagar agora (custo fixo)";
     case "revisar":
-      return "Revisar (essencial acima do plano)";
+      return "Revisar (fixo acima do plano)";
     case "negociar":
-      return "Negociar / adiar (não essencial)";
+      return "Negociar / adiar (custo variável)";
     case "cortar":
-      return "Reduzir / cortar";
+      return "Reduzir / cortar (variável)";
   }
 }
 
@@ -399,7 +399,7 @@ export default function FinanceiroDashboardPage() {
     setRef(refDefaultDashboard(g));
   };
 
-  /** Mapa: proteger (essencial) × reduzir (não essencial). */
+  /** Mapa: custo fixo × custo variável. */
   const mapaAcao = useMemo(
     () => montarMapaAcaoDesembolso(data?.desembolsoPorRubrica ?? [], 6),
     [data?.desembolsoPorRubrica],
@@ -1072,23 +1072,23 @@ export default function FinanceiroDashboardPage() {
               />
             </section>
 
-            {/* 3) Mapa de ação: essencial (proteger) × cortável (reduzir) */}
+            {/* 3) Mapa de ação: custo fixo × variável */}
             <Card>
               <CardHeader className="pb-1">
                 <CardTitle className="text-base tracking-tight">
-                  Mapa de ação — essencial × cortável
+                  Mapa de ação — custo fixo × variável
                 </CardTitle>
                 <p className="text-xs font-normal leading-relaxed text-muted-foreground">
-                  Esquerda: o que não pode falhar (folha, utilidades, insumos
-                  operacionais). Direita: onde dá para segurar ou cortar. Heurística
-                  alinhada à projeção de desembolso.
+                  Esquerda: custos fixos (estrutura/obrigações). Direita: custos
+                  variáveis (acompanham volume). Classificação editável em Análise
+                  → Fixo × variável.
                 </p>
                 <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-semibold">
                   <span style={{ color: corPagar }}>
                     Pagar {fmtMoney(mapaAcao.proteger.filter(r => r.acao === "pagar").reduce((s, r) => s + r.valorAcao, 0))}
                   </span>
                   <span style={{ color: corRevisar }}>
-                    Revisar essencial {fmtMoney(mapaAcao.proteger.filter(r => r.acao === "revisar").reduce((s, r) => s + r.valorAcao, 0))}
+                    Revisar fixo {fmtMoney(mapaAcao.proteger.filter(r => r.acao === "revisar").reduce((s, r) => s + r.valorAcao, 0))}
                   </span>
                   <span style={{ color: corNegociar }}>
                     Negociar/adiar {fmtMoney(mapaAcao.reduzir.filter(r => r.acao === "negociar").reduce((s, r) => s + r.valorAcao, 0))}
@@ -1100,18 +1100,18 @@ export default function FinanceiroDashboardPage() {
               </CardHeader>
               <CardContent className="grid gap-6 pt-3 md:grid-cols-2">
                 <MapaPainel
-                  titulo="Não deixar de pagar"
-                  subtitulo="Essenciais em aberto ou acima do plano"
-                  vazio="Nenhuma essencial urgente neste mês."
+                  titulo="Custo fixo — proteger"
+                  subtitulo="Em aberto ou acima do plano"
+                  vazio="Nenhum custo fixo urgente neste mês."
                   data={chartProteger}
                   chartGridProps={chartGridProps}
                   chartAxisXProps={chartAxisXProps}
                   chartAxisYProps={chartAxisYProps}
                 />
                 <MapaPainel
-                  titulo="Onde reduzir custo"
-                  subtitulo="Não essenciais — adiar, renegociar ou cortar"
-                  vazio="Sem volume cortável relevante."
+                  titulo="Custo variável — onde reduzir"
+                  subtitulo="Adiar, renegociar ou cortar"
+                  vazio="Sem volume variável urgente."
                   data={chartReduzir}
                   chartGridProps={chartGridProps}
                   chartAxisXProps={chartAxisXProps}

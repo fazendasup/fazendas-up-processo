@@ -13,12 +13,19 @@ import {
 } from "../financeiroContaAzulFluxo";
 import {
   deleteFinanceiroCaClassificacao,
+  deleteFinanceiroCaRubricaMeta,
   insertFinanceiroCaAjusteManual,
   listFinanceiroCaAjustesManuais,
   listFinanceiroCaClassificacoes,
+  listFinanceiroCaRubricasMeta,
   softDeleteFinanceiroCaAjusteManual,
   upsertFinanceiroCaClassificacao,
+  upsertFinanceiroCaRubricaMeta,
 } from "../financeiroClassificacaoDb";
+import {
+  inferirComportamentoCustoHeuristico,
+  resolverComportamentoCusto,
+} from "@shared/financeiroRubricaComportamento";
 import { aplicarEdicoesClassificacao } from "@shared/financeiroCfoInsights";
 import {
   addProjecaoColuna,
@@ -139,6 +146,89 @@ export const financeiroCfoRouter = router({
       await assertNaoPerfilSomenteAnalise(ctx.user);
       await deleteFinanceiroCaClassificacao(projetoIdFromCtx(ctx), input.id);
       return { ok: true as const };
+    }),
+
+  /** Overrides de custo fixo × variável por rúbrica. */
+  listRubricasMeta: custosProducaoModuleProcedure.query(async ({ ctx }) => {
+    return listFinanceiroCaRubricasMeta(projetoIdFromCtx(ctx));
+  }),
+
+  /**
+   * Lista rúbricas (sugestões do período + metas salvas) com heurística e override.
+   */
+  listRubricasComportamento: custosProducaoModuleProcedure
+    .input(
+      z.object({
+        inicio: z.coerce.date(),
+        fim: z.coerce.date(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const projetoId = projetoIdFromCtx(ctx);
+      const [analise, metas] = await Promise.all([
+        analisarFinanceiroCfoContaAzul(input.inicio, input.fim, projetoId, {
+          compararMesAnterior: false,
+        }),
+        listFinanceiroCaRubricasMeta(projetoId),
+      ]);
+      const metaByRubrica = new Map(
+        metas.map(m => [m.rubrica.trim().toLowerCase(), m]),
+      );
+      const nomes = new Set<string>();
+      for (const r of analise.rubricasSugestoes ?? []) {
+        const t = (r ?? "").trim();
+        if (t) nomes.add(t);
+      }
+      for (const r of analise.rubricas ?? []) {
+        const t = (r.label ?? "").trim();
+        if (t) nomes.add(t);
+      }
+      for (const m of metas) {
+        if (m.rubrica.trim()) nomes.add(m.rubrica.trim());
+      }
+      return Array.from(nomes)
+        .sort((a, b) => a.localeCompare(b, "pt-BR"))
+        .map(rubrica => {
+          const meta = metaByRubrica.get(rubrica.toLowerCase());
+          const override =
+            meta?.comportamentoCusto === "fixo" ||
+            meta?.comportamentoCusto === "variavel"
+              ? meta.comportamentoCusto
+              : null;
+          const heuristico = inferirComportamentoCustoHeuristico(rubrica);
+          return {
+            rubrica,
+            heuristico,
+            comportamentoCusto: override,
+            efetivo: resolverComportamentoCusto(rubrica, override),
+            nota: meta?.nota ?? null,
+            editado: override != null,
+          };
+        });
+    }),
+
+  salvarRubricaComportamento: custosProducaoModuleProcedure
+    .input(
+      z.object({
+        rubrica: z.string().min(1).max(191),
+        /** null = voltar à heurística automática */
+        comportamentoCusto: z.enum(["fixo", "variavel"]).nullable(),
+        nota: z.string().max(2000).nullable().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertNaoPerfilSomenteAnalise(ctx.user);
+      const projetoId = projetoIdFromCtx(ctx);
+      if (input.comportamentoCusto == null && (input.nota == null || input.nota === "")) {
+        await deleteFinanceiroCaRubricaMeta(projetoId, input.rubrica);
+        return { ok: true as const, deleted: true as const };
+      }
+      const row = await upsertFinanceiroCaRubricaMeta(projetoId, {
+        rubrica: input.rubrica,
+        comportamentoCusto: input.comportamentoCusto,
+        nota: input.nota,
+      });
+      return { ok: true as const, deleted: false as const, row };
     }),
 
   listAjustesManuais: custosProducaoModuleProcedure.query(async ({ ctx }) => {
