@@ -3,6 +3,7 @@ import type { PendingAssistantAction } from "@shared/assistant-actions";
 import { resolverFaseDestinoTransplantio, type FaseDestinoTransplantioFv } from "@shared/transplantioDestino";
 import { variedadePulaVegetativa } from "@shared/variedadesFase";
 import { randomUUID } from "crypto";
+import type { User } from "../../drizzle/schema";
 import * as db from "../db";
 import {
   findAndar,
@@ -18,6 +19,8 @@ export type AssistantPreviewCtx = {
   projetoId: number;
   projetoTipo: string | null;
   isAdmin?: boolean;
+  /** Usuário logado — necessário para consultas comerciais somente-leitura. */
+  user?: User | null;
 };
 
 function startOfLocalDayMs(d: Date): number {

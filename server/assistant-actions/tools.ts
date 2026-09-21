@@ -50,6 +50,12 @@ import {
   previewRegistrarColheita,
   previewRegistrarMedicaoCaixa,
 } from "./preview-ops";
+import {
+  assertAssistentePodeConsultarComercial,
+  consultarRelatorioComercialAssistente,
+  parsePeriodoAssistente,
+  type AssistenteRelatorioFoco,
+} from "../comercial/services/assistente-relatorios";
 
 function pushPreview(
   pending: PendingAssistantAction[],
@@ -61,6 +67,39 @@ function pushPreview(
 }
 
 const OPERATOR_OPERATION_TOOLS: ChatCompletionTool[] = [
+  {
+    type: "function",
+    function: {
+      name: "consultar_relatorio_comercial",
+      description:
+        "SOMENTE LEITURA. Consulta os mesmos dados dos Relatórios comerciais (Conta Azul): volume (quantidade) e valor por produto, série mensal, ABC, CMV e clientes em um período livre. Use SEMPRE que o usuário pedir vendas/volume por item, projeção, média de meses específicos (ex.: julho e agosto), CMV ou ABC fora do recorte já no resumo. Não prepara escrita nem pede confirmação.",
+      parameters: {
+        type: "object",
+        properties: {
+          inicio: {
+            type: "string",
+            description: "Início do período: YYYY-MM (mês inteiro) ou YYYY-MM-DD",
+          },
+          fim: {
+            type: "string",
+            description: "Fim do período: YYYY-MM (mês inteiro) ou YYYY-MM-DD",
+          },
+          foco: {
+            type: "string",
+            enum: ["produtos", "clientes", "abc", "cmv", "mensal", "completo"],
+            description:
+              "produtos (padrão): quantidade+valor por item e por mês + média mensal; abc: curva ABC; cmv: custo/margem; completo: vários blocos",
+          },
+          limite: {
+            type: "number",
+            description: "Máx. produtos/clientes retornados (padrão 80, máx. 200)",
+          },
+        },
+        required: ["inicio", "fim"],
+        additionalProperties: false,
+      },
+    },
+  },
   {
     type: "function",
     function: {
@@ -592,6 +631,36 @@ export async function runAssistantToolCall(
 
   try {
     switch (name) {
+      case "consultar_relatorio_comercial": {
+        const acesso = await assertAssistentePodeConsultarComercial(ctx.user);
+        if (!acesso.ok) return JSON.stringify({ ok: false, error: acesso.error });
+        const periodo = parsePeriodoAssistente(
+          String(args.inicio ?? ""),
+          String(args.fim ?? "")
+        );
+        if ("error" in periodo) {
+          return JSON.stringify({ ok: false, error: periodo.error });
+        }
+        const focoRaw = String(args.foco ?? "produtos");
+        const focos: AssistenteRelatorioFoco[] = [
+          "produtos",
+          "clientes",
+          "abc",
+          "cmv",
+          "mensal",
+          "completo",
+        ];
+        const foco = focos.includes(focoRaw as AssistenteRelatorioFoco)
+          ? (focoRaw as AssistenteRelatorioFoco)
+          : "produtos";
+        const data = await consultarRelatorioComercialAssistente({
+          inicio: periodo.inicio,
+          fim: periodo.fim,
+          foco,
+          limite: typeof args.limite === "number" ? args.limite : undefined,
+        });
+        return JSON.stringify({ ok: true, data });
+      }
       case "preparar_transplantio": {
         const r = await previewTransplantio(ctx, {
           torreOrigem: {

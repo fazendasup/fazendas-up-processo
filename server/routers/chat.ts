@@ -10,6 +10,7 @@ import { runFarmAssistantChat } from "../chat-assistant";
 import { classificarStatusPedido } from "../comercial/lib/pedido-status";
 import { getComercialPrisma } from "../comercial/db";
 import { resolveComercialUsuario } from "../comercial/resolve-usuario";
+import { buildProdutosSerieMensalSnapshot } from "../comercial/services/assistente-relatorios";
 import { buildCompactFazendaSnapshotMarkdown } from "../chat-context";
 import {
   buildAutomacaoAssistantResumo,
@@ -168,6 +169,7 @@ async function buildComercialAssistantResumo(enabled: boolean, user: User) {
       kpiSnapshots,
       ultimaSync,
       pedidosHistorico,
+      serieMensalRelatorios,
     ] = await Promise.all([
       prisma.cliente.findMany({
         select: {
@@ -285,6 +287,7 @@ async function buildComercialAssistantResumo(enabled: boolean, user: User) {
           itens: { select: { produto: true, quantidade: true, precoUnit: true } },
         },
       }),
+      buildProdutosSerieMensalSnapshot(8, 35).catch(() => null),
     ]);
 
     const clientesPorTipo: Record<string, number> = {};
@@ -566,6 +569,11 @@ async function buildComercialAssistantResumo(enabled: boolean, user: User) {
           receitaPorCategoria90d: topEntries(receitaPorCategoria, 20),
           margemProdutosComCusto: margemProdutos,
           clientesEmRisco: clientesRisco,
+          /**
+           * Série Conta Azul ~8 meses: quantidade + valor por produto/mês e médias mensais.
+           * Preferir estes campos (ou a ferramenta consultar_relatorio_comercial) para projeções.
+           */
+          serieMensalProdutos: serieMensalRelatorios,
         },
         Clientes: {
           totais: { total: clientes.length, porTipo: clientesPorTipo, porStatus: clientesPorStatus },
@@ -850,6 +858,7 @@ export const chatRouter = router({
             projetoId: pid,
             projetoTipo: projeto?.tipo ?? null,
             isAdmin: isOperationalAdminRole(ctx.user.role),
+            user: ctx.user,
           },
         });
         return {

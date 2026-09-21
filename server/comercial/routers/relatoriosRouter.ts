@@ -501,6 +501,7 @@ export const relatoriosRouter = router({
           id: r.produto,
           nome: r.produto,
           valor: r.valorBruto,
+          quantidade: r.quantidade,
         }))
       );
 

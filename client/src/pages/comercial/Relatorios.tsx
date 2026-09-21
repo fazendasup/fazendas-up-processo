@@ -1067,6 +1067,14 @@ export function Relatorios() {
     { key: "participacao", label: "Participação", value: r => fmtPct(r.participacao) },
     { key: "acumulado", label: "Acumulado", value: r => fmtPct(r.acumulado) },
   ];
+  const abcProdutosColumns: ColumnFilterDef<any>[] = [
+    { key: "nome", label: "Nome", value: r => r.nome },
+    { key: "quantidade", label: "Unidades vendidas", value: r => r.quantidade },
+    { key: "classe", label: "Classe", value: r => r.classe },
+    { key: "valor", label: "Valor", value: r => r.valor },
+    { key: "participacao", label: "Participação", value: r => fmtPct(r.participacao) },
+    { key: "acumulado", label: "Acumulado", value: r => fmtPct(r.acumulado) },
+  ];
   const clientesRiscoColumns: ColumnFilterDef<any>[] = [
     { key: "cliente", label: "Cliente", value: r => r.cliente },
     { key: "motivo", label: "Motivo", value: r => r.motivo },
@@ -1142,7 +1150,7 @@ export function Relatorios() {
     "lucro-margem": lucroMargemColumns,
     "maiores-clientes": maioresClientesColumns,
     "abc-clientes": abcColumns,
-    "abc-produtos": abcColumns,
+    "abc-produtos": abcProdutosColumns,
     "clientes-risco": clientesRiscoColumns,
     margem: margemColumns,
     "mix-produtos": mixColumns,
@@ -1294,6 +1302,12 @@ export function Relatorios() {
       { key: "participacao", label: "participação", value: r => r.participacao, format: fmtPct },
     ],
     "abc-produtos": [
+      {
+        key: "quantidade",
+        label: "unidades vendidas",
+        value: r => r.quantidade ?? 0,
+        format: fmtNumber,
+      },
       { key: "valor", label: "valor", value: r => r.valor, format: fmtMoney },
       { key: "participacao", label: "participação", value: r => r.participacao, format: fmtPct },
     ],
@@ -2348,9 +2362,10 @@ export function Relatorios() {
             <ReportSection
               title="Curva ABC de produtos"
               description="Produtos que mais contribuem para o faturamento bruto."
-              rows={filterRows("abc-produtos", data.abcProdutos ?? []).map(
+                  rows={filterRows("abc-produtos", data.abcProdutos ?? []).map(
                 (r: any) => ({
                   produto: r.nome,
+                  "unidades vendidas": r.quantidade ?? 0,
                   classe: r.classe,
                   valor: r.valor,
                   participacao: r.participacao,
@@ -2384,6 +2399,14 @@ export function Relatorios() {
                       <th className="px-3 py-2 text-left">
                         {columnHeader("abc-produtos", "nome", "Produto")}
                       </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader(
+                          "abc-produtos",
+                          "quantidade",
+                          "Unidades vendidas",
+                          "right"
+                        )}
+                      </th>
                       <th className="px-3 py-2 text-center">
                         {columnHeader("abc-produtos", "classe", "Classe", "center")}
                       </th>
@@ -2406,6 +2429,9 @@ export function Relatorios() {
                     ).map((r: any) => (
                       <tr key={r.id}>
                         <td className="px-3 py-2 font-semibold">{r.nome}</td>
+                        <td className="px-3 py-2 text-right">
+                          {fmtNumber(r.quantidade ?? 0)}
+                        </td>
                         <td className="px-3 py-2 text-center">{r.classe}</td>
                         <td className="px-3 py-2 text-right">{fmtMoney(r.valor)}</td>
                         <td className="px-3 py-2 text-right">{fmtPct(r.participacao)}</td>

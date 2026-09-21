@@ -26,10 +26,12 @@ export type AbcRow = {
   participacao: number;
   acumulado: number;
   classe: "A" | "B" | "C";
+  /** Unidades vendidas (só ABC de produtos). */
+  quantidade?: number;
 };
 
 export function curvaAbc(
-  rows: Array<{ id: string; nome: string; valor: number }>
+  rows: Array<{ id: string; nome: string; valor: number; quantidade?: number }>
 ): AbcRow[] {
   const sorted = [...rows]
     .filter(r => r.valor > 0)
@@ -50,6 +52,9 @@ export function curvaAbc(
       participacao: round2(row.valor / total),
       acumulado: round2(pctAcum),
       classe,
+      ...(row.quantidade != null
+        ? { quantidade: round2(row.quantidade) }
+        : {}),
     };
   });
 }

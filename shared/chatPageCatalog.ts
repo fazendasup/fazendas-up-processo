@@ -164,7 +164,8 @@ const PAGINAS_MODULO: ChatPageEntry[] = [
     rota: "/comercial/relatorios",
     nome: "Comercial — Relatórios",
     area: "comercial",
-    descricao: "Top clientes, produtos, margens e clientes em risco.",
+    descricao:
+      "Top clientes/produtos, CMV, ABC, volume (quantidade) e valor por item, série mensal e projeções — use serieMensalProdutos ou a ferramenta consultar_relatorio_comercial.",
     blocoSnapshot: "Relatórios",
   },
   {
