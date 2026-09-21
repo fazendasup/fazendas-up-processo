@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ArrowDownAZ, ArrowUpAZ, Check, ChevronDown } from "lucide-react";
 
 export type ColumnFilterState = {
@@ -96,6 +96,8 @@ export function ColumnHeaderFilter({
   align?: "left" | "right" | "center";
 }) {
   const [search, setSearch] = useState("");
+  const listRef = useRef<HTMLDivElement>(null);
+  const savedScrollTop = useRef(0);
   const selectedSet = new Set(selected ?? []);
   /** Filtro ativo de verdade = há valores marcados. */
   const hasActiveFilter = selected != null && selected.length > 0;
@@ -104,6 +106,15 @@ export function ColumnHeaderFilter({
   const visibleOptions = options.filter((option) =>
     option.label.toLowerCase().includes(search.trim().toLowerCase()),
   );
+
+  useLayoutEffect(() => {
+    if (!isOpen || !listRef.current) return;
+    listRef.current.scrollTop = savedScrollTop.current;
+  }, [isOpen, selected, visibleOptions.length]);
+
+  const rememberScroll = () => {
+    savedScrollTop.current = listRef.current?.scrollTop ?? 0;
+  };
 
   return (
     <div
@@ -176,6 +187,7 @@ export function ColumnHeaderFilter({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
+                  rememberScroll();
                   onSelectAll();
                 }}
                 className="text-xs font-bold text-emerald-700 hover:underline dark:text-emerald-300"
@@ -186,6 +198,7 @@ export function ColumnHeaderFilter({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
+                  rememberScroll();
                   onClearAll();
                 }}
                 className="text-xs font-bold text-red-700 hover:underline dark:text-red-300"
@@ -201,7 +214,13 @@ export function ColumnHeaderFilter({
                   : `Todos (${options.length})`}
             </span>
           </div>
-          <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
+          <div
+            ref={listRef}
+            onScroll={() => {
+              savedScrollTop.current = listRef.current?.scrollTop ?? 0;
+            }}
+            className="max-h-56 space-y-1 overflow-y-auto pr-1"
+          >
             {visibleOptions.length ? (
               visibleOptions.map((option) => {
                 // Sem filtro: todos marcados. Após "Limpar todos": nenhum marcado
@@ -212,7 +231,10 @@ export function ColumnHeaderFilter({
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => onToggleValue(option.value)}
+                    onClick={() => {
+                      rememberScroll();
+                      onToggleValue(option.value);
+                    }}
                     className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs font-semibold text-foreground hover:bg-muted"
                   >
                     <span

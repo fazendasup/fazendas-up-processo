@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ArrowDownAZ,
   ArrowUpAZ,
@@ -276,12 +276,23 @@ function ColumnHeaderFilter({
   align?: "left" | "right" | "center";
 }) {
   const [search, setSearch] = useState("");
+  const listRef = useRef<HTMLDivElement>(null);
+  const savedScrollTop = useRef(0);
   const selectedSet = new Set(selected ?? []);
   const hasActiveFilter = selected != null && selected.length > 0;
   const pickingMode = selected != null && selected.length === 0;
   const visibleOptions = options.filter(option =>
     option.label.toLowerCase().includes(search.trim().toLowerCase())
   );
+
+  useLayoutEffect(() => {
+    if (!isOpen || !listRef.current) return;
+    listRef.current.scrollTop = savedScrollTop.current;
+  }, [isOpen, selected, visibleOptions.length]);
+
+  const rememberScroll = () => {
+    savedScrollTop.current = listRef.current?.scrollTop ?? 0;
+  };
 
   return (
     <div
@@ -351,6 +362,7 @@ function ColumnHeaderFilter({
                 type="button"
                 onClick={e => {
                   e.stopPropagation();
+                  rememberScroll();
                   onSelectAll();
                 }}
                 className="text-xs font-bold text-emerald-700 hover:underline dark:text-emerald-300"
@@ -361,6 +373,7 @@ function ColumnHeaderFilter({
                 type="button"
                 onClick={e => {
                   e.stopPropagation();
+                  rememberScroll();
                   onClearAll();
                 }}
                 className="text-xs font-bold text-red-700 hover:underline dark:text-red-300"
@@ -376,7 +389,13 @@ function ColumnHeaderFilter({
                   : `Todos (${options.length})`}
             </span>
           </div>
-          <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
+          <div
+            ref={listRef}
+            onScroll={() => {
+              savedScrollTop.current = listRef.current?.scrollTop ?? 0;
+            }}
+            className="max-h-56 space-y-1 overflow-y-auto pr-1"
+          >
             {visibleOptions.length ? (
               visibleOptions.map(option => {
                 const checked =
@@ -385,7 +404,10 @@ function ColumnHeaderFilter({
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => onToggleValue(option.value)}
+                    onClick={() => {
+                      rememberScroll();
+                      onToggleValue(option.value);
+                    }}
                     className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/10"
                   >
                     <span
