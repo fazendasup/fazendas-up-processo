@@ -96,7 +96,10 @@ export default function FinanceiroKpiDetalhePage() {
   );
 
   const data = q.data;
-  const backHref = `/financeiro-cfo?g=${encodeURIComponent(granularidade)}&ref=${encodeURIComponent(ref)}`;
+  const backHref =
+    kpi === "contas-pagar" || kpi === "contas-receber"
+      ? "/financeiro-cfo"
+      : `/financeiro-cfo?g=${encodeURIComponent(granularidade)}&ref=${encodeURIComponent(ref)}`;
 
   const {
     hasColumnFilters,

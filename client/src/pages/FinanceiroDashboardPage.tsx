@@ -56,6 +56,13 @@ const GRANULARIDADE_LABEL: Record<DashboardGranularidade, string> = {
   ano: "Ano",
 };
 
+/** Filtro do dashboard: dia fica só nas contas a pagar/receber (cards + detalhe). */
+const DASHBOARD_FILTRO_GRANULARIDADES: DashboardGranularidade[] = [
+  "semana",
+  "mes",
+  "ano",
+];
+
 function fmtMoney(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "—";
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -322,19 +329,38 @@ export default function FinanceiroDashboardPage() {
   const refFromUrl = paramsUrl.get("ref");
   const mesFromUrl = paramsUrl.get("mes");
 
+  // Padrão = mês. "dia" na URL (vindo do detalhe de contas do dia) não muda o filtro do dashboard.
   const granularidadeInicial: DashboardGranularidade =
-    gFromUrl && isDashboardGranularidade(gFromUrl) ? gFromUrl : "mes";
+    gFromUrl &&
+    isDashboardGranularidade(gFromUrl) &&
+    gFromUrl !== "dia" &&
+    DASHBOARD_FILTRO_GRANULARIDADES.includes(gFromUrl)
+      ? gFromUrl
+      : "mes";
   const refInicial =
-    refFromUrl && refFromUrl.length >= 4
-      ? refFromUrl
-      : mesFromUrl && /^\d{4}-\d{2}$/.test(mesFromUrl)
-        ? mesFromUrl
+    granularidadeInicial === "mes" && mesFromUrl && /^\d{4}-\d{2}$/.test(mesFromUrl)
+      ? mesFromUrl
+      : granularidadeInicial !== "dia" &&
+          refFromUrl &&
+          refFromUrl.length >= 4 &&
+          gFromUrl !== "dia"
+        ? refFromUrl
         : refDefaultDashboard(granularidadeInicial);
 
   const [granularidade, setGranularidade] = useState<DashboardGranularidade>(
     granularidadeInicial,
   );
   const [ref, setRef] = useState(refInicial);
+
+  useEffect(() => {
+    // Limpa ?g=dia herdado do detalhe de contas, para o refresh ficar em mês.
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("g") !== "dia") return;
+    url.searchParams.set("g", "mes");
+    url.searchParams.set("ref", refDefaultDashboard("mes"));
+    window.history.replaceState({}, "", `${url.pathname}?${url.searchParams}`);
+  }, []);
   const utils = trpc.useUtils();
   const { theme } = useTheme();
   const chartTheme = useMemo(
@@ -539,7 +565,7 @@ export default function FinanceiroDashboardPage() {
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="flex flex-wrap justify-end rounded-lg border bg-muted/40 p-1">
-              {DASHBOARD_GRANULARIDADES.map(g => (
+              {DASHBOARD_FILTRO_GRANULARIDADES.map(g => (
                 <button
                   key={g}
                   type="button"
