@@ -53,6 +53,11 @@ import {
   primeiroDiaMesIso,
   type PeriodoPreset,
 } from "@/lib/comercial/periodo";
+import {
+  labelMesYmCurto,
+  listarMesesProjecaoAFrente,
+  mesIsoAmericaSp,
+} from "@shared/comercial/periodo-america-sp";
 import { diaIsoAmericaSp } from "@shared/comercial/periodo-america-sp";
 import { trpc } from "@/lib/trpc";
 import { isTrpcAbortError } from "@/lib/trpc-fetch";
@@ -79,6 +84,7 @@ const REPORTS = [
   { id: "orcamentos", label: "Orçamentos" },
   { id: "financeiro-servico", label: "Financeiro cliente/serviço" },
   { id: "vendas-mes", label: "Vendas por mês" },
+  { id: "projecao-volume", label: "Projeção de volume" },
   { id: "vendedores", label: "Vendas por vendedor" },
 ] as const;
 
@@ -103,6 +109,7 @@ const ACTION_REPORTS: Array<{ id: ReportId; label: string }> = [
   { id: "maiores-clientes", label: "Top clientes" },
   { id: "margem", label: "Margem" },
   { id: "vendas-mes", label: "Mês a mês" },
+  { id: "projecao-volume", label: "Projeção volume" },
 ];
 
 const CHART_COLORS = [
@@ -602,6 +609,7 @@ export function Relatorios() {
   >("valorLiquido");
   const [clienteSituacao, setClienteSituacao] =
     useState<ClienteSituacaoFiltro>("TODOS");
+  const [mesesProjecao, setMesesProjecao] = useState(3);
   const [tableFilters, setTableFilters] = useState<Record<string, string>>({});
   const [columnFilters, setColumnFilters] = useState<
     Record<string, Record<string, ColumnFilterState>>
@@ -657,6 +665,74 @@ export function Relatorios() {
         margem: Number(r.margemLucro ?? 0),
       })),
     [data?.cmv.linhas]
+  );
+
+  const nMesesProjecao = Math.min(Math.max(mesesProjecao, 1), 12);
+  const projecaoVolumeView = useMemo(() => {
+    const base = data?.projecaoVolume;
+    if (!base) {
+      return {
+        mesesBase: [] as string[],
+        mesesProjecao: [] as string[],
+        labelsProjecao: [] as string[],
+        nMesesBase: 0,
+        produtos: [] as Array<{
+          produto: string;
+          categoria: string | null;
+          quantidadeMediaMensal: number;
+          valorMediaMensal: number;
+          quantidadeProjetada: number;
+          valorProjetado: number;
+          quantidadeTotal: number;
+          valorBrutoTotal: number;
+        }>,
+        totais: {
+          quantidadeMediaMensal: 0,
+          valorMediaMensal: 0,
+          quantidadeProjetada: 0,
+          valorProjetado: 0,
+        },
+      };
+    }
+    const ultimoBase =
+      base.mesesBase[base.mesesBase.length - 1] ??
+      mesIsoAmericaSp(inicio);
+    const mesesProj = listarMesesProjecaoAFrente(ultimoBase, nMesesProjecao);
+    const produtos = (base.produtos ?? []).map((p: any) => ({
+      produto: String(p.produto),
+      categoria: (p.categoria as string | null) ?? null,
+      quantidadeTotal: Number(p.quantidadeTotal ?? 0),
+      valorBrutoTotal: Number(p.valorBrutoTotal ?? 0),
+      quantidadeMediaMensal: Number(p.quantidadeMediaMensal ?? 0),
+      valorMediaMensal: Number(p.valorMediaMensal ?? 0),
+      quantidadeProjetada: Number(p.quantidadeMediaMensal ?? 0) * nMesesProjecao,
+      valorProjetado: Number(p.valorMediaMensal ?? 0) * nMesesProjecao,
+    }));
+    return {
+      mesesBase: base.mesesBase as string[],
+      mesesProjecao: mesesProj,
+      labelsProjecao: mesesProj.map(labelMesYmCurto),
+      nMesesBase: Number(base.nMesesBase ?? base.mesesBase.length ?? 1),
+      produtos,
+      totais: {
+        quantidadeMediaMensal: Number(base.totais?.quantidadeMediaMensal ?? 0),
+        valorMediaMensal: Number(base.totais?.valorMediaMensal ?? 0),
+        quantidadeProjetada:
+          Number(base.totais?.quantidadeMediaMensal ?? 0) * nMesesProjecao,
+        valorProjetado:
+          Number(base.totais?.valorMediaMensal ?? 0) * nMesesProjecao,
+      },
+    };
+  }, [data?.projecaoVolume, nMesesProjecao, inicio]);
+
+  const chartProjecaoVolume = useMemo(
+    () =>
+      projecaoVolumeView.produtos.slice(0, 12).map(r => ({
+        produto: shortLabel(r.produto),
+        unidades: r.quantidadeProjetada,
+        faturamento: r.valorProjetado,
+      })),
+    [projecaoVolumeView.produtos]
   );
   const chartClientesSemVenda = useMemo(
     () =>
@@ -1137,6 +1213,30 @@ export function Relatorios() {
     { key: "frete", label: "Frete", value: r => r.frete },
     { key: "desconto", label: "Desconto", value: r => r.desconto },
   ];
+  const projecaoVolumeColumns: ColumnFilterDef<any>[] = [
+    { key: "produto", label: "Produto", value: r => r.produto },
+    { key: "categoria", label: "Categoria", value: r => r.categoria },
+    {
+      key: "qtdMedia",
+      label: "Média un./mês",
+      value: r => r.quantidadeMediaMensal,
+    },
+    {
+      key: "valorMedia",
+      label: "Média R$/mês",
+      value: r => r.valorMediaMensal,
+    },
+    {
+      key: "qtdProj",
+      label: "Projeção un.",
+      value: r => r.quantidadeProjetada,
+    },
+    {
+      key: "valorProj",
+      label: "Projeção R$",
+      value: r => r.valorProjetado,
+    },
+  ];
   const orcamentosColumns: ColumnFilterDef<any>[] = [
     { key: "data", label: "Data", value: r => fmtDate(r.dataOrcamento) },
     { key: "cliente", label: "Cliente", value: r => r.cliente },
@@ -1158,6 +1258,7 @@ export function Relatorios() {
     "vendas-detalhadas": vendasDetalhadasColumns,
     "produtos-vendidos": produtosVendidosColumns,
     "vendas-mes": vendasMesColumns,
+    "projecao-volume": projecaoVolumeColumns,
     orcamentos: orcamentosColumns,
   };
   const rawRowsByReport: Record<string, any[]> = data
@@ -1176,6 +1277,7 @@ export function Relatorios() {
         "vendas-detalhadas": data.vendasDetalhadas,
         "produtos-vendidos": data.produtosVendidosDetalhados,
         "vendas-mes": data.vendasPorMes,
+        "projecao-volume": projecaoVolumeView.produtos,
         orcamentos: data.orcamentos,
       }
     : {};
@@ -1228,6 +1330,10 @@ export function Relatorios() {
           data.produtosVendidosDetalhados
         ),
         "vendas-mes": filterRows("vendas-mes", data.vendasPorMes),
+        "projecao-volume": filterRows(
+          "projecao-volume",
+          projecaoVolumeView.produtos
+        ),
         orcamentos: filterRows("orcamentos", data.orcamentos),
       }
     : {};
@@ -1408,6 +1514,32 @@ export function Relatorios() {
         key: "desconto",
         label: "desconto",
         value: r => r.desconto,
+        format: fmtMoney,
+      },
+    ],
+    "projecao-volume": [
+      {
+        key: "qtdMedia",
+        label: "média un./mês",
+        value: r => r.quantidadeMediaMensal,
+        format: fmtNumber,
+      },
+      {
+        key: "valorMedia",
+        label: "média R$/mês",
+        value: r => r.valorMediaMensal,
+        format: fmtMoney,
+      },
+      {
+        key: "qtdProj",
+        label: "projeção un.",
+        value: r => r.quantidadeProjetada,
+        format: fmtNumber,
+      },
+      {
+        key: "valorProj",
+        label: "projeção R$",
+        value: r => r.valorProjetado,
         format: fmtMoney,
       },
     ],
@@ -3005,6 +3137,204 @@ export function Relatorios() {
                           </td>
                         </tr>
                       ))}
+                  </tbody>
+                </table>
+              </Table>
+            </ReportSection>
+          ) : null}
+
+          {active === "projecao-volume" ? (
+            <ReportSection
+              title="Projeção de volume por produto"
+              description={`Média mensal do período selecionado (${projecaoVolumeView.nMesesBase} mês${projecaoVolumeView.nMesesBase === 1 ? "" : "es"} base) × ${nMesesProjecao} mês${nMesesProjecao === 1 ? "" : "es"} à frente${
+                projecaoVolumeView.labelsProjecao.length
+                  ? `: ${projecaoVolumeView.labelsProjecao.join(", ")}`
+                  : ""
+              }. Unidades e faturamento bruto Conta Azul.`}
+              rows={filterRows(
+                "projecao-volume",
+                projecaoVolumeView.produtos
+              ).map(r => ({
+                produto: r.produto,
+                categoria: r.categoria,
+                "média un./mês": r.quantidadeMediaMensal,
+                "média R$/mês": r.valorMediaMensal,
+                "projeção un.": r.quantidadeProjetada,
+                "projeção R$": r.valorProjetado,
+              }))}
+            >
+              <div className="mb-3 flex flex-wrap items-end gap-3">
+                <label className="flex min-w-44 flex-col gap-1 text-xs font-bold text-slate-600 dark:text-slate-300">
+                  Meses de projeção à frente
+                  <select
+                    value={nMesesProjecao}
+                    onChange={e => setMesesProjecao(Number(e.target.value) || 3)}
+                    className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
+                  >
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map(n => (
+                      <option key={n} value={n}>
+                        {n} {n === 1 ? "mês" : "meses"}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <p className="max-w-xl text-xs text-slate-500 dark:text-slate-400">
+                  O período do filtro acima é a base histórica. A média = total do
+                  período ÷ meses civis da base. A projeção multiplica essa média
+                  pelos meses escolhidos.
+                </p>
+              </div>
+              <div className="mb-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-400/25 dark:bg-emerald-950/20">
+                  <div className="text-[11px] font-bold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">
+                    Média un./mês
+                  </div>
+                  <div className="mt-0.5 text-base font-bold text-slate-900 dark:text-slate-100">
+                    {fmtNumber(projecaoVolumeView.totais.quantidadeMediaMensal)}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-400/25 dark:bg-emerald-950/20">
+                  <div className="text-[11px] font-bold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">
+                    Média R$/mês
+                  </div>
+                  <div className="mt-0.5 text-base font-bold text-slate-900 dark:text-slate-100">
+                    {fmtMoney(projecaoVolumeView.totais.valorMediaMensal)}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 dark:border-sky-400/25 dark:bg-sky-950/20">
+                  <div className="text-[11px] font-bold uppercase tracking-wide text-sky-800 dark:text-sky-300">
+                    Projeção un. ({nMesesProjecao}m)
+                  </div>
+                  <div className="mt-0.5 text-base font-bold text-slate-900 dark:text-slate-100">
+                    {fmtNumber(projecaoVolumeView.totais.quantidadeProjetada)}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 dark:border-sky-400/25 dark:bg-sky-950/20">
+                  <div className="text-[11px] font-bold uppercase tracking-wide text-sky-800 dark:text-sky-300">
+                    Projeção R$ ({nMesesProjecao}m)
+                  </div>
+                  <div className="mt-0.5 text-base font-bold text-slate-900 dark:text-slate-100">
+                    {fmtMoney(projecaoVolumeView.totais.valorProjetado)}
+                  </div>
+                </div>
+              </div>
+              <ChartCard
+                title="Top produtos na projeção"
+                description="Volume e faturamento projetados (média × meses)."
+              >
+                {chartProjecaoVolume.length ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={chartProjecaoVolume}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="produto" />
+                      <YAxis
+                        yAxisId="left"
+                        tickFormatter={v => fmtMoney(Number(v), 0)}
+                      />
+                      <YAxis yAxisId="right" orientation="right" />
+                      <Tooltip
+                        formatter={(v: any, name) =>
+                          name === "unidades" ? fmtNumber(v) : fmtMoney(v)
+                        }
+                      />
+                      <Legend />
+                      <Bar
+                        yAxisId="left"
+                        dataKey="faturamento"
+                        name="Faturamento proj."
+                        fill="#059669"
+                      />
+                      <Line
+                        yAxisId="right"
+                        dataKey="unidades"
+                        name="Unidades proj."
+                        stroke="#f59e0b"
+                        strokeWidth={2}
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <EmptyChart message="Sem vendas no período base para projetar." />
+                )}
+              </ChartCard>
+              {renderTableFilter(
+                "projecao-volume",
+                projecaoVolumeView.produtos.length,
+                filterRows("projecao-volume", projecaoVolumeView.produtos)
+                  .length
+              )}
+              <Table>
+                <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
+                  <thead className="bg-slate-50 dark:bg-white/5">
+                    <tr>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("projecao-volume", "produto", "Produto")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader(
+                          "projecao-volume",
+                          "categoria",
+                          "Categoria"
+                        )}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader(
+                          "projecao-volume",
+                          "qtdMedia",
+                          "Média un./mês",
+                          "right"
+                        )}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader(
+                          "projecao-volume",
+                          "valorMedia",
+                          "Média R$/mês",
+                          "right"
+                        )}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader(
+                          "projecao-volume",
+                          "qtdProj",
+                          `Projeção un. (${nMesesProjecao}m)`,
+                          "right"
+                        )}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader(
+                          "projecao-volume",
+                          "valorProj",
+                          `Projeção R$ (${nMesesProjecao}m)`,
+                          "right"
+                        )}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-white/10">
+                    {filterRows(
+                      "projecao-volume",
+                      projecaoVolumeView.produtos
+                    ).map(r => (
+                      <tr key={r.produto}>
+                        <td className="px-3 py-2 font-semibold">{r.produto}</td>
+                        <td className="px-3 py-2 text-slate-600 dark:text-slate-300">
+                          {r.categoria ?? "—"}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {fmtNumber(r.quantidadeMediaMensal)}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {fmtMoney(r.valorMediaMensal)}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {fmtNumber(r.quantidadeProjetada)}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {fmtMoney(r.valorProjetado)}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </Table>

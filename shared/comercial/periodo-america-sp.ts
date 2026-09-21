@@ -53,3 +53,54 @@ export function periodoMesAnterior(inicio: Date, fim: Date): { inicio: Date; fim
     fim: fimDiaAmericaSp(diaIsoMesAnterior(fimIso)),
   };
 }
+
+/** Meses YYYY-MM cobertos pelo intervalo (calendário America/Sao_Paulo), inclusive. */
+export function listarMesesYmEntre(inicio: Date, fim: Date): string[] {
+  const start = mesIsoAmericaSp(inicio);
+  const end = mesIsoAmericaSp(fim);
+  if (start > end) return [];
+  const out: string[] = [];
+  let y = Number(start.slice(0, 4));
+  let m = Number(start.slice(5, 7));
+  const yEnd = Number(end.slice(0, 4));
+  const mEnd = Number(end.slice(5, 7));
+  while (y < yEnd || (y === yEnd && m <= mEnd)) {
+    out.push(`${y}-${String(m).padStart(2, "0")}`);
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
+  }
+  return out;
+}
+
+/** N meses civis imediatamente após `mesYm` (ex.: 2025-08 + 3 → 2025-09..11). */
+export function listarMesesProjecaoAFrente(mesYm: string, nMeses: number): string[] {
+  const n = Math.min(Math.max(Math.floor(nMeses), 0), 24);
+  if (n <= 0 || !/^\d{4}-\d{2}$/.test(mesYm)) return [];
+  let y = Number(mesYm.slice(0, 4));
+  let m = Number(mesYm.slice(5, 7));
+  const out: string[] = [];
+  for (let i = 0; i < n; i++) {
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
+    out.push(`${y}-${String(m).padStart(2, "0")}`);
+  }
+  return out;
+}
+
+/** Rótulo curto pt-BR: "set/2025". */
+export function labelMesYmCurto(mesYm: string): string {
+  if (!/^\d{4}-\d{2}$/.test(mesYm)) return mesYm;
+  const [y, m] = mesYm.split("-").map(Number);
+  const d = new Date(Date.UTC(y, m - 1, 1));
+  const mes = d
+    .toLocaleDateString("pt-BR", { month: "short", timeZone: "UTC" })
+    .replace(".", "")
+    .toLowerCase();
+  return `${mes}/${y}`;
+}

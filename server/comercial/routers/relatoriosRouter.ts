@@ -11,6 +11,7 @@ import { router, comercialProcedure } from "../../_core/trpc";
 import {
   addMap,
   curvaAbc,
+  montarProjecaoVolumeBase,
   n,
   periodoAnterior,
   round2,
@@ -505,6 +506,17 @@ export const relatoriosRouter = router({
         }))
       );
 
+      const projecaoVolume = montarProjecaoVolumeBase({
+        inicio: input.inicio,
+        fim: input.fim,
+        produtos: cmvRows.map(r => ({
+          produto: r.produto,
+          categoria: r.categoria,
+          quantidade: r.quantidade,
+          valorBruto: r.valorBruto,
+        })),
+      });
+
       const margemPorCliente = vendasPorClienteRows
         .map(row => {
           const lucro =
@@ -627,6 +639,7 @@ export const relatoriosRouter = router({
         },
         abcClientes,
         abcProdutos,
+        projecaoVolume,
         margemPorCliente,
         mixProdutosCliente,
         clientesRisco,

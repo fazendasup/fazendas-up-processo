@@ -165,7 +165,7 @@ const PAGINAS_MODULO: ChatPageEntry[] = [
     nome: "Comercial — Relatórios",
     area: "comercial",
     descricao:
-      "Top clientes/produtos, CMV, ABC, volume (quantidade) e valor por item, série mensal e projeções — use serieMensalProdutos ou a ferramenta consultar_relatorio_comercial.",
+      "Top clientes/produtos, CMV, ABC, volume por item, série mensal e projeção de volume (média × N meses).",
     blocoSnapshot: "Relatórios",
   },
   {
