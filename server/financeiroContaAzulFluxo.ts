@@ -478,6 +478,10 @@ export async function buscarParcelaDetalheFinanceiro(
     tipo === "pagar"
       ? det.fornecedor?.nome ?? null
       : det.cliente?.nome ?? null;
+  const clienteId =
+    tipo === "pagar"
+      ? det.fornecedor?.id ?? null
+      : det.cliente?.id ?? null;
   return normalizarParcela({
     id: det.id || parcelaId,
     tipo,
@@ -500,6 +504,7 @@ export async function buscarParcelaDetalheFinanceiro(
     categorias,
     centrosCusto: centros,
     contraparte,
+    clienteId,
     rateio,
     fonteClassificacao:
       rateio.length > 0
@@ -646,6 +651,10 @@ function mapParcelaListagem(
     tipo === "pagar"
       ? raw.fornecedor?.nome ?? null
       : raw.cliente?.nome ?? null;
+  const clienteId =
+    tipo === "pagar"
+      ? raw.fornecedor?.id ?? null
+      : raw.cliente?.id ?? null;
   const categorias = (raw.categorias ?? [])
     .map(c => c.nome?.trim() || "")
     .filter(Boolean);
@@ -672,6 +681,7 @@ function mapParcelaListagem(
     categorias,
     centrosCusto,
     contraparte,
+    clienteId,
     entradaDre: resolverEntradaDre(catalogo, catId, catNome),
     fonteClassificacao: catNome ? "listagem_categoria" : "sem_classificacao",
   });

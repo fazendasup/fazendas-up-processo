@@ -54,6 +54,8 @@ export type ParcelaFinanceiraNorm = {
   categoriaOriginal: string | null;
   centroCustoOriginal: string | null;
   contraparte: string | null;
+  /** Id Conta Azul do cliente (receber) ou fornecedor (pagar). */
+  clienteId?: string | null;
   rateio: RateioLinha[];
   fonteClassificacao: FonteClassificacao;
   confiancaClassificacao: ConfiancaClassificacao;
@@ -1297,6 +1299,7 @@ export function normalizarParcela(input: {
   categorias?: string[] | null;
   centrosCusto?: string[] | null;
   contraparte?: string | null;
+  clienteId?: string | null;
   rateio?: RateioLinha[] | null;
   fonteClassificacao?: FonteClassificacao | null;
   entradaDre?: string | null;
@@ -1388,6 +1391,7 @@ export function normalizarParcela(input: {
     categoriaOriginal: categoria,
     centroCustoOriginal: centroCusto,
     contraparte: input.contraparte ?? null,
+    clienteId: input.clienteId?.trim() || null,
     rateio,
     fonteClassificacao: fonte,
     confiancaClassificacao: confianca,

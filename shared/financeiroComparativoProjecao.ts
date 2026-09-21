@@ -128,6 +128,7 @@ export type ComparativoReceitaDetalheTitulo = {
   id: string;
   descricao: string;
   fornecedor: string | null;
+  clienteId?: string | null;
   valor: number;
   dataVencimento: string | null;
   dataPagamento?: string | null;
@@ -446,6 +447,12 @@ export function montarComparativoReceitaMes(input: {
   vendasAteDiaMesAnterior2?: number;
   vendasRestanteMesAnterior1?: number;
   vendasRestanteMesAnterior2?: number;
+  /**
+   * Baixas dos últimos N dias dos 2 meses anteriores.
+   * Quando informadas, a média histórica exclui clientes já em a receber.
+   */
+  baixasRestanteMesAnterior1?: ParcelaBaseProjecao[];
+  baixasRestanteMesAnterior2?: ParcelaBaseProjecao[];
   /** Calendário America/SP — default: assume mês fechado se omitido. */
   hojeYm?: string;
   diaHoje?: number;
@@ -497,6 +504,7 @@ export function montarComparativoReceitaMes(input: {
             id: p.id,
             descricao: p.descricao,
             fornecedor: p.fornecedor,
+            clienteId: p.clienteId ?? null,
             valor: round2(p.valorEmAberto),
             dataVencimento: p.dataVencimento,
             rubrica: p.rubrica,
@@ -507,6 +515,7 @@ export function montarComparativoReceitaMes(input: {
             id: p.id,
             descricao: p.descricao,
             fornecedor: p.fornecedor,
+            clienteId: p.clienteId ?? null,
             valor: round2(p.valorEmAberto),
             dataVencimento: p.dataVencimento,
             rubrica: p.rubrica,
@@ -523,6 +532,7 @@ export function montarComparativoReceitaMes(input: {
           id: p.id,
           descricao: p.descricao,
           fornecedor: p.fornecedor,
+          clienteId: p.clienteId ?? null,
           valor: round2(pago),
           dataVencimento: p.dataVencimento,
           dataPagamento: p.dataPagamento,
@@ -553,6 +563,28 @@ export function montarComparativoReceitaMes(input: {
     input.vendasMesAtual ?? vendasFaturadas + orcamentos,
   );
 
+  // Clientes já em a receber (no prazo): não entram de novo na média histórica.
+  const clientesEmAberto = new Set<string>();
+  for (const t of aReceberDetalhe) {
+    const k = chaveClienteCaixa(t.clienteId, t.fornecedor);
+    if (k) clientesEmAberto.add(k);
+  }
+
+  let restante1 = input.vendasRestanteMesAnterior1 ?? 0;
+  let restante2 = input.vendasRestanteMesAnterior2 ?? 0;
+  if (input.baixasRestanteMesAnterior1 != null) {
+    restante1 = somarValorPagoParcelasExcetoClientes(
+      input.baixasRestanteMesAnterior1,
+      clientesEmAberto,
+    );
+  }
+  if (input.baixasRestanteMesAnterior2 != null) {
+    restante2 = somarValorPagoParcelasExcetoClientes(
+      input.baixasRestanteMesAnterior2,
+      clientesEmAberto,
+    );
+  }
+
   const projecaoVendasBase = montarProjecaoVendasRestanteMes({
     mesYm,
     hojeYm,
@@ -562,19 +594,22 @@ export function montarComparativoReceitaMes(input: {
     vendasMesAtual: vendasFaturadas,
     vendasAteDiaMesAnterior1: input.vendasAteDiaMesAnterior1 ?? 0,
     vendasAteDiaMesAnterior2: input.vendasAteDiaMesAnterior2 ?? 0,
-    // Estes dois campos passam a ser baixas Conta Azul (caixa), não volume.
-    vendasRestanteMesAnterior1: input.vendasRestanteMesAnterior1 ?? 0,
-    vendasRestanteMesAnterior2: input.vendasRestanteMesAnterior2 ?? 0,
+    vendasRestanteMesAnterior1: restante1,
+    vendasRestanteMesAnterior2: restante2,
     mesAnterior1Ym: mes1,
     mesAnterior2Ym: mes2,
   });
-  // Projeção de fechar o mês em caixa: já recebido + o que ainda entra
-  // (média dos últimos N dias). Não soma "a receber" — evita duplicar
-  // com o padrão histórico de baixas. Orçamentos ficam só em vendasCompetencia.
-  const projecaoMesTotal = round2(
-    recebido + projecaoVendasBase.aindaEntraProjetado,
-  );
-  const projecaoVendas = { ...projecaoVendasBase, projecaoMesTotal };
+  // Ainda entra = a receber conhecido + média histórica só de clientes novos.
+  const historicoClientesNovos = projecaoVendasBase.mediaRestante2m;
+  const aindaEntraProjetado = round2(aReceberNoMes + historicoClientesNovos);
+  const projecaoMesTotal = round2(recebido + aindaEntraProjetado);
+  const projecaoVendas = {
+    ...projecaoVendasBase,
+    aindaEntraProjetado,
+    projecaoMesTotal,
+    aReceberNoProjetado: aReceberNoMes,
+    historicoClientesNovos,
+  };
   const gapVsProjecaoVendas = round2(projecaoMesTotal - pipelineMes);
 
   return {
@@ -835,6 +870,37 @@ export function somarValorPagoParcelas(parcelas: ParcelaBaseProjecao[]): number 
   return round2(s);
 }
 
+/** Chave estável do cliente para cruzar a receber × baixas históricas. */
+export function chaveClienteCaixa(
+  clienteId?: string | null,
+  nome?: string | null,
+): string | null {
+  const id = (clienteId ?? "").trim();
+  if (id) return `id:${id}`;
+  const n = (nome ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  if (n) return `nome:${n}`;
+  return null;
+}
+
+/**
+ * Soma baixas de venda/frete excluindo clientes já presentes em a receber
+ * (evita duplicar o mesmo cliente no projetado).
+ */
+export function somarValorPagoParcelasExcetoClientes(
+  parcelas: ParcelaBaseProjecao[],
+  clientesExcluir: ReadonlySet<string>,
+): number {
+  let s = 0;
+  for (const p of parcelas) {
+    if (!ehReceitaVendasCaixa(p)) continue;
+    const chave = chaveClienteCaixa(p.clienteId, p.fornecedor);
+    if (chave && clientesExcluir.has(chave)) continue;
+    const pago = valorPagoParcela(p);
+    if (pago > 0) s += pago;
+  }
+  return round2(s);
+}
+
 export function montarFinanceiroComparativo(input: {
   mesYm: string;
   linhasProjecao: LinhaProjecao[];
@@ -848,6 +914,8 @@ export function montarFinanceiroComparativo(input: {
   vendasAteDiaMesAnterior2?: number;
   vendasRestanteMesAnterior1?: number;
   vendasRestanteMesAnterior2?: number;
+  baixasRestanteMesAnterior1?: ParcelaBaseProjecao[];
+  baixasRestanteMesAnterior2?: ParcelaBaseProjecao[];
   hojeYm?: string;
   diaHoje?: number;
   /** Rúbricas marcadas como concluídas neste mês. */
@@ -875,6 +943,8 @@ export function montarFinanceiroComparativo(input: {
     vendasAteDiaMesAnterior2: input.vendasAteDiaMesAnterior2,
     vendasRestanteMesAnterior1: input.vendasRestanteMesAnterior1,
     vendasRestanteMesAnterior2: input.vendasRestanteMesAnterior2,
+    baixasRestanteMesAnterior1: input.baixasRestanteMesAnterior1,
+    baixasRestanteMesAnterior2: input.baixasRestanteMesAnterior2,
     hojeYm: input.hojeYm,
     diaHoje: input.diaHoje,
   });

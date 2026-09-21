@@ -79,6 +79,8 @@ export type ParcelaBaseProjecao = {
   id: string;
   descricao: string;
   fornecedor: string | null;
+  /** Id Conta Azul do cliente/fornecedor, quando a API envia. */
+  clienteId?: string | null;
   rubrica: string | null;
   /** Categoria como veio do Conta Azul (antes de override local). */
   rubricaOriginal?: string | null;

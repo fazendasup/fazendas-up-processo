@@ -32,6 +32,7 @@ import {
 import {
   agregarReceitaCaixaPeriodo,
   aplicarRubricasConcluidas,
+  chaveClienteCaixa,
   listarContasEmAbertoPorVencimento,
   montarComparativoDesembolsoMes,
   montarComparativoReceitaMes,
@@ -40,6 +41,7 @@ import {
   somarDesembolsoPagoPeriodo,
   somarRecebidoUltimosNDias,
   somarValorPagoParcelas,
+  somarValorPagoParcelasExcetoClientes,
 } from "@shared/financeiroComparativoProjecao";
 import {
   classificarRubricaDashboard,
@@ -137,6 +139,7 @@ function toBase(p: ParcelaFinanceiraNorm): ParcelaBaseProjecao {
     id: p.id,
     descricao: p.descricao,
     fornecedor: p.contraparte,
+    clienteId: p.clienteId ?? null,
     rubrica: atual,
     rubricaOriginal: original,
     rubricaEditadaLocal:
@@ -629,6 +632,8 @@ export async function carregarComparativoProjecao(
     vendasAteDiaMesAnterior2: vendas.vendasAteDiaMesAnterior2,
     vendasRestanteMesAnterior1: recebidoRestante1,
     vendasRestanteMesAnterior2: recebidoRestante2,
+    baixasRestanteMesAnterior1: baixas1,
+    baixasRestanteMesAnterior2: baixas2,
     hojeYm,
     diaHoje,
     rubricasConcluidas,
@@ -643,7 +648,7 @@ export async function carregarComparativoProjecao(
     },
     avisos: [
       "Caixa (já recebido / a receber / vencido) = Conta Azul ao vivo por vencimento e pagamento.",
-      `Ainda entra = média das baixas (vendas + frete, sem investimento/aporte${idsVendas.length ? `; DRE vendas no catálogo: ${idsVendas.length} cat.` : ""}).`,
+      `Ainda entra = a receber (no prazo) + média das baixas dos últimos N dias só de clientes que ainda não têm título em aberto${idsVendas.length ? ` (DRE vendas: ${idsVendas.length} cat.)` : ""}.`,
       avisoCats,
       "Já faturado = pedidos sincronizados (status venda). Orçamento ainda não é caixa.",
       `Orçamentos: até o dia ${vendas.diaLimiteOrcamento}` +
@@ -901,6 +906,8 @@ export async function carregarFinanceiroDashboard(
     vendasAteDiaMesAnterior2: vendas.vendasAteDiaMesAnterior2,
     vendasRestanteMesAnterior1: recebidoRestante1,
     vendasRestanteMesAnterior2: recebidoRestante2,
+    baixasRestanteMesAnterior1: baixasRest1,
+    baixasRestanteMesAnterior2: baixasRest2,
     hojeYm,
     diaHoje,
   });
@@ -988,7 +995,7 @@ export async function carregarFinanceiroDashboard(
   let desembolsoTotaisOut = { ...dMes.totais };
   let saldoRealizado = mesAtual.saldoCaixa;
   const avisos: string[] = [
-      `Ainda entra = baixas do período (só venda, ou venda+frete; sem aporte)${idsVendas.length ? ` (catálogo DRE vendas: ${idsVendas.length})` : ""}.`,
+      `Ainda entra = a receber (no prazo) + média das baixas dos últimos N dias só de clientes sem título em aberto${idsVendas.length ? ` (catálogo DRE vendas: ${idsVendas.length})` : ""}.`,
     (() => {
       const cats = resumirBaixasPorCategoria(
         [...baixasRest1, ...baixasRest2],
@@ -1005,7 +1012,7 @@ export async function carregarFinanceiroDashboard(
           .join(" · ")
       );
     })(),
-    "Projeção de fechar (caixa) = recebido + ainda entra (sem a receber).",
+    "Projeção de fechar (caixa) = recebido + ainda entra (a receber + histórico de clientes novos).",
     "Faturado/orçamento = volume de pedidos — não some com recebido.",
   ];
   if (saldoCa.aviso) avisos.push(saldoCa.aviso);
@@ -1565,7 +1572,7 @@ export async function carregarDashboardKpiDetalhe(
         titulo: "Ainda entra (proj. vendas)",
         subtitulo:
           dash.projecaoVendas.diasRestantes > 0
-            ? `Média Receitas de Vendas · últimos ${dash.projecaoVendas.diasRestantes} dias`
+            ? `A receber + média histórica (clientes novos) · últimos ${dash.projecaoVendas.diasRestantes} dias`
             : "Sem dias restantes",
         valor: dash.projecaoVendas.aindaEntraProjetado,
         meta: "+ receita",
@@ -1574,7 +1581,7 @@ export async function carregarDashboardKpiDetalhe(
       {
         id: "receita-total",
         titulo: "Receita caixa projetada",
-        subtitulo: "Recebido + ainda entra (não soma a receber)",
+        subtitulo: "Recebido + ainda entra (a receber + histórico)",
         valor: receitaProj,
         meta: "subtotal",
         grupo: "Receita caixa",
@@ -1647,7 +1654,7 @@ export async function carregarDashboardKpiDetalhe(
         0,
       );
     }
-    const [b1, b2] = await Promise.all([
+    const [b1, b2, receberMes] = await Promise.all([
       buscarBaixasReceberPorPeriodoPagamento(
         boundsUltimosNDiasMesYm(mes1, n).inicio,
         boundsUltimosNDiasMesYm(mes1, n).fim,
@@ -1658,18 +1665,49 @@ export async function carregarDashboardKpiDetalhe(
         boundsUltimosNDiasMesYm(mes2, n).fim,
         projetoId,
       ).then(r => r.map(toBase)),
+      buscarParcelasReceberParaComparativo(
+        boundsMesYmAmericaSp(mesYm).inicio,
+        boundsMesYmAmericaSp(mesYm).fim,
+        projetoId,
+      ).then(r => r.map(toBase)),
     ]);
-    const linhas: DashboardKpiLinha[] = [];
-    let t1 = 0;
-    let t2 = 0;
+    const receita = montarComparativoReceitaMes({
+      mesYm,
+      parcelasReceberMes: receberMes,
+      baixasRestanteMesAnterior1: b1,
+      baixasRestanteMesAnterior2: b2,
+      hojeYm,
+      diaHoje,
+    });
+    const excluir = new Set(
+      receita.aReceberDetalhe
+        .map(t => chaveClienteCaixa(t.clienteId, t.fornecedor))
+        .filter((k): k is string => !!k),
+    );
     const janela1 = boundsUltimosNDiasMesYm(mes1, n);
     const janela2 = boundsUltimosNDiasMesYm(mes2, n);
     const fmtIso = (d: Date) => diaIsoAmericaSp(d);
     const labelJanela = (ini: Date, fim: Date) =>
       `${fmtDataBr(fmtIso(ini))}–${fmtDataBr(fmtIso(fim))}`;
 
+    const linhas: DashboardKpiLinha[] = [];
+    for (const t of receita.aReceberDetalhe) {
+      linhas.push({
+        id: `ar:${t.id}`,
+        titulo: t.descricao,
+        subtitulo: t.fornecedor,
+        valor: t.valor,
+        meta: fmtDataBr(t.dataVencimento),
+        grupo: "A receber (no prazo)",
+      });
+    }
+
+    let t1 = 0;
+    let t2 = 0;
     for (const p of b1) {
       if (!ehReceitaVendasCaixa(p)) continue;
+      const chave = chaveClienteCaixa(p.clienteId, p.fornecedor);
+      if (chave && excluir.has(chave)) continue;
       const pago = valorPagoParcela(p);
       if (pago <= 0) continue;
       t1 += pago;
@@ -1679,11 +1717,13 @@ export async function carregarDashboardKpiDetalhe(
         subtitulo: p.fornecedor,
         valor: pago,
         meta: `${labelMesYm(mes1)} · pag. ${fmtDataBr(p.dataPagamento) ?? "?"}`,
-        grupo: p.rubrica,
+        grupo: "Histórico · clientes novos",
       });
     }
     for (const p of b2) {
       if (!ehReceitaVendasCaixa(p)) continue;
+      const chave = chaveClienteCaixa(p.clienteId, p.fornecedor);
+      if (chave && excluir.has(chave)) continue;
       const pago = valorPagoParcela(p);
       if (pago <= 0) continue;
       t2 += pago;
@@ -1693,31 +1733,43 @@ export async function carregarDashboardKpiDetalhe(
         subtitulo: p.fornecedor,
         valor: pago,
         meta: `${labelMesYm(mes2)} · pag. ${fmtDataBr(p.dataPagamento) ?? "?"}`,
-        grupo: p.rubrica,
+        grupo: "Histórico · clientes novos",
       });
     }
-    linhas.sort((a, b) => b.valor - a.valor);
-    const media =
-      t1 > 0 && t2 > 0
-        ? Math.round(((t1 + t2) / 2) * 100) / 100
-        : Math.round((t1 || t2) * 100) / 100;
 
-    // Resumo no topo: janelas exatas para reproduzir no Conta Azul
+    const hist = receita.projecaoVendas.historicoClientesNovos ?? 0;
+
     linhas.unshift(
       {
+        id: "resumo:a-receber",
+        titulo: "A receber (no prazo)",
+        subtitulo: "Títulos em aberto que ainda vencem neste mês",
+        valor: receita.aReceberNoMes,
+        meta: "base conhecida",
+        grupo: "Resumo",
+      },
+      {
         id: `resumo:${mes2}`,
-        titulo: `${labelMesYm(mes2)} · pagamento ${labelJanela(janela2.inicio, janela2.fim)}`,
-        subtitulo: "Filtro Conta Azul: data de pagamento (não vencimento) · venda e/ou frete",
+        titulo: `${labelMesYm(mes2)} · ${labelJanela(janela2.inicio, janela2.fim)}`,
+        subtitulo: "Baixas de clientes sem título em aberto agora",
         valor: Math.round(t2 * 100) / 100,
         meta: "base da média",
         grupo: "Resumo",
       },
       {
         id: `resumo:${mes1}`,
-        titulo: `${labelMesYm(mes1)} · pagamento ${labelJanela(janela1.inicio, janela1.fim)}`,
-        subtitulo: "Filtro Conta Azul: data de pagamento (não vencimento) · venda e/ou frete",
+        titulo: `${labelMesYm(mes1)} · ${labelJanela(janela1.inicio, janela1.fim)}`,
+        subtitulo: "Baixas de clientes sem título em aberto agora",
         valor: Math.round(t1 * 100) / 100,
         meta: "base da média",
+        grupo: "Resumo",
+      },
+      {
+        id: "resumo:historico",
+        titulo: "Média histórica (clientes novos)",
+        subtitulo: `Média dos últimos ${n} dias · exclui quem já está em a receber`,
+        valor: hist,
+        meta: "+ estimado",
         grupo: "Resumo",
       },
     );
@@ -1725,8 +1777,8 @@ export async function carregarDashboardKpiDetalhe(
     return {
       ...base,
       titulo: "Projetado de vendas (caixa)",
-      descricao: `Média das baixas com data de pagamento nos últimos ${n} dias de ${labelMesYm(mes2)} (${labelJanela(janela2.inicio, janela2.fim)}) e ${labelMesYm(mes1)} (${labelJanela(janela1.inicio, janela1.fim)}). Só venda e/ou frete. Total = média.`,
-      total: media,
+      descricao: `A receber (no prazo) + média das baixas nos últimos ${n} dias de ${labelMesYm(mes2)} e ${labelMesYm(mes1)}, só de clientes que ainda não têm título em aberto. Evita duplicar o mesmo cliente.`,
+      total: receita.projecaoVendas.aindaEntraProjetado,
       linhas,
     };
   }

@@ -385,10 +385,12 @@ describe("montarComparativoReceitaMes", () => {
     expect(out.projecaoVendas.vendasJaNoMes).toBe(1_200);
     expect(out.projecaoVendas.mediaRestante2m).toBe(1_300);
     expect(out.projecaoVendas.mediaAteMesmoDia2m).toBe(1_900);
-    expect(out.projecaoVendas.aindaEntraProjetado).toBe(1_300);
-    // Caixa: recebido + ainda entra (sem a receber)
-    expect(out.projecaoVendas.projecaoMesTotal).toBe(6_000 + 1_300);
-    expect(out.gapVsProjecaoVendas).toBe(6_000 + 1_300 - 13_000);
+    // Ainda entra = a receber (5k) + média histórica (1,3k)
+    expect(out.projecaoVendas.aReceberNoProjetado).toBe(5_000);
+    expect(out.projecaoVendas.historicoClientesNovos).toBe(1_300);
+    expect(out.projecaoVendas.aindaEntraProjetado).toBe(6_300);
+    expect(out.projecaoVendas.projecaoMesTotal).toBe(6_000 + 6_300);
+    expect(out.gapVsProjecaoVendas).toBe(6_000 + 6_300 - 13_000);
     expect(out.gapFinal).toBe(0);
   });
 
@@ -639,5 +641,68 @@ describe("listarContasEmAbertoPorVencimento", () => {
     });
     expect(receber.qtd).toBe(1);
     expect(receber.total).toBe(340);
+  });
+});
+
+describe("projetado exclui clientes já em a receber", () => {
+  it("não duplica o mesmo cliente na média histórica", () => {
+    const out = montarComparativoReceitaMes({
+      mesYm: "2026-09",
+      parcelasReceberMes: [
+        parcela({
+          id: "aberto",
+          descricao: "Pedido aberto",
+          fornecedor: "Cliente A",
+          clienteId: "cli-a",
+          valor: 10_000,
+          valorPago: 0,
+          valorEmAberto: 10_000,
+          status: "EM_ABERTO",
+          dataPagamento: null,
+          dataVencimento: "2026-09-25",
+        }),
+      ],
+      baixasRestanteMesAnterior1: [
+        parcela({
+          id: "hist-a",
+          descricao: "Mesmo cliente",
+          fornecedor: "Cliente A",
+          clienteId: "cli-a",
+          valorPago: 8_000,
+          dataPagamento: "2026-08-25",
+          dataVencimento: "2026-08-20",
+        }),
+        parcela({
+          id: "hist-b",
+          descricao: "Cliente novo",
+          fornecedor: "Cliente B",
+          clienteId: "cli-b",
+          valorPago: 2_000,
+          dataPagamento: "2026-08-26",
+          dataVencimento: "2026-08-20",
+        }),
+      ],
+      baixasRestanteMesAnterior2: [
+        parcela({
+          id: "hist-b2",
+          descricao: "Cliente novo",
+          fornecedor: "Cliente B",
+          clienteId: "cli-b",
+          valorPago: 2_000,
+          dataPagamento: "2026-07-26",
+          dataVencimento: "2026-07-20",
+        }),
+      ],
+      hojeYm: "2026-09",
+      diaHoje: 17,
+    });
+
+    expect(out.aReceberNoMes).toBe(10_000);
+    // Histórico só Cliente B (2k + 2k) / 2 = 2k; Cliente A excluído
+    expect(out.projecaoVendas.historicoClientesNovos).toBe(2_000);
+    expect(out.projecaoVendas.aindaEntraProjetado).toBe(12_000);
+    expect(out.projecaoVendas.aindaEntraProjetado).toBeGreaterThanOrEqual(
+      out.aReceberNoMes,
+    );
   });
 });

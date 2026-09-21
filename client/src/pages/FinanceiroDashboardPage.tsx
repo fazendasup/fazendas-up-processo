@@ -957,9 +957,10 @@ export default function FinanceiroDashboardPage() {
                   Entradas — caixa e vendas
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Camadas do caixa: recebido e ainda entra. A soma delas é a
-                  receita projetada usada no saldo abaixo (a receber não entra —
-                  evita duplicar). Não misture com faturado/orçamento (volume).
+                  Camadas do caixa: recebido e ainda entra. O projetado soma o a
+                  receber (no prazo) com a média histórica só de clientes que
+                  ainda não têm título em aberto — sem duplicar o mesmo cliente.
+                  Não misture com faturado/orçamento (volume).
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -988,7 +989,7 @@ export default function FinanceiroDashboardPage() {
                   value={fmtMoney(pv?.aindaEntraProjetado)}
                   hint={
                     pv && pv.diasRestantes > 0
-                      ? `Média venda/frete · últimos ${pv.diasRestantes} dias dos 2 meses ant.`
+                      ? `A receber ${fmtMoney(pv.aReceberNoProjetado ?? rec?.aReceberNoMes)} + novos clientes (média · últimos ${pv.diasRestantes} dias)`
                       : "Sem dias restantes neste mês"
                   }
                   href={kpiHref("proj-vendas")}

@@ -219,6 +219,7 @@ export type ProjecaoVendasRestanteMes = {
   /**
    * Média do que **entrou em caixa** (baixas Conta Azul) nos últimos
    * `diasRestantes` dias dos 2 meses anteriores — não é volume faturado.
+   * No dashboard, esta média exclui clientes já presentes em a receber.
    */
   mediaRestante2m: number;
   vendasRestanteMesAnterior1: number;
@@ -231,11 +232,18 @@ export type ProjecaoVendasRestanteMes = {
     { mesYm: string; inicioIso: string; fimIso: string; total: number },
     { mesYm: string; inicioIso: string; fimIso: string; total: number },
   ];
+  /**
+   * A receber (no prazo) + média histórica só de clientes ainda sem título
+   * em aberto neste mês. Sempre ≥ aReceberNoMes.
+   */
   aindaEntraProjetado: number;
+  /** Parte conhecida: títulos em aberto no prazo neste mês. */
+  aReceberNoProjetado?: number;
+  /** Parte estimada: média histórica excluindo clientes já em a receber. */
+  historicoClientesNovos?: number;
   /**
    * No fluxo de caixa: recebido + aindaEntraProjetado
-   * (sem somar a receber — evita redundância com o padrão de baixas).
-   * (Preenchido em montarComparativoReceitaMes; aqui só vendasJaNoMes + aindaEntra.)
+   * (aindaEntra já inclui a receber no prazo + histórico de clientes novos).
    */
   projecaoMesTotal: number;
 };
