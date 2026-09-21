@@ -41,7 +41,6 @@ import {
   somarDesembolsoPagoPeriodo,
   somarRecebidoUltimosNDias,
   somarValorPagoParcelas,
-  somarValorPagoParcelasExcetoClientes,
 } from "@shared/financeiroComparativoProjecao";
 import {
   classificarRubricaDashboard,
