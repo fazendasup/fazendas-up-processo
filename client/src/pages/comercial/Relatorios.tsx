@@ -3217,6 +3217,7 @@ export function Relatorios() {
               }. Unidades e faturamento bruto Conta Azul.`}
               rows={projecaoVolumeExport.rows}
               exportFooters={projecaoVolumeExport.footers}
+              exportSubtitleExtra={`Projeção ${nMesesProjecao} mês${nMesesProjecao === 1 ? "" : "es"} (${projecaoVolumeView.labelsProjecao.join(", ") || "—"}). KPIs totais: média ${fmtNumber(projecaoVolumeView.totais.quantidadeMediaMensal)} un./mês · ${fmtMoney(projecaoVolumeView.totais.valorMediaMensal)}/mês · projeção ${fmtNumber(projecaoVolumeView.totais.quantidadeProjetada)} un. · ${fmtMoney(projecaoVolumeView.totais.valorProjetado)}.`}
             >
               <div className="mb-3 flex flex-wrap items-end gap-3">
                 <label className="flex min-w-44 flex-col gap-1 text-xs font-bold text-slate-600 dark:text-slate-300">
