@@ -39,13 +39,12 @@ function addDaysIso(iso: string, days: number): string {
   return dt.toISOString().slice(0, 10);
 }
 
-/** Segunda-feira da semana ISO da data (America/SP civil). */
+/** Domingo de início da semana (dom→sáb) da data civil. */
 function inicioSemanaIso(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);
   const dt = new Date(Date.UTC(y!, m! - 1, d!));
-  const dow = dt.getUTCDay(); // 0=dom
-  const delta = dow === 0 ? -6 : 1 - dow;
-  return addDaysIso(iso, delta);
+  const dow = dt.getUTCDay(); // 0=dom … 6=sáb
+  return addDaysIso(iso, -dow);
 }
 
 function fmtMoney(n: number | null | undefined): string {
