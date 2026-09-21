@@ -40,7 +40,6 @@ import {
   type DesembolsoRubricaDashboard,
 } from "@shared/financeiroDashboard";
 import {
-  DASHBOARD_GRANULARIDADES,
   isDashboardGranularidade,
   refDefaultDashboard,
   type DashboardGranularidade,
