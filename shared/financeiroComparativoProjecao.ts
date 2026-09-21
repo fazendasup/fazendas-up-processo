@@ -6,6 +6,7 @@ import {
   ehNaoDesembolsoCusto,
   ehReceitaVendasCaixa,
   ehRubricaTipicaDeAtrasoMensal,
+  escolherCategoriaReceitaPrincipal,
   labelMesYm,
   mesAnteriorProjecao,
   mesPagamentoParcela,
@@ -507,7 +508,10 @@ export function montarComparativoReceitaMes(input: {
             clienteId: p.clienteId ?? null,
             valor: round2(p.valorEmAberto),
             dataVencimento: p.dataVencimento,
-            rubrica: p.rubrica,
+            rubrica: escolherCategoriaReceitaPrincipal(
+              [p.rubrica, ...(p.categorias ?? [])],
+              { descricao: p.descricao, preferida: p.rubrica },
+            ),
           });
         } else {
           aReceberNoMes += p.valorEmAberto;
@@ -518,7 +522,10 @@ export function montarComparativoReceitaMes(input: {
             clienteId: p.clienteId ?? null,
             valor: round2(p.valorEmAberto),
             dataVencimento: p.dataVencimento,
-            rubrica: p.rubrica,
+            rubrica: escolherCategoriaReceitaPrincipal(
+              [p.rubrica, ...(p.categorias ?? [])],
+              { descricao: p.descricao, preferida: p.rubrica },
+            ),
           });
         }
       }
@@ -767,11 +774,18 @@ export function listarContasEmAbertoPorVencimento(input: {
     const vencIso = (p.dataVencimento ?? "").slice(0, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(vencIso)) continue;
     if (vencIso < inicioIso || vencIso > fimIso) continue;
+    const rubrica =
+      modo === "receber"
+        ? escolherCategoriaReceitaPrincipal(
+            [p.rubrica, ...(p.categorias ?? [])],
+            { descricao: p.descricao, preferida: p.rubrica },
+          )
+        : p.rubrica;
     linhas.push({
       id: p.id,
       descricao: p.descricao,
       fornecedor: p.fornecedor,
-      rubrica: p.rubrica,
+      rubrica,
       valor: round2(p.valorEmAberto),
       dataVencimento: vencIso,
     });

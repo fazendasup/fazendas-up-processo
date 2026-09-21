@@ -6,7 +6,10 @@
  */
 
 import { periodoMesAnterior, diaIsoAmericaSp, inicioDiaAmericaSp, fimDiaAmericaSp } from "./comercial/periodo-america-sp";
-import { ehNaoDesembolsoCusto } from "./financeiroProjecaoDesembolso";
+import {
+  ehNaoDesembolsoCusto,
+  escolherCategoriaReceitaPrincipal,
+} from "./financeiroProjecaoDesembolso";
 
 export const RUBRICA_SEM_CATEGORIA = "Sem rúbrica no Conta Azul";
 export const CENTRO_CUSTO_SEM = "Sem centro de custo";
@@ -1323,9 +1326,19 @@ export function normalizarParcela(input: {
     })),
   }));
 
-  const categoriaFromRateio = rateio.find(r => r.categoriaNome)?.categoriaNome ?? null;
+  const catsDoRateio = rateio
+    .map(r => r.categoriaNome)
+    .filter((n): n is string => !!n);
+  const categoriaBruta =
+    catsDoRateio[0] || input.categoria?.trim() || categorias[0] || null;
+  /** A receber: venda+frete → grupo = Receitas de Vendas (não Fretes). */
   const categoria =
-    categoriaFromRateio || input.categoria?.trim() || categorias[0] || null;
+    input.tipo === "receber"
+      ? escolherCategoriaReceitaPrincipal(
+          [...catsDoRateio, ...categorias, input.categoria],
+          { descricao: input.descricao, preferida: categoriaBruta },
+        )
+      : categoriaBruta;
   const centroFromRateio =
     rateio.flatMap(r => r.centros).find(c => c.nome)?.nome ?? null;
   const centroCusto = centroFromRateio || centrosCusto[0] || null;

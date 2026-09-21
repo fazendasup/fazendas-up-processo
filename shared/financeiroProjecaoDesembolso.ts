@@ -180,31 +180,12 @@ export function ehReceitaVendasCaixa(
     .filter(Boolean);
 
   for (const rubrica of labels) {
-    // Categoria canônica: "Receitas de Vendas"
-    if (
-      /^receitas?\s+de\s+vendas?$/.test(rubrica) ||
-      /^venda(s)?\s+de\s+(produtos?|mercadorias?)$/.test(rubrica)
-    ) {
-      return true;
-    }
-    // Frete recebido (título próprio ou 2ª categoria no rateio)
-    if (
-      /^fretes?\s+recebidos?$/.test(rubrica) ||
-      /^frete(\s+de\s+venda)?$/.test(rubrica) ||
-      /^receita\s+de\s+frete$/.test(rubrica) ||
-      /^frete\s+sobre\s+venda$/.test(rubrica)
-    ) {
-      return true;
-    }
+    if (ehNomeCategoriaReceitaVendas(rubrica)) return true;
+    if (ehNomeCategoriaFreteRecebido(rubrica)) return true;
   }
 
   // Descrição típica: "Venda 4903 / NF-e:4002"
-  if (
-    /^(venda|orcamento)\s+\d+/.test(descricao) ||
-    /\bnf-?e\s*:?\s*\d+/.test(descricao)
-  ) {
-    return true;
-  }
+  if (ehDescricaoVendaOuOrcamento(p.descricao)) return true;
 
   // Descrição explícita de frete recebido
   if (/\bfrete(s)?\s+recebido/.test(descricao) || /^frete\b/.test(descricao)) {
@@ -220,6 +201,86 @@ export function ehReceitaVendasCaixa(
   }
 
   return false;
+}
+
+/** Nome canônico de receita de vendas (já normalizado: minúsculo, sem acento). */
+export function ehNomeCategoriaReceitaVendas(rubricaNorm: string): boolean {
+  return (
+    /^receitas?\s+de\s+vendas?$/.test(rubricaNorm) ||
+    /^venda(s)?\s+de\s+(produtos?|mercadorias?)$/.test(rubricaNorm)
+  );
+}
+
+/** Nome canônico de frete recebido (já normalizado). */
+export function ehNomeCategoriaFreteRecebido(rubricaNorm: string): boolean {
+  return (
+    /^fretes?\s+recebidos?$/.test(rubricaNorm) ||
+    /^frete(\s+de\s+venda)?$/.test(rubricaNorm) ||
+    /^receita\s+de\s+frete$/.test(rubricaNorm) ||
+    /^frete\s+sobre\s+venda$/.test(rubricaNorm)
+  );
+}
+
+function normalizarLabelCategoria(s: string | null | undefined): string {
+  return (s ?? "")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .trim();
+}
+
+export function ehDescricaoVendaOuOrcamento(
+  descricao: string | null | undefined,
+): boolean {
+  const d = (descricao ?? "")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .trim();
+  return /^(venda|orcamento)\s+\d+/.test(d) || /\bnf-?e\s*:?\s*\d+/.test(d);
+}
+
+/**
+ * Escolhe a rúbrica de exibição/caixa para a receber.
+ * Venda + frete no mesmo título → preferir "Receitas de Vendas"
+ * (frete é só rateio/parte do valor, não o grupo principal).
+ */
+export function escolherCategoriaReceitaPrincipal(
+  categorias: Array<string | null | undefined>,
+  opts?: { descricao?: string | null; preferida?: string | null },
+): string | null {
+  const ordered: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of [...categorias, opts?.preferida]) {
+    const t = (raw ?? "").trim();
+    if (!t) continue;
+    const k = normalizarLabelCategoria(t);
+    if (!k || seen.has(k)) continue;
+    seen.add(k);
+    ordered.push(t);
+  }
+  if (ordered.length === 0) {
+    return ehDescricaoVendaOuOrcamento(opts?.descricao)
+      ? "Receitas de Vendas"
+      : null;
+  }
+
+  const vendas = ordered.find(c =>
+    ehNomeCategoriaReceitaVendas(normalizarLabelCategoria(c)),
+  );
+  if (vendas) return vendas;
+
+  // Título de venda cujo Conta Azul listou só/primeiro o frete
+  if (ehDescricaoVendaOuOrcamento(opts?.descricao)) {
+    return "Receitas de Vendas";
+  }
+
+  const frete = ordered.find(c =>
+    ehNomeCategoriaFreteRecebido(normalizarLabelCategoria(c)),
+  );
+  if (frete) return frete;
+
+  return ordered[0] ?? null;
 }
 
 function round2(n: number): number {

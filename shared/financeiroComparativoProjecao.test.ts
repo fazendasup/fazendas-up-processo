@@ -12,6 +12,7 @@ import {
   ehNaoDesembolsoCusto,
   ehReceitaVendasCaixa,
   ehTransferenciaEntreContas,
+  escolherCategoriaReceitaPrincipal,
   type LinhaProjecao,
   type ParcelaBaseProjecao,
 } from "./financeiroProjecaoDesembolso";
@@ -164,6 +165,33 @@ describe("ehReceitaVendasCaixa", () => {
         entradaDre: null,
       }),
     ).toBe(true);
+  });
+});
+
+describe("escolherCategoriaReceitaPrincipal", () => {
+  it("prefere Receitas de Vendas quando há venda+frete", () => {
+    expect(
+      escolherCategoriaReceitaPrincipal(
+        ["Fretes recebidos", "Receitas de Vendas"],
+        { descricao: "Venda 5413" },
+      ),
+    ).toBe("Receitas de Vendas");
+  });
+
+  it("título Venda com só frete na categoria vira Receitas de Vendas", () => {
+    expect(
+      escolherCategoriaReceitaPrincipal(["Fretes recebidos"], {
+        descricao: "Venda 5419 / NF-e:4379",
+      }),
+    ).toBe("Receitas de Vendas");
+  });
+
+  it("frete puro (sem descrição de venda) permanece frete", () => {
+    expect(
+      escolherCategoriaReceitaPrincipal(["Fretes recebidos"], {
+        descricao: "Frete avulso cliente X",
+      }),
+    ).toBe("Fretes recebidos");
   });
 });
 
