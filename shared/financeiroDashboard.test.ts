@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   classificarRubricaDashboard,
+  consolidarCustosPorComportamento,
   montarMapaAcaoDesembolso,
   montarSerieDashboard3Meses,
 } from "./financeiroDashboard";
@@ -96,6 +97,34 @@ describe("classificarRubricaDashboard / montarMapaAcaoDesembolso", () => {
     });
     expect(r?.comportamentoCusto).toBe("fixo");
     expect(r?.acao).toBe("pagar");
+  });
+
+  it("consolida totais fixo × variável do plano", () => {
+    const out = consolidarCustosPorComportamento([
+      {
+        rubrica: "Energia elétrica",
+        projetado: 5_000,
+        pago: 2_000,
+        naoPago: 3_000,
+      },
+      {
+        rubrica: "Folha de pagamento",
+        projetado: 40_000,
+        pago: 40_000,
+        naoPago: 0,
+      },
+      {
+        rubrica: "Publicidade",
+        projetado: 10_000,
+        pago: 1_000,
+        naoPago: 9_000,
+      },
+    ]);
+    expect(out.fixo.projetado).toBe(45_000);
+    expect(out.variavel.projetado).toBe(10_000);
+    expect(out.pctFixoProjetado).toBe(81.82);
+    expect(out.fixo.qtdRubricas).toBe(2);
+    expect(out.variavel.qtdRubricas).toBe(1);
   });
 
   it("separa painéis fixo × variável", () => {

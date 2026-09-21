@@ -27,6 +27,7 @@ import {
   resolverComportamentoCusto,
 } from "@shared/financeiroRubricaComportamento";
 import { aplicarEdicoesClassificacao } from "@shared/financeiroCfoInsights";
+import { ehNaoDesembolsoCusto } from "@shared/financeiroProjecaoDesembolso";
 import {
   addProjecaoColuna,
   carregarComparativoProjecao,
@@ -154,55 +155,109 @@ export const financeiroCfoRouter = router({
   }),
 
   /**
-   * Lista rúbricas (sugestões do período + metas salvas) com heurística e override.
+   * Rúbricas da projeção (mês ant. + 3 meses) para classificar fixo × variável.
+   * Fonte = mesmas linhas da aba Projeção (não o catálogo CA nem só o mês aberto).
    */
   listRubricasComportamento: custosProducaoModuleProcedure
     .input(
       z.object({
-        inicio: z.coerce.date(),
-        fim: z.coerce.date(),
+        /** Mês âncora da projeção (AAAA-MM), igual à aba Projeção. */
+        mesYm: z.string().regex(/^\d{4}-\d{2}$/).optional(),
+        /** Alias legado — usa o mês de `inicio` se `mesYm` omitido. */
+        inicio: z.coerce.date().optional(),
+        fim: z.coerce.date().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
       const projetoId = projetoIdFromCtx(ctx);
-      const [analise, metas] = await Promise.all([
-        analisarFinanceiroCfoContaAzul(input.inicio, input.fim, projetoId, {
-          compararMesAnterior: false,
-        }),
+      const mesYm =
+        input.mesYm ??
+        (input.inicio
+          ? `${input.inicio.getFullYear()}-${String(input.inicio.getMonth() + 1).padStart(2, "0")}`
+          : null);
+      if (!mesYm || !/^\d{4}-\d{2}$/.test(mesYm)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Informe mesYm (AAAA-MM).",
+        });
+      }
+
+      const [grade, metas] = await Promise.all([
+        carregarProjecaoDesembolso(projetoId, mesYm),
         listFinanceiroCaRubricasMeta(projetoId),
       ]);
+
+      const mesesNoTotal = new Set(
+        grade.colunas.filter(c => c.contaNoTotal).map(c => c.mesYm),
+      );
+
+      type Acc = {
+        rubrica: string;
+        projetado3m: number;
+        qtdLinhas: number;
+      };
+      const byLower = new Map<string, Acc>();
+
+      const addLinha = (rubricaRaw: string | null | undefined, projetado: number) => {
+        const rubrica = (rubricaRaw ?? "").trim() || "(Sem rúbrica)";
+        const k = rubrica.toLowerCase();
+        const cur = byLower.get(k) ?? {
+          rubrica,
+          projetado3m: 0,
+          qtdLinhas: 0,
+        };
+        cur.projetado3m = Math.round((cur.projetado3m + projetado) * 100) / 100;
+        cur.qtdLinhas += 1;
+        byLower.set(k, cur);
+      };
+
+      for (const lin of grade.linhas) {
+        if (ehNaoDesembolsoCusto(lin.label, lin.rubrica)) continue;
+        // Qualquer linha que aparece na grade da projeção (3 meses + contexto).
+        const projetado3m = lin.celulas
+          .filter(c => mesesNoTotal.has(c.mesYm) && c.ativo)
+          .reduce((s, c) => s + (c.valorEfetivo || 0), 0);
+        addLinha(lin.rubrica, projetado3m);
+      }
+
+      // Overrides salvos que ainda não estão na grade atual.
+      for (const m of metas) {
+        const t = m.rubrica.trim();
+        if (!t) continue;
+        const k = t.toLowerCase();
+        if (!byLower.has(k)) {
+          byLower.set(k, { rubrica: t, projetado3m: 0, qtdLinhas: 0 });
+        }
+      }
+
       const metaByRubrica = new Map(
         metas.map(m => [m.rubrica.trim().toLowerCase(), m]),
       );
-      const nomes = new Set<string>();
-      for (const r of analise.rubricasSugestoes ?? []) {
-        const t = (r ?? "").trim();
-        if (t) nomes.add(t);
-      }
-      for (const r of analise.rubricas ?? []) {
-        const t = (r.label ?? "").trim();
-        if (t) nomes.add(t);
-      }
-      for (const m of metas) {
-        if (m.rubrica.trim()) nomes.add(m.rubrica.trim());
-      }
-      return Array.from(nomes)
-        .sort((a, b) => a.localeCompare(b, "pt-BR"))
-        .map(rubrica => {
-          const meta = metaByRubrica.get(rubrica.toLowerCase());
+
+      return Array.from(byLower.values())
+        .sort((a, b) => {
+          if (b.projetado3m !== a.projetado3m) {
+            return b.projetado3m - a.projetado3m;
+          }
+          return a.rubrica.localeCompare(b.rubrica, "pt-BR");
+        })
+        .map(row => {
+          const meta = metaByRubrica.get(row.rubrica.toLowerCase());
           const override =
             meta?.comportamentoCusto === "fixo" ||
             meta?.comportamentoCusto === "variavel"
               ? meta.comportamentoCusto
               : null;
-          const heuristico = inferirComportamentoCustoHeuristico(rubrica);
+          const heuristico = inferirComportamentoCustoHeuristico(row.rubrica);
           return {
-            rubrica,
+            rubrica: row.rubrica,
             heuristico,
             comportamentoCusto: override,
-            efetivo: resolverComportamentoCusto(rubrica, override),
+            efetivo: resolverComportamentoCusto(row.rubrica, override),
             nota: meta?.nota ?? null,
             editado: override != null,
+            projetado3m: row.projetado3m,
+            qtdLinhas: row.qtdLinhas,
           };
         });
     }),

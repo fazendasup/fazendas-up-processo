@@ -1072,6 +1072,99 @@ export default function FinanceiroDashboardPage() {
               />
             </section>
 
+            {/* Custo fixo × variável — totais do plano */}
+            <section className="space-y-3">
+              <div>
+                <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  <ArrowDownRight className="h-4 w-4" />
+                  Custo fixo × variável
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Consolidado do plano do mês por classificação
+                  {data?.custosPorComportamento
+                    ? ` (${data.custosPorComportamento.total.qtdRubricas} rúbrica(s))`
+                    : ""}
+                  . Edite em Análise → Fixo × variável.
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Kpi
+                  title="Custo fixo (plano)"
+                  value={fmtMoney(data?.custosPorComportamento?.fixo.projetado)}
+                  hint={
+                    data?.custosPorComportamento
+                      ? [
+                          data.custosPorComportamento.pctFixoProjetado != null
+                            ? `${fmtPct(data.custosPorComportamento.pctFixoProjetado).replace("+", "")} do plano`
+                            : null,
+                          `pago ${fmtMoney(data.custosPorComportamento.fixo.pago)}`,
+                          `em aberto ${fmtMoney(data.custosPorComportamento.fixo.naoPago)}`,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")
+                      : "Sem dados"
+                  }
+                />
+                <Kpi
+                  title="Custo variável (plano)"
+                  value={fmtMoney(
+                    data?.custosPorComportamento?.variavel.projetado,
+                  )}
+                  hint={
+                    data?.custosPorComportamento
+                      ? [
+                          data.custosPorComportamento.pctVariavelProjetado != null
+                            ? `${fmtPct(data.custosPorComportamento.pctVariavelProjetado).replace("+", "")} do plano`
+                            : null,
+                          `pago ${fmtMoney(data.custosPorComportamento.variavel.pago)}`,
+                          `em aberto ${fmtMoney(data.custosPorComportamento.variavel.naoPago)}`,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")
+                      : "Sem dados"
+                  }
+                />
+              </div>
+              {data?.custosPorComportamento &&
+              (data.custosPorComportamento.total.projetado ?? 0) > 0.009 ? (
+                <div className="space-y-1.5">
+                  <div
+                    className="flex h-2.5 overflow-hidden rounded-full bg-muted"
+                    role="img"
+                    aria-label={`Fixo ${data.custosPorComportamento.pctFixoProjetado ?? 0}%, variável ${data.custosPorComportamento.pctVariavelProjetado ?? 0}%`}
+                  >
+                    <div
+                      className="h-full bg-slate-700 dark:bg-slate-300"
+                      style={{
+                        width: `${data.custosPorComportamento.pctFixoProjetado ?? 0}%`,
+                      }}
+                    />
+                    <div
+                      className="h-full bg-amber-500"
+                      style={{
+                        width: `${data.custosPorComportamento.pctVariavelProjetado ?? 0}%`,
+                      }}
+                    />
+                  </div>
+                  <div className="flex flex-wrap justify-between gap-2 text-[11px] text-muted-foreground">
+                    <span>
+                      Fixo {fmtMoney(data.custosPorComportamento.fixo.projetado)}
+                      {data.custosPorComportamento.pctFixoProjetado != null
+                        ? ` (${data.custosPorComportamento.pctFixoProjetado}%)`
+                        : ""}
+                    </span>
+                    <span>
+                      Variável{" "}
+                      {fmtMoney(data.custosPorComportamento.variavel.projetado)}
+                      {data.custosPorComportamento.pctVariavelProjetado != null
+                        ? ` (${data.custosPorComportamento.pctVariavelProjetado}%)`
+                        : ""}
+                    </span>
+                  </div>
+                </div>
+              ) : null}
+            </section>
+
             {/* 3) Mapa de ação: custo fixo × variável */}
             <Card>
               <CardHeader className="pb-1">

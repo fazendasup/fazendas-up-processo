@@ -46,6 +46,7 @@ import {
 } from "@shared/financeiroComparativoProjecao";
 import {
   classificarRubricaDashboard,
+  consolidarCustosPorComportamento,
   montarSerieDashboard3Meses,
   type FinanceiroDashboardPayload,
 } from "@shared/financeiroDashboard";
@@ -1094,6 +1095,16 @@ export async function carregarFinanceiroDashboard(
     })),
   );
 
+  const custosPorComportamento = consolidarCustosPorComportamento(
+    dMes.rubricas.map(r => ({
+      rubrica: r.rubrica,
+      projetado: r.projetado,
+      pago: r.pago,
+      naoPago: r.naoPago,
+    })),
+    comportamentoMap,
+  );
+
   return {
     mesYm,
     labelMes: labelMesYm(mesYm),
@@ -1127,6 +1138,7 @@ export async function carregarFinanceiroDashboard(
       )
       .filter((r): r is NonNullable<typeof r> => r != null)
       .sort((a, b) => b.valorAcao - a.valorAcao),
+    custosPorComportamento,
     receita: receitaOut,
     impostosEncargosAtrasados: {
       total: impostosEncargosAtrasados.total,

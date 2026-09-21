@@ -628,8 +628,7 @@ export default function FinanceiroCfoPage() {
 
               <TabsContent value="comportamento" className="space-y-3">
                 <RubricasComportamentoPanel
-                  inicio={inicio}
-                  fim={fim}
+                  mesYm={mes}
                   readOnly={somenteAnaliseFinanceira}
                 />
               </TabsContent>

@@ -156,6 +156,8 @@ export type FinanceiroDashboardPayload = {
    * “proteger × reduzir”.
    */
   desembolsoPorRubrica: DesembolsoRubricaDashboard[];
+  /** Totais do mês por custo fixo × variável (plano completo). */
+  custosPorComportamento: CustosPorComportamento;
   receita: {
     previsto: number;
     recebido: number;
@@ -305,6 +307,79 @@ export function classificarRubricaDashboard(input: {
     essencial,
     acao,
     valorAcao: round2(valorAcao),
+  };
+}
+
+/** Totais agregados de um lado (fixo ou variável). */
+export type CustosComportamentoTotais = {
+  projetado: number;
+  pago: number;
+  naoPago: number;
+  qtdRubricas: number;
+};
+
+/** Consolidado do mês: custo fixo × variável. */
+export type CustosPorComportamento = {
+  fixo: CustosComportamentoTotais;
+  variavel: CustosComportamentoTotais;
+  total: CustosComportamentoTotais;
+  /** % do projetado total que é fixo. */
+  pctFixoProjetado: number | null;
+  /** % do projetado total que é variável. */
+  pctVariavelProjetado: number | null;
+};
+
+function emptyComportamentoTotais(): CustosComportamentoTotais {
+  return { projetado: 0, pago: 0, naoPago: 0, qtdRubricas: 0 };
+}
+
+/**
+ * Soma projetado/pago/não pago por comportamento (heurística + overrides).
+ * Inclui todas as rúbricas com volume, não só as do mapa de urgência.
+ */
+export function consolidarCustosPorComportamento(
+  rows: Array<{
+    rubrica: string;
+    projetado: number;
+    pago: number;
+    naoPago: number;
+  }>,
+  comportamentoMap?: Map<string, ComportamentoCusto | null> | null,
+): CustosPorComportamento {
+  const fixo = emptyComportamentoTotais();
+  const variavel = emptyComportamentoTotais();
+
+  for (const r of rows) {
+    const volume = Math.max(r.projetado, r.pago, r.naoPago);
+    if (volume <= 0) continue;
+    const c = comportamentoDaRubrica(r.rubrica, comportamentoMap);
+    const bucket = c === "fixo" ? fixo : variavel;
+    bucket.projetado = round2(bucket.projetado + r.projetado);
+    bucket.pago = round2(bucket.pago + r.pago);
+    bucket.naoPago = round2(bucket.naoPago + r.naoPago);
+    bucket.qtdRubricas += 1;
+  }
+
+  const total: CustosComportamentoTotais = {
+    projetado: round2(fixo.projetado + variavel.projetado),
+    pago: round2(fixo.pago + variavel.pago),
+    naoPago: round2(fixo.naoPago + variavel.naoPago),
+    qtdRubricas: fixo.qtdRubricas + variavel.qtdRubricas,
+  };
+
+  const pctFixoProjetado =
+    total.projetado > 0
+      ? round2((fixo.projetado / total.projetado) * 100)
+      : null;
+  const pctVariavelProjetado =
+    pctFixoProjetado == null ? null : round2(100 - pctFixoProjetado);
+
+  return {
+    fixo,
+    variavel,
+    total,
+    pctFixoProjetado,
+    pctVariavelProjetado,
   };
 }
 
