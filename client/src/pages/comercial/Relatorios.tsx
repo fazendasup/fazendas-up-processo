@@ -153,6 +153,7 @@ function exportCsv(
   filename: string,
   rows: Record<string, unknown>[],
   subtitle?: string,
+  footers?: Record<string, unknown>[],
 ) {
   if (!rows.length) return;
   exportObjectRows(rows, {
@@ -160,6 +161,7 @@ function exportCsv(
     subtitle,
     filename,
     format: "csv",
+    footers,
   });
 }
 
@@ -168,6 +170,7 @@ function exportPdf(
   filename: string,
   rows: Record<string, unknown>[],
   subtitle?: string,
+  footers?: Record<string, unknown>[],
 ) {
   if (!rows.length) return;
   exportObjectRows(rows, {
@@ -176,6 +179,7 @@ function exportPdf(
     filename: filename.replace(/\.csv$/i, ""),
     format: "pdf",
     orientation: Object.keys(rows[0] ?? {}).length > 6 ? "landscape" : "portrait",
+    footers,
   });
 }
 
@@ -487,6 +491,7 @@ function Section({
   rows,
   exportSubtitle,
   exportFilename,
+  exportFooters,
 }: {
   title: string;
   description: string;
@@ -494,6 +499,7 @@ function Section({
   rows?: Record<string, unknown>[];
   exportSubtitle?: string;
   exportFilename?: string;
+  exportFooters?: Record<string, unknown>[];
 }) {
   const fileBase = exportFilename ?? slugFilename(title);
   return (
@@ -516,9 +522,17 @@ function Section({
           <ExportMenu
             label="Exportar"
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-white/15 dark:bg-white/5 dark:text-slate-200 h-auto"
-            onExportCsv={() => exportCsv(`${fileBase}.csv`, rows, exportSubtitle)}
+            onExportCsv={() =>
+              exportCsv(`${fileBase}.csv`, rows, exportSubtitle, exportFooters)
+            }
             onExportPdf={() =>
-              exportPdf(title, `${fileBase}.pdf`, rows, exportSubtitle)
+              exportPdf(
+                title,
+                `${fileBase}.pdf`,
+                rows,
+                exportSubtitle,
+                exportFooters
+              )
             }
           />
         ) : null}
@@ -1579,24 +1593,65 @@ export function Relatorios() {
       : 0;
   const coberturaCurta = Boolean(data) && diasCobertura > 0 && diasFiltro - diasCobertura >= 7;
 
+  const projecaoVolumeExport = useMemo(() => {
+    const rows = filterRows("projecao-volume", projecaoVolumeView.produtos).map(
+      r => ({
+        produto: r.produto,
+        "média un./mês": r.quantidadeMediaMensal,
+        "média R$/mês": r.valorMediaMensal,
+        "projeção un.": r.quantidadeProjetada,
+        "projeção R$": r.valorProjetado,
+      })
+    );
+    const soma = (key: "média un./mês" | "média R$/mês" | "projeção un." | "projeção R$") =>
+      roundMoney(rows.reduce((s, r) => s + Number(r[key] ?? 0), 0));
+    const footers =
+      rows.length > 0
+        ? [
+            {
+              produto: "TOTAL",
+              "média un./mês": soma("média un./mês"),
+              "média R$/mês": soma("média R$/mês"),
+              "projeção un.": soma("projeção un."),
+              "projeção R$": soma("projeção R$"),
+            },
+          ]
+        : undefined;
+    return { rows, footers };
+  }, [
+    projecaoVolumeView.produtos,
+    tableFilters,
+    columnFilters,
+    sortState,
+  ]);
+
   function ReportSection({
     title,
     description,
     children,
     rows,
+    exportFooters,
+    exportSubtitleExtra,
   }: {
     title: string;
     description: string;
     children: ReactNode;
     rows?: Record<string, unknown>[];
+    exportFooters?: Record<string, unknown>[];
+    exportSubtitleExtra?: string;
   }) {
     return (
       <Section
         title={title}
         description={description}
         rows={rows}
-        exportSubtitle={exportSubtitle}
+        exportSubtitle={
+          exportSubtitleExtra
+            ? `${exportSubtitle} ${exportSubtitleExtra}`
+            : exportSubtitle
+        }
         exportFilename={`${slugFilename(title)}_${periodoIsoInicio}_a_${periodoIsoFim}`}
+        exportFooters={exportFooters}
       >
         {children}
       </Section>
@@ -3160,16 +3215,8 @@ export function Relatorios() {
                   ? `: ${projecaoVolumeView.labelsProjecao.join(", ")}`
                   : ""
               }. Unidades e faturamento bruto Conta Azul.`}
-              rows={filterRows(
-                "projecao-volume",
-                projecaoVolumeView.produtos
-              ).map(r => ({
-                produto: r.produto,
-                "média un./mês": r.quantidadeMediaMensal,
-                "média R$/mês": r.valorMediaMensal,
-                "projeção un.": r.quantidadeProjetada,
-                "projeção R$": r.valorProjetado,
-              }))}
+              rows={projecaoVolumeExport.rows}
+              exportFooters={projecaoVolumeExport.footers}
             >
               <div className="mb-3 flex flex-wrap items-end gap-3">
                 <label className="flex min-w-44 flex-col gap-1 text-xs font-bold text-slate-600 dark:text-slate-300">

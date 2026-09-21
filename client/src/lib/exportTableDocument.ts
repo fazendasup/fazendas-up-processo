@@ -94,10 +94,15 @@ export function exportObjectRows(
     filename: string;
     format: "csv" | "pdf";
     orientation?: "portrait" | "landscape";
+    /** Linhas de rodapé (ex.: totais / KPIs), alinhadas às mesmas chaves do header. */
+    footers?: Record<string, unknown>[];
   },
 ): void {
   const { headers, body } = objectRowsToTable(rows);
   if (body.length === 0) return;
+  const footers = (opts.footers ?? []).map(row =>
+    headers.map(h => cellText(row[h])),
+  );
   exportTableDocument(
     {
       title: opts.title,
@@ -105,6 +110,7 @@ export function exportObjectRows(
       filename: opts.filename,
       headers,
       rows: body,
+      footers: footers.length ? footers : undefined,
       orientation: opts.orientation,
     },
     opts.format,
