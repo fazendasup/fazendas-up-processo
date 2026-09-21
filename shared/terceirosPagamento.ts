@@ -1,10 +1,10 @@
 /**
- * Prestação de serviços de terceiros — regras de pagamento da diária.
+ * Prestação de serviços de terceiros — pagamento por hora.
  *
- * Diária: R$ 90 + R$ 10 vale-transporte + R$ 25 alimentação.
- * Se entra antes das 12h, almoça na empresa → alimentação descontada (R$ 0).
- * Horas extras: além de 8h de trabalho + 1h de almoço (9h presentes se almoçou;
- * 8h se não almoçou), a R$ 90 / 8 por hora.
+ * Valor/hora = R$ 90 ÷ 8.
+ * Horas pagas = tempo presente − 1h de almoço (se entrada antes das 12h).
+ * + R$ 10 vale-transporte por dia.
+ * + R$ 25 alimentação se NÃO almoçou na empresa (entrada ≥ 12h).
  */
 
 export const TERCEIROS_DIARIA_BASE = 90;
@@ -12,8 +12,11 @@ export const TERCEIROS_VALE_TRANSPORTE = 10;
 export const TERCEIROS_ALIMENTACAO = 25;
 export const TERCEIROS_HORAS_JORNADA = 8;
 export const TERCEIROS_HORAS_ALMOCO = 1;
-export const TERCEIROS_VALOR_HORA_EXTRA =
+/** R$ 90 / 8 — usado para qualquer quantidade de horas (a menos ou a mais). */
+export const TERCEIROS_VALOR_HORA =
   TERCEIROS_DIARIA_BASE / TERCEIROS_HORAS_JORNADA;
+/** @deprecated use TERCEIROS_VALOR_HORA */
+export const TERCEIROS_VALOR_HORA_EXTRA = TERCEIROS_VALOR_HORA;
 
 /** Normaliza CPF para só dígitos. */
 export function normalizarCpf(cpf: string): string {
@@ -66,22 +69,24 @@ function round2(n: number): number {
 
 export type PagamentoDiaTerceiro = {
   minutosPresente: number;
+  /** Tempo no local (entrada → saída). */
   horasPresente: number;
-  /** Entrou antes das 12:00 → almoço na empresa. */
+  /** Entrou antes das 12:00 → almoço na empresa (1h não remunerada). */
   almocouNaEmpresa: boolean;
-  /** Limite de presença sem extra (9h com almoço, 8h sem). */
-  horasLimiteNormal: number;
+  /** Horas remuneradas (presente − almoço se couber). */
+  horasTrabalhadas: number;
+  /** max(0, horasTrabalhadas − 8) — só informativo. */
   horasExtras: number;
-  valorDiaria: number;
+  /** horasTrabalhadas × (90/8). */
+  valorHoras: number;
   valorValeTransporte: number;
   /** 0 se almoçou na empresa; senão R$ 25. */
   valorAlimentacao: number;
-  valorHorasExtras: number;
   valorTotal: number;
 };
 
 /**
- * Calcula o pagamento de um dia a partir de entrada/saída.
+ * Calcula o pagamento de um dia (tudo proporcional por hora).
  * Retorna null se horários inválidos ou saída ≤ entrada.
  */
 export function calcularPagamentoDiaTerceiro(input: {
@@ -95,28 +100,31 @@ export function calcularPagamentoDiaTerceiro(input: {
   const minutosPresente = sai - ent;
   const horasPresente = round2(minutosPresente / 60);
   const almocouNaEmpresa = ent < 12 * 60;
-  const horasLimiteNormal = almocouNaEmpresa
-    ? TERCEIROS_HORAS_JORNADA + TERCEIROS_HORAS_ALMOCO
-    : TERCEIROS_HORAS_JORNADA;
-  const horasExtras = round2(Math.max(0, horasPresente - horasLimiteNormal));
-  const valorDiaria = TERCEIROS_DIARIA_BASE;
+  const descontoAlmocoHoras = almocouNaEmpresa
+    ? Math.min(TERCEIROS_HORAS_ALMOCO, horasPresente)
+    : 0;
+  const horasTrabalhadas = round2(
+    Math.max(0, horasPresente - descontoAlmocoHoras),
+  );
+  const horasExtras = round2(
+    Math.max(0, horasTrabalhadas - TERCEIROS_HORAS_JORNADA),
+  );
+  const valorHoras = round2(horasTrabalhadas * TERCEIROS_VALOR_HORA);
   const valorValeTransporte = TERCEIROS_VALE_TRANSPORTE;
   const valorAlimentacao = almocouNaEmpresa ? 0 : TERCEIROS_ALIMENTACAO;
-  const valorHorasExtras = round2(horasExtras * TERCEIROS_VALOR_HORA_EXTRA);
   const valorTotal = round2(
-    valorDiaria + valorValeTransporte + valorAlimentacao + valorHorasExtras,
+    valorHoras + valorValeTransporte + valorAlimentacao,
   );
 
   return {
     minutosPresente,
     horasPresente,
     almocouNaEmpresa,
-    horasLimiteNormal,
+    horasTrabalhadas,
     horasExtras,
-    valorDiaria,
+    valorHoras,
     valorValeTransporte,
     valorAlimentacao,
-    valorHorasExtras,
     valorTotal,
   };
 }

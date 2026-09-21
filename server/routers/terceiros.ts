@@ -15,6 +15,7 @@ import {
   listPrestadoresAdmin,
   listRegistrosAdmin,
   listRegistrosPrestador,
+  setRegistroPago,
   softDeletePrestador,
   upsertRegistroPrestador,
 } from "../terceirosDb";
@@ -62,19 +63,29 @@ async function assertToken(token: string) {
   return prestador;
 }
 
-function registroPublico(r: {
+function registroComPagamento(r: {
   id: number;
   dataServico: string;
   horaEntrada: string;
   horaSaida: string;
+  pagoAt: Date | null;
   createdAt: Date;
 }) {
+  const pagamento = calcularPagamentoDiaTerceiro({
+    horaEntrada: r.horaEntrada,
+    horaSaida: r.horaSaida,
+  });
+  const pago = r.pagoAt != null;
   return {
     id: r.id,
     dataServico: r.dataServico,
     horaEntrada: r.horaEntrada,
     horaSaida: r.horaSaida,
+    pago,
+    pagoAt: r.pagoAt,
     createdAt: r.createdAt,
+    pagamento,
+    valorTotal: pagamento?.valorTotal ?? 0,
   };
 }
 
@@ -110,19 +121,32 @@ export const terceirosRouter = router({
       }
     }),
 
-  /** Sessão atual (histórico próprio). */
+  /** Sessão atual (histórico próprio + em aberto). */
   meuHistorico: publicProcedure
     .input(z.object({ acessoToken: z.string().min(16) }))
     .query(async ({ input }) => {
       const p = await assertToken(input.acessoToken);
       const regs = await listRegistrosPrestador(p.id);
+      const registros = regs.map(registroComPagamento);
+      const emAberto = Math.round(
+        registros
+          .filter(r => !r.pago)
+          .reduce((s, r) => s + r.valorTotal, 0) * 100,
+      ) / 100;
+      const jaPago = Math.round(
+        registros
+          .filter(r => r.pago)
+          .reduce((s, r) => s + r.valorTotal, 0) * 100,
+      ) / 100;
       return {
         prestador: {
           id: p.id,
           nomeCompleto: p.nomeCompleto,
           cpfMascarado: formatarCpf(p.cpf),
         },
-        registros: regs.map(registroPublico),
+        registros,
+        emAberto,
+        jaPago,
       };
     }),
 
@@ -144,7 +168,7 @@ export const terceirosRouter = router({
         horaEntrada: input.horaEntrada,
         horaSaida: input.horaSaida,
       });
-      return registroPublico(row);
+      return registroComPagamento(row);
     }),
 
   excluirMeuRegistro: publicProcedure
@@ -156,6 +180,20 @@ export const terceirosRouter = router({
     )
     .mutation(async ({ input }) => {
       const p = await assertToken(input.acessoToken);
+      const regs = await listRegistrosPrestador(p.id);
+      const alvo = regs.find(r => r.id === input.registroId);
+      if (!alvo) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Registro não encontrado.",
+        });
+      }
+      if (alvo.pagoAt != null) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Dia já pago não pode ser removido. Contate a administração.",
+        });
+      }
       await deleteRegistroPrestador(p.id, input.registroId);
       return { ok: true as const };
     }),
@@ -195,19 +233,12 @@ export const terceirosRouter = router({
       });
 
       const itens = rows.map(r => {
-        const pag = calcularPagamentoDiaTerceiro({
-          horaEntrada: r.horaEntrada,
-          horaSaida: r.horaSaida,
-        });
+        const base = registroComPagamento(r);
         return {
-          id: r.id,
+          ...base,
           prestadorId: r.prestadorId,
           nomeCompleto: r.nomeCompleto,
           cpfMascarado: formatarCpf(r.cpf),
-          dataServico: r.dataServico,
-          horaEntrada: r.horaEntrada,
-          horaSaida: r.horaSaida,
-          pagamento: pag,
         };
       });
 
@@ -218,9 +249,10 @@ export const terceirosRouter = router({
           nomeCompleto: string;
           cpfMascarado: string;
           dias: number;
-          horasPresente: number;
+          horasTrabalhadas: number;
           horasExtras: number;
           valorTotal: number;
+          emAberto: number;
         }
       >();
 
@@ -230,23 +262,25 @@ export const terceirosRouter = router({
           nomeCompleto: it.nomeCompleto,
           cpfMascarado: it.cpfMascarado,
           dias: 0,
-          horasPresente: 0,
+          horasTrabalhadas: 0,
           horasExtras: 0,
           valorTotal: 0,
+          emAberto: 0,
         };
         cur.dias += 1;
-        cur.horasPresente += it.pagamento?.horasPresente ?? 0;
+        cur.horasTrabalhadas += it.pagamento?.horasTrabalhadas ?? 0;
         cur.horasExtras += it.pagamento?.horasExtras ?? 0;
-        cur.valorTotal += it.pagamento?.valorTotal ?? 0;
+        cur.valorTotal += it.valorTotal;
+        if (!it.pago) cur.emAberto += it.valorTotal;
         porPrestador.set(it.prestadorId, cur);
       }
 
       const totais = {
         dias: itens.length,
-        valorTotal: itens.reduce(
-          (s, i) => s + (i.pagamento?.valorTotal ?? 0),
-          0,
-        ),
+        valorTotal: itens.reduce((s, i) => s + i.valorTotal, 0),
+        emAberto: itens
+          .filter(i => !i.pago)
+          .reduce((s, i) => s + i.valorTotal, 0),
         horasExtras: itens.reduce(
           (s, i) => s + (i.pagamento?.horasExtras ?? 0),
           0,
@@ -258,17 +292,31 @@ export const terceirosRouter = router({
         porPrestador: Array.from(porPrestador.values())
           .map(p => ({
             ...p,
-            horasPresente: Math.round(p.horasPresente * 100) / 100,
+            horasTrabalhadas: Math.round(p.horasTrabalhadas * 100) / 100,
             horasExtras: Math.round(p.horasExtras * 100) / 100,
             valorTotal: Math.round(p.valorTotal * 100) / 100,
+            emAberto: Math.round(p.emAberto * 100) / 100,
           }))
           .sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto, "pt-BR")),
         totais: {
           dias: totais.dias,
           valorTotal: Math.round(totais.valorTotal * 100) / 100,
+          emAberto: Math.round(totais.emAberto * 100) / 100,
           horasExtras: Math.round(totais.horasExtras * 100) / 100,
         },
       };
+    }),
+
+  marcarPago: adminProcedure
+    .input(
+      z.object({
+        id: z.number().int().positive(),
+        pago: z.boolean(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const row = await setRegistroPago(input.id, input.pago);
+      return registroComPagamento(row);
     }),
 
   excluirPrestador: adminProcedure

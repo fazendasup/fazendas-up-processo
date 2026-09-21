@@ -1341,6 +1341,8 @@ export const terceirosRegistros = mysqlTable(
     horaEntrada: varchar("horaEntrada", { length: 5 }).notNull(),
     /** HH:mm */
     horaSaida: varchar("horaSaida", { length: 5 }).notNull(),
+    /** null = em aberto; preenchido quando admin marca como pago. */
+    pagoAt: timestamp("pagoAt"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },

@@ -11,10 +11,7 @@ import {
 import { getDb } from "./db";
 import { normalizarCpf } from "@shared/terceirosPagamento";
 
-let ensured = false;
-
 export async function ensureTerceirosTables(): Promise<void> {
-  if (ensured) return;
   const db = await getDb();
   if (!db) return;
   try {
@@ -43,6 +40,7 @@ export async function ensureTerceirosTables(): Promise<void> {
   \`dataServico\` varchar(10) NOT NULL,
   \`horaEntrada\` varchar(5) NOT NULL,
   \`horaSaida\` varchar(5) NOT NULL,
+  \`pagoAt\` timestamp NULL,
   \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (\`id\`),
@@ -56,7 +54,15 @@ export async function ensureTerceirosTables(): Promise<void> {
       console.error("[Database] ensureTerceirosTables registros:", err);
     }
   }
-  ensured = true;
+  try {
+    await db.execute(
+      sql.raw(
+        `ALTER TABLE \`terceiros_registros\` ADD COLUMN \`pagoAt\` timestamp NULL`,
+      ),
+    );
+  } catch {
+    // coluna já existe
+  }
 }
 
 function novoToken(): string {
@@ -268,6 +274,7 @@ export async function listRegistrosAdmin(opts: {
       dataServico: terceirosRegistros.dataServico,
       horaEntrada: terceirosRegistros.horaEntrada,
       horaSaida: terceirosRegistros.horaSaida,
+      pagoAt: terceirosRegistros.pagoAt,
       createdAt: terceirosRegistros.createdAt,
       updatedAt: terceirosRegistros.updatedAt,
       cpf: terceirosPrestadores.cpf,
@@ -302,4 +309,24 @@ export async function deleteRegistroAdmin(id: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(terceirosRegistros).where(eq(terceirosRegistros.id, id));
+}
+
+export async function setRegistroPago(
+  id: number,
+  pago: boolean,
+): Promise<TerceiroRegistroRow> {
+  await ensureTerceirosTables();
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(terceirosRegistros)
+    .set({ pagoAt: pago ? new Date() : null })
+    .where(eq(terceirosRegistros.id, id));
+  const row = await db
+    .select()
+    .from(terceirosRegistros)
+    .where(eq(terceirosRegistros.id, id))
+    .limit(1);
+  if (!row[0]) throw new Error("Registro não encontrado.");
+  return row[0];
 }

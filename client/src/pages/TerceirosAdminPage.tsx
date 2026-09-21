@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
-import { ExternalLink, Trash2 } from "lucide-react";
+import { ExternalLink, Trash2, CheckCircle2, Circle } from "lucide-react";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -19,8 +19,9 @@ import {
   formatarHorasDecimais,
   TERCEIROS_ALIMENTACAO,
   TERCEIROS_DIARIA_BASE,
+  TERCEIROS_HORAS_JORNADA,
   TERCEIROS_VALE_TRANSPORTE,
-  TERCEIROS_VALOR_HORA_EXTRA,
+  TERCEIROS_VALOR_HORA,
 } from "@shared/terceirosPagamento";
 
 function hojeIsoSp(): string {
@@ -108,6 +109,14 @@ export default function TerceirosAdminPage() {
     onError: err => toast.error(err.message),
   });
 
+  const marcarPago = trpc.terceiros.marcarPago.useMutation({
+    onSuccess: async (_d, vars) => {
+      toast.success(vars.pago ? "Marcado como pago" : "Voltou para em aberto");
+      await utils.terceiros.listRegistros.invalidate();
+    },
+    onError: err => toast.error(err.message),
+  });
+
   const data = regs.data;
 
   return (
@@ -120,11 +129,11 @@ export default function TerceirosAdminPage() {
               Terceiros — prestação de serviços
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Diária R$ {TERCEIROS_DIARIA_BASE} + VT R${" "}
-              {TERCEIROS_VALE_TRANSPORTE} + alimentação R${" "}
+              Tudo por hora: R$ {TERCEIROS_VALOR_HORA.toFixed(2)} (R${" "}
+              {TERCEIROS_DIARIA_BASE}÷{TERCEIROS_HORAS_JORNADA}) × horas
+              trabalhadas + VT R$ {TERCEIROS_VALE_TRANSPORTE} + alimentação R${" "}
               {TERCEIROS_ALIMENTACAO} (descontada se entrada antes das 12h).
-              Hora extra = R$ {TERCEIROS_VALOR_HORA_EXTRA.toFixed(2)} (90÷8)
-              além de 8h+1h almoço.
+              Marque como pago para abater do em aberto.
             </p>
           </div>
           <Button asChild variant="outline" size="sm" className="gap-1">
@@ -209,7 +218,7 @@ export default function TerceirosAdminPage() {
           </CardContent>
         </Card>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardContent className="p-4">
               <p className="text-xs uppercase text-muted-foreground">Dias</p>
@@ -233,10 +242,20 @@ export default function TerceirosAdminPage() {
           <Card>
             <CardContent className="p-4">
               <p className="text-xs uppercase text-muted-foreground">
-                A pagar (período)
+                Total do período
               </p>
               <p className="text-2xl font-semibold tabular-nums">
                 {fmtMoney(data?.totais.valorTotal)}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs uppercase text-muted-foreground">
+                Em aberto
+              </p>
+              <p className="text-2xl font-semibold tabular-nums text-amber-700">
+                {fmtMoney(data?.totais.emAberto)}
               </p>
             </CardContent>
           </Card>
@@ -261,7 +280,8 @@ export default function TerceirosAdminPage() {
                       <th className="px-3 py-2 text-right">Dias</th>
                       <th className="px-3 py-2 text-right">Horas</th>
                       <th className="px-3 py-2 text-right">Extras</th>
-                      <th className="px-3 py-2 text-right">A pagar</th>
+                      <th className="px-3 py-2 text-right">Total</th>
+                      <th className="px-3 py-2 text-right">Em aberto</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -277,13 +297,16 @@ export default function TerceirosAdminPage() {
                           {p.dias}
                         </td>
                         <td className="px-3 py-2 text-right tabular-nums">
-                          {formatarHorasDecimais(p.horasPresente)}
+                          {formatarHorasDecimais(p.horasTrabalhadas)}
                         </td>
                         <td className="px-3 py-2 text-right tabular-nums">
                           {formatarHorasDecimais(p.horasExtras)}
                         </td>
                         <td className="px-3 py-2 text-right font-semibold tabular-nums">
                           {fmtMoney(p.valorTotal)}
+                        </td>
+                        <td className="px-3 py-2 text-right font-semibold tabular-nums text-amber-700">
+                          {fmtMoney(p.emAberto)}
                         </td>
                       </tr>
                     ))}
@@ -312,10 +335,11 @@ export default function TerceirosAdminPage() {
                       <th className="px-3 py-2">Nome</th>
                       <th className="px-3 py-2">Entrada</th>
                       <th className="px-3 py-2">Saída</th>
-                      <th className="px-3 py-2 text-right">Presente</th>
+                      <th className="px-3 py-2 text-right">Horas</th>
                       <th className="px-3 py-2 text-right">Extra</th>
                       <th className="px-3 py-2 text-right">Alim.</th>
                       <th className="px-3 py-2 text-right">Total</th>
+                      <th className="px-3 py-2">Status</th>
                       <th className="px-3 py-2" />
                     </tr>
                   </thead>
@@ -336,7 +360,7 @@ export default function TerceirosAdminPage() {
                         </td>
                         <td className="px-3 py-2 text-right tabular-nums">
                           {r.pagamento
-                            ? formatarHorasDecimais(r.pagamento.horasPresente)
+                            ? formatarHorasDecimais(r.pagamento.horasTrabalhadas)
                             : "—"}
                         </td>
                         <td className="px-3 py-2 text-right tabular-nums">
@@ -352,7 +376,33 @@ export default function TerceirosAdminPage() {
                             : "—"}
                         </td>
                         <td className="px-3 py-2 text-right font-semibold tabular-nums">
-                          {fmtMoney(r.pagamento?.valorTotal)}
+                          {fmtMoney(r.valorTotal)}
+                        </td>
+                        <td className="px-3 py-2">
+                          <Button
+                            size="sm"
+                            variant={r.pago ? "secondary" : "outline"}
+                            className="gap-1"
+                            disabled={marcarPago.isPending}
+                            onClick={() =>
+                              marcarPago.mutate({
+                                id: r.id,
+                                pago: !r.pago,
+                              })
+                            }
+                          >
+                            {r.pago ? (
+                              <>
+                                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                                Pago
+                              </>
+                            ) : (
+                              <>
+                                <Circle className="h-3.5 w-3.5" />
+                                Em aberto
+                              </>
+                            )}
+                          </Button>
                         </td>
                         <td className="px-3 py-2 text-right">
                           <Button

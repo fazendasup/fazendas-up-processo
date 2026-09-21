@@ -25,6 +25,14 @@ function fmtDataBr(iso: string): string {
   return `${d}/${m}/${y}`;
 }
 
+function fmtMoney(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n)) return "—";
+  return n.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
 export default function TerceirosPublicPage() {
   const [token, setToken] = useState<string | null>(() => {
     try {
@@ -156,6 +164,7 @@ export default function TerceirosPublicPage() {
 
   const prestador = hist.data?.prestador;
   const registros = hist.data?.registros ?? [];
+  const emAberto = hist.data?.emAberto ?? 0;
 
   return (
     <Shell>
@@ -173,6 +182,21 @@ export default function TerceirosPublicPage() {
           Sair
         </Button>
       </div>
+
+      <Card className="border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/30">
+        <CardContent className="p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            A receber (em aberto)
+          </p>
+          <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-800 dark:text-emerald-200">
+            {fmtMoney(emAberto)}
+          </p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Dias ainda não marcados como pagos pela administração. Já pago:{" "}
+            {fmtMoney(hist.data?.jaPago ?? 0)}.
+          </p>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="pb-2">
@@ -226,7 +250,9 @@ export default function TerceirosPublicPage() {
               Salvar dia
             </Button>
             <p className="mt-2 text-[11px] text-muted-foreground">
-              Se já existir registro no mesmo dia, os horários serão atualizados.
+              Pagamento = horas × (R$ 90 ÷ 8) + VT R$ 10 + alimentação R$ 25
+              (descontada se entrada antes das 12h). Se já existir o dia, os
+              horários são atualizados.
             </p>
           </div>
         </CardContent>
@@ -236,8 +262,7 @@ export default function TerceirosPublicPage() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Seu histórico</CardTitle>
           <p className="text-xs text-muted-foreground">
-            Apenas dias, entradas e saídas. Valores de pagamento ficam com a
-            administração.
+            Dias, horários e valor. Só a administração marca como pago.
           </p>
         </CardHeader>
         <CardContent>
@@ -254,28 +279,47 @@ export default function TerceirosPublicPage() {
                   key={r.id}
                   className="flex items-center justify-between gap-2 px-3 py-2.5 text-sm"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-medium">{fmtDataBr(r.dataServico)}</p>
                     <p className="text-xs text-muted-foreground">
                       {r.horaEntrada} → {r.horaSaida}
+                      {r.pagamento
+                        ? ` · ${r.pagamento.horasTrabalhadas}h`
+                        : ""}
+                    </p>
+                    <p className="mt-0.5 text-xs">
+                      <span className="font-semibold tabular-nums">
+                        {fmtMoney(r.valorTotal)}
+                      </span>
+                      <span
+                        className={
+                          r.pago
+                            ? "ml-2 text-emerald-700"
+                            : "ml-2 text-amber-700"
+                        }
+                      >
+                        {r.pago ? "pago" : "em aberto"}
+                      </span>
                     </p>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-destructive"
-                    disabled={excluir.isPending}
-                    onClick={() => {
-                      if (!token) return;
-                      if (!confirm("Remover este dia?")) return;
-                      excluir.mutate({
-                        acessoToken: token,
-                        registroId: r.id,
-                      });
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {!r.pago ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="shrink-0 text-destructive"
+                      disabled={excluir.isPending}
+                      onClick={() => {
+                        if (!token) return;
+                        if (!confirm("Remover este dia?")) return;
+                        excluir.mutate({
+                          acessoToken: token,
+                          registroId: r.id,
+                        });
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  ) : null}
                 </li>
               ))}
             </ul>

@@ -3,6 +3,7 @@ import {
   calcularPagamentoDiaTerceiro,
   formatarCpf,
   normalizarCpf,
+  TERCEIROS_VALOR_HORA,
   validarCpf,
 } from "./terceirosPagamento";
 
@@ -26,42 +27,52 @@ describe("formatarCpf / normalizarCpf", () => {
   });
 });
 
-describe("calcularPagamentoDiaTerceiro", () => {
-  it("diária com almoço na empresa (entrada < 12h) sem extra", () => {
+describe("calcularPagamentoDiaTerceiro (por hora)", () => {
+  it("jornada cheia com almoço: 8h × (90/8) + VT", () => {
+    // 07–16 = 9h presente − 1h almoço = 8h → 90 + 10
     const r = calcularPagamentoDiaTerceiro({
       horaEntrada: "07:00",
       horaSaida: "16:00",
     });
-    expect(r).not.toBeNull();
     expect(r!.almocouNaEmpresa).toBe(true);
-    expect(r!.horasPresente).toBe(9);
-    expect(r!.horasExtras).toBe(0);
+    expect(r!.horasTrabalhadas).toBe(8);
+    expect(r!.valorHoras).toBe(90);
     expect(r!.valorAlimentacao).toBe(0);
-    expect(r!.valorTotal).toBe(100); // 90 + 10
+    expect(r!.valorTotal).toBe(100);
   });
 
-  it("diária sem almoço (entrada >= 12h) inclui alimentação", () => {
+  it("turno sem almoço: 8h × (90/8) + VT + alimentação", () => {
     const r = calcularPagamentoDiaTerceiro({
       horaEntrada: "12:00",
       horaSaida: "20:00",
     });
     expect(r!.almocouNaEmpresa).toBe(false);
-    expect(r!.horasPresente).toBe(8);
-    expect(r!.horasExtras).toBe(0);
+    expect(r!.horasTrabalhadas).toBe(8);
     expect(r!.valorAlimentacao).toBe(25);
-    expect(r!.valorTotal).toBe(125); // 90 + 10 + 25
+    expect(r!.valorTotal).toBe(125);
   });
 
-  it("horas extras além de 8h + 1h almoço", () => {
-    // 07:00–17:00 = 10h presentes → 1h extra × (90/8) = 11.25
+  it("trabalhou a menos: proporcional por hora", () => {
+    // 08–12 = 4h presente, almoço → 3h pagas × 11.25 + 10
+    const r = calcularPagamentoDiaTerceiro({
+      horaEntrada: "08:00",
+      horaSaida: "12:00",
+    });
+    expect(r!.horasTrabalhadas).toBe(3);
+    expect(r!.valorHoras).toBe(3 * TERCEIROS_VALOR_HORA);
+    expect(r!.valorTotal).toBe(round2(3 * TERCEIROS_VALOR_HORA + 10));
+  });
+
+  it("trabalhou a mais: também por hora", () => {
+    // 07–17 = 10h − 1h = 9h × 11.25 + 10 = 111.25
     const r = calcularPagamentoDiaTerceiro({
       horaEntrada: "07:00",
       horaSaida: "17:00",
     });
-    expect(r!.horasPresente).toBe(10);
+    expect(r!.horasTrabalhadas).toBe(9);
     expect(r!.horasExtras).toBe(1);
-    expect(r!.valorHorasExtras).toBe(11.25);
-    expect(r!.valorTotal).toBe(111.25); // 100 + 11.25
+    expect(r!.valorHoras).toBe(101.25);
+    expect(r!.valorTotal).toBe(111.25);
   });
 
   it("rejeita saída antes da entrada", () => {
@@ -73,3 +84,7 @@ describe("calcularPagamentoDiaTerceiro", () => {
     ).toBeNull();
   });
 });
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
