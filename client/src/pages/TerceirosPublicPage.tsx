@@ -117,10 +117,6 @@ export default function TerceirosPublicPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-xl">Prestação de serviços</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Informe seu CPF e nome completo para registrar os dias trabalhados
-              e ver seu histórico.
-            </p>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
@@ -186,14 +182,10 @@ export default function TerceirosPublicPage() {
       <Card className="border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/30">
         <CardContent className="p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            A receber (em aberto)
+            Em aberto
           </p>
           <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-800 dark:text-emerald-200">
             {fmtMoney(emAberto)}
-          </p>
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            Dias ainda não marcados como pagos pela administração. Já pago:{" "}
-            {fmtMoney(hist.data?.jaPago ?? 0)}.
           </p>
         </CardContent>
       </Card>
@@ -202,7 +194,7 @@ export default function TerceirosPublicPage() {
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base">
             <Clock className="h-4 w-4" />
-            Registrar dia de serviço
+            Registrar dia
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-3">
@@ -249,21 +241,13 @@ export default function TerceirosPublicPage() {
             >
               Salvar dia
             </Button>
-            <p className="mt-2 text-[11px] text-muted-foreground">
-              Pagamento = horas × (R$ 90 ÷ 8) + VT R$ 10 + alimentação R$ 25
-              (descontada se entrada antes das 12h). Se já existir o dia, os
-              horários são atualizados.
-            </p>
           </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Seu histórico</CardTitle>
-          <p className="text-xs text-muted-foreground">
-            Dias, horários e valor. Só a administração marca como pago.
-          </p>
+          <CardTitle className="text-base">Histórico</CardTitle>
         </CardHeader>
         <CardContent>
           {hist.isLoading ? (

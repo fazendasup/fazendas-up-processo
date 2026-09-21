@@ -17,11 +17,6 @@ import {
 import { trpc } from "@/lib/trpc";
 import {
   formatarHorasDecimais,
-  TERCEIROS_ALIMENTACAO,
-  TERCEIROS_DIARIA_BASE,
-  TERCEIROS_HORAS_JORNADA,
-  TERCEIROS_VALE_TRANSPORTE,
-  TERCEIROS_VALOR_HORA,
 } from "@shared/terceirosPagamento";
 
 function hojeIsoSp(): string {
@@ -124,16 +119,7 @@ export default function TerceirosAdminPage() {
       <main className="mx-auto max-w-6xl space-y-6 px-4 py-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              Terceiros — prestação de serviços
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Tudo por hora: R$ {TERCEIROS_VALOR_HORA.toFixed(2)} (R${" "}
-              {TERCEIROS_DIARIA_BASE}÷{TERCEIROS_HORAS_JORNADA}) × horas
-              trabalhadas + VT R$ {TERCEIROS_VALE_TRANSPORTE} + alimentação R${" "}
-              {TERCEIROS_ALIMENTACAO} (descontada se entrada antes das 12h).
-              Marque como pago para abater do em aberto.
-            </p>
+            <h1 className="text-2xl font-bold tracking-tight">Terceiros</h1>
           </div>
           <Button asChild variant="outline" size="sm" className="gap-1">
             <Link href="/terceiros" target="_blank">
@@ -429,19 +415,11 @@ export default function TerceirosAdminPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Cadastros</CardTitle>
-            <p className="text-xs text-muted-foreground">
-              Excluir desativa o prestador (não apaga o histórico de dias já
-              lançados no banco; ele some das listagens ativas).
-            </p>
           </CardHeader>
           <CardContent>
             {(prestadores.data?.length ?? 0) === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Nenhum prestador cadastrado ainda. Eles entram pela{" "}
-                <Link href="/terceiros" className="underline">
-                  página pública
-                </Link>
-                .
+                Nenhum prestador cadastrado.
               </p>
             ) : (
               <ul className="divide-y rounded-lg border">
@@ -461,11 +439,9 @@ export default function TerceirosAdminPage() {
                       variant="ghost"
                       className="text-destructive"
                       disabled={excluirPrestador.isPending}
-                      onClick={() => {
+                        onClick={() => {
                         if (
-                          !confirm(
-                            `Excluir ${p.nomeCompleto}? O acesso público será bloqueado.`,
-                          )
+                          !confirm(`Excluir ${p.nomeCompleto}?`)
                         ) {
                           return;
                         }
