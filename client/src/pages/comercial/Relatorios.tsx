@@ -140,6 +140,10 @@ function roundMoney(v: number) {
   return Math.round(v * 100) / 100;
 }
 
+function roundUnits(v: number) {
+  return Math.round(v);
+}
+
 function slugFilename(title: string) {
   return title
     .normalize("NFD")
@@ -154,6 +158,7 @@ function exportCsv(
   rows: Record<string, unknown>[],
   subtitle?: string,
   footers?: Record<string, unknown>[],
+  kpis?: { label: string; value: string }[],
 ) {
   if (!rows.length) return;
   exportObjectRows(rows, {
@@ -162,6 +167,7 @@ function exportCsv(
     filename,
     format: "csv",
     footers,
+    kpis,
   });
 }
 
@@ -171,6 +177,7 @@ function exportPdf(
   rows: Record<string, unknown>[],
   subtitle?: string,
   footers?: Record<string, unknown>[],
+  kpis?: { label: string; value: string }[],
 ) {
   if (!rows.length) return;
   exportObjectRows(rows, {
@@ -180,6 +187,7 @@ function exportPdf(
     format: "pdf",
     orientation: Object.keys(rows[0] ?? {}).length > 6 ? "landscape" : "portrait",
     footers,
+    kpis,
   });
 }
 
@@ -492,6 +500,7 @@ function Section({
   exportSubtitle,
   exportFilename,
   exportFooters,
+  exportKpis,
 }: {
   title: string;
   description: string;
@@ -500,6 +509,7 @@ function Section({
   exportSubtitle?: string;
   exportFilename?: string;
   exportFooters?: Record<string, unknown>[];
+  exportKpis?: { label: string; value: string }[];
 }) {
   const fileBase = exportFilename ?? slugFilename(title);
   return (
@@ -523,7 +533,13 @@ function Section({
             label="Exportar"
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-white/15 dark:bg-white/5 dark:text-slate-200 h-auto"
             onExportCsv={() =>
-              exportCsv(`${fileBase}.csv`, rows, exportSubtitle, exportFooters)
+              exportCsv(
+                `${fileBase}.csv`,
+                rows,
+                exportSubtitle,
+                exportFooters,
+                exportKpis
+              )
             }
             onExportPdf={() =>
               exportPdf(
@@ -531,7 +547,8 @@ function Section({
                 `${fileBase}.pdf`,
                 rows,
                 exportSubtitle,
-                exportFooters
+                exportFooters,
+                exportKpis
               )
             }
           />
@@ -716,19 +733,19 @@ export function Relatorios() {
       mesIsoAmericaSp(inicio);
     const mesesProj = listarMesesProjecaoAFrente(ultimoBase, nMesesProjecao);
     const produtos = (base.produtos ?? []).map((p: any) => {
-      const qtdMedia = roundMoney(Number(p.quantidadeMediaMensal ?? 0));
+      const qtdMedia = roundUnits(Number(p.quantidadeMediaMensal ?? 0));
       const valorMedia = roundMoney(Number(p.valorMediaMensal ?? 0));
       return {
         produto: String(p.produto),
-        quantidadeTotal: roundMoney(Number(p.quantidadeTotal ?? 0)),
+        quantidadeTotal: roundUnits(Number(p.quantidadeTotal ?? 0)),
         valorBrutoTotal: roundMoney(Number(p.valorBrutoTotal ?? 0)),
         quantidadeMediaMensal: qtdMedia,
         valorMediaMensal: valorMedia,
-        quantidadeProjetada: roundMoney(qtdMedia * nMesesProjecao),
+        quantidadeProjetada: roundUnits(qtdMedia * nMesesProjecao),
         valorProjetado: roundMoney(valorMedia * nMesesProjecao),
       };
     });
-    const qtdMediaTotal = roundMoney(
+    const qtdMediaTotal = roundUnits(
       Number(base.totais?.quantidadeMediaMensal ?? 0)
     );
     const valorMediaTotal = roundMoney(
@@ -743,7 +760,7 @@ export function Relatorios() {
       totais: {
         quantidadeMediaMensal: qtdMediaTotal,
         valorMediaMensal: valorMediaTotal,
-        quantidadeProjetada: roundMoney(qtdMediaTotal * nMesesProjecao),
+        quantidadeProjetada: roundUnits(qtdMediaTotal * nMesesProjecao),
         valorProjetado: roundMoney(valorMediaTotal * nMesesProjecao),
       },
     };
@@ -1594,32 +1611,60 @@ export function Relatorios() {
   const coberturaCurta = Boolean(data) && diasCobertura > 0 && diasFiltro - diasCobertura >= 7;
 
   const projecaoVolumeExport = useMemo(() => {
+    const colQtdMedia = "Média un./mês";
+    const colValorMedia = "Média R$/mês";
+    const colQtdProj = `Projeção un. (${nMesesProjecao} ${nMesesProjecao === 1 ? "mês" : "meses"})`;
+    const colValorProj = `Projeção R$ (${nMesesProjecao} ${nMesesProjecao === 1 ? "mês" : "meses"})`;
     const rows = filterRows("projecao-volume", projecaoVolumeView.produtos).map(
       r => ({
-        produto: r.produto,
-        "média un./mês": r.quantidadeMediaMensal,
-        "média R$/mês": r.valorMediaMensal,
-        "projeção un.": r.quantidadeProjetada,
-        "projeção R$": r.valorProjetado,
+        Produto: r.produto,
+        [colQtdMedia]: fmtNumber(r.quantidadeMediaMensal),
+        [colValorMedia]: fmtMoney(r.valorMediaMensal),
+        [colQtdProj]: fmtNumber(r.quantidadeProjetada),
+        [colValorProj]: fmtMoney(r.valorProjetado),
       })
     );
-    const soma = (key: "média un./mês" | "média R$/mês" | "projeção un." | "projeção R$") =>
-      roundMoney(rows.reduce((s, r) => s + Number(r[key] ?? 0), 0));
+    const t = projecaoVolumeView.totais;
     const footers =
       rows.length > 0
         ? [
             {
-              produto: "TOTAL",
-              "média un./mês": soma("média un./mês"),
-              "média R$/mês": soma("média R$/mês"),
-              "projeção un.": soma("projeção un."),
-              "projeção R$": soma("projeção R$"),
+              Produto: "TOTAL",
+              [colQtdMedia]: fmtNumber(t.quantidadeMediaMensal),
+              [colValorMedia]: fmtMoney(t.valorMediaMensal),
+              [colQtdProj]: fmtNumber(t.quantidadeProjetada),
+              [colValorProj]: fmtMoney(t.valorProjetado),
             },
           ]
         : undefined;
-    return { rows, footers };
+    const mesesLabel =
+      projecaoVolumeView.labelsProjecao.length > 0
+        ? projecaoVolumeView.labelsProjecao.join(", ")
+        : `${nMesesProjecao} mês${nMesesProjecao === 1 ? "" : "es"}`;
+    const kpis = [
+      {
+        label: "Total média un./mês",
+        value: fmtNumber(t.quantidadeMediaMensal),
+      },
+      {
+        label: "Total média R$/mês",
+        value: fmtMoney(t.valorMediaMensal),
+      },
+      {
+        label: `Total projeção un. (${nMesesProjecao} ${nMesesProjecao === 1 ? "mês" : "meses"})`,
+        value: fmtNumber(t.quantidadeProjetada),
+      },
+      {
+        label: `Total projeção R$ (${nMesesProjecao} ${nMesesProjecao === 1 ? "mês" : "meses"})`,
+        value: fmtMoney(t.valorProjetado),
+      },
+    ];
+    return { rows, footers, kpis, mesesLabel };
   }, [
     projecaoVolumeView.produtos,
+    projecaoVolumeView.totais,
+    projecaoVolumeView.labelsProjecao,
+    nMesesProjecao,
     tableFilters,
     columnFilters,
     sortState,
@@ -1631,6 +1676,7 @@ export function Relatorios() {
     children,
     rows,
     exportFooters,
+    exportKpis,
     exportSubtitleExtra,
   }: {
     title: string;
@@ -1638,6 +1684,7 @@ export function Relatorios() {
     children: ReactNode;
     rows?: Record<string, unknown>[];
     exportFooters?: Record<string, unknown>[];
+    exportKpis?: { label: string; value: string }[];
     exportSubtitleExtra?: string;
   }) {
     return (
@@ -1652,6 +1699,7 @@ export function Relatorios() {
         }
         exportFilename={`${slugFilename(title)}_${periodoIsoInicio}_a_${periodoIsoFim}`}
         exportFooters={exportFooters}
+        exportKpis={exportKpis}
       >
         {children}
       </Section>
@@ -3217,7 +3265,8 @@ export function Relatorios() {
               }. Unidades e faturamento bruto Conta Azul.`}
               rows={projecaoVolumeExport.rows}
               exportFooters={projecaoVolumeExport.footers}
-              exportSubtitleExtra={`Projeção ${nMesesProjecao} mês${nMesesProjecao === 1 ? "" : "es"} (${projecaoVolumeView.labelsProjecao.join(", ") || "—"}). KPIs totais: média ${fmtNumber(projecaoVolumeView.totais.quantidadeMediaMensal)} un./mês · ${fmtMoney(projecaoVolumeView.totais.valorMediaMensal)}/mês · projeção ${fmtNumber(projecaoVolumeView.totais.quantidadeProjetada)} un. · ${fmtMoney(projecaoVolumeView.totais.valorProjetado)}.`}
+              exportKpis={projecaoVolumeExport.kpis}
+              exportSubtitleExtra={`Projeção ${nMesesProjecao} mês${nMesesProjecao === 1 ? "" : "es"}: ${projecaoVolumeExport.mesesLabel}.`}
             >
               <div className="mb-3 flex flex-wrap items-end gap-3">
                 <label className="flex min-w-44 flex-col gap-1 text-xs font-bold text-slate-600 dark:text-slate-300">
@@ -3237,13 +3286,17 @@ export function Relatorios() {
                 <p className="max-w-xl text-xs text-slate-500 dark:text-slate-400">
                   O período do filtro acima é a base histórica. A média = total do
                   período ÷ meses civis da base. A projeção multiplica essa média
-                  pelos meses escolhidos.
+                  pelos meses escolhidos
+                  {projecaoVolumeView.labelsProjecao.length
+                    ? ` (${projecaoVolumeView.labelsProjecao.join(", ")})`
+                    : ""}
+                  .
                 </p>
               </div>
               <div className="mb-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-400/25 dark:bg-emerald-950/20">
                   <div className="text-[11px] font-bold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">
-                    Média un./mês
+                    Total média un./mês
                   </div>
                   <div className="mt-0.5 text-base font-bold text-slate-900 dark:text-slate-100">
                     {fmtNumber(projecaoVolumeView.totais.quantidadeMediaMensal)}
@@ -3251,27 +3304,39 @@ export function Relatorios() {
                 </div>
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-400/25 dark:bg-emerald-950/20">
                   <div className="text-[11px] font-bold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">
-                    Média R$/mês
+                    Total média R$/mês
                   </div>
                   <div className="mt-0.5 text-base font-bold text-slate-900 dark:text-slate-100">
                     {fmtMoney(projecaoVolumeView.totais.valorMediaMensal)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 dark:border-sky-400/25 dark:bg-sky-950/20">
-                  <div className="text-[11px] font-bold uppercase tracking-wide text-sky-800 dark:text-sky-300">
-                    Projeção un. ({nMesesProjecao}m)
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-400/25 dark:bg-emerald-950/20">
+                  <div className="text-[11px] font-bold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">
+                    Total projeção un. ({nMesesProjecao}{" "}
+                    {nMesesProjecao === 1 ? "mês" : "meses"})
                   </div>
                   <div className="mt-0.5 text-base font-bold text-slate-900 dark:text-slate-100">
                     {fmtNumber(projecaoVolumeView.totais.quantidadeProjetada)}
                   </div>
+                  {projecaoVolumeView.labelsProjecao.length ? (
+                    <div className="mt-0.5 text-[10px] font-semibold text-emerald-700/80 dark:text-emerald-300/80">
+                      {projecaoVolumeView.labelsProjecao.join(" · ")}
+                    </div>
+                  ) : null}
                 </div>
-                <div className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 dark:border-sky-400/25 dark:bg-sky-950/20">
-                  <div className="text-[11px] font-bold uppercase tracking-wide text-sky-800 dark:text-sky-300">
-                    Projeção R$ ({nMesesProjecao}m)
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-400/25 dark:bg-emerald-950/20">
+                  <div className="text-[11px] font-bold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">
+                    Total projeção R$ ({nMesesProjecao}{" "}
+                    {nMesesProjecao === 1 ? "mês" : "meses"})
                   </div>
                   <div className="mt-0.5 text-base font-bold text-slate-900 dark:text-slate-100">
                     {fmtMoney(projecaoVolumeView.totais.valorProjetado)}
                   </div>
+                  {projecaoVolumeView.labelsProjecao.length ? (
+                    <div className="mt-0.5 text-[10px] font-semibold text-emerald-700/80 dark:text-emerald-300/80">
+                      {projecaoVolumeView.labelsProjecao.join(" · ")}
+                    </div>
+                  ) : null}
                 </div>
               </div>
               <ChartCard
@@ -3346,7 +3411,7 @@ export function Relatorios() {
                         {columnHeader(
                           "projecao-volume",
                           "qtdProj",
-                          `Projeção un. (${nMesesProjecao}m)`,
+                          `Projeção un. (${nMesesProjecao} ${nMesesProjecao === 1 ? "mês" : "meses"})`,
                           "right"
                         )}
                       </th>
@@ -3354,7 +3419,7 @@ export function Relatorios() {
                         {columnHeader(
                           "projecao-volume",
                           "valorProj",
-                          `Projeção R$ (${nMesesProjecao}m)`,
+                          `Projeção R$ (${nMesesProjecao} ${nMesesProjecao === 1 ? "mês" : "meses"})`,
                           "right"
                         )}
                       </th>
