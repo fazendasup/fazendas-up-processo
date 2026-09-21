@@ -196,6 +196,12 @@ const SISTEMA_EXTRAS_ADMIN: NavItem[] = [
     icon: Users,
     requiredRole: "admin",
   },
+  {
+    href: "/terceiros-admin",
+    label: "Terceiros",
+    icon: Briefcase,
+    requiredRole: "admin",
+  },
 ];
 
 const SISTEMA_PROCESSO_ITEMS: NavItem[] = [

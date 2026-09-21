@@ -15,6 +15,8 @@ const STATIC: Record<string, string> = {
   "/ciclos": "Ciclos",
   "/config": "Configuração",
   "/administracao": "Administração",
+  "/terceiros": "Prestação de serviços",
+  "/terceiros-admin": "Terceiros",
   "/plataforma/modulos": "Módulos",
   "/planejamento": "Planejamento",
   "/planejamento-colheita": "Projeção de colheita",

@@ -1303,3 +1303,54 @@ export const visionTrainingSamples = mysqlTable("vision_training_samples", {
 
 export type VisionTrainingSampleRow = typeof visionTrainingSamples.$inferSelect;
 export type InsertVisionTrainingSample = typeof visionTrainingSamples.$inferInsert;
+
+// ---- Prestação de serviços de terceiros (acesso público por CPF) ----
+
+/** Prestador de serviço avulso (sem login na plataforma). */
+export const terceirosPrestadores = mysqlTable(
+  "terceiros_prestadores",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    /** CPF só dígitos (11). */
+    cpf: varchar("cpf", { length: 11 }).notNull(),
+    nomeCompleto: varchar("nomeCompleto", { length: 255 }).notNull(),
+    /** Token de sessão após identificar CPF+nome. */
+    acessoToken: varchar("acessoToken", { length: 64 }).notNull(),
+    ativo: boolean("ativo").notNull().default(true),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  t => ({
+    uqCpf: uniqueIndex("uq_terceiros_prestadores_cpf").on(t.cpf),
+    uqToken: uniqueIndex("uq_terceiros_prestadores_token").on(t.acessoToken),
+  }),
+);
+
+export type TerceiroPrestadorRow = typeof terceirosPrestadores.$inferSelect;
+export type InsertTerceiroPrestador = typeof terceirosPrestadores.$inferInsert;
+
+/** Registro diário de entrada/saída do prestador. */
+export const terceirosRegistros = mysqlTable(
+  "terceiros_registros",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    prestadorId: int("prestadorId").notNull(),
+    /** YYYY-MM-DD (America/Sao_Paulo). */
+    dataServico: varchar("dataServico", { length: 10 }).notNull(),
+    /** HH:mm */
+    horaEntrada: varchar("horaEntrada", { length: 5 }).notNull(),
+    /** HH:mm */
+    horaSaida: varchar("horaSaida", { length: 5 }).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  t => ({
+    uqDia: uniqueIndex("uq_terceiros_registros_prest_dia").on(
+      t.prestadorId,
+      t.dataServico,
+    ),
+  }),
+);
+
+export type TerceiroRegistroRow = typeof terceirosRegistros.$inferSelect;
+export type InsertTerceiroRegistro = typeof terceirosRegistros.$inferInsert;

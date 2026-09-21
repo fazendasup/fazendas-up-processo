@@ -53,6 +53,8 @@ const CorrecaoEcPage = lazy(() => import(/* @vite-ignore */"./pages/CorrecaoEcPa
 const ModulosPlataformaPage = lazy(() => import(/* @vite-ignore */"./pages/ModulosPlataformaPage"));
 const ComercialRoutes = lazy(() => import(/* @vite-ignore */"./pages/ComercialRoutes"));
 const RastreioEntrega = lazy(() => import(/* @vite-ignore */"./pages/RastreioEntrega"));
+const TerceirosPublicPage = lazy(() => import(/* @vite-ignore */"./pages/TerceirosPublicPage"));
+const TerceirosAdminPage = lazy(() => import(/* @vite-ignore */"./pages/TerceirosAdminPage"));
 const NotFound = lazy(() => import(/* @vite-ignore */"./pages/NotFound"));
 
 function RoleRootRoute() {
@@ -119,6 +121,8 @@ function Router() {
             {() => <CorrecaoEcPage publicMode />}
           </Route>
           <Route path="/rastreio/:token" component={RastreioEntrega} />
+          <Route path="/terceiros" component={TerceirosPublicPage} />
+          <Route path="/terceiros/" component={TerceirosPublicPage} />
 
           <Route path="/">
             {() => <RoleRootRoute />}
@@ -189,6 +193,16 @@ function Router() {
           <Route path="/administracao">
             <ProtectedRoute requiredRole="admin">
               <AdministradorPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/terceiros-admin">
+            <ProtectedRoute requiredRole="admin">
+              <TerceirosAdminPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/terceiros-admin/">
+            <ProtectedRoute requiredRole="admin">
+              <TerceirosAdminPage />
             </ProtectedRoute>
           </Route>
           <Route path="/plataforma/modulos">
