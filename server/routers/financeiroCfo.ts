@@ -46,6 +46,17 @@ import {
 } from "../financeiroConfigDb";
 import { DASHBOARD_KPI_IDS } from "@shared/financeiroDashboardKpi";
 import { DASHBOARD_GRANULARIDADES } from "@shared/financeiroPeriodoDashboard";
+import {
+  agregarComprasPorFornecedor,
+  parseNfeXml,
+} from "@shared/compraNf";
+import { diaIsoAmericaSp } from "@shared/comercial/periodo-america-sp";
+import {
+  countCompraNf,
+  listCompraNfItensPeriodo,
+  upsertCompraNfComItens,
+} from "../compraNfDb";
+import { syncComprasContaAzul } from "../compraNfContaAzul";
 
 async function assertNaoPerfilSomenteAnalise(user: User) {
   if (user.role !== "comercial") return;
@@ -546,5 +557,122 @@ export const financeiroCfoRouter = router({
         bradescoSaldoInicial: inicial != null ? Number(inicial) : null,
         bradescoSaldoInicialData: data,
       };
+    }),
+
+  /** Relatório de volume comprado (itens de NF) por fornecedor — foco alfaces/folhosas. */
+  comprasNfRelatorio: custosProducaoModuleProcedure
+    .input(
+      z.object({
+        inicio: z.coerce.date(),
+        fim: z.coerce.date(),
+        /** Filtro textual no nome do produto (default alface). Vazio = todos. */
+        produtoContem: z.string().max(120).optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const projetoId = projetoIdFromCtx(ctx);
+      const inicioIso = diaIsoAmericaSp(input.inicio);
+      const fimIso = diaIsoAmericaSp(input.fim);
+      if (fimIso < inicioIso) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Período inválido: fim antes do início.",
+        });
+      }
+      const filtro =
+        input.produtoContem === undefined
+          ? "alface"
+          : input.produtoContem.trim();
+      const itens = await listCompraNfItensPeriodo({
+        projetoId,
+        inicioIso,
+        fimIso,
+      });
+      const agg = agregarComprasPorFornecedor(itens, filtro || null);
+      const totalNotas = await countCompraNf(projetoId);
+      return {
+        inicioIso,
+        fimIso,
+        filtroProduto: filtro || null,
+        totalNotasCadastradas: totalNotas,
+        ...agg,
+        linhas: itens
+          .filter(i =>
+            filtro
+              ? i.descricao.toLowerCase().includes(filtro.toLowerCase())
+              : true,
+          )
+          .map(i => ({
+            data: i.dataEmissao,
+            fornecedor: i.fornecedorNome,
+            produto: i.descricao,
+            quantidade: i.quantidade,
+            unidade: i.unidade,
+            valor: i.valorTotal,
+            numeroNf: i.numero,
+            fonte: i.fonte,
+          }))
+          .sort((a, b) => {
+            const byDate = b.data.localeCompare(a.data);
+            if (byDate !== 0) return byDate;
+            return a.fornecedor.localeCompare(b.fornecedor);
+          }),
+      };
+    }),
+
+  comprasNfImportarXml: custosProducaoModuleProcedure
+    .input(
+      z.object({
+        xml: z.string().min(20).max(2_000_000),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user) {
+        throw new TRPCError({ code: "UNAUTHORIZED" });
+      }
+      await assertNaoPerfilSomenteAnalise(ctx.user);
+      const projetoId = projetoIdFromCtx(ctx);
+      let parsed;
+      try {
+        parsed = parseNfeXml(input.xml);
+      } catch (e) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: e instanceof Error ? e.message : "XML inválido.",
+        });
+      }
+      const r = await upsertCompraNfComItens({
+        projetoId,
+        parsed,
+        fonte: "xml",
+      });
+      return {
+        id: r.id,
+        created: r.created,
+        fornecedor: parsed.fornecedorNome,
+        dataEmissao: parsed.dataEmissao,
+        itens: parsed.itens.length,
+        valorTotal: parsed.valorTotal,
+      };
+    }),
+
+  comprasNfSyncContaAzul: custosProducaoModuleProcedure
+    .input(
+      z.object({
+        inicio: z.coerce.date(),
+        fim: z.coerce.date(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user) {
+        throw new TRPCError({ code: "UNAUTHORIZED" });
+      }
+      await assertNaoPerfilSomenteAnalise(ctx.user);
+      const projetoId = projetoIdFromCtx(ctx);
+      return syncComprasContaAzul({
+        projetoId,
+        inicio: input.inicio,
+        fim: input.fim,
+      });
     }),
 });

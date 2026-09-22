@@ -1,7 +1,11 @@
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 
-export type FinanceiroCfoNavPage = "dashboard" | "comparativo" | "analise";
+export type FinanceiroCfoNavPage =
+  | "dashboard"
+  | "comparativo"
+  | "analise"
+  | "compras-nf";
 
 const ITENS: Array<{
   id: FinanceiroCfoNavPage;
@@ -19,9 +23,14 @@ const ITENS: Array<{
     href: "/financeiro-cfo/analise",
     label: "Análise Conta Azul",
   },
+  {
+    id: "compras-nf",
+    href: "/financeiro-cfo/compras-nf",
+    label: "Compras por NF",
+  },
 ];
 
-/** Navegação entre as 3 páginas do Financeiro CFO, com destaque da página ativa. */
+/** Navegação entre as páginas do Financeiro CFO, com destaque da página ativa. */
 export function FinanceiroCfoNav({
   active,
   className,

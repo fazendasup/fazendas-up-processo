@@ -1356,3 +1356,58 @@ export const terceirosRegistros = mysqlTable(
 
 export type TerceiroRegistroRow = typeof terceirosRegistros.$inferSelect;
 export type InsertTerceiroRegistro = typeof terceirosRegistros.$inferInsert;
+
+/** Cabeçalho de NF de compra (XML importado ou sync Conta Azul). */
+export const compraNf = mysqlTable(
+  "compra_nf",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    projetoId: int("projetoId").notNull(),
+    chaveAcesso: varchar("chaveAcesso", { length: 44 }),
+    numero: varchar("numero", { length: 32 }),
+    serie: varchar("serie", { length: 8 }),
+    dataEmissao: varchar("dataEmissao", { length: 10 }).notNull(),
+    fornecedorNome: varchar("fornecedorNome", { length: 255 }).notNull(),
+    fornecedorCnpj: varchar("fornecedorCnpj", { length: 18 }),
+    fornecedorIdCa: varchar("fornecedorIdCa", { length: 64 }),
+    valorTotal: decimal("valorTotal", { precision: 14, scale: 2 })
+      .notNull()
+      .default("0"),
+    externalIdCa: varchar("externalIdCa", { length: 64 }),
+    fonte: mysqlEnum("fonte", ["xml", "conta_azul", "manual"])
+      .notNull()
+      .default("xml"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  t => ({
+    uqChave: uniqueIndex("uq_compra_nf_proj_chave").on(t.projetoId, t.chaveAcesso),
+    uqCa: uniqueIndex("uq_compra_nf_proj_ca").on(t.projetoId, t.externalIdCa),
+  }),
+);
+
+export type CompraNfRow = typeof compraNf.$inferSelect;
+export type InsertCompraNf = typeof compraNf.$inferInsert;
+export type CompraNfFonte = CompraNfRow["fonte"];
+
+/** Itens de NF de compra (produto × qtd × unidade). */
+export const compraNfItens = mysqlTable("compra_nf_itens", {
+  id: int("id").autoincrement().primaryKey(),
+  compraNfId: int("compraNfId").notNull(),
+  projetoId: int("projetoId").notNull(),
+  nItem: int("nItem"),
+  codigo: varchar("codigo", { length: 64 }),
+  descricao: varchar("descricao", { length: 512 }).notNull(),
+  quantidade: decimal("quantidade", { precision: 14, scale: 4 })
+    .notNull()
+    .default("0"),
+  unidade: varchar("unidade", { length: 16 }),
+  valorUnitario: decimal("valorUnitario", { precision: 14, scale: 4 }),
+  valorTotal: decimal("valorTotal", { precision: 14, scale: 2 })
+    .notNull()
+    .default("0"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CompraNfItemDbRow = typeof compraNfItens.$inferSelect;
+export type InsertCompraNfItem = typeof compraNfItens.$inferInsert;

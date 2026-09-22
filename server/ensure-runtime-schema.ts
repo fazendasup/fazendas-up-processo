@@ -34,4 +34,6 @@ export async function applyRuntimeSchemaEnsures(): Promise<void> {
   await db.ensureTorresNumeroEstruturaColumns();
   const { ensureTerceirosTables } = await import("./terceirosDb");
   await ensureTerceirosTables();
+  const { ensureCompraNfTables } = await import("./compraNfDb");
+  await ensureCompraNfTables();
 }
