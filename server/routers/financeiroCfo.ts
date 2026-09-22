@@ -39,6 +39,7 @@ import {
   softDeleteProjecaoLinhaManual,
   upsertProjecaoCelula,
 } from "../financeiroProjecaoService";
+import { carregarFluxoReceita } from "../financeiroFluxoReceitaService";
 import { upsertRubricaMesConcluida } from "../financeiroProjecaoDb";
 import {
   getFinanceiroCaConfig,
@@ -390,6 +391,20 @@ export const financeiroCfoRouter = router({
         ref,
         forceRefreshCa: input.forceRefreshCa === true,
       });
+    }),
+
+  /**
+   * Fluxo pela receita de vendas (últimos N meses de baixas):
+   * ritmo de entrada + cobertura vs fixos/diaristas/fornecedores.
+   */
+  fluxoReceita: custosProducaoModuleProcedure
+    .input(
+      z.object({
+        nMeses: z.number().int().min(1).max(6).default(3),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      return carregarFluxoReceita(projetoIdFromCtx(ctx), input.nMeses);
     }),
 
   /** Linhas por trás de um KPI do dashboard. */

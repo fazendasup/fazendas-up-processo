@@ -5,7 +5,8 @@ export type FinanceiroCfoNavPage =
   | "dashboard"
   | "comparativo"
   | "analise"
-  | "compras-nf";
+  | "compras-nf"
+  | "fluxo-receita";
 
 const ITENS: Array<{
   id: FinanceiroCfoNavPage;
@@ -13,6 +14,11 @@ const ITENS: Array<{
   label: string;
 }> = [
   { id: "dashboard", href: "/financeiro-cfo", label: "Dashboard" },
+  {
+    id: "fluxo-receita",
+    href: "/financeiro-cfo/fluxo-receita",
+    label: "Fluxo pela receita",
+  },
   {
     id: "comparativo",
     href: "/financeiro-cfo/comparativo",
