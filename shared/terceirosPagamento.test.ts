@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   calcularPagamentoDiaTerceiro,
+  dataSaidaServico,
   formatarCpf,
   normalizarCpf,
   TERCEIROS_VALOR_HORA,
@@ -90,6 +91,12 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
     expect(r!.valorAlimentacao).toBe(25);
     expect(r!.valorHoras).toBe(round2(14 * TERCEIROS_VALOR_HORA));
     expect(r!.valorTotal).toBe(round2(14 * TERCEIROS_VALOR_HORA + 10 + 25));
+  });
+
+  it("dataSaidaServico avança um dia quando cruza meia-noite", () => {
+    expect(dataSaidaServico("2026-09-22", "18:00", "08:00")).toBe("2026-09-23");
+    expect(dataSaidaServico("2026-09-22", "07:00", "16:00")).toBe("2026-09-22");
+    expect(dataSaidaServico("2026-12-31", "22:00", "06:00")).toBe("2027-01-01");
   });
 
   it("rejeita entrada igual à saída", () => {

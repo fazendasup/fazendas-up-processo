@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import {
+  dataSaidaServico,
   formatarHorasDecimais,
 } from "@shared/terceirosPagamento";
 
@@ -316,7 +317,6 @@ export default function TerceirosAdminPage() {
                 <table className="w-full min-w-[900px] text-sm">
                   <thead>
                     <tr className="border-b bg-muted/40 text-left text-[11px] font-semibold uppercase text-muted-foreground">
-                      <th className="px-3 py-2">Dia</th>
                       <th className="px-3 py-2">Nome</th>
                       <th className="px-3 py-2">Entrada</th>
                       <th className="px-3 py-2">Saída</th>
@@ -331,16 +331,20 @@ export default function TerceirosAdminPage() {
                   <tbody>
                     {data!.itens.map(r => (
                       <tr key={r.id} className="border-b last:border-0">
-                        <td className="px-3 py-2">
-                          {fmtDataBr(r.dataServico)}
-                        </td>
                         <td className="px-3 py-2 font-medium">
                           {r.nomeCompleto}
                         </td>
-                        <td className="px-3 py-2 tabular-nums">
-                          {r.horaEntrada}
+                        <td className="px-3 py-2 tabular-nums whitespace-nowrap">
+                          {fmtDataBr(r.dataServico)} {r.horaEntrada}
                         </td>
-                        <td className="px-3 py-2 tabular-nums">
+                        <td className="px-3 py-2 tabular-nums whitespace-nowrap">
+                          {fmtDataBr(
+                            dataSaidaServico(
+                              r.dataServico,
+                              r.horaEntrada,
+                              r.horaSaida,
+                            ),
+                          )}{" "}
                           {r.horaSaida}
                         </td>
                         <td className="px-3 py-2 text-right tabular-nums">

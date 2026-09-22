@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatarCpf, normalizarCpf } from "@shared/terceirosPagamento";
+import { formatarCpf, normalizarCpf, dataSaidaServico } from "@shared/terceirosPagamento";
 
 const STORAGE_KEY = "terceiros.acessoToken";
 
@@ -215,6 +215,9 @@ export default function TerceirosPublicPage() {
               value={horaEntrada}
               onChange={e => setHoraEntrada(e.target.value)}
             />
+            <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
+              {fmtDataBr(dataServico)}
+            </p>
           </div>
           <div>
             <Label htmlFor="saida">Saída</Label>
@@ -224,6 +227,11 @@ export default function TerceirosPublicPage() {
               value={horaSaida}
               onChange={e => setHoraSaida(e.target.value)}
             />
+            <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
+              {fmtDataBr(
+                dataSaidaServico(dataServico, horaEntrada, horaSaida),
+              )}
+            </p>
           </div>
           <div className="sm:col-span-3">
             <Button
@@ -264,11 +272,21 @@ export default function TerceirosPublicPage() {
                   className="flex items-center justify-between gap-2 px-3 py-2.5 text-sm"
                 >
                   <div className="min-w-0">
-                    <p className="font-medium">{fmtDataBr(r.dataServico)}</p>
+                    <p className="font-medium tabular-nums">
+                      {fmtDataBr(r.dataServico)} {r.horaEntrada}
+                      {" → "}
+                      {fmtDataBr(
+                        dataSaidaServico(
+                          r.dataServico,
+                          r.horaEntrada,
+                          r.horaSaida,
+                        ),
+                      )}{" "}
+                      {r.horaSaida}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      {r.horaEntrada} → {r.horaSaida}
                       {r.pagamento
-                        ? ` · ${r.pagamento.horasTrabalhadas}h`
+                        ? `${r.pagamento.horasTrabalhadas}h`
                         : ""}
                     </p>
                     <p className="mt-0.5 text-xs">

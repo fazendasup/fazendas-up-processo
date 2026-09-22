@@ -77,6 +77,26 @@ export function jornadaCruzaMeiaNoite(
   return sai < ent;
 }
 
+/**
+ * Data civil da saída (AAAA-MM-DD), a partir da data do serviço (entrada).
+ * Se a jornada cruza meia-noite, retorna o dia seguinte.
+ */
+export function dataSaidaServico(
+  dataServico: string,
+  horaEntrada: string,
+  horaSaida: string,
+): string {
+  if (!jornadaCruzaMeiaNoite(horaEntrada, horaSaida)) return dataServico;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dataServico.trim());
+  if (!m) return dataServico;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  d.setUTCDate(d.getUTCDate() + 1);
+  const y = d.getUTCFullYear();
+  const mo = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${mo}-${day}`;
+}
+
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
