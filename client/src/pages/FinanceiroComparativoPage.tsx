@@ -617,6 +617,11 @@ export default function FinanceiroComparativoPage() {
                                       <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                                         Pago Conta Azul ({pagos.length})
                                       </p>
+                                      <p className="mb-1.5 text-[10px] text-muted-foreground">
+                                        Baixas com data de pagamento no mês
+                                        (pode diferir do extrato se a baixa foi
+                                        só no contas a pagar).
+                                      </p>
                                       {pagos.length === 0 ? (
                                         <p className="text-xs text-muted-foreground">
                                           Nenhum pagamento no mês.

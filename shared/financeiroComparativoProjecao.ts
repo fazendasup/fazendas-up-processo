@@ -277,7 +277,10 @@ export function montarComparativoDesembolsoMes(input: {
     if (ehNaoDesembolsoCusto(p.descricao, p.rubrica)) continue;
     const pago = valorPagoParcela(p);
     if (pago <= 0) continue;
-    if (mesPagamentoParcela(p) !== mesYm) continue;
+    // Só baixa com data_pagamento no mês — não inventa pelo vencimento
+    // (título quitado sem baixa real no extrato).
+    const dp = (p.dataPagamento ?? "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dp) || dp.slice(0, 7) !== mesYm) continue;
     const rub = labelRubrica(p.rubrica);
     pagoPor.set(rub, round2((pagoPor.get(rub) ?? 0) + pago));
     pushDetalhe(rub, {
@@ -486,9 +489,10 @@ export function montarComparativoReceitaMes(input: {
     const vencMes = vencYm === mesYm;
     const aberto = p.valorEmAberto > 0.009;
     const vencIso = (p.dataVencimento ?? "").slice(0, 10);
-    // Listagem CA costuma omitir data_pagamento: mesPagamentoParcela faz
-    // fallback para vencimento quando o título já está quitado.
-    const pagMes = mesPagamentoParcela(p) === mesYm;
+    // Listagem CA de receber costuma omitir data_pagamento: fallback ao
+    // vencimento se o título já está quitado.
+    const pagMes =
+      mesPagamentoParcela(p, { fallbackVencimentoSeQuitado: true }) === mesYm;
 
     if (vencMes) {
       const valorTitulo = round2(
@@ -703,7 +707,9 @@ export function agregarReceitaCaixaPeriodo(input: {
 
     let pagRef = pagIso;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(pagRef)) {
-      const mesPag = mesPagamentoParcela(p);
+      const mesPag = mesPagamentoParcela(p, {
+        fallbackVencimentoSeQuitado: true,
+      });
       if (mesPag && vencIso && vencIso.startsWith(mesPag)) pagRef = vencIso;
       else if (mesPag) pagRef = `${mesPag}-01`;
     }
@@ -806,12 +812,8 @@ export function somarDesembolsoPagoPeriodo(
     if (ehNaoDesembolsoCusto(p.descricao, p.rubrica)) continue;
     const pago = valorPagoParcela(p);
     if (pago <= 0) continue;
-    let pagRef = (p.dataPagamento ?? "").slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(pagRef)) {
-      const mesPag = mesPagamentoParcela(p);
-      if (!mesPag) continue;
-      pagRef = `${mesPag}-15`;
-    }
+    const pagRef = (p.dataPagamento ?? "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(pagRef)) continue;
     if (pagRef >= inicioIso && pagRef <= fimIso) total += pago;
   }
   return round2(total);
@@ -824,7 +826,11 @@ export function somarRecebidoNoMes(
 ): number {
   let s = 0;
   for (const p of parcelas) {
-    if (mesPagamentoParcela(p) !== mesYm) continue;
+    if (
+      mesPagamentoParcela(p, { fallbackVencimentoSeQuitado: true }) !== mesYm
+    ) {
+      continue;
+    }
     s += valorPagoParcela(p);
   }
   return round2(s);
@@ -862,7 +868,7 @@ export function somarRecebidoUltimosNDias(
       }
       continue;
     }
-    if (mesPagamentoParcela(p) === mesYm) {
+    if (mesPagamentoParcela(p, { fallbackVencimentoSeQuitado: true }) === mesYm) {
       totalMes += pago;
     }
   }

@@ -1015,6 +1015,53 @@ export async function buscarParcelasPagarParaProjecao(
 }
 
 /**
+ * Só baixas a pagar com data_pagamento no período (filtro da API).
+ * Preferir isto a `buscarParcelasPagarParaProjecao` quando o critério for
+ * “dinheiro saiu” (Comparativo / projeção) — evita contar título quitado
+ * só pelo vencimento quando a listagem omite data_pagamento.
+ *
+ * Se o JSON vier sem data_pagamento, preenche com o início do período
+ * (a API já garantiu a baixa no intervalo).
+ */
+export async function buscarBaixasPagarPorPeriodoPagamento(
+  inicio: Date,
+  fim: Date,
+  projetoId: number,
+): Promise<ParcelaFinanceiraNorm[]> {
+  const [fetch, classifs] = await Promise.all([
+    fetchBaixasPagarPorPagamento(inicio, fim),
+    listFinanceiroCaClassificacoes(projetoId),
+  ]);
+  const catalogo = await fetchCatalogoCategorias();
+  const periodoInicio = isoDateLocal(inicio);
+  const periodoFim = isoDateLocal(fim);
+  let pagar = fetch.itens
+    .map(i => mapParcelaListagem(i, "pagar", catalogo))
+    .filter((x): x is ParcelaFinanceiraNorm => !!x)
+    .map(p => {
+      if (p.dataPagamento) return p;
+      // Listagem omitiu o campo; a API já filtrou por data_pagamento_*.
+      return { ...p, dataPagamento: periodoInicio };
+    });
+  pagar = aplicarEdicoesClassificacao(
+    pagar,
+    classifs.map(c => ({
+      tipo: c.tipo,
+      chave: c.chave,
+      rubricaOverride: c.rubricaOverride,
+      centroCustoOverride: c.centroCustoOverride,
+      excluido: c.excluido,
+      nota: c.nota,
+    })),
+  );
+  return parcelasAtivasParaRelatorio(pagar).filter(p =>
+    parcelaDespesaExecutadaNoPeriodo(p, periodoInicio, periodoFim, {
+      aceitarSemDataPagamento: true,
+    }),
+  );
+}
+
+/**
  * Contas a pagar por vencimento em janela longa (histórico completo).
  * Uso exclusivo do KPI de impostos/encargos — único indicador do dashboard
  * que varre todo o período, não só o mês âncora.
@@ -1192,7 +1239,8 @@ export async function buscarBaixasReceberPorPeriodoPagamento(
   ]);
   let receber = Array.from(porId.values())
     .map(i => mapParcelaListagem(i, "receber", catalogo))
-    .filter((x): x is ParcelaFinanceiraNorm => !!x);
+    .filter((x): x is ParcelaFinanceiraNorm => !!x)
+    .map(p => (p.dataPagamento ? p : { ...p, dataPagamento: pagDe }));
   receber = aplicarEdicoesClassificacao(
     receber,
     classifs.map(c => ({

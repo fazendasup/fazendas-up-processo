@@ -1,5 +1,6 @@
 import {
   buscarBaixasReceberPorPeriodoPagamento,
+  buscarBaixasPagarPorPeriodoPagamento,
   buscarParcelasPagarParaProjecao,
   buscarParcelasPagarHistoricoVencimento,
   buscarParcelasReceberParaComparativo,
@@ -183,7 +184,8 @@ async function carregarParcelasBaseMes(
     return hit.parcelas;
   }
   const { inicio, fim } = boundsMesYmAmericaSp(mesYm);
-  const raw = await buscarParcelasPagarParaProjecao(inicio, fim, projetoId);
+  // Só baixas com data_pagamento no mês (não títulos só com vencimento no mês).
+  const raw = await buscarBaixasPagarPorPeriodoPagamento(inicio, fim, projetoId);
   const parcelas = raw.map(toBase);
   parcelasCache.set(key, { at: Date.now(), parcelas });
   return parcelas;
@@ -344,7 +346,7 @@ export async function carregarProjecaoDesembolso(
       mesesHorizonte,
     },
     avisos: [
-      "Base = somente o que foi PAGO no mês anterior (sem previsão aberta do Conta Azul).",
+      "Base = somente baixas Conta Azul com data de pagamento no mês anterior (não conta título só pelo vencimento).",
       "Essenciais (energia, aluguel, salário, insumos, lanches, embalagens, tarifas bancárias, combustível, hortifruti…) já entram como projetado recorrente.",
       "Demais itens: valor sugerido — marque o checkbox se vai continuar.",
       "Total da projeção = só os 3 meses à frente (mês anterior não entra).",
@@ -790,7 +792,7 @@ export async function carregarFinanceiroDashboard(
     }),
     periodo.planoAlinhadoAoPeriodo
       ? Promise.resolve([] as ParcelaBaseProjecao[])
-      : buscarParcelasPagarParaProjecao(
+      : buscarBaixasPagarPorPeriodoPagamento(
           periodo.inicio,
           periodo.fim,
           projetoId,
@@ -802,7 +804,7 @@ export async function carregarFinanceiroDashboard(
           periodo.fim,
           projetoId,
         ).then(r => r.map(toBase)),
-    // Contas a pagar/receber do dia (sempre America/SP de hoje).
+    // Contas a pagar/receber do dia (vencimento) — aberto, não baixa.
     mesYm === hojeYm
       ? Promise.resolve(null as ParcelaBaseProjecao[] | null)
       : buscarParcelasPagarParaProjecao(

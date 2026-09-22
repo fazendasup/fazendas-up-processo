@@ -251,6 +251,40 @@ describe("montarComparativoDesembolsoMes", () => {
     expect(mat.detalhes.some(d => d.origem === "pago")).toBe(true);
   });
 
+  it("não conta título quitado sem data_pagamento (evita falso pago vs extrato)", () => {
+    const out = montarComparativoDesembolsoMes({
+      mesYm: "2026-09",
+      linhasProjecao: [linhaProj("Honorários Contábeis", 1067.9)],
+      parcelasPagarMes: [
+        parcela({
+          id: "boleto-real",
+          descricao: "Pagamento via boleto para PEGASUS",
+          fornecedor: "PEGASUS CONTABILIDADE LTDA",
+          rubrica: "Honorários Contábeis",
+          valorPago: 1093.51,
+          dataPagamento: "2026-09-10",
+          dataVencimento: "2026-09-10",
+        }),
+        parcela({
+          id: "parcela-sem-baixa-banco",
+          descricao: "5/12 - CONTABILIDADE",
+          fornecedor: "PEGASUS CONTABILIDADE LTDA",
+          rubrica: "Honorários Contábeis",
+          valor: 1067.9,
+          valorPago: 1067.9,
+          valorEmAberto: 0,
+          status: "QUITADO",
+          dataPagamento: null,
+          dataVencimento: "2026-09-15",
+        }),
+      ],
+    });
+    const rub = out.rubricas.find(r => r.rubrica === "Honorários Contábeis")!;
+    expect(rub.pago).toBe(1093.51);
+    expect(rub.detalhes.filter(d => d.origem === "pago")).toHaveLength(1);
+    expect(rub.detalhes.some(d => d.label.includes("5/12"))).toBe(false);
+  });
+
   it("marca vale-transporte pago sem projeção como atraso, não não-programada", () => {
     const out = montarComparativoDesembolsoMes({
       mesYm: "2026-09",

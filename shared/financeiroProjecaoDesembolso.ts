@@ -607,11 +607,24 @@ export function statusExecutado(p: ParcelaBaseProjecao): boolean {
   return p.valorEmAberto <= 0.009 && p.valorPago > 0;
 }
 
-/** Mês em que o dinheiro saiu (pagamento). */
-export function mesPagamentoParcela(p: ParcelaBaseProjecao): string | null {
-  const ref = p.dataPagamento || (statusExecutado(p) ? p.dataVencimento : null);
-  if (!ref || !/^\d{4}-\d{2}/.test(ref)) return null;
-  return ref.slice(0, 7);
+/**
+ * Mês em que o dinheiro saiu/entrou (pagamento).
+ * Sem data_pagamento: se `fallbackVencimentoSeQuitado`, usa vencimento quando
+ * o título já está executado (listagem CA de receber costuma omitir a data).
+ * No a pagar / Comparativo “Pago”, não use o fallback — preferir baixas filtradas
+ * por data_pagamento na API.
+ */
+export function mesPagamentoParcela(
+  p: ParcelaBaseProjecao,
+  opts?: { fallbackVencimentoSeQuitado?: boolean },
+): string | null {
+  const pag = (p.dataPagamento ?? "").slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(pag)) return pag.slice(0, 7);
+  if (opts?.fallbackVencimentoSeQuitado && statusExecutado(p)) {
+    const venc = (p.dataVencimento ?? "").slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(venc)) return venc.slice(0, 7);
+  }
+  return null;
 }
 
 export function valorPagoParcela(p: ParcelaBaseProjecao): number {
@@ -734,7 +747,9 @@ export function montarProjecaoDesembolso(input: {
     if (!statusExecutado(p)) return false;
     if (ehCreditoOuDescontoObtido(p.descricao, p.rubrica)) return false;
     if (ehTransferenciaEntreContas(p.descricao, p.rubrica)) return false;
-    return mesPagamentoParcela(p) === mesContextoYm;
+    // Exige data_pagamento real — não inventa pelo vencimento.
+    const dp = (p.dataPagamento ?? "").slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(dp) && dp.slice(0, 7) === mesContextoYm;
   });
 
   const seriesMap = new Map<string, SeriePago>();
