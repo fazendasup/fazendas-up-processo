@@ -804,21 +804,19 @@ export async function carregarFinanceiroDashboard(
           periodo.fim,
           projetoId,
         ).then(r => r.map(toBase)),
-    // Contas a pagar/receber do dia (vencimento) — aberto, não baixa.
-    mesYm === hojeYm
-      ? Promise.resolve(null as ParcelaBaseProjecao[] | null)
-      : buscarParcelasPagarParaProjecao(
-          inicioDiaAmericaSp(hojeIso),
-          fimDiaAmericaSp(hojeIso),
-          projetoId,
-        ).then(r => r.map(toBase)),
-    mesYm === hojeYm
-      ? Promise.resolve(null as ParcelaBaseProjecao[] | null)
-      : buscarParcelasReceberParaComparativo(
-          inicioDiaAmericaSp(hojeIso),
-          fimDiaAmericaSp(hojeIso),
-          projetoId,
-        ).then(r => r.map(toBase)),
+    // Contas do dia = títulos EM ABERTO com vencimento hoje (não baixas do mês).
+    // Antes: no mês corrente caía em `pagarMes` (só data_pagamento) e o KPI
+    // ficava R$ 0 no card, mas o detalhe (buscar por vencimento) mostrava certo.
+    buscarParcelasPagarParaProjecao(
+      inicioDiaAmericaSp(hojeIso),
+      fimDiaAmericaSp(hojeIso),
+      projetoId,
+    ).then(r => r.map(toBase)),
+    buscarParcelasReceberParaComparativo(
+      inicioDiaAmericaSp(hojeIso),
+      fimDiaAmericaSp(hojeIso),
+      projetoId,
+    ).then(r => r.map(toBase)),
     listRubricasMesConcluidas(projetoId, mesYm),
     buscarSaldosBancarios(projetoId).catch(() => ({
       saldoBancario: null as number | null,
@@ -1073,16 +1071,14 @@ export async function carregarFinanceiroDashboard(
     hojeIso,
   );
 
-  const srcPagarHoje = pagarHoje ?? pagarMes;
-  const srcReceberHoje = receberHoje ?? receberMes;
   const contasPagarDia = listarContasEmAbertoPorVencimento({
-    parcelas: srcPagarHoje,
+    parcelas: pagarHoje,
     inicioIso: hojeIso,
     fimIso: hojeIso,
     modo: "pagar",
   });
   const contasReceberDia = listarContasEmAbertoPorVencimento({
-    parcelas: srcReceberHoje,
+    parcelas: receberHoje,
     inicioIso: hojeIso,
     fimIso: hojeIso,
     modo: "receber",
