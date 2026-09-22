@@ -3741,15 +3741,12 @@ function ProdutosArea({
     trpc.comercial.pedidos.sincronizarCatalogoContaAzul.useMutation({
       onSuccess: r => {
         toast.success(
-          r.status === "already_running"
-            ? "Sincronização do catálogo já está em andamento."
-            : "Sincronização do catálogo iniciada.",
-          { description: "A lista será atualizada em alguns segundos." }
+          `Catálogo sincronizado: ${r.recebidos} recebidos, ${r.novos} novos, ${r.atualizados} atualizados` +
+            (r.ignorados > 0 ? `, ${r.ignorados} ignorados` : "") +
+            ".",
         );
-        window.setTimeout(() => {
-          void utils.comercial.pedidos.catalogoContaAzul.invalidate();
-          void utils.comercial.pedidos.produtos.invalidate();
-        }, 5000);
+        void utils.comercial.pedidos.catalogoContaAzul.invalidate();
+        void utils.comercial.pedidos.produtos.invalidate();
       },
       onError: e => toast.error(e.message),
     });
@@ -3815,7 +3812,11 @@ function ProdutosArea({
                 size="sm"
                 variant="outline"
                 disabled={!canEdit || sincronizar.isPending}
-                onClick={() => sincronizar.mutate()}
+                onClick={() =>
+                  sincronizar.mutate({
+                    busca: buscaCatalogo.trim() || undefined,
+                  })
+                }
               >
                 {sincronizar.isPending
                   ? "Sincronizando…"

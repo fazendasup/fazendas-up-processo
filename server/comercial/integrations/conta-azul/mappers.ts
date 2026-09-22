@@ -489,7 +489,13 @@ export function mapProdutoContaAzulItem(
 ): ContaAzulProdutoResumo | null {
   if (!raw || typeof raw !== "object") return null;
   const item = raw as Record<string, unknown>;
-  const id = typeof item.id === "string" ? item.id : null;
+  const idRaw = item.id;
+  const id =
+    typeof idRaw === "string"
+      ? idRaw.trim()
+      : typeof idRaw === "number" && Number.isFinite(idRaw)
+        ? String(idRaw)
+        : null;
   const nome = typeof item.nome === "string" ? item.nome.trim() : "";
   if (!id || !nome) return null;
   const tipo = typeof item.tipo === "string" ? item.tipo.toUpperCase().trim() : "PRODUTO";

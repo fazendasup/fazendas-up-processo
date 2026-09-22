@@ -22,7 +22,7 @@ function buildProdutosPath(
   endpoint: ProdutosEndpoint,
   pagina: number,
   tamanhoPagina: number,
-  status?: "ATIVO" | "INATIVO",
+  opts?: { status?: "ATIVO" | "INATIVO"; busca?: string; sku?: string },
 ): string {
   const qs = new URLSearchParams({
     pagina: String(pagina),
@@ -30,7 +30,9 @@ function buildProdutosPath(
     campo_ordenacao: "NOME",
     direcao_ordenacao: "ASC",
   });
-  if (status) qs.set("status", status);
+  if (opts?.status) qs.set("status", opts.status);
+  if (opts?.busca?.trim()) qs.set("busca", opts.busca.trim());
+  if (opts?.sku?.trim()) qs.set("sku", opts.sku.trim());
   return `${endpoint}?${qs.toString()}`;
 }
 
@@ -39,52 +41,70 @@ function itensProdutoPage(res: ContaAzulProdutosPage | unknown[]): unknown[] {
   return res.items ?? res.itens ?? res.produtos ?? res.data ?? [];
 }
 
-function totalProdutoPage(res: ContaAzulProdutosPage | unknown[]): number | null {
-  if (Array.isArray(res)) return null;
-  return res.totalItems ?? res.total_items ?? res.total_itens ?? null;
-}
-
 async function fetchProdutosContaAzulPorEndpoint(
   http: AxiosInstance,
   endpoint: ProdutosEndpoint,
+  opts?: { busca?: string; sku?: string },
 ): Promise<ContaAzulProdutoResumo[]> {
-  const tamanho = 200;
+  const tamanho = 100;
   const maxPaginas = 200;
   const porId = new Map<string, ContaAzulProdutoResumo>();
 
-  for (const status of ["ATIVO", "INATIVO"] as const) {
-    let recebidosStatus = 0;
+  // Busca pontual: 1 passada sem filtro de status (API filtra por nome/SKU).
+  // Catálogo completo: ATIVO + INATIVO (evita 3× paginação / rate limit).
+  const statusList: Array<"ATIVO" | "INATIVO" | undefined> =
+    opts?.busca || opts?.sku
+      ? [undefined, "ATIVO"]
+      : ["ATIVO", "INATIVO"];
+
+  for (const status of statusList) {
     for (let pagina = 1; pagina <= maxPaginas; pagina++) {
-      const path = buildProdutosPath(endpoint, pagina, tamanho, status);
-      const res = await contaAzulGet<ContaAzulProdutosPage | unknown[]>(http, path);
+      const path = buildProdutosPath(endpoint, pagina, tamanho, {
+        status,
+        busca: opts?.busca,
+        sku: opts?.sku,
+      });
+      let res: ContaAzulProdutosPage | unknown[];
+      try {
+        res = await contaAzulGet<ContaAzulProdutosPage | unknown[]>(http, path);
+      } catch (e) {
+        logger.warn(
+          { endpoint, pagina, status, err: e },
+          "Falha em página de produtos Conta Azul; seguindo.",
+        );
+        break;
+      }
       const batch = itensProdutoPage(res);
-      recebidosStatus += batch.length;
       for (const raw of batch) {
-        const mapped = mapProdutoContaAzulItem(raw, status);
+        const mapped = mapProdutoContaAzulItem(
+          raw,
+          status === "ATIVO" || status === "INATIVO" ? status : undefined,
+        );
         if (mapped) porId.set(mapped.id, mapped);
       }
       if (batch.length === 0) break;
       if (batch.length < tamanho) break;
-      const total = totalProdutoPage(res);
-      if (typeof total === "number" && recebidosStatus >= total) break;
     }
   }
 
   return Array.from(porId.values());
 }
 
-export async function fetchTodosProdutosContaAzul(http: AxiosInstance): Promise<ContaAzulProdutoResumo[]> {
+export async function fetchTodosProdutosContaAzul(
+  http: AxiosInstance,
+  opts?: { busca?: string; sku?: string },
+): Promise<ContaAzulProdutoResumo[]> {
   const endpoints: ProdutosEndpoint[] = ["/v1/produtos", "/v1/produto/busca"];
   const erros: string[] = [];
   const porId = new Map<string, ContaAzulProdutoResumo>();
 
   for (const endpoint of endpoints) {
     try {
-      const itens = await fetchProdutosContaAzulPorEndpoint(http, endpoint);
+      const itens = await fetchProdutosContaAzulPorEndpoint(http, endpoint, opts);
       for (const item of itens) porId.set(item.id, item);
       if (itens.length === 0) {
         logger.warn(
-          { endpoint },
+          { endpoint, busca: opts?.busca, sku: opts?.sku },
           "Endpoint de produtos Conta Azul retornou zero itens; tentando fallback se disponível.",
         );
       }
@@ -228,12 +248,15 @@ export type IniciarSyncCatalogoProdutosResult =
 export async function sincronizarCatalogoProdutosContaAzul(
   prisma: PrismaClient,
   env: Env,
+  opts?: { busca?: string; sku?: string },
 ): Promise<SincronizarCatalogoProdutosResult> {
   const cred = await ensureValidAccessToken(prisma, env);
-  if (!cred?.accessToken) throw new Error("Integração Conta Azul não configurada ou token inválido.");
+  if (!cred?.accessToken) {
+    throw new Error("Integração Conta Azul não configurada ou token inválido.");
+  }
 
   const http = createContaAzulHttp(env, cred.accessToken);
-  const itens = await fetchTodosProdutosContaAzul(http);
+  const itens = await fetchTodosProdutosContaAzul(http, opts);
   const agora = new Date();
   let novos = 0;
   let atualizados = 0;
@@ -249,26 +272,43 @@ export async function sincronizarCatalogoProdutosContaAzul(
   return { recebidos: itens.length, novos, atualizados, ignorados };
 }
 
-/** Dispara o sync sem manter a requisição do navegador aberta. */
+/**
+ * Garante uma única execução por processo. Aguarda o resultado (não fire-and-forget),
+ * para o botão da UI reportar erro/contagem reais.
+ */
+export async function sincronizarCatalogoProdutosContaAzulExclusivo(
+  prisma: PrismaClient,
+  env: Env,
+  opts?: { busca?: string; sku?: string },
+): Promise<SincronizarCatalogoProdutosResult> {
+  if (syncCatalogoProdutosEmAndamento) {
+    return syncCatalogoProdutosEmAndamento;
+  }
+  const execucao = sincronizarCatalogoProdutosContaAzul(prisma, env, opts);
+  syncCatalogoProdutosEmAndamento = execucao;
+  try {
+    const resultado = await execucao;
+    logger.info({ resultado, opts }, "Catálogo de produtos Conta Azul sincronizado.");
+    return resultado;
+  } catch (err) {
+    logger.error({ err, opts }, "Falha ao sincronizar catálogo de produtos Conta Azul.");
+    throw err;
+  } finally {
+    if (syncCatalogoProdutosEmAndamento === execucao) {
+      syncCatalogoProdutosEmAndamento = null;
+    }
+  }
+}
+
+/** @deprecated Prefira sincronizarCatalogoProdutosContaAzulExclusivo (aguarda resultado). */
 export function iniciarSincronizacaoCatalogoProdutosEmBackground(
   prisma: PrismaClient,
   env: Env,
 ): IniciarSyncCatalogoProdutosResult {
-  if (syncCatalogoProdutosEmAndamento) return { status: "already_running", emSegundoPlano: true };
-
-  const execucao = sincronizarCatalogoProdutosContaAzul(prisma, env);
-  syncCatalogoProdutosEmAndamento = execucao;
-  void execucao
-    .then((resultado) => {
-      logger.info({ resultado }, "Catálogo de produtos Conta Azul sincronizado.");
-    })
-    .catch((err) => {
-      logger.error({ err }, "Falha ao sincronizar catálogo de produtos Conta Azul.");
-    })
-    .finally(() => {
-      if (syncCatalogoProdutosEmAndamento === execucao) syncCatalogoProdutosEmAndamento = null;
-    });
-
+  if (syncCatalogoProdutosEmAndamento) {
+    return { status: "already_running", emSegundoPlano: true };
+  }
+  void sincronizarCatalogoProdutosContaAzulExclusivo(prisma, env);
   return { status: "started", emSegundoPlano: true };
 }
 

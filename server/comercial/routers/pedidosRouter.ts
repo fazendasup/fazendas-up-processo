@@ -63,8 +63,8 @@ import {
 import {
   desativarProdutosInativosNoContaAzul,
   importarProdutosParaOperacao,
-  iniciarSincronizacaoCatalogoProdutosEmBackground,
   sincronizarCatalogoProdutosContaAzul,
+  sincronizarCatalogoProdutosContaAzulExclusivo,
 } from "../integrations/conta-azul/produtos-sync.service.js";
 const podeConfigurarEstoqueVivo = comercialRequirePerfis(
   "ADMIN",
@@ -791,21 +791,35 @@ export const pedidosRouter = router({
 
   sincronizarCatalogoContaAzul: comercialProcedure
     .use(podeConfigurarEstoqueVivo)
-    .mutation(async ({ ctx }) => {
+    .input(
+      z
+        .object({
+          /** Busca pontual no Conta Azul (nome/SKU) — acelera achar produto novo. */
+          busca: z.string().trim().min(1).max(120).optional(),
+        })
+        .default({}),
+    )
+    .mutation(async ({ ctx, input }) => {
       if (!ctx.comercialEnv) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Ambiente comercial indisponível.",
         });
       }
-      const r = iniciarSincronizacaoCatalogoProdutosEmBackground(
+      const busca = input.busca?.trim() || undefined;
+      // Aguarda o sync e devolve contagem — antes era fire-and-forget e a UI
+      // só atualizava após 5s, sem saber se falhou ou se o produto entrou.
+      const resultado = await sincronizarCatalogoProdutosContaAzulExclusivo(
         ctx.prisma!,
-        ctx.comercialEnv
+        ctx.comercialEnv,
+        busca
+          ? {
+              busca,
+              sku: /^[A-Za-z0-9._-]{2,40}$/.test(busca) ? busca : undefined,
+            }
+          : undefined,
       );
-      if (r.status === "already_running") {
-        return r;
-      }
-      return r;
+      return { status: "ok" as const, ...resultado, busca: busca ?? null };
     }),
 
   importarProdutosContaAzul: comercialProcedure
@@ -839,7 +853,7 @@ export const pedidosRouter = router({
         ReturnType<typeof sincronizarCatalogoProdutosContaAzul>
       > | null = null;
       if (input.sincronizarAntes) {
-        sync = await sincronizarCatalogoProdutosContaAzul(
+        sync = await sincronizarCatalogoProdutosContaAzulExclusivo(
           ctx.prisma!,
           ctx.comercialEnv,
         );

@@ -13,13 +13,13 @@ describe("mapProdutoContaAzulItem", () => {
     );
   });
 
-  it("ignora tipos desconhecidos", () => {
+  it("aceita id numérico (coerce para string)", () => {
     expect(
       mapProdutoContaAzulItem({
-        id: "x",
-        nome: "Serviço",
-        tipo: "SERVICO",
-      }),
-    ).toBeNull();
+        id: 12345,
+        nome: "Mix Clássico 500g",
+        tipo: "PRODUTO",
+      })?.id,
+    ).toBe("12345");
   });
 });
