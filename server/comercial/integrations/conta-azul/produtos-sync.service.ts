@@ -76,23 +76,34 @@ async function fetchProdutosContaAzulPorEndpoint(
 export async function fetchTodosProdutosContaAzul(http: AxiosInstance): Promise<ContaAzulProdutoResumo[]> {
   const endpoints: ProdutosEndpoint[] = ["/v1/produtos", "/v1/produto/busca"];
   const erros: string[] = [];
+  const porId = new Map<string, ContaAzulProdutoResumo>();
 
   for (const endpoint of endpoints) {
     try {
       const itens = await fetchProdutosContaAzulPorEndpoint(http, endpoint);
-      if (itens.length > 0) return itens;
-      logger.warn({ endpoint }, "Endpoint de produtos Conta Azul retornou zero itens; tentando fallback se disponível.");
+      for (const item of itens) porId.set(item.id, item);
+      if (itens.length === 0) {
+        logger.warn(
+          { endpoint },
+          "Endpoint de produtos Conta Azul retornou zero itens; tentando fallback se disponível.",
+        );
+      }
     } catch (e) {
       erros.push(`${endpoint}: ${e instanceof Error ? e.message : String(e)}`);
-      logger.warn({ endpoint, err: e }, "Falha ao sincronizar produtos Conta Azul por endpoint; tentando fallback.");
+      logger.warn(
+        { endpoint, err: e },
+        "Falha ao sincronizar produtos Conta Azul por endpoint; tentando fallback.",
+      );
     }
   }
 
-  if (erros.length === endpoints.length) {
-    throw new Error(`Não foi possível consultar produtos no Conta Azul. ${erros.join(" | ")}`);
+  if (porId.size === 0 && erros.length === endpoints.length) {
+    throw new Error(
+      `Não foi possível consultar produtos no Conta Azul. ${erros.join(" | ")}`,
+    );
   }
 
-  return [];
+  return Array.from(porId.values());
 }
 
 async function upsertProdutoCatalogo(
@@ -156,7 +167,41 @@ async function upsertProdutoCatalogo(
     return "novo";
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-      logger.warn({ produtoId: item.id, nome: item.nome }, "Conflito de nome ao sincronizar produto Conta Azul");
+      // Nome único: vincula o espelho existente ao id Conta Azul (ou atualiza se já for o mesmo).
+      const conflito = await prisma.produtoComercial.findFirst({
+        where: {
+          OR: [
+            { nome: item.nome },
+            ...(item.codigo ? [{ sku: item.codigo }] : []),
+          ],
+        },
+      });
+      if (
+        conflito &&
+        (conflito.contaAzulProdutoId == null ||
+          conflito.contaAzulProdutoId === item.id)
+      ) {
+        const status = (item.status ?? "").toUpperCase();
+        const inativoNoCa =
+          status.length > 0 && status !== "ATIVO" && status !== "ACTIVE";
+        await prisma.produtoComercial.update({
+          where: { id: conflito.id },
+          data: {
+            ...dataBase,
+            ...(inativoNoCa ? { ativo: false, importadoOperacao: false } : {}),
+          },
+        });
+        return "atualizado";
+      }
+      logger.warn(
+        {
+          produtoId: item.id,
+          nome: item.nome,
+          conflitoId: conflito?.id,
+          conflitoCaId: conflito?.contaAzulProdutoId,
+        },
+        "Conflito de nome/sku ao sincronizar produto Conta Azul",
+      );
       return "ignorado";
     }
     throw e;

@@ -760,22 +760,30 @@ export const pedidosRouter = router({
         .default({ apenasDisponiveis: true, somenteAtivosContaAzul: true })
     )
     .query(async ({ ctx, input }) => {
+      const busca = input.busca?.trim();
+      const and: Prisma.ProdutoComercialWhereInput[] = [
+        { contaAzulProdutoId: { not: null } },
+      ];
+      if (input.apenasDisponiveis) {
+        and.push({
+          OR: [{ importadoOperacao: false }, { ativo: false }],
+        });
+      }
+      if (input.somenteAtivosContaAzul) {
+        and.push({
+          statusContaAzul: { in: ["ATIVO", "ACTIVE"] },
+        });
+      }
+      if (busca) {
+        and.push({
+          OR: [
+            { nome: { contains: busca } },
+            { sku: { contains: busca } },
+          ],
+        });
+      }
       const produtos = await ctx.prisma!.produtoComercial.findMany({
-        where: {
-          contaAzulProdutoId: { not: null },
-          // Disponíveis = ainda não estão ativos na operação (nunca importados
-          // ou desativados). Antes só `importadoOperacao: false` escondia itens
-          // desativados com a flag ainda true — sem caminho para reativar.
-          ...(input.apenasDisponiveis
-            ? {
-                OR: [{ importadoOperacao: false }, { ativo: false }],
-              }
-            : {}),
-          ...(input.somenteAtivosContaAzul ? { statusContaAzul: "ATIVO" } : {}),
-          ...(input.busca?.trim()
-            ? { nome: { contains: input.busca.trim() } }
-            : {}),
-        },
+        where: { AND: and },
         orderBy: [{ nome: "asc" }],
       });
       return produtos;

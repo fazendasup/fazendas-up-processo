@@ -493,7 +493,16 @@ export function mapProdutoContaAzulItem(
   const nome = typeof item.nome === "string" ? item.nome.trim() : "";
   if (!id || !nome) return null;
   const tipo = typeof item.tipo === "string" ? item.tipo.toUpperCase().trim() : "PRODUTO";
-  if (tipo && tipo !== "PRODUTO" && tipo !== "VARIACAO_PRODUTO") return null;
+  // Conta Azul: PRODUTO | KIT_PRODUTO | VARIACAO_PRODUTO (OpenAPI inventário).
+  // Kits (ex.: mixes) precisam entrar no catálogo local para ativação na operação.
+  if (
+    tipo &&
+    tipo !== "PRODUTO" &&
+    tipo !== "VARIACAO_PRODUTO" &&
+    tipo !== "KIT_PRODUTO"
+  ) {
+    return null;
+  }
   const codigo =
     typeof item.codigo === "string" && item.codigo.trim()
       ? item.codigo.trim()
