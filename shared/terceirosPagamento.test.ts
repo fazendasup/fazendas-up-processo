@@ -75,10 +75,27 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
     expect(r!.valorTotal).toBe(111.25);
   });
 
-  it("rejeita saída antes da entrada", () => {
+  it("jornada noturna: saída no dia seguinte, um VT e uma alimentação", () => {
+    // 18:00 → 08:00 = 14h presente, entrada ≥ 12 → sem desconto almoço, +VT + alim.
+    const r = calcularPagamentoDiaTerceiro({
+      horaEntrada: "18:00",
+      horaSaida: "08:00",
+    });
+    expect(r).not.toBeNull();
+    expect(r!.cruzaMeiaNoite).toBe(true);
+    expect(r!.horasPresente).toBe(14);
+    expect(r!.almocouNaEmpresa).toBe(false);
+    expect(r!.horasTrabalhadas).toBe(14);
+    expect(r!.valorValeTransporte).toBe(10);
+    expect(r!.valorAlimentacao).toBe(25);
+    expect(r!.valorHoras).toBe(round2(14 * TERCEIROS_VALOR_HORA));
+    expect(r!.valorTotal).toBe(round2(14 * TERCEIROS_VALOR_HORA + 10 + 25));
+  });
+
+  it("rejeita entrada igual à saída", () => {
     expect(
       calcularPagamentoDiaTerceiro({
-        horaEntrada: "18:00",
+        horaEntrada: "08:00",
         horaSaida: "08:00",
       }),
     ).toBeNull();

@@ -44,12 +44,13 @@ function assertHorarios(entrada: string, saida: string) {
       message: "Horário inválido.",
     });
   }
-  if (s <= e) {
+  if (s === e) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: "Hora de saída deve ser depois da entrada.",
+      message: "Hora de saída deve ser diferente da entrada.",
     });
   }
+  // s < e = jornada noturna (saída no dia seguinte) — permitido.
 }
 
 async function assertToken(token: string) {

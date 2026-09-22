@@ -3,8 +3,11 @@
  *
  * Valor/hora = R$ 90 ÷ 8.
  * Horas pagas = tempo presente − 1h de almoço (se entrada antes das 12h).
- * + R$ 10 vale-transporte por dia.
+ * + R$ 10 vale-transporte por dia (um registro = um VT, mesmo em jornada noturna).
  * + R$ 25 alimentação se NÃO almoçou na empresa (entrada ≥ 12h).
+ *
+ * Jornada que cruza meia-noite: saída menor que entrada (ex.: 18:00 → 08:00)
+ * conta como um único dia (data da entrada), com um VT e uma alimentação.
  */
 
 export const TERCEIROS_DIARIA_BASE = 90;
@@ -63,14 +66,27 @@ export function horaParaMinutos(hora: string): number | null {
   return h * 60 + min;
 }
 
+/** True quando saída é no dia seguinte (hora de saída &lt; hora de entrada). */
+export function jornadaCruzaMeiaNoite(
+  horaEntrada: string,
+  horaSaida: string,
+): boolean {
+  const ent = horaParaMinutos(horaEntrada);
+  const sai = horaParaMinutos(horaSaida);
+  if (ent == null || sai == null) return false;
+  return sai < ent;
+}
+
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
 export type PagamentoDiaTerceiro = {
   minutosPresente: number;
-  /** Tempo no local (entrada → saída). */
+  /** Tempo no local (entrada → saída; pode cruzar meia-noite). */
   horasPresente: number;
+  /** Saída no dia civil seguinte à data do serviço. */
+  cruzaMeiaNoite: boolean;
   /** Entrou antes das 12:00 → almoço na empresa (1h não remunerada). */
   almocouNaEmpresa: boolean;
   /** Horas remuneradas (presente − almoço se couber). */
@@ -87,7 +103,8 @@ export type PagamentoDiaTerceiro = {
 
 /**
  * Calcula o pagamento de um dia (tudo proporcional por hora).
- * Retorna null se horários inválidos ou saída ≤ entrada.
+ * Retorna null se horários inválidos ou entrada = saída.
+ * Se saída &lt; entrada, interpreta como jornada noturna (saída no dia seguinte).
  */
 export function calcularPagamentoDiaTerceiro(input: {
   horaEntrada: string;
@@ -95,9 +112,13 @@ export function calcularPagamentoDiaTerceiro(input: {
 }): PagamentoDiaTerceiro | null {
   const ent = horaParaMinutos(input.horaEntrada);
   const sai = horaParaMinutos(input.horaSaida);
-  if (ent == null || sai == null || sai <= ent) return null;
+  if (ent == null || sai == null) return null;
+  if (sai === ent) return null;
 
-  const minutosPresente = sai - ent;
+  const cruzaMeiaNoite = sai < ent;
+  const minutosPresente = cruzaMeiaNoite
+    ? 24 * 60 - ent + sai
+    : sai - ent;
   const horasPresente = round2(minutosPresente / 60);
   const almocouNaEmpresa = ent < 12 * 60;
   const descontoAlmocoHoras = almocouNaEmpresa
@@ -119,6 +140,7 @@ export function calcularPagamentoDiaTerceiro(input: {
   return {
     minutosPresente,
     horasPresente,
+    cruzaMeiaNoite,
     almocouNaEmpresa,
     horasTrabalhadas,
     horasExtras,
