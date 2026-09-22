@@ -20,6 +20,8 @@ export async function applyRuntimeSchemaEnsures(): Promise<void> {
   await db.ensureReceitasCrescimentoNovasColunas();
   await db.ensureEstoqueItensTable();
   await db.ensureEstoqueUnidadesKgLFromLegacyGramMl();
+  const { ensureEstoqueCategoriasTable } = await import("./estoqueCategoriasDb");
+  await ensureEstoqueCategoriasTable();
   await db.ensureVisionCultivoTables();
   await db.ensureProjetosTables();
   await db.ensureProjetoModulosTable();

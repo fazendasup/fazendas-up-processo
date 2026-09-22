@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { aplicarConsumoDiarioEstoque, projetarEstoque } from "./estoque";
+import {
+  aplicarConsumoDiarioEstoque,
+  labelCategoriaEstoque,
+  projetarEstoque,
+  slugifyEstoqueCategoria,
+} from "./estoque";
 
 describe("estoque", () => {
   it("desconta consumo diario desde a data de cadastro", () => {
@@ -49,5 +54,18 @@ describe("estoque", () => {
     expect(result.consumoMedioDiario).toBe(2);
     expect(result.estoqueAlvoQuantidade).toBe(88);
     expect(result.sugestaoCompraQuantidade).toBe(68);
+  });
+
+  it("slugify gera slug estável a partir do nome", () => {
+    expect(slugifyEstoqueCategoria("Fertilizantes Orgânicos")).toBe("fertilizantes_organicos");
+    expect(slugifyEstoqueCategoria("EPIs")).toBe("epis");
+    expect(slugifyEstoqueCategoria("  ")).toBe("classe");
+  });
+
+  it("labelCategoriaEstoque usa nome customizado quando disponível", () => {
+    expect(labelCategoriaEstoque("sementes")).toBe("Sementes");
+    expect(
+      labelCategoriaEstoque("fertilizantes", [{ slug: "fertilizantes", nome: "Fertilizantes" }]),
+    ).toBe("Fertilizantes");
   });
 });

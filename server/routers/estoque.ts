@@ -4,14 +4,25 @@ import { z } from "zod";
 import * as db from "../db";
 import type { EstoqueItemRow } from "../../drizzle/schema";
 import {
-  CATEGORIAS_ESTOQUE,
   UNIDADES_ESTOQUE,
   projetarEstoque,
   valorLinhaEstoque,
   custoConsumoDiario,
+  slugifyEstoqueCategoria,
 } from "../../shared/estoque";
+import {
+  assertEstoqueCategoriaExiste,
+  createEstoqueCategoria,
+  deleteEstoqueCategoria,
+  listEstoqueCategorias,
+  renameEstoqueCategoria,
+} from "../estoqueCategoriasDb";
 
-const categoriaZ = z.enum(CATEGORIAS_ESTOQUE);
+const categoriaSlugZ = z
+  .string()
+  .min(1)
+  .max(32)
+  .regex(/^[a-z0-9_]+$/, "Categoria inválida");
 const unidadeZ = z.enum(UNIDADES_ESTOQUE);
 
 /** Valores ainda em g/ml na BD são apresentados como kg/L e quantidades ÷1000 (alinhado à migração 0025). */
@@ -72,13 +83,88 @@ export const estoqueRouter = router({
   list: estoqueAccessProjectProcedure.query(async ({ ctx }) => {
     const pid = projetoIdFromCtx(ctx);
     const rows = await db.getAllEstoqueItens(pid);
-    return rows.map((r) => enrich(normalizeLegacyUnits(r)));
+    return rows.map(r => enrich(normalizeLegacyUnits(r)));
   }),
+
+  listCategorias: estoqueAccessProjectProcedure.query(async ({ ctx }) => {
+    const pid = projetoIdFromCtx(ctx);
+    const rows = await listEstoqueCategorias(pid);
+    return rows.map(r => ({
+      id: r.id,
+      slug: r.slug,
+      nome: r.nome,
+      ordem: r.ordem,
+      padrao: r.padrao,
+    }));
+  }),
+
+  createCategoria: estoqueAccessProjectProcedure
+    .input(
+      z.object({
+        nome: z.string().min(1).max(80),
+        slug: z.string().max(32).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await createEstoqueCategoria({
+          projetoId: projetoIdFromCtx(ctx),
+          nome: input.nome,
+          slug: input.slug,
+        });
+      } catch (e) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: e instanceof Error ? e.message : "Não foi possível criar a classe.",
+        });
+      }
+    }),
+
+  renameCategoria: estoqueAccessProjectProcedure
+    .input(
+      z.object({
+        id: z.number().int().positive(),
+        nome: z.string().min(1).max(80),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await renameEstoqueCategoria({
+          projetoId: projetoIdFromCtx(ctx),
+          id: input.id,
+          nome: input.nome,
+        });
+      } catch (e) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: e instanceof Error ? e.message : "Não foi possível renomear.",
+        });
+      }
+    }),
+
+  deleteCategoria: estoqueAccessProjectProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await deleteEstoqueCategoria({
+          projetoId: projetoIdFromCtx(ctx),
+          id: input.id,
+        });
+      } catch (e) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: e instanceof Error ? e.message : "Não foi possível excluir.",
+        });
+      }
+    }),
 
   kpis: estoqueAccessProjectProcedure.query(async ({ ctx }) => {
     const pid = projetoIdFromCtx(ctx);
-    const rows = await db.getAllEstoqueItens(pid);
-    const enriched = rows.map((r) => enrich(normalizeLegacyUnits(r)));
+    const [rows, cats] = await Promise.all([
+      db.getAllEstoqueItens(pid),
+      listEstoqueCategorias(pid),
+    ]);
+    const enriched = rows.map(r => enrich(normalizeLegacyUnits(r)));
     let valorTotal = 0;
     let custoMes = 0;
     let valorCompraSugerida = 0;
@@ -91,8 +177,8 @@ export const estoqueRouter = router({
       string,
       { count: number; valor: number; criticos: number }
     > = {};
-    for (const c of CATEGORIAS_ESTOQUE) {
-      porCategoria[c] = { count: 0, valor: 0, criticos: 0 };
+    for (const c of cats) {
+      porCategoria[c.slug] = { count: 0, valor: 0, criticos: 0 };
     }
     for (const e of enriched) {
       valorTotal += e.valorLinha;
@@ -134,7 +220,7 @@ export const estoqueRouter = router({
   create: estoqueAccessProjectProcedure
     .input(
       z.object({
-        categoria: categoriaZ,
+        categoria: categoriaSlugZ,
         nome: z.string().min(1).max(256),
         quantidadeTotal: z.number().finite(),
         unidadeTipo: unidadeZ,
@@ -149,8 +235,10 @@ export const estoqueRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      const pid = projetoIdFromCtx(ctx);
+      await assertEstoqueCategoriaExiste(pid, input.categoria);
       return db.createEstoqueItem({
-        projetoId: projetoIdFromCtx(ctx),
+        projetoId: pid,
         categoria: input.categoria,
         nome: input.nome,
         quantidadeTotal: input.quantidadeTotal,
@@ -170,7 +258,7 @@ export const estoqueRouter = router({
     .input(
       z.object({
         id: z.number().int().positive(),
-        categoria: categoriaZ.optional(),
+        categoria: categoriaSlugZ.optional(),
         nome: z.string().min(1).max(256).optional(),
         quantidadeTotal: z.number().finite().optional(),
         unidadeTipo: unidadeZ.optional(),
@@ -185,9 +273,11 @@ export const estoqueRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      const pid = projetoIdFromCtx(ctx);
       const { id, ...rest } = input;
-      const row = await db.getEstoqueItemById(projetoIdFromCtx(ctx), id);
+      const row = await db.getEstoqueItemById(pid, id);
       if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado" });
+      if (rest.categoria) await assertEstoqueCategoriaExiste(pid, rest.categoria);
       const updates: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(rest)) {
         if (v !== undefined) (updates as Record<string, unknown>)[k] = v;
@@ -202,7 +292,7 @@ export const estoqueRouter = router({
         hoje.setHours(0, 0, 0, 0);
         updates.consumoAplicadoAte = hoje;
       }
-      return db.updateEstoqueItem(projetoIdFromCtx(ctx), id, updates as never);
+      return db.updateEstoqueItem(pid, id, updates as never);
     }),
 
   delete: estoqueAccessProjectProcedure
@@ -212,4 +302,9 @@ export const estoqueRouter = router({
       if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado" });
       return db.deleteEstoqueItem(projetoIdFromCtx(ctx), input.id);
     }),
+
+  /** Utilitário p/ UI: preview do slug a partir do nome. */
+  previewSlug: estoqueAccessProjectProcedure
+    .input(z.object({ nome: z.string() }))
+    .query(({ input }) => ({ slug: slugifyEstoqueCategoria(input.nome) })),
 });

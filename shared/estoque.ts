@@ -7,19 +7,51 @@ export const CATEGORIAS_ESTOQUE = [
   "nutrientes",
   "embalagem",
 ] as const;
-export type EstoqueCategoria = (typeof CATEGORIAS_ESTOQUE)[number];
+export type EstoqueCategoriaPadrao = (typeof CATEGORIAS_ESTOQUE)[number];
+/** @deprecated use EstoqueCategoriaPadrao — categorias customizadas são string (slug). */
+export type EstoqueCategoria = string;
 
 /** Massa e volume em unidades comerciais (kg / L); `unidade` para contagens (ex.: embalagens). */
 export const UNIDADES_ESTOQUE = ["unidade", "kg", "l"] as const;
 export type EstoqueUnidadeTipo = (typeof UNIDADES_ESTOQUE)[number];
 
-export const LABEL_CATEGORIA: Record<EstoqueCategoria, string> = {
+export const LABEL_CATEGORIA: Record<EstoqueCategoriaPadrao, string> = {
   sementes: "Sementes",
   substratos: "Substratos",
   biologicos: "Biológicos",
   nutrientes: "Nutrientes",
   embalagem: "Embalagem",
 };
+
+/** Gera slug estável p/ categoria customizada (coluna varchar 32). */
+export function slugifyEstoqueCategoria(nome: string): string {
+  const base = nome
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 32);
+  return base || "classe";
+}
+
+export function labelCategoriaEstoque(
+  slug: string,
+  custom?: Array<{ slug: string; nome: string }> | null,
+): string {
+  const fromCustom = custom?.find(c => c.slug === slug)?.nome?.trim();
+  if (fromCustom) return fromCustom;
+  if (slug in LABEL_CATEGORIA) {
+    return LABEL_CATEGORIA[slug as EstoqueCategoriaPadrao];
+  }
+  return slug.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
+export function isCategoriaEstoquePadrao(
+  slug: string,
+): slug is EstoqueCategoriaPadrao {
+  return (CATEGORIAS_ESTOQUE as readonly string[]).includes(slug);
+}
 
 export const LABEL_UNIDADE: Record<EstoqueUnidadeTipo, string> = {
   unidade: "unidade(s)",

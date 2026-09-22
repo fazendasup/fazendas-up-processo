@@ -27,9 +27,8 @@ import {
 } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
 import {
-  CATEGORIAS_ESTOQUE,
-  LABEL_CATEGORIA,
   analiseCadastroEstoque,
+  labelCategoriaEstoque,
   labelUnidadeEstoque,
   textoFaltasCadastroEstoque,
   type EstoqueCategoria,
@@ -263,9 +262,14 @@ export default function EstoquePage() {
   const utils = trpc.useUtils();
   const { data: itens = [], isLoading } = trpc.estoque.list.useQuery();
   const { data: kpis } = trpc.estoque.kpis.useQuery();
+  const { data: categorias = [] } = trpc.estoque.listCategorias.useQuery();
+
+  const labelCat = (slug: string) => labelCategoriaEstoque(slug, categorias);
 
   const [tab, setTab] = useState<EstoqueTab>(TAB_GERAL);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [classeDialogOpen, setClasseDialogOpen] = useState(false);
+  const [novaClasseNome, setNovaClasseNome] = useState("");
   const [editId, setEditId] = useState<number | null>(null);
   /** Categoria do item em edição (evita mover item se o usuário mudar de aba com o diálogo aberto). */
   const [editCategoria, setEditCategoria] = useState<EstoqueCategoria | null>(null);
@@ -369,6 +373,25 @@ export default function EstoquePage() {
           ? `Baixa diária aplicada em ${result.atualizados} item(ns).`
           : "Estoque já estava atualizado para hoje.",
       );
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const createCategoriaMut = trpc.estoque.createCategoria.useMutation({
+    onSuccess: async (cat) => {
+      await utils.estoque.invalidate();
+      toast.success(`Classe "${cat.nome}" criada`);
+      setClasseDialogOpen(false);
+      setNovaClasseNome("");
+      setTab(cat.slug);
+      setFormCategoria(cat.slug);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const deleteCategoriaMut = trpc.estoque.deleteCategoria.useMutation({
+    onSuccess: async () => {
+      await utils.estoque.invalidate();
+      toast.success("Classe removida");
+      setTab(TAB_GERAL);
     },
     onError: (e) => toast.error(e.message),
   });
@@ -553,16 +576,28 @@ export default function EstoquePage() {
                   <span className="ml-0.5 text-muted-foreground">({kpis.totalItens})</span>
                 )}
               </TabsTrigger>
-              {CATEGORIAS_ESTOQUE.map((c) => (
-                <TabsTrigger key={c} value={c} className="text-xs">
-                  {LABEL_CATEGORIA[c]}
-                  {kpis?.porCategoria[c] != null && (
-                    <span className="ml-1 text-muted-foreground">({kpis.porCategoria[c].count})</span>
+              {categorias.map((c) => (
+                <TabsTrigger key={c.slug} value={c.slug} className="text-xs">
+                  {c.nome}
+                  {kpis?.porCategoria[c.slug] != null && (
+                    <span className="ml-1 text-muted-foreground">({kpis.porCategoria[c.slug].count})</span>
                   )}
                 </TabsTrigger>
               ))}
             </TabsList>
             <div className="flex flex-wrap gap-2 shrink-0">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => {
+                  setNovaClasseNome("");
+                  setClasseDialogOpen(true);
+                }}
+              >
+                <Plus className="w-4 h-4" />
+                Nova classe
+              </Button>
               <Button
                 size="sm"
                 variant="outline"
@@ -640,9 +675,9 @@ export default function EstoquePage() {
                   }
                 >
                   <option value="todas">Todas as categorias</option>
-                  {CATEGORIAS_ESTOQUE.map((c) => (
-                    <option key={c} value={c}>
-                      {LABEL_CATEGORIA[c]}
+                  {categorias.map((c) => (
+                    <option key={c.slug} value={c.slug}>
+                      {c.nome}
                     </option>
                   ))}
                 </select>
@@ -659,7 +694,7 @@ export default function EstoquePage() {
                         subtitulo:
                           overviewFiltroCategoria === "todas"
                             ? "Todos os itens"
-                            : LABEL_CATEGORIA[overviewFiltroCategoria],
+                            : labelCat(overviewFiltroCategoria),
                         filename: `inventario-estoque-${d}`,
                       },
                       "csv",
@@ -676,7 +711,7 @@ export default function EstoquePage() {
                         subtitulo:
                           overviewFiltroCategoria === "todas"
                             ? "Todos os itens"
-                            : LABEL_CATEGORIA[overviewFiltroCategoria],
+                            : labelCat(overviewFiltroCategoria),
                         filename: `inventario-estoque-${d}`,
                       },
                       "pdf",
@@ -696,7 +731,7 @@ export default function EstoquePage() {
                       subtitulo:
                         overviewFiltroCategoria === "todas"
                           ? "Todos os itens"
-                          : LABEL_CATEGORIA[overviewFiltroCategoria],
+                          : labelCat(overviewFiltroCategoria),
                     });
                     if (!ok) toast.error("Permita pop-ups para imprimir o inventário");
                   }}
@@ -749,7 +784,7 @@ export default function EstoquePage() {
                         return (
                           <TableRow key={row.id}>
                             <TableCell className="px-1.5 align-top whitespace-normal break-words">
-                              {LABEL_CATEGORIA[row.categoria as EstoqueCategoria] ?? row.categoria}
+                              {labelCat(row.categoria)}
                             </TableCell>
                             <TableCell className="px-1.5 align-top font-medium min-w-0 max-w-0">
                               <div className="flex items-start gap-1.5 min-w-0">
@@ -904,23 +939,47 @@ export default function EstoquePage() {
             </div>
           </TabsContent>
 
-          {CATEGORIAS_ESTOQUE.map((c) => {
+          {categorias.map((cat) => {
+            const c = cat.slug;
             const rows = (itens as ItemEnriquecido[]).filter((i) => i.categoria === c);
             const compraDates = collectIsoDates(rows, "dataCompraSugeridaIso");
             const esgDates = collectIsoDates(rows, "dataEsgotamentoIso");
             return (
             <TabsContent key={c} value={c} className="space-y-4 mt-0">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                {kpis?.porCategoria[c] != null && (
-                  <p className="text-xs text-muted-foreground">
-                    Valor nesta categoria: <strong>{fmtMoney(kpis.porCategoria[c].valor)}</strong>
-                    {kpis.porCategoria[c].criticos > 0 && (
-                      <span className="text-destructive ml-2">
-                        · {kpis.porCategoria[c].criticos} em estado crítico
-                      </span>
-                    )}
-                  </p>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  {kpis?.porCategoria[c] != null && (
+                    <p className="text-xs text-muted-foreground">
+                      Valor nesta categoria: <strong>{fmtMoney(kpis.porCategoria[c].valor)}</strong>
+                      {kpis.porCategoria[c].criticos > 0 && (
+                        <span className="text-destructive ml-2">
+                          · {kpis.porCategoria[c].criticos} em estado crítico
+                        </span>
+                      )}
+                    </p>
+                  )}
+                  {!cat.padrao && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs text-destructive"
+                      disabled={deleteCategoriaMut.isPending}
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `Excluir a classe "${cat.nome}"? Só é possível se não houver itens.`,
+                          )
+                        ) {
+                          deleteCategoriaMut.mutate({ id: cat.id });
+                        }
+                      }}
+                    >
+                      <Trash2 className="w-3 h-3 mr-1" />
+                      Excluir classe
+                    </Button>
+                  )}
+                </div>
                 <ExportMenu
                   label="Exportar categoria"
                   onExportCsv={() => {
@@ -928,7 +987,7 @@ export default function EstoquePage() {
                     exportInventarioEstoque(
                       rows.map(toExportRow),
                       {
-                        titulo: `Inventário — ${LABEL_CATEGORIA[c]}`,
+                        titulo: `Inventário — ${cat.nome}`,
                         filename: `inventario-${c}-${d}`,
                       },
                       "csv",
@@ -940,7 +999,7 @@ export default function EstoquePage() {
                     exportInventarioEstoque(
                       rows.map(toExportRow),
                       {
-                        titulo: `Inventário — ${LABEL_CATEGORIA[c]}`,
+                        titulo: `Inventário — ${cat.nome}`,
                         filename: `inventario-${c}-${d}`,
                       },
                       "pdf",
@@ -1068,7 +1127,7 @@ export default function EstoquePage() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
                     <CalendarClock className="w-4 h-4" />
-                    Calendário ({LABEL_CATEGORIA[c]})
+                    Calendário ({cat.nome})
                   </div>
                   <p className="text-[10px] text-muted-foreground">
                     <span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1 align-middle" />
@@ -1102,13 +1161,13 @@ export default function EstoquePage() {
           <DialogHeader>
             <DialogTitle>
               {editId != null ? "Editar item" : "Novo item"} —{" "}
-              {LABEL_CATEGORIA[
+              {labelCat(
                 editId != null
                   ? (editCategoria ?? "sementes")
                   : tab === TAB_GERAL
                     ? formCategoria
-                    : tab
-              ]}
+                    : tab,
+              )}
             </DialogTitle>
             <DialogDescription>
               O sistema calcula cobertura e compra sugerida pelo uso informado. Para consumo diário,
@@ -1124,9 +1183,9 @@ export default function EstoquePage() {
                   value={formCategoria}
                   onChange={(e) => setFormCategoria(e.target.value as EstoqueCategoria)}
                 >
-                  {CATEGORIAS_ESTOQUE.map((c) => (
-                    <option key={c} value={c}>
-                      {LABEL_CATEGORIA[c]}
+                  {categorias.map((c) => (
+                    <option key={c.slug} value={c.slug}>
+                      {c.nome}
                     </option>
                   ))}
                 </select>
@@ -1240,6 +1299,43 @@ export default function EstoquePage() {
             </Button>
             <Button onClick={submitForm} disabled={createMut.isPending || updateMut.isPending}>
               {editId != null ? "Guardar" : "Criar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={classeDialogOpen} onOpenChange={setClasseDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Nova classe de estoque</DialogTitle>
+            <DialogDescription>
+              Cria uma nova aba nesta página (ex.: Fertilizantes, EPIs, Ferramentas).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Label htmlFor="nova-classe-nome">Nome da classe</Label>
+            <Input
+              id="nova-classe-nome"
+              className="mt-1.5"
+              placeholder="Ex.: Fertilizantes"
+              value={novaClasseNome}
+              onChange={(e) => setNovaClasseNome(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && novaClasseNome.trim()) {
+                  createCategoriaMut.mutate({ nome: novaClasseNome.trim() });
+                }
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setClasseDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={!novaClasseNome.trim() || createCategoriaMut.isPending}
+              onClick={() => createCategoriaMut.mutate({ nome: novaClasseNome.trim() })}
+            >
+              Criar classe
             </Button>
           </DialogFooter>
         </DialogContent>

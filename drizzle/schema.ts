@@ -787,6 +787,28 @@ export const estoqueItens = mysqlTable("estoque_itens", {
 export type EstoqueItemRow = typeof estoqueItens.$inferSelect;
 export type InsertEstoqueItem = typeof estoqueItens.$inferInsert;
 
+/** Classes/categorias de estoque por projeto (abas da página Estoque). */
+export const estoqueCategorias = mysqlTable(
+  "estoque_categorias",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    projetoId: int("projetoId").notNull(),
+    slug: varchar("slug", { length: 32 }).notNull(),
+    nome: varchar("nome", { length: 80 }).notNull(),
+    ordem: int("ordem").notNull().default(0),
+    padrao: boolean("padrao").notNull().default(false),
+    ativo: boolean("ativo").notNull().default(true),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  t => ({
+    uq: uniqueIndex("uq_estoque_cat_proj_slug").on(t.projetoId, t.slug),
+  }),
+);
+
+export type EstoqueCategoriaRow = typeof estoqueCategorias.$inferSelect;
+export type InsertEstoqueCategoria = typeof estoqueCategorias.$inferInsert;
+
 /** Rubricas de custo de produção por variedade (R$/planta ou derivados). */
 export const custosProducaoItens = mysqlTable("custos_producao_itens", {
   id: int("id").autoincrement().primaryKey(),
