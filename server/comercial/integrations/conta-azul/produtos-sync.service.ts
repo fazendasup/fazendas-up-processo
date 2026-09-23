@@ -173,40 +173,97 @@ export async function fetchTodosProdutosContaAzul(
   return fetchProdutosCatalogoCompleto(http);
 }
 
+async function nomeDisponivelOuAlternativo(
+  prisma: PrismaClient,
+  nomeDesejado: string,
+  opts: { excluirId?: string; codigo?: string | null; idCa?: string },
+): Promise<string> {
+  const ocupado = await prisma.produtoComercial.findFirst({
+    where: {
+      nome: nomeDesejado,
+      ...(opts.excluirId ? { id: { not: opts.excluirId } } : {}),
+    },
+    select: { id: true },
+  });
+  if (!ocupado) return nomeDesejado.slice(0, 191);
+  const alt = (
+    opts.codigo
+      ? `${nomeDesejado} (${opts.codigo})`
+      : opts.idCa
+        ? `${nomeDesejado} · ${opts.idCa.slice(0, 8)}`
+        : `${nomeDesejado} · ${Date.now().toString(36)}`
+  ).slice(0, 191);
+  const altOcupado = await prisma.produtoComercial.findFirst({
+    where: {
+      nome: alt,
+      ...(opts.excluirId ? { id: { not: opts.excluirId } } : {}),
+    },
+    select: { id: true },
+  });
+  if (!altOcupado) return alt;
+  return `${nomeDesejado.slice(0, 160)} · ${opts.idCa?.slice(0, 8) ?? Date.now().toString(36)}`.slice(
+    0,
+    191,
+  );
+}
+
 async function upsertProdutoCatalogo(
   prisma: PrismaClient,
   item: ContaAzulProdutoResumo,
   agora: Date,
 ): Promise<"novo" | "atualizado" | "ignorado"> {
-  const dataBase = {
-    nome: item.nome,
-    sku: item.codigo,
-    statusContaAzul: item.status,
-    precoBase:
-      item.valorVenda == null ? null : new Prisma.Decimal(item.valorVenda),
-    sincronizadoEm: agora,
-    contaAzulProdutoId: item.id,
-  };
+  const status = (item.status ?? "").toUpperCase();
+  const inativoNoCa =
+    status.length > 0 && status !== "ATIVO" && status !== "ACTIVE";
 
   const existenteCa = await prisma.produtoComercial.findUnique({
     where: { contaAzulProdutoId: item.id },
   });
   if (existenteCa) {
-    const status = (item.status ?? "").toUpperCase();
-    const inativoNoCa =
-      status.length > 0 && status !== "ATIVO" && status !== "ACTIVE";
-    await prisma.produtoComercial.update({
-      where: { id: existenteCa.id },
-      data: {
-        nome: dataBase.nome,
-        sku: dataBase.sku,
-        statusContaAzul: dataBase.statusContaAzul,
-        precoBase: dataBase.precoBase,
-        sincronizadoEm: dataBase.sincronizadoEm,
-        ...(inativoNoCa ? { ativo: false, importadoOperacao: false } : {}),
-      },
+    const nome = await nomeDisponivelOuAlternativo(prisma, item.nome, {
+      excluirId: existenteCa.id,
+      codigo: item.codigo,
+      idCa: item.id,
     });
-    return "atualizado";
+    try {
+      await prisma.produtoComercial.update({
+        where: { id: existenteCa.id },
+        data: {
+          nome,
+          sku: item.codigo,
+          statusContaAzul: item.status,
+          precoBase:
+            item.valorVenda == null
+              ? null
+              : new Prisma.Decimal(item.valorVenda),
+          sincronizadoEm: agora,
+          ...(inativoNoCa ? { ativo: false, importadoOperacao: false } : {}),
+        },
+      });
+      return "atualizado";
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === "P2002"
+      ) {
+        // Último recurso: atualiza sem mexer no nome.
+        await prisma.produtoComercial.update({
+          where: { id: existenteCa.id },
+          data: {
+            sku: item.codigo,
+            statusContaAzul: item.status,
+            precoBase:
+              item.valorVenda == null
+                ? null
+                : new Prisma.Decimal(item.valorVenda),
+            sincronizadoEm: agora,
+            ...(inativoNoCa ? { ativo: false, importadoOperacao: false } : {}),
+          },
+        });
+        return "atualizado";
+      }
+      throw e;
+    }
   }
 
   const legado = await prisma.produtoComercial.findFirst({
@@ -219,21 +276,60 @@ async function upsertProdutoCatalogo(
     },
   });
   if (legado) {
-    await prisma.produtoComercial.update({
-      where: { id: legado.id },
-      data: {
-        ...dataBase,
-        ativo: false,
-        importadoOperacao: false,
-      },
+    const nome = await nomeDisponivelOuAlternativo(prisma, item.nome, {
+      excluirId: legado.id,
+      codigo: item.codigo,
+      idCa: item.id,
     });
-    return "atualizado";
+    try {
+      await prisma.produtoComercial.update({
+        where: { id: legado.id },
+        data: {
+          nome,
+          sku: item.codigo,
+          statusContaAzul: item.status,
+          precoBase:
+            item.valorVenda == null
+              ? null
+              : new Prisma.Decimal(item.valorVenda),
+          sincronizadoEm: agora,
+          contaAzulProdutoId: item.id,
+          ativo: false,
+          importadoOperacao: false,
+        },
+      });
+      return "atualizado";
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === "P2002"
+      ) {
+        logger.warn(
+          { produtoId: item.id, nome: item.nome, legadoId: legado.id },
+          "Conflito ao vincular produto legado Conta Azul",
+        );
+        return "ignorado";
+      }
+      throw e;
+    }
   }
 
+  const nomeCreate = await nomeDisponivelOuAlternativo(prisma, item.nome, {
+    codigo: item.codigo,
+    idCa: item.id,
+  });
   try {
     await prisma.produtoComercial.create({
       data: {
-        ...dataBase,
+        nome: nomeCreate,
+        sku: item.codigo,
+        statusContaAzul: item.status,
+        precoBase:
+          item.valorVenda == null
+            ? null
+            : new Prisma.Decimal(item.valorVenda),
+        sincronizadoEm: agora,
+        contaAzulProdutoId: item.id,
         ativo: false,
         importadoOperacao: false,
       },
@@ -244,61 +340,11 @@ async function upsertProdutoCatalogo(
       e instanceof Prisma.PrismaClientKnownRequestError &&
       e.code === "P2002"
     ) {
-      const conflito = await prisma.produtoComercial.findFirst({
-        where: {
-          OR: [
-            { nome: item.nome },
-            ...(item.codigo ? [{ sku: item.codigo }] : []),
-          ],
-        },
-      });
-      if (
-        conflito &&
-        (conflito.contaAzulProdutoId == null ||
-          conflito.contaAzulProdutoId === item.id)
-      ) {
-        const status = (item.status ?? "").toUpperCase();
-        const inativoNoCa =
-          status.length > 0 && status !== "ATIVO" && status !== "ACTIVE";
-        await prisma.produtoComercial.update({
-          where: { id: conflito.id },
-          data: {
-            ...dataBase,
-            ...(inativoNoCa
-              ? { ativo: false, importadoOperacao: false }
-              : {}),
-          },
-        });
-        return "atualizado";
-      }
-
-      const nomeAlt = (
-        item.codigo
-          ? `${item.nome} (${item.codigo})`
-          : `${item.nome} · ${item.id.slice(0, 8)}`
-      ).slice(0, 191);
-      try {
-        await prisma.produtoComercial.create({
-          data: {
-            ...dataBase,
-            nome: nomeAlt,
-            ativo: false,
-            importadoOperacao: false,
-          },
-        });
-        return "novo";
-      } catch (e2) {
-        logger.warn(
-          {
-            produtoId: item.id,
-            nome: item.nome,
-            conflitoId: conflito?.id,
-            err: e2,
-          },
-          "Conflito ao sincronizar produto Conta Azul",
-        );
-        return "ignorado";
-      }
+      logger.warn(
+        { produtoId: item.id, nome: item.nome },
+        "Conflito ao criar produto Conta Azul",
+      );
+      return "ignorado";
     }
     throw e;
   }
