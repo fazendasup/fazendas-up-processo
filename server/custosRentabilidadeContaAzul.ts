@@ -11,7 +11,6 @@ import type { CustoProdutoFichaRow } from "../drizzle/schema";
 import {
   PRODUTO_VENDA_SEM_ITENS_CHAVE,
   PRODUTO_VENDA_SEM_ITENS_NOME,
-  reconciliarBrutoItensComPedido,
 } from "@shared/custosRentabilidadeVendasCa";
 
 function normalizarNome(s: string): string {
@@ -266,15 +265,10 @@ export async function buscarVendasContaAzulPorPeriodo(
     }
 
     const sumBrutoRaw = round2(linhas.reduce((s, l) => s + l.bruto, 0));
+    // Não reescalar itens para o bruto do pedido: a receita por produto (CMV / ABC)
+    // deve ser qtd × preço, igual aos Relatórios. Só sinaliza divergência no diagnóstico.
     if (comp.valorBruto > 0 && sumBrutoRaw > 0 && Math.abs(sumBrutoRaw - comp.valorBruto) > 0.01) {
       pedidosItensDivergentes += 1;
-      const reconciliados = reconciliarBrutoItensComPedido(
-        comp.valorBruto,
-        linhas.map((l) => l.bruto),
-      );
-      for (let i = 0; i < linhas.length; i++) {
-        linhas[i]!.bruto = reconciliados[i]!;
-      }
     }
 
     for (let i = 0; i < linhas.length; i++) {

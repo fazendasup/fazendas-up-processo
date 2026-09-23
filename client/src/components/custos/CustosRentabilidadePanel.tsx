@@ -840,8 +840,9 @@ export function CustosRentabilidadePanel() {
           <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
             <li>
               <strong className="text-foreground">Receita por produto</strong> — valor do item na CA
-              (preço × quantidade), <strong>sem ratear frete</strong>. Frete e desconto do mês aparecem
-              só no resumo do período.
+              (preço × quantidade), no mesmo critério do ABC de produtos nos Relatórios —{" "}
+              <strong>sem ratear frete</strong>. Frete e desconto do mês aparecem no resumo; com
+              filtro, ficam rateados pela receita dos SKUs selecionados.
             </li>
             <li>
               <strong className="text-foreground">CMV por unidade (ficha)</strong> — matéria-prima + etapas com{" "}
