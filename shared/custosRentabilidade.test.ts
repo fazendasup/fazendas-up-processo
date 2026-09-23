@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calcularRentabilidade, somarCustoOperacionalSugerido } from "./custosRentabilidade";
+import { calcularRentabilidade, agregarRentabilidadeDeLinhas, somarCustoOperacionalSugerido } from "./custosRentabilidade";
 
 describe("calcularRentabilidade", () => {
   it("calcula lucro e prejuízo por SKU com rateio operacional", () => {
@@ -62,5 +62,43 @@ describe("somarCustoOperacionalSugerido", () => {
       { ativo: false, modo: "mensal_rateio", valorMensal: "200" },
     ]);
     expect(total).toBe(1500);
+  });
+});
+
+describe("agregarRentabilidadeDeLinhas", () => {
+  it("reagrega KPI só das linhas filtradas", () => {
+    const full = calcularRentabilidade({
+      custoOperacionalTotal: 1000,
+      linhas: [
+        {
+          fichaId: 1,
+          nomeProduto: "A",
+          quantidade: 10,
+          receitaTotal: 2000,
+          custoUnitarioManual: null,
+          custoUnitarioFicha: 100,
+        },
+        {
+          fichaId: 2,
+          nomeProduto: "B",
+          quantidade: 5,
+          receitaTotal: 500,
+          custoUnitarioManual: null,
+          custoUnitarioFicha: 50,
+        },
+      ],
+    });
+    const onlyA = agregarRentabilidadeDeLinhas([full.linhas[0]!], 1000);
+    expect(onlyA.totais.receita).toBe(2000);
+    expect(onlyA.totais.cmv).toBe(1000);
+    expect(onlyA.totais.lucroBruto).toBe(1000);
+    expect(onlyA.totais.custoOperacional).toBe(full.linhas[0]!.rateioOperacional);
+    expect(onlyA.totais.resultado).toBe(full.linhas[0]!.contribuicao);
+    expect(
+      onlyA.totais.linhasLucro +
+        onlyA.totais.linhasPrejuizo +
+        onlyA.totais.linhasIncompletas,
+    ).toBe(1);
+    expect(onlyA.viabilidade.quantidadeVendida).toBe(10);
   });
 });

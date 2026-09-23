@@ -27,7 +27,7 @@ import {
   LABEL_TIPO_FICHA_CUSTO_PRODUTO,
   type TipoFichaCustoProduto,
 } from "@shared/custosProduto";
-import { calcularRentabilidade, type LinhaRentabilidadeResultado } from "@shared/custosRentabilidade";
+import { agregarRentabilidadeDeLinhas, calcularRentabilidade, type LinhaRentabilidadeResultado } from "@shared/custosRentabilidade";
 import {
   somarOverheadItensIncluidos,
   type ModoOverheadRentabilidade,
@@ -687,6 +687,29 @@ export function CustosRentabilidadePanel() {
     };
   }, [linhasResultadoFiltradas]);
 
+  /** KPIs + viabilidade respeitam o filtro da tabela de produtos. */
+  const resumoExibido = useMemo(() => {
+    if (!calculoAtual) return null;
+    if (!hasColumnFilters) {
+      return {
+        totais: calculoAtual.totais,
+        viabilidade: calculoAtual.viabilidade,
+        produtosCount: calculoAtual.linhas.length,
+        filtrado: false,
+      };
+    }
+    const agregado = agregarRentabilidadeDeLinhas(
+      linhasResultadoFiltradas,
+      calculoAtual.totais.custoOperacional,
+    );
+    return {
+      totais: agregado.totais,
+      viabilidade: agregado.viabilidade,
+      produtosCount: linhasResultadoFiltradas.length,
+      filtrado: true,
+    };
+  }, [calculoAtual, hasColumnFilters, linhasResultadoFiltradas]);
+
   const tituloExibicao = titulo.trim() || `Período ${inicio}`;
 
   const importarVendasContaAzul = () => {
@@ -1200,18 +1223,22 @@ export function CustosRentabilidadePanel() {
         </CardContent>
       </Card>
 
-      {calculoAtual ? (
+      {resumoExibido ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <Card>
             <CardHeader className="pb-1">
               <CardTitle className="text-xs text-muted-foreground">Receita</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xl font-bold tabular-nums">{fmtMoney(calculoAtual.totais.receita)}</p>
+              <p className="text-xl font-bold tabular-nums">{fmtMoney(resumoExibido.totais.receita)}</p>
               <p className="text-xs text-muted-foreground">
-                {linhasCalculo.length} produto(s) · receita por produto (CMV)
+                {resumoExibido.produtosCount} produto(s)
+                {resumoExibido.filtrado && calculoAtual
+                  ? ` de ${calculoAtual.linhas.length}`
+                  : ""}{" "}
+                · receita por produto (CMV)
               </p>
-              {vendasContaAzul.data?.diagnostico ? (
+              {!resumoExibido.filtrado && vendasContaAzul.data?.diagnostico ? (
                 <div className="text-[11px] text-muted-foreground mt-1.5 leading-snug space-y-0.5">
                   <p>
                     Bruto pedidos CA{" "}
@@ -1250,7 +1277,8 @@ export function CustosRentabilidadePanel() {
                       </>
                     ) : null}
                   </p>
-                  {Math.abs(
+                  {calculoAtual &&
+                  Math.abs(
                     calculoAtual.totais.receita - vendasContaAzul.data.diagnostico.receitaBrutaPedidos,
                   ) > 0.01 ? (
                     <p className="text-amber-700 dark:text-amber-400">
@@ -1263,6 +1291,11 @@ export function CustosRentabilidadePanel() {
                   ) : null}
                 </div>
               ) : null}
+              {resumoExibido.filtrado ? (
+                <p className="text-[11px] text-muted-foreground mt-1.5">
+                  Totais da seleção filtrada
+                </p>
+              ) : null}
             </CardContent>
           </Card>
           <Card>
@@ -1270,7 +1303,7 @@ export function CustosRentabilidadePanel() {
               <CardTitle className="text-xs text-muted-foreground">CMV (fichas)</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xl font-bold tabular-nums">{fmtMoney(calculoAtual.totais.cmv)}</p>
+              <p className="text-xl font-bold tabular-nums">{fmtMoney(resumoExibido.totais.cmv)}</p>
             </CardContent>
           </Card>
           <Card>
@@ -1279,22 +1312,28 @@ export function CustosRentabilidadePanel() {
             </CardHeader>
             <CardContent>
               <p className="text-xl font-bold tabular-nums">
-                {fmtMoney(calculoAtual.totais.lucroBruto)}
+                {fmtMoney(resumoExibido.totais.lucroBruto)}
               </p>
               <p className="text-xs text-muted-foreground">
-                Margem {fmtPct(calculoAtual.totais.margemBrutaPct)}
+                Margem {fmtPct(resumoExibido.totais.margemBrutaPct)}
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-1">
-              <CardTitle className="text-xs text-muted-foreground">Overhead do mês</CardTitle>
+              <CardTitle className="text-xs text-muted-foreground">
+                {resumoExibido.filtrado ? "Rateio overhead (filtro)" : "Overhead do mês"}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xl font-bold tabular-nums">
-                {fmtMoney(calculoAtual.totais.custoOperacional)}
+                {fmtMoney(resumoExibido.totais.custoOperacional)}
               </p>
-              {modoOverhead === "sugerido" ? (
+              {resumoExibido.filtrado ? (
+                <p className="text-xs text-muted-foreground">
+                  Parcela rateada dos produtos filtrados
+                </p>
+              ) : modoOverhead === "sugerido" ? (
                 <p className="text-xs text-muted-foreground">Cadastro Compartilhados + MO fixa</p>
               ) : modoOverhead === "itens" ? (
                 <p className="text-xs text-muted-foreground">
@@ -1305,73 +1344,80 @@ export function CustosRentabilidadePanel() {
           </Card>
           <Card
             className={
-              calculoAtual.totais.resultado >= 0
+              resumoExibido.totais.resultado >= 0
                 ? "border-emerald-200 bg-emerald-50/40 dark:border-emerald-900 dark:bg-emerald-950/20"
                 : "border-rose-200 bg-rose-50/40 dark:border-rose-900 dark:bg-rose-950/20"
             }
           >
             <CardHeader className="pb-1">
-              <CardTitle className="text-xs">Resultado do período</CardTitle>
+              <CardTitle className="text-xs">
+                {resumoExibido.filtrado ? "Resultado (filtro)" : "Resultado do período"}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xl font-bold tabular-nums flex items-center gap-2">
-                {calculoAtual.totais.resultado >= 0 ? (
+                {resumoExibido.totais.resultado >= 0 ? (
                   <TrendingUp className="h-5 w-5 text-emerald-600" />
                 ) : (
                   <TrendingDown className="h-5 w-5 text-rose-600" />
                 )}
-                {fmtMoney(calculoAtual.totais.resultado)}
+                {fmtMoney(resumoExibido.totais.resultado)}
               </p>
               <p className="text-xs text-muted-foreground">
-                {calculoAtual.totais.linhasLucro} lucro · {calculoAtual.totais.linhasPrejuizo}{" "}
-                prejuízo · {calculoAtual.totais.linhasIncompletas} incompleto(s)
+                {resumoExibido.totais.linhasLucro} lucro · {resumoExibido.totais.linhasPrejuizo}{" "}
+                prejuízo · {resumoExibido.totais.linhasIncompletas} incompleto(s)
               </p>
             </CardContent>
           </Card>
         </div>
       ) : null}
 
-      {calculoAtual?.viabilidade ? (
+      {resumoExibido?.viabilidade ? (
         <Card className="border-amber-200/60 dark:border-amber-900">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Viabilidade — ponto de equilíbrio do mês</CardTitle>
+            <CardTitle className="text-base">
+              Viabilidade — ponto de equilíbrio do mês
+              {resumoExibido.filtrado ? " (mix filtrado)" : ""}
+            </CardTitle>
             <CardDescription>
-              Com o mix e preços atuais, quanto falta vender para cobrir o overhead fixo do período.
+              {resumoExibido.filtrado
+                ? "Com o mix filtrado e preços atuais, quanto falta vender para cobrir o overhead fixo do período."
+                : "Com o mix e preços atuais, quanto falta vender para cobrir o overhead fixo do período."}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <p className="text-xs text-muted-foreground">Contribuição média / unidade</p>
               <p className="text-lg font-bold tabular-nums">
-                {fmtMoney(calculoAtual.viabilidade.contribuicaoMediaPorUnidade)}
+                {fmtMoney(resumoExibido.viabilidade.contribuicaoMediaPorUnidade)}
               </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Equilíbrio (unidades no mix)</p>
               <p className="text-lg font-bold tabular-nums">
-                {calculoAtual.viabilidade.pontoEquilibrioUnidades ?? "—"}
+                {resumoExibido.viabilidade.pontoEquilibrioUnidades ?? "—"}
               </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Já vendido no período</p>
               <p className="text-lg font-bold tabular-nums">
-                {calculoAtual.viabilidade.quantidadeVendida}
+                {resumoExibido.viabilidade.quantidadeVendida}
               </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Faltam p/ equilíbrio</p>
               <p
                 className={`text-lg font-bold tabular-nums ${
-                  (calculoAtual.viabilidade.unidadesFaltamEquilibrio ?? 0) > 0
+                  (resumoExibido.viabilidade.unidadesFaltamEquilibrio ?? 0) > 0
                     ? "text-rose-600"
                     : "text-emerald-600"
                 }`}
               >
-                {calculoAtual.viabilidade.unidadesFaltamEquilibrio ?? 0} un.
+                {resumoExibido.viabilidade.unidadesFaltamEquilibrio ?? 0} un.
               </p>
-              {(calculoAtual.viabilidade.receitaFaltaEquilibrio ?? 0) > 0 ? (
+              {(resumoExibido.viabilidade.receitaFaltaEquilibrio ?? 0) > 0 ? (
                 <p className="text-[11px] text-muted-foreground">
-                  ≈ {fmtMoney(calculoAtual.viabilidade.receitaFaltaEquilibrio)} receita
+                  ≈ {fmtMoney(resumoExibido.viabilidade.receitaFaltaEquilibrio)} receita
                 </p>
               ) : (
                 <p className="text-[11px] text-emerald-600">Overhead coberto pelo mix atual</p>

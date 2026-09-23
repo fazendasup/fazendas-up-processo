@@ -49,6 +49,86 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+function viabilidadeDeMix(
+  receitaTotal: number,
+  lucroBruto: number,
+  quantidadeVendida: number,
+  custoOp: number,
+): RentabilidadeViabilidade {
+  const contribuicaoMediaPorUnidade =
+    quantidadeVendida > 0 && lucroBruto > 0
+      ? round2(lucroBruto / quantidadeVendida)
+      : null;
+  const pontoEquilibrioUnidades =
+    contribuicaoMediaPorUnidade != null && contribuicaoMediaPorUnidade > 0
+      ? Math.ceil(custoOp / contribuicaoMediaPorUnidade)
+      : null;
+  const pontoEquilibrioReceita =
+    lucroBruto > 0 && receitaTotal > 0
+      ? round2((custoOp * receitaTotal) / lucroBruto)
+      : null;
+  const unidadesFaltamEquilibrio =
+    pontoEquilibrioUnidades != null
+      ? Math.max(0, pontoEquilibrioUnidades - quantidadeVendida)
+      : null;
+  const receitaFaltaEquilibrio =
+    pontoEquilibrioReceita != null
+      ? round2(Math.max(0, pontoEquilibrioReceita - receitaTotal))
+      : null;
+  return {
+    quantidadeVendida: round2(quantidadeVendida),
+    contribuicaoMediaPorUnidade,
+    pontoEquilibrioUnidades,
+    pontoEquilibrioReceita,
+    unidadesFaltamEquilibrio,
+    receitaFaltaEquilibrio,
+  };
+}
+
+/**
+ * Reagrega KPIs / viabilidade a partir de linhas já calculadas
+ * (ex.: após filtro de coluna na UI).
+ *
+ * `custoOperacionalMes` — overhead fixo do período (para ponto de equilíbrio).
+ * Nos totais, `custoOperacional` vira a soma do rateio das linhas (parcela do filtro).
+ */
+export function agregarRentabilidadeDeLinhas(
+  linhas: LinhaRentabilidadeResultado[],
+  custoOperacionalMes: number,
+): {
+  totais: RentabilidadeTotais;
+  viabilidade: RentabilidadeViabilidade;
+} {
+  const receita = round2(linhas.reduce((s, l) => s + l.receitaTotal, 0));
+  const cmv = round2(linhas.reduce((s, l) => s + (l.cmv ?? 0), 0));
+  const lucroBruto = round2(
+    linhas.reduce((s, l) => s + (l.lucroBruto ?? 0), 0),
+  );
+  const rateio = round2(linhas.reduce((s, l) => s + l.rateioOperacional, 0));
+  const resultado = round2(
+    linhas.reduce((s, l) => s + (l.contribuicao ?? 0), 0),
+  );
+  const quantidadeVendida = round2(
+    linhas.reduce((s, l) => s + l.quantidade, 0),
+  );
+  const custoOp = Math.max(0, custoOperacionalMes);
+
+  return {
+    totais: {
+      receita,
+      cmv,
+      lucroBruto,
+      custoOperacional: rateio,
+      resultado,
+      margemBrutaPct: receita > 0 ? round2((lucroBruto / receita) * 100) : null,
+      linhasLucro: linhas.filter((l) => l.status === "lucro").length,
+      linhasPrejuizo: linhas.filter((l) => l.status === "prejuizo").length,
+      linhasIncompletas: linhas.filter((l) => l.status === "incompleto").length,
+    },
+    viabilidade: viabilidadeDeMix(receita, lucroBruto, quantidadeVendida, custoOp),
+  };
+}
+
 export function calcularRentabilidade(input: {
   linhas: LinhaRentabilidadeCalculo[];
   custoOperacionalTotal: number;
@@ -109,22 +189,6 @@ export function calcularRentabilidade(input: {
   const lucroBruto = round2(receitaTotal - cmv);
   const resultado = round2(lucroBruto - custoOp);
   const quantidadeVendida = round2(linhas.reduce((s, l) => s + l.quantidade, 0));
-  const contribuicaoMediaPorUnidade =
-    quantidadeVendida > 0 && lucroBruto > 0 ? round2(lucroBruto / quantidadeVendida) : null;
-  const pontoEquilibrioUnidades =
-    contribuicaoMediaPorUnidade != null && contribuicaoMediaPorUnidade > 0
-      ? Math.ceil(custoOp / contribuicaoMediaPorUnidade)
-      : null;
-  const pontoEquilibrioReceita =
-    lucroBruto > 0 && receitaTotal > 0
-      ? round2((custoOp * receitaTotal) / lucroBruto)
-      : null;
-  const unidadesFaltamEquilibrio =
-    pontoEquilibrioUnidades != null
-      ? Math.max(0, pontoEquilibrioUnidades - quantidadeVendida)
-      : null;
-  const receitaFaltaEquilibrio =
-    pontoEquilibrioReceita != null ? round2(Math.max(0, pontoEquilibrioReceita - receitaTotal)) : null;
 
   return {
     linhas,
@@ -139,14 +203,7 @@ export function calcularRentabilidade(input: {
       linhasPrejuizo: linhas.filter((l) => l.status === "prejuizo").length,
       linhasIncompletas: linhas.filter((l) => l.status === "incompleto").length,
     },
-    viabilidade: {
-      quantidadeVendida,
-      contribuicaoMediaPorUnidade,
-      pontoEquilibrioUnidades,
-      pontoEquilibrioReceita,
-      unidadesFaltamEquilibrio,
-      receitaFaltaEquilibrio,
-    },
+    viabilidade: viabilidadeDeMix(receitaTotal, lucroBruto, quantidadeVendida, custoOp),
   };
 }
 
