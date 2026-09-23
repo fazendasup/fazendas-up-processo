@@ -2,9 +2,11 @@
  * Prestação de serviços de terceiros — pagamento por hora.
  *
  * Valor/hora = R$ 90 ÷ 8.
- * Horas pagas = tempo presente − 1h de almoço (se entrada antes das 12h).
+ * Horas pagas = tempo presente − 1h de almoço somente se a jornada cobre o
+ * intervalo de almoço: entrada antes das 11:00 e saída depois das 13:00
+ * (em jornada noturna: entrada antes das 11:00, pois cruza o almoço do 1º dia).
  * + R$ 10 vale-transporte por dia (um registro = um VT, mesmo em jornada noturna).
- * + R$ 25 alimentação se NÃO almoçou na empresa (entrada ≥ 12h).
+ * + R$ 25 alimentação se NÃO almoçou na empresa.
  *
  * Jornada que cruza meia-noite: saída menor que entrada (ex.: 18:00 → 08:00)
  * conta como um único dia (data da entrada), com um VT e uma alimentação.
@@ -15,6 +17,10 @@ export const TERCEIROS_VALE_TRANSPORTE = 10;
 export const TERCEIROS_ALIMENTACAO = 25;
 export const TERCEIROS_HORAS_JORNADA = 8;
 export const TERCEIROS_HORAS_ALMOCO = 1;
+/** Entrada estritamente antes deste horário para considerar almoço na empresa. */
+export const TERCEIROS_ALMOCO_ENTRADA_ANTES_MIN = 11 * 60;
+/** Saída estritamente depois deste horário (mesmo dia) para descontar almoço. */
+export const TERCEIROS_ALMOCO_SAIDA_DEPOIS_MIN = 13 * 60;
 /** R$ 90 / 8 — usado para qualquer quantidade de horas (a menos ou a mais). */
 export const TERCEIROS_VALOR_HORA =
   TERCEIROS_DIARIA_BASE / TERCEIROS_HORAS_JORNADA;
@@ -107,7 +113,7 @@ export type PagamentoDiaTerceiro = {
   horasPresente: number;
   /** Saída no dia civil seguinte à data do serviço. */
   cruzaMeiaNoite: boolean;
-  /** Entrou antes das 12:00 → almoço na empresa (1h não remunerada). */
+  /** Cobriu 11h–13h → almoço na empresa (1h não remunerada). */
   almocouNaEmpresa: boolean;
   /** Horas remuneradas (presente − almoço se couber). */
   horasTrabalhadas: number;
@@ -140,7 +146,10 @@ export function calcularPagamentoDiaTerceiro(input: {
     ? 24 * 60 - ent + sai
     : sai - ent;
   const horasPresente = round2(minutosPresente / 60);
-  const almocouNaEmpresa = ent < 12 * 60;
+  // Só desconta almoço se entrou antes das 11h e (saiu depois das 13h ou cruzou meia-noite).
+  const almocouNaEmpresa =
+    ent < TERCEIROS_ALMOCO_ENTRADA_ANTES_MIN &&
+    (cruzaMeiaNoite || sai > TERCEIROS_ALMOCO_SAIDA_DEPOIS_MIN);
   const descontoAlmocoHoras = almocouNaEmpresa
     ? Math.min(TERCEIROS_HORAS_ALMOCO, horasPresente)
     : 0;
