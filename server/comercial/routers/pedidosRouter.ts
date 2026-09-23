@@ -764,14 +764,19 @@ export const pedidosRouter = router({
       const and: Prisma.ProdutoComercialWhereInput[] = [
         { contaAzulProdutoId: { not: null } },
       ];
-      if (input.apenasDisponiveis) {
+      // Sem busca: só o que ainda pode ser ativado. Com busca: mostra também
+      // o que já está na operação (evita achar que "sumiu").
+      if (input.apenasDisponiveis && !busca) {
         and.push({
           OR: [{ importadoOperacao: false }, { ativo: false }],
         });
       }
       if (input.somenteAtivosContaAzul) {
         and.push({
-          statusContaAzul: { in: ["ATIVO", "ACTIVE"] },
+          OR: [
+            { statusContaAzul: { in: ["ATIVO", "ACTIVE"] } },
+            { statusContaAzul: null },
+          ],
         });
       }
       if (busca) {

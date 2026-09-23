@@ -37,8 +37,43 @@ function buildProdutosPath(
 }
 
 function itensProdutoPage(res: ContaAzulProdutosPage | unknown[]): unknown[] {
-  if (Array.isArray(res)) return res;
-  return res.items ?? res.itens ?? res.produtos ?? res.data ?? [];
+  if (Array.isArray(res)) return expandRawProdutosPage(res);
+  return expandRawProdutosPage(
+    res.items ?? res.itens ?? res.produtos ?? res.data ?? [],
+  );
+}
+
+/** Inclui o item pai e cada variação (`produtos_variacao`) como produto próprio. */
+function expandRawProdutosPage(batch: unknown[]): unknown[] {
+  const out: unknown[] = [];
+  for (const raw of batch) {
+    if (!raw || typeof raw !== "object") continue;
+    out.push(raw);
+    const vars = (raw as Record<string, unknown>).produtos_variacao;
+    if (Array.isArray(vars)) {
+      for (const v of vars) {
+        if (v && typeof v === "object") out.push(v);
+      }
+    }
+  }
+  return out;
+}
+
+function semAcentos(s: string): string {
+  return s.normalize("NFD").replace(/\p{M}/gu, "");
+}
+
+function variantesBuscaContaAzul(busca: string): string[] {
+  const t = busca.trim();
+  if (!t) return [];
+  const out = new Set<string>();
+  out.add(t);
+  const sem = semAcentos(t);
+  if (sem !== t) out.add(sem);
+  const primeiro = t.split(/\s+/)[0];
+  if (primeiro && primeiro.length >= 2) out.add(primeiro);
+  if (/^[A-Za-z0-9._-]{2,40}$/.test(t)) out.add(t);
+  return Array.from(out);
 }
 
 async function fetchProdutosContaAzulPorEndpoint(
@@ -98,26 +133,44 @@ export async function fetchTodosProdutosContaAzul(
   const erros: string[] = [];
   const porId = new Map<string, ContaAzulProdutoResumo>();
 
-  for (const endpoint of endpoints) {
-    try {
-      const itens = await fetchProdutosContaAzulPorEndpoint(http, endpoint, opts);
-      for (const item of itens) porId.set(item.id, item);
-      if (itens.length === 0) {
+  const consultas: Array<{ busca?: string; sku?: string }> =
+    opts?.busca || opts?.sku
+      ? [
+          ...(opts.sku ? [{ sku: opts.sku }] : []),
+          ...variantesBuscaContaAzul(opts.busca ?? opts.sku ?? "").map(b => ({
+            busca: b,
+          })),
+        ]
+      : [{}];
+
+  for (const consulta of consultas) {
+    for (const endpoint of endpoints) {
+      try {
+        const itens = await fetchProdutosContaAzulPorEndpoint(
+          http,
+          endpoint,
+          consulta.busca || consulta.sku ? consulta : undefined,
+        );
+        for (const item of itens) porId.set(item.id, item);
+        if (itens.length === 0) {
+          logger.warn(
+            { endpoint, ...consulta },
+            "Endpoint de produtos Conta Azul retornou zero itens; tentando fallback se disponível.",
+          );
+        }
+      } catch (e) {
+        erros.push(`${endpoint}: ${e instanceof Error ? e.message : String(e)}`);
         logger.warn(
-          { endpoint, busca: opts?.busca, sku: opts?.sku },
-          "Endpoint de produtos Conta Azul retornou zero itens; tentando fallback se disponível.",
+          { endpoint, err: e },
+          "Falha ao sincronizar produtos Conta Azul por endpoint; tentando fallback.",
         );
       }
-    } catch (e) {
-      erros.push(`${endpoint}: ${e instanceof Error ? e.message : String(e)}`);
-      logger.warn(
-        { endpoint, err: e },
-        "Falha ao sincronizar produtos Conta Azul por endpoint; tentando fallback.",
-      );
     }
+    // Busca pontual: se já achou algo, não precisa esgotar todas as variantes.
+    if ((opts?.busca || opts?.sku) && porId.size > 0) break;
   }
 
-  if (porId.size === 0 && erros.length === endpoints.length) {
+  if (porId.size === 0 && erros.length > 0 && !opts?.busca && !opts?.sku) {
     throw new Error(
       `Não foi possível consultar produtos no Conta Azul. ${erros.join(" | ")}`,
     );
@@ -162,7 +215,13 @@ async function upsertProdutoCatalogo(
   }
 
   const legado = await prisma.produtoComercial.findFirst({
-    where: { nome: item.nome, contaAzulProdutoId: null },
+    where: {
+      contaAzulProdutoId: null,
+      OR: [
+        { nome: item.nome },
+        ...(item.codigo ? [{ sku: item.codigo }] : []),
+      ],
+    },
   });
   if (legado) {
     await prisma.produtoComercial.update({
@@ -187,7 +246,6 @@ async function upsertProdutoCatalogo(
     return "novo";
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-      // Nome único: vincula o espelho existente ao id Conta Azul (ou atualiza se já for o mesmo).
       const conflito = await prisma.produtoComercial.findFirst({
         where: {
           OR: [
@@ -213,16 +271,46 @@ async function upsertProdutoCatalogo(
         });
         return "atualizado";
       }
-      logger.warn(
-        {
-          produtoId: item.id,
-          nome: item.nome,
-          conflitoId: conflito?.id,
-          conflitoCaId: conflito?.contaAzulProdutoId,
-        },
-        "Conflito de nome/sku ao sincronizar produto Conta Azul",
-      );
-      return "ignorado";
+
+      // Nome/SKU já ligados a outro id Conta Azul: grava com nome disambiguado.
+      const nomeAlt = (
+        item.codigo
+          ? `${item.nome} (${item.codigo})`
+          : `${item.nome} · ${item.id.slice(0, 8)}`
+      ).slice(0, 191);
+      try {
+        await prisma.produtoComercial.create({
+          data: {
+            ...dataBase,
+            nome: nomeAlt,
+            ativo: false,
+            importadoOperacao: false,
+          },
+        });
+        logger.warn(
+          {
+            produtoId: item.id,
+            nomeOriginal: item.nome,
+            nomeAlt,
+            conflitoId: conflito?.id,
+            conflitoCaId: conflito?.contaAzulProdutoId,
+          },
+          "Produto Conta Azul gravado com nome alternativo por conflito de unique",
+        );
+        return "novo";
+      } catch (e2) {
+        logger.warn(
+          {
+            produtoId: item.id,
+            nome: item.nome,
+            conflitoId: conflito?.id,
+            conflitoCaId: conflito?.contaAzulProdutoId,
+            err: e2,
+          },
+          "Conflito de nome/sku ao sincronizar produto Conta Azul",
+        );
+        return "ignorado";
+      }
     }
     throw e;
   }
@@ -233,6 +321,8 @@ export type SincronizarCatalogoProdutosResult = {
   novos: number;
   atualizados: number;
   ignorados: number;
+  /** Amostra de nomes trazidos da API (p/ diagnóstico na UI). */
+  amostraNomes: string[];
 };
 
 let syncCatalogoProdutosEmAndamento: Promise<SincronizarCatalogoProdutosResult> | null = null;
@@ -269,7 +359,13 @@ export async function sincronizarCatalogoProdutosContaAzul(
     else ignorados++;
   }
 
-  return { recebidos: itens.length, novos, atualizados, ignorados };
+  return {
+    recebidos: itens.length,
+    novos,
+    atualizados,
+    ignorados,
+    amostraNomes: itens.slice(0, 12).map(i => i.nome),
+  };
 }
 
 /**

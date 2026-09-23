@@ -13,6 +13,16 @@ describe("mapProdutoContaAzulItem", () => {
     );
   });
 
+  it("default status ATIVO quando a API omite o campo", () => {
+    expect(
+      mapProdutoContaAzulItem({
+        id: "ca-2",
+        nome: "Mix Clássico 500g",
+        tipo: "PRODUTO",
+      })?.status,
+    ).toBe("ATIVO");
+  });
+
   it("aceita id numérico (coerce para string)", () => {
     expect(
       mapProdutoContaAzulItem({
@@ -21,5 +31,15 @@ describe("mapProdutoContaAzulItem", () => {
         tipo: "PRODUTO",
       })?.id,
     ).toBe("12345");
+  });
+
+  it("ignora tipos desconhecidos", () => {
+    expect(
+      mapProdutoContaAzulItem({
+        id: "x",
+        nome: "Serviço",
+        tipo: "SERVICO",
+      }),
+    ).toBeNull();
   });
 });

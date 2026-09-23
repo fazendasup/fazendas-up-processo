@@ -3740,11 +3740,21 @@ function ProdutosArea({
   const sincronizar =
     trpc.comercial.pedidos.sincronizarCatalogoContaAzul.useMutation({
       onSuccess: r => {
-        toast.success(
-          `Catálogo sincronizado: ${r.recebidos} recebidos, ${r.novos} novos, ${r.atualizados} atualizados` +
-            (r.ignorados > 0 ? `, ${r.ignorados} ignorados` : "") +
-            ".",
-        );
+        if (r.recebidos === 0) {
+          toast.error(
+            r.busca
+              ? `Conta Azul não retornou produtos para “${r.busca}”. Tente o SKU exato (ex.: MIXCL4) ou o nome completo.`
+              : "Conta Azul não retornou produtos. Verifique a conexão da integração.",
+          );
+        } else {
+          toast.success(
+            `Catálogo: ${r.recebidos} recebidos · ${r.novos} novos · ${r.atualizados} atualizados` +
+              (r.ignorados > 0 ? ` · ${r.ignorados} ignorados` : ""),
+            r.amostraNomes?.length
+              ? { description: r.amostraNomes.slice(0, 5).join(" · ") }
+              : undefined,
+          );
+        }
         void utils.comercial.pedidos.catalogoContaAzul.invalidate();
         void utils.comercial.pedidos.produtos.invalidate();
       },
@@ -3922,6 +3932,11 @@ function ProdutosArea({
                     <div className="min-w-0 flex-1">
                       <p className="font-medium">
                         {prod.nome}
+                        {prod.importadoOperacao && prod.ativo ? (
+                          <span className="ml-1 text-xs font-normal text-emerald-700 dark:text-emerald-300">
+                            (já na operação)
+                          </span>
+                        ) : null}
                         {prod.importadoOperacao && !prod.ativo ? (
                           <span className="ml-1 text-xs font-normal text-amber-700 dark:text-amber-300">
                             (desativado — selecione para reativar)

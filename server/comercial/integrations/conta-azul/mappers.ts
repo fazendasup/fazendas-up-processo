@@ -525,6 +525,10 @@ export function mapProdutoContaAzulItem(
     status = item.ativo ? "ATIVO" : "INATIVO";
   }
   if (!status && statusHint) status = statusHint;
+  // Listagem sem filtro de status (busca pontual) às vezes omite o campo;
+  // sem default o produto entra no banco com status null e some do filtro
+  // "somente ativos no Conta Azul".
+  if (!status) status = "ATIVO";
   return {
     id,
     nome,
