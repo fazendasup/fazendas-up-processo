@@ -3743,8 +3743,14 @@ function ProdutosArea({
         if (r.recebidos === 0) {
           toast.error(
             r.busca
-              ? `Conta Azul não retornou produtos para “${r.busca}”. Tente o SKU exato (ex.: MIXCL4) ou o nome completo.`
-              : "Conta Azul não retornou produtos. Verifique a conexão da integração.",
+              ? `Conta Azul não retornou “${r.busca}”.`
+              : "Conta Azul não retornou produtos.",
+            {
+              description:
+                (r.avisos?.length ? r.avisos.slice(0, 2).join(" · ") : "") ||
+                "Confira se o produto existe na conta conectada e tente o SKU exato.",
+              duration: 12_000,
+            },
           );
         } else {
           toast.success(

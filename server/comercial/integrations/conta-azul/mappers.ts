@@ -499,20 +499,15 @@ export function mapProdutoContaAzulItem(
   const nome = typeof item.nome === "string" ? item.nome.trim() : "";
   if (!id || !nome) return null;
   const tipo = typeof item.tipo === "string" ? item.tipo.toUpperCase().trim() : "PRODUTO";
-  // Conta Azul: PRODUTO | KIT_PRODUTO | VARIACAO_PRODUTO (OpenAPI inventário).
-  // Kits (ex.: mixes) precisam entrar no catálogo local para ativação na operação.
-  if (
-    tipo &&
-    tipo !== "PRODUTO" &&
-    tipo !== "VARIACAO_PRODUTO" &&
-    tipo !== "KIT_PRODUTO"
-  ) {
-    return null;
-  }
+  // Catálogo: aceita qualquer tipo com id+nome (PRODUTO, KIT, VARIACAO, etc.).
+  // Filtrar por tipo fazia produtos válidos sumirem do sync.
+  const codigoRaw = item.codigo ?? item.sku ?? item.ean;
   const codigo =
-    typeof item.codigo === "string" && item.codigo.trim()
-      ? item.codigo.trim()
-      : null;
+    typeof codigoRaw === "string" && codigoRaw.trim()
+      ? codigoRaw.trim()
+      : typeof codigoRaw === "number" && Number.isFinite(codigoRaw)
+        ? String(codigoRaw)
+        : null;
   const valorRaw = item.valor_venda ?? item.valorVenda;
   const valorVenda =
     typeof valorRaw === "number"
