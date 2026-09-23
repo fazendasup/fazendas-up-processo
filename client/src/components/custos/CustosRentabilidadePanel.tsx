@@ -710,6 +710,40 @@ export function CustosRentabilidadePanel() {
     };
   }, [calculoAtual, hasColumnFilters, linhasResultadoFiltradas]);
 
+  /**
+   * Frete/desconto na CA são do pedido (mês), não do SKU.
+   * Com filtro, rateamos pela participação da receita filtrada no mês.
+   */
+  const diagnosticoReceitaExibido = useMemo(() => {
+    const d = vendasContaAzul.data?.diagnostico;
+    if (!d || !resumoExibido) return null;
+    const round2 = (n: number) => Math.round(n * 100) / 100;
+    if (!resumoExibido.filtrado || !calculoAtual) {
+      return {
+        bruto: d.receitaBrutaPedidos,
+        itensSync: d.receitaItensBruto,
+        frete: d.freteTotal,
+        desconto: d.descontoTotal,
+        liquido: d.receitaLiquidaPedidos,
+        rateado: false as const,
+      };
+    }
+    const baseMes = calculoAtual.totais.receita;
+    const share = baseMes > 0 ? resumoExibido.totais.receita / baseMes : 0;
+    const frete = round2(d.freteTotal * share);
+    const desconto = round2(d.descontoTotal * share);
+    const bruto = resumoExibido.totais.receita;
+    const liquido = round2(bruto + frete - desconto);
+    return {
+      bruto,
+      itensSync: bruto,
+      frete,
+      desconto,
+      liquido,
+      rateado: true as const,
+    };
+  }, [vendasContaAzul.data?.diagnostico, resumoExibido, calculoAtual]);
+
   const tituloExibicao = titulo.trim() || `Período ${inicio}`;
 
   const importarVendasContaAzul = () => {
