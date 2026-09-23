@@ -64,6 +64,7 @@ import {
   Briefcase,
   Truck,
   Sprout,
+  Bell,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -74,6 +75,9 @@ const FarmAssistantSheet = lazy(() =>
   import(/* @vite-ignore */ "@/components/FarmAssistantSheet").then(m => ({
     default: m.FarmAssistantSheet,
   }))
+);
+const PushNotificacoesDialog = lazy(() =>
+  import("@/components/PushNotificacoesDialog"),
 );
 type NavItem = {
   href: string;
@@ -273,6 +277,7 @@ function ThemeToggleBar() {
 
 export default function Header() {
   const [farmAssistantOpen, setFarmAssistantOpen] = useState(false);
+  const [pushDialogOpen, setPushDialogOpen] = useState(false);
   const [location] = useLocation();
   const { exportCSV, backupJSON } = useFazenda();
   const mutations = useFazendaMutations();
@@ -1036,6 +1041,15 @@ export default function Header() {
 
               {/* Login/Logout */}
               <DropdownMenuSeparator />
+              {isLoggedIn && (
+                <DropdownMenuItem
+                  onClick={() => setPushDialogOpen(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Bell className="w-4 h-4" />
+                  Notificações
+                </DropdownMenuItem>
+              )}
               {isLoggedIn ? (
                 <DropdownMenuItem
                   onClick={handleLogout}
@@ -1056,6 +1070,15 @@ export default function Header() {
           </DropdownMenu>
         </div>
       </div>
+
+      {isLoggedIn && (
+        <Suspense fallback={null}>
+          <PushNotificacoesDialog
+            open={pushDialogOpen}
+            onOpenChange={setPushDialogOpen}
+          />
+        </Suspense>
+      )}
 
       {isLoggedIn && activeProjetoId != null && (
         <Suspense fallback={null}>

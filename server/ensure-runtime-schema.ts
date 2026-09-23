@@ -38,4 +38,6 @@ export async function applyRuntimeSchemaEnsures(): Promise<void> {
   await ensureTerceirosTables();
   const { ensureCompraNfTables } = await import("./compraNfDb");
   await ensureCompraNfTables();
+  const { ensurePushTables } = await import("./pushDb");
+  await ensurePushTables();
 }

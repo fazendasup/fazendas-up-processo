@@ -94,6 +94,18 @@ export const ENV = {
   openAiChatModel: (process.env.OPENAI_CHAT_MODEL ?? "gpt-5.4-mini").trim() || "gpt-5.4-mini",
   /** Modelo para Responses API + ferramenta `web_search` (mesma família que suporta web search na doc). */
   openAiResponsesModel: (process.env.OPENAI_RESPONSES_MODEL ?? "gpt-5.4-mini").trim() || "gpt-5.4-mini",
+
+  /**
+   * Web Push (VAPID). Sem chaves o envio fica desligado; o UI mostra “não configurado”.
+   * Gerar: `npx web-push generate-vapid-keys`
+   */
+  vapidPublicKey: (process.env.VAPID_PUBLIC_KEY ?? "").trim(),
+  vapidPrivateKey: (process.env.VAPID_PRIVATE_KEY ?? "").trim(),
+  vapidSubject: (
+    process.env.VAPID_SUBJECT ??
+    process.env.PUBLIC_APP_URL ??
+    "mailto:ops@fazendasup.com.br"
+  ).trim(),
 };
 
 // Validate required environment variables

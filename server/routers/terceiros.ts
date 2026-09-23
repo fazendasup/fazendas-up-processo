@@ -169,6 +169,14 @@ export const terceirosRouter = router({
         horaEntrada: input.horaEntrada,
         horaSaida: input.horaSaida,
       });
+      const { dispararPushNotificacao } = await import("../pushService");
+      dispararPushNotificacao({
+        categoria: "terceiros",
+        titulo: "Registro de terceiro",
+        corpo: `${p.nomeCompleto} registrou ${input.horaEntrada}–${input.horaSaida} em ${input.dataServico}.`,
+        url: "/terceiros-admin",
+        tag: `terceiro-${row.id}`,
+      });
       return registroComPagamento(row);
     }),
 

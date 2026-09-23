@@ -1433,3 +1433,32 @@ export const compraNfItens = mysqlTable("compra_nf_itens", {
 
 export type CompraNfItemDbRow = typeof compraNfItens.$inferSelect;
 export type InsertCompraNfItem = typeof compraNfItens.$inferInsert;
+
+/** Subscriptions Web Push por aparelho/usuário. */
+export const pushSubscriptions = mysqlTable("push_subscriptions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  endpoint: text("endpoint").notNull(),
+  p256dh: varchar("p256dh", { length: 255 }).notNull(),
+  auth: varchar("auth", { length: 128 }).notNull(),
+  userAgent: varchar("userAgent", { length: 512 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PushSubscriptionRow = typeof pushSubscriptions.$inferSelect;
+export type InsertPushSubscription = typeof pushSubscriptions.$inferInsert;
+
+/**
+ * Preferências de notificação por usuário.
+ * `categorias` é JSON `{ operacional: true, financeiro: false, ... }`.
+ */
+export const pushPreferencias = mysqlTable("push_preferencias", {
+  userId: int("userId").primaryKey(),
+  ativo: boolean("ativo").notNull().default(true),
+  categorias: json("categorias").$type<Record<string, boolean>>().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PushPreferenciaRow = typeof pushPreferencias.$inferSelect;
+export type InsertPushPreferencia = typeof pushPreferencias.$inferInsert;

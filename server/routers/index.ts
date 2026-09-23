@@ -42,6 +42,7 @@ import { custosProducaoRouter } from "./custosProducao";
 import { financeiroCfoRouter } from "./financeiroCfo";
 import { terceirosRouter } from "./terceiros";
 import { comercialRouter } from "./comercial";
+import { pushRouter } from "./push";
 
 export const appRouter = router({
   system: systemRouter,
@@ -83,6 +84,7 @@ export const appRouter = router({
   financeiroCfo: financeiroCfoRouter,
   terceiros: terceirosRouter,
   comercial: comercialRouter,
+  push: pushRouter,
 });
 
 export type AppRouter = typeof appRouter;

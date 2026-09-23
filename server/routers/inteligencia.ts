@@ -101,6 +101,21 @@ export const inteligenciaRouter = router({
       }
     }
 
+    if (criados > 0) {
+      const { dispararPushNotificacao } = await import("../pushService");
+      dispararPushNotificacao({
+        categoria: "operacional",
+        titulo: "Novos alertas operacionais",
+        corpo:
+          criados === 1
+            ? "1 novo alerta no projeto."
+            : `${criados} novos alertas no projeto.`,
+        url: "/inteligencia",
+        tag: `intel-${pid}`,
+        projetoId: pid,
+      });
+    }
+
     return { success: true, criados, atualizados, resolvidos, totalCandidatos: candidatos.length };
   }),
 
