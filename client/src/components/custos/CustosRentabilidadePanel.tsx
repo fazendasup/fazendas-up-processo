@@ -1238,7 +1238,7 @@ export function CustosRentabilidadePanel() {
                   : ""}{" "}
                 · receita por produto (CMV)
               </p>
-              {!resumoExibido.filtrado && vendasContaAzul.data?.diagnostico ? (
+              {vendasContaAzul.data?.diagnostico ? (
                 <div className="text-[11px] text-muted-foreground mt-1.5 leading-snug space-y-0.5">
                   <p>
                     Bruto pedidos CA{" "}
@@ -1277,7 +1277,8 @@ export function CustosRentabilidadePanel() {
                       </>
                     ) : null}
                   </p>
-                  {calculoAtual &&
+                  {!resumoExibido.filtrado &&
+                  calculoAtual &&
                   Math.abs(
                     calculoAtual.totais.receita - vendasContaAzul.data.diagnostico.receitaBrutaPedidos,
                   ) > 0.01 ? (
