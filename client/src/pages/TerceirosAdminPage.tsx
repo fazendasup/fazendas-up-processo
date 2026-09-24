@@ -274,10 +274,20 @@ export default function TerceirosAdminPage() {
                     {data!.porPrestador.map(p => (
                       <tr key={p.prestadorId} className="border-b last:border-0">
                         <td className="px-3 py-2 font-medium">
-                          {p.nomeCompleto}
+                          <div>{p.nomeCompleto}</div>
+                          {p.observacao ? (
+                            <p className="mt-0.5 text-xs font-normal text-amber-800 dark:text-amber-200">
+                              {p.observacao}
+                            </p>
+                          ) : null}
                         </td>
                         <td className="px-3 py-2 text-xs text-muted-foreground">
                           {p.cpfMascarado}
+                          {p.diariaBase != null ? (
+                            <div className="mt-0.5 tabular-nums">
+                              Diária {fmtMoney(p.diariaBase)}
+                            </div>
+                          ) : null}
                         </td>
                         <td className="px-3 py-2 text-right tabular-nums">
                           {p.dias}
@@ -430,18 +440,26 @@ export default function TerceirosAdminPage() {
                 {prestadores.data!.map(p => (
                   <li
                     key={p.id}
-                    className="flex items-center justify-between gap-2 px-3 py-2 text-sm"
+                    className="flex items-start justify-between gap-2 px-3 py-2 text-sm"
                   >
-                    <div>
+                    <div className="min-w-0">
                       <p className="font-medium">{p.nomeCompleto}</p>
                       <p className="text-xs text-muted-foreground">
                         {p.cpfMascarado}
+                        {p.diariaBase != null
+                          ? ` · Diária ${fmtMoney(p.diariaBase)} / 8h`
+                          : " · Diária padrão R$ 90 / 8h"}
                       </p>
+                      {p.observacao ? (
+                        <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">
+                          {p.observacao}
+                        </p>
+                      ) : null}
                     </div>
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="text-destructive"
+                      className="shrink-0 text-destructive"
                       disabled={excluirPrestador.isPending}
                         onClick={() => {
                         if (

@@ -10,6 +10,7 @@ import {
 import {
   deleteRegistroAdmin,
   deleteRegistroPrestador,
+  getPrestadorById,
   getPrestadorByToken,
   identificarPrestador,
   listPrestadoresAdmin,
@@ -17,6 +18,7 @@ import {
   listRegistrosPrestador,
   setRegistroPago,
   softDeletePrestador,
+  updatePrestadorAdmin,
   upsertRegistroPrestador,
 } from "../terceirosDb";
 
@@ -64,17 +66,27 @@ async function assertToken(token: string) {
   return prestador;
 }
 
-function registroComPagamento(r: {
-  id: number;
-  dataServico: string;
-  horaEntrada: string;
-  horaSaida: string;
-  pagoAt: Date | null;
-  createdAt: Date;
-}) {
+function parseDiariaBase(raw: string | number | null | undefined): number | null {
+  if (raw == null || raw === "") return null;
+  const n = typeof raw === "number" ? raw : Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function registroComPagamento(
+  r: {
+    id: number;
+    dataServico: string;
+    horaEntrada: string;
+    horaSaida: string;
+    pagoAt: Date | null;
+    createdAt: Date;
+  },
+  diariaBase?: number | null,
+) {
   const pagamento = calcularPagamentoDiaTerceiro({
     horaEntrada: r.horaEntrada,
     horaSaida: r.horaSaida,
+    diariaBase,
   });
   const pago = r.pagoAt != null;
   return {
@@ -127,8 +139,9 @@ export const terceirosRouter = router({
     .input(z.object({ acessoToken: z.string().min(16) }))
     .query(async ({ input }) => {
       const p = await assertToken(input.acessoToken);
+      const diaria = parseDiariaBase(p.diariaBase);
       const regs = await listRegistrosPrestador(p.id);
-      const registros = regs.map(registroComPagamento);
+      const registros = regs.map(r => registroComPagamento(r, diaria));
       const emAberto = Math.round(
         registros
           .filter(r => !r.pago)
@@ -144,6 +157,8 @@ export const terceirosRouter = router({
           id: p.id,
           nomeCompleto: p.nomeCompleto,
           cpfMascarado: formatarCpf(p.cpf),
+          diariaBase: diaria,
+          observacao: p.observacao,
         },
         registros,
         emAberto,
@@ -177,7 +192,7 @@ export const terceirosRouter = router({
         url: "/terceiros-admin",
         tag: `terceiro-${row.id}`,
       });
-      return registroComPagamento(row);
+      return registroComPagamento(row, parseDiariaBase(p.diariaBase));
     }),
 
   excluirMeuRegistro: publicProcedure
@@ -215,9 +230,31 @@ export const terceirosRouter = router({
       cpfMascarado: formatarCpf(p.cpf),
       cpf: p.cpf,
       nomeCompleto: p.nomeCompleto,
+      diariaBase: parseDiariaBase(p.diariaBase),
+      observacao: p.observacao,
       createdAt: p.createdAt,
     }));
   }),
+
+  atualizarPrestador: adminProcedure
+    .input(
+      z.object({
+        id: z.number().int().positive(),
+        diariaBase: z.number().positive().max(10_000).nullable().optional(),
+        observacao: z.string().max(2000).nullable().optional(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const p = await updatePrestadorAdmin(input);
+      return {
+        id: p.id,
+        cpfMascarado: formatarCpf(p.cpf),
+        cpf: p.cpf,
+        nomeCompleto: p.nomeCompleto,
+        diariaBase: parseDiariaBase(p.diariaBase),
+        observacao: p.observacao,
+      };
+    }),
 
   /** Admin: registros no período com cálculo de pagamento. */
   listRegistros: adminProcedure
@@ -242,12 +279,15 @@ export const terceirosRouter = router({
       });
 
       const itens = rows.map(r => {
-        const base = registroComPagamento(r);
+        const diaria = parseDiariaBase(r.diariaBase);
+        const base = registroComPagamento(r, diaria);
         return {
           ...base,
           prestadorId: r.prestadorId,
           nomeCompleto: r.nomeCompleto,
           cpfMascarado: formatarCpf(r.cpf),
+          diariaBase: diaria,
+          observacao: r.observacao,
         };
       });
 
@@ -257,6 +297,8 @@ export const terceirosRouter = router({
           prestadorId: number;
           nomeCompleto: string;
           cpfMascarado: string;
+          diariaBase: number | null;
+          observacao: string | null;
           dias: number;
           horasTrabalhadas: number;
           horasExtras: number;
@@ -270,6 +312,8 @@ export const terceirosRouter = router({
           prestadorId: it.prestadorId,
           nomeCompleto: it.nomeCompleto,
           cpfMascarado: it.cpfMascarado,
+          diariaBase: it.diariaBase,
+          observacao: it.observacao,
           dias: 0,
           horasTrabalhadas: 0,
           horasExtras: 0,
@@ -325,7 +369,8 @@ export const terceirosRouter = router({
     )
     .mutation(async ({ input }) => {
       const row = await setRegistroPago(input.id, input.pago);
-      return registroComPagamento(row);
+      const p = await getPrestadorById(row.prestadorId);
+      return registroComPagamento(row, parseDiariaBase(p?.diariaBase));
     }),
 
   excluirPrestador: adminProcedure

@@ -1,7 +1,7 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Redirect, Route, Switch } from "wouter";
+import { Redirect, Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { PwaInstallHint } from "./components/PwaInstallHint";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -17,6 +17,7 @@ import { RoutePageFallback } from "./components/RoutePageFallback";
 import { useAuth } from "./_core/hooks/useAuth";
 import { isProcessAccessRole } from "@shared/const";
 import { canAccessCommercialPath, homeForCommercialPerfil, homeForUserRole } from "./lib/accessPolicy";
+import { syncPwaManifestForLocation } from "./lib/pwa";
 import { trpc } from "./lib/trpc";
 
 const LoginPage = lazy(() => import(/* @vite-ignore */"./pages/LoginPage"));
@@ -378,7 +379,7 @@ function App() {
             <AgendaModalProvider>
               <TooltipProvider>
                 <Toaster />
-                <PwaInstallHint />
+                <AppChrome />
                 <ProjetoOnboardingRedirect>
                   <Router />
                 </ProjetoOnboardingRedirect>
@@ -389,6 +390,41 @@ function App() {
       </ThemeProvider>
     </ErrorBoundary>
   );
+}
+
+/** Manifest + hint de instalação conforme página pública ou app autenticado. */
+function AppChrome() {
+  const [loc] = useLocation();
+  const path = loc.split("?")[0] ?? "";
+  const search = loc.includes("?")
+    ? loc.slice(loc.indexOf("?"))
+    : typeof window !== "undefined"
+      ? window.location.search
+      : "";
+  const pathNorm =
+    path.length > 1 && path.endsWith("/") ? path.slice(0, -1) : path;
+
+  useEffect(() => {
+    syncPwaManifestForLocation(pathNorm, search);
+  }, [pathNorm, search]);
+
+  if (pathNorm === "/calculadora") {
+    return (
+      <PwaInstallHint
+        title="Instale a Calculadora EC/pH"
+        descriptionApp="Abre direto na calculadora, sem pedir login. Ideal para o celular na estufa."
+      />
+    );
+  }
+  if (pathNorm === "/terceiros") {
+    return (
+      <PwaInstallHint
+        title="Instale Prestação de serviços"
+        descriptionApp="Abre direto nesta página, sem pedir login do sistema. Ideal para registrar horas no celular."
+      />
+    );
+  }
+  return <PwaInstallHint />;
 }
 
 export default App;

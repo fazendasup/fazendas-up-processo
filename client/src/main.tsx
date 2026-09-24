@@ -75,10 +75,25 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (typeof window === "undefined") return;
 
   const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
-
   if (!isUnauthorized) return;
 
-  window.location.href = '/login';
+  // Páginas públicas não devem ir para o login por causa de outra query falhar.
+  const path = window.location.pathname.split("?")[0] ?? "";
+  if (
+    path === "/calculadora" ||
+    path === "/calculadora/" ||
+    path === "/terceiros" ||
+    path === "/terceiros/" ||
+    path === "/privacidade" ||
+    path === "/privacidade/" ||
+    path === "/login" ||
+    path === "/login/" ||
+    path.startsWith("/rastreio/")
+  ) {
+    return;
+  }
+
+  window.location.href = "/login";
 };
 
 queryClient.getQueryCache().subscribe(event => {

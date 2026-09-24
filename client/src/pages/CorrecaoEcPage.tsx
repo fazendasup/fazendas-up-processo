@@ -37,9 +37,15 @@ import {
   calcularCorrecaoPhKoh,
 } from "@shared/correcaoPh";
 import { AlertTriangle, Beaker, Copy, Droplets, FlaskConical, Link2, RotateCcw, ShieldAlert } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
+import {
+  applyCalculadoraPublicManifest,
+  projetoIdFromSearch,
+  recallCalculadoraProjetoId,
+  rememberCalculadoraProjetoId,
+} from "@/lib/pwa";
 
 const STORAGE_KEY_EC = "fazendas.correcaoEc.receita";
 const STORAGE_KEY_PH = "fazendas.correcaoPh.fatorMlEstoque";
@@ -72,12 +78,6 @@ function mergeFasesFromRows(
     };
   }
   return next;
-}
-
-function projetoIdFromSearch(search: string): number | null {
-  const raw = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search).get("projeto");
-  const n = raw ? Number(raw) : NaN;
-  return Number.isFinite(n) && n > 0 ? Math.floor(n) : null;
 }
 
 function loadReceita(): ReceitaConcentradoAb {
@@ -125,21 +125,31 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
   const { activeProjetoId, activeProjeto } = useProjeto();
   const [location] = useLocation();
   const projetoIdUrl = useMemo(() => {
-    const q = location.includes("?") ? location.slice(location.indexOf("?")) : window.location.search;
+    const q = location.includes("?")
+      ? location.slice(location.indexOf("?"))
+      : window.location.search;
     return projetoIdFromSearch(q);
   }, [location]);
+
+  const projetoIdPersistido = useMemo(
+    () => (publicMode ? recallCalculadoraProjetoId() : null),
+    // projetoIdUrl: recolhe de novo se o link mudar
+    [publicMode, projetoIdUrl],
+  );
+
+  /** Página pública: projeto do link, memória local, ou ativo da sessão. */
+  const publicProjetoId =
+    projetoIdUrl ??
+    projetoIdPersistido ??
+    (publicMode ? activeProjetoId ?? undefined : undefined);
 
   const authFaixas = trpc.fasesConfig.list.useQuery(undefined, {
     enabled: Boolean(!publicMode && user && activeProjetoId),
     staleTime: 30_000,
   });
 
-  /** Página pública: projeto do link, senão o ativo da sessão (se houver). */
-  const publicProjetoId =
-    projetoIdUrl ?? (publicMode ? activeProjetoId ?? undefined : undefined);
-
   const publicFaixas = trpc.fasesConfig.publicFaixas.useQuery(
-    { projetoId: publicProjetoId },
+    { projetoId: publicProjetoId ?? undefined },
     {
       enabled: Boolean(publicMode || !user || !activeProjetoId),
       staleTime: publicMode ? 0 : 60_000,
@@ -147,6 +157,20 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
       refetchOnWindowFocus: publicMode,
     },
   );
+
+  useEffect(() => {
+    if (!publicMode) return;
+    const resolved =
+      projetoIdUrl ?? publicFaixas.data?.projetoId ?? null;
+    if (resolved != null) rememberCalculadoraProjetoId(resolved);
+  }, [publicMode, projetoIdUrl, publicFaixas.data?.projetoId]);
+
+  useEffect(() => {
+    if (!publicMode) return;
+    applyCalculadoraPublicManifest(
+      publicProjetoId ?? publicFaixas.data?.projetoId ?? null,
+    );
+  }, [publicMode, publicProjetoId, publicFaixas.data?.projetoId]);
 
   const [faseAlvo, setFaseAlvo] = useState<Fase | null>(null);
   const [volumeEc, setVolumeEc] = useState("");

@@ -131,15 +131,26 @@ export type PagamentoDiaTerceiro = {
  * Calcula o pagamento de um dia (tudo proporcional por hora).
  * Retorna null se horários inválidos ou entrada = saída.
  * Se saída &lt; entrada, interpreta como jornada noturna (saída no dia seguinte).
+ *
+ * @param diariaBase — diária combinada para 8h (padrão {@link TERCEIROS_DIARIA_BASE}).
  */
 export function calcularPagamentoDiaTerceiro(input: {
   horaEntrada: string;
   horaSaida: string;
+  diariaBase?: number | null;
 }): PagamentoDiaTerceiro | null {
   const ent = horaParaMinutos(input.horaEntrada);
   const sai = horaParaMinutos(input.horaSaida);
   if (ent == null || sai == null) return null;
   if (sai === ent) return null;
+
+  const diaria =
+    input.diariaBase != null &&
+    Number.isFinite(input.diariaBase) &&
+    input.diariaBase > 0
+      ? input.diariaBase
+      : TERCEIROS_DIARIA_BASE;
+  const valorHora = diaria / TERCEIROS_HORAS_JORNADA;
 
   const cruzaMeiaNoite = sai < ent;
   const minutosPresente = cruzaMeiaNoite
@@ -159,7 +170,7 @@ export function calcularPagamentoDiaTerceiro(input: {
   const horasExtras = round2(
     Math.max(0, horasTrabalhadas - TERCEIROS_HORAS_JORNADA),
   );
-  const valorHoras = round2(horasTrabalhadas * TERCEIROS_VALOR_HORA);
+  const valorHoras = round2(horasTrabalhadas * valorHora);
   const valorValeTransporte = TERCEIROS_VALE_TRANSPORTE;
   const valorAlimentacao = almocouNaEmpresa ? 0 : TERCEIROS_ALIMENTACAO;
   const valorTotal = round2(

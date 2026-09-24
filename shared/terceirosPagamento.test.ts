@@ -29,17 +29,17 @@ describe("formatarCpf / normalizarCpf", () => {
 });
 
 describe("calcularPagamentoDiaTerceiro (por hora)", () => {
-  it("jornada cheia com almoço: 8h × (90/8) + VT", () => {
-    // 07–16 = 9h presente − 1h almoço = 8h → 90 + 10
+  it("diária customizada R$ 116 (8h) com almoço: 116 + VT, sem alimentação", () => {
     const r = calcularPagamentoDiaTerceiro({
       horaEntrada: "07:00",
       horaSaida: "16:00",
+      diariaBase: 116,
     });
     expect(r!.almocouNaEmpresa).toBe(true);
     expect(r!.horasTrabalhadas).toBe(8);
-    expect(r!.valorHoras).toBe(90);
+    expect(r!.valorHoras).toBe(116);
     expect(r!.valorAlimentacao).toBe(0);
-    expect(r!.valorTotal).toBe(100);
+    expect(r!.valorTotal).toBe(126);
   });
 
   it("turno da tarde (entrada ≥ 13h): sem desconto de almoço + alimentação", () => {

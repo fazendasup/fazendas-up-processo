@@ -9,8 +9,15 @@ import {
   type BeforeInstallPromptEvent,
 } from "@/lib/pwa";
 
-export function PwaInstallHint() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+export function PwaInstallHint({
+  title = "Instale o Fazendas UP",
+  descriptionApp = "Adicione à tela inicial para abrir em tela cheia, como um app, sem baixar pela loja.",
+}: {
+  title?: string;
+  descriptionApp?: string;
+} = {}) {
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -57,15 +64,13 @@ export function PwaInstallHint() {
           <Download className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-semibold">Instale o Fazendas UP</p>
+          <p className="font-semibold">{title}</p>
           {deferredPrompt ? (
-            <p className="mt-1 text-sm text-muted-foreground">
-              Adicione à tela inicial para abrir em tela cheia, como um app, sem baixar pela loja.
-            </p>
+            <p className="mt-1 text-sm text-muted-foreground">{descriptionApp}</p>
           ) : (
             <p className="mt-1 text-sm text-muted-foreground">
-              No iPhone, toque em <Share className="inline h-3.5 w-3.5" /> Compartilhar e depois em{" "}
-              <strong>Adicionar à Tela de Início</strong>.
+              No iPhone, toque em <Share className="inline h-3.5 w-3.5" /> Compartilhar e
+              depois em <strong>Adicionar à Tela de Início</strong>. {descriptionApp}
             </p>
           )}
           <div className="mt-3 flex flex-wrap gap-2">

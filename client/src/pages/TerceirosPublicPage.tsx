@@ -171,7 +171,15 @@ export default function TerceirosPublicPage() {
           </h1>
           <p className="text-sm text-muted-foreground">
             {prestador?.cpfMascarado}
+            {prestador?.diariaBase != null
+              ? ` · Diária ${fmtMoney(prestador.diariaBase)} / 8h`
+              : null}
           </p>
+          {prestador?.observacao ? (
+            <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+              {prestador.observacao}
+            </p>
+          ) : null}
         </div>
         <Button variant="ghost" size="sm" className="gap-1" onClick={sair}>
           <LogOut className="h-4 w-4" />

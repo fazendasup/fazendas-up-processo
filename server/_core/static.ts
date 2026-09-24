@@ -68,6 +68,16 @@ export function serveStatic(app: Express) {
   };
   sendPwaAsset("/sw.js", "sw.js", "application/javascript");
   sendPwaAsset("/manifest.webmanifest", "manifest.webmanifest", "application/manifest+json");
+  sendPwaAsset(
+    "/manifest-calculadora.webmanifest",
+    "manifest-calculadora.webmanifest",
+    "application/manifest+json",
+  );
+  sendPwaAsset(
+    "/manifest-terceiros.webmanifest",
+    "manifest-terceiros.webmanifest",
+    "application/manifest+json",
+  );
 
   app.use(
     express.static(distPath, {

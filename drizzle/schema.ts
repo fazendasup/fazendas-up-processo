@@ -1338,6 +1338,13 @@ export const terceirosPrestadores = mysqlTable(
     nomeCompleto: varchar("nomeCompleto", { length: 255 }).notNull(),
     /** Token de sessão após identificar CPF+nome. */
     acessoToken: varchar("acessoToken", { length: 64 }).notNull(),
+    /**
+     * Diária combinada para 8h (null = padrão global R$ 90).
+     * Valor/hora = diariaBase ÷ 8.
+     */
+    diariaBase: decimal("diariaBase", { precision: 10, scale: 2 }),
+    /** Observação operacional (acordo de diária, almoço, etc.). */
+    observacao: text("observacao"),
     ativo: boolean("ativo").notNull().default(true),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

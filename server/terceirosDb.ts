@@ -63,6 +63,35 @@ export async function ensureTerceirosTables(): Promise<void> {
   } catch {
     // coluna já existe
   }
+  try {
+    await db.execute(
+      sql.raw(
+        `ALTER TABLE \`terceiros_prestadores\` ADD COLUMN \`diariaBase\` decimal(10, 2) NULL`,
+      ),
+    );
+  } catch {
+    // coluna já existe
+  }
+  try {
+    await db.execute(
+      sql.raw(
+        `ALTER TABLE \`terceiros_prestadores\` ADD COLUMN \`observacao\` text NULL`,
+      ),
+    );
+  } catch {
+    // coluna já existe
+  }
+  // Acordo do Reinaldo Bentes Mendonça (diária R$ 116 + almoço R$ 25 no turno diurno).
+  // Só preenche se ainda não houver diária/observação (não sobrescreve edição manual).
+  try {
+    await db.execute(
+      sql.raw(
+        `UPDATE \`terceiros_prestadores\` SET \`diariaBase\` = COALESCE(\`diariaBase\`, 116.00), \`observacao\` = COALESCE(NULLIF(TRIM(\`observacao\`), ''), 'Diária R$ 116 (8h de trabalho). Almoço R$ 25 descontado porque trabalha de dia.') WHERE \`cpf\` = '77046609268'`,
+      ),
+    );
+  } catch (err) {
+    console.error("[Database] seed diária Reinaldo:", err);
+  }
 }
 
 function novoToken(): string {
@@ -121,6 +150,20 @@ export async function identificarPrestador(input: {
     .where(eq(terceirosPrestadores.cpf, cpf))
     .limit(1);
   return row[0]!;
+}
+
+export async function getPrestadorById(
+  id: number,
+): Promise<TerceiroPrestadorRow | null> {
+  await ensureTerceirosTables();
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(terceirosPrestadores)
+    .where(eq(terceirosPrestadores.id, id))
+    .limit(1);
+  return rows[0] ?? null;
 }
 
 export async function getPrestadorByToken(
@@ -252,6 +295,8 @@ export async function listRegistrosAdmin(opts: {
     TerceiroRegistroRow & {
       cpf: string;
       nomeCompleto: string;
+      diariaBase: string | null;
+      observacao: string | null;
     }
   >
 > {
@@ -279,6 +324,8 @@ export async function listRegistrosAdmin(opts: {
       updatedAt: terceirosRegistros.updatedAt,
       cpf: terceirosPrestadores.cpf,
       nomeCompleto: terceirosPrestadores.nomeCompleto,
+      diariaBase: terceirosPrestadores.diariaBase,
+      observacao: terceirosPrestadores.observacao,
     })
     .from(terceirosRegistros)
     .innerJoin(
@@ -292,6 +339,49 @@ export async function listRegistrosAdmin(opts: {
     );
 
   return rows;
+}
+
+export async function updatePrestadorAdmin(input: {
+  id: number;
+  diariaBase?: number | null;
+  observacao?: string | null;
+}): Promise<TerceiroPrestadorRow> {
+  await ensureTerceirosTables();
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const patch: Partial<InsertTerceiroPrestador> = {};
+  if (input.diariaBase !== undefined) {
+    patch.diariaBase =
+      input.diariaBase == null || !Number.isFinite(input.diariaBase)
+        ? null
+        : String(Math.round(input.diariaBase * 100) / 100);
+  }
+  if (input.observacao !== undefined) {
+    const t = input.observacao?.trim() ?? "";
+    patch.observacao = t.length ? t : null;
+  }
+  if (Object.keys(patch).length === 0) {
+    const cur = await db
+      .select()
+      .from(terceirosPrestadores)
+      .where(eq(terceirosPrestadores.id, input.id))
+      .limit(1);
+    if (!cur[0]) throw new Error("Prestador não encontrado.");
+    return cur[0];
+  }
+
+  await db
+    .update(terceirosPrestadores)
+    .set(patch)
+    .where(eq(terceirosPrestadores.id, input.id));
+  const row = await db
+    .select()
+    .from(terceirosPrestadores)
+    .where(eq(terceirosPrestadores.id, input.id))
+    .limit(1);
+  if (!row[0]) throw new Error("Prestador não encontrado.");
+  return row[0];
 }
 
 export async function softDeletePrestador(id: number): Promise<void> {
