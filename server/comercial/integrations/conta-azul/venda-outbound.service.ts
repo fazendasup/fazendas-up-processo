@@ -31,7 +31,15 @@ export type ValidacaoEnvioCa = {
   erros: string[];
   avisos: string[];
   modoSugerido: ModoEnvioContaAzul;
+  /** True quando já houve orçamento marcado e o usuário pode reenviar (ex.: excluiu no CA). */
+  podeReenviarOrcamento: boolean;
   periodo?: { inicio: string; fim: string; ehUltimoDiaDoPeriodo: boolean };
+};
+
+export type BoletoEmitidoCa = {
+  id: string;
+  url: string | null;
+  status: string | null;
 };
 
 function round2(n: number): number {
@@ -103,8 +111,10 @@ export async function sincronizarContasFinanceirasEnvio(
   if (!selecionadaId || !contas.some((c) => c.id === selecionadaId)) {
     const prefer =
       contas.find((c) =>
-        /COBRANCA|RECEBA|MEIOS_RECEBIMENTO|CONTA_CORRENTE/i.test(c.tipo ?? ""),
-      ) ?? contas[0];
+        /COBRANCAS_CONTA_AZUL|RECEBA.?FACIL|MEIOS_RECEBIMENTO/i.test(c.tipo ?? ""),
+      ) ??
+      contas.find((c) => /CONTA_CORRENTE|COBRANCA/i.test(c.tipo ?? "")) ??
+      contas[0];
     if (prefer) {
       await prisma.contaAzulEnvioConfig.update({
         where: { id: "default" },
@@ -314,9 +324,11 @@ export async function validarEnvioOperacionalContaAzul(
   ) {
     erros.push("Pedido já enviado como venda ao Conta Azul.");
   }
-  if (pedido.statusEnvioContaAzul === "ENVIADO_ORCAMENTO") {
-    erros.push(
-      "Já existe orçamento enviado para este pedido. Use «Fechar período → venda» no fim do acúmulo.",
+
+  const podeReenviarOrcamento = pedido.statusEnvioContaAzul === "ENVIADO_ORCAMENTO";
+  if (podeReenviarOrcamento) {
+    avisos.push(
+      "Já há orçamento marcado como enviado. Reenviar cria um novo documento (use se excluiu ou corrigiu no Conta Azul).",
     );
   }
 
@@ -354,6 +366,7 @@ export async function validarEnvioOperacionalContaAzul(
     erros,
     avisos,
     modoSugerido,
+    podeReenviarOrcamento,
     periodo: periodo
       ? {
           inicio: isoDataCivil(periodo.inicio),
@@ -412,7 +425,7 @@ async function criarVendaCa(
     tipoPagamento: string;
     idContaFinanceira: string;
   },
-): Promise<{ id: string; numero: number }> {
+): Promise<{ id: string; numero: number; dataVencimento: string; valorParcela: number }> {
   const numero = await proximoNumeroVenda(prisma, http);
   const totalItens = round2(
     input.itens.reduce((s, i) => s + i.quantidade * i.precoUnit, 0),
@@ -456,7 +469,87 @@ async function criarVendaCa(
   const res = await contaAzulPost<{ id?: string }>(http, "/v1/venda", body);
   const id = res?.id?.trim();
   if (!id) throw new Error("Conta Azul não retornou ID da venda.");
-  return { id, numero };
+  return { id, numero, dataVencimento: venc, valorParcela: total };
+}
+
+/** Extrai o id da 1ª parcela a partir do GET /v1/venda/{id}. */
+export function extrairIdParcelaVenda(venda: unknown): string | null {
+  if (!venda || typeof venda !== "object") return null;
+  const o = venda as Record<string, unknown>;
+  const cond = o.condicao_pagamento;
+  const listas: unknown[] = [];
+  if (cond && typeof cond === "object") {
+    const c = cond as Record<string, unknown>;
+    if (Array.isArray(c.parcelas)) listas.push(...c.parcelas);
+  }
+  if (Array.isArray(o.parcelas)) listas.push(...o.parcelas);
+  if (Array.isArray(o.installments)) listas.push(...o.installments);
+  for (const p of listas) {
+    if (!p || typeof p !== "object") continue;
+    const row = p as Record<string, unknown>;
+    const id = String(row.id ?? row.id_parcela ?? row.idParcela ?? "").trim();
+    if (id) return id;
+  }
+  return null;
+}
+
+/**
+ * Emite boleto (Cobranças Conta Azul) vinculado à parcela da venda.
+ * Falha aqui não deve desfazer a venda — o caller decide se propaga ou só avisa.
+ */
+async function emitirBoletoDaVenda(
+  http: AxiosInstance,
+  input: {
+    vendaId: string;
+    contaBancaria: string;
+    dataVencimento: string;
+    descricaoFatura: string;
+    descontoPercentual?: number | null;
+  },
+): Promise<BoletoEmitidoCa> {
+  const venda = await contaAzulGet<unknown>(
+    http,
+    `/v1/venda/${encodeURIComponent(input.vendaId)}`,
+  );
+  const idParcela = extrairIdParcelaVenda(venda);
+  if (!idParcela) {
+    throw new Error(
+      "Venda criada, mas a Conta Azul não retornou id da parcela para emitir o boleto.",
+    );
+  }
+
+  const body: Record<string, unknown> = {
+    conta_bancaria: input.contaBancaria,
+    descricao_fatura: input.descricaoFatura.slice(0, 200),
+    id_parcela: idParcela,
+    data_vencimento: input.dataVencimento,
+    tipo: "BOLETO",
+  };
+  const perc = Number(input.descontoPercentual);
+  if (Number.isFinite(perc) && perc > 0) {
+    body.atributos = {
+      desconto_antecipado: {
+        percentual: perc,
+        dias_antes_vencer: 0,
+      },
+    };
+  }
+
+  const cobranca = await contaAzulPost<{
+    id?: string;
+    url?: string;
+    status?: string;
+  }>(http, "/v1/financeiro/eventos-financeiros/contas-a-receber/gerar-cobranca", body);
+
+  const id = String(cobranca?.id ?? "").trim();
+  if (!id) {
+    throw new Error("Conta Azul não retornou ID da cobrança/boleto.");
+  }
+  return {
+    id,
+    url: cobranca.url ? String(cobranca.url) : null,
+    status: cobranca.status ? String(cobranca.status) : null,
+  };
 }
 
 async function gravarPedidoLocalAposEnvio(
@@ -533,9 +626,14 @@ export async function enviarOperacionalContaAzul(
   modo: ModoEnvioContaAzul;
   externalId: string;
   pedidoContaAzulLocalId: string;
+  boleto?: BoletoEmitidoCa | null;
+  boletoErro?: string | null;
+  reenvioOrcamento?: boolean;
 }> {
   const validacao = await validarEnvioOperacionalContaAzul(prisma, pedidoId);
   const modo = opts?.forcarModo ?? validacao.modoSugerido;
+  const reenvioOrcamento =
+    modo === "ORCAMENTO" && validacao.podeReenviarOrcamento;
 
   if (modo === "VENDA") {
     const pedido = await carregarPedido(prisma, pedidoId);
@@ -588,6 +686,9 @@ export async function enviarOperacionalContaAzul(
     let externalId: string;
     let statusPedido: string;
     let numeroVenda: string | undefined;
+    let boleto: BoletoEmitidoCa | null = null;
+    let boletoErro: string | null = null;
+    let dataVencimentoBoleto: string | null = null;
 
     if (modo === "ORCAMENTO") {
       const diasValidade = Math.max(1, regra?.diasAcumulo ?? 15);
@@ -602,6 +703,17 @@ export async function enviarOperacionalContaAzul(
       });
       externalId = created.id;
       statusPedido = "ORCAMENTO";
+
+      // Reenvio após exclusão/ajuste no CA: arquiva espelho local antigo.
+      if (reenvioOrcamento && pedido.pedidoContaAzulId) {
+        await prisma.pedido.update({
+          where: { id: pedido.pedidoContaAzulId },
+          data: {
+            statusConciliacao: "IGNORADA",
+            sugestaoPedidoOperacionalId: null,
+          },
+        });
+      }
     } else {
       if (!cfg.idContaFinanceira) {
         throw new Error(
@@ -622,6 +734,25 @@ export async function enviarOperacionalContaAzul(
       externalId = created.id;
       numeroVenda = String(created.numero);
       statusPedido = "EM_ANDAMENTO";
+      dataVencimentoBoleto = created.dataVencimento;
+
+      if ((cfg.tipoPagamentoPadrao || "BOLETO_BANCARIO") === "BOLETO_BANCARIO") {
+        try {
+          boleto = await emitirBoletoDaVenda(http, {
+            vendaId: created.id,
+            contaBancaria: cfg.idContaFinanceira,
+            dataVencimento: created.dataVencimento,
+            descricaoFatura: `Venda ${created.numero} — ${pedido.cliente?.nome ?? ""}`.trim(),
+            descontoPercentual: num(regra?.descontoBoletoPercentual),
+          });
+        } catch (err) {
+          boletoErro = err instanceof Error ? err.message : String(err);
+          logger.warn(
+            { err, vendaId: created.id },
+            "Conta Azul: venda ok, falha ao emitir boleto",
+          );
+        }
+      }
     }
 
     const cliId =
@@ -653,12 +784,19 @@ export async function enviarOperacionalContaAzul(
           modo === "ORCAMENTO" ? "ENVIADO_ORCAMENTO" : "ENVIADO_VENDA",
         contaAzulEnvioExternalId: externalId,
         enviadoContaAzulEm: new Date(),
-        ultimoErroEnvioCa: null,
+        ultimoErroEnvioCa: boletoErro ? boletoErro.slice(0, 2000) : null,
         pedidoContaAzulId: local.id,
         statusConciliacao: "CONCILIADO",
         snapshotConciliacao: {
           operacional: null,
-          contaAzul: { origem: "envio_fup", modo },
+          contaAzul: {
+            origem: "envio_fup",
+            modo,
+            reenvioOrcamento: Boolean(reenvioOrcamento),
+            boleto: boleto ?? undefined,
+            boletoErro: boletoErro ?? undefined,
+            dataVencimentoBoleto: dataVencimentoBoleto ?? undefined,
+          },
         },
       },
     });
@@ -668,7 +806,13 @@ export async function enviarOperacionalContaAzul(
         pedidoOperacionalId: pedidoId,
         pedidoContaAzulId: local.id,
         tipo: modo === "ORCAMENTO" ? "ENVIO_CA_ORCAMENTO" : "ENVIO_CA_VENDA",
-        depois: { externalId, modo },
+        depois: {
+          externalId,
+          modo,
+          reenvioOrcamento: Boolean(reenvioOrcamento),
+          boleto: boleto ?? undefined,
+          boletoErro: boletoErro ?? undefined,
+        },
       },
     });
 
@@ -680,6 +824,8 @@ export async function enviarOperacionalContaAzul(
           modo,
           pedidoOperacionalId: pedidoId,
           externalId,
+          boletoId: boleto?.id,
+          boletoErro: boletoErro ?? undefined,
         },
       },
     });
@@ -688,6 +834,9 @@ export async function enviarOperacionalContaAzul(
       modo,
       externalId,
       pedidoContaAzulLocalId: local.id,
+      boleto,
+      boletoErro,
+      reenvioOrcamento: Boolean(reenvioOrcamento),
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -726,6 +875,8 @@ export async function fecharPeriodoAcumuloContaAzul(
   pedidoContaAzulLocalId: string;
   pedidosAtualizados: number;
   periodo: { inicio: string; fim: string };
+  boleto?: BoletoEmitidoCa | null;
+  boletoErro?: string | null;
 }> {
   const regra = await prisma.regraComercialCliente.findUnique({
     where: { contaAzulCustomerId: input.contaAzulCustomerId },
@@ -819,6 +970,26 @@ export async function fecharPeriodoAcumuloContaAzul(
       idContaFinanceira: cfg.idContaFinanceira,
     });
 
+    let boleto: BoletoEmitidoCa | null = null;
+    let boletoErro: string | null = null;
+    if ((cfg.tipoPagamentoPadrao || "BOLETO_BANCARIO") === "BOLETO_BANCARIO") {
+      try {
+        boleto = await emitirBoletoDaVenda(http, {
+          vendaId: created.id,
+          contaBancaria: cfg.idContaFinanceira,
+          dataVencimento: created.dataVencimento,
+          descricaoFatura: `Venda acumulada ${created.numero} — ${cliente?.nome ?? ""}`.trim(),
+          descontoPercentual: num(regra?.descontoBoletoPercentual),
+        });
+      } catch (err) {
+        boletoErro = err instanceof Error ? err.message : String(err);
+        logger.warn(
+          { err, vendaId: created.id },
+          "Conta Azul: venda acumulada ok, falha ao emitir boleto",
+        );
+      }
+    }
+
     const local = await gravarPedidoLocalAposEnvio(prisma, {
       externalId: created.id,
       clienteId: cliente!.id,
@@ -835,7 +1006,7 @@ export async function fecharPeriodoAcumuloContaAzul(
         statusEnvioContaAzul: "ENVIADO_VENDA",
         contaAzulEnvioExternalId: created.id,
         enviadoContaAzulEm: new Date(),
-        ultimoErroEnvioCa: null,
+        ultimoErroEnvioCa: boletoErro ? boletoErro.slice(0, 2000) : null,
         pedidoContaAzulId: local.id,
         statusConciliacao: "CONCILIADO",
       },
@@ -852,6 +1023,8 @@ export async function fecharPeriodoAcumuloContaAzul(
             inicio: isoDataCivil(periodo.inicio),
             fim: dataIso,
           },
+          boleto: boleto ?? undefined,
+          boletoErro: boletoErro ?? undefined,
         },
       },
     });
@@ -864,6 +1037,8 @@ export async function fecharPeriodoAcumuloContaAzul(
           modo: "VENDA_ACUMULO",
           externalId: created.id,
           pedidos: ids.length,
+          boletoId: boleto?.id,
+          boletoErro: boletoErro ?? undefined,
         },
       },
     });
@@ -876,6 +1051,8 @@ export async function fecharPeriodoAcumuloContaAzul(
         inicio: isoDataCivil(periodo.inicio),
         fim: dataIso,
       },
+      boleto,
+      boletoErro,
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

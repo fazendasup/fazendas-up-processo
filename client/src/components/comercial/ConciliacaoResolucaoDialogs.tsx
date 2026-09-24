@@ -57,11 +57,25 @@ export function AcoesPedidoConciliacao({
   );
   const enviar = trpc.comercial.pedidos.enviarOperacionalContaAzul.useMutation({
     onSuccess: (r) => {
-      toast.success(
-        r.modo === "ORCAMENTO"
-          ? "Orçamento criado no Conta Azul."
-          : "Venda criada no Conta Azul.",
-      );
+      if (r.modo === "ORCAMENTO") {
+        toast.success(
+          r.reenvioOrcamento
+            ? "Orçamento reenviado ao Conta Azul."
+            : "Orçamento criado no Conta Azul.",
+        );
+      } else {
+        toast.success("Venda criada no Conta Azul.");
+        if (r.boleto?.url) {
+          toast.success("Boleto emitido.", {
+            action: {
+              label: "Abrir boleto",
+              onClick: () => window.open(r.boleto!.url!, "_blank", "noopener,noreferrer"),
+            },
+          });
+        } else if (r.boletoErro) {
+          toast.warning(`Venda ok, mas o boleto falhou: ${r.boletoErro}`);
+        }
+      }
       void utils.comercial.pedidos.invalidate();
       onEnviadoContaAzul?.();
     },
@@ -72,6 +86,16 @@ export function AcoesPedidoConciliacao({
       toast.success(
         `Venda acumulada criada (${r.pedidosAtualizados} entrega(s), período ${r.periodo.inicio}–${r.periodo.fim}).`,
       );
+      if (r.boleto?.url) {
+        toast.success("Boleto emitido.", {
+          action: {
+            label: "Abrir boleto",
+            onClick: () => window.open(r.boleto!.url!, "_blank", "noopener,noreferrer"),
+          },
+        });
+      } else if (r.boletoErro) {
+        toast.warning(`Venda ok, mas o boleto falhou: ${r.boletoErro}`);
+      }
       void utils.comercial.pedidos.invalidate();
       onEnviadoContaAzul?.();
     },
@@ -80,12 +104,18 @@ export function AcoesPedidoConciliacao({
 
   const statusEnvio = String(pedido.statusEnvioContaAzul ?? "NAO_ENVIADO");
   const jaVenda = statusEnvio === "ENVIADO_VENDA";
+  const jaOrcamento = statusEnvio === "ENVIADO_ORCAMENTO";
   const modo = validacao.data?.modoSugerido;
   const periodo = validacao.data?.periodo;
   const busy = enviar.isPending || fecharPeriodo.isPending;
+  const podeReenviar = Boolean(validacao.data?.podeReenviarOrcamento);
 
   const labelEnviar =
-    modo === "ORCAMENTO" ? "Enviar orçamento CA" : "Enviar venda CA";
+    modo === "ORCAMENTO"
+      ? podeReenviar || jaOrcamento
+        ? "Reenviar orçamento CA"
+        : "Enviar orçamento CA"
+      : "Enviar venda CA";
 
   return (
     <div className="mt-2 flex flex-wrap gap-1.5">
@@ -116,6 +146,14 @@ export function AcoesPedidoConciliacao({
               toast.error(validacao.data.erros.join(" "));
               return;
             }
+            if (
+              (podeReenviar || jaOrcamento) &&
+              !confirm(
+                "Já havia orçamento marcado como enviado. Confirma reenviar? Use isso se você excluiu ou corrigiu o orçamento no Conta Azul.",
+              )
+            ) {
+              return;
+            }
             enviar.mutate({ pedidoOperacionalId: pedido.id });
           }}
         >
@@ -129,11 +167,11 @@ export function AcoesPedidoConciliacao({
           variant="default"
           className="h-7 px-2 text-xs"
           disabled={disabled || busy}
-          title={`Fecha ${periodo.inicio}–${periodo.fim} e cria uma venda com o acumulado`}
+          title={`Fecha ${periodo.inicio}–${periodo.fim} e cria uma venda com o acumulado (+ boleto)`}
           onClick={() => {
             if (
               !confirm(
-                `Fechar período ${periodo.inicio}–${periodo.fim} e enviar a venda acumulada no Conta Azul?`,
+                `Fechar período ${periodo.inicio}–${periodo.fim}, enviar a venda acumulada e emitir boleto no Conta Azul?`,
               )
             ) {
               return;
@@ -151,9 +189,9 @@ export function AcoesPedidoConciliacao({
           {fecharPeriodo.isPending ? "Fechando…" : "Fechar período → venda"}
         </Button>
       ) : null}
-      {statusEnvio === "ENVIADO_ORCAMENTO" ? (
+      {jaOrcamento ? (
         <span className="self-center text-[10px] font-medium text-amber-700">
-          Orçamento CA enviado
+          Orçamento CA enviado · pode reenviar
         </span>
       ) : null}
       {jaVenda ? (

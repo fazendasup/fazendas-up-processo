@@ -57,6 +57,7 @@ function contaAzulPathPrecisaThrottle(path: string): boolean {
   if (p.includes("/v1/venda")) return true;
   if (p.includes("/v1/orcamento")) return true;
   if (p.includes("/v1/conta-financeira")) return true;
+  if (p.includes("/v1/financeiro")) return true;
   return false;
 }
 
