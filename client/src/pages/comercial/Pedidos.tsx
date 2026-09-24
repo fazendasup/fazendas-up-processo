@@ -37,6 +37,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConciliacaoContaAzulPanel } from "@/components/comercial/ConciliacaoContaAzulPanel";
+import { AcoesPedidoConciliacao } from "@/components/comercial/ConciliacaoResolucaoDialogs";
 import { SearchMultiSelect, SearchSelect } from "@/components/ui/search-select";
 import {
   CLIENTES_ACUMULO_ALLOWLIST_LABELS,
@@ -1029,6 +1030,37 @@ export function Pedidos({
               );
             })}
           </div>
+          {canEditarComercial &&
+          grupo.status !== "CANCELADO" &&
+          (grupo.pedidos?.length ?? 0) > 0 ? (
+            <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-2 dark:border-slate-800 dark:bg-slate-950/40">
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                Conta Azul
+              </p>
+              <div className="space-y-1">
+                {(grupo.pedidos as any[]).map(pedido => (
+                  <div
+                    key={pedido.id}
+                    className="flex flex-wrap items-center gap-2 border-t border-slate-200/80 pt-1 first:border-t-0 first:pt-0 dark:border-slate-800"
+                  >
+                    {(grupo.pedidos?.length ?? 0) > 1 ? (
+                      <span className="text-[11px] text-muted-foreground">
+                        {fmtDate(pedido.dataEntrega)} ·{" "}
+                        {labelStatus(String(pedido.status))}
+                      </span>
+                    ) : null}
+                    <AcoesPedidoConciliacao
+                      pedido={pedido}
+                      somenteEnvio
+                      onEnviadoContaAzul={() => {
+                        void invalidarVisaoOperacionalDia();
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
           {grupo.avarias?.length ? (
             <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-2 dark:border-amber-900/60 dark:bg-amber-950/10">
               <p className="mb-1 text-xs font-bold uppercase tracking-wide text-amber-800 dark:text-amber-200">

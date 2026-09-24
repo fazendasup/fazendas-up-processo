@@ -28,6 +28,8 @@ type LinhaItem = {
 export function AcoesPedidoConciliacao({
   pedido,
   disabled,
+  /** Só botões de envio Conta Azul (dashboard operacional). */
+  somenteEnvio = false,
   onEditar,
   onMarcarEntregue,
   onCancelar,
@@ -36,6 +38,7 @@ export function AcoesPedidoConciliacao({
 }: {
   pedido: any;
   disabled?: boolean;
+  somenteEnvio?: boolean;
   onEditar?: () => void;
   onMarcarEntregue?: () => void;
   onCancelar?: () => void;
@@ -86,12 +89,12 @@ export function AcoesPedidoConciliacao({
 
   return (
     <div className="mt-2 flex flex-wrap gap-1.5">
-      {onEditar && !cancelado ? (
+      {!somenteEnvio && onEditar && !cancelado ? (
         <Button type="button" size="sm" variant="outline" className="h-7 px-2 text-xs" disabled={disabled} onClick={onEditar}>
           Editar itens/preços
         </Button>
       ) : null}
-      {onMarcarEntregue && !cancelado && pedido.status !== "ENTREGUE" ? (
+      {!somenteEnvio && onMarcarEntregue && !cancelado && pedido.status !== "ENTREGUE" ? (
         <Button type="button" size="sm" variant="outline" className="h-7 px-2 text-xs" disabled={disabled} onClick={onMarcarEntregue}>
           Marcar entregue
         </Button>
@@ -166,12 +169,12 @@ export function AcoesPedidoConciliacao({
           Erro envio CA
         </span>
       ) : null}
-      {onCancelar && !cancelado ? (
+      {!somenteEnvio && onCancelar && !cancelado ? (
         <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs text-red-700" disabled={disabled} onClick={onCancelar}>
           Cancelar pedido
         </Button>
       ) : null}
-      {onReativar && cancelado ? (
+      {!somenteEnvio && onReativar && cancelado ? (
         <Button type="button" size="sm" variant="outline" className="h-7 px-2 text-xs" disabled={disabled} onClick={onReativar}>
           Reativar
         </Button>
