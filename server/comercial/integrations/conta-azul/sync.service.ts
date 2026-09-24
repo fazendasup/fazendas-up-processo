@@ -688,38 +688,13 @@ async function fetchTodasVendasBusca(
 }
 
 async function removerVendasForaDaBuscaAtual(
-  prisma: PrismaClient,
-  env: Env,
-  vendaIdsAtuais: Set<string>
+  _prisma: PrismaClient,
+  _env: Env,
+  _vendaIdsAtuais: Set<string>
 ): Promise<number> {
-  // Nunca apagar se a busca veio vazia ou suspeitamente pequena (proteção contra wipe).
-  if (vendaIdsAtuais.size === 0) return 0;
-  if (vendaIdsAtuais.size < 5) {
-    logger.warn(
-      { qtd: vendaIdsAtuais.size },
-      "Conta Azul: remoção de vendas fora da busca ignorada — poucas vendas recebidas",
-    );
-    return 0;
-  }
-  const { start, end } = vendasBuscaRange(env.CONTA_AZUL_VENDAS_SYNC_DIAS);
-  // Só remove documentos classificados como VENDA. Orçamentos (sync / envio FUP)
-  // ficam de fora — senão o próximo sync apagava tudo que não veio de /v1/venda/busca.
-  const result = await prisma.pedido.deleteMany({
-    where: {
-      origemPedido: "CONTA_AZUL",
-      externalId: { not: null, notIn: Array.from(vendaIdsAtuais) },
-      dataPedido: {
-        gte: parseDataVendaContaAzul(formatDataCalendarioSp(start)),
-        lte: new Date(`${formatDataCalendarioSp(end)}T23:59:59.999-03:00`),
-      },
-      AND: [
-        { NOT: { statusPedido: { contains: "ORCAMENTO" } } },
-        { NOT: { statusPedido: { contains: "orcamento" } } },
-        { NOT: { statusPedido: { contains: "Orcamento" } } },
-      ],
-    },
-  });
-  return result.count;
+  // DESATIVADO: apagar espelhos CA no sync era inseguro (busca incompleta / orçamentos).
+  // Pedidos operacionais nunca foram apagados por aqui — só a tabela `pedidos`.
+  return 0;
 }
 
 export type ContaAzulSyncResult = {
