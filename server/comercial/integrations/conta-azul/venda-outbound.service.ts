@@ -860,6 +860,156 @@ export async function enviarOperacionalContaAzul(
 }
 
 /**
+ * Prévia do período de acúmulo (histórico de entregas) para confirmação antes da venda.
+ */
+export async function previewPeriodoAcumuloContaAzul(
+  prisma: PrismaClient,
+  input: {
+    contaAzulCustomerId: string;
+    dataReferencia: Date;
+    pedidoOperacionalIds?: string[];
+  },
+): Promise<{
+  ok: boolean;
+  erros: string[];
+  clienteNome: string;
+  periodo: { inicio: string; fim: string };
+  frete: number;
+  prazoBoletoDias: number;
+  entregas: Array<{
+    id: string;
+    dataEntrega: string;
+    status: string;
+    statusEnvioContaAzul: string;
+    observacoes: string | null;
+    itens: Array<{
+      produtoNome: string;
+      quantidade: number;
+      precoUnit: number;
+      subtotal: number;
+    }>;
+    subtotal: number;
+  }>;
+  itensConsolidados: Array<{
+    produtoNome: string;
+    quantidade: number;
+    precoUnit: number;
+    subtotal: number;
+  }>;
+  totalItens: number;
+  totalComFrete: number;
+}> {
+  const regra = await prisma.regraComercialCliente.findUnique({
+    where: { contaAzulCustomerId: input.contaAzulCustomerId },
+  });
+  const cliente = await prisma.cliente.findUnique({
+    where: { externalId: input.contaAzulCustomerId },
+  });
+  const erros: string[] = [];
+  if (!clienteAcumulaFaturamento(regra, cliente?.nome ?? "")) {
+    erros.push("Cliente não está configurado para faturamento acumulado.");
+  }
+
+  const periodo = periodoAcumuloContendo(
+    input.dataReferencia,
+    regra?.diasAcumulo,
+  );
+  const inicio = new Date(periodo.inicio);
+  inicio.setHours(0, 0, 0, 0);
+  const fim = new Date(periodo.fim);
+  fim.setHours(23, 59, 59, 999);
+
+  const pedidos = await prisma.pedidoOperacional.findMany({
+    where: {
+      contaAzulCustomerId: input.contaAzulCustomerId,
+      status: { not: "CANCELADO" },
+      dataEntrega: { gte: inicio, lte: fim },
+      ...(input.pedidoOperacionalIds?.length
+        ? { id: { in: input.pedidoOperacionalIds } }
+        : {}),
+      statusEnvioContaAzul: { not: "ENVIADO_VENDA" },
+    },
+    include: {
+      itens: {
+        include: {
+          produto: {
+            select: {
+              contaAzulProdutoId: true,
+              precoBase: true,
+              ativo: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: { dataEntrega: "asc" },
+  });
+
+  if (pedidos.length === 0 && erros.length === 0) {
+    erros.push(
+      `Nenhuma entrega pendente de venda no período ${isoDataCivil(periodo.inicio)}–${isoDataCivil(periodo.fim)}.`,
+    );
+  }
+
+  const { itens, erros: errosItens } = agregarItens(pedidos);
+  erros.push(...errosItens);
+
+  const frete = freteDosPedidos(pedidos, regra);
+  const prazoBoletoDias = Math.max(
+    0,
+    regra?.prazoBoletoAcumuloDias ?? regra?.prazoBoletoDias ?? 0,
+  );
+
+  const entregas = pedidos.map((p) => {
+    const linhas = p.itens.map((it) => {
+      let preco = num(it.precoUnit);
+      if (preco <= 0) preco = num(it.produto.precoBase);
+      const quantidade = num(it.quantidade);
+      return {
+        produtoNome: it.produtoNome,
+        quantidade,
+        precoUnit: preco,
+        subtotal: round2(quantidade * preco),
+      };
+    });
+    const subtotal = round2(linhas.reduce((s, l) => s + l.subtotal, 0));
+    return {
+      id: p.id,
+      dataEntrega: isoDataCivil(p.dataEntrega),
+      status: p.status,
+      statusEnvioContaAzul: p.statusEnvioContaAzul,
+      observacoes: p.observacoes,
+      itens: linhas,
+      subtotal,
+    };
+  });
+
+  const itensConsolidados = itens.map((i) => ({
+    produtoNome: i.produtoNome,
+    quantidade: i.quantidade,
+    precoUnit: i.precoUnit,
+    subtotal: round2(i.quantidade * i.precoUnit),
+  }));
+  const totalItens = round2(itensConsolidados.reduce((s, i) => s + i.subtotal, 0));
+
+  return {
+    ok: erros.length === 0 && itensConsolidados.length > 0,
+    erros,
+    clienteNome: cliente?.nome ?? input.contaAzulCustomerId,
+    periodo: {
+      inicio: isoDataCivil(periodo.inicio),
+      fim: isoDataCivil(periodo.fim),
+    },
+    frete,
+    prazoBoletoDias,
+    entregas,
+    itensConsolidados,
+    totalItens,
+    totalComFrete: round2(totalItens + frete),
+  };
+}
+
+/**
  * Fecha o período de acúmulo: agrega entregas do bloco e cria UMA venda na CA.
  */
 export async function fecharPeriodoAcumuloContaAzul(

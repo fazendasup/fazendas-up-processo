@@ -3897,6 +3897,29 @@ export const pedidosRouter = router({
       }
     }),
 
+  /** Prévia do período de acúmulo (histórico) antes de fechar → venda. */
+  previewPeriodoAcumuloContaAzul: comercialProcedure
+    .use(podeConfigurarEstoqueVivo)
+    .input(
+      z.object({
+        contaAzulCustomerId: z.string().min(1),
+        dataReferencia: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        pedidoOperacionalIds: z.array(z.string()).optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { previewPeriodoAcumuloContaAzul } = await import(
+        "../integrations/conta-azul/venda-outbound.service.js"
+      );
+      const [y, m, d] = input.dataReferencia.split("-").map(Number);
+      const dataReferencia = new Date(y!, m! - 1, d!, 12, 0, 0, 0);
+      return previewPeriodoAcumuloContaAzul(ctx.prisma!, {
+        contaAzulCustomerId: input.contaAzulCustomerId,
+        dataReferencia,
+        pedidoOperacionalIds: input.pedidoOperacionalIds,
+      });
+    }),
+
   /** Fecha período de acúmulo e cria uma venda consolidada na Conta Azul. */
   fecharPeriodoAcumuloContaAzul: comercialProcedure
     .use(podeConfigurarEstoqueVivo)

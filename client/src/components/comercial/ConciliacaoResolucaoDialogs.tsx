@@ -47,6 +47,7 @@ export function AcoesPedidoConciliacao({
 }) {
   const cancelado = pedido.status === "CANCELADO";
   const utils = trpc.useUtils();
+  const [confirmarFechamentoAberto, setConfirmarFechamentoAberto] = useState(false);
   const validacao = trpc.comercial.pedidos.validarEnvioContaAzul.useQuery(
     { pedidoOperacionalId: pedido.id },
     {
@@ -55,6 +56,29 @@ export function AcoesPedidoConciliacao({
       retry: false,
     },
   );
+  const periodo = validacao.data?.periodo;
+  const dataRefFechamento = (() => {
+    if (typeof pedido.dataEntrega === "string") {
+      return pedido.dataEntrega.slice(0, 10);
+    }
+    return periodo?.fim ?? null;
+  })();
+
+  const previewFechamento = trpc.comercial.pedidos.previewPeriodoAcumuloContaAzul.useQuery(
+    {
+      contaAzulCustomerId: String(pedido.contaAzulCustomerId ?? ""),
+      dataReferencia: dataRefFechamento!,
+    },
+    {
+      enabled:
+        confirmarFechamentoAberto &&
+        Boolean(pedido.contaAzulCustomerId) &&
+        Boolean(dataRefFechamento),
+      staleTime: 0,
+      retry: false,
+    },
+  );
+
   const enviar = trpc.comercial.pedidos.enviarOperacionalContaAzul.useMutation({
     onSuccess: (r) => {
       if (r.modo === "ORCAMENTO") {
@@ -96,6 +120,7 @@ export function AcoesPedidoConciliacao({
       } else if (r.boletoErro) {
         toast.warning(`Venda ok, mas o boleto falhou: ${r.boletoErro}`);
       }
+      setConfirmarFechamentoAberto(false);
       void utils.comercial.pedidos.invalidate();
       onEnviadoContaAzul?.();
     },
@@ -106,7 +131,6 @@ export function AcoesPedidoConciliacao({
   const jaVenda = statusEnvio === "ENVIADO_VENDA";
   const jaOrcamento = statusEnvio === "ENVIADO_ORCAMENTO";
   const modo = validacao.data?.modoSugerido;
-  const periodo = validacao.data?.periodo;
   const busy = enviar.isPending || fecharPeriodo.isPending;
   const podeReenviar = Boolean(validacao.data?.podeReenviarOrcamento);
 
@@ -116,6 +140,32 @@ export function AcoesPedidoConciliacao({
         ? "Reenviar orçamento CA"
         : "Enviar orçamento CA"
       : "Enviar venda CA";
+
+  function fmtMoney(v: number) {
+    return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  }
+  function fmtQtd(v: number) {
+    return Number.isInteger(v) ? String(v) : v.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+  }
+  function labelStatusEnvio(s: string) {
+    switch (s) {
+      case "ENVIADO_ORCAMENTO":
+        return "orçamento enviado";
+      case "ENVIADO_VENDA":
+        return "venda enviada";
+      case "ERRO":
+        return "erro envio";
+      case "ENVIANDO":
+        return "enviando…";
+      default:
+        return "não enviado";
+    }
+  }
+  function fmtDataBr(iso: string) {
+    const [y, m, d] = iso.split("-");
+    if (!y || !m || !d) return iso;
+    return `${d}/${m}/${y}`;
+  }
 
   return (
     <div className="mt-2 flex flex-wrap gap-1.5">
@@ -167,26 +217,10 @@ export function AcoesPedidoConciliacao({
           variant="default"
           className="h-7 px-2 text-xs"
           disabled={disabled || busy}
-          title={`Fecha ${periodo.inicio}–${periodo.fim} e cria uma venda com o acumulado (+ boleto)`}
-          onClick={() => {
-            if (
-              !confirm(
-                `Fechar período ${periodo.inicio}–${periodo.fim}, enviar a venda acumulada e emitir boleto no Conta Azul?`,
-              )
-            ) {
-              return;
-            }
-            const dataRef =
-              typeof pedido.dataEntrega === "string"
-                ? pedido.dataEntrega.slice(0, 10)
-                : periodo.fim;
-            fecharPeriodo.mutate({
-              contaAzulCustomerId: pedido.contaAzulCustomerId,
-              dataReferencia: dataRef,
-            });
-          }}
+          title={`Revisa o histórico ${periodo.inicio}–${periodo.fim} e fecha em venda + boleto`}
+          onClick={() => setConfirmarFechamentoAberto(true)}
         >
-          {fecharPeriodo.isPending ? "Fechando…" : "Fechar período → venda"}
+          Fechar período → venda
         </Button>
       ) : null}
       {jaOrcamento ? (
@@ -217,6 +251,143 @@ export function AcoesPedidoConciliacao({
           Reativar
         </Button>
       ) : null}
+
+      <Dialog open={confirmarFechamentoAberto} onOpenChange={setConfirmarFechamentoAberto}>
+        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Confirmar fechamento → venda</DialogTitle>
+          </DialogHeader>
+          {previewFechamento.isLoading ? (
+            <p className="text-sm text-muted-foreground">Carregando histórico do período…</p>
+          ) : previewFechamento.error ? (
+            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+              {previewFechamento.error.message}
+            </p>
+          ) : previewFechamento.data ? (
+            <div className="space-y-3 text-sm">
+              <div className="rounded-lg border bg-slate-50 px-3 py-2 dark:bg-slate-950/40">
+                <p className="font-semibold">{previewFechamento.data.clienteNome}</p>
+                <p className="text-xs text-muted-foreground">
+                  Período {fmtDataBr(previewFechamento.data.periodo.inicio)} –{" "}
+                  {fmtDataBr(previewFechamento.data.periodo.fim)}
+                  {previewFechamento.data.prazoBoletoDias > 0
+                    ? ` · boleto em ${previewFechamento.data.prazoBoletoDias} dia(s)`
+                    : " · boleto à vista"}
+                </p>
+              </div>
+
+              {previewFechamento.data.erros.length > 0 ? (
+                <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-red-800">
+                  {previewFechamento.data.erros.map((e) => (
+                    <p key={e}>{e}</p>
+                  ))}
+                </div>
+              ) : null}
+
+              <div>
+                <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Histórico de entregas ({previewFechamento.data.entregas.length})
+                </p>
+                <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
+                  {previewFechamento.data.entregas.map((ent) => (
+                    <div
+                      key={ent.id}
+                      className="rounded-lg border border-slate-200 px-2.5 py-2 dark:border-slate-800"
+                    >
+                      <div className="flex flex-wrap items-baseline justify-between gap-1">
+                        <p className="font-semibold">{fmtDataBr(ent.dataEntrega)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {ent.status.toLowerCase()} · {labelStatusEnvio(ent.statusEnvioContaAzul)}
+                        </p>
+                      </div>
+                      <ul className="mt-1 space-y-0.5 text-xs">
+                        {ent.itens.map((it, idx) => (
+                          <li key={`${ent.id}-${idx}`} className="flex justify-between gap-2">
+                            <span className="min-w-0 truncate">
+                              {fmtQtd(it.quantidade)} × {it.produtoNome}
+                            </span>
+                            <span className="shrink-0 tabular-nums">{fmtMoney(it.subtotal)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      {ent.observacoes ? (
+                        <p className="mt-1 text-[11px] text-muted-foreground">Obs.: {ent.observacoes}</p>
+                      ) : null}
+                      <p className="mt-1 text-right text-xs font-semibold tabular-nums">
+                        Subtotal {fmtMoney(ent.subtotal)}
+                      </p>
+                    </div>
+                  ))}
+                  {previewFechamento.data.entregas.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Nenhuma entrega no período.</p>
+                  ) : null}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Consolidado na venda
+                </p>
+                <ul className="space-y-0.5 text-xs">
+                  {previewFechamento.data.itensConsolidados.map((it, idx) => (
+                    <li key={`${it.produtoNome}-${idx}`} className="flex justify-between gap-2">
+                      <span className="min-w-0 truncate">
+                        {fmtQtd(it.quantidade)} × {it.produtoNome}
+                      </span>
+                      <span className="shrink-0 tabular-nums">{fmtMoney(it.subtotal)}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-2 space-y-0.5 border-t pt-2 text-xs">
+                  <div className="flex justify-between">
+                    <span>Itens</span>
+                    <span className="tabular-nums">{fmtMoney(previewFechamento.data.totalItens)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Frete</span>
+                    <span className="tabular-nums">{fmtMoney(previewFechamento.data.frete)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-bold">
+                    <span>Total venda + boleto</span>
+                    <span className="tabular-nums">
+                      {fmtMoney(previewFechamento.data.totalComFrete)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={fecharPeriodo.isPending}
+              onClick={() => setConfirmarFechamentoAberto(false)}
+            >
+              Voltar
+            </Button>
+            <Button
+              type="button"
+              disabled={
+                fecharPeriodo.isPending ||
+                previewFechamento.isLoading ||
+                !previewFechamento.data?.ok ||
+                !dataRefFechamento
+              }
+              onClick={() => {
+                if (!dataRefFechamento) return;
+                fecharPeriodo.mutate({
+                  contaAzulCustomerId: pedido.contaAzulCustomerId,
+                  dataReferencia: dataRefFechamento,
+                });
+              }}
+            >
+              {fecharPeriodo.isPending ? "Enviando…" : "Confirmar venda + boleto"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
