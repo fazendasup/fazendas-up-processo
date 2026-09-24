@@ -130,15 +130,21 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
   }, [location]);
 
   const authFaixas = trpc.fasesConfig.list.useQuery(undefined, {
-    enabled: Boolean(user && activeProjetoId),
+    enabled: Boolean(!publicMode && user && activeProjetoId),
     staleTime: 30_000,
   });
 
+  /** Página pública: projeto do link, senão o ativo da sessão (se houver). */
+  const publicProjetoId =
+    projetoIdUrl ?? (publicMode ? activeProjetoId ?? undefined : undefined);
+
   const publicFaixas = trpc.fasesConfig.publicFaixas.useQuery(
-    { projetoId: projetoIdUrl ?? undefined },
+    { projetoId: publicProjetoId },
     {
       enabled: Boolean(publicMode || !user || !activeProjetoId),
-      staleTime: 60_000,
+      staleTime: publicMode ? 0 : 60_000,
+      refetchOnMount: publicMode ? "always" : true,
+      refetchOnWindowFocus: publicMode,
     },
   );
 
@@ -156,17 +162,45 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
   const [mostrarFatorPh, setMostrarFatorPh] = useState(false);
 
   const fasesConfig = useMemo(() => {
+    // Pública: só `publicFaixas` — evita sessão logada / loadAll com valores antigos.
+    if (publicMode) {
+      if (publicFaixas.data?.fases?.length) {
+        return mergeFasesFromRows(publicFaixas.data.fases) ?? FASES_CONFIG;
+      }
+      return FASES_CONFIG;
+    }
     const fromAuth = mergeFasesFromRows(authFaixas.data);
     if (fromAuth) return fromAuth;
-    // publicFaixas sempre devolve 3 fases; só aplica quando a query está ativa/com dados
     if (publicFaixas.data?.fases?.length) {
       return mergeFasesFromRows(publicFaixas.data.fases) ?? FASES_CONFIG;
     }
     return fazendaData.fasesConfig ?? FASES_CONFIG;
-  }, [authFaixas.data, publicFaixas.data, fazendaData.fasesConfig]);
+  }, [publicMode, authFaixas.data, publicFaixas.data, fazendaData.fasesConfig]);
 
   const faixaOrigem = useMemo(() => {
-    if (authFaixas.isLoading || (publicMode && publicFaixas.isLoading)) {
+    if (publicMode) {
+      if (publicFaixas.isLoading) {
+        return { texto: "Carregando faixas cadastradas…", cadastrado: false };
+      }
+      if (publicFaixas.data?.origem === "cadastrado" && publicFaixas.data.projetoNome) {
+        return {
+          texto: `Faixas cadastradas de «${publicFaixas.data.projetoNome}». Ao escolher a fase, o alvo usa o meio da faixa.`,
+          cadastrado: true,
+        };
+      }
+      if (publicFaixas.data?.origem === "cadastrado") {
+        return {
+          texto: "Faixas cadastradas do projeto. Ao escolher a fase, o alvo usa o meio da faixa.",
+          cadastrado: true,
+        };
+      }
+      return {
+        texto:
+          "Faixas padrão — gere o link em Correção EC/pH (com login) para incluir o projeto, ou mantenha um único projeto ativo.",
+        cadastrado: false,
+      };
+    }
+    if (authFaixas.isLoading || publicFaixas.isLoading) {
       return { texto: "Carregando faixas cadastradas…", cadastrado: false };
     }
     if (authFaixas.data && authFaixas.data.length > 0) {
@@ -190,18 +224,17 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
       };
     }
     return {
-      texto: publicMode
-        ? "Faixas padrão — gere o link em Correção EC/pH (com login) para incluir o projeto, ou mantenha um único projeto ativo."
-        : "Nenhuma faixa salva neste projeto ainda — mostrando padrão. Salve em Configurações → Fases.",
+      texto:
+        "Nenhuma faixa salva neste projeto ainda — mostrando padrão. Salve em Configurações → Fases.",
       cadastrado: false,
     };
   }, [
+    publicMode,
     authFaixas.data,
     authFaixas.isLoading,
     publicFaixas.data,
     publicFaixas.isLoading,
     activeProjeto?.nome,
-    publicMode,
   ]);
 
 

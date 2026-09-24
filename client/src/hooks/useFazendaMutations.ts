@@ -281,9 +281,15 @@ export function useFazendaMutations() {
         },
       }));
     },
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate();
+      void utils.fasesConfig.list.invalidate();
+      void utils.fasesConfig.publicFaixas.invalidate();
+    },
     onError: (error) => {
       invalidate();
+      void utils.fasesConfig.list.invalidate();
+      void utils.fasesConfig.publicFaixas.invalidate();
       toast.error(error.message || 'Erro ao salvar parâmetros EC/pH');
     },
   });
