@@ -48,12 +48,16 @@ export function createContaAzulHttp(env: Env, accessToken: string): AxiosInstanc
   });
 }
 
-/** Detalhe por id é o que estoura rate limit; /v1/venda/busca e /v1/pessoas não entram na fila. */
+/** Detalhe por id / escrita é o que estoura rate limit; buscas leves não entram na fila. */
 function contaAzulPathPrecisaThrottle(path: string): boolean {
   const p = (path.split("?")[0] ?? path).toLowerCase();
-  if (!p.includes("/v1/venda/")) return false;
   if (p.endsWith("/v1/venda/busca")) return false;
-  return true;
+  if (p === "/v1/pessoas" || p.startsWith("/v1/pessoas?")) return false;
+  if (p === "/v1/orcamentos" || p.startsWith("/v1/orcamentos?")) return true;
+  if (p.includes("/v1/venda")) return true;
+  if (p.includes("/v1/orcamento")) return true;
+  if (p.includes("/v1/conta-financeira")) return true;
+  return false;
 }
 
 export async function contaAzulGet<T>(client: AxiosInstance, path: string): Promise<T> {
@@ -69,6 +73,34 @@ export async function contaAzulGet<T>(client: AxiosInstance, path: string): Prom
       {
         tentativas: 6,
         delayMs: 800,
+        fator: 2,
+        isRetryable: isContaAzulRetryable,
+        delayForError: delayForContaAzulRetry,
+      },
+    );
+  } catch (e) {
+    throw contaAzulErroAmigavel(e);
+  }
+}
+
+/** POST na API Conta Azul (venda, orçamento, etc.) — mesmo throttle/retry do GET. */
+export async function contaAzulPost<T>(
+  client: AxiosInstance,
+  path: string,
+  body: unknown,
+): Promise<T> {
+  try {
+    return await withRetry(
+      async () => {
+        await contaAzulThrottle();
+        const { data } = await client.post<T>(path, body, {
+          headers: { "Content-Type": "application/json" },
+        });
+        return data;
+      },
+      {
+        tentativas: 4,
+        delayMs: 1000,
         fator: 2,
         isRetryable: isContaAzulRetryable,
         delayForError: delayForContaAzulRetry,

@@ -155,6 +155,11 @@ export type KpiSnapshot = $Result.DefaultSelection<Prisma.$KpiSnapshotPayload>
  */
 export type IntegrationCredential = $Result.DefaultSelection<Prisma.$IntegrationCredentialPayload>
 /**
+ * Model ContaAzulEnvioConfig
+ * * Config de envio operacional → Conta Azul (conta financeira, numeração).
+ */
+export type ContaAzulEnvioConfig = $Result.DefaultSelection<Prisma.$ContaAzulEnvioConfigPayload>
+/**
  * Model SyncState
  * 
  */
@@ -286,11 +291,23 @@ export const StatusEnvioMensagem: {
 export type StatusEnvioMensagem = (typeof StatusEnvioMensagem)[keyof typeof StatusEnvioMensagem]
 
 
+export const StatusEnvioContaAzul: {
+  NAO_ENVIADO: 'NAO_ENVIADO',
+  ENVIANDO: 'ENVIANDO',
+  ENVIADO_ORCAMENTO: 'ENVIADO_ORCAMENTO',
+  ENVIADO_VENDA: 'ENVIADO_VENDA',
+  ERRO: 'ERRO'
+};
+
+export type StatusEnvioContaAzul = (typeof StatusEnvioContaAzul)[keyof typeof StatusEnvioContaAzul]
+
+
 export const AcaoApi: {
   SYNC_CA: 'SYNC_CA',
   ENVIO_MC: 'ENVIO_MC',
   ANALISE_IG: 'ANALISE_IG',
-  PESQUISA_WEB: 'PESQUISA_WEB'
+  PESQUISA_WEB: 'PESQUISA_WEB',
+  ENVIO_CA: 'ENVIO_CA'
 };
 
 export type AcaoApi = (typeof AcaoApi)[keyof typeof AcaoApi]
@@ -438,6 +455,10 @@ export const TipoMensagem: typeof $Enums.TipoMensagem
 export type StatusEnvioMensagem = $Enums.StatusEnvioMensagem
 
 export const StatusEnvioMensagem: typeof $Enums.StatusEnvioMensagem
+
+export type StatusEnvioContaAzul = $Enums.StatusEnvioContaAzul
+
+export const StatusEnvioContaAzul: typeof $Enums.StatusEnvioContaAzul
 
 export type AcaoApi = $Enums.AcaoApi
 
@@ -880,6 +901,16 @@ export class PrismaClient<
     * ```
     */
   get integrationCredential(): Prisma.IntegrationCredentialDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.contaAzulEnvioConfig`: Exposes CRUD operations for the **ContaAzulEnvioConfig** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ContaAzulEnvioConfigs
+    * const contaAzulEnvioConfigs = await prisma.contaAzulEnvioConfig.findMany()
+    * ```
+    */
+  get contaAzulEnvioConfig(): Prisma.ContaAzulEnvioConfigDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.syncState`: Exposes CRUD operations for the **SyncState** model.
@@ -1378,6 +1409,7 @@ export namespace Prisma {
     ExecucaoApi: 'ExecucaoApi',
     KpiSnapshot: 'KpiSnapshot',
     IntegrationCredential: 'IntegrationCredential',
+    ContaAzulEnvioConfig: 'ContaAzulEnvioConfig',
     SyncState: 'SyncState',
     RegraClassificacao: 'RegraClassificacao',
     TemplateMensagem: 'TemplateMensagem'
@@ -1399,7 +1431,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "estoqueVivoMix" | "estoqueVivoMixComponente" | "produtoComercial" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "syncState" | "regraClassificacao" | "templateMensagem"
+      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "estoqueVivoMix" | "estoqueVivoMixComponente" | "produtoComercial" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "contaAzulEnvioConfig" | "syncState" | "regraClassificacao" | "templateMensagem"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -3251,6 +3283,72 @@ export namespace Prisma {
           }
         }
       }
+      ContaAzulEnvioConfig: {
+        payload: Prisma.$ContaAzulEnvioConfigPayload<ExtArgs>
+        fields: Prisma.ContaAzulEnvioConfigFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ContaAzulEnvioConfigFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ContaAzulEnvioConfigPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ContaAzulEnvioConfigFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ContaAzulEnvioConfigPayload>
+          }
+          findFirst: {
+            args: Prisma.ContaAzulEnvioConfigFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ContaAzulEnvioConfigPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ContaAzulEnvioConfigFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ContaAzulEnvioConfigPayload>
+          }
+          findMany: {
+            args: Prisma.ContaAzulEnvioConfigFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ContaAzulEnvioConfigPayload>[]
+          }
+          create: {
+            args: Prisma.ContaAzulEnvioConfigCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ContaAzulEnvioConfigPayload>
+          }
+          createMany: {
+            args: Prisma.ContaAzulEnvioConfigCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.ContaAzulEnvioConfigDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ContaAzulEnvioConfigPayload>
+          }
+          update: {
+            args: Prisma.ContaAzulEnvioConfigUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ContaAzulEnvioConfigPayload>
+          }
+          deleteMany: {
+            args: Prisma.ContaAzulEnvioConfigDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ContaAzulEnvioConfigUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.ContaAzulEnvioConfigUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ContaAzulEnvioConfigPayload>
+          }
+          aggregate: {
+            args: Prisma.ContaAzulEnvioConfigAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateContaAzulEnvioConfig>
+          }
+          groupBy: {
+            args: Prisma.ContaAzulEnvioConfigGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ContaAzulEnvioConfigGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ContaAzulEnvioConfigCountArgs<ExtArgs>
+            result: $Utils.Optional<ContaAzulEnvioConfigCountAggregateOutputType> | number
+          }
+        }
+      }
       SyncState: {
         payload: Prisma.$SyncStatePayload<ExtArgs>
         fields: Prisma.SyncStateFieldRefs
@@ -3573,6 +3671,7 @@ export namespace Prisma {
     execucaoApi?: ExecucaoApiOmit
     kpiSnapshot?: KpiSnapshotOmit
     integrationCredential?: IntegrationCredentialOmit
+    contaAzulEnvioConfig?: ContaAzulEnvioConfigOmit
     syncState?: SyncStateOmit
     regraClassificacao?: RegraClassificacaoOmit
     templateMensagem?: TemplateMensagemOmit
@@ -16067,6 +16166,10 @@ export namespace Prisma {
     observacoes: string | null
     freteCortesia: boolean | null
     prioridadeEntrega: number | null
+    statusEnvioContaAzul: $Enums.StatusEnvioContaAzul | null
+    contaAzulEnvioExternalId: string | null
+    enviadoContaAzulEm: Date | null
+    ultimoErroEnvioCa: string | null
     criadoPorId: string | null
     editadoPorId: string | null
     criadoEm: Date | null
@@ -16087,6 +16190,10 @@ export namespace Prisma {
     observacoes: string | null
     freteCortesia: boolean | null
     prioridadeEntrega: number | null
+    statusEnvioContaAzul: $Enums.StatusEnvioContaAzul | null
+    contaAzulEnvioExternalId: string | null
+    enviadoContaAzulEm: Date | null
+    ultimoErroEnvioCa: string | null
     criadoPorId: string | null
     editadoPorId: string | null
     criadoEm: Date | null
@@ -16108,6 +16215,10 @@ export namespace Prisma {
     observacoes: number
     freteCortesia: number
     prioridadeEntrega: number
+    statusEnvioContaAzul: number
+    contaAzulEnvioExternalId: number
+    enviadoContaAzulEm: number
+    ultimoErroEnvioCa: number
     criadoPorId: number
     editadoPorId: number
     criadoEm: number
@@ -16140,6 +16251,10 @@ export namespace Prisma {
     observacoes?: true
     freteCortesia?: true
     prioridadeEntrega?: true
+    statusEnvioContaAzul?: true
+    contaAzulEnvioExternalId?: true
+    enviadoContaAzulEm?: true
+    ultimoErroEnvioCa?: true
     criadoPorId?: true
     editadoPorId?: true
     criadoEm?: true
@@ -16160,6 +16275,10 @@ export namespace Prisma {
     observacoes?: true
     freteCortesia?: true
     prioridadeEntrega?: true
+    statusEnvioContaAzul?: true
+    contaAzulEnvioExternalId?: true
+    enviadoContaAzulEm?: true
+    ultimoErroEnvioCa?: true
     criadoPorId?: true
     editadoPorId?: true
     criadoEm?: true
@@ -16181,6 +16300,10 @@ export namespace Prisma {
     observacoes?: true
     freteCortesia?: true
     prioridadeEntrega?: true
+    statusEnvioContaAzul?: true
+    contaAzulEnvioExternalId?: true
+    enviadoContaAzulEm?: true
+    ultimoErroEnvioCa?: true
     criadoPorId?: true
     editadoPorId?: true
     criadoEm?: true
@@ -16289,6 +16412,10 @@ export namespace Prisma {
     observacoes: string | null
     freteCortesia: boolean
     prioridadeEntrega: number | null
+    statusEnvioContaAzul: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId: string | null
+    enviadoContaAzulEm: Date | null
+    ultimoErroEnvioCa: string | null
     criadoPorId: string | null
     editadoPorId: string | null
     criadoEm: Date
@@ -16329,6 +16456,10 @@ export namespace Prisma {
     observacoes?: boolean
     freteCortesia?: boolean
     prioridadeEntrega?: boolean
+    statusEnvioContaAzul?: boolean
+    contaAzulEnvioExternalId?: boolean
+    enviadoContaAzulEm?: boolean
+    ultimoErroEnvioCa?: boolean
     criadoPorId?: boolean
     editadoPorId?: boolean
     criadoEm?: boolean
@@ -16361,13 +16492,17 @@ export namespace Prisma {
     observacoes?: boolean
     freteCortesia?: boolean
     prioridadeEntrega?: boolean
+    statusEnvioContaAzul?: boolean
+    contaAzulEnvioExternalId?: boolean
+    enviadoContaAzulEm?: boolean
+    ultimoErroEnvioCa?: boolean
     criadoPorId?: boolean
     editadoPorId?: boolean
     criadoEm?: boolean
     atualizadoEm?: boolean
   }
 
-  export type PedidoOperacionalOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "clienteId" | "contaAzulCustomerId" | "dataEntrega" | "diaSemana" | "tipoVenda" | "status" | "statusConciliacao" | "pedidoContaAzulId" | "sugestaoPedidoContaAzulId" | "snapshotConciliacao" | "observacoes" | "freteCortesia" | "prioridadeEntrega" | "criadoPorId" | "editadoPorId" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["pedidoOperacional"]>
+  export type PedidoOperacionalOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "clienteId" | "contaAzulCustomerId" | "dataEntrega" | "diaSemana" | "tipoVenda" | "status" | "statusConciliacao" | "pedidoContaAzulId" | "sugestaoPedidoContaAzulId" | "snapshotConciliacao" | "observacoes" | "freteCortesia" | "prioridadeEntrega" | "statusEnvioContaAzul" | "contaAzulEnvioExternalId" | "enviadoContaAzulEm" | "ultimoErroEnvioCa" | "criadoPorId" | "editadoPorId" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["pedidoOperacional"]>
   export type PedidoOperacionalInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     cliente?: boolean | PedidoOperacional$clienteArgs<ExtArgs>
     criadoPor?: boolean | PedidoOperacional$criadoPorArgs<ExtArgs>
@@ -16407,6 +16542,13 @@ export namespace Prisma {
       observacoes: string | null
       freteCortesia: boolean
       prioridadeEntrega: number | null
+      statusEnvioContaAzul: $Enums.StatusEnvioContaAzul
+      /**
+       * * externalId do orçamento/venda criado no Conta Azul (antes do vínculo local).
+       */
+      contaAzulEnvioExternalId: string | null
+      enviadoContaAzulEm: Date | null
+      ultimoErroEnvioCa: string | null
       criadoPorId: string | null
       editadoPorId: string | null
       criadoEm: Date
@@ -16802,6 +16944,10 @@ export namespace Prisma {
     readonly observacoes: FieldRef<"PedidoOperacional", 'String'>
     readonly freteCortesia: FieldRef<"PedidoOperacional", 'Boolean'>
     readonly prioridadeEntrega: FieldRef<"PedidoOperacional", 'Int'>
+    readonly statusEnvioContaAzul: FieldRef<"PedidoOperacional", 'StatusEnvioContaAzul'>
+    readonly contaAzulEnvioExternalId: FieldRef<"PedidoOperacional", 'String'>
+    readonly enviadoContaAzulEm: FieldRef<"PedidoOperacional", 'DateTime'>
+    readonly ultimoErroEnvioCa: FieldRef<"PedidoOperacional", 'String'>
     readonly criadoPorId: FieldRef<"PedidoOperacional", 'String'>
     readonly editadoPorId: FieldRef<"PedidoOperacional", 'String'>
     readonly criadoEm: FieldRef<"PedidoOperacional", 'DateTime'>
@@ -33904,6 +34050,933 @@ export namespace Prisma {
 
 
   /**
+   * Model ContaAzulEnvioConfig
+   */
+
+  export type AggregateContaAzulEnvioConfig = {
+    _count: ContaAzulEnvioConfigCountAggregateOutputType | null
+    _avg: ContaAzulEnvioConfigAvgAggregateOutputType | null
+    _sum: ContaAzulEnvioConfigSumAggregateOutputType | null
+    _min: ContaAzulEnvioConfigMinAggregateOutputType | null
+    _max: ContaAzulEnvioConfigMaxAggregateOutputType | null
+  }
+
+  export type ContaAzulEnvioConfigAvgAggregateOutputType = {
+    proximoNumeroVenda: number | null
+  }
+
+  export type ContaAzulEnvioConfigSumAggregateOutputType = {
+    proximoNumeroVenda: number | null
+  }
+
+  export type ContaAzulEnvioConfigMinAggregateOutputType = {
+    id: string | null
+    idContaFinanceira: string | null
+    nomeContaFinanceira: string | null
+    tipoPagamentoPadrao: string | null
+    proximoNumeroVenda: number | null
+    atualizadoEm: Date | null
+  }
+
+  export type ContaAzulEnvioConfigMaxAggregateOutputType = {
+    id: string | null
+    idContaFinanceira: string | null
+    nomeContaFinanceira: string | null
+    tipoPagamentoPadrao: string | null
+    proximoNumeroVenda: number | null
+    atualizadoEm: Date | null
+  }
+
+  export type ContaAzulEnvioConfigCountAggregateOutputType = {
+    id: number
+    idContaFinanceira: number
+    nomeContaFinanceira: number
+    tipoPagamentoPadrao: number
+    proximoNumeroVenda: number
+    atualizadoEm: number
+    _all: number
+  }
+
+
+  export type ContaAzulEnvioConfigAvgAggregateInputType = {
+    proximoNumeroVenda?: true
+  }
+
+  export type ContaAzulEnvioConfigSumAggregateInputType = {
+    proximoNumeroVenda?: true
+  }
+
+  export type ContaAzulEnvioConfigMinAggregateInputType = {
+    id?: true
+    idContaFinanceira?: true
+    nomeContaFinanceira?: true
+    tipoPagamentoPadrao?: true
+    proximoNumeroVenda?: true
+    atualizadoEm?: true
+  }
+
+  export type ContaAzulEnvioConfigMaxAggregateInputType = {
+    id?: true
+    idContaFinanceira?: true
+    nomeContaFinanceira?: true
+    tipoPagamentoPadrao?: true
+    proximoNumeroVenda?: true
+    atualizadoEm?: true
+  }
+
+  export type ContaAzulEnvioConfigCountAggregateInputType = {
+    id?: true
+    idContaFinanceira?: true
+    nomeContaFinanceira?: true
+    tipoPagamentoPadrao?: true
+    proximoNumeroVenda?: true
+    atualizadoEm?: true
+    _all?: true
+  }
+
+  export type ContaAzulEnvioConfigAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ContaAzulEnvioConfig to aggregate.
+     */
+    where?: ContaAzulEnvioConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ContaAzulEnvioConfigs to fetch.
+     */
+    orderBy?: ContaAzulEnvioConfigOrderByWithRelationInput | ContaAzulEnvioConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ContaAzulEnvioConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ContaAzulEnvioConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ContaAzulEnvioConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ContaAzulEnvioConfigs
+    **/
+    _count?: true | ContaAzulEnvioConfigCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: ContaAzulEnvioConfigAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: ContaAzulEnvioConfigSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ContaAzulEnvioConfigMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ContaAzulEnvioConfigMaxAggregateInputType
+  }
+
+  export type GetContaAzulEnvioConfigAggregateType<T extends ContaAzulEnvioConfigAggregateArgs> = {
+        [P in keyof T & keyof AggregateContaAzulEnvioConfig]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateContaAzulEnvioConfig[P]>
+      : GetScalarType<T[P], AggregateContaAzulEnvioConfig[P]>
+  }
+
+
+
+
+  export type ContaAzulEnvioConfigGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ContaAzulEnvioConfigWhereInput
+    orderBy?: ContaAzulEnvioConfigOrderByWithAggregationInput | ContaAzulEnvioConfigOrderByWithAggregationInput[]
+    by: ContaAzulEnvioConfigScalarFieldEnum[] | ContaAzulEnvioConfigScalarFieldEnum
+    having?: ContaAzulEnvioConfigScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ContaAzulEnvioConfigCountAggregateInputType | true
+    _avg?: ContaAzulEnvioConfigAvgAggregateInputType
+    _sum?: ContaAzulEnvioConfigSumAggregateInputType
+    _min?: ContaAzulEnvioConfigMinAggregateInputType
+    _max?: ContaAzulEnvioConfigMaxAggregateInputType
+  }
+
+  export type ContaAzulEnvioConfigGroupByOutputType = {
+    id: string
+    idContaFinanceira: string | null
+    nomeContaFinanceira: string | null
+    tipoPagamentoPadrao: string
+    proximoNumeroVenda: number | null
+    atualizadoEm: Date
+    _count: ContaAzulEnvioConfigCountAggregateOutputType | null
+    _avg: ContaAzulEnvioConfigAvgAggregateOutputType | null
+    _sum: ContaAzulEnvioConfigSumAggregateOutputType | null
+    _min: ContaAzulEnvioConfigMinAggregateOutputType | null
+    _max: ContaAzulEnvioConfigMaxAggregateOutputType | null
+  }
+
+  type GetContaAzulEnvioConfigGroupByPayload<T extends ContaAzulEnvioConfigGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ContaAzulEnvioConfigGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ContaAzulEnvioConfigGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ContaAzulEnvioConfigGroupByOutputType[P]>
+            : GetScalarType<T[P], ContaAzulEnvioConfigGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ContaAzulEnvioConfigSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    idContaFinanceira?: boolean
+    nomeContaFinanceira?: boolean
+    tipoPagamentoPadrao?: boolean
+    proximoNumeroVenda?: boolean
+    atualizadoEm?: boolean
+  }, ExtArgs["result"]["contaAzulEnvioConfig"]>
+
+
+
+  export type ContaAzulEnvioConfigSelectScalar = {
+    id?: boolean
+    idContaFinanceira?: boolean
+    nomeContaFinanceira?: boolean
+    tipoPagamentoPadrao?: boolean
+    proximoNumeroVenda?: boolean
+    atualizadoEm?: boolean
+  }
+
+  export type ContaAzulEnvioConfigOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "idContaFinanceira" | "nomeContaFinanceira" | "tipoPagamentoPadrao" | "proximoNumeroVenda" | "atualizadoEm", ExtArgs["result"]["contaAzulEnvioConfig"]>
+
+  export type $ContaAzulEnvioConfigPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ContaAzulEnvioConfig"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      idContaFinanceira: string | null
+      nomeContaFinanceira: string | null
+      tipoPagamentoPadrao: string
+      proximoNumeroVenda: number | null
+      atualizadoEm: Date
+    }, ExtArgs["result"]["contaAzulEnvioConfig"]>
+    composites: {}
+  }
+
+  type ContaAzulEnvioConfigGetPayload<S extends boolean | null | undefined | ContaAzulEnvioConfigDefaultArgs> = $Result.GetResult<Prisma.$ContaAzulEnvioConfigPayload, S>
+
+  type ContaAzulEnvioConfigCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ContaAzulEnvioConfigFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ContaAzulEnvioConfigCountAggregateInputType | true
+    }
+
+  export interface ContaAzulEnvioConfigDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ContaAzulEnvioConfig'], meta: { name: 'ContaAzulEnvioConfig' } }
+    /**
+     * Find zero or one ContaAzulEnvioConfig that matches the filter.
+     * @param {ContaAzulEnvioConfigFindUniqueArgs} args - Arguments to find a ContaAzulEnvioConfig
+     * @example
+     * // Get one ContaAzulEnvioConfig
+     * const contaAzulEnvioConfig = await prisma.contaAzulEnvioConfig.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ContaAzulEnvioConfigFindUniqueArgs>(args: SelectSubset<T, ContaAzulEnvioConfigFindUniqueArgs<ExtArgs>>): Prisma__ContaAzulEnvioConfigClient<$Result.GetResult<Prisma.$ContaAzulEnvioConfigPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one ContaAzulEnvioConfig that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ContaAzulEnvioConfigFindUniqueOrThrowArgs} args - Arguments to find a ContaAzulEnvioConfig
+     * @example
+     * // Get one ContaAzulEnvioConfig
+     * const contaAzulEnvioConfig = await prisma.contaAzulEnvioConfig.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ContaAzulEnvioConfigFindUniqueOrThrowArgs>(args: SelectSubset<T, ContaAzulEnvioConfigFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ContaAzulEnvioConfigClient<$Result.GetResult<Prisma.$ContaAzulEnvioConfigPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ContaAzulEnvioConfig that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ContaAzulEnvioConfigFindFirstArgs} args - Arguments to find a ContaAzulEnvioConfig
+     * @example
+     * // Get one ContaAzulEnvioConfig
+     * const contaAzulEnvioConfig = await prisma.contaAzulEnvioConfig.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ContaAzulEnvioConfigFindFirstArgs>(args?: SelectSubset<T, ContaAzulEnvioConfigFindFirstArgs<ExtArgs>>): Prisma__ContaAzulEnvioConfigClient<$Result.GetResult<Prisma.$ContaAzulEnvioConfigPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ContaAzulEnvioConfig that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ContaAzulEnvioConfigFindFirstOrThrowArgs} args - Arguments to find a ContaAzulEnvioConfig
+     * @example
+     * // Get one ContaAzulEnvioConfig
+     * const contaAzulEnvioConfig = await prisma.contaAzulEnvioConfig.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ContaAzulEnvioConfigFindFirstOrThrowArgs>(args?: SelectSubset<T, ContaAzulEnvioConfigFindFirstOrThrowArgs<ExtArgs>>): Prisma__ContaAzulEnvioConfigClient<$Result.GetResult<Prisma.$ContaAzulEnvioConfigPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more ContaAzulEnvioConfigs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ContaAzulEnvioConfigFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ContaAzulEnvioConfigs
+     * const contaAzulEnvioConfigs = await prisma.contaAzulEnvioConfig.findMany()
+     * 
+     * // Get first 10 ContaAzulEnvioConfigs
+     * const contaAzulEnvioConfigs = await prisma.contaAzulEnvioConfig.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const contaAzulEnvioConfigWithIdOnly = await prisma.contaAzulEnvioConfig.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ContaAzulEnvioConfigFindManyArgs>(args?: SelectSubset<T, ContaAzulEnvioConfigFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ContaAzulEnvioConfigPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a ContaAzulEnvioConfig.
+     * @param {ContaAzulEnvioConfigCreateArgs} args - Arguments to create a ContaAzulEnvioConfig.
+     * @example
+     * // Create one ContaAzulEnvioConfig
+     * const ContaAzulEnvioConfig = await prisma.contaAzulEnvioConfig.create({
+     *   data: {
+     *     // ... data to create a ContaAzulEnvioConfig
+     *   }
+     * })
+     * 
+     */
+    create<T extends ContaAzulEnvioConfigCreateArgs>(args: SelectSubset<T, ContaAzulEnvioConfigCreateArgs<ExtArgs>>): Prisma__ContaAzulEnvioConfigClient<$Result.GetResult<Prisma.$ContaAzulEnvioConfigPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many ContaAzulEnvioConfigs.
+     * @param {ContaAzulEnvioConfigCreateManyArgs} args - Arguments to create many ContaAzulEnvioConfigs.
+     * @example
+     * // Create many ContaAzulEnvioConfigs
+     * const contaAzulEnvioConfig = await prisma.contaAzulEnvioConfig.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ContaAzulEnvioConfigCreateManyArgs>(args?: SelectSubset<T, ContaAzulEnvioConfigCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a ContaAzulEnvioConfig.
+     * @param {ContaAzulEnvioConfigDeleteArgs} args - Arguments to delete one ContaAzulEnvioConfig.
+     * @example
+     * // Delete one ContaAzulEnvioConfig
+     * const ContaAzulEnvioConfig = await prisma.contaAzulEnvioConfig.delete({
+     *   where: {
+     *     // ... filter to delete one ContaAzulEnvioConfig
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ContaAzulEnvioConfigDeleteArgs>(args: SelectSubset<T, ContaAzulEnvioConfigDeleteArgs<ExtArgs>>): Prisma__ContaAzulEnvioConfigClient<$Result.GetResult<Prisma.$ContaAzulEnvioConfigPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one ContaAzulEnvioConfig.
+     * @param {ContaAzulEnvioConfigUpdateArgs} args - Arguments to update one ContaAzulEnvioConfig.
+     * @example
+     * // Update one ContaAzulEnvioConfig
+     * const contaAzulEnvioConfig = await prisma.contaAzulEnvioConfig.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ContaAzulEnvioConfigUpdateArgs>(args: SelectSubset<T, ContaAzulEnvioConfigUpdateArgs<ExtArgs>>): Prisma__ContaAzulEnvioConfigClient<$Result.GetResult<Prisma.$ContaAzulEnvioConfigPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more ContaAzulEnvioConfigs.
+     * @param {ContaAzulEnvioConfigDeleteManyArgs} args - Arguments to filter ContaAzulEnvioConfigs to delete.
+     * @example
+     * // Delete a few ContaAzulEnvioConfigs
+     * const { count } = await prisma.contaAzulEnvioConfig.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ContaAzulEnvioConfigDeleteManyArgs>(args?: SelectSubset<T, ContaAzulEnvioConfigDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ContaAzulEnvioConfigs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ContaAzulEnvioConfigUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ContaAzulEnvioConfigs
+     * const contaAzulEnvioConfig = await prisma.contaAzulEnvioConfig.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ContaAzulEnvioConfigUpdateManyArgs>(args: SelectSubset<T, ContaAzulEnvioConfigUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one ContaAzulEnvioConfig.
+     * @param {ContaAzulEnvioConfigUpsertArgs} args - Arguments to update or create a ContaAzulEnvioConfig.
+     * @example
+     * // Update or create a ContaAzulEnvioConfig
+     * const contaAzulEnvioConfig = await prisma.contaAzulEnvioConfig.upsert({
+     *   create: {
+     *     // ... data to create a ContaAzulEnvioConfig
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ContaAzulEnvioConfig we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ContaAzulEnvioConfigUpsertArgs>(args: SelectSubset<T, ContaAzulEnvioConfigUpsertArgs<ExtArgs>>): Prisma__ContaAzulEnvioConfigClient<$Result.GetResult<Prisma.$ContaAzulEnvioConfigPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of ContaAzulEnvioConfigs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ContaAzulEnvioConfigCountArgs} args - Arguments to filter ContaAzulEnvioConfigs to count.
+     * @example
+     * // Count the number of ContaAzulEnvioConfigs
+     * const count = await prisma.contaAzulEnvioConfig.count({
+     *   where: {
+     *     // ... the filter for the ContaAzulEnvioConfigs we want to count
+     *   }
+     * })
+    **/
+    count<T extends ContaAzulEnvioConfigCountArgs>(
+      args?: Subset<T, ContaAzulEnvioConfigCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ContaAzulEnvioConfigCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ContaAzulEnvioConfig.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ContaAzulEnvioConfigAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ContaAzulEnvioConfigAggregateArgs>(args: Subset<T, ContaAzulEnvioConfigAggregateArgs>): Prisma.PrismaPromise<GetContaAzulEnvioConfigAggregateType<T>>
+
+    /**
+     * Group by ContaAzulEnvioConfig.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ContaAzulEnvioConfigGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ContaAzulEnvioConfigGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ContaAzulEnvioConfigGroupByArgs['orderBy'] }
+        : { orderBy?: ContaAzulEnvioConfigGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ContaAzulEnvioConfigGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetContaAzulEnvioConfigGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ContaAzulEnvioConfig model
+   */
+  readonly fields: ContaAzulEnvioConfigFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ContaAzulEnvioConfig.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ContaAzulEnvioConfigClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ContaAzulEnvioConfig model
+   */
+  interface ContaAzulEnvioConfigFieldRefs {
+    readonly id: FieldRef<"ContaAzulEnvioConfig", 'String'>
+    readonly idContaFinanceira: FieldRef<"ContaAzulEnvioConfig", 'String'>
+    readonly nomeContaFinanceira: FieldRef<"ContaAzulEnvioConfig", 'String'>
+    readonly tipoPagamentoPadrao: FieldRef<"ContaAzulEnvioConfig", 'String'>
+    readonly proximoNumeroVenda: FieldRef<"ContaAzulEnvioConfig", 'Int'>
+    readonly atualizadoEm: FieldRef<"ContaAzulEnvioConfig", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ContaAzulEnvioConfig findUnique
+   */
+  export type ContaAzulEnvioConfigFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ContaAzulEnvioConfig
+     */
+    select?: ContaAzulEnvioConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ContaAzulEnvioConfig
+     */
+    omit?: ContaAzulEnvioConfigOmit<ExtArgs> | null
+    /**
+     * Filter, which ContaAzulEnvioConfig to fetch.
+     */
+    where: ContaAzulEnvioConfigWhereUniqueInput
+  }
+
+  /**
+   * ContaAzulEnvioConfig findUniqueOrThrow
+   */
+  export type ContaAzulEnvioConfigFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ContaAzulEnvioConfig
+     */
+    select?: ContaAzulEnvioConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ContaAzulEnvioConfig
+     */
+    omit?: ContaAzulEnvioConfigOmit<ExtArgs> | null
+    /**
+     * Filter, which ContaAzulEnvioConfig to fetch.
+     */
+    where: ContaAzulEnvioConfigWhereUniqueInput
+  }
+
+  /**
+   * ContaAzulEnvioConfig findFirst
+   */
+  export type ContaAzulEnvioConfigFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ContaAzulEnvioConfig
+     */
+    select?: ContaAzulEnvioConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ContaAzulEnvioConfig
+     */
+    omit?: ContaAzulEnvioConfigOmit<ExtArgs> | null
+    /**
+     * Filter, which ContaAzulEnvioConfig to fetch.
+     */
+    where?: ContaAzulEnvioConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ContaAzulEnvioConfigs to fetch.
+     */
+    orderBy?: ContaAzulEnvioConfigOrderByWithRelationInput | ContaAzulEnvioConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ContaAzulEnvioConfigs.
+     */
+    cursor?: ContaAzulEnvioConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ContaAzulEnvioConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ContaAzulEnvioConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ContaAzulEnvioConfigs.
+     */
+    distinct?: ContaAzulEnvioConfigScalarFieldEnum | ContaAzulEnvioConfigScalarFieldEnum[]
+  }
+
+  /**
+   * ContaAzulEnvioConfig findFirstOrThrow
+   */
+  export type ContaAzulEnvioConfigFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ContaAzulEnvioConfig
+     */
+    select?: ContaAzulEnvioConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ContaAzulEnvioConfig
+     */
+    omit?: ContaAzulEnvioConfigOmit<ExtArgs> | null
+    /**
+     * Filter, which ContaAzulEnvioConfig to fetch.
+     */
+    where?: ContaAzulEnvioConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ContaAzulEnvioConfigs to fetch.
+     */
+    orderBy?: ContaAzulEnvioConfigOrderByWithRelationInput | ContaAzulEnvioConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ContaAzulEnvioConfigs.
+     */
+    cursor?: ContaAzulEnvioConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ContaAzulEnvioConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ContaAzulEnvioConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ContaAzulEnvioConfigs.
+     */
+    distinct?: ContaAzulEnvioConfigScalarFieldEnum | ContaAzulEnvioConfigScalarFieldEnum[]
+  }
+
+  /**
+   * ContaAzulEnvioConfig findMany
+   */
+  export type ContaAzulEnvioConfigFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ContaAzulEnvioConfig
+     */
+    select?: ContaAzulEnvioConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ContaAzulEnvioConfig
+     */
+    omit?: ContaAzulEnvioConfigOmit<ExtArgs> | null
+    /**
+     * Filter, which ContaAzulEnvioConfigs to fetch.
+     */
+    where?: ContaAzulEnvioConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ContaAzulEnvioConfigs to fetch.
+     */
+    orderBy?: ContaAzulEnvioConfigOrderByWithRelationInput | ContaAzulEnvioConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ContaAzulEnvioConfigs.
+     */
+    cursor?: ContaAzulEnvioConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ContaAzulEnvioConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ContaAzulEnvioConfigs.
+     */
+    skip?: number
+    distinct?: ContaAzulEnvioConfigScalarFieldEnum | ContaAzulEnvioConfigScalarFieldEnum[]
+  }
+
+  /**
+   * ContaAzulEnvioConfig create
+   */
+  export type ContaAzulEnvioConfigCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ContaAzulEnvioConfig
+     */
+    select?: ContaAzulEnvioConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ContaAzulEnvioConfig
+     */
+    omit?: ContaAzulEnvioConfigOmit<ExtArgs> | null
+    /**
+     * The data needed to create a ContaAzulEnvioConfig.
+     */
+    data: XOR<ContaAzulEnvioConfigCreateInput, ContaAzulEnvioConfigUncheckedCreateInput>
+  }
+
+  /**
+   * ContaAzulEnvioConfig createMany
+   */
+  export type ContaAzulEnvioConfigCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ContaAzulEnvioConfigs.
+     */
+    data: ContaAzulEnvioConfigCreateManyInput | ContaAzulEnvioConfigCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ContaAzulEnvioConfig update
+   */
+  export type ContaAzulEnvioConfigUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ContaAzulEnvioConfig
+     */
+    select?: ContaAzulEnvioConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ContaAzulEnvioConfig
+     */
+    omit?: ContaAzulEnvioConfigOmit<ExtArgs> | null
+    /**
+     * The data needed to update a ContaAzulEnvioConfig.
+     */
+    data: XOR<ContaAzulEnvioConfigUpdateInput, ContaAzulEnvioConfigUncheckedUpdateInput>
+    /**
+     * Choose, which ContaAzulEnvioConfig to update.
+     */
+    where: ContaAzulEnvioConfigWhereUniqueInput
+  }
+
+  /**
+   * ContaAzulEnvioConfig updateMany
+   */
+  export type ContaAzulEnvioConfigUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ContaAzulEnvioConfigs.
+     */
+    data: XOR<ContaAzulEnvioConfigUpdateManyMutationInput, ContaAzulEnvioConfigUncheckedUpdateManyInput>
+    /**
+     * Filter which ContaAzulEnvioConfigs to update
+     */
+    where?: ContaAzulEnvioConfigWhereInput
+    /**
+     * Limit how many ContaAzulEnvioConfigs to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ContaAzulEnvioConfig upsert
+   */
+  export type ContaAzulEnvioConfigUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ContaAzulEnvioConfig
+     */
+    select?: ContaAzulEnvioConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ContaAzulEnvioConfig
+     */
+    omit?: ContaAzulEnvioConfigOmit<ExtArgs> | null
+    /**
+     * The filter to search for the ContaAzulEnvioConfig to update in case it exists.
+     */
+    where: ContaAzulEnvioConfigWhereUniqueInput
+    /**
+     * In case the ContaAzulEnvioConfig found by the `where` argument doesn't exist, create a new ContaAzulEnvioConfig with this data.
+     */
+    create: XOR<ContaAzulEnvioConfigCreateInput, ContaAzulEnvioConfigUncheckedCreateInput>
+    /**
+     * In case the ContaAzulEnvioConfig was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ContaAzulEnvioConfigUpdateInput, ContaAzulEnvioConfigUncheckedUpdateInput>
+  }
+
+  /**
+   * ContaAzulEnvioConfig delete
+   */
+  export type ContaAzulEnvioConfigDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ContaAzulEnvioConfig
+     */
+    select?: ContaAzulEnvioConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ContaAzulEnvioConfig
+     */
+    omit?: ContaAzulEnvioConfigOmit<ExtArgs> | null
+    /**
+     * Filter which ContaAzulEnvioConfig to delete.
+     */
+    where: ContaAzulEnvioConfigWhereUniqueInput
+  }
+
+  /**
+   * ContaAzulEnvioConfig deleteMany
+   */
+  export type ContaAzulEnvioConfigDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ContaAzulEnvioConfigs to delete
+     */
+    where?: ContaAzulEnvioConfigWhereInput
+    /**
+     * Limit how many ContaAzulEnvioConfigs to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * ContaAzulEnvioConfig without action
+   */
+  export type ContaAzulEnvioConfigDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ContaAzulEnvioConfig
+     */
+    select?: ContaAzulEnvioConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ContaAzulEnvioConfig
+     */
+    omit?: ContaAzulEnvioConfigOmit<ExtArgs> | null
+  }
+
+
+  /**
    * Model SyncState
    */
 
@@ -36741,6 +37814,10 @@ export namespace Prisma {
     observacoes: 'observacoes',
     freteCortesia: 'freteCortesia',
     prioridadeEntrega: 'prioridadeEntrega',
+    statusEnvioContaAzul: 'statusEnvioContaAzul',
+    contaAzulEnvioExternalId: 'contaAzulEnvioExternalId',
+    enviadoContaAzulEm: 'enviadoContaAzulEm',
+    ultimoErroEnvioCa: 'ultimoErroEnvioCa',
     criadoPorId: 'criadoPorId',
     editadoPorId: 'editadoPorId',
     criadoEm: 'criadoEm',
@@ -37016,6 +38093,18 @@ export namespace Prisma {
   export type IntegrationCredentialScalarFieldEnum = (typeof IntegrationCredentialScalarFieldEnum)[keyof typeof IntegrationCredentialScalarFieldEnum]
 
 
+  export const ContaAzulEnvioConfigScalarFieldEnum: {
+    id: 'id',
+    idContaFinanceira: 'idContaFinanceira',
+    nomeContaFinanceira: 'nomeContaFinanceira',
+    tipoPagamentoPadrao: 'tipoPagamentoPadrao',
+    proximoNumeroVenda: 'proximoNumeroVenda',
+    atualizadoEm: 'atualizadoEm'
+  };
+
+  export type ContaAzulEnvioConfigScalarFieldEnum = (typeof ContaAzulEnvioConfigScalarFieldEnum)[keyof typeof ContaAzulEnvioConfigScalarFieldEnum]
+
+
   export const SyncStateScalarFieldEnum: {
     id: 'id',
     provider: 'provider',
@@ -37219,6 +38308,8 @@ export namespace Prisma {
     pedidoContaAzulId: 'pedidoContaAzulId',
     sugestaoPedidoContaAzulId: 'sugestaoPedidoContaAzulId',
     observacoes: 'observacoes',
+    contaAzulEnvioExternalId: 'contaAzulEnvioExternalId',
+    ultimoErroEnvioCa: 'ultimoErroEnvioCa',
     criadoPorId: 'criadoPorId',
     editadoPorId: 'editadoPorId'
   };
@@ -37405,6 +38496,16 @@ export namespace Prisma {
   export type IntegrationCredentialOrderByRelevanceFieldEnum = (typeof IntegrationCredentialOrderByRelevanceFieldEnum)[keyof typeof IntegrationCredentialOrderByRelevanceFieldEnum]
 
 
+  export const ContaAzulEnvioConfigOrderByRelevanceFieldEnum: {
+    id: 'id',
+    idContaFinanceira: 'idContaFinanceira',
+    nomeContaFinanceira: 'nomeContaFinanceira',
+    tipoPagamentoPadrao: 'tipoPagamentoPadrao'
+  };
+
+  export type ContaAzulEnvioConfigOrderByRelevanceFieldEnum = (typeof ContaAzulEnvioConfigOrderByRelevanceFieldEnum)[keyof typeof ContaAzulEnvioConfigOrderByRelevanceFieldEnum]
+
+
   export const SyncStateOrderByRelevanceFieldEnum: {
     id: 'id',
     provider: 'provider',
@@ -37545,6 +38646,13 @@ export namespace Prisma {
    * Reference to a field of type 'StatusConciliacaoOperacional'
    */
   export type EnumStatusConciliacaoOperacionalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'StatusConciliacaoOperacional'>
+    
+
+
+  /**
+   * Reference to a field of type 'StatusEnvioContaAzul'
+   */
+  export type EnumStatusEnvioContaAzulFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'StatusEnvioContaAzul'>
     
 
 
@@ -38613,6 +39721,10 @@ export namespace Prisma {
     observacoes?: StringNullableFilter<"PedidoOperacional"> | string | null
     freteCortesia?: BoolFilter<"PedidoOperacional"> | boolean
     prioridadeEntrega?: IntNullableFilter<"PedidoOperacional"> | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFilter<"PedidoOperacional"> | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: StringNullableFilter<"PedidoOperacional"> | string | null
+    enviadoContaAzulEm?: DateTimeNullableFilter<"PedidoOperacional"> | Date | string | null
+    ultimoErroEnvioCa?: StringNullableFilter<"PedidoOperacional"> | string | null
     criadoPorId?: StringNullableFilter<"PedidoOperacional"> | string | null
     editadoPorId?: StringNullableFilter<"PedidoOperacional"> | string | null
     criadoEm?: DateTimeFilter<"PedidoOperacional"> | Date | string
@@ -38642,6 +39754,10 @@ export namespace Prisma {
     observacoes?: SortOrderInput | SortOrder
     freteCortesia?: SortOrder
     prioridadeEntrega?: SortOrderInput | SortOrder
+    statusEnvioContaAzul?: SortOrder
+    contaAzulEnvioExternalId?: SortOrderInput | SortOrder
+    enviadoContaAzulEm?: SortOrderInput | SortOrder
+    ultimoErroEnvioCa?: SortOrderInput | SortOrder
     criadoPorId?: SortOrderInput | SortOrder
     editadoPorId?: SortOrderInput | SortOrder
     criadoEm?: SortOrder
@@ -38675,6 +39791,10 @@ export namespace Prisma {
     observacoes?: StringNullableFilter<"PedidoOperacional"> | string | null
     freteCortesia?: BoolFilter<"PedidoOperacional"> | boolean
     prioridadeEntrega?: IntNullableFilter<"PedidoOperacional"> | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFilter<"PedidoOperacional"> | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: StringNullableFilter<"PedidoOperacional"> | string | null
+    enviadoContaAzulEm?: DateTimeNullableFilter<"PedidoOperacional"> | Date | string | null
+    ultimoErroEnvioCa?: StringNullableFilter<"PedidoOperacional"> | string | null
     criadoPorId?: StringNullableFilter<"PedidoOperacional"> | string | null
     editadoPorId?: StringNullableFilter<"PedidoOperacional"> | string | null
     criadoEm?: DateTimeFilter<"PedidoOperacional"> | Date | string
@@ -38704,6 +39824,10 @@ export namespace Prisma {
     observacoes?: SortOrderInput | SortOrder
     freteCortesia?: SortOrder
     prioridadeEntrega?: SortOrderInput | SortOrder
+    statusEnvioContaAzul?: SortOrder
+    contaAzulEnvioExternalId?: SortOrderInput | SortOrder
+    enviadoContaAzulEm?: SortOrderInput | SortOrder
+    ultimoErroEnvioCa?: SortOrderInput | SortOrder
     criadoPorId?: SortOrderInput | SortOrder
     editadoPorId?: SortOrderInput | SortOrder
     criadoEm?: SortOrder
@@ -38733,6 +39857,10 @@ export namespace Prisma {
     observacoes?: StringNullableWithAggregatesFilter<"PedidoOperacional"> | string | null
     freteCortesia?: BoolWithAggregatesFilter<"PedidoOperacional"> | boolean
     prioridadeEntrega?: IntNullableWithAggregatesFilter<"PedidoOperacional"> | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulWithAggregatesFilter<"PedidoOperacional"> | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: StringNullableWithAggregatesFilter<"PedidoOperacional"> | string | null
+    enviadoContaAzulEm?: DateTimeNullableWithAggregatesFilter<"PedidoOperacional"> | Date | string | null
+    ultimoErroEnvioCa?: StringNullableWithAggregatesFilter<"PedidoOperacional"> | string | null
     criadoPorId?: StringNullableWithAggregatesFilter<"PedidoOperacional"> | string | null
     editadoPorId?: StringNullableWithAggregatesFilter<"PedidoOperacional"> | string | null
     criadoEm?: DateTimeWithAggregatesFilter<"PedidoOperacional"> | Date | string
@@ -40150,6 +41278,66 @@ export namespace Prisma {
     atualizadoEm?: DateTimeWithAggregatesFilter<"IntegrationCredential"> | Date | string
   }
 
+  export type ContaAzulEnvioConfigWhereInput = {
+    AND?: ContaAzulEnvioConfigWhereInput | ContaAzulEnvioConfigWhereInput[]
+    OR?: ContaAzulEnvioConfigWhereInput[]
+    NOT?: ContaAzulEnvioConfigWhereInput | ContaAzulEnvioConfigWhereInput[]
+    id?: StringFilter<"ContaAzulEnvioConfig"> | string
+    idContaFinanceira?: StringNullableFilter<"ContaAzulEnvioConfig"> | string | null
+    nomeContaFinanceira?: StringNullableFilter<"ContaAzulEnvioConfig"> | string | null
+    tipoPagamentoPadrao?: StringFilter<"ContaAzulEnvioConfig"> | string
+    proximoNumeroVenda?: IntNullableFilter<"ContaAzulEnvioConfig"> | number | null
+    atualizadoEm?: DateTimeFilter<"ContaAzulEnvioConfig"> | Date | string
+  }
+
+  export type ContaAzulEnvioConfigOrderByWithRelationInput = {
+    id?: SortOrder
+    idContaFinanceira?: SortOrderInput | SortOrder
+    nomeContaFinanceira?: SortOrderInput | SortOrder
+    tipoPagamentoPadrao?: SortOrder
+    proximoNumeroVenda?: SortOrderInput | SortOrder
+    atualizadoEm?: SortOrder
+    _relevance?: ContaAzulEnvioConfigOrderByRelevanceInput
+  }
+
+  export type ContaAzulEnvioConfigWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: ContaAzulEnvioConfigWhereInput | ContaAzulEnvioConfigWhereInput[]
+    OR?: ContaAzulEnvioConfigWhereInput[]
+    NOT?: ContaAzulEnvioConfigWhereInput | ContaAzulEnvioConfigWhereInput[]
+    idContaFinanceira?: StringNullableFilter<"ContaAzulEnvioConfig"> | string | null
+    nomeContaFinanceira?: StringNullableFilter<"ContaAzulEnvioConfig"> | string | null
+    tipoPagamentoPadrao?: StringFilter<"ContaAzulEnvioConfig"> | string
+    proximoNumeroVenda?: IntNullableFilter<"ContaAzulEnvioConfig"> | number | null
+    atualizadoEm?: DateTimeFilter<"ContaAzulEnvioConfig"> | Date | string
+  }, "id">
+
+  export type ContaAzulEnvioConfigOrderByWithAggregationInput = {
+    id?: SortOrder
+    idContaFinanceira?: SortOrderInput | SortOrder
+    nomeContaFinanceira?: SortOrderInput | SortOrder
+    tipoPagamentoPadrao?: SortOrder
+    proximoNumeroVenda?: SortOrderInput | SortOrder
+    atualizadoEm?: SortOrder
+    _count?: ContaAzulEnvioConfigCountOrderByAggregateInput
+    _avg?: ContaAzulEnvioConfigAvgOrderByAggregateInput
+    _max?: ContaAzulEnvioConfigMaxOrderByAggregateInput
+    _min?: ContaAzulEnvioConfigMinOrderByAggregateInput
+    _sum?: ContaAzulEnvioConfigSumOrderByAggregateInput
+  }
+
+  export type ContaAzulEnvioConfigScalarWhereWithAggregatesInput = {
+    AND?: ContaAzulEnvioConfigScalarWhereWithAggregatesInput | ContaAzulEnvioConfigScalarWhereWithAggregatesInput[]
+    OR?: ContaAzulEnvioConfigScalarWhereWithAggregatesInput[]
+    NOT?: ContaAzulEnvioConfigScalarWhereWithAggregatesInput | ContaAzulEnvioConfigScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"ContaAzulEnvioConfig"> | string
+    idContaFinanceira?: StringNullableWithAggregatesFilter<"ContaAzulEnvioConfig"> | string | null
+    nomeContaFinanceira?: StringNullableWithAggregatesFilter<"ContaAzulEnvioConfig"> | string | null
+    tipoPagamentoPadrao?: StringWithAggregatesFilter<"ContaAzulEnvioConfig"> | string
+    proximoNumeroVenda?: IntNullableWithAggregatesFilter<"ContaAzulEnvioConfig"> | number | null
+    atualizadoEm?: DateTimeWithAggregatesFilter<"ContaAzulEnvioConfig"> | Date | string
+  }
+
   export type SyncStateWhereInput = {
     AND?: SyncStateWhereInput | SyncStateWhereInput[]
     OR?: SyncStateWhereInput[]
@@ -41366,6 +42554,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
@@ -41393,6 +42585,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoPorId?: string | null
     editadoPorId?: string | null
     criadoEm?: Date | string
@@ -41416,6 +42612,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
@@ -41443,6 +42643,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -41468,6 +42672,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoPorId?: string | null
     editadoPorId?: string | null
     criadoEm?: Date | string
@@ -41487,6 +42695,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -41506,6 +42718,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -43034,6 +44250,69 @@ export namespace Prisma {
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type ContaAzulEnvioConfigCreateInput = {
+    id?: string
+    idContaFinanceira?: string | null
+    nomeContaFinanceira?: string | null
+    tipoPagamentoPadrao?: string
+    proximoNumeroVenda?: number | null
+    atualizadoEm?: Date | string
+  }
+
+  export type ContaAzulEnvioConfigUncheckedCreateInput = {
+    id?: string
+    idContaFinanceira?: string | null
+    nomeContaFinanceira?: string | null
+    tipoPagamentoPadrao?: string
+    proximoNumeroVenda?: number | null
+    atualizadoEm?: Date | string
+  }
+
+  export type ContaAzulEnvioConfigUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    idContaFinanceira?: NullableStringFieldUpdateOperationsInput | string | null
+    nomeContaFinanceira?: NullableStringFieldUpdateOperationsInput | string | null
+    tipoPagamentoPadrao?: StringFieldUpdateOperationsInput | string
+    proximoNumeroVenda?: NullableIntFieldUpdateOperationsInput | number | null
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ContaAzulEnvioConfigUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    idContaFinanceira?: NullableStringFieldUpdateOperationsInput | string | null
+    nomeContaFinanceira?: NullableStringFieldUpdateOperationsInput | string | null
+    tipoPagamentoPadrao?: StringFieldUpdateOperationsInput | string
+    proximoNumeroVenda?: NullableIntFieldUpdateOperationsInput | number | null
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ContaAzulEnvioConfigCreateManyInput = {
+    id?: string
+    idContaFinanceira?: string | null
+    nomeContaFinanceira?: string | null
+    tipoPagamentoPadrao?: string
+    proximoNumeroVenda?: number | null
+    atualizadoEm?: Date | string
+  }
+
+  export type ContaAzulEnvioConfigUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    idContaFinanceira?: NullableStringFieldUpdateOperationsInput | string | null
+    nomeContaFinanceira?: NullableStringFieldUpdateOperationsInput | string | null
+    tipoPagamentoPadrao?: StringFieldUpdateOperationsInput | string
+    proximoNumeroVenda?: NullableIntFieldUpdateOperationsInput | number | null
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ContaAzulEnvioConfigUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    idContaFinanceira?: NullableStringFieldUpdateOperationsInput | string | null
+    nomeContaFinanceira?: NullableStringFieldUpdateOperationsInput | string | null
+    tipoPagamentoPadrao?: StringFieldUpdateOperationsInput | string
+    proximoNumeroVenda?: NullableIntFieldUpdateOperationsInput | number | null
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type SyncStateCreateInput = {
     id?: string
     provider: string
@@ -44443,6 +45722,13 @@ export namespace Prisma {
     not?: NestedEnumStatusConciliacaoOperacionalFilter<$PrismaModel> | $Enums.StatusConciliacaoOperacional
   }
 
+  export type EnumStatusEnvioContaAzulFilter<$PrismaModel = never> = {
+    equals?: $Enums.StatusEnvioContaAzul | EnumStatusEnvioContaAzulFieldRefInput<$PrismaModel>
+    in?: $Enums.StatusEnvioContaAzul[]
+    notIn?: $Enums.StatusEnvioContaAzul[]
+    not?: NestedEnumStatusEnvioContaAzulFilter<$PrismaModel> | $Enums.StatusEnvioContaAzul
+  }
+
   export type UsuarioNullableScalarRelationFilter = {
     is?: UsuarioWhereInput | null
     isNot?: UsuarioWhereInput | null
@@ -44484,6 +45770,10 @@ export namespace Prisma {
     observacoes?: SortOrder
     freteCortesia?: SortOrder
     prioridadeEntrega?: SortOrder
+    statusEnvioContaAzul?: SortOrder
+    contaAzulEnvioExternalId?: SortOrder
+    enviadoContaAzulEm?: SortOrder
+    ultimoErroEnvioCa?: SortOrder
     criadoPorId?: SortOrder
     editadoPorId?: SortOrder
     criadoEm?: SortOrder
@@ -44509,6 +45799,10 @@ export namespace Prisma {
     observacoes?: SortOrder
     freteCortesia?: SortOrder
     prioridadeEntrega?: SortOrder
+    statusEnvioContaAzul?: SortOrder
+    contaAzulEnvioExternalId?: SortOrder
+    enviadoContaAzulEm?: SortOrder
+    ultimoErroEnvioCa?: SortOrder
     criadoPorId?: SortOrder
     editadoPorId?: SortOrder
     criadoEm?: SortOrder
@@ -44529,6 +45823,10 @@ export namespace Prisma {
     observacoes?: SortOrder
     freteCortesia?: SortOrder
     prioridadeEntrega?: SortOrder
+    statusEnvioContaAzul?: SortOrder
+    contaAzulEnvioExternalId?: SortOrder
+    enviadoContaAzulEm?: SortOrder
+    ultimoErroEnvioCa?: SortOrder
     criadoPorId?: SortOrder
     editadoPorId?: SortOrder
     criadoEm?: SortOrder
@@ -44584,6 +45882,16 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumStatusConciliacaoOperacionalFilter<$PrismaModel>
     _max?: NestedEnumStatusConciliacaoOperacionalFilter<$PrismaModel>
+  }
+
+  export type EnumStatusEnvioContaAzulWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.StatusEnvioContaAzul | EnumStatusEnvioContaAzulFieldRefInput<$PrismaModel>
+    in?: $Enums.StatusEnvioContaAzul[]
+    notIn?: $Enums.StatusEnvioContaAzul[]
+    not?: NestedEnumStatusEnvioContaAzulWithAggregatesFilter<$PrismaModel> | $Enums.StatusEnvioContaAzul
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumStatusEnvioContaAzulFilter<$PrismaModel>
+    _max?: NestedEnumStatusEnvioContaAzulFilter<$PrismaModel>
   }
 
   export type EnumRotaEntregaStatusFilter<$PrismaModel = never> = {
@@ -45719,6 +47027,47 @@ export namespace Prisma {
     refreshToken?: SortOrder
     expiresAt?: SortOrder
     atualizadoEm?: SortOrder
+  }
+
+  export type ContaAzulEnvioConfigOrderByRelevanceInput = {
+    fields: ContaAzulEnvioConfigOrderByRelevanceFieldEnum | ContaAzulEnvioConfigOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type ContaAzulEnvioConfigCountOrderByAggregateInput = {
+    id?: SortOrder
+    idContaFinanceira?: SortOrder
+    nomeContaFinanceira?: SortOrder
+    tipoPagamentoPadrao?: SortOrder
+    proximoNumeroVenda?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type ContaAzulEnvioConfigAvgOrderByAggregateInput = {
+    proximoNumeroVenda?: SortOrder
+  }
+
+  export type ContaAzulEnvioConfigMaxOrderByAggregateInput = {
+    id?: SortOrder
+    idContaFinanceira?: SortOrder
+    nomeContaFinanceira?: SortOrder
+    tipoPagamentoPadrao?: SortOrder
+    proximoNumeroVenda?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type ContaAzulEnvioConfigMinOrderByAggregateInput = {
+    id?: SortOrder
+    idContaFinanceira?: SortOrder
+    nomeContaFinanceira?: SortOrder
+    tipoPagamentoPadrao?: SortOrder
+    proximoNumeroVenda?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type ContaAzulEnvioConfigSumOrderByAggregateInput = {
+    proximoNumeroVenda?: SortOrder
   }
 
   export type SyncStateOrderByRelevanceInput = {
@@ -47343,6 +48692,10 @@ export namespace Prisma {
     set?: $Enums.StatusConciliacaoOperacional
   }
 
+  export type EnumStatusEnvioContaAzulFieldUpdateOperationsInput = {
+    set?: $Enums.StatusEnvioContaAzul
+  }
+
   export type ClienteUpdateOneWithoutPedidosOperacionaisNestedInput = {
     create?: XOR<ClienteCreateWithoutPedidosOperacionaisInput, ClienteUncheckedCreateWithoutPedidosOperacionaisInput>
     connectOrCreate?: ClienteCreateOrConnectWithoutPedidosOperacionaisInput
@@ -48552,6 +49905,13 @@ export namespace Prisma {
     not?: NestedEnumStatusConciliacaoOperacionalFilter<$PrismaModel> | $Enums.StatusConciliacaoOperacional
   }
 
+  export type NestedEnumStatusEnvioContaAzulFilter<$PrismaModel = never> = {
+    equals?: $Enums.StatusEnvioContaAzul | EnumStatusEnvioContaAzulFieldRefInput<$PrismaModel>
+    in?: $Enums.StatusEnvioContaAzul[]
+    notIn?: $Enums.StatusEnvioContaAzul[]
+    not?: NestedEnumStatusEnvioContaAzulFilter<$PrismaModel> | $Enums.StatusEnvioContaAzul
+  }
+
   export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel>
     in?: number[]
@@ -48607,6 +49967,16 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumStatusConciliacaoOperacionalFilter<$PrismaModel>
     _max?: NestedEnumStatusConciliacaoOperacionalFilter<$PrismaModel>
+  }
+
+  export type NestedEnumStatusEnvioContaAzulWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.StatusEnvioContaAzul | EnumStatusEnvioContaAzulFieldRefInput<$PrismaModel>
+    in?: $Enums.StatusEnvioContaAzul[]
+    notIn?: $Enums.StatusEnvioContaAzul[]
+    not?: NestedEnumStatusEnvioContaAzulWithAggregatesFilter<$PrismaModel> | $Enums.StatusEnvioContaAzul
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumStatusEnvioContaAzulFilter<$PrismaModel>
+    _max?: NestedEnumStatusEnvioContaAzulFilter<$PrismaModel>
   }
 
   export type NestedEnumRotaEntregaStatusFilter<$PrismaModel = never> = {
@@ -48945,6 +50315,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
@@ -48971,6 +50345,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     editadoPorId?: string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -49003,6 +50381,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
@@ -49029,6 +50411,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoPorId?: string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -49408,6 +50794,10 @@ export namespace Prisma {
     observacoes?: StringNullableFilter<"PedidoOperacional"> | string | null
     freteCortesia?: BoolFilter<"PedidoOperacional"> | boolean
     prioridadeEntrega?: IntNullableFilter<"PedidoOperacional"> | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFilter<"PedidoOperacional"> | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: StringNullableFilter<"PedidoOperacional"> | string | null
+    enviadoContaAzulEm?: DateTimeNullableFilter<"PedidoOperacional"> | Date | string | null
+    ultimoErroEnvioCa?: StringNullableFilter<"PedidoOperacional"> | string | null
     criadoPorId?: StringNullableFilter<"PedidoOperacional"> | string | null
     editadoPorId?: StringNullableFilter<"PedidoOperacional"> | string | null
     criadoEm?: DateTimeFilter<"PedidoOperacional"> | Date | string
@@ -50032,6 +51422,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     criadoPor?: UsuarioCreateNestedOneWithoutPedidosCriadosInput
@@ -50057,6 +51451,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoPorId?: string | null
     editadoPorId?: string | null
     criadoEm?: Date | string
@@ -53253,6 +54651,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
@@ -53279,6 +54681,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoPorId?: string | null
     editadoPorId?: string | null
     criadoEm?: Date | string
@@ -53378,6 +54784,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
@@ -53404,6 +54814,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -53493,6 +54907,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
@@ -53519,6 +54937,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoPorId?: string | null
     editadoPorId?: string | null
     criadoEm?: Date | string
@@ -53724,6 +55146,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
@@ -53750,6 +55176,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -53957,6 +55387,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
@@ -53983,6 +55417,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoPorId?: string | null
     editadoPorId?: string | null
     criadoEm?: Date | string
@@ -54064,6 +55502,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
@@ -54090,6 +55532,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -54254,6 +55700,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
@@ -54279,6 +55729,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoPorId?: string | null
     editadoPorId?: string | null
     criadoEm?: Date | string
@@ -54479,6 +55933,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
@@ -54505,6 +55963,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoPorId?: string | null
     editadoPorId?: string | null
     criadoEm?: Date | string
@@ -54588,6 +56050,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
@@ -54614,6 +56080,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -55533,6 +57003,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     editadoPorId?: string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -55553,6 +57027,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoPorId?: string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -55763,6 +57241,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
@@ -55789,6 +57271,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -55813,6 +57299,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -55831,6 +57321,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
@@ -55857,6 +57351,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -55881,6 +57379,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -56327,6 +57829,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoPorId?: string | null
     editadoPorId?: string | null
     criadoEm?: Date | string
@@ -56594,6 +58100,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     criadoPor?: UsuarioUpdateOneWithoutPedidosCriadosNestedInput
@@ -56619,6 +58129,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -56643,6 +58157,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -57438,6 +58956,10 @@ export namespace Prisma {
     observacoes?: string | null
     freteCortesia?: boolean
     prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
     criadoPorId?: string | null
     editadoPorId?: string | null
     criadoEm?: Date | string
@@ -57500,6 +59022,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
@@ -57525,6 +59051,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -57549,6 +59079,10 @@ export namespace Prisma {
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     freteCortesia?: BoolFieldUpdateOperationsInput | boolean
     prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string

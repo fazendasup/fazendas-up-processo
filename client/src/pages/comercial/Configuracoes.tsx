@@ -11,6 +11,76 @@ import { TooltipInfo } from "@/components/comercial/ui/TooltipInfo";
 import { useSyncContaAzul } from "@/hooks/useSyncContaAzul";
 import { trpc } from "@/lib/trpc";
 
+function ContaAzulEnvioConfigPanel() {
+  const contas = trpc.comercial.integracoes.contasFinanceirasContaAzul.useQuery(undefined, {
+    retry: false,
+  });
+  const salvar = trpc.comercial.integracoes.salvarEnvioContaAzulConfig.useMutation({
+    onSuccess: () => {
+      toast.success("Conta financeira salva para emissão de vendas.");
+      void contas.refetch();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-[0_1px_3px_#00000014]"
+    >
+      <p className="text-xs font-bold uppercase tracking-wide text-[#1E40AF]">Envio de vendas</p>
+      <h2 className="mt-1 text-lg font-bold text-[#1E40AF]">Conta financeira (boleto)</h2>
+      <p className="mt-1 text-sm text-[#6B7280]">
+        Necessária para criar <strong>venda</strong> na Conta Azul a partir do pedido. Orçamentos de
+        clientes com acúmulo não usam esta conta.
+      </p>
+      {contas.isLoading ? (
+        <div className="mt-4 flex justify-center py-4">
+          <Spinner className="h-6 w-6" />
+        </div>
+      ) : contas.error ? (
+        <p className="mt-3 rounded-lg bg-[#FEF2F2] px-3 py-2 text-sm text-[#B91C1C]">
+          {contas.error.message}
+        </p>
+      ) : (
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+          <label className="block min-w-0 flex-1 text-sm">
+            <span className="font-medium text-[#374151]">Conta</span>
+            <select
+              className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm"
+              value={contas.data?.selecionadaId ?? ""}
+              onChange={(e) => {
+                const id = e.target.value || null;
+                const nome =
+                  contas.data?.contas.find((c) => c.id === id)?.nome ?? null;
+                salvar.mutate({
+                  idContaFinanceira: id,
+                  nomeContaFinanceira: nome,
+                });
+              }}
+            >
+              <option value="">Selecione…</option>
+              {(contas.data?.contas ?? []).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                  {c.tipo ? ` (${c.tipo})` : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="text-xs text-[#9CA3AF]">
+            Pagamento padrão: {contas.data?.tipoPagamentoPadrao ?? "BOLETO_BANCARIO"}
+            {contas.data?.proximoNumeroVenda != null
+              ? ` · Próx. nº venda: ${contas.data.proximoNumeroVenda}`
+              : ""}
+          </p>
+        </div>
+      )}
+    </motion.section>
+  );
+}
+
 export function Configuracoes() {
   const [searchParams, setSearchParams] = useSearchParams();
   useEffect(() => {
@@ -119,6 +189,8 @@ export function Configuracoes() {
           mostra JSON da API); use sempre este site em localhost:5173 e este botão.
         </p>
       </motion.section>
+
+      <ContaAzulEnvioConfigPanel />
 
       <Tabs defaultValue="templates" className="mt-2">
         <TabsList className="flex h-auto flex-wrap gap-2 rounded-lg border border-[#E5E7EB] bg-white p-2 shadow-[0_1px_3px_#00000014]">

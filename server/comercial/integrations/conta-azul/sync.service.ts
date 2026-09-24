@@ -268,6 +268,168 @@ function buildVendasBuscaPath(
   return `/v1/venda/busca?${qs.toString()}`;
 }
 
+/**
+ * Puxa orçamentos do período de sync e grava como Pedido (status ORCAMENTO*),
+ * para conciliação de clientes com acúmulo.
+ */
+async function sincronizarOrcamentosContaAzul(
+  prisma: PrismaClient,
+  http: AxiosInstance,
+  env: Env,
+  _catalogoProdutos: ContaAzulProdutoCategoriaLookup[],
+): Promise<{ recebidos: number; gravados: number }> {
+  const dias = env.CONTA_AZUL_VENDAS_SYNC_DIAS ?? 90;
+  const { start, end } = vendasBuscaRange(Math.min(dias, 120));
+  const dataInicio = formatDataCalendarioSp(start);
+  const dataFim = formatDataCalendarioSp(end);
+  let pagina = 1;
+  let recebidos = 0;
+  let gravados = 0;
+  const maxPaginas = 20;
+
+  while (pagina <= maxPaginas) {
+    const qs = new URLSearchParams({
+      pagina: String(pagina),
+      tamanho_pagina: "50",
+      data_inicio: dataInicio,
+      data_fim: dataFim,
+      campo_ordenado_descendente: "DATA",
+    });
+    let batch: unknown[] = [];
+    try {
+      const raw = await contaAzulGet<{
+        itens?: unknown[];
+        items?: unknown[];
+        total_itens?: number;
+      }>(http, `/v1/orcamentos?${qs.toString()}`);
+      batch = raw.itens ?? raw.items ?? [];
+    } catch (err) {
+      logger.warn({ err, pagina }, "Conta Azul: falha ao listar orçamentos");
+      break;
+    }
+    if (batch.length === 0) break;
+    recebidos += batch.length;
+
+    for (const raw of batch) {
+      if (!raw || typeof raw !== "object") continue;
+      const o = raw as Record<string, unknown>;
+      const id = typeof o.id === "string" ? o.id : null;
+      if (!id) continue;
+      const clienteObj = o.cliente;
+      let clienteExternalId: string | null = null;
+      if (clienteObj && typeof clienteObj === "object") {
+        const cid = (clienteObj as Record<string, unknown>).id;
+        if (typeof cid === "string") clienteExternalId = cid;
+      }
+      if (!clienteExternalId && typeof o.id_cliente === "string") {
+        clienteExternalId = o.id_cliente;
+      }
+      if (!clienteExternalId) continue;
+
+      const cli = await prisma.cliente.findUnique({
+        where: { externalId: clienteExternalId },
+      });
+      if (!cli) continue;
+
+      const dataRaw =
+        (typeof o.data_orcamento === "string" && o.data_orcamento) ||
+        (typeof o.data === "string" && o.data) ||
+        null;
+      const dataPedido = parseDataVendaContaAzul(dataRaw ?? undefined);
+      const total =
+        typeof o.total === "number"
+          ? o.total
+          : typeof o.valor_total === "number"
+            ? o.valor_total
+            : 0;
+      const situacao =
+        typeof o.situacao === "string"
+          ? o.situacao
+          : "ORCAMENTO";
+      const numero =
+        typeof o.numero === "number"
+          ? String(o.numero)
+          : typeof o.numero === "string"
+            ? o.numero
+            : null;
+
+      // Detalhe para itens (opcional — orçamento listado pode não trazer itens)
+      let itensCreate: Array<{
+        produto: string;
+        quantidade: number;
+        precoUnit: number;
+      }> = [];
+      try {
+        const det = await contaAzulGet<{
+          itens?: Array<{
+            id?: string;
+            nome?: string;
+            descricao?: string;
+            quantidade?: number;
+            valor?: number;
+          }>;
+        }>(http, `/v1/orcamentos/${encodeURIComponent(id)}`);
+        itensCreate = (det.itens ?? []).map((it) => ({
+          produto: String(it.nome ?? it.descricao ?? "Item"),
+          quantidade: Number(it.quantidade ?? 1) || 1,
+          precoUnit: Number(it.valor ?? 0) || 0,
+        }));
+      } catch {
+        /* lista sem detalhe — grava cabeçalho */
+      }
+
+      await prisma.pedido.upsert({
+        where: { externalId: id },
+        create: {
+          externalId: id,
+          numeroVenda: numero,
+          clienteId: cli.id,
+          dataPedido,
+          valorTotal: total,
+          valorBruto: total,
+          valorFrete: 0,
+          valorDesconto: 0,
+          valorLiquido: total,
+          composicaoDetalhada: itensCreate.length > 0,
+          statusPedido: situacao.includes("ORCAMENTO")
+            ? situacao
+            : `ORCAMENTO_${situacao}`,
+          origemPedido: "CONTA_AZUL",
+          itens:
+            itensCreate.length > 0
+              ? { create: itensCreate }
+              : undefined,
+        },
+        update: {
+          numeroVenda: numero ?? undefined,
+          dataPedido,
+          valorTotal: total,
+          valorBruto: total,
+          valorLiquido: total,
+          statusPedido: situacao.includes("ORCAMENTO")
+            ? situacao
+            : `ORCAMENTO_${situacao}`,
+          ...(itensCreate.length > 0
+            ? {
+                composicaoDetalhada: true,
+                itens: {
+                  deleteMany: {},
+                  create: itensCreate,
+                },
+              }
+            : {}),
+        },
+      });
+      gravados++;
+    }
+
+    if (batch.length < 50) break;
+    pagina += 1;
+  }
+
+  return { recebidos, gravados };
+}
+
 type ResolveComposicaoCtx = {
   detailBudget: { remaining: number };
 };
@@ -863,6 +1025,12 @@ async function executarContaAzulSync(
       env,
       vendaIdsAtuais
     );
+    const orcamentosSync = await sincronizarOrcamentosContaAzul(
+      prisma,
+      http,
+      env,
+      catalogoProdutos,
+    );
     const composicaoEnriquecidos = await enriquecerComposicaoPedidosPendentes(
       prisma,
       http,
@@ -896,6 +1064,8 @@ async function executarContaAzulSync(
           pedidosRemovidosForaDaBusca,
           conciliacaoSugestoes,
           conciliacaoDivergencias,
+          orcamentosRecebidos: orcamentosSync.recebidos,
+          orcamentosGravados: orcamentosSync.gravados,
         },
         duracaoMs: Date.now() - started,
       },

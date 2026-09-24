@@ -32,6 +32,7 @@ export function AcoesPedidoConciliacao({
   onMarcarEntregue,
   onCancelar,
   onReativar,
+  onEnviadoContaAzul,
 }: {
   pedido: any;
   disabled?: boolean;
@@ -39,8 +40,50 @@ export function AcoesPedidoConciliacao({
   onMarcarEntregue?: () => void;
   onCancelar?: () => void;
   onReativar?: () => void;
+  onEnviadoContaAzul?: () => void;
 }) {
   const cancelado = pedido.status === "CANCELADO";
+  const utils = trpc.useUtils();
+  const validacao = trpc.comercial.pedidos.validarEnvioContaAzul.useQuery(
+    { pedidoOperacionalId: pedido.id },
+    {
+      enabled: Boolean(pedido?.id) && !cancelado,
+      staleTime: 30_000,
+      retry: false,
+    },
+  );
+  const enviar = trpc.comercial.pedidos.enviarOperacionalContaAzul.useMutation({
+    onSuccess: (r) => {
+      toast.success(
+        r.modo === "ORCAMENTO"
+          ? "Orçamento criado no Conta Azul."
+          : "Venda criada no Conta Azul.",
+      );
+      void utils.comercial.pedidos.invalidate();
+      onEnviadoContaAzul?.();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const fecharPeriodo = trpc.comercial.pedidos.fecharPeriodoAcumuloContaAzul.useMutation({
+    onSuccess: (r) => {
+      toast.success(
+        `Venda acumulada criada (${r.pedidosAtualizados} entrega(s), período ${r.periodo.inicio}–${r.periodo.fim}).`,
+      );
+      void utils.comercial.pedidos.invalidate();
+      onEnviadoContaAzul?.();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const statusEnvio = String(pedido.statusEnvioContaAzul ?? "NAO_ENVIADO");
+  const jaVenda = statusEnvio === "ENVIADO_VENDA";
+  const modo = validacao.data?.modoSugerido;
+  const periodo = validacao.data?.periodo;
+  const busy = enviar.isPending || fecharPeriodo.isPending;
+
+  const labelEnviar =
+    modo === "ORCAMENTO" ? "Enviar orçamento CA" : "Enviar venda CA";
+
   return (
     <div className="mt-2 flex flex-wrap gap-1.5">
       {onEditar && !cancelado ? (
@@ -52,6 +95,76 @@ export function AcoesPedidoConciliacao({
         <Button type="button" size="sm" variant="outline" className="h-7 px-2 text-xs" disabled={disabled} onClick={onMarcarEntregue}>
           Marcar entregue
         </Button>
+      ) : null}
+      {!cancelado && !jaVenda ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          className="h-7 px-2 text-xs"
+          disabled={disabled || busy || validacao.isLoading || (validacao.data && !validacao.data.ok)}
+          title={
+            validacao.data?.erros?.length
+              ? validacao.data.erros.join(" ")
+              : validacao.data?.avisos?.join(" ") || undefined
+          }
+          onClick={() => {
+            if (validacao.data && !validacao.data.ok) {
+              toast.error(validacao.data.erros.join(" "));
+              return;
+            }
+            enviar.mutate({ pedidoOperacionalId: pedido.id });
+          }}
+        >
+          {enviar.isPending ? "Enviando…" : labelEnviar}
+        </Button>
+      ) : null}
+      {!cancelado && modo === "ORCAMENTO" && !jaVenda && periodo ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="default"
+          className="h-7 px-2 text-xs"
+          disabled={disabled || busy}
+          title={`Fecha ${periodo.inicio}–${periodo.fim} e cria uma venda com o acumulado`}
+          onClick={() => {
+            if (
+              !confirm(
+                `Fechar período ${periodo.inicio}–${periodo.fim} e enviar a venda acumulada no Conta Azul?`,
+              )
+            ) {
+              return;
+            }
+            const dataRef =
+              typeof pedido.dataEntrega === "string"
+                ? pedido.dataEntrega.slice(0, 10)
+                : periodo.fim;
+            fecharPeriodo.mutate({
+              contaAzulCustomerId: pedido.contaAzulCustomerId,
+              dataReferencia: dataRef,
+            });
+          }}
+        >
+          {fecharPeriodo.isPending ? "Fechando…" : "Fechar período → venda"}
+        </Button>
+      ) : null}
+      {statusEnvio === "ENVIADO_ORCAMENTO" ? (
+        <span className="self-center text-[10px] font-medium text-amber-700">
+          Orçamento CA enviado
+        </span>
+      ) : null}
+      {jaVenda ? (
+        <span className="self-center text-[10px] font-medium text-emerald-700">
+          Venda CA enviada
+        </span>
+      ) : null}
+      {statusEnvio === "ERRO" && pedido.ultimoErroEnvioCa ? (
+        <span
+          className="self-center max-w-[220px] truncate text-[10px] text-red-700"
+          title={pedido.ultimoErroEnvioCa}
+        >
+          Erro envio CA
+        </span>
       ) : null}
       {onCancelar && !cancelado ? (
         <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs text-red-700" disabled={disabled} onClick={onCancelar}>

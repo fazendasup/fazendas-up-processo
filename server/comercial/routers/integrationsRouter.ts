@@ -100,4 +100,60 @@ export const integrationsRouter = router({
       });
     }
   }),
+
+  /** Lista/sincroniza contas financeiras para emissão de venda (boleto). */
+  contasFinanceirasContaAzul: comercialProcedure.use(syncCA).query(async ({ ctx }) => {
+    const { sincronizarContasFinanceirasEnvio, ensureContaAzulEnvioConfig } = await import(
+      "../integrations/conta-azul/venda-outbound.service.js"
+    );
+    try {
+      const sync = await sincronizarContasFinanceirasEnvio(ctx.prisma!, ctx.comercialEnv!);
+      const cfg = await ensureContaAzulEnvioConfig(ctx.prisma!);
+      return {
+        contas: sync.contas,
+        selecionadaId: sync.selecionadaId,
+        tipoPagamentoPadrao: cfg.tipoPagamentoPadrao,
+        proximoNumeroVenda: cfg.proximoNumeroVenda,
+      };
+    } catch (e) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: e instanceof Error ? e.message : "Falha ao listar contas financeiras",
+      });
+    }
+  }),
+
+  salvarEnvioContaAzulConfig: comercialProcedure
+    .use(syncCA)
+    .input(
+      z.object({
+        idContaFinanceira: z.string().min(1).nullable().optional(),
+        nomeContaFinanceira: z.string().max(255).nullable().optional(),
+        tipoPagamentoPadrao: z.string().min(3).max(64).optional(),
+        proximoNumeroVenda: z.number().int().positive().nullable().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { ensureContaAzulEnvioConfig } = await import(
+        "../integrations/conta-azul/venda-outbound.service.js"
+      );
+      await ensureContaAzulEnvioConfig(ctx.prisma!);
+      return ctx.prisma!.contaAzulEnvioConfig.update({
+        where: { id: "default" },
+        data: {
+          ...(input.idContaFinanceira !== undefined
+            ? { idContaFinanceira: input.idContaFinanceira }
+            : {}),
+          ...(input.nomeContaFinanceira !== undefined
+            ? { nomeContaFinanceira: input.nomeContaFinanceira }
+            : {}),
+          ...(input.tipoPagamentoPadrao
+            ? { tipoPagamentoPadrao: input.tipoPagamentoPadrao }
+            : {}),
+          ...(input.proximoNumeroVenda !== undefined
+            ? { proximoNumeroVenda: input.proximoNumeroVenda }
+            : {}),
+        },
+      });
+    }),
 });

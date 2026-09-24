@@ -88,11 +88,20 @@ enum StatusEnvioMensagem {
   FALHA
 }
 
+enum StatusEnvioContaAzul {
+  NAO_ENVIADO
+  ENVIANDO
+  ENVIADO_ORCAMENTO
+  ENVIADO_VENDA
+  ERRO
+}
+
 enum AcaoApi {
   SYNC_CA
   ENVIO_MC
   ANALISE_IG
   PESQUISA_WEB
+  ENVIO_CA
 }
 
 enum StatusExecucaoApi {
@@ -402,6 +411,13 @@ model PedidoOperacional {
   observacoes               String?                      @db.Text
   freteCortesia             Boolean                      @default(false) @map("frete_cortesia")
   prioridadeEntrega         Int?                         @map("prioridade_entrega")
+  statusEnvioContaAzul      StatusEnvioContaAzul         @default(NAO_ENVIADO) @map("status_envio_conta_azul")
+  /**
+   * externalId do orçamento/venda criado no Conta Azul (antes do vínculo local).
+   */
+  contaAzulEnvioExternalId  String?                      @map("conta_azul_envio_external_id")
+  enviadoContaAzulEm        DateTime?                    @map("enviado_conta_azul_em")
+  ultimoErroEnvioCa         String?                      @map("ultimo_erro_envio_ca") @db.Text
   criadoPorId               String?                      @map("criado_por_id")
   editadoPorId              String?                      @map("editado_por_id")
   criadoEm                  DateTime                     @default(now()) @map("criado_em")
@@ -746,6 +762,20 @@ model IntegrationCredential {
   atualizadoEm DateTime  @updatedAt @map("atualizado_em")
 
   @@map("integration_credentials")
+}
+
+/**
+ * Config de envio operacional → Conta Azul (conta financeira, numeração).
+ */
+model ContaAzulEnvioConfig {
+  id                  String   @id @default("default")
+  idContaFinanceira   String?  @map("id_conta_financeira")
+  nomeContaFinanceira String?  @map("nome_conta_financeira")
+  tipoPagamentoPadrao String   @default("BOLETO_BANCARIO") @map("tipo_pagamento_padrao")
+  proximoNumeroVenda  Int?     @map("proximo_numero_venda")
+  atualizadoEm        DateTime @updatedAt @map("atualizado_em")
+
+  @@map("conta_azul_envio_config")
 }
 
 model SyncState {

@@ -3848,4 +3848,85 @@ export const pedidosRouter = router({
         });
       }
     }),
+
+  /** Pré-checagem antes de enviar pedido ao Conta Azul. */
+  validarEnvioContaAzul: comercialProcedure
+    .use(podeConfigurarEstoqueVivo)
+    .input(z.object({ pedidoOperacionalId: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const { validarEnvioOperacionalContaAzul } = await import(
+        "../integrations/conta-azul/venda-outbound.service.js"
+      );
+      return validarEnvioOperacionalContaAzul(
+        ctx.prisma!,
+        input.pedidoOperacionalId,
+      );
+    }),
+
+  /**
+   * Envia pedido operacional → Conta Azul.
+   * Sem acúmulo: venda. Com acúmulo: orçamento (venda só no fechamento do período).
+   */
+  enviarOperacionalContaAzul: comercialProcedure
+    .use(podeConfigurarEstoqueVivo)
+    .input(
+      z.object({
+        pedidoOperacionalId: z.string().min(1),
+        forcarModo: z.enum(["ORCAMENTO", "VENDA"]).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { enviarOperacionalContaAzul } = await import(
+        "../integrations/conta-azul/venda-outbound.service.js"
+      );
+      try {
+        return await enviarOperacionalContaAzul(
+          ctx.prisma!,
+          ctx.comercialEnv!,
+          input.pedidoOperacionalId,
+          { forcarModo: input.forcarModo },
+        );
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Falha ao enviar ao Conta Azul.",
+        });
+      }
+    }),
+
+  /** Fecha período de acúmulo e cria uma venda consolidada na Conta Azul. */
+  fecharPeriodoAcumuloContaAzul: comercialProcedure
+    .use(podeConfigurarEstoqueVivo)
+    .input(
+      z.object({
+        contaAzulCustomerId: z.string().min(1),
+        dataReferencia: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        pedidoOperacionalIds: z.array(z.string()).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { fecharPeriodoAcumuloContaAzul } = await import(
+        "../integrations/conta-azul/venda-outbound.service.js"
+      );
+      const [y, m, d] = input.dataReferencia.split("-").map(Number);
+      const dataReferencia = new Date(y!, m! - 1, d!, 12, 0, 0, 0);
+      try {
+        return await fecharPeriodoAcumuloContaAzul(ctx.prisma!, ctx.comercialEnv!, {
+          contaAzulCustomerId: input.contaAzulCustomerId,
+          dataReferencia,
+          pedidoOperacionalIds: input.pedidoOperacionalIds,
+        });
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Falha ao fechar período no Conta Azul.",
+        });
+      }
+    }),
 });

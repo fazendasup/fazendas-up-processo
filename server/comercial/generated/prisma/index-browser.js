@@ -269,6 +269,10 @@ exports.Prisma.PedidoOperacionalScalarFieldEnum = {
   observacoes: 'observacoes',
   freteCortesia: 'freteCortesia',
   prioridadeEntrega: 'prioridadeEntrega',
+  statusEnvioContaAzul: 'statusEnvioContaAzul',
+  contaAzulEnvioExternalId: 'contaAzulEnvioExternalId',
+  enviadoContaAzulEm: 'enviadoContaAzulEm',
+  ultimoErroEnvioCa: 'ultimoErroEnvioCa',
   criadoPorId: 'criadoPorId',
   editadoPorId: 'editadoPorId',
   criadoEm: 'criadoEm',
@@ -493,6 +497,15 @@ exports.Prisma.IntegrationCredentialScalarFieldEnum = {
   atualizadoEm: 'atualizadoEm'
 };
 
+exports.Prisma.ContaAzulEnvioConfigScalarFieldEnum = {
+  id: 'id',
+  idContaFinanceira: 'idContaFinanceira',
+  nomeContaFinanceira: 'nomeContaFinanceira',
+  tipoPagamentoPadrao: 'tipoPagamentoPadrao',
+  proximoNumeroVenda: 'proximoNumeroVenda',
+  atualizadoEm: 'atualizadoEm'
+};
+
 exports.Prisma.SyncStateScalarFieldEnum = {
   id: 'id',
   provider: 'provider',
@@ -636,6 +649,8 @@ exports.Prisma.PedidoOperacionalOrderByRelevanceFieldEnum = {
   pedidoContaAzulId: 'pedidoContaAzulId',
   sugestaoPedidoContaAzulId: 'sugestaoPedidoContaAzulId',
   observacoes: 'observacoes',
+  contaAzulEnvioExternalId: 'contaAzulEnvioExternalId',
+  ultimoErroEnvioCa: 'ultimoErroEnvioCa',
   criadoPorId: 'criadoPorId',
   editadoPorId: 'editadoPorId'
 };
@@ -771,6 +786,13 @@ exports.Prisma.IntegrationCredentialOrderByRelevanceFieldEnum = {
   refreshToken: 'refreshToken'
 };
 
+exports.Prisma.ContaAzulEnvioConfigOrderByRelevanceFieldEnum = {
+  id: 'id',
+  idContaFinanceira: 'idContaFinanceira',
+  nomeContaFinanceira: 'nomeContaFinanceira',
+  tipoPagamentoPadrao: 'tipoPagamentoPadrao'
+};
+
 exports.Prisma.SyncStateOrderByRelevanceFieldEnum = {
   id: 'id',
   provider: 'provider',
@@ -851,6 +873,14 @@ exports.StatusConciliacaoOperacional = exports.$Enums.StatusConciliacaoOperacion
   VENDA_ERRADA: 'VENDA_ERRADA'
 };
 
+exports.StatusEnvioContaAzul = exports.$Enums.StatusEnvioContaAzul = {
+  NAO_ENVIADO: 'NAO_ENVIADO',
+  ENVIANDO: 'ENVIANDO',
+  ENVIADO_ORCAMENTO: 'ENVIADO_ORCAMENTO',
+  ENVIADO_VENDA: 'ENVIADO_VENDA',
+  ERRO: 'ERRO'
+};
+
 exports.RotaEntregaStatus = exports.$Enums.RotaEntregaStatus = {
   PLANEJADA: 'PLANEJADA',
   EM_ROTA: 'EM_ROTA',
@@ -926,7 +956,8 @@ exports.AcaoApi = exports.$Enums.AcaoApi = {
   SYNC_CA: 'SYNC_CA',
   ENVIO_MC: 'ENVIO_MC',
   ANALISE_IG: 'ANALISE_IG',
-  PESQUISA_WEB: 'PESQUISA_WEB'
+  PESQUISA_WEB: 'PESQUISA_WEB',
+  ENVIO_CA: 'ENVIO_CA'
 };
 
 exports.StatusExecucaoApi = exports.$Enums.StatusExecucaoApi = {
@@ -970,6 +1001,7 @@ exports.Prisma.ModelName = {
   ExecucaoApi: 'ExecucaoApi',
   KpiSnapshot: 'KpiSnapshot',
   IntegrationCredential: 'IntegrationCredential',
+  ContaAzulEnvioConfig: 'ContaAzulEnvioConfig',
   SyncState: 'SyncState',
   RegraClassificacao: 'RegraClassificacao',
   TemplateMensagem: 'TemplateMensagem'
