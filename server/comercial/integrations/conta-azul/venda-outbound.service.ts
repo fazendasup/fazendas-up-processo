@@ -130,28 +130,82 @@ export async function sincronizarContasFinanceirasEnvio(
   return { contas, selecionadaId: selecionadaId ?? null };
 }
 
+/**
+ * Extrai o próximo nº sugerido pela Conta Azul em erros do tipo:
+ * "O número da venda informado já foi utilizado... O nº 5566 é o próximo disponível"
+ */
+export function parseProximoNumeroDisponivelCa(mensagem: string): number | null {
+  const m =
+    mensagem.match(/n[ºo°]?\s*(\d+)\s*[ée]\s*o\s*pr[oó]ximo\s+dispon[ií]vel/i) ??
+    mensagem.match(/pr[oó]ximo\s+dispon[ií]vel[^\d]*(\d+)/i) ??
+    mensagem.match(/pr[oó]ximo\s+(?:n[ºo°]?\s*)?(\d+)/i);
+  if (!m?.[1]) return null;
+  const n = Number(m[1]);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+async function consultarProximoNumeroOficialCa(http: AxiosInstance): Promise<number | null> {
+  try {
+    const raw = await contaAzulGet<unknown>(http, "/v1/venda/proximo-numero");
+    if (typeof raw === "number" && Number.isFinite(raw) && raw > 0) return raw;
+    if (typeof raw === "string") {
+      const n = Number(raw.replace(/\D/g, ""));
+      return Number.isFinite(n) && n > 0 ? n : null;
+    }
+    if (raw && typeof raw === "object") {
+      const o = raw as Record<string, unknown>;
+      for (const key of [
+        "proximo_numero",
+        "proximoNumero",
+        "numero",
+        "next",
+        "value",
+      ]) {
+        const n = Number(o[key]);
+        if (Number.isFinite(n) && n > 0) return n;
+      }
+    }
+  } catch (err) {
+    logger.warn({ err }, "Conta Azul: GET /v1/venda/proximo-numero falhou");
+  }
+  return null;
+}
+
+async function gravarProximoNumeroLocal(prisma: PrismaClient, usado: number) {
+  await prisma.contaAzulEnvioConfig.update({
+    where: { id: "default" },
+    data: { proximoNumeroVenda: usado + 1 },
+  });
+}
+
+/**
+ * Sempre prioriza a numeração oficial do Conta Azul (vendas manuais no ERP
+ * avançam a sequência — o cache local sozinho fica desatualizado).
+ */
 async function proximoNumeroVenda(
   prisma: PrismaClient,
   http: AxiosInstance,
 ): Promise<number> {
-  const cfg = await ensureContaAzulEnvioConfig(prisma);
-  if (cfg.proximoNumeroVenda != null && cfg.proximoNumeroVenda > 0) {
-    const n = cfg.proximoNumeroVenda;
-    await prisma.contaAzulEnvioConfig.update({
-      where: { id: "default" },
-      data: { proximoNumeroVenda: n + 1 },
-    });
-    return n;
+  await ensureContaAzulEnvioConfig(prisma);
+
+  const oficial = await consultarProximoNumeroOficialCa(http);
+  if (oficial != null) {
+    await gravarProximoNumeroLocal(prisma, oficial);
+    return oficial;
   }
 
-  // Heurística: maior número local + busca recente CA
+  // Fallback: máximo entre cache local, espelhos e busca recente na CA
+  const cfg = await ensureContaAzulEnvioConfig(prisma);
+  let max = cfg.proximoNumeroVenda != null && cfg.proximoNumeroVenda > 0
+    ? cfg.proximoNumeroVenda - 1
+    : 0;
+
   const maxLocal = await prisma.pedido.findMany({
     where: { numeroVenda: { not: null } },
     select: { numeroVenda: true },
     take: 500,
     orderBy: { dataPedido: "desc" },
   });
-  let max = 0;
   for (const p of maxLocal) {
     const n = Number(String(p.numeroVenda).replace(/\D/g, ""));
     if (Number.isFinite(n) && n > max) max = n;
@@ -171,14 +225,11 @@ async function proximoNumeroVenda(
       if (Number.isFinite(n) && n > max) max = n;
     }
   } catch (err) {
-    logger.warn({ err }, "Conta Azul: falha ao obter próximo número de venda");
+    logger.warn({ err }, "Conta Azul: falha ao obter próximo número de venda (busca)");
   }
 
   const next = max + 1;
-  await prisma.contaAzulEnvioConfig.update({
-    where: { id: "default" },
-    data: { proximoNumeroVenda: next + 1 },
-  });
+  await gravarProximoNumeroLocal(prisma, next);
   return next;
 }
 
@@ -426,7 +477,6 @@ async function criarVendaCa(
     idContaFinanceira: string;
   },
 ): Promise<{ id: string; numero: number; dataVencimento: string; valorParcela: number }> {
-  const numero = await proximoNumeroVenda(prisma, http);
   const totalItens = round2(
     input.itens.reduce((s, i) => s + i.quantidade * i.precoUnit, 0),
   );
@@ -436,40 +486,75 @@ async function criarVendaCa(
   const opcao =
     input.prazoBoletoDias <= 0 ? "À vista" : String(input.prazoBoletoDias);
 
-  const body = {
-    id_cliente: input.idCliente,
-    numero,
-    situacao: "EM_ANDAMENTO",
-    data_venda: input.data,
-    observacoes: input.observacoes ?? undefined,
-    observacoes_pagamento: `Prazo ${input.prazoBoletoDias} dia(s)`,
-    itens: input.itens.map((i) => ({
-      id: i.contaAzulProdutoId,
-      descricao: i.produtoNome,
-      quantidade: i.quantidade,
-      valor: i.precoUnit,
-    })),
-    composicao_de_valor: {
-      frete: input.frete,
-    },
-    condicao_pagamento: {
-      tipo_pagamento: input.tipoPagamento || "BOLETO_BANCARIO",
-      id_conta_financeira: input.idContaFinanceira,
-      opcao_condicao_pagamento: opcao,
-      parcelas: [
-        {
-          data_vencimento: venc,
-          valor: total,
-          descricao: "Parcela 1",
-        },
-      ],
-    },
-  };
+  let numero = await proximoNumeroVenda(prisma, http);
+  const maxTentativas = 4;
+  let lastErr: unknown;
 
-  const res = await contaAzulPost<{ id?: string }>(http, "/v1/venda", body);
-  const id = res?.id?.trim();
-  if (!id) throw new Error("Conta Azul não retornou ID da venda.");
-  return { id, numero, dataVencimento: venc, valorParcela: total };
+  for (let tentativa = 1; tentativa <= maxTentativas; tentativa++) {
+    const body = {
+      id_cliente: input.idCliente,
+      numero,
+      situacao: "EM_ANDAMENTO",
+      data_venda: input.data,
+      observacoes: input.observacoes ?? undefined,
+      observacoes_pagamento: `Prazo ${input.prazoBoletoDias} dia(s)`,
+      itens: input.itens.map((i) => ({
+        id: i.contaAzulProdutoId,
+        descricao: i.produtoNome,
+        quantidade: i.quantidade,
+        valor: i.precoUnit,
+      })),
+      composicao_de_valor: {
+        frete: input.frete,
+      },
+      condicao_pagamento: {
+        tipo_pagamento: input.tipoPagamento || "BOLETO_BANCARIO",
+        id_conta_financeira: input.idContaFinanceira,
+        opcao_condicao_pagamento: opcao,
+        parcelas: [
+          {
+            data_vencimento: venc,
+            valor: total,
+            descricao: "Parcela 1",
+          },
+        ],
+      },
+    };
+
+    try {
+      const res = await contaAzulPost<{ id?: string }>(http, "/v1/venda", body);
+      const id = res?.id?.trim();
+      if (!id) throw new Error("Conta Azul não retornou ID da venda.");
+      await gravarProximoNumeroLocal(prisma, numero);
+      return { id, numero, dataVencimento: venc, valorParcela: total };
+    } catch (err) {
+      lastErr = err;
+      const msg = err instanceof Error ? err.message : String(err);
+      const sugerido = parseProximoNumeroDisponivelCa(msg);
+      const conflitoNumeracao =
+        /n[uú]mero.*j[aá]\s*foi\s*utilizado|pr[oó]ximo\s+dispon[ií]vel/i.test(msg);
+
+      if (!conflitoNumeracao || tentativa >= maxTentativas) {
+        throw err;
+      }
+
+      const oficial = await consultarProximoNumeroOficialCa(http);
+      const next =
+        sugerido ??
+        oficial ??
+        numero + 1;
+      logger.warn(
+        { tentativa, numeroTentado: numero, next, msg },
+        "Conta Azul: número de venda em uso — retentando com sequência atualizada",
+      );
+      numero = next;
+      await gravarProximoNumeroLocal(prisma, next);
+    }
+  }
+
+  throw lastErr instanceof Error
+    ? lastErr
+    : new Error("Falha ao criar venda no Conta Azul após retentativas de numeração.");
 }
 
 /** Extrai o id da 1ª parcela a partir do GET /v1/venda/{id}. */

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { extrairIdParcelaVenda } from "./venda-outbound.service";
+import {
+  extrairIdParcelaVenda,
+  parseProximoNumeroDisponivelCa,
+} from "./venda-outbound.service";
 
 describe("extrairIdParcelaVenda", () => {
   it("lê id em condicao_pagamento.parcelas", () => {
@@ -23,5 +26,19 @@ describe("extrairIdParcelaVenda", () => {
   it("retorna null sem parcela", () => {
     expect(extrairIdParcelaVenda({ condicao_pagamento: {} })).toBeNull();
     expect(extrairIdParcelaVenda(null)).toBeNull();
+  });
+});
+
+describe("parseProximoNumeroDisponivelCa", () => {
+  it("extrai o nº da mensagem oficial da Conta Azul", () => {
+    expect(
+      parseProximoNumeroDisponivelCa(
+        "Conta Azul (400): O número da venda informado já foi utilizado em outra venda. O nº 5566 é o próximo disponível",
+      ),
+    ).toBe(5566);
+  });
+
+  it("retorna null sem indicação clara", () => {
+    expect(parseProximoNumeroDisponivelCa("erro genérico")).toBeNull();
   });
 });
