@@ -6,7 +6,8 @@
  * intervalo de almoço: entrada antes das 11:00 e saída depois das 13:00
  * (em jornada noturna: entrada antes das 11:00, pois cruza o almoço do 1º dia).
  * + R$ 10 vale-transporte por dia (um registro = um VT, mesmo em jornada noturna).
- * + R$ 25 alimentação se NÃO almoçou na empresa.
+ * + R$ 25 alimentação se NÃO almoçou na empresa e trabalhou pelo menos 6h.
+ *   Abaixo de 6h conta só a hora (e o VT).
  *
  * Jornada que cruza meia-noite: saída menor que entrada (ex.: 18:00 → 08:00)
  * conta como um único dia (data da entrada), com um VT e uma alimentação.
@@ -15,6 +16,8 @@
 export const TERCEIROS_DIARIA_BASE = 90;
 export const TERCEIROS_VALE_TRANSPORTE = 10;
 export const TERCEIROS_ALIMENTACAO = 25;
+/** Abaixo disto não há vale refeição — só hora (e VT). */
+export const TERCEIROS_HORAS_MIN_ALIMENTACAO = 6;
 export const TERCEIROS_HORAS_JORNADA = 8;
 export const TERCEIROS_HORAS_ALMOCO = 1;
 /** Entrada estritamente antes deste horário para considerar almoço na empresa. */
@@ -152,7 +155,7 @@ export type PagamentoDiaTerceiro = {
   /** horasTrabalhadas × (90/8). */
   valorHoras: number;
   valorValeTransporte: number;
-  /** 0 se almoçou na empresa; senão R$ 25. */
+  /** 0 se almoçou na empresa ou trabalhou menos de 6h; senão R$ 25. */
   valorAlimentacao: number;
   valorTotal: number;
 };
@@ -165,7 +168,7 @@ export type PagamentoDiaTerceiro = {
  * @param diariaBase — diária combinada para 8h (padrão {@link TERCEIROS_DIARIA_BASE}).
  * @param almocouNaEmpresaOverride — null/undefined = automático pelo horário;
  *   true = almoço na empresa (desconta 1h, sem R$ 25);
- *   false = vale alimentação R$ 25 (sem desconto de 1h).
+ *   false = sem almoço na empresa (vale R$ 25 só se trabalhou pelo menos 6h).
  */
 export function calcularPagamentoDiaTerceiro(input: {
   horaEntrada: string;
@@ -212,7 +215,10 @@ export function calcularPagamentoDiaTerceiro(input: {
   );
   const valorHoras = round2(horasTrabalhadas * valorHora);
   const valorValeTransporte = TERCEIROS_VALE_TRANSPORTE;
-  const valorAlimentacao = almocouNaEmpresa ? 0 : TERCEIROS_ALIMENTACAO;
+  const recebeAlimentacao =
+    !almocouNaEmpresa &&
+    horasTrabalhadas >= TERCEIROS_HORAS_MIN_ALIMENTACAO;
+  const valorAlimentacao = recebeAlimentacao ? TERCEIROS_ALIMENTACAO : 0;
   const valorTotal = round2(
     valorHoras + valorValeTransporte + valorAlimentacao,
   );

@@ -606,7 +606,7 @@ export default function TerceirosAdminPage() {
                       Almoço na empresa (desconta 1h, sem R$ 25)
                     </SelectItem>
                     <SelectItem value="vale">
-                      Vale alimentação R$ 25 (sem desconto 1h)
+                      Vale alimentação R$ 25 (sem desconto 1h, a partir de 6h)
                     </SelectItem>
                   </SelectContent>
                 </Select>

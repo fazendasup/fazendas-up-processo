@@ -350,14 +350,17 @@ export default function TerceirosPublicPage() {
                       {r.pagamento
                         ? `${r.pagamento.horasTrabalhadas}h`
                         : ""}
-                      {r.pagamento?.almocouNaEmpresaManual
-                        ? r.pagamento.almocouNaEmpresa
+                      {r.pagamento?.almocouNaEmpresa
+                        ? r.pagamento.almocouNaEmpresaManual
                           ? " · almoço empresa (ajustado)"
-                          : " · vale alimentação (ajustado)"
-                        : r.pagamento?.almocouNaEmpresa
-                          ? " · almoço empresa"
-                          : r.pagamento
-                            ? " · vale alimentação"
+                          : " · almoço empresa"
+                        : (r.pagamento?.valorAlimentacao ?? 0) > 0
+                          ? r.pagamento?.almocouNaEmpresaManual
+                            ? " · vale alimentação (ajustado)"
+                            : " · vale alimentação"
+                          : (r.pagamento?.horasTrabalhadas ?? 0) > 0 &&
+                              (r.pagamento?.horasTrabalhadas ?? 0) < 6
+                            ? " · sem refeição (menos de 6h)"
                             : ""}
                     </p>
                     <p className="mt-0.5 text-xs">

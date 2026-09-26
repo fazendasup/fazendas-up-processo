@@ -83,8 +83,7 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
     expect(r!.valorTotal).toBe(125);
   });
 
-  it("só manhã (sai antes/às 13h): 4h pagas, sem desconto de almoço + alimentação", () => {
-    // 08–12 = 4h presente, não cobriu janela 11–13 → 4h × 11.25 + VT + alim.
+  it("só manhã com menos de 6h: paga a hora e o VT, sem refeição", () => {
     const r = calcularPagamentoDiaTerceiro({
       horaEntrada: "08:00",
       horaSaida: "12:00",
@@ -92,8 +91,18 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
     expect(r!.almocouNaEmpresa).toBe(false);
     expect(r!.horasTrabalhadas).toBe(4);
     expect(r!.valorHoras).toBe(4 * TERCEIROS_VALOR_HORA);
+    expect(r!.valorAlimentacao).toBe(0);
+    expect(r!.valorTotal).toBe(round2(4 * TERCEIROS_VALOR_HORA + 10));
+  });
+
+  it("exatamente 6h sem almoço na empresa: recebe os R$ 25", () => {
+    const r = calcularPagamentoDiaTerceiro({
+      horaEntrada: "13:00",
+      horaSaida: "19:00",
+    });
+    expect(r!.horasTrabalhadas).toBe(6);
     expect(r!.valorAlimentacao).toBe(25);
-    expect(r!.valorTotal).toBe(round2(4 * TERCEIROS_VALOR_HORA + 10 + 25));
+    expect(r!.valorTotal).toBe(round2(6 * TERCEIROS_VALOR_HORA + 10 + 25));
   });
 
   it("sai exatamente às 13h: ainda sem desconto (precisa sair depois das 13h)", () => {
@@ -103,6 +112,7 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
     });
     expect(r!.almocouNaEmpresa).toBe(false);
     expect(r!.horasTrabalhadas).toBe(5);
+    expect(r!.valorAlimentacao).toBe(0);
   });
 
   it("entrou antes das 11h e saiu depois das 13h: desconta almoço", () => {
@@ -169,6 +179,17 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
     expect(r!.almocouNaEmpresaManual).toBe(true);
     expect(r!.horasTrabalhadas).toBe(9);
     expect(r!.valorAlimentacao).toBe(25);
+  });
+
+  it("menos de 6h: o vale forçado pelo admin também não paga refeição", () => {
+    const r = calcularPagamentoDiaTerceiro({
+      horaEntrada: "08:00",
+      horaSaida: "12:00",
+      almocouNaEmpresaOverride: false,
+    });
+    expect(r!.horasTrabalhadas).toBe(4);
+    expect(r!.valorAlimentacao).toBe(0);
+    expect(r!.valorValeTransporte).toBe(10);
   });
 
   it("override: força almoço na empresa no turno da tarde", () => {
