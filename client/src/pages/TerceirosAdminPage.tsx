@@ -12,6 +12,7 @@ import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { InputHora24h } from "@/components/InputHora24h";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -31,6 +32,7 @@ import { trpc } from "@/lib/trpc";
 import {
   dataSaidaServico,
   formatarHorasDecimais,
+  normalizarHora24h,
 } from "@shared/terceirosPagamento";
 
 function hojeIsoSp(): string {
@@ -572,20 +574,18 @@ export default function TerceirosAdminPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label htmlFor="aj-entrada">Entrada</Label>
-                  <Input
+                  <InputHora24h
                     id="aj-entrada"
-                    type="time"
                     value={editEntrada}
-                    onChange={e => setEditEntrada(e.target.value)}
+                    onChange={setEditEntrada}
                   />
                 </div>
                 <div>
                   <Label htmlFor="aj-saida">Saída</Label>
-                  <Input
+                  <InputHora24h
                     id="aj-saida"
-                    type="time"
                     value={editSaida}
-                    onChange={e => setEditSaida(e.target.value)}
+                    onChange={setEditSaida}
                   />
                 </div>
               </div>
@@ -624,10 +624,16 @@ export default function TerceirosAdminPage() {
               disabled={ajustar.isPending || !editando}
               onClick={() => {
                 if (!editando) return;
+                const entrada = normalizarHora24h(editEntrada);
+                const saida = normalizarHora24h(editSaida);
+                if (!entrada || !saida) {
+                  toast.error("Digite a hora no formato 24h, como 07:00.");
+                  return;
+                }
                 ajustar.mutate({
                   id: editando.id,
-                  horaEntrada: editEntrada,
-                  horaSaida: editSaida,
+                  horaEntrada: entrada,
+                  horaSaida: saida,
                   almocouNaEmpresaOverride:
                     editAlim === "auto"
                       ? null

@@ -5,8 +5,9 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { InputHora24h } from "@/components/InputHora24h";
 import { Label } from "@/components/ui/label";
-import { formatarCpf, normalizarCpf, dataSaidaServico } from "@shared/terceirosPagamento";
+import { formatarCpf, normalizarCpf, dataSaidaServico, normalizarHora24h } from "@shared/terceirosPagamento";
 
 const STORAGE_KEY = "terceiros.acessoToken";
 
@@ -262,11 +263,10 @@ export default function TerceirosPublicPage() {
           </div>
           <div>
             <Label htmlFor="entrada">Entrada</Label>
-            <Input
+            <InputHora24h
               id="entrada"
-              type="time"
               value={horaEntrada}
-              onChange={e => setHoraEntrada(e.target.value)}
+              onChange={setHoraEntrada}
             />
             <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
               {fmtDataBr(dataServico)}
@@ -274,11 +274,10 @@ export default function TerceirosPublicPage() {
           </div>
           <div>
             <Label htmlFor="saida">Saída</Label>
-            <Input
+            <InputHora24h
               id="saida"
-              type="time"
               value={horaSaida}
-              onChange={e => setHoraSaida(e.target.value)}
+              onChange={setHoraSaida}
             />
             <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
               {fmtDataBr(
@@ -292,11 +291,19 @@ export default function TerceirosPublicPage() {
               disabled={salvar.isPending || !token}
               onClick={() => {
                 if (!token) return;
+                const entrada = normalizarHora24h(horaEntrada);
+                const saida = normalizarHora24h(horaSaida);
+                if (!entrada || !saida) {
+                  toast.error("Digite a hora no formato 24h, como 07:00.");
+                  return;
+                }
+                setHoraEntrada(entrada);
+                setHoraSaida(saida);
                 salvar.mutate({
                   acessoToken: token,
                   dataServico,
-                  horaEntrada,
-                  horaSaida,
+                  horaEntrada: entrada,
+                  horaSaida: saida,
                 });
               }}
             >

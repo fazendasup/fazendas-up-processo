@@ -3,7 +3,9 @@ import {
   calcularPagamentoDiaTerceiro,
   dataSaidaServico,
   formatarCpf,
+  mascaraHoraDigitada,
   normalizarCpf,
+  normalizarHora24h,
   TERCEIROS_VALOR_HORA,
   validarCpf,
 } from "./terceirosPagamento";
@@ -25,6 +27,23 @@ describe("formatarCpf / normalizarCpf", () => {
   it("normaliza e formata", () => {
     expect(normalizarCpf("529.982.247-25")).toBe("52998224725");
     expect(formatarCpf("52998224725")).toBe("529.982.247-25");
+  });
+});
+
+describe("mascaraHoraDigitada / normalizarHora24h", () => {
+  it("insere os dois pontos enquanto digita", () => {
+    expect(mascaraHoraDigitada("0")).toBe("0");
+    expect(mascaraHoraDigitada("07")).toBe("07");
+    expect(mascaraHoraDigitada("073")).toBe("07:3");
+    expect(mascaraHoraDigitada("0730")).toBe("07:30");
+  });
+
+  it("aceita digitação com dois pontos e normaliza para 24h", () => {
+    expect(mascaraHoraDigitada("7:30")).toBe("7:30");
+    expect(normalizarHora24h("7:30")).toBe("07:30");
+    expect(normalizarHora24h("07:30")).toBe("07:30");
+    expect(normalizarHora24h("24:00")).toBeNull();
+    expect(normalizarHora24h("07:")).toBeNull();
   });
 });
 

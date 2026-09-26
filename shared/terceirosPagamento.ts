@@ -61,6 +61,34 @@ export function validarCpf(cpf: string): boolean {
   return d1 === Number(d[9]) && d2 === Number(d[10]);
 }
 
+/**
+ * Máscara enquanto a pessoa digita a hora (24h).
+ * "0730" vira "07:30". Não abre o relógio do celular.
+ */
+export function mascaraHoraDigitada(raw: string): string {
+  if (raw.includes(":")) {
+    const [hRaw, mRaw = ""] = raw.split(":");
+    const hh = hRaw.replace(/\D/g, "").slice(0, 2);
+    const mm = mRaw.replace(/\D/g, "").slice(0, 2);
+    if (raw.endsWith(":") || mm.length > 0) {
+      return mm.length ? `${hh}:${mm}` : `${hh}:`;
+    }
+    return hh;
+  }
+  const d = raw.replace(/\D/g, "").slice(0, 4);
+  if (d.length <= 2) return d;
+  return `${d.slice(0, 2)}:${d.slice(2)}`;
+}
+
+/** "7:30" ou "0730" já mascarado → "07:30". Null se inválido. */
+export function normalizarHora24h(raw: string): string | null {
+  const min = horaParaMinutos(raw);
+  if (min == null) return null;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 /** "HH:mm" ou "HH:mm:ss" → minutos desde 00:00. */
 export function horaParaMinutos(hora: string): number | null {
   const m = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(hora.trim());
