@@ -45,6 +45,39 @@ function fmtQuando(d: Date | string): string {
   });
 }
 
+type AjusteVisivel = {
+  id: number;
+  descricao: string;
+  createdAt: Date | string;
+};
+
+/** Só o último ajuste do dia (horário e alimentação salvos juntos contam como um). */
+function ultimoAjusteDoDia(ajustes: AjusteVisivel[] | undefined): {
+  texto: string;
+  quando: Date | string;
+} | null {
+  if (!ajustes?.length) return null;
+  const ordenados = [...ajustes].sort((a, b) => {
+    const ta = new Date(a.createdAt).getTime();
+    const tb = new Date(b.createdAt).getTime();
+    if (tb !== ta) return tb - ta;
+    return b.id - a.id;
+  });
+  const maisRecente = ordenados[0]!;
+  const instante = new Date(maisRecente.createdAt).getTime();
+  const doMesmoSalvamento = ordenados.filter(
+    a => new Date(a.createdAt).getTime() === instante,
+  );
+  return {
+    texto: doMesmoSalvamento
+      .slice()
+      .reverse()
+      .map(a => a.descricao)
+      .join(" "),
+    quando: maisRecente.createdAt,
+  };
+}
+
 export default function TerceirosPublicPage() {
   const [token, setToken] = useState<string | null>(() => {
     try {
@@ -286,7 +319,9 @@ export default function TerceirosPublicPage() {
             </p>
           ) : (
             <ul className="divide-y rounded-lg border">
-              {registros.map(r => (
+              {registros.map(r => {
+                const ultimo = ultimoAjusteDoDia(r.ajustes);
+                return (
                 <li
                   key={r.id}
                   className="flex items-center justify-between gap-2 px-3 py-2.5 text-sm"
@@ -332,21 +367,14 @@ export default function TerceirosPublicPage() {
                         {r.pago ? "pago" : "em aberto"}
                       </span>
                     </p>
-                    {(r.ajustes?.length ?? 0) > 0 ? (
-                      <ul className="mt-1.5 space-y-1 border-l-2 border-sky-300 pl-2 dark:border-sky-700">
-                        {r.ajustes.map(a => (
-                          <li
-                            key={a.id}
-                            className="text-[11px] leading-snug text-sky-900 dark:text-sky-100"
-                          >
-                            <span className="font-medium">Ajuste:</span>{" "}
-                            {a.descricao}
-                            <span className="ml-1 text-muted-foreground">
-                              ({fmtQuando(a.createdAt)})
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
+                    {ultimo ? (
+                      <p className="mt-1.5 border-l-2 border-sky-300 pl-2 text-[11px] leading-snug text-sky-900 dark:border-sky-700 dark:text-sky-100">
+                        <span className="font-medium">Ajuste:</span>{" "}
+                        {ultimo.texto}
+                        <span className="ml-1 text-muted-foreground">
+                          ({fmtQuando(ultimo.quando)})
+                        </span>
+                      </p>
                     ) : null}
                   </div>
                   {!r.pago ? (
@@ -368,7 +396,8 @@ export default function TerceirosPublicPage() {
                     </Button>
                   ) : null}
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </CardContent>
