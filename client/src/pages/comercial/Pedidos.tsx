@@ -38,6 +38,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConciliacaoContaAzulPanel } from "@/components/comercial/ConciliacaoContaAzulPanel";
 import { AcoesPedidoConciliacao } from "@/components/comercial/ConciliacaoResolucaoDialogs";
+import {
+  InadimplenciaClienteBadge,
+  useInadimplenciaResumo,
+} from "@/components/comercial/InadimplenciaClienteBadge";
 import { SearchMultiSelect, SearchSelect } from "@/components/ui/search-select";
 import {
   CLIENTES_ACUMULO_ALLOWLIST_LABELS,
@@ -764,6 +768,22 @@ export function Pedidos({
   const pedidosCanceladosAgenda = pedidosAgenda.filter(
     pedido => pedido.status === "CANCELADO"
   );
+
+  const idsClientesDashboard = useMemo(() => {
+    const ids = new Set<string>();
+    for (const g of gruposDashboardAll) {
+      const id = String(g.contaAzulCustomerId ?? "").trim();
+      if (id) ids.add(id);
+    }
+    for (const p of pedidosAgenda) {
+      const id = String(p.contaAzulCustomerId ?? "").trim();
+      if (id) ids.add(id);
+    }
+    return Array.from(ids);
+  }, [gruposDashboardAll, pedidosAgenda]);
+
+  const { mapa: mapaInadimplencia } = useInadimplenciaResumo(idsClientesDashboard);
+
   const gruposAtivosPorStatus = STATUS_ATIVOS.map(status => ({
     status,
     ...STATUS_BLOCOS[status],
@@ -849,9 +869,16 @@ export function Pedidos({
         <CardContent className="space-y-3 p-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate font-bold">
-                {grupo.cliente?.nome ?? grupo.contaAzulCustomerId}
-              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="truncate font-bold">
+                  {grupo.cliente?.nome ?? grupo.contaAzulCustomerId}
+                </p>
+                <InadimplenciaClienteBadge
+                  contaAzulCustomerId={String(grupo.contaAzulCustomerId)}
+                  clienteNome={grupo.cliente?.nome}
+                  resumo={mapaInadimplencia.get(String(grupo.contaAzulCustomerId))}
+                />
+              </div>
               <p className="text-xs text-muted-foreground">
                 {grupo.cliente?.cnpjCpf || "Sem documento"} ·{" "}
                 {grupo.pedidos.length} pedido(s)
@@ -2300,9 +2327,18 @@ export function Pedidos({
                           >
                             <div className="flex flex-wrap justify-between gap-2">
                               <div>
-                                <p className="font-semibold">
-                                  {p.cliente?.nome ?? p.contaAzulCustomerId}
-                                </p>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="font-semibold">
+                                    {p.cliente?.nome ?? p.contaAzulCustomerId}
+                                  </p>
+                                  <InadimplenciaClienteBadge
+                                    contaAzulCustomerId={String(p.contaAzulCustomerId)}
+                                    clienteNome={p.cliente?.nome}
+                                    resumo={mapaInadimplencia.get(
+                                      String(p.contaAzulCustomerId),
+                                    )}
+                                  />
+                                </div>
                                 <p className="text-xs text-muted-foreground">
                                   {TIPOS.find(([v]) => v === p.tipoVenda)?.[1]}{" "}
                                   · {labelStatus(p.status)}

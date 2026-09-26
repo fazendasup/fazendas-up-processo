@@ -3863,6 +3863,88 @@ export const pedidosRouter = router({
       );
     }),
 
+  /** Resumo de inadimplência Conta Azul para os clientes do dashboard. */
+  inadimplenciaResumo: comercialProcedure
+    .input(
+      z.object({
+        contaAzulCustomerIds: z.array(z.string().min(1)).max(200),
+      }),
+    )
+    .query(async ({ input }) => {
+      const { resumoInadimplenciaPorClientes } = await import(
+        "../lib/cliente-inadimplencia-ca.js"
+      );
+      try {
+        return await resumoInadimplenciaPorClientes(input.contaAzulCustomerIds);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Falha ao consultar inadimplência no Conta Azul.",
+        });
+      }
+    }),
+
+  /** Títulos em atraso de um cliente (Conta Azul). */
+  inadimplenciaDetalhe: comercialProcedure
+    .input(z.object({ contaAzulCustomerId: z.string().min(1) }))
+    .query(async ({ input }) => {
+      const { detalheInadimplenciaCliente } = await import(
+        "../lib/cliente-inadimplencia-ca.js"
+      );
+      try {
+        return await detalheInadimplenciaCliente(input.contaAzulCustomerId);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Falha ao consultar títulos em atraso.",
+        });
+      }
+    }),
+
+  /** Extrato a receber Conta Azul só deste cliente (para PDF). */
+  extratoClienteContaAzul: comercialProcedure
+    .input(
+      z.object({
+        contaAzulCustomerId: z.string().min(1),
+        dataInicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        dataFim: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const { extratoReceberClienteCa } = await import(
+        "../lib/cliente-inadimplencia-ca.js"
+      );
+      const hoje = new Date();
+      const fim =
+        input.dataFim ??
+        `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
+      const inicioDate = new Date(hoje.getFullYear() - 1, hoje.getMonth(), hoje.getDate());
+      const inicio =
+        input.dataInicio ??
+        `${inicioDate.getFullYear()}-${String(inicioDate.getMonth() + 1).padStart(2, "0")}-${String(inicioDate.getDate()).padStart(2, "0")}`;
+      try {
+        return await extratoReceberClienteCa({
+          contaAzulCustomerId: input.contaAzulCustomerId,
+          dataInicio: inicio,
+          dataFim: fim,
+        });
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Falha ao gerar extrato do cliente no Conta Azul.",
+        });
+      }
+    }),
+
   /**
    * Envia pedido operacional → Conta Azul.
    * Sem acúmulo: venda. Com acúmulo: orçamento (venda só no fechamento do período).
