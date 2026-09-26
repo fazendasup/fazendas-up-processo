@@ -1,10 +1,13 @@
 import { randomBytes } from "node:crypto";
-import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import {
+  terceirosAjustes,
   terceirosPrestadores,
   terceirosRegistros,
+  type InsertTerceiroAjuste,
   type InsertTerceiroPrestador,
   type InsertTerceiroRegistro,
+  type TerceiroAjusteRow,
   type TerceiroPrestadorRow,
   type TerceiroRegistroRow,
 } from "../drizzle/schema";
@@ -80,6 +83,35 @@ export async function ensureTerceirosTables(): Promise<void> {
     );
   } catch {
     // coluna já existe
+  }
+  try {
+    await db.execute(
+      sql.raw(
+        `ALTER TABLE \`terceiros_registros\` ADD COLUMN \`almocouNaEmpresaOverride\` boolean NULL`,
+      ),
+    );
+  } catch {
+    // coluna já existe
+  }
+  try {
+    await db.execute(sql.raw(`CREATE TABLE IF NOT EXISTS \`terceiros_ajustes\` (
+  \`id\` int AUTO_INCREMENT NOT NULL,
+  \`registroId\` int NOT NULL,
+  \`prestadorId\` int NOT NULL,
+  \`tipo\` varchar(32) NOT NULL,
+  \`descricao\` text NOT NULL,
+  \`detalheJson\` text NULL,
+  \`adminUserId\` int NULL,
+  \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (\`id\`),
+  KEY \`idx_terceiros_ajustes_registro\` (\`registroId\`),
+  KEY \`idx_terceiros_ajustes_prestador\` (\`prestadorId\`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!/already exists|ER_TABLE_EXISTS/i.test(msg)) {
+      console.error("[Database] ensureTerceirosTables ajustes:", err);
+    }
   }
   // Acordo do Reinaldo Bentes Mendonça (diária R$ 116 + almoço R$ 25 no turno diurno).
   // Só preenche se ainda não houver diária/observação (não sobrescreve edição manual).
@@ -266,6 +298,14 @@ export async function deleteRegistroPrestador(
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db
+    .delete(terceirosAjustes)
+    .where(
+      and(
+        eq(terceirosAjustes.registroId, registroId),
+        eq(terceirosAjustes.prestadorId, prestadorId),
+      ),
+    );
+  await db
     .delete(terceirosRegistros)
     .where(
       and(
@@ -319,6 +359,7 @@ export async function listRegistrosAdmin(opts: {
       dataServico: terceirosRegistros.dataServico,
       horaEntrada: terceirosRegistros.horaEntrada,
       horaSaida: terceirosRegistros.horaSaida,
+      almocouNaEmpresaOverride: terceirosRegistros.almocouNaEmpresaOverride,
       pagoAt: terceirosRegistros.pagoAt,
       createdAt: terceirosRegistros.createdAt,
       updatedAt: terceirosRegistros.updatedAt,
@@ -398,7 +439,144 @@ export async function deleteRegistroAdmin(id: number): Promise<void> {
   await ensureTerceirosTables();
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  await db.delete(terceirosAjustes).where(eq(terceirosAjustes.registroId, id));
   await db.delete(terceirosRegistros).where(eq(terceirosRegistros.id, id));
+}
+
+function rotuloAlimentacao(v: boolean | null | undefined): string {
+  if (v === true) return "almoço na empresa (desconta 1h, sem vale R$ 25)";
+  if (v === false) return "vale alimentação R$ 25 (sem desconto de 1h)";
+  return "automático pelo horário";
+}
+
+/** Admin ajusta horário e/ou regra de alimentação; grava histórico para o PJ. */
+export async function ajustarRegistroAdmin(input: {
+  id: number;
+  horaEntrada?: string;
+  horaSaida?: string;
+  /** undefined = não alterar; null = automático; true/false = override */
+  almocouNaEmpresaOverride?: boolean | null;
+  adminUserId?: number | null;
+}): Promise<{
+  registro: TerceiroRegistroRow;
+  ajustes: TerceiroAjusteRow[];
+}> {
+  await ensureTerceirosTables();
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const cur = await db
+    .select()
+    .from(terceirosRegistros)
+    .where(eq(terceirosRegistros.id, input.id))
+    .limit(1);
+  if (!cur[0]) throw new Error("Registro não encontrado.");
+  const before = cur[0];
+
+  const horaEntrada =
+    input.horaEntrada != null
+      ? input.horaEntrada.trim().slice(0, 5)
+      : before.horaEntrada;
+  const horaSaida =
+    input.horaSaida != null
+      ? input.horaSaida.trim().slice(0, 5)
+      : before.horaSaida;
+
+  const patch: Partial<InsertTerceiroRegistro> = {};
+  const novosAjustes: InsertTerceiroAjuste[] = [];
+
+  const horarioMudou =
+    horaEntrada !== before.horaEntrada || horaSaida !== before.horaSaida;
+  if (horarioMudou) {
+    patch.horaEntrada = horaEntrada;
+    patch.horaSaida = horaSaida;
+    novosAjustes.push({
+      registroId: before.id,
+      prestadorId: before.prestadorId,
+      tipo: "horario",
+      descricao: `Horário ajustado de ${before.horaEntrada}–${before.horaSaida} para ${horaEntrada}–${horaSaida}.`,
+      detalheJson: JSON.stringify({
+        antes: {
+          horaEntrada: before.horaEntrada,
+          horaSaida: before.horaSaida,
+        },
+        depois: { horaEntrada, horaSaida },
+      }),
+      adminUserId: input.adminUserId ?? null,
+    });
+  }
+
+  if (input.almocouNaEmpresaOverride !== undefined) {
+    const next = input.almocouNaEmpresaOverride;
+    const prev = before.almocouNaEmpresaOverride ?? null;
+    const same =
+      (next == null && prev == null) ||
+      (next === true && prev === true) ||
+      (next === false && prev === false);
+    if (!same) {
+      patch.almocouNaEmpresaOverride = next;
+      novosAjustes.push({
+        registroId: before.id,
+        prestadorId: before.prestadorId,
+        tipo: "alimentacao",
+        descricao: `Alimentação ajustada: de ${rotuloAlimentacao(prev)} para ${rotuloAlimentacao(next)}.`,
+        detalheJson: JSON.stringify({
+          antes: prev,
+          depois: next,
+        }),
+        adminUserId: input.adminUserId ?? null,
+      });
+    }
+  }
+
+  if (Object.keys(patch).length === 0) {
+    const ajustesExistentes = await listAjustesPorRegistroIds([before.id]);
+    return { registro: before, ajustes: ajustesExistentes };
+  }
+
+  await db
+    .update(terceirosRegistros)
+    .set(patch)
+    .where(eq(terceirosRegistros.id, before.id));
+
+  if (novosAjustes.length > 0) {
+    await db.insert(terceirosAjustes).values(novosAjustes);
+  }
+
+  const row = await db
+    .select()
+    .from(terceirosRegistros)
+    .where(eq(terceirosRegistros.id, before.id))
+    .limit(1);
+  if (!row[0]) throw new Error("Registro não encontrado.");
+  const ajustes = await listAjustesPorRegistroIds([before.id]);
+  return { registro: row[0], ajustes };
+}
+
+export async function listAjustesPorPrestador(
+  prestadorId: number,
+): Promise<TerceiroAjusteRow[]> {
+  await ensureTerceirosTables();
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(terceirosAjustes)
+    .where(eq(terceirosAjustes.prestadorId, prestadorId))
+    .orderBy(desc(terceirosAjustes.createdAt), desc(terceirosAjustes.id));
+}
+
+export async function listAjustesPorRegistroIds(
+  registroIds: number[],
+): Promise<TerceiroAjusteRow[]> {
+  await ensureTerceirosTables();
+  const db = await getDb();
+  if (!db || registroIds.length === 0) return [];
+  return db
+    .select()
+    .from(terceirosAjustes)
+    .where(inArray(terceirosAjustes.registroId, registroIds))
+    .orderBy(desc(terceirosAjustes.createdAt), desc(terceirosAjustes.id));
 }
 
 export async function setRegistroPago(

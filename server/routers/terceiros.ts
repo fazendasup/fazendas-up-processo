@@ -8,11 +8,14 @@ import {
   validarCpf,
 } from "@shared/terceirosPagamento";
 import {
+  ajustarRegistroAdmin,
   deleteRegistroAdmin,
   deleteRegistroPrestador,
   getPrestadorById,
   getPrestadorByToken,
   identificarPrestador,
+  listAjustesPorPrestador,
+  listAjustesPorRegistroIds,
   listPrestadoresAdmin,
   listRegistrosAdmin,
   listRegistrosPrestador,
@@ -72,21 +75,56 @@ function parseDiariaBase(raw: string | number | null | undefined): number | null
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+/** MySQL/drizzle pode devolver boolean como 0/1. */
+function parseAlmocoOverride(
+  raw: boolean | number | string | null | undefined,
+): boolean | null {
+  if (raw === true || raw === 1 || raw === "1") return true;
+  if (raw === false || raw === 0 || raw === "0") return false;
+  return null;
+}
+
+function mapAjuste(a: {
+  id: number;
+  registroId: number;
+  tipo: string;
+  descricao: string;
+  createdAt: Date;
+}) {
+  return {
+    id: a.id,
+    registroId: a.registroId,
+    tipo: a.tipo,
+    descricao: a.descricao,
+    createdAt: a.createdAt,
+  };
+}
+
 function registroComPagamento(
   r: {
     id: number;
     dataServico: string;
     horaEntrada: string;
     horaSaida: string;
+    almocouNaEmpresaOverride?: boolean | null;
     pagoAt: Date | null;
     createdAt: Date;
   },
   diariaBase?: number | null,
+  ajustes: Array<{
+    id: number;
+    registroId: number;
+    tipo: string;
+    descricao: string;
+    createdAt: Date;
+  }> = [],
 ) {
+  const override = parseAlmocoOverride(r.almocouNaEmpresaOverride);
   const pagamento = calcularPagamentoDiaTerceiro({
     horaEntrada: r.horaEntrada,
     horaSaida: r.horaSaida,
     diariaBase,
+    almocouNaEmpresaOverride: override,
   });
   const pago = r.pagoAt != null;
   return {
@@ -94,11 +132,13 @@ function registroComPagamento(
     dataServico: r.dataServico,
     horaEntrada: r.horaEntrada,
     horaSaida: r.horaSaida,
+    almocouNaEmpresaOverride: override,
     pago,
     pagoAt: r.pagoAt,
     createdAt: r.createdAt,
     pagamento,
     valorTotal: pagamento?.valorTotal ?? 0,
+    ajustes: ajustes.map(mapAjuste),
   };
 }
 
@@ -134,14 +174,23 @@ export const terceirosRouter = router({
       }
     }),
 
-  /** Sessão atual (histórico próprio + em aberto). */
+  /** Sessão atual (histórico próprio + em aberto + ajustes admin). */
   meuHistorico: publicProcedure
     .input(z.object({ acessoToken: z.string().min(16) }))
     .query(async ({ input }) => {
       const p = await assertToken(input.acessoToken);
       const diaria = parseDiariaBase(p.diariaBase);
       const regs = await listRegistrosPrestador(p.id);
-      const registros = regs.map(r => registroComPagamento(r, diaria));
+      const ajustesAll = await listAjustesPorPrestador(p.id);
+      const porReg = new Map<number, typeof ajustesAll>();
+      for (const a of ajustesAll) {
+        const list = porReg.get(a.registroId) ?? [];
+        list.push(a);
+        porReg.set(a.registroId, list);
+      }
+      const registros = regs.map(r =>
+        registroComPagamento(r, diaria, porReg.get(r.id) ?? []),
+      );
       const emAberto = Math.round(
         registros
           .filter(r => !r.pago)
@@ -161,6 +210,7 @@ export const terceirosRouter = router({
           observacao: p.observacao,
         },
         registros,
+        ajustes: ajustesAll.map(mapAjuste),
         emAberto,
         jaPago,
       };
@@ -192,7 +242,12 @@ export const terceirosRouter = router({
         url: "/terceiros-admin",
         tag: `terceiro-${row.id}`,
       });
-      return registroComPagamento(row, parseDiariaBase(p.diariaBase));
+      const ajustes = await listAjustesPorRegistroIds([row.id]);
+      return registroComPagamento(
+        row,
+        parseDiariaBase(p.diariaBase),
+        ajustes,
+      );
     }),
 
   excluirMeuRegistro: publicProcedure
@@ -277,10 +332,17 @@ export const terceirosRouter = router({
         fimIso: input.fim,
         prestadorId: input.prestadorId,
       });
+      const ajustesAll = await listAjustesPorRegistroIds(rows.map(r => r.id));
+      const porReg = new Map<number, typeof ajustesAll>();
+      for (const a of ajustesAll) {
+        const list = porReg.get(a.registroId) ?? [];
+        list.push(a);
+        porReg.set(a.registroId, list);
+      }
 
       const itens = rows.map(r => {
         const diaria = parseDiariaBase(r.diariaBase);
-        const base = registroComPagamento(r, diaria);
+        const base = registroComPagamento(r, diaria, porReg.get(r.id) ?? []);
         return {
           ...base,
           prestadorId: r.prestadorId,
@@ -360,6 +422,49 @@ export const terceirosRouter = router({
       };
     }),
 
+  /** Admin: ajusta horário e/ou desconto de alimentação; histórico visível ao PJ. */
+  ajustarRegistro: adminProcedure
+    .input(
+      z.object({
+        id: z.number().int().positive(),
+        horaEntrada: horaHm.optional(),
+        horaSaida: horaHm.optional(),
+        /** null = automático; true = almoço empresa; false = vale R$ 25 */
+        almocouNaEmpresaOverride: z.boolean().nullable().optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      if (
+        input.horaEntrada != null &&
+        input.horaSaida != null
+      ) {
+        assertHorarios(input.horaEntrada, input.horaSaida);
+      } else if (input.horaEntrada != null || input.horaSaida != null) {
+        // precisa ambos se alterar horário — busca atual no DB via ajustar
+      }
+      try {
+        const { registro, ajustes } = await ajustarRegistroAdmin({
+          id: input.id,
+          horaEntrada: input.horaEntrada,
+          horaSaida: input.horaSaida,
+          almocouNaEmpresaOverride: input.almocouNaEmpresaOverride,
+          adminUserId: ctx.user?.id ?? null,
+        });
+        assertHorarios(registro.horaEntrada, registro.horaSaida);
+        const p = await getPrestadorById(registro.prestadorId);
+        return registroComPagamento(
+          registro,
+          parseDiariaBase(p?.diariaBase),
+          ajustes,
+        );
+      } catch (e) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: e instanceof Error ? e.message : "Falha ao ajustar.",
+        });
+      }
+    }),
+
   marcarPago: adminProcedure
     .input(
       z.object({
@@ -370,7 +475,12 @@ export const terceirosRouter = router({
     .mutation(async ({ input }) => {
       const row = await setRegistroPago(input.id, input.pago);
       const p = await getPrestadorById(row.prestadorId);
-      return registroComPagamento(row, parseDiariaBase(p?.diariaBase));
+      const ajustes = await listAjustesPorRegistroIds([row.id]);
+      return registroComPagamento(
+        row,
+        parseDiariaBase(p?.diariaBase),
+        ajustes,
+      );
     }),
 
   excluirPrestador: adminProcedure

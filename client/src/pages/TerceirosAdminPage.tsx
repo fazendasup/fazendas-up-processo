@@ -1,12 +1,25 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
-import { ExternalLink, Trash2, CheckCircle2, Circle } from "lucide-react";
+import {
+  ExternalLink,
+  Trash2,
+  CheckCircle2,
+  Circle,
+  Pencil,
+} from "lucide-react";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -58,6 +71,16 @@ function fmtDataBr(iso: string): string {
 }
 
 type ModoFiltro = "dia" | "semana" | "periodo";
+type AlimModo = "auto" | "empresa" | "vale";
+
+type RegistroEditavel = {
+  id: number;
+  nomeCompleto: string;
+  dataServico: string;
+  horaEntrada: string;
+  horaSaida: string;
+  almocouNaEmpresaOverride: boolean | null;
+};
 
 export default function TerceirosAdminPage() {
   const hoje = hojeIsoSp();
@@ -66,6 +89,10 @@ export default function TerceirosAdminPage() {
   const [inicio, setInicio] = useState(inicioSemanaIso(hoje));
   const [fim, setFim] = useState(addDaysIso(inicioSemanaIso(hoje), 6));
   const [prestadorId, setPrestadorId] = useState<string>("todos");
+  const [editando, setEditando] = useState<RegistroEditavel | null>(null);
+  const [editEntrada, setEditEntrada] = useState("07:00");
+  const [editSaida, setEditSaida] = useState("16:00");
+  const [editAlim, setEditAlim] = useState<AlimModo>("auto");
 
   const periodo = useMemo(() => {
     if (modo === "dia") return { inicio: refDia, fim: refDia };
@@ -85,6 +112,19 @@ export default function TerceirosAdminPage() {
       prestadorId === "todos" ? null : Number(prestadorId) || null,
   });
 
+  useEffect(() => {
+    if (!editando) return;
+    setEditEntrada(editando.horaEntrada);
+    setEditSaida(editando.horaSaida);
+    setEditAlim(
+      editando.almocouNaEmpresaOverride === true
+        ? "empresa"
+        : editando.almocouNaEmpresaOverride === false
+          ? "vale"
+          : "auto",
+    );
+  }, [editando]);
+
   const excluirPrestador = trpc.terceiros.excluirPrestador.useMutation({
     onSuccess: async () => {
       toast.success("Prestador removido");
@@ -98,7 +138,7 @@ export default function TerceirosAdminPage() {
 
   const excluirRegistro = trpc.terceiros.excluirRegistro.useMutation({
     onSuccess: async () => {
-      toast.success("Registro removido");
+      toast.success("Dia removido");
       await utils.terceiros.listRegistros.invalidate();
     },
     onError: err => toast.error(err.message),
@@ -112,20 +152,32 @@ export default function TerceirosAdminPage() {
     onError: err => toast.error(err.message),
   });
 
+  const ajustar = trpc.terceiros.ajustarRegistro.useMutation({
+    onSuccess: async () => {
+      toast.success("Ajuste salvo — o PJ verá no histórico");
+      setEditando(null);
+      await utils.terceiros.listRegistros.invalidate();
+    },
+    onError: err => toast.error(err.message),
+  });
+
   const data = regs.data;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <Header />
-      <main className="mx-auto max-w-6xl space-y-6 px-4 py-6">
+      <main className="mx-auto max-w-6xl space-y-4 px-4 py-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Terceiros</h1>
+            <p className="text-sm text-muted-foreground">
+              Prestação de serviços · pagamento por hora
+            </p>
           </div>
-          <Button asChild variant="outline" size="sm" className="gap-1">
-            <Link href="/terceiros" target="_blank">
-              <ExternalLink className="h-3.5 w-3.5" />
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/terceiros">
               Página pública
+              <ExternalLink className="ml-1 h-3.5 w-3.5" />
             </Link>
           </Button>
         </div>
@@ -136,7 +188,7 @@ export default function TerceirosAdminPage() {
           </CardHeader>
           <CardContent className="flex flex-wrap items-end gap-3">
             <div>
-              <Label className="text-xs">Modo</Label>
+              <Label>Modo</Label>
               <Select
                 value={modo}
                 onValueChange={v => setModo(v as ModoFiltro)}
@@ -154,7 +206,7 @@ export default function TerceirosAdminPage() {
             {modo === "periodo" ? (
               <>
                 <div>
-                  <Label className="text-xs">De</Label>
+                  <Label>Início</Label>
                   <Input
                     type="date"
                     value={inicio}
@@ -162,7 +214,7 @@ export default function TerceirosAdminPage() {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs">Até</Label>
+                  <Label>Fim</Label>
                   <Input
                     type="date"
                     value={fim}
@@ -172,9 +224,7 @@ export default function TerceirosAdminPage() {
               </>
             ) : (
               <div>
-                <Label className="text-xs">
-                  {modo === "semana" ? "Dia na semana" : "Dia"}
-                </Label>
+                <Label>{modo === "dia" ? "Dia" : "Referência"}</Label>
                 <Input
                   type="date"
                   value={refDia}
@@ -183,7 +233,7 @@ export default function TerceirosAdminPage() {
               </div>
             )}
             <div>
-              <Label className="text-xs">Prestador</Label>
+              <Label>Prestador</Label>
               <Select value={prestadorId} onValueChange={setPrestadorId}>
                 <SelectTrigger className="w-[220px]">
                   <SelectValue />
@@ -198,8 +248,8 @@ export default function TerceirosAdminPage() {
                 </SelectContent>
               </Select>
             </div>
-            <p className="w-full text-xs text-muted-foreground">
-              Período: {fmtDataBr(periodo.inicio)} — {fmtDataBr(periodo.fim)}
+            <p className="text-xs text-muted-foreground">
+              {fmtDataBr(periodo.inicio)} → {fmtDataBr(periodo.fim)}
             </p>
           </CardContent>
         </Card>
@@ -208,7 +258,7 @@ export default function TerceirosAdminPage() {
           <Card>
             <CardContent className="p-4">
               <p className="text-xs uppercase text-muted-foreground">Dias</p>
-              <p className="text-2xl font-semibold tabular-nums">
+              <p className="mt-1 text-2xl font-semibold tabular-nums">
                 {data?.totais.dias ?? "—"}
               </p>
             </CardContent>
@@ -218,7 +268,7 @@ export default function TerceirosAdminPage() {
               <p className="text-xs uppercase text-muted-foreground">
                 Horas extras
               </p>
-              <p className="text-2xl font-semibold tabular-nums">
+              <p className="mt-1 text-2xl font-semibold tabular-nums">
                 {data
                   ? formatarHorasDecimais(data.totais.horasExtras)
                   : "—"}
@@ -230,7 +280,7 @@ export default function TerceirosAdminPage() {
               <p className="text-xs uppercase text-muted-foreground">
                 Total do período
               </p>
-              <p className="text-2xl font-semibold tabular-nums">
+              <p className="mt-1 text-2xl font-semibold tabular-nums">
                 {fmtMoney(data?.totais.valorTotal)}
               </p>
             </CardContent>
@@ -240,7 +290,7 @@ export default function TerceirosAdminPage() {
               <p className="text-xs uppercase text-muted-foreground">
                 Em aberto
               </p>
-              <p className="text-2xl font-semibold tabular-nums text-amber-700">
+              <p className="mt-1 text-2xl font-semibold tabular-nums text-amber-700">
                 {fmtMoney(data?.totais.emAberto)}
               </p>
             </CardContent>
@@ -324,7 +374,7 @@ export default function TerceirosAdminPage() {
               <p className="text-sm text-muted-foreground">Sem dias no filtro.</p>
             ) : (
               <div className="overflow-x-auto rounded-lg border">
-                <table className="w-full min-w-[900px] text-sm">
+                <table className="w-full min-w-[980px] text-sm">
                   <thead>
                     <tr className="border-b bg-muted/40 text-left text-[11px] font-semibold uppercase text-muted-foreground">
                       <th className="px-3 py-2">Nome</th>
@@ -343,6 +393,12 @@ export default function TerceirosAdminPage() {
                       <tr key={r.id} className="border-b last:border-0">
                         <td className="px-3 py-2 font-medium">
                           {r.nomeCompleto}
+                          {(r.ajustes?.length ?? 0) > 0 ? (
+                            <p className="mt-0.5 text-[11px] font-normal text-sky-700 dark:text-sky-300">
+                              {r.ajustes.length} ajuste
+                              {r.ajustes.length > 1 ? "s" : ""}
+                            </p>
+                          ) : null}
                         </td>
                         <td className="px-3 py-2 tabular-nums whitespace-nowrap">
                           {fmtDataBr(r.dataServico)} {r.horaEntrada}
@@ -370,7 +426,9 @@ export default function TerceirosAdminPage() {
                         <td className="px-3 py-2 text-right tabular-nums">
                           {r.pagamento
                             ? r.pagamento.almocouNaEmpresa
-                              ? "descontada"
+                              ? r.pagamento.almocouNaEmpresaManual
+                                ? "descontada*"
+                                : "descontada"
                               : fmtMoney(r.pagamento.valorAlimentacao)
                             : "—"}
                         </td>
@@ -403,7 +461,25 @@ export default function TerceirosAdminPage() {
                             )}
                           </Button>
                         </td>
-                        <td className="px-3 py-2 text-right">
+                        <td className="px-3 py-2 text-right whitespace-nowrap">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            title="Ajustar horário / alimentação"
+                            onClick={() =>
+                              setEditando({
+                                id: r.id,
+                                nomeCompleto: r.nomeCompleto,
+                                dataServico: r.dataServico,
+                                horaEntrada: r.horaEntrada,
+                                horaSaida: r.horaSaida,
+                                almocouNaEmpresaOverride:
+                                  r.almocouNaEmpresaOverride ?? null,
+                              })
+                            }
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
                           <Button
                             size="sm"
                             variant="ghost"
@@ -461,10 +537,8 @@ export default function TerceirosAdminPage() {
                       variant="ghost"
                       className="shrink-0 text-destructive"
                       disabled={excluirPrestador.isPending}
-                        onClick={() => {
-                        if (
-                          !confirm(`Excluir ${p.nomeCompleto}?`)
-                        ) {
+                      onClick={() => {
+                        if (!confirm(`Excluir ${p.nomeCompleto}?`)) {
                           return;
                         }
                         excluirPrestador.mutate({ id: p.id });
@@ -479,6 +553,93 @@ export default function TerceirosAdminPage() {
           </CardContent>
         </Card>
       </main>
+
+      <Dialog
+        open={editando != null}
+        onOpenChange={open => {
+          if (!open) setEditando(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ajustar dia</DialogTitle>
+          </DialogHeader>
+          {editando ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                {editando.nomeCompleto} · {fmtDataBr(editando.dataServico)}
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="aj-entrada">Entrada</Label>
+                  <Input
+                    id="aj-entrada"
+                    type="time"
+                    value={editEntrada}
+                    onChange={e => setEditEntrada(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="aj-saida">Saída</Label>
+                  <Input
+                    id="aj-saida"
+                    type="time"
+                    value={editSaida}
+                    onChange={e => setEditSaida(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Alimentação / desconto</Label>
+                <Select
+                  value={editAlim}
+                  onValueChange={v => setEditAlim(v as AlimModo)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">
+                      Automático pelo horário
+                    </SelectItem>
+                    <SelectItem value="empresa">
+                      Almoço na empresa (desconta 1h, sem R$ 25)
+                    </SelectItem>
+                    <SelectItem value="vale">
+                      Vale alimentação R$ 25 (sem desconto 1h)
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  O PJ verá este ajuste no histórico.
+                </p>
+              </div>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditando(null)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={ajustar.isPending || !editando}
+              onClick={() => {
+                if (!editando) return;
+                ajustar.mutate({
+                  id: editando.id,
+                  horaEntrada: editEntrada,
+                  horaSaida: editSaida,
+                  almocouNaEmpresaOverride:
+                    editAlim === "auto"
+                      ? null
+                      : editAlim === "empresa",
+                });
+              }}
+            >
+              Salvar ajuste
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

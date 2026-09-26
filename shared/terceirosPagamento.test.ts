@@ -139,6 +139,30 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
       }),
     ).toBeNull();
   });
+
+  it("override: força vale alimentação mesmo no turno diurno", () => {
+    const r = calcularPagamentoDiaTerceiro({
+      horaEntrada: "07:00",
+      horaSaida: "16:00",
+      almocouNaEmpresaOverride: false,
+    });
+    expect(r!.almocouNaEmpresa).toBe(false);
+    expect(r!.almocouNaEmpresaManual).toBe(true);
+    expect(r!.horasTrabalhadas).toBe(9);
+    expect(r!.valorAlimentacao).toBe(25);
+  });
+
+  it("override: força almoço na empresa no turno da tarde", () => {
+    const r = calcularPagamentoDiaTerceiro({
+      horaEntrada: "13:00",
+      horaSaida: "21:00",
+      almocouNaEmpresaOverride: true,
+    });
+    expect(r!.almocouNaEmpresa).toBe(true);
+    expect(r!.almocouNaEmpresaManual).toBe(true);
+    expect(r!.horasTrabalhadas).toBe(7);
+    expect(r!.valorAlimentacao).toBe(0);
+  });
 });
 
 function round2(n: number): number {

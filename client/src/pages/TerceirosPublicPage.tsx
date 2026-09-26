@@ -33,6 +33,18 @@ function fmtMoney(n: number | null | undefined): string {
   });
 }
 
+function fmtQuando(d: Date | string): string {
+  const dt = typeof d === "string" ? new Date(d) : d;
+  if (Number.isNaN(dt.getTime())) return "";
+  return dt.toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function TerceirosPublicPage() {
   const [token, setToken] = useState<string | null>(() => {
     try {
@@ -296,6 +308,15 @@ export default function TerceirosPublicPage() {
                       {r.pagamento
                         ? `${r.pagamento.horasTrabalhadas}h`
                         : ""}
+                      {r.pagamento?.almocouNaEmpresaManual
+                        ? r.pagamento.almocouNaEmpresa
+                          ? " · almoço empresa (ajustado)"
+                          : " · vale alimentação (ajustado)"
+                        : r.pagamento?.almocouNaEmpresa
+                          ? " · almoço empresa"
+                          : r.pagamento
+                            ? " · vale alimentação"
+                            : ""}
                     </p>
                     <p className="mt-0.5 text-xs">
                       <span className="font-semibold tabular-nums">
@@ -311,6 +332,22 @@ export default function TerceirosPublicPage() {
                         {r.pago ? "pago" : "em aberto"}
                       </span>
                     </p>
+                    {(r.ajustes?.length ?? 0) > 0 ? (
+                      <ul className="mt-1.5 space-y-1 border-l-2 border-sky-300 pl-2 dark:border-sky-700">
+                        {r.ajustes.map(a => (
+                          <li
+                            key={a.id}
+                            className="text-[11px] leading-snug text-sky-900 dark:text-sky-100"
+                          >
+                            <span className="font-medium">Ajuste:</span>{" "}
+                            {a.descricao}
+                            <span className="ml-1 text-muted-foreground">
+                              ({fmtQuando(a.createdAt)})
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
                   </div>
                   {!r.pago ? (
                     <Button

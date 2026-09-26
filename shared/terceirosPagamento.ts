@@ -115,6 +115,8 @@ export type PagamentoDiaTerceiro = {
   cruzaMeiaNoite: boolean;
   /** Cobriu 11h–13h → almoço na empresa (1h não remunerada). */
   almocouNaEmpresa: boolean;
+  /** true se o admin forçou o flag de almoço (não veio só do horário). */
+  almocouNaEmpresaManual: boolean;
   /** Horas remuneradas (presente − almoço se couber). */
   horasTrabalhadas: number;
   /** max(0, horasTrabalhadas − 8) — só informativo. */
@@ -133,11 +135,15 @@ export type PagamentoDiaTerceiro = {
  * Se saída &lt; entrada, interpreta como jornada noturna (saída no dia seguinte).
  *
  * @param diariaBase — diária combinada para 8h (padrão {@link TERCEIROS_DIARIA_BASE}).
+ * @param almocouNaEmpresaOverride — null/undefined = automático pelo horário;
+ *   true = almoço na empresa (desconta 1h, sem R$ 25);
+ *   false = vale alimentação R$ 25 (sem desconto de 1h).
  */
 export function calcularPagamentoDiaTerceiro(input: {
   horaEntrada: string;
   horaSaida: string;
   diariaBase?: number | null;
+  almocouNaEmpresaOverride?: boolean | null;
 }): PagamentoDiaTerceiro | null {
   const ent = horaParaMinutos(input.horaEntrada);
   const sai = horaParaMinutos(input.horaSaida);
@@ -158,9 +164,15 @@ export function calcularPagamentoDiaTerceiro(input: {
     : sai - ent;
   const horasPresente = round2(minutosPresente / 60);
   // Só desconta almoço se entrou antes das 11h e (saiu depois das 13h ou cruzou meia-noite).
-  const almocouNaEmpresa =
+  const almocouAuto =
     ent < TERCEIROS_ALMOCO_ENTRADA_ANTES_MIN &&
     (cruzaMeiaNoite || sai > TERCEIROS_ALMOCO_SAIDA_DEPOIS_MIN);
+  const almocouNaEmpresaManual =
+    input.almocouNaEmpresaOverride === true ||
+    input.almocouNaEmpresaOverride === false;
+  const almocouNaEmpresa = almocouNaEmpresaManual
+    ? Boolean(input.almocouNaEmpresaOverride)
+    : almocouAuto;
   const descontoAlmocoHoras = almocouNaEmpresa
     ? Math.min(TERCEIROS_HORAS_ALMOCO, horasPresente)
     : 0;
@@ -182,6 +194,7 @@ export function calcularPagamentoDiaTerceiro(input: {
     horasPresente,
     cruzaMeiaNoite,
     almocouNaEmpresa,
+    almocouNaEmpresaManual,
     horasTrabalhadas,
     horasExtras,
     valorHoras,

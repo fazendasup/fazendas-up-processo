@@ -1370,6 +1370,12 @@ export const terceirosRegistros = mysqlTable(
     horaEntrada: varchar("horaEntrada", { length: 5 }).notNull(),
     /** HH:mm */
     horaSaida: varchar("horaSaida", { length: 5 }).notNull(),
+    /**
+     * Override admin do almoço na empresa.
+     * null = automático pelo horário; true = desconta 1h / sem R$ 25;
+     * false = vale alimentação R$ 25 / sem desconto 1h.
+     */
+    almocouNaEmpresaOverride: boolean("almocouNaEmpresaOverride"),
     /** null = em aberto; preenchido quando admin marca como pago. */
     pagoAt: timestamp("pagoAt"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -1385,6 +1391,24 @@ export const terceirosRegistros = mysqlTable(
 
 export type TerceiroRegistroRow = typeof terceirosRegistros.$inferSelect;
 export type InsertTerceiroRegistro = typeof terceirosRegistros.$inferInsert;
+
+/** Histórico de ajustes feitos pelo admin em um registro do PJ. */
+export const terceirosAjustes = mysqlTable("terceiros_ajustes", {
+  id: int("id").autoincrement().primaryKey(),
+  registroId: int("registroId").notNull(),
+  prestadorId: int("prestadorId").notNull(),
+  /** horario | alimentacao */
+  tipo: varchar("tipo", { length: 32 }).notNull(),
+  /** Texto legível do que mudou (visível ao PJ). */
+  descricao: text("descricao").notNull(),
+  /** Snapshot JSON opcional (antes/depois). */
+  detalheJson: text("detalheJson"),
+  adminUserId: int("adminUserId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TerceiroAjusteRow = typeof terceirosAjustes.$inferSelect;
+export type InsertTerceiroAjuste = typeof terceirosAjustes.$inferInsert;
 
 /** Cabeçalho de NF de compra (XML importado ou sync Conta Azul). */
 export const compraNf = mysqlTable(
