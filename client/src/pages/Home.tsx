@@ -10,7 +10,6 @@ import { FASES_CONFIG, torreEstaAtivaNoDashboard } from '@/lib/types';
 import type { Fase } from '@/lib/types';
 import {
   resumoFazenda,
-  contarCiclosPendentes,
   calcularKPIs,
   contarPlantasAndar,
   contarColhidasAndar,
@@ -23,7 +22,6 @@ import {
   Scissors,
   Wrench,
   Leaf,
-  Clock,
   Layers,
   Target,
   Droplet,
@@ -324,8 +322,7 @@ export default function Home() {
         <AplicacoesCaixaHoje />
 
         {/* Alertas rápidos */}
-        {(resumo.ciclosPendentes > 0 ||
-          resumo.previsaoVencida > 0 ||
+        {(resumo.previsaoVencida > 0 ||
           kpis.andaresLavagemPendente > 0 ||
           kpis.manutencoesVencidas > 0 ||
           tarefasParaHojeList.length > 0 ||
@@ -333,15 +330,6 @@ export default function Home() {
           ciclosAplicacaoAtrasados > 0 ||
           totalPlantioGerminacao > 0) && (
           <section className="flex flex-wrap gap-2">
-            {resumo.ciclosPendentes > 0 && (
-              <button
-                type="button"
-                onClick={() => openAgenda('ciclos')}
-                className="inline-flex rounded-full no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-              >
-                <AlertBadge icon={<Clock className="w-3 h-3" />} text={`${resumo.ciclosPendentes} ciclo(s) pendente(s)`} color="amber" />
-              </button>
-            )}
             {resumo.previsaoVencida > 0 && (
               <button
                 type="button"
@@ -421,7 +409,6 @@ export default function Home() {
         {fases.map((fase) => {
           const cfg = data.fasesConfig?.[fase] || FASES_CONFIG[fase];
           const torresFase = torresAtivas.filter((t) => t.fase === fase);
-          const ciclosPendentes = contarCiclosPendentes(data.ciclos, fase);
 
           return (
             <section key={fase}>
@@ -436,9 +423,6 @@ export default function Home() {
                 <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
                   <span>EC {cfg.ecMin}-{cfg.ecMax}</span>
                   <span>pH {cfg.phMin}-{cfg.phMax}</span>
-                  {ciclosPendentes > 0 && (
-                    <span className="text-amber-600 dark:text-amber-400 font-semibold">{ciclosPendentes} ciclo(s) pendente(s)</span>
-                  )}
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">

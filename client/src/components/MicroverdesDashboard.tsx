@@ -12,7 +12,6 @@ import {
   Scissors,
   Wrench,
   Leaf,
-  Clock,
   Layers,
   Target,
   Droplet,
@@ -31,7 +30,6 @@ import {
 } from "@/lib/microverdesPhases";
 import {
   resumoFazenda,
-  contarCiclosPendentes,
   calcularKPIs,
   contarPlantasAndar,
   contarColhidasAndar,
@@ -295,8 +293,7 @@ export default function MicroverdesDashboard() {
 
         <AplicacoesCaixaHoje />
 
-        {(resumo.ciclosPendentes > 0 ||
-          resumo.previsaoVencida > 0 ||
+        {(resumo.previsaoVencida > 0 ||
           kpis.andaresLavagemPendente > 0 ||
           kpis.manutencoesVencidas > 0 ||
           tarefasParaHojeList.length > 0 ||
@@ -304,15 +301,6 @@ export default function MicroverdesDashboard() {
           ciclosAplicacaoAtrasados > 0 ||
           totalPlantioGerminacao > 0) && (
           <section className="flex flex-wrap gap-2">
-            {resumo.ciclosPendentes > 0 && (
-              <button
-                type="button"
-                onClick={() => openAgenda('ciclos')}
-                className="inline-flex rounded-full no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-              >
-                <AlertBadgeMv icon={<Clock className="w-3 h-3" />} text={`${resumo.ciclosPendentes} ciclo(s) pendente(s)`} color="amber" />
-              </button>
-            )}
             {resumo.previsaoVencida > 0 && (
               <button
                 type="button"
@@ -451,7 +439,6 @@ export default function MicroverdesDashboard() {
           const refFase = fases[0]!;
           const cfg = data.fasesConfig?.[refFase] || FASES_CONFIG[refFase];
           const torresFase = torresAtivas.filter((t) => fases.includes(t.fase));
-          const ciclosPendentes = fases.reduce((s, f) => s + contarCiclosPendentes(data.ciclos, f), 0);
 
           return (
             <section key={id}>
@@ -470,9 +457,6 @@ export default function MicroverdesDashboard() {
                   <span>
                     pH {cfg.phMin}-{cfg.phMax}
                   </span>
-                  {ciclosPendentes > 0 && (
-                    <span className="text-amber-600 dark:text-amber-400 font-semibold">{ciclosPendentes} ciclo(s) pendente(s)</span>
-                  )}
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
