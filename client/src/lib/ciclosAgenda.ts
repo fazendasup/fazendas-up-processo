@@ -1,7 +1,7 @@
 // Alinha contagens do dashboard com o cartão de ciclos da agenda do dia.
 
 import type { CicloAplicacao } from '@/lib/types';
-import { cicloPendenteHoje } from '@/lib/utils-farm';
+import { cicloTemPendencia } from '@/lib/utils-farm';
 import { filtroTarefasParaHoje, startOfLocalDayMs } from '@/lib/tarefasHoje';
 
 export type TarefaBaseParaCiclo = {
@@ -31,7 +31,7 @@ export function linhasCicloOperacaoHoje<T extends TarefaBaseParaCiclo>(
   todasTarefas: T[],
 ): LinhaCicloOperacao<T>[] {
   const tarefasHoje = filtroTarefasParaHoje(todasTarefas);
-  const ciclosHoje = ciclos.filter((c) => cicloPendenteHoje(c));
+  const ciclosHoje = ciclos.filter((c) => cicloTemPendencia(c));
   const tarefasCicloHoje = tarefasHoje.filter((t) => t.tipo === 'ciclo');
 
   const map = new Map<string, LinhaCicloOperacao<T>>();
@@ -46,7 +46,7 @@ export function linhasCicloOperacaoHoje<T extends TarefaBaseParaCiclo>(
     const cid = t.cicloId;
     if (cid != null) {
       const cicloFull = ciclos.find((c) => cicloNumericId(c) === cid) ?? null;
-      if (cicloFull && !cicloPendenteHoje(cicloFull)) continue;
+      if (cicloFull && !cicloTemPendencia(cicloFull)) continue;
       const k = `c-${cid}`;
       if (map.has(k)) map.get(k)!.tarefa = t;
       else map.set(k, { key: k, cicloNumId: cid, ciclo: cicloFull, tarefa: t });

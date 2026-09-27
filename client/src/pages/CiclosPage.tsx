@@ -9,7 +9,7 @@ import { FASES_CONFIG } from '@/lib/types';
 type FrequenciaCiclo = "diaria" | "semanal" | "quinzenal" | "mensal" | "personalizada";
 type AlvoCiclo = "ambos" | "caixa" | "andar";
 
-import { cicloPendenteHoje, formatarDataHora, DIAS_SEMANA } from '@/lib/utils-farm';
+import { cicloTemPendencia, formatarDataHora, DIAS_SEMANA } from '@/lib/utils-farm';
 import { useFazendaMutations } from '@/hooks/useFazendaMutations';
 import { useDbIdResolver } from '@/hooks/useDbIdResolver';
 import { Button } from '@/components/ui/button';
@@ -90,6 +90,7 @@ export default function CiclosPage() {
   const [datesEspecificas, setDatesEspecificas] = useState<string[]>([hojeYmdLocal()]);
   const [dosagensEspecificas, setDosagensEspecificas] = useState<string[]>(['']);
   const [dosagem, setDosagem] = useState<string>('');
+  const [caixasSelecionadas, setCaixasSelecionadas] = useState<string[]>([]);
   const [modoData, setModoData] = useState<'frequencia' | 'especifica'>('frequencia');
   /** Edição: última aplicação (YYYY-MM-DD); vazio = não alterar o campo no servidor */
   const [ultimaExecucaoYmd, setUltimaExecucaoYmd] = useState('');
@@ -114,6 +115,12 @@ export default function CiclosPage() {
     );
   };
 
+  const toggleCaixa = (caixaId: string) => {
+    setCaixasSelecionadas((prev) =>
+      prev.includes(caixaId) ? prev.filter((id) => id !== caixaId) : [...prev, caixaId]
+    );
+  };
+
   const resetForm = () => {
     setNomeCiclo('');
     setFrequencia('');
@@ -124,6 +131,7 @@ export default function CiclosPage() {
     setDatesEspecificas([hojeYmdLocal()]);
     setDosagensEspecificas(['']);
     setDosagem('');
+    setCaixasSelecionadas([]);
     setModoData('frequencia');
     setIntervaloDiasStr('');
     setProduto('');
@@ -148,6 +156,7 @@ export default function CiclosPage() {
     setAlvo(ciclo.alvo);
     setDiasSelecionados(ciclo.diasSemana || []);
     setFasesSelecionadas([...ciclo.fasesAplicaveis]);
+    setCaixasSelecionadas([...(ciclo.caixaIds ?? [])]);
     setIntervaloDiasStr(
       ciclo.intervaloDias != null && ciclo.intervaloDias > 0 ? String(ciclo.intervaloDias) : ''
     );
@@ -181,6 +190,7 @@ export default function CiclosPage() {
     setAlvo(ciclo.alvo);
     setDiasSelecionados([...(ciclo.diasSemana || [])]);
     setFasesSelecionadas([...ciclo.fasesAplicaveis]);
+    setCaixasSelecionadas([...(ciclo.caixaIds ?? [])]);
     setIntervaloDiasStr(
       ciclo.intervaloDias != null && ciclo.intervaloDias > 0 ? String(ciclo.intervaloDias) : ''
     );
@@ -257,6 +267,21 @@ export default function CiclosPage() {
       return;
     }
 
+    const aplicaEmCaixa = alvo !== 'andar' && data.caixasAgua.length > 0;
+    if (aplicaEmCaixa && caixasSelecionadas.length === 0) {
+      toast.error('Escolha pelo menos uma caixa');
+      return;
+    }
+    const caixaIds = aplicaEmCaixa
+      ? caixasSelecionadas
+          .map((slug) => resolver.caixaSlugToId.get(slug))
+          .filter((id): id is number => id != null)
+      : [];
+    if (aplicaEmCaixa && caixaIds.length === 0) {
+      toast.error('Não foi possível identificar as caixas. Atualize a página.');
+      return;
+    }
+
     if (editingId) {
       const dbId = resolver.cicloFrontIdToDbId.get(editingId);
       if (!dbId) { toast.error('Ciclo não encontrado'); return; }
@@ -299,6 +324,7 @@ export default function CiclosPage() {
         dosagem: dosagem.trim() || null,
         fasesAplicaveis: fasesSelecionadas,
         alvo,
+        caixaIds,
         ...(dataInicioDate ? { dataInicio: dataInicioDate } : {}),
         ...(ultimaExecucao !== undefined ? { ultimaExecucao } : {}),
       });
@@ -321,6 +347,7 @@ export default function CiclosPage() {
         dosagem: dosagem.trim() || undefined,
         fasesAplicaveis: fasesSelecionadas,
         alvo,
+        caixaIds,
         ...(dataInicioDate ? { dataInicio: dataInicioDate } : {}),
       }, {
         onSuccess: () => {
@@ -383,7 +410,7 @@ export default function CiclosPage() {
     );
   };
 
-  const ciclosPendentes = data.ciclos.filter((c) => cicloPendenteHoje(c));
+  const ciclosPendentes = data.ciclos.filter((c) => cicloTemPendencia(c));
 
 
   return (
@@ -511,6 +538,36 @@ export default function CiclosPage() {
                     ))}
                   </div>
                 </div>
+
+                {alvo !== 'andar' && data.caixasAgua.length > 0 && (
+                  <div>
+                    <Label className="text-xs mb-2 block">Caixas *</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {data.caixasAgua.map((caixa) => {
+                        const torres = data.torres
+                          .filter((t) => t.caixaAguaId === caixa.id)
+                          .map((t) => t.numeroTorre)
+                          .sort((a, b) => a - b);
+                        const ativo = caixasSelecionadas.includes(caixa.id);
+                        return (
+                          <button
+                            key={caixa.id}
+                            type="button"
+                            onClick={() => toggleCaixa(caixa.id)}
+                            className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                              ativo
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'bg-muted text-muted-foreground border-border'
+                            }`}
+                          >
+                            {caixa.nome}
+                            {torres.length > 0 ? ` · torres ${torres.join(', ')}` : ''}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 <div className="border-t pt-4">
                   <Label className="text-xs font-semibold mb-3 block">Modo de Agendamento</Label>
@@ -746,6 +803,10 @@ export default function CiclosPage() {
                   key={ciclo.id}
                   ciclo={ciclo}
                   pendente
+                  caixasLabel={(ciclo.caixaIds ?? [])
+                    .map((id) => data.caixasAgua.find((c) => c.id === id)?.nome)
+                    .filter(Boolean)
+                    .join(', ')}
                   onDelete={handleDelete}
                   onToggle={handleToggle}
                   onExecutar={abrirDialogExecutar}
@@ -802,7 +863,11 @@ export default function CiclosPage() {
                 <CicloItem
                   key={ciclo.id}
                   ciclo={ciclo}
-                  pendente={cicloPendenteHoje(ciclo)}
+                  pendente={cicloTemPendencia(ciclo)}
+                  caixasLabel={(ciclo.caixaIds ?? [])
+                    .map((id) => data.caixasAgua.find((c) => c.id === id)?.nome)
+                    .filter(Boolean)
+                    .join(', ')}
                   onDelete={handleDelete}
                   onToggle={handleToggle}
                   onExecutar={abrirDialogExecutar}
@@ -826,6 +891,7 @@ function CicloItem({
   onExecutar,
   onEdit,
   onDuplicate,
+  caixasLabel,
 }: {
   ciclo: CicloAplicacao;
   pendente: boolean;
@@ -834,6 +900,7 @@ function CicloItem({
   onExecutar: (id: string) => void;
   onEdit?: (id: string) => void;
   onDuplicate?: (id: string) => void;
+  caixasLabel?: string;
 }) {
   const frequenciaLabel = () => {
     switch (ciclo.frequencia) {
@@ -878,6 +945,9 @@ function CicloItem({
           <span>
             {ciclo.fasesAplicaveis.map((f) => FASES_CONFIG[f].label).join(', ')}
           </span>
+          {(ciclo.caixaIds?.length ?? 0) > 0 && caixasLabel ? (
+            <span>{caixasLabel}</span>
+          ) : null}
           {ciclo.dataInicio && (
             <span>Início: {ciclo.dataInicio.split('-').reverse().join('/')}</span>
           )}
@@ -887,7 +957,7 @@ function CicloItem({
         </div>
       </div>
       <div className="flex items-center gap-1 shrink-0">
-        {pendente && ciclo.ativo && (
+        {pendente && ciclo.ativo && (ciclo.caixaIds?.length ?? 0) === 0 && (
           <Button variant="outline" size="sm" className="h-8 text-xs gap-1 text-emerald-600 dark:text-emerald-400 border-emerald-300 hover:bg-emerald-50 dark:border-emerald-700 dark:hover:bg-emerald-950/50" onClick={() => onExecutar(ciclo.id)}>
             <CheckCircle2 className="w-3 h-3" />
             Feito

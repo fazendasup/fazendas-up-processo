@@ -33,6 +33,20 @@ function toDateStr(d: Date | string | null | undefined): string | null {
   return d;
 }
 
+function parseIdList(raw: unknown): number[] {
+  const value = typeof raw === "string" ? safeParse(raw) : raw;
+  if (!Array.isArray(value)) return [];
+  return value.map((n) => Number(n)).filter((n) => Number.isFinite(n) && n > 0);
+}
+
+function safeParse(raw: string): unknown {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 /** Calendário local YYYY-MM-DD (para âncoras de agendamento). */
 function toYmdLocal(d: Date | string | null | undefined): string | undefined {
   if (!d) return undefined;
@@ -338,6 +352,16 @@ export function transformFazendaLoadAllResponse(raw: unknown): FazendaData {
     dosagem: c.dosagem || undefined,
     fasesAplicaveis: (c.fasesAplicaveis as Fase[]) || [],
     alvo: c.alvo as CicloAplicacao["alvo"],
+    caixaIds: parseIdList(c.caixaIds)
+      .map((id) => caixaSlugMap.get(id))
+      .filter((slug): slug is string => Boolean(slug)),
+    execucoesCaixa: ((r.cicloCaixaExecucoes as any[]) || [])
+      .filter((e: any) => e.cicloId === c.id)
+      .map((e: any) => ({
+        caixaId: caixaSlugMap.get(e.caixaAguaId) || "",
+        ultimaExecucao: toDateStr(e.ultimaExecucao) || undefined,
+      }))
+      .filter((e: { caixaId: string }) => e.caixaId),
     dataInicio: toYmdLocal(c.dataInicio),
     ultimaExecucao: toDateStr(c.ultimaExecucao) || undefined,
     ultimoExecutorNome: c.ultimoExecutorNome || undefined,

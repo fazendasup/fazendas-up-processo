@@ -13,6 +13,8 @@ export async function applyRuntimeSchemaEnsures(): Promise<void> {
   await db.ensureUsersCriadoPorColumn();
   await db.ensureProjetosCriadoPorColumn();
   await db.ensureCiclosDosagemColumn();
+  await db.ensureCiclosCaixaIdsColumn();
+  await db.ensureCicloCaixaExecucoesTable();
   await db.ensurePlanosPlantioGerminacaoColumns();
   await db.ensureTransplantiosRastreioColumns();
   await db.ensureManutencoesBancadaColumns();

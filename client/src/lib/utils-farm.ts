@@ -480,10 +480,25 @@ export function cicloPendenteHoje(ciclo: CicloAplicacao, dataReferencia?: Date):
   return false;
 }
 
+/** Pendência do ciclo: no alvo caixa, basta uma das caixas cadastradas estar no dia. */
+export function cicloTemPendencia(ciclo: CicloAplicacao, dataReferencia?: Date): boolean {
+  if (!ciclo.ativo) return false;
+  if (ciclo.alvo === "andar") return cicloPendenteHoje(ciclo, dataReferencia);
+  const caixas = ciclo.caixaIds ?? [];
+  if (caixas.length === 0) return cicloPendenteHoje(ciclo, dataReferencia);
+  return caixas.some((caixaId) => {
+    const ex = ciclo.execucoesCaixa?.find((e) => e.caixaId === caixaId);
+    return cicloPendenteHoje(
+      { ...ciclo, ultimaExecucao: ex?.ultimaExecucao },
+      dataReferencia,
+    );
+  });
+}
+
 /** Conta ciclos pendentes para uma fase */
 export function contarCiclosPendentes(ciclos: CicloAplicacao[], fase: Fase): number {
   return ciclos.filter(
-    (c) => c.fasesAplicaveis.includes(fase) && cicloPendenteHoje(c)
+    (c) => c.fasesAplicaveis.includes(fase) && cicloTemPendencia(c)
   ).length;
 }
 
@@ -917,7 +932,7 @@ export function resumoFazenda(data: FazendaData) {
     const torre = data.torres.find((t) => t.id === a.torreId);
     return andarOcupado(a, torre?.fase, data.projetoTipo);
   }).length;
-  const ciclosPendentes = data.ciclos.filter((c) => cicloPendenteHoje(c)).length;
+  const ciclosPendentes = data.ciclos.filter((c) => cicloTemPendencia(c)).length;
 
   let ultimaMedicao: string | null = null;
   data.caixasAgua.forEach((ca) => {

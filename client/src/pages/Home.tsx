@@ -52,6 +52,7 @@ import HidroponiaDashboard from '@/components/HidroponiaDashboard';
 import MicroverdesDashboard from '@/components/MicroverdesDashboard';
 import ProntasColheitaKpiDialog from '@/components/ProntasColheitaKpiDialog';
 import { useAgendaModal } from '@/contexts/AgendaModalContext';
+import AplicacoesCaixaHoje from '@/components/AplicacoesCaixaHoje';
 
 /** Foto das torres versionada no app (CDN Manus/CloudFront ficou 403). Cache-bust no nome ao trocar arquivo. */
 const HERO_URL = '/images/hero-fazenda.jpg?v=3';
@@ -319,6 +320,8 @@ export default function Home() {
             })}
           </div>
         </section>
+
+        <AplicacoesCaixaHoje />
 
         {/* Alertas rápidos */}
         {(resumo.ciclosPendentes > 0 ||

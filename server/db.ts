@@ -30,6 +30,7 @@ import {
   transplantios, InsertTransplantio,
   manutencoes, InsertManutencao,
   ciclos, InsertCiclo,
+  cicloCaixaExecucoes,
   receitasCrescimento, InsertReceitaCrescimento,
   tarefas, InsertTarefa,
   registrosColheita, InsertRegistroColheita,
@@ -3413,6 +3414,7 @@ export async function getAllCiclos(projetoId: number) {
   if (!db) return [];
   await ensureCiclosDosagemColumn();
   await ensureCiclosDataInicioColumn();
+  await ensureCiclosCaixaIdsColumn();
   return db.select().from(ciclos).where(eq(ciclos.projetoId, projetoId));
 }
 
@@ -3421,6 +3423,7 @@ export async function createCiclo(data: InsertCiclo) {
   if (!db) throw new Error("Database not available");
   await ensureCiclosDosagemColumn();
   await ensureCiclosDataInicioColumn();
+  await ensureCiclosCaixaIdsColumn();
   const result = await db.insert(ciclos).values(data);
   return { id: result[0].insertId };
 }
@@ -3430,6 +3433,7 @@ export async function updateCiclo(projetoId: number, id: number, data: Partial<I
   if (!db) throw new Error("Database not available");
   await ensureCiclosDosagemColumn();
   await ensureCiclosDataInicioColumn();
+  await ensureCiclosCaixaIdsColumn();
   await db.update(ciclos).set(data).where(and(eq(ciclos.projetoId, projetoId), eq(ciclos.id, id)));
 }
 
@@ -3450,6 +3454,8 @@ export async function loadFullFazendaData(projetoId: number) {
   // Compat: adiciona colunas novas em bases antigas (ex.: testes/local sem migrate).
   await ensureCiclosDosagemColumn();
   await ensureCiclosDataInicioColumn();
+  await ensureCiclosCaixaIdsColumn();
+  await ensureCicloCaixaExecucoesTable();
   await ensureMedicoesCaixaTemperaturaColumn();
   await ensureMedicoesAuditoriaTable();
   await ensureTransplantiosRastreioColumns();
@@ -3481,6 +3487,7 @@ export async function loadFullFazendaData(projetoId: number) {
     allTransplantios,
     allManutencoes,
     allCiclos,
+    allCicloCaixaExecucoes,
     allReceitas,
     allTarefas,
     allRegistrosColheita,
@@ -3507,6 +3514,7 @@ export async function loadFullFazendaData(projetoId: number) {
     db.select().from(transplantios).where(eq(transplantios.projetoId, projetoId)),
     db.select().from(manutencoes).where(eq(manutencoes.projetoId, projetoId)),
     db.select().from(ciclos).where(eq(ciclos.projetoId, projetoId)),
+    db.select().from(cicloCaixaExecucoes).where(eq(cicloCaixaExecucoes.projetoId, projetoId)),
     db.select().from(receitasCrescimento).where(eq(receitasCrescimento.projetoId, projetoId)),
     db.select().from(tarefas).where(eq(tarefas.projetoId, projetoId)),
     db.select().from(registrosColheita).where(eq(registrosColheita.projetoId, projetoId)),
@@ -3546,6 +3554,7 @@ export async function loadFullFazendaData(projetoId: number) {
     transplantios: allTransplantios,
     manutencoes: allManutencoes,
     ciclos: allCiclos,
+    cicloCaixaExecucoes: allCicloCaixaExecucoes,
     receitas: allReceitas,
     tarefas: allTarefas,
     registrosColheita: allRegistrosColheita,
@@ -3720,6 +3729,129 @@ export async function ensureCiclosDosagemColumn(): Promise<void> {
     if (isMysqlDuplicateColumnError(err)) return;
     if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
     console.error("[Database] ensureCiclosDosagemColumn:", err);
+  }
+}
+
+/** Garante coluna `caixaIds` e a tabela de execução por caixa. */
+export async function ensureCiclosCaixaIdsColumn(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.execute(sql.raw("ALTER TABLE `ciclos` ADD COLUMN `caixaIds` json NULL"));
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (isMysqlDuplicateColumnError(err)) return;
+    if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
+    console.error("[Database] ensureCiclosCaixaIdsColumn:", err);
+  }
+}
+
+export async function ensureCicloCaixaExecucoesTable(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.execute(sql.raw(`CREATE TABLE IF NOT EXISTS \`ciclo_caixa_execucoes\` (
+  \`id\` int AUTO_INCREMENT NOT NULL,
+  \`projetoId\` int NOT NULL,
+  \`cicloId\` int NOT NULL,
+  \`caixaAguaId\` int NOT NULL,
+  \`ultimaExecucao\` timestamp NOT NULL,
+  \`executorId\` int NULL,
+  \`executorNome\` varchar(128) NULL,
+  \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (\`id\`),
+  UNIQUE KEY \`uq_ciclo_caixa_exec\` (\`cicloId\`, \`caixaAguaId\`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!/already exists|ER_TABLE_EXISTS/i.test(msg)) {
+      console.error("[Database] ensureCicloCaixaExecucoesTable:", err);
+    }
+  }
+}
+
+export async function registrarAplicacaoCicloNaCaixa(input: {
+  projetoId: number;
+  cicloId: number;
+  caixaAguaId: number;
+  executorId: number;
+  executorNome: string;
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await ensureCiclosCaixaIdsColumn();
+  await ensureCicloCaixaExecucoesTable();
+
+  const rows = await db
+    .select()
+    .from(ciclos)
+    .where(and(eq(ciclos.projetoId, input.projetoId), eq(ciclos.id, input.cicloId)))
+    .limit(1);
+  const ciclo = rows[0];
+  if (!ciclo) throw new Error("Ciclo não encontrado.");
+
+  const ids = parseCaixaIdsJson(ciclo.caixaIds);
+  if (!ids.includes(input.caixaAguaId)) {
+    throw new Error("Esta caixa não faz parte deste ciclo.");
+  }
+  const caixa = await getCaixaAguaById(input.projetoId, input.caixaAguaId);
+  if (!caixa) throw new Error("Caixa não encontrada.");
+
+  const agora = new Date();
+  const existente = await db
+    .select()
+    .from(cicloCaixaExecucoes)
+    .where(
+      and(
+        eq(cicloCaixaExecucoes.cicloId, input.cicloId),
+        eq(cicloCaixaExecucoes.caixaAguaId, input.caixaAguaId),
+      ),
+    )
+    .limit(1);
+
+  if (existente[0]) {
+    await db
+      .update(cicloCaixaExecucoes)
+      .set({
+        ultimaExecucao: agora,
+        executorId: input.executorId,
+        executorNome: input.executorNome,
+      })
+      .where(eq(cicloCaixaExecucoes.id, existente[0].id));
+  } else {
+    await db.insert(cicloCaixaExecucoes).values({
+      projetoId: input.projetoId,
+      cicloId: input.cicloId,
+      caixaAguaId: input.caixaAguaId,
+      ultimaExecucao: agora,
+      executorId: input.executorId,
+      executorNome: input.executorNome,
+    });
+  }
+
+  await createAplicacaoCaixa({
+    projetoId: input.projetoId,
+    caixaAguaId: input.caixaAguaId,
+    tipo: ciclo.tipo || "ciclo",
+    produto: ciclo.produto,
+    quantidade: ciclo.dosagem?.trim() || "conforme ciclo",
+    dataHora: agora,
+    executadoPorId: input.executorId,
+    executadoPorNome: input.executorNome,
+  });
+}
+
+function parseCaixaIdsJson(raw: unknown): number[] {
+  const value = typeof raw === "string" ? safeJson(raw) : raw;
+  if (!Array.isArray(value)) return [];
+  return value.map(n => Number(n)).filter(n => Number.isFinite(n) && n > 0);
+}
+
+function safeJson(raw: string): unknown {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
   }
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cicloPendenteHoje } from "./utils-farm";
+import { cicloPendenteHoje, cicloTemPendencia } from "./utils-farm";
 import type { CicloAplicacao } from "./types";
 
 function base(over: Partial<CicloAplicacao> = {}): CicloAplicacao {
@@ -77,5 +77,35 @@ describe("cicloPendenteHoje", () => {
     // Hoje é dia 12 às 14:00 (já executado hoje)
     const hojeTarde = new Date(2026, 8, 12, 14, 0, 0);
     expect(cicloPendenteHoje(ciclo, hojeTarde)).toBe(false);
+  });
+});
+
+describe("cicloTemPendencia", () => {
+  it("fica pendente se alguma caixa do ciclo ainda não foi aplicada hoje", () => {
+    const hoje = new Date(2026, 8, 12, 14, 0, 0);
+    const ciclo = base({
+      frequencia: "personalizada",
+      intervaloDias: 2,
+      dataInicio: "2026-09-06",
+      caixaIds: ["caixa-a", "caixa-b"],
+      execucoesCaixa: [
+        { caixaId: "caixa-a", ultimaExecucao: "2026-09-12T10:00:00" },
+      ],
+    });
+    expect(cicloTemPendencia(ciclo, hoje)).toBe(true);
+  });
+
+  it("não fica pendente quando todas as caixas foram aplicadas hoje", () => {
+    const hoje = new Date(2026, 8, 12, 14, 0, 0);
+    const ciclo = base({
+      frequencia: "personalizada",
+      intervaloDias: 2,
+      dataInicio: "2026-09-06",
+      caixaIds: ["caixa-a"],
+      execucoesCaixa: [
+        { caixaId: "caixa-a", ultimaExecucao: "2026-09-12T10:00:00" },
+      ],
+    });
+    expect(cicloTemPendencia(ciclo, hoje)).toBe(false);
   });
 });

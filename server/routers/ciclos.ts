@@ -16,6 +16,7 @@ const cicloBaseSchema = z.object({
   dosagem: z.string().optional(),
   fasesAplicaveis: z.array(faseCicloSchema).min(1),
   alvo: alvoCicloSchema.default("ambos"),
+  caixaIds: z.array(z.number().int().positive()).optional(),
   ativo: z.boolean().default(true),
   dataInicio: z.coerce.date().optional(),
 });
@@ -38,6 +39,7 @@ export const ciclosRouter = router({
         dosagem: z.string().nullable().optional(),
         dataInicio: z.coerce.date().nullable().optional(),
         ultimaExecucao: z.coerce.date().nullable().optional(),
+        caixaIds: z.array(z.number().int().positive()).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -59,6 +61,24 @@ export const ciclosRouter = router({
         ultimoExecutorNome: ctx.user.name || "Usuário",
       });
       return { success: true };
+    }),
+  /** Registra a aplicação numa caixa. A próxima data dessa caixa segue o ritmo do ciclo. */
+  aplicarNaCaixa: projectProcedure
+    .input(
+      z.object({
+        cicloId: z.number().int().positive(),
+        caixaAguaId: z.number().int().positive(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      await db.registrarAplicacaoCicloNaCaixa({
+        projetoId: projetoIdFromCtx(ctx),
+        cicloId: input.cicloId,
+        caixaAguaId: input.caixaAguaId,
+        executorId: ctx.user.id,
+        executorNome: ctx.user.name || "Usuário",
+      });
+      return { success: true as const };
     }),
   delete: commercialEditorProjectProcedure
     .input(z.object({ id: z.number() }))

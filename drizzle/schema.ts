@@ -526,6 +526,8 @@ export const ciclos = mysqlTable("ciclos", {
   dosagem: varchar("dosagem", { length: 128 }),
   fasesAplicaveis: json("fasesAplicaveis").notNull(),
   alvo: varchar("alvo", { length: 16 }).notNull().default("caixa"),
+  /** Caixas d'água em que este ciclo é aplicado. A execução de cada uma é independente. */
+  caixaIds: json("caixaIds"),
   /** Âncora do agendamento (próximas aplicações / data de início no formulário). */
   dataInicio: timestamp("dataInicio"),
   ultimaExecucao: timestamp("ultimaExecucao"),
@@ -538,6 +540,27 @@ export const ciclos = mysqlTable("ciclos", {
 
 export type CicloRow = typeof ciclos.$inferSelect;
 export type InsertCiclo = typeof ciclos.$inferInsert;
+
+/** Última aplicação de um ciclo em uma caixa. O ritmo seguinte parte desta data. */
+export const cicloCaixaExecucoes = mysqlTable(
+  "ciclo_caixa_execucoes",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    projetoId: int("projetoId").notNull(),
+    cicloId: int("cicloId").notNull(),
+    caixaAguaId: int("caixaAguaId").notNull(),
+    ultimaExecucao: timestamp("ultimaExecucao").notNull(),
+    executorId: int("executorId"),
+    executorNome: varchar("executorNome", { length: 128 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (t) => ({
+    uqCicloCaixa: uniqueIndex("uq_ciclo_caixa_exec").on(t.cicloId, t.caixaAguaId),
+  }),
+);
+
+export type CicloCaixaExecucaoRow = typeof cicloCaixaExecucoes.$inferSelect;
+export type InsertCicloCaixaExecucao = typeof cicloCaixaExecucoes.$inferInsert;
 
 // ---- Receitas de Crescimento ----
 export const receitasCrescimento = mysqlTable("receitas_crescimento", {

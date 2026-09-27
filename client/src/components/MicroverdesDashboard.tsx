@@ -44,6 +44,7 @@ import { filtroTarefasParaHoje, partitionTarefasHojeVsAtrasadas } from "@/lib/ta
 import { contarCiclosAplicacaoAtrasados } from "@/lib/ciclosAgenda";
 import { filtrarPlanosPrioridadeSomenteGerminacaoPlantio } from "@/lib/planosPlantioOperacao";
 import { useAgendaModal } from "@/contexts/AgendaModalContext";
+import AplicacoesCaixaHoje from "@/components/AplicacoesCaixaHoje";
 import {
   dateKeyLocal,
   eventosPorDia,
@@ -291,6 +292,8 @@ export default function MicroverdesDashboard() {
             />
           </div>
         </section>
+
+        <AplicacoesCaixaHoje />
 
         {(resumo.ciclosPendentes > 0 ||
           resumo.previsaoVencida > 0 ||

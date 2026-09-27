@@ -299,6 +299,10 @@ export interface CicloAplicacao {
   dosagem?: string;
   fasesAplicaveis: Fase[];
   alvo: 'caixa' | 'andar' | 'ambos';
+  /** Slugs das caixas em que o ciclo é aplicado. */
+  caixaIds?: string[];
+  /** Última aplicação de cada caixa (slug). */
+  execucoesCaixa?: { caixaId: string; ultimaExecucao?: string }[];
   /** Data de início do agendamento (YYYY-MM-DD ou ISO). */
   dataInicio?: string;
   ultimaExecucao?: string;
