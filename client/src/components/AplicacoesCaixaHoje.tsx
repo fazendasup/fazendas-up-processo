@@ -7,6 +7,7 @@ import { useDbIdResolver } from "@/hooks/useDbIdResolver";
 import { Button } from "@/components/ui/button";
 import { cicloPendenteHoje } from "@/lib/utils-farm";
 import { torreEstaAtivaNoDashboard } from "@/lib/types";
+import { rotuloCaixaComoCadastro } from "@/lib/rotuloCaixaCadastro";
 
 /**
  * O que aplicar hoje, por caixa. Uma linha: torres, produto, dosagem, Aplicar.
@@ -30,6 +31,7 @@ export default function AplicacoesCaixaHoje() {
       cicloId: number;
       caixaDbId: number;
       torres: string;
+      torresDetalhe?: string;
       produto: string;
       dosagem: string;
     }[] = [];
@@ -48,24 +50,23 @@ export default function AplicacoesCaixaHoje() {
           ultimaExecucao: exec?.ultimaExecucao,
         });
         if (!pendente) continue;
-        const numeros = data.torres
-          .filter(
-            (t) => t.caixaAguaId === caixaId && torreEstaAtivaNoDashboard(t),
-          )
-          .map((t) => t.numeroTorre)
-          .sort((a, b) => a - b);
+        const ligadas = data.torres.filter(
+          (t) => t.caixaAguaId === caixaId && torreEstaAtivaNoDashboard(t),
+        );
+        const rotulo = rotuloCaixaComoCadastro(caixa.nome, ligadas);
         out.push({
           key: `${ciclo.id}-${caixaId}`,
           cicloId,
           caixaDbId,
-          torres: numeros.length > 0 ? numeros.join(" · ") : caixa.nome,
+          torres: rotulo.principal,
+          torresDetalhe: rotulo.detalhe,
           produto: ciclo.produto,
           dosagem: ciclo.dosagem?.trim() || "",
         });
       }
     }
 
-    return out.sort((a, b) => a.torres.localeCompare(b.torres, "pt-BR"));
+    return out.sort((a, b) => a.torres.localeCompare(b.torres, "pt-BR", { numeric: true }));
   }, [data, resolver.caixaSlugToId]);
 
   if (linhas.length === 0) return null;
@@ -85,9 +86,12 @@ export default function AplicacoesCaixaHoje() {
             className="surface-panel rounded-xl border border-border/70 px-4 py-3 flex items-center justify-between gap-3"
           >
             <div className="min-w-0">
-              <p className="font-display text-lg font-bold tabular-nums leading-none">
+              <p className="font-display text-base font-bold leading-tight">
                 {linha.torres}
               </p>
+              {linha.torresDetalhe ? (
+                <p className="mt-1 text-xs text-muted-foreground">{linha.torresDetalhe}</p>
+              ) : null}
               <p className="mt-1.5 text-sm">{linha.produto}</p>
               {linha.dosagem ? (
                 <p className="text-base font-semibold">{linha.dosagem}</p>

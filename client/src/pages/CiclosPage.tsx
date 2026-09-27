@@ -10,6 +10,7 @@ type FrequenciaCiclo = "diaria" | "semanal" | "quinzenal" | "mensal" | "personal
 type AlvoCiclo = "ambos" | "caixa" | "andar";
 
 import { cicloTemPendencia, formatarDataHora, DIAS_SEMANA } from '@/lib/utils-farm';
+import { numeroNoNomeCadastro, rotuloCaixaComoCadastro } from '@/lib/rotuloCaixaCadastro';
 import { useFazendaMutations } from '@/hooks/useFazendaMutations';
 import { useDbIdResolver } from '@/hooks/useDbIdResolver';
 import { Button } from '@/components/ui/button';
@@ -68,48 +69,22 @@ function dateAtLocalNoonFromYmd(ymd: string): Date {
   return d;
 }
 
-function numerosNoNome(nome: string): number {
-  const nums = nome.match(/\d+/g);
-  if (!nums?.length) return 10_000;
-  return Number(nums[nums.length - 1]);
-}
-
-function nomeCurtoCaixa(nome: string): string {
-  return nome.replace(/^Caixa Torre\s+/i, '').replace(/^Caixa\s+/i, '');
-}
-
-/** Torres ativas no rótulo; o nome curto da caixa fica visível mesmo quando o par vira número. */
-function rotuloCaixaSequencia(nome: string, torres: number[]): { principal: string; detalhe?: string } {
-  const curto = nomeCurtoCaixa(nome);
-  const extra = /baby\s*leaf/i.exec(nome)?.[0];
-  if (torres.length >= 2) {
-    const par = torres.join(' · ');
-    return { principal: extra ? `${par} · ${extra}` : par, detalhe: curto };
-  }
-  if (torres.length === 1) {
-    const principal = String(torres[0]);
-    return curto === principal ? { principal } : { principal, detalhe: curto };
-  }
-  return { principal: curto };
-}
-
 function caixasNaSequencia<T extends { id: string; nome: string; fase: Fase }>(
   caixas: T[],
-  torres: { caixaAguaId?: string; numeroTorre: number; ativa?: boolean | number | null }[],
+  torres: { nome: string; caixaAguaId?: string; ativa?: boolean | number | null }[],
   fase: Fase,
-): { caixa: T; torres: number[] }[] {
+): { caixa: T; torres: { nome: string }[] }[] {
   return caixas
     .filter((c) => c.fase === fase)
     .map((caixa) => ({
       caixa,
       torres: torres
         .filter((t) => t.caixaAguaId === caixa.id && torreEstaAtivaNoDashboard(t))
-        .map((t) => t.numeroTorre)
-        .sort((a, b) => a - b),
+        .sort((a, b) => numeroNoNomeCadastro(a.nome) - numeroNoNomeCadastro(b.nome) || a.nome.localeCompare(b.nome, 'pt-BR')),
     }))
     .sort((a, b) => {
-      const oa = a.torres[0] ?? 10_000 + numerosNoNome(a.caixa.nome);
-      const ob = b.torres[0] ?? 10_000 + numerosNoNome(b.caixa.nome);
+      const oa = a.torres[0] ? numeroNoNomeCadastro(a.torres[0].nome) : 10_000 + numeroNoNomeCadastro(a.caixa.nome);
+      const ob = b.torres[0] ? numeroNoNomeCadastro(b.torres[0].nome) : 10_000 + numeroNoNomeCadastro(b.caixa.nome);
       if (oa !== ob) return oa - ob;
       return a.caixa.nome.localeCompare(b.caixa.nome, 'pt-BR');
     });
@@ -598,16 +573,16 @@ export default function CiclosPage() {
                             <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                               {FASES_CONFIG[fase].label}
                             </p>
-                            <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-5">
+                            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
                               {lista.map(({ caixa, torres }) => {
                                 const ativo = caixasSelecionadas.includes(caixa.id);
-                                const rotulo = rotuloCaixaSequencia(caixa.nome, torres);
+                                const rotulo = rotuloCaixaComoCadastro(caixa.nome, torres);
                                 return (
                                   <button
                                     key={caixa.id}
                                     type="button"
                                     onClick={() => toggleCaixa(caixa.id)}
-                                    className={`rounded-md border px-2 py-1.5 text-center text-xs font-semibold tabular-nums transition-colors ${
+                                    className={`rounded-md border px-2 py-1.5 text-center text-xs font-semibold transition-colors ${
                                       ativo
                                         ? 'bg-primary text-primary-foreground border-primary'
                                         : 'bg-muted text-muted-foreground border-border'
