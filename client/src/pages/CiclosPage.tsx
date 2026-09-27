@@ -4,7 +4,7 @@
 import Header from '@/components/Header';
 import { useFazenda } from '@/contexts/FazendaContext';
 import type { CicloAplicacao, Fase } from '@/lib/types';
-import { FASES_CONFIG } from '@/lib/types';
+import { FASES_CONFIG, torreEstaAtivaNoDashboard } from '@/lib/types';
 
 type FrequenciaCiclo = "diaria" | "semanal" | "quinzenal" | "mensal" | "personalizada";
 type AlvoCiclo = "ambos" | "caixa" | "andar";
@@ -74,16 +74,28 @@ function numerosNoNome(nome: string): number {
   return Number(nums[nums.length - 1]);
 }
 
-/** Uma caixa que abastece duas torres vira um único rótulo, na ordem das torres. */
-function rotuloCaixaSequencia(nome: string, torres: number[]): string {
-  if (torres.length >= 2) return torres.join(' · ');
-  if (torres.length === 1) return String(torres[0]);
-  return nome.replace(/^Caixa Torre\s+/i, '');
+function nomeCurtoCaixa(nome: string): string {
+  return nome.replace(/^Caixa Torre\s+/i, '').replace(/^Caixa\s+/i, '');
+}
+
+/** Torres ativas no rótulo; o nome curto da caixa fica visível mesmo quando o par vira número. */
+function rotuloCaixaSequencia(nome: string, torres: number[]): { principal: string; detalhe?: string } {
+  const curto = nomeCurtoCaixa(nome);
+  const extra = /baby\s*leaf/i.exec(nome)?.[0];
+  if (torres.length >= 2) {
+    const par = torres.join(' · ');
+    return { principal: extra ? `${par} · ${extra}` : par, detalhe: curto };
+  }
+  if (torres.length === 1) {
+    const principal = String(torres[0]);
+    return curto === principal ? { principal } : { principal, detalhe: curto };
+  }
+  return { principal: curto };
 }
 
 function caixasNaSequencia<T extends { id: string; nome: string; fase: Fase }>(
   caixas: T[],
-  torres: { caixaAguaId?: string; numeroTorre: number }[],
+  torres: { caixaAguaId?: string; numeroTorre: number; ativa?: boolean | number | null }[],
   fase: Fase,
 ): { caixa: T; torres: number[] }[] {
   return caixas
@@ -91,7 +103,7 @@ function caixasNaSequencia<T extends { id: string; nome: string; fase: Fase }>(
     .map((caixa) => ({
       caixa,
       torres: torres
-        .filter((t) => t.caixaAguaId === caixa.id)
+        .filter((t) => t.caixaAguaId === caixa.id && torreEstaAtivaNoDashboard(t))
         .map((t) => t.numeroTorre)
         .sort((a, b) => a - b),
     }))
@@ -589,6 +601,7 @@ export default function CiclosPage() {
                             <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-5">
                               {lista.map(({ caixa, torres }) => {
                                 const ativo = caixasSelecionadas.includes(caixa.id);
+                                const rotulo = rotuloCaixaSequencia(caixa.nome, torres);
                                 return (
                                   <button
                                     key={caixa.id}
@@ -600,7 +613,12 @@ export default function CiclosPage() {
                                         : 'bg-muted text-muted-foreground border-border'
                                     }`}
                                   >
-                                    {rotuloCaixaSequencia(caixa.nome, torres)}
+                                    <span className="block leading-tight">{rotulo.principal}</span>
+                                    {rotulo.detalhe && (
+                                      <span className={`block text-[10px] font-medium leading-tight ${ativo ? 'text-primary-foreground/80' : 'opacity-80'}`}>
+                                        {rotulo.detalhe}
+                                      </span>
+                                    )}
                                   </button>
                                 );
                               })}
