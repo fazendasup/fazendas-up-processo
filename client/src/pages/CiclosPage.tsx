@@ -68,6 +68,41 @@ function dateAtLocalNoonFromYmd(ymd: string): Date {
   return d;
 }
 
+function numerosNoNome(nome: string): number {
+  const nums = nome.match(/\d+/g);
+  if (!nums?.length) return 10_000;
+  return Number(nums[nums.length - 1]);
+}
+
+/** Uma caixa que abastece duas torres vira um único rótulo, na ordem das torres. */
+function rotuloCaixaSequencia(nome: string, torres: number[]): string {
+  if (torres.length >= 2) return torres.join(' · ');
+  if (torres.length === 1) return String(torres[0]);
+  return nome.replace(/^Caixa Torre\s+/i, '');
+}
+
+function caixasNaSequencia<T extends { id: string; nome: string; fase: Fase }>(
+  caixas: T[],
+  torres: { caixaAguaId?: string; numeroTorre: number }[],
+  fase: Fase,
+): { caixa: T; torres: number[] }[] {
+  return caixas
+    .filter((c) => c.fase === fase)
+    .map((caixa) => ({
+      caixa,
+      torres: torres
+        .filter((t) => t.caixaAguaId === caixa.id)
+        .map((t) => t.numeroTorre)
+        .sort((a, b) => a - b),
+    }))
+    .sort((a, b) => {
+      const oa = a.torres[0] ?? 10_000 + numerosNoNome(a.caixa.nome);
+      const ob = b.torres[0] ?? 10_000 + numerosNoNome(b.caixa.nome);
+      if (oa !== ob) return oa - ob;
+      return a.caixa.nome.localeCompare(b.caixa.nome, 'pt-BR');
+    });
+}
+
 export default function CiclosPage() {
   const { data } = useFazenda();
   const isHidroponia = data.projetoTipo === 'hidroponia';
@@ -542,27 +577,35 @@ export default function CiclosPage() {
                 {alvo !== 'andar' && data.caixasAgua.length > 0 && (
                   <div>
                     <Label className="text-xs mb-2 block">Caixas *</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {data.caixasAgua.map((caixa) => {
-                        const torres = data.torres
-                          .filter((t) => t.caixaAguaId === caixa.id)
-                          .map((t) => t.numeroTorre)
-                          .sort((a, b) => a - b);
-                        const ativo = caixasSelecionadas.includes(caixa.id);
+                    <div className="space-y-3">
+                      {(['mudas', 'vegetativa', 'maturacao'] as Fase[]).map((fase) => {
+                        const lista = caixasNaSequencia(data.caixasAgua, data.torres, fase);
+                        if (lista.length === 0) return null;
                         return (
-                          <button
-                            key={caixa.id}
-                            type="button"
-                            onClick={() => toggleCaixa(caixa.id)}
-                            className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
-                              ativo
-                                ? 'bg-primary text-primary-foreground border-primary'
-                                : 'bg-muted text-muted-foreground border-border'
-                            }`}
-                          >
-                            {caixa.nome}
-                            {torres.length > 0 ? ` · torres ${torres.join(', ')}` : ''}
-                          </button>
+                          <div key={fase}>
+                            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                              {FASES_CONFIG[fase].label}
+                            </p>
+                            <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-5">
+                              {lista.map(({ caixa, torres }) => {
+                                const ativo = caixasSelecionadas.includes(caixa.id);
+                                return (
+                                  <button
+                                    key={caixa.id}
+                                    type="button"
+                                    onClick={() => toggleCaixa(caixa.id)}
+                                    className={`rounded-md border px-2 py-1.5 text-center text-xs font-semibold tabular-nums transition-colors ${
+                                      ativo
+                                        ? 'bg-primary text-primary-foreground border-primary'
+                                        : 'bg-muted text-muted-foreground border-border'
+                                    }`}
+                                  >
+                                    {rotuloCaixaSequencia(caixa.nome, torres)}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
                         );
                       })}
                     </div>
