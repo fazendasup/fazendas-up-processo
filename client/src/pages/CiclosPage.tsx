@@ -11,6 +11,7 @@ type AlvoCiclo = "ambos" | "caixa" | "andar";
 
 import { cicloTemPendencia, formatarDataHora, DIAS_SEMANA } from '@/lib/utils-farm';
 import { numeroNoNomeCadastro, rotuloCaixaComoCadastro } from '@/lib/rotuloCaixaCadastro';
+import ProtocoloFases14d from '@/components/ProtocoloFases14d';
 import { useFazendaMutations } from '@/hooks/useFazendaMutations';
 import { useDbIdResolver } from '@/hooks/useDbIdResolver';
 import { Button } from '@/components/ui/button';
@@ -819,6 +820,8 @@ export default function CiclosPage() {
             </DialogContent>
           </Dialog>
         </div>
+
+        <ProtocoloFases14d />
 
         {/* Pendentes hoje */}
         {ciclosPendentes.length > 0 && (
