@@ -3,12 +3,13 @@ export type ContaAzulSyncMode = "manual" | "cron";
 /**
  * Quantos GET /v1/venda/{id} o sync pode fazer (composição frete/desconto).
  *
- * - Manual: padrão 5.000 = alinha o dashboard ao relatório da Conta Azul (bruto/frete/desconto).
+ * - Manual: padrão 120 detalhes por clique, para o sync terminar em poucos minutos.
+ * - Cron: padrão 80. O restante das vendas entra nos próximos syncs.
  * - Defina CONTA_AZUL_SYNC_DETAIL_MAX=N para enriquecer até N vendas por execução.
- * - CONTA_AZUL_SYNC_DETAIL_UNLIMITED=1 = sem limite (lento; use só se necessário).
+ * - CONTA_AZUL_SYNC_DETAIL_UNLIMITED=1 = sem limite no orçamento (ainda há prazo de 4 min no sync).
  */
-const DEFAULT_MANUAL_DETAIL_MAX = 5_000;
-const DEFAULT_CRON_DETAIL_MAX = 1_000;
+const DEFAULT_MANUAL_DETAIL_MAX = 120;
+const DEFAULT_CRON_DETAIL_MAX = 80;
 
 export function contaAzulSyncDetailBudget(mode: ContaAzulSyncMode): number {
   if (process.env.CONTA_AZUL_SYNC_SKIP_DETAIL === "1") return 0;

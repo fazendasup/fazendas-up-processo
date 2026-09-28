@@ -8,10 +8,10 @@ describe("contaAzulSyncDetailBudget", () => {
     process.env = { ...env };
   });
 
-  it("manual: padrão 5.000 = busca detalhes para alinhar frete/desconto", () => {
+  it("manual: padrão 120 detalhes por execução", () => {
     delete process.env.CONTA_AZUL_SYNC_DETAIL_MAX;
     delete process.env.CONTA_AZUL_SYNC_DETAIL_UNLIMITED;
-    expect(contaAzulSyncDetailBudget("manual")).toBe(5_000);
+    expect(contaAzulSyncDetailBudget("manual")).toBe(120);
   });
 
   it("manual: respeita CONTA_AZUL_SYNC_DETAIL_MAX positivo", () => {
@@ -19,9 +19,9 @@ describe("contaAzulSyncDetailBudget", () => {
     expect(contaAzulSyncDetailBudget("manual")).toBe(80);
   });
 
-  it("cron: padrão 1.000 = mantém composição atualizada sem sync ilimitado", () => {
+  it("cron: padrão 80 detalhes por execução", () => {
     delete process.env.CONTA_AZUL_CRON_DETAIL_MAX;
-    expect(contaAzulSyncDetailBudget("cron")).toBe(1_000);
+    expect(contaAzulSyncDetailBudget("cron")).toBe(80);
   });
 
   it("manual: UNLIMITED habilita detalhes ilimitados", () => {

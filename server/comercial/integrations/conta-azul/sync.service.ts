@@ -432,7 +432,19 @@ async function sincronizarOrcamentosContaAzul(
 
 type ResolveComposicaoCtx = {
   detailBudget: { remaining: number };
+  /** Depois deste instante o sync grava a venda sem novo GET de detalhe. */
+  deadlineAt: number;
 };
+
+const SYNC_DETALHE_DEADLINE_MS = 4 * 60_000;
+
+function podeBuscarDetalhe(ctx: ResolveComposicaoCtx): boolean {
+  if (Date.now() >= ctx.deadlineAt) {
+    ctx.detailBudget.remaining = 0;
+    return false;
+  }
+  return ctx.detailBudget.remaining > 0;
+}
 
 type ResolveComposicaoResult = {
   composicao: ComposicaoValorPedido;
@@ -450,7 +462,7 @@ async function fetchComposicaoDetalheVenda(
   totalFallback: number,
   ctx: ResolveComposicaoCtx
 ): Promise<ResolveComposicaoResult | null> {
-  if (ctx.detailBudget.remaining <= 0) return null;
+  if (!podeBuscarDetalhe(ctx)) return null;
   ctx.detailBudget.remaining--;
   try {
     const detail = await contaAzulGet<unknown>(
@@ -490,7 +502,7 @@ async function fetchItensVenda(
   ctx: ResolveComposicaoCtx,
   catalogoProdutos: ContaAzulProdutoCategoriaLookup[]
 ): Promise<ContaAzulPedidoItemPayload[] | null> {
-  if (ctx.detailBudget.remaining <= 0) return null;
+  if (!podeBuscarDetalhe(ctx)) return null;
   ctx.detailBudget.remaining--;
   try {
     const raw = await contaAzulGet<unknown>(
@@ -516,7 +528,7 @@ async function enriquecerComposicaoPedidosPendentes(
   ctx: ResolveComposicaoCtx,
   catalogoProdutos: ContaAzulProdutoCategoriaLookup[]
 ): Promise<number> {
-  if (ctx.detailBudget.remaining <= 0) return 0;
+  if (!podeBuscarDetalhe(ctx)) return 0;
 
   const candidatos = await prisma.pedido.findMany({
     where: {
@@ -540,7 +552,7 @@ async function enriquecerComposicaoPedidosPendentes(
 
   let enriquecidos = 0;
   for (const p of candidatos) {
-    if (ctx.detailBudget.remaining <= 0) break;
+    if (!podeBuscarDetalhe(ctx)) break;
     const precisaComposicao = pedidoPrecisaEnriquecerComposicao(p);
     const precisaItens = p._count.itens === 0;
     if (!precisaComposicao && !precisaItens) continue;
@@ -617,7 +629,7 @@ async function resolveComposicaoVenda(
     };
   }
 
-  if (ctx.detailBudget.remaining <= 0) {
+  if (!podeBuscarDetalhe(ctx)) {
     return {
       composicao: fromBusca ?? composicaoFromTotalApenas(totalFallback),
       composicaoDetalhada: false,
@@ -867,6 +879,7 @@ async function executarContaAzulSync(
   const started = Date.now();
   const composicaoCtx: ResolveComposicaoCtx = {
     detailBudget: { remaining: contaAzulSyncDetailBudget(mode) },
+    deadlineAt: started + SYNC_DETALHE_DEADLINE_MS,
   };
   const cred = await ensureValidAccessToken(prisma, env);
   if (!cred?.accessToken) {

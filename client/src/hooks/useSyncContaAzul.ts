@@ -41,7 +41,7 @@ export function useSyncContaAzul(callbacks?: SyncContaAzulCallbacks) {
     onSuccess: () => {
       syncStartedAtRef.current = Date.now();
       setAguardando(true);
-      toast.info("Sincronização Conta Azul iniciada. Em geral termina em poucos segundos.");
+      toast.info("Sincronização Conta Azul iniciada. Leva alguns minutos e depois atualiza os pedidos.");
     },
     onError: (e) => {
       const msg = e.message ?? "";
