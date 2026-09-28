@@ -165,9 +165,14 @@ type CacheEntry = {
   parcelas: ParcelaBaseProjecao[];
 };
 
+/** Resposta do dashboard — segunda abertura no mesmo período não repete a Conta Azul. */
+const DASHBOARD_PAYLOAD_TTL_MS = 3 * 60_000;
+const dashboardPayloadCache = new Map<string, { at: number; data: unknown }>();
+
 /** Cache curto das parcelas CA da projeção — evita refetch de ~10s a cada checkbox. */
 const CACHE_TTL_MS = 5 * 60_000;
 const parcelasCache = new Map<string, CacheEntry>();
+const parcelasInflight = new Map<string, Promise<ParcelaBaseProjecao[]>>();
 
 function cacheKey(projetoId: number, mesYm: string): string {
   return `${projetoId}:${mesYm}`;
@@ -183,12 +188,23 @@ async function carregarParcelasBaseMes(
   if (!forceRefresh && hit && Date.now() - hit.at < CACHE_TTL_MS) {
     return hit.parcelas;
   }
-  const { inicio, fim } = boundsMesYmAmericaSp(mesYm);
-  // Só baixas com data_pagamento no mês (não títulos só com vencimento no mês).
-  const raw = await buscarBaixasPagarPorPeriodoPagamento(inicio, fim, projetoId);
-  const parcelas = raw.map(toBase);
-  parcelasCache.set(key, { at: Date.now(), parcelas });
-  return parcelas;
+  if (!forceRefresh) {
+    const pending = parcelasInflight.get(key);
+    if (pending) return pending;
+  }
+  const job = (async () => {
+    const { inicio, fim } = boundsMesYmAmericaSp(mesYm);
+    // Só baixas com data_pagamento no mês (não títulos só com vencimento no mês).
+    const raw = await buscarBaixasPagarPorPeriodoPagamento(inicio, fim, projetoId);
+    const parcelas = raw.map(toBase);
+    parcelasCache.set(key, { at: Date.now(), parcelas });
+    return parcelas;
+  })();
+  if (!forceRefresh) {
+    parcelasInflight.set(key, job);
+    void job.finally(() => parcelasInflight.delete(key));
+  }
+  return job;
 }
 
 export function invalidarCacheProjecaoParcelas(
@@ -708,6 +724,13 @@ export async function carregarFinanceiroDashboard(
   const hojeYm = mesIsoAmericaSp();
   const diaHoje = Number(hojeIso.slice(8, 10));
   const force = input.forceRefreshCa === true;
+  const dashCacheKey = `${projetoId}:${granularidade}:${String(refBruta)}`;
+  if (!force) {
+    const hit = dashboardPayloadCache.get(dashCacheKey);
+    if (hit && Date.now() - hit.at < DASHBOARD_PAYLOAD_TTL_MS) {
+      return hit.data as Awaited<ReturnType<typeof carregarFinanceiroDashboard>>;
+    }
+  }
 
   const bounds = (ym: string) => boundsMesYmAmericaSp(ym);
 
@@ -811,14 +834,16 @@ export async function carregarFinanceiroDashboard(
       inicioDiaAmericaSp(hojeIso),
       fimDiaAmericaSp(hojeIso),
       projetoId,
+      { somenteVencimento: true },
     ).then(r => r.map(toBase)),
     buscarParcelasReceberParaComparativo(
       inicioDiaAmericaSp(hojeIso),
       fimDiaAmericaSp(hojeIso),
       projetoId,
+      { somenteVencimento: true },
     ).then(r => r.map(toBase)),
     listRubricasMesConcluidas(projetoId, mesYm),
-    buscarSaldosBancarios(projetoId).catch(() => ({
+    buscarSaldosBancarios(projetoId, { force }).catch(() => ({
       saldoBancario: null as number | null,
       saldoContaAzul: null as number | null,
       saldoBradesco: null as number | null,
@@ -842,6 +867,7 @@ export async function carregarFinanceiroDashboard(
     // Único indicador com histórico completo (não só mês âncora).
     buscarParcelasPagarHistoricoVencimento(projetoId, {
       vencAteIso: hojeIso,
+      force,
     }).then(r => r.map(toBase)),
   ]);
 
@@ -1103,7 +1129,7 @@ export async function carregarFinanceiroDashboard(
     comportamentoMap,
   );
 
-  return {
+  const payload = {
     mesYm,
     labelMes: labelMesYm(mesYm),
     periodo: periodoMeta,
@@ -1149,6 +1175,10 @@ export async function carregarFinanceiroDashboard(
     },
     avisos,
   } satisfies FinanceiroDashboardPayload;
+  if (!force) {
+    dashboardPayloadCache.set(dashCacheKey, { at: Date.now(), data: payload });
+  }
+  return payload;
 }
 
 function fmtDataBr(iso: string | null | undefined): string | null {

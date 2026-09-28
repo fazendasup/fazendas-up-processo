@@ -51,9 +51,20 @@ export type SaldosBancariosPayload = {
   aviso?: string;
 };
 
+const baixasDesdeCache = new Map<
+  string,
+  { at: number; value: { recebido: number; pago: number; aviso?: string } }
+>();
+const BAIXAS_DESDE_TTL_MS = 3 * 60_000;
+
 async function somarBaixasTodasContasDesde(
   dataDe: string,
+  force = false,
 ): Promise<{ recebido: number; pago: number; aviso?: string }> {
+  const cached = baixasDesdeCache.get(dataDe);
+  if (!force && cached && Date.now() - cached.at < BAIXAS_DESDE_TTL_MS) {
+    return cached.value;
+  }
   const env = getComercialEnv();
   const prisma = getComercialPrisma();
   const cred = await ensureValidAccessToken(prisma, env);
@@ -102,7 +113,9 @@ async function somarBaixasTodasContasDesde(
     somarPath("/v1/financeiro/eventos-financeiros/contas-a-receber/buscar"),
     somarPath("/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar"),
   ]);
-  return { recebido, pago };
+  const value = { recebido, pago };
+  baixasDesdeCache.set(dataDe, { at: Date.now(), value });
+  return value;
 }
 
 function lerSaldoInicialConfig(config: Awaited<ReturnType<typeof getFinanceiroCaConfig>>): {
@@ -130,6 +143,7 @@ function lerSaldoInicialConfig(config: Awaited<ReturnType<typeof getFinanceiroCa
 
 export async function buscarSaldosBancarios(
   projetoId: number,
+  opts?: { force?: boolean },
 ): Promise<SaldosBancariosPayload> {
   const config = await getFinanceiroCaConfig(projetoId);
   const { saldoInicial, saldoInicialData } = lerSaldoInicialConfig(config);
@@ -154,7 +168,7 @@ export async function buscarSaldosBancarios(
     };
   }
 
-  const mov = await somarBaixasTodasContasDesde(saldoInicialData);
+  const mov = await somarBaixasTodasContasDesde(saldoInicialData, opts?.force === true);
   const saldoBancario = round2(saldoInicial + mov.recebido - mov.pago);
 
   return {

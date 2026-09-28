@@ -385,7 +385,8 @@ export default function FinanceiroDashboardPage() {
     `/financeiro-cfo/kpi/${kpi}?g=${encodeURIComponent(granularidade)}&ref=${encodeURIComponent(ref)}`;
 
   const q = trpc.financeiroCfo.dashboard.useQuery(queryInput, {
-    staleTime: 60_000,
+    staleTime: 3 * 60_000,
+    refetchOnWindowFocus: false,
   });
 
   const data = q.data;
@@ -507,7 +508,11 @@ export default function FinanceiroDashboardPage() {
   const salvarConfigSaldos = trpc.financeiroCfo.salvarConfigSaldos.useMutation({
     onSuccess: async () => {
       toast.success("Saldo bancário salvo");
-      await q.refetch();
+      const next = await utils.financeiroCfo.dashboard.fetch({
+        ...queryInput,
+        forceRefreshCa: true,
+      });
+      utils.financeiroCfo.dashboard.setData(queryInput, next);
     },
     onError: e => {
       toast.error(e.message || "Falha ao salvar saldo bancário");

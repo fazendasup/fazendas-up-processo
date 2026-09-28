@@ -250,6 +250,7 @@ async function fetchParcelasPaginated(
   pathBase: string,
   inicio: Date,
   fim: Date,
+  opts?: { somenteVencimento?: boolean },
 ): Promise<{ itens: ParcelaCaRaw[]; aviso?: string }> {
   const env = getComercialEnv();
   const prisma = getComercialPrisma();
@@ -316,6 +317,13 @@ async function fetchParcelasPaginated(
     });
     return qs;
   });
+
+  if (opts?.somenteVencimento) {
+    return {
+      itens: Array.from(porId.values()),
+      aviso: avisos.length ? avisos.join(" · ") : undefined,
+    };
+  }
 
   await coletar("pagamento", pagina => {
     const qs = new URLSearchParams({
@@ -987,12 +995,14 @@ export async function buscarParcelasPagarParaProjecao(
   inicio: Date,
   fim: Date,
   projetoId: number,
+  opts?: { somenteVencimento?: boolean },
 ): Promise<ParcelaFinanceiraNorm[]> {
   const [fetch, classifs] = await Promise.all([
     fetchParcelasPaginated(
       "/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar",
       inicio,
       fim,
+      opts,
     ),
     listFinanceiroCaClassificacoes(projetoId),
   ]);
@@ -1066,12 +1076,27 @@ export async function buscarBaixasPagarPorPeriodoPagamento(
  * Uso exclusivo do KPI de impostos/encargos — único indicador do dashboard
  * que varre todo o período, não só o mês âncora.
  */
+const historicoPagarCache = new Map<
+  string,
+  { at: number; parcelas: ParcelaFinanceiraNorm[] }
+>();
+const HISTORICO_PAGAR_TTL_MS = 5 * 60_000;
+
 export async function buscarParcelasPagarHistoricoVencimento(
   projetoId: number,
-  opts?: { vencDeIso?: string; vencAteIso?: string },
+  opts?: { vencDeIso?: string; vencAteIso?: string; force?: boolean },
 ): Promise<ParcelaFinanceiraNorm[]> {
   const vencDe = opts?.vencDeIso ?? "2020-01-01";
   const vencAte = opts?.vencAteIso ?? diaIsoAmericaSp();
+  const cacheKey = `${projetoId}:${vencDe}:${vencAte}`;
+  const cached = historicoPagarCache.get(cacheKey);
+  if (
+    !opts?.force &&
+    cached &&
+    Date.now() - cached.at < HISTORICO_PAGAR_TTL_MS
+  ) {
+    return cached.parcelas;
+  }
   const env = getComercialEnv();
   const prisma = getComercialPrisma();
   const cred = await ensureValidAccessToken(prisma, env);
@@ -1086,37 +1111,58 @@ export async function buscarParcelasPagarHistoricoVencimento(
     fetchCatalogoCategorias(),
   ]);
   const tamanho = 200;
-  const maxPaginas = 80;
   const porId = new Map<string, ParcelaCaRaw>();
 
-  for (let pagina = 1; pagina <= maxPaginas; pagina++) {
-    const qs = new URLSearchParams({
-      pagina: String(pagina),
-      tamanho_pagina: String(tamanho),
-      data_vencimento_de: vencDe,
-      data_vencimento_ate: vencAte,
-    });
-    let res: BuscaParcelasResponse;
-    try {
-      res = await fetchParcelasPagina(
-        http,
-        "/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar",
-        qs,
-      );
-    } catch (e) {
-      if (pagina === 1) {
-        console.error(
-          "[financeiro] pagar historico vencimento:",
-          e instanceof Error ? e.message : e,
+  const coletar = async (status: string | null, maxPaginas: number) => {
+    for (let pagina = 1; pagina <= maxPaginas; pagina++) {
+      const qs = new URLSearchParams({
+        pagina: String(pagina),
+        tamanho_pagina: String(tamanho),
+        data_vencimento_de: vencDe,
+        data_vencimento_ate: vencAte,
+      });
+      if (status) qs.set("status", status);
+      let res: BuscaParcelasResponse;
+      try {
+        res = await fetchParcelasPagina(
+          http,
+          "/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar",
+          qs,
         );
+      } catch (e) {
+        if (pagina === 1) throw e;
+        break;
       }
-      break;
+      const batch = res.itens ?? [];
+      for (const item of batch) {
+        if (item.id) porId.set(item.id, item);
+      }
+      if (batch.length < tamanho) break;
     }
-    const batch = res.itens ?? [];
-    for (const item of batch) {
-      if (item.id) porId.set(item.id, item);
+  };
+
+  let statusOk = false;
+  for (const status of ["ATRASADO", "EM_ABERTO"] as const) {
+    try {
+      await coletar(status, 20);
+      statusOk = true;
+    } catch (e) {
+      console.error(
+        `[financeiro] pagar historico ${status}:`,
+        e instanceof Error ? e.message : e,
+      );
     }
-    if (batch.length < tamanho) break;
+  }
+  if (!statusOk) {
+    porId.clear();
+    try {
+      await coletar(null, 80);
+    } catch (err) {
+      console.error(
+        "[financeiro] pagar historico vencimento:",
+        err instanceof Error ? err.message : err,
+      );
+    }
   }
 
   let pagar = Array.from(porId.values())
@@ -1133,7 +1179,9 @@ export async function buscarParcelasPagarHistoricoVencimento(
       nota: c.nota,
     })),
   );
-  return parcelasAtivasParaRelatorio(pagar);
+  const ativas = parcelasAtivasParaRelatorio(pagar);
+  historicoPagarCache.set(cacheKey, { at: Date.now(), parcelas: ativas });
+  return ativas;
 }
 
 /** Contas a receber normalizadas + overrides (comparativo de receita). */
@@ -1141,12 +1189,14 @@ export async function buscarParcelasReceberParaComparativo(
   inicio: Date,
   fim: Date,
   projetoId: number,
+  opts?: { somenteVencimento?: boolean },
 ): Promise<ParcelaFinanceiraNorm[]> {
   const [fetch, classifs] = await Promise.all([
     fetchParcelasPaginated(
       "/v1/financeiro/eventos-financeiros/contas-a-receber/buscar",
       inicio,
       fim,
+      opts,
     ),
     listFinanceiroCaClassificacoes(projetoId),
   ]);
