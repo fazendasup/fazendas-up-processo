@@ -23,6 +23,7 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { isTrpcAbortError } from "@/lib/trpc-fetch";
 import Header from "@/components/Header";
 import { FinanceiroCfoNav } from "@/components/financeiro/FinanceiroCfoNav";
 import { Button } from "@/components/ui/button";
@@ -581,7 +582,11 @@ export default function FinanceiroCfoPage() {
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
                 <p className="font-semibold">Não foi possível carregar</p>
-                <p className="text-xs">{analise.error.message}</p>
+                <p className="text-xs">
+                  {isTrpcAbortError(analise.error)
+                    ? "A consulta da Conta Azul foi interrompida. Atualize de novo — a primeira carga do mês pode levar mais de um minuto."
+                    : analise.error.message}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -589,7 +594,7 @@ export default function FinanceiroCfoPage() {
 
         {analise.isLoading ? (
           <p className="text-sm text-muted-foreground">
-            Carregando despesas Conta Azul…
+            Carregando despesas Conta Azul… a primeira carga do mês pode levar mais de um minuto.
           </p>
         ) : null}
 

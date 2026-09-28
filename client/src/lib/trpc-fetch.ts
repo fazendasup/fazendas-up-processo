@@ -10,6 +10,10 @@ const LONG_TRPC_PATHS = new Set([
   "comercial.integracoes.aplicarInteligenciaComercial",
   "comercial.pedidos.copiarSemanaAnterior",
   "comercial.relatorios.resumo",
+  "financeiroCfo.analise",
+  "financeiroCfo.dashboard",
+  "financeiroCfo.projecaoDesembolso",
+  "financeiroCfo.comparativoProjecao",
 ]);
 
 export function isLongRunningTrpcOp(path: string): boolean {
@@ -19,11 +23,23 @@ export function isLongRunningTrpcOp(path: string): boolean {
 export function createTrpcFetch(timeoutMs: number): typeof fetch {
   return (input, init) => {
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), timeoutMs);
+    const timeoutReason = new DOMException(
+      "A consulta passou do tempo limite e foi interrompida.",
+      "TimeoutError",
+    );
+    const t = setTimeout(() => ctrl.abort(timeoutReason), timeoutMs);
     const upstream = init?.signal;
     if (upstream) {
-      if (upstream.aborted) ctrl.abort();
-      else upstream.addEventListener("abort", () => ctrl.abort(), { once: true });
+      const repassar = () => {
+        const reason = upstream.reason;
+        ctrl.abort(
+          reason instanceof Error
+            ? reason
+            : new DOMException("The operation was aborted.", "AbortError"),
+        );
+      };
+      if (upstream.aborted) repassar();
+      else upstream.addEventListener("abort", repassar, { once: true });
     }
     return globalThis
       .fetch(input, {
