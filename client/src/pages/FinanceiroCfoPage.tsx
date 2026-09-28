@@ -23,6 +23,7 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { textoErroContaAzul } from "@shared/contaAzulErroUsuario";
 import { isTrpcAbortError } from "@/lib/trpc-fetch";
 import Header from "@/components/Header";
 import { FinanceiroCfoNav } from "@/components/financeiro/FinanceiroCfoNav";
@@ -585,7 +586,7 @@ export default function FinanceiroCfoPage() {
                 <p className="text-xs">
                   {isTrpcAbortError(analise.error)
                     ? "A consulta da Conta Azul foi interrompida. Atualize de novo — a primeira carga do mês pode levar mais de um minuto."
-                    : analise.error.message}
+                    : textoErroContaAzul(analise.error.message)}
                 </p>
               </div>
             </CardContent>

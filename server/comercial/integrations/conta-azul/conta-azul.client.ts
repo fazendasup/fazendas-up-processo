@@ -1,4 +1,5 @@
 import axios, { type AxiosInstance } from "axios";
+import { detalheHttpContaAzul } from "@shared/contaAzulErroUsuario";
 import type { Env } from "../../env";
 import { withRetry } from "../../lib/retry";
 import { contaAzulThrottle, retryAfterMsFromAxios } from "./conta-azul-rate-limit";
@@ -13,12 +14,7 @@ function contaAzulErroAmigavel(e: unknown): Error {
   } else if (typeof raw === "string") {
     detalhe = raw;
   }
-  let base = detalhe ?? e.message;
-  if (status === 429) {
-    base =
-      "Muitas requisições à API (limite excedido). Aguarde 1–2 minutos e tente o sync de novo. O sync automático usa menos chamadas; use o botão manual com calma.";
-  }
-  return new Error(`Conta Azul${status != null ? ` (${status})` : ""}: ${base}`);
+  return new Error(detalheHttpContaAzul(status, detalhe, e.message));
 }
 
 function isContaAzulRetryable(err: unknown): boolean {

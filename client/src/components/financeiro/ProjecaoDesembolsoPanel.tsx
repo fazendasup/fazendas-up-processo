@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { textoErroContaAzul } from "@shared/contaAzulErroUsuario";
 import { trpc } from "@/lib/trpc";
 import {
   type ColumnFilterDef,
@@ -609,7 +610,11 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
     );
   }
   if (proj.isError) {
-    return <p className="text-sm text-red-700">{proj.error.message}</p>;
+    return (
+      <p className="text-sm text-red-700">
+        {textoErroContaAzul(proj.error.message)}
+      </p>
+    );
   }
   if (!data) return null;
 
