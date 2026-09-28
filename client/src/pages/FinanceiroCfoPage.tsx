@@ -601,6 +601,14 @@ export default function FinanceiroCfoPage() {
 
         {data ? (
           <>
+            {data.avisos?.some(a => /fora do ar|503|502|504/i.test(a)) ? (
+              <Card className="border-amber-300 bg-amber-50">
+                <CardContent className="p-4 text-sm text-amber-950">
+                  Parte da Conta Azul não respondeu. O que carregou está abaixo;
+                  clique em Atualizar para completar.
+                </CardContent>
+              </Card>
+            ) : null}
             <Tabs
               value={tabAtiva}
               onValueChange={setTabAtiva}

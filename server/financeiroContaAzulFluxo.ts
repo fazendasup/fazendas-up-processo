@@ -720,41 +720,73 @@ export async function analisarFinanceiroCfoContaAzul(
   const prevInicio = prev ? isoDateLocal(prev.inicio) : null;
   const prevFim = prev ? isoDateLocal(prev.fim) : null;
 
-  const [
-    pagarFetch,
-    receberFetch,
-    saldos,
-    lastSync,
-    classifs,
-    ajustes,
-    equipesMo,
-    pagarBaixasFetch,
-    pagarBaixasPrevFetch,
-  ] = await Promise.all([
+  const vazioParcelas = { itens: [] as ParcelaCaRaw[] };
+  const lerContaAzul = async <T,>(
+    fn: () => Promise<T>,
+    vazio: T,
+  ): Promise<{ data: T; aviso?: string }> => {
+    try {
+      return { data: await fn() };
+    } catch {
+      await new Promise(r => setTimeout(r, 1_500));
+      try {
+        return { data: await fn() };
+      } catch (e2) {
+        const msg = e2 instanceof Error ? e2.message : String(e2);
+        console.error("[financeiro] consulta Conta Azul:", msg);
+        return { data: vazio, aviso: msg };
+      }
+    }
+  };
+
+  // Em sequência: várias buscas ao mesmo tempo fazem a Conta Azul responder 503
+  // e a análise inteira caía, mesmo com a API no ar.
+  const pagarRes = await lerContaAzul(
+    () =>
       fetchParcelasPaginated(
         "/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar",
         inicioSp,
         fimSp,
       ),
+    vazioParcelas,
+  );
+  const receberRes = await lerContaAzul(
+    () =>
       fetchParcelasPaginated(
         "/v1/financeiro/eventos-financeiros/contas-a-receber/buscar",
         inicioSp,
         fimSp,
       ),
-      fetchSaldosContas(),
-      prisma.execucaoApi.findFirst({
-        where: { acaoApi: AcaoApi.SYNC_CA },
-        orderBy: { dataExecucao: "desc" },
-        select: { dataExecucao: true, statusExecucao: true },
-      }),
-      listFinanceiroCaClassificacoes(projetoId),
-      listFinanceiroCaAjustesManuais(projetoId),
-      moEquipeDb.listMoEquipes(projetoId).catch(() => []),
-      fetchBaixasPagarPorPagamento(inicioSp, fimSp),
-      buscarMesAnterior && prev
-        ? fetchBaixasPagarPorPagamento(prev.inicio, prev.fim)
-        : Promise.resolve({ itens: [] as ParcelaCaRaw[], aviso: undefined }),
-    ]);
+    vazioParcelas,
+  );
+  const baixasRes = await lerContaAzul(
+    () => fetchBaixasPagarPorPagamento(inicioSp, fimSp),
+    vazioParcelas,
+  );
+  const baixasPrevRes =
+    buscarMesAnterior && prev
+      ? await lerContaAzul(
+          () => fetchBaixasPagarPorPagamento(prev.inicio, prev.fim),
+          vazioParcelas,
+        )
+      : { data: vazioParcelas };
+
+  const pagarFetch = pagarRes.data;
+  const receberFetch = receberRes.data;
+  const pagarBaixasFetch = baixasRes.data;
+  const pagarBaixasPrevFetch = baixasPrevRes.data;
+
+  const [saldos, lastSync, classifs, ajustes, equipesMo] = await Promise.all([
+    fetchSaldosContas(),
+    prisma.execucaoApi.findFirst({
+      where: { acaoApi: AcaoApi.SYNC_CA },
+      orderBy: { dataExecucao: "desc" },
+      select: { dataExecucao: true, statusExecucao: true },
+    }),
+    listFinanceiroCaClassificacoes(projetoId),
+    listFinanceiroCaAjustesManuais(projetoId),
+    moEquipeDb.listMoEquipes(projetoId).catch(() => []),
+  ]);
 
   /** Catálogo DRE — resolve entrada_dre; não bloqueia se a API falhar. */
   const catalogo = await fetchCatalogoCategorias();
@@ -905,6 +937,10 @@ export async function analisarFinanceiroCfoContaAzul(
   });
 
   const avisos = [
+    pagarRes.aviso,
+    receberRes.aviso,
+    baixasRes.aviso,
+    baixasPrevRes.aviso,
     pagarFetch.aviso,
     receberFetch.aviso,
     pagarBaixasFetch.aviso,
