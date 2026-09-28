@@ -650,6 +650,9 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
               onClick={() => {
                 void (async () => {
                   try {
+                    await utils.financeiroCfo.projecaoDesembolso.cancel({
+                      mesInicioYm,
+                    });
                     const fresh =
                       await utils.financeiroCfo.projecaoDesembolso.fetch({
                         mesInicioYm,
@@ -659,7 +662,14 @@ export function ProjecaoDesembolsoPanel({ mesInicioYm }: { mesInicioYm: string }
                       { mesInicioYm },
                       fresh,
                     );
-                    toast.success("Base Conta Azul atualizada");
+                    const daContaAzul = fresh.linhas.filter(
+                      l => l.origemLinha !== "manual",
+                    ).length;
+                    toast.success(
+                      daContaAzul > 0
+                        ? `Base atualizada: ${daContaAzul} despesa(s) paga(s) no mês anterior.`
+                        : "Base atualizada, sem despesas pagas no mês anterior.",
+                    );
                   } catch (e) {
                     toast.error(
                       e instanceof Error ? e.message : "Falha ao atualizar",

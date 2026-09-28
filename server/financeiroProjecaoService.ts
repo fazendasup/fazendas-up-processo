@@ -162,6 +162,7 @@ function toBase(p: ParcelaFinanceiraNorm): ParcelaBaseProjecao {
 
 type CacheEntry = {
   at: number;
+  started: number;
   parcelas: ParcelaBaseProjecao[];
 };
 
@@ -192,12 +193,16 @@ async function carregarParcelasBaseMes(
     const pending = parcelasInflight.get(key);
     if (pending) return pending;
   }
+  const started = Date.now();
   const job = (async () => {
     const { inicio, fim } = boundsMesYmAmericaSp(mesYm);
     // Só baixas com data_pagamento no mês (não títulos só com vencimento no mês).
     const raw = await buscarBaixasPagarPorPeriodoPagamento(inicio, fim, projetoId);
     const parcelas = raw.map(toBase);
-    parcelasCache.set(key, { at: Date.now(), parcelas });
+    const prev = parcelasCache.get(key);
+    if (!prev || prev.started <= started) {
+      parcelasCache.set(key, { at: Date.now(), started, parcelas });
+    }
     return parcelas;
   })();
   if (!forceRefresh) {

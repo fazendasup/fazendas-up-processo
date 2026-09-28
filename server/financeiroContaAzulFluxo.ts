@@ -370,7 +370,6 @@ async function fetchBaixasPagarPorPagamento(
   const tamanho = 200;
   const maxPaginas = 40;
   const porId = new Map<string, ParcelaCaRaw>();
-  const avisos: string[] = [];
 
   for (let pagina = 1; pagina <= maxPaginas; pagina++) {
     const qs = new URLSearchParams({
@@ -390,20 +389,25 @@ async function fetchBaixasPagarPorPagamento(
       );
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      if (pagina === 1) avisos.push(`baixas pagar: ${msg}`);
-      break;
+      const carregadas = porId.size;
+      throw new Error(
+        carregadas > 0
+          ? `A lista de despesas parou no meio (${carregadas} já lidas). ${msg}`
+          : msg,
+      );
     }
     const batch = res.itens ?? [];
     for (const item of batch) {
       if (item.id) porId.set(item.id, item);
     }
-    if (batch.length < tamanho) break;
+    if (batch.length < tamanho) {
+      return { itens: Array.from(porId.values()) };
+    }
   }
 
-  return {
-    itens: Array.from(porId.values()),
-    aviso: avisos.length ? avisos.join(" · ") : undefined,
-  };
+  throw new Error(
+    "A Conta Azul devolveu só parte das despesas pagas do mês. Atualize a base de novo.",
+  );
 }
 
 function resolverEntradaDre(
