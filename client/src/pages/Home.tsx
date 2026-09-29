@@ -46,6 +46,7 @@ import { filtroTarefasParaHoje, partitionTarefasHojeVsAtrasadas } from '@/lib/ta
 import { contarCiclosAplicacaoAtrasados } from '@/lib/ciclosAgenda';
 import { filtrarPlanosPrioridadeSomenteGerminacaoPlantio } from '@/lib/planosPlantioOperacao';
 import { NOME_PROJETO_FAZENDA_LEGADO } from '@shared/const';
+import { CELULAS_PADRAO_BANDEJA_MUDAS, torreEhMudasBandeja } from '@shared/mudasBandejas';
 import HidroponiaDashboard from '@/components/HidroponiaDashboard';
 import MicroverdesDashboard from '@/components/MicroverdesDashboard';
 import ProntasColheitaKpiDialog from '@/components/ProntasColheitaKpiDialog';
@@ -111,12 +112,17 @@ export default function Home() {
     planosGerminacaoPrioridade.length + eventosGerminacaoHoje.length;
 
   const fases: Fase[] = ['mudas', 'vegetativa', 'maturacao'];
+  const torresMicroverdes = torresAtivas.filter((t) => t.cultivo === 'microverdes');
 
   // Plantas por fase
   const plantasPorFase = fases.map((fase) => {
-    const torres = torresAtivas.filter((t) => t.fase === fase);
+    const torres = torresAtivas.filter((t) => t.fase === fase && t.cultivo !== 'microverdes');
     const andaresFase = dataAtiva.andares.filter((a) => torres.some((t) => t.id === a.torreId));
-    const plantadas = andaresFase.reduce((sum, a) => sum + contarPlantasAndar(a, fase, dataAtiva.projetoTipo), 0);
+    const plantadas = andaresFase.reduce((sum, a) => {
+      const torre = torres.find((t) => t.id === a.torreId);
+      const celulas = torre && torreEhMudasBandeja(torre) ? CELULAS_PADRAO_BANDEJA_MUDAS : undefined;
+      return sum + contarPlantasAndar(a, fase, dataAtiva.projetoTipo, celulas);
+    }, 0);
     const colhidas =
       fase === 'maturacao' || (dataAtiva.projetoTipo === 'microverdes' && fase === 'vegetativa')
         ? andaresFase.reduce((sum, a) => sum + contarColhidasAndar(a, fase, dataAtiva.projetoTipo), 0)
@@ -401,10 +407,29 @@ export default function Home() {
           </section>
         )}
 
+        {torresMicroverdes.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-display font-bold text-base flex items-center gap-2">
+                <span>🌱</span>
+                Microverdes
+                <span className="text-xs font-normal text-muted-foreground">
+                  ({torresMicroverdes.length} torre{torresMicroverdes.length !== 1 ? 's' : ''})
+                </span>
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+              {torresMicroverdes.map((torre) => (
+                <TorreCard key={torre.id} torre={torre} />
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Torres por fase */}
         {fases.map((fase) => {
           const cfg = data.fasesConfig?.[fase] || FASES_CONFIG[fase];
-          const torresFase = torresAtivas.filter((t) => t.fase === fase);
+          const torresFase = torresAtivas.filter((t) => t.fase === fase && t.cultivo !== 'microverdes');
 
           return (
             <section key={fase}>

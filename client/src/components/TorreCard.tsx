@@ -23,6 +23,7 @@ import {
 import type { CicloPrazoOpts } from '@/lib/utils-farm';
 import { AlertTriangle, Droplets, ChevronRight, Sprout, Scissors, Droplet, Clock } from 'lucide-react';
 import { AplicacaoPendenteNaTorre } from '@/components/AplicacoesCaixaHoje';
+import { CELULAS_PADRAO_BANDEJA_MUDAS, torreEhMudasBandeja } from '@shared/mudasBandejas';
 
 interface TorreCardProps {
   torre: Torre;
@@ -86,7 +87,9 @@ function calcAndarPerfilStatus(
 export default function TorreCard({ torre }: TorreCardProps) {
   const { data } = useFazenda();
   const { activeProjeto } = useProjeto();
-  const isMicroverdes = activeProjeto?.tipo === 'microverdes';
+  const isMicroverdes = activeProjeto?.tipo === 'microverdes' || torre.cultivo === 'microverdes';
+  const tipoContagem = isMicroverdes ? 'microverdes' : data.projetoTipo;
+  const celulasMudas = torreEhMudasBandeja(torre) ? CELULAS_PADRAO_BANDEJA_MUDAS : undefined;
   /** Torre física em pé: topo do desenho = andar de número maior (como na TorreDetail). */
   const andares = andaresDaTorreDeclarados(data.andares, torre).sort((a, b) => b.numero - a.numero);
   const caixa = data.caixasAgua.find((c) => c.id === torre.caixaAguaId);
@@ -111,7 +114,7 @@ export default function TorreCard({ torre }: TorreCardProps) {
     data.manutencoes,
     cicloPrazoOptsFromFazenda(data),
   );
-  const andaresOcupados = andares.filter((a) => andarOcupado(a, torre.fase, data.projetoTipo)).length;
+  const andaresOcupados = andares.filter((a) => andarOcupado(a, torre.fase, tipoContagem)).length;
   const caixaTitle = caixa
     ? [
         `${andaresOcupados}/${torre.numAndares ?? torre.andares ?? andares.length}`,
@@ -125,11 +128,11 @@ export default function TorreCard({ torre }: TorreCardProps) {
   const exibirColhidas =
     isMicroverdes ? faseTorreMicroverdesIluminacao(torre.fase) : torre.fase === 'maturacao';
   const totalPlantas = andares.reduce(
-    (sum, a) => sum + contarPlantasAndar(a, torre.fase, data.projetoTipo),
+    (sum, a) => sum + contarPlantasAndar(a, torre.fase, tipoContagem, celulasMudas),
     0,
   );
   const totalColhidas = exibirColhidas
-    ? andares.reduce((sum, a) => sum + contarColhidasAndar(a, torre.fase, data.projetoTipo), 0)
+    ? andares.reduce((sum, a) => sum + contarColhidasAndar(a, torre.fase, tipoContagem), 0)
     : 0;
   const andaresLavagem = andares.filter((a) => andarPrecisaLavagem(a)).length;
 
@@ -143,7 +146,7 @@ export default function TorreCard({ torre }: TorreCardProps) {
             andares,
             data.variedades,
             cicloPrazoOptsFromFazenda(data),
-            data.projetoTipo ?? null,
+            tipoContagem ?? null,
           )
         : [],
     [exibirColhidas, torre, andares, data],
@@ -171,7 +174,7 @@ export default function TorreCard({ torre }: TorreCardProps) {
   const nomeExib = tituloTorreCardCompacto(isMicroverdes ? nomeTorreExibicaoMicroverdes(torre) : torre.nome);
 
   const renderSegmentoAndar = (andar: Andar) => {
-    const ocupado = andarOcupado(andar, torre.fase, data.projetoTipo);
+    const ocupado = andarOcupado(andar, torre.fase, tipoContagem);
     const precisaLavar = andarPrecisaLavagem(andar);
     const ps = calcAndarPerfilStatus(andar, torre.fase, data.variedades, cicloOpts);
 
@@ -272,7 +275,9 @@ export default function TorreCard({ torre }: TorreCardProps) {
               <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                 <Sprout className="h-2.5 w-2.5 shrink-0" />
                 <strong>{totalPlantas}</strong>
-                <span className="text-muted-foreground">em processo</span>
+                <span className="text-muted-foreground">
+                  {celulasMudas ? 'células' : isMicroverdes && torre.fase === 'mudas' ? 'bandejas' : 'em processo'}
+                </span>
               </span>
               {exibirColhidas && totalColhidas > 0 && (
                 <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
@@ -294,7 +299,7 @@ export default function TorreCard({ torre }: TorreCardProps) {
                   <strong>
                     {perfisProntosTorre}/{perfisTotalTorre}
                   </strong>
-                  <span className="font-normal">{rotuloPerfisPrazoCritico(torre.fase, data.projetoTipo)}</span>
+                  <span className="font-normal">{rotuloPerfisPrazoCritico(torre.fase, tipoContagem)}</span>
                 </span>
               )}
               {perfisQuaseTorre > 0 && (

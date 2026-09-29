@@ -1,5 +1,13 @@
 import { receitaCicloPrioritariaParaVariedade } from "@shared/cicloReceita";
 import {
+  ANDARES_TORRE_MUDAS_BANDEJA,
+  BANDEJAS_POR_ANDAR_MUDAS,
+  TORRES_MUDAS_BANDEJA,
+  nomeTorreComoMicroverdes,
+  slugTorreMudasBandeja,
+  torreMudasViraMicroverdes,
+} from "../shared/mudasBandejas";
+import {
   hojeYmdSaoPaulo,
   instanteMeioDia,
   reagendarSequenciaAposAplicar,
@@ -4784,6 +4792,97 @@ WHERE t.\`numeroTorre\` IS NULL`));
     const msg = err instanceof Error ? err.message : String(err);
     if (!/doesn't exist/i.test(msg) && !/ER_NO_SUCH_TABLE/i.test(msg)) {
       console.warn("[Database] ensureTorresNumeroEstruturaColumns override 12x6:", msg.slice(0, 120));
+    }
+  }
+}
+
+/**
+ * Torre de mudas existente vira microverdes (andares, perfis e histórico ficam).
+ * Cria 4 torres de 6 andares com 4 bandejas cada, se ainda não existirem.
+ * Não corre no Vitest, para não alterar bases de teste.
+ */
+export async function ensureMudasBandejasEMicroverdes(): Promise<void> {
+  const dbConn = await getDb();
+  if (!dbConn || !(await tableExists(dbConn, "torres"))) return;
+  if (!(await columnExists(dbConn, "torres", "cultivo"))) {
+    try {
+      await dbConn.execute(
+        sql.raw(
+          "ALTER TABLE `torres` ADD COLUMN `cultivo` varchar(16) NOT NULL DEFAULT 'folhosa'",
+        ),
+      );
+    } catch (err: unknown) {
+      if (!isMysqlDuplicateColumnError(err)) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (!/doesn't exist/i.test(msg) && !/ER_NO_SUCH_TABLE/i.test(msg)) {
+          console.error("[Database] ensureMudasBandejasEMicroverdes:", err);
+        }
+        return;
+      }
+    }
+  }
+  if (process.env.VITEST) return;
+  if (!(await tableExists(dbConn, "projetos"))) return;
+
+  const projetosFv = await dbConn
+    .select({ id: projetos.id })
+    .from(projetos)
+    .where(eq(projetos.tipo, "fazenda_vertical"));
+
+  const overrideBandeja = JSON.stringify({
+    mudas: { perfis: BANDEJAS_POR_ANDAR_MUDAS, furosPorPerfil: 0 },
+  });
+
+  for (const projeto of projetosFv) {
+    const lista = await dbConn
+      .select()
+      .from(torres)
+      .where(eq(torres.projetoId, projeto.id));
+    const slugs = new Set(lista.map((t) => t.slug));
+    const jaExistemTorresBandeja = slugs.has(slugTorreMudasBandeja(1));
+
+    for (const torre of lista) {
+      if (
+        !torreMudasViraMicroverdes(
+          { fase: torre.fase, slug: torre.slug, cultivo: torre.cultivo },
+          jaExistemTorresBandeja,
+        )
+      ) {
+        continue;
+      }
+      await dbConn
+        .update(torres)
+        .set({
+          cultivo: "microverdes",
+          nome: nomeTorreComoMicroverdes(torre.nome).slice(0, 128),
+        })
+        .where(and(eq(torres.projetoId, projeto.id), eq(torres.id, torre.id)));
+    }
+
+    for (let n = 1; n <= TORRES_MUDAS_BANDEJA; n++) {
+      const slug = slugTorreMudasBandeja(n);
+      if (slugs.has(slug)) continue;
+      const maxRow = await dbConn
+        .select({ n: max(torres.numeroTorre) })
+        .from(torres)
+        .where(eq(torres.projetoId, projeto.id));
+      const numeroTorre = Number(maxRow[0]?.n ?? 0) + 1;
+      try {
+        await createTorreComEstrutura({
+          projetoId: projeto.id,
+          slug,
+          nome: `Torre Mudas ${n}`,
+          fase: "mudas",
+          numAndares: ANDARES_TORRE_MUDAS_BANDEJA,
+          numeroTorre,
+          estruturaOverrideJson: overrideBandeja,
+        });
+        slugs.add(slug);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (/duplicate|uq_|unique/i.test(msg)) continue;
+        console.error("[Database] ensureMudasBandejasEMicroverdes criar torre:", err);
+      }
     }
   }
 }

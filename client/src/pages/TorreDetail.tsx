@@ -11,11 +11,11 @@ import {
   labelFaseTorreMicroverdes,
   labelPosicaoProducao,
   nomeTorreExibicaoMicroverdes,
-  resumoEstruturaFisicaMicroverdes,
   termoUnidadeProducao,
 } from '@/lib/microverdesPhases';
 import { FASES_CONFIG, gerarPerfisIniciais, gerarFurosIniciais } from '@/lib/types';
 import { estruturaFaseParaProjeto } from '@shared/types';
+import { CELULAS_PADRAO_BANDEJA_MUDAS, torreEhMudasBandeja } from '@shared/mudasBandejas';
 import type { MedicaoCaixa, AplicacaoCaixa, AplicacaoAndar, FuroStatus, RegistroTransplantio, PerfilData } from '@/lib/types';
 import {
   diasDecorridos, diasRestantes, dataPrevista, labelPrevisao,
@@ -69,9 +69,10 @@ export default function TorreDetail() {
   const { id } = useParams<{ id: string }>();
   const { data } = useFazenda();
   const { activeProjeto } = useProjeto();
-  const isMicroverdes = activeProjeto?.tipo === 'microverdes';
+  const torreCultivoMv = data.torres.find((t) => t.id === id)?.cultivo === 'microverdes';
+  const isMicroverdes = activeProjeto?.tipo === 'microverdes' || torreCultivoMv;
   const projetoTipo = data.projetoTipo ?? activeProjeto?.tipo ?? null;
-  const unidOperacao = termoUnidadeProducao(projetoTipo);
+  const unidOperacao = termoUnidadeProducao(isMicroverdes ? 'microverdes' : projetoTipo);
   const { isVisitante, isAdmin, loading: roleLoading } = useRole();
   const mutations = useFazendaMutations();
   const isReadOnly = roleLoading || isVisitante || mutations.isReadOnly;
@@ -271,7 +272,7 @@ export default function TorreDetail() {
   const quantidadeInicialPerfilMudas = (variedadeSlug?: string | null, atual?: number | null): number => {
     const atualNum = Number(atual);
     if (Number.isFinite(atualNum) && atualNum > 0) return Math.floor(atualNum);
-    return quantidadePlanejadaMudasPorVariedade(variedadeSlug) ?? quantidadePlantasPerfilMudas(undefined);
+    return quantidadePlanejadaMudasPorVariedade(variedadeSlug) ?? CELULAS_PADRAO_BANDEJA_MUDAS;
   };
 
   const distribuirQuantidadeMudas = (total: number, n: number): number[] => {
@@ -307,7 +308,12 @@ export default function TorreDetail() {
   const now = new Date();
   const localDatetime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
-  const totalPlantasTorre = andares.reduce((sum, a) => sum + contarPlantasAndar(a, torre.fase, projetoTipo), 0);
+  const tipoContagem = isMicroverdes ? 'microverdes' : projetoTipo;
+  const celulasMudas = torreEhMudasBandeja(torre) ? CELULAS_PADRAO_BANDEJA_MUDAS : undefined;
+  const totalPlantasTorre = andares.reduce(
+    (sum, a) => sum + contarPlantasAndar(a, torre.fase, tipoContagem, celulasMudas),
+    0,
+  );
   const totalColhidasTorre = torreComModoColheita
     ? andares.reduce((sum, a) => sum + contarColhidasAndar(a, torre.fase, projetoTipo), 0)
     : 0;
@@ -423,7 +429,7 @@ export default function TorreDetail() {
     });
     toast.success(
       isMicroverdes
-        ? `Data da posição ${labelPosicaoProducao(projetoTipo, perfilIndex)} atualizada!`
+        ? `Data da posição ${labelPosicaoProducao(isMicroverdes ? 'microverdes' : projetoTipo, perfilIndex)} atualizada!`
         : `Data do Perfil ${perfilIndex + 1} atualizada!`,
     );
   };
@@ -635,7 +641,7 @@ export default function TorreDetail() {
         dataEntrada: new Date(),
       } as any);
       toast.success(
-        `Variedade na posição ${labelPosicaoProducao(projetoTipo, perfilIndex)} atualizada!`,
+        `Variedade na posição ${labelPosicaoProducao(isMicroverdes ? 'microverdes' : projetoTipo, perfilIndex)} atualizada!`,
       );
       return;
     }
@@ -664,7 +670,7 @@ export default function TorreDetail() {
 
     toast.success(
       isMicroverdes
-        ? `Variedade na posição ${labelPosicaoProducao(projetoTipo, perfilIndex)} atualizada!`
+        ? `Variedade na posição ${labelPosicaoProducao(isMicroverdes ? 'microverdes' : projetoTipo, perfilIndex)} atualizada!`
         : `Variedade do Perfil ${perfilIndex + 1} atualizada!`,
     );
   };
@@ -1272,18 +1278,16 @@ export default function TorreDetail() {
               <p className="text-xs text-muted-foreground mb-3">
                 N.º {typeof torre.numeroTorre === 'number' ? torre.numeroTorre : '—'} &middot; {torre.andares} andares &middot; {faseLabelExibicao}
                 {isMicroverdes
-                  ? ` · ${resumoEstruturaFisicaMicroverdes(torre.fase)}`
+                  ? ` · ${estruturaFaseParaProjeto(projetoTipo, torre.fase, torre.estruturaOverride ?? null).perfis} bandejas/andar`
                   : isMudas
-                    ? ` · ${estruturaFaseParaProjeto(projetoTipo, 'mudas').perfis} perfis abertos`
-                    : isMicroverdes && !isMudas
-                      ? ` · ${estruturaFaseParaProjeto(projetoTipo, torre.fase, torre.estruturaOverride ?? null).perfis} bandejas (iluminação)`
-                      : ` · ${estruturaFaseParaProjeto(projetoTipo, torre.fase, torre.estruturaOverride ?? null).perfis}×${estruturaFaseParaProjeto(projetoTipo, torre.fase, torre.estruturaOverride ?? null).furosPorPerfil} furos`}
+                    ? ` · ${estruturaFaseParaProjeto(projetoTipo, 'mudas', torre.estruturaOverride ?? null).perfis} bandejas · ${CELULAS_PADRAO_BANDEJA_MUDAS} células`
+                    : ` · ${estruturaFaseParaProjeto(projetoTipo, torre.fase, torre.estruturaOverride ?? null).perfis}×${estruturaFaseParaProjeto(projetoTipo, torre.fase, torre.estruturaOverride ?? null).furosPorPerfil} furos`}
               </p>
               <div className={`grid ${torreComModoColheita ? 'grid-cols-2' : 'grid-cols-1'} gap-2 text-center`}>
                 <div className="p-2 bg-emerald-50 rounded-lg">
                   <p className="font-display font-bold text-lg text-emerald-700 dark:text-emerald-300">{totalPlantasTorre}</p>
                   <p className="text-[10px] text-muted-foreground">
-                    {isMudas ? (isMicroverdes ? 'Bandejas ativas' : 'Perfis ativos') : 'Plantas ativas'}
+                    {isMudas ? (isMicroverdes ? 'Bandejas ativas' : torreEhMudasBandeja(torre) ? 'Células' : 'Perfis ativos') : 'Plantas ativas'}
                   </p>
                 </div>
                 {torreComModoColheita && (
@@ -1308,7 +1312,7 @@ export default function TorreDetail() {
               </div>
               <div className="max-h-[500px] overflow-y-auto">
                 {andares.map((andar) => {
-                  const plantadas = contarPlantasAndar(andar, torre.fase, projetoTipo);
+                  const plantadas = contarPlantasAndar(andar, torre.fase, tipoContagem, celulasMudas);
                   const precisaLavar = andarPrecisaLavagem(andar);
                   const isSelected = andar.id === selectedAndar;
                   const maxSlots = capacidadeAndar(torre.fase, projetoTipo, torre.estruturaOverride ?? null);
@@ -1660,7 +1664,7 @@ export default function TorreDetail() {
                   if (prontos.length === 0) return null;
                   const acao =
                     isMicroverdes && torre.fase !== 'mudas' ? 'colheita' : torre.fase === 'maturacao' ? 'colheita' : 'transplantar';
-                  const nomes = prontos.map((p) => labelPosicaoProducao(projetoTipo, p.perfilIndex)).join(', ');
+                  const nomes = prontos.map((p) => labelPosicaoProducao(isMicroverdes ? 'microverdes' : projetoTipo, p.perfilIndex)).join(', ');
                   return (
                     <div className="mx-4 mt-3 p-3 bg-red-50 border-2 border-red-300 rounded-lg animate-pulse">
                       <div className="flex items-center gap-2">
@@ -1814,7 +1818,7 @@ export default function TorreDetail() {
                                           <span className={`font-bold text-xs ${
                                             ps.rest !== null && ps.rest <= 0 ? 'text-red-700 dark:text-red-300' :
                                             ps.rest !== null && ps.rest <= 3 ? 'text-amber-700 dark:text-amber-300' : ''
-                                          }`}>{labelPosicaoProducao(projetoTipo, ps.perfilIndex)}</span>
+                                          }`}>{labelPosicaoProducao(isMicroverdes ? 'microverdes' : projetoTipo, ps.perfilIndex)}</span>
                                           {variedade && (
                                             <span className="text-[10px] text-muted-foreground truncate max-w-[60px]">{variedade.nome}</span>
                                           )}
@@ -1843,12 +1847,12 @@ export default function TorreDetail() {
                                       />
                                       {isMudas && !isMicroverdes && (
                                         <div className="mt-1">
-                                          <Label className="text-[10px] text-muted-foreground">Qtd. mudas</Label>
+                                          <Label className="text-[10px] text-muted-foreground">Células</Label>
                                           <Input
                                             type="number"
                                             min={0}
                                             className="mt-0.5 h-7 text-[11px]"
-                                            defaultValue={quantidadePlantasPerfilMudas(perfil)}
+                                            defaultValue={quantidadePlantasPerfilMudas(perfil, CELULAS_PADRAO_BANDEJA_MUDAS)}
                                             key={`${andarSelecionado.id}-p${ps.perfilIndex}-qtd-${perfil?.quantidadePlantas ?? 'legacy'}`}
                                             onBlur={(e) => handleUpdatePerfilQuantidadeMudas(ps.perfilIndex, e.target.value)}
                                           />
@@ -2414,7 +2418,7 @@ export default function TorreDetail() {
                               const varNome = p.variedadeId ? data.variedades.find(v => v.id === p.variedadeId)?.nome : null;
                               return (
                                 <SelectItem key={p.perfilIndex} value={String(p.perfilIndex)}>
-                                  {labelPosicaoProducao(projetoTipo, p.perfilIndex)}{varNome ? ` (${varNome})` : ''}
+                                  {labelPosicaoProducao(isMicroverdes ? 'microverdes' : projetoTipo, p.perfilIndex)}{varNome ? ` (${varNome})` : ''}
                                 </SelectItem>
                               );
                             })}
@@ -2457,7 +2461,7 @@ export default function TorreDetail() {
                           <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Selecione o andar..." /></SelectTrigger>
                           <SelectContent>
                             {andaresDestino.map(a => {
-                              const plantadas = contarPlantasAndar(a, torre.fase, projetoTipo);
+                              const plantadas = contarPlantasAndar(a, torre.fase, tipoContagem, celulasMudas);
                               const maxSlots = capacidadeAndar(torre.fase, projetoTipo, torre.estruturaOverride ?? null);
                               return (
                                 <SelectItem key={a.id} value={a.id}>
@@ -2491,7 +2495,7 @@ export default function TorreDetail() {
                           <SelectContent>
                             {perfisDestino.map(p => (
                               <SelectItem key={p.index} value={String(p.index)}>
-                                {labelPosicaoProducao(projetoTipo, p.index)} {p.ocupado ? '(ocupada)' : '(livre)'}
+                                {labelPosicaoProducao(isMicroverdes ? 'microverdes' : projetoTipo, p.index)} {p.ocupado ? '(ocupada)' : '(livre)'}
                               </SelectItem>
                             ))}
                           </SelectContent>

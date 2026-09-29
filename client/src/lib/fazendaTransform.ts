@@ -158,6 +158,7 @@ export function transformFazendaLoadAllResponse(raw: unknown): FazendaData {
       numeroTorre: typeof t.numeroTorre === "number" ? t.numeroTorre : 0,
       estruturaOverride: parseTorreEstruturaOverrideJson(t.estruturaOverrideJson ?? null),
       caixaAguaId: t.caixaAguaId ? caixaSlugMap.get(t.caixaAguaId) || "" : "",
+      cultivo: t.cultivo === "microverdes" ? "microverdes" : "folhosa",
       ativa: !(t.ativa === false || t.ativa === 0),
     }))
     .sort(compareTorresPorExibicao);

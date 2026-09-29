@@ -222,6 +222,8 @@ export interface Torre {
   /** Override da grelha física (ex.: 12×6 em veg/mat). */
   estruturaOverride?: TorreEstruturaOverride | null;
   caixaAguaId?: string;
+  /** `microverdes`: a torre antiga de mudas, com o histórico, operada como microverdes. */
+  cultivo?: "folhosa" | "microverdes" | null;
   ativa?: boolean;
 }
 

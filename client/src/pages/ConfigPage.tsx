@@ -705,6 +705,7 @@ export default function ConfigPage() {
                     <h3 className="font-semibold">{torre.nome}</h3>
                     <p className="text-xs text-muted-foreground">
                       N.º {typeof torre.numeroTorre === 'number' ? torre.numeroTorre : '—'} · {torre.numAndares || torre.andares || 0} andares
+                      {torre.cultivo === 'microverdes' ? ' · Microverdes' : ''}
                     </p>
                     {!microOmitCaixaAgua && (() => {
                       const nd = (data.caixasAgua || []).find((c) => c.id === torre.caixaAguaId)?.nome;

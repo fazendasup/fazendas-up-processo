@@ -260,6 +260,8 @@ export const torres = mysqlTable(
   /** JSON opcional: override por fase `{ "vegetativa": { "perfis":12, "furosPorPerfil":6 } }`. */
   estruturaOverrideJson: text("estruturaOverrideJson"),
   numAndares: int("numAndares").notNull().default(10),
+  /** `folhosa` (fazenda vertical) ou `microverdes` quando a torre deixou de ser mudas e o histórico ficou nela. */
+  cultivo: varchar("cultivo", { length: 16 }).notNull().default("folhosa"),
   caixaAguaId: int("caixaAguaId"),
     ativa: boolean("ativa").notNull().default(true),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
