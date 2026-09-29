@@ -22,6 +22,7 @@ import {
 } from '@/lib/utils-farm';
 import type { CicloPrazoOpts } from '@/lib/utils-farm';
 import { AlertTriangle, Droplets, ChevronRight, Sprout, Scissors, Droplet, Clock } from 'lucide-react';
+import { AplicacaoPendenteNaTorre } from '@/components/AplicacoesCaixaHoje';
 
 interface TorreCardProps {
   torre: Torre;
@@ -213,9 +214,10 @@ export default function TorreCard({ torre }: TorreCardProps) {
     );
   };
 
+  const hrefTorre = `/torre/${torre.id}`;
+
   return (
-    <Link
-      href={`/torre/${torre.id}`}
+    <div
       className="group block h-full min-w-0"
       aria-label={`${nomeExib}: mapa de andares à esquerda; totais e detalhes à direita.`}
     >
@@ -223,17 +225,20 @@ export default function TorreCard({ torre }: TorreCardProps) {
       <div
         className={`flex h-full min-h-0 min-w-0 overflow-hidden rounded-lg surface-panel transition-transform duration-300 group-hover:-translate-y-0.5 ${faseClass}`}
       >
-        <div className="flex min-h-0 shrink-0 flex-col items-center gap-1.5 border-r border-border/60 bg-muted/15 px-2 py-2.5">
+        <Link
+          href={hrefTorre}
+          className="flex min-h-0 shrink-0 flex-col items-center gap-1.5 border-r border-border/60 bg-muted/15 px-2 py-2.5"
+        >
           <span className="select-none text-center text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
             Andares
           </span>
           <div className="flex flex-col gap-0.5 rounded-sm p-px ring-1 ring-border/45">
             {andares.map(renderSegmentoAndar)}
           </div>
-        </div>
+        </Link>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 p-2.5">
-          <div className="flex min-w-0 items-start justify-between gap-2">
+          <Link href={hrefTorre} className="flex min-w-0 items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               <h3 className="font-display min-w-0 text-sm font-semibold leading-snug text-card-foreground">{nomeExib}</h3>
               {caixaCompartilhadaResumo && (
@@ -255,11 +260,14 @@ export default function TorreCard({ torre }: TorreCardProps) {
                 {alertas}
               </span>
             ) : null}
-          </div>
+          </Link>
 
+          <Link href={hrefTorre} className="block">
           <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">Totais da torre</p>
+          </Link>
 
-          <div className="min-h-0 min-w-0 flex-1">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <Link href={hrefTorre} className="block">
             <div className="flex flex-col gap-1.5 text-[10px] leading-snug text-card-foreground">
               <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                 <Sprout className="h-2.5 w-2.5 shrink-0" />
@@ -315,9 +323,14 @@ export default function TorreCard({ torre }: TorreCardProps) {
                 </div>
               )}
             </div>
+            </Link>
+            <AplicacaoPendenteNaTorre caixaId={torre.caixaAguaId} />
           </div>
 
-          <div className="flex w-full items-start justify-between gap-1 border-t border-border/40 pt-1.5 text-[10px] text-muted-foreground">
+          <Link
+            href={hrefTorre}
+            className="flex w-full items-start justify-between gap-1 border-t border-border/40 pt-1.5 text-[10px] text-muted-foreground"
+          >
             <div
               className="flex min-w-0 flex-1 flex-col gap-0.5 leading-snug"
               title={caixaTitle}
@@ -339,9 +352,9 @@ export default function TorreCard({ torre }: TorreCardProps) {
               )}
             </div>
             <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-primary" />
-          </div>
+          </Link>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }

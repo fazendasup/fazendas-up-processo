@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { Droplet } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useFazenda } from "@/contexts/FazendaContext";
@@ -7,34 +6,22 @@ import { useDbIdResolver } from "@/hooks/useDbIdResolver";
 import { Button } from "@/components/ui/button";
 import { cicloPendenteHoje } from "@/lib/utils-farm";
 import { torreEstaAtivaNoDashboard } from "@/lib/types";
-import { rotuloCaixaComoCadastro } from "@/lib/rotuloCaixaCadastro";
 
-/**
- * O que aplicar hoje, por caixa. Uma linha: torres, produto, dosagem, Aplicar.
- * O ritmo seguinte dessa caixa parte do momento da aplicação.
- */
-export default function AplicacoesCaixaHoje() {
+export type AplicacaoCaixaHoje = {
+  key: string;
+  cicloId: number;
+  caixaSlug: string;
+  caixaDbId: number;
+  produto: string;
+  dosagem: string;
+};
+
+export function useAplicacoesCaixaHoje(): AplicacaoCaixaHoje[] {
   const { data } = useFazenda();
   const resolver = useDbIdResolver();
-  const utils = trpc.useUtils();
-  const aplicar = trpc.ciclos.aplicarNaCaixa.useMutation({
-    onSuccess: async () => {
-      toast.success("Aplicação registrada");
-      await utils.fazenda.loadAll.invalidate();
-    },
-    onError: (err) => toast.error(err.message),
-  });
 
-  const linhas = useMemo(() => {
-    const out: {
-      key: string;
-      cicloId: number;
-      caixaDbId: number;
-      torres: string;
-      torresDetalhe?: string;
-      produto: string;
-      dosagem: string;
-    }[] = [];
+  return useMemo(() => {
+    const out: AplicacaoCaixaHoje[] = [];
 
     for (const ciclo of data.ciclos) {
       if (!ciclo.ativo || ciclo.alvo === "andar") continue;
@@ -50,68 +37,66 @@ export default function AplicacoesCaixaHoje() {
           ultimaExecucao: exec?.ultimaExecucao,
         });
         if (!pendente) continue;
-        const ligadas = data.torres.filter(
+        const temTorreAtiva = data.torres.some(
           (t) => t.caixaAguaId === caixaId && torreEstaAtivaNoDashboard(t),
         );
-        const rotulo = rotuloCaixaComoCadastro(caixa.nome, ligadas);
+        if (!temTorreAtiva) continue;
         out.push({
           key: `${ciclo.id}-${caixaId}`,
           cicloId,
+          caixaSlug: caixaId,
           caixaDbId,
-          torres: rotulo.principal,
-          torresDetalhe: rotulo.detalhe,
           produto: ciclo.produto,
           dosagem: ciclo.dosagem?.trim() || "",
         });
       }
     }
 
-    return out.sort((a, b) => a.torres.localeCompare(b.torres, "pt-BR", { numeric: true }));
+    return out;
   }, [data, resolver.caixaSlugToId]);
+}
 
-  if (linhas.length === 0) return null;
+/** Dose do dia no vão do card da torre, com o botão de aplicar. */
+export function AplicacaoPendenteNaTorre({ caixaId }: { caixaId?: string | null }) {
+  const linhas = useAplicacoesCaixaHoje().filter((l) => l.caixaSlug === caixaId);
+  const utils = trpc.useUtils();
+  const aplicar = trpc.ciclos.aplicarNaCaixa.useMutation({
+    onSuccess: async () => {
+      toast.success("Aplicação registrada");
+      await utils.fazenda.loadAll.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  if (!caixaId || linhas.length === 0) return null;
 
   return (
-    <section>
-      <h2 className="font-display font-bold text-base mb-3 flex items-center gap-2 text-foreground">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/10 text-sky-700 dark:text-sky-300 ring-1 ring-sky-500/20">
-          <Droplet className="w-4 h-4" />
-        </span>
-        Aplicar hoje
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {linhas.map((linha) => (
-          <div
-            key={linha.key}
-            className="surface-panel rounded-xl border border-border/70 px-4 py-3 flex items-center justify-between gap-3"
+    <div className="mt-auto flex flex-col gap-1.5 pt-2">
+      {linhas.map((linha) => (
+        <div
+          key={linha.key}
+          className="rounded-md bg-emerald-600 px-2.5 py-2 text-white shadow-sm"
+        >
+          <p className="text-[11px] font-semibold leading-tight">{linha.produto}</p>
+          {linha.dosagem ? (
+            <p className="mt-1 text-sm font-bold leading-snug">{linha.dosagem}</p>
+          ) : null}
+          <Button
+            type="button"
+            size="sm"
+            className="mt-2 h-8 w-full bg-white font-bold text-emerald-800 hover:bg-emerald-50"
+            disabled={aplicar.isPending}
+            onClick={() =>
+              aplicar.mutate({
+                cicloId: linha.cicloId,
+                caixaAguaId: linha.caixaDbId,
+              })
+            }
           >
-            <div className="min-w-0">
-              <p className="font-display text-base font-bold leading-tight">
-                {linha.torres}
-              </p>
-              {linha.torresDetalhe ? (
-                <p className="mt-1 text-xs text-muted-foreground">{linha.torresDetalhe}</p>
-              ) : null}
-              <p className="mt-1.5 text-sm">{linha.produto}</p>
-              {linha.dosagem ? (
-                <p className="text-base font-semibold">{linha.dosagem}</p>
-              ) : null}
-            </div>
-            <Button
-              size="sm"
-              disabled={aplicar.isPending}
-              onClick={() =>
-                aplicar.mutate({
-                  cicloId: linha.cicloId,
-                  caixaAguaId: linha.caixaDbId,
-                })
-              }
-            >
-              Aplicar
-            </Button>
-          </div>
-        ))}
-      </div>
-    </section>
+            Aplicar
+          </Button>
+        </div>
+      ))}
+    </div>
   );
 }
