@@ -494,7 +494,7 @@ async function criarVendaCa(
     const body = {
       id_cliente: input.idCliente,
       numero,
-      situacao: "EM_ANDAMENTO",
+      situacao: "APROVADO",
       data_venda: input.data,
       observacoes: input.observacoes ?? undefined,
       observacoes_pagamento: `Prazo ${input.prazoBoletoDias} dia(s)`,
@@ -901,7 +901,7 @@ export async function enviarOperacionalContaAzul(
       });
       externalId = created.id;
       numeroVenda = String(created.numero);
-      statusPedido = "EM_ANDAMENTO";
+      statusPedido = "APROVADO";
       dataVencimentoBoleto = created.dataVencimento;
 
       if ((cfg.tipoPagamentoPadrao || "BOLETO_BANCARIO") === "BOLETO_BANCARIO") {
@@ -1326,7 +1326,7 @@ export async function fecharPeriodoAcumuloContaAzul(
       dataPedido: periodo.fim,
       itens,
       frete,
-      statusPedido: "EM_ANDAMENTO",
+      statusPedido: "APROVADO",
       numeroVenda: String(created.numero),
     });
 
