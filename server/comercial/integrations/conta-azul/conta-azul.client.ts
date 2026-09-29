@@ -1,5 +1,5 @@
 import axios, { type AxiosInstance } from "axios";
-import { detalheHttpContaAzul } from "@shared/contaAzulErroUsuario";
+import { detalheHttpContaAzul, mensagemCorpoContaAzul } from "@shared/contaAzulErroUsuario";
 import type { Env } from "../../env";
 import { withRetry } from "../../lib/retry";
 import { contaAzulThrottle, retryAfterMsFromAxios } from "./conta-azul-rate-limit";
@@ -7,13 +7,7 @@ import { contaAzulThrottle, retryAfterMsFromAxios } from "./conta-azul-rate-limi
 function contaAzulErroAmigavel(e: unknown): Error {
   if (!axios.isAxiosError(e)) return e instanceof Error ? e : new Error(String(e));
   const status = e.response?.status;
-  const raw = e.response?.data;
-  let detalhe: string | undefined;
-  if (raw && typeof raw === "object" && "error" in raw && typeof (raw as { error: unknown }).error === "string") {
-    detalhe = (raw as { error: string }).error;
-  } else if (typeof raw === "string") {
-    detalhe = raw;
-  }
+  const detalhe = mensagemCorpoContaAzul(e.response?.data);
   return new Error(detalheHttpContaAzul(status, detalhe, e.message));
 }
 

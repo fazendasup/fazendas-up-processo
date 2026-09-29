@@ -74,6 +74,16 @@ type ContaFinanceiraItem = {
   nome?: string;
   ativo?: boolean;
   tipo?: string;
+  banco?: string;
+  possui_config_boleto_bancario?: boolean;
+};
+
+export type ContaCobrancaBoleto = {
+  id: string;
+  tipo: string | null;
+  nome?: string | null;
+  banco?: string | null;
+  possuiConfigBoleto?: boolean | null;
 };
 
 /** Sincroniza lista de contas financeiras e escolhe padrão se ainda não houver. */
@@ -81,7 +91,7 @@ export async function sincronizarContasFinanceirasEnvio(
   prisma: PrismaClient,
   env: Env,
 ): Promise<{
-  contas: Array<{ id: string; nome: string; tipo: string | null; ativo: boolean }>;
+  contas: Array<ContaCobrancaBoleto & { nome: string; ativo: boolean }>;
   selecionadaId: string | null;
 }> {
   const cred = await ensureValidAccessToken(prisma, env);
@@ -101,6 +111,8 @@ export async function sincronizarContasFinanceirasEnvio(
         id,
         nome: String(c.nome ?? id),
         tipo: c.tipo ? String(c.tipo) : null,
+        banco: c.banco ? String(c.banco) : null,
+        possuiConfigBoleto: c.possui_config_boleto_bancario === true,
         ativo: c.ativo !== false,
       };
     })
@@ -607,18 +619,37 @@ export function extrairIdEventoFinanceiro(venda: unknown): string | null {
   return null;
 }
 
-/** Conta que a API aceita em gerar-cobranca: Cobranças Conta Azul ou conta corrente PJ. */
+function ehCobrancasContaAzul(c: ContaCobrancaBoleto): boolean {
+  return /COBRANCAS_CONTA_AZUL|RECEBA.?FACIL/i.test(c.tipo ?? "");
+}
+
+/** Conta PJ da Conta Azul (banco CONTAAZUL_IP), a que a API aceita em gerar-cobranca. */
+function ehContaPjContaAzul(c: ContaCobrancaBoleto): boolean {
+  return (
+    /CONTAAZUL/i.test(c.banco ?? "") ||
+    /conta\s*pj\s*conta\s*azul/i.test(c.nome ?? "")
+  );
+}
+
+function emiteBoletoContaAzul(c: ContaCobrancaBoleto): boolean {
+  if (ehCobrancasContaAzul(c) || c.possuiConfigBoleto === true) return true;
+  return /^CONTA_CORRENTE$/i.test(c.tipo ?? "") && ehContaPjContaAzul(c);
+}
+
+/**
+ * Conta de cobrança do boleto. A conta da venda (ex.: Banco do Brasil) não serve:
+ * a API só aceita Cobranças Conta Azul ou a Conta PJ Conta Azul.
+ */
 export function escolherContaCobrancaBoleto(
-  contas: Array<{ id: string; tipo: string | null }>,
+  contas: ContaCobrancaBoleto[],
   selecionadaId: string | null | undefined,
 ): string | null {
-  const serve = (tipo: string | null | undefined) =>
-    !!tipo && (/COBRANCAS_CONTA_AZUL/i.test(tipo) || /^CONTA_CORRENTE$/i.test(tipo));
   const selecionada = contas.find((c) => c.id === selecionadaId);
-  if (selecionada && serve(selecionada.tipo)) return selecionada.id;
+  if (selecionada && emiteBoletoContaAzul(selecionada)) return selecionada.id;
   return (
-    contas.find((c) => /COBRANCAS_CONTA_AZUL/i.test(c.tipo ?? ""))?.id ??
-    contas.find((c) => /^CONTA_CORRENTE$/i.test(c.tipo ?? ""))?.id ??
+    contas.find(ehCobrancasContaAzul)?.id ??
+    contas.find((c) => /^CONTA_CORRENTE$/i.test(c.tipo ?? "") && ehContaPjContaAzul(c))?.id ??
+    contas.find((c) => c.possuiConfigBoleto === true)?.id ??
     null
   );
 }
@@ -710,12 +741,46 @@ async function emitirBoletoDaVenda(
   if (!id) {
     throw new Error("Conta Azul não retornou ID da cobrança/boleto.");
   }
-  const url = cobranca.url ?? cobranca.URL ?? null;
+  const registrada = await aguardarRegistroCobranca(http, id, {
+    url: cobranca.url ?? cobranca.URL ?? null,
+    status: cobranca.status ? String(cobranca.status) : null,
+  });
+  if (registrada.status && /FALHA_EMISSAO|INVALIDO/i.test(registrada.status)) {
+    throw new Error(
+      `Conta Azul não registrou o boleto (${registrada.status}).`,
+    );
+  }
   return {
     id,
-    url: url ? String(url) : null,
-    status: cobranca.status ? String(cobranca.status) : null,
+    url: registrada.url,
+    status: registrada.status,
   };
+}
+
+async function aguardarRegistroCobranca(
+  http: AxiosInstance,
+  id: string,
+  inicial: { url: string | null; status: string | null },
+): Promise<{ url: string | null; status: string | null }> {
+  let url = inicial.url ? String(inicial.url) : null;
+  let status = inicial.status;
+  if (url) return { url, status };
+  for (let tentativa = 1; tentativa <= 4; tentativa++) {
+    try {
+      const c = await contaAzulGet<{ url?: string; URL?: string; status?: string }>(
+        http,
+        `/v1/financeiro/eventos-financeiros/contas-a-receber/cobranca/${encodeURIComponent(id)}`,
+      );
+      url = c.url ?? c.URL ?? null;
+      status = c.status ? String(c.status) : status;
+      if (url) return { url: String(url), status };
+      if (status && /FALHA_EMISSAO|INVALIDO/i.test(status)) return { url: null, status };
+    } catch (err) {
+      logger.warn({ err, id, tentativa }, "Conta Azul: cobrança ainda sem link do boleto");
+    }
+    if (tentativa < 4) await esperar(700 * tentativa);
+  }
+  return { url, status };
 }
 
 async function gravarPedidoLocalAposEnvio(
@@ -844,7 +909,7 @@ export async function enviarOperacionalContaAzul(
     const http = createContaAzulHttp(env, cred.accessToken);
 
     // Garante conta financeira para vendas
-    let contasFinanceiras: Array<{ id: string; nome: string; tipo: string | null; ativo: boolean }> = [];
+    let contasFinanceiras: Array<ContaCobrancaBoleto & { nome: string; ativo: boolean }> = [];
     if (modo === "VENDA") {
       const syncContas = await sincronizarContasFinanceirasEnvio(prisma, env);
       contasFinanceiras = syncContas.contas;
@@ -908,7 +973,7 @@ export async function enviarOperacionalContaAzul(
         const contaBoleto = escolherContaCobrancaBoleto(contasFinanceiras, cfg.idContaFinanceira);
         if (!contaBoleto) {
           boletoErro =
-            "Nenhuma conta Cobranças Conta Azul (ou conta corrente PJ) disponível para emitir o boleto.";
+            "Nenhuma conta Cobranças Conta Azul ou Conta PJ Conta Azul disponível para emitir o boleto.";
         } else {
           try {
             boleto = await emitirBoletoDaVenda(http, {
@@ -1300,7 +1365,7 @@ export async function fecharPeriodoAcumuloContaAzul(
       const contaBoleto = escolherContaCobrancaBoleto(syncContas.contas, cfg.idContaFinanceira);
       if (!contaBoleto) {
         boletoErro =
-          "Nenhuma conta Cobranças Conta Azul (ou conta corrente PJ) disponível para emitir o boleto.";
+          "Nenhuma conta Cobranças Conta Azul ou Conta PJ Conta Azul disponível para emitir o boleto.";
       } else {
         try {
           boleto = await emitirBoletoDaVenda(http, {

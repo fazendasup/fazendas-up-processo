@@ -63,16 +63,45 @@ describe("escolherContaCobrancaBoleto", () => {
     ).toBe("cob");
   });
 
-  it("mantém a conta selecionada se ela já emite boleto", () => {
+  it("ignora conta corrente comum e usa a Conta PJ Conta Azul", () => {
+    expect(
+      escolherContaCobrancaBoleto(
+        [
+          { id: "bb", tipo: "CONTA_CORRENTE", nome: "Banco do Brasil", banco: "BANCO_BRASIL" },
+          {
+            id: "pj",
+            tipo: "CONTA_CORRENTE",
+            nome: "Conta PJ Conta Azul IP",
+            banco: "CONTAAZUL_IP",
+          },
+        ],
+        "bb",
+      ),
+    ).toBe("pj");
+  });
+
+  it("mantém a conta selecionada quando ela já emite boleto", () => {
     expect(
       escolherContaCobrancaBoleto(
         [
           { id: "cob", tipo: "COBRANCAS_CONTA_AZUL" },
-          { id: "cc", tipo: "CONTA_CORRENTE" },
+          { id: "pj", tipo: "CONTA_CORRENTE", banco: "CONTAAZUL_IP" },
         ],
-        "cc",
+        "cob",
       ),
-    ).toBe("cc");
+    ).toBe("cob");
+  });
+
+  it("não escolhe conta corrente sem configuração de boleto", () => {
+    expect(
+      escolherContaCobrancaBoleto(
+        [
+          { id: "bb", tipo: "CONTA_CORRENTE", banco: "BANCO_BRASIL" },
+          { id: "bradesco", tipo: "CONTA_CORRENTE", banco: "BRADESCO" },
+        ],
+        "bb",
+      ),
+    ).toBeNull();
   });
 });
 

@@ -19,6 +19,35 @@ function textoLimpo(texto: string): string {
   return limpo.length > 240 ? `${limpo.slice(0, 237)}…` : limpo;
 }
 
+/** Texto útil do JSON de erro da Conta Azul (`message`, `errors[]`, etc.). */
+export function mensagemCorpoContaAzul(raw: unknown): string | undefined {
+  if (typeof raw === "string") {
+    const t = raw.trim();
+    return t || undefined;
+  }
+  if (!raw || typeof raw !== "object") return undefined;
+  const o = raw as Record<string, unknown>;
+  const partes: string[] = [];
+  for (const key of ["message", "mensagem", "error_description", "detail", "error"]) {
+    const v = o[key];
+    if (typeof v === "string" && v.trim()) partes.push(v.trim());
+  }
+  if (Array.isArray(o.errors)) {
+    for (const e of o.errors) {
+      if (typeof e === "string" && e.trim()) partes.push(e.trim());
+      else if (e && typeof e === "object") {
+        const er = e as Record<string, unknown>;
+        const m = er.message ?? er.mensagem ?? er.detail ?? er.description;
+        if (typeof m === "string" && m.trim()) partes.push(m.trim());
+      }
+    }
+  }
+  const uniq = [...new Set(partes)];
+  if (!uniq.length) return undefined;
+  const joined = uniq.join(" — ");
+  return joined.length > 240 ? `${joined.slice(0, 237)}…` : joined;
+}
+
 /** Mensagem para o usuário a partir do HTTP da Conta Azul, sem HTML da CDN. */
 export function detalheHttpContaAzul(
   status: number | undefined,

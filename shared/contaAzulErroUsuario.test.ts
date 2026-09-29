@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   detalheHttpContaAzul,
+  mensagemCorpoContaAzul,
   textoErroContaAzul,
 } from "./contaAzulErroUsuario";
 
@@ -21,5 +22,16 @@ describe("erro Conta Azul para o usuário", () => {
 
   it("429 não repete o corpo técnico", () => {
     expect(detalheHttpContaAzul(429, "rate limit", "x")).toMatch(/limitou/);
+  });
+
+  it("lê message e errors do JSON da API", () => {
+    expect(
+      mensagemCorpoContaAzul({
+        message: "Conta inválida para boleto",
+        errors: [{ message: "conta_bancaria deve ser Cobranças Conta Azul" }],
+      }),
+    ).toBe(
+      "Conta inválida para boleto — conta_bancaria deve ser Cobranças Conta Azul",
+    );
   });
 });

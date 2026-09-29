@@ -96,6 +96,8 @@ export function AcoesPedidoConciliacao({
               onClick: () => window.open(r.boleto!.url!, "_blank", "noopener,noreferrer"),
             },
           });
+        } else if (r.boleto) {
+          toast.success("Boleto emitido. A Conta Azul ainda está registrando o link.");
         } else if (r.boletoErro) {
           toast.warning(`Venda ok, mas o boleto falhou: ${r.boletoErro}`);
         }
@@ -117,6 +119,8 @@ export function AcoesPedidoConciliacao({
             onClick: () => window.open(r.boleto!.url!, "_blank", "noopener,noreferrer"),
           },
         });
+      } else if (r.boleto) {
+        toast.success("Boleto emitido. A Conta Azul ainda está registrando o link.");
       } else if (r.boletoErro) {
         toast.warning(`Venda ok, mas o boleto falhou: ${r.boletoErro}`);
       }
