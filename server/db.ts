@@ -1,4 +1,10 @@
 import { receitaCicloPrioritariaParaVariedade } from "@shared/cicloReceita";
+import {
+  hojeYmdSaoPaulo,
+  instanteMeioDia,
+  reagendarSequenciaAposAplicar,
+  type PassoCicloAgenda,
+} from "@shared/cicloSequencia";
 import { aplicarConsumoDiarioEstoque as calcularConsumoDiarioEstoque } from "@shared/estoque";
 import { eq, and, or, inArray, sql, asc, desc, count, ne, isNull, gt, max, gte, isNotNull, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
@@ -3755,7 +3761,8 @@ export async function ensureCicloCaixaExecucoesTable(): Promise<void> {
   \`projetoId\` int NOT NULL,
   \`cicloId\` int NOT NULL,
   \`caixaAguaId\` int NOT NULL,
-  \`ultimaExecucao\` timestamp NOT NULL,
+  \`ultimaExecucao\` timestamp NULL,
+  \`dataAgenda\` timestamp NULL,
   \`executorId\` int NULL,
   \`executorNome\` varchar(128) NULL,
   \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -3765,6 +3772,20 @@ export async function ensureCicloCaixaExecucoesTable(): Promise<void> {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (!/already exists|ER_TABLE_EXISTS/i.test(msg)) {
+      console.error("[Database] ensureCicloCaixaExecucoesTable:", err);
+    }
+  }
+  const alters = [
+    "ALTER TABLE `ciclo_caixa_execucoes` ADD COLUMN `dataAgenda` timestamp NULL",
+    "ALTER TABLE `ciclo_caixa_execucoes` MODIFY COLUMN `ultimaExecucao` timestamp NULL",
+  ];
+  for (const stmt of alters) {
+    try {
+      await db.execute(sql.raw(stmt));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (isMysqlDuplicateColumnError(err)) continue;
+      if (/doesn't exist/i.test(msg) || /ER_NO_SUCH_TABLE/i.test(msg)) return;
       console.error("[Database] ensureCicloCaixaExecucoesTable:", err);
     }
   }
@@ -3798,6 +3819,31 @@ export async function registrarAplicacaoCicloNaCaixa(input: {
   if (!caixa) throw new Error("Caixa não encontrada.");
 
   const agora = new Date();
+  const hojeYmd = hojeYmdSaoPaulo(agora);
+
+  const [ciclosProjeto, execucoesProjeto] = await Promise.all([
+    db.select().from(ciclos).where(eq(ciclos.projetoId, input.projetoId)),
+    db.select().from(cicloCaixaExecucoes).where(eq(cicloCaixaExecucoes.projetoId, input.projetoId)),
+  ]);
+  const passos: PassoCicloAgenda<number>[] = ciclosProjeto.map((c) => ({
+    id: c.id,
+    ativo: c.ativo !== false && Number(c.ativo) !== 0,
+    alvo: c.alvo,
+    frequencia: c.frequencia,
+    diasSemana: Array.isArray(c.diasSemana) ? (c.diasSemana as number[]) : null,
+    intervaloDias: c.intervaloDias,
+    dataInicio: c.dataInicio,
+    caixaIds: parseCaixaIdsJson(c.caixaIds),
+    execucoes: execucoesProjeto
+      .filter((e) => e.cicloId === c.id)
+      .map((e) => ({
+        caixaId: e.caixaAguaId,
+        ultimaExecucao: e.ultimaExecucao,
+        dataAgenda: e.dataAgenda,
+      })),
+  }));
+  const deslocamentos = reagendarSequenciaAposAplicar(passos, input.caixaAguaId, input.cicloId, hojeYmd);
+
   const existente = await db
     .select()
     .from(cicloCaixaExecucoes)
@@ -3814,6 +3860,7 @@ export async function registrarAplicacaoCicloNaCaixa(input: {
       .update(cicloCaixaExecucoes)
       .set({
         ultimaExecucao: agora,
+        dataAgenda: null,
         executorId: input.executorId,
         executorNome: input.executorNome,
       })
@@ -3824,9 +3871,32 @@ export async function registrarAplicacaoCicloNaCaixa(input: {
       cicloId: input.cicloId,
       caixaAguaId: input.caixaAguaId,
       ultimaExecucao: agora,
+      dataAgenda: null,
       executorId: input.executorId,
       executorNome: input.executorNome,
     });
+  }
+
+  for (const desloca of deslocamentos) {
+    const linha = execucoesProjeto.find(
+      (e) => e.cicloId === desloca.cicloId && e.caixaAguaId === input.caixaAguaId,
+    );
+    const dataAgenda = instanteMeioDia(desloca.dataAgendaYmd);
+    if (linha) {
+      await db
+        .update(cicloCaixaExecucoes)
+        .set({ dataAgenda })
+        .where(eq(cicloCaixaExecucoes.id, linha.id));
+    } else {
+      await db.insert(cicloCaixaExecucoes).values({
+        projetoId: input.projetoId,
+        cicloId: desloca.cicloId,
+        caixaAguaId: input.caixaAguaId,
+        dataAgenda,
+        executorId: input.executorId,
+        executorNome: input.executorNome,
+      });
+    }
   }
 
   await createAplicacaoCaixa({

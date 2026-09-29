@@ -549,7 +549,9 @@ export const cicloCaixaExecucoes = mysqlTable(
     projetoId: int("projetoId").notNull(),
     cicloId: int("cicloId").notNull(),
     caixaAguaId: int("caixaAguaId").notNull(),
-    ultimaExecucao: timestamp("ultimaExecucao").notNull(),
+    ultimaExecucao: timestamp("ultimaExecucao"),
+    /** Próxima data desta caixa quando a sequência foi deslocada. Vale até a aplicação. */
+    dataAgenda: timestamp("dataAgenda"),
     executorId: int("executorId"),
     executorNome: varchar("executorNome", { length: 128 }),
     createdAt: timestamp("createdAt").defaultNow().notNull(),

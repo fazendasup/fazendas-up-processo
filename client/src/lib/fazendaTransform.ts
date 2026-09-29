@@ -360,6 +360,7 @@ export function transformFazendaLoadAllResponse(raw: unknown): FazendaData {
       .map((e: any) => ({
         caixaId: caixaSlugMap.get(e.caixaAguaId) || "",
         ultimaExecucao: toDateStr(e.ultimaExecucao) || undefined,
+        dataAgenda: toYmdLocal(e.dataAgenda),
       }))
       .filter((e: { caixaId: string }) => e.caixaId),
     dataInicio: toYmdLocal(c.dataInicio),

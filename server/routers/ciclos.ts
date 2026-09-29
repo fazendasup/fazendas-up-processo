@@ -62,7 +62,7 @@ export const ciclosRouter = router({
       });
       return { success: true };
     }),
-  /** Registra a aplicação numa caixa. A próxima data dessa caixa segue o ritmo do ciclo. */
+  /** Registra a aplicação numa caixa e desloca os passos seguintes da sequência. */
   aplicarNaCaixa: projectProcedure
     .input(
       z.object({

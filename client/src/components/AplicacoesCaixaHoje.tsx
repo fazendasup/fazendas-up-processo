@@ -4,61 +4,41 @@ import { trpc } from "@/lib/trpc";
 import { useFazenda } from "@/contexts/FazendaContext";
 import { useDbIdResolver } from "@/hooks/useDbIdResolver";
 import { Button } from "@/components/ui/button";
-import { cicloPendenteHoje } from "@/lib/utils-farm";
-import { torreEstaAtivaNoDashboard } from "@/lib/types";
+import type { CicloAplicacao } from "@/lib/types";
+import {
+  escolherPassoDaCaixa,
+  hojeYmdSaoPaulo,
+  type PassoCicloAgenda,
+} from "@shared/cicloSequencia";
 
-export type AplicacaoCaixaHoje = {
-  key: string;
-  cicloId: number;
-  caixaSlug: string;
-  caixaDbId: number;
-  produto: string;
-  dosagem: string;
-};
-
-export function useAplicacoesCaixaHoje(): AplicacaoCaixaHoje[] {
-  const { data } = useFazenda();
-  const resolver = useDbIdResolver();
-
-  return useMemo(() => {
-    const out: AplicacaoCaixaHoje[] = [];
-
-    for (const ciclo of data.ciclos) {
-      if (!ciclo.ativo || ciclo.alvo === "andar") continue;
-      const cicloId = Number(String(ciclo.id).replace(/^c-/, ""));
-      if (!Number.isFinite(cicloId)) continue;
-      for (const caixaId of ciclo.caixaIds ?? []) {
-        const caixa = data.caixasAgua.find((c) => c.id === caixaId);
-        const caixaDbId = resolver.caixaSlugToId.get(caixaId);
-        if (!caixa || caixaDbId == null) continue;
-        const exec = ciclo.execucoesCaixa?.find((e) => e.caixaId === caixaId);
-        const pendente = cicloPendenteHoje({
-          ...ciclo,
-          ultimaExecucao: exec?.ultimaExecucao,
-        });
-        if (!pendente) continue;
-        const temTorreAtiva = data.torres.some(
-          (t) => t.caixaAguaId === caixaId && torreEstaAtivaNoDashboard(t),
-        );
-        if (!temTorreAtiva) continue;
-        out.push({
-          key: `${ciclo.id}-${caixaId}`,
-          cicloId,
-          caixaSlug: caixaId,
-          caixaDbId,
-          produto: ciclo.produto,
-          dosagem: ciclo.dosagem?.trim() || "",
-        });
-      }
-    }
-
-    return out;
-  }, [data, resolver.caixaSlugToId]);
+function passosAgenda(ciclos: CicloAplicacao[]): PassoCicloAgenda<string>[] {
+  const out: PassoCicloAgenda<string>[] = [];
+  for (const ciclo of ciclos) {
+    const id = Number(String(ciclo.id).replace(/^c-/, ""));
+    if (!Number.isFinite(id)) continue;
+    out.push({
+      id,
+      ativo: ciclo.ativo !== false,
+      alvo: ciclo.alvo,
+      frequencia: ciclo.frequencia,
+      diasSemana: ciclo.diasSemana,
+      intervaloDias: ciclo.intervaloDias,
+      dataInicio: ciclo.dataInicio,
+      caixaIds: ciclo.caixaIds ?? [],
+      execucoes: (ciclo.execucoesCaixa ?? []).map((e) => ({
+        caixaId: e.caixaId,
+        ultimaExecucao: e.ultimaExecucao,
+        dataAgenda: e.dataAgenda,
+      })),
+    });
+  }
+  return out;
 }
 
-/** Dose do dia no vão do card da torre, com o botão de aplicar. */
+/** Próximo passo da caixa: um produto por vez, com atraso quando a data já passou. */
 export function AplicacaoPendenteNaTorre({ caixaId }: { caixaId?: string | null }) {
-  const linhas = useAplicacoesCaixaHoje().filter((l) => l.caixaSlug === caixaId);
+  const { data } = useFazenda();
+  const resolver = useDbIdResolver();
   const utils = trpc.useUtils();
   const aplicar = trpc.ciclos.aplicarNaCaixa.useMutation({
     onSuccess: async () => {
@@ -68,35 +48,63 @@ export function AplicacaoPendenteNaTorre({ caixaId }: { caixaId?: string | null 
     onError: (err) => toast.error(err.message),
   });
 
-  if (!caixaId || linhas.length === 0) return null;
+  const linha = useMemo(() => {
+    if (!caixaId) return null;
+    const escolhido = escolherPassoDaCaixa(passosAgenda(data.ciclos), caixaId, hojeYmdSaoPaulo());
+    if (!escolhido) return null;
+    const ciclo = data.ciclos.find((c) => Number(String(c.id).replace(/^c-/, "")) === escolhido.passo.id);
+    const caixaDbId = resolver.caixaSlugToId.get(caixaId);
+    if (!ciclo || caixaDbId == null) return null;
+    return {
+      cicloId: escolhido.passo.id,
+      caixaDbId,
+      produto: ciclo.produto,
+      dosagem: ciclo.dosagem?.trim() || "",
+      diasAtraso: escolhido.diasAtraso,
+    };
+  }, [caixaId, data.ciclos, resolver.caixaSlugToId]);
+
+  if (!linha) return null;
+
+  const atrasado = linha.diasAtraso > 0;
 
   return (
-    <div className="mt-auto flex flex-col gap-1.5 pt-2">
-      {linhas.map((linha) => (
-        <div
-          key={linha.key}
-          className="rounded-md bg-emerald-600 px-2.5 py-2 text-white shadow-sm"
-        >
-          <p className="text-[11px] font-semibold leading-tight">{linha.produto}</p>
+    <div
+      className={`mt-auto rounded-md border px-2 py-1 ${
+        atrasado ? "border-amber-300 bg-amber-50" : "border-emerald-200 bg-emerald-50"
+      }`}
+    >
+      <div className="flex items-center gap-1.5">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[11px] font-semibold leading-tight text-foreground">{linha.produto}</p>
           {linha.dosagem ? (
-            <p className="mt-1 text-sm font-bold leading-snug">{linha.dosagem}</p>
+            <p className="line-clamp-2 text-[10px] leading-snug text-muted-foreground" title={linha.dosagem}>
+              {linha.dosagem}
+            </p>
           ) : null}
-          <Button
-            type="button"
-            size="sm"
-            className="mt-2 h-8 w-full bg-white font-bold text-emerald-800 hover:bg-emerald-50"
-            disabled={aplicar.isPending}
-            onClick={() =>
-              aplicar.mutate({
-                cicloId: linha.cicloId,
-                caixaAguaId: linha.caixaDbId,
-              })
-            }
-          >
-            Aplicar
-          </Button>
+          {atrasado ? (
+            <p className="text-[10px] font-semibold leading-tight text-amber-800">
+              Em atraso · {linha.diasAtraso} {linha.diasAtraso === 1 ? "dia" : "dias"}
+            </p>
+          ) : null}
         </div>
-      ))}
+        <Button
+          type="button"
+          size="sm"
+          className="h-7 shrink-0 px-2 text-xs"
+          disabled={aplicar.isPending}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            aplicar.mutate({
+              cicloId: linha.cicloId,
+              caixaAguaId: linha.caixaDbId,
+            });
+          }}
+        >
+          Aplicar
+        </Button>
+      </div>
     </div>
   );
 }
