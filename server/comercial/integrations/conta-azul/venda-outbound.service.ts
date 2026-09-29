@@ -557,31 +557,119 @@ async function criarVendaCa(
     : new Error("Falha ao criar venda no Conta Azul após retentativas de numeração.");
 }
 
-/** Extrai o id da 1ª parcela a partir do GET /v1/venda/{id}. */
-export function extrairIdParcelaVenda(venda: unknown): string | null {
-  if (!venda || typeof venda !== "object") return null;
-  const o = venda as Record<string, unknown>;
-  const cond = o.condicao_pagamento;
-  const listas: unknown[] = [];
-  if (cond && typeof cond === "object") {
-    const c = cond as Record<string, unknown>;
-    if (Array.isArray(c.parcelas)) listas.push(...c.parcelas);
-  }
-  if (Array.isArray(o.parcelas)) listas.push(...o.parcelas);
-  if (Array.isArray(o.installments)) listas.push(...o.installments);
-  for (const p of listas) {
+function idsDeListaParcelas(lista: unknown): string[] {
+  if (!Array.isArray(lista)) return [];
+  const ids: string[] = [];
+  for (const p of lista) {
     if (!p || typeof p !== "object") continue;
     const row = p as Record<string, unknown>;
     const id = String(row.id ?? row.id_parcela ?? row.idParcela ?? "").trim();
+    if (id) ids.push(id);
+  }
+  return ids;
+}
+
+/**
+ * GET /v1/venda/{id} devolve a condição em `venda.condicao_pagamento`, não na raiz.
+ * O id dessa parcela nem sempre é o da conta a receber usada em gerar-cobranca.
+ */
+export function extrairIdParcelaVenda(venda: unknown): string | null {
+  if (!venda || typeof venda !== "object") return null;
+  const o = venda as Record<string, unknown>;
+  const nos = [o, o.venda].filter((n) => n && typeof n === "object") as Record<string, unknown>[];
+  for (const no of nos) {
+    const cond = no.condicao_pagamento;
+    if (cond && typeof cond === "object") {
+      const id = idsDeListaParcelas((cond as Record<string, unknown>).parcelas)[0];
+      if (id) return id;
+    }
+    const direto = idsDeListaParcelas(no.parcelas)[0] ?? idsDeListaParcelas(no.installments)[0];
+    if (direto) return direto;
+  }
+  return null;
+}
+
+/** Evento financeiro criado junto com a venda — as parcelas dele é que recebem o boleto. */
+export function extrairIdEventoFinanceiro(venda: unknown): string | null {
+  if (!venda || typeof venda !== "object") return null;
+  const o = venda as Record<string, unknown>;
+  const candidatos = [
+    o.evento_financeiro,
+    o.venda && typeof o.venda === "object"
+      ? (o.venda as Record<string, unknown>).evento_financeiro
+      : null,
+  ];
+  for (const ev of candidatos) {
+    if (!ev || typeof ev !== "object") continue;
+    const id = String((ev as Record<string, unknown>).id ?? "").trim();
     if (id) return id;
   }
   return null;
+}
+
+/** Conta que a API aceita em gerar-cobranca: Cobranças Conta Azul ou conta corrente PJ. */
+export function escolherContaCobrancaBoleto(
+  contas: Array<{ id: string; tipo: string | null }>,
+  selecionadaId: string | null | undefined,
+): string | null {
+  const serve = (tipo: string | null | undefined) =>
+    !!tipo && (/COBRANCAS_CONTA_AZUL/i.test(tipo) || /^CONTA_CORRENTE$/i.test(tipo));
+  const selecionada = contas.find((c) => c.id === selecionadaId);
+  if (selecionada && serve(selecionada.tipo)) return selecionada.id;
+  return (
+    contas.find((c) => /COBRANCAS_CONTA_AZUL/i.test(c.tipo ?? ""))?.id ??
+    contas.find((c) => /^CONTA_CORRENTE$/i.test(c.tipo ?? ""))?.id ??
+    null
+  );
+}
+
+function esperar(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
  * Emite boleto (Cobranças Conta Azul) vinculado à parcela da venda.
  * Falha aqui não deve desfazer a venda — o caller decide se propaga ou só avisa.
  */
+async function idParcelaReceberDaVenda(http: AxiosInstance, vendaId: string): Promise<string> {
+  let fallbackVenda: string | null = null;
+  for (let tentativa = 1; tentativa <= 4; tentativa++) {
+    const venda = await contaAzulGet<unknown>(
+      http,
+      `/v1/venda/${encodeURIComponent(vendaId)}`,
+    );
+    fallbackVenda = extrairIdParcelaVenda(venda) ?? fallbackVenda;
+    const eventoId = extrairIdEventoFinanceiro(venda);
+    if (eventoId) {
+      try {
+        const raw = await contaAzulGet<unknown>(
+          http,
+          `/v1/financeiro/eventos-financeiros/${encodeURIComponent(eventoId)}/parcelas`,
+        );
+        const lista = Array.isArray(raw)
+          ? raw
+          : raw && typeof raw === "object"
+            ? ((raw as Record<string, unknown>).itens ??
+              (raw as Record<string, unknown>).parcelas)
+            : null;
+        const idEvento = idsDeListaParcelas(lista)[0];
+        if (idEvento) return idEvento;
+      } catch (err) {
+        logger.warn(
+          { err, vendaId, eventoId, tentativa },
+          "Conta Azul: parcelas do evento financeiro ainda indisponíveis",
+        );
+      }
+    }
+    if (fallbackVenda && !eventoId) return fallbackVenda;
+    if (tentativa < 4) await esperar(700 * tentativa);
+  }
+  if (fallbackVenda) return fallbackVenda;
+  throw new Error(
+    "Venda criada, mas a Conta Azul ainda não liberou a parcela para emitir o boleto.",
+  );
+}
+
 async function emitirBoletoDaVenda(
   http: AxiosInstance,
   input: {
@@ -592,16 +680,7 @@ async function emitirBoletoDaVenda(
     descontoPercentual?: number | null;
   },
 ): Promise<BoletoEmitidoCa> {
-  const venda = await contaAzulGet<unknown>(
-    http,
-    `/v1/venda/${encodeURIComponent(input.vendaId)}`,
-  );
-  const idParcela = extrairIdParcelaVenda(venda);
-  if (!idParcela) {
-    throw new Error(
-      "Venda criada, mas a Conta Azul não retornou id da parcela para emitir o boleto.",
-    );
-  }
+  const idParcela = await idParcelaReceberDaVenda(http, input.vendaId);
 
   const body: Record<string, unknown> = {
     conta_bancaria: input.contaBancaria,
@@ -623,6 +702,7 @@ async function emitirBoletoDaVenda(
   const cobranca = await contaAzulPost<{
     id?: string;
     url?: string;
+    URL?: string;
     status?: string;
   }>(http, "/v1/financeiro/eventos-financeiros/contas-a-receber/gerar-cobranca", body);
 
@@ -630,9 +710,10 @@ async function emitirBoletoDaVenda(
   if (!id) {
     throw new Error("Conta Azul não retornou ID da cobrança/boleto.");
   }
+  const url = cobranca.url ?? cobranca.URL ?? null;
   return {
     id,
-    url: cobranca.url ? String(cobranca.url) : null,
+    url: url ? String(url) : null,
     status: cobranca.status ? String(cobranca.status) : null,
   };
 }
@@ -763,8 +844,10 @@ export async function enviarOperacionalContaAzul(
     const http = createContaAzulHttp(env, cred.accessToken);
 
     // Garante conta financeira para vendas
+    let contasFinanceiras: Array<{ id: string; nome: string; tipo: string | null; ativo: boolean }> = [];
     if (modo === "VENDA") {
-      await sincronizarContasFinanceirasEnvio(prisma, env);
+      const syncContas = await sincronizarContasFinanceirasEnvio(prisma, env);
+      contasFinanceiras = syncContas.contas;
     }
     const cfg = await ensureContaAzulEnvioConfig(prisma);
 
@@ -822,20 +905,26 @@ export async function enviarOperacionalContaAzul(
       dataVencimentoBoleto = created.dataVencimento;
 
       if ((cfg.tipoPagamentoPadrao || "BOLETO_BANCARIO") === "BOLETO_BANCARIO") {
-        try {
-          boleto = await emitirBoletoDaVenda(http, {
-            vendaId: created.id,
-            contaBancaria: cfg.idContaFinanceira,
-            dataVencimento: created.dataVencimento,
-            descricaoFatura: `Venda ${created.numero} — ${pedido.cliente?.nome ?? ""}`.trim(),
-            descontoPercentual: num(regra?.descontoBoletoPercentual),
-          });
-        } catch (err) {
-          boletoErro = err instanceof Error ? err.message : String(err);
-          logger.warn(
-            { err, vendaId: created.id },
-            "Conta Azul: venda ok, falha ao emitir boleto",
-          );
+        const contaBoleto = escolherContaCobrancaBoleto(contasFinanceiras, cfg.idContaFinanceira);
+        if (!contaBoleto) {
+          boletoErro =
+            "Nenhuma conta Cobranças Conta Azul (ou conta corrente PJ) disponível para emitir o boleto.";
+        } else {
+          try {
+            boleto = await emitirBoletoDaVenda(http, {
+              vendaId: created.id,
+              contaBancaria: contaBoleto,
+              dataVencimento: created.dataVencimento,
+              descricaoFatura: `Venda ${created.numero} — ${pedido.cliente?.nome ?? ""}`.trim(),
+              descontoPercentual: num(regra?.descontoBoletoPercentual),
+            });
+          } catch (err) {
+            boletoErro = err instanceof Error ? err.message : String(err);
+            logger.warn(
+              { err, vendaId: created.id },
+              "Conta Azul: venda ok, falha ao emitir boleto",
+            );
+          }
         }
       }
     }
@@ -1170,7 +1259,7 @@ export async function fecharPeriodoAcumuloContaAzul(
   if (itens.length === 0) throw new Error("Sem itens válidos no período.");
 
   const frete = freteDosPedidos(pedidos, regra);
-  await sincronizarContasFinanceirasEnvio(prisma, env);
+  const syncContas = await sincronizarContasFinanceirasEnvio(prisma, env);
   const cfg = await ensureContaAzulEnvioConfig(prisma);
   if (!cfg.idContaFinanceira) {
     throw new Error("Conta financeira Conta Azul não configurada.");
@@ -1208,20 +1297,26 @@ export async function fecharPeriodoAcumuloContaAzul(
     let boleto: BoletoEmitidoCa | null = null;
     let boletoErro: string | null = null;
     if ((cfg.tipoPagamentoPadrao || "BOLETO_BANCARIO") === "BOLETO_BANCARIO") {
-      try {
-        boleto = await emitirBoletoDaVenda(http, {
-          vendaId: created.id,
-          contaBancaria: cfg.idContaFinanceira,
-          dataVencimento: created.dataVencimento,
-          descricaoFatura: `Venda acumulada ${created.numero} — ${cliente?.nome ?? ""}`.trim(),
-          descontoPercentual: num(regra?.descontoBoletoPercentual),
-        });
-      } catch (err) {
-        boletoErro = err instanceof Error ? err.message : String(err);
-        logger.warn(
-          { err, vendaId: created.id },
-          "Conta Azul: venda acumulada ok, falha ao emitir boleto",
-        );
+      const contaBoleto = escolherContaCobrancaBoleto(syncContas.contas, cfg.idContaFinanceira);
+      if (!contaBoleto) {
+        boletoErro =
+          "Nenhuma conta Cobranças Conta Azul (ou conta corrente PJ) disponível para emitir o boleto.";
+      } else {
+        try {
+          boleto = await emitirBoletoDaVenda(http, {
+            vendaId: created.id,
+            contaBancaria: contaBoleto,
+            dataVencimento: created.dataVencimento,
+            descricaoFatura: `Venda acumulada ${created.numero} — ${cliente?.nome ?? ""}`.trim(),
+            descontoPercentual: num(regra?.descontoBoletoPercentual),
+          });
+        } catch (err) {
+          boletoErro = err instanceof Error ? err.message : String(err);
+          logger.warn(
+            { err, vendaId: created.id },
+            "Conta Azul: venda acumulada ok, falha ao emitir boleto",
+          );
+        }
       }
     }
 
