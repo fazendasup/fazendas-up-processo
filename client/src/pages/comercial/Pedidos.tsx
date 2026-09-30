@@ -24,6 +24,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { fmtDataEntrega, isoDataEntrega } from "@/lib/dataEntrega";
 import { trpc } from "@/lib/trpc";
 import {
   isLiderColheitaPerfil,
@@ -158,10 +159,7 @@ function DestaqueObservacaoPedido({
 }
 
 function fmtDate(v: string | Date) {
-  return new Date(v).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-  });
+  return fmtDataEntrega(v);
 }
 
 function labelStatus(s: string) {
@@ -493,7 +491,7 @@ export function Pedidos({
     trpc.comercial.pedidos.alterarDataPedido.useMutation({
       onSuccess: async result => {
         if (!result.unchanged && result.dataEntrega) {
-          setDia(isoLocal(new Date(result.dataEntrega)));
+          setDia(isoDataEntrega(result.dataEntrega));
         }
         toast.success(
           result.unchanged
@@ -514,7 +512,7 @@ export function Pedidos({
     trpc.comercial.pedidos.copiarPedidoParaDia.useMutation({
       onSuccess: async result => {
         if (result.dataEntrega) {
-          setDia(isoLocal(new Date(result.dataEntrega)));
+          setDia(isoDataEntrega(result.dataEntrega));
         }
         toast.success(
           `Pedido de ${result.clienteNome} copiado para ${fmtDate(result.dataEntrega)}. O original permanece no dia de origem.`
@@ -825,7 +823,7 @@ export function Pedidos({
       const iso = isoLocal(d);
       const grupos = gruposDashboard.filter(
         (g: any) =>
-          (g.dataEntregaIso ?? isoLocal(new Date(g.dataEntrega ?? dia))) === iso,
+          (g.dataEntregaIso ?? isoDataEntrega(g.dataEntrega ?? dia)) === iso,
       );
       dias.push({
         iso,
@@ -1247,7 +1245,7 @@ export function Pedidos({
   }
 
   function alterarDataPedidoAgenda(pedido: any) {
-    const dataAtual = isoLocal(new Date(pedido.dataEntrega));
+    const dataAtual = isoDataEntrega(pedido.dataEntrega);
     const novaData = datasPedidos[pedido.id] || dataAtual;
     if (!novaData) return toast.error("Informe a nova data do pedido.");
     if (novaData === dataAtual)
@@ -1264,7 +1262,7 @@ export function Pedidos({
   }
 
   function copiarPedidoAgenda(pedido: any) {
-    const dataAtual = isoLocal(new Date(pedido.dataEntrega));
+    const dataAtual = isoDataEntrega(pedido.dataEntrega);
     const novaData = datasPedidos[pedido.id] || dataAtual;
     if (!novaData) return toast.error("Informe a data de destino.");
     const nome =
@@ -2423,7 +2421,7 @@ export function Pedidos({
                                   className="h-9 w-40"
                                   value={
                                     datasPedidos[p.id] ??
-                                    isoLocal(new Date(p.dataEntrega))
+                                    isoDataEntrega(p.dataEntrega)
                                   }
                                   onChange={e =>
                                     setDatasPedidos(prev => ({
@@ -2445,8 +2443,8 @@ export function Pedidos({
                                   p.status === "CANCELADO" ||
                                   alterarDataPedido.isPending ||
                                   (datasPedidos[p.id] ??
-                                    isoLocal(new Date(p.dataEntrega))) ===
-                                    isoLocal(new Date(p.dataEntrega))
+                                    isoDataEntrega(p.dataEntrega)) ===
+                                    isoDataEntrega(p.dataEntrega)
                                 }
                                 onClick={() => alterarDataPedidoAgenda(p)}
                               >
