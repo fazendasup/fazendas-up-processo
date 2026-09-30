@@ -21,7 +21,6 @@ import {
   ShoppingBasket,
   Sprout,
   Users,
-  XCircle,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { fmtDataEntrega, isoDataEntrega } from "@/lib/dataEntrega";
@@ -32,6 +31,11 @@ import {
   ocultarValoresComerciais,
 } from "@/lib/accessPolicy";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -188,16 +192,6 @@ function statusSelectClass(status: string) {
       "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200",
   };
   return classes[status] ?? "border-border bg-background";
-}
-
-function statusBarClass(status: string) {
-  const classes: Record<string, string> = {
-    PENDENTE: "bg-amber-500",
-    PRONTO: "bg-blue-500",
-    ENTREGUE: "bg-emerald-500",
-    CANCELADO: "bg-rose-500",
-  };
-  return classes[status] ?? "bg-slate-400";
 }
 
 type ProdutoLinha = {
@@ -628,7 +622,7 @@ export function Pedidos({
         pronto: number;
         entregue: number;
         linhas: number;
-        clientes: Set<string>;
+        clientes: Map<string, { nome: string; quantidade: number }>;
       }
     >();
     const categoriasMap = new Map<
@@ -676,14 +670,20 @@ export function Pedidos({
           pronto: 0,
           entregue: 0,
           linhas: 0,
-          clientes: new Set<string>(),
+          clientes: new Map<string, { nome: string; quantidade: number }>(),
         };
         atual.quantidade += quantidade;
         if (grupo.status === "ENTREGUE") atual.entregue += quantidade;
         else if (itemPronto) atual.pronto += quantidade;
         else atual.pendente += quantidade;
         atual.linhas += 1;
-        atual.clientes.add(grupo.contaAzulCustomerId);
+        const clienteId = String(grupo.contaAzulCustomerId ?? "");
+        const destino = atual.clientes.get(clienteId) ?? {
+          nome: grupo.cliente?.nome ?? clienteId,
+          quantidade: 0,
+        };
+        destino.quantidade += quantidade;
+        atual.clientes.set(clienteId, destino);
         produtosMap.set(nome, atual);
         const cat = categoriasMap.get(categoria) ?? {
           quantidade: 0,
@@ -709,6 +709,13 @@ export function Pedidos({
       .map(p => ({
         ...p,
         clientes: p.clientes.size,
+        destinos: Array.from(p.clientes.entries())
+          .map(([id, c]) => ({ id, nome: c.nome, quantidade: c.quantidade }))
+          .sort(
+            (a, b) =>
+              b.quantidade - a.quantidade ||
+              a.nome.localeCompare(b.nome, "pt-BR")
+          ),
         falta: Math.max(0, p.quantidade - p.pronto - p.entregue),
       }))
       .sort(
@@ -2867,15 +2874,7 @@ function AlertaAvariasPedidoCopiado({
 }
 
 function PedidosKpiDashboard({ kpis }: { kpis: any }) {
-  const totalStatus = Math.max(
-    1,
-    Object.values(kpis.status ?? {}).reduce(
-      (sum: number, n: any) => sum + Number(n ?? 0),
-      0
-    )
-  );
   const produtosPorVariedade = kpis.produtos ?? [];
-  const categorias = kpis.categorias ?? [];
 
   return (
     <div className="space-y-3">
@@ -2932,7 +2931,7 @@ function PedidosKpiDashboard({ kpis }: { kpis: any }) {
             <ShoppingBasket className="h-4 w-4" /> Produtos por variedade
           </CardTitle>
           <p className="text-xs text-muted-foreground">
-            Falta = total − pronto − entregue. O número grande é o que ainda precisa ser feito.
+            Falta = total − pronto − entregue. Passe o mouse na variedade para ver os clientes.
           </p>
         </CardHeader>
         <CardContent>
@@ -2950,145 +2949,72 @@ function PedidosKpiDashboard({ kpis }: { kpis: any }) {
                 const feito = pronto + entregue;
                 const pctFeito =
                   total > 0 ? Math.min(100, Math.round((feito / total) * 100)) : 0;
+                const destinos = (produto.destinos ?? []) as Array<{
+                  id: string;
+                  nome: string;
+                  quantidade: number;
+                }>;
                 return (
-                  <div
-                    key={produto.nome}
-                    className="rounded-lg border bg-muted/20 p-2"
-                  >
-                    <div className="mb-1 flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p
-                          className="truncate text-xs font-semibold"
-                          title={produto.nome}
-                        >
-                          {index + 1}. {produto.nome}
+                  <Tooltip key={produto.nome}>
+                    <TooltipTrigger asChild>
+                      <div className="cursor-default rounded-lg border bg-muted/20 p-2 text-left">
+                        <div className="mb-1 flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate text-xs font-semibold">
+                              {index + 1}. {produto.nome}
+                            </p>
+                            <p className="truncate text-[10px] text-muted-foreground">
+                              {produto.categoria} · {produto.clientes} cliente(s)
+                            </p>
+                          </div>
+                          <span
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                              falta > 0
+                                ? "bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-100"
+                                : "bg-emerald-100 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-100"
+                            }`}
+                          >
+                            {falta > 0
+                              ? `Falta ${formatQuantidade(falta)}`
+                              : "Feito"}
+                          </span>
+                        </div>
+                        <p className="mb-1 text-[10px] tabular-nums text-muted-foreground">
+                          {formatQuantidade(total)} − pronto {formatQuantidade(pronto)} −
+                          entregue {formatQuantidade(entregue)}
                         </p>
-                        <p className="truncate text-[10px] text-muted-foreground">
-                          {produto.categoria} · {produto.clientes} cliente(s)
-                        </p>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-amber-200/70 dark:bg-amber-900/40">
+                          <div
+                            className="h-full rounded-full bg-emerald-500"
+                            style={{ width: `${pctFeito}%` }}
+                          />
+                        </div>
                       </div>
-                      <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                          falta > 0
-                            ? "bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-100"
-                            : "bg-emerald-100 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-100"
-                        }`}
-                      >
-                        {falta > 0
-                          ? `Falta ${formatQuantidade(falta)}`
-                          : "Feito"}
-                      </span>
-                    </div>
-                    <p className="mb-1 text-[10px] tabular-nums text-muted-foreground">
-                      {formatQuantidade(total)} − pronto {formatQuantidade(pronto)} −
-                      entregue {formatQuantidade(entregue)}
-                    </p>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-amber-200/70 dark:bg-amber-900/40">
-                      <div
-                        className="h-full rounded-full bg-emerald-500"
-                        style={{ width: `${pctFeito}%` }}
-                      />
-                    </div>
-                  </div>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="top"
+                      className="max-h-64 max-w-xs overflow-y-auto text-left"
+                    >
+                      <p className="mb-1 font-semibold">{produto.nome}</p>
+                      {destinos.length === 0 ? (
+                        <p>Nenhum cliente neste produto.</p>
+                      ) : (
+                        <ul className="space-y-0.5">
+                          {destinos.map(destino => (
+                            <li key={destino.id}>
+                              {destino.nome} · {formatQuantidade(destino.quantidade)}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
                 );
               })}
             </div>
           )}
         </CardContent>
       </Card>
-
-      <div className="grid gap-3 lg:grid-cols-2">
-        <Card className="border bg-card/80">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <Clock className="h-4 w-4" /> Status das entregas
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {STATUS.map(status => {
-              const total = Number(kpis.status?.[status] ?? 0);
-              const pct = Math.round((total / totalStatus) * 100);
-              return (
-                <div key={status} className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-2 text-xs">
-                    <span
-                      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 font-semibold ${statusSelectClass(status)}`}
-                    >
-                      {status === "ENTREGUE" ? (
-                        <CheckCircle2 className="h-3 w-3" />
-                      ) : null}
-                      {status === "CANCELADO" ? (
-                        <XCircle className="h-3 w-3" />
-                      ) : null}
-                      {status === "PENDENTE" ? (
-                        <Clock className="h-3 w-3" />
-                      ) : null}
-                      {status === "PRONTO" ? (
-                        <PackageCheck className="h-3 w-3" />
-                      ) : null}
-                      {labelStatus(status)}
-                    </span>
-                    <span className="font-bold">{total} cliente(s)</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className={`h-full rounded-full ${statusBarClass(status)}`}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <MiniInsight
-                icon={<AlertTriangle className="h-3.5 w-3.5" />}
-                label="Sem regras"
-                value={kpis.clientesSemRegras}
-              />
-              <MiniInsight
-                icon={<Search className="h-3.5 w-3.5" />}
-                label="Com observação"
-                value={kpis.observacoes}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border bg-card/80">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <ShoppingBasket className="h-4 w-4" /> Por categoria
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {categorias.map((categoria: any) => (
-                <div
-                  key={categoria.nome}
-                  className="rounded-lg border bg-muted/20 px-3 py-2 text-sm"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="truncate font-medium">{categoria.nome}</span>
-                    <span className="font-bold tabular-nums">
-                      Falta {formatQuantidade(categoria.falta ?? categoria.quantidade)}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-[10px] tabular-nums text-muted-foreground">
-                    {formatQuantidade(categoria.quantidade)} − pronto{" "}
-                    {formatQuantidade(categoria.pronto ?? 0)} − entregue{" "}
-                    {formatQuantidade(categoria.entregue ?? 0)}
-                  </p>
-                </div>
-              ))}
-              {categorias.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  Sem categorias no dia.
-                </p>
-              ) : null}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }
@@ -3116,26 +3042,6 @@ function KpiResumoCard({
       </div>
       <p className="text-2xl font-extrabold tracking-tight">{value}</p>
       <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
-    </div>
-  );
-}
-
-function MiniInsight({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-}) {
-  return (
-    <div className="rounded-lg border bg-muted/30 p-2">
-      <div className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
-        {icon}
-        {label}
-      </div>
-      <p className="mt-1 text-lg font-bold">{value}</p>
     </div>
   );
 }
