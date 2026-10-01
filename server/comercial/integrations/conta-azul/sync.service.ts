@@ -28,6 +28,7 @@ import {
   normalizarComposicao,
   pedidoPrecisaEnriquecerComposicao,
   precisaDetalheComposicao,
+  statusPedidoEfetivoDetalhe,
   vendaDetalheDeveSerIgnorada,
   type ComposicaoValorPedido,
 } from "../../lib/composicao-valor.js";
@@ -483,7 +484,7 @@ async function fetchComposicaoDetalheVenda(
     return {
       composicao: fromDetail ?? composicaoFromTotalApenas(totalFallback),
       composicaoDetalhada: Boolean(fromDetail),
-      statusPedido: meta.situacaoNome ?? undefined,
+      statusPedido: statusPedidoEfetivoDetalhe(meta) ?? undefined,
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -657,7 +658,7 @@ async function resolveComposicaoVenda(
     return {
       composicao: fromDetail ?? composicaoFromTotalApenas(totalFallback),
       composicaoDetalhada: Boolean(fromDetail),
-      statusPedido: meta.situacaoNome ?? undefined,
+      statusPedido: statusPedidoEfetivoDetalhe(meta) ?? undefined,
       itens: (await itensPromise) ?? undefined,
     };
   } catch (e) {

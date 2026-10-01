@@ -11,6 +11,7 @@ import {
   precisaDetalheComposicao,
   vendaDetalheDeveSerIgnorada,
   extrairMetadadosVendaDetalhe,
+  statusPedidoEfetivoDetalhe,
 } from "./composicao-valor.js";
 
 describe("composicao-valor", () => {
@@ -102,6 +103,16 @@ describe("composicao-valor", () => {
       valorDesconto: 307.04,
       valorLiquido: 54462.31,
     });
+  });
+
+  it("documento cancelado não fica aprovado", () => {
+    const meta = extrairMetadadosVendaDetalhe({
+      venda: {
+        situacao: { nome: "APROVADO" },
+        status: "CANCELADO",
+      },
+    });
+    expect(statusPedidoEfetivoDetalhe(meta)).toBe("CANCELADO");
   });
 
   it("ignora venda COMPRA e CANCELADO no detalhe", () => {

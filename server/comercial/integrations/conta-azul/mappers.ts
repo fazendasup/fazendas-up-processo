@@ -393,6 +393,8 @@ export function mapVendaBuscaItem(raw: unknown): {
     const nome = (situacao as Record<string, unknown>).nome;
     if (typeof nome === "string" && nome.trim()) status = nome;
   }
+  const statusDoc = typeof o.status === "string" ? o.status.trim() : "";
+  if (/^cancelad[oa]$/i.test(statusDoc)) status = "CANCELADO";
   return {
     clienteExternalId,
     payload: {

@@ -93,12 +93,14 @@ export function composicaoFromComposicaoValorCa(c: Record<string, unknown>): Com
 export type MetadadosVendaDetalheCa = {
   tipoNegociacao: string | null;
   situacaoNome: string | null;
+  /** Campo `status` do documento (ex.: VENDA, CANCELADO), distinto de `situacao`. */
+  statusDocumento: string | null;
   composicao: ComposicaoValorPedido | null;
 };
 
 export function extrairMetadadosVendaDetalhe(raw: unknown): MetadadosVendaDetalheCa {
   if (!raw || typeof raw !== "object") {
-    return { tipoNegociacao: null, situacaoNome: null, composicao: null };
+    return { tipoNegociacao: null, situacaoNome: null, statusDocumento: null, composicao: null };
   }
   const root = raw as Record<string, unknown>;
   const venda =
@@ -122,8 +124,26 @@ export function extrairMetadadosVendaDetalhe(raw: unknown): MetadadosVendaDetalh
       : typeof venda.tipoNegociacao === "string"
         ? venda.tipoNegociacao
         : null;
+  const statusRaw = venda.status ?? root.status;
+  const statusDocumento =
+    typeof statusRaw === "string"
+      ? statusRaw.trim() || null
+      : statusRaw && typeof statusRaw === "object"
+        ? String((statusRaw as Record<string, unknown>).nome ?? "").trim() || null
+        : null;
 
-  return { tipoNegociacao, situacaoNome, composicao };
+  return { tipoNegociacao, situacaoNome, statusDocumento, composicao };
+}
+
+/** Situação aprovada com documento cancelado não entra no total de aprovados da Conta Azul. */
+export function statusPedidoEfetivoDetalhe(meta: MetadadosVendaDetalheCa): string | null {
+  const doc = (meta.statusDocumento ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .trim();
+  if (doc === "CANCELADO" || doc === "CANCELADA") return "CANCELADO";
+  return meta.situacaoNome;
 }
 
 export function vendaDetalheDeveSerIgnorada(meta: MetadadosVendaDetalheCa): boolean {
