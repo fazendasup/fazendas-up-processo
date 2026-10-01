@@ -511,19 +511,23 @@ model HistoricoLocalizacaoEntrega {
 }
 
 model PedidoOperacionalItem {
-  id            String   @id @default(cuid())
-  pedidoId      String   @map("pedido_id")
-  produtoId     String   @map("produto_id")
-  produtoNome   String   @map("produto_nome")
-  categoria     String?
-  quantidade    Decimal  @db.Decimal(12, 3)
-  precoUnit     Decimal? @map("preco_unit") @db.Decimal(14, 2)
-  precoEspecial Boolean  @default(false) @map("preco_especial")
+  id               String   @id @default(cuid())
+  pedidoId         String   @map("pedido_id")
+  produtoId        String   @map("produto_id")
+  produtoNome      String   @map("produto_nome")
+  categoria        String?
+  quantidade       Decimal  @db.Decimal(12, 3)
+  precoUnit        Decimal? @map("preco_unit") @db.Decimal(14, 2)
+  precoEspecial    Boolean  @default(false) @map("preco_especial")
   /**
    * Linha já separada/produzida — atualiza o status do pedido quando todas ficam prontas.
    */
-  pronto        Boolean  @default(false)
-  observacoes   String?  @db.Text
+  pronto           Boolean  @default(false)
+  /**
+   * Quanto desta linha já foi separado. `pronto` fica verdadeiro quando atinge `quantidade`.
+   */
+  quantidadePronta Decimal  @default(0) @map("quantidade_pronta") @db.Decimal(12, 3)
+  observacoes      String?  @db.Text
 
   pedido  PedidoOperacional @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
   produto ProdutoComercial  @relation(fields: [produtoId], references: [id])

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -406,6 +406,18 @@ export function Pedidos({
       },
       onError: err => toast.error(err.message),
     });
+  const definirQuantidadePronta =
+    trpc.comercial.pedidos.definirQuantidadeProntaVariedade.useMutation({
+      onSuccess: result => {
+        toast.success(
+          result.statusMudou && result.pedidosProntos > 0
+            ? "Quantidade lançada. Pedidos completos foram marcados como prontos."
+            : "Quantidade pronta atualizada.",
+        );
+        void invalidarVisaoOperacionalDia();
+      },
+      onError: err => toast.error(err.message),
+    });
   const reativarPedidos =
     trpc.comercial.pedidos.reativarPedidosCancelados.useMutation({
       onSuccess: result => {
@@ -623,6 +635,7 @@ export function Pedidos({
         entregue: number;
         linhas: number;
         clientes: Map<string, { nome: string; quantidade: number }>;
+        linhasAbertas: Array<{ id: string; quantidade: number }>;
       }
     >();
     const categoriasMap = new Map<
@@ -658,10 +671,11 @@ export function Pedidos({
         const quantidade = Number(item.quantidade ?? 0) || 0;
         const nome = item.produtoNome || "Produto sem nome";
         const categoria = item.categoria || "Sem categoria";
-        const itemPronto =
-          grupo.status === "PRONTO" ||
-          grupo.status === "ENTREGUE" ||
-          Boolean(item.pronto);
+        const prontaLinha = quantidadeProntaDaLinha(
+          item,
+          grupo.status,
+          quantidade,
+        );
         const atual = produtosMap.get(nome) ?? {
           nome,
           categoria,
@@ -671,11 +685,17 @@ export function Pedidos({
           entregue: 0,
           linhas: 0,
           clientes: new Map<string, { nome: string; quantidade: number }>(),
+          linhasAbertas: [] as Array<{ id: string; quantidade: number }>,
         };
         atual.quantidade += quantidade;
         if (grupo.status === "ENTREGUE") atual.entregue += quantidade;
-        else if (itemPronto) atual.pronto += quantidade;
-        else atual.pendente += quantidade;
+        else {
+          atual.pronto += prontaLinha;
+          atual.pendente += Math.max(0, quantidade - prontaLinha);
+          if (item.id) {
+            atual.linhasAbertas.push({ id: String(item.id), quantidade });
+          }
+        }
         atual.linhas += 1;
         const clienteId = String(grupo.contaAzulCustomerId ?? "");
         const destino = atual.clientes.get(clienteId) ?? {
@@ -693,13 +713,17 @@ export function Pedidos({
         };
         cat.quantidade += quantidade;
         if (grupo.status === "ENTREGUE") cat.entregue += quantidade;
-        else if (itemPronto) cat.pronto += quantidade;
-        else cat.pendente += quantidade;
+        else {
+          cat.pronto += prontaLinha;
+          cat.pendente += Math.max(0, quantidade - prontaLinha);
+        }
         categoriasMap.set(categoria, cat);
         unidades += quantidade;
         if (grupo.status === "ENTREGUE") unidadesEntregue += quantidade;
-        else if (itemPronto) unidadesPronto += quantidade;
-        else unidadesPendente += quantidade;
+        else {
+          unidadesPronto += prontaLinha;
+          unidadesPendente += Math.max(0, quantidade - prontaLinha);
+        }
         linhas += 1;
       }
     }
@@ -709,6 +733,7 @@ export function Pedidos({
       .map(p => ({
         ...p,
         clientes: p.clientes.size,
+        linhasAbertas: p.linhasAbertas,
         destinos: Array.from(p.clientes.entries())
           .map(([id, c]) => ({ id, nome: c.nome, quantidade: c.quantidade }))
           .sort(
@@ -1021,6 +1046,10 @@ export function Pedidos({
                       {linhaPronta ? (
                         <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-800">
                           Pronto
+                        </span>
+                      ) : Number(item.quantidadePronta ?? 0) > 0 ? (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-900 ring-1 ring-amber-200 dark:bg-amber-950/50 dark:text-amber-100 dark:ring-amber-800">
+                          Parcial {fmtQtd(item.quantidadePronta)}
                         </span>
                       ) : null}
                       {podeVerValores && item.precoUnit != null ? (
@@ -1730,20 +1759,27 @@ export function Pedidos({
               {escopoDashboard === "semana" ? (
                 <p className="text-xs text-muted-foreground">
                   Pedidos ainda abertos (pendente ou pronto) de segunda a domingo
-                  da data selecionada. Use «Abrir dia» para detalhar ou alterar
-                  itens. Ordem (#) define a sequência de produção; marque cada
-                  linha como pronta.
+                  da data selecionada. Digite a quantidade pronta na variedade
+                  para preencher os clientes na ordem de produção.
                 </p>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  Ordem (#) = sequência de produção (1 primeiro). Marque
-                  produtos individuais como prontos — o pedido vira «Pronto»
-                  quando todas as linhas estiverem feitas.
+                  Ordem (#) = sequência de produção (1 primeiro). Digite a
+                  quantidade pronta na variedade — ela preenche os clientes
+                  nessa ordem. O pedido vira «Pronto» quando todas as linhas
+                  estiverem feitas.
                 </p>
               )}
             </CardHeader>
             <CardContent className="space-y-4">
-              <PedidosKpiDashboard kpis={dashboardKpis} />
+              <PedidosKpiDashboard
+                kpis={dashboardKpis}
+                podeEditar={canEditarComercial}
+                salvandoPronto={definirQuantidadePronta.isPending}
+                onDefinirPronto={(itemIds, quantidade) =>
+                  definirQuantidadePronta.mutate({ itemIds, quantidade })
+                }
+              />
               <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/20 p-3">
                 <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1 sm:max-w-md">
@@ -2873,7 +2909,103 @@ function AlertaAvariasPedidoCopiado({
   );
 }
 
-function PedidosKpiDashboard({ kpis }: { kpis: any }) {
+function quantidadeProntaDaLinha(
+  item: { pronto?: boolean; quantidadePronta?: unknown },
+  status: string,
+  quantidade: number,
+) {
+  if (status === "ENTREGUE" || status === "CANCELADO") return 0;
+  if (status === "PRONTO" || item.pronto) return quantidade;
+  const parcial = Number(item.quantidadePronta ?? 0);
+  if (!Number.isFinite(parcial) || parcial <= 0) return 0;
+  return Math.min(quantidade, parcial);
+}
+
+function textoQuantidade(valor: number) {
+  return valor.toLocaleString("pt-BR", {
+    maximumFractionDigits: 3,
+    useGrouping: false,
+  });
+}
+
+function CampoProntoVariedade({
+  valor,
+  max,
+  disabled,
+  onSalvar,
+}: {
+  valor: number;
+  max: number;
+  disabled: boolean;
+  onSalvar: (quantidade: number) => void;
+}) {
+  const [texto, setTexto] = useState(() => textoQuantidade(valor));
+  const focado = useRef(false);
+
+  useEffect(() => {
+    if (!focado.current) setTexto(textoQuantidade(valor));
+  }, [valor]);
+
+  function confirmar() {
+    const bruto = texto.trim();
+    const parsed = bruto.includes(",")
+      ? Number(bruto.replace(/\./g, "").replace(",", "."))
+      : Number(bruto);
+    if (!Number.isFinite(parsed)) {
+      setTexto(textoQuantidade(valor));
+      return;
+    }
+    const clamped = Math.min(max, Math.max(0, Math.round(parsed * 1000) / 1000));
+    setTexto(textoQuantidade(clamped));
+    if (Math.abs(clamped - valor) < 0.0005) return;
+    onSalvar(clamped);
+  }
+
+  return (
+    <label className="mt-2 flex items-center gap-2">
+      <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+        Pronto
+      </span>
+      <Input
+        type="text"
+        inputMode="decimal"
+        value={texto}
+        disabled={disabled}
+        aria-label="Quantidade pronta"
+        className="h-8 w-20 px-2 text-right text-sm font-semibold tabular-nums"
+        onFocus={() => {
+          focado.current = true;
+        }}
+        onBlur={() => {
+          focado.current = false;
+          confirmar();
+        }}
+        onChange={event => setTexto(event.target.value)}
+        onKeyDown={event => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            (event.target as HTMLInputElement).blur();
+          }
+        }}
+      />
+      <span className="text-[10px] tabular-nums text-muted-foreground">
+        / {textoQuantidade(max)}
+      </span>
+    </label>
+  );
+}
+
+function PedidosKpiDashboard({
+  kpis,
+  podeEditar,
+  salvandoPronto,
+  onDefinirPronto,
+}: {
+  kpis: any;
+  podeEditar: boolean;
+  salvandoPronto: boolean;
+  onDefinirPronto: (itemIds: string[], quantidade: number) => void;
+}) {
   const produtosPorVariedade = kpis.produtos ?? [];
 
   return (
@@ -2931,7 +3063,7 @@ function PedidosKpiDashboard({ kpis }: { kpis: any }) {
             <ShoppingBasket className="h-4 w-4" /> Produtos por variedade
           </CardTitle>
           <p className="text-xs text-muted-foreground">
-            Falta = total − pronto − entregue. Passe o mouse na variedade para ver os clientes.
+            Falta = total − pronto − entregue. Digite o pronto na variedade para preencher os clientes na ordem de produção. Passe o mouse para ver quem recebe.
           </p>
         </CardHeader>
         <CardContent>
@@ -2954,61 +3086,84 @@ function PedidosKpiDashboard({ kpis }: { kpis: any }) {
                   nome: string;
                   quantidade: number;
                 }>;
+                const linhasAbertas = (produto.linhasAbertas ?? []) as Array<{
+                  id: string;
+                  quantidade: number;
+                }>;
+                const maxPronto = Math.max(0, total - entregue);
                 return (
-                  <Tooltip key={produto.nome}>
-                    <TooltipTrigger asChild>
-                      <div className="cursor-default rounded-lg border bg-muted/20 p-2 text-left">
-                        <div className="mb-1 flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="truncate text-xs font-semibold">
-                              {index + 1}. {produto.nome}
-                            </p>
-                            <p className="truncate text-[10px] text-muted-foreground">
-                              {produto.categoria} · {produto.clientes} cliente(s)
-                            </p>
+                  <div
+                    key={produto.nome}
+                    className="rounded-lg border bg-muted/20 p-2 text-left"
+                  >
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="cursor-default">
+                          <div className="mb-1 flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="truncate text-xs font-semibold">
+                                {index + 1}. {produto.nome}
+                              </p>
+                              <p className="truncate text-[10px] text-muted-foreground">
+                                {produto.categoria} · {produto.clientes} cliente(s)
+                              </p>
+                            </div>
+                            <span
+                              className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                                falta > 0
+                                  ? "bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-100"
+                                  : "bg-emerald-100 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-100"
+                              }`}
+                            >
+                              {falta > 0
+                                ? `Falta ${formatQuantidade(falta)}`
+                                : "Feito"}
+                            </span>
                           </div>
-                          <span
-                            className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                              falta > 0
-                                ? "bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-100"
-                                : "bg-emerald-100 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-100"
-                            }`}
-                          >
-                            {falta > 0
-                              ? `Falta ${formatQuantidade(falta)}`
-                              : "Feito"}
-                          </span>
+                          <p className="mb-1 text-[10px] tabular-nums text-muted-foreground">
+                            {formatQuantidade(total)} − pronto {formatQuantidade(pronto)} −
+                            entregue {formatQuantidade(entregue)}
+                          </p>
+                          <div className="h-1.5 overflow-hidden rounded-full bg-amber-200/70 dark:bg-amber-900/40">
+                            <div
+                              className="h-full rounded-full bg-emerald-500"
+                              style={{ width: `${pctFeito}%` }}
+                            />
+                          </div>
                         </div>
-                        <p className="mb-1 text-[10px] tabular-nums text-muted-foreground">
-                          {formatQuantidade(total)} − pronto {formatQuantidade(pronto)} −
-                          entregue {formatQuantidade(entregue)}
-                        </p>
-                        <div className="h-1.5 overflow-hidden rounded-full bg-amber-200/70 dark:bg-amber-900/40">
-                          <div
-                            className="h-full rounded-full bg-emerald-500"
-                            style={{ width: `${pctFeito}%` }}
-                          />
-                        </div>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="top"
-                      className="max-h-64 max-w-xs overflow-y-auto text-left"
-                    >
-                      <p className="mb-1 font-semibold">{produto.nome}</p>
-                      {destinos.length === 0 ? (
-                        <p>Nenhum cliente neste produto.</p>
-                      ) : (
-                        <ul className="space-y-0.5">
-                          {destinos.map(destino => (
-                            <li key={destino.id}>
-                              {destino.nome} · {formatQuantidade(destino.quantidade)}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </TooltipContent>
-                  </Tooltip>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="max-h-64 max-w-xs overflow-y-auto text-left"
+                      >
+                        <p className="mb-1 font-semibold">{produto.nome}</p>
+                        {destinos.length === 0 ? (
+                          <p>Nenhum cliente neste produto.</p>
+                        ) : (
+                          <ul className="space-y-0.5">
+                            {destinos.map(destino => (
+                              <li key={destino.id}>
+                                {destino.nome} · {formatQuantidade(destino.quantidade)}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </TooltipContent>
+                    </Tooltip>
+                    {podeEditar && linhasAbertas.length > 0 ? (
+                      <CampoProntoVariedade
+                        valor={pronto}
+                        max={maxPronto}
+                        disabled={salvandoPronto}
+                        onSalvar={quantidade =>
+                          onDefinirPronto(
+                            linhasAbertas.map(linha => linha.id),
+                            quantidade,
+                          )
+                        }
+                      />
+                    ) : null}
+                  </div>
                 );
               })}
             </div>

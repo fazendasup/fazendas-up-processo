@@ -519,6 +519,8 @@ model PedidoOperacionalItem {
   precoEspecial   Boolean  @default(false) @map("preco_especial")
   /** Linha já separada/produzida — atualiza o status do pedido quando todas ficam prontas. */
   pronto          Boolean  @default(false)
+  /** Quanto desta linha já foi separado. `pronto` fica verdadeiro quando atinge `quantidade`. */
+  quantidadePronta Decimal @default(0) @map("quantidade_pronta") @db.Decimal(12, 3)
   observacoes     String?  @db.Text
 
   pedido  PedidoOperacional @relation(fields: [pedidoId], references: [id], onDelete: Cascade)

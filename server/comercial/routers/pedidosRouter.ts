@@ -16,6 +16,7 @@ import {
   type EstoqueVivoMixCfg,
   type LinhaPedidoEstoque,
 } from "../lib/estoque-vivo.js";
+import { alocarQuantidadePronta } from "../lib/alocar-quantidade-pronta.js";
 import { classificarStatusPedido } from "../lib/pedido-status.js";
 import {
   assertSemanaAnteriorFechada,
@@ -1232,15 +1233,30 @@ export const pedidosRouter = router({
               });
             }
             if (input.itens.length > 0) {
-              const prontoPorProduto = new Map<string, boolean>();
+              const prontoPorProduto = new Map<string, number>();
               for (const i of antes?.itens ?? []) {
-                if (i.pronto) prontoPorProduto.set(i.produtoId, true);
+                const qtd = Number(i.quantidade);
+                const pronta = i.pronto
+                  ? qtd
+                  : Math.min(qtd, Number(i.quantidadePronta ?? 0));
+                if (pronta > 0) {
+                  prontoPorProduto.set(
+                    i.produtoId,
+                    (prontoPorProduto.get(i.produtoId) ?? 0) + pronta,
+                  );
+                }
               }
               await tx.pedidoOperacionalItem.createMany({
                 data: input.itens.map(item => {
                   const produto = produtoMap.get(item.produtoId)!;
                   const especial = precoEspecial.get(item.produtoId);
                   const preco = especial ?? produto.precoBase;
+                  const disponivel = prontoPorProduto.get(produto.id) ?? 0;
+                  const quantidadePronta = Math.min(item.quantidade, disponivel);
+                  prontoPorProduto.set(produto.id, disponivel - quantidadePronta);
+                  const pronto =
+                    item.quantidade > 0 &&
+                    quantidadePronta >= item.quantidade - 1e-9;
                   return {
                     pedidoId: pedido.id,
                     produtoId: produto.id,
@@ -1249,7 +1265,8 @@ export const pedidosRouter = router({
                     quantidade: new Prisma.Decimal(item.quantidade),
                     precoUnit: preco ?? null,
                     precoEspecial: Boolean(especial),
-                    pronto: prontoPorProduto.get(produto.id) ?? false,
+                    pronto,
+                    quantidadePronta: new Prisma.Decimal(quantidadePronta),
                     observacoes: item.observacoes?.trim() || null,
                   };
                 }),
@@ -1826,6 +1843,7 @@ export const pedidosRouter = router({
           ...p.itens.map((i: any) => ({
             ...i,
             quantidade: Number(i.quantidade ?? 0) || 0,
+            quantidadePronta: Number(i.quantidadePronta ?? 0) || 0,
             pronto: Boolean(i.pronto),
             tipoVenda: p.tipoVenda,
           }))
@@ -1903,15 +1921,17 @@ export const pedidosRouter = router({
         });
         if (pedidoIds.length > 0) {
           if (input.status === "PRONTO" || input.status === "ENTREGUE") {
-            await tx.pedidoOperacionalItem.updateMany({
-              where: { pedidoId: { in: pedidoIds } },
-              data: { pronto: true },
-            });
+            await tx.$executeRaw`
+              UPDATE pedidos_operacionais_itens
+              SET pronto = true, quantidade_pronta = quantidade
+              WHERE pedido_id IN (${Prisma.join(pedidoIds)})
+            `;
           } else if (input.status === "PENDENTE") {
-            await tx.pedidoOperacionalItem.updateMany({
-              where: { pedidoId: { in: pedidoIds } },
-              data: { pronto: false },
-            });
+            await tx.$executeRaw`
+              UPDATE pedidos_operacionais_itens
+              SET pronto = false, quantidade_pronta = 0
+              WHERE pedido_id IN (${Prisma.join(pedidoIds)})
+            `;
           }
         }
         for (const p of pedidos) {
@@ -1978,7 +1998,10 @@ export const pedidosRouter = router({
       await ctx.prisma!.$transaction(async tx => {
         await tx.pedidoOperacionalItem.update({
           where: { id: item.id },
-          data: { pronto: input.pronto },
+          data: {
+            pronto: input.pronto,
+            quantidadePronta: input.pronto ? item.quantidade : new Prisma.Decimal(0),
+          },
         });
 
         const itensAtualizados = item.pedido.itens.map(i =>
@@ -2019,6 +2042,132 @@ export const pedidosRouter = router({
         status: statusNovo,
         statusMudou: statusNovo !== statusAnterior,
       };
+    }),
+
+  definirQuantidadeProntaVariedade: comercialProcedure
+    .input(
+      z.object({
+        itemIds: z.array(z.string().min(1)).min(1).max(800),
+        quantidade: z.number().finite().min(0),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { ensureItemPedidoProntoColumn } = await import(
+        "../ensure-item-pedido-pronto"
+      );
+      await ensureItemPedidoProntoColumn();
+
+      const usuario = ctx.comercialUsuario;
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
+
+      const vistos = new Set<string>();
+      const ids: string[] = [];
+      for (const id of input.itemIds) {
+        if (vistos.has(id)) continue;
+        vistos.add(id);
+        ids.push(id);
+      }
+
+      const itens = await ctx.prisma!.pedidoOperacionalItem.findMany({
+        where: { id: { in: ids } },
+        include: {
+          pedido: {
+            select: {
+              id: true,
+              status: true,
+              itens: { select: { id: true, pronto: true } },
+            },
+          },
+        },
+      });
+      if (itens.length !== ids.length) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Uma ou mais linhas da variedade não foram encontradas.",
+        });
+      }
+
+      const porId = new Map(itens.map(item => [item.id, item]));
+      const abertos = ids
+        .map(id => porId.get(id)!)
+        .filter(
+          item =>
+            item.pedido.status === "PENDENTE" || item.pedido.status === "PRONTO",
+        );
+      if (abertos.length === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Nenhuma linha aberta para lançar a quantidade pronta.",
+        });
+      }
+
+      const alocacao = alocarQuantidadePronta(
+        abertos.map(item => ({
+          id: item.id,
+          quantidade: Number(item.quantidade),
+        })),
+        input.quantidade,
+      );
+      const alocPorId = new Map(alocacao.map(linha => [linha.id, linha]));
+      const pedidos = new Map<
+        string,
+        { status: string; itens: Array<{ id: string; pronto: boolean }> }
+      >();
+      for (const item of abertos) {
+        if (!pedidos.has(item.pedido.id)) {
+          pedidos.set(item.pedido.id, {
+            status: item.pedido.status,
+            itens: item.pedido.itens,
+          });
+        }
+      }
+
+      let statusMudou = false;
+      let pedidosProntos = 0;
+
+      await ctx.prisma!.$transaction(async tx => {
+        for (const linha of alocacao) {
+          await tx.pedidoOperacionalItem.update({
+            where: { id: linha.id },
+            data: {
+              pronto: linha.pronto,
+              quantidadePronta: new Prisma.Decimal(linha.quantidadePronta),
+            },
+          });
+        }
+
+        for (const [pedidoId, pedido] of pedidos) {
+          const statusAnterior = pedido.status;
+          const todosProntos =
+            pedido.itens.length > 0 &&
+            pedido.itens.every(item => alocPorId.get(item.id)?.pronto ?? item.pronto);
+          let statusNovo = statusAnterior;
+          if (todosProntos && statusAnterior === "PENDENTE") statusNovo = "PRONTO";
+          else if (!todosProntos && statusAnterior === "PRONTO") statusNovo = "PENDENTE";
+          if (statusNovo === statusAnterior) continue;
+
+          statusMudou = true;
+          if (statusNovo === "PRONTO") pedidosProntos += 1;
+          await tx.pedidoOperacional.update({
+            where: { id: pedidoId },
+            data: { status: statusNovo, editadoPorId: usuario.id },
+          });
+          await registrarAuditoria(
+            tx as any,
+            pedidoId,
+            { id: usuario.id, nome: usuario.nome },
+            "quantidade_pronta_variedade",
+            { status: statusAnterior },
+            { status: statusNovo, quantidade: input.quantidade },
+          );
+        }
+      });
+
+      return { success: true, statusMudou, pedidosProntos };
     }),
 
   atualizarPrioridadeClienteDia: comercialProcedure

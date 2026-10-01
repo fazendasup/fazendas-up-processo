@@ -20793,11 +20793,13 @@ export namespace Prisma {
   export type PedidoOperacionalItemAvgAggregateOutputType = {
     quantidade: Decimal | null
     precoUnit: Decimal | null
+    quantidadePronta: Decimal | null
   }
 
   export type PedidoOperacionalItemSumAggregateOutputType = {
     quantidade: Decimal | null
     precoUnit: Decimal | null
+    quantidadePronta: Decimal | null
   }
 
   export type PedidoOperacionalItemMinAggregateOutputType = {
@@ -20810,6 +20812,7 @@ export namespace Prisma {
     precoUnit: Decimal | null
     precoEspecial: boolean | null
     pronto: boolean | null
+    quantidadePronta: Decimal | null
     observacoes: string | null
   }
 
@@ -20823,6 +20826,7 @@ export namespace Prisma {
     precoUnit: Decimal | null
     precoEspecial: boolean | null
     pronto: boolean | null
+    quantidadePronta: Decimal | null
     observacoes: string | null
   }
 
@@ -20836,6 +20840,7 @@ export namespace Prisma {
     precoUnit: number
     precoEspecial: number
     pronto: number
+    quantidadePronta: number
     observacoes: number
     _all: number
   }
@@ -20844,11 +20849,13 @@ export namespace Prisma {
   export type PedidoOperacionalItemAvgAggregateInputType = {
     quantidade?: true
     precoUnit?: true
+    quantidadePronta?: true
   }
 
   export type PedidoOperacionalItemSumAggregateInputType = {
     quantidade?: true
     precoUnit?: true
+    quantidadePronta?: true
   }
 
   export type PedidoOperacionalItemMinAggregateInputType = {
@@ -20861,6 +20868,7 @@ export namespace Prisma {
     precoUnit?: true
     precoEspecial?: true
     pronto?: true
+    quantidadePronta?: true
     observacoes?: true
   }
 
@@ -20874,6 +20882,7 @@ export namespace Prisma {
     precoUnit?: true
     precoEspecial?: true
     pronto?: true
+    quantidadePronta?: true
     observacoes?: true
   }
 
@@ -20887,6 +20896,7 @@ export namespace Prisma {
     precoUnit?: true
     precoEspecial?: true
     pronto?: true
+    quantidadePronta?: true
     observacoes?: true
     _all?: true
   }
@@ -20987,6 +20997,7 @@ export namespace Prisma {
     precoUnit: Decimal | null
     precoEspecial: boolean
     pronto: boolean
+    quantidadePronta: Decimal
     observacoes: string | null
     _count: PedidoOperacionalItemCountAggregateOutputType | null
     _avg: PedidoOperacionalItemAvgAggregateOutputType | null
@@ -21019,6 +21030,7 @@ export namespace Prisma {
     precoUnit?: boolean
     precoEspecial?: boolean
     pronto?: boolean
+    quantidadePronta?: boolean
     observacoes?: boolean
     pedido?: boolean | PedidoOperacionalDefaultArgs<ExtArgs>
     produto?: boolean | ProdutoComercialDefaultArgs<ExtArgs>
@@ -21036,10 +21048,11 @@ export namespace Prisma {
     precoUnit?: boolean
     precoEspecial?: boolean
     pronto?: boolean
+    quantidadePronta?: boolean
     observacoes?: boolean
   }
 
-  export type PedidoOperacionalItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "pedidoId" | "produtoId" | "produtoNome" | "categoria" | "quantidade" | "precoUnit" | "precoEspecial" | "pronto" | "observacoes", ExtArgs["result"]["pedidoOperacionalItem"]>
+  export type PedidoOperacionalItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "pedidoId" | "produtoId" | "produtoNome" | "categoria" | "quantidade" | "precoUnit" | "precoEspecial" | "pronto" | "quantidadePronta" | "observacoes", ExtArgs["result"]["pedidoOperacionalItem"]>
   export type PedidoOperacionalItemInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     pedido?: boolean | PedidoOperacionalDefaultArgs<ExtArgs>
     produto?: boolean | ProdutoComercialDefaultArgs<ExtArgs>
@@ -21064,6 +21077,10 @@ export namespace Prisma {
        * * Linha já separada/produzida — atualiza o status do pedido quando todas ficam prontas.
        */
       pronto: boolean
+      /**
+       * * Quanto desta linha já foi separado. `pronto` fica verdadeiro quando atinge `quantidade`.
+       */
+      quantidadePronta: Prisma.Decimal
       observacoes: string | null
     }, ExtArgs["result"]["pedidoOperacionalItem"]>
     composites: {}
@@ -21445,6 +21462,7 @@ export namespace Prisma {
     readonly precoUnit: FieldRef<"PedidoOperacionalItem", 'Decimal'>
     readonly precoEspecial: FieldRef<"PedidoOperacionalItem", 'Boolean'>
     readonly pronto: FieldRef<"PedidoOperacionalItem", 'Boolean'>
+    readonly quantidadePronta: FieldRef<"PedidoOperacionalItem", 'Decimal'>
     readonly observacoes: FieldRef<"PedidoOperacionalItem", 'String'>
   }
     
@@ -37892,6 +37910,7 @@ export namespace Prisma {
     precoUnit: 'precoUnit',
     precoEspecial: 'precoEspecial',
     pronto: 'pronto',
+    quantidadePronta: 'quantidadePronta',
     observacoes: 'observacoes'
   };
 
@@ -40180,6 +40199,7 @@ export namespace Prisma {
     precoUnit?: DecimalNullableFilter<"PedidoOperacionalItem"> | Decimal | DecimalJsLike | number | string | null
     precoEspecial?: BoolFilter<"PedidoOperacionalItem"> | boolean
     pronto?: BoolFilter<"PedidoOperacionalItem"> | boolean
+    quantidadePronta?: DecimalFilter<"PedidoOperacionalItem"> | Decimal | DecimalJsLike | number | string
     observacoes?: StringNullableFilter<"PedidoOperacionalItem"> | string | null
     pedido?: XOR<PedidoOperacionalScalarRelationFilter, PedidoOperacionalWhereInput>
     produto?: XOR<ProdutoComercialScalarRelationFilter, ProdutoComercialWhereInput>
@@ -40195,6 +40215,7 @@ export namespace Prisma {
     precoUnit?: SortOrderInput | SortOrder
     precoEspecial?: SortOrder
     pronto?: SortOrder
+    quantidadePronta?: SortOrder
     observacoes?: SortOrderInput | SortOrder
     pedido?: PedidoOperacionalOrderByWithRelationInput
     produto?: ProdutoComercialOrderByWithRelationInput
@@ -40214,6 +40235,7 @@ export namespace Prisma {
     precoUnit?: DecimalNullableFilter<"PedidoOperacionalItem"> | Decimal | DecimalJsLike | number | string | null
     precoEspecial?: BoolFilter<"PedidoOperacionalItem"> | boolean
     pronto?: BoolFilter<"PedidoOperacionalItem"> | boolean
+    quantidadePronta?: DecimalFilter<"PedidoOperacionalItem"> | Decimal | DecimalJsLike | number | string
     observacoes?: StringNullableFilter<"PedidoOperacionalItem"> | string | null
     pedido?: XOR<PedidoOperacionalScalarRelationFilter, PedidoOperacionalWhereInput>
     produto?: XOR<ProdutoComercialScalarRelationFilter, ProdutoComercialWhereInput>
@@ -40229,6 +40251,7 @@ export namespace Prisma {
     precoUnit?: SortOrderInput | SortOrder
     precoEspecial?: SortOrder
     pronto?: SortOrder
+    quantidadePronta?: SortOrder
     observacoes?: SortOrderInput | SortOrder
     _count?: PedidoOperacionalItemCountOrderByAggregateInput
     _avg?: PedidoOperacionalItemAvgOrderByAggregateInput
@@ -40250,6 +40273,7 @@ export namespace Prisma {
     precoUnit?: DecimalNullableWithAggregatesFilter<"PedidoOperacionalItem"> | Decimal | DecimalJsLike | number | string | null
     precoEspecial?: BoolWithAggregatesFilter<"PedidoOperacionalItem"> | boolean
     pronto?: BoolWithAggregatesFilter<"PedidoOperacionalItem"> | boolean
+    quantidadePronta?: DecimalWithAggregatesFilter<"PedidoOperacionalItem"> | Decimal | DecimalJsLike | number | string
     observacoes?: StringNullableWithAggregatesFilter<"PedidoOperacionalItem"> | string | null
   }
 
@@ -43060,6 +43084,7 @@ export namespace Prisma {
     precoUnit?: Decimal | DecimalJsLike | number | string | null
     precoEspecial?: boolean
     pronto?: boolean
+    quantidadePronta?: Decimal | DecimalJsLike | number | string
     observacoes?: string | null
     pedido: PedidoOperacionalCreateNestedOneWithoutItensInput
     produto: ProdutoComercialCreateNestedOneWithoutItensPedidoInput
@@ -43075,6 +43100,7 @@ export namespace Prisma {
     precoUnit?: Decimal | DecimalJsLike | number | string | null
     precoEspecial?: boolean
     pronto?: boolean
+    quantidadePronta?: Decimal | DecimalJsLike | number | string
     observacoes?: string | null
   }
 
@@ -43086,6 +43112,7 @@ export namespace Prisma {
     precoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     precoEspecial?: BoolFieldUpdateOperationsInput | boolean
     pronto?: BoolFieldUpdateOperationsInput | boolean
+    quantidadePronta?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     pedido?: PedidoOperacionalUpdateOneRequiredWithoutItensNestedInput
     produto?: ProdutoComercialUpdateOneRequiredWithoutItensPedidoNestedInput
@@ -43101,6 +43128,7 @@ export namespace Prisma {
     precoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     precoEspecial?: BoolFieldUpdateOperationsInput | boolean
     pronto?: BoolFieldUpdateOperationsInput | boolean
+    quantidadePronta?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
@@ -43114,6 +43142,7 @@ export namespace Prisma {
     precoUnit?: Decimal | DecimalJsLike | number | string | null
     precoEspecial?: boolean
     pronto?: boolean
+    quantidadePronta?: Decimal | DecimalJsLike | number | string
     observacoes?: string | null
   }
 
@@ -43125,6 +43154,7 @@ export namespace Prisma {
     precoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     precoEspecial?: BoolFieldUpdateOperationsInput | boolean
     pronto?: BoolFieldUpdateOperationsInput | boolean
+    quantidadePronta?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
@@ -43138,6 +43168,7 @@ export namespace Prisma {
     precoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     precoEspecial?: BoolFieldUpdateOperationsInput | boolean
     pronto?: BoolFieldUpdateOperationsInput | boolean
+    quantidadePronta?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
@@ -46157,12 +46188,14 @@ export namespace Prisma {
     precoUnit?: SortOrder
     precoEspecial?: SortOrder
     pronto?: SortOrder
+    quantidadePronta?: SortOrder
     observacoes?: SortOrder
   }
 
   export type PedidoOperacionalItemAvgOrderByAggregateInput = {
     quantidade?: SortOrder
     precoUnit?: SortOrder
+    quantidadePronta?: SortOrder
   }
 
   export type PedidoOperacionalItemMaxOrderByAggregateInput = {
@@ -46175,6 +46208,7 @@ export namespace Prisma {
     precoUnit?: SortOrder
     precoEspecial?: SortOrder
     pronto?: SortOrder
+    quantidadePronta?: SortOrder
     observacoes?: SortOrder
   }
 
@@ -46188,12 +46222,14 @@ export namespace Prisma {
     precoUnit?: SortOrder
     precoEspecial?: SortOrder
     pronto?: SortOrder
+    quantidadePronta?: SortOrder
     observacoes?: SortOrder
   }
 
   export type PedidoOperacionalItemSumOrderByAggregateInput = {
     quantidade?: SortOrder
     precoUnit?: SortOrder
+    quantidadePronta?: SortOrder
   }
 
   export type PedidoOperacionalAvariaOrderByRelevanceInput = {
@@ -52286,6 +52322,7 @@ export namespace Prisma {
     precoUnit?: Decimal | DecimalJsLike | number | string | null
     precoEspecial?: boolean
     pronto?: boolean
+    quantidadePronta?: Decimal | DecimalJsLike | number | string
     observacoes?: string | null
     pedido: PedidoOperacionalCreateNestedOneWithoutItensInput
   }
@@ -52299,6 +52336,7 @@ export namespace Prisma {
     precoUnit?: Decimal | DecimalJsLike | number | string | null
     precoEspecial?: boolean
     pronto?: boolean
+    quantidadePronta?: Decimal | DecimalJsLike | number | string
     observacoes?: string | null
   }
 
@@ -52586,6 +52624,7 @@ export namespace Prisma {
     precoUnit?: DecimalNullableFilter<"PedidoOperacionalItem"> | Decimal | DecimalJsLike | number | string | null
     precoEspecial?: BoolFilter<"PedidoOperacionalItem"> | boolean
     pronto?: BoolFilter<"PedidoOperacionalItem"> | boolean
+    quantidadePronta?: DecimalFilter<"PedidoOperacionalItem"> | Decimal | DecimalJsLike | number | string
     observacoes?: StringNullableFilter<"PedidoOperacionalItem"> | string | null
   }
 
@@ -53483,6 +53522,7 @@ export namespace Prisma {
     precoUnit?: Decimal | DecimalJsLike | number | string | null
     precoEspecial?: boolean
     pronto?: boolean
+    quantidadePronta?: Decimal | DecimalJsLike | number | string
     observacoes?: string | null
     produto: ProdutoComercialCreateNestedOneWithoutItensPedidoInput
   }
@@ -53496,6 +53536,7 @@ export namespace Prisma {
     precoUnit?: Decimal | DecimalJsLike | number | string | null
     precoEspecial?: boolean
     pronto?: boolean
+    quantidadePronta?: Decimal | DecimalJsLike | number | string
     observacoes?: string | null
   }
 
@@ -58331,6 +58372,7 @@ export namespace Prisma {
     precoUnit?: Decimal | DecimalJsLike | number | string | null
     precoEspecial?: boolean
     pronto?: boolean
+    quantidadePronta?: Decimal | DecimalJsLike | number | string
     observacoes?: string | null
   }
 
@@ -58417,6 +58459,7 @@ export namespace Prisma {
     precoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     precoEspecial?: BoolFieldUpdateOperationsInput | boolean
     pronto?: BoolFieldUpdateOperationsInput | boolean
+    quantidadePronta?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     pedido?: PedidoOperacionalUpdateOneRequiredWithoutItensNestedInput
   }
@@ -58430,6 +58473,7 @@ export namespace Prisma {
     precoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     precoEspecial?: BoolFieldUpdateOperationsInput | boolean
     pronto?: BoolFieldUpdateOperationsInput | boolean
+    quantidadePronta?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
@@ -58442,6 +58486,7 @@ export namespace Prisma {
     precoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     precoEspecial?: BoolFieldUpdateOperationsInput | boolean
     pronto?: BoolFieldUpdateOperationsInput | boolean
+    quantidadePronta?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
@@ -58653,6 +58698,7 @@ export namespace Prisma {
     precoUnit?: Decimal | DecimalJsLike | number | string | null
     precoEspecial?: boolean
     pronto?: boolean
+    quantidadePronta?: Decimal | DecimalJsLike | number | string
     observacoes?: string | null
   }
 
@@ -58701,6 +58747,7 @@ export namespace Prisma {
     precoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     precoEspecial?: BoolFieldUpdateOperationsInput | boolean
     pronto?: BoolFieldUpdateOperationsInput | boolean
+    quantidadePronta?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
     produto?: ProdutoComercialUpdateOneRequiredWithoutItensPedidoNestedInput
   }
@@ -58714,6 +58761,7 @@ export namespace Prisma {
     precoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     precoEspecial?: BoolFieldUpdateOperationsInput | boolean
     pronto?: BoolFieldUpdateOperationsInput | boolean
+    quantidadePronta?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
@@ -58726,6 +58774,7 @@ export namespace Prisma {
     precoUnit?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     precoEspecial?: BoolFieldUpdateOperationsInput | boolean
     pronto?: BoolFieldUpdateOperationsInput | boolean
+    quantidadePronta?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     observacoes?: NullableStringFieldUpdateOperationsInput | string | null
   }
 

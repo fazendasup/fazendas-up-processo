@@ -31,4 +31,23 @@ export async function ensureItemPedidoProntoColumn(): Promise<void> {
   } catch {
     /* índice já existe */
   }
+
+  try {
+    await prisma.$executeRawUnsafe(
+      "ALTER TABLE `pedidos_operacionais_itens` ADD COLUMN `quantidade_pronta` DECIMAL(12, 3) NOT NULL DEFAULT 0",
+    );
+  } catch {
+    /* coluna já existe */
+  }
+
+  try {
+    await prisma.$executeRawUnsafe(
+      "UPDATE `pedidos_operacionais_itens` SET `quantidade_pronta` = `quantidade` WHERE `pronto` = true AND `quantidade_pronta` = 0",
+    );
+  } catch (e) {
+    console.warn(
+      "[comercial] backfill quantidade_pronta:",
+      e instanceof Error ? e.message : e,
+    );
+  }
 }
