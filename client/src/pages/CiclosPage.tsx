@@ -9,7 +9,7 @@ import { FASES_CONFIG, torreEstaAtivaNoDashboard } from '@/lib/types';
 type FrequenciaCiclo = "diaria" | "semanal" | "quinzenal" | "mensal" | "personalizada";
 type AlvoCiclo = "ambos" | "caixa" | "andar";
 
-import { cicloTemPendencia, formatarDataHora, DIAS_SEMANA } from '@/lib/utils-farm';
+import { cicloPendenteNoProtocolo, formatarDataHora, DIAS_SEMANA } from '@/lib/utils-farm';
 import { numeroNoNomeCadastro, rotuloCaixaComoCadastro } from '@/lib/rotuloCaixaCadastro';
 import AplicacaoFoliar from '@/components/AplicacaoFoliar';
 import AplicacaoSolucao from '@/components/AplicacaoSolucao';
@@ -525,7 +525,7 @@ export default function CiclosPage() {
     });
   };
 
-  const ciclosPendentes = data.ciclos.filter((c) => cicloTemPendencia(c));
+  const ciclosPendentes = data.ciclos.filter((c) => cicloPendenteNoProtocolo(c, data.ciclos));
 
 
   return (
@@ -1009,7 +1009,7 @@ export default function CiclosPage() {
                 <CicloItem
                   key={ciclo.id}
                   ciclo={ciclo}
-                  pendente={cicloTemPendencia(ciclo)}
+                  pendente={cicloPendenteNoProtocolo(ciclo, data.ciclos)}
                   caixasLabel={(ciclo.caixaIds ?? [])
                     .map((id) => data.caixasAgua.find((c) => c.id === id)?.nome)
                     .filter(Boolean)

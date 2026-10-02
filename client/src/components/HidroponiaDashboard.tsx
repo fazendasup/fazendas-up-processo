@@ -5,7 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { useProjeto } from "@/contexts/ProjetoContext";
 import { useFazenda } from "@/contexts/FazendaContext";
 import { FASES_CONFIG, type Fase } from "@/lib/types";
-import { contarCiclosPendentes, cicloTemPendencia } from "@/lib/utils-farm";
+import { contarCiclosPendentes, cicloPendenteNoProtocolo } from "@/lib/utils-farm";
 import BancadaCard from "@/components/BancadaCard";
 import { filtroTarefasParaHoje, partitionTarefasHojeVsAtrasadas } from "@/lib/tarefasHoje";
 import { contarCiclosAplicacaoAtrasados } from "@/lib/ciclosAgenda";
@@ -117,7 +117,7 @@ export default function HidroponiaDashboard() {
 
   const fases: Fase[] = ["mudas", "vegetativa", "maturacao"];
 
-  const ciclosPendentesHoje = data.ciclos.filter((c) => cicloTemPendencia(c)).length;
+  const ciclosPendentesHoje = data.ciclos.filter((c) => cicloPendenteNoProtocolo(c, data.ciclos)).length;
 
   return (
     <>

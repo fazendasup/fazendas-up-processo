@@ -339,6 +339,21 @@ async function startServer() {
   }
 
   try {
+    const { ensureProgramacaoCiclosProtocolo } = await import(
+      "../ciclos/ensure-programacao-protocolo"
+    );
+    const programados = await ensureProgramacaoCiclosProtocolo();
+    if (programados > 0) {
+      console.log(`[Server] Ciclos do protocolo programados: ${programados}`);
+    }
+  } catch (e) {
+    console.error(
+      "[Server] ensureProgramacaoCiclosProtocolo falhou — a agenda do protocolo pode ficar incompleta:",
+      e instanceof Error ? e.message : e,
+    );
+  }
+
+  try {
     const { ensureItemPedidoProntoColumn } = await import(
       "../comercial/ensure-item-pedido-pronto"
     );

@@ -161,7 +161,7 @@ export function cartoesSolucao(): CartaoSolucao[] {
         { rotulo: "500 L", valor: tanque500.bio },
       ],
       notas: [],
-      aviso: `${protocolo.bioNota}. Bio nos dias sem H₂O₂.`,
+      aviso: `${protocolo.bioNota}. Nos dias sem H₂O₂. No dia de Infinito ou Cercobin, o bio fica de fora.`,
       dosagemAgenda: `310 L: ${tanque310.bio}. 500 L: ${tanque500.bio}. Dias sem peróxido.`,
     },
     {
@@ -248,8 +248,6 @@ const MESMO_DIA: Array<[ProdutoSolucaoId, ProdutoSolucaoId, string]> = [
   ["peroxido", "cercobin", "Cercobin no mesmo dia de H₂O₂ ou de Infinito."],
   ["peroxido", "bio", "Bio nos dias sem H₂O₂."],
   ["infinito", "cercobin", "Cercobin no mesmo dia de H₂O₂ ou de Infinito."],
-  ["cercobin", "bio", "Cercobin e bio ficam em dias diferentes."],
-  ["infinito", "bio", "Infinito e bio: preferir dias diferentes."],
 ];
 
 function inicioYmd(valor?: string | null): string | null {
@@ -376,6 +374,136 @@ export function mensagemRegraSolucao(
   }
 
   return null;
+}
+
+export type CicloProgramado = {
+  chave: ProdutoSolucaoId | CaldaFoliarId;
+  nome: string;
+  produto: string;
+  tipo: "Solução" | "Foliar";
+  frequencia: "diaria" | "semanal" | "quinzenal" | "personalizada";
+  intervaloDias?: number;
+  diasSemana?: number[];
+  fases: FaseProtocoloId[];
+  dosagem: string;
+  dataInicio: string;
+  caixas: "todas" | "sem-mudas" | "nenhuma";
+};
+
+function segundaDaSemana(ymd: string): string {
+  const dia = diaDaSemana(ymd);
+  const voltar = dia === 0 ? 6 : dia - 1;
+  return somarDias(ymd, -voltar);
+}
+
+function proximoOffset(segunda: string, hoje: string, offsets: number[]): string {
+  for (let i = 0; i < 14; i++) {
+    const ymd = somarDias(hoje, i);
+    const off = ((diferenca(segunda, ymd) % 14) + 14) % 14;
+    if (offsets.includes(off)) return ymd;
+  }
+  return hoje;
+}
+
+/**
+ * Agenda alinhada à semana: peróxido nos dias pares a partir da segunda,
+ * bio nos ímpares, Infinito na quinta (24 h depois do peróxido) e
+ * Cercobin 6 dias depois, fora do peróxido. Calda A na sexta, Calda B na segunda.
+ */
+export function programacaoCiclos(hojeYmd: string): CicloProgramado[] {
+  const segunda = segundaDaSemana(hojeYmd);
+  const peroxido = cartaoSolucao("peroxido");
+  const bio = cartaoSolucao("bio");
+  const infinito = cartaoSolucao("infinito");
+  const cercobin = cartaoSolucao("cercobin");
+  const koh = cartaoSolucao("koh");
+  const caldaA = caldaFoliar("A");
+  const caldaB = caldaFoliar("B");
+  return [
+    {
+      chave: "koh",
+      nome: koh.nome,
+      produto: koh.produto,
+      tipo: "Solução",
+      frequencia: "diaria",
+      fases: koh.fases,
+      dosagem: koh.dosagemAgenda,
+      dataInicio: hojeYmd,
+      caixas: "todas",
+    },
+    {
+      chave: "peroxido",
+      nome: peroxido.nome,
+      produto: peroxido.produto,
+      tipo: "Solução",
+      frequencia: "personalizada",
+      intervaloDias: 2,
+      fases: peroxido.fases,
+      dosagem: peroxido.dosagemAgenda,
+      dataInicio: proximoOffset(segunda, hojeYmd, [0, 2, 4, 6, 8, 10, 12]),
+      caixas: "todas",
+    },
+    {
+      chave: "bio",
+      nome: bio.nome,
+      produto: bio.produto,
+      tipo: "Solução",
+      frequencia: "personalizada",
+      intervaloDias: 2,
+      fases: bio.fases,
+      dosagem: bio.dosagemAgenda,
+      dataInicio: proximoOffset(segunda, hojeYmd, [1, 3, 5, 7, 9, 11, 13]),
+      caixas: "todas",
+    },
+    {
+      chave: "infinito",
+      nome: infinito.nome,
+      produto: infinito.produto,
+      tipo: "Solução",
+      frequencia: "quinzenal",
+      intervaloDias: 14,
+      fases: infinito.fases,
+      dosagem: infinito.dosagemAgenda,
+      dataInicio: proximoOffset(segunda, hojeYmd, [3]),
+      caixas: "sem-mudas",
+    },
+    {
+      chave: "cercobin",
+      nome: cercobin.nome,
+      produto: cercobin.produto,
+      tipo: "Solução",
+      frequencia: "quinzenal",
+      intervaloDias: 14,
+      fases: cercobin.fases,
+      dosagem: cercobin.dosagemAgenda,
+      dataInicio: proximoOffset(segunda, hojeYmd, [9]),
+      caixas: "sem-mudas",
+    },
+    {
+      chave: "A",
+      nome: caldaA.nome,
+      produto: caldaA.itens.map((item) => item.produto).join(", "),
+      tipo: "Foliar",
+      frequencia: "semanal",
+      diasSemana: [5],
+      fases: ["mudas", "vegetativa", "maturacao"],
+      dosagem: caldaA.dosagemAgenda,
+      dataInicio: segunda,
+      caixas: "nenhuma",
+    },
+    {
+      chave: "B",
+      nome: caldaB.nome,
+      produto: caldaB.itens.map((item) => item.produto).join(", "),
+      tipo: "Foliar",
+      frequencia: "semanal",
+      diasSemana: [1],
+      fases: ["mudas", "vegetativa", "maturacao"],
+      dosagem: caldaB.dosagemAgenda,
+      dataInicio: segunda,
+      caixas: "nenhuma",
+    },
+  ];
 }
 
 export function rotulosNoDia(faseId: FaseProtocoloId, dia: number): string[] {

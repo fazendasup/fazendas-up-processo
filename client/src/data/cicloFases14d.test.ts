@@ -6,6 +6,7 @@ import {
   dosesDaVariante,
   mensagemRegraSolucao,
   produtoSolucaoDoNome,
+  programacaoCiclos,
   protocoloFoliar,
   rotulosNoDia,
 } from "./cicloFases14d";
@@ -162,5 +163,55 @@ describe("protocolo fases 14 dias", () => {
         fasesAplicaveis: ["vegetativa"],
       }),
     ).toMatch(/10 dias/);
+  });
+
+  it("programa a semana sem juntar peróxido, Infinito e Cercobin", () => {
+    const agenda = programacaoCiclos("2026-10-02");
+    const porChave = Object.fromEntries(agenda.map((item) => [item.chave, item]));
+    expect(porChave.peroxido).toMatchObject({
+      frequencia: "personalizada",
+      intervaloDias: 2,
+      dataInicio: "2026-10-02",
+    });
+    expect(porChave.bio.dataInicio).toBe("2026-10-03");
+    expect(porChave.infinito).toMatchObject({
+      frequencia: "quinzenal",
+      intervaloDias: 14,
+      dataInicio: "2026-10-15",
+      fases: ["vegetativa", "maturacao"],
+    });
+    expect(porChave.cercobin.dataInicio).toBe("2026-10-07");
+    expect(porChave.A.diasSemana).toEqual([5]);
+    expect(porChave.B.diasSemana).toEqual([1]);
+
+    for (const item of agenda) {
+      if (item.tipo !== "Solução") continue;
+      const outros = agenda
+        .filter((ciclo) => ciclo.chave !== item.chave && ciclo.tipo === "Solução")
+        .map((ciclo) => ({
+          id: ciclo.chave,
+          nome: ciclo.nome,
+          produto: ciclo.produto,
+          ativo: true,
+          frequencia: ciclo.frequencia,
+          intervaloDias: ciclo.intervaloDias,
+          diasSemana: ciclo.diasSemana,
+          dataInicio: ciclo.dataInicio,
+          fasesAplicaveis: ciclo.fases,
+        }));
+      expect(
+        mensagemRegraSolucao(outros, {
+          id: item.chave,
+          nome: item.nome,
+          produto: item.produto,
+          ativo: true,
+          frequencia: item.frequencia,
+          intervaloDias: item.intervaloDias,
+          diasSemana: item.diasSemana,
+          dataInicio: item.dataInicio,
+          fasesAplicaveis: item.fases,
+        }),
+      ).toBeNull();
+    }
   });
 });

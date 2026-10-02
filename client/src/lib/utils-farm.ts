@@ -26,6 +26,7 @@ import {
 import { variedadePulaVegetativa } from '@shared/variedadesFase';
 import { estruturaFaseParaProjeto, type TorreEstruturaOverride } from '@shared/types';
 import { receitaCicloPrioritariaParaVariedade } from '@shared/cicloReceita';
+import { produtoSolucaoDoNome } from '@/data/cicloFases14d';
 
 /** Microverdes iluminação: cultivo em nível de bandeja (perfil), sem furos. */
 export type CultivoBandejaStatus = 'vazio' | 'plantado' | 'colhido';
@@ -480,6 +481,27 @@ export function cicloPendenteHoje(ciclo: CicloAplicacao, dataReferencia?: Date):
   return false;
 }
 
+/**
+ * Bio não aparece no dia em que Infinito ou Cercobin estão pendentes.
+ * O protocolo manda não misturar esses produtos no mesmo dia.
+ */
+export function cicloPendenteNoProtocolo(
+  ciclo: CicloAplicacao,
+  ciclos: CicloAplicacao[],
+  dataReferencia?: Date,
+): boolean {
+  if (!cicloTemPendencia(ciclo, dataReferencia)) return false;
+  const produto = produtoSolucaoDoNome(ciclo.nome) ?? produtoSolucaoDoNome(ciclo.produto || "");
+  if (produto !== "bio") return true;
+  return !ciclos.some((outro) => {
+    if (!outro.ativo || outro.id === ciclo.id) return false;
+    const outroProduto =
+      produtoSolucaoDoNome(outro.nome) ?? produtoSolucaoDoNome(outro.produto || "");
+    if (outroProduto !== "infinito" && outroProduto !== "cercobin") return false;
+    return cicloTemPendencia(outro, dataReferencia);
+  });
+}
+
 /** Pendência do ciclo: no alvo caixa, basta uma das caixas cadastradas estar no dia. */
 export function cicloTemPendencia(ciclo: CicloAplicacao, dataReferencia?: Date): boolean {
   if (!ciclo.ativo) return false;
@@ -498,7 +520,7 @@ export function cicloTemPendencia(ciclo: CicloAplicacao, dataReferencia?: Date):
 /** Conta ciclos pendentes para uma fase */
 export function contarCiclosPendentes(ciclos: CicloAplicacao[], fase: Fase): number {
   return ciclos.filter(
-    (c) => c.fasesAplicaveis.includes(fase) && cicloTemPendencia(c)
+    (c) => c.fasesAplicaveis.includes(fase) && cicloPendenteNoProtocolo(c, ciclos)
   ).length;
 }
 
@@ -932,7 +954,7 @@ export function resumoFazenda(data: FazendaData) {
     const torre = data.torres.find((t) => t.id === a.torreId);
     return andarOcupado(a, torre?.fase, data.projetoTipo);
   }).length;
-  const ciclosPendentes = data.ciclos.filter((c) => cicloTemPendencia(c)).length;
+  const ciclosPendentes = data.ciclos.filter((c) => cicloPendenteNoProtocolo(c, data.ciclos)).length;
 
   let ultimaMedicao: string | null = null;
   data.caixasAgua.forEach((ca) => {
