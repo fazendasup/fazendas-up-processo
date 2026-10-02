@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import {
   DEFAULT_HARVEST_PARAMS,
-  recommendedTowersPerDay,
   simulateYear,
   type HarvestParams,
 } from "@shared/harvest";
@@ -120,22 +119,20 @@ export function ProjecaoColheitaPanel({ prefill }: { prefill?: PrefillHint }) {
   const towerParams: TowerNeedsParams = useMemo(
     () => ({
       ...towerExtra,
-      matTowersPerDay: harvest.towersPerDay,
+      matTowersPerDay:
+        towerExtra.daysMaturacao > 0 ? harvest.towers / towerExtra.daysMaturacao : 0,
     }),
-    [towerExtra, harvest.towersPerDay],
+    [towerExtra, harvest.towers],
   );
 
   const towers = useMemo(() => calculateTowerNeeds(towerParams), [towerParams]);
 
-  const matTowersNeeded = towers.phases.find(p => p.fase === "maturacao")!.towersCeil;
-
   const harvestForSim: HarvestParams = useMemo(
     () => ({
       ...harvest,
-      towers: matTowersNeeded > 0 ? matTowersNeeded : harvest.towers,
       growthDays: towerExtra.daysMaturacao,
     }),
-    [harvest, matTowersNeeded, towerExtra.daysMaturacao],
+    [harvest, towerExtra.daysMaturacao],
   );
 
   const projection = useMemo(
@@ -185,36 +182,33 @@ export function ProjecaoColheitaPanel({ prefill }: { prefill?: PrefillHint }) {
   };
 
   const applyRecommendedVolume = () => {
-    const rec = recommendedTowersPerDay({
-      towers: matTowersNeeded > 0 ? matTowersNeeded : harvest.towers,
-      growthDays: towerExtra.daysMaturacao,
-      sanitizeHours: harvest.sanitizeHours,
-      skipSaturday: harvest.skipSaturday,
+    setH("towersPerDay", projection.recommendedTowersPerDay);
+  };
+
+  const applyErpTowers = () => {
+    setHarvest(p => {
+      const towers =
+        prefill?.towersFromErp && prefill.towersFromErp > 0 ? prefill.towersFromErp : p.towers;
+      const plantsPerTower =
+        prefill?.plantsPerTowerFromErp && prefill.plantsPerTowerFromErp > 0
+          ? Math.round(prefill.plantsPerTowerFromErp)
+          : p.plantsPerTower;
+      return { ...p, towers, plantsPerTower };
     });
-    setH("towersPerDay", rec);
   };
 
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Altere o ritmo de colheita e os tempos por fase — as torres necessárias e
-          os custos de energia atualizam juntos. Faturamento usa a lista mensal.
-          Tudo fica salvo neste navegador.
+          O faturamento usa as torres de maturação informadas. Ciclo mais curto
+          aumenta quantas torres dá para colher por dia. Tudo fica salvo neste
+          navegador.
         </p>
         <div className="flex flex-wrap gap-2">
-          {prefill?.sourceLabel ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              onClick={() => {
-                if (prefill.plantsPerTowerFromErp && prefill.plantsPerTowerFromErp > 0) {
-                  setH("plantsPerTower", Math.round(prefill.plantsPerTowerFromErp));
-                }
-              }}
-            >
-              Plantas/torre do ERP
+              {prefill?.sourceLabel ? (
+            <Button type="button" size="sm" variant="secondary" onClick={applyErpTowers}>
+              Usar torres do ERP
             </Button>
           ) : null}
           <Button type="button" size="sm" variant="outline" onClick={resetAll}>
@@ -234,6 +228,14 @@ export function ProjecaoColheitaPanel({ prefill }: { prefill?: PrefillHint }) {
               <CardTitle className="text-base">Colheita</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2">
+              <Field label="Torres em maturação">
+                <DecimalInput
+                  value={harvest.towers}
+                  onChange={v => setH("towers", v)}
+                  integersOnly
+                  fractionDigits={0}
+                />
+              </Field>
               <Field label="Torres / dia (ritmo)">
                 <DecimalInput
                   value={harvest.towersPerDay}
@@ -419,8 +421,9 @@ export function ProjecaoColheitaPanel({ prefill }: { prefill?: PrefillHint }) {
             </AlertTitle>
             <AlertDescription className="flex flex-wrap items-center gap-2">
               <span>
-                Volume recomendado: {num(projection.recommendedTowersPerDay, 1)}{" "}
-                torre(s)/dia
+                {num(harvest.towers, 0)} torres de maturação, no ciclo de{" "}
+                {num(projection.cycleDays, 1)} dias, aguentam{" "}
+                {num(projection.recommendedTowersPerDay, 1)} torre(s)/dia.
               </span>
               <Button size="sm" variant="secondary" onClick={applyRecommendedVolume}>
                 <Sparkles className="mr-1 h-3.5 w-3.5" />
@@ -434,7 +437,7 @@ export function ProjecaoColheitaPanel({ prefill }: { prefill?: PrefillHint }) {
       {/* 3. Torres */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-          3 · Torres necessárias (ritmo {num(harvest.towersPerDay, 2)}/dia)
+          3 · Torres da fazenda ({num(harvest.towers, 0)} em maturação)
         </h2>
         <div className="grid gap-3 sm:grid-cols-3">
           {towers.phases.map(ph => (
@@ -456,9 +459,9 @@ export function ProjecaoColheitaPanel({ prefill }: { prefill?: PrefillHint }) {
           ))}
         </div>
         <p className="text-xs text-muted-foreground">
-          Total sugerido: <strong>{towers.totalTowersCeil} torres</strong>. A
-          maturação ({matTowersNeeded}) alimenta a projeção de faturamento
-          automaticamente.
+          Total na fazenda: <strong>{towers.totalTowersCeil} torres</strong>. O
+          faturamento usa as {num(harvest.towers, 0)} de maturação. Ciclo mais curto
+          aumenta as torres que dá para colher por dia.
         </p>
       </section>
 

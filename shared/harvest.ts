@@ -202,7 +202,8 @@ function detectBottleneck(
   capacityCycle: number,
   capacityRoutine: number,
 ): HarvestBottleneck {
-  const eps = 0.05; // ~5% de torres/mês
+  const base = Math.max(capacityCycle, capacityRoutine, 1);
+  const eps = base * 0.05;
   if (capacityRoutine + eps < capacityCycle) return "calendario";
   if (capacityCycle + eps < capacityRoutine) return "ciclo";
   return "equilibrado";

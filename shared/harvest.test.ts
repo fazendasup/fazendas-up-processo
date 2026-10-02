@@ -27,6 +27,17 @@ describe("recommendedTowersPerDay", () => {
     ).toBe(1);
   });
 
+  it("ciclo mais curto aumenta as torres por dia na mesma fazenda", () => {
+    const base = {
+      towers: 14,
+      sanitizeHours: 48,
+      skipSaturday: true,
+    };
+    const curto = recommendedTowersPerDay({ ...base, growthDays: 10 });
+    const longo = recommendedTowersPerDay({ ...base, growthDays: 14 });
+    expect(curto).toBeGreaterThan(longo);
+  });
+
   it("exemplo clássico ~1,4", () => {
     // 14 / 16 * 7/6 ≈ 1.02 — use towers that yield 1.4
     // 16 * 1.4 * 6/7 ≈ 19.2 → use 22.4/16*7/6?
