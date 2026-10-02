@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   capacityCycleTowers,
+  classificarRitmo,
   cycleDaysFromParams,
   DEFAULT_HARVEST_PARAMS,
   recommendedTowersPerDay,
@@ -117,6 +118,23 @@ describe("simulateYear", () => {
     expect(jan.plantsNet).toBeCloseTo(jan.plantsGross * 0.9, 6);
     expect(jan.products).toBe(Math.floor((jan.plantsNet * 40) / 100));
     expect(jan.revenue).toBe(jan.products * 8);
+  });
+
+  it("1 torre/dia com 10 torres e maturação de 10 dias não é gargalo", () => {
+    const result = simulateYear(
+      {
+        ...DEFAULT_HARVEST_PARAMS,
+        towers: 10,
+        growthDays: 10,
+        sanitizeHours: 48,
+        towersPerDay: 1,
+        skipSaturday: true,
+      },
+      2026,
+    );
+    expect(result.recommendedTowersPerDay).toBe(1);
+    expect(result.bottleneck).toBe("equilibrado");
+    expect(classificarRitmo(1, 0.97)).toBe("equilibrado");
   });
 
   it("gargalo calendário: com 1 torre/dia, encurtar ciclo não sobe a média", () => {

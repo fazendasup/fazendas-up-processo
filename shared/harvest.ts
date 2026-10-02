@@ -198,15 +198,16 @@ function commercialFromPlants(
   return { kg, products, revenue: products * salePrice };
 }
 
-function detectBottleneck(
-  capacityCycle: number,
-  capacityRoutine: number,
+/** Compara o ritmo digitado com o que as torres aguentam. Empate na 1ª casa decimal não é gargalo. */
+export function classificarRitmo(
+  towersPerDay: number,
+  recommended: number,
 ): HarvestBottleneck {
-  const base = Math.max(capacityCycle, capacityRoutine, 1);
-  const eps = base * 0.05;
-  if (capacityRoutine + eps < capacityCycle) return "calendario";
-  if (capacityCycle + eps < capacityRoutine) return "ciclo";
-  return "equilibrado";
+  if (!(recommended > 0) || !(towersPerDay > 0)) return "equilibrado";
+  const casa = (n: number) => Math.round(n * 10) / 10;
+  if (casa(towersPerDay) === casa(recommended)) return "equilibrado";
+  if (towersPerDay < recommended) return "calendario";
+  return "ciclo";
 }
 
 function buildNotes(
@@ -245,14 +246,14 @@ function buildNotes(
 
   if (result.bottleneck === "calendario") {
     notes.push(
-      "Gargalo: calendário/rotina. Encurtar o ciclo biológico sozinho não sobe a média enquanto o volume diário (torres/dia) for o limitante.",
+      "Cabe colher mais torres por dia. O ritmo informado está abaixo do que as torres de maturação repõem nesse ciclo.",
     );
   } else if (result.bottleneck === "ciclo") {
     notes.push(
-      "Gargalo: ciclo biológico. A rotina diária colheria mais torres do que o ciclo permite — reduzir volume diário ou alongar sanitização/crescimento não ajuda; o teto é o ciclo.",
+      "O ritmo informado passa do que o ciclo repõe. O teto é o volume recomendado.",
     );
   } else {
-    notes.push("Gargalo: equilibrado — rotina diária e ciclo biológico estão alinhados.");
+    notes.push("O ritmo informado acompanha o que as torres aguentam nesse ciclo.");
   }
 
   notes.push(
@@ -354,7 +355,7 @@ export function simulateYear(
     { plants: 0, kg: 0, products: 0, revenue: 0 },
   );
 
-  const bottleneck = detectBottleneck(sumCycle / 12, sumRoutine / 12);
+  const bottleneck = classificarRitmo(params.towersPerDay, recommended);
 
   const now = new Date();
   const referenceMonthIndex =

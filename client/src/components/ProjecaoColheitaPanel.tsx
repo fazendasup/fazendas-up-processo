@@ -414,16 +414,14 @@ export function ProjecaoColheitaPanel({ prefill }: { prefill?: PrefillHint }) {
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>
-              Gargalo:{" "}
               {projection.bottleneck === "calendario"
-                ? "calendário / ritmo diário"
-                : "ciclo biológico"}
+                ? `Cabe colher ${num(projection.recommendedTowersPerDay, 1)} torres por dia`
+                : `O teto deste ciclo é ${num(projection.recommendedTowersPerDay, 1)} torres por dia`}
             </AlertTitle>
             <AlertDescription className="flex flex-wrap items-center gap-2">
               <span>
-                {num(harvest.towers, 0)} torres de maturação, no ciclo de{" "}
-                {num(projection.cycleDays, 1)} dias, aguentam{" "}
-                {num(projection.recommendedTowersPerDay, 1)} torre(s)/dia.
+                {num(harvest.towers, 0)} torres de maturação e ciclo de{" "}
+                {num(projection.cycleDays, 1)} dias (maturação + sanitização).
               </span>
               <Button size="sm" variant="secondary" onClick={applyRecommendedVolume}>
                 <Sparkles className="mr-1 h-3.5 w-3.5" />
