@@ -12,8 +12,16 @@ type AlvoCiclo = "ambos" | "caixa" | "andar";
 import { cicloTemPendencia, formatarDataHora, DIAS_SEMANA } from '@/lib/utils-farm';
 import { numeroNoNomeCadastro, rotuloCaixaComoCadastro } from '@/lib/rotuloCaixaCadastro';
 import AplicacaoFoliar from '@/components/AplicacaoFoliar';
+import AplicacaoSolucao from '@/components/AplicacaoSolucao';
 import ProtocoloFases14d from '@/components/ProtocoloFases14d';
-import { caldaFoliar, caldasNoMesmoDia, type CaldaFoliarId } from '@/data/cicloFases14d';
+import {
+  caldaFoliar,
+  caldasNoMesmoDia,
+  cartaoSolucao,
+  mensagemRegraSolucao,
+  type CaldaFoliarId,
+  type ProdutoSolucaoId,
+} from '@/data/cicloFases14d';
 import { useFazendaMutations } from '@/hooks/useFazendaMutations';
 import { useDbIdResolver } from '@/hooks/useDbIdResolver';
 import { Button } from '@/components/ui/button';
@@ -299,6 +307,35 @@ export default function CiclosPage() {
       return;
     }
 
+    const regraSolucao = mensagemRegraSolucao(
+      data.ciclos.map((ciclo) => ({
+        id: ciclo.id,
+        nome: ciclo.nome,
+        produto: ciclo.produto,
+        ativo: ciclo.ativo,
+        frequencia: ciclo.frequencia,
+        diasSemana: ciclo.diasSemana,
+        intervaloDias: ciclo.intervaloDias,
+        dataInicio: ciclo.dataInicio ? isoToYmdLocal(ciclo.dataInicio) : null,
+        fasesAplicaveis: ciclo.fasesAplicaveis,
+      })),
+      {
+        id: editingId ?? 'novo',
+        nome,
+        produto,
+        ativo: true,
+        frequencia: modoData === 'frequencia' ? frequencia : 'personalizada',
+        diasSemana: diasSelecionados,
+        intervaloDias,
+        dataInicio,
+        fasesAplicaveis: fasesSelecionadas,
+      },
+    );
+    if (regraSolucao) {
+      toast.error(regraSolucao);
+      return;
+    }
+
     if (
       modoData === 'frequencia' &&
       frequencia === 'personalizada' &&
@@ -454,6 +491,22 @@ export default function CiclosPage() {
         },
       }
     );
+  };
+
+  const agendarSolucao = (id: ProdutoSolucaoId) => {
+    const cartao = cartaoSolucao(id);
+    resetForm();
+    setNomeCiclo(cartao.nome);
+    setProduto(cartao.produto);
+    setTipo('Solução');
+    setDosagem(cartao.dosagemAgenda);
+    setFrequencia(cartao.frequencia);
+    setIntervaloDiasStr(cartao.intervaloDias ? String(cartao.intervaloDias) : '');
+    setFasesSelecionadas(cartao.fases);
+    setAlvo('caixa');
+    setModoData('frequencia');
+    setShowForm(true);
+    toast.message(`${cartao.nome} na agenda`, { description: cartao.aviso });
   };
 
   const agendarCalda = (id: CaldaFoliarId) => {
@@ -690,6 +743,12 @@ export default function CiclosPage() {
                         </Select>
                       </div>
 
+                      {tipo.trim().toLowerCase() === 'solução' && (
+                        <p className="mt-2 text-[11px] text-muted-foreground">
+                          KOH primeiro, com pH estável 10–15 min. A dose é a do tanque de 310 L ou 500 L.
+                        </p>
+                      )}
+
                       {frequencia === 'semanal' && (
                         <div className="mt-3">
                           <Label className="text-xs mb-2 block">Dias da Semana</Label>
@@ -864,6 +923,8 @@ export default function CiclosPage() {
             </DialogContent>
           </Dialog>
         </div>
+
+        <AplicacaoSolucao ciclos={data.ciclos} onAgendar={agendarSolucao} />
 
         <AplicacaoFoliar ciclos={data.ciclos} onAgendar={agendarCalda} />
 

@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   caldaFoliar,
   caldasNoMesmoDia,
+  cartaoSolucao,
   dosesDaVariante,
+  mensagemRegraSolucao,
+  produtoSolucaoDoNome,
   protocoloFoliar,
   rotulosNoDia,
 } from "./cicloFases14d";
@@ -71,5 +74,93 @@ describe("protocolo fases 14 dias", () => {
         diasSemana: [4],
       }),
     ).toBe(false);
+  });
+
+  it("copia a dose do tanque para peróxido, Infinito e Cercobin", () => {
+    expect(cartaoSolucao("peroxido").linhas.map((linha) => linha.valor)).toEqual([
+      dosesDaVariante("310").h2o2,
+      dosesDaVariante("500").h2o2,
+    ]);
+    expect(cartaoSolucao("infinito").fases).toEqual(["vegetativa", "maturacao"]);
+    expect(cartaoSolucao("cercobin").linhas.map((linha) => linha.valor)).toEqual(["6 g", "10 g"]);
+    expect(cartaoSolucao("koh").dosagemAgenda.length).toBeLessThanOrEqual(128);
+    expect(produtoSolucaoDoNome("Biozenith")).toBeNull();
+    expect(produtoSolucaoDoNome("H₂O₂ 200V (~50%)")).toBe("peroxido");
+  });
+
+  it("aplica os bloqueios do protocolo ao agendar a solução", () => {
+    const peroxido = {
+      id: "p",
+      nome: "Peróxido",
+      ativo: true,
+      frequencia: "personalizada",
+      intervaloDias: 2,
+      dataInicio: "2026-10-01",
+      fasesAplicaveis: ["mudas", "vegetativa", "maturacao"],
+    };
+    expect(
+      mensagemRegraSolucao([peroxido], {
+        id: "i",
+        nome: "Infinito",
+        ativo: true,
+        frequencia: "quinzenal",
+        dataInicio: "2026-10-01",
+        fasesAplicaveis: ["vegetativa", "maturacao"],
+      }),
+    ).toMatch(/12 h/);
+    expect(
+      mensagemRegraSolucao([peroxido], {
+        id: "b",
+        nome: "Bio",
+        ativo: true,
+        frequencia: "personalizada",
+        intervaloDias: 2,
+        dataInicio: "2026-10-02",
+        fasesAplicaveis: ["mudas", "vegetativa", "maturacao"],
+      }),
+    ).toBeNull();
+    expect(
+      mensagemRegraSolucao([], {
+        id: "m",
+        nome: "Cercobin",
+        ativo: true,
+        frequencia: "quinzenal",
+        dataInicio: "2026-10-01",
+        fasesAplicaveis: ["mudas"],
+      }),
+    ).toMatch(/Mudas/);
+    expect(
+      mensagemRegraSolucao(
+        [
+          {
+            id: "i",
+            nome: "Infinito",
+            ativo: true,
+            frequencia: "quinzenal",
+            dataInicio: "2026-10-01",
+            fasesAplicaveis: ["vegetativa"],
+          },
+        ],
+        {
+          id: "c",
+          nome: "Cercobin",
+          ativo: true,
+          frequencia: "quinzenal",
+          dataInicio: "2026-10-03",
+          fasesAplicaveis: ["vegetativa"],
+        },
+      ),
+    ).toMatch(/3 dias/);
+    expect(
+      mensagemRegraSolucao([], {
+        id: "cedo",
+        nome: "Infinito",
+        ativo: true,
+        frequencia: "semanal",
+        diasSemana: [1],
+        dataInicio: "2026-10-05",
+        fasesAplicaveis: ["vegetativa"],
+      }),
+    ).toMatch(/10 dias/);
   });
 });
