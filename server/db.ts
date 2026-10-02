@@ -10,7 +10,9 @@ import {
 import {
   hojeYmdSaoPaulo,
   instanteMeioDia,
+  reagendarCaldasAposAplicar,
   reagendarSequenciaAposAplicar,
+  ymdCalendario,
   type PassoCicloAgenda,
 } from "@shared/cicloSequencia";
 import { aplicarConsumoDiarioEstoque as calcularConsumoDiarioEstoque } from "@shared/estoque";
@@ -3799,13 +3801,56 @@ export async function ensureCicloCaixaExecucoesTable(): Promise<void> {
   }
 }
 
+/** Registra a aplicação e, se atrasou, empurra a outra calda para manter o intervalo. */
+export async function marcarCicloExecutado(input: {
+  projetoId: number;
+  cicloId: number;
+  ultimaExecucao: Date;
+  executorId: number;
+  executorNome: string;
+}): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const dataYmd = ymdCalendario(input.ultimaExecucao);
+  const todos = await db.select().from(ciclos).where(eq(ciclos.projetoId, input.projetoId));
+  const atual = todos.find((ciclo) => ciclo.id === input.cicloId);
+  if (!atual) throw new Error("Ciclo não encontrado.");
+
+  await updateCiclo(input.projetoId, input.cicloId, {
+    ultimaExecucao: input.ultimaExecucao,
+    ultimoExecutorId: input.executorId,
+    ultimoExecutorNome: input.executorNome,
+  });
+
+  if (!dataYmd) return 0;
+  const ajustes = reagendarCaldasAposAplicar(
+    todos.map((ciclo) => ({
+      id: ciclo.id,
+      nome: ciclo.nome,
+      produto: ciclo.produto,
+      ativo: ciclo.ativo !== false && Number(ciclo.ativo) !== 0,
+      diasSemana: Array.isArray(ciclo.diasSemana) ? (ciclo.diasSemana as number[]) : null,
+      dataInicio: ciclo.dataInicio,
+    })),
+    input.cicloId,
+    dataYmd,
+  );
+  for (const ajuste of ajustes) {
+    await updateCiclo(input.projetoId, ajuste.cicloId, {
+      dataInicio: instanteMeioDia(ajuste.dataInicioYmd),
+      diasSemana: ajuste.diasSemana,
+    });
+  }
+  return ajustes.length;
+}
+
 export async function registrarAplicacaoCicloNaCaixa(input: {
   projetoId: number;
   cicloId: number;
   caixaAguaId: number;
   executorId: number;
   executorNome: string;
-}): Promise<void> {
+}): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await ensureCiclosCaixaIdsColumn();
@@ -3841,6 +3886,8 @@ export async function registrarAplicacaoCicloNaCaixa(input: {
     diasSemana: Array.isArray(c.diasSemana) ? (c.diasSemana as number[]) : null,
     intervaloDias: c.intervaloDias,
     dataInicio: c.dataInicio,
+    nome: c.nome,
+    produto: c.produto,
     caixaIds: parseCaixaIdsJson(c.caixaIds),
     execucoes: execucoesProjeto
       .filter((e) => e.cicloId === c.id)
@@ -3917,6 +3964,7 @@ export async function registrarAplicacaoCicloNaCaixa(input: {
     executadoPorId: input.executorId,
     executadoPorNome: input.executorNome,
   });
+  return deslocamentos.length;
 }
 
 function parseCaixaIdsJson(raw: unknown): number[] {

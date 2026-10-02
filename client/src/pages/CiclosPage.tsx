@@ -484,8 +484,12 @@ export default function CiclosPage() {
     mutations.marcarCicloExecutado.mutate(
       { id: dbId, ultimaExecucao },
       {
-        onSuccess: () => {
-          toast.success('Aplicação registrada!');
+        onSuccess: (resultado) => {
+          toast.success(
+            resultado.ajustados > 0
+              ? 'Aplicação registrada. A outra calda mudou de data.'
+              : 'Aplicação registrada!',
+          );
           setExecutarDialogOpen(false);
           setExecutarCicloId(null);
         },
@@ -970,7 +974,7 @@ export default function CiclosPage() {
               <DialogTitle className="font-display text-base">Registrar aplicação</DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground">
-              Em qual dia a aplicação foi feita? Você pode escolher uma data passada se já tiver realizado o processo antes.
+              Em qual dia a aplicação foi feita? Se foi depois do dia previsto, a outra calda muda de data para manter o intervalo.
             </p>
             <div>
               <Label className="text-xs">Data da aplicação</Label>
@@ -1027,6 +1031,16 @@ export default function CiclosPage() {
       </main>
     </div>
   );
+}
+
+function proximaDataAgenda(ciclo: CicloAplicacao): string | null {
+  const datas = (ciclo.execucoesCaixa ?? [])
+    .map((execucao) => execucao.dataAgenda)
+    .filter((data): data is string => Boolean(data))
+    .sort();
+  const primeira = datas[0];
+  if (!primeira) return null;
+  return primeira.split("-").reverse().join("/");
 }
 
 function CicloItem({
@@ -1096,6 +1110,9 @@ function CicloItem({
           ) : null}
           {ciclo.dataInicio && (
             <span>Início: {ciclo.dataInicio.split('-').reverse().join('/')}</span>
+          )}
+          {proximaDataAgenda(ciclo) && (
+            <span>Próxima: {proximaDataAgenda(ciclo)}</span>
           )}
           {ciclo.ultimaExecucao && (
             <span>Última execução: {formatarDataHora(ciclo.ultimaExecucao)}</span>

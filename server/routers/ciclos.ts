@@ -55,12 +55,14 @@ export const ciclosRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      await db.updateCiclo(projetoIdFromCtx(ctx), input.id, {
+      const ajustados = await db.marcarCicloExecutado({
+        projetoId: projetoIdFromCtx(ctx),
+        cicloId: input.id,
         ultimaExecucao: input.ultimaExecucao,
-        ultimoExecutorId: ctx.user.id,
-        ultimoExecutorNome: ctx.user.name || "Usuário",
+        executorId: ctx.user.id,
+        executorNome: ctx.user.name || "Usuário",
       });
-      return { success: true };
+      return { success: true, ajustados };
     }),
   /** Registra a aplicação numa caixa e desloca os passos seguintes da sequência. */
   aplicarNaCaixa: projectProcedure
@@ -71,14 +73,14 @@ export const ciclosRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      await db.registrarAplicacaoCicloNaCaixa({
+      const ajustados = await db.registrarAplicacaoCicloNaCaixa({
         projetoId: projetoIdFromCtx(ctx),
         cicloId: input.cicloId,
         caixaAguaId: input.caixaAguaId,
         executorId: ctx.user.id,
         executorNome: ctx.user.name || "Usuário",
       });
-      return { success: true as const };
+      return { success: true as const, ajustados };
     }),
   delete: commercialEditorProjectProcedure
     .input(z.object({ id: z.number() }))

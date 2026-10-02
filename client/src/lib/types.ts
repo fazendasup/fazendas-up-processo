@@ -307,6 +307,8 @@ export interface CicloAplicacao {
   execucoesCaixa?: { caixaId: string; ultimaExecucao?: string; dataAgenda?: string }[];
   /** Data de início do agendamento (YYYY-MM-DD ou ISO). */
   dataInicio?: string;
+  /** Próxima data desta caixa quando o atraso empurrou a agenda. */
+  dataAgenda?: string;
   ultimaExecucao?: string;
   ultimoExecutorNome?: string;
   ativo: boolean;

@@ -41,8 +41,12 @@ export function AplicacaoPendenteNaTorre({ caixaId }: { caixaId?: string | null 
   const resolver = useDbIdResolver();
   const utils = trpc.useUtils();
   const aplicar = trpc.ciclos.aplicarNaCaixa.useMutation({
-    onSuccess: async () => {
-      toast.success("Aplicação registrada");
+    onSuccess: async (resultado) => {
+      toast.success(
+        resultado.ajustados > 0
+          ? "Aplicação registrada. As outras datas desta caixa foram atualizadas."
+          : "Aplicação registrada",
+      );
       await utils.fazenda.loadAll.invalidate();
     },
     onError: (err) => toast.error(err.message),

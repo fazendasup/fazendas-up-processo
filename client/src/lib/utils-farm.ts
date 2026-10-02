@@ -460,6 +460,12 @@ export function cicloPendenteHoje(ciclo: CicloAplicacao, dataReferencia?: Date):
   const ultimaYmd = ymdLocalDe(ciclo.ultimaExecucao);
   if (ultimaYmd && ultimaYmd === hojeYmd) return false;
 
+  // Agenda deslocada pelo atraso vale até a aplicação. Antes dela, não aparece.
+  const agendaYmd = ymdLocalDe(ciclo.dataAgenda);
+  if (agendaYmd && (!ultimaYmd || agendaYmd > ultimaYmd)) {
+    return agendaYmd <= hojeYmd;
+  }
+
   if (ciclo.frequencia === 'diaria') return true;
 
   if (ciclo.frequencia === 'semanal' && ciclo.diasSemana) {
@@ -511,7 +517,7 @@ export function cicloTemPendencia(ciclo: CicloAplicacao, dataReferencia?: Date):
   return caixas.some((caixaId) => {
     const ex = ciclo.execucoesCaixa?.find((e) => e.caixaId === caixaId);
     return cicloPendenteHoje(
-      { ...ciclo, ultimaExecucao: ex?.ultimaExecucao },
+      { ...ciclo, ultimaExecucao: ex?.ultimaExecucao, dataAgenda: ex?.dataAgenda },
       dataReferencia,
     );
   });

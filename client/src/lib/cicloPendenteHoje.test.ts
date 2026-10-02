@@ -67,6 +67,17 @@ describe("cicloPendenteHoje", () => {
     expect(cicloPendenteHoje(ciclo, dia11)).toBe(false);
   });
 
+  it("não fica pendente antes da data remarcada pelo atraso", () => {
+    const ciclo = base({
+      frequencia: "quinzenal",
+      intervaloDias: 14,
+      dataInicio: "2026-10-07",
+      dataAgenda: "2026-10-23",
+    });
+    expect(cicloPendenteHoje(ciclo, new Date(2026, 9, 20, 12, 0, 0))).toBe(false);
+    expect(cicloPendenteHoje(ciclo, new Date(2026, 9, 23, 12, 0, 0))).toBe(true);
+  });
+
   it("não fica pendente se já foi executado no mesmo dia", () => {
     const ciclo = base({
       frequencia: "personalizada",
