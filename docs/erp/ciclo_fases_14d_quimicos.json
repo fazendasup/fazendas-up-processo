@@ -113,8 +113,46 @@
     { "par": "H₂O₂ + Bio", "mesmoDia": "Não", "regra": "Bio nos dias sem H₂O₂." },
     { "par": "Infinito + Cercobin", "mesmoDia": "Não", "regra": "Cercobin pelo menos 3 dias depois." },
     { "par": "Cercobin + Bio", "mesmoDia": "Não", "regra": "Dias diferentes." },
-    { "par": "Infinito + Bio", "mesmoDia": "Evitar", "regra": "Preferir dias diferentes." }
+    { "par": "Infinito + Bio", "mesmoDia": "Evitar", "regra": "Preferir dias diferentes." },
+    { "par": "H₂O₂, Cercobin ou Infinito + foliar", "mesmoDia": "Sim", "regra": "Foliar ok. Preferir 2–4 h depois." }
   ],
+  "foliar": {
+    "titulo": "Aplicação foliar",
+    "via": "Só foliar. Não entra na solução.",
+    "volume": "5 L",
+    "horario": "Manhã cedo ou fim de tarde.",
+    "produtos": ["Biozenith", "Nutrisolve", "Magleaf", "Forticell"],
+    "caldas": [
+      {
+        "id": "A",
+        "nome": "Calda A",
+        "volume": "5 L",
+        "frequencia": "1× por semana",
+        "dosagemAgenda": "5 L: Biozenith 12,5 mL, Nutrisolve 12,5 mL, Magleaf 10 mL",
+        "itens": [
+          { "produto": "Biozenith", "dose": "12,5 mL" },
+          { "produto": "Nutrisolve", "dose": "12,5 mL" },
+          { "produto": "Magleaf", "dose": "10 mL" }
+        ]
+      },
+      {
+        "id": "B",
+        "nome": "Calda B",
+        "volume": "5 L",
+        "frequencia": "1× por semana, em dia diferente da Calda A",
+        "aviso": "Sozinho. Não misturar com Magleaf.",
+        "dosagemAgenda": "5 L: Forticell 15 mL. Tip burn: 20–25 mL. Sem Magleaf.",
+        "itens": [
+          { "produto": "Forticell", "dose": "15 mL", "crise": "Tip burn: 20–25 mL" }
+        ]
+      }
+    ],
+    "regras": [
+      "Não aplicar Calda A e Calda B no mesmo dia.",
+      "Tip burn ativo: só Calda B. Suspender Magleaf até estabilizar.",
+      "Após H₂O₂, Cercobin ou Infinito na solução: foliar ok, preferir 2–4 h depois."
+    ]
+  },
   "fluxoEncherCaixa": [
     "Água",
     "Nutriente, até o EC",

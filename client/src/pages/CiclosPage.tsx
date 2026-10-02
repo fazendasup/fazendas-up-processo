@@ -11,7 +11,9 @@ type AlvoCiclo = "ambos" | "caixa" | "andar";
 
 import { cicloTemPendencia, formatarDataHora, DIAS_SEMANA } from '@/lib/utils-farm';
 import { numeroNoNomeCadastro, rotuloCaixaComoCadastro } from '@/lib/rotuloCaixaCadastro';
+import AplicacaoFoliar from '@/components/AplicacaoFoliar';
 import ProtocoloFases14d from '@/components/ProtocoloFases14d';
+import { caldaFoliar, caldasNoMesmoDia, type CaldaFoliarId } from '@/data/cicloFases14d';
 import { useFazendaMutations } from '@/hooks/useFazendaMutations';
 import { useDbIdResolver } from '@/hooks/useDbIdResolver';
 import { Button } from '@/components/ui/button';
@@ -277,6 +279,27 @@ export default function CiclosPage() {
     }
 
     if (
+      tipo.trim().toLowerCase() === 'foliar' &&
+      frequencia === 'semanal' &&
+      diasSelecionados.length === 0
+    ) {
+      toast.error('Escolha o dia da semana da calda foliar.');
+      return;
+    }
+
+    if (
+      caldasNoMesmoDia(data.ciclos, {
+        id: editingId,
+        nome,
+        frequencia: modoData === 'frequencia' ? frequencia : 'personalizada',
+        diasSemana: diasSelecionados,
+      })
+    ) {
+      toast.error('Calda A e Calda B ficam em dias diferentes.');
+      return;
+    }
+
+    if (
       modoData === 'frequencia' &&
       frequencia === 'personalizada' &&
       (!intervaloDias || intervaloDias < 1)
@@ -431,6 +454,22 @@ export default function CiclosPage() {
         },
       }
     );
+  };
+
+  const agendarCalda = (id: CaldaFoliarId) => {
+    const calda = caldaFoliar(id);
+    resetForm();
+    setNomeCiclo(calda.nome);
+    setProduto(calda.itens.map((item) => item.produto).join(', '));
+    setTipo('Foliar');
+    setDosagem(calda.dosagemAgenda);
+    setFrequencia('semanal');
+    setAlvo('andar');
+    setModoData('frequencia');
+    setShowForm(true);
+    toast.message(`${calda.nome} na agenda`, {
+      description: 'Escolha um dia diferente da outra calda. Manhã cedo ou fim de tarde.',
+    });
   };
 
   const ciclosPendentes = data.ciclos.filter((c) => cicloTemPendencia(c));
@@ -654,6 +693,11 @@ export default function CiclosPage() {
                       {frequencia === 'semanal' && (
                         <div className="mt-3">
                           <Label className="text-xs mb-2 block">Dias da Semana</Label>
+                          {tipo.trim().toLowerCase() === 'foliar' && (
+                            <p className="mb-2 text-[11px] text-muted-foreground">
+                              Foliar, fora da solução. Calda A e Calda B em dias diferentes.
+                            </p>
+                          )}
                           <div className="flex gap-2 flex-wrap">
                             {DIAS_SEMANA.map((dia) => (
                               <button
@@ -820,6 +864,8 @@ export default function CiclosPage() {
             </DialogContent>
           </Dialog>
         </div>
+
+        <AplicacaoFoliar ciclos={data.ciclos} onAgendar={agendarCalda} />
 
         <ProtocoloFases14d />
 
