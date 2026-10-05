@@ -1405,7 +1405,7 @@ export const terceirosRegistros = mysqlTable(
     almocouNaEmpresaOverride: boolean("almocouNaEmpresaOverride"),
     /**
      * Override admin da 1h de descanso.
-     * null = desconta só se almoçou na empresa; true = desconta 1h; false = não desconta.
+     * null ou true = desconta 1h (padrão); false = não desconta neste dia.
      */
     descontaDescansoOverride: boolean("descontaDescansoOverride"),
     /** null = em aberto; preenchido quando admin marca como pago. */

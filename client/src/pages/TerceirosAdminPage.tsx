@@ -74,7 +74,7 @@ function fmtDataBr(iso: string): string {
 
 type ModoFiltro = "dia" | "semana" | "periodo";
 type AlimModo = "auto" | "empresa" | "vale";
-type DescModo = "auto" | "sim" | "nao";
+type DescModo = "sim" | "nao";
 
 type RegistroEditavel = {
   id: number;
@@ -97,9 +97,7 @@ function modoAlmoco(
 function modoDescanso(
   override: boolean | null | undefined,
 ): DescModo {
-  if (override === true) return "sim";
-  if (override === false) return "nao";
-  return "auto";
+  return override === false ? "nao" : "sim";
 }
 
 export default function TerceirosAdminPage() {
@@ -113,7 +111,7 @@ export default function TerceirosAdminPage() {
   const [editEntrada, setEditEntrada] = useState("07:00");
   const [editSaida, setEditSaida] = useState("16:00");
   const [editAlim, setEditAlim] = useState<AlimModo>("auto");
-  const [editDescanso, setEditDescanso] = useState<DescModo>("auto");
+  const [editDescanso, setEditDescanso] = useState<DescModo>("sim");
 
   const periodo = useMemo(() => {
     if (modo === "dia") return { inicio: refDia, fim: refDia };
@@ -480,7 +478,7 @@ export default function TerceirosAdminPage() {
                                 ajustar.mutate({
                                   id: r.id,
                                   descontaDescansoOverride:
-                                    v === "auto" ? null : v === "sim",
+                                    v === "nao" ? false : null,
                                 });
                               }}
                             >
@@ -488,9 +486,6 @@ export default function TerceirosAdminPage() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="auto">
-                                  Descanso: automático
-                                </SelectItem>
                                 <SelectItem value="sim">
                                   Descontar 1h
                                 </SelectItem>
@@ -699,18 +694,14 @@ export default function TerceirosAdminPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="auto">
-                      Automático (só se almoçou na empresa)
-                    </SelectItem>
                     <SelectItem value="sim">Descontar 1h</SelectItem>
                     <SelectItem value="nao">Não descontar 1h</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  Quem está na empresa das 11h às 13h pode almoçar lá: nesse
-                  caso não recebe os R$ 25 e a 1h sai do pagamento. Em qualquer
-                  outro horário os R$ 25 ficam. A 1h de descanso só sai se for
-                  marcada neste dia.
+                  A 1h de descanso sai por padrão. Marque «Não descontar 1h» no dia
+                  em que a hora deve ser paga. Quem almoça na empresa (11h–13h)
+                  não recebe os R$ 25. Nos outros horários os R$ 25 ficam.
                 </p>
               </div>
             </div>
@@ -738,9 +729,11 @@ export default function TerceirosAdminPage() {
                       ? null
                       : editAlim === "empresa",
                   descontaDescansoOverride:
-                    editDescanso === "auto"
-                      ? null
-                      : editDescanso === "sim",
+                    editDescanso === "nao"
+                      ? false
+                      : editando.descontaDescansoOverride === true
+                        ? true
+                        : null,
                 });
               }}
             >

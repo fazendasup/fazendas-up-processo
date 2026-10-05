@@ -61,14 +61,27 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
     expect(r!.valorTotal).toBe(126);
   });
 
-  it("turno da tarde sem almoço na empresa: não desconta hora e mantém os R$ 25", () => {
+  it("turno da tarde: desconta 1h por padrão e mantém os R$ 25", () => {
     const r = calcularPagamentoDiaTerceiro({
       horaEntrada: "13:00",
       horaSaida: "21:00",
     });
     expect(r!.almocouNaEmpresa).toBe(false);
-    expect(r!.descontaDescanso).toBe(false);
+    expect(r!.descontaDescanso).toBe(true);
+    expect(r!.descontaDescansoManual).toBe(false);
     expect(r!.horasPresente).toBe(8);
+    expect(r!.horasTrabalhadas).toBe(7);
+    expect(r!.valorAlimentacao).toBe(25);
+    expect(r!.valorTotal).toBe(round2(7 * TERCEIROS_VALOR_HORA + 10 + 25));
+  });
+
+  it("não descontar 1h neste dia: paga as horas cheias e mantém os R$ 25", () => {
+    const r = calcularPagamentoDiaTerceiro({
+      horaEntrada: "13:00",
+      horaSaida: "21:00",
+      descontaDescansoOverride: false,
+    });
+    expect(r!.descontaDescanso).toBe(false);
     expect(r!.horasTrabalhadas).toBe(8);
     expect(r!.valorAlimentacao).toBe(25);
     expect(r!.valorTotal).toBe(125);
@@ -94,9 +107,9 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
       horaSaida: "20:00",
     });
     expect(r!.almocouNaEmpresa).toBe(false);
-    expect(r!.horasTrabalhadas).toBe(8);
+    expect(r!.horasTrabalhadas).toBe(7);
     expect(r!.valorAlimentacao).toBe(25);
-    expect(r!.valorTotal).toBe(125);
+    expect(r!.valorTotal).toBe(round2(7 * TERCEIROS_VALOR_HORA + 10 + 25));
   });
 
   it("só manhã com menos de 6h: paga a hora e o VT, sem refeição", () => {
@@ -105,10 +118,11 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
       horaSaida: "12:00",
     });
     expect(r!.almocouNaEmpresa).toBe(false);
-    expect(r!.horasTrabalhadas).toBe(4);
-    expect(r!.valorHoras).toBe(4 * TERCEIROS_VALOR_HORA);
+    expect(r!.horasPresente).toBe(4);
+    expect(r!.horasTrabalhadas).toBe(3);
+    expect(r!.valorHoras).toBe(3 * TERCEIROS_VALOR_HORA);
     expect(r!.valorAlimentacao).toBe(0);
-    expect(r!.valorTotal).toBe(round2(4 * TERCEIROS_VALOR_HORA + 10));
+    expect(r!.valorTotal).toBe(round2(3 * TERCEIROS_VALOR_HORA + 10));
   });
 
   it("exatamente 6h sem almoço na empresa: recebe os R$ 25", () => {
@@ -116,9 +130,10 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
       horaEntrada: "13:00",
       horaSaida: "19:00",
     });
-    expect(r!.horasTrabalhadas).toBe(6);
+    expect(r!.horasPresente).toBe(6);
+    expect(r!.horasTrabalhadas).toBe(5);
     expect(r!.valorAlimentacao).toBe(25);
-    expect(r!.valorTotal).toBe(round2(6 * TERCEIROS_VALOR_HORA + 10 + 25));
+    expect(r!.valorTotal).toBe(round2(5 * TERCEIROS_VALOR_HORA + 10 + 25));
   });
 
   it("sai exatamente às 13h: ainda sem desconto (precisa sair depois das 13h)", () => {
@@ -127,7 +142,8 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
       horaSaida: "13:00",
     });
     expect(r!.almocouNaEmpresa).toBe(false);
-    expect(r!.horasTrabalhadas).toBe(5);
+    expect(r!.horasPresente).toBe(5);
+    expect(r!.horasTrabalhadas).toBe(4);
     expect(r!.valorAlimentacao).toBe(0);
   });
 
@@ -153,8 +169,8 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
     expect(r!.valorTotal).toBe(111.25);
   });
 
-  it("jornada noturna fora do almoço: não desconta hora e mantém os R$ 25", () => {
-    // 18:00 → 08:00 = 14h presente. Não cobre 11h–13h.
+  it("jornada noturna fora do almoço: desconta 1h e mantém os R$ 25", () => {
+    // 18:00 → 08:00 = 14h presente − 1h. Não cobre 11h–13h.
     const r = calcularPagamentoDiaTerceiro({
       horaEntrada: "18:00",
       horaSaida: "08:00",
@@ -163,22 +179,22 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
     expect(r!.cruzaMeiaNoite).toBe(true);
     expect(r!.horasPresente).toBe(14);
     expect(r!.almocouNaEmpresa).toBe(false);
-    expect(r!.descontaDescanso).toBe(false);
-    expect(r!.horasTrabalhadas).toBe(14);
+    expect(r!.descontaDescanso).toBe(true);
+    expect(r!.horasTrabalhadas).toBe(13);
     expect(r!.valorValeTransporte).toBe(10);
     expect(r!.valorAlimentacao).toBe(25);
-    expect(r!.valorHoras).toBe(round2(14 * TERCEIROS_VALOR_HORA));
-    expect(r!.valorTotal).toBe(round2(14 * TERCEIROS_VALOR_HORA + 10 + 25));
+    expect(r!.valorHoras).toBe(round2(13 * TERCEIROS_VALOR_HORA));
+    expect(r!.valorTotal).toBe(round2(13 * TERCEIROS_VALOR_HORA + 10 + 25));
   });
 
-  it("noite que não passa no almoço da empresa não desconta a hora", () => {
+  it("noite fora do almoço da empresa mantém os R$ 25 e desconta 1h", () => {
     const r = calcularPagamentoDiaTerceiro({
       horaEntrada: "22:00",
       horaSaida: "06:00",
     });
     expect(r!.almocouNaEmpresa).toBe(false);
-    expect(r!.descontaDescanso).toBe(false);
-    expect(r!.horasTrabalhadas).toBe(8);
+    expect(r!.descontaDescanso).toBe(true);
+    expect(r!.horasTrabalhadas).toBe(7);
     expect(r!.valorAlimentacao).toBe(25);
   });
 
@@ -205,7 +221,7 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
     });
     expect(r!.almocouNaEmpresa).toBe(false);
     expect(r!.almocouNaEmpresaManual).toBe(true);
-    expect(r!.horasTrabalhadas).toBe(9);
+    expect(r!.horasTrabalhadas).toBe(8);
     expect(r!.valorAlimentacao).toBe(25);
   });
 
@@ -215,7 +231,7 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
       horaSaida: "12:00",
       almocouNaEmpresaOverride: false,
     });
-    expect(r!.horasTrabalhadas).toBe(4);
+    expect(r!.horasTrabalhadas).toBe(3);
     expect(r!.valorAlimentacao).toBe(0);
     expect(r!.valorValeTransporte).toBe(10);
   });

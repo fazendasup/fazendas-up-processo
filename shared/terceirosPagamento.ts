@@ -2,11 +2,10 @@
  * Prestação de serviços de terceiros — pagamento por hora.
  *
  * Valor/hora = R$ 90 ÷ 8.
- * Horas pagas = tempo presente − 1h de descanso, só quando essa hora é descontada.
+ * Horas pagas = tempo presente − 1h de descanso. A 1h sai por padrão;
+ * o admin pode marcar o dia para não descontar.
  * Quem está na empresa das 11h às 13h pode almoçar na empresa: nesse caso
- * não recebe os R$ 25 e a 1h de almoço sai do pagamento.
- * Em qualquer outro horário os R$ 25 não são descontados. A 1h de descanso
- * é escolha do dia: às vezes sai, às vezes não.
+ * não recebe os R$ 25. Em qualquer outro horário os R$ 25 ficam.
  * + R$ 10 vale-transporte por dia (um registro = um VT, mesmo em jornada noturna).
  * + R$ 25 alimentação se não almoçou na empresa e esteve pelo menos 6h.
  *   Abaixo de 6h conta só a hora (e o VT). A 1h de descanso não tira os R$ 25.
@@ -150,7 +149,7 @@ export type PagamentoDiaTerceiro = {
   almocouNaEmpresa: boolean;
   /** true se o admin definiu o almoço (não veio só do horário 11h–13h). */
   almocouNaEmpresaManual: boolean;
-  /** 1h de descanso não remunerada. No automático, só junto com o almoço na empresa. */
+  /** 1h de descanso não remunerada. Padrão: desconta. false só se o admin desligou. */
   descontaDescanso: boolean;
   /** true se o admin definiu a hora de descanso. */
   descontaDescansoManual: boolean;
@@ -174,8 +173,8 @@ export type PagamentoDiaTerceiro = {
  * @param diariaBase — diária combinada para 8h (padrão {@link TERCEIROS_DIARIA_BASE}).
  * @param almocouNaEmpresaOverride — null = automático (11h–13h);
  *   true = almoçou na empresa (sem R$ 25); false = não almoçou (mantém os R$ 25).
- * @param descontaDescansoOverride — null = desconta 1h só se almoçou na empresa;
- *   true = desconta 1h de descanso; false = não desconta a hora.
+ * @param descontaDescansoOverride — null ou true = desconta 1h;
+ *   false = não desconta a hora neste dia.
  */
 export function calcularPagamentoDiaTerceiro(input: {
   horaEntrada: string;
@@ -215,9 +214,7 @@ export function calcularPagamentoDiaTerceiro(input: {
   const descontaDescansoManual =
     input.descontaDescansoOverride === true ||
     input.descontaDescansoOverride === false;
-  const descontaDescanso = descontaDescansoManual
-    ? Boolean(input.descontaDescansoOverride)
-    : almocouNaEmpresa;
+  const descontaDescanso = input.descontaDescansoOverride !== false;
   const descontoRefeicaoHoras = descontaDescanso
     ? Math.min(TERCEIROS_HORAS_ALMOCO, horasPresente)
     : 0;

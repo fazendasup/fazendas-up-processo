@@ -469,9 +469,9 @@ function rotuloAlimentacao(v: boolean | null | undefined): string {
 }
 
 function rotuloDescanso(v: boolean | null | undefined): string {
-  if (v === true) return "descontar 1h de descanso neste dia";
   if (v === false) return "não descontar a hora de descanso neste dia";
-  return "automático (só desconta se almoçou na empresa)";
+  if (v === true) return "descontar 1h de descanso neste dia";
+  return "descontar 1h de descanso (padrão)";
 }
 
 /** Admin ajusta horário e/ou regra de alimentação; grava histórico para o PJ. */

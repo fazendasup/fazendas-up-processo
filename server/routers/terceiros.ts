@@ -435,7 +435,7 @@ export const terceirosRouter = router({
         horaSaida: horaHm.optional(),
         /** null = automático; true = almoço na empresa (sem R$ 25); false = mantém os R$ 25 */
         almocouNaEmpresaOverride: z.boolean().nullable().optional(),
-        /** null = automático (só com o almoço); true = desconta 1h; false = não desconta */
+        /** null ou true = desconta 1h; false = não desconta neste dia */
         descontaDescansoOverride: z.boolean().nullable().optional(),
       }),
     )
