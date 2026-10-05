@@ -96,11 +96,11 @@ export async function ensureTerceirosTables(): Promise<void> {
   try {
     await db.execute(
       sql.raw(
-        `ALTER TABLE \`terceiros_prestadores\` ADD COLUMN \`descontaAlmoco\` boolean NOT NULL DEFAULT true`,
+        `ALTER TABLE \`terceiros_prestadores\` DROP COLUMN \`descontaAlmoco\``,
       ),
     );
   } catch {
-    // coluna já existe
+    // coluna já removida
   }
   try {
     await db.execute(sql.raw(`CREATE TABLE IF NOT EXISTS \`terceiros_ajustes\` (
@@ -346,7 +346,6 @@ export async function listRegistrosAdmin(opts: {
       nomeCompleto: string;
       diariaBase: string | null;
       observacao: string | null;
-      descontaAlmoco: boolean;
     }
   >
 > {
@@ -377,7 +376,6 @@ export async function listRegistrosAdmin(opts: {
       nomeCompleto: terceirosPrestadores.nomeCompleto,
       diariaBase: terceirosPrestadores.diariaBase,
       observacao: terceirosPrestadores.observacao,
-      descontaAlmoco: terceirosPrestadores.descontaAlmoco,
     })
     .from(terceirosRegistros)
     .innerJoin(
@@ -397,7 +395,6 @@ export async function updatePrestadorAdmin(input: {
   id: number;
   diariaBase?: number | null;
   observacao?: string | null;
-  descontaAlmoco?: boolean;
 }): Promise<TerceiroPrestadorRow> {
   await ensureTerceirosTables();
   const db = await getDb();
@@ -413,9 +410,6 @@ export async function updatePrestadorAdmin(input: {
   if (input.observacao !== undefined) {
     const t = input.observacao?.trim() ?? "";
     patch.observacao = t.length ? t : null;
-  }
-  if (input.descontaAlmoco !== undefined) {
-    patch.descontaAlmoco = input.descontaAlmoco;
   }
   if (Object.keys(patch).length === 0) {
     const cur = await db
@@ -459,8 +453,8 @@ export async function deleteRegistroAdmin(id: number): Promise<void> {
 }
 
 function rotuloAlimentacao(v: boolean | null | undefined): string {
-  if (v === true) return "almoço na empresa (desconta 1h, sem vale R$ 25)";
-  if (v === false) return "vale alimentação R$ 25 (sem desconto de 1h)";
+  if (v === true) return "descontar almoço neste dia (desconta 1h, sem vale R$ 25)";
+  if (v === false) return "não descontar almoço neste dia (vale R$ 25 a partir de 6h)";
   return "automático pelo horário";
 }
 

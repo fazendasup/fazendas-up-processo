@@ -14,7 +14,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { InputHora24h } from "@/components/InputHora24h";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -83,8 +82,15 @@ type RegistroEditavel = {
   horaEntrada: string;
   horaSaida: string;
   almocouNaEmpresaOverride: boolean | null;
-  descontaAlmoco: boolean;
 };
+
+function modoAlmoco(
+  override: boolean | null | undefined,
+): AlimModo {
+  if (override === true) return "empresa";
+  if (override === false) return "vale";
+  return "auto";
+}
 
 export default function TerceirosAdminPage() {
   const hoje = hojeIsoSp();
@@ -152,17 +158,6 @@ export default function TerceirosAdminPage() {
     onSuccess: async (_d, vars) => {
       toast.success(vars.pago ? "Marcado como pago" : "Voltou para em aberto");
       await utils.terceiros.listRegistros.invalidate();
-    },
-    onError: err => toast.error(err.message),
-  });
-
-  const atualizarPrestador = trpc.terceiros.atualizarPrestador.useMutation({
-    onSuccess: async () => {
-      toast.success("Regra de almoço atualizada");
-      await Promise.all([
-        utils.terceiros.listPrestadores.invalidate(),
-        utils.terceiros.listRegistros.invalidate(),
-      ]);
     },
     onError: err => toast.error(err.message),
   });
@@ -340,11 +335,6 @@ export default function TerceirosAdminPage() {
                       <tr key={p.prestadorId} className="border-b last:border-0">
                         <td className="px-3 py-2 font-medium">
                           <div>{p.nomeCompleto}</div>
-                          {p.descontaAlmoco ? null : (
-                            <p className="mt-0.5 text-xs font-normal text-muted-foreground">
-                              Traz o próprio almoço
-                            </p>
-                          )}
                           {p.observacao ? (
                             <p className="mt-0.5 text-xs font-normal text-amber-800 dark:text-amber-200">
                               {p.observacao}
@@ -402,7 +392,7 @@ export default function TerceirosAdminPage() {
                       <th className="px-3 py-2">Saída</th>
                       <th className="px-3 py-2 text-right">Horas</th>
                       <th className="px-3 py-2 text-right">Extra</th>
-                      <th className="px-3 py-2 text-right">Alim.</th>
+                      <th className="px-3 py-2">Almoço</th>
                       <th className="px-3 py-2 text-right">Total</th>
                       <th className="px-3 py-2">Status</th>
                       <th className="px-3 py-2" />
@@ -443,14 +433,36 @@ export default function TerceirosAdminPage() {
                             ? formatarHorasDecimais(r.pagamento.horasExtras)
                             : "—"}
                         </td>
-                        <td className="px-3 py-2 text-right tabular-nums">
-                          {r.pagamento
-                            ? r.pagamento.almocouNaEmpresa
-                              ? r.pagamento.almocouNaEmpresaManual
-                                ? "descontada*"
-                                : "descontada"
-                              : fmtMoney(r.pagamento.valorAlimentacao)
-                            : "—"}
+                        <td className="px-3 py-2">
+                          <Select
+                            value={modoAlmoco(r.almocouNaEmpresaOverride)}
+                            disabled={ajustar.isPending}
+                            onValueChange={v => {
+                              ajustar.mutate({
+                                id: r.id,
+                                almocouNaEmpresaOverride:
+                                  v === "auto" ? null : v === "empresa",
+                              });
+                            }}
+                          >
+                            <SelectTrigger className="h-8 w-[11.5rem] text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="auto">Automático</SelectItem>
+                              <SelectItem value="empresa">
+                                Descontar almoço
+                              </SelectItem>
+                              <SelectItem value="vale">
+                                Não descontar
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <p className="mt-1 text-[11px] tabular-nums text-muted-foreground">
+                            {r.pagamento?.almocouNaEmpresa
+                              ? "desconta 1h"
+                              : fmtMoney(r.pagamento?.valorAlimentacao)}
+                          </p>
                         </td>
                         <td className="px-3 py-2 text-right font-semibold tabular-nums">
                           {fmtMoney(r.valorTotal)}
@@ -495,7 +507,6 @@ export default function TerceirosAdminPage() {
                                 horaSaida: r.horaSaida,
                                 almocouNaEmpresaOverride:
                                   r.almocouNaEmpresaOverride ?? null,
-                                descontaAlmoco: r.descontaAlmoco,
                               })
                             }
                           >
@@ -552,27 +563,6 @@ export default function TerceirosAdminPage() {
                           {p.observacao}
                         </p>
                       ) : null}
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <Label
-                        htmlFor={`almoco-${p.id}`}
-                        className="max-w-[8.5rem] text-right text-xs leading-tight font-normal"
-                      >
-                        {p.descontaAlmoco
-                          ? "Desconta almoço"
-                          : "Traz o próprio almoço"}
-                      </Label>
-                      <Switch
-                        id={`almoco-${p.id}`}
-                        checked={p.descontaAlmoco}
-                        disabled={atualizarPrestador.isPending}
-                        onCheckedChange={checked =>
-                          atualizarPrestador.mutate({
-                            id: p.id,
-                            descontaAlmoco: checked,
-                          })
-                        }
-                      />
                     </div>
                     <Button
                       size="sm"
@@ -643,18 +633,17 @@ export default function TerceirosAdminPage() {
                       Automático pelo horário
                     </SelectItem>
                     <SelectItem value="empresa">
-                      Almoço na empresa (desconta 1h, sem R$ 25)
+                      Descontar almoço neste dia
                     </SelectItem>
                     <SelectItem value="vale">
-                      Vale alimentação R$ 25 (sem desconto 1h, a partir de 6h)
+                      Não descontar neste dia
                     </SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  {editando.descontaAlmoco
-                    ? "No automático, desconta 1h quando a jornada cobre 11h–13h."
-                    : "Esta pessoa traz o próprio almoço. No automático, a hora não é descontada e entra o vale a partir de 6h."}{" "}
-                  O ajuste deste dia prevalece e o PJ vê no histórico.
+                  Vale só para este dia. Descontar tira 1h e não paga o vale.
+                  Não descontar mantém a hora e paga R$ 25 a partir de 6h. O PJ
+                  vê no histórico.
                 </p>
               </div>
             </div>

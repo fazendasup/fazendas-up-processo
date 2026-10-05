@@ -166,18 +166,15 @@ export type PagamentoDiaTerceiro = {
  * Se saída &lt; entrada, interpreta como jornada noturna (saída no dia seguinte).
  *
  * @param diariaBase — diária combinada para 8h (padrão {@link TERCEIROS_DIARIA_BASE}).
- * @param almocouNaEmpresaOverride — null/undefined = automático pelo horário
- *   (ou pela política do prestador); true = almoço na empresa (desconta 1h, sem R$ 25);
- *   false = sem almoço na empresa (vale R$ 25 só se trabalhou pelo menos 6h).
- * @param descontaAlmoco — false = a pessoa traz o próprio almoço. Sem override do dia,
- *   não desconta 1h e paga o vale a partir de 6h. O ajuste do dia prevalece.
+ * @param almocouNaEmpresaOverride — null/undefined = automático pelo horário;
+ *   true = desconta o almoço deste dia (desconta 1h, sem R$ 25);
+ *   false = não desconta (vale R$ 25 só se trabalhou pelo menos 6h).
  */
 export function calcularPagamentoDiaTerceiro(input: {
   horaEntrada: string;
   horaSaida: string;
   diariaBase?: number | null;
   almocouNaEmpresaOverride?: boolean | null;
-  descontaAlmoco?: boolean | null;
 }): PagamentoDiaTerceiro | null {
   const ent = horaParaMinutos(input.horaEntrada);
   const sai = horaParaMinutos(input.horaSaida);
@@ -206,9 +203,7 @@ export function calcularPagamentoDiaTerceiro(input: {
     input.almocouNaEmpresaOverride === false;
   const almocouNaEmpresa = almocouNaEmpresaManual
     ? Boolean(input.almocouNaEmpresaOverride)
-    : input.descontaAlmoco === false
-      ? false
-      : almocouAuto;
+    : almocouAuto;
   const descontoAlmocoHoras = almocouNaEmpresa
     ? Math.min(TERCEIROS_HORAS_ALMOCO, horasPresente)
     : 0;

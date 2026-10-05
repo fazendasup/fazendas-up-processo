@@ -192,31 +192,6 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
     expect(r!.valorValeTransporte).toBe(10);
   });
 
-  it("quem traz o próprio almoço não perde a hora e recebe o vale", () => {
-    const r = calcularPagamentoDiaTerceiro({
-      horaEntrada: "07:00",
-      horaSaida: "16:00",
-      descontaAlmoco: false,
-    });
-    expect(r!.almocouNaEmpresa).toBe(false);
-    expect(r!.almocouNaEmpresaManual).toBe(false);
-    expect(r!.horasTrabalhadas).toBe(9);
-    expect(r!.valorAlimentacao).toBe(25);
-    expect(r!.valorTotal).toBe(round2(9 * TERCEIROS_VALOR_HORA + 10 + 25));
-  });
-
-  it("ajuste do dia ainda desconta mesmo quando a pessoa traz almoço", () => {
-    const r = calcularPagamentoDiaTerceiro({
-      horaEntrada: "07:00",
-      horaSaida: "16:00",
-      descontaAlmoco: false,
-      almocouNaEmpresaOverride: true,
-    });
-    expect(r!.almocouNaEmpresa).toBe(true);
-    expect(r!.horasTrabalhadas).toBe(8);
-    expect(r!.valorAlimentacao).toBe(0);
-  });
-
   it("override: força almoço na empresa no turno da tarde", () => {
     const r = calcularPagamentoDiaTerceiro({
       horaEntrada: "13:00",
