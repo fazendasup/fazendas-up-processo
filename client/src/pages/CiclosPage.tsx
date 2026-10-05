@@ -37,6 +37,8 @@ import {
   CalendarClock, Plus, Trash2, AlertTriangle, CheckCircle2, Power, Edit, Copy,
 } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'wouter';
+import { atalhoBpfDoTexto, hrefBpf } from '@shared/bpfDocumento';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
@@ -1101,6 +1103,15 @@ function CicloItem({
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
           <span>{frequenciaLabel()}</span>
           <span className="font-medium">{ciclo.produto}</span>
+          {(() => {
+            const fit = atalhoBpfDoTexto(ciclo.produto, ciclo.nome);
+            if (!fit) return null;
+            return (
+              <Link href={hrefBpf(fit.view)} className="font-medium text-primary hover:underline">
+                {fit.codigo}
+              </Link>
+            );
+          })()}
           {ciclo.dosagem && <span>Dosagem: {ciclo.dosagem}</span>}
           <span>
             {ciclo.fasesAplicaveis.map((f) => FASES_CONFIG[f].label).join(', ')}

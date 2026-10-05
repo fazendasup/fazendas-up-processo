@@ -146,8 +146,112 @@ html[data-theme="dark"] .doc-wrap {
   border-color: oklch(0.32 0.04 260);
 }
 
+.bpf-modo {
+  margin: 0 0 0.75rem;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--erp-muted);
+}
+
+.bpf-historico {
+  max-height: 220px;
+  overflow: auto;
+  margin: 0 0 0.6rem;
+  padding: 0.45rem;
+  border: 1px solid var(--erp-border);
+  border-radius: 10px;
+  background: var(--erp-card);
+}
+
+.bpf-hist-item {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--erp-border);
+  font-size: 0.72rem;
+}
+
+.bpf-hist-item p { margin: 0; }
+
+.bpf-hist-meta,
+.bpf-hist-vazio {
+  color: var(--erp-muted);
+  margin-top: 0.15rem;
+}
+
+.bpf-hist-restore {
+  margin-top: 0.25rem;
+  border: 0;
+  background: transparent;
+  color: var(--erp-primary);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.tool-btn[hidden],
+.bpf-historico[hidden],
+.bpf-backdrop[hidden] {
+  display: none !important;
+}
+
+body.bpf-readonly .document input[type="file"],
+body.bpf-readonly [data-logo-upload],
+body.bpf-readonly .crit-toggle {
+  pointer-events: none;
+}
+
+.bpf-menu-btn,
+.bpf-backdrop {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .app { display: block; }
+  .sidebar {
+    position: fixed;
+    z-index: 40;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: min(88vw, 320px);
+    transform: translateX(-105%);
+    transition: transform 0.18s ease;
+  }
+  body.sidebar-open .sidebar { transform: none; }
+  .bpf-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    border: 0;
+    background: rgba(15, 23, 42, 0.4);
+  }
+  body:not(.sidebar-open) .bpf-backdrop { display: none !important; }
+  .bpf-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--erp-border);
+    background: var(--erp-card);
+    color: var(--erp-text);
+    border-radius: 10px;
+    padding: 0.5rem 0.75rem;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .main { padding: 0.75rem; }
+  .hint:last-child { display: none; }
+}
+
 @media print {
   body {
     background: #fff !important;
+  }
+  .sidebar,
+  .bpf-backdrop,
+  .bpf-menu-btn {
+    display: none !important;
   }
 }

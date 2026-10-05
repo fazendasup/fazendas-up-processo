@@ -36,6 +36,7 @@ import { useFazendaMutations } from '@/hooks/useFazendaMutations';
 import { useRole } from '@/hooks/useRole';
 import { wrapReadOnlyMutation } from '@/lib/readOnlyMutation';
 import { VISITOR_READONLY_MSG } from '@shared/const';
+import { hrefBpf } from '@shared/bpfDocumento';
 import { useDbIdResolver } from '@/hooks/useDbIdResolver';
 import PerfilFurosGrid from '@/components/PerfilFurosGrid';
 import { TransplantioDistribuidoModal } from '@/components/TransplantioDistribuidoModal';
@@ -2106,6 +2107,19 @@ export default function TorreDetail() {
                       </button>
                     ))}
                   </div>
+                  {modoFuros === 'colheita' ? (
+                    <p className="mb-3 text-xs">
+                      <Link href={hrefBpf('tr-fit6')} className="font-medium text-primary hover:underline">
+                        FIT-TR-007 Colheita
+                      </Link>
+                    </p>
+                  ) : modoFuros === 'transplantio' ? (
+                    <p className="mb-3 text-xs">
+                      <Link href={hrefBpf('tr-fit5')} className="font-medium text-primary hover:underline">
+                        FIT-TR-006 Transplantios
+                      </Link>
+                    </p>
+                  ) : null}
 
                   {/* Botão de Registrar Colheita (quando modo colheita) */}
                   {modoFuros === 'colheita' && torreComModoColheita && andarSelecionado && contarColhidasAndar(andarSelecionado, torre.fase, projetoTipo) > 0 && (

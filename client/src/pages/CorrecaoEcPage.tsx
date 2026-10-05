@@ -40,6 +40,7 @@ import { AlertTriangle, Beaker, Copy, Droplets, FlaskConical, Link2, RotateCcw, 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
+import { hrefBpf } from "@shared/bpfDocumento";
 import {
   applyCalculadoraPublicManifest,
   projetoIdFromSearch,
@@ -385,6 +386,17 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
               {publicMode
                 ? "Ferramenta aberta — sem login. Escolha EC (concentrados A/B) ou pH (KOH P.A.)."
                 : "Ferramenta liberada para operadores. Escolha EC (concentrados A/B) ou pH (hidróxido de potássio P.A.)."}
+            </p>
+            <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+              <Link href={hrefBpf("tr-fit1")} className="font-medium text-primary hover:underline">
+                FIT-TR-002 Correção EC
+              </Link>
+              <Link href={hrefBpf("tr-fit2")} className="font-medium text-primary hover:underline">
+                FIT-TR-003 Correção pH
+              </Link>
+              <Link href={hrefBpf("tr-fit3")} className="font-medium text-primary hover:underline">
+                FIT-TR-004 H₂O₂
+              </Link>
             </p>
           </div>
           {!publicMode ? (

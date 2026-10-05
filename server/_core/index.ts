@@ -19,6 +19,7 @@ import { ensureBootstrapAdmin } from "../bootstrap-admin";
 import * as db from "../db";
 import { runDrizzleMigrateFromEnv } from "../run-drizzle-migrate";
 import { applyRuntimeSchemaEnsures } from "../ensure-runtime-schema";
+import { registerBpfRoutes } from "../bpfRoutes";
 import { runComercialPrismaMigrateFromEnv } from "../run-comercial-prisma-migrate";
 import { initMqttFromEnv, shutdownMqtt } from "./mqtt";
 import { APP_VERSION } from "./release-meta";
@@ -211,6 +212,9 @@ async function startServer() {
   console.log(
     "[Server] Rotas /api/trpc registradas (sessão anônima funciona durante a inicialização da BD)."
   );
+  app.use("/api/bpf", apiLimiter);
+  app.use("/api/bpf", jsonParser);
+  registerBpfRoutes(app);
 
   try {
     const { registerComercialOAuthRoutes } = await import("../comercial/oauth-routes");

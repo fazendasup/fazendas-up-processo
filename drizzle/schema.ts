@@ -9,6 +9,7 @@ import {
   float,
   json,
   decimal,
+  customType,
   uniqueIndex,
   primaryKey,
   date,
@@ -1520,3 +1521,28 @@ export const pushPreferencias = mysqlTable("push_preferencias", {
 
 export type PushPreferenciaRow = typeof pushPreferencias.$inferSelect;
 export type InsertPushPreferencia = typeof pushPreferencias.$inferInsert;
+
+const bpfLongtext = customType<{ data: string }>({
+  dataType() {
+    return "longtext";
+  },
+});
+
+/** Versão oficial dos POP/FIT, compartilhada pela fazenda. */
+export const bpfEstado = mysqlTable("bpf_estado", {
+  id: int("id").primaryKey(),
+  conteudoJson: bpfLongtext("conteudoJson").notNull(),
+  atualizadoPorId: int("atualizadoPorId"),
+  atualizadoPorNome: varchar("atualizadoPorNome", { length: 255 }),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+/** Texto das revisões, sem as fotos, para saber quem alterou. */
+export const bpfRevisoes = mysqlTable("bpf_revisoes", {
+  id: int("id").autoincrement().primaryKey(),
+  resumo: varchar("resumo", { length: 255 }).notNull(),
+  conteudoJson: bpfLongtext("conteudoJson").notNull(),
+  userId: int("userId"),
+  userName: varchar("userName", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});

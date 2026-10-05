@@ -10,6 +10,9 @@ let titleBeforePrint = APP_DOC_TITLE;
 
 let state = structuredClone(DEFAULT_DATA);
 let currentView = 'pop';
+let podeEditar = false;
+let syncTimer = null;
+let ultimaRevisaoResumo = '';
 const NEW_SECTOR_KEYS = ['lavagem', 'secagem', 'embalagem', 'plantioAlface', 'plantioMicroverdes', 'torresProducao'];
 
 // ── Init ──
@@ -18,7 +21,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadState();
     bindNavigation();
     bindToolbar();
-    // Render imediatamente (ícones via <img> fallback) — não esperar CDN
+    renderAll();
+    flashMsg('Carregando a versão da fazenda…', 4000);
+    await sincronizarDoServidor();
     renderAll();
     flashMsg('Carregando ícones…');
     try {
@@ -328,16 +333,204 @@ function deepMerge(base, override) {
   return override ?? base;
 }
 
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  flashMsg('Salvo automaticamente');
+function saveState(opts = {}) {
+  if (!podeEditar) return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    console.warn('Cópia local cheia', e);
+  }
+  const revisao = Boolean(opts.revisao);
+  if (opts.resumo) ultimaRevisaoResumo = opts.resumo;
+  flashMsg(revisao ? 'Publicando no ERP…' : 'Salvando no ERP…');
+  if (revisao) {
+    clearTimeout(syncTimer);
+    void publicarNoErp(true);
+    return;
+  }
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => publicarNoErp(false), 1200);
 }
 
-function flashMsg(text) {
+async function publicarNoErp(registrarRevisao) {
+  if (!podeEditar) return;
+  const meta = getDocMetaForView();
+  const resumo = ultimaRevisaoResumo
+    || (registrarRevisao ? buildPrintDocumentTitle(meta) : 'Alteração automática');
+  ultimaRevisaoResumo = '';
+  try {
+    const res = await fetch('/api/bpf', {
+      method: 'PUT',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conteudo: state,
+        resumo,
+        registrarRevisao,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      flashMsg(data.error || 'Não foi possível publicar.');
+      return;
+    }
+    if (Array.isArray(data.revisoes)) desenharHistorico(data.revisoes);
+    flashMsg(registrarRevisao ? 'Publicado para a fazenda' : 'Salvo no ERP');
+  } catch (e) {
+    console.warn(e);
+    flashMsg('Sem conexão — a alteração ficou só neste navegador');
+  }
+}
+
+async function sincronizarDoServidor() {
+  try {
+    const res = await fetch('/api/bpf', { credentials: 'same-origin' });
+    if (res.status === 401 || res.status === 403) {
+      podeEditar = false;
+      flashMsg('Entre no ERP para ver a versão da fazenda');
+      return;
+    }
+    if (!res.ok) return;
+    const data = await res.json();
+    podeEditar = Boolean(data.podeEditar);
+    if (data.conteudo && typeof data.conteudo === 'object') {
+      const revServidor = data.conteudo.meta?.contentRev;
+      state = deepMerge(structuredClone(DEFAULT_DATA), data.conteudo);
+      ensureState();
+      if (podeEditar && revServidor !== state.meta?.contentRev) {
+        ultimaRevisaoResumo = 'Atualização do procedimento padrão';
+        await publicarNoErp(true);
+      }
+    } else if (podeEditar) {
+      ultimaRevisaoResumo = 'Versão inicial publicada';
+      await publicarNoErp(true);
+    }
+    if (Array.isArray(data.revisoes)) desenharHistorico(data.revisoes);
+    const quem = data.atualizadoPor ? ` · última alteração: ${data.atualizadoPor}` : '';
+    const modo = podeEditar ? 'Você pode editar' : 'Somente leitura';
+    flashMsg(`${modo}${quem}`);
+  } catch (e) {
+    console.warn(e);
+    podeEditar = false;
+    flashMsg('Sem conexão com o ERP — cópia deste navegador');
+  }
+}
+
+function desenharHistorico(revisoes) {
+  const box = document.getElementById('bpf-historico-lista');
+  if (!box) return;
+  if (!revisoes.length) {
+    box.innerHTML = '<p class="bpf-hist-vazio">Nenhuma revisão publicada ainda.</p>';
+    return;
+  }
+  box.innerHTML = revisoes.map((item) => {
+    const quando = item.createdAt ? new Date(item.createdAt).toLocaleString('pt-BR') : '';
+    const restaurar = podeEditar
+      ? `<button type="button" class="bpf-hist-restore" data-rev="${esc(String(item.id))}">Restaurar texto</button>`
+      : '';
+    return `<article class="bpf-hist-item">
+      <p>${esc(item.resumo || 'Alteração')}</p>
+      <p class="bpf-hist-meta">${esc(item.userName || 'Administrador')} · ${esc(quando)}</p>
+      ${restaurar}
+    </article>`;
+  }).join('');
+  box.querySelectorAll('.bpf-hist-restore').forEach((btn) => {
+    btn.addEventListener('click', () => restaurarRevisao(btn.dataset.rev));
+  });
+}
+
+async function restaurarRevisao(id) {
+  if (!podeEditar || !id) return;
+  if (!confirm('Restaurar o texto desta revisão para toda a fazenda? As fotos atuais permanecem.')) return;
+  const res = await fetch('/api/bpf/restaurar', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: Number(id) }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    flashMsg(data.error || 'Não foi possível restaurar.');
+    return;
+  }
+  if (data.conteudo && typeof data.conteudo === 'object') {
+    const fotos = state;
+    state = deepMerge(structuredClone(DEFAULT_DATA), data.conteudo);
+    recolocarFotos(state, fotos);
+    ensureState();
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) { /* ignore */ }
+    renderAll();
+  }
+  if (Array.isArray(data.revisoes)) desenharHistorico(data.revisoes);
+  flashMsg('Texto restaurado');
+}
+
+function recolocarFotos(destino, origem) {
+  if (!destino || !origem || typeof destino !== 'object' || typeof origem !== 'object') return;
+  if (Array.isArray(destino) || Array.isArray(origem)) {
+    if (!Array.isArray(destino) || !Array.isArray(origem)) return;
+    destino.forEach((item, i) => recolocarFotos(item, origem[i]));
+    return;
+  }
+  for (const key of Object.keys(origem)) {
+    const valor = origem[key];
+    if (typeof valor === 'string' && valor.startsWith('data:') && (destino[key] == null || destino[key] === '')) {
+      destino[key] = valor;
+    } else if (valor && typeof valor === 'object') {
+      if (destino[key] && typeof destino[key] === 'object') recolocarFotos(destino[key], valor);
+    }
+  }
+}
+
+function sliceDoDocumento(view) {
+  const pl = state.preLavagem;
+  if (view === 'pop' || view === 'cartaz' || view === 'formularios' || view === 'config') return pl;
+  if (view === 'fit1') return pl?.fits?.[0];
+  if (view === 'fit2') return pl?.fits?.[1];
+  if (view === 'fit3') return pl?.fits?.[2];
+  const m = String(view || '').match(/^(lv|sc|em|pa|pm|tr)-(pop|fit\d+|cartaz|forms)$/);
+  if (!m) return null;
+  const sectorKey = {
+    lv: 'lavagem', sc: 'secagem', em: 'embalagem',
+    pa: 'plantioAlface', pm: 'plantioMicroverdes', tr: 'torresProducao',
+  }[m[1]];
+  const setor = state[sectorKey];
+  if (!setor) return null;
+  if (m[2] === 'pop' || m[2] === 'cartaz' || m[2] === 'forms') return setor;
+  const fitIdx = Number(String(m[2]).replace('fit', ''));
+  return setor.fits?.[fitIdx] || setor;
+}
+
+function coletarTexto(value, out) {
+  if (value == null) return;
+  if (typeof value === 'string') {
+    if (!value.startsWith('data:') && value.length < 5000) out.push(value);
+    return;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((item) => coletarTexto(item, out));
+    return;
+  }
+  if (typeof value === 'object') {
+    for (const [key, item] of Object.entries(value)) {
+      if (key === 'foto' || key === 'fotos' || key === 'logo' || key === 'icon') continue;
+      coletarTexto(item, out);
+    }
+  }
+}
+
+window.bpfTextoDoDocumento = function bpfTextoDoDocumento(view) {
+  const partes = [];
+  coletarTexto(sliceDoDocumento(view), partes);
+  return partes.join('\n').toLowerCase();
+};
+
+function flashMsg(text, ms = 2200) {
   const el = document.getElementById('status-msg');
   if (!el) return;
   el.textContent = text;
-  setTimeout(() => { el.textContent = ''; }, 2000);
+  clearTimeout(flashMsg._t);
+  flashMsg._t = setTimeout(() => { el.textContent = ''; }, ms);
 }
 
 // ── Navigation ──
@@ -529,17 +722,25 @@ function bindToolbar() {
     if (el) el.addEventListener(event, handler);
   };
 
-  on('btn-save', 'click', saveState);
+  on('btn-save', 'click', () => saveState({
+    revisao: true,
+    resumo: buildPrintDocumentTitle(),
+  }));
   on('btn-export-json', 'click', exportJson);
   on('import-file', 'change', importJson);
+  on('btn-historico', 'click', () => {
+    const box = document.getElementById('bpf-historico');
+    if (box) box.hidden = !box.hidden;
+  });
   on('btn-print', 'click', () => prepareAndPrint());
   on('btn-print-top', 'click', () => prepareAndPrint());
   on('btn-reset', 'click', () => {
-    if (confirm('Restaurar TODOS os dados padrão da Pré-Lavagem?\n\nIsso recarrega a POP e FITs completas. Fotos e logo serão perdidos.')) {
+    if (!podeEditar) return;
+    if (confirm('Restaurar o texto padrão e publicar para toda a fazenda?\n\nFotos e logo deste navegador serão perdidos.')) {
       localStorage.removeItem(STORAGE_KEY);
       state = structuredClone(DEFAULT_DATA);
       ensureState();
-      saveState();
+      saveState({ revisao: true, resumo: 'Restaurar padrão' });
       renderAll();
       flashMsg('Dados completos restaurados!');
     }
@@ -712,7 +913,7 @@ function prepareAndPrint() {
     // Pré-aplica síncrona (alguns browsers disparam beforeprint tarde demais para medir)
     prepareDocumentForPrint();
     window.print();
-    flashMsg('Diálogo de impressão aberto');
+    flashMsg('Escolha Salvar como PDF. O nome do arquivo já é o do documento.', 5000);
   } catch (err) {
     cleanupAfterPrint();
     console.error(err);
@@ -736,7 +937,7 @@ function importJson(e) {
     try {
       state = JSON.parse(ev.target.result);
       ensureState();
-      saveState();
+      saveState({ revisao: true, resumo: 'Backup importado' });
       renderAll();
       flashMsg('Dados importados!');
     } catch {
@@ -787,6 +988,7 @@ function autoResizeTextareas(root = document) {
 function bindInput(el, getPath, setPath) {
   const event = el.tagName === 'TEXTAREA' ? 'input' : 'change';
   el.addEventListener(event, () => {
+    if (!podeEditar) return;
     setPath(el.value);
     saveState();
   });
@@ -881,6 +1083,7 @@ function renderCriticalPanel(items, basePath = 'preLavagem.controlesCriticos') {
 function bindPhotos(root) {
   root.querySelectorAll('input[data-photo-path]').forEach(input => {
     input.addEventListener('change', (e) => {
+      if (!podeEditar) return;
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
@@ -899,6 +1102,7 @@ function bindLogo() {
     const input = slot.querySelector('input[type=file]');
     if (!input) return;
     input.addEventListener('change', (e) => {
+      if (!podeEditar) return;
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
@@ -1081,6 +1285,7 @@ function bindCritToggles(root) {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      if (!podeEditar) return;
       const path = btn.dataset.critPath;
       const next = !getNested(state, path);
       setNested(state, path, next);
@@ -2237,4 +2442,26 @@ function renderAll() {
   }
   showView(currentView);
   activateNavForView(currentView);
+  applyEditMode();
+}
+
+function applyEditMode() {
+  document.body.classList.toggle('bpf-readonly', !podeEditar);
+  document.querySelectorAll('textarea, input').forEach((el) => {
+    if (el.id === 'bpf-search' || el.id === 'import-file') return;
+    if (el.type === 'file' || el.type === 'search') return;
+    el.readOnly = !podeEditar;
+  });
+  for (const id of ['btn-save', 'btn-reset']) {
+    const el = document.getElementById(id);
+    if (el) el.hidden = !podeEditar;
+  }
+  const importLabel = document.querySelector('label[for="import-file"]');
+  if (importLabel) importLabel.hidden = !podeEditar;
+  const nota = document.getElementById('bpf-modo');
+  if (nota) {
+    nota.textContent = podeEditar
+      ? 'Edição de administrador. Salvar publica para toda a fazenda.'
+      : 'Somente leitura. Quem administra a fazenda é quem altera o procedimento.';
+  }
 }
