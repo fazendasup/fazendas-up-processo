@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 280" role="img" aria-label="Saude: ferida e avise a gerente">
+  <rect width="400" height="280" fill="#FFF3E0"/>
+  <rect x="16" y="16" width="368" height="248" rx="16" fill="#FFF" stroke="#FFCC80" stroke-width="3"/>
+  <!-- caution triangle -->
+  <path d="M48 200 L90 95 L132 200 Z" fill="#FF9800" stroke="#E65100" stroke-width="5" stroke-linejoin="round"/>
+  <rect x="84" y="125" width="12" height="40" rx="3" fill="#FFF"/>
+  <circle cx="90" cy="180" r="7" fill="#FFF"/>
+  <!-- worker with bandage on hand -->
+  <g stroke="#5D4037" stroke-width="2">
+    <circle cx="210" cy="85" r="36" fill="#FFCC80"/>
+    <!-- sick face: frown + sweat -->
+    <circle cx="198" cy="80" r="4" fill="#5D4037" stroke="none"/>
+    <circle cx="222" cy="80" r="4" fill="#5D4037" stroke="none"/>
+    <path d="M198 105 q12 -8 24 0" fill="none" stroke-linecap="round" stroke-width="2.5"/>
+    <ellipse cx="240" cy="70" rx="4" ry="7" fill="#4FC3F7" stroke="none"/>
+    <!-- body -->
+    <path d="M170 130 h80 l15 95 h-110 z" fill="#42A5F5" stroke="#1565C0" stroke-width="2"/>
+    <!-- arm with wound/bandage -->
+    <path d="M250 145 q55 10 70 45" fill="none" stroke="#FFCC80" stroke-width="18" stroke-linecap="round"/>
+  </g>
+  <!-- bandage with red cross marks -->
+  <g transform="translate(290,165) rotate(-15)">
+    <rect x="0" y="0" width="55" height="28" rx="5" fill="#FFF" stroke="#90A4AE" stroke-width="2"/>
+    <path d="M8 8 l40 12 M12 20 l36 8" stroke="#EF5350" stroke-width="2.5"/>
+    <!-- wound hint under edge -->
+    <ellipse cx="-8" cy="14" rx="8" ry="5" fill="#E57373" stroke="#C62828" stroke-width="1.5"/>
+  </g>
+  <!-- STOP entering -->
+  <g transform="translate(55,45)">
+    <rect x="0" y="0" width="70" height="28" rx="6" fill="#C62828"/>
+    <text x="35" y="19" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="800" fill="#FFF">PARE</text>
+  </g>
+  <!-- speech bubble -->
+  <rect x="250" y="40" width="120" height="55" rx="12" fill="#FFF3E0" stroke="#EF6C00" stroke-width="3"/>
+  <path d="M275 95 l12 18 l8-14" fill="#FFF3E0" stroke="#EF6C00" stroke-width="3"/>
+  <text x="310" y="62" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="800" fill="#E65100">AVISE A</text>
+  <text x="310" y="80" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="800" fill="#E65100">GERENTE</text>
+  <text x="200" y="250" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="800" fill="#E65100">FERIDA / DOENCA - NAO ENTRE</text>
+</svg>

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 280" role="img" aria-label="Colaborador colocando touca e avental limpo">
+  <rect width="400" height="280" fill="#E8F5E9"/>
+  <rect x="16" y="16" width="368" height="248" rx="16" fill="#E3F2FD" stroke="#81C784" stroke-width="3"/>
+  <!-- worker putting on touca + apron -->
+  <g stroke="#5D4037" stroke-width="2">
+    <!-- body / clean apron being put on -->
+    <path d="M155 145 h90 l18 100 h-126 z" fill="#1565C0" stroke="#0D47A1" stroke-width="2.5"/>
+    <path d="M175 160 h50 v60 h-50 z" fill="#0D47A1"/>
+    <path d="M175 160 h50 v12 q-25 10 -50 0 z" fill="#1976D2"/>
+    <!-- head -->
+    <circle cx="200" cy="100" r="38" fill="#FFCC80"/>
+    <circle cx="188" cy="95" r="4" fill="#5D4037" stroke="none"/>
+    <circle cx="212" cy="95" r="4" fill="#5D4037" stroke="none"/>
+    <path d="M190 115 q10 8 20 0" fill="none" stroke-linecap="round"/>
+    <!-- arms raising touca onto head -->
+    <path d="M155 155 q-45 -20 -50 -55" fill="none" stroke="#FFCC80" stroke-width="14" stroke-linecap="round"/>
+    <path d="M245 155 q45 -20 50 -55" fill="none" stroke="#FFB74D" stroke-width="14" stroke-linecap="round"/>
+  </g>
+  <!-- touca being placed -->
+  <ellipse cx="200" cy="62" rx="48" ry="28" fill="#FFF" stroke="#90A4AE" stroke-width="3"/>
+  <ellipse cx="200" cy="78" rx="40" ry="12" fill="#ECEFF1" stroke="#B0BEC5" stroke-width="1.5"/>
+  <path d="M160 70 q40 -8 80 0" fill="none" stroke="#CFD8DC" stroke-width="2"/>
+  <!-- hands on touca edge -->
+  <ellipse cx="148" cy="88" rx="14" ry="10" fill="#FFCC80" stroke="#C68642" stroke-width="2"/>
+  <ellipse cx="252" cy="88" rx="14" ry="10" fill="#FFB74D" stroke="#C68642" stroke-width="2"/>
+  <!-- boots -->
+  <rect x="170" y="240" width="28" height="20" rx="4" fill="#37474F" stroke="#263238" stroke-width="2"/>
+  <rect x="202" y="240" width="28" height="20" rx="4" fill="#37474F" stroke="#263238" stroke-width="2"/>
+  <!-- check badge -->
+  <circle cx="70" cy="70" r="32" fill="#2E7D32"/>
+  <path d="M55 70 l10 10 20-22" fill="none" stroke="#FFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="310" y="70" font-family="sans-serif" font-size="14" font-weight="800" fill="#1B5E20">UNIFORME</text>
+  <text x="310" y="90" font-family="sans-serif" font-size="12" font-weight="700" fill="#1565C0">Touca + Avental</text>
+</svg>

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" role="img" aria-label="Higienizar as maos ao entrar">
+  <rect width="200" height="160" rx="12" fill="#E3F2FD"/>
+  <!-- sink faucet mini -->
+  <rect x="78" y="15" width="16" height="28" rx="4" fill="#546E7A" stroke="#37474F" stroke-width="1.5"/>
+  <rect x="62" y="10" width="48" height="12" rx="4" fill="#455A64"/>
+  <path d="M86 42 v22" stroke="#29B6F6" stroke-width="6" stroke-linecap="round"/>
+  <!-- hands washing -->
+  <ellipse cx="75" cy="85" rx="28" ry="16" fill="#FFCC80" stroke="#C68642" stroke-width="2" transform="rotate(-20 75 85)"/>
+  <ellipse cx="115" cy="88" rx="28" ry="16" fill="#FFB74D" stroke="#C68642" stroke-width="2" transform="rotate(18 115 88)"/>
+  <circle cx="90" cy="75" r="5" fill="#FFF" stroke="#4FC3F7" stroke-width="1.2"/>
+  <circle cx="105" cy="80" r="4" fill="#E1F5FE" stroke="#81D4FA" stroke-width="1"/>
+  <!-- gel bottle alt -->
+  <rect x="150" y="50" width="22" height="40" rx="5" fill="#5C6BC0" stroke="#283593" stroke-width="1.5"/>
+  <text x="161" y="75" text-anchor="middle" font-family="sans-serif" font-size="7" font-weight="800" fill="#FFF">70%</text>
+  <!-- door / enter arrow -->
+  <rect x="20" y="110" width="30" height="28" rx="3" fill="#8D6E63" stroke="#5D4037" stroke-width="1.5"/>
+  <path d="M55 124 h25" stroke="#2E7D32" stroke-width="3" stroke-linecap="round"/>
+  <path d="M72 116 l10 8 -10 8" fill="none" stroke="#2E7D32" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="100" y="152" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="700" fill="#1565C0">HIGIENIZAR MAOS</text>
+</svg>

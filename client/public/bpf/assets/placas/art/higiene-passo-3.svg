@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" role="img" aria-label="Unhas curtas limpas sem esmalte">
+  <rect width="200" height="160" rx="12" fill="#FFF8E1"/>
+  <!-- hand with short clean nails -->
+  <g stroke="#C68642" stroke-width="2.5" stroke-linejoin="round">
+    <ellipse cx="85" cy="100" rx="42" ry="28" fill="#FFCC80"/>
+    <!-- fingers with short nails -->
+    <g>
+      <ellipse cx="55" cy="70" rx="9" ry="20" fill="#FFB74D" transform="rotate(-35 55 70)"/>
+      <ellipse cx="52" cy="52" rx="6" ry="5" fill="#FFF8E1" stroke="#E0E0E0" stroke-width="1" transform="rotate(-35 52 52)"/>
+      <ellipse cx="70" cy="58" rx="8" ry="20" fill="#FFCC80" transform="rotate(-15 70 58)"/>
+      <ellipse cx="68" cy="40" rx="5.5" ry="4.5" fill="#FFF8E1" stroke="#E0E0E0" stroke-width="1" transform="rotate(-15 68 40)"/>
+      <ellipse cx="88" cy="52" rx="8" ry="22" fill="#FFB74D"/>
+      <ellipse cx="88" cy="32" rx="5.5" ry="4.5" fill="#FFF8E1" stroke="#E0E0E0" stroke-width="1"/>
+      <ellipse cx="106" cy="58" rx="8" ry="20" fill="#FFCC80" transform="rotate(18 106 58)"/>
+      <ellipse cx="110" cy="40" rx="5.5" ry="4.5" fill="#FFF8E1" stroke="#E0E0E0" stroke-width="1" transform="rotate(18 110 40)"/>
+      <ellipse cx="120" cy="75" rx="8" ry="16" fill="#FFB74D" transform="rotate(40 120 75)"/>
+      <ellipse cx="128" cy="60" rx="5" ry="4" fill="#FFF8E1" stroke="#E0E0E0" stroke-width="1" transform="rotate(40 128 60)"/>
+    </g>
+  </g>
+  <!-- OK short -->
+  <circle cx="50" cy="130" r="14" fill="#2E7D32"/>
+  <path d="M43 130 l5 5 10-11" fill="none" stroke="#FFF" stroke-width="3" stroke-linecap="round"/>
+  <!-- crossed long / painted nail -->
+  <g transform="translate(145,30)">
+    <ellipse cx="18" cy="35" rx="10" ry="28" fill="#FFCC80" stroke="#C68642" stroke-width="1.5"/>
+    <ellipse cx="18" cy="10" rx="9" ry="12" fill="#E91E63" stroke="#AD1457" stroke-width="1.5"/>
+    <circle cx="18" cy="28" r="20" fill="none" stroke="#C62828" stroke-width="3"/>
+    <line x1="4" y1="14" x2="32" y2="42" stroke="#C62828" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <text x="100" y="152" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="700" fill="#F57F17">UNHAS CURTAS</text>
+</svg>

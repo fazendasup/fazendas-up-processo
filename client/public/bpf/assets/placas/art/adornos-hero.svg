@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 280" role="img" aria-label="Proibido adornos: anel, relogio e pulseira">
+  <rect width="400" height="280" fill="#FFEBEE"/>
+  <rect x="16" y="16" width="368" height="248" rx="16" fill="#FFF" stroke="#EF9A9A" stroke-width="3"/>
+  <!-- forearms / wrists with jewelry -->
+  <g stroke="#C68642" stroke-width="2.5">
+    <!-- left arm + hand with ring -->
+    <ellipse cx="120" cy="150" rx="55" ry="32" fill="#FFCC80" transform="rotate(-25 120 150)"/>
+    <ellipse cx="75" cy="125" rx="10" ry="18" fill="#FFB74D" transform="rotate(-40 75 125)"/>
+    <ellipse cx="90" cy="112" rx="9" ry="17" fill="#FFCC80" transform="rotate(-22 90 112)"/>
+    <ellipse cx="108" cy="106" rx="9" ry="17" fill="#FFB74D"/>
+    <ellipse cx="126" cy="112" rx="8" ry="15" fill="#FFCC80" transform="rotate(18 126 112)"/>
+    <!-- gold ring on finger -->
+    <ellipse cx="108" cy="95" rx="10" ry="6" fill="none" stroke="#FFC107" stroke-width="5"/>
+    <rect x="102" y="88" width="12" height="8" rx="2" fill="#FFD54F" stroke="#F9A825" stroke-width="1.5"/>
+    <!-- bracelet -->
+    <ellipse cx="155" cy="165" rx="22" ry="12" fill="none" stroke="#CE93D8" stroke-width="6"/>
+    <circle cx="155" cy="152" r="5" fill="#AB47BC" stroke="#7B1FA2" stroke-width="1.5"/>
+    <!-- right wrist with watch -->
+    <ellipse cx="280" cy="145" rx="50" ry="30" fill="#FFB74D" transform="rotate(20 280 145)"/>
+    <rect x="255" y="125" width="50" height="42" rx="8" fill="#455A64" stroke="#263238" stroke-width="2" transform="rotate(20 280 146)"/>
+    <circle cx="280" cy="146" r="14" fill="#ECEFF1" stroke="#263238" stroke-width="2" transform="rotate(20 280 146)"/>
+    <line x1="280" y1="146" x2="280" y2="136" stroke="#263238" stroke-width="2" stroke-linecap="round" transform="rotate(20 280 146)"/>
+    <line x1="280" y1="146" x2="288" y2="150" stroke="#C62828" stroke-width="1.8" stroke-linecap="round" transform="rotate(20 280 146)"/>
+  </g>
+  <!-- big red prohibition -->
+  <circle cx="200" cy="140" r="95" fill="none" stroke="#C62828" stroke-width="16"/>
+  <line x1="132" y1="72" x2="268" y2="208" stroke="#C62828" stroke-width="16" stroke-linecap="round"/>
+  <rect x="90" y="235" width="220" height="22" rx="6" fill="#C62828"/>
+  <text x="200" y="251" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="800" fill="#FFF">PROIBIDO - SEM ADORNOS</text>
+</svg>

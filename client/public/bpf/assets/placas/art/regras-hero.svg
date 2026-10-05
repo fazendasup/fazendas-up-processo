@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 280" role="img" aria-label="Regras BPF: maos, adornos, celular e EPI">
+  <rect width="400" height="280" fill="#E8F5E9"/>
+  <rect x="12" y="12" width="376" height="256" rx="14" fill="#FFF" stroke="#A5D6A7" stroke-width="3"/>
+  <text x="200" y="38" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="800" fill="#1B5E20">REGRAS DA PRODUCAO</text>
+  <!-- panel 1: hands -->
+  <g transform="translate(28,55)">
+    <rect width="80" height="90" rx="10" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.5"/>
+    <rect x="30" y="10" width="12" height="18" rx="3" fill="#546E7A"/>
+    <path d="M36 28 v16" stroke="#29B6F6" stroke-width="4" stroke-linecap="round"/>
+    <ellipse cx="30" cy="52" rx="14" ry="9" fill="#FFCC80" stroke="#C68642" stroke-width="1.5"/>
+    <ellipse cx="48" cy="52" rx="14" ry="9" fill="#FFB74D" stroke="#C68642" stroke-width="1.5"/>
+    <text x="40" y="80" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="800" fill="#1565C0">MAOS</text>
+  </g>
+  <!-- panel 2: no jewelry -->
+  <g transform="translate(116,55)">
+    <rect width="80" height="90" rx="10" fill="#FFEBEE" stroke="#C62828" stroke-width="2.5"/>
+    <circle cx="40" cy="38" r="14" fill="none" stroke="#FFC107" stroke-width="4"/>
+    <rect x="34" y="22" width="12" height="8" rx="1" fill="#FFD54F"/>
+    <circle cx="40" cy="40" r="22" fill="none" stroke="#C62828" stroke-width="4"/>
+    <line x1="24" y1="24" x2="56" y2="56" stroke="#C62828" stroke-width="4" stroke-linecap="round"/>
+    <text x="40" y="80" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="800" fill="#C62828">ADORNOS</text>
+  </g>
+  <!-- panel 3: no phone -->
+  <g transform="translate(204,55)">
+    <rect width="80" height="90" rx="10" fill="#FFEBEE" stroke="#C62828" stroke-width="2.5"/>
+    <rect x="28" y="14" width="24" height="40" rx="4" fill="#263238"/>
+    <rect x="31" y="18" width="18" height="28" rx="1" fill="#90CAF9"/>
+    <circle cx="40" cy="38" r="22" fill="none" stroke="#C62828" stroke-width="4"/>
+    <line x1="24" y1="24" x2="56" y2="56" stroke="#C62828" stroke-width="4" stroke-linecap="round"/>
+    <text x="40" y="80" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="800" fill="#C62828">CELULAR</text>
+  </g>
+  <!-- panel 4: EPI -->
+  <g transform="translate(292,55)">
+    <rect width="80" height="90" rx="10" fill="#E8F5E9" stroke="#2E7D32" stroke-width="2.5"/>
+    <ellipse cx="40" cy="22" rx="16" ry="10" fill="#FFF" stroke="#90A4AE" stroke-width="1.5"/>
+    <circle cx="40" cy="32" r="10" fill="#FFCC80" stroke="#C68642" stroke-width="1.2"/>
+    <path d="M24 48 h32 l6 22 h-44 z" fill="#1565C0"/>
+    <text x="40" y="80" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="800" fill="#2E7D32">EPI</text>
+  </g>
+  <!-- bottom row mini scenes -->
+  <g transform="translate(28,160)">
+    <rect width="168" height="85" rx="10" fill="#FFF3E0" stroke="#EF6C00" stroke-width="2.5"/>
+    <circle cx="35" cy="40" r="18" fill="#FFCC80" stroke="#C68642" stroke-width="1.5"/>
+    <rect x="50" y="30" width="28" height="14" rx="3" fill="#FFF" stroke="#90A4AE" stroke-width="1.5"/>
+    <path d="M55 34 l18 5" stroke="#EF5350" stroke-width="1.5"/>
+    <text x="110" y="38" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="800" fill="#E65100">SAUDE</text>
+    <text x="110" y="55" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="700" fill="#EF6C00">avise a gerente</text>
+  </g>
+  <g transform="translate(204,160)">
+    <rect width="168" height="85" rx="10" fill="#E8F5E9" stroke="#2E7D32" stroke-width="2.5"/>
+    <path d="M25 55 l12 12 22-28" fill="none" stroke="#2E7D32" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="105" y="38" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="800" fill="#1B5E20">ORDEM</text>
+    <text x="105" y="55" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="700" fill="#388E3C">bancada limpa</text>
+  </g>
+</svg>

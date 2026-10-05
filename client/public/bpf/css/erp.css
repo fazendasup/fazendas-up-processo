@@ -1,0 +1,153 @@
+/* Chrome alinhado ao ERP (Aurora). Os documentos impressos mantêm as cores operacionais. */
+
+@import url("https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap");
+
+:root {
+  --erp-primary: oklch(0.52 0.14 195);
+  --erp-primary-hover: oklch(0.46 0.14 195);
+  --erp-bg: oklch(0.97 0.012 220);
+  --erp-card: oklch(0.995 0.008 220);
+  --erp-text: oklch(0.2 0.02 250);
+  --erp-muted: oklch(0.45 0.03 250);
+  --erp-border: oklch(0.88 0.025 220);
+  --erp-sidebar: oklch(0.985 0.008 220);
+  --erp-soft: oklch(0.93 0.018 220);
+}
+
+html[data-theme="dark"] {
+  --erp-primary: oklch(0.72 0.14 195);
+  --erp-primary-hover: oklch(0.78 0.12 195);
+  --erp-bg: oklch(0.14 0.025 260);
+  --erp-card: oklch(0.19 0.03 260);
+  --erp-text: oklch(0.96 0.01 230);
+  --erp-muted: oklch(0.72 0.04 230);
+  --erp-border: oklch(0.32 0.04 260);
+  --erp-sidebar: oklch(0.17 0.03 260);
+  --erp-soft: oklch(0.26 0.03 260);
+}
+
+body {
+  font-family: "DM Sans", system-ui, sans-serif;
+  background: var(--erp-bg);
+  color: var(--erp-text);
+}
+
+.sidebar {
+  background: var(--erp-sidebar);
+  color: var(--erp-text);
+  border-right: 1px solid var(--erp-border);
+  box-shadow: none;
+}
+
+.sidebar h1 {
+  font-family: Syne, system-ui, sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: -0.03em;
+  color: var(--erp-text);
+}
+
+.sidebar .sub {
+  color: var(--erp-muted);
+  opacity: 1;
+  margin-bottom: 0.85rem;
+}
+
+.bpf-search {
+  width: 100%;
+  margin: 0 0 0.85rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--erp-border);
+  border-radius: 10px;
+  background: var(--erp-card);
+  color: var(--erp-text);
+  font: inherit;
+  font-size: 0.8rem;
+}
+
+.bpf-search:focus {
+  outline: 2px solid var(--erp-primary);
+  outline-offset: 1px;
+}
+
+.nav-sector-toggle {
+  background: var(--erp-soft);
+  color: var(--erp-text);
+}
+
+.nav-sector-count,
+.nav-sector-chevron {
+  color: var(--erp-muted);
+  opacity: 1;
+}
+
+.nav-btn[hidden],
+.nav-sector[hidden] {
+  display: none !important;
+}
+
+.nav-btn {
+  color: var(--erp-text);
+}
+
+.nav-btn:hover {
+  background: var(--erp-soft);
+}
+
+.nav-btn.active {
+  background: var(--erp-primary);
+  color: #fff;
+  box-shadow: none;
+}
+
+.sidebar hr {
+  border-top-color: var(--erp-border);
+}
+
+.tool-btn {
+  border: 1px solid var(--erp-border);
+  background: var(--erp-card);
+  color: var(--erp-text);
+}
+
+.tool-btn:hover {
+  background: var(--erp-soft);
+}
+
+.main {
+  padding-top: 1rem;
+}
+
+.toolbar {
+  background: var(--erp-card);
+  border: 1px solid var(--erp-border);
+  box-shadow: none;
+}
+
+.toolbar .primary {
+  background: var(--erp-primary);
+}
+
+.toolbar .primary:hover {
+  background: var(--erp-primary-hover);
+}
+
+.hint {
+  color: var(--erp-muted);
+}
+
+.doc-wrap {
+  background: #fff;
+  color: #1a1d21;
+  border: 1px solid var(--erp-border);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .doc-wrap {
+  border-color: oklch(0.32 0.04 260);
+}
+
+@media print {
+  body {
+    background: #fff !important;
+  }
+}

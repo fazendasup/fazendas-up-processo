@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" role="img" aria-label="Molhar as maos com agua corrente">
+  <rect width="200" height="160" rx="12" fill="#E3F2FD"/>
+  <!-- faucet -->
+  <rect x="78" y="18" width="20" height="36" rx="5" fill="#546E7A" stroke="#37474F" stroke-width="2"/>
+  <rect x="58" y="10" width="60" height="16" rx="6" fill="#455A64" stroke="#263238" stroke-width="2"/>
+  <rect x="84" y="50" width="10" height="16" rx="2" fill="#37474F"/>
+  <!-- water stream -->
+  <path d="M89 66 v38" stroke="#29B6F6" stroke-width="8" stroke-linecap="round"/>
+  <path d="M80 70 v30" stroke="#4FC3F7" stroke-width="4" stroke-linecap="round" opacity=".9"/>
+  <path d="M98 70 v30" stroke="#4FC3F7" stroke-width="4" stroke-linecap="round" opacity=".9"/>
+  <path d="M75 95 q14 10 28 0" fill="none" stroke="#81D4FA" stroke-width="3" opacity=".7"/>
+  <!-- sink basin hint -->
+  <ellipse cx="100" cy="130" rx="70" ry="18" fill="#90A4AE" opacity=".35"/>
+  <!-- left hand under water -->
+  <g stroke="#C68642" stroke-width="2" stroke-linejoin="round">
+    <ellipse cx="78" cy="115" rx="32" ry="20" fill="#FFCC80" transform="rotate(-30 78 115)"/>
+    <ellipse cx="52" cy="100" rx="7" ry="14" fill="#FFB74D" transform="rotate(-45 52 100)"/>
+    <ellipse cx="62" cy="92" rx="6" ry="13" fill="#FFCC80" transform="rotate(-25 62 92)"/>
+    <ellipse cx="74" cy="88" rx="6" ry="13" fill="#FFB74D"/>
+    <ellipse cx="86" cy="92" rx="6" ry="12" fill="#FFCC80" transform="rotate(15 86 92)"/>
+  </g>
+  <!-- right hand -->
+  <g stroke="#C68642" stroke-width="2" stroke-linejoin="round">
+    <ellipse cx="122" cy="118" rx="32" ry="20" fill="#FFB74D" transform="rotate(28 122 118)"/>
+    <ellipse cx="148" cy="104" rx="7" ry="14" fill="#FFCC80" transform="rotate(42 148 104)"/>
+    <ellipse cx="138" cy="95" rx="6" ry="13" fill="#FFB74D" transform="rotate(20 138 95)"/>
+    <ellipse cx="126" cy="90" rx="6" ry="13" fill="#FFCC80"/>
+    <ellipse cx="114" cy="95" rx="6" ry="12" fill="#FFB74D" transform="rotate(-12 114 95)"/>
+  </g>
+  <!-- water drops on hands -->
+  <circle cx="90" cy="105" r="3" fill="#4FC3F7"/>
+  <circle cx="110" cy="108" r="2.5" fill="#29B6F6"/>
+  <circle cx="100" cy="100" r="2" fill="#81D4FA"/>
+  <text x="100" y="152" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="#1565C0">MOLHAR</text>
+</svg>

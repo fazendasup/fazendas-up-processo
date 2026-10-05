@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" role="img" aria-label="Enxaguar maos sob agua corrente">
+  <rect width="200" height="160" rx="12" fill="#E3F2FD"/>
+  <!-- faucet -->
+  <rect x="78" y="12" width="20" height="32" rx="5" fill="#546E7A" stroke="#37474F" stroke-width="2"/>
+  <rect x="58" y="6" width="60" height="14" rx="5" fill="#455A64" stroke="#263238" stroke-width="2"/>
+  <rect x="84" y="40" width="10" height="14" rx="2" fill="#37474F"/>
+  <!-- strong water rinse -->
+  <path d="M89 54 v42" stroke="#0288D1" stroke-width="10" stroke-linecap="round"/>
+  <path d="M78 58 v36" stroke="#29B6F6" stroke-width="5" stroke-linecap="round"/>
+  <path d="M100 58 v36" stroke="#29B6F6" stroke-width="5" stroke-linecap="round"/>
+  <path d="M70 88 q19 14 38 0" fill="none" stroke="#4FC3F7" stroke-width="4" opacity=".8"/>
+  <!-- splash pool -->
+  <ellipse cx="100" cy="128" rx="65" ry="16" fill="#81D4FA" opacity=".45"/>
+  <!-- hands tilted rinsing soap away -->
+  <g stroke="#C68642" stroke-width="2" stroke-linejoin="round">
+    <ellipse cx="75" cy="110" rx="30" ry="18" fill="#FFCC80" transform="rotate(-35 75 110)"/>
+    <ellipse cx="55" cy="95" rx="6" ry="12" fill="#FFB74D" transform="rotate(-50 55 95)"/>
+    <ellipse cx="66" cy="88" rx="5" ry="11" fill="#FFCC80" transform="rotate(-30 66 88)"/>
+    <ellipse cx="78" cy="84" rx="5" ry="11" fill="#FFB74D"/>
+    <ellipse cx="125" cy="112" rx="30" ry="18" fill="#FFB74D" transform="rotate(32 125 112)"/>
+    <ellipse cx="145" cy="98" rx="6" ry="12" fill="#FFCC80" transform="rotate(48 145 98)"/>
+    <ellipse cx="134" cy="90" rx="5" ry="11" fill="#FFB74D" transform="rotate(25 134 90)"/>
+    <ellipse cx="122" cy="86" rx="5" ry="11" fill="#FFCC80"/>
+  </g>
+  <!-- soap foam washing away -->
+  <circle cx="60" cy="100" r="4" fill="#C8E6C9" opacity=".7"/>
+  <circle cx="140" cy="105" r="5" fill="#A5D6A7" opacity=".6"/>
+  <circle cx="100" cy="120" r="3" fill="#E8F5E9" opacity=".8"/>
+  <path d="M55 115 q20 8 40 0" fill="none" stroke="#66BB6A" stroke-width="2" opacity=".4" stroke-dasharray="3 2"/>
+  <text x="100" y="152" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="#0277BD">ENXAGUAR</text>
+</svg>

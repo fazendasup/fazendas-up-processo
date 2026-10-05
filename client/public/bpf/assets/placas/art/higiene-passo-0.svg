@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" role="img" aria-label="Touca cobrindo todo o cabelo">
+  <rect width="200" height="160" rx="12" fill="#E3F2FD"/>
+  <!-- head -->
+  <circle cx="100" cy="95" r="38" fill="#FFCC80" stroke="#C68642" stroke-width="2.5"/>
+  <circle cx="88" cy="92" r="4" fill="#5D4037"/>
+  <circle cx="112" cy="92" r="4" fill="#5D4037"/>
+  <path d="M90 110 q10 8 20 0" fill="none" stroke="#5D4037" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- hair peeking then covered -->
+  <ellipse cx="100" cy="55" rx="42" ry="28" fill="#FFF" stroke="#90A4AE" stroke-width="3"/>
+  <ellipse cx="100" cy="72" rx="36" ry="12" fill="#ECEFF1" stroke="#B0BEC5" stroke-width="1.5"/>
+  <path d="M65 68 q35 -10 70 0" fill="none" stroke="#CFD8DC" stroke-width="2"/>
+  <!-- no hair escaping marks -->
+  <circle cx="165" cy="50" r="16" fill="#2E7D32"/>
+  <path d="M157 50 l5 5 10-12" fill="none" stroke="#FFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="100" y="150" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="#1565C0">TOUCA</text>
+</svg>

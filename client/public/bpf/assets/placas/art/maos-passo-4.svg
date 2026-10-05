@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" role="img" aria-label="Secar com papel toalha descartavel">
+  <rect width="200" height="160" rx="12" fill="#FFF8E1"/>
+  <!-- paper towel dispenser -->
+  <rect x="20" y="20" width="50" height="40" rx="6" fill="#78909C" stroke="#455A64" stroke-width="2.5"/>
+  <rect x="28" y="28" width="34" height="18" rx="3" fill="#ECEFF1" stroke="#90A4AE" stroke-width="1.5"/>
+  <!-- hanging paper sheet -->
+  <path d="M35 46 h20 v28 h-20 z" fill="#FFF" stroke="#B0BEC5" stroke-width="1.5"/>
+  <path d="M38 52 h14 M38 58 h14 M38 64 h10" stroke="#CFD8DC" stroke-width="1.2"/>
+  <!-- crossed-out cloth (not allowed) -->
+  <g transform="translate(155,25)">
+    <rect x="0" y="8" width="32" height="22" rx="3" fill="#A1887F" stroke="#5D4037" stroke-width="1.5"/>
+    <path d="M4 12 q12 8 24 0" fill="none" stroke="#8D6E63" stroke-width="2"/>
+    <circle cx="16" cy="18" r="18" fill="none" stroke="#C62828" stroke-width="3"/>
+    <line x1="4" y1="6" x2="28" y2="30" stroke="#C62828" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <text x="171" y="58" text-anchor="middle" font-family="sans-serif" font-size="7" font-weight="700" fill="#C62828">NAO PANO</text>
+  <!-- hands drying with paper towel -->
+  <g stroke="#C68642" stroke-width="2" stroke-linejoin="round">
+    <ellipse cx="85" cy="105" rx="34" ry="20" fill="#FFCC80" transform="rotate(-15 85 105)"/>
+    <ellipse cx="60" cy="92" rx="6" ry="12" fill="#FFB74D" transform="rotate(-35 60 92)"/>
+    <ellipse cx="72" cy="84" rx="5" ry="11" fill="#FFCC80" transform="rotate(-15 72 84)"/>
+    <ellipse cx="85" cy="80" rx="5" ry="11" fill="#FFB74D"/>
+    <ellipse cx="125" cy="100" rx="32" ry="18" fill="#FFB74D" transform="rotate(20 125 100)"/>
+  </g>
+  <!-- paper towel in use -->
+  <rect x="70" y="78" width="55" height="36" rx="3" fill="#FFF" stroke="#90A4AE" stroke-width="2" transform="rotate(-8 97 96)"/>
+  <path d="M78 88 h35 M78 96 h30 M78 104 h25" stroke="#B0BEC5" stroke-width="1.3" transform="rotate(-8 97 96)"/>
+  <!-- OK badge -->
+  <circle cx="40" cy="120" r="14" fill="#2E7D32"/>
+  <path d="M33 120 l5 5 10-12" fill="none" stroke="#FFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="100" y="152" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="700" fill="#F57F17">PAPEL TOALHA</text>
+</svg>

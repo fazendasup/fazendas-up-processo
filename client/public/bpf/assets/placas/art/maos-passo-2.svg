@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" role="img" aria-label="Esfregar palmas e entre os dedos 20 segundos">
+  <rect width="200" height="160" rx="12" fill="#FFF3E0"/>
+  <!-- clock badge -->
+  <circle cx="168" cy="32" r="22" fill="#FFF" stroke="#EF6C00" stroke-width="3"/>
+  <circle cx="168" cy="32" r="3" fill="#E65100"/>
+  <line x1="168" y1="32" x2="168" y2="18" stroke="#E65100" stroke-width="3" stroke-linecap="round"/>
+  <line x1="168" y1="32" x2="178" y2="38" stroke="#FF9800" stroke-width="2.5" stroke-linecap="round"/>
+  <text x="168" y="58" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="800" fill="#E65100">20 s</text>
+  <!-- palms rubbing together -->
+  <g stroke="#C68642" stroke-width="2.2" stroke-linejoin="round">
+    <!-- bottom hand -->
+    <ellipse cx="95" cy="95" rx="48" ry="30" fill="#FFCC80" transform="rotate(-8 95 95)"/>
+    <ellipse cx="55" cy="82" rx="8" ry="16" fill="#FFB74D" transform="rotate(-50 55 82)"/>
+    <ellipse cx="68" cy="70" rx="7" ry="15" fill="#FFCC80" transform="rotate(-28 68 70)"/>
+    <ellipse cx="84" cy="64" rx="7" ry="16" fill="#FFB74D"/>
+    <ellipse cx="100" cy="66" rx="7" ry="15" fill="#FFCC80" transform="rotate(12 100 66)"/>
+    <ellipse cx="114" cy="74" rx="7" ry="14" fill="#FFB74D" transform="rotate(28 114 74)"/>
+    <!-- top hand scrubbing -->
+    <ellipse cx="110" cy="88" rx="45" ry="26" fill="#FFB74D" transform="rotate(25 110 88)" opacity=".95"/>
+    <ellipse cx="140" cy="72" rx="7" ry="14" fill="#FFCC80" transform="rotate(45 140 72)"/>
+    <ellipse cx="128" cy="62" rx="6" ry="13" fill="#FFB74D" transform="rotate(30 128 62)"/>
+    <ellipse cx="115" cy="58" rx="6" ry="13" fill="#FFCC80" transform="rotate(10 115 58)"/>
+  </g>
+  <!-- foam / lather trails -->
+  <circle cx="80" cy="90" r="6" fill="#FFF" stroke="#81D4FA" stroke-width="1.5"/>
+  <circle cx="105" cy="78" r="8" fill="#E1F5FE" stroke="#4FC3F7" stroke-width="1.5"/>
+  <circle cx="125" cy="95" r="5" fill="#FFF" stroke="#81D4FA" stroke-width="1.2"/>
+  <circle cx="92" cy="105" r="4" fill="#B3E5FC"/>
+  <!-- motion arcs -->
+  <path d="M50 100 q-12 -20 5 -35" fill="none" stroke="#EF6C00" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="4 3"/>
+  <path d="M155 70 q18 8 12 30" fill="none" stroke="#EF6C00" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="4 3"/>
+  <text x="100" y="148" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="#E65100">ESFREGAR</text>
+</svg>

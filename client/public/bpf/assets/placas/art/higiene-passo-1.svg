@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" role="img" aria-label="Avental uniforme limpo">
+  <rect width="200" height="160" rx="12" fill="#E8F5E9"/>
+  <!-- neck / head hint -->
+  <circle cx="100" cy="28" r="16" fill="#FFCC80" stroke="#C68642" stroke-width="2"/>
+  <!-- clean apron -->
+  <path d="M55 50 h90 l18 95 h-126 z" fill="#1565C0" stroke="#0D47A1" stroke-width="3"/>
+  <path d="M75 65 h50 v55 h-50 z" fill="#0D47A1"/>
+  <path d="M75 65 h50 v10 q-25 8 -50 0 z" fill="#1976D2"/>
+  <!-- straps -->
+  <path d="M70 50 q-15 -15 -5 -28" fill="none" stroke="#0D47A1" stroke-width="4" stroke-linecap="round"/>
+  <path d="M130 50 q15 -15 5 -28" fill="none" stroke="#0D47A1" stroke-width="4" stroke-linecap="round"/>
+  <!-- empty pocket (no loose objects) -->
+  <rect x="85" y="85" width="30" height="22" rx="3" fill="#0D47A1" stroke="#FFF" stroke-width="1.5" opacity=".5"/>
+  <line x1="88" y1="90" x2="112" y2="110" stroke="#C62828" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+  <text x="100" y="150" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="#1B5E20">AVENTAL LIMPO</text>
+</svg>

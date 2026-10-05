@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" role="img" aria-label="Calcado fechado e botas limpas">
+  <rect width="200" height="160" rx="12" fill="#ECEFF1"/>
+  <!-- floor line -->
+  <rect x="20" y="120" width="160" height="8" rx="2" fill="#90A4AE"/>
+  <!-- left boot -->
+  <path d="M40 75 h45 v40 h-20 l-10 15 h-25 z" fill="#37474F" stroke="#263238" stroke-width="2.5"/>
+  <ellipse cx="55" cy="128" rx="28" ry="10" fill="#263238"/>
+  <path d="M48 95 h28" stroke="#546E7A" stroke-width="2"/>
+  <!-- right boot -->
+  <path d="M115 75 h45 v40 h-20 l-10 15 h-25 z" fill="#455A64" stroke="#263238" stroke-width="2.5"/>
+  <ellipse cx="130" cy="128" rx="28" ry="10" fill="#263238"/>
+  <path d="M123 95 h28" stroke="#78909C" stroke-width="2"/>
+  <!-- sparkle clean -->
+  <path d="M95 45 l2 6 6 2 -6 2 -2 6 -2-6 -6-2 6-2 z" fill="#FFD54F"/>
+  <!-- crossed sandal/open shoe -->
+  <g transform="translate(155,20)" opacity=".9">
+    <path d="M5 25 q15 -15 30 0 l-5 8 h-20 z" fill="#A1887F" stroke="#5D4037" stroke-width="1.5"/>
+    <circle cx="20" cy="28" r="16" fill="none" stroke="#C62828" stroke-width="2.5"/>
+    <line x1="8" y1="16" x2="32" y2="40" stroke="#C62828" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <text x="100" y="152" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="#37474F">BOTAS FECHADAS</text>
+</svg>

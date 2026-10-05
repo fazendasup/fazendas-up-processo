@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POP e FIT — Fazendas UP</title>
+  <link rel="stylesheet" href="css/app.css?v=98">
+  <link rel="stylesheet" href="css/erp.css?v=1">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
+</head>
+<body>
+  <div class="app">
+  <aside class="sidebar no-print">
+    <h1>POP e FIT</h1>
+    <p class="sub">Procedimentos da fazenda</p>
+    <input id="bpf-search" class="bpf-search" type="search" placeholder="Buscar setor, POP ou FIT" autocomplete="off">
+
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+
+    <button class="nav-btn" data-view="config">⚙️ Configurações</button>
+
+    <hr>
+    <button class="tool-btn" id="btn-save">💾 Salvar agora</button>
+    <button class="tool-btn" id="btn-print">🖨️ Imprimir</button>
+    <button class="tool-btn" id="btn-export-json">📤 Exportar backup</button>
+    <button class="tool-btn" id="btn-reset">🔄 Restaurar padrão</button>
+    <input type="file" id="import-file" accept=".json" hidden>
+    <label class="tool-btn" for="import-file" style="text-align:center">📥 Importar backup</label>
+  </aside>
+
+  <main class="main">
+    <div class="toolbar no-print">
+      <button class="primary" id="btn-print-top">🖨️ Imprimir este documento</button>
+      <span class="hint" id="status-msg"></span>
+      <span class="hint">Clique para editar · Impressão em retrato · Desmarque "Cabeçalhos e rodapés"</span>
+    </div>
+
+    <div class="doc-wrap">
+      <div id="view-pop" class="document"></div>
+      <div id="view-fit1" class="document hidden"></div>
+      <div id="view-fit2" class="document hidden"></div>
+      <div id="view-fit3" class="document hidden"></div>
+      <div id="view-cartaz" class="document cartaz hidden"></div>
+      <div id="view-formularios" class="document hidden"></div>
+
+      <div id="view-lv-pop" class="document hidden"></div>
+      <div id="view-lv-fit0" class="document hidden"></div>
+      <div id="view-lv-fit1" class="document hidden"></div>
+      <div id="view-lv-cartaz" class="document cartaz hidden"></div>
+      <div id="view-lv-forms" class="document hidden"></div>
+
+      <div id="view-sc-pop" class="document hidden"></div>
+      <div id="view-sc-fit0" class="document hidden"></div>
+      <div id="view-sc-fit1" class="document hidden"></div>
+      <div id="view-sc-fit2" class="document hidden"></div>
+      <div id="view-sc-cartaz" class="document cartaz hidden"></div>
+      <div id="view-sc-forms" class="document hidden"></div>
+
+      <div id="view-em-pop" class="document hidden"></div>
+      <div id="view-em-fit0" class="document hidden"></div>
+      <div id="view-em-fit1" class="document hidden"></div>
+      <div id="view-em-cartaz" class="document cartaz hidden"></div>
+      <div id="view-em-forms" class="document hidden"></div>
+
+      <div id="view-pa-pop" class="document hidden"></div>
+      <div id="view-pa-fit0" class="document hidden"></div>
+      <div id="view-pa-fit1" class="document hidden"></div>
+      <div id="view-pa-fit2" class="document hidden"></div>
+      <div id="view-pa-fit3" class="document hidden"></div>
+      <div id="view-pa-cartaz" class="document cartaz hidden"></div>
+      <div id="view-pa-forms" class="document hidden"></div>
+
+      <div id="view-pm-pop" class="document hidden"></div>
+      <div id="view-pm-fit0" class="document hidden"></div>
+      <div id="view-pm-fit1" class="document hidden"></div>
+      <div id="view-pm-fit2" class="document hidden"></div>
+      <div id="view-pm-fit3" class="document hidden"></div>
+      <div id="view-pm-fit4" class="document hidden"></div>
+      <div id="view-pm-cartaz" class="document cartaz hidden"></div>
+      <div id="view-pm-forms" class="document hidden"></div>
+
+      <div id="view-tr-pop" class="document hidden"></div>
+      <div id="view-tr-fit0" class="document hidden"></div>
+      <div id="view-tr-fit1" class="document hidden"></div>
+      <div id="view-tr-fit2" class="document hidden"></div>
+      <div id="view-tr-fit3" class="document hidden"></div>
+      <div id="view-tr-fit4" class="document hidden"></div>
+      <div id="view-tr-fit5" class="document hidden"></div>
+      <div id="view-tr-fit6" class="document hidden"></div>
+      <div id="view-tr-cartaz" class="document cartaz hidden"></div>
+      <div id="view-tr-forms" class="document hidden"></div>
+
+      <div id="view-bpf-maos" class="document placa-bpf hidden"></div>
+      <div id="view-bpf-adornos" class="document placa-bpf hidden"></div>
+      <div id="view-bpf-celular" class="document placa-bpf hidden"></div>
+      <div id="view-bpf-saude" class="document placa-bpf hidden"></div>
+      <div id="view-bpf-higiene" class="document placa-bpf hidden"></div>
+      <div id="view-bpf-regras" class="document placa-bpf hidden"></div>
+
+      <div id="view-config" class="document hidden"></div>
+    </div>
+  </main>
+  </div>
+
+  <script src="js/icons.js?v=98"></script>
+  <script src="js/data.js?v=98"></script>
+  <script src="js/plantio-sectors.js?v=98"></script>
+  <script src="js/torres-sectors.js?v=98"></script>
+  <script src="js/placas-bpf.js?v=98"></script>
+  <script src="js/app.js?v=98"></script>
+  <script src="js/erp.js?v=1"></script>
+</body>
+</html>

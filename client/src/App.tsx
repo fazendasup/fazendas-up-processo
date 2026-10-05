@@ -57,6 +57,7 @@ const ComercialRoutes = lazy(() => import(/* @vite-ignore */"./pages/ComercialRo
 const RastreioEntrega = lazy(() => import(/* @vite-ignore */"./pages/RastreioEntrega"));
 const TerceirosPublicPage = lazy(() => import(/* @vite-ignore */"./pages/TerceirosPublicPage"));
 const TerceirosAdminPage = lazy(() => import(/* @vite-ignore */"./pages/TerceirosAdminPage"));
+const BpfDocumentosPage = lazy(() => import(/* @vite-ignore */"./pages/BpfDocumentosPage"));
 const NotFound = lazy(() => import(/* @vite-ignore */"./pages/NotFound"));
 
 function RoleRootRoute() {
@@ -163,6 +164,16 @@ function Router() {
           <Route path="/germinacao">
             <ProtectedRoute requiredRole="processo">
               <GerminacaoPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/bpf">
+            <ProtectedRoute requiredRole="processo">
+              <BpfDocumentosPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/bpf/">
+            <ProtectedRoute requiredRole="processo">
+              <BpfDocumentosPage />
             </ProtectedRoute>
           </Route>
           <Route path="/manutencao">
