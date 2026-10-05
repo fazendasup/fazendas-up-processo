@@ -96,6 +96,15 @@ export async function ensureTerceirosTables(): Promise<void> {
   try {
     await db.execute(
       sql.raw(
+        `ALTER TABLE \`terceiros_registros\` ADD COLUMN \`descontaDescansoOverride\` boolean NULL`,
+      ),
+    );
+  } catch {
+    // coluna já existe
+  }
+  try {
+    await db.execute(
+      sql.raw(
         `ALTER TABLE \`terceiros_prestadores\` DROP COLUMN \`descontaAlmoco\``,
       ),
     );
@@ -369,6 +378,7 @@ export async function listRegistrosAdmin(opts: {
       horaEntrada: terceirosRegistros.horaEntrada,
       horaSaida: terceirosRegistros.horaSaida,
       almocouNaEmpresaOverride: terceirosRegistros.almocouNaEmpresaOverride,
+      descontaDescansoOverride: terceirosRegistros.descontaDescansoOverride,
       pagoAt: terceirosRegistros.pagoAt,
       createdAt: terceirosRegistros.createdAt,
       updatedAt: terceirosRegistros.updatedAt,
@@ -453,9 +463,15 @@ export async function deleteRegistroAdmin(id: number): Promise<void> {
 }
 
 function rotuloAlimentacao(v: boolean | null | undefined): string {
-  if (v === true) return "descontar almoço neste dia (desconta 1h, sem vale R$ 25)";
-  if (v === false) return "não descontar almoço neste dia (vale R$ 25 a partir de 6h)";
-  return "automático pelo horário";
+  if (v === true) return "almoço na empresa neste dia (sem R$ 25)";
+  if (v === false) return "não almoçou na empresa (mantém os R$ 25 a partir de 6h)";
+  return "automático pelo horário de 11h–13h";
+}
+
+function rotuloDescanso(v: boolean | null | undefined): string {
+  if (v === true) return "descontar 1h de descanso neste dia";
+  if (v === false) return "não descontar a hora de descanso neste dia";
+  return "automático (só desconta se almoçou na empresa)";
 }
 
 /** Admin ajusta horário e/ou regra de alimentação; grava histórico para o PJ. */
@@ -465,6 +481,8 @@ export async function ajustarRegistroAdmin(input: {
   horaSaida?: string;
   /** undefined = não alterar; null = automático; true/false = override */
   almocouNaEmpresaOverride?: boolean | null;
+  /** undefined = não alterar; null = automático; true/false = override */
+  descontaDescansoOverride?: boolean | null;
   adminUserId?: number | null;
 }): Promise<{
   registro: TerceiroRegistroRow;
@@ -528,7 +546,30 @@ export async function ajustarRegistroAdmin(input: {
         registroId: before.id,
         prestadorId: before.prestadorId,
         tipo: "alimentacao",
-        descricao: `Alimentação ajustada: de ${rotuloAlimentacao(prev)} para ${rotuloAlimentacao(next)}.`,
+        descricao: `Almoço ajustado: de ${rotuloAlimentacao(prev)} para ${rotuloAlimentacao(next)}.`,
+        detalheJson: JSON.stringify({
+          antes: prev,
+          depois: next,
+        }),
+        adminUserId: input.adminUserId ?? null,
+      });
+    }
+  }
+
+  if (input.descontaDescansoOverride !== undefined) {
+    const next = input.descontaDescansoOverride;
+    const prev = before.descontaDescansoOverride ?? null;
+    const same =
+      (next == null && prev == null) ||
+      (next === true && prev === true) ||
+      (next === false && prev === false);
+    if (!same) {
+      patch.descontaDescansoOverride = next;
+      novosAjustes.push({
+        registroId: before.id,
+        prestadorId: before.prestadorId,
+        tipo: "descanso",
+        descricao: `Descanso ajustado: de ${rotuloDescanso(prev)} para ${rotuloDescanso(next)}.`,
         detalheJson: JSON.stringify({
           antes: prev,
           depois: next,

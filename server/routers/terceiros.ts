@@ -107,6 +107,7 @@ function registroComPagamento(
     horaEntrada: string;
     horaSaida: string;
     almocouNaEmpresaOverride?: boolean | null;
+    descontaDescansoOverride?: boolean | null;
     pagoAt: Date | null;
     createdAt: Date;
   },
@@ -120,11 +121,13 @@ function registroComPagamento(
   }> = [],
 ) {
   const override = parseAlmocoOverride(r.almocouNaEmpresaOverride);
+  const descanso = parseAlmocoOverride(r.descontaDescansoOverride);
   const pagamento = calcularPagamentoDiaTerceiro({
     horaEntrada: r.horaEntrada,
     horaSaida: r.horaSaida,
     diariaBase,
     almocouNaEmpresaOverride: override,
+    descontaDescansoOverride: descanso,
   });
   const pago = r.pagoAt != null;
   return {
@@ -133,6 +136,7 @@ function registroComPagamento(
     horaEntrada: r.horaEntrada,
     horaSaida: r.horaSaida,
     almocouNaEmpresaOverride: override,
+    descontaDescansoOverride: descanso,
     pago,
     pagoAt: r.pagoAt,
     createdAt: r.createdAt,
@@ -429,8 +433,10 @@ export const terceirosRouter = router({
         id: z.number().int().positive(),
         horaEntrada: horaHm.optional(),
         horaSaida: horaHm.optional(),
-        /** null = automático; true = almoço empresa; false = vale R$ 25 */
+        /** null = automático; true = almoço na empresa (sem R$ 25); false = mantém os R$ 25 */
         almocouNaEmpresaOverride: z.boolean().nullable().optional(),
+        /** null = automático (só com o almoço); true = desconta 1h; false = não desconta */
+        descontaDescansoOverride: z.boolean().nullable().optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -448,6 +454,7 @@ export const terceirosRouter = router({
           horaEntrada: input.horaEntrada,
           horaSaida: input.horaSaida,
           almocouNaEmpresaOverride: input.almocouNaEmpresaOverride,
+          descontaDescansoOverride: input.descontaDescansoOverride,
           adminUserId: ctx.user?.id ?? null,
         });
         assertHorarios(registro.horaEntrada, registro.horaSaida);

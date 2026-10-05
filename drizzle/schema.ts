@@ -1399,11 +1399,15 @@ export const terceirosRegistros = mysqlTable(
     /** HH:mm */
     horaSaida: varchar("horaSaida", { length: 5 }).notNull(),
     /**
-     * Override admin do almoço na empresa.
-     * null = automático pelo horário; true = desconta 1h / sem R$ 25;
-     * false = vale alimentação R$ 25 / sem desconto 1h.
+     * Override admin do almoço na empresa (só os R$ 25).
+     * null = automático (11h–13h); true = sem R$ 25; false = mantém os R$ 25.
      */
     almocouNaEmpresaOverride: boolean("almocouNaEmpresaOverride"),
+    /**
+     * Override admin da 1h de descanso.
+     * null = desconta só se almoçou na empresa; true = desconta 1h; false = não desconta.
+     */
+    descontaDescansoOverride: boolean("descontaDescansoOverride"),
     /** null = em aberto; preenchido quando admin marca como pago. */
     pagoAt: timestamp("pagoAt"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),

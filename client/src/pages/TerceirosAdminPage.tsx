@@ -74,6 +74,7 @@ function fmtDataBr(iso: string): string {
 
 type ModoFiltro = "dia" | "semana" | "periodo";
 type AlimModo = "auto" | "empresa" | "vale";
+type DescModo = "auto" | "sim" | "nao";
 
 type RegistroEditavel = {
   id: number;
@@ -82,6 +83,7 @@ type RegistroEditavel = {
   horaEntrada: string;
   horaSaida: string;
   almocouNaEmpresaOverride: boolean | null;
+  descontaDescansoOverride: boolean | null;
 };
 
 function modoAlmoco(
@@ -89,6 +91,14 @@ function modoAlmoco(
 ): AlimModo {
   if (override === true) return "empresa";
   if (override === false) return "vale";
+  return "auto";
+}
+
+function modoDescanso(
+  override: boolean | null | undefined,
+): DescModo {
+  if (override === true) return "sim";
+  if (override === false) return "nao";
   return "auto";
 }
 
@@ -103,6 +113,7 @@ export default function TerceirosAdminPage() {
   const [editEntrada, setEditEntrada] = useState("07:00");
   const [editSaida, setEditSaida] = useState("16:00");
   const [editAlim, setEditAlim] = useState<AlimModo>("auto");
+  const [editDescanso, setEditDescanso] = useState<DescModo>("auto");
 
   const periodo = useMemo(() => {
     if (modo === "dia") return { inicio: refDia, fim: refDia };
@@ -133,6 +144,7 @@ export default function TerceirosAdminPage() {
           ? "vale"
           : "auto",
     );
+    setEditDescanso(modoDescanso(editando.descontaDescansoOverride));
   }, [editando]);
 
   const excluirPrestador = trpc.terceiros.excluirPrestador.useMutation({
@@ -392,7 +404,7 @@ export default function TerceirosAdminPage() {
                       <th className="px-3 py-2">Saída</th>
                       <th className="px-3 py-2 text-right">Horas</th>
                       <th className="px-3 py-2 text-right">Extra</th>
-                      <th className="px-3 py-2">Almoço</th>
+                      <th className="px-3 py-2">Almoço e descanso</th>
                       <th className="px-3 py-2 text-right">Total</th>
                       <th className="px-3 py-2">Status</th>
                       <th className="px-3 py-2" />
@@ -434,36 +446,68 @@ export default function TerceirosAdminPage() {
                             : "—"}
                         </td>
                         <td className="px-3 py-2">
-                          <Select
-                            value={modoAlmoco(r.almocouNaEmpresaOverride)}
-                            disabled={ajustar.isPending}
-                            onValueChange={v => {
-                              ajustar.mutate({
-                                id: r.id,
-                                almocouNaEmpresaOverride:
-                                  v === "auto" ? null : v === "empresa",
-                              });
-                            }}
-                          >
-                            <SelectTrigger className="h-8 w-[11.5rem] text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="auto">Automático</SelectItem>
-                              <SelectItem value="empresa">
-                                Descontar almoço
-                              </SelectItem>
-                              <SelectItem value="vale">
-                                Não descontar
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <div className="space-y-1">
+                            <Select
+                              value={modoAlmoco(r.almocouNaEmpresaOverride)}
+                              disabled={ajustar.isPending}
+                              onValueChange={v => {
+                                ajustar.mutate({
+                                  id: r.id,
+                                  almocouNaEmpresaOverride:
+                                    v === "auto" ? null : v === "empresa",
+                                });
+                              }}
+                            >
+                              <SelectTrigger className="h-8 w-[13.5rem] text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="auto">
+                                  Almoço: automático
+                                </SelectItem>
+                                <SelectItem value="empresa">
+                                  Almoçou na empresa
+                                </SelectItem>
+                                <SelectItem value="vale">
+                                  Não almoçou na empresa
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Select
+                              value={modoDescanso(r.descontaDescansoOverride)}
+                              disabled={ajustar.isPending}
+                              onValueChange={v => {
+                                ajustar.mutate({
+                                  id: r.id,
+                                  descontaDescansoOverride:
+                                    v === "auto" ? null : v === "sim",
+                                });
+                              }}
+                            >
+                              <SelectTrigger className="h-8 w-[13.5rem] text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="auto">
+                                  Descanso: automático
+                                </SelectItem>
+                                <SelectItem value="sim">
+                                  Descontar 1h
+                                </SelectItem>
+                                <SelectItem value="nao">
+                                  Não descontar 1h
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                           <p className="mt-1 text-[11px] tabular-nums text-muted-foreground">
-                            {r.pagamento?.almocouNaEmpresa
+                            {r.pagamento?.descontaDescanso
                               ? "desconta 1h"
-                              : r.pagamento?.jantou
-                                ? `desconta 1h · ${fmtMoney(r.pagamento.valorAlimentacao)}`
-                                : fmtMoney(r.pagamento?.valorAlimentacao)}
+                              : "sem 1h"}
+                            {" · "}
+                            {r.pagamento?.almocouNaEmpresa
+                              ? "sem R$ 25"
+                              : fmtMoney(r.pagamento?.valorAlimentacao)}
                           </p>
                         </td>
                         <td className="px-3 py-2 text-right font-semibold tabular-nums">
@@ -509,6 +553,8 @@ export default function TerceirosAdminPage() {
                                 horaSaida: r.horaSaida,
                                 almocouNaEmpresaOverride:
                                   r.almocouNaEmpresaOverride ?? null,
+                                descontaDescansoOverride:
+                                  r.descontaDescansoOverride ?? null,
                               })
                             }
                           >
@@ -622,7 +668,7 @@ export default function TerceirosAdminPage() {
                 </div>
               </div>
               <div>
-                <Label>Alimentação / desconto</Label>
+                <Label>Almoço na empresa</Label>
                 <Select
                   value={editAlim}
                   onValueChange={v => setEditAlim(v as AlimModo)}
@@ -632,20 +678,39 @@ export default function TerceirosAdminPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="auto">
-                      Automático pelo horário
+                      Automático (11h–13h)
                     </SelectItem>
                     <SelectItem value="empresa">
-                      Descontar almoço neste dia
+                      Almoçou na empresa
                     </SelectItem>
                     <SelectItem value="vale">
-                      Não descontar neste dia
+                      Não almoçou na empresa
                     </SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div>
+                <Label>1h de descanso</Label>
+                <Select
+                  value={editDescanso}
+                  onValueChange={v => setEditDescanso(v as DescModo)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">
+                      Automático (só se almoçou na empresa)
+                    </SelectItem>
+                    <SelectItem value="sim">Descontar 1h</SelectItem>
+                    <SelectItem value="nao">Não descontar 1h</SelectItem>
+                  </SelectContent>
+                </Select>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  No automático, 11h–13h desconta 1h e não paga os R$ 25. Fora
-                  disso, se cobre 18h–20h, desconta 1h da janta e mantém os R$
-                  25. O ajuste deste dia prevalece.
+                  Quem está na empresa das 11h às 13h pode almoçar lá: nesse
+                  caso não recebe os R$ 25 e a 1h sai do pagamento. Em qualquer
+                  outro horário os R$ 25 ficam. A 1h de descanso só sai se for
+                  marcada neste dia.
                 </p>
               </div>
             </div>
@@ -672,6 +737,10 @@ export default function TerceirosAdminPage() {
                     editAlim === "auto"
                       ? null
                       : editAlim === "empresa",
+                  descontaDescansoOverride:
+                    editDescanso === "auto"
+                      ? null
+                      : editDescanso === "sim",
                 });
               }}
             >
