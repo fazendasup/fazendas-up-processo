@@ -61,15 +61,17 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
     expect(r!.valorTotal).toBe(126);
   });
 
-  it("turno da tarde (entrada ≥ 13h): sem desconto de almoço + alimentação", () => {
+  it("turno da tarde cobre a janta: desconta 1h e mantém os R$ 25", () => {
     const r = calcularPagamentoDiaTerceiro({
       horaEntrada: "13:00",
       horaSaida: "21:00",
     });
     expect(r!.almocouNaEmpresa).toBe(false);
-    expect(r!.horasTrabalhadas).toBe(8);
+    expect(r!.jantou).toBe(true);
+    expect(r!.horasPresente).toBe(8);
+    expect(r!.horasTrabalhadas).toBe(7);
     expect(r!.valorAlimentacao).toBe(25);
-    expect(r!.valorTotal).toBe(125);
+    expect(r!.valorTotal).toBe(round2(7 * TERCEIROS_VALOR_HORA + 10 + 25));
   });
 
   it("entrada 12h ainda sem desconto (só desconta se entrou antes das 11h)", () => {
@@ -137,8 +139,8 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
     expect(r!.valorTotal).toBe(111.25);
   });
 
-  it("jornada noturna: saída no dia seguinte, um VT e uma alimentação", () => {
-    // 18:00 → 08:00 = 14h presente, entrada ≥ 13 → sem desconto almoço, +VT + alim.
+  it("jornada noturna que pega a janta: desconta 1h e mantém os R$ 25", () => {
+    // 18:00 → 08:00 = 14h presente − 1h de janta.
     const r = calcularPagamentoDiaTerceiro({
       horaEntrada: "18:00",
       horaSaida: "08:00",
@@ -147,11 +149,22 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
     expect(r!.cruzaMeiaNoite).toBe(true);
     expect(r!.horasPresente).toBe(14);
     expect(r!.almocouNaEmpresa).toBe(false);
-    expect(r!.horasTrabalhadas).toBe(14);
+    expect(r!.jantou).toBe(true);
+    expect(r!.horasTrabalhadas).toBe(13);
     expect(r!.valorValeTransporte).toBe(10);
     expect(r!.valorAlimentacao).toBe(25);
-    expect(r!.valorHoras).toBe(round2(14 * TERCEIROS_VALOR_HORA));
-    expect(r!.valorTotal).toBe(round2(14 * TERCEIROS_VALOR_HORA + 10 + 25));
+    expect(r!.valorHoras).toBe(round2(13 * TERCEIROS_VALOR_HORA));
+    expect(r!.valorTotal).toBe(round2(13 * TERCEIROS_VALOR_HORA + 10 + 25));
+  });
+
+  it("noite que começa depois das 20h não desconta janta", () => {
+    const r = calcularPagamentoDiaTerceiro({
+      horaEntrada: "22:00",
+      horaSaida: "06:00",
+    });
+    expect(r!.jantou).toBe(false);
+    expect(r!.horasTrabalhadas).toBe(8);
+    expect(r!.valorAlimentacao).toBe(25);
   });
 
   it("dataSaidaServico avança um dia quando cruza meia-noite", () => {

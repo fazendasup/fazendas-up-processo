@@ -354,7 +354,9 @@ export default function TerceirosPublicPage() {
                         ? r.pagamento.almocouNaEmpresaManual
                           ? " · almoço descontado neste dia"
                           : " · almoço descontado"
-                        : (r.pagamento?.valorAlimentacao ?? 0) > 0
+                        : r.pagamento?.jantou
+                          ? " · janta descontada 1h · vale alimentação"
+                          : (r.pagamento?.valorAlimentacao ?? 0) > 0
                           ? r.pagamento?.almocouNaEmpresaManual
                             ? " · almoço não descontado neste dia"
                             : " · vale alimentação"

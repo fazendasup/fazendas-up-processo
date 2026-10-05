@@ -461,7 +461,9 @@ export default function TerceirosAdminPage() {
                           <p className="mt-1 text-[11px] tabular-nums text-muted-foreground">
                             {r.pagamento?.almocouNaEmpresa
                               ? "desconta 1h"
-                              : fmtMoney(r.pagamento?.valorAlimentacao)}
+                              : r.pagamento?.jantou
+                                ? `desconta 1h · ${fmtMoney(r.pagamento.valorAlimentacao)}`
+                                : fmtMoney(r.pagamento?.valorAlimentacao)}
                           </p>
                         </td>
                         <td className="px-3 py-2 text-right font-semibold tabular-nums">
@@ -641,9 +643,9 @@ export default function TerceirosAdminPage() {
                   </SelectContent>
                 </Select>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  Vale só para este dia. Descontar tira 1h e não paga o vale.
-                  Não descontar mantém a hora e paga R$ 25 a partir de 6h. O PJ
-                  vê no histórico.
+                  No automático, 11h–13h desconta 1h e não paga os R$ 25. Fora
+                  disso, se cobre 18h–20h, desconta 1h da janta e mantém os R$
+                  25. O ajuste deste dia prevalece.
                 </p>
               </div>
             </div>
