@@ -1372,6 +1372,11 @@ export const terceirosPrestadores = mysqlTable(
     diariaBase: decimal("diariaBase", { precision: 10, scale: 2 }),
     /** Observação operacional (acordo de diária, almoço, etc.). */
     observacao: text("observacao"),
+    /**
+     * true = desconta 1h quando a jornada cobre 11h–13h e não paga o vale.
+     * false = traz o próprio almoço: não desconta a hora e paga o vale a partir de 6h.
+     */
+    descontaAlmoco: boolean("descontaAlmoco").notNull().default(true),
     ativo: boolean("ativo").notNull().default(true),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

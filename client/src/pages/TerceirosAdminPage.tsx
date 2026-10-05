@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { InputHora24h } from "@/components/InputHora24h";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -82,6 +83,7 @@ type RegistroEditavel = {
   horaEntrada: string;
   horaSaida: string;
   almocouNaEmpresaOverride: boolean | null;
+  descontaAlmoco: boolean;
 };
 
 export default function TerceirosAdminPage() {
@@ -150,6 +152,17 @@ export default function TerceirosAdminPage() {
     onSuccess: async (_d, vars) => {
       toast.success(vars.pago ? "Marcado como pago" : "Voltou para em aberto");
       await utils.terceiros.listRegistros.invalidate();
+    },
+    onError: err => toast.error(err.message),
+  });
+
+  const atualizarPrestador = trpc.terceiros.atualizarPrestador.useMutation({
+    onSuccess: async () => {
+      toast.success("Regra de almoço atualizada");
+      await Promise.all([
+        utils.terceiros.listPrestadores.invalidate(),
+        utils.terceiros.listRegistros.invalidate(),
+      ]);
     },
     onError: err => toast.error(err.message),
   });
@@ -327,6 +340,11 @@ export default function TerceirosAdminPage() {
                       <tr key={p.prestadorId} className="border-b last:border-0">
                         <td className="px-3 py-2 font-medium">
                           <div>{p.nomeCompleto}</div>
+                          {p.descontaAlmoco ? null : (
+                            <p className="mt-0.5 text-xs font-normal text-muted-foreground">
+                              Traz o próprio almoço
+                            </p>
+                          )}
                           {p.observacao ? (
                             <p className="mt-0.5 text-xs font-normal text-amber-800 dark:text-amber-200">
                               {p.observacao}
@@ -477,6 +495,7 @@ export default function TerceirosAdminPage() {
                                 horaSaida: r.horaSaida,
                                 almocouNaEmpresaOverride:
                                   r.almocouNaEmpresaOverride ?? null,
+                                descontaAlmoco: r.descontaAlmoco,
                               })
                             }
                           >
@@ -533,6 +552,27 @@ export default function TerceirosAdminPage() {
                           {p.observacao}
                         </p>
                       ) : null}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Label
+                        htmlFor={`almoco-${p.id}`}
+                        className="max-w-[8.5rem] text-right text-xs leading-tight font-normal"
+                      >
+                        {p.descontaAlmoco
+                          ? "Desconta almoço"
+                          : "Traz o próprio almoço"}
+                      </Label>
+                      <Switch
+                        id={`almoco-${p.id}`}
+                        checked={p.descontaAlmoco}
+                        disabled={atualizarPrestador.isPending}
+                        onCheckedChange={checked =>
+                          atualizarPrestador.mutate({
+                            id: p.id,
+                            descontaAlmoco: checked,
+                          })
+                        }
+                      />
                     </div>
                     <Button
                       size="sm"
@@ -611,7 +651,10 @@ export default function TerceirosAdminPage() {
                   </SelectContent>
                 </Select>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  O PJ verá este ajuste no histórico.
+                  {editando.descontaAlmoco
+                    ? "No automático, desconta 1h quando a jornada cobre 11h–13h."
+                    : "Esta pessoa traz o próprio almoço. No automático, a hora não é descontada e entra o vale a partir de 6h."}{" "}
+                  O ajuste deste dia prevalece e o PJ vê no histórico.
                 </p>
               </div>
             </div>

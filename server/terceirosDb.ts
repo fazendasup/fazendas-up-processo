@@ -94,6 +94,15 @@ export async function ensureTerceirosTables(): Promise<void> {
     // coluna já existe
   }
   try {
+    await db.execute(
+      sql.raw(
+        `ALTER TABLE \`terceiros_prestadores\` ADD COLUMN \`descontaAlmoco\` boolean NOT NULL DEFAULT true`,
+      ),
+    );
+  } catch {
+    // coluna já existe
+  }
+  try {
     await db.execute(sql.raw(`CREATE TABLE IF NOT EXISTS \`terceiros_ajustes\` (
   \`id\` int AUTO_INCREMENT NOT NULL,
   \`registroId\` int NOT NULL,
@@ -337,6 +346,7 @@ export async function listRegistrosAdmin(opts: {
       nomeCompleto: string;
       diariaBase: string | null;
       observacao: string | null;
+      descontaAlmoco: boolean;
     }
   >
 > {
@@ -367,6 +377,7 @@ export async function listRegistrosAdmin(opts: {
       nomeCompleto: terceirosPrestadores.nomeCompleto,
       diariaBase: terceirosPrestadores.diariaBase,
       observacao: terceirosPrestadores.observacao,
+      descontaAlmoco: terceirosPrestadores.descontaAlmoco,
     })
     .from(terceirosRegistros)
     .innerJoin(
@@ -386,6 +397,7 @@ export async function updatePrestadorAdmin(input: {
   id: number;
   diariaBase?: number | null;
   observacao?: string | null;
+  descontaAlmoco?: boolean;
 }): Promise<TerceiroPrestadorRow> {
   await ensureTerceirosTables();
   const db = await getDb();
@@ -401,6 +413,9 @@ export async function updatePrestadorAdmin(input: {
   if (input.observacao !== undefined) {
     const t = input.observacao?.trim() ?? "";
     patch.observacao = t.length ? t : null;
+  }
+  if (input.descontaAlmoco !== undefined) {
+    patch.descontaAlmoco = input.descontaAlmoco;
   }
   if (Object.keys(patch).length === 0) {
     const cur = await db

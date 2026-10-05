@@ -100,6 +100,14 @@ function mapAjuste(a: {
   };
 }
 
+/** true = desconta almoço no horário; false = traz o próprio. */
+function parseDescontaAlmoco(
+  raw: boolean | number | string | null | undefined,
+): boolean {
+  if (raw === false || raw === 0 || raw === "0") return false;
+  return true;
+}
+
 function registroComPagamento(
   r: {
     id: number;
@@ -118,6 +126,7 @@ function registroComPagamento(
     descricao: string;
     createdAt: Date;
   }> = [],
+  descontaAlmoco = true,
 ) {
   const override = parseAlmocoOverride(r.almocouNaEmpresaOverride);
   const pagamento = calcularPagamentoDiaTerceiro({
@@ -125,6 +134,7 @@ function registroComPagamento(
     horaSaida: r.horaSaida,
     diariaBase,
     almocouNaEmpresaOverride: override,
+    descontaAlmoco,
   });
   const pago = r.pagoAt != null;
   return {
@@ -180,6 +190,7 @@ export const terceirosRouter = router({
     .query(async ({ input }) => {
       const p = await assertToken(input.acessoToken);
       const diaria = parseDiariaBase(p.diariaBase);
+      const descontaAlmoco = parseDescontaAlmoco(p.descontaAlmoco);
       const regs = await listRegistrosPrestador(p.id);
       const ajustesAll = await listAjustesPorPrestador(p.id);
       const porReg = new Map<number, typeof ajustesAll>();
@@ -189,7 +200,12 @@ export const terceirosRouter = router({
         porReg.set(a.registroId, list);
       }
       const registros = regs.map(r =>
-        registroComPagamento(r, diaria, porReg.get(r.id) ?? []),
+        registroComPagamento(
+          r,
+          diaria,
+          porReg.get(r.id) ?? [],
+          descontaAlmoco,
+        ),
       );
       const emAberto = Math.round(
         registros
@@ -208,6 +224,7 @@ export const terceirosRouter = router({
           cpfMascarado: formatarCpf(p.cpf),
           diariaBase: diaria,
           observacao: p.observacao,
+          descontaAlmoco,
         },
         registros,
         ajustes: ajustesAll.map(mapAjuste),
@@ -247,6 +264,7 @@ export const terceirosRouter = router({
         row,
         parseDiariaBase(p.diariaBase),
         ajustes,
+        parseDescontaAlmoco(p.descontaAlmoco),
       );
     }),
 
@@ -287,6 +305,7 @@ export const terceirosRouter = router({
       nomeCompleto: p.nomeCompleto,
       diariaBase: parseDiariaBase(p.diariaBase),
       observacao: p.observacao,
+      descontaAlmoco: parseDescontaAlmoco(p.descontaAlmoco),
       createdAt: p.createdAt,
     }));
   }),
@@ -297,6 +316,7 @@ export const terceirosRouter = router({
         id: z.number().int().positive(),
         diariaBase: z.number().positive().max(10_000).nullable().optional(),
         observacao: z.string().max(2000).nullable().optional(),
+        descontaAlmoco: z.boolean().optional(),
       }),
     )
     .mutation(async ({ input }) => {
@@ -308,6 +328,7 @@ export const terceirosRouter = router({
         nomeCompleto: p.nomeCompleto,
         diariaBase: parseDiariaBase(p.diariaBase),
         observacao: p.observacao,
+        descontaAlmoco: parseDescontaAlmoco(p.descontaAlmoco),
       };
     }),
 
@@ -342,7 +363,13 @@ export const terceirosRouter = router({
 
       const itens = rows.map(r => {
         const diaria = parseDiariaBase(r.diariaBase);
-        const base = registroComPagamento(r, diaria, porReg.get(r.id) ?? []);
+        const descontaAlmoco = parseDescontaAlmoco(r.descontaAlmoco);
+        const base = registroComPagamento(
+          r,
+          diaria,
+          porReg.get(r.id) ?? [],
+          descontaAlmoco,
+        );
         return {
           ...base,
           prestadorId: r.prestadorId,
@@ -350,6 +377,7 @@ export const terceirosRouter = router({
           cpfMascarado: formatarCpf(r.cpf),
           diariaBase: diaria,
           observacao: r.observacao,
+          descontaAlmoco,
         };
       });
 
@@ -361,6 +389,7 @@ export const terceirosRouter = router({
           cpfMascarado: string;
           diariaBase: number | null;
           observacao: string | null;
+          descontaAlmoco: boolean;
           dias: number;
           horasTrabalhadas: number;
           horasExtras: number;
@@ -376,6 +405,7 @@ export const terceirosRouter = router({
           cpfMascarado: it.cpfMascarado,
           diariaBase: it.diariaBase,
           observacao: it.observacao,
+          descontaAlmoco: it.descontaAlmoco,
           dias: 0,
           horasTrabalhadas: 0,
           horasExtras: 0,
@@ -456,6 +486,7 @@ export const terceirosRouter = router({
           registro,
           parseDiariaBase(p?.diariaBase),
           ajustes,
+          parseDescontaAlmoco(p?.descontaAlmoco),
         );
       } catch (e) {
         throw new TRPCError({
@@ -480,6 +511,7 @@ export const terceirosRouter = router({
         row,
         parseDiariaBase(p?.diariaBase),
         ajustes,
+        parseDescontaAlmoco(p?.descontaAlmoco),
       );
     }),
 
