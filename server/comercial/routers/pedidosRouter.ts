@@ -1378,16 +1378,29 @@ export const pedidosRouter = router({
               dataEntrega: { gte: dataAtual, lte: fimDia(dataAtual) },
               status: { not: "CANCELADO" },
             },
-            select: { id: true, dataEntrega: true, diaSemana: true },
+            select: {
+              id: true,
+              dataEntrega: true,
+              diaSemana: true,
+              statusEnvioContaAzul: true,
+            },
           })
         : [
             {
               id: pedido.id,
               dataEntrega: pedido.dataEntrega,
               diaSemana: pedido.diaSemana,
+              statusEnvioContaAzul: pedido.statusEnvioContaAzul,
             },
           ];
       const pedidosAlvoIds = pedidosAlvo.map(p => p.id);
+      const mudouDeSemana =
+        inicioSemana(dataAtual).getTime() !== inicioSemana(novaData).getTime();
+      const idsEnvioReiniciado = mudouDeSemana
+        ? pedidosAlvo
+            .filter(p => p.statusEnvioContaAzul !== "NAO_ENVIADO")
+            .map(p => p.id)
+        : [];
 
       await ctx.prisma!.$transaction(async tx => {
         await tx.pedidoOperacional.updateMany({
@@ -1398,6 +1411,21 @@ export const pedidosRouter = router({
             editadoPorId: usuario.id,
           },
         });
+        if (idsEnvioReiniciado.length > 0) {
+          await tx.pedidoOperacional.updateMany({
+            where: { id: { in: idsEnvioReiniciado } },
+            data: {
+              statusEnvioContaAzul: "NAO_ENVIADO",
+              contaAzulEnvioExternalId: null,
+              enviadoContaAzulEm: null,
+              ultimoErroEnvioCa: null,
+              pedidoContaAzulId: null,
+              sugestaoPedidoContaAzulId: null,
+              statusConciliacao: "PLANEJADO",
+              snapshotConciliacao: Prisma.DbNull,
+            },
+          });
+        }
         await tx.pedidoOperacionalAvaria.updateMany({
           where: { pedidoId: { in: pedidosAlvoIds } },
           data: { dataEntrega: novaData },
@@ -1413,8 +1441,13 @@ export const pedidosRouter = router({
           {
             dataEntrega: pedidoAlvo.dataEntrega,
             diaSemana: pedidoAlvo.diaSemana,
+            statusEnvioContaAzul: pedidoAlvo.statusEnvioContaAzul,
           },
-          { dataEntrega: novaData, diaSemana: diaSemana(novaData) }
+          {
+            dataEntrega: novaData,
+            diaSemana: diaSemana(novaData),
+            envioContaAzulReiniciado: idsEnvioReiniciado.includes(pedidoAlvo.id),
+          }
         ).catch(err => {
           console.warn("[alterarDataPedido] auditoria ignorada:", err);
         });

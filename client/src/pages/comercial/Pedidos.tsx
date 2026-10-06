@@ -42,6 +42,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConciliacaoContaAzulPanel } from "@/components/comercial/ConciliacaoContaAzulPanel";
+import { useSyncContaAzulNaPagina } from "@/hooks/useSyncContaAzul";
 import { AcoesPedidoConciliacao } from "@/components/comercial/ConciliacaoResolucaoDialogs";
 import {
   InadimplenciaClienteBadge,
@@ -258,6 +259,7 @@ export function Pedidos({
     string | null
   >(null);
   const me = trpc.comercial.pedidos.me.useQuery();
+  useSyncContaAzulNaPagina("vendas");
   const canEditarComercial =
     me.data?.perfil === "ADMIN" ||
     me.data?.perfil === "GERENTE_COMERCIAL" ||
@@ -1286,8 +1288,21 @@ export function Pedidos({
     if (!novaData) return toast.error("Informe a nova data do pedido.");
     if (novaData === dataAtual)
       return toast.message("Pedido já está nesta data.");
+    const segunda = (iso: string) => {
+      const d = new Date(`${iso}T12:00:00`);
+      d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+      return d.toISOString().slice(0, 10);
+    };
+    const outraSemana = segunda(dataAtual) !== segunda(novaData);
+    const jaEnviado =
+      pedido.statusEnvioContaAzul === "ENVIADO_VENDA" ||
+      pedido.statusEnvioContaAzul === "ENVIADO_ORCAMENTO";
     const ok = window.confirm(
-      `Mover todos os pedidos de ${pedido.cliente?.nome ?? pedido.contaAzulCustomerId} neste dia de ${fmtDate(pedido.dataEntrega)} para ${fmtDate(`${novaData}T12:00:00`)}?`
+      `Mover todos os pedidos de ${pedido.cliente?.nome ?? pedido.contaAzulCustomerId} neste dia de ${fmtDate(pedido.dataEntrega)} para ${fmtDate(`${novaData}T12:00:00`)}?${
+        outraSemana && jaEnviado
+          ? "\n\nO envio ao Conta Azul da semana anterior não acompanha. Este dia fica livre para emitir uma venda nova."
+          : ""
+      }`
     );
     if (!ok) return;
     alterarDataPedido.mutate({
