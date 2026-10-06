@@ -42,7 +42,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConciliacaoContaAzulPanel } from "@/components/comercial/ConciliacaoContaAzulPanel";
-import { useSyncContaAzulNaPagina } from "@/hooks/useSyncContaAzul";
 import { AcoesPedidoConciliacao } from "@/components/comercial/ConciliacaoResolucaoDialogs";
 import {
   InadimplenciaClienteBadge,
@@ -259,7 +258,6 @@ export function Pedidos({
     string | null
   >(null);
   const me = trpc.comercial.pedidos.me.useQuery();
-  useSyncContaAzulNaPagina("vendas");
   const canEditarComercial =
     me.data?.perfil === "ADMIN" ||
     me.data?.perfil === "GERENTE_COMERCIAL" ||
