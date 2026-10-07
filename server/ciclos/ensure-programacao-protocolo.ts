@@ -151,6 +151,11 @@ export async function ensureProgramacaoCiclosProtocolo(agora = new Date()): Prom
           .update(ciclos)
           .set({
             ...dados,
+            // Nome e produto ficam como foram salvos no ciclo.
+            nome: ja.nome,
+            produto: ja.produto,
+            tipo: ja.tipo,
+            dosagem: ja.dosagem,
             dataInicio: reiniciar ? dados.dataInicio : (ja.dataInicio ?? dados.dataInicio),
             ...(reiniciar
               ? { ultimaExecucao: null, ultimoExecutorId: null, ultimoExecutorNome: null }
