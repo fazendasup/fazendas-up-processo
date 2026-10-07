@@ -31,6 +31,11 @@ import {
   ocultarValoresComerciais,
 } from "@/lib/accessPolicy";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -2970,15 +2975,17 @@ function CampoProntoVariedade({
   }
 
   return (
-    <label className="mt-3 flex items-center gap-2">
-      <span className="text-xs font-medium text-muted-foreground">Já separei</span>
+    <label className="mt-2 flex items-center gap-2">
+      <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+        Pronto
+      </span>
       <Input
         type="text"
         inputMode="decimal"
         value={texto}
         disabled={disabled}
-        aria-label="Quantidade já separada"
-        className="h-8 w-16 px-2 text-right text-sm font-semibold tabular-nums"
+        aria-label="Quantidade pronta"
+        className="h-8 w-20 px-2 text-right text-sm font-semibold tabular-nums"
         onFocus={() => {
           focado.current = true;
         }}
@@ -2994,103 +3001,10 @@ function CampoProntoVariedade({
           }
         }}
       />
-      <span className="text-xs tabular-nums text-muted-foreground">
-        de {textoQuantidade(max)}
+      <span className="text-[10px] tabular-nums text-muted-foreground">
+        / {textoQuantidade(max)}
       </span>
     </label>
-  );
-}
-
-function categoriaVisivel(categoria: unknown): string | null {
-  const texto = String(categoria ?? "").trim();
-  if (!texto || texto.toLowerCase() === "sem categoria") return null;
-  return texto;
-}
-
-function linhaDestinos(
-  destinos: Array<{ id: string; nome: string; quantidade: number }>,
-): string {
-  if (destinos.length === 0) return "Nenhum cliente";
-  if (destinos.length === 1) return destinos[0].nome;
-  return destinos
-    .map(destino => `${destino.nome} ${formatQuantidade(destino.quantidade)}`)
-    .join(" · ");
-}
-
-function CartaoSeparacao({
-  produto,
-  podeEditar,
-  salvandoPronto,
-  onDefinirPronto,
-}: {
-  produto: {
-    nome: string;
-    categoria?: string;
-    quantidade?: number;
-    falta?: number;
-    pendente?: number;
-    pronto?: number;
-    entregue?: number;
-    destinos?: Array<{ id: string; nome: string; quantidade: number }>;
-    linhasAbertas?: Array<{ id: string; quantidade: number }>;
-  };
-  podeEditar: boolean;
-  salvandoPronto: boolean;
-  onDefinirPronto: (itemIds: string[], quantidade: number) => void;
-}) {
-  const total = Number(produto.quantidade ?? 0);
-  const falta = Number(produto.falta ?? produto.pendente ?? total);
-  const pronto = Number(produto.pronto ?? 0);
-  const entregue = Number(produto.entregue ?? 0);
-  const aberto = falta > 0;
-  const destinos = produto.destinos ?? [];
-  const linhasAbertas = produto.linhasAbertas ?? [];
-  const maxPronto = Math.max(0, total - entregue);
-  const categoria = categoriaVisivel(produto.categoria);
-
-  return (
-    <article className="rounded-lg border bg-background p-3 text-left">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold leading-snug">{produto.nome}</p>
-          {categoria ? (
-            <p className="mt-0.5 text-xs text-muted-foreground">{categoria}</p>
-          ) : null}
-          <p className="mt-1 text-xs leading-snug text-muted-foreground">{linhaDestinos(destinos)}</p>
-        </div>
-        {aberto ? (
-          <p className="shrink-0 text-right leading-none">
-            <span className="block text-xl font-semibold tabular-nums tracking-tight">
-              {formatQuantidade(falta)}
-            </span>
-            <span className="mt-1 block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-              falta
-            </span>
-          </p>
-        ) : (
-          <span className="shrink-0 text-xs font-medium text-emerald-700 dark:text-emerald-300">
-            Separado
-          </span>
-        )}
-      </div>
-      {podeEditar && linhasAbertas.length > 0 ? (
-        <CampoProntoVariedade
-          valor={pronto}
-          max={maxPronto}
-          disabled={salvandoPronto}
-          onSalvar={quantidade =>
-            onDefinirPronto(
-              linhasAbertas.map(linha => linha.id),
-              quantidade,
-            )
-          }
-        />
-      ) : maxPronto > 0 ? (
-        <p className="mt-3 text-xs text-muted-foreground">
-          Já separei {formatQuantidade(pronto)} de {formatQuantidade(maxPronto)}
-        </p>
-      ) : null}
-    </article>
   );
 }
 
@@ -3105,19 +3019,7 @@ function PedidosKpiDashboard({
   salvandoPronto: boolean;
   onDefinirPronto: (itemIds: string[], quantidade: number) => void;
 }) {
-  const produtosPorVariedade = (kpis.produtos ?? []) as Array<{
-    nome: string;
-    categoria?: string;
-    quantidade?: number;
-    falta?: number;
-    pendente?: number;
-    pronto?: number;
-    entregue?: number;
-    destinos?: Array<{ id: string; nome: string; quantidade: number }>;
-    linhasAbertas?: Array<{ id: string; quantidade: number }>;
-  }>;
-  const aSeparar = produtosPorVariedade.filter(produto => Number(produto.falta ?? produto.pendente ?? 0) > 0);
-  const separados = produtosPorVariedade.filter(produto => Number(produto.falta ?? produto.pendente ?? 0) <= 0);
+  const produtosPorVariedade = kpis.produtos ?? [];
 
   return (
     <div className="space-y-3">
@@ -3171,53 +3073,113 @@ function PedidosKpiDashboard({
       <Card className="border bg-card/80">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm">
-            <ShoppingBasket className="h-4 w-4" /> O que separar
+            <ShoppingBasket className="h-4 w-4" /> Produtos por variedade
           </CardTitle>
           <p className="text-xs text-muted-foreground">
-            O número é o que ainda falta. Informe quanto já separou para preencher os clientes na ordem de produção.
+            Falta = total − pronto − entregue. Digite o pronto na variedade para preencher os clientes na ordem de produção. Passe o mouse para ver quem recebe.
           </p>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent>
           {produtosPorVariedade.length === 0 ? (
             <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
               Sem produtos no dia.
             </p>
           ) : (
-            <>
-              {aSeparar.length > 0 ? (
-                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                  {aSeparar.map(produto => (
-                    <CartaoSeparacao
-                      key={produto.nome}
-                      produto={produto}
-                      podeEditar={podeEditar}
-                      salvandoPronto={salvandoPronto}
-                      onDefinirPronto={onDefinirPronto}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
-                  Tudo deste dia já está separado.
-                </p>
-              )}
-              {separados.length > 0 ? (
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground">Já separado</p>
-                  <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                    {separados.map(produto => (
-                      <CartaoSeparacao
-                        key={produto.nome}
-                        produto={produto}
-                        podeEditar={podeEditar}
-                        salvandoPronto={salvandoPronto}
-                        onDefinirPronto={onDefinirPronto}
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {produtosPorVariedade.map((produto: any, index: number) => {
+                const total = Number(produto.quantidade ?? 0);
+                const falta = Number(produto.falta ?? produto.pendente ?? total);
+                const pronto = Number(produto.pronto ?? 0);
+                const entregue = Number(produto.entregue ?? 0);
+                const feito = pronto + entregue;
+                const pctFeito =
+                  total > 0 ? Math.min(100, Math.round((feito / total) * 100)) : 0;
+                const destinos = (produto.destinos ?? []) as Array<{
+                  id: string;
+                  nome: string;
+                  quantidade: number;
+                }>;
+                const linhasAbertas = (produto.linhasAbertas ?? []) as Array<{
+                  id: string;
+                  quantidade: number;
+                }>;
+                const maxPronto = Math.max(0, total - entregue);
+                return (
+                  <div
+                    key={produto.nome}
+                    className="rounded-lg border bg-muted/20 p-2 text-left"
+                  >
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="cursor-default">
+                          <div className="mb-1 flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="truncate text-xs font-semibold">
+                                {index + 1}. {produto.nome}
+                              </p>
+                              <p className="truncate text-[10px] text-muted-foreground">
+                                {produto.categoria} · {produto.clientes} cliente(s)
+                              </p>
+                            </div>
+                            <span
+                              className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                                falta > 0
+                                  ? "bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-100"
+                                  : "bg-emerald-100 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-100"
+                              }`}
+                            >
+                              {falta > 0
+                                ? `Falta ${formatQuantidade(falta)}`
+                                : "Feito"}
+                            </span>
+                          </div>
+                          <p className="mb-1 text-[10px] tabular-nums text-muted-foreground">
+                            {formatQuantidade(total)} − pronto {formatQuantidade(pronto)} −
+                            entregue {formatQuantidade(entregue)}
+                          </p>
+                          <div className="h-1.5 overflow-hidden rounded-full bg-amber-200/70 dark:bg-amber-900/40">
+                            <div
+                              className="h-full rounded-full bg-emerald-500"
+                              style={{ width: `${pctFeito}%` }}
+                            />
+                          </div>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="max-h-64 max-w-xs overflow-y-auto text-left"
+                      >
+                        <p className="mb-1 font-semibold">{produto.nome}</p>
+                        {destinos.length === 0 ? (
+                          <p>Nenhum cliente neste produto.</p>
+                        ) : (
+                          <ul className="space-y-0.5">
+                            {destinos.map(destino => (
+                              <li key={destino.id}>
+                                {destino.nome} · {formatQuantidade(destino.quantidade)}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </TooltipContent>
+                    </Tooltip>
+                    {podeEditar && linhasAbertas.length > 0 ? (
+                      <CampoProntoVariedade
+                        valor={pronto}
+                        max={maxPronto}
+                        disabled={salvandoPronto}
+                        onSalvar={quantidade =>
+                          onDefinirPronto(
+                            linhasAbertas.map(linha => linha.id),
+                            quantidade,
+                          )
+                        }
                       />
-                    ))}
+                    ) : null}
                   </div>
-                </div>
-              ) : null}
-            </>
+                );
+              })}
+            </div>
           )}
         </CardContent>
       </Card>
