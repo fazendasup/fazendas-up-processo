@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRole } from '@/hooks/useRole';
 
 type ReceitaForm = {
   nome: string;
@@ -192,6 +193,8 @@ export default function ReceitasPage() {
 }
 
 function ReceitasTabContent() {
+  const { isAdmin, isComercial, isVisitante } = useRole();
+  const podeExcluir = isAdmin || isComercial;
   const utils = trpc.useUtils();
   // Buscar variedades diretamente do DB (id numÃ©rico)
   const { data: variedadesDb } = trpc.variedades.list.useQuery();
@@ -418,10 +421,12 @@ function ReceitasTabContent() {
               escuro)
             </p>
           </div>
-          <Button className="bg-emerald-600 hover:bg-emerald-700 gap-1.5 shrink-0" onClick={openCreate}>
-            <Plus className="w-4 h-4" />
-            Nova receita
-          </Button>
+          {!isVisitante ? (
+            <Button className="bg-emerald-600 hover:bg-emerald-700 gap-1.5 shrink-0" onClick={openCreate}>
+              <Plus className="w-4 h-4" />
+              Nova receita
+            </Button>
+          ) : null}
         </div>
 
         {/* Filtro por variedade */}
@@ -513,34 +518,40 @@ function ReceitasTabContent() {
                             </span>
                           )}
                         </div>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={(e) => { e.stopPropagation(); openEdit(receita); }}
-                          title="Editar"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={(e) => { e.stopPropagation(); openDuplicateFrom(receita); }}
-                          title="Copiar para nova receita"
-                        >
-                          <Copy className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={(e) => { e.stopPropagation(); handleDelete(receita.id, receita.nome); }}
-                          disabled={deleteReceita.isPending}
-                          title="Excluir"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                        {!isVisitante ? (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => { e.stopPropagation(); openEdit(receita); }}
+                              title="Editar"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => { e.stopPropagation(); openDuplicateFrom(receita); }}
+                              title="Copiar para nova receita"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </Button>
+                          </>
+                        ) : null}
+                        {podeExcluir ? (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={(e) => { e.stopPropagation(); handleDelete(receita.id, receita.nome); }}
+                            disabled={deleteReceita.isPending}
+                            title="Excluir"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        ) : null}
                         {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                       </div>
                     </div>

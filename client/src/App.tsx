@@ -318,14 +318,14 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/receitas">
-            <ProtectedRoute requiredRole="comercial">
+            <ProtectedRoute requiredRole="operacao">
               <ComercialPerfilRouteGuard path="/receitas">
                 <ReceitasPage />
               </ComercialPerfilRouteGuard>
             </ProtectedRoute>
           </Route>
           <Route path="/cadastros">
-            <ProtectedRoute requiredRole="comercial">
+            <ProtectedRoute requiredRole="operacao">
               <ComercialPerfilRouteGuard path="/cadastros">
                 <ReceitasPage />
               </ComercialPerfilRouteGuard>

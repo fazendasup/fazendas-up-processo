@@ -185,14 +185,11 @@ describe("Permissões: admin global + projeto (adminProjectProcedure)", () => {
     await expect(caller.admin.reset()).rejects.toThrow(/permission|forbidden/i);
   });
 
-  it("bloqueia operador de criar variedade", async () => {
+  it("permite operador criar variedade", async () => {
+    vi.spyOn(db, "createVariedade").mockResolvedValue({ id: 41 } as Awaited<ReturnType<typeof db.createVariedade>>);
     const ctx = createContext("user", { projetoHeader: "1" });
     const caller = appRouter.createCaller(ctx);
-    await expect(
-      caller.variedades.create({
-        nome: "Test",
-      }),
-    ).rejects.toThrow(/permission|forbidden/i);
+    await expect(caller.variedades.create({ nome: "Test" })).resolves.toMatchObject({ id: 41 });
   });
 
   it("bloqueia operador de criar ciclo", async () => {

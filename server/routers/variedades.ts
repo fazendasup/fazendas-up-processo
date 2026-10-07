@@ -71,7 +71,7 @@ export const variedadesRouter = router({
 
       return eventos;
     }),
-  create: commercialEditorProjectProcedure
+  create: projectProcedure
     .input(
       z.object({
         slug: z.string().optional(),
@@ -97,7 +97,7 @@ export const variedadesRouter = router({
         babyLeaf: input.babyLeaf ?? false,
       });
     }),
-  update: commercialEditorProjectProcedure
+  update: projectProcedure
     .input(
       z.object({
         id: z.number(),

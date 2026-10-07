@@ -33,8 +33,8 @@ export const medicoesCaixaRouter = router({
         executadoPorNome: ctx.user.name || "Usuário",
       });
     }),
-  /** Admin: corrige EC/pH/temp sem apagar o registro; grava auditoria com valores anteriores. */
-  update: adminProjectProcedure
+  /** Corrige EC, pH e temperatura sem apagar o registro; grava auditoria com os valores anteriores. */
+  update: projectProcedure
     .input(
       z.object({
         id: z.number(),
@@ -58,7 +58,7 @@ export const medicoesCaixaRouter = router({
         },
         {
           usuarioId: ctx.user.id,
-          usuarioNome: ctx.user.name || "Admin",
+          usuarioNome: ctx.user.name || "Operador",
           motivo: input.motivo ?? null,
         },
       );

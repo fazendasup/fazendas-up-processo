@@ -10,8 +10,8 @@ import { isCommercialAccessRole, isOperationalAdminRole, isPlatformCommercialRol
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  /** `processo` bloqueia usuários somente-comerciais; `comercial` permite comercial/admin/plataforma. */
-  requiredRole?: "user" | "processo" | "admin" | "platform_admin" | "comercial";
+  /** `processo` bloqueia usuários somente-comerciais; `comercial` permite comercial/admin/plataforma; `operacao` permite os dois. */
+  requiredRole?: "user" | "processo" | "operacao" | "admin" | "platform_admin" | "comercial";
   fallback?: React.ReactNode;
 }
 
@@ -44,6 +44,26 @@ export default function ProtectedRoute({ children, requiredRole = "user", fallba
         <div className="text-center max-w-sm">
           <Loader2 className="w-8 h-8 animate-spin text-muted-foreground mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">A redirecionar para o login…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    requiredRole === "operacao" &&
+    !isProcessAccessRole(user.role) &&
+    !isCommercialAccessRole(user.role)
+  ) {
+    if (fallback) return <>{fallback}</>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center max-w-sm">
+          <ShieldAlert className="w-12 h-12 text-destructive/40 mx-auto mb-4" />
+          <h2 className="font-display text-xl font-bold mb-2">Acesso restrito</h2>
+          <p className="text-sm text-muted-foreground mb-4">Esta conta tem acesso somente às áreas liberadas para seu perfil.</p>
+          <Button variant="outline" asChild>
+            <a href="/projetos">Projetos</a>
+          </Button>
         </div>
       </div>
     );

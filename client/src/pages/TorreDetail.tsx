@@ -74,7 +74,8 @@ export default function TorreDetail() {
   const isMicroverdes = activeProjeto?.tipo === 'microverdes' || torreCultivoMv;
   const projetoTipo = data.projetoTipo ?? activeProjeto?.tipo ?? null;
   const unidOperacao = termoUnidadeProducao(isMicroverdes ? 'microverdes' : projetoTipo);
-  const { isVisitante, isAdmin, loading: roleLoading } = useRole();
+  const { isVisitante, isOperador, isAdmin, loading: roleLoading } = useRole();
+  const podeCorrigirMedicao = !roleLoading && !isVisitante && (isOperador || isAdmin);
   const mutations = useFazendaMutations();
   const isReadOnly = roleLoading || isVisitante || mutations.isReadOnly;
   const resolver = useDbIdResolver();
@@ -1142,7 +1143,7 @@ export default function TorreDetail() {
   };
 
   const handleSaveEditMedicao = () => {
-    if (!editMedicao || !isAdmin) return;
+    if (!editMedicao || !podeCorrigirMedicao) return;
     const dbId = resolver.medicaoFrontIdToDbId.get(editMedicao.id);
     if (!dbId) {
       toast.error('Medição não encontrada');
@@ -1509,7 +1510,7 @@ export default function TorreDetail() {
                                 </div>
                               )}
                               <div className="flex items-center gap-0.5 shrink-0">
-                                {item._type === 'medicao' && isAdmin && (
+                                {item._type === 'medicao' && podeCorrigirMedicao && (
                                   <button
                                     type="button"
                                     title="Corrigir medição"

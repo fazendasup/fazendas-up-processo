@@ -48,7 +48,7 @@ export const receitasRouter = router({
     .query(async ({ ctx, input }) => {
       return db.getReceitasByVariedadeId(projetoIdFromCtx(ctx), input.variedadeId);
     }),
-  create: commercialEditorProjectProcedure
+  create: projectProcedure
     .input(receitaInputSchema)
     .mutation(async ({ input, ctx }) => {
       const projetoId = projetoIdFromCtx(ctx);
@@ -62,7 +62,7 @@ export const receitasRouter = router({
       await db.syncVariedadeDiasFromReceitaPrioritaria(projetoId, input.variedadeId);
       return out;
     }),
-  update: commercialEditorProjectProcedure
+  update: projectProcedure
     .input(
       receitaInputSchema.partial().extend({
         id: z.number(),

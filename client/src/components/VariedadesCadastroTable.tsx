@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { useFazenda } from '@/contexts/FazendaContext';
 import { useFazendaMutations } from '@/hooks/useFazendaMutations';
+import { useRole } from '@/hooks/useRole';
 import { useDbIdResolver } from '@/hooks/useDbIdResolver';
 import { trpc } from '@/lib/trpc';
 import { VARIEDADES_PADRAO } from '@/lib/types';
@@ -27,6 +28,8 @@ type Props = {
 };
 
 export function VariedadesCadastroTable({ notaTopo }: Props) {
+  const { isAdmin, isComercial, isVisitante } = useRole();
+  const podeExcluir = isAdmin || isComercial;
   const { data } = useFazenda();
   const mutations = useFazendaMutations();
   const resolver = useDbIdResolver();
@@ -142,10 +145,13 @@ export function VariedadesCadastroTable({ notaTopo }: Props) {
             <FileDown className="w-3 h-3 mr-1" />
             Exportar lotes
           </Button>
-          <Button variant="outline" size="sm" className="text-xs" onClick={handleResetVariedades}>
-            <RotateCcw className="w-3 h-3 mr-1" />
-            Restaurar
-          </Button>
+          {podeExcluir ? (
+            <Button variant="outline" size="sm" className="text-xs" onClick={handleResetVariedades}>
+              <RotateCcw className="w-3 h-3 mr-1" />
+              Restaurar
+            </Button>
+          ) : null}
+          {!isVisitante ? (
           <Dialog
             open={showAddVar}
             onOpenChange={(open) => {
@@ -187,6 +193,7 @@ export function VariedadesCadastroTable({ notaTopo }: Props) {
               </form>
             </DialogContent>
           </Dialog>
+          ) : null}
         </div>
       </div>
 
@@ -219,6 +226,7 @@ export function VariedadesCadastroTable({ notaTopo }: Props) {
                     <td className="p-3">
                       <Switch
                         checked={ehBaby}
+                        disabled={isVisitante}
                         onCheckedChange={(checked) => handleToggleBabyLeaf(v.id, checked)}
                         aria-label={`Baby leaf: ${v.nome}`}
                       />
@@ -240,13 +248,16 @@ export function VariedadesCadastroTable({ notaTopo }: Props) {
                         >
                           <History className="w-3 h-3" />
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteVariedade(v.id)}
-                          className="text-muted-foreground hover:text-destructive p-1"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
+                        {podeExcluir ? (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteVariedade(v.id)}
+                            className="text-muted-foreground hover:text-destructive p-1"
+                            title="Excluir"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        ) : null}
                       </div>
                     </td>
                   </tr>

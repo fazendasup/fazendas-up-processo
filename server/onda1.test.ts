@@ -86,17 +86,17 @@ describe("receitas", () => {
     expect(typeof receita.id).toBe("number");
   });
 
-  it("operator cannot create a receita", async () => {
+  it("operator can create a receita", async () => {
     const variedadeId = await getFirstVariedadeId();
     if (!variedadeId) return;
 
     const caller = appRouter.createCaller(createOperatorContext());
-    await expect(
-      caller.receitas.create({
-        nome: "Receita Operador",
-        variedadeId,
-      })
-    ).rejects.toThrow();
+    const receita = await caller.receitas.create({
+      nome: "Receita Operador",
+      variedadeId,
+    });
+    expect(receita.id).toBeGreaterThan(0);
+    await appRouter.createCaller(createAdminContext()).receitas.delete({ id: receita.id });
   });
 
   it("public cannot create a receita", async () => {
