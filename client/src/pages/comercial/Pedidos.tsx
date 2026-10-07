@@ -3049,27 +3049,30 @@ function CartaoSeparacao({
   const categoria = categoriaVisivel(produto.categoria);
 
   return (
-    <article
-      className={`rounded-lg border p-3 text-left ${
-        aberto
-          ? "border-amber-300/80 bg-amber-50/60 dark:border-amber-800/60 dark:bg-amber-950/20"
-          : "border-emerald-300/70 bg-emerald-50/50 dark:border-emerald-900/50 dark:bg-emerald-950/20"
-      }`}
-    >
-      <p
-        className={`font-display font-extrabold tabular-nums leading-none ${
-          aberto
-            ? "text-2xl text-amber-950 dark:text-amber-50"
-            : "text-sm text-emerald-800 dark:text-emerald-100"
-        }`}
-      >
-        {aberto ? `Separar ${formatQuantidade(falta)}` : "Separado"}
-      </p>
-      <p className="mt-2 text-sm font-semibold leading-snug">{produto.nome}</p>
-      {categoria ? (
-        <p className="mt-0.5 text-xs text-muted-foreground">{categoria}</p>
-      ) : null}
-      <p className="mt-1 text-xs leading-snug text-muted-foreground">{linhaDestinos(destinos)}</p>
+    <article className="rounded-lg border bg-background p-3 text-left">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold leading-snug">{produto.nome}</p>
+          {categoria ? (
+            <p className="mt-0.5 text-xs text-muted-foreground">{categoria}</p>
+          ) : null}
+          <p className="mt-1 text-xs leading-snug text-muted-foreground">{linhaDestinos(destinos)}</p>
+        </div>
+        {aberto ? (
+          <p className="shrink-0 text-right leading-none">
+            <span className="block text-xl font-semibold tabular-nums tracking-tight">
+              {formatQuantidade(falta)}
+            </span>
+            <span className="mt-1 block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              falta
+            </span>
+          </p>
+        ) : (
+          <span className="shrink-0 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+            Separado
+          </span>
+        )}
+      </div>
       {podeEditar && linhasAbertas.length > 0 ? (
         <CampoProntoVariedade
           valor={pronto}
