@@ -8,7 +8,7 @@
   "ph": "5,8–6,2",
   "koh": {
     "estoque": "100 g / 1 L de água",
-    "rotina": "Todo dia, em todas as fases, até pH 5,8–6,2.",
+    "rotina": "Somente quando o pH estiver abaixo de 5,8–6,2. Não entra na agenda.",
     "aviso": "Nunca misturar o concentrado com outros químicos no mesmo recipiente.",
     "esperaMinutos": "10–15 min estável antes de H₂O₂, Infinito ou Cercobin"
   },
@@ -40,9 +40,9 @@
       "id": "mudas",
       "label": "Mudas",
       "idade": "0–14 dias",
-      "callout": "SEM Infinito e SEM Cercobin. Só KOH, H₂O₂, bio e ambiente.",
+      "callout": "SEM Infinito e SEM Cercobin. H₂O₂, bio e ambiente. KOH só se o pH estiver baixo.",
       "agenda": [
-        "KOH todo dia",
+        "KOH somente se o pH estiver abaixo de 5,8",
         "H₂O₂ a cada 2 dias",
         "Bio nos dias sem H₂O₂",
         "Sem Infinito e sem Cercobin"
@@ -55,7 +55,7 @@
       "idade": "14–28 dias",
       "callout": "Máx. 1 Infinito (dia 2–4) e 1 Cercobin (dia 8–10). Nunca no mesmo dia.",
       "agenda": [
-        "H₂O₂ a cada 2 dias e KOH todo dia",
+        "H₂O₂ a cada 2 dias. KOH só se o pH estiver abaixo de 5,8",
         "Infinito 1× sugerido nos dias 2–4, de manhã, com pelo menos 12 h após o H₂O₂ (preferir 24 h)",
         "Cercobin 1× sugerido nos dias 8–10, pelo menos 3 dias depois do Infinito, em dia sem H₂O₂",
         "Se pular o Infinito, o Cercobin pode ir por volta dos dias 4–6"
@@ -74,7 +74,7 @@
       "agenda": [
         "Infinito só se necessário, cedo, dias 1–3",
         "Cercobin cedo, dias 2–4",
-        "Últimos 5 dias (a partir do dia 9): sem sistêmico novo. KOH, oxigênio, frio e H₂O₂ de rotina",
+        "Últimos 5 dias (a partir do dia 9): sem sistêmico novo. Oxigênio, frio e H₂O₂ de rotina. KOH só se o pH estiver baixo",
         "Na colheita, alertar se o Infinito foi há menos de 3 dias. Carência conservadora; o RT pode confirmar"
       ],
       "janelas": [
@@ -93,7 +93,7 @@
     "Infinito com menos de 10 dias desde o último Infinito.",
     "Cercobin com menos de 10 dias desde o último. Preferir 14 dias.",
     "Qualquer químico se a temperatura da solução estiver em 24 °C ou mais.",
-    "H₂O₂, Infinito ou Cercobin antes do pH 5,8–6,2 estável por 10–15 min depois do KOH.",
+    "Se usou KOH, esperar o pH 5,8–6,2 estável por 10–15 min antes de H₂O₂, Infinito ou Cercobin.",
     "Depois de Infinito ou Cercobin: UV desligado por 24 h.",
     "Na Maturação, a partir do dia 9 da fase: não iniciar sistêmico novo.",
     "Na colheita, se o Infinito foi há menos de 3 dias: alertar e bloquear. O RT pode confirmar a carência."
@@ -103,7 +103,7 @@
     "Não aumentar a dose além do card do tanque.",
     "Não aplicar Infinito ou Cercobin em Mudas no fluxo padrão.",
     "Não juntar Infinito, Cercobin e H₂O₂ no mesmo dia.",
-    "Não aplicar químico sem KOH e pH antes.",
+    "Não aplicar químico com o pH fora de 5,8–6,2. KOH só entra se o pH estiver baixo.",
     "Não ignorar a carência na Maturação e na colheita."
   ],
   "compatibilidade": [

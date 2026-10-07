@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { and, eq } from "drizzle-orm";
 import { programacaoCiclos, type CicloProgramado } from "../../client/src/data/cicloFases14d";
-import { caixasAgua, ciclos, projetos } from "../../drizzle/schema";
+import { caixasAgua, cicloCaixaExecucoes, ciclos, projetos } from "../../drizzle/schema";
 import { closeDb, getDb } from "../db";
 
 function hojeSaoPaulo(agora = new Date()): string {
@@ -46,6 +46,18 @@ function misturaAsCaldas(nome: string, produto: string): boolean {
   return temForticell && temCaldaA;
 }
 
+/** Primeiro dia da agenda recomeçada. Datas anteriores são reancoradas uma vez. */
+const REINICIO_AGENDA = "2026-10-07";
+
+function ymdInicio(valor: unknown): string | null {
+  if (!valor) return null;
+  if (valor instanceof Date && !Number.isNaN(valor.getTime())) {
+    return valor.toISOString().slice(0, 10);
+  }
+  const prefixo = String(valor).slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(prefixo) ? prefixo : null;
+}
+
 function foliarDentroDaCaixa(nome: string, produto: string, alvo: string): boolean {
   const t = texto(`${nome} ${produto}`);
   if (t.startsWith("calda a") || t.startsWith("calda b")) return false;
@@ -80,8 +92,18 @@ export async function ensureProgramacaoCiclosProtocolo(agora = new Date()): Prom
       .from(ciclos)
       .where(eq(ciclos.projetoId, fazenda.id));
 
+    const reiniciar = existentes.some((ciclo) => {
+      const chave = chaveDoCiclo(ciclo.nome, ciclo.produto);
+      if (!chave || !ciclo.ativo) return false;
+      if (chave === "koh") return true;
+      const inicio = ymdInicio(ciclo.dataInicio);
+      return inicio == null || inicio < REINICIO_AGENDA;
+    });
+
     for (const ciclo of existentes) {
+      const chave = chaveDoCiclo(ciclo.nome, ciclo.produto);
       const desligar =
+        chave === "koh" ||
         misturaAsCaldas(ciclo.nome, ciclo.produto) ||
         foliarDentroDaCaixa(ciclo.nome, ciclo.produto, ciclo.alvo);
       if (!desligar || !ciclo.ativo) continue;
@@ -116,14 +138,31 @@ export async function ensureProgramacaoCiclosProtocolo(agora = new Date()): Prom
       const ja = existentes.find(
         (ciclo) => chaveDoCiclo(ciclo.nome, ciclo.produto) === item.chave && ciclo.ativo,
       );
-      if (ja && (item.chave === "A" || item.chave === "B") && Array.isArray(ja.diasSemana)) {
+      if (
+        ja &&
+        !reiniciar &&
+        (item.chave === "A" || item.chave === "B") &&
+        Array.isArray(ja.diasSemana)
+      ) {
         continue;
       }
       if (ja) {
         await db
           .update(ciclos)
-          .set({ ...dados, dataInicio: ja.dataInicio ?? dados.dataInicio })
+          .set({
+            ...dados,
+            dataInicio: reiniciar ? dados.dataInicio : (ja.dataInicio ?? dados.dataInicio),
+            ...(reiniciar
+              ? { ultimaExecucao: null, ultimoExecutorId: null, ultimoExecutorNome: null }
+              : {}),
+          })
           .where(and(eq(ciclos.id, ja.id), eq(ciclos.projetoId, fazenda.id)));
+        if (reiniciar) {
+          await db
+            .update(cicloCaixaExecucoes)
+            .set({ ultimaExecucao: null, dataAgenda: null })
+            .where(eq(cicloCaixaExecucoes.cicloId, ja.id));
+        }
       } else {
         await db.insert(ciclos).values({ ...dados, projetoId: fazenda.id });
       }

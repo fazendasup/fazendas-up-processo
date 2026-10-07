@@ -64,16 +64,28 @@ export default function AplicacaoSolucao({
                   ))}
                 </ul>
               ) : null}
-              <p className="mt-2 text-xs text-muted-foreground">{resumoAgenda(ciclos, cartao.id)}</p>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="mt-3 h-8 text-xs"
-                onClick={() => onAgendar(cartao.id)}
-              >
-                Agendar
-              </Button>
+              {cartao.id === "koh" ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Fora da agenda. Use a correção de pH quando a leitura estiver abaixo de 5,8.
+                </p>
+              ) : (
+                <p className="mt-2 text-xs text-muted-foreground">{resumoAgenda(ciclos, cartao.id)}</p>
+              )}
+              {cartao.id === "koh" ? (
+                <Button type="button" size="sm" variant="outline" className="mt-3 h-8 text-xs" asChild>
+                  <a href="/correcao-ec">Corrigir pH</a>
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="mt-3 h-8 text-xs"
+                  onClick={() => onAgendar(cartao.id)}
+                >
+                  Agendar
+                </Button>
+              )}
             </article>
           ))}
         </div>

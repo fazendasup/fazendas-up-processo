@@ -405,10 +405,19 @@ function proximoOffset(segunda: string, hoje: string, offsets: number[]): string
   return hoje;
 }
 
+function proximoDiaSemana(hoje: string, dia: number): string {
+  for (let i = 0; i < 7; i++) {
+    const ymd = somarDias(hoje, i);
+    if (diaDaSemana(ymd) === dia) return ymd;
+  }
+  return hoje;
+}
+
 /**
- * Agenda alinhada à semana: peróxido nos dias pares a partir da segunda,
- * bio nos ímpares, Infinito na quinta (24 h depois do peróxido) e
- * Cercobin 6 dias depois, fora do peróxido. Calda A na sexta, Calda B na segunda.
+ * Agenda a partir de hoje: peróxido nos dias pares da semana, bio nos ímpares,
+ * Infinito na quinta (24 h depois do peróxido) e Cercobin fora do peróxido,
+ * pelo menos 3 dias depois. Calda A na sexta, Calda B na segunda.
+ * KOH não entra: só quando o pH estiver abaixo da faixa.
  */
 export function programacaoCiclos(hojeYmd: string): CicloProgramado[] {
   const segunda = segundaDaSemana(hojeYmd);
@@ -416,21 +425,9 @@ export function programacaoCiclos(hojeYmd: string): CicloProgramado[] {
   const bio = cartaoSolucao("bio");
   const infinito = cartaoSolucao("infinito");
   const cercobin = cartaoSolucao("cercobin");
-  const koh = cartaoSolucao("koh");
   const caldaA = caldaFoliar("A");
   const caldaB = caldaFoliar("B");
   return [
-    {
-      chave: "koh",
-      nome: koh.nome,
-      produto: koh.produto,
-      tipo: "Solução",
-      frequencia: "diaria",
-      fases: koh.fases,
-      dosagem: koh.dosagemAgenda,
-      dataInicio: hojeYmd,
-      caixas: "todas",
-    },
     {
       chave: "peroxido",
       nome: peroxido.nome,
@@ -488,7 +485,7 @@ export function programacaoCiclos(hojeYmd: string): CicloProgramado[] {
       diasSemana: [5],
       fases: ["mudas", "vegetativa", "maturacao"],
       dosagem: caldaA.dosagemAgenda,
-      dataInicio: segunda,
+      dataInicio: proximoDiaSemana(hojeYmd, 5),
       caixas: "nenhuma",
     },
     {
@@ -500,7 +497,7 @@ export function programacaoCiclos(hojeYmd: string): CicloProgramado[] {
       diasSemana: [1],
       fases: ["mudas", "vegetativa", "maturacao"],
       dosagem: caldaB.dosagemAgenda,
-      dataInicio: segunda,
+      dataInicio: proximoDiaSemana(hojeYmd, 1),
       caixas: "nenhuma",
     },
   ];

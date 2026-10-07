@@ -95,7 +95,7 @@ export default function ProtocoloFases14d() {
               return (
                 <div
                   key={dia}
-                  title={rotulos.join(" · ") || "KOH"}
+                  title={rotulos.join(" · ") || "Rotina da fase"}
                   className={`rounded-md border px-1 py-1.5 text-center text-[10px] leading-tight ${
                     bloqueio
                       ? "border-amber-500/50 bg-amber-500/10"

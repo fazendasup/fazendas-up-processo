@@ -182,7 +182,10 @@ describe("protocolo fases 14 dias", () => {
     });
     expect(porChave.cercobin.dataInicio).toBe("2026-10-07");
     expect(porChave.A.diasSemana).toEqual([5]);
+    expect(porChave.A.dataInicio).toBe("2026-10-02");
     expect(porChave.B.diasSemana).toEqual([1]);
+    expect(porChave.B.dataInicio).toBe("2026-10-05");
+    expect(porChave.koh).toBeUndefined();
 
     for (const item of agenda) {
       if (item.tipo !== "Solução") continue;
@@ -213,5 +216,25 @@ describe("protocolo fases 14 dias", () => {
         }),
       ).toBeNull();
     }
+  });
+
+  it("recomeça em 7 de outubro sem KOH na agenda", () => {
+    const agenda = programacaoCiclos("2026-10-07");
+    const porChave = Object.fromEntries(agenda.map((item) => [item.chave, item]));
+    expect(porChave.koh).toBeUndefined();
+    expect(porChave.peroxido.dataInicio).toBe("2026-10-07");
+    expect(porChave.bio.dataInicio).toBe("2026-10-08");
+    expect(porChave.infinito).toMatchObject({
+      dataInicio: "2026-10-08",
+      fases: ["vegetativa", "maturacao"],
+      caixas: "sem-mudas",
+    });
+    expect(porChave.cercobin).toMatchObject({
+      dataInicio: "2026-10-14",
+      fases: ["vegetativa", "maturacao"],
+      caixas: "sem-mudas",
+    });
+    expect(porChave.A.dataInicio).toBe("2026-10-09");
+    expect(porChave.B.dataInicio).toBe("2026-10-12");
   });
 });

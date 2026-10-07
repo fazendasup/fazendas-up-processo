@@ -751,7 +751,7 @@ export default function CiclosPage() {
 
                       {tipo.trim().toLowerCase() === 'solução' && (
                         <p className="mt-2 text-[11px] text-muted-foreground">
-                          KOH primeiro, com pH estável 10–15 min. A dose é a do tanque de 310 L ou 500 L.
+                          Se o pH estiver baixo, corrija com KOH e espere 10–15 min estável. A dose dos outros produtos é a do tanque de 310 L ou 500 L.
                         </p>
                       )}
 
