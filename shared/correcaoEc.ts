@@ -24,19 +24,19 @@ export type ReceitaConcentradoAb = {
   fatorTds: number;
 };
 
-/** Receita informada pelo produtor (2×50 L). */
+/** Receita das caixas A e B (complete 50 L cada). A dose de EC usa essa concentração. */
 export const RECEITA_AB_PADRAO: ReceitaConcentradoAb = {
   volumeGalaoL: 50,
   fatorTds: 700,
   galaoA: [
-    { id: "kno3", nome: "Nitrato de potássio (KNO₃)", massaKg: 5.172 },
-    { id: "mgso4", nome: "Sulfato de magnésio 7H₂O", massaKg: 5.07 },
-    { id: "map", nome: "MAP", massaKg: 1.316 },
-    { id: "micros", nome: "Micros", massaKg: 0.2 },
+    { id: "nks", nome: "NKS 13-00-43 +1Mg", massaKg: 3.6 },
+    { id: "mkp", nome: "MKP", massaKg: 1.4 },
+    { id: "mgso4", nome: "Sulfato de Mg 9,5%", massaKg: 2.8 },
+    { id: "dripsol", nome: "Dripsol Micro Equilíbrio", massaKg: 0.12 },
   ],
   galaoB: [
-    { id: "cano3", nome: "Nitrato de cálcio (Ca(NO₃)₂·4H₂O)", massaKg: 6.29 },
-    { id: "fe", nome: "Quelato de ferro", massaKg: 0.25 },
+    { id: "calcinit", nome: "YaraLiva Calcinit", massaKg: 6.2 },
+    { id: "fe-eddha", nome: "Ferro EDDHA 6%", massaKg: 0.2 },
   ],
 };
 

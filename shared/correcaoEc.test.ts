@@ -10,8 +10,8 @@ describe("correcaoEc", () => {
   it("calcula concentração dos galões A/B", () => {
     const a = concentracaoGalaoGL(RECEITA_AB_PADRAO.galaoA, 50);
     const b = concentracaoGalaoGL(RECEITA_AB_PADRAO.galaoB, 50);
-    expect(a).toBeCloseTo(235.16, 1);
-    expect(b).toBeCloseTo(130.8, 1);
+    expect(a).toBeCloseTo(158.4, 1);
+    expect(b).toBeCloseTo(128, 1);
   });
 
   it("estima potência > 0", () => {
@@ -26,9 +26,16 @@ describe("correcaoEc", () => {
       ecAlvo: 1.5,
     });
     expect(r.aviso).toBeNull();
-    expect(r.mlA).toBeGreaterThan(0);
+    expect(r.mlA).toBe(733.2);
     expect(r.mlA).toBe(r.mlB);
-    expect(r.sais.length).toBe(6);
+    expect(r.sais.map((s) => s.nome)).toEqual([
+      "NKS 13-00-43 +1Mg",
+      "MKP",
+      "Sulfato de Mg 9,5%",
+      "Dripsol Micro Equilíbrio",
+      "YaraLiva Calcinit",
+      "Ferro EDDHA 6%",
+    ]);
   });
 
   it("sugere diluição quando EC alvo < atual", () => {

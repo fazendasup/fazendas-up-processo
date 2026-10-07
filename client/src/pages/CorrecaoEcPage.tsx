@@ -24,6 +24,7 @@ import { trpc } from "@/lib/trpc";
 import {
   RECEITA_AB_PADRAO,
   calcularCorrecaoEc,
+  concentracaoGalaoGL,
   type ReceitaConcentradoAb,
 } from "@shared/correcaoEc";
 import {
@@ -48,9 +49,38 @@ import {
   rememberCalculadoraProjetoId,
 } from "@/lib/pwa";
 
-const STORAGE_KEY_EC = "fazendas.correcaoEc.receita";
+const STORAGE_KEY_EC = "fazendas.correcaoEc.receita.v2";
 const STORAGE_KEY_PH = "fazendas.correcaoPh.fatorMlEstoque";
 const FASES_ORDEM: Fase[] = ["mudas", "vegetativa", "maturacao"];
+
+const SOLUCOES_CONCENTRADAS = [
+  {
+    id: "A",
+    titulo: "Caixa A",
+    tom: "border-emerald-500/30 bg-emerald-500/[0.04]",
+    tituloClasse: "text-emerald-800 dark:text-emerald-200",
+    passos: [
+      "Use uma caixa limpa, só do concentrado A, com a marca de 50 L.",
+      "Coloque água limpa sem encher os 50 L.",
+      "Dissolva um produto de cada vez, na ordem da lista. Mexa até o sólido sumir antes do próximo.",
+      "Complete com água até 50 L e misture de novo.",
+      "Identifique a caixa como Concentrado A.",
+    ],
+  },
+  {
+    id: "B",
+    titulo: "Caixa B",
+    tom: "border-sky-500/30 bg-sky-500/[0.04]",
+    tituloClasse: "text-sky-800 dark:text-sky-200",
+    passos: [
+      "Use outra caixa limpa, só do concentrado B. Não aproveite a caixa do A.",
+      "Coloque água limpa sem encher os 50 L.",
+      "Dissolva o Calcinit por completo. Depois dissolva o ferro.",
+      "Complete com água até 50 L e misture de novo.",
+      "Identifique a caixa como Concentrado B.",
+    ],
+  },
+] as const;
 export const CALCULADORA_PUBLIC_PATH = "/calculadora";
 
 function meioFaixa(min: number, max: number): number {
@@ -384,8 +414,8 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               {publicMode
-                ? "Ferramenta aberta — sem login. Escolha EC (concentrados A/B) ou pH (KOH P.A.)."
-                : "Ferramenta liberada para operadores. Escolha EC (concentrados A/B) ou pH (hidróxido de potássio P.A.)."}
+                ? "Ferramenta aberta — sem login. Escolha EC, pH ou o preparo das soluções A e B."
+                : "Ferramenta liberada para operadores. Escolha EC, pH ou o preparo das soluções A e B."}
             </p>
             <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
               <Link href={hrefBpf("tr-fit1")} className="font-medium text-primary hover:underline">
@@ -472,12 +502,15 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
         </Card>
 
         <Tabs defaultValue="ec" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 h-auto">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto">
             <TabsTrigger value="ec" className="gap-1.5 text-xs sm:text-sm">
               <Droplets className="w-3.5 h-3.5" /> Correção EC
             </TabsTrigger>
             <TabsTrigger value="ph" className="gap-1.5 text-xs sm:text-sm">
               <FlaskConical className="w-3.5 h-3.5" /> Correção pH (KOH)
+            </TabsTrigger>
+            <TabsTrigger value="solucoes" className="gap-1.5 text-xs sm:text-sm">
+              <Beaker className="w-3.5 h-3.5" /> Soluções A e B
             </TabsTrigger>
           </TabsList>
 
@@ -621,8 +654,16 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
                   <CardTitle className="text-base">Concentrados A / B</CardTitle>
                   <CardDescription>
                     Estoque padrão: 2×{receita.volumeGalaoL} L · A{" "}
-                    {formatDecimalForInput(resultadoEc?.concA_gL ?? 235.16, 1)} g/L · B{" "}
-                    {formatDecimalForInput(resultadoEc?.concB_gL ?? 130.8, 1)} g/L
+                    {formatDecimalForInput(
+                      resultadoEc?.concA_gL ?? concentracaoGalaoGL(receita.galaoA, receita.volumeGalaoL),
+                      1,
+                    )}{" "}
+                    g/L · B{" "}
+                    {formatDecimalForInput(
+                      resultadoEc?.concB_gL ?? concentracaoGalaoGL(receita.galaoB, receita.volumeGalaoL),
+                      1,
+                    )}{" "}
+                    g/L
                   </CardDescription>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setMostrarReceita((v) => !v)}>
@@ -879,6 +920,51 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
                 </CardContent>
               ) : null}
             </Card>
+          </TabsContent>
+
+          <TabsContent value="solucoes" className="space-y-4 mt-0">
+            <div className="flex gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-50">
+              <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+              <p>
+                Prepare A e B em caixas separadas. Nunca misture os dois concentrados no mesmo recipiente: o cálcio do B
+                precipita com o fosfato e o sulfato do A.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {SOLUCOES_CONCENTRADAS.map((caixa) => (
+                <Card key={caixa.id} className={caixa.tom}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className={`text-base ${caixa.tituloClasse}`}>{caixa.titulo}</CardTitle>
+                    <CardDescription>Complete {RECEITA_AB_PADRAO.volumeGalaoL} L</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <ul className="space-y-1.5 text-sm">
+                      {(caixa.id === "A" ? RECEITA_AB_PADRAO.galaoA : RECEITA_AB_PADRAO.galaoB).map((item) => (
+                        <li key={item.id} className="flex items-baseline justify-between gap-3">
+                          <span>{item.nome}</span>
+                          <span className="shrink-0 font-semibold tabular-nums">
+                            {new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 }).format(
+                              Math.round(item.massaKg * 1000),
+                            )}{" "}
+                            g
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    <ol className="list-decimal space-y-1.5 pl-4 text-sm text-muted-foreground">
+                      {caixa.passos.map((passo) => (
+                        <li key={passo}>{passo}</li>
+                      ))}
+                    </ol>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Na caixa de cultivo, A e B entram separados e em volumes iguais. A dose de correção fica na aba Correção EC.
+            </p>
           </TabsContent>
         </Tabs>
       </main>
