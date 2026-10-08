@@ -1,4 +1,5 @@
 import {
+  diaIsoAmericaSp,
   listarMesesYmEntre,
   periodoMesAnterior,
 } from "@shared/comercial/periodo-america-sp";
@@ -139,5 +140,151 @@ export function montarProjecaoVolumeBase(input: {
       quantidadeMediaMensal: round2(quantidadeTotal / nMesesBase),
       valorMediaMensal: round2(valorBrutoTotal / nMesesBase),
     },
+  };
+}
+
+export type LevantamentoUnidade = {
+  clienteId: string;
+  cliente: string;
+  q1: number;
+  q2: number;
+  totalUn: number;
+  faturamentoQ1: number;
+  faturamentoQ2: number;
+  faturamento: number;
+  vendas: number;
+  share: number;
+};
+
+export type LevantamentoUnidades = {
+  precoMedio: number;
+  volumeTotal: number;
+  faturamentoTotal: number;
+  volumeQ1: number;
+  volumeQ2: number;
+  faturamentoQ1: number;
+  faturamentoQ2: number;
+  variacaoVolumeQ2: number | null;
+  vendas: number;
+  unidades: number;
+  mediaPorUnidade: number;
+  faturamentoMedioPorUnidade: number;
+  top3: {
+    nomes: string;
+    volume: number;
+    faturamento: number;
+    share: number;
+  };
+  linhas: LevantamentoUnidade[];
+};
+
+function quinzenaAmericaSp(data: Date): 1 | 2 {
+  const dia = Number(diaIsoAmericaSp(data).slice(8, 10));
+  return dia <= 15 ? 1 : 2;
+}
+
+/** Volume e faturamento por cliente, partido em 1ª quinzena (dias 1–15) e 2ª (dia 16 em diante). */
+export function montarLevantamentoUnidades(
+  vendas: Array<{
+    dataPedido: Date;
+    clienteId: string;
+    clienteNome: string;
+    itens: Array<{ quantidade: unknown; precoUnit: unknown }>;
+  }>,
+): LevantamentoUnidades {
+  const map = new Map<
+    string,
+    {
+      clienteId: string;
+      cliente: string;
+      q1: number;
+      q2: number;
+      faturamentoQ1: number;
+      faturamentoQ2: number;
+      vendas: number;
+    }
+  >();
+
+  for (const venda of vendas) {
+    const q = quinzenaAmericaSp(venda.dataPedido);
+    const row = addMap(map, venda.clienteId, () => ({
+      clienteId: venda.clienteId,
+      cliente: venda.clienteNome,
+      q1: 0,
+      q2: 0,
+      faturamentoQ1: 0,
+      faturamentoQ2: 0,
+      vendas: 0,
+    }));
+    let entrou = false;
+    for (const item of venda.itens) {
+      const quantidade = n(item.quantidade);
+      const valor = quantidade * n(item.precoUnit);
+      if (quantidade === 0 && valor === 0) continue;
+      entrou = true;
+      if (q === 1) {
+        row.q1 += quantidade;
+        row.faturamentoQ1 += valor;
+      } else {
+        row.q2 += quantidade;
+        row.faturamentoQ2 += valor;
+      }
+    }
+    if (entrou) row.vendas += 1;
+  }
+
+  const bruto = [...map.values()]
+    .map(row => {
+      const totalUn = row.q1 + row.q2;
+      const faturamento = row.faturamentoQ1 + row.faturamentoQ2;
+      return { ...row, totalUn, faturamento };
+    })
+    .filter(row => row.totalUn > 0 || row.faturamento > 0)
+    .sort(
+      (a, b) => b.totalUn - a.totalUn || b.faturamento - a.faturamento || a.cliente.localeCompare(b.cliente, "pt-BR"),
+    );
+
+  const volumeTotal = bruto.reduce((s, r) => s + r.totalUn, 0);
+  const faturamentoTotal = bruto.reduce((s, r) => s + r.faturamento, 0);
+  const volumeQ1 = bruto.reduce((s, r) => s + r.q1, 0);
+  const volumeQ2 = bruto.reduce((s, r) => s + r.q2, 0);
+  const faturamentoQ1 = bruto.reduce((s, r) => s + r.faturamentoQ1, 0);
+  const faturamentoQ2 = bruto.reduce((s, r) => s + r.faturamentoQ2, 0);
+  const unidades = bruto.length;
+  const top = bruto.slice(0, 3);
+  const volumeTop = top.reduce((s, r) => s + r.totalUn, 0);
+  const faturamentoTop = top.reduce((s, r) => s + r.faturamento, 0);
+
+  return {
+    precoMedio: volumeTotal > 0 ? round2(faturamentoTotal / volumeTotal) : 0,
+    volumeTotal: round2(volumeTotal),
+    faturamentoTotal: round2(faturamentoTotal),
+    volumeQ1: round2(volumeQ1),
+    volumeQ2: round2(volumeQ2),
+    faturamentoQ1: round2(faturamentoQ1),
+    faturamentoQ2: round2(faturamentoQ2),
+    variacaoVolumeQ2: variacaoPct(volumeQ2, volumeQ1),
+    vendas: bruto.reduce((s, r) => s + r.vendas, 0),
+    unidades,
+    mediaPorUnidade: unidades > 0 ? round2(volumeTotal / unidades) : 0,
+    faturamentoMedioPorUnidade: unidades > 0 ? round2(faturamentoTotal / unidades) : 0,
+    top3: {
+      nomes: top.map(r => r.cliente).join(" + "),
+      volume: round2(volumeTop),
+      faturamento: round2(faturamentoTop),
+      share: volumeTotal > 0 ? volumeTop / volumeTotal : 0,
+    },
+    linhas: bruto.map(row => ({
+      clienteId: row.clienteId,
+      cliente: row.cliente,
+      q1: round2(row.q1),
+      q2: round2(row.q2),
+      totalUn: round2(row.totalUn),
+      faturamentoQ1: round2(row.faturamentoQ1),
+      faturamentoQ2: round2(row.faturamentoQ2),
+      faturamento: round2(row.faturamento),
+      vendas: row.vendas,
+      share: volumeTotal > 0 ? row.totalUn / volumeTotal : 0,
+    })),
   };
 }

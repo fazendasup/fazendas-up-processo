@@ -11,6 +11,7 @@ import { router, comercialProcedure } from "../../_core/trpc";
 import {
   addMap,
   curvaAbc,
+  montarLevantamentoUnidades,
   montarProjecaoVolumeBase,
   n,
   periodoAnterior,
@@ -723,6 +724,14 @@ export const relatoriosRouter = router({
           observacao:
             "Contratos não estão sincronizados na base comercial atual.",
         },
+        levantamento: montarLevantamentoUnidades(
+          vendas.map(p => ({
+            dataPedido: p.dataPedido,
+            clienteId: p.cliente.id,
+            clienteNome: p.cliente.nome,
+            itens: p.itens,
+          })),
+        ),
         orcamentos: orcamentos.map(p => {
           const comp = composicaoDoPedidoParaDashboard(p);
           return {

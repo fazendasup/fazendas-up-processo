@@ -5,7 +5,6 @@ import {
   Check,
   ChevronDown,
   Download,
-  FileBarChart,
   Info,
   Phone,
   Search,
@@ -65,6 +64,7 @@ import { ExportMenu } from "@/components/ui/export-menu";
 import { exportObjectRows } from "@/lib/exportTableDocument";
 
 const REPORTS = [
+  { id: "levantamento", label: "Levantamento por unidade" },
   { id: "vendas-cliente", label: "Vendas por cliente" },
   { id: "cmv", label: "CMV" },
   { id: "clientes-sem-vendas", label: "Clientes sem vendas" },
@@ -75,17 +75,12 @@ const REPORTS = [
   { id: "clientes-risco", label: "Clientes em risco" },
   { id: "margem", label: "Margem por cliente" },
   { id: "mix-produtos", label: "Mix e cross-sell" },
-  { id: "impostos", label: "Impostos" },
   { id: "clientes", label: "Relação de clientes" },
   { id: "vendas-detalhadas", label: "Vendas detalhadas" },
   { id: "produtos-vendidos", label: "Produtos vendidos" },
-  { id: "servicos", label: "Serviços" },
-  { id: "contratos", label: "Contratos" },
   { id: "orcamentos", label: "Orçamentos" },
-  { id: "financeiro-servico", label: "Financeiro cliente/serviço" },
   { id: "vendas-mes", label: "Vendas por mês" },
   { id: "projecao-volume", label: "Projeção de volume" },
-  { id: "vendedores", label: "Vendas por vendedor" },
 ] as const;
 
 type ReportId = "prioridades" | (typeof REPORTS)[number]["id"];
@@ -103,6 +98,7 @@ const CLIENTE_SITUACAO_OPTIONS: Array<{
 
 const ACTION_REPORTS: Array<{ id: ReportId; label: string }> = [
   { id: "prioridades", label: "Prioridades" },
+  { id: "levantamento", label: "Levantamento por unidade" },
   { id: "clientes-risco", label: "Clientes em risco" },
   { id: "clientes-sem-vendas", label: "Reativar clientes" },
   { id: "mix-produtos", label: "Cross-sell" },
@@ -2014,6 +2010,160 @@ export function Relatorios() {
             </ReportSection>
           ) : null}
 
+          {active === "levantamento" && data.levantamento ? (
+            <ReportSection
+              title="Levantamento por unidade"
+              description={`Volume e faturamento por cliente. Preço médio ${fmtMoney(data.levantamento.precoMedio)}. 1ª quinzena: dias 1 a 15. 2ª quinzena: dia 16 em diante.`}
+              rows={data.levantamento.linhas.map(r => ({
+                Unidade: r.cliente,
+                "1ª quinzena": r.q1,
+                "2ª quinzena": r.q2,
+                "Total un.": r.totalUn,
+                Faturamento: fmtMoney(r.faturamento),
+                Participação: fmtPct(r.share),
+              }))}
+            >
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-400/25 dark:bg-sky-950/20">
+                  <div className="text-xs font-bold uppercase tracking-wide text-sky-800 dark:text-sky-300">Volume total</div>
+                  <div className="mt-1 text-2xl font-bold tabular-nums">{fmtNumber(data.levantamento.volumeTotal, 1)}</div>
+                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{fmtNumber(data.levantamento.unidades)} clientes · {fmtNumber(data.levantamento.vendas)} vendas</p>
+                </div>
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-400/25 dark:bg-emerald-950/20">
+                  <div className="text-xs font-bold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">Faturamento total</div>
+                  <div className="mt-1 text-2xl font-bold tabular-nums">{fmtMoney(data.levantamento.faturamentoTotal)}</div>
+                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">Preço médio {fmtMoney(data.levantamento.precoMedio)}</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-white/5">
+                  <div className="text-xs font-bold uppercase tracking-wide text-slate-500">1ª quinzena</div>
+                  <div className="mt-1 text-2xl font-bold tabular-nums">{fmtNumber(data.levantamento.volumeQ1, 1)}</div>
+                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{fmtMoney(data.levantamento.faturamentoQ1)} · dias 1–15</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-white/5">
+                  <div className="text-xs font-bold uppercase tracking-wide text-slate-500">2ª quinzena</div>
+                  <div className="mt-1 text-2xl font-bold tabular-nums">{fmtNumber(data.levantamento.volumeQ2, 1)}</div>
+                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+                    {fmtMoney(data.levantamento.faturamentoQ2)} · {fmtVariacao(data.levantamento.variacaoVolumeQ2)} vs 1ª
+                  </p>
+                </div>
+              </div>
+              <div className="grid gap-3 lg:grid-cols-3">
+                <div className="rounded-2xl border border-slate-200 p-4 dark:border-white/10">
+                  <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Faturamento 1ª Q</div>
+                  <div className="mt-1 text-lg font-bold">{fmtMoney(data.levantamento.faturamentoQ1)}</div>
+                  <p className="text-xs text-slate-500">{fmtNumber(data.levantamento.volumeQ1, 1)} un.</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 p-4 dark:border-white/10">
+                  <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Faturamento 2ª Q</div>
+                  <div className="mt-1 text-lg font-bold">{fmtMoney(data.levantamento.faturamentoQ2)}</div>
+                  <p className="text-xs text-slate-500">{fmtNumber(data.levantamento.volumeQ2, 1)} un.</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 p-4 dark:border-white/10">
+                  <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Média por cliente</div>
+                  <div className="mt-1 text-lg font-bold">{fmtNumber(data.levantamento.mediaPorUnidade, 1)} un.</div>
+                  <p className="text-xs text-slate-500">{fmtMoney(data.levantamento.faturamentoMedioPorUnidade)} · média quinzenal {fmtNumber(data.levantamento.volumeTotal / 2, 1)} un.</p>
+                </div>
+              </div>
+              {data.levantamento.volumeQ1 === data.levantamento.volumeQ2 && data.levantamento.volumeTotal > 0 ? (
+                <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950 dark:border-emerald-400/25 dark:bg-emerald-950/20 dark:text-emerald-100">
+                  As duas quinzenas fecharam no mesmo volume: {fmtNumber(data.levantamento.volumeQ1, 1)} un. ({fmtMoney(data.levantamento.faturamentoQ1)}) cada. O período soma {fmtNumber(data.levantamento.volumeTotal, 1)} un. em {fmtNumber(data.levantamento.vendas)} vendas.
+                </p>
+              ) : null}
+              <ChartCard title="Quinzenas por cliente" description="Volume em unidades. Azul é a 1ª quinzena, roxo a 2ª.">
+                {data.levantamento.linhas.length ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data.levantamento.linhas.slice(0, 12)}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="cliente" tickFormatter={v => shortLabel(String(v), 14)} interval={0} height={48} />
+                      <YAxis />
+                      <Tooltip formatter={(v: any) => fmtNumber(Number(v), 1)} />
+                      <Legend />
+                      <Bar dataKey="q1" name="1ª quinzena" fill="#38bdf8" />
+                      <Bar dataKey="q2" name="2ª quinzena" fill="#8b5cf6" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <EmptyChart message="Sem vendas no período." />
+                )}
+              </ChartCard>
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)]">
+                <Table>
+                  <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
+                    <thead className="bg-slate-50 dark:bg-white/5">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Unidade</th>
+                        <th className="px-3 py-2 text-right">1ª Q</th>
+                        <th className="px-3 py-2 text-right">2ª Q</th>
+                        <th className="px-3 py-2 text-right">Total un.</th>
+                        <th className="px-3 py-2 text-right">R$ total</th>
+                        <th className="px-3 py-2 text-right">Share</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-white/10">
+                      {data.levantamento.linhas.map((r, index) => (
+                        <tr key={r.clienteId}>
+                          <td className="px-3 py-2 font-semibold">{index + 1}. {r.cliente}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">{fmtNumber(r.q1, 1)}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">{fmtNumber(r.q2, 1)}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">{fmtNumber(r.totalUn, 1)}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(r.faturamento)}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">{fmtPct(r.share)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </Table>
+                <div className="rounded-2xl border border-slate-200 p-4 dark:border-white/10">
+                  <h3 className="text-sm font-bold">Participação</h3>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {fmtNumber(data.levantamento.volumeTotal, 1)} un. · {fmtMoney(data.levantamento.faturamentoTotal)}
+                  </p>
+                  {data.levantamento.linhas.length ? (
+                    <div className="h-56">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={data.levantamento.linhas.slice(0, 8)}
+                            dataKey="totalUn"
+                            nameKey="cliente"
+                            innerRadius={58}
+                            outerRadius={80}
+                            paddingAngle={2}
+                          >
+                            {data.levantamento.linhas.slice(0, 8).map((_, i) => (
+                              <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(v: any) => fmtNumber(Number(v), 1)} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <p className="py-8 text-center text-sm text-slate-500">Sem vendas no período.</p>
+                  )}
+                  <ul className="space-y-1 text-xs text-slate-600 dark:text-slate-300">
+                    {data.levantamento.linhas.slice(0, 8).map((r, i) => (
+                      <li key={r.clienteId} className="flex items-center justify-between gap-2">
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: CHART_COLORS[i % CHART_COLORS.length] }} />
+                          <span className="truncate">{r.cliente}</span>
+                        </span>
+                        <span className="tabular-nums">{fmtPct(r.share)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {data.levantamento.top3.nomes ? (
+                    <p className="mt-3 text-xs text-slate-600 dark:text-slate-300">
+                      Top 3 = {fmtPct(data.levantamento.top3.share)} · {fmtMoney(data.levantamento.top3.faturamento)}
+                      <br />
+                      {data.levantamento.top3.nomes} = {fmtNumber(data.levantamento.top3.volume, 1)} un.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </ReportSection>
+          ) : null}
+
           {active === "vendas-cliente" ? (
             <ReportSection
               title="Análise das vendas por cliente"
@@ -2968,22 +3118,6 @@ export function Relatorios() {
             </ReportSection>
           ) : null}
 
-          {active === "impostos" ? (
-            <ReportSection
-              title="Relatório de Impostos"
-              description="Nota fiscal, valores e impostos por venda/serviço."
-              rows={data.impostos.linhas}
-            >
-              <ChartCard
-                title="Impostos por período"
-                description="Será preenchido quando notas e tributos estiverem sincronizados."
-              >
-                <EmptyChart message="Dados fiscais ainda indisponíveis na base comercial." />
-              </ChartCard>
-              <Notice>{data.impostos.observacao}</Notice>
-            </ReportSection>
-          ) : null}
-
           {active === "clientes" ? (
             <ReportSection
               title="Relação de clientes"
@@ -3559,38 +3693,6 @@ export function Relatorios() {
             </ReportSection>
           ) : null}
 
-          {active === "servicos" ? (
-            <ReportSection
-              title="Relação detalhada de serviços prestados"
-              description="Cliente, serviço, data, valor bruto, líquido e desconto aplicado."
-              rows={data.servicosPrestados.linhas}
-            >
-              <ChartCard
-                title="Serviços prestados por cliente"
-                description="Será preenchido quando a Conta Azul disponibilizar serviços na sincronização."
-              >
-                <EmptyChart message="Dados de serviços ainda indisponíveis." />
-              </ChartCard>
-              <Notice>{data.servicosPrestados.observacao}</Notice>
-            </ReportSection>
-          ) : null}
-
-          {active === "contratos" ? (
-            <ReportSection
-              title="Situação dos Contratos"
-              description="Contratos ativos ou encerrados, datas e valores em aberto/pagos/vencidos."
-              rows={data.contratos.linhas}
-            >
-              <ChartCard
-                title="Contratos por situação"
-                description="Será preenchido quando contratos estiverem persistidos na base comercial."
-              >
-                <EmptyChart message="Dados de contratos ainda indisponíveis." />
-              </ChartCard>
-              <Notice>{data.contratos.observacao}</Notice>
-            </ReportSection>
-          ) : null}
-
           {active === "orcamentos" ? (
             <ReportSection
               title="Situação dos orçamentos"
@@ -3687,51 +3789,8 @@ export function Relatorios() {
             </ReportSection>
           ) : null}
 
-          {active === "financeiro-servico" ? (
-            <ReportSection
-              title="Situação financeira por cliente e serviço"
-              description="Valores em aberto, pagos e vencidos por cliente/serviço."
-              rows={data.financeiraClienteServico.linhas}
-            >
-              <ChartCard
-                title="Financeiro por cliente e serviço"
-                description="Será preenchido quando aberto, pago e vencido forem sincronizados."
-              >
-                <EmptyChart message="Dados financeiros detalhados ainda indisponíveis." />
-              </ChartCard>
-              <Notice>{data.financeiraClienteServico.observacao}</Notice>
-            </ReportSection>
-          ) : null}
-
-          {active === "vendedores" ? (
-            <ReportSection
-              title="Análise das vendas por vendedor"
-              description="Produtos/serviços vendidos por vendedor, valores e descontos."
-              rows={data.vendasPorVendedor.linhas}
-            >
-              <ChartCard
-                title="Vendas por vendedor"
-                description="Será preenchido quando o vendedor estiver persistido nas vendas."
-              >
-                <EmptyChart message="Dados de vendedor ainda indisponíveis." />
-              </ChartCard>
-              <Notice>{data.vendasPorVendedor.observacao}</Notice>
-            </ReportSection>
-          ) : null}
         </>
       )}
-
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400">
-        <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100">
-          <FileBarChart className="h-4 w-4" />
-          Observação de integridade
-        </div>
-        <p className="mt-1">
-          Relatórios financeiros avançados dependem dos campos sincronizados.
-          Impostos, contratos, serviços e vendedor aparecem como indisponíveis
-          enquanto esses dados não estiverem persistidos na base comercial.
-        </p>
-      </div>
     </div>
   );
 }
