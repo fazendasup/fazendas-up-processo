@@ -471,6 +471,23 @@ type TotalDef<T> = {
   format?: (value: number) => string;
 };
 
+function repartirParticipacaoAbc<T extends { id: string; valor: number }>(rows: T[]) {
+  const total = rows.reduce((soma, row) => soma + Number(row.valor ?? 0), 0);
+  let acumulado = 0;
+  const acumuladoPorId = new Map<string, number>();
+  for (const row of [...rows].sort(
+    (a, b) => Number(b.valor) - Number(a.valor) || String(a.id).localeCompare(String(b.id)),
+  )) {
+    acumulado += Number(row.valor ?? 0);
+    acumuladoPorId.set(String(row.id), total > 0 ? acumulado / total : 0);
+  }
+  return rows.map(row => ({
+    ...row,
+    participacao: total > 0 ? Number(row.valor ?? 0) / total : 0,
+    acumulado: acumuladoPorId.get(String(row.id)) ?? 0,
+  }));
+}
+
 function TotalsBar<T>({
   rows,
   totals,
@@ -1406,15 +1423,11 @@ export function Relatorios() {
         ),
         "lucro-margem": filterRows("lucro-margem", data.lucroMargemMes),
         "maiores-clientes": filterRows("maiores-clientes", data.maioresClientes),
-        "abc-clientes": filterRowsDrill(
-          "abc-clientes",
-          data.abcClientes ?? [],
-          (r: any) => r.nome
+        "abc-clientes": repartirParticipacaoAbc(
+          filterRowsDrill("abc-clientes", data.abcClientes ?? [], (r: any) => r.nome),
         ),
-        "abc-produtos": filterRowsDrill(
-          "abc-produtos",
-          data.abcProdutos ?? [],
-          (r: any) => r.nome
+        "abc-produtos": repartirParticipacaoAbc(
+          filterRowsDrill("abc-produtos", data.abcProdutos ?? [], (r: any) => r.nome),
         ),
         "clientes-risco": filterRowsDrill(
           "clientes-risco",
@@ -2608,11 +2621,7 @@ export function Relatorios() {
             <ReportSection
               title="Curva ABC de clientes"
               description="Classificação A/B/C pela receita líquida acumulada. Clique no gráfico para filtrar."
-              rows={filterRowsDrill(
-                "abc-clientes",
-                data.abcClientes ?? [],
-                (r: any) => r.nome
-              ).map((r: any) => ({
+              rows={(totalRowsByReport["abc-clientes"] ?? []).map((r: any) => ({
                 cliente: r.nome,
                 classe: r.classe,
                 valor: r.valor,
@@ -2664,11 +2673,7 @@ export function Relatorios() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
-                    {filterRowsDrill(
-                      "abc-clientes",
-                      data.abcClientes ?? [],
-                      (r: any) => r.nome
-                    )
+                    {(totalRowsByReport["abc-clientes"] ?? [])
                       .slice(0, 100)
                       .map((r: any) => (
                         <tr key={r.id}>
@@ -2701,7 +2706,7 @@ export function Relatorios() {
             <ReportSection
               title="Curva ABC de produtos"
               description="Produtos que mais contribuem para o faturamento bruto."
-                  rows={filterRows("abc-produtos", data.abcProdutos ?? []).map(
+                  rows={(totalRowsByReport["abc-produtos"] ?? []).map(
                 (r: any) => ({
                   produto: r.nome,
                   "unidades vendidas": r.quantidade ?? 0,
@@ -2761,11 +2766,7 @@ export function Relatorios() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
-                    {filterRowsDrill(
-                      "abc-produtos",
-                      data.abcProdutos ?? [],
-                      (r: any) => r.nome
-                    ).map((r: any) => (
+                    {(totalRowsByReport["abc-produtos"] ?? []).map((r: any) => (
                       <tr key={r.id}>
                         <td className="px-3 py-2 font-semibold">{r.nome}</td>
                         <td className="px-3 py-2 text-right">

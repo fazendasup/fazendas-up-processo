@@ -1,5 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { montarLevantamentoUnidades } from "./relatorios-calculos";
+import { curvaAbc, montarLevantamentoUnidades } from "./relatorios-calculos";
+
+describe("curvaAbc", () => {
+  it("soma 100% mesmo com participações que o arredondamento quebraria", () => {
+    const curva = curvaAbc([
+      { id: "a", nome: "A", valor: 1 },
+      { id: "b", nome: "B", valor: 1 },
+      { id: "c", nome: "C", valor: 1 },
+    ]);
+    const soma = curva.reduce((total, linha) => total + linha.participacao, 0);
+    expect(soma).toBeCloseTo(1, 10);
+    expect(curva.at(-1)?.acumulado).toBeCloseTo(1, 10);
+  });
+});
 
 describe("montarLevantamentoUnidades", () => {
   it("parte o volume em quinzenas e ordena pela participação", () => {

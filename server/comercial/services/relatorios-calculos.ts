@@ -53,8 +53,8 @@ export function curvaAbc(
       id: row.id,
       nome: row.nome,
       valor: round2(row.valor),
-      participacao: round2(row.valor / total),
-      acumulado: round2(pctAcum),
+      participacao: row.valor / total,
+      acumulado: pctAcum,
       classe,
       ...(row.quantidade != null
         ? { quantidade: round2(row.quantidade) }
