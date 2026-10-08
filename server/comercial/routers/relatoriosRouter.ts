@@ -727,6 +727,7 @@ export const relatoriosRouter = router({
           const comp = composicaoDoPedidoParaDashboard(p);
           return {
             id: p.id,
+            numero: p.numeroVenda,
             cliente: p.cliente.nome,
             dataOrcamento: p.dataPedido,
             status: p.statusPedido,

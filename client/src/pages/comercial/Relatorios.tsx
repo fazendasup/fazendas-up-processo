@@ -1300,6 +1300,7 @@ export function Relatorios() {
     },
   ];
   const orcamentosColumns: ColumnFilterDef<any>[] = [
+    { key: "numero", label: "Número", value: r => r.numero ?? "" },
     { key: "data", label: "Data", value: r => fmtDate(r.dataOrcamento) },
     { key: "cliente", label: "Cliente", value: r => r.cliente },
     { key: "status", label: "Status", value: r => r.status },
@@ -3594,7 +3595,13 @@ export function Relatorios() {
             <ReportSection
               title="Situação dos orçamentos"
               description="Orçamentos em andamento, cliente, data e valor bruto."
-              rows={filterRows("orcamentos", data.orcamentos)}
+              rows={filterRows("orcamentos", data.orcamentos).map((r: any) => ({
+                Número: String(r.numero ?? "").trim() || "—",
+                Cliente: r.cliente ?? "",
+                Data: fmtDate(r.dataOrcamento),
+                Status: r.status ?? "",
+                Valor: fmtMoney(Number(r.valorBruto ?? 0)),
+              }))}
             >
               <ChartCard
                 title="Orçamentos por status"
@@ -3642,6 +3649,9 @@ export function Relatorios() {
                   <thead className="bg-slate-50 dark:bg-white/5">
                     <tr>
                       <th className="px-3 py-2 text-left">
+                        {columnHeader("orcamentos", "numero", "Número")}
+                      </th>
+                      <th className="px-3 py-2 text-left">
                         {columnHeader("orcamentos", "data", "Data")}
                       </th>
                       <th className="px-3 py-2 text-left">
@@ -3658,6 +3668,9 @@ export function Relatorios() {
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
                     {filterRows("orcamentos", data.orcamentos).map((r: any) => (
                       <tr key={r.id}>
+                        <td className="px-3 py-2 tabular-nums">
+                          {String(r.numero ?? "").trim() || "—"}
+                        </td>
                         <td className="px-3 py-2">
                           {fmtDate(r.dataOrcamento)}
                         </td>
