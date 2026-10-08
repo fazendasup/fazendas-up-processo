@@ -67,14 +67,10 @@ const REPORTS = [
   { id: "levantamento", label: "Levantamento por unidade" },
   { id: "vendas-cliente", label: "Vendas por cliente" },
   { id: "cmv", label: "CMV" },
-  { id: "clientes-sem-vendas", label: "Clientes sem vendas" },
   { id: "lucro-margem", label: "Lucro e margem" },
-  { id: "maiores-clientes", label: "Maiores clientes" },
   { id: "abc-clientes", label: "ABC clientes" },
   { id: "abc-produtos", label: "ABC produtos" },
-  { id: "clientes-risco", label: "Clientes em risco" },
   { id: "margem", label: "Margem por cliente" },
-  { id: "mix-produtos", label: "Mix e cross-sell" },
   { id: "clientes", label: "Relação de clientes" },
   { id: "vendas-detalhadas", label: "Vendas detalhadas" },
   { id: "produtos-vendidos", label: "Produtos vendidos" },
@@ -99,10 +95,6 @@ const CLIENTE_SITUACAO_OPTIONS: Array<{
 const ACTION_REPORTS: Array<{ id: ReportId; label: string }> = [
   { id: "prioridades", label: "Prioridades" },
   { id: "levantamento", label: "Levantamento por unidade" },
-  { id: "clientes-risco", label: "Clientes em risco" },
-  { id: "clientes-sem-vendas", label: "Reativar clientes" },
-  { id: "mix-produtos", label: "Cross-sell" },
-  { id: "maiores-clientes", label: "Top clientes" },
   { id: "margem", label: "Margem" },
   { id: "vendas-mes", label: "Mês a mês" },
   { id: "projecao-volume", label: "Projeção volume" },
@@ -622,7 +614,7 @@ type ComercialPriority = {
   detalhe: string;
   acao: string;
   valor?: string;
-  report: ReportId;
+  report?: ReportId;
   drillValue?: string;
   tone: "red" | "amber" | "emerald" | "sky";
 };
@@ -660,6 +652,10 @@ export function Relatorios() {
   const [metricaMes, setMetricaMes] = useState<
     "valorBruto" | "valorLiquido" | "frete" | "desconto"
   >("valorLiquido");
+  const [levantamentoMetrica, setLevantamentoMetrica] = useState<
+    "volume" | "faturamento"
+  >("volume");
+  const [levantamentoFiltro, setLevantamentoFiltro] = useState("");
   const [clienteSituacao, setClienteSituacao] =
     useState<ClienteSituacaoFiltro>("TODOS");
   const [mesesProjecao, setMesesProjecao] = useState(3);
@@ -690,6 +686,68 @@ export function Relatorios() {
     }
   );
   const data = q.data;
+  const levantamentoVista = useMemo(() => {
+    const linhasBase = data?.levantamento?.linhas ?? [];
+    const termo = levantamentoFiltro.trim().toLocaleLowerCase("pt-BR");
+    const filtradas = linhasBase.filter(
+      linha => !termo || linha.cliente.toLocaleLowerCase("pt-BR").includes(termo),
+    );
+    const porFaturamento = levantamentoMetrica === "faturamento";
+    const linhas = [...filtradas].sort((a, b) =>
+      porFaturamento
+        ? b.faturamento - a.faturamento || a.cliente.localeCompare(b.cliente, "pt-BR")
+        : b.totalUn - a.totalUn || a.cliente.localeCompare(b.cliente, "pt-BR"),
+    );
+    const volumeTotal = linhas.reduce((soma, linha) => soma + linha.totalUn, 0);
+    const faturamentoTotal = linhas.reduce((soma, linha) => soma + linha.faturamento, 0);
+    const volumeQ1 = linhas.reduce((soma, linha) => soma + linha.q1, 0);
+    const volumeQ2 = linhas.reduce((soma, linha) => soma + linha.q2, 0);
+    const faturamentoQ1 = linhas.reduce((soma, linha) => soma + linha.faturamentoQ1, 0);
+    const faturamentoQ2 = linhas.reduce((soma, linha) => soma + linha.faturamentoQ2, 0);
+    const base = porFaturamento ? faturamentoTotal : volumeTotal;
+    const comShare = linhas.map(linha => ({
+      ...linha,
+      shareVista:
+        base > 0 ? (porFaturamento ? linha.faturamento : linha.totalUn) / base : 0,
+    }));
+    const top = comShare.slice(0, 3);
+    const topBase = top.reduce(
+      (soma, linha) => soma + (porFaturamento ? linha.faturamento : linha.totalUn),
+      0,
+    );
+    return {
+      porFaturamento,
+      linhas: comShare,
+      volumeTotal,
+      faturamentoTotal,
+      volumeQ1,
+      volumeQ2,
+      faturamentoQ1,
+      faturamentoQ2,
+      vendas: linhas.reduce((soma, linha) => soma + linha.vendas, 0),
+      unidades: linhas.length,
+      precoMedio: volumeTotal > 0 ? faturamentoTotal / volumeTotal : 0,
+      mediaPorUnidade: linhas.length > 0 ? volumeTotal / linhas.length : 0,
+      faturamentoMedioPorUnidade: linhas.length > 0 ? faturamentoTotal / linhas.length : 0,
+      variacaoQ2: porFaturamento
+        ? faturamentoQ1 > 0
+          ? (faturamentoQ2 - faturamentoQ1) / faturamentoQ1
+          : faturamentoQ2 > 0
+            ? 1
+            : null
+        : volumeQ1 > 0
+          ? (volumeQ2 - volumeQ1) / volumeQ1
+          : volumeQ2 > 0
+            ? 1
+            : null,
+      top3: {
+        nomes: top.map(linha => linha.cliente).join(" + "),
+        volume: top.reduce((soma, linha) => soma + linha.totalUn, 0),
+        faturamento: top.reduce((soma, linha) => soma + linha.faturamento, 0),
+        share: base > 0 ? topBase / base : 0,
+      },
+    };
+  }, [data?.levantamento, levantamentoFiltro, levantamentoMetrica]);
 
   const topClientesChart = useMemo(
     () =>
@@ -888,8 +946,6 @@ export function Relatorios() {
         detalhe: `${r.motivo}. Antes: ${fmtMoney(r.valorAnterior)} | agora: ${fmtMoney(r.valorAtual)}.`,
         acao: "O vendedor deve chamar hoje e perguntar se houve problema, falta de produto ou troca de fornecedor.",
         valor: fmtVariacao(r.variacaoValor),
-        report: "clientes-risco",
-        drillValue: r.cliente,
         tone: "red",
       });
     }
@@ -903,8 +959,6 @@ export function Relatorios() {
         titulo: r.cliente,
         detalhe: `Sem compra há ${fmtNumber(r.diasSemVenda)} dias. Última venda: ${fmtDate(r.ultimaVenda)}.`,
         acao: "Enviar mensagem simples: conferir demanda da semana e oferecer o mix que ele costumava comprar.",
-        report: "clientes-sem-vendas",
-        drillValue: r.cliente,
         tone: "amber",
       });
     }
@@ -920,8 +974,6 @@ export function Relatorios() {
         detalhe: `Já compra: ${r.topProdutos || "mix não identificado"}.`,
         acao: `Na próxima conversa, oferecer ${sugestoes}.`,
         valor: fmtMoney(r.valorBruto),
-        report: "mix-produtos",
-        drillValue: r.cliente,
         tone: "emerald",
       });
     }
@@ -1985,25 +2037,27 @@ export function Relatorios() {
                         <Phone className="mr-2 inline h-4 w-4" />
                         {item.acao}
                       </div>
-                      <button
-                        type="button"
-                        className="mt-3 text-xs font-black underline underline-offset-4 opacity-80 transition hover:opacity-100"
-                        onClick={() => {
-                          setActive(item.report);
-                          setDrill(
-                            item.drillValue
-                              ? { report: item.report, value: item.drillValue }
-                              : null
-                          );
-                        }}
-                      >
-                        Ver dados que justificam esta ação
-                      </button>
+                      {item.report ? (
+                        <button
+                          type="button"
+                          className="mt-3 text-xs font-black underline underline-offset-4 opacity-80 transition hover:opacity-100"
+                          onClick={() => {
+                            setActive(item.report!);
+                            setDrill(
+                              item.drillValue
+                                ? { report: item.report!, value: item.drillValue }
+                                : null
+                            );
+                          }}
+                        >
+                          Ver dados que justificam esta ação
+                        </button>
+                      ) : null}
                     </div>
                   ))
                 ) : (
                   <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500 dark:border-white/15 dark:text-slate-400 lg:col-span-2">
-                    Nenhuma prioridade crítica encontrada neste período. Use os atalhos acima para revisar top clientes, margem e vendas do mês.
+                    Nenhuma prioridade crítica encontrada neste período. Use os atalhos acima para revisar o levantamento, a margem e as vendas do mês.
                   </div>
                 )}
               </div>
@@ -2013,77 +2067,108 @@ export function Relatorios() {
           {active === "levantamento" && data.levantamento ? (
             <ReportSection
               title="Levantamento por unidade"
-              description={`Volume e faturamento por cliente. Preço médio ${fmtMoney(data.levantamento.precoMedio)}. 1ª quinzena: dias 1 a 15. 2ª quinzena: dia 16 em diante.`}
-              rows={data.levantamento.linhas.map(r => ({
+              description={`Ordenado por ${levantamentoVista.porFaturamento ? "faturamento" : "volume"}. Preço médio ${fmtMoney(levantamentoVista.precoMedio)}. 1ª quinzena: dias 1 a 15. 2ª quinzena: dia 16 em diante.`}
+              rows={levantamentoVista.linhas.map(r => ({
                 Unidade: r.cliente,
-                "1ª quinzena": r.q1,
-                "2ª quinzena": r.q2,
+                "1ª quinzena": levantamentoVista.porFaturamento ? fmtMoney(r.faturamentoQ1) : r.q1,
+                "2ª quinzena": levantamentoVista.porFaturamento ? fmtMoney(r.faturamentoQ2) : r.q2,
                 "Total un.": r.totalUn,
                 Faturamento: fmtMoney(r.faturamento),
-                Participação: fmtPct(r.share),
+                Participação: fmtPct(r.shareVista),
               }))}
             >
+              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+                <label className="flex min-w-56 flex-1 flex-col gap-1 text-xs font-bold text-slate-600 dark:text-slate-300">
+                  Filtrar unidade
+                  <input
+                    value={levantamentoFiltro}
+                    onChange={event => setLevantamentoFiltro(event.target.value)}
+                    placeholder="Nome do cliente"
+                    className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
+                  />
+                </label>
+                <div className="flex rounded-full bg-slate-100 p-1 dark:bg-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setLevantamentoMetrica("volume")}
+                    className={`rounded-full px-3 py-1.5 text-xs font-bold ${levantamentoMetrica === "volume" ? "bg-white text-slate-900 shadow-sm dark:bg-slate-100" : "text-slate-600 dark:text-slate-300"}`}
+                  >
+                    Volume
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLevantamentoMetrica("faturamento")}
+                    className={`rounded-full px-3 py-1.5 text-xs font-bold ${levantamentoMetrica === "faturamento" ? "bg-white text-slate-900 shadow-sm dark:bg-slate-100" : "text-slate-600 dark:text-slate-300"}`}
+                  >
+                    Faturamento
+                  </button>
+                </div>
+              </div>
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-400/25 dark:bg-sky-950/20">
                   <div className="text-xs font-bold uppercase tracking-wide text-sky-800 dark:text-sky-300">Volume total</div>
-                  <div className="mt-1 text-2xl font-bold tabular-nums">{fmtNumber(data.levantamento.volumeTotal, 1)}</div>
-                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{fmtNumber(data.levantamento.unidades)} clientes · {fmtNumber(data.levantamento.vendas)} vendas</p>
+                  <div className="mt-1 text-2xl font-bold tabular-nums">{fmtNumber(levantamentoVista.volumeTotal, 1)}</div>
+                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{fmtNumber(levantamentoVista.unidades)} clientes · {fmtNumber(levantamentoVista.vendas)} vendas</p>
                 </div>
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-400/25 dark:bg-emerald-950/20">
                   <div className="text-xs font-bold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">Faturamento total</div>
-                  <div className="mt-1 text-2xl font-bold tabular-nums">{fmtMoney(data.levantamento.faturamentoTotal)}</div>
-                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">Preço médio {fmtMoney(data.levantamento.precoMedio)}</p>
+                  <div className="mt-1 text-2xl font-bold tabular-nums">{fmtMoney(levantamentoVista.faturamentoTotal)}</div>
+                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">Preço médio {fmtMoney(levantamentoVista.precoMedio)}</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-white/5">
                   <div className="text-xs font-bold uppercase tracking-wide text-slate-500">1ª quinzena</div>
-                  <div className="mt-1 text-2xl font-bold tabular-nums">{fmtNumber(data.levantamento.volumeQ1, 1)}</div>
-                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{fmtMoney(data.levantamento.faturamentoQ1)} · dias 1–15</p>
+                  <div className="mt-1 text-2xl font-bold tabular-nums">
+                    {levantamentoVista.porFaturamento ? fmtMoney(levantamentoVista.faturamentoQ1) : fmtNumber(levantamentoVista.volumeQ1, 1)}
+                  </div>
+                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+                    {levantamentoVista.porFaturamento ? `${fmtNumber(levantamentoVista.volumeQ1, 1)} un.` : fmtMoney(levantamentoVista.faturamentoQ1)} · dias 1–15
+                  </p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-white/5">
                   <div className="text-xs font-bold uppercase tracking-wide text-slate-500">2ª quinzena</div>
-                  <div className="mt-1 text-2xl font-bold tabular-nums">{fmtNumber(data.levantamento.volumeQ2, 1)}</div>
+                  <div className="mt-1 text-2xl font-bold tabular-nums">
+                    {levantamentoVista.porFaturamento ? fmtMoney(levantamentoVista.faturamentoQ2) : fmtNumber(levantamentoVista.volumeQ2, 1)}
+                  </div>
                   <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-                    {fmtMoney(data.levantamento.faturamentoQ2)} · {fmtVariacao(data.levantamento.variacaoVolumeQ2)} vs 1ª
+                    {levantamentoVista.porFaturamento ? `${fmtNumber(levantamentoVista.volumeQ2, 1)} un.` : fmtMoney(levantamentoVista.faturamentoQ2)} · {fmtVariacao(levantamentoVista.variacaoQ2)} vs 1ª
                   </p>
                 </div>
               </div>
               <div className="grid gap-3 lg:grid-cols-3">
                 <div className="rounded-2xl border border-slate-200 p-4 dark:border-white/10">
                   <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Faturamento 1ª Q</div>
-                  <div className="mt-1 text-lg font-bold">{fmtMoney(data.levantamento.faturamentoQ1)}</div>
-                  <p className="text-xs text-slate-500">{fmtNumber(data.levantamento.volumeQ1, 1)} un.</p>
+                  <div className="mt-1 text-lg font-bold">{fmtMoney(levantamentoVista.faturamentoQ1)}</div>
+                  <p className="text-xs text-slate-500">{fmtNumber(levantamentoVista.volumeQ1, 1)} un.</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 p-4 dark:border-white/10">
                   <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Faturamento 2ª Q</div>
-                  <div className="mt-1 text-lg font-bold">{fmtMoney(data.levantamento.faturamentoQ2)}</div>
-                  <p className="text-xs text-slate-500">{fmtNumber(data.levantamento.volumeQ2, 1)} un.</p>
+                  <div className="mt-1 text-lg font-bold">{fmtMoney(levantamentoVista.faturamentoQ2)}</div>
+                  <p className="text-xs text-slate-500">{fmtNumber(levantamentoVista.volumeQ2, 1)} un.</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 p-4 dark:border-white/10">
                   <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Média por cliente</div>
-                  <div className="mt-1 text-lg font-bold">{fmtNumber(data.levantamento.mediaPorUnidade, 1)} un.</div>
-                  <p className="text-xs text-slate-500">{fmtMoney(data.levantamento.faturamentoMedioPorUnidade)} · média quinzenal {fmtNumber(data.levantamento.volumeTotal / 2, 1)} un.</p>
+                  <div className="mt-1 text-lg font-bold">{levantamentoVista.porFaturamento ? fmtMoney(levantamentoVista.faturamentoMedioPorUnidade) : `${fmtNumber(levantamentoVista.mediaPorUnidade, 1)} un.`}</div>
+                  <p className="text-xs text-slate-500">{levantamentoVista.porFaturamento ? `${fmtNumber(levantamentoVista.mediaPorUnidade, 1)} un.` : fmtMoney(levantamentoVista.faturamentoMedioPorUnidade)} · média quinzenal {levantamentoVista.porFaturamento ? fmtMoney(levantamentoVista.faturamentoTotal / 2) : `${fmtNumber(levantamentoVista.volumeTotal / 2, 1)} un.`}</p>
                 </div>
               </div>
-              {data.levantamento.volumeQ1 === data.levantamento.volumeQ2 && data.levantamento.volumeTotal > 0 ? (
-                <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950 dark:border-emerald-400/25 dark:bg-emerald-950/20 dark:text-emerald-100">
-                  As duas quinzenas fecharam no mesmo volume: {fmtNumber(data.levantamento.volumeQ1, 1)} un. ({fmtMoney(data.levantamento.faturamentoQ1)}) cada. O período soma {fmtNumber(data.levantamento.volumeTotal, 1)} un. em {fmtNumber(data.levantamento.vendas)} vendas.
-                </p>
-              ) : null}
-              <ChartCard title="Quinzenas por cliente" description="Volume em unidades. Azul é a 1ª quinzena, roxo a 2ª.">
-                {data.levantamento.linhas.length ? (
+              <ChartCard
+                title="Quinzenas por cliente"
+                description={levantamentoVista.porFaturamento ? "Faturamento em reais. Azul é a 1ª quinzena, roxo a 2ª." : "Volume em unidades. Azul é a 1ª quinzena, roxo a 2ª."}
+              >
+                {levantamentoVista.linhas.length ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={data.levantamento.linhas.slice(0, 12)}>
+                    <BarChart data={levantamentoVista.linhas.slice(0, 12)}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="cliente" tickFormatter={v => shortLabel(String(v), 14)} interval={0} height={48} />
-                      <YAxis />
-                      <Tooltip formatter={(v: any) => fmtNumber(Number(v), 1)} />
+                      <YAxis tickFormatter={v => levantamentoVista.porFaturamento ? fmtMoney(Number(v), 0) : fmtNumber(Number(v), 0)} />
+                      <Tooltip formatter={(v: any) => levantamentoVista.porFaturamento ? fmtMoney(Number(v)) : fmtNumber(Number(v), 1)} />
                       <Legend />
-                      <Bar dataKey="q1" name="1ª quinzena" fill="#38bdf8" />
-                      <Bar dataKey="q2" name="2ª quinzena" fill="#8b5cf6" />
+                      <Bar dataKey={levantamentoVista.porFaturamento ? "faturamentoQ1" : "q1"} name="1ª quinzena" fill="#38bdf8" />
+                      <Bar dataKey={levantamentoVista.porFaturamento ? "faturamentoQ2" : "q2"} name="2ª quinzena" fill="#8b5cf6" />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <EmptyChart message="Sem vendas no período." />
+                  <EmptyChart message={levantamentoFiltro.trim() ? "Nenhuma unidade com esse nome." : "Sem vendas no período."} />
                 )}
               </ChartCard>
               <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)]">
@@ -2092,22 +2177,22 @@ export function Relatorios() {
                     <thead className="bg-slate-50 dark:bg-white/5">
                       <tr>
                         <th className="px-3 py-2 text-left">Unidade</th>
-                        <th className="px-3 py-2 text-right">1ª Q</th>
-                        <th className="px-3 py-2 text-right">2ª Q</th>
+                        <th className="px-3 py-2 text-right">{levantamentoVista.porFaturamento ? "1ª Q R$" : "1ª Q"}</th>
+                        <th className="px-3 py-2 text-right">{levantamentoVista.porFaturamento ? "2ª Q R$" : "2ª Q"}</th>
                         <th className="px-3 py-2 text-right">Total un.</th>
                         <th className="px-3 py-2 text-right">R$ total</th>
                         <th className="px-3 py-2 text-right">Share</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-white/10">
-                      {data.levantamento.linhas.map((r, index) => (
+                      {levantamentoVista.linhas.map((r, index) => (
                         <tr key={r.clienteId}>
                           <td className="px-3 py-2 font-semibold">{index + 1}. {r.cliente}</td>
-                          <td className="px-3 py-2 text-right tabular-nums">{fmtNumber(r.q1, 1)}</td>
-                          <td className="px-3 py-2 text-right tabular-nums">{fmtNumber(r.q2, 1)}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">{levantamentoVista.porFaturamento ? fmtMoney(r.faturamentoQ1) : fmtNumber(r.q1, 1)}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">{levantamentoVista.porFaturamento ? fmtMoney(r.faturamentoQ2) : fmtNumber(r.q2, 1)}</td>
                           <td className="px-3 py-2 text-right tabular-nums">{fmtNumber(r.totalUn, 1)}</td>
                           <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(r.faturamento)}</td>
-                          <td className="px-3 py-2 text-right tabular-nums">{fmtPct(r.share)}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">{fmtPct(r.shareVista)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -2116,25 +2201,25 @@ export function Relatorios() {
                 <div className="rounded-2xl border border-slate-200 p-4 dark:border-white/10">
                   <h3 className="text-sm font-bold">Participação</h3>
                   <p className="mt-1 text-xs text-slate-500">
-                    {fmtNumber(data.levantamento.volumeTotal, 1)} un. · {fmtMoney(data.levantamento.faturamentoTotal)}
+                    {fmtNumber(levantamentoVista.volumeTotal, 1)} un. · {fmtMoney(levantamentoVista.faturamentoTotal)}
                   </p>
-                  {data.levantamento.linhas.length ? (
+                  {levantamentoVista.linhas.length ? (
                     <div className="h-56">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
-                            data={data.levantamento.linhas.slice(0, 8)}
-                            dataKey="totalUn"
+                            data={levantamentoVista.linhas.slice(0, 8)}
+                            dataKey={levantamentoVista.porFaturamento ? "faturamento" : "totalUn"}
                             nameKey="cliente"
                             innerRadius={58}
                             outerRadius={80}
                             paddingAngle={2}
                           >
-                            {data.levantamento.linhas.slice(0, 8).map((_, i) => (
+                            {levantamentoVista.linhas.slice(0, 8).map((_, i) => (
                               <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                             ))}
                           </Pie>
-                          <Tooltip formatter={(v: any) => fmtNumber(Number(v), 1)} />
+                          <Tooltip formatter={(v: any) => levantamentoVista.porFaturamento ? fmtMoney(Number(v)) : fmtNumber(Number(v), 1)} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
@@ -2142,21 +2227,21 @@ export function Relatorios() {
                     <p className="py-8 text-center text-sm text-slate-500">Sem vendas no período.</p>
                   )}
                   <ul className="space-y-1 text-xs text-slate-600 dark:text-slate-300">
-                    {data.levantamento.linhas.slice(0, 8).map((r, i) => (
+                    {levantamentoVista.linhas.slice(0, 8).map((r, i) => (
                       <li key={r.clienteId} className="flex items-center justify-between gap-2">
                         <span className="flex min-w-0 items-center gap-2">
                           <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: CHART_COLORS[i % CHART_COLORS.length] }} />
                           <span className="truncate">{r.cliente}</span>
                         </span>
-                        <span className="tabular-nums">{fmtPct(r.share)}</span>
+                        <span className="tabular-nums">{fmtPct(r.shareVista)}</span>
                       </li>
                     ))}
                   </ul>
-                  {data.levantamento.top3.nomes ? (
+                  {levantamentoVista.top3.nomes ? (
                     <p className="mt-3 text-xs text-slate-600 dark:text-slate-300">
-                      Top 3 = {fmtPct(data.levantamento.top3.share)} · {fmtMoney(data.levantamento.top3.faturamento)}
+                      Top 3 = {fmtPct(levantamentoVista.top3.share)} · {fmtMoney(levantamentoVista.top3.faturamento)}
                       <br />
-                      {data.levantamento.top3.nomes} = {fmtNumber(data.levantamento.top3.volume, 1)} un.
+                      {levantamentoVista.top3.nomes} = {levantamentoVista.porFaturamento ? fmtMoney(levantamentoVista.top3.faturamento) : `${fmtNumber(levantamentoVista.top3.volume, 1)} un.`}
                     </p>
                   ) : null}
                 </div>
@@ -2421,75 +2506,6 @@ export function Relatorios() {
             </ReportSection>
           ) : null}
 
-          {active === "clientes-sem-vendas" ? (
-            <ReportSection
-              title="Clientes sem vendas há mais tempo"
-              description="Clientes ordenados pelo maior tempo desde a última venda."
-              rows={filterRows("clientes-sem-vendas", data.clientesSemVendas)}
-            >
-              <ChartCard
-                title="Clientes com maior tempo sem recompra"
-                description="Ajuda a priorizar reativação comercial."
-              >
-                {chartClientesSemVenda.length ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartClientesSemVenda} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis dataKey="cliente" type="category" width={130} />
-                      <Tooltip formatter={(v: any) => `${fmtNumber(v)} dias`} />
-                      <Bar dataKey="dias" name="Dias sem venda" fill="#f59e0b" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <EmptyChart message="Sem histórico suficiente para calcular inatividade." />
-                )}
-              </ChartCard>
-              {renderTableFilter(
-                "clientes-sem-vendas",
-                data.clientesSemVendas.length,
-                filterRows("clientes-sem-vendas", data.clientesSemVendas).length
-              )}
-              <Table>
-                <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
-                  <thead className="bg-slate-50 dark:bg-white/5">
-                    <tr>
-                      <th className="px-3 py-2 text-left">
-                        {columnHeader("clientes-sem-vendas", "cliente", "Cliente")}
-                      </th>
-                      <th className="px-3 py-2 text-left">
-                        {columnHeader("clientes-sem-vendas", "tipo", "Tipo")}
-                      </th>
-                      <th className="px-3 py-2 text-left">
-                        {columnHeader("clientes-sem-vendas", "situacao", "Situação")}
-                      </th>
-                      <th className="px-3 py-2 text-right">
-                        {columnHeader("clientes-sem-vendas", "ultimaVenda", "Última venda", "right")}
-                      </th>
-                      <th className="px-3 py-2 text-right">
-                        {columnHeader("clientes-sem-vendas", "dias", "Dias", "right")}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-white/10">
-                    {filterRows("clientes-sem-vendas", data.clientesSemVendas).slice(0, 100).map((r: any) => (
-                      <tr key={r.id}>
-                        <td className="px-3 py-2 font-semibold">{r.cliente}</td>
-                        <td className="px-3 py-2">{r.tipo}</td>
-                        <td className="px-3 py-2">{r.situacao}</td>
-                        <td className="px-3 py-2 text-right">
-                          {fmtDate(r.ultimaVenda)}
-                        </td>
-                        <td className="px-3 py-2 text-right">
-                          {r.diasSemVenda ?? "—"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </Table>
-            </ReportSection>
-          ) : null}
 
           {active === "lucro-margem" ? (
             <ReportSection
@@ -2587,100 +2603,6 @@ export function Relatorios() {
             </ReportSection>
           ) : null}
 
-          {active === "maiores-clientes" ? (
-            <ReportSection
-              title="Gráfico de maiores clientes"
-              description="Compare clientes por valor bruto, valor líquido, total vendido ou ticket médio por venda."
-              rows={filterRows("maiores-clientes", data.maioresClientes)}
-            >
-              <div className="mb-4 flex flex-wrap items-center gap-2">
-                {(
-                  [
-                    "valorBruto",
-                    "valorLiquido",
-                    "totalVendido",
-                    "ticketMedio",
-                  ] as const
-                ).map(m => (
-                  <button
-                    key={m}
-                    type="button"
-                    className={`rounded-full px-3 py-1.5 text-xs font-bold ${metricaCliente === m ? "bg-sky-600 text-white" : "bg-slate-100 text-slate-700"}`}
-                    onClick={() => setMetricaCliente(m)}
-                  >
-                    {m}
-                  </button>
-                ))}
-              </div>
-              <ChartCard
-                title="Ranking de clientes"
-                description="Use as métricas para alternar entre faturamento, volume e ticket."
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={topClientesChart}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="cliente" />
-                    <YAxis />
-                    <Tooltip
-                      formatter={(v: any) =>
-                        metricaCliente === "totalVendido"
-                          ? fmtNumber(v)
-                          : fmtMoney(v)
-                      }
-                    />
-                    <Bar dataKey="valor" fill="#0ea5e9" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartCard>
-              {renderTableFilter(
-                "maiores-clientes",
-                data.maioresClientes.length,
-                filterRows("maiores-clientes", data.maioresClientes).length
-              )}
-              <Table>
-                <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
-                  <thead className="bg-slate-50 dark:bg-white/5">
-                    <tr>
-                      <th className="px-3 py-2 text-left">
-                        {columnHeader("maiores-clientes", "cliente", "Cliente")}
-                      </th>
-                      <th className="px-3 py-2 text-left">
-                        {columnHeader("maiores-clientes", "tipo", "Tipo")}
-                      </th>
-                      <th className="px-3 py-2 text-right">
-                        {columnHeader("maiores-clientes", "vendas", "Vendas", "right")}
-                      </th>
-                      <th className="px-3 py-2 text-right">
-                        {columnHeader("maiores-clientes", "valorBruto", "Valor bruto", "right")}
-                      </th>
-                      <th className="px-3 py-2 text-right">
-                        {columnHeader("maiores-clientes", "valorLiquido", "Valor líquido", "right")}
-                      </th>
-                      <th className="px-3 py-2 text-right">
-                        {columnHeader("maiores-clientes", "itens", "Itens", "right")}
-                      </th>
-                      <th className="px-3 py-2 text-right">
-                        {columnHeader("maiores-clientes", "ticketMedio", "Ticket médio", "right")}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-white/10">
-                    {filterRows("maiores-clientes", data.maioresClientes).slice(0, 80).map((r: any) => (
-                      <tr key={r.clienteId}>
-                        <td className="px-3 py-2 font-semibold">{r.cliente}</td>
-                        <td className="px-3 py-2">{r.tipoItem ?? "—"}</td>
-                        <td className="px-3 py-2 text-right">{fmtNumber(r.vendas)}</td>
-                        <td className="px-3 py-2 text-right">{fmtMoney(r.valorBruto)}</td>
-                        <td className="px-3 py-2 text-right">{fmtMoney(r.valorLiquido)}</td>
-                        <td className="px-3 py-2 text-right">{fmtNumber(r.totalVendido)}</td>
-                        <td className="px-3 py-2 text-right">{fmtMoney(r.ticketMedio)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </Table>
-            </ReportSection>
-          ) : null}
 
           {active === "abc-clientes" ? (
             <ReportSection
@@ -2861,94 +2783,6 @@ export function Relatorios() {
             </ReportSection>
           ) : null}
 
-          {active === "clientes-risco" ? (
-            <ReportSection
-              title="Clientes em risco"
-              description="Queda ou parada de compra vs o mesmo intervalo no mês anterior."
-              rows={filterRowsDrill(
-                "clientes-risco",
-                data.clientesRisco ?? [],
-                (r: any) => r.cliente
-              )}
-            >
-              <ChartCard title="Score de risco" description="Clique para filtrar a lista.">
-                <RiscoChart
-                  rows={data.clientesRisco ?? []}
-                  onPick={nome => setDrillFor("clientes-risco", nome)}
-                />
-              </ChartCard>
-              {drill?.report === "clientes-risco" ? (
-                <DrillBanner label={drill.value} onClear={() => setDrill(null)} />
-              ) : null}
-              {renderTableFilter(
-                "clientes-risco",
-                (data.clientesRisco ?? []).length,
-                filterRowsDrill(
-                  "clientes-risco",
-                  data.clientesRisco ?? [],
-                  (r: any) => r.cliente
-                ).length
-              )}
-              <Table>
-                <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
-                  <thead className="bg-slate-50 dark:bg-white/5">
-                    <tr>
-                      <th className="px-3 py-2 text-left">
-                        {columnHeader("clientes-risco", "cliente", "Cliente")}
-                      </th>
-                      <th className="px-3 py-2 text-right">
-                        {columnHeader("clientes-risco", "score", "Score", "right")}
-                      </th>
-                      <th className="px-3 py-2 text-left">
-                        {columnHeader("clientes-risco", "motivo", "Motivo")}
-                      </th>
-                      <th className="px-3 py-2 text-right">
-                        {columnHeader("clientes-risco", "valorAnterior", "Valor anterior", "right")}
-                      </th>
-                      <th className="px-3 py-2 text-right">
-                        {columnHeader("clientes-risco", "valorAtual", "Valor atual", "right")}
-                      </th>
-                      <th className="px-3 py-2 text-right">
-                        {columnHeader("clientes-risco", "variacao", "Variação", "right")}
-                      </th>
-                      <th className="px-3 py-2 text-left">
-                        {columnHeader("clientes-risco", "acao", "Ação sugerida")}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-white/10">
-                    {filterRowsDrill(
-                      "clientes-risco",
-                      data.clientesRisco ?? [],
-                      (r: any) => r.cliente
-                    ).map((r: any) => (
-                      <tr key={r.clienteId}>
-                        <td className="px-3 py-2">
-                          <ClienteLink id={r.clienteId} nome={r.cliente} />
-                        </td>
-                        <td className="px-3 py-2 text-right font-bold text-red-600">
-                          {r.score}
-                        </td>
-                        <td className="px-3 py-2">{r.motivo}</td>
-                        <td className="px-3 py-2 text-right">
-                          {fmtMoney(r.valorAnterior)}
-                        </td>
-                        <td className="px-3 py-2 text-right">
-                          {fmtMoney(r.valorAtual)}
-                        </td>
-                        <td className="px-3 py-2 text-right">
-                          {fmtVariacao(r.variacaoValor)}
-                        </td>
-                        <td className="px-3 py-2 text-slate-600 dark:text-slate-400">
-                          {r.acaoSugerida}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </Table>
-            </ReportSection>
-          ) : null}
 
           {active === "margem" ? (
             <ReportSection
@@ -3038,85 +2872,6 @@ export function Relatorios() {
             </ReportSection>
           ) : null}
 
-          {active === "mix-produtos" ? (
-            <ReportSection
-              title="Mix de produtos e cross-sell"
-              description="Produtos populares que clientes relevantes ainda não compram no período."
-              rows={filterRowsDrill(
-                "mix-produtos",
-                data.mixProdutosCliente ?? [],
-                (r: any) => r.cliente
-              ).map((r: any) => ({
-                cliente: r.cliente,
-                valorBruto: r.valorBruto,
-                topProdutos: r.topProdutos,
-                oportunidades: r.oportunidadesCrossSell.join(" | "),
-              }))}
-            >
-              <ChartCard title="Oportunidades por cliente">
-                <MixChart
-                  rows={(data.mixProdutosCliente ?? []).map((r: any) => ({
-                    cliente: r.cliente,
-                    oportunidades: r.oportunidadesCrossSell?.length ?? 0,
-                  }))}
-                />
-              </ChartCard>
-              {drill?.report === "mix-produtos" ? (
-                <DrillBanner label={drill.value} onClear={() => setDrill(null)} />
-              ) : null}
-              {renderTableFilter(
-                "mix-produtos",
-                (data.mixProdutosCliente ?? []).length,
-                filterRowsDrill(
-                  "mix-produtos",
-                  data.mixProdutosCliente ?? [],
-                  (r: any) => r.cliente
-                ).length
-              )}
-              <Table>
-                <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
-                  <thead className="bg-slate-50 dark:bg-white/5">
-                    <tr>
-                      <th className="px-3 py-2 text-left">
-                        {columnHeader("mix-produtos", "cliente", "Cliente")}
-                      </th>
-                      <th className="px-3 py-2 text-right">
-                        {columnHeader("mix-produtos", "faturamento", "Faturamento", "right")}
-                      </th>
-                      <th className="px-3 py-2 text-left">
-                        {columnHeader("mix-produtos", "topProdutos", "Já compra")}
-                      </th>
-                      <th className="px-3 py-2 text-left">
-                        {columnHeader("mix-produtos", "oportunidades", "Sugestões cross-sell")}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-white/10">
-                    {filterRowsDrill(
-                      "mix-produtos",
-                      data.mixProdutosCliente ?? [],
-                      (r: any) => r.cliente
-                    ).map((r: any) => (
-                      <tr key={r.clienteId}>
-                        <td className="px-3 py-2">
-                          <ClienteLink id={r.clienteId} nome={r.cliente} />
-                        </td>
-                        <td className="px-3 py-2 text-right">
-                          {fmtMoney(r.valorBruto)}
-                        </td>
-                        <td className="px-3 py-2 text-slate-600 dark:text-slate-400">
-                          {r.topProdutos || "—"}
-                        </td>
-                        <td className="px-3 py-2 font-medium text-violet-700 dark:text-violet-300">
-                          {r.oportunidadesCrossSell?.join(", ") || "—"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </Table>
-            </ReportSection>
-          ) : null}
 
           {active === "clientes" ? (
             <ReportSection
