@@ -135,9 +135,24 @@ export async function ensureProgramacaoCiclosProtocolo(agora = new Date()): Prom
         dataInicio: meioDiaSaoPaulo(item.dataInicio),
         ativo: true,
       };
-      const ja = existentes.find(
-        (ciclo) => chaveDoCiclo(ciclo.nome, ciclo.produto) === item.chave && ciclo.ativo,
+      const mesmos = existentes.filter(
+        (ciclo) => chaveDoCiclo(ciclo.nome, ciclo.produto) === item.chave,
       );
+      const ja = mesmos.find((ciclo) => ciclo.ativo);
+      const temInativo = mesmos.some((ciclo) => !ciclo.ativo);
+      if (!ja && temInativo) continue;
+      if (
+        ja &&
+        temInativo &&
+        !ja.ultimaExecucao &&
+        ymdInicio(ja.dataInicio) === item.dataInicio
+      ) {
+        await db
+          .update(ciclos)
+          .set({ ativo: false })
+          .where(and(eq(ciclos.id, ja.id), eq(ciclos.projetoId, fazenda.id)));
+        continue;
+      }
       if (
         ja &&
         !reiniciar &&
