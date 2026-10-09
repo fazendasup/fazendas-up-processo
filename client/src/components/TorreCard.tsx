@@ -329,7 +329,7 @@ export default function TorreCard({ torre }: TorreCardProps) {
               )}
             </div>
             </Link>
-            <AplicacaoPendenteNaTorre caixaId={torre.caixaAguaId} />
+            <AplicacaoPendenteNaTorre caixaId={torre.caixaAguaId} fase={torre.fase} />
           </div>
 
           <Link

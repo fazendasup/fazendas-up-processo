@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   escolherPassoDaCaixa,
+  passosDevidosDaCaixa,
   reagendarCaldasAposAplicar,
   reagendarSequenciaAposAplicar,
   type PassoCicloAgenda,
@@ -51,6 +52,18 @@ describe("escolherPassoDaCaixa", () => {
   it("vence hoje sem atraso", () => {
     const escolhido = escolherPassoDaCaixa([passo(1, "2026-09-29")], "cx", "2026-09-29");
     expect(escolhido?.diasAtraso).toBe(0);
+  });
+
+  it("lista as duas aplicações que vencem no mesmo dia", () => {
+    const devidos = passosDevidosDaCaixa(
+      [
+        passo(1, "2026-10-09", { frequencia: "personalizada", intervaloDias: 2 }),
+        passo(2, "2026-10-09", { frequencia: "semanal", diasSemana: [5], intervaloDias: null }),
+      ],
+      "cx",
+      "2026-10-09",
+    );
+    expect(devidos.map((item) => item.passo.id)).toEqual([1, 2]);
   });
 });
 

@@ -225,25 +225,33 @@ export function dataPrevistaCicloYmd<TCaixa extends string | number>(
   return adicionarDiasYmd(ultima, intervaloEfetivo(passo));
 }
 
-/** Só o primeiro passo da sequência que já pode ser feito. Os seguintes ficam ocultos. */
-export function escolherPassoDaCaixa<TCaixa extends string | number>(
+/** Todos os passos da caixa que já venceram ou vencem hoje, do mais antigo ao mais novo. */
+export function passosDevidosDaCaixa<TCaixa extends string | number>(
   passos: PassoCicloAgenda<TCaixa>[],
   caixaId: TCaixa,
   hojeYmd: string,
-): PassoEscolhido<TCaixa> | null {
-  const devidos = passos
+): PassoEscolhido<TCaixa>[] {
+  return passos
     .map((passo) => {
       const previstaYmd = dataPrevistaCicloYmd(passo, caixaId, hojeYmd);
       return previstaYmd ? { passo, previstaYmd } : null;
     })
     .filter((item): item is { passo: PassoCicloAgenda<TCaixa>; previstaYmd: string } => item != null)
     .filter((item) => item.previstaYmd <= hojeYmd)
-    .sort((a, b) => a.previstaYmd.localeCompare(b.previstaYmd) || a.passo.id - b.passo.id);
+    .sort((a, b) => a.previstaYmd.localeCompare(b.previstaYmd) || a.passo.id - b.passo.id)
+    .map((item) => ({
+      ...item,
+      diasAtraso: Math.max(0, diferencaDiasYmd(item.previstaYmd, hojeYmd)),
+    }));
+}
 
-  const primeiro = devidos[0];
-  if (!primeiro) return null;
-  const diasAtraso = Math.max(0, diferencaDiasYmd(primeiro.previstaYmd, hojeYmd));
-  return { ...primeiro, diasAtraso };
+/** O passo mais antigo que já pode ser feito. */
+export function escolherPassoDaCaixa<TCaixa extends string | number>(
+  passos: PassoCicloAgenda<TCaixa>[],
+  caixaId: TCaixa,
+  hojeYmd: string,
+): PassoEscolhido<TCaixa> | null {
+  return passosDevidosDaCaixa(passos, caixaId, hojeYmd)[0] ?? null;
 }
 
 /**
