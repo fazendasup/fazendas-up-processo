@@ -22,6 +22,10 @@ export type DadosEmpresa = {
   inscricaoEstadual: string | null;
 };
 
+export function jpegValido(conteudo: Buffer): boolean {
+  return conteudo.length > 100 && conteudo.length <= 1_500_000 && conteudo[0] === 0xff && conteudo[1] === 0xd8 && conteudo[2] === 0xff;
+}
+
 export function cnpjValido(valor: string): boolean {
   const cnpj = valor.replace(/\D/g, "");
   if (cnpj.length !== 14 || /^(\d)\1+$/.test(cnpj)) return false;

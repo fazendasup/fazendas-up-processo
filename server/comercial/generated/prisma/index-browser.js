@@ -254,6 +254,12 @@ exports.Prisma.PortalCadastroScalarFieldEnum = {
   atualizadoEm: 'atualizadoEm'
 };
 
+exports.Prisma.PortalFotoScalarFieldEnum = {
+  produtoId: 'produtoId',
+  conteudo: 'conteudo',
+  atualizadoEm: 'atualizadoEm'
+};
+
 exports.Prisma.RegraComercialClienteScalarFieldEnum = {
   id: 'id',
   contaAzulCustomerId: 'contaAzulCustomerId',
@@ -693,6 +699,10 @@ exports.Prisma.PortalCadastroOrderByRelevanceFieldEnum = {
   contaAzulId: 'contaAzulId'
 };
 
+exports.Prisma.PortalFotoOrderByRelevanceFieldEnum = {
+  produtoId: 'produtoId'
+};
+
 exports.Prisma.RegraComercialClienteOrderByRelevanceFieldEnum = {
   id: 'id',
   contaAzulCustomerId: 'contaAzulCustomerId',
@@ -1056,6 +1066,7 @@ exports.Prisma.ModelName = {
   ProdutoComercial: 'ProdutoComercial',
   PortalAcesso: 'PortalAcesso',
   PortalCadastro: 'PortalCadastro',
+  PortalFoto: 'PortalFoto',
   RegraComercialCliente: 'RegraComercialCliente',
   ClienteLegadoContaAzulLink: 'ClienteLegadoContaAzulLink',
   PrecoEspecialCliente: 'PrecoEspecialCliente',

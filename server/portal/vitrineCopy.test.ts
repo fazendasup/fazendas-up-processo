@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { jpegValido } from "./portalLoja";
 import { fichaDoProduto } from "./vitrineCopy";
 
 describe("fichaDoProduto", () => {
@@ -11,5 +12,11 @@ describe("fichaDoProduto", () => {
     expect(fichaDoProduto("Manjericão Folha Fina 60g").grupo).toBe("Ervas");
     expect(fichaDoProduto("Mix Clássico 80g").grupo).toBe("Saladas");
     expect(fichaDoProduto("Alho Inteiro Descascado e Higienizado Kg").grupo).toBe("Processados");
+  });
+
+  it("aceita só jpeg com tamanho de foto", () => {
+    const jpeg = Buffer.from([0xff, 0xd8, 0xff, ...new Array(120).fill(1)]);
+    expect(jpegValido(jpeg)).toBe(true);
+    expect(jpegValido(Buffer.from("nao-e-foto"))).toBe(false);
   });
 });

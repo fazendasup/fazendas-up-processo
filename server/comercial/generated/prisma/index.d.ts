@@ -64,6 +64,11 @@ export type PortalAcesso = $Result.DefaultSelection<Prisma.$PortalAcessoPayload>
  */
 export type PortalCadastro = $Result.DefaultSelection<Prisma.$PortalCadastroPayload>
 /**
+ * Model PortalFoto
+ * Foto enviada pela equipe. Fica fora do produto para a lista da loja não carregar o arquivo.
+ */
+export type PortalFoto = $Result.DefaultSelection<Prisma.$PortalFotoPayload>
+/**
  * Model RegraComercialCliente
  * 
  */
@@ -731,6 +736,16 @@ export class PrismaClient<
     * ```
     */
   get portalCadastro(): Prisma.PortalCadastroDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.portalFoto`: Exposes CRUD operations for the **PortalFoto** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PortalFotos
+    * const portalFotos = await prisma.portalFoto.findMany()
+    * ```
+    */
+  get portalFoto(): Prisma.PortalFotoDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.regraComercialCliente`: Exposes CRUD operations for the **RegraComercialCliente** model.
@@ -1421,6 +1436,7 @@ export namespace Prisma {
     ProdutoComercial: 'ProdutoComercial',
     PortalAcesso: 'PortalAcesso',
     PortalCadastro: 'PortalCadastro',
+    PortalFoto: 'PortalFoto',
     RegraComercialCliente: 'RegraComercialCliente',
     ClienteLegadoContaAzulLink: 'ClienteLegadoContaAzulLink',
     PrecoEspecialCliente: 'PrecoEspecialCliente',
@@ -1463,7 +1479,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "estoqueVivoMix" | "estoqueVivoMixComponente" | "produtoComercial" | "portalAcesso" | "portalCadastro" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "contaAzulEnvioConfig" | "syncState" | "regraClassificacao" | "templateMensagem"
+      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "estoqueVivoMix" | "estoqueVivoMixComponente" | "produtoComercial" | "portalAcesso" | "portalCadastro" | "portalFoto" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "contaAzulEnvioConfig" | "syncState" | "regraClassificacao" | "templateMensagem"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -2124,6 +2140,72 @@ export namespace Prisma {
           count: {
             args: Prisma.PortalCadastroCountArgs<ExtArgs>
             result: $Utils.Optional<PortalCadastroCountAggregateOutputType> | number
+          }
+        }
+      }
+      PortalFoto: {
+        payload: Prisma.$PortalFotoPayload<ExtArgs>
+        fields: Prisma.PortalFotoFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PortalFotoFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalFotoPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PortalFotoFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalFotoPayload>
+          }
+          findFirst: {
+            args: Prisma.PortalFotoFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalFotoPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PortalFotoFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalFotoPayload>
+          }
+          findMany: {
+            args: Prisma.PortalFotoFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalFotoPayload>[]
+          }
+          create: {
+            args: Prisma.PortalFotoCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalFotoPayload>
+          }
+          createMany: {
+            args: Prisma.PortalFotoCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.PortalFotoDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalFotoPayload>
+          }
+          update: {
+            args: Prisma.PortalFotoUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalFotoPayload>
+          }
+          deleteMany: {
+            args: Prisma.PortalFotoDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PortalFotoUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.PortalFotoUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalFotoPayload>
+          }
+          aggregate: {
+            args: Prisma.PortalFotoAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePortalFoto>
+          }
+          groupBy: {
+            args: Prisma.PortalFotoGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PortalFotoGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PortalFotoCountArgs<ExtArgs>
+            result: $Utils.Optional<PortalFotoCountAggregateOutputType> | number
           }
         }
       }
@@ -3817,6 +3899,7 @@ export namespace Prisma {
     produtoComercial?: ProdutoComercialOmit
     portalAcesso?: PortalAcessoOmit
     portalCadastro?: PortalCadastroOmit
+    portalFoto?: PortalFotoOmit
     regraComercialCliente?: RegraComercialClienteOmit
     clienteLegadoContaAzulLink?: ClienteLegadoContaAzulLinkOmit
     precoEspecialCliente?: PrecoEspecialClienteOmit
@@ -12211,6 +12294,7 @@ export namespace Prisma {
     estoqueLoja?: boolean
     criadoEm?: boolean
     atualizadoEm?: boolean
+    portalFoto?: boolean | ProdutoComercial$portalFotoArgs<ExtArgs>
     precosEspeciais?: boolean | ProdutoComercial$precosEspeciaisArgs<ExtArgs>
     itensPedido?: boolean | ProdutoComercial$itensPedidoArgs<ExtArgs>
     avariasPedido?: boolean | ProdutoComercial$avariasPedidoArgs<ExtArgs>
@@ -12253,6 +12337,7 @@ export namespace Prisma {
 
   export type ProdutoComercialOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "contaAzulProdutoId" | "sku" | "statusContaAzul" | "sincronizadoEm" | "importadoOperacao" | "precoBase" | "categoria" | "ativo" | "modoCompra" | "fatorCompraUnidade" | "rendimentoPorKg" | "ocultoListaCompra" | "mixAtivo" | "mixFolhaLeve" | "mixProdutoReferenciaId" | "mixVariedades" | "imagemUrl" | "visivelPortal" | "descricaoLoja" | "aplicacaoLoja" | "estoqueLoja" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["produtoComercial"]>
   export type ProdutoComercialInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    portalFoto?: boolean | ProdutoComercial$portalFotoArgs<ExtArgs>
     precosEspeciais?: boolean | ProdutoComercial$precosEspeciaisArgs<ExtArgs>
     itensPedido?: boolean | ProdutoComercial$itensPedidoArgs<ExtArgs>
     avariasPedido?: boolean | ProdutoComercial$avariasPedidoArgs<ExtArgs>
@@ -12266,6 +12351,7 @@ export namespace Prisma {
   export type $ProdutoComercialPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "ProdutoComercial"
     objects: {
+      portalFoto: Prisma.$PortalFotoPayload<ExtArgs> | null
       precosEspeciais: Prisma.$PrecoEspecialClientePayload<ExtArgs>[]
       itensPedido: Prisma.$PedidoOperacionalItemPayload<ExtArgs>[]
       avariasPedido: Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>[]
@@ -12643,6 +12729,7 @@ export namespace Prisma {
    */
   export interface Prisma__ProdutoComercialClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    portalFoto<T extends ProdutoComercial$portalFotoArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$portalFotoArgs<ExtArgs>>): Prisma__PortalFotoClient<$Result.GetResult<Prisma.$PortalFotoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     precosEspeciais<T extends ProdutoComercial$precosEspeciaisArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$precosEspeciaisArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PrecoEspecialClientePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     itensPedido<T extends ProdutoComercial$itensPedidoArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$itensPedidoArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     avariasPedido<T extends ProdutoComercial$avariasPedidoArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$avariasPedidoArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -13044,6 +13131,25 @@ export namespace Prisma {
      * Limit how many ProdutoComercials to delete.
      */
     limit?: number
+  }
+
+  /**
+   * ProdutoComercial.portalFoto
+   */
+  export type ProdutoComercial$portalFotoArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalFoto
+     */
+    select?: PortalFotoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalFoto
+     */
+    omit?: PortalFotoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalFotoInclude<ExtArgs> | null
+    where?: PortalFotoWhereInput
   }
 
   /**
@@ -15245,6 +15351,913 @@ export namespace Prisma {
      * Omit specific fields from the PortalCadastro
      */
     omit?: PortalCadastroOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PortalFoto
+   */
+
+  export type AggregatePortalFoto = {
+    _count: PortalFotoCountAggregateOutputType | null
+    _min: PortalFotoMinAggregateOutputType | null
+    _max: PortalFotoMaxAggregateOutputType | null
+  }
+
+  export type PortalFotoMinAggregateOutputType = {
+    produtoId: string | null
+    conteudo: Uint8Array | null
+    atualizadoEm: Date | null
+  }
+
+  export type PortalFotoMaxAggregateOutputType = {
+    produtoId: string | null
+    conteudo: Uint8Array | null
+    atualizadoEm: Date | null
+  }
+
+  export type PortalFotoCountAggregateOutputType = {
+    produtoId: number
+    conteudo: number
+    atualizadoEm: number
+    _all: number
+  }
+
+
+  export type PortalFotoMinAggregateInputType = {
+    produtoId?: true
+    conteudo?: true
+    atualizadoEm?: true
+  }
+
+  export type PortalFotoMaxAggregateInputType = {
+    produtoId?: true
+    conteudo?: true
+    atualizadoEm?: true
+  }
+
+  export type PortalFotoCountAggregateInputType = {
+    produtoId?: true
+    conteudo?: true
+    atualizadoEm?: true
+    _all?: true
+  }
+
+  export type PortalFotoAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalFoto to aggregate.
+     */
+    where?: PortalFotoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalFotos to fetch.
+     */
+    orderBy?: PortalFotoOrderByWithRelationInput | PortalFotoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PortalFotoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalFotos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalFotos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PortalFotos
+    **/
+    _count?: true | PortalFotoCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PortalFotoMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PortalFotoMaxAggregateInputType
+  }
+
+  export type GetPortalFotoAggregateType<T extends PortalFotoAggregateArgs> = {
+        [P in keyof T & keyof AggregatePortalFoto]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePortalFoto[P]>
+      : GetScalarType<T[P], AggregatePortalFoto[P]>
+  }
+
+
+
+
+  export type PortalFotoGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PortalFotoWhereInput
+    orderBy?: PortalFotoOrderByWithAggregationInput | PortalFotoOrderByWithAggregationInput[]
+    by: PortalFotoScalarFieldEnum[] | PortalFotoScalarFieldEnum
+    having?: PortalFotoScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PortalFotoCountAggregateInputType | true
+    _min?: PortalFotoMinAggregateInputType
+    _max?: PortalFotoMaxAggregateInputType
+  }
+
+  export type PortalFotoGroupByOutputType = {
+    produtoId: string
+    conteudo: Uint8Array
+    atualizadoEm: Date
+    _count: PortalFotoCountAggregateOutputType | null
+    _min: PortalFotoMinAggregateOutputType | null
+    _max: PortalFotoMaxAggregateOutputType | null
+  }
+
+  type GetPortalFotoGroupByPayload<T extends PortalFotoGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PortalFotoGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PortalFotoGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PortalFotoGroupByOutputType[P]>
+            : GetScalarType<T[P], PortalFotoGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PortalFotoSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    produtoId?: boolean
+    conteudo?: boolean
+    atualizadoEm?: boolean
+    produto?: boolean | ProdutoComercialDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["portalFoto"]>
+
+
+
+  export type PortalFotoSelectScalar = {
+    produtoId?: boolean
+    conteudo?: boolean
+    atualizadoEm?: boolean
+  }
+
+  export type PortalFotoOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"produtoId" | "conteudo" | "atualizadoEm", ExtArgs["result"]["portalFoto"]>
+  export type PortalFotoInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    produto?: boolean | ProdutoComercialDefaultArgs<ExtArgs>
+  }
+
+  export type $PortalFotoPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PortalFoto"
+    objects: {
+      produto: Prisma.$ProdutoComercialPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      produtoId: string
+      conteudo: Uint8Array
+      atualizadoEm: Date
+    }, ExtArgs["result"]["portalFoto"]>
+    composites: {}
+  }
+
+  type PortalFotoGetPayload<S extends boolean | null | undefined | PortalFotoDefaultArgs> = $Result.GetResult<Prisma.$PortalFotoPayload, S>
+
+  type PortalFotoCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PortalFotoFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PortalFotoCountAggregateInputType | true
+    }
+
+  export interface PortalFotoDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PortalFoto'], meta: { name: 'PortalFoto' } }
+    /**
+     * Find zero or one PortalFoto that matches the filter.
+     * @param {PortalFotoFindUniqueArgs} args - Arguments to find a PortalFoto
+     * @example
+     * // Get one PortalFoto
+     * const portalFoto = await prisma.portalFoto.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PortalFotoFindUniqueArgs>(args: SelectSubset<T, PortalFotoFindUniqueArgs<ExtArgs>>): Prisma__PortalFotoClient<$Result.GetResult<Prisma.$PortalFotoPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PortalFoto that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PortalFotoFindUniqueOrThrowArgs} args - Arguments to find a PortalFoto
+     * @example
+     * // Get one PortalFoto
+     * const portalFoto = await prisma.portalFoto.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PortalFotoFindUniqueOrThrowArgs>(args: SelectSubset<T, PortalFotoFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PortalFotoClient<$Result.GetResult<Prisma.$PortalFotoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalFoto that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalFotoFindFirstArgs} args - Arguments to find a PortalFoto
+     * @example
+     * // Get one PortalFoto
+     * const portalFoto = await prisma.portalFoto.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PortalFotoFindFirstArgs>(args?: SelectSubset<T, PortalFotoFindFirstArgs<ExtArgs>>): Prisma__PortalFotoClient<$Result.GetResult<Prisma.$PortalFotoPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalFoto that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalFotoFindFirstOrThrowArgs} args - Arguments to find a PortalFoto
+     * @example
+     * // Get one PortalFoto
+     * const portalFoto = await prisma.portalFoto.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PortalFotoFindFirstOrThrowArgs>(args?: SelectSubset<T, PortalFotoFindFirstOrThrowArgs<ExtArgs>>): Prisma__PortalFotoClient<$Result.GetResult<Prisma.$PortalFotoPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PortalFotos that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalFotoFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PortalFotos
+     * const portalFotos = await prisma.portalFoto.findMany()
+     * 
+     * // Get first 10 PortalFotos
+     * const portalFotos = await prisma.portalFoto.findMany({ take: 10 })
+     * 
+     * // Only select the `produtoId`
+     * const portalFotoWithProdutoIdOnly = await prisma.portalFoto.findMany({ select: { produtoId: true } })
+     * 
+     */
+    findMany<T extends PortalFotoFindManyArgs>(args?: SelectSubset<T, PortalFotoFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PortalFotoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PortalFoto.
+     * @param {PortalFotoCreateArgs} args - Arguments to create a PortalFoto.
+     * @example
+     * // Create one PortalFoto
+     * const PortalFoto = await prisma.portalFoto.create({
+     *   data: {
+     *     // ... data to create a PortalFoto
+     *   }
+     * })
+     * 
+     */
+    create<T extends PortalFotoCreateArgs>(args: SelectSubset<T, PortalFotoCreateArgs<ExtArgs>>): Prisma__PortalFotoClient<$Result.GetResult<Prisma.$PortalFotoPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PortalFotos.
+     * @param {PortalFotoCreateManyArgs} args - Arguments to create many PortalFotos.
+     * @example
+     * // Create many PortalFotos
+     * const portalFoto = await prisma.portalFoto.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PortalFotoCreateManyArgs>(args?: SelectSubset<T, PortalFotoCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a PortalFoto.
+     * @param {PortalFotoDeleteArgs} args - Arguments to delete one PortalFoto.
+     * @example
+     * // Delete one PortalFoto
+     * const PortalFoto = await prisma.portalFoto.delete({
+     *   where: {
+     *     // ... filter to delete one PortalFoto
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PortalFotoDeleteArgs>(args: SelectSubset<T, PortalFotoDeleteArgs<ExtArgs>>): Prisma__PortalFotoClient<$Result.GetResult<Prisma.$PortalFotoPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PortalFoto.
+     * @param {PortalFotoUpdateArgs} args - Arguments to update one PortalFoto.
+     * @example
+     * // Update one PortalFoto
+     * const portalFoto = await prisma.portalFoto.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PortalFotoUpdateArgs>(args: SelectSubset<T, PortalFotoUpdateArgs<ExtArgs>>): Prisma__PortalFotoClient<$Result.GetResult<Prisma.$PortalFotoPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PortalFotos.
+     * @param {PortalFotoDeleteManyArgs} args - Arguments to filter PortalFotos to delete.
+     * @example
+     * // Delete a few PortalFotos
+     * const { count } = await prisma.portalFoto.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PortalFotoDeleteManyArgs>(args?: SelectSubset<T, PortalFotoDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PortalFotos.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalFotoUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PortalFotos
+     * const portalFoto = await prisma.portalFoto.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PortalFotoUpdateManyArgs>(args: SelectSubset<T, PortalFotoUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one PortalFoto.
+     * @param {PortalFotoUpsertArgs} args - Arguments to update or create a PortalFoto.
+     * @example
+     * // Update or create a PortalFoto
+     * const portalFoto = await prisma.portalFoto.upsert({
+     *   create: {
+     *     // ... data to create a PortalFoto
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PortalFoto we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PortalFotoUpsertArgs>(args: SelectSubset<T, PortalFotoUpsertArgs<ExtArgs>>): Prisma__PortalFotoClient<$Result.GetResult<Prisma.$PortalFotoPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PortalFotos.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalFotoCountArgs} args - Arguments to filter PortalFotos to count.
+     * @example
+     * // Count the number of PortalFotos
+     * const count = await prisma.portalFoto.count({
+     *   where: {
+     *     // ... the filter for the PortalFotos we want to count
+     *   }
+     * })
+    **/
+    count<T extends PortalFotoCountArgs>(
+      args?: Subset<T, PortalFotoCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PortalFotoCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PortalFoto.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalFotoAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PortalFotoAggregateArgs>(args: Subset<T, PortalFotoAggregateArgs>): Prisma.PrismaPromise<GetPortalFotoAggregateType<T>>
+
+    /**
+     * Group by PortalFoto.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalFotoGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PortalFotoGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PortalFotoGroupByArgs['orderBy'] }
+        : { orderBy?: PortalFotoGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PortalFotoGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPortalFotoGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PortalFoto model
+   */
+  readonly fields: PortalFotoFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PortalFoto.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PortalFotoClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    produto<T extends ProdutoComercialDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercialDefaultArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PortalFoto model
+   */
+  interface PortalFotoFieldRefs {
+    readonly produtoId: FieldRef<"PortalFoto", 'String'>
+    readonly conteudo: FieldRef<"PortalFoto", 'Bytes'>
+    readonly atualizadoEm: FieldRef<"PortalFoto", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PortalFoto findUnique
+   */
+  export type PortalFotoFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalFoto
+     */
+    select?: PortalFotoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalFoto
+     */
+    omit?: PortalFotoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalFotoInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalFoto to fetch.
+     */
+    where: PortalFotoWhereUniqueInput
+  }
+
+  /**
+   * PortalFoto findUniqueOrThrow
+   */
+  export type PortalFotoFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalFoto
+     */
+    select?: PortalFotoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalFoto
+     */
+    omit?: PortalFotoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalFotoInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalFoto to fetch.
+     */
+    where: PortalFotoWhereUniqueInput
+  }
+
+  /**
+   * PortalFoto findFirst
+   */
+  export type PortalFotoFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalFoto
+     */
+    select?: PortalFotoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalFoto
+     */
+    omit?: PortalFotoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalFotoInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalFoto to fetch.
+     */
+    where?: PortalFotoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalFotos to fetch.
+     */
+    orderBy?: PortalFotoOrderByWithRelationInput | PortalFotoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalFotos.
+     */
+    cursor?: PortalFotoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalFotos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalFotos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalFotos.
+     */
+    distinct?: PortalFotoScalarFieldEnum | PortalFotoScalarFieldEnum[]
+  }
+
+  /**
+   * PortalFoto findFirstOrThrow
+   */
+  export type PortalFotoFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalFoto
+     */
+    select?: PortalFotoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalFoto
+     */
+    omit?: PortalFotoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalFotoInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalFoto to fetch.
+     */
+    where?: PortalFotoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalFotos to fetch.
+     */
+    orderBy?: PortalFotoOrderByWithRelationInput | PortalFotoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalFotos.
+     */
+    cursor?: PortalFotoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalFotos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalFotos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalFotos.
+     */
+    distinct?: PortalFotoScalarFieldEnum | PortalFotoScalarFieldEnum[]
+  }
+
+  /**
+   * PortalFoto findMany
+   */
+  export type PortalFotoFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalFoto
+     */
+    select?: PortalFotoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalFoto
+     */
+    omit?: PortalFotoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalFotoInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalFotos to fetch.
+     */
+    where?: PortalFotoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalFotos to fetch.
+     */
+    orderBy?: PortalFotoOrderByWithRelationInput | PortalFotoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PortalFotos.
+     */
+    cursor?: PortalFotoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalFotos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalFotos.
+     */
+    skip?: number
+    distinct?: PortalFotoScalarFieldEnum | PortalFotoScalarFieldEnum[]
+  }
+
+  /**
+   * PortalFoto create
+   */
+  export type PortalFotoCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalFoto
+     */
+    select?: PortalFotoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalFoto
+     */
+    omit?: PortalFotoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalFotoInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PortalFoto.
+     */
+    data: XOR<PortalFotoCreateInput, PortalFotoUncheckedCreateInput>
+  }
+
+  /**
+   * PortalFoto createMany
+   */
+  export type PortalFotoCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PortalFotos.
+     */
+    data: PortalFotoCreateManyInput | PortalFotoCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PortalFoto update
+   */
+  export type PortalFotoUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalFoto
+     */
+    select?: PortalFotoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalFoto
+     */
+    omit?: PortalFotoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalFotoInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PortalFoto.
+     */
+    data: XOR<PortalFotoUpdateInput, PortalFotoUncheckedUpdateInput>
+    /**
+     * Choose, which PortalFoto to update.
+     */
+    where: PortalFotoWhereUniqueInput
+  }
+
+  /**
+   * PortalFoto updateMany
+   */
+  export type PortalFotoUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PortalFotos.
+     */
+    data: XOR<PortalFotoUpdateManyMutationInput, PortalFotoUncheckedUpdateManyInput>
+    /**
+     * Filter which PortalFotos to update
+     */
+    where?: PortalFotoWhereInput
+    /**
+     * Limit how many PortalFotos to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalFoto upsert
+   */
+  export type PortalFotoUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalFoto
+     */
+    select?: PortalFotoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalFoto
+     */
+    omit?: PortalFotoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalFotoInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PortalFoto to update in case it exists.
+     */
+    where: PortalFotoWhereUniqueInput
+    /**
+     * In case the PortalFoto found by the `where` argument doesn't exist, create a new PortalFoto with this data.
+     */
+    create: XOR<PortalFotoCreateInput, PortalFotoUncheckedCreateInput>
+    /**
+     * In case the PortalFoto was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PortalFotoUpdateInput, PortalFotoUncheckedUpdateInput>
+  }
+
+  /**
+   * PortalFoto delete
+   */
+  export type PortalFotoDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalFoto
+     */
+    select?: PortalFotoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalFoto
+     */
+    omit?: PortalFotoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalFotoInclude<ExtArgs> | null
+    /**
+     * Filter which PortalFoto to delete.
+     */
+    where: PortalFotoWhereUniqueInput
+  }
+
+  /**
+   * PortalFoto deleteMany
+   */
+  export type PortalFotoDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalFotos to delete
+     */
+    where?: PortalFotoWhereInput
+    /**
+     * Limit how many PortalFotos to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalFoto without action
+   */
+  export type PortalFotoDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalFoto
+     */
+    select?: PortalFotoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalFoto
+     */
+    omit?: PortalFotoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalFotoInclude<ExtArgs> | null
   }
 
 
@@ -40085,6 +41098,15 @@ export namespace Prisma {
   export type PortalCadastroScalarFieldEnum = (typeof PortalCadastroScalarFieldEnum)[keyof typeof PortalCadastroScalarFieldEnum]
 
 
+  export const PortalFotoScalarFieldEnum: {
+    produtoId: 'produtoId',
+    conteudo: 'conteudo',
+    atualizadoEm: 'atualizadoEm'
+  };
+
+  export type PortalFotoScalarFieldEnum = (typeof PortalFotoScalarFieldEnum)[keyof typeof PortalFotoScalarFieldEnum]
+
+
   export const RegraComercialClienteScalarFieldEnum: {
     id: 'id',
     contaAzulCustomerId: 'contaAzulCustomerId',
@@ -40644,6 +41666,13 @@ export namespace Prisma {
   export type PortalCadastroOrderByRelevanceFieldEnum = (typeof PortalCadastroOrderByRelevanceFieldEnum)[keyof typeof PortalCadastroOrderByRelevanceFieldEnum]
 
 
+  export const PortalFotoOrderByRelevanceFieldEnum: {
+    produtoId: 'produtoId'
+  };
+
+  export type PortalFotoOrderByRelevanceFieldEnum = (typeof PortalFotoOrderByRelevanceFieldEnum)[keyof typeof PortalFotoOrderByRelevanceFieldEnum]
+
+
   export const RegraComercialClienteOrderByRelevanceFieldEnum: {
     id: 'id',
     contaAzulCustomerId: 'contaAzulCustomerId',
@@ -40985,6 +42014,13 @@ export namespace Prisma {
    * Reference to a field of type 'ModoCompraProduto'
    */
   export type EnumModoCompraProdutoFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ModoCompraProduto'>
+    
+
+
+  /**
+   * Reference to a field of type 'Bytes'
+   */
+  export type BytesFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Bytes'>
     
 
 
@@ -41697,6 +42733,7 @@ export namespace Prisma {
     estoqueLoja?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
+    portalFoto?: XOR<PortalFotoNullableScalarRelationFilter, PortalFotoWhereInput> | null
     precosEspeciais?: PrecoEspecialClienteListRelationFilter
     itensPedido?: PedidoOperacionalItemListRelationFilter
     avariasPedido?: PedidoOperacionalAvariaListRelationFilter
@@ -41732,6 +42769,7 @@ export namespace Prisma {
     estoqueLoja?: SortOrderInput | SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
+    portalFoto?: PortalFotoOrderByWithRelationInput
     precosEspeciais?: PrecoEspecialClienteOrderByRelationAggregateInput
     itensPedido?: PedidoOperacionalItemOrderByRelationAggregateInput
     avariasPedido?: PedidoOperacionalAvariaOrderByRelationAggregateInput
@@ -41771,6 +42809,7 @@ export namespace Prisma {
     estoqueLoja?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
+    portalFoto?: XOR<PortalFotoNullableScalarRelationFilter, PortalFotoWhereInput> | null
     precosEspeciais?: PrecoEspecialClienteListRelationFilter
     itensPedido?: PedidoOperacionalItemListRelationFilter
     avariasPedido?: PedidoOperacionalAvariaListRelationFilter
@@ -42046,6 +43085,52 @@ export namespace Prisma {
     contaAzulId?: StringNullableWithAggregatesFilter<"PortalCadastro"> | string | null
     criadoEm?: DateTimeWithAggregatesFilter<"PortalCadastro"> | Date | string
     atualizadoEm?: DateTimeWithAggregatesFilter<"PortalCadastro"> | Date | string
+  }
+
+  export type PortalFotoWhereInput = {
+    AND?: PortalFotoWhereInput | PortalFotoWhereInput[]
+    OR?: PortalFotoWhereInput[]
+    NOT?: PortalFotoWhereInput | PortalFotoWhereInput[]
+    produtoId?: StringFilter<"PortalFoto"> | string
+    conteudo?: BytesFilter<"PortalFoto"> | Uint8Array
+    atualizadoEm?: DateTimeFilter<"PortalFoto"> | Date | string
+    produto?: XOR<ProdutoComercialScalarRelationFilter, ProdutoComercialWhereInput>
+  }
+
+  export type PortalFotoOrderByWithRelationInput = {
+    produtoId?: SortOrder
+    conteudo?: SortOrder
+    atualizadoEm?: SortOrder
+    produto?: ProdutoComercialOrderByWithRelationInput
+    _relevance?: PortalFotoOrderByRelevanceInput
+  }
+
+  export type PortalFotoWhereUniqueInput = Prisma.AtLeast<{
+    produtoId?: string
+    AND?: PortalFotoWhereInput | PortalFotoWhereInput[]
+    OR?: PortalFotoWhereInput[]
+    NOT?: PortalFotoWhereInput | PortalFotoWhereInput[]
+    conteudo?: BytesFilter<"PortalFoto"> | Uint8Array
+    atualizadoEm?: DateTimeFilter<"PortalFoto"> | Date | string
+    produto?: XOR<ProdutoComercialScalarRelationFilter, ProdutoComercialWhereInput>
+  }, "produtoId">
+
+  export type PortalFotoOrderByWithAggregationInput = {
+    produtoId?: SortOrder
+    conteudo?: SortOrder
+    atualizadoEm?: SortOrder
+    _count?: PortalFotoCountOrderByAggregateInput
+    _max?: PortalFotoMaxOrderByAggregateInput
+    _min?: PortalFotoMinOrderByAggregateInput
+  }
+
+  export type PortalFotoScalarWhereWithAggregatesInput = {
+    AND?: PortalFotoScalarWhereWithAggregatesInput | PortalFotoScalarWhereWithAggregatesInput[]
+    OR?: PortalFotoScalarWhereWithAggregatesInput[]
+    NOT?: PortalFotoScalarWhereWithAggregatesInput | PortalFotoScalarWhereWithAggregatesInput[]
+    produtoId?: StringWithAggregatesFilter<"PortalFoto"> | string
+    conteudo?: BytesWithAggregatesFilter<"PortalFoto"> | Uint8Array
+    atualizadoEm?: DateTimeWithAggregatesFilter<"PortalFoto"> | Date | string
   }
 
   export type RegraComercialClienteWhereInput = {
@@ -44717,6 +45802,7 @@ export namespace Prisma {
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+    portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
@@ -44752,6 +45838,7 @@ export namespace Prisma {
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+    portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
@@ -44785,6 +45872,7 @@ export namespace Prisma {
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
@@ -44820,6 +45908,7 @@ export namespace Prisma {
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
@@ -45152,6 +46241,47 @@ export namespace Prisma {
     erro?: NullableStringFieldUpdateOperationsInput | string | null
     contaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalFotoCreateInput = {
+    conteudo: Uint8Array
+    atualizadoEm?: Date | string
+    produto: ProdutoComercialCreateNestedOneWithoutPortalFotoInput
+  }
+
+  export type PortalFotoUncheckedCreateInput = {
+    produtoId: string
+    conteudo: Uint8Array
+    atualizadoEm?: Date | string
+  }
+
+  export type PortalFotoUpdateInput = {
+    conteudo?: BytesFieldUpdateOperationsInput | Uint8Array
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    produto?: ProdutoComercialUpdateOneRequiredWithoutPortalFotoNestedInput
+  }
+
+  export type PortalFotoUncheckedUpdateInput = {
+    produtoId?: StringFieldUpdateOperationsInput | string
+    conteudo?: BytesFieldUpdateOperationsInput | Uint8Array
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalFotoCreateManyInput = {
+    produtoId: string
+    conteudo: Uint8Array
+    atualizadoEm?: Date | string
+  }
+
+  export type PortalFotoUpdateManyMutationInput = {
+    conteudo?: BytesFieldUpdateOperationsInput | Uint8Array
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalFotoUncheckedUpdateManyInput = {
+    produtoId?: StringFieldUpdateOperationsInput | string
+    conteudo?: BytesFieldUpdateOperationsInput | Uint8Array
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -48189,6 +49319,11 @@ export namespace Prisma {
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
+  export type PortalFotoNullableScalarRelationFilter = {
+    is?: PortalFotoWhereInput | null
+    isNot?: PortalFotoWhereInput | null
+  }
+
   export type PrecoEspecialClienteListRelationFilter = {
     every?: PrecoEspecialClienteWhereInput
     some?: PrecoEspecialClienteWhereInput
@@ -48487,6 +49622,47 @@ export namespace Prisma {
     contaAzulId?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
+  }
+
+  export type BytesFilter<$PrismaModel = never> = {
+    equals?: Uint8Array | BytesFieldRefInput<$PrismaModel>
+    in?: Uint8Array[]
+    notIn?: Uint8Array[]
+    not?: NestedBytesFilter<$PrismaModel> | Uint8Array
+  }
+
+  export type PortalFotoOrderByRelevanceInput = {
+    fields: PortalFotoOrderByRelevanceFieldEnum | PortalFotoOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type PortalFotoCountOrderByAggregateInput = {
+    produtoId?: SortOrder
+    conteudo?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PortalFotoMaxOrderByAggregateInput = {
+    produtoId?: SortOrder
+    conteudo?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PortalFotoMinOrderByAggregateInput = {
+    produtoId?: SortOrder
+    conteudo?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type BytesWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Uint8Array | BytesFieldRefInput<$PrismaModel>
+    in?: Uint8Array[]
+    notIn?: Uint8Array[]
+    not?: NestedBytesWithAggregatesFilter<$PrismaModel> | Uint8Array
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBytesFilter<$PrismaModel>
+    _max?: NestedBytesFilter<$PrismaModel>
   }
 
   export type EnumTipoVendaPedidoNullableFilter<$PrismaModel = never> = {
@@ -51279,6 +52455,12 @@ export namespace Prisma {
     update?: XOR<XOR<ProdutoComercialUpdateToOneWithWhereWithoutEstoqueVivoMixComponentesInput, ProdutoComercialUpdateWithoutEstoqueVivoMixComponentesInput>, ProdutoComercialUncheckedUpdateWithoutEstoqueVivoMixComponentesInput>
   }
 
+  export type PortalFotoCreateNestedOneWithoutProdutoInput = {
+    create?: XOR<PortalFotoCreateWithoutProdutoInput, PortalFotoUncheckedCreateWithoutProdutoInput>
+    connectOrCreate?: PortalFotoCreateOrConnectWithoutProdutoInput
+    connect?: PortalFotoWhereUniqueInput
+  }
+
   export type PrecoEspecialClienteCreateNestedManyWithoutProdutoInput = {
     create?: XOR<PrecoEspecialClienteCreateWithoutProdutoInput, PrecoEspecialClienteUncheckedCreateWithoutProdutoInput> | PrecoEspecialClienteCreateWithoutProdutoInput[] | PrecoEspecialClienteUncheckedCreateWithoutProdutoInput[]
     connectOrCreate?: PrecoEspecialClienteCreateOrConnectWithoutProdutoInput | PrecoEspecialClienteCreateOrConnectWithoutProdutoInput[]
@@ -51327,6 +52509,12 @@ export namespace Prisma {
     connect?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
   }
 
+  export type PortalFotoUncheckedCreateNestedOneWithoutProdutoInput = {
+    create?: XOR<PortalFotoCreateWithoutProdutoInput, PortalFotoUncheckedCreateWithoutProdutoInput>
+    connectOrCreate?: PortalFotoCreateOrConnectWithoutProdutoInput
+    connect?: PortalFotoWhereUniqueInput
+  }
+
   export type PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput = {
     create?: XOR<PrecoEspecialClienteCreateWithoutProdutoInput, PrecoEspecialClienteUncheckedCreateWithoutProdutoInput> | PrecoEspecialClienteCreateWithoutProdutoInput[] | PrecoEspecialClienteUncheckedCreateWithoutProdutoInput[]
     connectOrCreate?: PrecoEspecialClienteCreateOrConnectWithoutProdutoInput | PrecoEspecialClienteCreateOrConnectWithoutProdutoInput[]
@@ -51371,6 +52559,16 @@ export namespace Prisma {
 
   export type EnumModoCompraProdutoFieldUpdateOperationsInput = {
     set?: $Enums.ModoCompraProduto
+  }
+
+  export type PortalFotoUpdateOneWithoutProdutoNestedInput = {
+    create?: XOR<PortalFotoCreateWithoutProdutoInput, PortalFotoUncheckedCreateWithoutProdutoInput>
+    connectOrCreate?: PortalFotoCreateOrConnectWithoutProdutoInput
+    upsert?: PortalFotoUpsertWithoutProdutoInput
+    disconnect?: PortalFotoWhereInput | boolean
+    delete?: PortalFotoWhereInput | boolean
+    connect?: PortalFotoWhereUniqueInput
+    update?: XOR<XOR<PortalFotoUpdateToOneWithWhereWithoutProdutoInput, PortalFotoUpdateWithoutProdutoInput>, PortalFotoUncheckedUpdateWithoutProdutoInput>
   }
 
   export type PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput = {
@@ -51465,6 +52663,16 @@ export namespace Prisma {
     update?: EstoqueVivoMixComponenteUpdateWithWhereUniqueWithoutProdutoInput | EstoqueVivoMixComponenteUpdateWithWhereUniqueWithoutProdutoInput[]
     updateMany?: EstoqueVivoMixComponenteUpdateManyWithWhereWithoutProdutoInput | EstoqueVivoMixComponenteUpdateManyWithWhereWithoutProdutoInput[]
     deleteMany?: EstoqueVivoMixComponenteScalarWhereInput | EstoqueVivoMixComponenteScalarWhereInput[]
+  }
+
+  export type PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput = {
+    create?: XOR<PortalFotoCreateWithoutProdutoInput, PortalFotoUncheckedCreateWithoutProdutoInput>
+    connectOrCreate?: PortalFotoCreateOrConnectWithoutProdutoInput
+    upsert?: PortalFotoUpsertWithoutProdutoInput
+    disconnect?: PortalFotoWhereInput | boolean
+    delete?: PortalFotoWhereInput | boolean
+    connect?: PortalFotoWhereUniqueInput
+    update?: XOR<XOR<PortalFotoUpdateToOneWithWhereWithoutProdutoInput, PortalFotoUpdateWithoutProdutoInput>, PortalFotoUncheckedUpdateWithoutProdutoInput>
   }
 
   export type PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput = {
@@ -51563,6 +52771,24 @@ export namespace Prisma {
     upsert?: ClienteUpsertWithoutPortalAcessoInput
     connect?: ClienteWhereUniqueInput
     update?: XOR<XOR<ClienteUpdateToOneWithWhereWithoutPortalAcessoInput, ClienteUpdateWithoutPortalAcessoInput>, ClienteUncheckedUpdateWithoutPortalAcessoInput>
+  }
+
+  export type ProdutoComercialCreateNestedOneWithoutPortalFotoInput = {
+    create?: XOR<ProdutoComercialCreateWithoutPortalFotoInput, ProdutoComercialUncheckedCreateWithoutPortalFotoInput>
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutPortalFotoInput
+    connect?: ProdutoComercialWhereUniqueInput
+  }
+
+  export type BytesFieldUpdateOperationsInput = {
+    set?: Uint8Array
+  }
+
+  export type ProdutoComercialUpdateOneRequiredWithoutPortalFotoNestedInput = {
+    create?: XOR<ProdutoComercialCreateWithoutPortalFotoInput, ProdutoComercialUncheckedCreateWithoutPortalFotoInput>
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutPortalFotoInput
+    upsert?: ProdutoComercialUpsertWithoutPortalFotoInput
+    connect?: ProdutoComercialWhereUniqueInput
+    update?: XOR<XOR<ProdutoComercialUpdateToOneWithWhereWithoutPortalFotoInput, ProdutoComercialUpdateWithoutPortalFotoInput>, ProdutoComercialUncheckedUpdateWithoutPortalFotoInput>
   }
 
   export type ClienteCreateNestedOneWithoutRegraComercialInput = {
@@ -52912,6 +54138,23 @@ export namespace Prisma {
     gt?: InputJsonValue
     gte?: InputJsonValue
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type NestedBytesFilter<$PrismaModel = never> = {
+    equals?: Uint8Array | BytesFieldRefInput<$PrismaModel>
+    in?: Uint8Array[]
+    notIn?: Uint8Array[]
+    not?: NestedBytesFilter<$PrismaModel> | Uint8Array
+  }
+
+  export type NestedBytesWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Uint8Array | BytesFieldRefInput<$PrismaModel>
+    in?: Uint8Array[]
+    notIn?: Uint8Array[]
+    not?: NestedBytesWithAggregatesFilter<$PrismaModel> | Uint8Array
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBytesFilter<$PrismaModel>
+    _max?: NestedBytesFilter<$PrismaModel>
   }
 
   export type NestedEnumTipoVendaPedidoNullableFilter<$PrismaModel = never> = {
@@ -55070,6 +56313,7 @@ export namespace Prisma {
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+    portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
@@ -55104,6 +56348,7 @@ export namespace Prisma {
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+    portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
@@ -55174,6 +56419,7 @@ export namespace Prisma {
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
@@ -55208,6 +56454,7 @@ export namespace Prisma {
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
@@ -55291,6 +56538,7 @@ export namespace Prisma {
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+    portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
@@ -55325,6 +56573,7 @@ export namespace Prisma {
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+    portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
@@ -55404,6 +56653,7 @@ export namespace Prisma {
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
@@ -55438,11 +56688,27 @@ export namespace Prisma {
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput
+  }
+
+  export type PortalFotoCreateWithoutProdutoInput = {
+    conteudo: Uint8Array
+    atualizadoEm?: Date | string
+  }
+
+  export type PortalFotoUncheckedCreateWithoutProdutoInput = {
+    conteudo: Uint8Array
+    atualizadoEm?: Date | string
+  }
+
+  export type PortalFotoCreateOrConnectWithoutProdutoInput = {
+    where: PortalFotoWhereUniqueInput
+    create: XOR<PortalFotoCreateWithoutProdutoInput, PortalFotoUncheckedCreateWithoutProdutoInput>
   }
 
   export type PrecoEspecialClienteCreateWithoutProdutoInput = {
@@ -55570,6 +56836,7 @@ export namespace Prisma {
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+    portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
@@ -55604,6 +56871,7 @@ export namespace Prisma {
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+    portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
@@ -55641,6 +56909,7 @@ export namespace Prisma {
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+    portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
@@ -55674,6 +56943,7 @@ export namespace Prisma {
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+    portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
@@ -55742,6 +57012,27 @@ export namespace Prisma {
   export type EstoqueVivoMixComponenteCreateManyProdutoInputEnvelope = {
     data: EstoqueVivoMixComponenteCreateManyProdutoInput | EstoqueVivoMixComponenteCreateManyProdutoInput[]
     skipDuplicates?: boolean
+  }
+
+  export type PortalFotoUpsertWithoutProdutoInput = {
+    update: XOR<PortalFotoUpdateWithoutProdutoInput, PortalFotoUncheckedUpdateWithoutProdutoInput>
+    create: XOR<PortalFotoCreateWithoutProdutoInput, PortalFotoUncheckedCreateWithoutProdutoInput>
+    where?: PortalFotoWhereInput
+  }
+
+  export type PortalFotoUpdateToOneWithWhereWithoutProdutoInput = {
+    where?: PortalFotoWhereInput
+    data: XOR<PortalFotoUpdateWithoutProdutoInput, PortalFotoUncheckedUpdateWithoutProdutoInput>
+  }
+
+  export type PortalFotoUpdateWithoutProdutoInput = {
+    conteudo?: BytesFieldUpdateOperationsInput | Uint8Array
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalFotoUncheckedUpdateWithoutProdutoInput = {
+    conteudo?: BytesFieldUpdateOperationsInput | Uint8Array
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type PrecoEspecialClienteUpsertWithWhereUniqueWithoutProdutoInput = {
@@ -55857,6 +57148,7 @@ export namespace Prisma {
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
@@ -55891,6 +57183,7 @@ export namespace Prisma {
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
@@ -56124,6 +57417,158 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
+  }
+
+  export type ProdutoComercialCreateWithoutPortalFotoInput = {
+    id?: string
+    nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
+    itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
+    avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
+    mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
+    mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixCreateNestedManyWithoutProdutoReferenciaInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
+  }
+
+  export type ProdutoComercialUncheckedCreateWithoutPortalFotoInput = {
+    id?: string
+    nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixProdutoReferenciaId?: string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
+    itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
+    avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
+    mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedCreateNestedManyWithoutProdutoReferenciaInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
+  }
+
+  export type ProdutoComercialCreateOrConnectWithoutPortalFotoInput = {
+    where: ProdutoComercialWhereUniqueInput
+    create: XOR<ProdutoComercialCreateWithoutPortalFotoInput, ProdutoComercialUncheckedCreateWithoutPortalFotoInput>
+  }
+
+  export type ProdutoComercialUpsertWithoutPortalFotoInput = {
+    update: XOR<ProdutoComercialUpdateWithoutPortalFotoInput, ProdutoComercialUncheckedUpdateWithoutPortalFotoInput>
+    create: XOR<ProdutoComercialCreateWithoutPortalFotoInput, ProdutoComercialUncheckedCreateWithoutPortalFotoInput>
+    where?: ProdutoComercialWhereInput
+  }
+
+  export type ProdutoComercialUpdateToOneWithWhereWithoutPortalFotoInput = {
+    where?: ProdutoComercialWhereInput
+    data: XOR<ProdutoComercialUpdateWithoutPortalFotoInput, ProdutoComercialUncheckedUpdateWithoutPortalFotoInput>
+  }
+
+  export type ProdutoComercialUpdateWithoutPortalFotoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
+    itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
+    avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
+    mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
+    mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUpdateManyWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
+  }
+
+  export type ProdutoComercialUncheckedUpdateWithoutPortalFotoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixProdutoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
+    itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
+    avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
+    mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
   export type ClienteCreateWithoutRegraComercialInput = {
@@ -56506,6 +57951,7 @@ export namespace Prisma {
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+    portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
     mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
@@ -56540,6 +57986,7 @@ export namespace Prisma {
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+    portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
@@ -56635,6 +58082,7 @@ export namespace Prisma {
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
     mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
@@ -56669,6 +58117,7 @@ export namespace Prisma {
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
@@ -58129,6 +59578,7 @@ export namespace Prisma {
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+    portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
     mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
@@ -58163,6 +59613,7 @@ export namespace Prisma {
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+    portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
@@ -58278,6 +59729,7 @@ export namespace Prisma {
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
     mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
@@ -58312,6 +59764,7 @@ export namespace Prisma {
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
@@ -58470,6 +59923,7 @@ export namespace Prisma {
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+    portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
@@ -58504,6 +59958,7 @@ export namespace Prisma {
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+    portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
@@ -58733,6 +60188,7 @@ export namespace Prisma {
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
@@ -58767,6 +60223,7 @@ export namespace Prisma {
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
@@ -61992,6 +63449,7 @@ export namespace Prisma {
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
@@ -62025,6 +63483,7 @@ export namespace Prisma {
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput

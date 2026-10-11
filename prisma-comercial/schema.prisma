@@ -330,6 +330,7 @@ model ProdutoComercial {
   criadoEm                 DateTime           @default(now()) @map("criado_em")
   atualizadoEm             DateTime           @updatedAt @map("atualizado_em")
 
+  portalFoto      PortalFoto?
   precosEspeciais PrecoEspecialCliente[]
   itensPedido     PedidoOperacionalItem[]
   avariasPedido   PedidoOperacionalAvaria[]
@@ -389,6 +390,17 @@ model PortalCadastro {
   @@index([cnpj])
   @@index([status])
   @@map("portal_cadastros")
+}
+
+/// Foto enviada pela equipe. Fica fora do produto para a lista da loja não carregar o arquivo.
+model PortalFoto {
+  produtoId    String   @id @map("produto_id")
+  conteudo     Bytes    @db.MediumBlob
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  produto ProdutoComercial @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+
+  @@map("portal_fotos")
 }
 
 model RegraComercialCliente {

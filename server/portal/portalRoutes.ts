@@ -15,7 +15,7 @@ import {
   upcomingDeliveryDates,
 } from "./portalCalendario";
 import { fichaDoProduto } from "./vitrineCopy";
-import { cnpjValido, formatarCnpj, LojaErro, preencherFichasDaVitrine, reenviarCadastro, registrarEmpresa } from "./portalLoja";
+import { cnpjValido, formatarCnpj, jpegValido, LojaErro, preencherFichasDaVitrine, reenviarCadastro, registrarEmpresa } from "./portalLoja";
 import {
   emitirSessaoCliente,
   emitirSessaoEquipe,
@@ -325,6 +325,23 @@ export function registerPortalRoutes(app: Express): void {
       }
       console.error("[portal] cadastro", error);
       falha(res, 503, "Não foi possível cadastrar a empresa agora.");
+    }
+  });
+
+  app.get("/api/portal/foto/:id", async (req, res) => {
+    try {
+      const prisma = getComercialPrisma();
+      const foto = await prisma.portalFoto.findUnique({ where: { produtoId: req.params.id } });
+      if (!foto) {
+        res.status(404).end();
+        return;
+      }
+      res.setHeader("Content-Type", "image/jpeg");
+      res.setHeader("Cache-Control", "public, max-age=60");
+      res.send(foto.conteudo);
+    } catch (error) {
+      console.error("[portal] foto", error);
+      res.status(404).end();
     }
   });
 
@@ -899,6 +916,46 @@ export function registerPortalRoutes(app: Express): void {
     } catch (error) {
       console.error("[portal] patch produto", error);
       falha(res, 503, "Não foi possível salvar o produto.");
+    }
+  });
+
+  app.post("/api/portal/equipe/produtos/:id/foto", async (req, res) => {
+    const equipe = await equipeDaSessao(req);
+    if (!equipe) {
+      falha(res, 401, "Entre com o acesso da equipe.");
+      return;
+    }
+    const parsed = z.object({ imagem: z.string().min(100).max(2_100_000) }).safeParse(req.body);
+    if (!parsed.success) {
+      falha(res, 400, "Escolha uma foto JPG ou PNG.");
+      return;
+    }
+    const conteudo = Buffer.from(parsed.data.imagem, "base64");
+    if (!jpegValido(conteudo)) {
+      falha(res, 400, "Escolha uma foto JPG ou PNG de até 1,5 MB.");
+      return;
+    }
+    try {
+      const prisma = getComercialPrisma();
+      const produto = await prisma.produtoComercial.findUnique({ where: { id: req.params.id } });
+      if (!produto || !produto.importadoOperacao || !produto.contaAzulProdutoId) {
+        falha(res, 404, "Produto não encontrado.");
+        return;
+      }
+      const imagemUrl = `/api/portal/foto/${produto.id}`;
+      await prisma.portalFoto.upsert({
+        where: { produtoId: produto.id },
+        create: { produtoId: produto.id, conteudo },
+        update: { conteudo },
+      });
+      await prisma.produtoComercial.update({
+        where: { id: produto.id },
+        data: { imagemUrl },
+      });
+      res.json({ imagemUrl });
+    } catch (error) {
+      console.error("[portal] salvar foto", error);
+      falha(res, 503, "Não foi possível guardar a foto.");
     }
   });
 
