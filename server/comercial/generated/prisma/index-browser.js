@@ -210,6 +210,20 @@ exports.Prisma.ProdutoComercialScalarFieldEnum = {
   mixFolhaLeve: 'mixFolhaLeve',
   mixProdutoReferenciaId: 'mixProdutoReferenciaId',
   mixVariedades: 'mixVariedades',
+  imagemUrl: 'imagemUrl',
+  visivelPortal: 'visivelPortal',
+  criadoEm: 'criadoEm',
+  atualizadoEm: 'atualizadoEm'
+};
+
+exports.Prisma.PortalAcessoScalarFieldEnum = {
+  id: 'id',
+  clienteId: 'clienteId',
+  email: 'email',
+  senhaHash: 'senhaHash',
+  conviteHash: 'conviteHash',
+  conviteExpiraEm: 'conviteExpiraEm',
+  ativo: 'ativo',
   criadoEm: 'criadoEm',
   atualizadoEm: 'atualizadoEm'
 };
@@ -618,7 +632,16 @@ exports.Prisma.ProdutoComercialOrderByRelevanceFieldEnum = {
   sku: 'sku',
   statusContaAzul: 'statusContaAzul',
   categoria: 'categoria',
-  mixProdutoReferenciaId: 'mixProdutoReferenciaId'
+  mixProdutoReferenciaId: 'mixProdutoReferenciaId',
+  imagemUrl: 'imagemUrl'
+};
+
+exports.Prisma.PortalAcessoOrderByRelevanceFieldEnum = {
+  id: 'id',
+  clienteId: 'clienteId',
+  email: 'email',
+  senhaHash: 'senhaHash',
+  conviteHash: 'conviteHash'
 };
 
 exports.Prisma.RegraComercialClienteOrderByRelevanceFieldEnum = {
@@ -982,6 +1005,7 @@ exports.Prisma.ModelName = {
   EstoqueVivoMix: 'EstoqueVivoMix',
   EstoqueVivoMixComponente: 'EstoqueVivoMixComponente',
   ProdutoComercial: 'ProdutoComercial',
+  PortalAcesso: 'PortalAcesso',
   RegraComercialCliente: 'RegraComercialCliente',
   ClienteLegadoContaAzulLink: 'ClienteLegadoContaAzulLink',
   PrecoEspecialCliente: 'PrecoEspecialCliente',

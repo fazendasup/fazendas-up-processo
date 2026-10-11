@@ -216,6 +216,19 @@ async function startServer() {
   app.use("/api/bpf", jsonParser);
   registerBpfRoutes(app);
 
+  app.use("/api/portal", apiLimiter);
+  app.use("/api/portal", express.json({ limit: "32kb" }));
+  try {
+    const { registerPortalRoutes } = await import("../portal/portalRoutes");
+    registerPortalRoutes(app);
+    console.log("[Server] Rotas /api/portal (loja B2B) registradas.");
+  } catch (e) {
+    console.warn(
+      "[Server] Portal B2B não carregado:",
+      e instanceof Error ? e.message : e
+    );
+  }
+
   try {
     const { registerComercialOAuthRoutes } = await import("../comercial/oauth-routes");
     registerComercialOAuthRoutes(app);

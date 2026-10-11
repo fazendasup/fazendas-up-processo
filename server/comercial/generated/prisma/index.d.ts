@@ -54,6 +54,11 @@ export type EstoqueVivoMixComponente = $Result.DefaultSelection<Prisma.$EstoqueV
  */
 export type ProdutoComercial = $Result.DefaultSelection<Prisma.$ProdutoComercialPayload>
 /**
+ * Model PortalAcesso
+ * Acesso do cliente B2B ao site. A senha nasce só quando a pessoa ativa o convite.
+ */
+export type PortalAcesso = $Result.DefaultSelection<Prisma.$PortalAcessoPayload>
+/**
  * Model RegraComercialCliente
  * 
  */
@@ -701,6 +706,16 @@ export class PrismaClient<
     * ```
     */
   get produtoComercial(): Prisma.ProdutoComercialDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.portalAcesso`: Exposes CRUD operations for the **PortalAcesso** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PortalAcessos
+    * const portalAcessos = await prisma.portalAcesso.findMany()
+    * ```
+    */
+  get portalAcesso(): Prisma.PortalAcessoDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.regraComercialCliente`: Exposes CRUD operations for the **RegraComercialCliente** model.
@@ -1389,6 +1404,7 @@ export namespace Prisma {
     EstoqueVivoMix: 'EstoqueVivoMix',
     EstoqueVivoMixComponente: 'EstoqueVivoMixComponente',
     ProdutoComercial: 'ProdutoComercial',
+    PortalAcesso: 'PortalAcesso',
     RegraComercialCliente: 'RegraComercialCliente',
     ClienteLegadoContaAzulLink: 'ClienteLegadoContaAzulLink',
     PrecoEspecialCliente: 'PrecoEspecialCliente',
@@ -1431,7 +1447,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "estoqueVivoMix" | "estoqueVivoMixComponente" | "produtoComercial" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "contaAzulEnvioConfig" | "syncState" | "regraClassificacao" | "templateMensagem"
+      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "estoqueVivoMix" | "estoqueVivoMixComponente" | "produtoComercial" | "portalAcesso" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "contaAzulEnvioConfig" | "syncState" | "regraClassificacao" | "templateMensagem"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1960,6 +1976,72 @@ export namespace Prisma {
           count: {
             args: Prisma.ProdutoComercialCountArgs<ExtArgs>
             result: $Utils.Optional<ProdutoComercialCountAggregateOutputType> | number
+          }
+        }
+      }
+      PortalAcesso: {
+        payload: Prisma.$PortalAcessoPayload<ExtArgs>
+        fields: Prisma.PortalAcessoFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PortalAcessoFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalAcessoPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PortalAcessoFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalAcessoPayload>
+          }
+          findFirst: {
+            args: Prisma.PortalAcessoFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalAcessoPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PortalAcessoFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalAcessoPayload>
+          }
+          findMany: {
+            args: Prisma.PortalAcessoFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalAcessoPayload>[]
+          }
+          create: {
+            args: Prisma.PortalAcessoCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalAcessoPayload>
+          }
+          createMany: {
+            args: Prisma.PortalAcessoCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.PortalAcessoDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalAcessoPayload>
+          }
+          update: {
+            args: Prisma.PortalAcessoUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalAcessoPayload>
+          }
+          deleteMany: {
+            args: Prisma.PortalAcessoDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PortalAcessoUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.PortalAcessoUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalAcessoPayload>
+          }
+          aggregate: {
+            args: Prisma.PortalAcessoAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePortalAcesso>
+          }
+          groupBy: {
+            args: Prisma.PortalAcessoGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PortalAcessoGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PortalAcessoCountArgs<ExtArgs>
+            result: $Utils.Optional<PortalAcessoCountAggregateOutputType> | number
           }
         }
       }
@@ -3651,6 +3733,7 @@ export namespace Prisma {
     estoqueVivoMix?: EstoqueVivoMixOmit
     estoqueVivoMixComponente?: EstoqueVivoMixComponenteOmit
     produtoComercial?: ProdutoComercialOmit
+    portalAcesso?: PortalAcessoOmit
     regraComercialCliente?: RegraComercialClienteOmit
     clienteLegadoContaAzulLink?: ClienteLegadoContaAzulLinkOmit
     precoEspecialCliente?: PrecoEspecialClienteOmit
@@ -7710,6 +7793,7 @@ export namespace Prisma {
     avariasOperacionais?: boolean | Cliente$avariasOperacionaisArgs<ExtArgs>
     linksLegadoContaAzul?: boolean | Cliente$linksLegadoContaAzulArgs<ExtArgs>
     paradasEntrega?: boolean | Cliente$paradasEntregaArgs<ExtArgs>
+    portalAcesso?: boolean | Cliente$portalAcessoArgs<ExtArgs>
     _count?: boolean | ClienteCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["cliente"]>
 
@@ -7748,6 +7832,7 @@ export namespace Prisma {
     avariasOperacionais?: boolean | Cliente$avariasOperacionaisArgs<ExtArgs>
     linksLegadoContaAzul?: boolean | Cliente$linksLegadoContaAzulArgs<ExtArgs>
     paradasEntrega?: boolean | Cliente$paradasEntregaArgs<ExtArgs>
+    portalAcesso?: boolean | Cliente$portalAcessoArgs<ExtArgs>
     _count?: boolean | ClienteCountOutputTypeDefaultArgs<ExtArgs>
   }
 
@@ -7765,6 +7850,7 @@ export namespace Prisma {
       avariasOperacionais: Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>[]
       linksLegadoContaAzul: Prisma.$ClienteLegadoContaAzulLinkPayload<ExtArgs>[]
       paradasEntrega: Prisma.$ParadaEntregaPayload<ExtArgs>[]
+      portalAcesso: Prisma.$PortalAcessoPayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -8135,6 +8221,7 @@ export namespace Prisma {
     avariasOperacionais<T extends Cliente$avariasOperacionaisArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$avariasOperacionaisArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     linksLegadoContaAzul<T extends Cliente$linksLegadoContaAzulArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$linksLegadoContaAzulArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ClienteLegadoContaAzulLinkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     paradasEntrega<T extends Cliente$paradasEntregaArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$paradasEntregaArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ParadaEntregaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    portalAcesso<T extends Cliente$portalAcessoArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$portalAcessoArgs<ExtArgs>>): Prisma__PortalAcessoClient<$Result.GetResult<Prisma.$PortalAcessoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -8775,6 +8862,25 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: ParadaEntregaScalarFieldEnum | ParadaEntregaScalarFieldEnum[]
+  }
+
+  /**
+   * Cliente.portalAcesso
+   */
+  export type Cliente$portalAcessoArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalAcesso
+     */
+    select?: PortalAcessoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalAcesso
+     */
+    omit?: PortalAcessoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalAcessoInclude<ExtArgs> | null
+    where?: PortalAcessoWhereInput
   }
 
   /**
@@ -11698,6 +11804,8 @@ export namespace Prisma {
     mixAtivo: boolean | null
     mixFolhaLeve: boolean | null
     mixProdutoReferenciaId: string | null
+    imagemUrl: string | null
+    visivelPortal: boolean | null
     criadoEm: Date | null
     atualizadoEm: Date | null
   }
@@ -11720,6 +11828,8 @@ export namespace Prisma {
     mixAtivo: boolean | null
     mixFolhaLeve: boolean | null
     mixProdutoReferenciaId: string | null
+    imagemUrl: string | null
+    visivelPortal: boolean | null
     criadoEm: Date | null
     atualizadoEm: Date | null
   }
@@ -11743,6 +11853,8 @@ export namespace Prisma {
     mixFolhaLeve: number
     mixProdutoReferenciaId: number
     mixVariedades: number
+    imagemUrl: number
+    visivelPortal: number
     criadoEm: number
     atualizadoEm: number
     _all: number
@@ -11779,6 +11891,8 @@ export namespace Prisma {
     mixAtivo?: true
     mixFolhaLeve?: true
     mixProdutoReferenciaId?: true
+    imagemUrl?: true
+    visivelPortal?: true
     criadoEm?: true
     atualizadoEm?: true
   }
@@ -11801,6 +11915,8 @@ export namespace Prisma {
     mixAtivo?: true
     mixFolhaLeve?: true
     mixProdutoReferenciaId?: true
+    imagemUrl?: true
+    visivelPortal?: true
     criadoEm?: true
     atualizadoEm?: true
   }
@@ -11824,6 +11940,8 @@ export namespace Prisma {
     mixFolhaLeve?: true
     mixProdutoReferenciaId?: true
     mixVariedades?: true
+    imagemUrl?: true
+    visivelPortal?: true
     criadoEm?: true
     atualizadoEm?: true
     _all?: true
@@ -11934,6 +12052,8 @@ export namespace Prisma {
     mixFolhaLeve: boolean
     mixProdutoReferenciaId: string | null
     mixVariedades: JsonValue | null
+    imagemUrl: string | null
+    visivelPortal: boolean
     criadoEm: Date
     atualizadoEm: Date
     _count: ProdutoComercialCountAggregateOutputType | null
@@ -11976,6 +12096,8 @@ export namespace Prisma {
     mixFolhaLeve?: boolean
     mixProdutoReferenciaId?: boolean
     mixVariedades?: boolean
+    imagemUrl?: boolean
+    visivelPortal?: boolean
     criadoEm?: boolean
     atualizadoEm?: boolean
     precosEspeciais?: boolean | ProdutoComercial$precosEspeciaisArgs<ExtArgs>
@@ -12009,11 +12131,13 @@ export namespace Prisma {
     mixFolhaLeve?: boolean
     mixProdutoReferenciaId?: boolean
     mixVariedades?: boolean
+    imagemUrl?: boolean
+    visivelPortal?: boolean
     criadoEm?: boolean
     atualizadoEm?: boolean
   }
 
-  export type ProdutoComercialOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "contaAzulProdutoId" | "sku" | "statusContaAzul" | "sincronizadoEm" | "importadoOperacao" | "precoBase" | "categoria" | "ativo" | "modoCompra" | "fatorCompraUnidade" | "rendimentoPorKg" | "ocultoListaCompra" | "mixAtivo" | "mixFolhaLeve" | "mixProdutoReferenciaId" | "mixVariedades" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["produtoComercial"]>
+  export type ProdutoComercialOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "contaAzulProdutoId" | "sku" | "statusContaAzul" | "sincronizadoEm" | "importadoOperacao" | "precoBase" | "categoria" | "ativo" | "modoCompra" | "fatorCompraUnidade" | "rendimentoPorKg" | "ocultoListaCompra" | "mixAtivo" | "mixFolhaLeve" | "mixProdutoReferenciaId" | "mixVariedades" | "imagemUrl" | "visivelPortal" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["produtoComercial"]>
   export type ProdutoComercialInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     precosEspeciais?: boolean | ProdutoComercial$precosEspeciaisArgs<ExtArgs>
     itensPedido?: boolean | ProdutoComercial$itensPedidoArgs<ExtArgs>
@@ -12055,6 +12179,11 @@ export namespace Prisma {
       mixFolhaLeve: boolean
       mixProdutoReferenciaId: string | null
       mixVariedades: Prisma.JsonValue | null
+      imagemUrl: string | null
+      /**
+       * Liberado na loja do site. Não mexe no cadastro operacional.
+       */
+      visivelPortal: boolean
       criadoEm: Date
       atualizadoEm: Date
     }, ExtArgs["result"]["produtoComercial"]>
@@ -12451,6 +12580,8 @@ export namespace Prisma {
     readonly mixFolhaLeve: FieldRef<"ProdutoComercial", 'Boolean'>
     readonly mixProdutoReferenciaId: FieldRef<"ProdutoComercial", 'String'>
     readonly mixVariedades: FieldRef<"ProdutoComercial", 'Json'>
+    readonly imagemUrl: FieldRef<"ProdutoComercial", 'String'>
+    readonly visivelPortal: FieldRef<"ProdutoComercial", 'Boolean'>
     readonly criadoEm: FieldRef<"ProdutoComercial", 'DateTime'>
     readonly atualizadoEm: FieldRef<"ProdutoComercial", 'DateTime'>
   }
@@ -12974,6 +13105,979 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: ProdutoComercialInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PortalAcesso
+   */
+
+  export type AggregatePortalAcesso = {
+    _count: PortalAcessoCountAggregateOutputType | null
+    _min: PortalAcessoMinAggregateOutputType | null
+    _max: PortalAcessoMaxAggregateOutputType | null
+  }
+
+  export type PortalAcessoMinAggregateOutputType = {
+    id: string | null
+    clienteId: string | null
+    email: string | null
+    senhaHash: string | null
+    conviteHash: string | null
+    conviteExpiraEm: Date | null
+    ativo: boolean | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type PortalAcessoMaxAggregateOutputType = {
+    id: string | null
+    clienteId: string | null
+    email: string | null
+    senhaHash: string | null
+    conviteHash: string | null
+    conviteExpiraEm: Date | null
+    ativo: boolean | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type PortalAcessoCountAggregateOutputType = {
+    id: number
+    clienteId: number
+    email: number
+    senhaHash: number
+    conviteHash: number
+    conviteExpiraEm: number
+    ativo: number
+    criadoEm: number
+    atualizadoEm: number
+    _all: number
+  }
+
+
+  export type PortalAcessoMinAggregateInputType = {
+    id?: true
+    clienteId?: true
+    email?: true
+    senhaHash?: true
+    conviteHash?: true
+    conviteExpiraEm?: true
+    ativo?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type PortalAcessoMaxAggregateInputType = {
+    id?: true
+    clienteId?: true
+    email?: true
+    senhaHash?: true
+    conviteHash?: true
+    conviteExpiraEm?: true
+    ativo?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type PortalAcessoCountAggregateInputType = {
+    id?: true
+    clienteId?: true
+    email?: true
+    senhaHash?: true
+    conviteHash?: true
+    conviteExpiraEm?: true
+    ativo?: true
+    criadoEm?: true
+    atualizadoEm?: true
+    _all?: true
+  }
+
+  export type PortalAcessoAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalAcesso to aggregate.
+     */
+    where?: PortalAcessoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalAcessos to fetch.
+     */
+    orderBy?: PortalAcessoOrderByWithRelationInput | PortalAcessoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PortalAcessoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalAcessos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalAcessos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PortalAcessos
+    **/
+    _count?: true | PortalAcessoCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PortalAcessoMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PortalAcessoMaxAggregateInputType
+  }
+
+  export type GetPortalAcessoAggregateType<T extends PortalAcessoAggregateArgs> = {
+        [P in keyof T & keyof AggregatePortalAcesso]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePortalAcesso[P]>
+      : GetScalarType<T[P], AggregatePortalAcesso[P]>
+  }
+
+
+
+
+  export type PortalAcessoGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PortalAcessoWhereInput
+    orderBy?: PortalAcessoOrderByWithAggregationInput | PortalAcessoOrderByWithAggregationInput[]
+    by: PortalAcessoScalarFieldEnum[] | PortalAcessoScalarFieldEnum
+    having?: PortalAcessoScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PortalAcessoCountAggregateInputType | true
+    _min?: PortalAcessoMinAggregateInputType
+    _max?: PortalAcessoMaxAggregateInputType
+  }
+
+  export type PortalAcessoGroupByOutputType = {
+    id: string
+    clienteId: string
+    email: string
+    senhaHash: string | null
+    conviteHash: string | null
+    conviteExpiraEm: Date | null
+    ativo: boolean
+    criadoEm: Date
+    atualizadoEm: Date
+    _count: PortalAcessoCountAggregateOutputType | null
+    _min: PortalAcessoMinAggregateOutputType | null
+    _max: PortalAcessoMaxAggregateOutputType | null
+  }
+
+  type GetPortalAcessoGroupByPayload<T extends PortalAcessoGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PortalAcessoGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PortalAcessoGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PortalAcessoGroupByOutputType[P]>
+            : GetScalarType<T[P], PortalAcessoGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PortalAcessoSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    clienteId?: boolean
+    email?: boolean
+    senhaHash?: boolean
+    conviteHash?: boolean
+    conviteExpiraEm?: boolean
+    ativo?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+    cliente?: boolean | ClienteDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["portalAcesso"]>
+
+
+
+  export type PortalAcessoSelectScalar = {
+    id?: boolean
+    clienteId?: boolean
+    email?: boolean
+    senhaHash?: boolean
+    conviteHash?: boolean
+    conviteExpiraEm?: boolean
+    ativo?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+  }
+
+  export type PortalAcessoOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "clienteId" | "email" | "senhaHash" | "conviteHash" | "conviteExpiraEm" | "ativo" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["portalAcesso"]>
+  export type PortalAcessoInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    cliente?: boolean | ClienteDefaultArgs<ExtArgs>
+  }
+
+  export type $PortalAcessoPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PortalAcesso"
+    objects: {
+      cliente: Prisma.$ClientePayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      clienteId: string
+      email: string
+      senhaHash: string | null
+      conviteHash: string | null
+      conviteExpiraEm: Date | null
+      ativo: boolean
+      criadoEm: Date
+      atualizadoEm: Date
+    }, ExtArgs["result"]["portalAcesso"]>
+    composites: {}
+  }
+
+  type PortalAcessoGetPayload<S extends boolean | null | undefined | PortalAcessoDefaultArgs> = $Result.GetResult<Prisma.$PortalAcessoPayload, S>
+
+  type PortalAcessoCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PortalAcessoFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PortalAcessoCountAggregateInputType | true
+    }
+
+  export interface PortalAcessoDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PortalAcesso'], meta: { name: 'PortalAcesso' } }
+    /**
+     * Find zero or one PortalAcesso that matches the filter.
+     * @param {PortalAcessoFindUniqueArgs} args - Arguments to find a PortalAcesso
+     * @example
+     * // Get one PortalAcesso
+     * const portalAcesso = await prisma.portalAcesso.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PortalAcessoFindUniqueArgs>(args: SelectSubset<T, PortalAcessoFindUniqueArgs<ExtArgs>>): Prisma__PortalAcessoClient<$Result.GetResult<Prisma.$PortalAcessoPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PortalAcesso that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PortalAcessoFindUniqueOrThrowArgs} args - Arguments to find a PortalAcesso
+     * @example
+     * // Get one PortalAcesso
+     * const portalAcesso = await prisma.portalAcesso.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PortalAcessoFindUniqueOrThrowArgs>(args: SelectSubset<T, PortalAcessoFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PortalAcessoClient<$Result.GetResult<Prisma.$PortalAcessoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalAcesso that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalAcessoFindFirstArgs} args - Arguments to find a PortalAcesso
+     * @example
+     * // Get one PortalAcesso
+     * const portalAcesso = await prisma.portalAcesso.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PortalAcessoFindFirstArgs>(args?: SelectSubset<T, PortalAcessoFindFirstArgs<ExtArgs>>): Prisma__PortalAcessoClient<$Result.GetResult<Prisma.$PortalAcessoPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalAcesso that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalAcessoFindFirstOrThrowArgs} args - Arguments to find a PortalAcesso
+     * @example
+     * // Get one PortalAcesso
+     * const portalAcesso = await prisma.portalAcesso.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PortalAcessoFindFirstOrThrowArgs>(args?: SelectSubset<T, PortalAcessoFindFirstOrThrowArgs<ExtArgs>>): Prisma__PortalAcessoClient<$Result.GetResult<Prisma.$PortalAcessoPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PortalAcessos that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalAcessoFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PortalAcessos
+     * const portalAcessos = await prisma.portalAcesso.findMany()
+     * 
+     * // Get first 10 PortalAcessos
+     * const portalAcessos = await prisma.portalAcesso.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const portalAcessoWithIdOnly = await prisma.portalAcesso.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PortalAcessoFindManyArgs>(args?: SelectSubset<T, PortalAcessoFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PortalAcessoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PortalAcesso.
+     * @param {PortalAcessoCreateArgs} args - Arguments to create a PortalAcesso.
+     * @example
+     * // Create one PortalAcesso
+     * const PortalAcesso = await prisma.portalAcesso.create({
+     *   data: {
+     *     // ... data to create a PortalAcesso
+     *   }
+     * })
+     * 
+     */
+    create<T extends PortalAcessoCreateArgs>(args: SelectSubset<T, PortalAcessoCreateArgs<ExtArgs>>): Prisma__PortalAcessoClient<$Result.GetResult<Prisma.$PortalAcessoPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PortalAcessos.
+     * @param {PortalAcessoCreateManyArgs} args - Arguments to create many PortalAcessos.
+     * @example
+     * // Create many PortalAcessos
+     * const portalAcesso = await prisma.portalAcesso.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PortalAcessoCreateManyArgs>(args?: SelectSubset<T, PortalAcessoCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a PortalAcesso.
+     * @param {PortalAcessoDeleteArgs} args - Arguments to delete one PortalAcesso.
+     * @example
+     * // Delete one PortalAcesso
+     * const PortalAcesso = await prisma.portalAcesso.delete({
+     *   where: {
+     *     // ... filter to delete one PortalAcesso
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PortalAcessoDeleteArgs>(args: SelectSubset<T, PortalAcessoDeleteArgs<ExtArgs>>): Prisma__PortalAcessoClient<$Result.GetResult<Prisma.$PortalAcessoPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PortalAcesso.
+     * @param {PortalAcessoUpdateArgs} args - Arguments to update one PortalAcesso.
+     * @example
+     * // Update one PortalAcesso
+     * const portalAcesso = await prisma.portalAcesso.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PortalAcessoUpdateArgs>(args: SelectSubset<T, PortalAcessoUpdateArgs<ExtArgs>>): Prisma__PortalAcessoClient<$Result.GetResult<Prisma.$PortalAcessoPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PortalAcessos.
+     * @param {PortalAcessoDeleteManyArgs} args - Arguments to filter PortalAcessos to delete.
+     * @example
+     * // Delete a few PortalAcessos
+     * const { count } = await prisma.portalAcesso.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PortalAcessoDeleteManyArgs>(args?: SelectSubset<T, PortalAcessoDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PortalAcessos.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalAcessoUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PortalAcessos
+     * const portalAcesso = await prisma.portalAcesso.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PortalAcessoUpdateManyArgs>(args: SelectSubset<T, PortalAcessoUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one PortalAcesso.
+     * @param {PortalAcessoUpsertArgs} args - Arguments to update or create a PortalAcesso.
+     * @example
+     * // Update or create a PortalAcesso
+     * const portalAcesso = await prisma.portalAcesso.upsert({
+     *   create: {
+     *     // ... data to create a PortalAcesso
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PortalAcesso we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PortalAcessoUpsertArgs>(args: SelectSubset<T, PortalAcessoUpsertArgs<ExtArgs>>): Prisma__PortalAcessoClient<$Result.GetResult<Prisma.$PortalAcessoPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PortalAcessos.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalAcessoCountArgs} args - Arguments to filter PortalAcessos to count.
+     * @example
+     * // Count the number of PortalAcessos
+     * const count = await prisma.portalAcesso.count({
+     *   where: {
+     *     // ... the filter for the PortalAcessos we want to count
+     *   }
+     * })
+    **/
+    count<T extends PortalAcessoCountArgs>(
+      args?: Subset<T, PortalAcessoCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PortalAcessoCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PortalAcesso.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalAcessoAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PortalAcessoAggregateArgs>(args: Subset<T, PortalAcessoAggregateArgs>): Prisma.PrismaPromise<GetPortalAcessoAggregateType<T>>
+
+    /**
+     * Group by PortalAcesso.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalAcessoGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PortalAcessoGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PortalAcessoGroupByArgs['orderBy'] }
+        : { orderBy?: PortalAcessoGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PortalAcessoGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPortalAcessoGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PortalAcesso model
+   */
+  readonly fields: PortalAcessoFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PortalAcesso.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PortalAcessoClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    cliente<T extends ClienteDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ClienteDefaultArgs<ExtArgs>>): Prisma__ClienteClient<$Result.GetResult<Prisma.$ClientePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PortalAcesso model
+   */
+  interface PortalAcessoFieldRefs {
+    readonly id: FieldRef<"PortalAcesso", 'String'>
+    readonly clienteId: FieldRef<"PortalAcesso", 'String'>
+    readonly email: FieldRef<"PortalAcesso", 'String'>
+    readonly senhaHash: FieldRef<"PortalAcesso", 'String'>
+    readonly conviteHash: FieldRef<"PortalAcesso", 'String'>
+    readonly conviteExpiraEm: FieldRef<"PortalAcesso", 'DateTime'>
+    readonly ativo: FieldRef<"PortalAcesso", 'Boolean'>
+    readonly criadoEm: FieldRef<"PortalAcesso", 'DateTime'>
+    readonly atualizadoEm: FieldRef<"PortalAcesso", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PortalAcesso findUnique
+   */
+  export type PortalAcessoFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalAcesso
+     */
+    select?: PortalAcessoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalAcesso
+     */
+    omit?: PortalAcessoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalAcessoInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalAcesso to fetch.
+     */
+    where: PortalAcessoWhereUniqueInput
+  }
+
+  /**
+   * PortalAcesso findUniqueOrThrow
+   */
+  export type PortalAcessoFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalAcesso
+     */
+    select?: PortalAcessoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalAcesso
+     */
+    omit?: PortalAcessoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalAcessoInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalAcesso to fetch.
+     */
+    where: PortalAcessoWhereUniqueInput
+  }
+
+  /**
+   * PortalAcesso findFirst
+   */
+  export type PortalAcessoFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalAcesso
+     */
+    select?: PortalAcessoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalAcesso
+     */
+    omit?: PortalAcessoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalAcessoInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalAcesso to fetch.
+     */
+    where?: PortalAcessoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalAcessos to fetch.
+     */
+    orderBy?: PortalAcessoOrderByWithRelationInput | PortalAcessoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalAcessos.
+     */
+    cursor?: PortalAcessoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalAcessos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalAcessos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalAcessos.
+     */
+    distinct?: PortalAcessoScalarFieldEnum | PortalAcessoScalarFieldEnum[]
+  }
+
+  /**
+   * PortalAcesso findFirstOrThrow
+   */
+  export type PortalAcessoFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalAcesso
+     */
+    select?: PortalAcessoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalAcesso
+     */
+    omit?: PortalAcessoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalAcessoInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalAcesso to fetch.
+     */
+    where?: PortalAcessoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalAcessos to fetch.
+     */
+    orderBy?: PortalAcessoOrderByWithRelationInput | PortalAcessoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalAcessos.
+     */
+    cursor?: PortalAcessoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalAcessos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalAcessos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalAcessos.
+     */
+    distinct?: PortalAcessoScalarFieldEnum | PortalAcessoScalarFieldEnum[]
+  }
+
+  /**
+   * PortalAcesso findMany
+   */
+  export type PortalAcessoFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalAcesso
+     */
+    select?: PortalAcessoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalAcesso
+     */
+    omit?: PortalAcessoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalAcessoInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalAcessos to fetch.
+     */
+    where?: PortalAcessoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalAcessos to fetch.
+     */
+    orderBy?: PortalAcessoOrderByWithRelationInput | PortalAcessoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PortalAcessos.
+     */
+    cursor?: PortalAcessoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalAcessos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalAcessos.
+     */
+    skip?: number
+    distinct?: PortalAcessoScalarFieldEnum | PortalAcessoScalarFieldEnum[]
+  }
+
+  /**
+   * PortalAcesso create
+   */
+  export type PortalAcessoCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalAcesso
+     */
+    select?: PortalAcessoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalAcesso
+     */
+    omit?: PortalAcessoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalAcessoInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PortalAcesso.
+     */
+    data: XOR<PortalAcessoCreateInput, PortalAcessoUncheckedCreateInput>
+  }
+
+  /**
+   * PortalAcesso createMany
+   */
+  export type PortalAcessoCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PortalAcessos.
+     */
+    data: PortalAcessoCreateManyInput | PortalAcessoCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PortalAcesso update
+   */
+  export type PortalAcessoUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalAcesso
+     */
+    select?: PortalAcessoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalAcesso
+     */
+    omit?: PortalAcessoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalAcessoInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PortalAcesso.
+     */
+    data: XOR<PortalAcessoUpdateInput, PortalAcessoUncheckedUpdateInput>
+    /**
+     * Choose, which PortalAcesso to update.
+     */
+    where: PortalAcessoWhereUniqueInput
+  }
+
+  /**
+   * PortalAcesso updateMany
+   */
+  export type PortalAcessoUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PortalAcessos.
+     */
+    data: XOR<PortalAcessoUpdateManyMutationInput, PortalAcessoUncheckedUpdateManyInput>
+    /**
+     * Filter which PortalAcessos to update
+     */
+    where?: PortalAcessoWhereInput
+    /**
+     * Limit how many PortalAcessos to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalAcesso upsert
+   */
+  export type PortalAcessoUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalAcesso
+     */
+    select?: PortalAcessoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalAcesso
+     */
+    omit?: PortalAcessoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalAcessoInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PortalAcesso to update in case it exists.
+     */
+    where: PortalAcessoWhereUniqueInput
+    /**
+     * In case the PortalAcesso found by the `where` argument doesn't exist, create a new PortalAcesso with this data.
+     */
+    create: XOR<PortalAcessoCreateInput, PortalAcessoUncheckedCreateInput>
+    /**
+     * In case the PortalAcesso was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PortalAcessoUpdateInput, PortalAcessoUncheckedUpdateInput>
+  }
+
+  /**
+   * PortalAcesso delete
+   */
+  export type PortalAcessoDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalAcesso
+     */
+    select?: PortalAcessoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalAcesso
+     */
+    omit?: PortalAcessoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalAcessoInclude<ExtArgs> | null
+    /**
+     * Filter which PortalAcesso to delete.
+     */
+    where: PortalAcessoWhereUniqueInput
+  }
+
+  /**
+   * PortalAcesso deleteMany
+   */
+  export type PortalAcessoDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalAcessos to delete
+     */
+    where?: PortalAcessoWhereInput
+    /**
+     * Limit how many PortalAcessos to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalAcesso without action
+   */
+  export type PortalAcessoDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalAcesso
+     */
+    select?: PortalAcessoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalAcesso
+     */
+    omit?: PortalAcessoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalAcessoInclude<ExtArgs> | null
   }
 
 
@@ -37761,11 +38865,28 @@ export namespace Prisma {
     mixFolhaLeve: 'mixFolhaLeve',
     mixProdutoReferenciaId: 'mixProdutoReferenciaId',
     mixVariedades: 'mixVariedades',
+    imagemUrl: 'imagemUrl',
+    visivelPortal: 'visivelPortal',
     criadoEm: 'criadoEm',
     atualizadoEm: 'atualizadoEm'
   };
 
   export type ProdutoComercialScalarFieldEnum = (typeof ProdutoComercialScalarFieldEnum)[keyof typeof ProdutoComercialScalarFieldEnum]
+
+
+  export const PortalAcessoScalarFieldEnum: {
+    id: 'id',
+    clienteId: 'clienteId',
+    email: 'email',
+    senhaHash: 'senhaHash',
+    conviteHash: 'conviteHash',
+    conviteExpiraEm: 'conviteExpiraEm',
+    ativo: 'ativo',
+    criadoEm: 'criadoEm',
+    atualizadoEm: 'atualizadoEm'
+  };
+
+  export type PortalAcessoScalarFieldEnum = (typeof PortalAcessoScalarFieldEnum)[keyof typeof PortalAcessoScalarFieldEnum]
 
 
   export const RegraComercialClienteScalarFieldEnum: {
@@ -38283,10 +39404,22 @@ export namespace Prisma {
     sku: 'sku',
     statusContaAzul: 'statusContaAzul',
     categoria: 'categoria',
-    mixProdutoReferenciaId: 'mixProdutoReferenciaId'
+    mixProdutoReferenciaId: 'mixProdutoReferenciaId',
+    imagemUrl: 'imagemUrl'
   };
 
   export type ProdutoComercialOrderByRelevanceFieldEnum = (typeof ProdutoComercialOrderByRelevanceFieldEnum)[keyof typeof ProdutoComercialOrderByRelevanceFieldEnum]
+
+
+  export const PortalAcessoOrderByRelevanceFieldEnum: {
+    id: 'id',
+    clienteId: 'clienteId',
+    email: 'email',
+    senhaHash: 'senhaHash',
+    conviteHash: 'conviteHash'
+  };
+
+  export type PortalAcessoOrderByRelevanceFieldEnum = (typeof PortalAcessoOrderByRelevanceFieldEnum)[keyof typeof PortalAcessoOrderByRelevanceFieldEnum]
 
 
   export const RegraComercialClienteOrderByRelevanceFieldEnum: {
@@ -39018,6 +40151,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaListRelationFilter
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkListRelationFilter
     paradasEntrega?: ParadaEntregaListRelationFilter
+    portalAcesso?: XOR<PortalAcessoNullableScalarRelationFilter, PortalAcessoWhereInput> | null
   }
 
   export type ClienteOrderByWithRelationInput = {
@@ -39049,6 +40183,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaOrderByRelationAggregateInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkOrderByRelationAggregateInput
     paradasEntrega?: ParadaEntregaOrderByRelationAggregateInput
+    portalAcesso?: PortalAcessoOrderByWithRelationInput
     _relevance?: ClienteOrderByRelevanceInput
   }
 
@@ -39084,6 +40219,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaListRelationFilter
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkListRelationFilter
     paradasEntrega?: ParadaEntregaListRelationFilter
+    portalAcesso?: XOR<PortalAcessoNullableScalarRelationFilter, PortalAcessoWhereInput> | null
   }, "id" | "externalId">
 
   export type ClienteOrderByWithAggregationInput = {
@@ -39332,6 +40468,8 @@ export namespace Prisma {
     mixFolhaLeve?: BoolFilter<"ProdutoComercial"> | boolean
     mixProdutoReferenciaId?: StringNullableFilter<"ProdutoComercial"> | string | null
     mixVariedades?: JsonNullableFilter<"ProdutoComercial">
+    imagemUrl?: StringNullableFilter<"ProdutoComercial"> | string | null
+    visivelPortal?: BoolFilter<"ProdutoComercial"> | boolean
     criadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     precosEspeciais?: PrecoEspecialClienteListRelationFilter
@@ -39362,6 +40500,8 @@ export namespace Prisma {
     mixFolhaLeve?: SortOrder
     mixProdutoReferenciaId?: SortOrderInput | SortOrder
     mixVariedades?: SortOrderInput | SortOrder
+    imagemUrl?: SortOrderInput | SortOrder
+    visivelPortal?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
     precosEspeciais?: PrecoEspecialClienteOrderByRelationAggregateInput
@@ -39396,6 +40536,8 @@ export namespace Prisma {
     mixFolhaLeve?: BoolFilter<"ProdutoComercial"> | boolean
     mixProdutoReferenciaId?: StringNullableFilter<"ProdutoComercial"> | string | null
     mixVariedades?: JsonNullableFilter<"ProdutoComercial">
+    imagemUrl?: StringNullableFilter<"ProdutoComercial"> | string | null
+    visivelPortal?: BoolFilter<"ProdutoComercial"> | boolean
     criadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     precosEspeciais?: PrecoEspecialClienteListRelationFilter
@@ -39426,6 +40568,8 @@ export namespace Prisma {
     mixFolhaLeve?: SortOrder
     mixProdutoReferenciaId?: SortOrderInput | SortOrder
     mixVariedades?: SortOrderInput | SortOrder
+    imagemUrl?: SortOrderInput | SortOrder
+    visivelPortal?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
     _count?: ProdutoComercialCountOrderByAggregateInput
@@ -39457,8 +40601,86 @@ export namespace Prisma {
     mixFolhaLeve?: BoolWithAggregatesFilter<"ProdutoComercial"> | boolean
     mixProdutoReferenciaId?: StringNullableWithAggregatesFilter<"ProdutoComercial"> | string | null
     mixVariedades?: JsonNullableWithAggregatesFilter<"ProdutoComercial">
+    imagemUrl?: StringNullableWithAggregatesFilter<"ProdutoComercial"> | string | null
+    visivelPortal?: BoolWithAggregatesFilter<"ProdutoComercial"> | boolean
     criadoEm?: DateTimeWithAggregatesFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeWithAggregatesFilter<"ProdutoComercial"> | Date | string
+  }
+
+  export type PortalAcessoWhereInput = {
+    AND?: PortalAcessoWhereInput | PortalAcessoWhereInput[]
+    OR?: PortalAcessoWhereInput[]
+    NOT?: PortalAcessoWhereInput | PortalAcessoWhereInput[]
+    id?: StringFilter<"PortalAcesso"> | string
+    clienteId?: StringFilter<"PortalAcesso"> | string
+    email?: StringFilter<"PortalAcesso"> | string
+    senhaHash?: StringNullableFilter<"PortalAcesso"> | string | null
+    conviteHash?: StringNullableFilter<"PortalAcesso"> | string | null
+    conviteExpiraEm?: DateTimeNullableFilter<"PortalAcesso"> | Date | string | null
+    ativo?: BoolFilter<"PortalAcesso"> | boolean
+    criadoEm?: DateTimeFilter<"PortalAcesso"> | Date | string
+    atualizadoEm?: DateTimeFilter<"PortalAcesso"> | Date | string
+    cliente?: XOR<ClienteScalarRelationFilter, ClienteWhereInput>
+  }
+
+  export type PortalAcessoOrderByWithRelationInput = {
+    id?: SortOrder
+    clienteId?: SortOrder
+    email?: SortOrder
+    senhaHash?: SortOrderInput | SortOrder
+    conviteHash?: SortOrderInput | SortOrder
+    conviteExpiraEm?: SortOrderInput | SortOrder
+    ativo?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    cliente?: ClienteOrderByWithRelationInput
+    _relevance?: PortalAcessoOrderByRelevanceInput
+  }
+
+  export type PortalAcessoWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    clienteId?: string
+    email?: string
+    AND?: PortalAcessoWhereInput | PortalAcessoWhereInput[]
+    OR?: PortalAcessoWhereInput[]
+    NOT?: PortalAcessoWhereInput | PortalAcessoWhereInput[]
+    senhaHash?: StringNullableFilter<"PortalAcesso"> | string | null
+    conviteHash?: StringNullableFilter<"PortalAcesso"> | string | null
+    conviteExpiraEm?: DateTimeNullableFilter<"PortalAcesso"> | Date | string | null
+    ativo?: BoolFilter<"PortalAcesso"> | boolean
+    criadoEm?: DateTimeFilter<"PortalAcesso"> | Date | string
+    atualizadoEm?: DateTimeFilter<"PortalAcesso"> | Date | string
+    cliente?: XOR<ClienteScalarRelationFilter, ClienteWhereInput>
+  }, "id" | "clienteId" | "email">
+
+  export type PortalAcessoOrderByWithAggregationInput = {
+    id?: SortOrder
+    clienteId?: SortOrder
+    email?: SortOrder
+    senhaHash?: SortOrderInput | SortOrder
+    conviteHash?: SortOrderInput | SortOrder
+    conviteExpiraEm?: SortOrderInput | SortOrder
+    ativo?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    _count?: PortalAcessoCountOrderByAggregateInput
+    _max?: PortalAcessoMaxOrderByAggregateInput
+    _min?: PortalAcessoMinOrderByAggregateInput
+  }
+
+  export type PortalAcessoScalarWhereWithAggregatesInput = {
+    AND?: PortalAcessoScalarWhereWithAggregatesInput | PortalAcessoScalarWhereWithAggregatesInput[]
+    OR?: PortalAcessoScalarWhereWithAggregatesInput[]
+    NOT?: PortalAcessoScalarWhereWithAggregatesInput | PortalAcessoScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PortalAcesso"> | string
+    clienteId?: StringWithAggregatesFilter<"PortalAcesso"> | string
+    email?: StringWithAggregatesFilter<"PortalAcesso"> | string
+    senhaHash?: StringNullableWithAggregatesFilter<"PortalAcesso"> | string | null
+    conviteHash?: StringNullableWithAggregatesFilter<"PortalAcesso"> | string | null
+    conviteExpiraEm?: DateTimeNullableWithAggregatesFilter<"PortalAcesso"> | Date | string | null
+    ativo?: BoolWithAggregatesFilter<"PortalAcesso"> | boolean
+    criadoEm?: DateTimeWithAggregatesFilter<"PortalAcesso"> | Date | string
+    atualizadoEm?: DateTimeWithAggregatesFilter<"PortalAcesso"> | Date | string
   }
 
   export type RegraComercialClienteWhereInput = {
@@ -41781,6 +43003,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateInput = {
@@ -41811,6 +43034,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUpdateInput = {
@@ -41841,6 +43065,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateInput = {
@@ -41871,6 +43096,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteCreateManyInput = {
@@ -42119,6 +43345,8 @@ export namespace Prisma {
     mixAtivo?: boolean
     mixFolhaLeve?: boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
@@ -42149,6 +43377,8 @@ export namespace Prisma {
     mixFolhaLeve?: boolean
     mixProdutoReferenciaId?: string | null
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
@@ -42177,6 +43407,8 @@ export namespace Prisma {
     mixAtivo?: BoolFieldUpdateOperationsInput | boolean
     mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
@@ -42207,6 +43439,8 @@ export namespace Prisma {
     mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
     mixProdutoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
@@ -42236,6 +43470,8 @@ export namespace Prisma {
     mixFolhaLeve?: boolean
     mixProdutoReferenciaId?: string | null
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
   }
@@ -42258,6 +43494,8 @@ export namespace Prisma {
     mixAtivo?: BoolFieldUpdateOperationsInput | boolean
     mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -42281,6 +43519,91 @@ export namespace Prisma {
     mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
     mixProdutoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalAcessoCreateInput = {
+    id?: string
+    email: string
+    senhaHash?: string | null
+    conviteHash?: string | null
+    conviteExpiraEm?: Date | string | null
+    ativo?: boolean
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    cliente: ClienteCreateNestedOneWithoutPortalAcessoInput
+  }
+
+  export type PortalAcessoUncheckedCreateInput = {
+    id?: string
+    clienteId: string
+    email: string
+    senhaHash?: string | null
+    conviteHash?: string | null
+    conviteExpiraEm?: Date | string | null
+    ativo?: boolean
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PortalAcessoUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: NullableStringFieldUpdateOperationsInput | string | null
+    conviteHash?: NullableStringFieldUpdateOperationsInput | string | null
+    conviteExpiraEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneRequiredWithoutPortalAcessoNestedInput
+  }
+
+  export type PortalAcessoUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: NullableStringFieldUpdateOperationsInput | string | null
+    conviteHash?: NullableStringFieldUpdateOperationsInput | string | null
+    conviteExpiraEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalAcessoCreateManyInput = {
+    id?: string
+    clienteId: string
+    email: string
+    senhaHash?: string | null
+    conviteHash?: string | null
+    conviteExpiraEm?: Date | string | null
+    ativo?: boolean
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PortalAcessoUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: NullableStringFieldUpdateOperationsInput | string | null
+    conviteHash?: NullableStringFieldUpdateOperationsInput | string | null
+    conviteExpiraEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalAcessoUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: NullableStringFieldUpdateOperationsInput | string | null
+    conviteHash?: NullableStringFieldUpdateOperationsInput | string | null
+    conviteExpiraEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -44956,6 +46279,11 @@ export namespace Prisma {
     none?: ParadaEntregaWhereInput
   }
 
+  export type PortalAcessoNullableScalarRelationFilter = {
+    is?: PortalAcessoWhereInput | null
+    isNot?: PortalAcessoWhereInput | null
+  }
+
   export type PedidoOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -45379,6 +46707,8 @@ export namespace Prisma {
     mixFolhaLeve?: SortOrder
     mixProdutoReferenciaId?: SortOrder
     mixVariedades?: SortOrder
+    imagemUrl?: SortOrder
+    visivelPortal?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
   }
@@ -45407,6 +46737,8 @@ export namespace Prisma {
     mixAtivo?: SortOrder
     mixFolhaLeve?: SortOrder
     mixProdutoReferenciaId?: SortOrder
+    imagemUrl?: SortOrder
+    visivelPortal?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
   }
@@ -45429,6 +46761,8 @@ export namespace Prisma {
     mixAtivo?: SortOrder
     mixFolhaLeve?: SortOrder
     mixProdutoReferenciaId?: SortOrder
+    imagemUrl?: SortOrder
+    visivelPortal?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
   }
@@ -45473,6 +46807,53 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedJsonNullableFilter<$PrismaModel>
     _max?: NestedJsonNullableFilter<$PrismaModel>
+  }
+
+  export type ClienteScalarRelationFilter = {
+    is?: ClienteWhereInput
+    isNot?: ClienteWhereInput
+  }
+
+  export type PortalAcessoOrderByRelevanceInput = {
+    fields: PortalAcessoOrderByRelevanceFieldEnum | PortalAcessoOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type PortalAcessoCountOrderByAggregateInput = {
+    id?: SortOrder
+    clienteId?: SortOrder
+    email?: SortOrder
+    senhaHash?: SortOrder
+    conviteHash?: SortOrder
+    conviteExpiraEm?: SortOrder
+    ativo?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PortalAcessoMaxOrderByAggregateInput = {
+    id?: SortOrder
+    clienteId?: SortOrder
+    email?: SortOrder
+    senhaHash?: SortOrder
+    conviteHash?: SortOrder
+    conviteExpiraEm?: SortOrder
+    ativo?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PortalAcessoMinOrderByAggregateInput = {
+    id?: SortOrder
+    clienteId?: SortOrder
+    email?: SortOrder
+    senhaHash?: SortOrder
+    conviteHash?: SortOrder
+    conviteExpiraEm?: SortOrder
+    ativo?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
   }
 
   export type EnumTipoVendaPedidoNullableFilter<$PrismaModel = never> = {
@@ -46407,11 +47788,6 @@ export namespace Prisma {
     in?: $Enums.OrigemPedido[]
     notIn?: $Enums.OrigemPedido[]
     not?: NestedEnumOrigemPedidoFilter<$PrismaModel> | $Enums.OrigemPedido
-  }
-
-  export type ClienteScalarRelationFilter = {
-    is?: ClienteWhereInput
-    isNot?: ClienteWhereInput
   }
 
   export type ItemPedidoListRelationFilter = {
@@ -47773,6 +49149,12 @@ export namespace Prisma {
     connect?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
   }
 
+  export type PortalAcessoCreateNestedOneWithoutClienteInput = {
+    create?: XOR<PortalAcessoCreateWithoutClienteInput, PortalAcessoUncheckedCreateWithoutClienteInput>
+    connectOrCreate?: PortalAcessoCreateOrConnectWithoutClienteInput
+    connect?: PortalAcessoWhereUniqueInput
+  }
+
   export type PedidoUncheckedCreateNestedManyWithoutClienteInput = {
     create?: XOR<PedidoCreateWithoutClienteInput, PedidoUncheckedCreateWithoutClienteInput> | PedidoCreateWithoutClienteInput[] | PedidoUncheckedCreateWithoutClienteInput[]
     connectOrCreate?: PedidoCreateOrConnectWithoutClienteInput | PedidoCreateOrConnectWithoutClienteInput[]
@@ -47840,6 +49222,12 @@ export namespace Prisma {
     connectOrCreate?: ParadaEntregaCreateOrConnectWithoutClienteInput | ParadaEntregaCreateOrConnectWithoutClienteInput[]
     createMany?: ParadaEntregaCreateManyClienteInputEnvelope
     connect?: ParadaEntregaWhereUniqueInput | ParadaEntregaWhereUniqueInput[]
+  }
+
+  export type PortalAcessoUncheckedCreateNestedOneWithoutClienteInput = {
+    create?: XOR<PortalAcessoCreateWithoutClienteInput, PortalAcessoUncheckedCreateWithoutClienteInput>
+    connectOrCreate?: PortalAcessoCreateOrConnectWithoutClienteInput
+    connect?: PortalAcessoWhereUniqueInput
   }
 
   export type EnumTipoClienteFieldUpdateOperationsInput = {
@@ -48004,6 +49392,16 @@ export namespace Prisma {
     deleteMany?: ParadaEntregaScalarWhereInput | ParadaEntregaScalarWhereInput[]
   }
 
+  export type PortalAcessoUpdateOneWithoutClienteNestedInput = {
+    create?: XOR<PortalAcessoCreateWithoutClienteInput, PortalAcessoUncheckedCreateWithoutClienteInput>
+    connectOrCreate?: PortalAcessoCreateOrConnectWithoutClienteInput
+    upsert?: PortalAcessoUpsertWithoutClienteInput
+    disconnect?: PortalAcessoWhereInput | boolean
+    delete?: PortalAcessoWhereInput | boolean
+    connect?: PortalAcessoWhereUniqueInput
+    update?: XOR<XOR<PortalAcessoUpdateToOneWithWhereWithoutClienteInput, PortalAcessoUpdateWithoutClienteInput>, PortalAcessoUncheckedUpdateWithoutClienteInput>
+  }
+
   export type PedidoUncheckedUpdateManyWithoutClienteNestedInput = {
     create?: XOR<PedidoCreateWithoutClienteInput, PedidoUncheckedCreateWithoutClienteInput> | PedidoCreateWithoutClienteInput[] | PedidoUncheckedCreateWithoutClienteInput[]
     connectOrCreate?: PedidoCreateOrConnectWithoutClienteInput | PedidoCreateOrConnectWithoutClienteInput[]
@@ -48138,6 +49536,16 @@ export namespace Prisma {
     update?: ParadaEntregaUpdateWithWhereUniqueWithoutClienteInput | ParadaEntregaUpdateWithWhereUniqueWithoutClienteInput[]
     updateMany?: ParadaEntregaUpdateManyWithWhereWithoutClienteInput | ParadaEntregaUpdateManyWithWhereWithoutClienteInput[]
     deleteMany?: ParadaEntregaScalarWhereInput | ParadaEntregaScalarWhereInput[]
+  }
+
+  export type PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput = {
+    create?: XOR<PortalAcessoCreateWithoutClienteInput, PortalAcessoUncheckedCreateWithoutClienteInput>
+    connectOrCreate?: PortalAcessoCreateOrConnectWithoutClienteInput
+    upsert?: PortalAcessoUpsertWithoutClienteInput
+    disconnect?: PortalAcessoWhereInput | boolean
+    delete?: PortalAcessoWhereInput | boolean
+    connect?: PortalAcessoWhereUniqueInput
+    update?: XOR<XOR<PortalAcessoUpdateToOneWithWhereWithoutClienteInput, PortalAcessoUpdateWithoutClienteInput>, PortalAcessoUncheckedUpdateWithoutClienteInput>
   }
 
   export type ProdutoComercialCreateNestedOneWithoutEstoqueVivoMixesReferenciaInput = {
@@ -48508,6 +49916,20 @@ export namespace Prisma {
     update?: EstoqueVivoMixComponenteUpdateWithWhereUniqueWithoutProdutoInput | EstoqueVivoMixComponenteUpdateWithWhereUniqueWithoutProdutoInput[]
     updateMany?: EstoqueVivoMixComponenteUpdateManyWithWhereWithoutProdutoInput | EstoqueVivoMixComponenteUpdateManyWithWhereWithoutProdutoInput[]
     deleteMany?: EstoqueVivoMixComponenteScalarWhereInput | EstoqueVivoMixComponenteScalarWhereInput[]
+  }
+
+  export type ClienteCreateNestedOneWithoutPortalAcessoInput = {
+    create?: XOR<ClienteCreateWithoutPortalAcessoInput, ClienteUncheckedCreateWithoutPortalAcessoInput>
+    connectOrCreate?: ClienteCreateOrConnectWithoutPortalAcessoInput
+    connect?: ClienteWhereUniqueInput
+  }
+
+  export type ClienteUpdateOneRequiredWithoutPortalAcessoNestedInput = {
+    create?: XOR<ClienteCreateWithoutPortalAcessoInput, ClienteUncheckedCreateWithoutPortalAcessoInput>
+    connectOrCreate?: ClienteCreateOrConnectWithoutPortalAcessoInput
+    upsert?: ClienteUpsertWithoutPortalAcessoInput
+    connect?: ClienteWhereUniqueInput
+    update?: XOR<XOR<ClienteUpdateToOneWithWhereWithoutPortalAcessoInput, ClienteUpdateWithoutPortalAcessoInput>, ClienteUncheckedUpdateWithoutPortalAcessoInput>
   }
 
   export type ClienteCreateNestedOneWithoutRegraComercialInput = {
@@ -51111,6 +52533,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutGrupoInput = {
@@ -51140,6 +52563,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutGrupoInput = {
@@ -51623,6 +53047,33 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type PortalAcessoCreateWithoutClienteInput = {
+    id?: string
+    email: string
+    senhaHash?: string | null
+    conviteHash?: string | null
+    conviteExpiraEm?: Date | string | null
+    ativo?: boolean
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PortalAcessoUncheckedCreateWithoutClienteInput = {
+    id?: string
+    email: string
+    senhaHash?: string | null
+    conviteHash?: string | null
+    conviteExpiraEm?: Date | string | null
+    ativo?: boolean
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PortalAcessoCreateOrConnectWithoutClienteInput = {
+    where: PortalAcessoWhereUniqueInput
+    create: XOR<PortalAcessoCreateWithoutClienteInput, PortalAcessoUncheckedCreateWithoutClienteInput>
+  }
+
   export type GrupoClienteUpsertWithoutClientesInput = {
     update: XOR<GrupoClienteUpdateWithoutClientesInput, GrupoClienteUncheckedUpdateWithoutClientesInput>
     create: XOR<GrupoClienteCreateWithoutClientesInput, GrupoClienteUncheckedCreateWithoutClientesInput>
@@ -51928,6 +53379,39 @@ export namespace Prisma {
     atualizadoEm?: DateTimeFilter<"ParadaEntrega"> | Date | string
   }
 
+  export type PortalAcessoUpsertWithoutClienteInput = {
+    update: XOR<PortalAcessoUpdateWithoutClienteInput, PortalAcessoUncheckedUpdateWithoutClienteInput>
+    create: XOR<PortalAcessoCreateWithoutClienteInput, PortalAcessoUncheckedCreateWithoutClienteInput>
+    where?: PortalAcessoWhereInput
+  }
+
+  export type PortalAcessoUpdateToOneWithWhereWithoutClienteInput = {
+    where?: PortalAcessoWhereInput
+    data: XOR<PortalAcessoUpdateWithoutClienteInput, PortalAcessoUncheckedUpdateWithoutClienteInput>
+  }
+
+  export type PortalAcessoUpdateWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: NullableStringFieldUpdateOperationsInput | string | null
+    conviteHash?: NullableStringFieldUpdateOperationsInput | string | null
+    conviteExpiraEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalAcessoUncheckedUpdateWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: NullableStringFieldUpdateOperationsInput | string | null
+    conviteHash?: NullableStringFieldUpdateOperationsInput | string | null
+    conviteExpiraEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type ProdutoComercialCreateWithoutEstoqueVivoMixesReferenciaInput = {
     id?: string
     nome: string
@@ -51946,6 +53430,8 @@ export namespace Prisma {
     mixAtivo?: boolean
     mixFolhaLeve?: boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
@@ -51975,6 +53461,8 @@ export namespace Prisma {
     mixFolhaLeve?: boolean
     mixProdutoReferenciaId?: string | null
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
@@ -52040,6 +53528,8 @@ export namespace Prisma {
     mixAtivo?: BoolFieldUpdateOperationsInput | boolean
     mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
@@ -52069,6 +53559,8 @@ export namespace Prisma {
     mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
     mixProdutoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
@@ -52147,6 +53639,8 @@ export namespace Prisma {
     mixAtivo?: boolean
     mixFolhaLeve?: boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
@@ -52176,6 +53670,8 @@ export namespace Prisma {
     mixFolhaLeve?: boolean
     mixProdutoReferenciaId?: string | null
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
@@ -52250,6 +53746,8 @@ export namespace Prisma {
     mixAtivo?: BoolFieldUpdateOperationsInput | boolean
     mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
@@ -52279,6 +53777,8 @@ export namespace Prisma {
     mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
     mixProdutoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
@@ -52406,6 +53906,8 @@ export namespace Prisma {
     mixAtivo?: boolean
     mixFolhaLeve?: boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
@@ -52435,6 +53937,8 @@ export namespace Prisma {
     mixFolhaLeve?: boolean
     mixProdutoReferenciaId?: string | null
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
@@ -52467,6 +53971,8 @@ export namespace Prisma {
     mixAtivo?: boolean
     mixFolhaLeve?: boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
@@ -52495,6 +54001,8 @@ export namespace Prisma {
     mixAtivo?: boolean
     mixFolhaLeve?: boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
@@ -52673,6 +54181,8 @@ export namespace Prisma {
     mixAtivo?: BoolFieldUpdateOperationsInput | boolean
     mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
@@ -52702,6 +54212,8 @@ export namespace Prisma {
     mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
     mixProdutoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
@@ -52749,6 +54261,8 @@ export namespace Prisma {
     mixFolhaLeve?: BoolFilter<"ProdutoComercial"> | boolean
     mixProdutoReferenciaId?: StringNullableFilter<"ProdutoComercial"> | string | null
     mixVariedades?: JsonNullableFilter<"ProdutoComercial">
+    imagemUrl?: StringNullableFilter<"ProdutoComercial"> | string | null
+    visivelPortal?: BoolFilter<"ProdutoComercial"> | boolean
     criadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
   }
@@ -52798,6 +54312,142 @@ export namespace Prisma {
     data: XOR<EstoqueVivoMixComponenteUpdateManyMutationInput, EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoInput>
   }
 
+  export type ClienteCreateWithoutPortalAcessoInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+    grupo?: GrupoClienteCreateNestedOneWithoutClientesInput
+    pedidos?: PedidoCreateNestedManyWithoutClienteInput
+    interacoes?: InteracaoCreateNestedManyWithoutClienteInput
+    oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
+    mensagens?: MensagemCreateNestedManyWithoutClienteInput
+    execucoes?: ExecucaoApiCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
+  }
+
+  export type ClienteUncheckedCreateWithoutPortalAcessoInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    grupoId?: string | null
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+    pedidos?: PedidoUncheckedCreateNestedManyWithoutClienteInput
+    interacoes?: InteracaoUncheckedCreateNestedManyWithoutClienteInput
+    oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutClienteInput
+    mensagens?: MensagemUncheckedCreateNestedManyWithoutClienteInput
+    execucoes?: ExecucaoApiUncheckedCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteUncheckedCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
+  }
+
+  export type ClienteCreateOrConnectWithoutPortalAcessoInput = {
+    where: ClienteWhereUniqueInput
+    create: XOR<ClienteCreateWithoutPortalAcessoInput, ClienteUncheckedCreateWithoutPortalAcessoInput>
+  }
+
+  export type ClienteUpsertWithoutPortalAcessoInput = {
+    update: XOR<ClienteUpdateWithoutPortalAcessoInput, ClienteUncheckedUpdateWithoutPortalAcessoInput>
+    create: XOR<ClienteCreateWithoutPortalAcessoInput, ClienteUncheckedCreateWithoutPortalAcessoInput>
+    where?: ClienteWhereInput
+  }
+
+  export type ClienteUpdateToOneWithWhereWithoutPortalAcessoInput = {
+    where?: ClienteWhereInput
+    data: XOR<ClienteUpdateWithoutPortalAcessoInput, ClienteUncheckedUpdateWithoutPortalAcessoInput>
+  }
+
+  export type ClienteUpdateWithoutPortalAcessoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    grupo?: GrupoClienteUpdateOneWithoutClientesNestedInput
+    pedidos?: PedidoUpdateManyWithoutClienteNestedInput
+    interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
+    oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
+    mensagens?: MensagemUpdateManyWithoutClienteNestedInput
+    execucoes?: ExecucaoApiUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
+  }
+
+  export type ClienteUncheckedUpdateWithoutPortalAcessoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    grupoId?: NullableStringFieldUpdateOperationsInput | string | null
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedidos?: PedidoUncheckedUpdateManyWithoutClienteNestedInput
+    interacoes?: InteracaoUncheckedUpdateManyWithoutClienteNestedInput
+    oportunidades?: OportunidadeUncheckedUpdateManyWithoutClienteNestedInput
+    mensagens?: MensagemUncheckedUpdateManyWithoutClienteNestedInput
+    execucoes?: ExecucaoApiUncheckedUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUncheckedUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
+  }
+
   export type ClienteCreateWithoutRegraComercialInput = {
     id?: string
     externalId?: string | null
@@ -52825,6 +54475,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutRegraComercialInput = {
@@ -52854,6 +54505,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutRegraComercialInput = {
@@ -52925,6 +54577,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutRegraComercialInput = {
@@ -52954,6 +54607,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type PrecoEspecialClienteUpsertWithWhereUniqueWithoutRegraInput = {
@@ -52999,6 +54653,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutLinksLegadoContaAzulInput = {
@@ -53028,6 +54683,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutLinksLegadoContaAzulInput = {
@@ -53073,6 +54729,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutLinksLegadoContaAzulInput = {
@@ -53102,6 +54759,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type RegraComercialClienteCreateWithoutPrecosEspeciaisInput = {
@@ -53163,6 +54821,8 @@ export namespace Prisma {
     mixAtivo?: boolean
     mixFolhaLeve?: boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
@@ -53192,6 +54852,8 @@ export namespace Prisma {
     mixFolhaLeve?: boolean
     mixProdutoReferenciaId?: string | null
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
@@ -53282,6 +54944,8 @@ export namespace Prisma {
     mixAtivo?: BoolFieldUpdateOperationsInput | boolean
     mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
@@ -53311,6 +54975,8 @@ export namespace Prisma {
     mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
     mixProdutoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
@@ -53347,6 +55013,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutPedidosOperacionaisInput = {
@@ -53376,6 +55043,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutPedidosOperacionaisInput = {
@@ -53692,6 +55360,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutPedidosOperacionaisInput = {
@@ -53721,6 +55390,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type UsuarioUpsertWithoutPedidosCriadosInput = {
@@ -54415,6 +56085,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutParadasEntregaInput = {
@@ -54444,6 +56115,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutParadasEntregaInput = {
@@ -54544,6 +56216,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutParadasEntregaInput = {
@@ -54573,6 +56246,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type RotaEntregaCreateWithoutLocalizacoesInput = {
@@ -54758,6 +56432,8 @@ export namespace Prisma {
     mixAtivo?: boolean
     mixFolhaLeve?: boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
@@ -54787,6 +56463,8 @@ export namespace Prisma {
     mixFolhaLeve?: boolean
     mixProdutoReferenciaId?: string | null
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
@@ -54897,6 +56575,8 @@ export namespace Prisma {
     mixAtivo?: BoolFieldUpdateOperationsInput | boolean
     mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
@@ -54926,6 +56606,8 @@ export namespace Prisma {
     mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
     mixProdutoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
@@ -55023,6 +56705,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutAvariasOperacionaisInput = {
@@ -55052,6 +56735,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutAvariasOperacionaisInput = {
@@ -55077,6 +56761,8 @@ export namespace Prisma {
     mixAtivo?: boolean
     mixFolhaLeve?: boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
@@ -55106,6 +56792,8 @@ export namespace Prisma {
     mixFolhaLeve?: boolean
     mixProdutoReferenciaId?: string | null
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
@@ -55268,6 +56956,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutAvariasOperacionaisInput = {
@@ -55297,6 +56986,7 @@ export namespace Prisma {
     pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type ProdutoComercialUpsertWithoutAvariasPedidoInput = {
@@ -55328,6 +57018,8 @@ export namespace Prisma {
     mixAtivo?: BoolFieldUpdateOperationsInput | boolean
     mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
@@ -55357,6 +57049,8 @@ export namespace Prisma {
     mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
     mixProdutoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
@@ -55662,6 +57356,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutPedidosInput = {
@@ -55691,6 +57386,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutPedidosInput = {
@@ -55868,6 +57564,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutPedidosInput = {
@@ -55897,6 +57594,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type ItemPedidoUpsertWithWhereUniqueWithoutPedidoInput = {
@@ -56308,6 +58006,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutInteracoesInput = {
@@ -56337,6 +58036,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutInteracoesInput = {
@@ -56382,6 +58082,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutInteracoesInput = {
@@ -56411,6 +58112,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteCreateWithoutOportunidadesInput = {
@@ -56440,6 +58142,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutOportunidadesInput = {
@@ -56469,6 +58172,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutOportunidadesInput = {
@@ -56557,6 +58261,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutOportunidadesInput = {
@@ -56586,6 +58291,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type UsuarioUpsertWithoutOportunidadesInput = {
@@ -56664,6 +58370,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutMensagensInput = {
@@ -56693,6 +58400,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutMensagensInput = {
@@ -56781,6 +58489,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutMensagensInput = {
@@ -56810,6 +58519,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type UsuarioUpsertWithoutMensagensInput = {
@@ -56888,6 +58598,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutExecucoesInput = {
@@ -56917,6 +58628,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutExecucoesInput = {
@@ -56962,6 +58674,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutExecucoesInput = {
@@ -56991,6 +58704,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type MensagemCreateManyAprovadorInput = {
@@ -57739,6 +59453,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutGrupoInput = {
@@ -57768,6 +59483,7 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateManyWithoutGrupoInput = {
@@ -58408,6 +60124,8 @@ export namespace Prisma {
     mixAtivo?: boolean
     mixFolhaLeve?: boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
   }
@@ -58550,6 +60268,8 @@ export namespace Prisma {
     mixAtivo?: BoolFieldUpdateOperationsInput | boolean
     mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
@@ -58578,6 +60298,8 @@ export namespace Prisma {
     mixAtivo?: BoolFieldUpdateOperationsInput | boolean
     mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
@@ -58606,6 +60328,8 @@ export namespace Prisma {
     mixAtivo?: BoolFieldUpdateOperationsInput | boolean
     mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }

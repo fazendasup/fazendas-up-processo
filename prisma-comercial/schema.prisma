@@ -251,6 +251,7 @@ model Cliente {
   avariasOperacionais PedidoOperacionalAvaria[]
   linksLegadoContaAzul ClienteLegadoContaAzulLink[]
   paradasEntrega ParadaEntrega[]
+  portalAcesso PortalAcesso?
 
   @@index([tipo, statusRelacionamento])
   @@index([nome])
@@ -320,6 +321,9 @@ model ProdutoComercial {
   mixFolhaLeve             Boolean            @default(false) @map("mix_folha_leve")
   mixProdutoReferenciaId   String?            @map("mix_produto_referencia_id")
   mixVariedades            Json?              @map("mix_variedades")
+  imagemUrl                String?            @map("imagem_url")
+  /// Liberado na loja do site. Não mexe no cadastro operacional.
+  visivelPortal            Boolean            @default(false) @map("visivel_portal")
   criadoEm                 DateTime           @default(now()) @map("criado_em")
   atualizadoEm             DateTime           @updatedAt @map("atualizado_em")
 
@@ -336,6 +340,24 @@ model ProdutoComercial {
   @@index([sku])
   @@index([importadoOperacao, ativo])
   @@map("produtos_comerciais")
+}
+
+/// Acesso do cliente B2B ao site. A senha nasce só quando a pessoa ativa o convite.
+model PortalAcesso {
+  id              String    @id @default(cuid())
+  clienteId       String    @unique @map("cliente_id")
+  email           String    @unique
+  senhaHash       String?   @map("senha_hash")
+  conviteHash     String?   @map("convite_hash")
+  conviteExpiraEm DateTime? @map("convite_expira_em")
+  ativo           Boolean   @default(true)
+  criadoEm        DateTime  @default(now()) @map("criado_em")
+  atualizadoEm    DateTime  @updatedAt @map("atualizado_em")
+
+  cliente Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  @@index([conviteHash])
+  @@map("portal_acessos")
 }
 
 model RegraComercialCliente {
