@@ -11974,6 +11974,7 @@ export namespace Prisma {
     mixProdutoReferenciaId: string | null
     imagemUrl: string | null
     visivelPortal: boolean | null
+    exclusivoPortal: boolean | null
     descricaoLoja: string | null
     aplicacaoLoja: string | null
     estoqueLoja: Decimal | null
@@ -12001,6 +12002,7 @@ export namespace Prisma {
     mixProdutoReferenciaId: string | null
     imagemUrl: string | null
     visivelPortal: boolean | null
+    exclusivoPortal: boolean | null
     descricaoLoja: string | null
     aplicacaoLoja: string | null
     estoqueLoja: Decimal | null
@@ -12029,6 +12031,7 @@ export namespace Prisma {
     mixVariedades: number
     imagemUrl: number
     visivelPortal: number
+    exclusivoPortal: number
     descricaoLoja: number
     aplicacaoLoja: number
     estoqueLoja: number
@@ -12072,6 +12075,7 @@ export namespace Prisma {
     mixProdutoReferenciaId?: true
     imagemUrl?: true
     visivelPortal?: true
+    exclusivoPortal?: true
     descricaoLoja?: true
     aplicacaoLoja?: true
     estoqueLoja?: true
@@ -12099,6 +12103,7 @@ export namespace Prisma {
     mixProdutoReferenciaId?: true
     imagemUrl?: true
     visivelPortal?: true
+    exclusivoPortal?: true
     descricaoLoja?: true
     aplicacaoLoja?: true
     estoqueLoja?: true
@@ -12127,6 +12132,7 @@ export namespace Prisma {
     mixVariedades?: true
     imagemUrl?: true
     visivelPortal?: true
+    exclusivoPortal?: true
     descricaoLoja?: true
     aplicacaoLoja?: true
     estoqueLoja?: true
@@ -12242,6 +12248,7 @@ export namespace Prisma {
     mixVariedades: JsonValue | null
     imagemUrl: string | null
     visivelPortal: boolean
+    exclusivoPortal: boolean
     descricaoLoja: string | null
     aplicacaoLoja: string | null
     estoqueLoja: Decimal | null
@@ -12289,6 +12296,7 @@ export namespace Prisma {
     mixVariedades?: boolean
     imagemUrl?: boolean
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: boolean
     aplicacaoLoja?: boolean
     estoqueLoja?: boolean
@@ -12328,6 +12336,7 @@ export namespace Prisma {
     mixVariedades?: boolean
     imagemUrl?: boolean
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: boolean
     aplicacaoLoja?: boolean
     estoqueLoja?: boolean
@@ -12335,7 +12344,7 @@ export namespace Prisma {
     atualizadoEm?: boolean
   }
 
-  export type ProdutoComercialOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "contaAzulProdutoId" | "sku" | "statusContaAzul" | "sincronizadoEm" | "importadoOperacao" | "precoBase" | "categoria" | "ativo" | "modoCompra" | "fatorCompraUnidade" | "rendimentoPorKg" | "ocultoListaCompra" | "mixAtivo" | "mixFolhaLeve" | "mixProdutoReferenciaId" | "mixVariedades" | "imagemUrl" | "visivelPortal" | "descricaoLoja" | "aplicacaoLoja" | "estoqueLoja" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["produtoComercial"]>
+  export type ProdutoComercialOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "contaAzulProdutoId" | "sku" | "statusContaAzul" | "sincronizadoEm" | "importadoOperacao" | "precoBase" | "categoria" | "ativo" | "modoCompra" | "fatorCompraUnidade" | "rendimentoPorKg" | "ocultoListaCompra" | "mixAtivo" | "mixFolhaLeve" | "mixProdutoReferenciaId" | "mixVariedades" | "imagemUrl" | "visivelPortal" | "exclusivoPortal" | "descricaoLoja" | "aplicacaoLoja" | "estoqueLoja" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["produtoComercial"]>
   export type ProdutoComercialInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     portalFoto?: boolean | ProdutoComercial$portalFotoArgs<ExtArgs>
     precosEspeciais?: boolean | ProdutoComercial$precosEspeciaisArgs<ExtArgs>
@@ -12384,6 +12393,10 @@ export namespace Prisma {
        * Liberado na loja do site. Não mexe no cadastro operacional.
        */
       visivelPortal: boolean
+      /**
+       * Some da vitrine aberta. Entra só para o cliente que tem preço deste produto na regra comercial.
+       */
+      exclusivoPortal: boolean
       descricaoLoja: string | null
       aplicacaoLoja: string | null
       estoqueLoja: Prisma.Decimal | null
@@ -12786,6 +12799,7 @@ export namespace Prisma {
     readonly mixVariedades: FieldRef<"ProdutoComercial", 'Json'>
     readonly imagemUrl: FieldRef<"ProdutoComercial", 'String'>
     readonly visivelPortal: FieldRef<"ProdutoComercial", 'Boolean'>
+    readonly exclusivoPortal: FieldRef<"ProdutoComercial", 'Boolean'>
     readonly descricaoLoja: FieldRef<"ProdutoComercial", 'String'>
     readonly aplicacaoLoja: FieldRef<"ProdutoComercial", 'String'>
     readonly estoqueLoja: FieldRef<"ProdutoComercial", 'Decimal'>
@@ -41047,6 +41061,7 @@ export namespace Prisma {
     mixVariedades: 'mixVariedades',
     imagemUrl: 'imagemUrl',
     visivelPortal: 'visivelPortal',
+    exclusivoPortal: 'exclusivoPortal',
     descricaoLoja: 'descricaoLoja',
     aplicacaoLoja: 'aplicacaoLoja',
     estoqueLoja: 'estoqueLoja',
@@ -42728,6 +42743,7 @@ export namespace Prisma {
     mixVariedades?: JsonNullableFilter<"ProdutoComercial">
     imagemUrl?: StringNullableFilter<"ProdutoComercial"> | string | null
     visivelPortal?: BoolFilter<"ProdutoComercial"> | boolean
+    exclusivoPortal?: BoolFilter<"ProdutoComercial"> | boolean
     descricaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
     aplicacaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
     estoqueLoja?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
@@ -42764,6 +42780,7 @@ export namespace Prisma {
     mixVariedades?: SortOrderInput | SortOrder
     imagemUrl?: SortOrderInput | SortOrder
     visivelPortal?: SortOrder
+    exclusivoPortal?: SortOrder
     descricaoLoja?: SortOrderInput | SortOrder
     aplicacaoLoja?: SortOrderInput | SortOrder
     estoqueLoja?: SortOrderInput | SortOrder
@@ -42804,6 +42821,7 @@ export namespace Prisma {
     mixVariedades?: JsonNullableFilter<"ProdutoComercial">
     imagemUrl?: StringNullableFilter<"ProdutoComercial"> | string | null
     visivelPortal?: BoolFilter<"ProdutoComercial"> | boolean
+    exclusivoPortal?: BoolFilter<"ProdutoComercial"> | boolean
     descricaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
     aplicacaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
     estoqueLoja?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
@@ -42840,6 +42858,7 @@ export namespace Prisma {
     mixVariedades?: SortOrderInput | SortOrder
     imagemUrl?: SortOrderInput | SortOrder
     visivelPortal?: SortOrder
+    exclusivoPortal?: SortOrder
     descricaoLoja?: SortOrderInput | SortOrder
     aplicacaoLoja?: SortOrderInput | SortOrder
     estoqueLoja?: SortOrderInput | SortOrder
@@ -42876,6 +42895,7 @@ export namespace Prisma {
     mixVariedades?: JsonNullableWithAggregatesFilter<"ProdutoComercial">
     imagemUrl?: StringNullableWithAggregatesFilter<"ProdutoComercial"> | string | null
     visivelPortal?: BoolWithAggregatesFilter<"ProdutoComercial"> | boolean
+    exclusivoPortal?: BoolWithAggregatesFilter<"ProdutoComercial"> | boolean
     descricaoLoja?: StringNullableWithAggregatesFilter<"ProdutoComercial"> | string | null
     aplicacaoLoja?: StringNullableWithAggregatesFilter<"ProdutoComercial"> | string | null
     estoqueLoja?: DecimalNullableWithAggregatesFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
@@ -45797,6 +45817,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
@@ -45833,6 +45854,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
@@ -45867,6 +45889,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -45903,6 +45926,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -45938,6 +45962,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
@@ -45965,6 +45990,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -45993,6 +46019,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -49391,6 +49418,7 @@ export namespace Prisma {
     mixVariedades?: SortOrder
     imagemUrl?: SortOrder
     visivelPortal?: SortOrder
+    exclusivoPortal?: SortOrder
     descricaoLoja?: SortOrder
     aplicacaoLoja?: SortOrder
     estoqueLoja?: SortOrder
@@ -49425,6 +49453,7 @@ export namespace Prisma {
     mixProdutoReferenciaId?: SortOrder
     imagemUrl?: SortOrder
     visivelPortal?: SortOrder
+    exclusivoPortal?: SortOrder
     descricaoLoja?: SortOrder
     aplicacaoLoja?: SortOrder
     estoqueLoja?: SortOrder
@@ -49452,6 +49481,7 @@ export namespace Prisma {
     mixProdutoReferenciaId?: SortOrder
     imagemUrl?: SortOrder
     visivelPortal?: SortOrder
+    exclusivoPortal?: SortOrder
     descricaoLoja?: SortOrder
     aplicacaoLoja?: SortOrder
     estoqueLoja?: SortOrder
@@ -56308,6 +56338,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
@@ -56343,6 +56374,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
@@ -56414,6 +56446,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -56449,6 +56482,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -56533,6 +56567,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
@@ -56568,6 +56603,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
@@ -56648,6 +56684,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -56683,6 +56720,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -56831,6 +56869,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
@@ -56866,6 +56905,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
@@ -56904,6 +56944,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
@@ -56938,6 +56979,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
@@ -57143,6 +57185,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -57178,6 +57221,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -57231,6 +57275,7 @@ export namespace Prisma {
     mixVariedades?: JsonNullableFilter<"ProdutoComercial">
     imagemUrl?: StringNullableFilter<"ProdutoComercial"> | string | null
     visivelPortal?: BoolFilter<"ProdutoComercial"> | boolean
+    exclusivoPortal?: BoolFilter<"ProdutoComercial"> | boolean
     descricaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
     aplicacaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
     estoqueLoja?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
@@ -57439,6 +57484,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
@@ -57474,6 +57520,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
@@ -57523,6 +57570,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -57558,6 +57606,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -57946,6 +57995,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
@@ -57981,6 +58031,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
@@ -58077,6 +58128,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -58112,6 +58164,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -59573,6 +59626,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
@@ -59608,6 +59662,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
@@ -59724,6 +59779,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -59759,6 +59815,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -59918,6 +59975,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
@@ -59953,6 +60011,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
@@ -60183,6 +60242,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -60218,6 +60278,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -63297,6 +63358,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
@@ -63444,6 +63506,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -63478,6 +63541,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -63512,6 +63576,7 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null

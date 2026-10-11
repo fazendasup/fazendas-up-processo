@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { jpegValido } from "./portalLoja";
+import { jpegValido, produtoVisivelNaLoja } from "./portalLoja";
 import { fichaDoProduto } from "./vitrineCopy";
 
 describe("fichaDoProduto", () => {
@@ -12,6 +12,14 @@ describe("fichaDoProduto", () => {
     expect(fichaDoProduto("Manjericão Folha Fina 60g").grupo).toBe("Ervas");
     expect(fichaDoProduto("Mix Clássico 80g").grupo).toBe("Saladas");
     expect(fichaDoProduto("Alho Inteiro Descascado e Higienizado Kg").grupo).toBe("Processados");
+  });
+
+  it("esconde produto exclusivo de quem não tem o preço na regra", () => {
+    expect(produtoVisivelNaLoja({ visivel: true, exclusivo: false, temPrecoEspecial: false, logado: false })).toBe(true);
+    expect(produtoVisivelNaLoja({ visivel: true, exclusivo: true, temPrecoEspecial: false, logado: false })).toBe(false);
+    expect(produtoVisivelNaLoja({ visivel: true, exclusivo: true, temPrecoEspecial: false, logado: true })).toBe(false);
+    expect(produtoVisivelNaLoja({ visivel: true, exclusivo: true, temPrecoEspecial: true, logado: true })).toBe(true);
+    expect(produtoVisivelNaLoja({ visivel: false, exclusivo: false, temPrecoEspecial: true, logado: true })).toBe(false);
   });
 
   it("aceita só jpeg com tamanho de foto", () => {

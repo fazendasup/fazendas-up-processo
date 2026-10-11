@@ -15,7 +15,7 @@ import {
   upcomingDeliveryDates,
 } from "./portalCalendario";
 import { fichaDoProduto } from "./vitrineCopy";
-import { cnpjValido, formatarCnpj, jpegValido, LojaErro, preencherFichasDaVitrine, reenviarCadastro, registrarEmpresa } from "./portalLoja";
+import { cnpjValido, formatarCnpj, jpegValido, LojaErro, preencherFichasDaVitrine, produtoVisivelNaLoja, reenviarCadastro, registrarEmpresa } from "./portalLoja";
 import { baixarDocumentoCliente, DocumentoErro, lembrarTitulosDoCliente } from "./portalDocumentos";
 import {
   emitirSessaoCliente,
@@ -253,8 +253,19 @@ export function registerPortalRoutes(app: Express): void {
         minimoReais: MIN_ORDER_REAIS,
         datas: upcomingDeliveryDates(agora),
         itens: produtos.flatMap((produto) => {
-          const base = dinheiro(produto.precoBase);
+          const logado = Boolean(acesso);
           const especial = especiais.get(produto.id);
+          if (
+            !produtoVisivelNaLoja({
+              visivel: produto.visivelPortal,
+              exclusivo: produto.exclusivoPortal,
+              temPrecoEspecial: especial != null,
+              logado,
+            })
+          ) {
+            return [];
+          }
+          const base = dinheiro(produto.precoBase);
           const preco = especial ?? base;
           if (preco == null || preco <= 0) return [];
           const ficha = fichaDoProduto(produto.nome);
@@ -265,8 +276,8 @@ export function registerPortalRoutes(app: Express): void {
               grupo: ficha.grupo,
               descricao: produto.descricaoLoja || ficha.descricao,
               aplicacao: produto.aplicacaoLoja || ficha.aplicacao,
-              preco,
-              precoEspecial: especial != null,
+              preco: logado ? preco : null,
+              precoEspecial: logado && especial != null,
               imagemUrl: produto.imagemUrl || ficha.foto,
               unidade: produto.modoCompra === "KG" ? "kg" : "un",
               estoque: estoqueNumero(produto.estoqueLoja),
@@ -526,8 +537,18 @@ export function registerPortalRoutes(app: Express): void {
       });
       const especiais = await precosDoCliente(acesso.cliente.externalId);
       const itens = produtos.flatMap((produto) => {
-        const base = dinheiro(produto.precoBase);
         const especial = especiais.get(produto.id);
+        if (
+          !produtoVisivelNaLoja({
+            visivel: produto.visivelPortal,
+            exclusivo: produto.exclusivoPortal,
+            temPrecoEspecial: especial != null,
+            logado: true,
+          })
+        ) {
+          return [];
+        }
+        const base = dinheiro(produto.precoBase);
         const preco = especial ?? base;
         if (preco == null || preco <= 0) return [];
         return [
@@ -647,6 +668,20 @@ export function registerPortalRoutes(app: Express): void {
       }
       const porId = new Map(produtos.map((produto) => [produto.id, produto]));
       const especiais = await precosDoCliente(contaAzulId);
+      if (
+        produtos.some(
+          (produto) =>
+            !produtoVisivelNaLoja({
+              visivel: produto.visivelPortal,
+              exclusivo: produto.exclusivoPortal,
+              temPrecoEspecial: especiais.has(produto.id),
+              logado: true,
+            }),
+        )
+      ) {
+        falha(res, 400, "Um ou mais produtos não estão disponíveis.");
+        return;
+      }
       const regra = await prisma.regraComercialCliente.findUnique({
         where: { contaAzulCustomerId: contaAzulId },
       });
@@ -866,6 +901,7 @@ export function registerPortalRoutes(app: Express): void {
             descricao: produto.descricaoLoja || ficha.descricao,
             aplicacao: produto.aplicacaoLoja || ficha.aplicacao,
             naLoja: produto.visivelPortal,
+            exclusivo: produto.exclusivoPortal,
             preco: dinheiro(produto.precoBase),
             imagemUrl: produto.imagemUrl || ficha.foto,
             unidade: produto.modoCompra === "KG" ? "kg" : "un",
@@ -913,6 +949,7 @@ export function registerPortalRoutes(app: Express): void {
     const parsed = z
       .object({
         naLoja: z.boolean().optional(),
+        exclusivo: z.boolean().optional(),
         preco: z.number().positive().max(99999).optional(),
         imagemUrl: z.string().max(500).nullable().optional(),
         descricao: z.string().trim().max(400).optional(),
@@ -923,6 +960,7 @@ export function registerPortalRoutes(app: Express): void {
     const temCampo =
       parsed.success &&
       (parsed.data.naLoja != null ||
+        parsed.data.exclusivo != null ||
         parsed.data.preco != null ||
         parsed.data.imagemUrl !== undefined ||
         parsed.data.descricao != null ||
@@ -951,6 +989,7 @@ export function registerPortalRoutes(app: Express): void {
         where: { id: atual.id },
         data: {
           ...(parsed.data.naLoja != null ? { visivelPortal: parsed.data.naLoja } : {}),
+          ...(parsed.data.exclusivo != null ? { exclusivoPortal: parsed.data.exclusivo } : {}),
           ...(parsed.data.preco != null ? { precoBase: parsed.data.preco.toFixed(2) } : {}),
           ...(parsed.data.imagemUrl !== undefined ? { imagemUrl: parsed.data.imagemUrl || null } : {}),
           ...(parsed.data.descricao != null ? { descricaoLoja: parsed.data.descricao } : {}),
@@ -963,6 +1002,7 @@ export function registerPortalRoutes(app: Express): void {
       res.json({
         id: atualizado.id,
         naLoja: atualizado.visivelPortal,
+        exclusivo: atualizado.exclusivoPortal,
         preco: dinheiro(atualizado.precoBase),
         imagemUrl: atualizado.imagemUrl,
         descricao: atualizado.descricaoLoja,

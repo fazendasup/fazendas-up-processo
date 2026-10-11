@@ -212,6 +212,7 @@ exports.Prisma.ProdutoComercialScalarFieldEnum = {
   mixVariedades: 'mixVariedades',
   imagemUrl: 'imagemUrl',
   visivelPortal: 'visivelPortal',
+  exclusivoPortal: 'exclusivoPortal',
   descricaoLoja: 'descricaoLoja',
   aplicacaoLoja: 'aplicacaoLoja',
   estoqueLoja: 'estoqueLoja',

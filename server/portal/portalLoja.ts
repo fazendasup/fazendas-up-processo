@@ -22,6 +22,18 @@ export type DadosEmpresa = {
   inscricaoEstadual: string | null;
 };
 
+/** Produto exclusivo só entra para o cliente que já tem o preço dele na regra comercial. */
+export function produtoVisivelNaLoja(input: {
+  visivel: boolean;
+  exclusivo: boolean;
+  temPrecoEspecial: boolean;
+  logado: boolean;
+}): boolean {
+  if (!input.visivel) return false;
+  if (!input.exclusivo) return true;
+  return input.logado && input.temPrecoEspecial;
+}
+
 export function jpegValido(conteudo: Buffer): boolean {
   return conteudo.length > 100 && conteudo.length <= 1_500_000 && conteudo[0] === 0xff && conteudo[1] === 0xd8 && conteudo[2] === 0xff;
 }

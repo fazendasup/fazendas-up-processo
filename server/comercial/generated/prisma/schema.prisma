@@ -324,6 +324,8 @@ model ProdutoComercial {
   imagemUrl              String?           @map("imagem_url")
   /// Liberado na loja do site. Não mexe no cadastro operacional.
   visivelPortal          Boolean           @default(false) @map("visivel_portal")
+  /// Some da vitrine aberta. Entra só para o cliente que tem preço deste produto na regra comercial.
+  exclusivoPortal        Boolean           @default(false) @map("exclusivo_portal")
   descricaoLoja          String?           @map("descricao_loja") @db.Text
   aplicacaoLoja          String?           @map("aplicacao_loja") @db.Text
   estoqueLoja            Decimal?          @map("estoque_loja") @db.Decimal(14, 3)
