@@ -16,6 +16,7 @@ import {
 } from "./portalCalendario";
 import { fichaDoProduto } from "./vitrineCopy";
 import { cnpjValido, formatarCnpj, jpegValido, LojaErro, preencherFichasDaVitrine, reenviarCadastro, registrarEmpresa } from "./portalLoja";
+import { baixarDocumentoCliente, DocumentoErro, lembrarTitulosDoCliente } from "./portalDocumentos";
 import {
   emitirSessaoCliente,
   emitirSessaoEquipe,
@@ -36,6 +37,15 @@ const loginLimit = rateLimit({
   legacyHeaders: false,
   validate: false,
   message: { error: "Muitas tentativas. Espere alguns minutos e tente de novo." },
+});
+
+const documentoLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: false,
+  message: { error: "Muitos downloads. Espere alguns minutos e tente de novo." },
 });
 
 const cadastroLimit = rateLimit({
@@ -730,28 +740,74 @@ export function registerPortalRoutes(app: Express): void {
         dataInicio: addCalendarDays(hoje, -180),
         dataFim: addCalendarDays(hoje, 90),
       });
+      const titulos = extrato.titulos.map((titulo) => ({
+        id: titulo.id,
+        descricao: titulo.descricao,
+        vencimento: titulo.dataVencimento,
+        pagamento: titulo.dataPagamento,
+        status: titulo.status,
+        valor: titulo.valorTotal,
+        emAberto: titulo.valorAberto,
+        pago: titulo.valorPago,
+        referencia: titulo.referencia,
+      }));
+      lembrarTitulosDoCliente(
+        contaAzulId,
+        titulos.map((titulo) => ({ id: titulo.id, vencimento: titulo.vencimento })),
+      );
       res.json({
         totais: {
           recebido: extrato.totais.recebido,
           emAberto: extrato.totais.emAberto,
           emAtraso: extrato.totais.emAtraso,
         },
-        titulos: extrato.titulos.map((titulo) => ({
-          id: titulo.id,
-          descricao: titulo.descricao,
-          vencimento: titulo.dataVencimento,
-          pagamento: titulo.dataPagamento,
-          status: titulo.status,
-          valor: titulo.valorTotal,
-          emAberto: titulo.valorAberto,
-          pago: titulo.valorPago,
-          referencia: titulo.referencia,
-        })),
+        titulos,
       });
     } catch (error) {
       console.error("[portal] financeiro", error);
       falha(res, 503, "Os pagamentos não carregaram agora. Tente de novo em instantes.");
     }
+  });
+
+  const enviarDocumento = async (req: Request, res: Response, tipo: "boleto" | "nota") => {
+    const acesso = await clienteDaSessao(req);
+    if (!acesso) {
+      falha(res, 401, "Entre para ver o financeiro.");
+      return;
+    }
+    const contaAzulId = acesso.cliente.externalId?.trim();
+    if (!contaAzulId) {
+      falha(res, 404, "Os pagamentos desta conta ainda não estão disponíveis.");
+      return;
+    }
+    try {
+      const arquivo = await baixarDocumentoCliente({
+        contaAzulCustomerId: contaAzulId,
+        cnpj: acesso.cliente.cnpjCpf,
+        parcelaId: String(req.params.id ?? ""),
+        tipo,
+      });
+      res.setHeader("Content-Type", arquivo.contentType);
+      res.setHeader("Content-Disposition", `attachment; filename="${arquivo.nome}"`);
+      res.setHeader("Cache-Control", "private, no-store");
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.send(arquivo.bytes);
+    } catch (error) {
+      if (error instanceof DocumentoErro) {
+        falha(res, error.status, error.message);
+        return;
+      }
+      console.error("[portal] documento", error);
+      falha(res, 503, "Não foi possível baixar agora. Tente de novo em instantes.");
+    }
+  };
+
+  app.get("/api/portal/financeiro/:id/boleto", documentoLimit, (req, res) => {
+    void enviarDocumento(req, res, "boleto");
+  });
+
+  app.get("/api/portal/financeiro/:id/nota", documentoLimit, (req, res) => {
+    void enviarDocumento(req, res, "nota");
   });
 
   app.post("/api/portal/equipe/entrar", loginLimit, async (req, res) => {

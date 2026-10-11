@@ -74,6 +74,52 @@ export async function contaAzulGet<T>(client: AxiosInstance, path: string): Prom
   }
 }
 
+class ContaAzulStatusRetry extends Error {
+  constructor(readonly status: number) {
+    super(`HTTP ${status}`);
+  }
+}
+
+/** Download binário (PDF do boleto, XML/ZIP da nota). 429 e 5xx entram no retry. */
+export async function contaAzulGetBytes(
+  client: AxiosInstance,
+  path: string,
+): Promise<{ status: number; data: Buffer; contentType: string }> {
+  try {
+    return await withRetry(
+      async () => {
+        if (contaAzulPathPrecisaThrottle(path)) {
+          await contaAzulThrottle();
+        }
+        const response = await client.get<ArrayBuffer>(path, {
+          responseType: "arraybuffer",
+          headers: {
+            accept: "application/pdf, application/xml, application/zip, application/octet-stream, */*",
+          },
+          validateStatus: () => true,
+        });
+        if (response.status === 429 || response.status >= 500) {
+          throw new ContaAzulStatusRetry(response.status);
+        }
+        return {
+          status: response.status,
+          data: Buffer.from(response.data),
+          contentType: String(response.headers["content-type"] ?? "application/octet-stream"),
+        };
+      },
+      {
+        tentativas: 4,
+        delayMs: 800,
+        fator: 2,
+        isRetryable: (err) => err instanceof ContaAzulStatusRetry || isContaAzulRetryable(err),
+        delayForError: delayForContaAzulRetry,
+      },
+    );
+  } catch (e) {
+    throw contaAzulErroAmigavel(e);
+  }
+}
+
 /** POST na API Conta Azul (venda, orçamento, etc.) — mesmo throttle/retry do GET. */
 export async function contaAzulPost<T>(
   client: AxiosInstance,
