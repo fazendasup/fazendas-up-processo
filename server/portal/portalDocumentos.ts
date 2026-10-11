@@ -95,6 +95,14 @@ export function escolherCobrancaBoleto(input: {
   return boletoUtil(encontrada) ? ultima : null;
 }
 
+/** A consulta de notas recusa um intervalo maior que 15 dias. */
+export function janelasNota(ancora: string): Array<{ data_inicial: string; data_final: string }> {
+  return [-14, 0, -28, -42, -56, -70].map((inicio) => ({
+    data_inicial: addCalendarDays(ancora, inicio),
+    data_final: addCalendarDays(ancora, inicio + 14),
+  }));
+}
+
 export function descreverArquivoFiscal(
   bytes: Buffer,
   contentType: string,
@@ -232,30 +240,35 @@ async function baixarNota(
   const numero = Number.isFinite(Number(detalhe.fatura?.numero)) ? Number(detalhe.fatura?.numero) : null;
   const documento = (cnpj ?? "").replace(/\D/g, "");
   const ancora = vencimento?.slice(0, 10) || detalhe.data_vencimento?.slice(0, 10) || todayYmd();
-  const paramsBase = {
-    data_inicial: addCalendarDays(ancora, -120),
-    data_final: addCalendarDays(ancora, 45),
-    pagina: "1",
-    tamanho_pagina: "20",
-  };
   const http = await httpCa();
   let nota: NotaItem | null = null;
+  let consultas = 0;
   let falhas = 0;
-  const tentar = async (extra: Record<string, string>) => {
-    const params = new URLSearchParams(paramsBase);
-    for (const [chave, valor] of Object.entries(extra)) params.set(chave, valor);
-    try {
-      return escolherNota(await listarNotas(http, params), numero);
-    } catch {
-      falhas += 1;
-      return null;
+  const varrer = async (extra: Record<string, string>) => {
+    for (const janela of janelasNota(ancora)) {
+      const params = new URLSearchParams({
+        data_inicial: janela.data_inicial,
+        data_final: janela.data_final,
+        pagina: "1",
+        tamanho_pagina: "20",
+        ...extra,
+      });
+      consultas += 1;
+      try {
+        const encontrada = escolherNota(await listarNotas(http, params), numero);
+        if (encontrada) return encontrada;
+      } catch (error) {
+        falhas += 1;
+        console.error("[portal] nota", error instanceof Error ? error.message : error);
+      }
     }
+    return null;
   };
-  if (vendaId) nota = await tentar({ id_venda: vendaId });
+  if (vendaId) nota = await varrer({ id_venda: vendaId });
   if (!nota && numero && documento) {
-    nota = await tentar({ numero_nota: String(numero), documento_tomador: documento });
+    nota = await varrer({ numero_nota: String(numero), documento_tomador: documento });
   }
-  if (!nota && falhas > 0) {
+  if (!nota && consultas > 0 && falhas === consultas) {
     throw new DocumentoErro(503, "Não foi possível baixar a nota agora. Tente de novo em instantes.");
   }
   const chave = nota?.chave_acesso ?? "";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { escolherCobrancaBoleto, descreverArquivoFiscal } from "./portalDocumentos";
+import { escolherCobrancaBoleto, descreverArquivoFiscal, janelasNota } from "./portalDocumentos";
 
 describe("documentos do pagamento", () => {
   it("prefere o boleto autorizado e ignora cobrança cancelada", () => {
@@ -20,6 +20,16 @@ describe("documentos do pagamento", () => {
         ],
       }),
     ).toBe("33333333-3333-4333-8333-333333333333");
+  });
+
+  it("busca a nota em janelas de 14 dias", () => {
+    const janelas = janelasNota("2026-10-11");
+    expect(janelas.length).toBeGreaterThan(0);
+    for (const janela of janelas) {
+      const dias = (Date.parse(janela.data_final) - Date.parse(janela.data_inicial)) / 86_400_000;
+      expect(dias).toBe(14);
+    }
+    expect(janelas.some((janela) => janela.data_inicial <= "2026-10-11" && janela.data_final >= "2026-10-11")).toBe(true);
   });
 
   it("reconhece pdf, zip e xml da nota", () => {
