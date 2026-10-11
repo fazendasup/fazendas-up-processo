@@ -578,24 +578,41 @@ export function registerPortalRoutes(app: Express): void {
     }
     try {
       const prisma = getComercialPrisma();
+      const hoje = todayYmd();
+      const contaAzulId = acesso.cliente.externalId?.trim();
       const pedidos = await prisma.pedidoOperacional.findMany({
-        where: { clienteId: acesso.clienteId },
-        orderBy: { dataEntrega: "desc" },
-        take: 40,
+        where: {
+          dataEntrega: { gte: new Date(`${addCalendarDays(hoje, -180)}T00:00:00.000-04:00`) },
+          OR: [
+            { clienteId: acesso.clienteId },
+            ...(contaAzulId ? [{ contaAzulCustomerId: contaAzulId }] : []),
+          ],
+        },
+        orderBy: { dataEntrega: "asc" },
+        take: 80,
         include: { itens: true },
       });
       res.json({
-        pedidos: pedidos.map((pedido) => ({
-          id: pedido.id,
-          dataEntrega: dataLocal(pedido.dataEntrega),
-          status: pedido.status,
-          observacoes: pedido.observacoes,
-          itens: pedido.itens.map((item) => ({
-            nome: item.produtoNome,
-            quantidade: Number(item.quantidade),
-            preco: dinheiro(item.precoUnit),
-          })),
-        })),
+        pedidos: pedidos.map((pedido) => {
+          const dataEntrega = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "America/Manaus",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          }).format(pedido.dataEntrega);
+          return {
+            id: pedido.id,
+            dataEntrega,
+            status: pedido.status,
+            programado: dataEntrega >= hoje && pedido.status !== "CANCELADO",
+            doSite: (pedido.observacoes ?? "").includes("Pedido pelo site"),
+            itens: pedido.itens.map((item) => ({
+              nome: item.produtoNome,
+              quantidade: Number(item.quantidade),
+              preco: dinheiro(item.precoUnit),
+            })),
+          };
+        }),
       });
     } catch (error) {
       console.error("[portal] pedidos", error);

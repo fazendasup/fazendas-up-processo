@@ -1,3 +1,5 @@
+import { createRequire } from "node:module";
+import { inflateRawSync } from "node:zlib";
 import { getComercialPrisma } from "../comercial/db";
 import { getComercialEnv } from "../comercial/env";
 import { extratoReceberClienteCa } from "../comercial/lib/cliente-inadimplencia-ca";
@@ -27,6 +29,8 @@ const STATUS_BOLETO_INUTIL = new Set([
   "EM_CANCELAMENTO",
   "EXTORNADO",
 ]);
+
+const require = createRequire(import.meta.url);
 
 const ID_PARCELA = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CHAVE_NFE = /^\d{44}$/;
@@ -218,6 +222,89 @@ async function listarNotas(
   return resposta.itens ?? [];
 }
 
+function xmlDaArquivo(bytes: Buffer): string | null {
+  const texto = bytes.toString("utf8").trimStart();
+  if (texto.startsWith("<?xml") || texto.startsWith("<")) return bytes.toString("utf8");
+  if (bytes[0] !== 0x50 || bytes[1] !== 0x4b) return null;
+  const xmls: string[] = [];
+  let offset = 0;
+  while (offset + 30 <= bytes.length && bytes.readUInt32LE(offset) === 0x04034b50) {
+    const method = bytes.readUInt16LE(offset + 8);
+    const compSize = bytes.readUInt32LE(offset + 18);
+    const nameLen = bytes.readUInt16LE(offset + 26);
+    const extraLen = bytes.readUInt16LE(offset + 28);
+    const start = offset + 30 + nameLen + extraLen;
+    if (compSize > 0 && start + compSize <= bytes.length) {
+      const data = bytes.subarray(start, start + compSize);
+      let conteudo: Buffer | null = null;
+      if (method === 0) conteudo = data;
+      else if (method === 8) {
+        try {
+          conteudo = inflateRawSync(data);
+        } catch {
+          conteudo = null;
+        }
+      }
+      if (conteudo?.includes(0x3c)) xmls.push(conteudo.toString("utf8"));
+    }
+    offset = start + Math.max(compSize, 0);
+    if (compSize === 0) break;
+  }
+  return xmls.find((xml) => xml.includes("nfeProc")) ?? xmls.find((xml) => xml.includes("infNFe")) ?? null;
+}
+
+type DocumentoPdf = {
+  on(evento: "end", cb: () => void): void;
+  on(evento: "error", cb: (erro: Error) => void): void;
+  readableEnded?: boolean;
+};
+
+const capturasPdf = new WeakMap<object, Buffer[]>();
+let capturaPdfPronta = false;
+
+function prepararCapturaPdf() {
+  if (capturaPdfPronta) return;
+  capturaPdfPronta = true;
+  const pdfkitPath = require.resolve("pdfkit", { paths: [require.resolve("nfe-danfe-pdf")] });
+  const PDFDocument = require(pdfkitPath) as { prototype: { end: (...args: unknown[]) => unknown } };
+  const fim = PDFDocument.prototype.end;
+  PDFDocument.prototype.end = function (this: object, ...args: unknown[]) {
+    const partes: Buffer[] = [];
+    capturasPdf.set(this, partes);
+    (this as { on: (evento: string, cb: (chunk: Buffer) => void) => void }).on("data", (chunk) => {
+      partes.push(Buffer.from(chunk));
+    });
+    return fim.apply(this, args);
+  };
+}
+
+async function pdfDaNota(xml: string): Promise<Buffer> {
+  prepararCapturaPdf();
+  const { gerarPDF } = require("nfe-danfe-pdf") as {
+    gerarPDF: (conteudo: string, opcoes?: { textoRodape?: string }) => Promise<DocumentoPdf>;
+  };
+  const doc = await gerarPDF(xml, { textoRodape: "Fazendas Up" });
+  const partes = capturasPdf.get(doc) ?? [];
+  if (!doc.readableEnded) {
+    await new Promise<void>((resolve, reject) => {
+      const prazo = setTimeout(() => reject(new Error("A nota demorou para virar PDF.")), 15_000);
+      doc.on("end", () => {
+        clearTimeout(prazo);
+        resolve();
+      });
+      doc.on("error", (erro) => {
+        clearTimeout(prazo);
+        reject(erro);
+      });
+    });
+  }
+  const pdf = Buffer.concat(partes);
+  if (pdf.subarray(0, 4).toString("utf8") !== "%PDF" || pdf.length < 1000 || pdf.length > MAX_BYTES) {
+    throw new DocumentoErro(503, "Não foi possível preparar a nota agora. Tente de novo em instantes.");
+  }
+  return pdf;
+}
+
 function escolherNota(itens: NotaItem[], numero: number | null): NotaItem | null {
   const validas = itens.filter((item) => CHAVE_NFE.test(item.chave_acesso ?? ""));
   if (numero != null) {
@@ -284,8 +371,23 @@ async function baixarNota(
   if (arquivo.status !== 200 || arquivo.data.length < 32 || arquivo.data.length > MAX_BYTES) {
     throw new DocumentoErro(404, "Este pagamento ainda não tem nota fiscal para baixar.");
   }
-  const descrito = descreverArquivoFiscal(arquivo.data, arquivo.contentType, nota?.numero_nota ?? numero, "nota");
-  return { bytes: arquivo.data, contentType: descrito.contentType, nome: descrito.nome };
+  const xml = xmlDaArquivo(arquivo.data);
+  if (!xml) {
+    throw new DocumentoErro(404, "Este pagamento ainda não tem nota fiscal para baixar.");
+  }
+  try {
+    const pdf = await pdfDaNota(xml);
+    const numeroNota = nota?.numero_nota ?? numero;
+    return {
+      bytes: pdf,
+      contentType: "application/pdf",
+      nome: numeroNota ? `nota-${numeroNota}.pdf` : "nota.pdf",
+    };
+  } catch (error) {
+    if (error instanceof DocumentoErro) throw error;
+    console.error("[portal] nota pdf", error instanceof Error ? error.message : error);
+    throw new DocumentoErro(503, "Não foi possível preparar a nota agora. Tente de novo em instantes.");
+  }
 }
 
 export async function baixarDocumentoCliente(input: {
