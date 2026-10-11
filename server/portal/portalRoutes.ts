@@ -3,6 +3,7 @@ import rateLimit from "express-rate-limit";
 import { z } from "zod";
 import * as db from "../db";
 import { getComercialPrisma } from "../comercial/db";
+import type { PrismaClient } from "../comercial/generated/prisma/index.js";
 import { detalheInadimplenciaCliente, extratoReceberClienteCa } from "../comercial/lib/cliente-inadimplencia-ca";
 import { hashPassword, verifyPassword } from "../comercial/lib/password";
 import {
@@ -74,6 +75,52 @@ function imagemValida(valor: string): boolean {
   return valor.startsWith("https://");
 }
 
+function somenteDigitos(valor: string): string {
+  return valor.replace(/\D/g, "");
+}
+
+function senhaInicialDoCnpj(cnpj: string): string {
+  return cnpj.slice(0, 5);
+}
+
+async function senhaDoPortalConfere(senhaHash: string | null, cnpj: string, senha: string): Promise<boolean> {
+  if (!senhaHash) return senha === senhaInicialDoCnpj(cnpj);
+  return verifyPassword(senha, senhaHash);
+}
+
+async function buscarClientePorCnpj(prisma: PrismaClient, cnpj: string) {
+  const ids = await prisma.$queryRaw<Array<{ id: string }>>`
+    SELECT id FROM clientes
+    WHERE cnpj_cpf IS NOT NULL
+      AND REPLACE(REPLACE(REPLACE(REPLACE(cnpj_cpf, '.', ''), '/', ''), '-', ''), ' ', '') = ${cnpj}
+  `;
+  if (ids.length === 0) return null;
+  const clientes = await prisma.cliente.findMany({
+    where: { id: { in: ids.map((row) => row.id) } },
+    include: { portalAcesso: true },
+  });
+  return (
+    clientes.find((cliente) => cliente.externalId && cliente.portalAcesso) ??
+    clientes.find((cliente) => cliente.externalId) ??
+    clientes[0] ??
+    null
+  );
+}
+
+async function criarAcessoPortal(
+  prisma: PrismaClient,
+  cliente: { id: string; emailPrincipal: string | null },
+  cnpj: string,
+) {
+  const informado = cliente.emailPrincipal?.trim().toLowerCase() ?? "";
+  let email = informado.includes("@") ? informado : `${cnpj}@cnpj.fazendasup.com.br`;
+  const ocupado = await prisma.portalAcesso.findUnique({ where: { email } });
+  if (ocupado && ocupado.clienteId !== cliente.id) email = `${cnpj}@cnpj.fazendasup.com.br`;
+  return prisma.portalAcesso.create({
+    data: { clienteId: cliente.id, email, ativo: true },
+  });
+}
+
 async function clienteDaSessao(req: Request) {
   const sessao = await lerSessaoCliente(req);
   if (!sessao) return null;
@@ -82,7 +129,7 @@ async function clienteDaSessao(req: Request) {
     where: { id: sessao.acessoId },
     include: { cliente: true },
   });
-  if (!acesso || !acesso.ativo || !acesso.senhaHash) return null;
+  if (!acesso || !acesso.ativo) return null;
   if (acesso.clienteId !== sessao.clienteId) return null;
   return acesso;
 }
@@ -194,7 +241,7 @@ export function registerPortalRoutes(app: Express): void {
         return;
       }
       if (acesso.senhaHash) {
-        falha(res, 400, "Esta conta já tem senha. Entre com o e-mail.");
+        falha(res, 400, "Esta conta já tem senha. Entre com o CNPJ.");
         return;
       }
       const senhaHash = await hashPassword(parsed.data.senha);
@@ -215,27 +262,45 @@ export function registerPortalRoutes(app: Express): void {
       falha(res, 503, "O portal ainda não tem segredo de sessão configurado.");
       return;
     }
-    const parsed = z.object({ email: emailSchema, senha: z.string().min(1).max(72) }).safeParse(req.body);
+    const parsed = z
+      .object({
+        cnpj: z.string().trim().min(14).max(20),
+        senha: z.string().min(1).max(72),
+      })
+      .safeParse(req.body);
     if (!parsed.success) {
-      falha(res, 401, "E-mail ou senha não conferem.");
+      falha(res, 401, "CNPJ ou senha não conferem.");
+      return;
+    }
+    const cnpj = somenteDigitos(parsed.data.cnpj);
+    if (cnpj.length !== 14) {
+      falha(res, 401, "CNPJ ou senha não conferem.");
       return;
     }
     try {
       const prisma = getComercialPrisma();
-      const acesso = await prisma.portalAcesso.findUnique({
-        where: { email: parsed.data.email },
-        include: { cliente: true },
-      });
-      const ok =
-        acesso?.ativo &&
-        acesso.senhaHash &&
-        (await verifyPassword(parsed.data.senha, acesso.senhaHash));
-      if (!ok || !acesso) {
-        falha(res, 401, "E-mail ou senha não conferem.");
+      const cliente = await buscarClientePorCnpj(prisma, cnpj);
+      if (!cliente) {
+        falha(res, 401, "CNPJ ou senha não conferem.");
         return;
       }
-      await emitirSessaoCliente(req, res, acesso.id, acesso.clienteId);
-      res.json({ cliente: dadosCliente(acesso) });
+      const acessoExistente = cliente.portalAcesso;
+      const confere = await senhaDoPortalConfere(acessoExistente?.senhaHash ?? null, cnpj, parsed.data.senha);
+      if (!confere || acessoExistente?.ativo === false) {
+        falha(res, 401, "CNPJ ou senha não conferem.");
+        return;
+      }
+      const acesso = acessoExistente ?? (await criarAcessoPortal(prisma, cliente, cnpj));
+      const completo = await prisma.portalAcesso.findUnique({
+        where: { id: acesso.id },
+        include: { cliente: true },
+      });
+      if (!completo) {
+        falha(res, 503, "Não foi possível entrar agora.");
+        return;
+      }
+      await emitirSessaoCliente(req, res, completo.id, completo.clienteId);
+      res.json({ cliente: dadosCliente(completo), senhaInicial: !completo.senhaHash });
     } catch (error) {
       console.error("[portal] entrar", error);
       falha(res, 503, "Não foi possível entrar agora.");
@@ -245,6 +310,49 @@ export function registerPortalRoutes(app: Express): void {
   app.post("/api/portal/sair", async (req, res) => {
     encerrarSessao(req, res, "cliente");
     res.json({ ok: true });
+  });
+
+  app.post("/api/portal/senha", async (req, res) => {
+    const acesso = await clienteDaSessao(req);
+    if (!acesso) {
+      falha(res, 401, "Entre para alterar a senha.");
+      return;
+    }
+    const parsed = z
+      .object({
+        senhaAtual: z.string().min(1).max(72),
+        senhaNova: z.string().min(6, "A nova senha precisa ter pelo menos 6 caracteres.").max(72),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      falha(res, 400, parsed.error.issues[0]?.message ?? "Confira a senha atual e a nova.");
+      return;
+    }
+    const cnpj = somenteDigitos(acesso.cliente.cnpjCpf ?? "");
+    if (cnpj.length !== 14) {
+      falha(res, 400, "Este cadastro não tem CNPJ para trocar a senha.");
+      return;
+    }
+    const confere = await senhaDoPortalConfere(acesso.senhaHash, cnpj, parsed.data.senhaAtual);
+    if (!confere) {
+      falha(res, 401, "A senha atual não confere.");
+      return;
+    }
+    if (parsed.data.senhaNova === senhaInicialDoCnpj(cnpj)) {
+      falha(res, 400, "Escolha uma senha diferente dos 5 primeiros dígitos do CNPJ.");
+      return;
+    }
+    try {
+      const prisma = getComercialPrisma();
+      await prisma.portalAcesso.update({
+        where: { id: acesso.id },
+        data: { senhaHash: await hashPassword(parsed.data.senhaNova) },
+      });
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("[portal] senha", error);
+      falha(res, 503, "Não foi possível alterar a senha agora.");
+    }
   });
 
   app.get("/api/portal/catalogo", async (req, res) => {
