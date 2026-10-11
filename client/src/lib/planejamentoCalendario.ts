@@ -2,6 +2,8 @@
 // Eventos do calendário de plantio (calendário completo + filtros operacionais)
 // ============================================================
 
+import { marcoAtualDoPlano, type MarcoPlanoTipo } from "@shared/planosPlantioOperacao";
+
 export type PlanoRow = {
   id: number;
   status: string;
@@ -24,11 +26,22 @@ export type DiaEvento = {
   variedade: string;
   quantidade?: number;
   planoId: number;
+  atrasado?: boolean;
 };
 
 type EventosPorDiaOptions = {
   /** No calendário mensal, mostrar todos os marcos do cronograma mesmo que a ação operacional já tenha avançado. */
   mostrarCronogramaCompleto?: boolean;
+  /** Um marco por lote: o que ainda falta. Atrasado aparece no dia de hoje. */
+  somenteProximoMarco?: boolean;
+};
+
+const ROTULO_MARCO: Record<MarcoPlanoTipo, string> = {
+  germinacao: "Germinar",
+  mudas: "Transplantio para mudas",
+  veg: "Vegetativa",
+  mat: "Maturação",
+  colheita: "Colheita",
 };
 
 export function dateKeyLocal(d: Date): string {
@@ -94,7 +107,57 @@ function aplicarFiltroOperacionalNoDia(evs: DiaEvento[], planoPorId: Map<number,
   return out.sort((a, b) => (ORD_FASE[a.tipo] ?? 9) - (ORD_FASE[b.tipo] ?? 9) || a.variedade.localeCompare(b.variedade));
 }
 
+function dataDoMarco(plano: PlanoRow, tipo: MarcoPlanoTipo): Date {
+  switch (tipo) {
+    case "germinacao":
+      return parseDia(plano.dataInicioGerminacao);
+    case "mudas":
+      return parseDia(plano.dataTransplantioMudas);
+    case "veg":
+      return parseDia(plano.dataTransplantioVeg);
+    case "mat":
+      return parseDia(plano.dataTransplantioMat);
+    case "colheita":
+      return parseDia(plano.dataColheitaPrevista);
+  }
+}
+
+function eventosSomenteProximoMarco(planos: PlanoRow[]): Map<string, DiaEvento[]> {
+  const map = new Map<string, DiaEvento[]>();
+  const hoje = new Date();
+  hoje.setHours(12, 0, 0, 0);
+  const hojeKey = dateKeyLocal(hoje);
+  for (const plano of planos) {
+    const marco = marcoAtualDoPlano(plano, hoje);
+    if (!marco?.ymd) continue;
+    const vegIgualMat =
+      dateKeyLocal(parseDia(plano.dataTransplantioVeg)) === dateKeyLocal(parseDia(plano.dataTransplantioMat));
+    const rotuloBase =
+      marco.tipo === "mat" && vegIgualMat ? "Maturação (direto)" : ROTULO_MARCO[marco.tipo];
+    const evento: DiaEvento = {
+      id: `prox-${plano.id}`,
+      tipo: marco.tipo,
+      rotulo: marco.atrasado ? `Em atraso · ${rotuloBase}` : rotuloBase,
+      variedade: plano.variedadeNome || "Variedade",
+      quantidade: plano.quantidadePlantas,
+      planoId: plano.id,
+      atrasado: marco.atrasado,
+    };
+    const key = marco.atrasado ? hojeKey : dateKeyLocal(parseDia(dataDoMarco(plano, marco.tipo)));
+    const lista = map.get(key) ?? [];
+    lista.push(evento);
+    map.set(key, lista);
+  }
+  map.forEach((arr) => {
+    arr.sort(
+      (a, b) => (ORD_FASE[a.tipo] ?? 9) - (ORD_FASE[b.tipo] ?? 9) || a.variedade.localeCompare(b.variedade),
+    );
+  });
+  return map;
+}
+
 export function eventosPorDia(planos: PlanoRow[], options: EventosPorDiaOptions = {}): Map<string, DiaEvento[]> {
+  if (options.somenteProximoMarco) return eventosSomenteProximoMarco(planos);
   const map = new Map<string, DiaEvento[]>();
   for (const p of planos) {
     if (p.status === 'cancelado') continue;

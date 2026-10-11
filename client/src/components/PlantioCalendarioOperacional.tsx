@@ -132,7 +132,7 @@ export default function PlantioCalendarioOperacional({
   calendarMonth,
   onMonthChange,
 }: Props) {
-  const eventsByDate = useMemo(() => eventosPorDia(planos, { mostrarCronogramaCompleto: true }), [planos]);
+  const eventsByDate = useMemo(() => eventosPorDia(planos, { somenteProximoMarco: true }), [planos]);
 
   const hoje = useMemo(() => {
     const t = new Date();
@@ -175,8 +175,8 @@ export default function PlantioCalendarioOperacional({
         <Card className="lg:col-span-3">
           <CardContent className="p-3 sm:p-4">
             <p className="text-[11px] text-muted-foreground mb-2">
-              Abreviações (Germ., Tr→Mud. = transplantio para mudas, Veg., Mat., Colh.) no dia do marco. Pode haver
-              várias no mesmo dia. Clique no dia para ver o detalhe ao lado.
+              Cada lote aparece só no próximo passo (Germ., Tr→Mud., Veg., Mat. ou Colh.). Se esse dia já passou, o
+              lote fica em hoje, marcado como atraso. Clique no dia para ver o detalhe ao lado.
             </p>
             <Calendar
               mode="single"
@@ -237,7 +237,10 @@ export default function PlantioCalendarioOperacional({
                 {eventosSelecionadosOrdenados.map((e) => (
                   <li
                     key={e.id}
-                    className={cn('rounded-md border px-2.5 py-1.5 text-sm', chipClass[e.tipo])}
+                    className={cn(
+                      'rounded-md border px-2.5 py-1.5 text-sm',
+                      e.atrasado ? 'border-amber-500/40 bg-amber-500/15 text-amber-950 dark:text-amber-100' : chipClass[e.tipo],
+                    )}
                   >
                     <div className="font-semibold">{e.rotulo}</div>
                     <div className="text-foreground/90">{e.variedade}</div>

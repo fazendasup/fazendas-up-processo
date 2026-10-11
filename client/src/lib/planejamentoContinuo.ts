@@ -156,10 +156,18 @@ export function linhaCapacidadeTorre(
   };
 }
 
+/** Torre desativada na configuração não entra na capacidade do cronograma. */
+export function torreCapAtiva(t: { ativa?: boolean | number | null }): boolean {
+  const ativa = t.ativa as boolean | number | null | undefined;
+  if (ativa === false || ativa === 0) return false;
+  return true;
+}
+
 function filtrarTorresCapacidade(torres: TorreCapInput[], filtro: FiltroTorresBabyLeafFv): TorreCapInput[] {
-  if (filtro === 'todas') return torres;
-  if (filtro === 'apenas_baby_leaf') return torres.filter(torreReservadaGrelhaBabyLeaf);
-  return torres.filter((t) => !torreReservadaGrelhaBabyLeaf(t));
+  const ativas = torres.filter(torreCapAtiva);
+  if (filtro === 'todas') return ativas;
+  if (filtro === 'apenas_baby_leaf') return ativas.filter(torreReservadaGrelhaBabyLeaf);
+  return ativas.filter((t) => !torreReservadaGrelhaBabyLeaf(t));
 }
 
 /** Detalhe por torre (para exibir de onde vem a capacidade instalada). */
@@ -184,7 +192,7 @@ export function capacidadePorFaseInstalacao(
   proposito: PropositoCapacidadeFv = 'colheita',
 ): Record<Fase, number> {
   const cap: Record<Fase, number> = { mudas: 0, vegetativa: 0, maturacao: 0 };
-  for (const t of torres) {
+  for (const t of torres.filter(torreCapAtiva)) {
     const n = Math.max(0, t.numAndares | 0);
     const porAndar = plantasPorAndarTorre(t, projetoTipo, proposito);
     cap[t.fase] += porAndar * n;
@@ -236,8 +244,9 @@ export function resumoInstalacaoCapacidadeFv(
   torres: TorreCapInput[],
   projetoTipo?: string | null,
 ): ResumoInstalacaoFv {
+  const ativas = torres.filter(torreCapAtiva);
   const torresPorFase: Record<Fase, number> = { mudas: 0, vegetativa: 0, maturacao: 0 };
-  for (const t of torres) torresPorFase[t.fase] += 1;
+  for (const t of ativas) torresPorFase[t.fase] += 1;
 
   const linhasMatPadrao = linhasCapacidadeInstalacao(torres, projetoTipo, 'exceto_baby_leaf', 'colheita').filter(
     (l) => l.fase === 'maturacao',
@@ -257,9 +266,9 @@ export function resumoInstalacaoCapacidadeFv(
   const maturacaoBabyLeaf = grupo(linhasMatBaby);
 
   return {
-    torresCadastradas: torres.length,
+    torresCadastradas: ativas.length,
     torresPorFase,
-    torresBabyLeaf12x6: torres.filter(torreReservadaGrelhaBabyLeaf).length,
+    torresBabyLeaf12x6: ativas.filter(torreReservadaGrelhaBabyLeaf).length,
     maturacaoPadrao,
     maturacaoBabyLeaf,
     maturacaoTotalColheita: maturacaoPadrao.capacidadeColheita + maturacaoBabyLeaf.capacidadeColheita,

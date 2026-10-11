@@ -118,15 +118,18 @@ describe('capacidadePorFaseInstalacaoComFiltro', () => {
     expect(resumo.maturacaoTotalColheita).toBe(7776);
   });
 
-  it('considera torres cadastradas mesmo quando marcadas como inativas', () => {
+  it('ignora torres desativadas na capacidade', () => {
     const torres: TorreCapInput[] = [
       { fase: 'maturacao', numAndares: 9, ativa: false, estruturaOverride: null },
+      { fase: 'maturacao', numAndares: 9, ativa: true, estruturaOverride: null },
       { fase: 'maturacao', numAndares: 9, ativa: false, estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6 },
     ];
     const resumo = resumoInstalacaoCapacidadeFv(torres, projeto);
-    expect(resumo.torresCadastradas).toBe(2);
+    expect(resumo.torresCadastradas).toBe(1);
+    expect(resumo.torresPorFase.maturacao).toBe(1);
+    expect(resumo.maturacaoPadrao.quantidadeTorres).toBe(1);
     expect(resumo.maturacaoPadrao.capacidadeColheita).toBe(324);
-    expect(resumo.maturacaoBabyLeaf.capacidadeColheita).toBe(648);
+    expect(resumo.maturacaoBabyLeaf.capacidadeColheita).toBe(0);
   });
 
   it('3 torres veg 12×6 com 12 andares = 5184 só em vegetativa (plantio)', () => {

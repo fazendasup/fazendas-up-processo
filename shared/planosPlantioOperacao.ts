@@ -22,9 +22,70 @@ export function isPlanoOperacional(p: { status: string }) {
   return p.status !== "colhido" && p.status !== "cancelado";
 }
 
-export function isPlanoAtrasado(p: { status: string; dataColheitaPrevista: Date | string }, hojeStart: number) {
+export type MarcoPlanoTipo = "germinacao" | "mudas" | "veg" | "mat" | "colheita";
+
+export type MarcoAtualPlano = {
+  tipo: MarcoPlanoTipo;
+  ymd: string;
+  atrasado: boolean;
+};
+
+type PlanoComMarcos = {
+  status: string;
+  dataInicioGerminacao?: Date | string | null;
+  dataTransplantioMudas?: Date | string | null;
+  dataTransplantioVeg?: Date | string | null;
+  dataTransplantioMat?: Date | string | null;
+  dataColheitaPrevista?: Date | string | null;
+};
+
+/**
+ * O marco que ainda cabe a este lote.
+ * Em produção, o marco vencido (veg, mat ou colheita) permanece até a data do seguinte.
+ */
+export function marcoAtualDoPlano(plano: PlanoComMarcos, hoje: Date = new Date()): MarcoAtualPlano | null {
+  if (plano.status === "cancelado" || plano.status === "colhido") return null;
+  const hojeYmd = ymdLocalKey(hoje);
+  const ymdDe = (data: Date | string | null | undefined) => {
+    if (data == null || data === "") return "";
+    if (typeof data === "string" && /^\d{4}-\d{2}-\d{2}$/.test(data.slice(0, 10)) && data.length <= 10) {
+      return data.slice(0, 10);
+    }
+    return ymdLocalKey(data);
+  };
+
+  if (plano.status === "planejado") {
+    const ymd = ymdDe(plano.dataInicioGerminacao);
+    return { tipo: "germinacao", ymd, atrasado: ymd !== "" && ymd < hojeYmd };
+  }
+  if (plano.status === "em_germinacao") {
+    const ymd = ymdDe(plano.dataTransplantioMudas);
+    return { tipo: "mudas", ymd, atrasado: ymd !== "" && ymd < hojeYmd };
+  }
+
+  const vegYmd = ymdDe(plano.dataTransplantioVeg);
+  const matYmd = ymdDe(plano.dataTransplantioMat);
+  const colYmd = ymdDe(plano.dataColheitaPrevista);
+  const vegIgualMat = vegYmd !== "" && vegYmd === matYmd;
+  const etapas: Array<{ tipo: MarcoPlanoTipo; ymd: string }> = [
+    ...(vegIgualMat ? [] : [{ tipo: "veg" as const, ymd: vegYmd }]),
+    { tipo: "mat", ymd: matYmd },
+    { tipo: "colheita", ymd: colYmd },
+  ];
+  const proxima = etapas.find((etapa) => etapa.ymd >= hojeYmd);
+  if (proxima) {
+    const vencida = [...etapas].reverse().find((etapa) => etapa.ymd !== "" && etapa.ymd < hojeYmd);
+    if (vencida) return { tipo: vencida.tipo, ymd: vencida.ymd, atrasado: true };
+    return { tipo: proxima.tipo, ymd: proxima.ymd, atrasado: false };
+  }
+  const ultima = etapas[etapas.length - 1];
+  return { tipo: ultima.tipo, ymd: ultima.ymd, atrasado: ultima.ymd !== "" && ultima.ymd < hojeYmd };
+}
+
+export function isPlanoAtrasado(p: PlanoComMarcos & { dataColheitaPrevista?: Date | string | null }, hojeStart: number) {
   if (!isPlanoOperacional(p)) return false;
-  return startOfLocalDayTime(p.dataColheitaPrevista) < hojeStart;
+  const marco = marcoAtualDoPlano(p, new Date(hojeStart));
+  return marco?.atrasado === true;
 }
 
 export function isPlanoMarcoHoje(p: { status: string }, hojeYmd: string) {
