@@ -324,6 +324,9 @@ model ProdutoComercial {
   imagemUrl                String?            @map("imagem_url")
   /// Liberado na loja do site. Não mexe no cadastro operacional.
   visivelPortal            Boolean            @default(false) @map("visivel_portal")
+  descricaoLoja            String?            @map("descricao_loja") @db.Text
+  aplicacaoLoja            String?            @map("aplicacao_loja") @db.Text
+  estoqueLoja              Decimal?           @map("estoque_loja") @db.Decimal(14, 3)
   criadoEm                 DateTime           @default(now()) @map("criado_em")
   atualizadoEm             DateTime           @updatedAt @map("atualizado_em")
 
@@ -358,6 +361,34 @@ model PortalAcesso {
 
   @@index([conviteHash])
   @@map("portal_acessos")
+}
+
+/// Pedido de cadastro vindo do site. Vai para o Conta Azul quando a API aceita.
+model PortalCadastro {
+  id                 String   @id @default(cuid())
+  nome               String
+  nomeFantasia       String?  @map("nome_fantasia")
+  cnpj               String
+  email              String
+  telefone           String
+  contato            String
+  cep                String
+  logradouro         String
+  numero             String
+  complemento        String?
+  bairro             String
+  cidade             String
+  estado             String
+  inscricaoEstadual  String?  @map("inscricao_estadual")
+  status             String   @default("RECEBIDO")
+  erro               String?  @db.Text
+  contaAzulId        String?  @map("conta_azul_id")
+  criadoEm           DateTime @default(now()) @map("criado_em")
+  atualizadoEm       DateTime @updatedAt @map("atualizado_em")
+
+  @@index([cnpj])
+  @@index([status])
+  @@map("portal_cadastros")
 }
 
 model RegraComercialCliente {

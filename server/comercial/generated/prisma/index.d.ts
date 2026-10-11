@@ -59,6 +59,11 @@ export type ProdutoComercial = $Result.DefaultSelection<Prisma.$ProdutoComercial
  */
 export type PortalAcesso = $Result.DefaultSelection<Prisma.$PortalAcessoPayload>
 /**
+ * Model PortalCadastro
+ * Pedido de cadastro vindo do site. Vai para o Conta Azul quando a API aceita.
+ */
+export type PortalCadastro = $Result.DefaultSelection<Prisma.$PortalCadastroPayload>
+/**
  * Model RegraComercialCliente
  * 
  */
@@ -716,6 +721,16 @@ export class PrismaClient<
     * ```
     */
   get portalAcesso(): Prisma.PortalAcessoDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.portalCadastro`: Exposes CRUD operations for the **PortalCadastro** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PortalCadastros
+    * const portalCadastros = await prisma.portalCadastro.findMany()
+    * ```
+    */
+  get portalCadastro(): Prisma.PortalCadastroDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.regraComercialCliente`: Exposes CRUD operations for the **RegraComercialCliente** model.
@@ -1405,6 +1420,7 @@ export namespace Prisma {
     EstoqueVivoMixComponente: 'EstoqueVivoMixComponente',
     ProdutoComercial: 'ProdutoComercial',
     PortalAcesso: 'PortalAcesso',
+    PortalCadastro: 'PortalCadastro',
     RegraComercialCliente: 'RegraComercialCliente',
     ClienteLegadoContaAzulLink: 'ClienteLegadoContaAzulLink',
     PrecoEspecialCliente: 'PrecoEspecialCliente',
@@ -1447,7 +1463,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "estoqueVivoMix" | "estoqueVivoMixComponente" | "produtoComercial" | "portalAcesso" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "contaAzulEnvioConfig" | "syncState" | "regraClassificacao" | "templateMensagem"
+      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "estoqueVivoMix" | "estoqueVivoMixComponente" | "produtoComercial" | "portalAcesso" | "portalCadastro" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "contaAzulEnvioConfig" | "syncState" | "regraClassificacao" | "templateMensagem"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -2042,6 +2058,72 @@ export namespace Prisma {
           count: {
             args: Prisma.PortalAcessoCountArgs<ExtArgs>
             result: $Utils.Optional<PortalAcessoCountAggregateOutputType> | number
+          }
+        }
+      }
+      PortalCadastro: {
+        payload: Prisma.$PortalCadastroPayload<ExtArgs>
+        fields: Prisma.PortalCadastroFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PortalCadastroFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalCadastroPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PortalCadastroFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalCadastroPayload>
+          }
+          findFirst: {
+            args: Prisma.PortalCadastroFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalCadastroPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PortalCadastroFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalCadastroPayload>
+          }
+          findMany: {
+            args: Prisma.PortalCadastroFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalCadastroPayload>[]
+          }
+          create: {
+            args: Prisma.PortalCadastroCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalCadastroPayload>
+          }
+          createMany: {
+            args: Prisma.PortalCadastroCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.PortalCadastroDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalCadastroPayload>
+          }
+          update: {
+            args: Prisma.PortalCadastroUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalCadastroPayload>
+          }
+          deleteMany: {
+            args: Prisma.PortalCadastroDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PortalCadastroUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.PortalCadastroUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalCadastroPayload>
+          }
+          aggregate: {
+            args: Prisma.PortalCadastroAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePortalCadastro>
+          }
+          groupBy: {
+            args: Prisma.PortalCadastroGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PortalCadastroGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PortalCadastroCountArgs<ExtArgs>
+            result: $Utils.Optional<PortalCadastroCountAggregateOutputType> | number
           }
         }
       }
@@ -3734,6 +3816,7 @@ export namespace Prisma {
     estoqueVivoMixComponente?: EstoqueVivoMixComponenteOmit
     produtoComercial?: ProdutoComercialOmit
     portalAcesso?: PortalAcessoOmit
+    portalCadastro?: PortalCadastroOmit
     regraComercialCliente?: RegraComercialClienteOmit
     clienteLegadoContaAzulLink?: ClienteLegadoContaAzulLinkOmit
     precoEspecialCliente?: PrecoEspecialClienteOmit
@@ -11778,12 +11861,14 @@ export namespace Prisma {
     precoBase: Decimal | null
     fatorCompraUnidade: Decimal | null
     rendimentoPorKg: Decimal | null
+    estoqueLoja: Decimal | null
   }
 
   export type ProdutoComercialSumAggregateOutputType = {
     precoBase: Decimal | null
     fatorCompraUnidade: Decimal | null
     rendimentoPorKg: Decimal | null
+    estoqueLoja: Decimal | null
   }
 
   export type ProdutoComercialMinAggregateOutputType = {
@@ -11806,6 +11891,9 @@ export namespace Prisma {
     mixProdutoReferenciaId: string | null
     imagemUrl: string | null
     visivelPortal: boolean | null
+    descricaoLoja: string | null
+    aplicacaoLoja: string | null
+    estoqueLoja: Decimal | null
     criadoEm: Date | null
     atualizadoEm: Date | null
   }
@@ -11830,6 +11918,9 @@ export namespace Prisma {
     mixProdutoReferenciaId: string | null
     imagemUrl: string | null
     visivelPortal: boolean | null
+    descricaoLoja: string | null
+    aplicacaoLoja: string | null
+    estoqueLoja: Decimal | null
     criadoEm: Date | null
     atualizadoEm: Date | null
   }
@@ -11855,6 +11946,9 @@ export namespace Prisma {
     mixVariedades: number
     imagemUrl: number
     visivelPortal: number
+    descricaoLoja: number
+    aplicacaoLoja: number
+    estoqueLoja: number
     criadoEm: number
     atualizadoEm: number
     _all: number
@@ -11865,12 +11959,14 @@ export namespace Prisma {
     precoBase?: true
     fatorCompraUnidade?: true
     rendimentoPorKg?: true
+    estoqueLoja?: true
   }
 
   export type ProdutoComercialSumAggregateInputType = {
     precoBase?: true
     fatorCompraUnidade?: true
     rendimentoPorKg?: true
+    estoqueLoja?: true
   }
 
   export type ProdutoComercialMinAggregateInputType = {
@@ -11893,6 +11989,9 @@ export namespace Prisma {
     mixProdutoReferenciaId?: true
     imagemUrl?: true
     visivelPortal?: true
+    descricaoLoja?: true
+    aplicacaoLoja?: true
+    estoqueLoja?: true
     criadoEm?: true
     atualizadoEm?: true
   }
@@ -11917,6 +12016,9 @@ export namespace Prisma {
     mixProdutoReferenciaId?: true
     imagemUrl?: true
     visivelPortal?: true
+    descricaoLoja?: true
+    aplicacaoLoja?: true
+    estoqueLoja?: true
     criadoEm?: true
     atualizadoEm?: true
   }
@@ -11942,6 +12044,9 @@ export namespace Prisma {
     mixVariedades?: true
     imagemUrl?: true
     visivelPortal?: true
+    descricaoLoja?: true
+    aplicacaoLoja?: true
+    estoqueLoja?: true
     criadoEm?: true
     atualizadoEm?: true
     _all?: true
@@ -12054,6 +12159,9 @@ export namespace Prisma {
     mixVariedades: JsonValue | null
     imagemUrl: string | null
     visivelPortal: boolean
+    descricaoLoja: string | null
+    aplicacaoLoja: string | null
+    estoqueLoja: Decimal | null
     criadoEm: Date
     atualizadoEm: Date
     _count: ProdutoComercialCountAggregateOutputType | null
@@ -12098,6 +12206,9 @@ export namespace Prisma {
     mixVariedades?: boolean
     imagemUrl?: boolean
     visivelPortal?: boolean
+    descricaoLoja?: boolean
+    aplicacaoLoja?: boolean
+    estoqueLoja?: boolean
     criadoEm?: boolean
     atualizadoEm?: boolean
     precosEspeciais?: boolean | ProdutoComercial$precosEspeciaisArgs<ExtArgs>
@@ -12133,11 +12244,14 @@ export namespace Prisma {
     mixVariedades?: boolean
     imagemUrl?: boolean
     visivelPortal?: boolean
+    descricaoLoja?: boolean
+    aplicacaoLoja?: boolean
+    estoqueLoja?: boolean
     criadoEm?: boolean
     atualizadoEm?: boolean
   }
 
-  export type ProdutoComercialOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "contaAzulProdutoId" | "sku" | "statusContaAzul" | "sincronizadoEm" | "importadoOperacao" | "precoBase" | "categoria" | "ativo" | "modoCompra" | "fatorCompraUnidade" | "rendimentoPorKg" | "ocultoListaCompra" | "mixAtivo" | "mixFolhaLeve" | "mixProdutoReferenciaId" | "mixVariedades" | "imagemUrl" | "visivelPortal" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["produtoComercial"]>
+  export type ProdutoComercialOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "contaAzulProdutoId" | "sku" | "statusContaAzul" | "sincronizadoEm" | "importadoOperacao" | "precoBase" | "categoria" | "ativo" | "modoCompra" | "fatorCompraUnidade" | "rendimentoPorKg" | "ocultoListaCompra" | "mixAtivo" | "mixFolhaLeve" | "mixProdutoReferenciaId" | "mixVariedades" | "imagemUrl" | "visivelPortal" | "descricaoLoja" | "aplicacaoLoja" | "estoqueLoja" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["produtoComercial"]>
   export type ProdutoComercialInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     precosEspeciais?: boolean | ProdutoComercial$precosEspeciaisArgs<ExtArgs>
     itensPedido?: boolean | ProdutoComercial$itensPedidoArgs<ExtArgs>
@@ -12184,6 +12298,9 @@ export namespace Prisma {
        * Liberado na loja do site. Não mexe no cadastro operacional.
        */
       visivelPortal: boolean
+      descricaoLoja: string | null
+      aplicacaoLoja: string | null
+      estoqueLoja: Prisma.Decimal | null
       criadoEm: Date
       atualizadoEm: Date
     }, ExtArgs["result"]["produtoComercial"]>
@@ -12582,6 +12699,9 @@ export namespace Prisma {
     readonly mixVariedades: FieldRef<"ProdutoComercial", 'Json'>
     readonly imagemUrl: FieldRef<"ProdutoComercial", 'String'>
     readonly visivelPortal: FieldRef<"ProdutoComercial", 'Boolean'>
+    readonly descricaoLoja: FieldRef<"ProdutoComercial", 'String'>
+    readonly aplicacaoLoja: FieldRef<"ProdutoComercial", 'String'>
+    readonly estoqueLoja: FieldRef<"ProdutoComercial", 'Decimal'>
     readonly criadoEm: FieldRef<"ProdutoComercial", 'DateTime'>
     readonly atualizadoEm: FieldRef<"ProdutoComercial", 'DateTime'>
   }
@@ -14078,6 +14198,1053 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: PortalAcessoInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PortalCadastro
+   */
+
+  export type AggregatePortalCadastro = {
+    _count: PortalCadastroCountAggregateOutputType | null
+    _min: PortalCadastroMinAggregateOutputType | null
+    _max: PortalCadastroMaxAggregateOutputType | null
+  }
+
+  export type PortalCadastroMinAggregateOutputType = {
+    id: string | null
+    nome: string | null
+    nomeFantasia: string | null
+    cnpj: string | null
+    email: string | null
+    telefone: string | null
+    contato: string | null
+    cep: string | null
+    logradouro: string | null
+    numero: string | null
+    complemento: string | null
+    bairro: string | null
+    cidade: string | null
+    estado: string | null
+    inscricaoEstadual: string | null
+    status: string | null
+    erro: string | null
+    contaAzulId: string | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type PortalCadastroMaxAggregateOutputType = {
+    id: string | null
+    nome: string | null
+    nomeFantasia: string | null
+    cnpj: string | null
+    email: string | null
+    telefone: string | null
+    contato: string | null
+    cep: string | null
+    logradouro: string | null
+    numero: string | null
+    complemento: string | null
+    bairro: string | null
+    cidade: string | null
+    estado: string | null
+    inscricaoEstadual: string | null
+    status: string | null
+    erro: string | null
+    contaAzulId: string | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type PortalCadastroCountAggregateOutputType = {
+    id: number
+    nome: number
+    nomeFantasia: number
+    cnpj: number
+    email: number
+    telefone: number
+    contato: number
+    cep: number
+    logradouro: number
+    numero: number
+    complemento: number
+    bairro: number
+    cidade: number
+    estado: number
+    inscricaoEstadual: number
+    status: number
+    erro: number
+    contaAzulId: number
+    criadoEm: number
+    atualizadoEm: number
+    _all: number
+  }
+
+
+  export type PortalCadastroMinAggregateInputType = {
+    id?: true
+    nome?: true
+    nomeFantasia?: true
+    cnpj?: true
+    email?: true
+    telefone?: true
+    contato?: true
+    cep?: true
+    logradouro?: true
+    numero?: true
+    complemento?: true
+    bairro?: true
+    cidade?: true
+    estado?: true
+    inscricaoEstadual?: true
+    status?: true
+    erro?: true
+    contaAzulId?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type PortalCadastroMaxAggregateInputType = {
+    id?: true
+    nome?: true
+    nomeFantasia?: true
+    cnpj?: true
+    email?: true
+    telefone?: true
+    contato?: true
+    cep?: true
+    logradouro?: true
+    numero?: true
+    complemento?: true
+    bairro?: true
+    cidade?: true
+    estado?: true
+    inscricaoEstadual?: true
+    status?: true
+    erro?: true
+    contaAzulId?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type PortalCadastroCountAggregateInputType = {
+    id?: true
+    nome?: true
+    nomeFantasia?: true
+    cnpj?: true
+    email?: true
+    telefone?: true
+    contato?: true
+    cep?: true
+    logradouro?: true
+    numero?: true
+    complemento?: true
+    bairro?: true
+    cidade?: true
+    estado?: true
+    inscricaoEstadual?: true
+    status?: true
+    erro?: true
+    contaAzulId?: true
+    criadoEm?: true
+    atualizadoEm?: true
+    _all?: true
+  }
+
+  export type PortalCadastroAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalCadastro to aggregate.
+     */
+    where?: PortalCadastroWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalCadastros to fetch.
+     */
+    orderBy?: PortalCadastroOrderByWithRelationInput | PortalCadastroOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PortalCadastroWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalCadastros from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalCadastros.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PortalCadastros
+    **/
+    _count?: true | PortalCadastroCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PortalCadastroMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PortalCadastroMaxAggregateInputType
+  }
+
+  export type GetPortalCadastroAggregateType<T extends PortalCadastroAggregateArgs> = {
+        [P in keyof T & keyof AggregatePortalCadastro]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePortalCadastro[P]>
+      : GetScalarType<T[P], AggregatePortalCadastro[P]>
+  }
+
+
+
+
+  export type PortalCadastroGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PortalCadastroWhereInput
+    orderBy?: PortalCadastroOrderByWithAggregationInput | PortalCadastroOrderByWithAggregationInput[]
+    by: PortalCadastroScalarFieldEnum[] | PortalCadastroScalarFieldEnum
+    having?: PortalCadastroScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PortalCadastroCountAggregateInputType | true
+    _min?: PortalCadastroMinAggregateInputType
+    _max?: PortalCadastroMaxAggregateInputType
+  }
+
+  export type PortalCadastroGroupByOutputType = {
+    id: string
+    nome: string
+    nomeFantasia: string | null
+    cnpj: string
+    email: string
+    telefone: string
+    contato: string
+    cep: string
+    logradouro: string
+    numero: string
+    complemento: string | null
+    bairro: string
+    cidade: string
+    estado: string
+    inscricaoEstadual: string | null
+    status: string
+    erro: string | null
+    contaAzulId: string | null
+    criadoEm: Date
+    atualizadoEm: Date
+    _count: PortalCadastroCountAggregateOutputType | null
+    _min: PortalCadastroMinAggregateOutputType | null
+    _max: PortalCadastroMaxAggregateOutputType | null
+  }
+
+  type GetPortalCadastroGroupByPayload<T extends PortalCadastroGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PortalCadastroGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PortalCadastroGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PortalCadastroGroupByOutputType[P]>
+            : GetScalarType<T[P], PortalCadastroGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PortalCadastroSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nome?: boolean
+    nomeFantasia?: boolean
+    cnpj?: boolean
+    email?: boolean
+    telefone?: boolean
+    contato?: boolean
+    cep?: boolean
+    logradouro?: boolean
+    numero?: boolean
+    complemento?: boolean
+    bairro?: boolean
+    cidade?: boolean
+    estado?: boolean
+    inscricaoEstadual?: boolean
+    status?: boolean
+    erro?: boolean
+    contaAzulId?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+  }, ExtArgs["result"]["portalCadastro"]>
+
+
+
+  export type PortalCadastroSelectScalar = {
+    id?: boolean
+    nome?: boolean
+    nomeFantasia?: boolean
+    cnpj?: boolean
+    email?: boolean
+    telefone?: boolean
+    contato?: boolean
+    cep?: boolean
+    logradouro?: boolean
+    numero?: boolean
+    complemento?: boolean
+    bairro?: boolean
+    cidade?: boolean
+    estado?: boolean
+    inscricaoEstadual?: boolean
+    status?: boolean
+    erro?: boolean
+    contaAzulId?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+  }
+
+  export type PortalCadastroOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "nomeFantasia" | "cnpj" | "email" | "telefone" | "contato" | "cep" | "logradouro" | "numero" | "complemento" | "bairro" | "cidade" | "estado" | "inscricaoEstadual" | "status" | "erro" | "contaAzulId" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["portalCadastro"]>
+
+  export type $PortalCadastroPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PortalCadastro"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      nome: string
+      nomeFantasia: string | null
+      cnpj: string
+      email: string
+      telefone: string
+      contato: string
+      cep: string
+      logradouro: string
+      numero: string
+      complemento: string | null
+      bairro: string
+      cidade: string
+      estado: string
+      inscricaoEstadual: string | null
+      status: string
+      erro: string | null
+      contaAzulId: string | null
+      criadoEm: Date
+      atualizadoEm: Date
+    }, ExtArgs["result"]["portalCadastro"]>
+    composites: {}
+  }
+
+  type PortalCadastroGetPayload<S extends boolean | null | undefined | PortalCadastroDefaultArgs> = $Result.GetResult<Prisma.$PortalCadastroPayload, S>
+
+  type PortalCadastroCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PortalCadastroFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PortalCadastroCountAggregateInputType | true
+    }
+
+  export interface PortalCadastroDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PortalCadastro'], meta: { name: 'PortalCadastro' } }
+    /**
+     * Find zero or one PortalCadastro that matches the filter.
+     * @param {PortalCadastroFindUniqueArgs} args - Arguments to find a PortalCadastro
+     * @example
+     * // Get one PortalCadastro
+     * const portalCadastro = await prisma.portalCadastro.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PortalCadastroFindUniqueArgs>(args: SelectSubset<T, PortalCadastroFindUniqueArgs<ExtArgs>>): Prisma__PortalCadastroClient<$Result.GetResult<Prisma.$PortalCadastroPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PortalCadastro that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PortalCadastroFindUniqueOrThrowArgs} args - Arguments to find a PortalCadastro
+     * @example
+     * // Get one PortalCadastro
+     * const portalCadastro = await prisma.portalCadastro.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PortalCadastroFindUniqueOrThrowArgs>(args: SelectSubset<T, PortalCadastroFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PortalCadastroClient<$Result.GetResult<Prisma.$PortalCadastroPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalCadastro that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalCadastroFindFirstArgs} args - Arguments to find a PortalCadastro
+     * @example
+     * // Get one PortalCadastro
+     * const portalCadastro = await prisma.portalCadastro.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PortalCadastroFindFirstArgs>(args?: SelectSubset<T, PortalCadastroFindFirstArgs<ExtArgs>>): Prisma__PortalCadastroClient<$Result.GetResult<Prisma.$PortalCadastroPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalCadastro that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalCadastroFindFirstOrThrowArgs} args - Arguments to find a PortalCadastro
+     * @example
+     * // Get one PortalCadastro
+     * const portalCadastro = await prisma.portalCadastro.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PortalCadastroFindFirstOrThrowArgs>(args?: SelectSubset<T, PortalCadastroFindFirstOrThrowArgs<ExtArgs>>): Prisma__PortalCadastroClient<$Result.GetResult<Prisma.$PortalCadastroPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PortalCadastros that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalCadastroFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PortalCadastros
+     * const portalCadastros = await prisma.portalCadastro.findMany()
+     * 
+     * // Get first 10 PortalCadastros
+     * const portalCadastros = await prisma.portalCadastro.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const portalCadastroWithIdOnly = await prisma.portalCadastro.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PortalCadastroFindManyArgs>(args?: SelectSubset<T, PortalCadastroFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PortalCadastroPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PortalCadastro.
+     * @param {PortalCadastroCreateArgs} args - Arguments to create a PortalCadastro.
+     * @example
+     * // Create one PortalCadastro
+     * const PortalCadastro = await prisma.portalCadastro.create({
+     *   data: {
+     *     // ... data to create a PortalCadastro
+     *   }
+     * })
+     * 
+     */
+    create<T extends PortalCadastroCreateArgs>(args: SelectSubset<T, PortalCadastroCreateArgs<ExtArgs>>): Prisma__PortalCadastroClient<$Result.GetResult<Prisma.$PortalCadastroPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PortalCadastros.
+     * @param {PortalCadastroCreateManyArgs} args - Arguments to create many PortalCadastros.
+     * @example
+     * // Create many PortalCadastros
+     * const portalCadastro = await prisma.portalCadastro.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PortalCadastroCreateManyArgs>(args?: SelectSubset<T, PortalCadastroCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a PortalCadastro.
+     * @param {PortalCadastroDeleteArgs} args - Arguments to delete one PortalCadastro.
+     * @example
+     * // Delete one PortalCadastro
+     * const PortalCadastro = await prisma.portalCadastro.delete({
+     *   where: {
+     *     // ... filter to delete one PortalCadastro
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PortalCadastroDeleteArgs>(args: SelectSubset<T, PortalCadastroDeleteArgs<ExtArgs>>): Prisma__PortalCadastroClient<$Result.GetResult<Prisma.$PortalCadastroPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PortalCadastro.
+     * @param {PortalCadastroUpdateArgs} args - Arguments to update one PortalCadastro.
+     * @example
+     * // Update one PortalCadastro
+     * const portalCadastro = await prisma.portalCadastro.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PortalCadastroUpdateArgs>(args: SelectSubset<T, PortalCadastroUpdateArgs<ExtArgs>>): Prisma__PortalCadastroClient<$Result.GetResult<Prisma.$PortalCadastroPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PortalCadastros.
+     * @param {PortalCadastroDeleteManyArgs} args - Arguments to filter PortalCadastros to delete.
+     * @example
+     * // Delete a few PortalCadastros
+     * const { count } = await prisma.portalCadastro.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PortalCadastroDeleteManyArgs>(args?: SelectSubset<T, PortalCadastroDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PortalCadastros.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalCadastroUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PortalCadastros
+     * const portalCadastro = await prisma.portalCadastro.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PortalCadastroUpdateManyArgs>(args: SelectSubset<T, PortalCadastroUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one PortalCadastro.
+     * @param {PortalCadastroUpsertArgs} args - Arguments to update or create a PortalCadastro.
+     * @example
+     * // Update or create a PortalCadastro
+     * const portalCadastro = await prisma.portalCadastro.upsert({
+     *   create: {
+     *     // ... data to create a PortalCadastro
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PortalCadastro we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PortalCadastroUpsertArgs>(args: SelectSubset<T, PortalCadastroUpsertArgs<ExtArgs>>): Prisma__PortalCadastroClient<$Result.GetResult<Prisma.$PortalCadastroPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PortalCadastros.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalCadastroCountArgs} args - Arguments to filter PortalCadastros to count.
+     * @example
+     * // Count the number of PortalCadastros
+     * const count = await prisma.portalCadastro.count({
+     *   where: {
+     *     // ... the filter for the PortalCadastros we want to count
+     *   }
+     * })
+    **/
+    count<T extends PortalCadastroCountArgs>(
+      args?: Subset<T, PortalCadastroCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PortalCadastroCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PortalCadastro.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalCadastroAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PortalCadastroAggregateArgs>(args: Subset<T, PortalCadastroAggregateArgs>): Prisma.PrismaPromise<GetPortalCadastroAggregateType<T>>
+
+    /**
+     * Group by PortalCadastro.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalCadastroGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PortalCadastroGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PortalCadastroGroupByArgs['orderBy'] }
+        : { orderBy?: PortalCadastroGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PortalCadastroGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPortalCadastroGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PortalCadastro model
+   */
+  readonly fields: PortalCadastroFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PortalCadastro.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PortalCadastroClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PortalCadastro model
+   */
+  interface PortalCadastroFieldRefs {
+    readonly id: FieldRef<"PortalCadastro", 'String'>
+    readonly nome: FieldRef<"PortalCadastro", 'String'>
+    readonly nomeFantasia: FieldRef<"PortalCadastro", 'String'>
+    readonly cnpj: FieldRef<"PortalCadastro", 'String'>
+    readonly email: FieldRef<"PortalCadastro", 'String'>
+    readonly telefone: FieldRef<"PortalCadastro", 'String'>
+    readonly contato: FieldRef<"PortalCadastro", 'String'>
+    readonly cep: FieldRef<"PortalCadastro", 'String'>
+    readonly logradouro: FieldRef<"PortalCadastro", 'String'>
+    readonly numero: FieldRef<"PortalCadastro", 'String'>
+    readonly complemento: FieldRef<"PortalCadastro", 'String'>
+    readonly bairro: FieldRef<"PortalCadastro", 'String'>
+    readonly cidade: FieldRef<"PortalCadastro", 'String'>
+    readonly estado: FieldRef<"PortalCadastro", 'String'>
+    readonly inscricaoEstadual: FieldRef<"PortalCadastro", 'String'>
+    readonly status: FieldRef<"PortalCadastro", 'String'>
+    readonly erro: FieldRef<"PortalCadastro", 'String'>
+    readonly contaAzulId: FieldRef<"PortalCadastro", 'String'>
+    readonly criadoEm: FieldRef<"PortalCadastro", 'DateTime'>
+    readonly atualizadoEm: FieldRef<"PortalCadastro", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PortalCadastro findUnique
+   */
+  export type PortalCadastroFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalCadastro
+     */
+    select?: PortalCadastroSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalCadastro
+     */
+    omit?: PortalCadastroOmit<ExtArgs> | null
+    /**
+     * Filter, which PortalCadastro to fetch.
+     */
+    where: PortalCadastroWhereUniqueInput
+  }
+
+  /**
+   * PortalCadastro findUniqueOrThrow
+   */
+  export type PortalCadastroFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalCadastro
+     */
+    select?: PortalCadastroSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalCadastro
+     */
+    omit?: PortalCadastroOmit<ExtArgs> | null
+    /**
+     * Filter, which PortalCadastro to fetch.
+     */
+    where: PortalCadastroWhereUniqueInput
+  }
+
+  /**
+   * PortalCadastro findFirst
+   */
+  export type PortalCadastroFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalCadastro
+     */
+    select?: PortalCadastroSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalCadastro
+     */
+    omit?: PortalCadastroOmit<ExtArgs> | null
+    /**
+     * Filter, which PortalCadastro to fetch.
+     */
+    where?: PortalCadastroWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalCadastros to fetch.
+     */
+    orderBy?: PortalCadastroOrderByWithRelationInput | PortalCadastroOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalCadastros.
+     */
+    cursor?: PortalCadastroWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalCadastros from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalCadastros.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalCadastros.
+     */
+    distinct?: PortalCadastroScalarFieldEnum | PortalCadastroScalarFieldEnum[]
+  }
+
+  /**
+   * PortalCadastro findFirstOrThrow
+   */
+  export type PortalCadastroFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalCadastro
+     */
+    select?: PortalCadastroSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalCadastro
+     */
+    omit?: PortalCadastroOmit<ExtArgs> | null
+    /**
+     * Filter, which PortalCadastro to fetch.
+     */
+    where?: PortalCadastroWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalCadastros to fetch.
+     */
+    orderBy?: PortalCadastroOrderByWithRelationInput | PortalCadastroOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalCadastros.
+     */
+    cursor?: PortalCadastroWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalCadastros from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalCadastros.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalCadastros.
+     */
+    distinct?: PortalCadastroScalarFieldEnum | PortalCadastroScalarFieldEnum[]
+  }
+
+  /**
+   * PortalCadastro findMany
+   */
+  export type PortalCadastroFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalCadastro
+     */
+    select?: PortalCadastroSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalCadastro
+     */
+    omit?: PortalCadastroOmit<ExtArgs> | null
+    /**
+     * Filter, which PortalCadastros to fetch.
+     */
+    where?: PortalCadastroWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalCadastros to fetch.
+     */
+    orderBy?: PortalCadastroOrderByWithRelationInput | PortalCadastroOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PortalCadastros.
+     */
+    cursor?: PortalCadastroWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalCadastros from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalCadastros.
+     */
+    skip?: number
+    distinct?: PortalCadastroScalarFieldEnum | PortalCadastroScalarFieldEnum[]
+  }
+
+  /**
+   * PortalCadastro create
+   */
+  export type PortalCadastroCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalCadastro
+     */
+    select?: PortalCadastroSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalCadastro
+     */
+    omit?: PortalCadastroOmit<ExtArgs> | null
+    /**
+     * The data needed to create a PortalCadastro.
+     */
+    data: XOR<PortalCadastroCreateInput, PortalCadastroUncheckedCreateInput>
+  }
+
+  /**
+   * PortalCadastro createMany
+   */
+  export type PortalCadastroCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PortalCadastros.
+     */
+    data: PortalCadastroCreateManyInput | PortalCadastroCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PortalCadastro update
+   */
+  export type PortalCadastroUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalCadastro
+     */
+    select?: PortalCadastroSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalCadastro
+     */
+    omit?: PortalCadastroOmit<ExtArgs> | null
+    /**
+     * The data needed to update a PortalCadastro.
+     */
+    data: XOR<PortalCadastroUpdateInput, PortalCadastroUncheckedUpdateInput>
+    /**
+     * Choose, which PortalCadastro to update.
+     */
+    where: PortalCadastroWhereUniqueInput
+  }
+
+  /**
+   * PortalCadastro updateMany
+   */
+  export type PortalCadastroUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PortalCadastros.
+     */
+    data: XOR<PortalCadastroUpdateManyMutationInput, PortalCadastroUncheckedUpdateManyInput>
+    /**
+     * Filter which PortalCadastros to update
+     */
+    where?: PortalCadastroWhereInput
+    /**
+     * Limit how many PortalCadastros to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalCadastro upsert
+   */
+  export type PortalCadastroUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalCadastro
+     */
+    select?: PortalCadastroSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalCadastro
+     */
+    omit?: PortalCadastroOmit<ExtArgs> | null
+    /**
+     * The filter to search for the PortalCadastro to update in case it exists.
+     */
+    where: PortalCadastroWhereUniqueInput
+    /**
+     * In case the PortalCadastro found by the `where` argument doesn't exist, create a new PortalCadastro with this data.
+     */
+    create: XOR<PortalCadastroCreateInput, PortalCadastroUncheckedCreateInput>
+    /**
+     * In case the PortalCadastro was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PortalCadastroUpdateInput, PortalCadastroUncheckedUpdateInput>
+  }
+
+  /**
+   * PortalCadastro delete
+   */
+  export type PortalCadastroDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalCadastro
+     */
+    select?: PortalCadastroSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalCadastro
+     */
+    omit?: PortalCadastroOmit<ExtArgs> | null
+    /**
+     * Filter which PortalCadastro to delete.
+     */
+    where: PortalCadastroWhereUniqueInput
+  }
+
+  /**
+   * PortalCadastro deleteMany
+   */
+  export type PortalCadastroDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalCadastros to delete
+     */
+    where?: PortalCadastroWhereInput
+    /**
+     * Limit how many PortalCadastros to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalCadastro without action
+   */
+  export type PortalCadastroDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalCadastro
+     */
+    select?: PortalCadastroSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalCadastro
+     */
+    omit?: PortalCadastroOmit<ExtArgs> | null
   }
 
 
@@ -38867,6 +40034,9 @@ export namespace Prisma {
     mixVariedades: 'mixVariedades',
     imagemUrl: 'imagemUrl',
     visivelPortal: 'visivelPortal',
+    descricaoLoja: 'descricaoLoja',
+    aplicacaoLoja: 'aplicacaoLoja',
+    estoqueLoja: 'estoqueLoja',
     criadoEm: 'criadoEm',
     atualizadoEm: 'atualizadoEm'
   };
@@ -38887,6 +40057,32 @@ export namespace Prisma {
   };
 
   export type PortalAcessoScalarFieldEnum = (typeof PortalAcessoScalarFieldEnum)[keyof typeof PortalAcessoScalarFieldEnum]
+
+
+  export const PortalCadastroScalarFieldEnum: {
+    id: 'id',
+    nome: 'nome',
+    nomeFantasia: 'nomeFantasia',
+    cnpj: 'cnpj',
+    email: 'email',
+    telefone: 'telefone',
+    contato: 'contato',
+    cep: 'cep',
+    logradouro: 'logradouro',
+    numero: 'numero',
+    complemento: 'complemento',
+    bairro: 'bairro',
+    cidade: 'cidade',
+    estado: 'estado',
+    inscricaoEstadual: 'inscricaoEstadual',
+    status: 'status',
+    erro: 'erro',
+    contaAzulId: 'contaAzulId',
+    criadoEm: 'criadoEm',
+    atualizadoEm: 'atualizadoEm'
+  };
+
+  export type PortalCadastroScalarFieldEnum = (typeof PortalCadastroScalarFieldEnum)[keyof typeof PortalCadastroScalarFieldEnum]
 
 
   export const RegraComercialClienteScalarFieldEnum: {
@@ -39405,7 +40601,9 @@ export namespace Prisma {
     statusContaAzul: 'statusContaAzul',
     categoria: 'categoria',
     mixProdutoReferenciaId: 'mixProdutoReferenciaId',
-    imagemUrl: 'imagemUrl'
+    imagemUrl: 'imagemUrl',
+    descricaoLoja: 'descricaoLoja',
+    aplicacaoLoja: 'aplicacaoLoja'
   };
 
   export type ProdutoComercialOrderByRelevanceFieldEnum = (typeof ProdutoComercialOrderByRelevanceFieldEnum)[keyof typeof ProdutoComercialOrderByRelevanceFieldEnum]
@@ -39420,6 +40618,30 @@ export namespace Prisma {
   };
 
   export type PortalAcessoOrderByRelevanceFieldEnum = (typeof PortalAcessoOrderByRelevanceFieldEnum)[keyof typeof PortalAcessoOrderByRelevanceFieldEnum]
+
+
+  export const PortalCadastroOrderByRelevanceFieldEnum: {
+    id: 'id',
+    nome: 'nome',
+    nomeFantasia: 'nomeFantasia',
+    cnpj: 'cnpj',
+    email: 'email',
+    telefone: 'telefone',
+    contato: 'contato',
+    cep: 'cep',
+    logradouro: 'logradouro',
+    numero: 'numero',
+    complemento: 'complemento',
+    bairro: 'bairro',
+    cidade: 'cidade',
+    estado: 'estado',
+    inscricaoEstadual: 'inscricaoEstadual',
+    status: 'status',
+    erro: 'erro',
+    contaAzulId: 'contaAzulId'
+  };
+
+  export type PortalCadastroOrderByRelevanceFieldEnum = (typeof PortalCadastroOrderByRelevanceFieldEnum)[keyof typeof PortalCadastroOrderByRelevanceFieldEnum]
 
 
   export const RegraComercialClienteOrderByRelevanceFieldEnum: {
@@ -40470,6 +41692,9 @@ export namespace Prisma {
     mixVariedades?: JsonNullableFilter<"ProdutoComercial">
     imagemUrl?: StringNullableFilter<"ProdutoComercial"> | string | null
     visivelPortal?: BoolFilter<"ProdutoComercial"> | boolean
+    descricaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
+    aplicacaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
+    estoqueLoja?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     precosEspeciais?: PrecoEspecialClienteListRelationFilter
@@ -40502,6 +41727,9 @@ export namespace Prisma {
     mixVariedades?: SortOrderInput | SortOrder
     imagemUrl?: SortOrderInput | SortOrder
     visivelPortal?: SortOrder
+    descricaoLoja?: SortOrderInput | SortOrder
+    aplicacaoLoja?: SortOrderInput | SortOrder
+    estoqueLoja?: SortOrderInput | SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
     precosEspeciais?: PrecoEspecialClienteOrderByRelationAggregateInput
@@ -40538,6 +41766,9 @@ export namespace Prisma {
     mixVariedades?: JsonNullableFilter<"ProdutoComercial">
     imagemUrl?: StringNullableFilter<"ProdutoComercial"> | string | null
     visivelPortal?: BoolFilter<"ProdutoComercial"> | boolean
+    descricaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
+    aplicacaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
+    estoqueLoja?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     precosEspeciais?: PrecoEspecialClienteListRelationFilter
@@ -40570,6 +41801,9 @@ export namespace Prisma {
     mixVariedades?: SortOrderInput | SortOrder
     imagemUrl?: SortOrderInput | SortOrder
     visivelPortal?: SortOrder
+    descricaoLoja?: SortOrderInput | SortOrder
+    aplicacaoLoja?: SortOrderInput | SortOrder
+    estoqueLoja?: SortOrderInput | SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
     _count?: ProdutoComercialCountOrderByAggregateInput
@@ -40603,6 +41837,9 @@ export namespace Prisma {
     mixVariedades?: JsonNullableWithAggregatesFilter<"ProdutoComercial">
     imagemUrl?: StringNullableWithAggregatesFilter<"ProdutoComercial"> | string | null
     visivelPortal?: BoolWithAggregatesFilter<"ProdutoComercial"> | boolean
+    descricaoLoja?: StringNullableWithAggregatesFilter<"ProdutoComercial"> | string | null
+    aplicacaoLoja?: StringNullableWithAggregatesFilter<"ProdutoComercial"> | string | null
+    estoqueLoja?: DecimalNullableWithAggregatesFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeWithAggregatesFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeWithAggregatesFilter<"ProdutoComercial"> | Date | string
   }
@@ -40681,6 +41918,134 @@ export namespace Prisma {
     ativo?: BoolWithAggregatesFilter<"PortalAcesso"> | boolean
     criadoEm?: DateTimeWithAggregatesFilter<"PortalAcesso"> | Date | string
     atualizadoEm?: DateTimeWithAggregatesFilter<"PortalAcesso"> | Date | string
+  }
+
+  export type PortalCadastroWhereInput = {
+    AND?: PortalCadastroWhereInput | PortalCadastroWhereInput[]
+    OR?: PortalCadastroWhereInput[]
+    NOT?: PortalCadastroWhereInput | PortalCadastroWhereInput[]
+    id?: StringFilter<"PortalCadastro"> | string
+    nome?: StringFilter<"PortalCadastro"> | string
+    nomeFantasia?: StringNullableFilter<"PortalCadastro"> | string | null
+    cnpj?: StringFilter<"PortalCadastro"> | string
+    email?: StringFilter<"PortalCadastro"> | string
+    telefone?: StringFilter<"PortalCadastro"> | string
+    contato?: StringFilter<"PortalCadastro"> | string
+    cep?: StringFilter<"PortalCadastro"> | string
+    logradouro?: StringFilter<"PortalCadastro"> | string
+    numero?: StringFilter<"PortalCadastro"> | string
+    complemento?: StringNullableFilter<"PortalCadastro"> | string | null
+    bairro?: StringFilter<"PortalCadastro"> | string
+    cidade?: StringFilter<"PortalCadastro"> | string
+    estado?: StringFilter<"PortalCadastro"> | string
+    inscricaoEstadual?: StringNullableFilter<"PortalCadastro"> | string | null
+    status?: StringFilter<"PortalCadastro"> | string
+    erro?: StringNullableFilter<"PortalCadastro"> | string | null
+    contaAzulId?: StringNullableFilter<"PortalCadastro"> | string | null
+    criadoEm?: DateTimeFilter<"PortalCadastro"> | Date | string
+    atualizadoEm?: DateTimeFilter<"PortalCadastro"> | Date | string
+  }
+
+  export type PortalCadastroOrderByWithRelationInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    nomeFantasia?: SortOrderInput | SortOrder
+    cnpj?: SortOrder
+    email?: SortOrder
+    telefone?: SortOrder
+    contato?: SortOrder
+    cep?: SortOrder
+    logradouro?: SortOrder
+    numero?: SortOrder
+    complemento?: SortOrderInput | SortOrder
+    bairro?: SortOrder
+    cidade?: SortOrder
+    estado?: SortOrder
+    inscricaoEstadual?: SortOrderInput | SortOrder
+    status?: SortOrder
+    erro?: SortOrderInput | SortOrder
+    contaAzulId?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    _relevance?: PortalCadastroOrderByRelevanceInput
+  }
+
+  export type PortalCadastroWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: PortalCadastroWhereInput | PortalCadastroWhereInput[]
+    OR?: PortalCadastroWhereInput[]
+    NOT?: PortalCadastroWhereInput | PortalCadastroWhereInput[]
+    nome?: StringFilter<"PortalCadastro"> | string
+    nomeFantasia?: StringNullableFilter<"PortalCadastro"> | string | null
+    cnpj?: StringFilter<"PortalCadastro"> | string
+    email?: StringFilter<"PortalCadastro"> | string
+    telefone?: StringFilter<"PortalCadastro"> | string
+    contato?: StringFilter<"PortalCadastro"> | string
+    cep?: StringFilter<"PortalCadastro"> | string
+    logradouro?: StringFilter<"PortalCadastro"> | string
+    numero?: StringFilter<"PortalCadastro"> | string
+    complemento?: StringNullableFilter<"PortalCadastro"> | string | null
+    bairro?: StringFilter<"PortalCadastro"> | string
+    cidade?: StringFilter<"PortalCadastro"> | string
+    estado?: StringFilter<"PortalCadastro"> | string
+    inscricaoEstadual?: StringNullableFilter<"PortalCadastro"> | string | null
+    status?: StringFilter<"PortalCadastro"> | string
+    erro?: StringNullableFilter<"PortalCadastro"> | string | null
+    contaAzulId?: StringNullableFilter<"PortalCadastro"> | string | null
+    criadoEm?: DateTimeFilter<"PortalCadastro"> | Date | string
+    atualizadoEm?: DateTimeFilter<"PortalCadastro"> | Date | string
+  }, "id">
+
+  export type PortalCadastroOrderByWithAggregationInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    nomeFantasia?: SortOrderInput | SortOrder
+    cnpj?: SortOrder
+    email?: SortOrder
+    telefone?: SortOrder
+    contato?: SortOrder
+    cep?: SortOrder
+    logradouro?: SortOrder
+    numero?: SortOrder
+    complemento?: SortOrderInput | SortOrder
+    bairro?: SortOrder
+    cidade?: SortOrder
+    estado?: SortOrder
+    inscricaoEstadual?: SortOrderInput | SortOrder
+    status?: SortOrder
+    erro?: SortOrderInput | SortOrder
+    contaAzulId?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    _count?: PortalCadastroCountOrderByAggregateInput
+    _max?: PortalCadastroMaxOrderByAggregateInput
+    _min?: PortalCadastroMinOrderByAggregateInput
+  }
+
+  export type PortalCadastroScalarWhereWithAggregatesInput = {
+    AND?: PortalCadastroScalarWhereWithAggregatesInput | PortalCadastroScalarWhereWithAggregatesInput[]
+    OR?: PortalCadastroScalarWhereWithAggregatesInput[]
+    NOT?: PortalCadastroScalarWhereWithAggregatesInput | PortalCadastroScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PortalCadastro"> | string
+    nome?: StringWithAggregatesFilter<"PortalCadastro"> | string
+    nomeFantasia?: StringNullableWithAggregatesFilter<"PortalCadastro"> | string | null
+    cnpj?: StringWithAggregatesFilter<"PortalCadastro"> | string
+    email?: StringWithAggregatesFilter<"PortalCadastro"> | string
+    telefone?: StringWithAggregatesFilter<"PortalCadastro"> | string
+    contato?: StringWithAggregatesFilter<"PortalCadastro"> | string
+    cep?: StringWithAggregatesFilter<"PortalCadastro"> | string
+    logradouro?: StringWithAggregatesFilter<"PortalCadastro"> | string
+    numero?: StringWithAggregatesFilter<"PortalCadastro"> | string
+    complemento?: StringNullableWithAggregatesFilter<"PortalCadastro"> | string | null
+    bairro?: StringWithAggregatesFilter<"PortalCadastro"> | string
+    cidade?: StringWithAggregatesFilter<"PortalCadastro"> | string
+    estado?: StringWithAggregatesFilter<"PortalCadastro"> | string
+    inscricaoEstadual?: StringNullableWithAggregatesFilter<"PortalCadastro"> | string | null
+    status?: StringWithAggregatesFilter<"PortalCadastro"> | string
+    erro?: StringNullableWithAggregatesFilter<"PortalCadastro"> | string | null
+    contaAzulId?: StringNullableWithAggregatesFilter<"PortalCadastro"> | string | null
+    criadoEm?: DateTimeWithAggregatesFilter<"PortalCadastro"> | Date | string
+    atualizadoEm?: DateTimeWithAggregatesFilter<"PortalCadastro"> | Date | string
   }
 
   export type RegraComercialClienteWhereInput = {
@@ -43347,6 +44712,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
@@ -43379,6 +44747,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
@@ -43409,6 +44780,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
@@ -43441,6 +44815,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
@@ -43472,6 +44849,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
   }
@@ -43496,6 +44876,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -43521,6 +44904,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -43604,6 +44990,167 @@ export namespace Prisma {
     conviteHash?: NullableStringFieldUpdateOperationsInput | string | null
     conviteExpiraEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     ativo?: BoolFieldUpdateOperationsInput | boolean
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalCadastroCreateInput = {
+    id?: string
+    nome: string
+    nomeFantasia?: string | null
+    cnpj: string
+    email: string
+    telefone: string
+    contato: string
+    cep: string
+    logradouro: string
+    numero: string
+    complemento?: string | null
+    bairro: string
+    cidade: string
+    estado: string
+    inscricaoEstadual?: string | null
+    status?: string
+    erro?: string | null
+    contaAzulId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PortalCadastroUncheckedCreateInput = {
+    id?: string
+    nome: string
+    nomeFantasia?: string | null
+    cnpj: string
+    email: string
+    telefone: string
+    contato: string
+    cep: string
+    logradouro: string
+    numero: string
+    complemento?: string | null
+    bairro: string
+    cidade: string
+    estado: string
+    inscricaoEstadual?: string | null
+    status?: string
+    erro?: string | null
+    contaAzulId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PortalCadastroUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    nomeFantasia?: NullableStringFieldUpdateOperationsInput | string | null
+    cnpj?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    telefone?: StringFieldUpdateOperationsInput | string
+    contato?: StringFieldUpdateOperationsInput | string
+    cep?: StringFieldUpdateOperationsInput | string
+    logradouro?: StringFieldUpdateOperationsInput | string
+    numero?: StringFieldUpdateOperationsInput | string
+    complemento?: NullableStringFieldUpdateOperationsInput | string | null
+    bairro?: StringFieldUpdateOperationsInput | string
+    cidade?: StringFieldUpdateOperationsInput | string
+    estado?: StringFieldUpdateOperationsInput | string
+    inscricaoEstadual?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    erro?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalCadastroUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    nomeFantasia?: NullableStringFieldUpdateOperationsInput | string | null
+    cnpj?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    telefone?: StringFieldUpdateOperationsInput | string
+    contato?: StringFieldUpdateOperationsInput | string
+    cep?: StringFieldUpdateOperationsInput | string
+    logradouro?: StringFieldUpdateOperationsInput | string
+    numero?: StringFieldUpdateOperationsInput | string
+    complemento?: NullableStringFieldUpdateOperationsInput | string | null
+    bairro?: StringFieldUpdateOperationsInput | string
+    cidade?: StringFieldUpdateOperationsInput | string
+    estado?: StringFieldUpdateOperationsInput | string
+    inscricaoEstadual?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    erro?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalCadastroCreateManyInput = {
+    id?: string
+    nome: string
+    nomeFantasia?: string | null
+    cnpj: string
+    email: string
+    telefone: string
+    contato: string
+    cep: string
+    logradouro: string
+    numero: string
+    complemento?: string | null
+    bairro: string
+    cidade: string
+    estado: string
+    inscricaoEstadual?: string | null
+    status?: string
+    erro?: string | null
+    contaAzulId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PortalCadastroUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    nomeFantasia?: NullableStringFieldUpdateOperationsInput | string | null
+    cnpj?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    telefone?: StringFieldUpdateOperationsInput | string
+    contato?: StringFieldUpdateOperationsInput | string
+    cep?: StringFieldUpdateOperationsInput | string
+    logradouro?: StringFieldUpdateOperationsInput | string
+    numero?: StringFieldUpdateOperationsInput | string
+    complemento?: NullableStringFieldUpdateOperationsInput | string | null
+    bairro?: StringFieldUpdateOperationsInput | string
+    cidade?: StringFieldUpdateOperationsInput | string
+    estado?: StringFieldUpdateOperationsInput | string
+    inscricaoEstadual?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    erro?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalCadastroUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    nomeFantasia?: NullableStringFieldUpdateOperationsInput | string | null
+    cnpj?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    telefone?: StringFieldUpdateOperationsInput | string
+    contato?: StringFieldUpdateOperationsInput | string
+    cep?: StringFieldUpdateOperationsInput | string
+    logradouro?: StringFieldUpdateOperationsInput | string
+    numero?: StringFieldUpdateOperationsInput | string
+    complemento?: NullableStringFieldUpdateOperationsInput | string | null
+    bairro?: StringFieldUpdateOperationsInput | string
+    cidade?: StringFieldUpdateOperationsInput | string
+    estado?: StringFieldUpdateOperationsInput | string
+    inscricaoEstadual?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    erro?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -46709,6 +48256,9 @@ export namespace Prisma {
     mixVariedades?: SortOrder
     imagemUrl?: SortOrder
     visivelPortal?: SortOrder
+    descricaoLoja?: SortOrder
+    aplicacaoLoja?: SortOrder
+    estoqueLoja?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
   }
@@ -46717,6 +48267,7 @@ export namespace Prisma {
     precoBase?: SortOrder
     fatorCompraUnidade?: SortOrder
     rendimentoPorKg?: SortOrder
+    estoqueLoja?: SortOrder
   }
 
   export type ProdutoComercialMaxOrderByAggregateInput = {
@@ -46739,6 +48290,9 @@ export namespace Prisma {
     mixProdutoReferenciaId?: SortOrder
     imagemUrl?: SortOrder
     visivelPortal?: SortOrder
+    descricaoLoja?: SortOrder
+    aplicacaoLoja?: SortOrder
+    estoqueLoja?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
   }
@@ -46763,6 +48317,9 @@ export namespace Prisma {
     mixProdutoReferenciaId?: SortOrder
     imagemUrl?: SortOrder
     visivelPortal?: SortOrder
+    descricaoLoja?: SortOrder
+    aplicacaoLoja?: SortOrder
+    estoqueLoja?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
   }
@@ -46771,6 +48328,7 @@ export namespace Prisma {
     precoBase?: SortOrder
     fatorCompraUnidade?: SortOrder
     rendimentoPorKg?: SortOrder
+    estoqueLoja?: SortOrder
   }
 
   export type EnumModoCompraProdutoWithAggregatesFilter<$PrismaModel = never> = {
@@ -46852,6 +48410,81 @@ export namespace Prisma {
     conviteHash?: SortOrder
     conviteExpiraEm?: SortOrder
     ativo?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PortalCadastroOrderByRelevanceInput = {
+    fields: PortalCadastroOrderByRelevanceFieldEnum | PortalCadastroOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type PortalCadastroCountOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    nomeFantasia?: SortOrder
+    cnpj?: SortOrder
+    email?: SortOrder
+    telefone?: SortOrder
+    contato?: SortOrder
+    cep?: SortOrder
+    logradouro?: SortOrder
+    numero?: SortOrder
+    complemento?: SortOrder
+    bairro?: SortOrder
+    cidade?: SortOrder
+    estado?: SortOrder
+    inscricaoEstadual?: SortOrder
+    status?: SortOrder
+    erro?: SortOrder
+    contaAzulId?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PortalCadastroMaxOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    nomeFantasia?: SortOrder
+    cnpj?: SortOrder
+    email?: SortOrder
+    telefone?: SortOrder
+    contato?: SortOrder
+    cep?: SortOrder
+    logradouro?: SortOrder
+    numero?: SortOrder
+    complemento?: SortOrder
+    bairro?: SortOrder
+    cidade?: SortOrder
+    estado?: SortOrder
+    inscricaoEstadual?: SortOrder
+    status?: SortOrder
+    erro?: SortOrder
+    contaAzulId?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PortalCadastroMinOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    nomeFantasia?: SortOrder
+    cnpj?: SortOrder
+    email?: SortOrder
+    telefone?: SortOrder
+    contato?: SortOrder
+    cep?: SortOrder
+    logradouro?: SortOrder
+    numero?: SortOrder
+    complemento?: SortOrder
+    bairro?: SortOrder
+    cidade?: SortOrder
+    estado?: SortOrder
+    inscricaoEstadual?: SortOrder
+    status?: SortOrder
+    erro?: SortOrder
+    contaAzulId?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
   }
@@ -53432,6 +55065,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
@@ -53463,6 +55099,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
@@ -53530,6 +55169,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
@@ -53561,6 +55203,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
@@ -53641,6 +55286,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
@@ -53672,6 +55320,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
@@ -53748,6 +55399,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
@@ -53779,6 +55433,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
@@ -53908,6 +55565,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
@@ -53939,6 +55599,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
@@ -53973,6 +55636,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
@@ -54003,6 +55669,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
@@ -54183,6 +55852,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
@@ -54214,6 +55886,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
@@ -54263,6 +55938,9 @@ export namespace Prisma {
     mixVariedades?: JsonNullableFilter<"ProdutoComercial">
     imagemUrl?: StringNullableFilter<"ProdutoComercial"> | string | null
     visivelPortal?: BoolFilter<"ProdutoComercial"> | boolean
+    descricaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
+    aplicacaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
+    estoqueLoja?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
   }
@@ -54823,6 +56501,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
@@ -54854,6 +56535,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
@@ -54946,6 +56630,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
@@ -54977,6 +56664,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
@@ -56434,6 +58124,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
@@ -56465,6 +58158,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
@@ -56577,6 +58273,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
@@ -56608,6 +58307,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
@@ -56763,6 +58465,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
@@ -56794,6 +58499,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
@@ -57020,6 +58728,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
@@ -57051,6 +58762,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
@@ -60126,6 +61840,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: string | null
     visivelPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
   }
@@ -60270,6 +61987,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
@@ -60300,6 +62020,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
@@ -60330,6 +62053,9 @@ export namespace Prisma {
     mixVariedades?: NullableJsonNullValueInput | InputJsonValue
     imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
     visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }

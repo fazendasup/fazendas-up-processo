@@ -212,6 +212,9 @@ exports.Prisma.ProdutoComercialScalarFieldEnum = {
   mixVariedades: 'mixVariedades',
   imagemUrl: 'imagemUrl',
   visivelPortal: 'visivelPortal',
+  descricaoLoja: 'descricaoLoja',
+  aplicacaoLoja: 'aplicacaoLoja',
+  estoqueLoja: 'estoqueLoja',
   criadoEm: 'criadoEm',
   atualizadoEm: 'atualizadoEm'
 };
@@ -224,6 +227,29 @@ exports.Prisma.PortalAcessoScalarFieldEnum = {
   conviteHash: 'conviteHash',
   conviteExpiraEm: 'conviteExpiraEm',
   ativo: 'ativo',
+  criadoEm: 'criadoEm',
+  atualizadoEm: 'atualizadoEm'
+};
+
+exports.Prisma.PortalCadastroScalarFieldEnum = {
+  id: 'id',
+  nome: 'nome',
+  nomeFantasia: 'nomeFantasia',
+  cnpj: 'cnpj',
+  email: 'email',
+  telefone: 'telefone',
+  contato: 'contato',
+  cep: 'cep',
+  logradouro: 'logradouro',
+  numero: 'numero',
+  complemento: 'complemento',
+  bairro: 'bairro',
+  cidade: 'cidade',
+  estado: 'estado',
+  inscricaoEstadual: 'inscricaoEstadual',
+  status: 'status',
+  erro: 'erro',
+  contaAzulId: 'contaAzulId',
   criadoEm: 'criadoEm',
   atualizadoEm: 'atualizadoEm'
 };
@@ -633,7 +659,9 @@ exports.Prisma.ProdutoComercialOrderByRelevanceFieldEnum = {
   statusContaAzul: 'statusContaAzul',
   categoria: 'categoria',
   mixProdutoReferenciaId: 'mixProdutoReferenciaId',
-  imagemUrl: 'imagemUrl'
+  imagemUrl: 'imagemUrl',
+  descricaoLoja: 'descricaoLoja',
+  aplicacaoLoja: 'aplicacaoLoja'
 };
 
 exports.Prisma.PortalAcessoOrderByRelevanceFieldEnum = {
@@ -642,6 +670,27 @@ exports.Prisma.PortalAcessoOrderByRelevanceFieldEnum = {
   email: 'email',
   senhaHash: 'senhaHash',
   conviteHash: 'conviteHash'
+};
+
+exports.Prisma.PortalCadastroOrderByRelevanceFieldEnum = {
+  id: 'id',
+  nome: 'nome',
+  nomeFantasia: 'nomeFantasia',
+  cnpj: 'cnpj',
+  email: 'email',
+  telefone: 'telefone',
+  contato: 'contato',
+  cep: 'cep',
+  logradouro: 'logradouro',
+  numero: 'numero',
+  complemento: 'complemento',
+  bairro: 'bairro',
+  cidade: 'cidade',
+  estado: 'estado',
+  inscricaoEstadual: 'inscricaoEstadual',
+  status: 'status',
+  erro: 'erro',
+  contaAzulId: 'contaAzulId'
 };
 
 exports.Prisma.RegraComercialClienteOrderByRelevanceFieldEnum = {
@@ -1006,6 +1055,7 @@ exports.Prisma.ModelName = {
   EstoqueVivoMixComponente: 'EstoqueVivoMixComponente',
   ProdutoComercial: 'ProdutoComercial',
   PortalAcesso: 'PortalAcesso',
+  PortalCadastro: 'PortalCadastro',
   RegraComercialCliente: 'RegraComercialCliente',
   ClienteLegadoContaAzulLink: 'ClienteLegadoContaAzulLink',
   PrecoEspecialCliente: 'PrecoEspecialCliente',

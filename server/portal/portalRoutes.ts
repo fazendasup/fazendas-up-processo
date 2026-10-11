@@ -14,6 +14,8 @@ import {
   todayYmd,
   upcomingDeliveryDates,
 } from "./portalCalendario";
+import { fichaDoProduto } from "./vitrineCopy";
+import { cnpjValido, formatarCnpj, LojaErro, preencherFichasDaVitrine, reenviarCadastro, registrarEmpresa } from "./portalLoja";
 import {
   emitirSessaoCliente,
   emitirSessaoEquipe,
@@ -34,6 +36,15 @@ const loginLimit = rateLimit({
   legacyHeaders: false,
   validate: false,
   message: { error: "Muitas tentativas. Espere alguns minutos e tente de novo." },
+});
+
+const cadastroLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 6,
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: false,
+  message: { error: "Muitos cadastros em seguida. Espere alguns minutos." },
 });
 
 const conviteLimit = rateLimit({
@@ -72,7 +83,15 @@ function podeEditarLoja(role: string | null | undefined) {
 
 function imagemValida(valor: string): boolean {
   if (valor.length > 500) return false;
-  return valor.startsWith("https://");
+  if (valor.startsWith("https://")) return true;
+  return valor.startsWith("/produtos/") || valor.startsWith("/uploads/");
+}
+
+function estoqueNumero(valor: unknown): number | null {
+  if (valor == null) return null;
+  const n = Number(valor);
+  if (!Number.isFinite(n)) return null;
+  return Math.round(n * 1000) / 1000;
 }
 
 function somenteDigitos(valor: string): string {
@@ -202,6 +221,111 @@ export function registerPortalRoutes(app: Express): void {
       primeiraData: earliestDeliveryYmd(agora),
       datas: upcomingDeliveryDates(agora),
     });
+  });
+
+  app.get("/api/portal/vitrine", async (req, res) => {
+    try {
+      const prisma = getComercialPrisma();
+      await preencherFichasDaVitrine(prisma);
+      const acesso = await clienteDaSessao(req);
+      const especiais = await precosDoCliente(acesso?.cliente.externalId ?? null);
+      const produtos = await prisma.produtoComercial.findMany({
+        where: {
+          ativo: true,
+          visivelPortal: true,
+          importadoOperacao: true,
+          contaAzulProdutoId: { not: null },
+        },
+        orderBy: { nome: "asc" },
+      });
+      const agora = new Date();
+      res.json({
+        minimoReais: MIN_ORDER_REAIS,
+        datas: upcomingDeliveryDates(agora),
+        itens: produtos.flatMap((produto) => {
+          const base = dinheiro(produto.precoBase);
+          const especial = especiais.get(produto.id);
+          const preco = especial ?? base;
+          if (preco == null || preco <= 0) return [];
+          const ficha = fichaDoProduto(produto.nome);
+          return [
+            {
+              id: produto.id,
+              nome: produto.nome,
+              grupo: ficha.grupo,
+              descricao: produto.descricaoLoja || ficha.descricao,
+              aplicacao: produto.aplicacaoLoja || ficha.aplicacao,
+              preco,
+              precoEspecial: especial != null,
+              imagemUrl: produto.imagemUrl || ficha.foto,
+              unidade: produto.modoCompra === "KG" ? "kg" : "un",
+              estoque: estoqueNumero(produto.estoqueLoja),
+            },
+          ];
+        }),
+      });
+    } catch (error) {
+      console.error("[portal] vitrine", error);
+      falha(res, 503, "Não foi possível carregar os produtos.");
+    }
+  });
+
+  app.post("/api/portal/cadastro", cadastroLimit, async (req, res) => {
+    const parsed = z
+      .object({
+        nome: z.string().trim().min(2).max(160),
+        nomeFantasia: z.string().trim().max(160).optional(),
+        cnpj: z.string().trim().max(20),
+        email: emailSchema,
+        telefone: z.string().trim().min(10).max(20),
+        contato: z.string().trim().min(2).max(120),
+        cep: z.string().trim().max(12),
+        logradouro: z.string().trim().min(2).max(160),
+        numero: z.string().trim().min(1).max(20),
+        complemento: z.string().trim().max(120).optional(),
+        bairro: z.string().trim().min(2).max(80),
+        cidade: z.string().trim().min(2).max(80),
+        estado: z.string().trim().length(2),
+        inscricaoEstadual: z.string().trim().max(20).optional(),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      falha(res, 400, "Confira os dados da empresa. CNPJ, endereço e contato são necessários.");
+      return;
+    }
+    const cnpj = parsed.data.cnpj.replace(/\D/g, "");
+    const cep = parsed.data.cep.replace(/\D/g, "");
+    const telefone = parsed.data.telefone.replace(/\D/g, "");
+    if (!cnpjValido(cnpj) || cep.length !== 8 || telefone.length < 10) {
+      falha(res, 400, "Confira o CNPJ, o CEP e o telefone.");
+      return;
+    }
+    try {
+      const resultado = await registrarEmpresa({
+        nome: parsed.data.nome,
+        nomeFantasia: parsed.data.nomeFantasia?.trim() || null,
+        cnpj,
+        email: parsed.data.email,
+        telefone,
+        contato: parsed.data.contato,
+        cep,
+        logradouro: parsed.data.logradouro,
+        numero: parsed.data.numero,
+        complemento: parsed.data.complemento?.trim() || null,
+        bairro: parsed.data.bairro,
+        cidade: parsed.data.cidade,
+        estado: parsed.data.estado.toUpperCase(),
+        inscricaoEstadual: parsed.data.inscricaoEstadual?.trim() || null,
+      });
+      res.status(resultado.pendente ? 202 : 201).json(resultado);
+    } catch (error) {
+      if (error instanceof LojaErro) {
+        falha(res, error.status, error.message);
+        return;
+      }
+      console.error("[portal] cadastro", error);
+      falha(res, 503, "Não foi possível cadastrar a empresa agora.");
+    }
   });
 
   app.get("/api/portal/sessao", async (req, res) => {
@@ -476,7 +600,7 @@ export function registerPortalRoutes(app: Express): void {
         falha(
           res,
           409,
-          "Há pagamento em atraso no Conta Azul. Regularize para lançar uma nova entrega.",
+          "Há um pagamento em atraso nesta conta. Regularize para enviar um novo pedido.",
         );
         return;
       }
@@ -509,7 +633,7 @@ export function registerPortalRoutes(app: Express): void {
         return { produto, quantidade: item.quantidade, preco, especial: especial != null };
       });
       if (linhas.some((linha) => linha == null)) {
-        falha(res, 400, "Há produto sem preço. A equipe precisa completar o cadastro.");
+        falha(res, 400, "Há produto sem preço.");
         return;
       }
       const totalReais = Math.round(total * 100) / 100;
@@ -519,7 +643,18 @@ export function registerPortalRoutes(app: Express): void {
       }
       const nota = parsed.data.observacoes?.trim();
       const dataEntrega = new Date(`${parsed.data.dataEntrega}T12:00:00`);
-      const pedido = await prisma.pedidoOperacional.create({
+      const pedido = await prisma.$transaction(async (tx) => {
+        for (const linha of linhas) {
+          if (linha!.produto.estoqueLoja == null) continue;
+          const baixado = await tx.produtoComercial.updateMany({
+            where: { id: linha!.produto.id, estoqueLoja: { gte: linha!.quantidade } },
+            data: { estoqueLoja: { decrement: linha!.quantidade } },
+          });
+          if (baixado.count !== 1) {
+            throw new LojaErro(409, `${linha!.produto.nome} não tem essa quantidade disponível.`);
+          }
+        }
+        return tx.pedidoOperacional.create({
         data: {
           clienteId: acesso.clienteId,
           contaAzulCustomerId: contaAzulId,
@@ -540,14 +675,19 @@ export function registerPortalRoutes(app: Express): void {
         },
         include: { itens: true },
       });
+      });
       res.status(201).json({
         id: pedido.id,
         dataEntrega: parsed.data.dataEntrega,
         total: totalReais,
       });
     } catch (error) {
+      if (error instanceof LojaErro) {
+        falha(res, error.status, error.message);
+        return;
+      }
       console.error("[portal] criar pedido", error);
-      falha(res, 503, "Não foi possível lançar o pedido agora. Nada foi gravado se a conferência falhou.");
+      falha(res, 503, "Não foi possível enviar o pedido agora.");
     }
   });
 
@@ -643,15 +783,22 @@ export function registerPortalRoutes(app: Express): void {
         orderBy: { nome: "asc" },
       });
       res.json({
-        produtos: produtos.map((produto) => ({
-          id: produto.id,
-          nome: produto.nome,
-          categoria: produto.categoria,
-          naLoja: produto.visivelPortal,
-          preco: dinheiro(produto.precoBase),
-          imagemUrl: produto.imagemUrl,
-          unidade: produto.modoCompra === "KG" ? "kg" : "un",
-        })),
+        produtos: produtos.map((produto) => {
+          const ficha = fichaDoProduto(produto.nome);
+          return {
+            id: produto.id,
+            nome: produto.nome,
+            categoria: produto.categoria,
+            grupo: ficha.grupo,
+            descricao: produto.descricaoLoja || ficha.descricao,
+            aplicacao: produto.aplicacaoLoja || ficha.aplicacao,
+            naLoja: produto.visivelPortal,
+            preco: dinheiro(produto.precoBase),
+            imagemUrl: produto.imagemUrl || ficha.foto,
+            unidade: produto.modoCompra === "KG" ? "kg" : "un",
+            estoque: estoqueNumero(produto.estoqueLoja),
+          };
+        }),
       });
     } catch (error) {
       console.error("[portal] equipe produtos", error);
@@ -695,10 +842,21 @@ export function registerPortalRoutes(app: Express): void {
         naLoja: z.boolean().optional(),
         preco: z.number().positive().max(99999).optional(),
         imagemUrl: z.string().max(500).nullable().optional(),
+        descricao: z.string().trim().max(400).optional(),
+        aplicacao: z.string().trim().max(240).optional(),
+        estoque: z.number().min(0).max(99999).nullable().optional(),
       })
       .safeParse(req.body);
-    if (!parsed.success || (parsed.data.naLoja == null && parsed.data.preco == null && parsed.data.imagemUrl === undefined)) {
-      falha(res, 400, "Informe preço, foto ou se o item fica na loja.");
+    const temCampo =
+      parsed.success &&
+      (parsed.data.naLoja != null ||
+        parsed.data.preco != null ||
+        parsed.data.imagemUrl !== undefined ||
+        parsed.data.descricao != null ||
+        parsed.data.aplicacao != null ||
+        parsed.data.estoque !== undefined);
+    if (!parsed.success || !temCampo) {
+      falha(res, 400, "Informe preço, foto, estoque ou se o item fica na loja.");
       return;
     }
     if (parsed.data.imagemUrl && !imagemValida(parsed.data.imagemUrl)) {
@@ -722,6 +880,11 @@ export function registerPortalRoutes(app: Express): void {
           ...(parsed.data.naLoja != null ? { visivelPortal: parsed.data.naLoja } : {}),
           ...(parsed.data.preco != null ? { precoBase: parsed.data.preco.toFixed(2) } : {}),
           ...(parsed.data.imagemUrl !== undefined ? { imagemUrl: parsed.data.imagemUrl || null } : {}),
+          ...(parsed.data.descricao != null ? { descricaoLoja: parsed.data.descricao } : {}),
+          ...(parsed.data.aplicacao != null ? { aplicacaoLoja: parsed.data.aplicacao } : {}),
+          ...(parsed.data.estoque !== undefined
+            ? { estoqueLoja: parsed.data.estoque == null ? null : parsed.data.estoque.toFixed(3) }
+            : {}),
         },
       });
       res.json({
@@ -729,10 +892,64 @@ export function registerPortalRoutes(app: Express): void {
         naLoja: atualizado.visivelPortal,
         preco: dinheiro(atualizado.precoBase),
         imagemUrl: atualizado.imagemUrl,
+        descricao: atualizado.descricaoLoja,
+        aplicacao: atualizado.aplicacaoLoja,
+        estoque: estoqueNumero(atualizado.estoqueLoja),
       });
     } catch (error) {
       console.error("[portal] patch produto", error);
       falha(res, 503, "Não foi possível salvar o produto.");
+    }
+  });
+
+  app.get("/api/portal/equipe/cadastros", async (req, res) => {
+    const equipe = await equipeDaSessao(req);
+    if (!equipe) {
+      falha(res, 401, "Entre com o acesso da equipe.");
+      return;
+    }
+    try {
+      const prisma = getComercialPrisma();
+      const cadastros = await prisma.portalCadastro.findMany({
+        orderBy: { criadoEm: "desc" },
+        take: 40,
+      });
+      res.json({
+        cadastros: cadastros.map((item) => ({
+          id: item.id,
+          nome: item.nome,
+          cnpj: formatarCnpj(item.cnpj),
+          email: item.email,
+          cidade: item.cidade,
+          estado: item.estado,
+          status: item.status,
+          erro: item.erro,
+        })),
+      });
+    } catch (error) {
+      console.error("[portal] cadastros", error);
+      falha(res, 503, "Não foi possível listar os cadastros.");
+    }
+  });
+
+  app.post("/api/portal/equipe/cadastros/:id/enviar", async (req, res) => {
+    const equipe = await equipeDaSessao(req);
+    if (!equipe) {
+      falha(res, 401, "Entre com o acesso da equipe.");
+      return;
+    }
+    try {
+      await reenviarCadastro(req.params.id);
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("[portal] reenviar cadastro", error);
+      const prisma = getComercialPrisma();
+      const texto = error instanceof Error ? error.message : "Falha ao enviar.";
+      await prisma.portalCadastro.update({
+        where: { id: req.params.id },
+        data: { status: "ERRO", erro: texto.slice(0, 2000) },
+      }).catch(() => undefined);
+      falha(res, 503, "Não foi possível enviar este cadastro.");
     }
   });
 
