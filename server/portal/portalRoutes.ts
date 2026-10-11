@@ -467,7 +467,7 @@ export function registerPortalRoutes(app: Express): void {
     }
     const contaAzulId = acesso.cliente.externalId?.trim();
     if (!contaAzulId) {
-      falha(res, 400, "Este cadastro ainda não está ligado ao Conta Azul.");
+      falha(res, 400, "Esta conta ainda não pode receber pedidos. Fale com a fazenda.");
       return;
     }
     try {
@@ -562,7 +562,7 @@ export function registerPortalRoutes(app: Express): void {
       res.json({
         titulos: [],
         totais: { recebido: 0, emAberto: 0, emAtraso: 0 },
-        aviso: "Cadastro ainda sem vínculo com o Conta Azul.",
+        aviso: "Os pagamentos desta conta ainda não estão disponíveis.",
       });
       return;
     }
@@ -593,7 +593,7 @@ export function registerPortalRoutes(app: Express): void {
       });
     } catch (error) {
       console.error("[portal] financeiro", error);
-      falha(res, 503, "O Conta Azul não respondeu o financeiro deste cliente.");
+      falha(res, 503, "Os pagamentos não carregaram agora. Tente de novo em instantes.");
     }
   });
 
