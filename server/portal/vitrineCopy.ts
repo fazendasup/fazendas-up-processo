@@ -29,7 +29,7 @@ export function fichaDoProduto(nome: string): FichaProduto {
       grupo: "Flores",
       descricao: "Flores comestíveis, colhidas para ir ao prato.",
       aplicacao: "Finalização de prato, drink e sobremesa.",
-      foto: "/produtos/flores.jpg?v=3",
+      foto: "/produtos/flores.jpg?v=4",
     };
   }
   if (/molho/.test(n)) {
