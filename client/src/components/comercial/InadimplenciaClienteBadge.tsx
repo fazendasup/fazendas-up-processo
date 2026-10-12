@@ -78,53 +78,49 @@ export function InadimplenciaClienteBadge({
     { contaAzulCustomerId },
     { enabled: aberto, staleTime: 30_000, retry: false },
   );
-  const utils = trpc.useUtils();
   const [baixandoPdf, setBaixandoPdf] = useState(false);
 
   if (!resumo?.inadimplente) return null;
 
-  async function baixarExtratoPdf() {
+  function baixarPdfEmAberto() {
+    const titulos = (detalhe.data?.titulos ?? []).filter((t) => t.valorAberto > 0.009);
+    if (titulos.length === 0) {
+      toast.error("Não há títulos em aberto para este cliente.");
+      return;
+    }
     setBaixandoPdf(true);
     try {
-      const extrato = await utils.comercial.pedidos.extratoClienteContaAzul.fetch({
-        contaAzulCustomerId,
-      });
-      const nome = extrato.clienteNome || clienteNome || contaAzulCustomerId;
-      const rows = extrato.titulos.map((t) => [
-        fmtDataBr(t.dataPagamento || t.dataVencimento),
-        t.descricao,
-        t.categoria ?? "",
-        t.status,
-        t.valorPago > 0 ? fmtMoney(t.valorPago) : "",
-        t.valorAberto > 0 ? fmtMoney(t.valorAberto) : "",
-        fmtMoney(t.valorTotal),
-      ]);
+      const nome = detalhe.data?.clienteNome || clienteNome || contaAzulCustomerId;
+      const total = titulos.reduce((s, t) => s + t.valorAberto, 0);
+      const hoje = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Sao_Paulo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date());
       exportTableDocument(
         {
-          title: `Extrato Conta Azul — ${nome}`,
-          subtitle: `Período ${fmtDataBr(extrato.periodo.inicio)} a ${fmtDataBr(extrato.periodo.fim)} · somente este cliente`,
-          filename: `extrato_ca_${nome.replace(/[^\w\-]+/g, "_").slice(0, 40)}_${extrato.periodo.inicio}_${extrato.periodo.fim}`,
-          headers: [
-            "Data",
-            "Lançamento",
-            "Categoria",
-            "Situação",
-            "Recebido",
-            "Em aberto",
-            "Total",
-          ],
-          rows,
+          title: `Títulos em aberto — ${nome}`,
+          subtitle: "Somente o saldo em aberto deste cliente",
+          filename: `titulos_em_aberto_${nome.replace(/[^\w\-]+/g, "_").slice(0, 40)}_${hoje}`,
+          headers: ["Vencimento", "Lançamento", "Categoria", "Situação", "Em aberto"],
+          rows: titulos.map((t) => [
+            fmtDataBr(t.dataVencimento),
+            t.descricao,
+            t.categoria ?? "",
+            t.status,
+            fmtMoney(t.valorAberto),
+          ]),
+          footers: [["", "", "", "Total em aberto", fmtMoney(total)]],
           kpis: [
-            { label: "Recebido", value: fmtMoney(extrato.totais.recebido) },
-            { label: "Em aberto", value: fmtMoney(extrato.totais.emAberto) },
-            { label: "Em atraso", value: fmtMoney(extrato.totais.emAtraso) },
-            { label: "Total", value: fmtMoney(extrato.totais.total) },
+            { label: "Títulos", value: String(titulos.length) },
+            { label: "Em aberto", value: fmtMoney(total) },
           ],
           orientation: "landscape",
         },
         "pdf",
       );
-      toast.success("PDF do extrato gerado.");
+      toast.success("PDF dos títulos em aberto gerado.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao gerar PDF.");
     } finally {
@@ -204,8 +200,8 @@ export function InadimplenciaClienteBadge({
             </Button>
             <Button
               type="button"
-              disabled={baixandoPdf}
-              onClick={() => void baixarExtratoPdf()}
+              disabled={baixandoPdf || !detalhe.data || detalhe.data.titulos.length === 0}
+              onClick={() => baixarPdfEmAberto()}
             >
               {baixandoPdf ? (
                 <>
@@ -215,7 +211,7 @@ export function InadimplenciaClienteBadge({
               ) : (
                 <>
                   <Download className="mr-1.5 h-4 w-4" />
-                  Baixar extrato PDF
+                  Baixar PDF em aberto
                 </>
               )}
             </Button>
