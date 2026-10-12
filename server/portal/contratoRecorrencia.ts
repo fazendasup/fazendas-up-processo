@@ -86,22 +86,28 @@ export async function sincronizarContratoPendente(
   });
   if (atual?.status === "ACEITO") return false;
   if (atual?.textoHash === textoHash) return false;
-  await prisma.portalContrato.upsert({
-    where: { clienteId: cliente.id },
-    create: {
-      clienteId: cliente.id,
-      versao: CONTRATO_RECORRENCIA_VERSAO,
-      texto,
-      textoHash,
-      status: "PENDENTE",
-    },
-    update: {
-      versao: CONTRATO_RECORRENCIA_VERSAO,
-      texto,
-      textoHash,
-      status: "PENDENTE",
-    },
-  });
+  const dados = {
+    versao: CONTRATO_RECORRENCIA_VERSAO,
+    texto,
+    textoHash,
+    status: "PENDENTE" as const,
+  };
+  try {
+    await prisma.portalContrato.upsert({
+      where: { clienteId: cliente.id },
+      create: { clienteId: cliente.id, ...dados },
+      update: dados,
+    });
+  } catch (error) {
+    const codigo = typeof error === "object" && error && "code" in error ? String(error.code) : "";
+    if (codigo !== "P2002") throw error;
+    const existente = await prisma.portalContrato.findUnique({
+      where: { clienteId: cliente.id },
+      select: { status: true, textoHash: true },
+    });
+    if (!existente || existente.status === "ACEITO" || existente.textoHash === textoHash) return false;
+    await prisma.portalContrato.update({ where: { clienteId: cliente.id }, data: dados });
+  }
   return true;
 }
 
