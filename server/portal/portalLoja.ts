@@ -1,3 +1,4 @@
+import { createRequire } from "node:module";
 import { createContaAzulHttp, contaAzulPost } from "../comercial/integrations/conta-azul/conta-azul.client";
 import { ensureValidAccessToken } from "../comercial/integrations/conta-azul/sync.service";
 import { getComercialPrisma } from "../comercial/db";
@@ -36,6 +37,43 @@ export function produtoVisivelNaLoja(input: {
 
 export function jpegValido(conteudo: Buffer): boolean {
   return conteudo.length > 100 && conteudo.length <= 1_500_000 && conteudo[0] === 0xff && conteudo[1] === 0xd8 && conteudo[2] === 0xff;
+}
+
+/** Marca ftyp dos arquivos HEIC/HEIF que o celular salva. */
+export function marcaHeic(conteudo: Buffer): boolean {
+  if (conteudo.length < 12 || conteudo.subarray(4, 8).toString("ascii") !== "ftyp") return false;
+  const marca = conteudo.subarray(8, 12).toString("ascii").toLowerCase();
+  return ["heic", "heix", "hevc", "hevx", "mif1", "msf1", "heim", "heis"].includes(marca);
+}
+
+/** O navegador não abre HEIC. Aqui vira JPEG no tamanho da loja. */
+export async function jpegDaFotoEnviada(conteudo: Buffer): Promise<Buffer> {
+  if (jpegValido(conteudo)) return conteudo;
+  if (!marcaHeic(conteudo)) {
+    throw new Error("Escolha uma foto JPG, PNG ou a foto do celular.");
+  }
+  const converter = createRequire(import.meta.url)("heic-convert") as (opcoes: {
+    buffer: Buffer;
+    format: "JPEG";
+    quality: number;
+  }) => Promise<ArrayBuffer | Uint8Array>;
+  const bruto = Buffer.from(await converter({ buffer: conteudo, format: "JPEG", quality: 0.86 }));
+  const { default: sharp } = await import("sharp");
+  let qualidade = 82;
+  let jpeg = Buffer.alloc(0);
+  for (let tentativa = 0; tentativa < 4; tentativa += 1) {
+    jpeg = await sharp(bruto)
+      .rotate()
+      .resize({ width: 1400, height: 1400, fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: qualidade })
+      .toBuffer();
+    if (jpeg.length <= 1_400_000) break;
+    qualidade -= 12;
+  }
+  if (!jpegValido(jpeg)) {
+    throw new Error("Não consegui abrir a foto do celular. Escolha JPG ou PNG.");
+  }
+  return jpeg;
 }
 
 /** Prisma devolve Bytes como Uint8Array. Express só envia binário se for Buffer. */

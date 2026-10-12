@@ -15,7 +15,7 @@ import {
   upcomingDeliveryDates,
 } from "./portalCalendario";
 import { fichaDoProduto } from "./vitrineCopy";
-import { alinharFotosDeEstoque, bytesDaFoto, cnpjValido, formatarCnpj, jpegValido, LojaErro, preencherFichasDaVitrine, produtoVisivelNaLoja, reenviarCadastro, registrarEmpresa } from "./portalLoja";
+import { alinharFotosDeEstoque, bytesDaFoto, cnpjValido, formatarCnpj, jpegDaFotoEnviada, jpegValido, LojaErro, preencherFichasDaVitrine, produtoVisivelNaLoja, reenviarCadastro, registrarEmpresa } from "./portalLoja";
 import { baixarDocumentoCliente, DocumentoErro, lembrarTitulosDoCliente } from "./portalDocumentos";
 import {
   emitirSessaoCliente,
@@ -1041,14 +1041,20 @@ export function registerPortalRoutes(app: Express): void {
       falha(res, 401, "Entre com o acesso da equipe.");
       return;
     }
-    const parsed = z.object({ imagem: z.string().min(100).max(2_100_000) }).safeParse(req.body);
+    const parsed = z.object({ imagem: z.string().min(100).max(18_000_000) }).safeParse(req.body);
     if (!parsed.success) {
-      falha(res, 400, "Escolha uma foto JPG ou PNG.");
+      falha(res, 400, "Escolha uma foto JPG, PNG ou a foto do celular.");
       return;
     }
-    const conteudo = Buffer.from(parsed.data.imagem, "base64");
+    let conteudo: Buffer;
+    try {
+      conteudo = await jpegDaFotoEnviada(Buffer.from(parsed.data.imagem, "base64"));
+    } catch (error) {
+      falha(res, 400, error instanceof Error ? error.message : "Escolha uma foto JPG, PNG ou a foto do celular.");
+      return;
+    }
     if (!jpegValido(conteudo)) {
-      falha(res, 400, "Escolha uma foto JPG ou PNG de até 1,5 MB.");
+      falha(res, 400, "Escolha uma foto JPG, PNG ou a foto do celular.");
       return;
     }
     try {

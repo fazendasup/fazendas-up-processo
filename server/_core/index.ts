@@ -217,7 +217,7 @@ async function startServer() {
   registerBpfRoutes(app);
 
   app.use("/api/portal", apiLimiter);
-  app.use("/api/portal", express.json({ limit: "4mb" }));
+  app.use("/api/portal", express.json({ limit: "18mb" }));
   try {
     const { registerPortalRoutes } = await import("../portal/portalRoutes");
     registerPortalRoutes(app);
