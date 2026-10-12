@@ -14,9 +14,10 @@ describe("correcaoEc", () => {
     expect(b).toBeCloseTo(128, 1);
   });
 
-  it("estima potência > 0", () => {
-    expect(potenciaEcPorMlPorLitro(RECEITA_AB_PADRAO)).toBeGreaterThan(0.3);
-    expect(potenciaEcPorMlPorLitro(RECEITA_AB_PADRAO)).toBeLessThan(0.7);
+  it("estima a potência medida da receita nova", () => {
+    const potencia = potenciaEcPorMlPorLitro(RECEITA_AB_PADRAO);
+    const mlPorLAntigo = 1.26 / ((158.4 + 128) / 700);
+    expect(potencia).toBeCloseTo(0.86 / mlPorLAntigo, 4);
   });
 
   it("sobe EC com volumes iguais de A e B", () => {
@@ -26,7 +27,7 @@ describe("correcaoEc", () => {
       ecAlvo: 1.5,
     });
     expect(r.aviso).toBeNull();
-    expect(r.mlA).toBe(733.2);
+    expect(r.mlA).toBeCloseTo(1074.6, 0);
     expect(r.mlA).toBe(r.mlB);
     expect(r.sais.map((s) => s.nome)).toEqual([
       "NKS 13-00-43 +1Mg",
@@ -46,6 +47,17 @@ describe("correcaoEc", () => {
     });
     expect(r.mlA).toBe(0);
     expect(r.diluirComAguaL).toBeCloseTo(100, 0);
+  });
+
+  it("aumenta a dose para o alvo que a validação não alcançou", () => {
+    const r = calcularCorrecaoEc({
+      volumeCaixaL: 3000,
+      ecAtual: 0.04,
+      ecAlvo: 1.3,
+    });
+    const mlPorLAntigo = 1.26 / ((158.4 + 128) / 700);
+    expect(r.mlA / 3000).toBeCloseTo(mlPorLAntigo * (1.26 / 0.86), 2);
+    expect(r.mlB).toBe(r.mlA);
   });
 
   it("não doseia quando já no alvo", () => {

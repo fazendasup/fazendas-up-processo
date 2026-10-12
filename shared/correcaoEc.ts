@@ -1,9 +1,11 @@
 /**
- * Calculadora de correção de EC com concentrados A/B (galões de estoque).
+ * Calculadora de correção de EC com os concentrados A/B da receita atual.
+ * A e B entram em volumes iguais.
  *
- * Dosagem padrão: volumes iguais de A e B (prática hidropônica).
- * Relação EC ↔ concentração: EC (mS/cm) ≈ ppm / fatorTds
- * (500, 640 ou 700 conforme a escala do medidor).
+ * Cada sal tem o EC de uma solução a 1 g/L. A mistura na caixa rende menos do que a
+ * soma desses valores: na validação (alvo 1,30 saindo de 0,04) a regra antiga,
+ * que tratava todo grama como 1,43 mS, chegou a 0,90. O fator abaixo faz a dose
+ * padrão fechar com essa leitura.
  */
 
 export type SalConcentrado = {
@@ -11,34 +13,93 @@ export type SalConcentrado = {
   nome: string;
   /** Massa no galão (kg). */
   massaKg: number;
+  /** mS/cm acrescentados por 1 g/L deste sal na caixa. */
+  ecPorGPorL: number;
 };
 
 export type ReceitaConcentradoAb = {
   volumeGalaoL: number;
   galaoA: SalConcentrado[];
   galaoB: SalConcentrado[];
-  /**
-   * Fator do medidor: ppm ≈ EC_mS × fatorTds.
-   * 700 = escala “700”; 640 comum em fertilizantes; 500 = escala “500”.
-   */
-  fatorTds: number;
 };
 
-/** Receita das caixas A e B (complete 50 L cada). A dose de EC usa essa concentração. */
+/** EC (mS/cm) de solução pura a 1 g/L. Calcinit: ficha Yara, 1,2. MKP: 0,72–0,86 a 1 g/L. */
+const EC_PURO_POR_G_POR_L: Record<string, number> = {
+  nks: 1.3,
+  mkp: 0.8,
+  mgso4: 0.7,
+  dripsol: 0.4,
+  calcinit: 1.2,
+  "fe-eddha": 0.25,
+};
+
+const MASSA_PADRAO_KG: Record<string, number> = {
+  nks: 3.6,
+  mkp: 1.4,
+  mgso4: 2.8,
+  dripsol: 0.12,
+  calcinit: 6.2,
+  "fe-eddha": 0.2,
+};
+
+const VOLUME_GALAO_L = 50;
+
+/**
+ * A dose calculada com 1 g/L = 1,43 mS (fator 700) subiu o EC em 0,86, não em 1,26.
+ * Esta potência é a que a caixa realmente entregou, em mS por mL/L de A e de B.
+ */
+const POTENCIA_MEDIDA_RECEITA = 0.86 / (1.26 / ((158.4 + 128) / 700));
+
+function potenciaPuraPadrao(): number {
+  return Object.entries(MASSA_PADRAO_KG).reduce(
+    (soma, [id, kg]) => soma + (kg / VOLUME_GALAO_L) * (EC_PURO_POR_G_POR_L[id] ?? 0),
+    0,
+  );
+}
+
+const ESCALA_EC_MEDIDO = POTENCIA_MEDIDA_RECEITA / potenciaPuraPadrao();
+
+function ecDoSal(id: string): number {
+  return (EC_PURO_POR_G_POR_L[id] ?? 0.975) * ESCALA_EC_MEDIDO;
+}
+
+/** Receita das caixas A e B (complete 50 L cada). A dose de EC usa o rendimento medido desta mistura. */
 export const RECEITA_AB_PADRAO: ReceitaConcentradoAb = {
-  volumeGalaoL: 50,
-  fatorTds: 700,
+  volumeGalaoL: VOLUME_GALAO_L,
   galaoA: [
-    { id: "nks", nome: "NKS 13-00-43 +1Mg", massaKg: 3.6 },
-    { id: "mkp", nome: "MKP", massaKg: 1.4 },
-    { id: "mgso4", nome: "Sulfato de Mg 9,5%", massaKg: 2.8 },
-    { id: "dripsol", nome: "Dripsol Micro Equilíbrio", massaKg: 0.12 },
+    { id: "nks", nome: "NKS 13-00-43 +1Mg", massaKg: 3.6, ecPorGPorL: ecDoSal("nks") },
+    { id: "mkp", nome: "MKP", massaKg: 1.4, ecPorGPorL: ecDoSal("mkp") },
+    { id: "mgso4", nome: "Sulfato de Mg 9,5%", massaKg: 2.8, ecPorGPorL: ecDoSal("mgso4") },
+    { id: "dripsol", nome: "Dripsol Micro Equilíbrio", massaKg: 0.12, ecPorGPorL: ecDoSal("dripsol") },
   ],
   galaoB: [
-    { id: "calcinit", nome: "YaraLiva Calcinit", massaKg: 6.2 },
-    { id: "fe-eddha", nome: "Ferro EDDHA 6%", massaKg: 0.2 },
+    { id: "calcinit", nome: "YaraLiva Calcinit", massaKg: 6.2, ecPorGPorL: ecDoSal("calcinit") },
+    { id: "fe-eddha", nome: "Ferro EDDHA 6%", massaKg: 0.2, ecPorGPorL: ecDoSal("fe-eddha") },
   ],
 };
+
+export function normalizarReceita(bruta: Partial<ReceitaConcentradoAb> | null | undefined): ReceitaConcentradoAb {
+  const catalogo = new Map(
+    [...RECEITA_AB_PADRAO.galaoA, ...RECEITA_AB_PADRAO.galaoB].map((sal) => [sal.id, sal.ecPorGPorL]),
+  );
+  const sal = (item: Partial<SalConcentrado> | undefined, padrao: SalConcentrado): SalConcentrado => {
+    const ecInformado = Number(item?.ecPorGPorL);
+    return {
+      id: padrao.id,
+      nome: typeof item?.nome === "string" && item.nome.trim() ? item.nome : padrao.nome,
+      massaKg: Number(item?.massaKg) >= 0 ? Number(item?.massaKg) : padrao.massaKg,
+      ecPorGPorL: ecInformado > 0 ? ecInformado : (catalogo.get(String(item?.id ?? padrao.id)) ?? padrao.ecPorGPorL),
+    };
+  };
+  if (!bruta?.galaoA?.length || !bruta?.galaoB?.length) return RECEITA_AB_PADRAO;
+  const doGalao = (itens: Partial<SalConcentrado>[] | undefined, padroes: SalConcentrado[]) =>
+    padroes.map((padrao) => sal(itens?.find((item) => item.id === padrao.id), padrao));
+  return {
+    volumeGalaoL: (bruta.volumeGalaoL ?? 0) > 0 ? Number(bruta.volumeGalaoL) : VOLUME_GALAO_L,
+    galaoA: doGalao(bruta.galaoA, RECEITA_AB_PADRAO.galaoA),
+    galaoB: doGalao(bruta.galaoB, RECEITA_AB_PADRAO.galaoB),
+  };
+}
 
 export type EntradaCorrecaoEc = {
   volumeCaixaL: number;
@@ -88,14 +149,13 @@ export function concentracaoGalaoGL(sais: SalConcentrado[], volumeGalaoL: number
   return (kg * 1000) / volumeGalaoL;
 }
 
-/** Potência: ΔEC por (mL A + mL B) por litro de caixa. */
+/** ΔEC (mS/cm) ao adicionar 1 mL de A e 1 mL de B em 1 L de caixa. */
 export function potenciaEcPorMlPorLitro(receita: ReceitaConcentradoAb): number {
-  const concA = concentracaoGalaoGL(receita.galaoA, receita.volumeGalaoL);
-  const concB = concentracaoGalaoGL(receita.galaoB, receita.volumeGalaoL);
-  const gPorMlCada = (concA + concB) / 1000; // g/L na caixa por 1 mL/L de cada
-  const fator = receita.fatorTds > 0 ? receita.fatorTds : 700;
-  // ppm = g/L * 1000; EC = ppm / fator → EC = g/L * 1000 / fator
-  return (gPorMlCada * 1000) / fator;
+  if (receita.volumeGalaoL <= 0) return 0;
+  return [...receita.galaoA, ...receita.galaoB].reduce((soma, sal) => {
+    const ec = sal.ecPorGPorL > 0 ? sal.ecPorGPorL : 0;
+    return soma + (Math.max(0, sal.massaKg) / receita.volumeGalaoL) * ec;
+  }, 0);
 }
 
 /**

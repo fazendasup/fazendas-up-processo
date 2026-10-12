@@ -7,13 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useFazenda } from "@/contexts/FazendaContext";
@@ -25,6 +18,7 @@ import {
   RECEITA_AB_PADRAO,
   calcularCorrecaoEc,
   concentracaoGalaoGL,
+  normalizarReceita,
   type ReceitaConcentradoAb,
 } from "@shared/correcaoEc";
 import {
@@ -115,14 +109,7 @@ function loadReceita(): ReceitaConcentradoAb {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_EC);
     if (!raw) return RECEITA_AB_PADRAO;
-    const parsed = JSON.parse(raw) as ReceitaConcentradoAb;
-    if (!parsed?.galaoA?.length || !parsed?.galaoB?.length) return RECEITA_AB_PADRAO;
-    return {
-      ...RECEITA_AB_PADRAO,
-      ...parsed,
-      volumeGalaoL: parsed.volumeGalaoL > 0 ? parsed.volumeGalaoL : 50,
-      fatorTds: parsed.fatorTds > 0 ? parsed.fatorTds : 700,
-    };
+    return normalizarReceita(JSON.parse(raw) as ReceitaConcentradoAb);
   } catch {
     return RECEITA_AB_PADRAO;
   }
@@ -635,8 +622,8 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
                   ) : null}
 
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Adicione A e B em volumes iguais, misture bem e meça o EC de novo após estabilizar. Calibre o
-                    fator TDS se a leitura real divergir.
+                    Adicione A e B em volumes iguais, misture bem e meça o EC de novo após estabilizar. A dose usa o
+                    EC de cada sal desta receita, ajustado pela leitura em que o alvo 1,30 chegou a 0,90.
                   </p>
                 </CardContent>
               </Card>
@@ -672,34 +659,20 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
               </CardHeader>
               {mostrarReceita ? (
                 <CardContent className="space-y-4">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Volume de cada galão (L)</Label>
-                      <Input
-                        inputMode="decimal"
-                        value={String(receita.volumeGalaoL)}
-                        onChange={(e) => {
-                          const n = parseOptDecimal(e.target.value);
-                          if (n != null && n > 0) setReceita((r) => ({ ...r, volumeGalaoL: n }));
-                        }}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Fator TDS do medidor</Label>
-                      <Select
-                        value={String(receita.fatorTds)}
-                        onValueChange={(v) => setReceita((r) => ({ ...r, fatorTds: Number(v) }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="500">500 (escala 500)</SelectItem>
-                          <SelectItem value="640">640 (fertilizantes)</SelectItem>
-                          <SelectItem value="700">700 (escala 700 — padrão)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div className="max-w-xs space-y-1">
+                    <Label className="text-xs">Volume de cada galão (L)</Label>
+                    <Input
+                      inputMode="decimal"
+                      value={String(receita.volumeGalaoL)}
+                      onChange={(e) => {
+                        const n = parseOptDecimal(e.target.value);
+                        if (n != null && n > 0) setReceita((r) => ({ ...r, volumeGalaoL: n }));
+                      }}
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      Calcinit entra com 1,2 mS por g/L e o MKP com cerca de 0,8. O conjunto foi ajustado para a
+                      leitura das caixas: a conta anterior pedia 1,30 e o EC ficou em 0,90.
+                    </p>
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
