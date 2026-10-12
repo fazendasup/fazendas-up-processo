@@ -16,6 +16,10 @@ describe("fichaDoProduto", () => {
     expect(fichaDoProduto("Rúcula").grupo).toBe("Folhas");
     expect(fichaDoProduto("Manjericão Folha Fina 60g").grupo).toBe("Ervas");
     expect(fichaDoProduto("Mix Clássico 80g").grupo).toBe("Saladas");
+    expect(fichaDoProduto("Mix Clássico 80g").foto).toBe("/produtos/mix-classico.jpg?v=1");
+    expect(fichaDoProduto("Mix Chefe - Seleção Especial").foto).toBe("/produtos/mix-chefe.jpg?v=1");
+    expect(fichaDoProduto("Mix Crocante - Base para Salada").foto).toBe("/produtos/mix-crocante.jpg?v=1");
+    expect(fichaDoProduto("Mix de Alfaces 200g").foto).toBe("/produtos/mix-alfaces.jpg?v=1");
     expect(fichaDoProduto("Alho Inteiro Descascado e Higienizado Kg").grupo).toBe("Processados");
   });
 

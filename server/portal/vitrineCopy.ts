@@ -91,7 +91,17 @@ export function fichaDoProduto(nome: string): FichaProduto {
       aplicacao: /crocante|classico|leve|chefe|tudo/.test(n)
         ? "Salada servida, bowl e acompanhamento."
         : "Salada, bowl e linha fria.",
-      foto: /rucula/.test(n) ? "/produtos/mix-rucula.jpg" : "/produtos/mix.jpg?v=2",
+      foto: /crocante/.test(n)
+        ? "/produtos/mix-crocante.jpg?v=1"
+        : /classico/.test(n)
+          ? "/produtos/mix-classico.jpg?v=1"
+          : /chefe/.test(n)
+            ? "/produtos/mix-chefe.jpg?v=1"
+            : /alfaces/.test(n) && !/rucula/.test(n)
+              ? "/produtos/mix-alfaces.jpg?v=1"
+              : /rucula/.test(n)
+                ? "/produtos/mix-rucula.jpg"
+                : "/produtos/mix.jpg?v=2",
     };
   }
 
