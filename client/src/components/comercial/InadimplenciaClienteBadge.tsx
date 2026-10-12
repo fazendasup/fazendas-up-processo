@@ -23,6 +23,39 @@ function fmtDataBr(iso: string | null | undefined) {
   return `${d}/${m}/${y}`;
 }
 
+/** Situação do título no PDF e na lista, sempre em português. */
+function situacaoPt(status: string): string {
+  switch (status.trim().toUpperCase()) {
+    case "OVERDUE":
+    case "ATRASADO":
+      return "Em atraso";
+    case "PENDING":
+    case "OPEN":
+    case "EM_ABERTO":
+    case "ABERTO":
+      return "Em aberto";
+    case "ACQUITTED":
+    case "RECEIVED":
+    case "PAID":
+    case "QUITADO":
+      return "Quitado";
+    case "PARTIAL":
+      return "Parcial";
+    case "LOST":
+      return "Perdido";
+    case "RENEGOTIATED":
+      return "Renegociado";
+    case "CANCELED":
+    case "CANCELLED":
+    case "CANCELADO":
+      return "Cancelado";
+    default:
+      return /[A-Za-z]/.test(status) && status === status.toUpperCase()
+        ? "Em aberto"
+        : status.trim() || "Em aberto";
+  }
+}
+
 export function useInadimplenciaResumo(contaAzulCustomerIds: string[]) {
   const ids = useMemo(
     () =>
@@ -107,8 +140,8 @@ export function InadimplenciaClienteBadge({
           rows: titulos.map((t) => [
             fmtDataBr(t.dataVencimento),
             t.descricao,
-            t.categoria ?? "",
-            t.status,
+            "Venda",
+            situacaoPt(t.status),
             fmtMoney(t.valorAberto),
           ]),
           footers: [["", "", "", "Total em aberto", fmtMoney(total)]],
@@ -180,8 +213,7 @@ export function InadimplenciaClienteBadge({
                       </p>
                     </div>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      Venc. {fmtDataBr(t.dataVencimento)} · {t.status}
-                      {t.categoria ? ` · ${t.categoria}` : ""}
+                      Venc. {fmtDataBr(t.dataVencimento)} · {situacaoPt(t.status)} · Venda
                     </p>
                   </div>
                 ))}
