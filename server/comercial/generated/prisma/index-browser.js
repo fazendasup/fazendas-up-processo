@@ -232,6 +232,49 @@ exports.Prisma.PortalAcessoScalarFieldEnum = {
   atualizadoEm: 'atualizadoEm'
 };
 
+exports.Prisma.PortalContaScalarFieldEnum = {
+  clienteId: 'clienteId',
+  nomeFantasia: 'nomeFantasia',
+  telefone: 'telefone',
+  contato: 'contato',
+  cep: 'cep',
+  logradouro: 'logradouro',
+  numero: 'numero',
+  complemento: 'complemento',
+  bairro: 'bairro',
+  cidade: 'cidade',
+  estado: 'estado',
+  inscricaoEstadual: 'inscricaoEstadual',
+  atualizadoEm: 'atualizadoEm'
+};
+
+exports.Prisma.PortalContratoScalarFieldEnum = {
+  id: 'id',
+  clienteId: 'clienteId',
+  versao: 'versao',
+  texto: 'texto',
+  textoHash: 'textoHash',
+  status: 'status',
+  criadoEm: 'criadoEm',
+  atualizadoEm: 'atualizadoEm'
+};
+
+exports.Prisma.PortalContratoAceiteScalarFieldEnum = {
+  id: 'id',
+  contratoId: 'contratoId',
+  clienteId: 'clienteId',
+  versao: 'versao',
+  textoHash: 'textoHash',
+  representanteNome: 'representanteNome',
+  representanteCpf: 'representanteCpf',
+  representanteEmail: 'representanteEmail',
+  empresaNome: 'empresaNome',
+  empresaCnpj: 'empresaCnpj',
+  ip: 'ip',
+  userAgent: 'userAgent',
+  aceitoEm: 'aceitoEm'
+};
+
 exports.Prisma.PortalCadastroScalarFieldEnum = {
   id: 'id',
   nome: 'nome',
@@ -679,6 +722,45 @@ exports.Prisma.PortalAcessoOrderByRelevanceFieldEnum = {
   conviteHash: 'conviteHash'
 };
 
+exports.Prisma.PortalContaOrderByRelevanceFieldEnum = {
+  clienteId: 'clienteId',
+  nomeFantasia: 'nomeFantasia',
+  telefone: 'telefone',
+  contato: 'contato',
+  cep: 'cep',
+  logradouro: 'logradouro',
+  numero: 'numero',
+  complemento: 'complemento',
+  bairro: 'bairro',
+  cidade: 'cidade',
+  estado: 'estado',
+  inscricaoEstadual: 'inscricaoEstadual'
+};
+
+exports.Prisma.PortalContratoOrderByRelevanceFieldEnum = {
+  id: 'id',
+  clienteId: 'clienteId',
+  versao: 'versao',
+  texto: 'texto',
+  textoHash: 'textoHash',
+  status: 'status'
+};
+
+exports.Prisma.PortalContratoAceiteOrderByRelevanceFieldEnum = {
+  id: 'id',
+  contratoId: 'contratoId',
+  clienteId: 'clienteId',
+  versao: 'versao',
+  textoHash: 'textoHash',
+  representanteNome: 'representanteNome',
+  representanteCpf: 'representanteCpf',
+  representanteEmail: 'representanteEmail',
+  empresaNome: 'empresaNome',
+  empresaCnpj: 'empresaCnpj',
+  ip: 'ip',
+  userAgent: 'userAgent'
+};
+
 exports.Prisma.PortalCadastroOrderByRelevanceFieldEnum = {
   id: 'id',
   nome: 'nome',
@@ -1066,6 +1148,9 @@ exports.Prisma.ModelName = {
   EstoqueVivoMixComponente: 'EstoqueVivoMixComponente',
   ProdutoComercial: 'ProdutoComercial',
   PortalAcesso: 'PortalAcesso',
+  PortalConta: 'PortalConta',
+  PortalContrato: 'PortalContrato',
+  PortalContratoAceite: 'PortalContratoAceite',
   PortalCadastro: 'PortalCadastro',
   PortalFoto: 'PortalFoto',
   RegraComercialCliente: 'RegraComercialCliente',

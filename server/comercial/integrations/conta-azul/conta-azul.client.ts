@@ -120,6 +120,34 @@ export async function contaAzulGetBytes(
   }
 }
 
+/** PATCH parcial. 204 também é sucesso. */
+export async function contaAzulPatch(
+  client: AxiosInstance,
+  path: string,
+  body: unknown,
+): Promise<void> {
+  try {
+    await withRetry(
+      async () => {
+        await contaAzulThrottle();
+        await client.patch(path, body, {
+          headers: { "Content-Type": "application/json" },
+          validateStatus: (status) => status >= 200 && status < 300,
+        });
+      },
+      {
+        tentativas: 4,
+        delayMs: 1000,
+        fator: 2,
+        isRetryable: isContaAzulRetryable,
+        delayForError: delayForContaAzulRetry,
+      },
+    );
+  } catch (e) {
+    throw contaAzulErroAmigavel(e);
+  }
+}
+
 /** POST na API Conta Azul (venda, orçamento, etc.) — mesmo throttle/retry do GET. */
 export async function contaAzulPost<T>(
   client: AxiosInstance,

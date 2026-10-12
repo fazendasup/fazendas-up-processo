@@ -10,10 +10,10 @@ import {
   addCalendarDays,
   earliestDeliveryYmd,
   entregaPermitida,
-  MIN_ORDER_REAIS,
   todayYmd,
   upcomingDeliveryDates,
 } from "./portalCalendario";
+import { aceitarContrato, lerConta, minimoDaConta, salvarConta } from "./portalConta";
 import { fichaDoProduto } from "./vitrineCopy";
 import { alinharFotosDeEstoque, bytesDaFoto, cnpjValido, formatarCnpj, jpegDaFotoEnviada, jpegValido, LojaErro, preencherFichasDaVitrine, produtoVisivelNaLoja, reenviarCadastro, registrarEmpresa } from "./portalLoja";
 import { baixarDocumentoCliente, DocumentoErro, lembrarTitulosDoCliente } from "./portalDocumentos";
@@ -223,10 +223,12 @@ export function registerPortalRoutes(app: Express): void {
     next();
   });
 
-  app.get("/api/portal/regras", (_req, res) => {
+  app.get("/api/portal/regras", async (req, res) => {
     const agora = new Date();
+    const acesso = await clienteDaSessao(req);
+    const minimoReais = await minimoDaConta(getComercialPrisma(), acesso?.clienteId ?? null);
     res.json({
-      minimoReais: MIN_ORDER_REAIS,
+      minimoReais,
       antecedenciaDiasUteis: 2,
       primeiraData: earliestDeliveryYmd(agora),
       datas: upcomingDeliveryDates(agora),
@@ -251,7 +253,7 @@ export function registerPortalRoutes(app: Express): void {
       });
       const agora = new Date();
       res.json({
-        minimoReais: MIN_ORDER_REAIS,
+        minimoReais: await minimoDaConta(prisma, acesso?.clienteId ?? null),
         datas: upcomingDeliveryDates(agora),
         itens: produtos.flatMap((produto) => {
           const logado = Boolean(acesso);
@@ -475,6 +477,89 @@ export function registerPortalRoutes(app: Express): void {
   app.post("/api/portal/sair", async (req, res) => {
     encerrarSessao(req, res, "cliente");
     res.json({ ok: true });
+  });
+
+  app.get("/api/portal/conta", async (req, res) => {
+    const acesso = await clienteDaSessao(req);
+    if (!acesso) {
+      falha(res, 401, "Entre para ver a conta.");
+      return;
+    }
+    try {
+      res.json(await lerConta(getComercialPrisma(), acesso));
+    } catch (error) {
+      falha(res, 400, error instanceof Error ? error.message : "Não foi possível abrir a conta.");
+    }
+  });
+
+  app.patch("/api/portal/conta", async (req, res) => {
+    const acesso = await clienteDaSessao(req);
+    if (!acesso) {
+      falha(res, 401, "Entre para atualizar a conta.");
+      return;
+    }
+    const parsed = z
+      .object({
+        nome: z.string().trim().min(3).max(255),
+        nomeFantasia: z.string().trim().max(255).optional().default(""),
+        email: z.string().trim().min(5).max(320),
+        telefone: z.string().trim().min(8).max(40),
+        contato: z.string().trim().min(3).max(255),
+        cep: z.string().trim().min(8).max(16),
+        logradouro: z.string().trim().min(1).max(255),
+        numero: z.string().trim().min(1).max(32),
+        complemento: z.string().trim().max(255).optional().default(""),
+        bairro: z.string().trim().min(1).max(255),
+        cidade: z.string().trim().min(1).max(255),
+        estado: z.string().trim().min(2).max(2),
+        inscricaoEstadual: z.string().trim().max(20).optional().default(""),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      falha(res, 400, "Confira os dados da empresa.");
+      return;
+    }
+    try {
+      const prisma = getComercialPrisma();
+      const salvo = await salvarConta(prisma, acesso, { ...parsed.data, cnpj: acesso.cliente.cnpjCpf ?? "" });
+      const conta = await lerConta(prisma, { ...acesso, email: parsed.data.email.trim().toLowerCase() });
+      res.json({ ...conta, aviso: salvo.aviso });
+    } catch (error) {
+      falha(res, 400, error instanceof Error ? error.message : "Não foi possível salvar a conta.");
+    }
+  });
+
+  app.post("/api/portal/conta/contrato", async (req, res) => {
+    const acesso = await clienteDaSessao(req);
+    if (!acesso) {
+      falha(res, 401, "Entre para aceitar o contrato.");
+      return;
+    }
+    const parsed = z
+      .object({
+        representanteNome: z.string().trim().min(5).max(255),
+        representanteCpf: z.string().trim().min(11).max(14),
+        representanteEmail: z.string().trim().min(5).max(320),
+        liEAceito: z.literal(true),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      falha(res, 400, "Informe nome, CPF e e-mail de quem aceita, e confirme o contrato.");
+      return;
+    }
+    const encaminhado = req.headers["x-forwarded-for"];
+    const bruto = Array.isArray(encaminhado) ? encaminhado[0] : encaminhado;
+    try {
+      const prisma = getComercialPrisma();
+      await aceitarContrato(prisma, acesso, {
+        ...parsed.data,
+        ip: (bruto?.split(",")[0]?.trim() || req.ip || "").slice(0, 64),
+        userAgent: String(req.headers["user-agent"] ?? "").slice(0, 512),
+      });
+      res.json(await lerConta(prisma, acesso));
+    } catch (error) {
+      falha(res, 400, error instanceof Error ? error.message : "Não foi possível registrar o aceite.");
+    }
   });
 
   app.post("/api/portal/senha", async (req, res) => {
@@ -719,8 +804,9 @@ export function registerPortalRoutes(app: Express): void {
         return;
       }
       const totalReais = Math.round(total * 100) / 100;
-      if (totalReais < MIN_ORDER_REAIS) {
-        falha(res, 400, `O pedido mínimo para entrega é R$ ${MIN_ORDER_REAIS.toFixed(2).replace(".", ",")}.`);
+      const minimo = await minimoDaConta(prisma, acesso.clienteId);
+      if (totalReais < minimo) {
+        falha(res, 400, `O pedido mínimo para entrega é R$ ${minimo.toFixed(2).replace(".", ",")}.`);
         return;
       }
       const nota = parsed.data.observacoes?.trim();

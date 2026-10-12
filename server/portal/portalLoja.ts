@@ -1,9 +1,10 @@
 import { createRequire } from "node:module";
-import { createContaAzulHttp, contaAzulPost } from "../comercial/integrations/conta-azul/conta-azul.client";
+import { createContaAzulHttp, contaAzulGet, contaAzulPatch, contaAzulPost } from "../comercial/integrations/conta-azul/conta-azul.client";
 import { ensureValidAccessToken } from "../comercial/integrations/conta-azul/sync.service";
 import { getComercialPrisma } from "../comercial/db";
 import { getComercialEnv } from "../comercial/env";
 import type { PrismaClient } from "../comercial/generated/prisma/index.js";
+import { sincronizarContratoPendente } from "./contratoRecorrencia";
 import { fichaDoProduto } from "./vitrineCopy";
 
 export type DadosEmpresa = {
@@ -98,7 +99,7 @@ export function formatarCnpj(digitos: string): string {
   return digitos.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
 }
 
-function formatarCep(digitos: string): string {
+export function formatarCep(digitos: string): string {
   return digitos.replace(/^(\d{5})(\d{3})$/, "$1-$2");
 }
 
@@ -197,6 +198,61 @@ export async function criarPessoaNoContaAzul(dados: DadosEmpresa): Promise<strin
   }
   if (!criado.id) throw new Error("O cadastro não foi confirmado.");
   return criado.id;
+}
+
+type PessoaDetalhe = {
+  enderecos?: Array<{ id?: string }>;
+  inscricoes?: Array<{
+    id?: string;
+    indicador_inscricao_estadual?: string;
+    inscricao_estadual?: string;
+    inscricao_municipal?: string;
+    inscricao_suframa?: string;
+  }>;
+};
+
+/** Atualiza nome, contato e endereço no Conta Azul sem substituir o cadastro inteiro. */
+export async function atualizarPessoaNoContaAzul(pessoaId: string, dados: DadosEmpresa): Promise<void> {
+  const env = getComercialEnv();
+  const prisma = getComercialPrisma();
+  const cred = await ensureValidAccessToken(prisma, env);
+  if (!cred?.accessToken) {
+    throw new Error("O cadastro financeiro não está disponível agora.");
+  }
+  const http = createContaAzulHttp(env, cred.accessToken);
+  const detalhe = await contaAzulGet<PessoaDetalhe>(http, `/v1/pessoas/${encodeURIComponent(pessoaId)}`);
+  const enderecoAtual = detalhe.enderecos?.[0];
+  const inscricaoAtual = detalhe.inscricoes?.[0];
+  const complemento = dados.complemento?.trim() || "Sem complemento";
+  await contaAzulPatch(http, `/v1/pessoas/${encodeURIComponent(pessoaId)}`, {
+    nome: dados.nome,
+    ...(dados.nomeFantasia ? { nome_fantasia: dados.nomeFantasia } : {}),
+    email: dados.email,
+    telefone_comercial: dados.telefone,
+    telefone_celular: dados.telefone,
+    enderecos: [
+      {
+        ...(enderecoAtual?.id ? { id: enderecoAtual.id } : {}),
+        logradouro: dados.logradouro,
+        numero: dados.numero,
+        complemento,
+        bairro: dados.bairro,
+        cidade: dados.cidade,
+        estado: dados.estado,
+        cep: formatarCep(dados.cep),
+        pais: "Brasil",
+      },
+    ],
+    inscricoes: [
+      {
+        ...(inscricaoAtual?.id ? { id: inscricaoAtual.id } : {}),
+        indicador_inscricao_estadual: dados.inscricaoEstadual ? "CONTRIBUINTE" : "NAO CONTRIBUINTE",
+        ...(dados.inscricaoEstadual ? { inscricao_estadual: dados.inscricaoEstadual } : {}),
+        ...(inscricaoAtual?.inscricao_municipal ? { inscricao_municipal: inscricaoAtual.inscricao_municipal } : {}),
+        ...(inscricaoAtual?.inscricao_suframa ? { inscricao_suframa: inscricaoAtual.inscricao_suframa } : {}),
+      },
+    ],
+  });
 }
 
 export class LojaErro extends Error {
@@ -298,6 +354,37 @@ export async function registrarEmpresa(dados: DadosEmpresa): Promise<{ pendente:
         },
       });
   await garantirAcesso(prisma, cliente.id, dados.email, dados.cnpj);
+  await prisma.portalConta.upsert({
+    where: { clienteId: cliente.id },
+    create: {
+      clienteId: cliente.id,
+      nomeFantasia: dados.nomeFantasia,
+      telefone: dados.telefone,
+      contato: dados.contato,
+      cep: dados.cep,
+      logradouro: dados.logradouro,
+      numero: dados.numero,
+      complemento: dados.complemento,
+      bairro: dados.bairro,
+      cidade: dados.cidade,
+      estado: dados.estado,
+      inscricaoEstadual: dados.inscricaoEstadual,
+    },
+    update: {
+      nomeFantasia: dados.nomeFantasia,
+      telefone: dados.telefone,
+      contato: dados.contato,
+      cep: dados.cep,
+      logradouro: dados.logradouro,
+      numero: dados.numero,
+      complemento: dados.complemento,
+      bairro: dados.bairro,
+      cidade: dados.cidade,
+      estado: dados.estado,
+      inscricaoEstadual: dados.inscricaoEstadual,
+    },
+  });
+  await sincronizarContratoPendente(prisma, cliente);
   await prisma.portalCadastro.update({
     where: { id: pedido.id },
     data: { status: "ENVIADO", contaAzulId, erro: null },
@@ -352,6 +439,7 @@ export async function reenviarCadastro(id: string): Promise<void> {
         },
       });
   await garantirAcesso(prisma, cliente.id, dados.email, dados.cnpj);
+  await sincronizarContratoPendente(prisma, cliente);
   await prisma.portalCadastro.update({
     where: { id: pedido.id },
     data: { status: "ENVIADO", contaAzulId, erro: null },

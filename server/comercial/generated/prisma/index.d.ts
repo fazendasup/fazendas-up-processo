@@ -59,6 +59,21 @@ export type ProdutoComercial = $Result.DefaultSelection<Prisma.$ProdutoComercial
  */
 export type PortalAcesso = $Result.DefaultSelection<Prisma.$PortalAcessoPayload>
 /**
+ * Model PortalConta
+ * Dados cadastrais editáveis na conta do site. O CNPJ permanece no cliente.
+ */
+export type PortalConta = $Result.DefaultSelection<Prisma.$PortalContaPayload>
+/**
+ * Model PortalContrato
+ * Contrato de fornecimento recorrente, um por cliente. O texto aceito não é reescrito.
+ */
+export type PortalContrato = $Result.DefaultSelection<Prisma.$PortalContratoPayload>
+/**
+ * Model PortalContratoAceite
+ * Rastro de quem aceitou o contrato: pessoa, documento, rede e versão do texto.
+ */
+export type PortalContratoAceite = $Result.DefaultSelection<Prisma.$PortalContratoAceitePayload>
+/**
  * Model PortalCadastro
  * Pedido de cadastro vindo do site. Vai para o Conta Azul quando a API aceita.
  */
@@ -726,6 +741,36 @@ export class PrismaClient<
     * ```
     */
   get portalAcesso(): Prisma.PortalAcessoDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.portalConta`: Exposes CRUD operations for the **PortalConta** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PortalContas
+    * const portalContas = await prisma.portalConta.findMany()
+    * ```
+    */
+  get portalConta(): Prisma.PortalContaDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.portalContrato`: Exposes CRUD operations for the **PortalContrato** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PortalContratoes
+    * const portalContratoes = await prisma.portalContrato.findMany()
+    * ```
+    */
+  get portalContrato(): Prisma.PortalContratoDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.portalContratoAceite`: Exposes CRUD operations for the **PortalContratoAceite** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PortalContratoAceites
+    * const portalContratoAceites = await prisma.portalContratoAceite.findMany()
+    * ```
+    */
+  get portalContratoAceite(): Prisma.PortalContratoAceiteDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.portalCadastro`: Exposes CRUD operations for the **PortalCadastro** model.
@@ -1435,6 +1480,9 @@ export namespace Prisma {
     EstoqueVivoMixComponente: 'EstoqueVivoMixComponente',
     ProdutoComercial: 'ProdutoComercial',
     PortalAcesso: 'PortalAcesso',
+    PortalConta: 'PortalConta',
+    PortalContrato: 'PortalContrato',
+    PortalContratoAceite: 'PortalContratoAceite',
     PortalCadastro: 'PortalCadastro',
     PortalFoto: 'PortalFoto',
     RegraComercialCliente: 'RegraComercialCliente',
@@ -1479,7 +1527,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "estoqueVivoMix" | "estoqueVivoMixComponente" | "produtoComercial" | "portalAcesso" | "portalCadastro" | "portalFoto" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "contaAzulEnvioConfig" | "syncState" | "regraClassificacao" | "templateMensagem"
+      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "estoqueVivoMix" | "estoqueVivoMixComponente" | "produtoComercial" | "portalAcesso" | "portalConta" | "portalContrato" | "portalContratoAceite" | "portalCadastro" | "portalFoto" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "contaAzulEnvioConfig" | "syncState" | "regraClassificacao" | "templateMensagem"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -2074,6 +2122,204 @@ export namespace Prisma {
           count: {
             args: Prisma.PortalAcessoCountArgs<ExtArgs>
             result: $Utils.Optional<PortalAcessoCountAggregateOutputType> | number
+          }
+        }
+      }
+      PortalConta: {
+        payload: Prisma.$PortalContaPayload<ExtArgs>
+        fields: Prisma.PortalContaFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PortalContaFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContaPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PortalContaFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContaPayload>
+          }
+          findFirst: {
+            args: Prisma.PortalContaFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContaPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PortalContaFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContaPayload>
+          }
+          findMany: {
+            args: Prisma.PortalContaFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContaPayload>[]
+          }
+          create: {
+            args: Prisma.PortalContaCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContaPayload>
+          }
+          createMany: {
+            args: Prisma.PortalContaCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.PortalContaDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContaPayload>
+          }
+          update: {
+            args: Prisma.PortalContaUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContaPayload>
+          }
+          deleteMany: {
+            args: Prisma.PortalContaDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PortalContaUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.PortalContaUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContaPayload>
+          }
+          aggregate: {
+            args: Prisma.PortalContaAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePortalConta>
+          }
+          groupBy: {
+            args: Prisma.PortalContaGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PortalContaGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PortalContaCountArgs<ExtArgs>
+            result: $Utils.Optional<PortalContaCountAggregateOutputType> | number
+          }
+        }
+      }
+      PortalContrato: {
+        payload: Prisma.$PortalContratoPayload<ExtArgs>
+        fields: Prisma.PortalContratoFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PortalContratoFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContratoPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PortalContratoFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContratoPayload>
+          }
+          findFirst: {
+            args: Prisma.PortalContratoFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContratoPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PortalContratoFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContratoPayload>
+          }
+          findMany: {
+            args: Prisma.PortalContratoFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContratoPayload>[]
+          }
+          create: {
+            args: Prisma.PortalContratoCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContratoPayload>
+          }
+          createMany: {
+            args: Prisma.PortalContratoCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.PortalContratoDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContratoPayload>
+          }
+          update: {
+            args: Prisma.PortalContratoUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContratoPayload>
+          }
+          deleteMany: {
+            args: Prisma.PortalContratoDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PortalContratoUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.PortalContratoUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContratoPayload>
+          }
+          aggregate: {
+            args: Prisma.PortalContratoAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePortalContrato>
+          }
+          groupBy: {
+            args: Prisma.PortalContratoGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PortalContratoGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PortalContratoCountArgs<ExtArgs>
+            result: $Utils.Optional<PortalContratoCountAggregateOutputType> | number
+          }
+        }
+      }
+      PortalContratoAceite: {
+        payload: Prisma.$PortalContratoAceitePayload<ExtArgs>
+        fields: Prisma.PortalContratoAceiteFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PortalContratoAceiteFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContratoAceitePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PortalContratoAceiteFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContratoAceitePayload>
+          }
+          findFirst: {
+            args: Prisma.PortalContratoAceiteFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContratoAceitePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PortalContratoAceiteFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContratoAceitePayload>
+          }
+          findMany: {
+            args: Prisma.PortalContratoAceiteFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContratoAceitePayload>[]
+          }
+          create: {
+            args: Prisma.PortalContratoAceiteCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContratoAceitePayload>
+          }
+          createMany: {
+            args: Prisma.PortalContratoAceiteCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.PortalContratoAceiteDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContratoAceitePayload>
+          }
+          update: {
+            args: Prisma.PortalContratoAceiteUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContratoAceitePayload>
+          }
+          deleteMany: {
+            args: Prisma.PortalContratoAceiteDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PortalContratoAceiteUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.PortalContratoAceiteUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalContratoAceitePayload>
+          }
+          aggregate: {
+            args: Prisma.PortalContratoAceiteAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePortalContratoAceite>
+          }
+          groupBy: {
+            args: Prisma.PortalContratoAceiteGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PortalContratoAceiteGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PortalContratoAceiteCountArgs<ExtArgs>
+            result: $Utils.Optional<PortalContratoAceiteCountAggregateOutputType> | number
           }
         }
       }
@@ -3898,6 +4144,9 @@ export namespace Prisma {
     estoqueVivoMixComponente?: EstoqueVivoMixComponenteOmit
     produtoComercial?: ProdutoComercialOmit
     portalAcesso?: PortalAcessoOmit
+    portalConta?: PortalContaOmit
+    portalContrato?: PortalContratoOmit
+    portalContratoAceite?: PortalContratoAceiteOmit
     portalCadastro?: PortalCadastroOmit
     portalFoto?: PortalFotoOmit
     regraComercialCliente?: RegraComercialClienteOmit
@@ -4349,6 +4598,37 @@ export namespace Prisma {
    */
   export type ProdutoComercialCountOutputTypeCountEstoqueVivoMixComponentesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: EstoqueVivoMixComponenteWhereInput
+  }
+
+
+  /**
+   * Count Type PortalContratoCountOutputType
+   */
+
+  export type PortalContratoCountOutputType = {
+    aceites: number
+  }
+
+  export type PortalContratoCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    aceites?: boolean | PortalContratoCountOutputTypeCountAceitesArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * PortalContratoCountOutputType without action
+   */
+  export type PortalContratoCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContratoCountOutputType
+     */
+    select?: PortalContratoCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * PortalContratoCountOutputType without action
+   */
+  export type PortalContratoCountOutputTypeCountAceitesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PortalContratoAceiteWhereInput
   }
 
 
@@ -7960,6 +8240,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: boolean | Cliente$linksLegadoContaAzulArgs<ExtArgs>
     paradasEntrega?: boolean | Cliente$paradasEntregaArgs<ExtArgs>
     portalAcesso?: boolean | Cliente$portalAcessoArgs<ExtArgs>
+    portalConta?: boolean | Cliente$portalContaArgs<ExtArgs>
+    portalContrato?: boolean | Cliente$portalContratoArgs<ExtArgs>
     _count?: boolean | ClienteCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["cliente"]>
 
@@ -7999,6 +8281,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: boolean | Cliente$linksLegadoContaAzulArgs<ExtArgs>
     paradasEntrega?: boolean | Cliente$paradasEntregaArgs<ExtArgs>
     portalAcesso?: boolean | Cliente$portalAcessoArgs<ExtArgs>
+    portalConta?: boolean | Cliente$portalContaArgs<ExtArgs>
+    portalContrato?: boolean | Cliente$portalContratoArgs<ExtArgs>
     _count?: boolean | ClienteCountOutputTypeDefaultArgs<ExtArgs>
   }
 
@@ -8017,6 +8301,8 @@ export namespace Prisma {
       linksLegadoContaAzul: Prisma.$ClienteLegadoContaAzulLinkPayload<ExtArgs>[]
       paradasEntrega: Prisma.$ParadaEntregaPayload<ExtArgs>[]
       portalAcesso: Prisma.$PortalAcessoPayload<ExtArgs> | null
+      portalConta: Prisma.$PortalContaPayload<ExtArgs> | null
+      portalContrato: Prisma.$PortalContratoPayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -8388,6 +8674,8 @@ export namespace Prisma {
     linksLegadoContaAzul<T extends Cliente$linksLegadoContaAzulArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$linksLegadoContaAzulArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ClienteLegadoContaAzulLinkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     paradasEntrega<T extends Cliente$paradasEntregaArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$paradasEntregaArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ParadaEntregaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     portalAcesso<T extends Cliente$portalAcessoArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$portalAcessoArgs<ExtArgs>>): Prisma__PortalAcessoClient<$Result.GetResult<Prisma.$PortalAcessoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    portalConta<T extends Cliente$portalContaArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$portalContaArgs<ExtArgs>>): Prisma__PortalContaClient<$Result.GetResult<Prisma.$PortalContaPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    portalContrato<T extends Cliente$portalContratoArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$portalContratoArgs<ExtArgs>>): Prisma__PortalContratoClient<$Result.GetResult<Prisma.$PortalContratoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -9047,6 +9335,44 @@ export namespace Prisma {
      */
     include?: PortalAcessoInclude<ExtArgs> | null
     where?: PortalAcessoWhereInput
+  }
+
+  /**
+   * Cliente.portalConta
+   */
+  export type Cliente$portalContaArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalConta
+     */
+    select?: PortalContaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalConta
+     */
+    omit?: PortalContaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContaInclude<ExtArgs> | null
+    where?: PortalContaWhereInput
+  }
+
+  /**
+   * Cliente.portalContrato
+   */
+  export type Cliente$portalContratoArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContrato
+     */
+    select?: PortalContratoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContrato
+     */
+    omit?: PortalContratoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoInclude<ExtArgs> | null
+    where?: PortalContratoWhereInput
   }
 
   /**
@@ -14318,6 +14644,3032 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: PortalAcessoInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PortalConta
+   */
+
+  export type AggregatePortalConta = {
+    _count: PortalContaCountAggregateOutputType | null
+    _min: PortalContaMinAggregateOutputType | null
+    _max: PortalContaMaxAggregateOutputType | null
+  }
+
+  export type PortalContaMinAggregateOutputType = {
+    clienteId: string | null
+    nomeFantasia: string | null
+    telefone: string | null
+    contato: string | null
+    cep: string | null
+    logradouro: string | null
+    numero: string | null
+    complemento: string | null
+    bairro: string | null
+    cidade: string | null
+    estado: string | null
+    inscricaoEstadual: string | null
+    atualizadoEm: Date | null
+  }
+
+  export type PortalContaMaxAggregateOutputType = {
+    clienteId: string | null
+    nomeFantasia: string | null
+    telefone: string | null
+    contato: string | null
+    cep: string | null
+    logradouro: string | null
+    numero: string | null
+    complemento: string | null
+    bairro: string | null
+    cidade: string | null
+    estado: string | null
+    inscricaoEstadual: string | null
+    atualizadoEm: Date | null
+  }
+
+  export type PortalContaCountAggregateOutputType = {
+    clienteId: number
+    nomeFantasia: number
+    telefone: number
+    contato: number
+    cep: number
+    logradouro: number
+    numero: number
+    complemento: number
+    bairro: number
+    cidade: number
+    estado: number
+    inscricaoEstadual: number
+    atualizadoEm: number
+    _all: number
+  }
+
+
+  export type PortalContaMinAggregateInputType = {
+    clienteId?: true
+    nomeFantasia?: true
+    telefone?: true
+    contato?: true
+    cep?: true
+    logradouro?: true
+    numero?: true
+    complemento?: true
+    bairro?: true
+    cidade?: true
+    estado?: true
+    inscricaoEstadual?: true
+    atualizadoEm?: true
+  }
+
+  export type PortalContaMaxAggregateInputType = {
+    clienteId?: true
+    nomeFantasia?: true
+    telefone?: true
+    contato?: true
+    cep?: true
+    logradouro?: true
+    numero?: true
+    complemento?: true
+    bairro?: true
+    cidade?: true
+    estado?: true
+    inscricaoEstadual?: true
+    atualizadoEm?: true
+  }
+
+  export type PortalContaCountAggregateInputType = {
+    clienteId?: true
+    nomeFantasia?: true
+    telefone?: true
+    contato?: true
+    cep?: true
+    logradouro?: true
+    numero?: true
+    complemento?: true
+    bairro?: true
+    cidade?: true
+    estado?: true
+    inscricaoEstadual?: true
+    atualizadoEm?: true
+    _all?: true
+  }
+
+  export type PortalContaAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalConta to aggregate.
+     */
+    where?: PortalContaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalContas to fetch.
+     */
+    orderBy?: PortalContaOrderByWithRelationInput | PortalContaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PortalContaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalContas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalContas.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PortalContas
+    **/
+    _count?: true | PortalContaCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PortalContaMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PortalContaMaxAggregateInputType
+  }
+
+  export type GetPortalContaAggregateType<T extends PortalContaAggregateArgs> = {
+        [P in keyof T & keyof AggregatePortalConta]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePortalConta[P]>
+      : GetScalarType<T[P], AggregatePortalConta[P]>
+  }
+
+
+
+
+  export type PortalContaGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PortalContaWhereInput
+    orderBy?: PortalContaOrderByWithAggregationInput | PortalContaOrderByWithAggregationInput[]
+    by: PortalContaScalarFieldEnum[] | PortalContaScalarFieldEnum
+    having?: PortalContaScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PortalContaCountAggregateInputType | true
+    _min?: PortalContaMinAggregateInputType
+    _max?: PortalContaMaxAggregateInputType
+  }
+
+  export type PortalContaGroupByOutputType = {
+    clienteId: string
+    nomeFantasia: string | null
+    telefone: string
+    contato: string
+    cep: string
+    logradouro: string
+    numero: string
+    complemento: string | null
+    bairro: string
+    cidade: string
+    estado: string
+    inscricaoEstadual: string | null
+    atualizadoEm: Date
+    _count: PortalContaCountAggregateOutputType | null
+    _min: PortalContaMinAggregateOutputType | null
+    _max: PortalContaMaxAggregateOutputType | null
+  }
+
+  type GetPortalContaGroupByPayload<T extends PortalContaGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PortalContaGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PortalContaGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PortalContaGroupByOutputType[P]>
+            : GetScalarType<T[P], PortalContaGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PortalContaSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    clienteId?: boolean
+    nomeFantasia?: boolean
+    telefone?: boolean
+    contato?: boolean
+    cep?: boolean
+    logradouro?: boolean
+    numero?: boolean
+    complemento?: boolean
+    bairro?: boolean
+    cidade?: boolean
+    estado?: boolean
+    inscricaoEstadual?: boolean
+    atualizadoEm?: boolean
+    cliente?: boolean | ClienteDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["portalConta"]>
+
+
+
+  export type PortalContaSelectScalar = {
+    clienteId?: boolean
+    nomeFantasia?: boolean
+    telefone?: boolean
+    contato?: boolean
+    cep?: boolean
+    logradouro?: boolean
+    numero?: boolean
+    complemento?: boolean
+    bairro?: boolean
+    cidade?: boolean
+    estado?: boolean
+    inscricaoEstadual?: boolean
+    atualizadoEm?: boolean
+  }
+
+  export type PortalContaOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"clienteId" | "nomeFantasia" | "telefone" | "contato" | "cep" | "logradouro" | "numero" | "complemento" | "bairro" | "cidade" | "estado" | "inscricaoEstadual" | "atualizadoEm", ExtArgs["result"]["portalConta"]>
+  export type PortalContaInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    cliente?: boolean | ClienteDefaultArgs<ExtArgs>
+  }
+
+  export type $PortalContaPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PortalConta"
+    objects: {
+      cliente: Prisma.$ClientePayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      clienteId: string
+      nomeFantasia: string | null
+      telefone: string
+      contato: string
+      cep: string
+      logradouro: string
+      numero: string
+      complemento: string | null
+      bairro: string
+      cidade: string
+      estado: string
+      inscricaoEstadual: string | null
+      atualizadoEm: Date
+    }, ExtArgs["result"]["portalConta"]>
+    composites: {}
+  }
+
+  type PortalContaGetPayload<S extends boolean | null | undefined | PortalContaDefaultArgs> = $Result.GetResult<Prisma.$PortalContaPayload, S>
+
+  type PortalContaCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PortalContaFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PortalContaCountAggregateInputType | true
+    }
+
+  export interface PortalContaDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PortalConta'], meta: { name: 'PortalConta' } }
+    /**
+     * Find zero or one PortalConta that matches the filter.
+     * @param {PortalContaFindUniqueArgs} args - Arguments to find a PortalConta
+     * @example
+     * // Get one PortalConta
+     * const portalConta = await prisma.portalConta.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PortalContaFindUniqueArgs>(args: SelectSubset<T, PortalContaFindUniqueArgs<ExtArgs>>): Prisma__PortalContaClient<$Result.GetResult<Prisma.$PortalContaPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PortalConta that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PortalContaFindUniqueOrThrowArgs} args - Arguments to find a PortalConta
+     * @example
+     * // Get one PortalConta
+     * const portalConta = await prisma.portalConta.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PortalContaFindUniqueOrThrowArgs>(args: SelectSubset<T, PortalContaFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PortalContaClient<$Result.GetResult<Prisma.$PortalContaPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalConta that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContaFindFirstArgs} args - Arguments to find a PortalConta
+     * @example
+     * // Get one PortalConta
+     * const portalConta = await prisma.portalConta.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PortalContaFindFirstArgs>(args?: SelectSubset<T, PortalContaFindFirstArgs<ExtArgs>>): Prisma__PortalContaClient<$Result.GetResult<Prisma.$PortalContaPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalConta that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContaFindFirstOrThrowArgs} args - Arguments to find a PortalConta
+     * @example
+     * // Get one PortalConta
+     * const portalConta = await prisma.portalConta.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PortalContaFindFirstOrThrowArgs>(args?: SelectSubset<T, PortalContaFindFirstOrThrowArgs<ExtArgs>>): Prisma__PortalContaClient<$Result.GetResult<Prisma.$PortalContaPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PortalContas that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContaFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PortalContas
+     * const portalContas = await prisma.portalConta.findMany()
+     * 
+     * // Get first 10 PortalContas
+     * const portalContas = await prisma.portalConta.findMany({ take: 10 })
+     * 
+     * // Only select the `clienteId`
+     * const portalContaWithClienteIdOnly = await prisma.portalConta.findMany({ select: { clienteId: true } })
+     * 
+     */
+    findMany<T extends PortalContaFindManyArgs>(args?: SelectSubset<T, PortalContaFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PortalContaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PortalConta.
+     * @param {PortalContaCreateArgs} args - Arguments to create a PortalConta.
+     * @example
+     * // Create one PortalConta
+     * const PortalConta = await prisma.portalConta.create({
+     *   data: {
+     *     // ... data to create a PortalConta
+     *   }
+     * })
+     * 
+     */
+    create<T extends PortalContaCreateArgs>(args: SelectSubset<T, PortalContaCreateArgs<ExtArgs>>): Prisma__PortalContaClient<$Result.GetResult<Prisma.$PortalContaPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PortalContas.
+     * @param {PortalContaCreateManyArgs} args - Arguments to create many PortalContas.
+     * @example
+     * // Create many PortalContas
+     * const portalConta = await prisma.portalConta.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PortalContaCreateManyArgs>(args?: SelectSubset<T, PortalContaCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a PortalConta.
+     * @param {PortalContaDeleteArgs} args - Arguments to delete one PortalConta.
+     * @example
+     * // Delete one PortalConta
+     * const PortalConta = await prisma.portalConta.delete({
+     *   where: {
+     *     // ... filter to delete one PortalConta
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PortalContaDeleteArgs>(args: SelectSubset<T, PortalContaDeleteArgs<ExtArgs>>): Prisma__PortalContaClient<$Result.GetResult<Prisma.$PortalContaPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PortalConta.
+     * @param {PortalContaUpdateArgs} args - Arguments to update one PortalConta.
+     * @example
+     * // Update one PortalConta
+     * const portalConta = await prisma.portalConta.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PortalContaUpdateArgs>(args: SelectSubset<T, PortalContaUpdateArgs<ExtArgs>>): Prisma__PortalContaClient<$Result.GetResult<Prisma.$PortalContaPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PortalContas.
+     * @param {PortalContaDeleteManyArgs} args - Arguments to filter PortalContas to delete.
+     * @example
+     * // Delete a few PortalContas
+     * const { count } = await prisma.portalConta.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PortalContaDeleteManyArgs>(args?: SelectSubset<T, PortalContaDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PortalContas.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContaUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PortalContas
+     * const portalConta = await prisma.portalConta.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PortalContaUpdateManyArgs>(args: SelectSubset<T, PortalContaUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one PortalConta.
+     * @param {PortalContaUpsertArgs} args - Arguments to update or create a PortalConta.
+     * @example
+     * // Update or create a PortalConta
+     * const portalConta = await prisma.portalConta.upsert({
+     *   create: {
+     *     // ... data to create a PortalConta
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PortalConta we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PortalContaUpsertArgs>(args: SelectSubset<T, PortalContaUpsertArgs<ExtArgs>>): Prisma__PortalContaClient<$Result.GetResult<Prisma.$PortalContaPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PortalContas.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContaCountArgs} args - Arguments to filter PortalContas to count.
+     * @example
+     * // Count the number of PortalContas
+     * const count = await prisma.portalConta.count({
+     *   where: {
+     *     // ... the filter for the PortalContas we want to count
+     *   }
+     * })
+    **/
+    count<T extends PortalContaCountArgs>(
+      args?: Subset<T, PortalContaCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PortalContaCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PortalConta.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContaAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PortalContaAggregateArgs>(args: Subset<T, PortalContaAggregateArgs>): Prisma.PrismaPromise<GetPortalContaAggregateType<T>>
+
+    /**
+     * Group by PortalConta.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContaGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PortalContaGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PortalContaGroupByArgs['orderBy'] }
+        : { orderBy?: PortalContaGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PortalContaGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPortalContaGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PortalConta model
+   */
+  readonly fields: PortalContaFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PortalConta.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PortalContaClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    cliente<T extends ClienteDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ClienteDefaultArgs<ExtArgs>>): Prisma__ClienteClient<$Result.GetResult<Prisma.$ClientePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PortalConta model
+   */
+  interface PortalContaFieldRefs {
+    readonly clienteId: FieldRef<"PortalConta", 'String'>
+    readonly nomeFantasia: FieldRef<"PortalConta", 'String'>
+    readonly telefone: FieldRef<"PortalConta", 'String'>
+    readonly contato: FieldRef<"PortalConta", 'String'>
+    readonly cep: FieldRef<"PortalConta", 'String'>
+    readonly logradouro: FieldRef<"PortalConta", 'String'>
+    readonly numero: FieldRef<"PortalConta", 'String'>
+    readonly complemento: FieldRef<"PortalConta", 'String'>
+    readonly bairro: FieldRef<"PortalConta", 'String'>
+    readonly cidade: FieldRef<"PortalConta", 'String'>
+    readonly estado: FieldRef<"PortalConta", 'String'>
+    readonly inscricaoEstadual: FieldRef<"PortalConta", 'String'>
+    readonly atualizadoEm: FieldRef<"PortalConta", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PortalConta findUnique
+   */
+  export type PortalContaFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalConta
+     */
+    select?: PortalContaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalConta
+     */
+    omit?: PortalContaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContaInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalConta to fetch.
+     */
+    where: PortalContaWhereUniqueInput
+  }
+
+  /**
+   * PortalConta findUniqueOrThrow
+   */
+  export type PortalContaFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalConta
+     */
+    select?: PortalContaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalConta
+     */
+    omit?: PortalContaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContaInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalConta to fetch.
+     */
+    where: PortalContaWhereUniqueInput
+  }
+
+  /**
+   * PortalConta findFirst
+   */
+  export type PortalContaFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalConta
+     */
+    select?: PortalContaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalConta
+     */
+    omit?: PortalContaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContaInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalConta to fetch.
+     */
+    where?: PortalContaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalContas to fetch.
+     */
+    orderBy?: PortalContaOrderByWithRelationInput | PortalContaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalContas.
+     */
+    cursor?: PortalContaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalContas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalContas.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalContas.
+     */
+    distinct?: PortalContaScalarFieldEnum | PortalContaScalarFieldEnum[]
+  }
+
+  /**
+   * PortalConta findFirstOrThrow
+   */
+  export type PortalContaFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalConta
+     */
+    select?: PortalContaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalConta
+     */
+    omit?: PortalContaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContaInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalConta to fetch.
+     */
+    where?: PortalContaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalContas to fetch.
+     */
+    orderBy?: PortalContaOrderByWithRelationInput | PortalContaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalContas.
+     */
+    cursor?: PortalContaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalContas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalContas.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalContas.
+     */
+    distinct?: PortalContaScalarFieldEnum | PortalContaScalarFieldEnum[]
+  }
+
+  /**
+   * PortalConta findMany
+   */
+  export type PortalContaFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalConta
+     */
+    select?: PortalContaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalConta
+     */
+    omit?: PortalContaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContaInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalContas to fetch.
+     */
+    where?: PortalContaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalContas to fetch.
+     */
+    orderBy?: PortalContaOrderByWithRelationInput | PortalContaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PortalContas.
+     */
+    cursor?: PortalContaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalContas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalContas.
+     */
+    skip?: number
+    distinct?: PortalContaScalarFieldEnum | PortalContaScalarFieldEnum[]
+  }
+
+  /**
+   * PortalConta create
+   */
+  export type PortalContaCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalConta
+     */
+    select?: PortalContaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalConta
+     */
+    omit?: PortalContaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContaInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PortalConta.
+     */
+    data: XOR<PortalContaCreateInput, PortalContaUncheckedCreateInput>
+  }
+
+  /**
+   * PortalConta createMany
+   */
+  export type PortalContaCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PortalContas.
+     */
+    data: PortalContaCreateManyInput | PortalContaCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PortalConta update
+   */
+  export type PortalContaUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalConta
+     */
+    select?: PortalContaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalConta
+     */
+    omit?: PortalContaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContaInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PortalConta.
+     */
+    data: XOR<PortalContaUpdateInput, PortalContaUncheckedUpdateInput>
+    /**
+     * Choose, which PortalConta to update.
+     */
+    where: PortalContaWhereUniqueInput
+  }
+
+  /**
+   * PortalConta updateMany
+   */
+  export type PortalContaUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PortalContas.
+     */
+    data: XOR<PortalContaUpdateManyMutationInput, PortalContaUncheckedUpdateManyInput>
+    /**
+     * Filter which PortalContas to update
+     */
+    where?: PortalContaWhereInput
+    /**
+     * Limit how many PortalContas to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalConta upsert
+   */
+  export type PortalContaUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalConta
+     */
+    select?: PortalContaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalConta
+     */
+    omit?: PortalContaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContaInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PortalConta to update in case it exists.
+     */
+    where: PortalContaWhereUniqueInput
+    /**
+     * In case the PortalConta found by the `where` argument doesn't exist, create a new PortalConta with this data.
+     */
+    create: XOR<PortalContaCreateInput, PortalContaUncheckedCreateInput>
+    /**
+     * In case the PortalConta was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PortalContaUpdateInput, PortalContaUncheckedUpdateInput>
+  }
+
+  /**
+   * PortalConta delete
+   */
+  export type PortalContaDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalConta
+     */
+    select?: PortalContaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalConta
+     */
+    omit?: PortalContaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContaInclude<ExtArgs> | null
+    /**
+     * Filter which PortalConta to delete.
+     */
+    where: PortalContaWhereUniqueInput
+  }
+
+  /**
+   * PortalConta deleteMany
+   */
+  export type PortalContaDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalContas to delete
+     */
+    where?: PortalContaWhereInput
+    /**
+     * Limit how many PortalContas to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalConta without action
+   */
+  export type PortalContaDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalConta
+     */
+    select?: PortalContaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalConta
+     */
+    omit?: PortalContaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContaInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PortalContrato
+   */
+
+  export type AggregatePortalContrato = {
+    _count: PortalContratoCountAggregateOutputType | null
+    _min: PortalContratoMinAggregateOutputType | null
+    _max: PortalContratoMaxAggregateOutputType | null
+  }
+
+  export type PortalContratoMinAggregateOutputType = {
+    id: string | null
+    clienteId: string | null
+    versao: string | null
+    texto: string | null
+    textoHash: string | null
+    status: string | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type PortalContratoMaxAggregateOutputType = {
+    id: string | null
+    clienteId: string | null
+    versao: string | null
+    texto: string | null
+    textoHash: string | null
+    status: string | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type PortalContratoCountAggregateOutputType = {
+    id: number
+    clienteId: number
+    versao: number
+    texto: number
+    textoHash: number
+    status: number
+    criadoEm: number
+    atualizadoEm: number
+    _all: number
+  }
+
+
+  export type PortalContratoMinAggregateInputType = {
+    id?: true
+    clienteId?: true
+    versao?: true
+    texto?: true
+    textoHash?: true
+    status?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type PortalContratoMaxAggregateInputType = {
+    id?: true
+    clienteId?: true
+    versao?: true
+    texto?: true
+    textoHash?: true
+    status?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type PortalContratoCountAggregateInputType = {
+    id?: true
+    clienteId?: true
+    versao?: true
+    texto?: true
+    textoHash?: true
+    status?: true
+    criadoEm?: true
+    atualizadoEm?: true
+    _all?: true
+  }
+
+  export type PortalContratoAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalContrato to aggregate.
+     */
+    where?: PortalContratoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalContratoes to fetch.
+     */
+    orderBy?: PortalContratoOrderByWithRelationInput | PortalContratoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PortalContratoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalContratoes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalContratoes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PortalContratoes
+    **/
+    _count?: true | PortalContratoCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PortalContratoMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PortalContratoMaxAggregateInputType
+  }
+
+  export type GetPortalContratoAggregateType<T extends PortalContratoAggregateArgs> = {
+        [P in keyof T & keyof AggregatePortalContrato]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePortalContrato[P]>
+      : GetScalarType<T[P], AggregatePortalContrato[P]>
+  }
+
+
+
+
+  export type PortalContratoGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PortalContratoWhereInput
+    orderBy?: PortalContratoOrderByWithAggregationInput | PortalContratoOrderByWithAggregationInput[]
+    by: PortalContratoScalarFieldEnum[] | PortalContratoScalarFieldEnum
+    having?: PortalContratoScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PortalContratoCountAggregateInputType | true
+    _min?: PortalContratoMinAggregateInputType
+    _max?: PortalContratoMaxAggregateInputType
+  }
+
+  export type PortalContratoGroupByOutputType = {
+    id: string
+    clienteId: string
+    versao: string
+    texto: string
+    textoHash: string
+    status: string
+    criadoEm: Date
+    atualizadoEm: Date
+    _count: PortalContratoCountAggregateOutputType | null
+    _min: PortalContratoMinAggregateOutputType | null
+    _max: PortalContratoMaxAggregateOutputType | null
+  }
+
+  type GetPortalContratoGroupByPayload<T extends PortalContratoGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PortalContratoGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PortalContratoGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PortalContratoGroupByOutputType[P]>
+            : GetScalarType<T[P], PortalContratoGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PortalContratoSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    clienteId?: boolean
+    versao?: boolean
+    texto?: boolean
+    textoHash?: boolean
+    status?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+    cliente?: boolean | ClienteDefaultArgs<ExtArgs>
+    aceites?: boolean | PortalContrato$aceitesArgs<ExtArgs>
+    _count?: boolean | PortalContratoCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["portalContrato"]>
+
+
+
+  export type PortalContratoSelectScalar = {
+    id?: boolean
+    clienteId?: boolean
+    versao?: boolean
+    texto?: boolean
+    textoHash?: boolean
+    status?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+  }
+
+  export type PortalContratoOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "clienteId" | "versao" | "texto" | "textoHash" | "status" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["portalContrato"]>
+  export type PortalContratoInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    cliente?: boolean | ClienteDefaultArgs<ExtArgs>
+    aceites?: boolean | PortalContrato$aceitesArgs<ExtArgs>
+    _count?: boolean | PortalContratoCountOutputTypeDefaultArgs<ExtArgs>
+  }
+
+  export type $PortalContratoPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PortalContrato"
+    objects: {
+      cliente: Prisma.$ClientePayload<ExtArgs>
+      aceites: Prisma.$PortalContratoAceitePayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      clienteId: string
+      versao: string
+      texto: string
+      textoHash: string
+      status: string
+      criadoEm: Date
+      atualizadoEm: Date
+    }, ExtArgs["result"]["portalContrato"]>
+    composites: {}
+  }
+
+  type PortalContratoGetPayload<S extends boolean | null | undefined | PortalContratoDefaultArgs> = $Result.GetResult<Prisma.$PortalContratoPayload, S>
+
+  type PortalContratoCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PortalContratoFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PortalContratoCountAggregateInputType | true
+    }
+
+  export interface PortalContratoDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PortalContrato'], meta: { name: 'PortalContrato' } }
+    /**
+     * Find zero or one PortalContrato that matches the filter.
+     * @param {PortalContratoFindUniqueArgs} args - Arguments to find a PortalContrato
+     * @example
+     * // Get one PortalContrato
+     * const portalContrato = await prisma.portalContrato.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PortalContratoFindUniqueArgs>(args: SelectSubset<T, PortalContratoFindUniqueArgs<ExtArgs>>): Prisma__PortalContratoClient<$Result.GetResult<Prisma.$PortalContratoPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PortalContrato that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PortalContratoFindUniqueOrThrowArgs} args - Arguments to find a PortalContrato
+     * @example
+     * // Get one PortalContrato
+     * const portalContrato = await prisma.portalContrato.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PortalContratoFindUniqueOrThrowArgs>(args: SelectSubset<T, PortalContratoFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PortalContratoClient<$Result.GetResult<Prisma.$PortalContratoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalContrato that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContratoFindFirstArgs} args - Arguments to find a PortalContrato
+     * @example
+     * // Get one PortalContrato
+     * const portalContrato = await prisma.portalContrato.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PortalContratoFindFirstArgs>(args?: SelectSubset<T, PortalContratoFindFirstArgs<ExtArgs>>): Prisma__PortalContratoClient<$Result.GetResult<Prisma.$PortalContratoPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalContrato that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContratoFindFirstOrThrowArgs} args - Arguments to find a PortalContrato
+     * @example
+     * // Get one PortalContrato
+     * const portalContrato = await prisma.portalContrato.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PortalContratoFindFirstOrThrowArgs>(args?: SelectSubset<T, PortalContratoFindFirstOrThrowArgs<ExtArgs>>): Prisma__PortalContratoClient<$Result.GetResult<Prisma.$PortalContratoPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PortalContratoes that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContratoFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PortalContratoes
+     * const portalContratoes = await prisma.portalContrato.findMany()
+     * 
+     * // Get first 10 PortalContratoes
+     * const portalContratoes = await prisma.portalContrato.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const portalContratoWithIdOnly = await prisma.portalContrato.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PortalContratoFindManyArgs>(args?: SelectSubset<T, PortalContratoFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PortalContratoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PortalContrato.
+     * @param {PortalContratoCreateArgs} args - Arguments to create a PortalContrato.
+     * @example
+     * // Create one PortalContrato
+     * const PortalContrato = await prisma.portalContrato.create({
+     *   data: {
+     *     // ... data to create a PortalContrato
+     *   }
+     * })
+     * 
+     */
+    create<T extends PortalContratoCreateArgs>(args: SelectSubset<T, PortalContratoCreateArgs<ExtArgs>>): Prisma__PortalContratoClient<$Result.GetResult<Prisma.$PortalContratoPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PortalContratoes.
+     * @param {PortalContratoCreateManyArgs} args - Arguments to create many PortalContratoes.
+     * @example
+     * // Create many PortalContratoes
+     * const portalContrato = await prisma.portalContrato.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PortalContratoCreateManyArgs>(args?: SelectSubset<T, PortalContratoCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a PortalContrato.
+     * @param {PortalContratoDeleteArgs} args - Arguments to delete one PortalContrato.
+     * @example
+     * // Delete one PortalContrato
+     * const PortalContrato = await prisma.portalContrato.delete({
+     *   where: {
+     *     // ... filter to delete one PortalContrato
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PortalContratoDeleteArgs>(args: SelectSubset<T, PortalContratoDeleteArgs<ExtArgs>>): Prisma__PortalContratoClient<$Result.GetResult<Prisma.$PortalContratoPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PortalContrato.
+     * @param {PortalContratoUpdateArgs} args - Arguments to update one PortalContrato.
+     * @example
+     * // Update one PortalContrato
+     * const portalContrato = await prisma.portalContrato.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PortalContratoUpdateArgs>(args: SelectSubset<T, PortalContratoUpdateArgs<ExtArgs>>): Prisma__PortalContratoClient<$Result.GetResult<Prisma.$PortalContratoPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PortalContratoes.
+     * @param {PortalContratoDeleteManyArgs} args - Arguments to filter PortalContratoes to delete.
+     * @example
+     * // Delete a few PortalContratoes
+     * const { count } = await prisma.portalContrato.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PortalContratoDeleteManyArgs>(args?: SelectSubset<T, PortalContratoDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PortalContratoes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContratoUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PortalContratoes
+     * const portalContrato = await prisma.portalContrato.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PortalContratoUpdateManyArgs>(args: SelectSubset<T, PortalContratoUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one PortalContrato.
+     * @param {PortalContratoUpsertArgs} args - Arguments to update or create a PortalContrato.
+     * @example
+     * // Update or create a PortalContrato
+     * const portalContrato = await prisma.portalContrato.upsert({
+     *   create: {
+     *     // ... data to create a PortalContrato
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PortalContrato we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PortalContratoUpsertArgs>(args: SelectSubset<T, PortalContratoUpsertArgs<ExtArgs>>): Prisma__PortalContratoClient<$Result.GetResult<Prisma.$PortalContratoPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PortalContratoes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContratoCountArgs} args - Arguments to filter PortalContratoes to count.
+     * @example
+     * // Count the number of PortalContratoes
+     * const count = await prisma.portalContrato.count({
+     *   where: {
+     *     // ... the filter for the PortalContratoes we want to count
+     *   }
+     * })
+    **/
+    count<T extends PortalContratoCountArgs>(
+      args?: Subset<T, PortalContratoCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PortalContratoCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PortalContrato.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContratoAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PortalContratoAggregateArgs>(args: Subset<T, PortalContratoAggregateArgs>): Prisma.PrismaPromise<GetPortalContratoAggregateType<T>>
+
+    /**
+     * Group by PortalContrato.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContratoGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PortalContratoGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PortalContratoGroupByArgs['orderBy'] }
+        : { orderBy?: PortalContratoGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PortalContratoGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPortalContratoGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PortalContrato model
+   */
+  readonly fields: PortalContratoFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PortalContrato.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PortalContratoClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    cliente<T extends ClienteDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ClienteDefaultArgs<ExtArgs>>): Prisma__ClienteClient<$Result.GetResult<Prisma.$ClientePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    aceites<T extends PortalContrato$aceitesArgs<ExtArgs> = {}>(args?: Subset<T, PortalContrato$aceitesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PortalContratoAceitePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PortalContrato model
+   */
+  interface PortalContratoFieldRefs {
+    readonly id: FieldRef<"PortalContrato", 'String'>
+    readonly clienteId: FieldRef<"PortalContrato", 'String'>
+    readonly versao: FieldRef<"PortalContrato", 'String'>
+    readonly texto: FieldRef<"PortalContrato", 'String'>
+    readonly textoHash: FieldRef<"PortalContrato", 'String'>
+    readonly status: FieldRef<"PortalContrato", 'String'>
+    readonly criadoEm: FieldRef<"PortalContrato", 'DateTime'>
+    readonly atualizadoEm: FieldRef<"PortalContrato", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PortalContrato findUnique
+   */
+  export type PortalContratoFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContrato
+     */
+    select?: PortalContratoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContrato
+     */
+    omit?: PortalContratoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalContrato to fetch.
+     */
+    where: PortalContratoWhereUniqueInput
+  }
+
+  /**
+   * PortalContrato findUniqueOrThrow
+   */
+  export type PortalContratoFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContrato
+     */
+    select?: PortalContratoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContrato
+     */
+    omit?: PortalContratoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalContrato to fetch.
+     */
+    where: PortalContratoWhereUniqueInput
+  }
+
+  /**
+   * PortalContrato findFirst
+   */
+  export type PortalContratoFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContrato
+     */
+    select?: PortalContratoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContrato
+     */
+    omit?: PortalContratoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalContrato to fetch.
+     */
+    where?: PortalContratoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalContratoes to fetch.
+     */
+    orderBy?: PortalContratoOrderByWithRelationInput | PortalContratoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalContratoes.
+     */
+    cursor?: PortalContratoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalContratoes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalContratoes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalContratoes.
+     */
+    distinct?: PortalContratoScalarFieldEnum | PortalContratoScalarFieldEnum[]
+  }
+
+  /**
+   * PortalContrato findFirstOrThrow
+   */
+  export type PortalContratoFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContrato
+     */
+    select?: PortalContratoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContrato
+     */
+    omit?: PortalContratoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalContrato to fetch.
+     */
+    where?: PortalContratoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalContratoes to fetch.
+     */
+    orderBy?: PortalContratoOrderByWithRelationInput | PortalContratoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalContratoes.
+     */
+    cursor?: PortalContratoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalContratoes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalContratoes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalContratoes.
+     */
+    distinct?: PortalContratoScalarFieldEnum | PortalContratoScalarFieldEnum[]
+  }
+
+  /**
+   * PortalContrato findMany
+   */
+  export type PortalContratoFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContrato
+     */
+    select?: PortalContratoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContrato
+     */
+    omit?: PortalContratoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalContratoes to fetch.
+     */
+    where?: PortalContratoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalContratoes to fetch.
+     */
+    orderBy?: PortalContratoOrderByWithRelationInput | PortalContratoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PortalContratoes.
+     */
+    cursor?: PortalContratoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalContratoes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalContratoes.
+     */
+    skip?: number
+    distinct?: PortalContratoScalarFieldEnum | PortalContratoScalarFieldEnum[]
+  }
+
+  /**
+   * PortalContrato create
+   */
+  export type PortalContratoCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContrato
+     */
+    select?: PortalContratoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContrato
+     */
+    omit?: PortalContratoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PortalContrato.
+     */
+    data: XOR<PortalContratoCreateInput, PortalContratoUncheckedCreateInput>
+  }
+
+  /**
+   * PortalContrato createMany
+   */
+  export type PortalContratoCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PortalContratoes.
+     */
+    data: PortalContratoCreateManyInput | PortalContratoCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PortalContrato update
+   */
+  export type PortalContratoUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContrato
+     */
+    select?: PortalContratoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContrato
+     */
+    omit?: PortalContratoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PortalContrato.
+     */
+    data: XOR<PortalContratoUpdateInput, PortalContratoUncheckedUpdateInput>
+    /**
+     * Choose, which PortalContrato to update.
+     */
+    where: PortalContratoWhereUniqueInput
+  }
+
+  /**
+   * PortalContrato updateMany
+   */
+  export type PortalContratoUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PortalContratoes.
+     */
+    data: XOR<PortalContratoUpdateManyMutationInput, PortalContratoUncheckedUpdateManyInput>
+    /**
+     * Filter which PortalContratoes to update
+     */
+    where?: PortalContratoWhereInput
+    /**
+     * Limit how many PortalContratoes to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalContrato upsert
+   */
+  export type PortalContratoUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContrato
+     */
+    select?: PortalContratoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContrato
+     */
+    omit?: PortalContratoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PortalContrato to update in case it exists.
+     */
+    where: PortalContratoWhereUniqueInput
+    /**
+     * In case the PortalContrato found by the `where` argument doesn't exist, create a new PortalContrato with this data.
+     */
+    create: XOR<PortalContratoCreateInput, PortalContratoUncheckedCreateInput>
+    /**
+     * In case the PortalContrato was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PortalContratoUpdateInput, PortalContratoUncheckedUpdateInput>
+  }
+
+  /**
+   * PortalContrato delete
+   */
+  export type PortalContratoDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContrato
+     */
+    select?: PortalContratoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContrato
+     */
+    omit?: PortalContratoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoInclude<ExtArgs> | null
+    /**
+     * Filter which PortalContrato to delete.
+     */
+    where: PortalContratoWhereUniqueInput
+  }
+
+  /**
+   * PortalContrato deleteMany
+   */
+  export type PortalContratoDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalContratoes to delete
+     */
+    where?: PortalContratoWhereInput
+    /**
+     * Limit how many PortalContratoes to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalContrato.aceites
+   */
+  export type PortalContrato$aceitesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContratoAceite
+     */
+    select?: PortalContratoAceiteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContratoAceite
+     */
+    omit?: PortalContratoAceiteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoAceiteInclude<ExtArgs> | null
+    where?: PortalContratoAceiteWhereInput
+    orderBy?: PortalContratoAceiteOrderByWithRelationInput | PortalContratoAceiteOrderByWithRelationInput[]
+    cursor?: PortalContratoAceiteWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PortalContratoAceiteScalarFieldEnum | PortalContratoAceiteScalarFieldEnum[]
+  }
+
+  /**
+   * PortalContrato without action
+   */
+  export type PortalContratoDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContrato
+     */
+    select?: PortalContratoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContrato
+     */
+    omit?: PortalContratoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PortalContratoAceite
+   */
+
+  export type AggregatePortalContratoAceite = {
+    _count: PortalContratoAceiteCountAggregateOutputType | null
+    _min: PortalContratoAceiteMinAggregateOutputType | null
+    _max: PortalContratoAceiteMaxAggregateOutputType | null
+  }
+
+  export type PortalContratoAceiteMinAggregateOutputType = {
+    id: string | null
+    contratoId: string | null
+    clienteId: string | null
+    versao: string | null
+    textoHash: string | null
+    representanteNome: string | null
+    representanteCpf: string | null
+    representanteEmail: string | null
+    empresaNome: string | null
+    empresaCnpj: string | null
+    ip: string | null
+    userAgent: string | null
+    aceitoEm: Date | null
+  }
+
+  export type PortalContratoAceiteMaxAggregateOutputType = {
+    id: string | null
+    contratoId: string | null
+    clienteId: string | null
+    versao: string | null
+    textoHash: string | null
+    representanteNome: string | null
+    representanteCpf: string | null
+    representanteEmail: string | null
+    empresaNome: string | null
+    empresaCnpj: string | null
+    ip: string | null
+    userAgent: string | null
+    aceitoEm: Date | null
+  }
+
+  export type PortalContratoAceiteCountAggregateOutputType = {
+    id: number
+    contratoId: number
+    clienteId: number
+    versao: number
+    textoHash: number
+    representanteNome: number
+    representanteCpf: number
+    representanteEmail: number
+    empresaNome: number
+    empresaCnpj: number
+    ip: number
+    userAgent: number
+    aceitoEm: number
+    _all: number
+  }
+
+
+  export type PortalContratoAceiteMinAggregateInputType = {
+    id?: true
+    contratoId?: true
+    clienteId?: true
+    versao?: true
+    textoHash?: true
+    representanteNome?: true
+    representanteCpf?: true
+    representanteEmail?: true
+    empresaNome?: true
+    empresaCnpj?: true
+    ip?: true
+    userAgent?: true
+    aceitoEm?: true
+  }
+
+  export type PortalContratoAceiteMaxAggregateInputType = {
+    id?: true
+    contratoId?: true
+    clienteId?: true
+    versao?: true
+    textoHash?: true
+    representanteNome?: true
+    representanteCpf?: true
+    representanteEmail?: true
+    empresaNome?: true
+    empresaCnpj?: true
+    ip?: true
+    userAgent?: true
+    aceitoEm?: true
+  }
+
+  export type PortalContratoAceiteCountAggregateInputType = {
+    id?: true
+    contratoId?: true
+    clienteId?: true
+    versao?: true
+    textoHash?: true
+    representanteNome?: true
+    representanteCpf?: true
+    representanteEmail?: true
+    empresaNome?: true
+    empresaCnpj?: true
+    ip?: true
+    userAgent?: true
+    aceitoEm?: true
+    _all?: true
+  }
+
+  export type PortalContratoAceiteAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalContratoAceite to aggregate.
+     */
+    where?: PortalContratoAceiteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalContratoAceites to fetch.
+     */
+    orderBy?: PortalContratoAceiteOrderByWithRelationInput | PortalContratoAceiteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PortalContratoAceiteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalContratoAceites from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalContratoAceites.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PortalContratoAceites
+    **/
+    _count?: true | PortalContratoAceiteCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PortalContratoAceiteMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PortalContratoAceiteMaxAggregateInputType
+  }
+
+  export type GetPortalContratoAceiteAggregateType<T extends PortalContratoAceiteAggregateArgs> = {
+        [P in keyof T & keyof AggregatePortalContratoAceite]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePortalContratoAceite[P]>
+      : GetScalarType<T[P], AggregatePortalContratoAceite[P]>
+  }
+
+
+
+
+  export type PortalContratoAceiteGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PortalContratoAceiteWhereInput
+    orderBy?: PortalContratoAceiteOrderByWithAggregationInput | PortalContratoAceiteOrderByWithAggregationInput[]
+    by: PortalContratoAceiteScalarFieldEnum[] | PortalContratoAceiteScalarFieldEnum
+    having?: PortalContratoAceiteScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PortalContratoAceiteCountAggregateInputType | true
+    _min?: PortalContratoAceiteMinAggregateInputType
+    _max?: PortalContratoAceiteMaxAggregateInputType
+  }
+
+  export type PortalContratoAceiteGroupByOutputType = {
+    id: string
+    contratoId: string
+    clienteId: string
+    versao: string
+    textoHash: string
+    representanteNome: string
+    representanteCpf: string
+    representanteEmail: string
+    empresaNome: string
+    empresaCnpj: string
+    ip: string
+    userAgent: string
+    aceitoEm: Date
+    _count: PortalContratoAceiteCountAggregateOutputType | null
+    _min: PortalContratoAceiteMinAggregateOutputType | null
+    _max: PortalContratoAceiteMaxAggregateOutputType | null
+  }
+
+  type GetPortalContratoAceiteGroupByPayload<T extends PortalContratoAceiteGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PortalContratoAceiteGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PortalContratoAceiteGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PortalContratoAceiteGroupByOutputType[P]>
+            : GetScalarType<T[P], PortalContratoAceiteGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PortalContratoAceiteSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    contratoId?: boolean
+    clienteId?: boolean
+    versao?: boolean
+    textoHash?: boolean
+    representanteNome?: boolean
+    representanteCpf?: boolean
+    representanteEmail?: boolean
+    empresaNome?: boolean
+    empresaCnpj?: boolean
+    ip?: boolean
+    userAgent?: boolean
+    aceitoEm?: boolean
+    contrato?: boolean | PortalContratoDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["portalContratoAceite"]>
+
+
+
+  export type PortalContratoAceiteSelectScalar = {
+    id?: boolean
+    contratoId?: boolean
+    clienteId?: boolean
+    versao?: boolean
+    textoHash?: boolean
+    representanteNome?: boolean
+    representanteCpf?: boolean
+    representanteEmail?: boolean
+    empresaNome?: boolean
+    empresaCnpj?: boolean
+    ip?: boolean
+    userAgent?: boolean
+    aceitoEm?: boolean
+  }
+
+  export type PortalContratoAceiteOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "contratoId" | "clienteId" | "versao" | "textoHash" | "representanteNome" | "representanteCpf" | "representanteEmail" | "empresaNome" | "empresaCnpj" | "ip" | "userAgent" | "aceitoEm", ExtArgs["result"]["portalContratoAceite"]>
+  export type PortalContratoAceiteInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    contrato?: boolean | PortalContratoDefaultArgs<ExtArgs>
+  }
+
+  export type $PortalContratoAceitePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PortalContratoAceite"
+    objects: {
+      contrato: Prisma.$PortalContratoPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      contratoId: string
+      clienteId: string
+      versao: string
+      textoHash: string
+      representanteNome: string
+      representanteCpf: string
+      representanteEmail: string
+      empresaNome: string
+      empresaCnpj: string
+      ip: string
+      userAgent: string
+      aceitoEm: Date
+    }, ExtArgs["result"]["portalContratoAceite"]>
+    composites: {}
+  }
+
+  type PortalContratoAceiteGetPayload<S extends boolean | null | undefined | PortalContratoAceiteDefaultArgs> = $Result.GetResult<Prisma.$PortalContratoAceitePayload, S>
+
+  type PortalContratoAceiteCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PortalContratoAceiteFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PortalContratoAceiteCountAggregateInputType | true
+    }
+
+  export interface PortalContratoAceiteDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PortalContratoAceite'], meta: { name: 'PortalContratoAceite' } }
+    /**
+     * Find zero or one PortalContratoAceite that matches the filter.
+     * @param {PortalContratoAceiteFindUniqueArgs} args - Arguments to find a PortalContratoAceite
+     * @example
+     * // Get one PortalContratoAceite
+     * const portalContratoAceite = await prisma.portalContratoAceite.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PortalContratoAceiteFindUniqueArgs>(args: SelectSubset<T, PortalContratoAceiteFindUniqueArgs<ExtArgs>>): Prisma__PortalContratoAceiteClient<$Result.GetResult<Prisma.$PortalContratoAceitePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PortalContratoAceite that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PortalContratoAceiteFindUniqueOrThrowArgs} args - Arguments to find a PortalContratoAceite
+     * @example
+     * // Get one PortalContratoAceite
+     * const portalContratoAceite = await prisma.portalContratoAceite.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PortalContratoAceiteFindUniqueOrThrowArgs>(args: SelectSubset<T, PortalContratoAceiteFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PortalContratoAceiteClient<$Result.GetResult<Prisma.$PortalContratoAceitePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalContratoAceite that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContratoAceiteFindFirstArgs} args - Arguments to find a PortalContratoAceite
+     * @example
+     * // Get one PortalContratoAceite
+     * const portalContratoAceite = await prisma.portalContratoAceite.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PortalContratoAceiteFindFirstArgs>(args?: SelectSubset<T, PortalContratoAceiteFindFirstArgs<ExtArgs>>): Prisma__PortalContratoAceiteClient<$Result.GetResult<Prisma.$PortalContratoAceitePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalContratoAceite that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContratoAceiteFindFirstOrThrowArgs} args - Arguments to find a PortalContratoAceite
+     * @example
+     * // Get one PortalContratoAceite
+     * const portalContratoAceite = await prisma.portalContratoAceite.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PortalContratoAceiteFindFirstOrThrowArgs>(args?: SelectSubset<T, PortalContratoAceiteFindFirstOrThrowArgs<ExtArgs>>): Prisma__PortalContratoAceiteClient<$Result.GetResult<Prisma.$PortalContratoAceitePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PortalContratoAceites that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContratoAceiteFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PortalContratoAceites
+     * const portalContratoAceites = await prisma.portalContratoAceite.findMany()
+     * 
+     * // Get first 10 PortalContratoAceites
+     * const portalContratoAceites = await prisma.portalContratoAceite.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const portalContratoAceiteWithIdOnly = await prisma.portalContratoAceite.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PortalContratoAceiteFindManyArgs>(args?: SelectSubset<T, PortalContratoAceiteFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PortalContratoAceitePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PortalContratoAceite.
+     * @param {PortalContratoAceiteCreateArgs} args - Arguments to create a PortalContratoAceite.
+     * @example
+     * // Create one PortalContratoAceite
+     * const PortalContratoAceite = await prisma.portalContratoAceite.create({
+     *   data: {
+     *     // ... data to create a PortalContratoAceite
+     *   }
+     * })
+     * 
+     */
+    create<T extends PortalContratoAceiteCreateArgs>(args: SelectSubset<T, PortalContratoAceiteCreateArgs<ExtArgs>>): Prisma__PortalContratoAceiteClient<$Result.GetResult<Prisma.$PortalContratoAceitePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PortalContratoAceites.
+     * @param {PortalContratoAceiteCreateManyArgs} args - Arguments to create many PortalContratoAceites.
+     * @example
+     * // Create many PortalContratoAceites
+     * const portalContratoAceite = await prisma.portalContratoAceite.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PortalContratoAceiteCreateManyArgs>(args?: SelectSubset<T, PortalContratoAceiteCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a PortalContratoAceite.
+     * @param {PortalContratoAceiteDeleteArgs} args - Arguments to delete one PortalContratoAceite.
+     * @example
+     * // Delete one PortalContratoAceite
+     * const PortalContratoAceite = await prisma.portalContratoAceite.delete({
+     *   where: {
+     *     // ... filter to delete one PortalContratoAceite
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PortalContratoAceiteDeleteArgs>(args: SelectSubset<T, PortalContratoAceiteDeleteArgs<ExtArgs>>): Prisma__PortalContratoAceiteClient<$Result.GetResult<Prisma.$PortalContratoAceitePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PortalContratoAceite.
+     * @param {PortalContratoAceiteUpdateArgs} args - Arguments to update one PortalContratoAceite.
+     * @example
+     * // Update one PortalContratoAceite
+     * const portalContratoAceite = await prisma.portalContratoAceite.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PortalContratoAceiteUpdateArgs>(args: SelectSubset<T, PortalContratoAceiteUpdateArgs<ExtArgs>>): Prisma__PortalContratoAceiteClient<$Result.GetResult<Prisma.$PortalContratoAceitePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PortalContratoAceites.
+     * @param {PortalContratoAceiteDeleteManyArgs} args - Arguments to filter PortalContratoAceites to delete.
+     * @example
+     * // Delete a few PortalContratoAceites
+     * const { count } = await prisma.portalContratoAceite.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PortalContratoAceiteDeleteManyArgs>(args?: SelectSubset<T, PortalContratoAceiteDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PortalContratoAceites.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContratoAceiteUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PortalContratoAceites
+     * const portalContratoAceite = await prisma.portalContratoAceite.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PortalContratoAceiteUpdateManyArgs>(args: SelectSubset<T, PortalContratoAceiteUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one PortalContratoAceite.
+     * @param {PortalContratoAceiteUpsertArgs} args - Arguments to update or create a PortalContratoAceite.
+     * @example
+     * // Update or create a PortalContratoAceite
+     * const portalContratoAceite = await prisma.portalContratoAceite.upsert({
+     *   create: {
+     *     // ... data to create a PortalContratoAceite
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PortalContratoAceite we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PortalContratoAceiteUpsertArgs>(args: SelectSubset<T, PortalContratoAceiteUpsertArgs<ExtArgs>>): Prisma__PortalContratoAceiteClient<$Result.GetResult<Prisma.$PortalContratoAceitePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PortalContratoAceites.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContratoAceiteCountArgs} args - Arguments to filter PortalContratoAceites to count.
+     * @example
+     * // Count the number of PortalContratoAceites
+     * const count = await prisma.portalContratoAceite.count({
+     *   where: {
+     *     // ... the filter for the PortalContratoAceites we want to count
+     *   }
+     * })
+    **/
+    count<T extends PortalContratoAceiteCountArgs>(
+      args?: Subset<T, PortalContratoAceiteCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PortalContratoAceiteCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PortalContratoAceite.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContratoAceiteAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PortalContratoAceiteAggregateArgs>(args: Subset<T, PortalContratoAceiteAggregateArgs>): Prisma.PrismaPromise<GetPortalContratoAceiteAggregateType<T>>
+
+    /**
+     * Group by PortalContratoAceite.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalContratoAceiteGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PortalContratoAceiteGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PortalContratoAceiteGroupByArgs['orderBy'] }
+        : { orderBy?: PortalContratoAceiteGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PortalContratoAceiteGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPortalContratoAceiteGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PortalContratoAceite model
+   */
+  readonly fields: PortalContratoAceiteFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PortalContratoAceite.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PortalContratoAceiteClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    contrato<T extends PortalContratoDefaultArgs<ExtArgs> = {}>(args?: Subset<T, PortalContratoDefaultArgs<ExtArgs>>): Prisma__PortalContratoClient<$Result.GetResult<Prisma.$PortalContratoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PortalContratoAceite model
+   */
+  interface PortalContratoAceiteFieldRefs {
+    readonly id: FieldRef<"PortalContratoAceite", 'String'>
+    readonly contratoId: FieldRef<"PortalContratoAceite", 'String'>
+    readonly clienteId: FieldRef<"PortalContratoAceite", 'String'>
+    readonly versao: FieldRef<"PortalContratoAceite", 'String'>
+    readonly textoHash: FieldRef<"PortalContratoAceite", 'String'>
+    readonly representanteNome: FieldRef<"PortalContratoAceite", 'String'>
+    readonly representanteCpf: FieldRef<"PortalContratoAceite", 'String'>
+    readonly representanteEmail: FieldRef<"PortalContratoAceite", 'String'>
+    readonly empresaNome: FieldRef<"PortalContratoAceite", 'String'>
+    readonly empresaCnpj: FieldRef<"PortalContratoAceite", 'String'>
+    readonly ip: FieldRef<"PortalContratoAceite", 'String'>
+    readonly userAgent: FieldRef<"PortalContratoAceite", 'String'>
+    readonly aceitoEm: FieldRef<"PortalContratoAceite", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PortalContratoAceite findUnique
+   */
+  export type PortalContratoAceiteFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContratoAceite
+     */
+    select?: PortalContratoAceiteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContratoAceite
+     */
+    omit?: PortalContratoAceiteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoAceiteInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalContratoAceite to fetch.
+     */
+    where: PortalContratoAceiteWhereUniqueInput
+  }
+
+  /**
+   * PortalContratoAceite findUniqueOrThrow
+   */
+  export type PortalContratoAceiteFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContratoAceite
+     */
+    select?: PortalContratoAceiteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContratoAceite
+     */
+    omit?: PortalContratoAceiteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoAceiteInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalContratoAceite to fetch.
+     */
+    where: PortalContratoAceiteWhereUniqueInput
+  }
+
+  /**
+   * PortalContratoAceite findFirst
+   */
+  export type PortalContratoAceiteFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContratoAceite
+     */
+    select?: PortalContratoAceiteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContratoAceite
+     */
+    omit?: PortalContratoAceiteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoAceiteInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalContratoAceite to fetch.
+     */
+    where?: PortalContratoAceiteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalContratoAceites to fetch.
+     */
+    orderBy?: PortalContratoAceiteOrderByWithRelationInput | PortalContratoAceiteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalContratoAceites.
+     */
+    cursor?: PortalContratoAceiteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalContratoAceites from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalContratoAceites.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalContratoAceites.
+     */
+    distinct?: PortalContratoAceiteScalarFieldEnum | PortalContratoAceiteScalarFieldEnum[]
+  }
+
+  /**
+   * PortalContratoAceite findFirstOrThrow
+   */
+  export type PortalContratoAceiteFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContratoAceite
+     */
+    select?: PortalContratoAceiteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContratoAceite
+     */
+    omit?: PortalContratoAceiteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoAceiteInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalContratoAceite to fetch.
+     */
+    where?: PortalContratoAceiteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalContratoAceites to fetch.
+     */
+    orderBy?: PortalContratoAceiteOrderByWithRelationInput | PortalContratoAceiteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalContratoAceites.
+     */
+    cursor?: PortalContratoAceiteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalContratoAceites from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalContratoAceites.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalContratoAceites.
+     */
+    distinct?: PortalContratoAceiteScalarFieldEnum | PortalContratoAceiteScalarFieldEnum[]
+  }
+
+  /**
+   * PortalContratoAceite findMany
+   */
+  export type PortalContratoAceiteFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContratoAceite
+     */
+    select?: PortalContratoAceiteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContratoAceite
+     */
+    omit?: PortalContratoAceiteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoAceiteInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalContratoAceites to fetch.
+     */
+    where?: PortalContratoAceiteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalContratoAceites to fetch.
+     */
+    orderBy?: PortalContratoAceiteOrderByWithRelationInput | PortalContratoAceiteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PortalContratoAceites.
+     */
+    cursor?: PortalContratoAceiteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalContratoAceites from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalContratoAceites.
+     */
+    skip?: number
+    distinct?: PortalContratoAceiteScalarFieldEnum | PortalContratoAceiteScalarFieldEnum[]
+  }
+
+  /**
+   * PortalContratoAceite create
+   */
+  export type PortalContratoAceiteCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContratoAceite
+     */
+    select?: PortalContratoAceiteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContratoAceite
+     */
+    omit?: PortalContratoAceiteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoAceiteInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PortalContratoAceite.
+     */
+    data: XOR<PortalContratoAceiteCreateInput, PortalContratoAceiteUncheckedCreateInput>
+  }
+
+  /**
+   * PortalContratoAceite createMany
+   */
+  export type PortalContratoAceiteCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PortalContratoAceites.
+     */
+    data: PortalContratoAceiteCreateManyInput | PortalContratoAceiteCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PortalContratoAceite update
+   */
+  export type PortalContratoAceiteUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContratoAceite
+     */
+    select?: PortalContratoAceiteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContratoAceite
+     */
+    omit?: PortalContratoAceiteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoAceiteInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PortalContratoAceite.
+     */
+    data: XOR<PortalContratoAceiteUpdateInput, PortalContratoAceiteUncheckedUpdateInput>
+    /**
+     * Choose, which PortalContratoAceite to update.
+     */
+    where: PortalContratoAceiteWhereUniqueInput
+  }
+
+  /**
+   * PortalContratoAceite updateMany
+   */
+  export type PortalContratoAceiteUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PortalContratoAceites.
+     */
+    data: XOR<PortalContratoAceiteUpdateManyMutationInput, PortalContratoAceiteUncheckedUpdateManyInput>
+    /**
+     * Filter which PortalContratoAceites to update
+     */
+    where?: PortalContratoAceiteWhereInput
+    /**
+     * Limit how many PortalContratoAceites to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalContratoAceite upsert
+   */
+  export type PortalContratoAceiteUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContratoAceite
+     */
+    select?: PortalContratoAceiteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContratoAceite
+     */
+    omit?: PortalContratoAceiteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoAceiteInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PortalContratoAceite to update in case it exists.
+     */
+    where: PortalContratoAceiteWhereUniqueInput
+    /**
+     * In case the PortalContratoAceite found by the `where` argument doesn't exist, create a new PortalContratoAceite with this data.
+     */
+    create: XOR<PortalContratoAceiteCreateInput, PortalContratoAceiteUncheckedCreateInput>
+    /**
+     * In case the PortalContratoAceite was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PortalContratoAceiteUpdateInput, PortalContratoAceiteUncheckedUpdateInput>
+  }
+
+  /**
+   * PortalContratoAceite delete
+   */
+  export type PortalContratoAceiteDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContratoAceite
+     */
+    select?: PortalContratoAceiteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContratoAceite
+     */
+    omit?: PortalContratoAceiteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoAceiteInclude<ExtArgs> | null
+    /**
+     * Filter which PortalContratoAceite to delete.
+     */
+    where: PortalContratoAceiteWhereUniqueInput
+  }
+
+  /**
+   * PortalContratoAceite deleteMany
+   */
+  export type PortalContratoAceiteDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalContratoAceites to delete
+     */
+    where?: PortalContratoAceiteWhereInput
+    /**
+     * Limit how many PortalContratoAceites to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalContratoAceite without action
+   */
+  export type PortalContratoAceiteDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalContratoAceite
+     */
+    select?: PortalContratoAceiteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalContratoAceite
+     */
+    omit?: PortalContratoAceiteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalContratoAceiteInclude<ExtArgs> | null
   }
 
 
@@ -41087,6 +44439,58 @@ export namespace Prisma {
   export type PortalAcessoScalarFieldEnum = (typeof PortalAcessoScalarFieldEnum)[keyof typeof PortalAcessoScalarFieldEnum]
 
 
+  export const PortalContaScalarFieldEnum: {
+    clienteId: 'clienteId',
+    nomeFantasia: 'nomeFantasia',
+    telefone: 'telefone',
+    contato: 'contato',
+    cep: 'cep',
+    logradouro: 'logradouro',
+    numero: 'numero',
+    complemento: 'complemento',
+    bairro: 'bairro',
+    cidade: 'cidade',
+    estado: 'estado',
+    inscricaoEstadual: 'inscricaoEstadual',
+    atualizadoEm: 'atualizadoEm'
+  };
+
+  export type PortalContaScalarFieldEnum = (typeof PortalContaScalarFieldEnum)[keyof typeof PortalContaScalarFieldEnum]
+
+
+  export const PortalContratoScalarFieldEnum: {
+    id: 'id',
+    clienteId: 'clienteId',
+    versao: 'versao',
+    texto: 'texto',
+    textoHash: 'textoHash',
+    status: 'status',
+    criadoEm: 'criadoEm',
+    atualizadoEm: 'atualizadoEm'
+  };
+
+  export type PortalContratoScalarFieldEnum = (typeof PortalContratoScalarFieldEnum)[keyof typeof PortalContratoScalarFieldEnum]
+
+
+  export const PortalContratoAceiteScalarFieldEnum: {
+    id: 'id',
+    contratoId: 'contratoId',
+    clienteId: 'clienteId',
+    versao: 'versao',
+    textoHash: 'textoHash',
+    representanteNome: 'representanteNome',
+    representanteCpf: 'representanteCpf',
+    representanteEmail: 'representanteEmail',
+    empresaNome: 'empresaNome',
+    empresaCnpj: 'empresaCnpj',
+    ip: 'ip',
+    userAgent: 'userAgent',
+    aceitoEm: 'aceitoEm'
+  };
+
+  export type PortalContratoAceiteScalarFieldEnum = (typeof PortalContratoAceiteScalarFieldEnum)[keyof typeof PortalContratoAceiteScalarFieldEnum]
+
+
   export const PortalCadastroScalarFieldEnum: {
     id: 'id',
     nome: 'nome',
@@ -41655,6 +45059,54 @@ export namespace Prisma {
   };
 
   export type PortalAcessoOrderByRelevanceFieldEnum = (typeof PortalAcessoOrderByRelevanceFieldEnum)[keyof typeof PortalAcessoOrderByRelevanceFieldEnum]
+
+
+  export const PortalContaOrderByRelevanceFieldEnum: {
+    clienteId: 'clienteId',
+    nomeFantasia: 'nomeFantasia',
+    telefone: 'telefone',
+    contato: 'contato',
+    cep: 'cep',
+    logradouro: 'logradouro',
+    numero: 'numero',
+    complemento: 'complemento',
+    bairro: 'bairro',
+    cidade: 'cidade',
+    estado: 'estado',
+    inscricaoEstadual: 'inscricaoEstadual'
+  };
+
+  export type PortalContaOrderByRelevanceFieldEnum = (typeof PortalContaOrderByRelevanceFieldEnum)[keyof typeof PortalContaOrderByRelevanceFieldEnum]
+
+
+  export const PortalContratoOrderByRelevanceFieldEnum: {
+    id: 'id',
+    clienteId: 'clienteId',
+    versao: 'versao',
+    texto: 'texto',
+    textoHash: 'textoHash',
+    status: 'status'
+  };
+
+  export type PortalContratoOrderByRelevanceFieldEnum = (typeof PortalContratoOrderByRelevanceFieldEnum)[keyof typeof PortalContratoOrderByRelevanceFieldEnum]
+
+
+  export const PortalContratoAceiteOrderByRelevanceFieldEnum: {
+    id: 'id',
+    contratoId: 'contratoId',
+    clienteId: 'clienteId',
+    versao: 'versao',
+    textoHash: 'textoHash',
+    representanteNome: 'representanteNome',
+    representanteCpf: 'representanteCpf',
+    representanteEmail: 'representanteEmail',
+    empresaNome: 'empresaNome',
+    empresaCnpj: 'empresaCnpj',
+    ip: 'ip',
+    userAgent: 'userAgent'
+  };
+
+  export type PortalContratoAceiteOrderByRelevanceFieldEnum = (typeof PortalContratoAceiteOrderByRelevanceFieldEnum)[keyof typeof PortalContratoAceiteOrderByRelevanceFieldEnum]
 
 
   export const PortalCadastroOrderByRelevanceFieldEnum: {
@@ -42425,6 +45877,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkListRelationFilter
     paradasEntrega?: ParadaEntregaListRelationFilter
     portalAcesso?: XOR<PortalAcessoNullableScalarRelationFilter, PortalAcessoWhereInput> | null
+    portalConta?: XOR<PortalContaNullableScalarRelationFilter, PortalContaWhereInput> | null
+    portalContrato?: XOR<PortalContratoNullableScalarRelationFilter, PortalContratoWhereInput> | null
   }
 
   export type ClienteOrderByWithRelationInput = {
@@ -42457,6 +45911,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkOrderByRelationAggregateInput
     paradasEntrega?: ParadaEntregaOrderByRelationAggregateInput
     portalAcesso?: PortalAcessoOrderByWithRelationInput
+    portalConta?: PortalContaOrderByWithRelationInput
+    portalContrato?: PortalContratoOrderByWithRelationInput
     _relevance?: ClienteOrderByRelevanceInput
   }
 
@@ -42493,6 +45949,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkListRelationFilter
     paradasEntrega?: ParadaEntregaListRelationFilter
     portalAcesso?: XOR<PortalAcessoNullableScalarRelationFilter, PortalAcessoWhereInput> | null
+    portalConta?: XOR<PortalContaNullableScalarRelationFilter, PortalContaWhereInput> | null
+    portalContrato?: XOR<PortalContratoNullableScalarRelationFilter, PortalContratoWhereInput> | null
   }, "id" | "externalId">
 
   export type ClienteOrderByWithAggregationInput = {
@@ -42977,6 +46435,272 @@ export namespace Prisma {
     ativo?: BoolWithAggregatesFilter<"PortalAcesso"> | boolean
     criadoEm?: DateTimeWithAggregatesFilter<"PortalAcesso"> | Date | string
     atualizadoEm?: DateTimeWithAggregatesFilter<"PortalAcesso"> | Date | string
+  }
+
+  export type PortalContaWhereInput = {
+    AND?: PortalContaWhereInput | PortalContaWhereInput[]
+    OR?: PortalContaWhereInput[]
+    NOT?: PortalContaWhereInput | PortalContaWhereInput[]
+    clienteId?: StringFilter<"PortalConta"> | string
+    nomeFantasia?: StringNullableFilter<"PortalConta"> | string | null
+    telefone?: StringFilter<"PortalConta"> | string
+    contato?: StringFilter<"PortalConta"> | string
+    cep?: StringFilter<"PortalConta"> | string
+    logradouro?: StringFilter<"PortalConta"> | string
+    numero?: StringFilter<"PortalConta"> | string
+    complemento?: StringNullableFilter<"PortalConta"> | string | null
+    bairro?: StringFilter<"PortalConta"> | string
+    cidade?: StringFilter<"PortalConta"> | string
+    estado?: StringFilter<"PortalConta"> | string
+    inscricaoEstadual?: StringNullableFilter<"PortalConta"> | string | null
+    atualizadoEm?: DateTimeFilter<"PortalConta"> | Date | string
+    cliente?: XOR<ClienteScalarRelationFilter, ClienteWhereInput>
+  }
+
+  export type PortalContaOrderByWithRelationInput = {
+    clienteId?: SortOrder
+    nomeFantasia?: SortOrderInput | SortOrder
+    telefone?: SortOrder
+    contato?: SortOrder
+    cep?: SortOrder
+    logradouro?: SortOrder
+    numero?: SortOrder
+    complemento?: SortOrderInput | SortOrder
+    bairro?: SortOrder
+    cidade?: SortOrder
+    estado?: SortOrder
+    inscricaoEstadual?: SortOrderInput | SortOrder
+    atualizadoEm?: SortOrder
+    cliente?: ClienteOrderByWithRelationInput
+    _relevance?: PortalContaOrderByRelevanceInput
+  }
+
+  export type PortalContaWhereUniqueInput = Prisma.AtLeast<{
+    clienteId?: string
+    AND?: PortalContaWhereInput | PortalContaWhereInput[]
+    OR?: PortalContaWhereInput[]
+    NOT?: PortalContaWhereInput | PortalContaWhereInput[]
+    nomeFantasia?: StringNullableFilter<"PortalConta"> | string | null
+    telefone?: StringFilter<"PortalConta"> | string
+    contato?: StringFilter<"PortalConta"> | string
+    cep?: StringFilter<"PortalConta"> | string
+    logradouro?: StringFilter<"PortalConta"> | string
+    numero?: StringFilter<"PortalConta"> | string
+    complemento?: StringNullableFilter<"PortalConta"> | string | null
+    bairro?: StringFilter<"PortalConta"> | string
+    cidade?: StringFilter<"PortalConta"> | string
+    estado?: StringFilter<"PortalConta"> | string
+    inscricaoEstadual?: StringNullableFilter<"PortalConta"> | string | null
+    atualizadoEm?: DateTimeFilter<"PortalConta"> | Date | string
+    cliente?: XOR<ClienteScalarRelationFilter, ClienteWhereInput>
+  }, "clienteId">
+
+  export type PortalContaOrderByWithAggregationInput = {
+    clienteId?: SortOrder
+    nomeFantasia?: SortOrderInput | SortOrder
+    telefone?: SortOrder
+    contato?: SortOrder
+    cep?: SortOrder
+    logradouro?: SortOrder
+    numero?: SortOrder
+    complemento?: SortOrderInput | SortOrder
+    bairro?: SortOrder
+    cidade?: SortOrder
+    estado?: SortOrder
+    inscricaoEstadual?: SortOrderInput | SortOrder
+    atualizadoEm?: SortOrder
+    _count?: PortalContaCountOrderByAggregateInput
+    _max?: PortalContaMaxOrderByAggregateInput
+    _min?: PortalContaMinOrderByAggregateInput
+  }
+
+  export type PortalContaScalarWhereWithAggregatesInput = {
+    AND?: PortalContaScalarWhereWithAggregatesInput | PortalContaScalarWhereWithAggregatesInput[]
+    OR?: PortalContaScalarWhereWithAggregatesInput[]
+    NOT?: PortalContaScalarWhereWithAggregatesInput | PortalContaScalarWhereWithAggregatesInput[]
+    clienteId?: StringWithAggregatesFilter<"PortalConta"> | string
+    nomeFantasia?: StringNullableWithAggregatesFilter<"PortalConta"> | string | null
+    telefone?: StringWithAggregatesFilter<"PortalConta"> | string
+    contato?: StringWithAggregatesFilter<"PortalConta"> | string
+    cep?: StringWithAggregatesFilter<"PortalConta"> | string
+    logradouro?: StringWithAggregatesFilter<"PortalConta"> | string
+    numero?: StringWithAggregatesFilter<"PortalConta"> | string
+    complemento?: StringNullableWithAggregatesFilter<"PortalConta"> | string | null
+    bairro?: StringWithAggregatesFilter<"PortalConta"> | string
+    cidade?: StringWithAggregatesFilter<"PortalConta"> | string
+    estado?: StringWithAggregatesFilter<"PortalConta"> | string
+    inscricaoEstadual?: StringNullableWithAggregatesFilter<"PortalConta"> | string | null
+    atualizadoEm?: DateTimeWithAggregatesFilter<"PortalConta"> | Date | string
+  }
+
+  export type PortalContratoWhereInput = {
+    AND?: PortalContratoWhereInput | PortalContratoWhereInput[]
+    OR?: PortalContratoWhereInput[]
+    NOT?: PortalContratoWhereInput | PortalContratoWhereInput[]
+    id?: StringFilter<"PortalContrato"> | string
+    clienteId?: StringFilter<"PortalContrato"> | string
+    versao?: StringFilter<"PortalContrato"> | string
+    texto?: StringFilter<"PortalContrato"> | string
+    textoHash?: StringFilter<"PortalContrato"> | string
+    status?: StringFilter<"PortalContrato"> | string
+    criadoEm?: DateTimeFilter<"PortalContrato"> | Date | string
+    atualizadoEm?: DateTimeFilter<"PortalContrato"> | Date | string
+    cliente?: XOR<ClienteScalarRelationFilter, ClienteWhereInput>
+    aceites?: PortalContratoAceiteListRelationFilter
+  }
+
+  export type PortalContratoOrderByWithRelationInput = {
+    id?: SortOrder
+    clienteId?: SortOrder
+    versao?: SortOrder
+    texto?: SortOrder
+    textoHash?: SortOrder
+    status?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    cliente?: ClienteOrderByWithRelationInput
+    aceites?: PortalContratoAceiteOrderByRelationAggregateInput
+    _relevance?: PortalContratoOrderByRelevanceInput
+  }
+
+  export type PortalContratoWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    clienteId?: string
+    AND?: PortalContratoWhereInput | PortalContratoWhereInput[]
+    OR?: PortalContratoWhereInput[]
+    NOT?: PortalContratoWhereInput | PortalContratoWhereInput[]
+    versao?: StringFilter<"PortalContrato"> | string
+    texto?: StringFilter<"PortalContrato"> | string
+    textoHash?: StringFilter<"PortalContrato"> | string
+    status?: StringFilter<"PortalContrato"> | string
+    criadoEm?: DateTimeFilter<"PortalContrato"> | Date | string
+    atualizadoEm?: DateTimeFilter<"PortalContrato"> | Date | string
+    cliente?: XOR<ClienteScalarRelationFilter, ClienteWhereInput>
+    aceites?: PortalContratoAceiteListRelationFilter
+  }, "id" | "clienteId">
+
+  export type PortalContratoOrderByWithAggregationInput = {
+    id?: SortOrder
+    clienteId?: SortOrder
+    versao?: SortOrder
+    texto?: SortOrder
+    textoHash?: SortOrder
+    status?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    _count?: PortalContratoCountOrderByAggregateInput
+    _max?: PortalContratoMaxOrderByAggregateInput
+    _min?: PortalContratoMinOrderByAggregateInput
+  }
+
+  export type PortalContratoScalarWhereWithAggregatesInput = {
+    AND?: PortalContratoScalarWhereWithAggregatesInput | PortalContratoScalarWhereWithAggregatesInput[]
+    OR?: PortalContratoScalarWhereWithAggregatesInput[]
+    NOT?: PortalContratoScalarWhereWithAggregatesInput | PortalContratoScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PortalContrato"> | string
+    clienteId?: StringWithAggregatesFilter<"PortalContrato"> | string
+    versao?: StringWithAggregatesFilter<"PortalContrato"> | string
+    texto?: StringWithAggregatesFilter<"PortalContrato"> | string
+    textoHash?: StringWithAggregatesFilter<"PortalContrato"> | string
+    status?: StringWithAggregatesFilter<"PortalContrato"> | string
+    criadoEm?: DateTimeWithAggregatesFilter<"PortalContrato"> | Date | string
+    atualizadoEm?: DateTimeWithAggregatesFilter<"PortalContrato"> | Date | string
+  }
+
+  export type PortalContratoAceiteWhereInput = {
+    AND?: PortalContratoAceiteWhereInput | PortalContratoAceiteWhereInput[]
+    OR?: PortalContratoAceiteWhereInput[]
+    NOT?: PortalContratoAceiteWhereInput | PortalContratoAceiteWhereInput[]
+    id?: StringFilter<"PortalContratoAceite"> | string
+    contratoId?: StringFilter<"PortalContratoAceite"> | string
+    clienteId?: StringFilter<"PortalContratoAceite"> | string
+    versao?: StringFilter<"PortalContratoAceite"> | string
+    textoHash?: StringFilter<"PortalContratoAceite"> | string
+    representanteNome?: StringFilter<"PortalContratoAceite"> | string
+    representanteCpf?: StringFilter<"PortalContratoAceite"> | string
+    representanteEmail?: StringFilter<"PortalContratoAceite"> | string
+    empresaNome?: StringFilter<"PortalContratoAceite"> | string
+    empresaCnpj?: StringFilter<"PortalContratoAceite"> | string
+    ip?: StringFilter<"PortalContratoAceite"> | string
+    userAgent?: StringFilter<"PortalContratoAceite"> | string
+    aceitoEm?: DateTimeFilter<"PortalContratoAceite"> | Date | string
+    contrato?: XOR<PortalContratoScalarRelationFilter, PortalContratoWhereInput>
+  }
+
+  export type PortalContratoAceiteOrderByWithRelationInput = {
+    id?: SortOrder
+    contratoId?: SortOrder
+    clienteId?: SortOrder
+    versao?: SortOrder
+    textoHash?: SortOrder
+    representanteNome?: SortOrder
+    representanteCpf?: SortOrder
+    representanteEmail?: SortOrder
+    empresaNome?: SortOrder
+    empresaCnpj?: SortOrder
+    ip?: SortOrder
+    userAgent?: SortOrder
+    aceitoEm?: SortOrder
+    contrato?: PortalContratoOrderByWithRelationInput
+    _relevance?: PortalContratoAceiteOrderByRelevanceInput
+  }
+
+  export type PortalContratoAceiteWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: PortalContratoAceiteWhereInput | PortalContratoAceiteWhereInput[]
+    OR?: PortalContratoAceiteWhereInput[]
+    NOT?: PortalContratoAceiteWhereInput | PortalContratoAceiteWhereInput[]
+    contratoId?: StringFilter<"PortalContratoAceite"> | string
+    clienteId?: StringFilter<"PortalContratoAceite"> | string
+    versao?: StringFilter<"PortalContratoAceite"> | string
+    textoHash?: StringFilter<"PortalContratoAceite"> | string
+    representanteNome?: StringFilter<"PortalContratoAceite"> | string
+    representanteCpf?: StringFilter<"PortalContratoAceite"> | string
+    representanteEmail?: StringFilter<"PortalContratoAceite"> | string
+    empresaNome?: StringFilter<"PortalContratoAceite"> | string
+    empresaCnpj?: StringFilter<"PortalContratoAceite"> | string
+    ip?: StringFilter<"PortalContratoAceite"> | string
+    userAgent?: StringFilter<"PortalContratoAceite"> | string
+    aceitoEm?: DateTimeFilter<"PortalContratoAceite"> | Date | string
+    contrato?: XOR<PortalContratoScalarRelationFilter, PortalContratoWhereInput>
+  }, "id">
+
+  export type PortalContratoAceiteOrderByWithAggregationInput = {
+    id?: SortOrder
+    contratoId?: SortOrder
+    clienteId?: SortOrder
+    versao?: SortOrder
+    textoHash?: SortOrder
+    representanteNome?: SortOrder
+    representanteCpf?: SortOrder
+    representanteEmail?: SortOrder
+    empresaNome?: SortOrder
+    empresaCnpj?: SortOrder
+    ip?: SortOrder
+    userAgent?: SortOrder
+    aceitoEm?: SortOrder
+    _count?: PortalContratoAceiteCountOrderByAggregateInput
+    _max?: PortalContratoAceiteMaxOrderByAggregateInput
+    _min?: PortalContratoAceiteMinOrderByAggregateInput
+  }
+
+  export type PortalContratoAceiteScalarWhereWithAggregatesInput = {
+    AND?: PortalContratoAceiteScalarWhereWithAggregatesInput | PortalContratoAceiteScalarWhereWithAggregatesInput[]
+    OR?: PortalContratoAceiteScalarWhereWithAggregatesInput[]
+    NOT?: PortalContratoAceiteScalarWhereWithAggregatesInput | PortalContratoAceiteScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PortalContratoAceite"> | string
+    contratoId?: StringWithAggregatesFilter<"PortalContratoAceite"> | string
+    clienteId?: StringWithAggregatesFilter<"PortalContratoAceite"> | string
+    versao?: StringWithAggregatesFilter<"PortalContratoAceite"> | string
+    textoHash?: StringWithAggregatesFilter<"PortalContratoAceite"> | string
+    representanteNome?: StringWithAggregatesFilter<"PortalContratoAceite"> | string
+    representanteCpf?: StringWithAggregatesFilter<"PortalContratoAceite"> | string
+    representanteEmail?: StringWithAggregatesFilter<"PortalContratoAceite"> | string
+    empresaNome?: StringWithAggregatesFilter<"PortalContratoAceite"> | string
+    empresaCnpj?: StringWithAggregatesFilter<"PortalContratoAceite"> | string
+    ip?: StringWithAggregatesFilter<"PortalContratoAceite"> | string
+    userAgent?: StringWithAggregatesFilter<"PortalContratoAceite"> | string
+    aceitoEm?: DateTimeWithAggregatesFilter<"PortalContratoAceite"> | Date | string
   }
 
   export type PortalCadastroWhereInput = {
@@ -45474,6 +49198,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateInput = {
@@ -45505,6 +49231,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUpdateInput = {
@@ -45536,6 +49264,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateInput = {
@@ -45567,6 +49297,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteCreateManyInput = {
@@ -46108,6 +49840,308 @@ export namespace Prisma {
     ativo?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalContaCreateInput = {
+    nomeFantasia?: string | null
+    telefone?: string
+    contato?: string
+    cep?: string
+    logradouro?: string
+    numero?: string
+    complemento?: string | null
+    bairro?: string
+    cidade?: string
+    estado?: string
+    inscricaoEstadual?: string | null
+    atualizadoEm?: Date | string
+    cliente: ClienteCreateNestedOneWithoutPortalContaInput
+  }
+
+  export type PortalContaUncheckedCreateInput = {
+    clienteId: string
+    nomeFantasia?: string | null
+    telefone?: string
+    contato?: string
+    cep?: string
+    logradouro?: string
+    numero?: string
+    complemento?: string | null
+    bairro?: string
+    cidade?: string
+    estado?: string
+    inscricaoEstadual?: string | null
+    atualizadoEm?: Date | string
+  }
+
+  export type PortalContaUpdateInput = {
+    nomeFantasia?: NullableStringFieldUpdateOperationsInput | string | null
+    telefone?: StringFieldUpdateOperationsInput | string
+    contato?: StringFieldUpdateOperationsInput | string
+    cep?: StringFieldUpdateOperationsInput | string
+    logradouro?: StringFieldUpdateOperationsInput | string
+    numero?: StringFieldUpdateOperationsInput | string
+    complemento?: NullableStringFieldUpdateOperationsInput | string | null
+    bairro?: StringFieldUpdateOperationsInput | string
+    cidade?: StringFieldUpdateOperationsInput | string
+    estado?: StringFieldUpdateOperationsInput | string
+    inscricaoEstadual?: NullableStringFieldUpdateOperationsInput | string | null
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneRequiredWithoutPortalContaNestedInput
+  }
+
+  export type PortalContaUncheckedUpdateInput = {
+    clienteId?: StringFieldUpdateOperationsInput | string
+    nomeFantasia?: NullableStringFieldUpdateOperationsInput | string | null
+    telefone?: StringFieldUpdateOperationsInput | string
+    contato?: StringFieldUpdateOperationsInput | string
+    cep?: StringFieldUpdateOperationsInput | string
+    logradouro?: StringFieldUpdateOperationsInput | string
+    numero?: StringFieldUpdateOperationsInput | string
+    complemento?: NullableStringFieldUpdateOperationsInput | string | null
+    bairro?: StringFieldUpdateOperationsInput | string
+    cidade?: StringFieldUpdateOperationsInput | string
+    estado?: StringFieldUpdateOperationsInput | string
+    inscricaoEstadual?: NullableStringFieldUpdateOperationsInput | string | null
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalContaCreateManyInput = {
+    clienteId: string
+    nomeFantasia?: string | null
+    telefone?: string
+    contato?: string
+    cep?: string
+    logradouro?: string
+    numero?: string
+    complemento?: string | null
+    bairro?: string
+    cidade?: string
+    estado?: string
+    inscricaoEstadual?: string | null
+    atualizadoEm?: Date | string
+  }
+
+  export type PortalContaUpdateManyMutationInput = {
+    nomeFantasia?: NullableStringFieldUpdateOperationsInput | string | null
+    telefone?: StringFieldUpdateOperationsInput | string
+    contato?: StringFieldUpdateOperationsInput | string
+    cep?: StringFieldUpdateOperationsInput | string
+    logradouro?: StringFieldUpdateOperationsInput | string
+    numero?: StringFieldUpdateOperationsInput | string
+    complemento?: NullableStringFieldUpdateOperationsInput | string | null
+    bairro?: StringFieldUpdateOperationsInput | string
+    cidade?: StringFieldUpdateOperationsInput | string
+    estado?: StringFieldUpdateOperationsInput | string
+    inscricaoEstadual?: NullableStringFieldUpdateOperationsInput | string | null
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalContaUncheckedUpdateManyInput = {
+    clienteId?: StringFieldUpdateOperationsInput | string
+    nomeFantasia?: NullableStringFieldUpdateOperationsInput | string | null
+    telefone?: StringFieldUpdateOperationsInput | string
+    contato?: StringFieldUpdateOperationsInput | string
+    cep?: StringFieldUpdateOperationsInput | string
+    logradouro?: StringFieldUpdateOperationsInput | string
+    numero?: StringFieldUpdateOperationsInput | string
+    complemento?: NullableStringFieldUpdateOperationsInput | string | null
+    bairro?: StringFieldUpdateOperationsInput | string
+    cidade?: StringFieldUpdateOperationsInput | string
+    estado?: StringFieldUpdateOperationsInput | string
+    inscricaoEstadual?: NullableStringFieldUpdateOperationsInput | string | null
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalContratoCreateInput = {
+    id?: string
+    versao: string
+    texto: string
+    textoHash: string
+    status?: string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    cliente: ClienteCreateNestedOneWithoutPortalContratoInput
+    aceites?: PortalContratoAceiteCreateNestedManyWithoutContratoInput
+  }
+
+  export type PortalContratoUncheckedCreateInput = {
+    id?: string
+    clienteId: string
+    versao: string
+    texto: string
+    textoHash: string
+    status?: string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    aceites?: PortalContratoAceiteUncheckedCreateNestedManyWithoutContratoInput
+  }
+
+  export type PortalContratoUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    versao?: StringFieldUpdateOperationsInput | string
+    texto?: StringFieldUpdateOperationsInput | string
+    textoHash?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneRequiredWithoutPortalContratoNestedInput
+    aceites?: PortalContratoAceiteUpdateManyWithoutContratoNestedInput
+  }
+
+  export type PortalContratoUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: StringFieldUpdateOperationsInput | string
+    versao?: StringFieldUpdateOperationsInput | string
+    texto?: StringFieldUpdateOperationsInput | string
+    textoHash?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    aceites?: PortalContratoAceiteUncheckedUpdateManyWithoutContratoNestedInput
+  }
+
+  export type PortalContratoCreateManyInput = {
+    id?: string
+    clienteId: string
+    versao: string
+    texto: string
+    textoHash: string
+    status?: string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PortalContratoUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    versao?: StringFieldUpdateOperationsInput | string
+    texto?: StringFieldUpdateOperationsInput | string
+    textoHash?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalContratoUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: StringFieldUpdateOperationsInput | string
+    versao?: StringFieldUpdateOperationsInput | string
+    texto?: StringFieldUpdateOperationsInput | string
+    textoHash?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalContratoAceiteCreateInput = {
+    id?: string
+    clienteId: string
+    versao: string
+    textoHash: string
+    representanteNome: string
+    representanteCpf: string
+    representanteEmail: string
+    empresaNome: string
+    empresaCnpj: string
+    ip: string
+    userAgent: string
+    aceitoEm?: Date | string
+    contrato: PortalContratoCreateNestedOneWithoutAceitesInput
+  }
+
+  export type PortalContratoAceiteUncheckedCreateInput = {
+    id?: string
+    contratoId: string
+    clienteId: string
+    versao: string
+    textoHash: string
+    representanteNome: string
+    representanteCpf: string
+    representanteEmail: string
+    empresaNome: string
+    empresaCnpj: string
+    ip: string
+    userAgent: string
+    aceitoEm?: Date | string
+  }
+
+  export type PortalContratoAceiteUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: StringFieldUpdateOperationsInput | string
+    versao?: StringFieldUpdateOperationsInput | string
+    textoHash?: StringFieldUpdateOperationsInput | string
+    representanteNome?: StringFieldUpdateOperationsInput | string
+    representanteCpf?: StringFieldUpdateOperationsInput | string
+    representanteEmail?: StringFieldUpdateOperationsInput | string
+    empresaNome?: StringFieldUpdateOperationsInput | string
+    empresaCnpj?: StringFieldUpdateOperationsInput | string
+    ip?: StringFieldUpdateOperationsInput | string
+    userAgent?: StringFieldUpdateOperationsInput | string
+    aceitoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    contrato?: PortalContratoUpdateOneRequiredWithoutAceitesNestedInput
+  }
+
+  export type PortalContratoAceiteUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contratoId?: StringFieldUpdateOperationsInput | string
+    clienteId?: StringFieldUpdateOperationsInput | string
+    versao?: StringFieldUpdateOperationsInput | string
+    textoHash?: StringFieldUpdateOperationsInput | string
+    representanteNome?: StringFieldUpdateOperationsInput | string
+    representanteCpf?: StringFieldUpdateOperationsInput | string
+    representanteEmail?: StringFieldUpdateOperationsInput | string
+    empresaNome?: StringFieldUpdateOperationsInput | string
+    empresaCnpj?: StringFieldUpdateOperationsInput | string
+    ip?: StringFieldUpdateOperationsInput | string
+    userAgent?: StringFieldUpdateOperationsInput | string
+    aceitoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalContratoAceiteCreateManyInput = {
+    id?: string
+    contratoId: string
+    clienteId: string
+    versao: string
+    textoHash: string
+    representanteNome: string
+    representanteCpf: string
+    representanteEmail: string
+    empresaNome: string
+    empresaCnpj: string
+    ip: string
+    userAgent: string
+    aceitoEm?: Date | string
+  }
+
+  export type PortalContratoAceiteUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: StringFieldUpdateOperationsInput | string
+    versao?: StringFieldUpdateOperationsInput | string
+    textoHash?: StringFieldUpdateOperationsInput | string
+    representanteNome?: StringFieldUpdateOperationsInput | string
+    representanteCpf?: StringFieldUpdateOperationsInput | string
+    representanteEmail?: StringFieldUpdateOperationsInput | string
+    empresaNome?: StringFieldUpdateOperationsInput | string
+    empresaCnpj?: StringFieldUpdateOperationsInput | string
+    ip?: StringFieldUpdateOperationsInput | string
+    userAgent?: StringFieldUpdateOperationsInput | string
+    aceitoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalContratoAceiteUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contratoId?: StringFieldUpdateOperationsInput | string
+    clienteId?: StringFieldUpdateOperationsInput | string
+    versao?: StringFieldUpdateOperationsInput | string
+    textoHash?: StringFieldUpdateOperationsInput | string
+    representanteNome?: StringFieldUpdateOperationsInput | string
+    representanteCpf?: StringFieldUpdateOperationsInput | string
+    representanteEmail?: StringFieldUpdateOperationsInput | string
+    empresaNome?: StringFieldUpdateOperationsInput | string
+    empresaCnpj?: StringFieldUpdateOperationsInput | string
+    ip?: StringFieldUpdateOperationsInput | string
+    userAgent?: StringFieldUpdateOperationsInput | string
+    aceitoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type PortalCadastroCreateInput = {
@@ -48988,6 +53022,16 @@ export namespace Prisma {
     isNot?: PortalAcessoWhereInput | null
   }
 
+  export type PortalContaNullableScalarRelationFilter = {
+    is?: PortalContaWhereInput | null
+    isNot?: PortalContaWhereInput | null
+  }
+
+  export type PortalContratoNullableScalarRelationFilter = {
+    is?: PortalContratoWhereInput | null
+    isNot?: PortalContratoWhereInput | null
+  }
+
   export type PedidoOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -49577,6 +53621,168 @@ export namespace Prisma {
     ativo?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
+  }
+
+  export type PortalContaOrderByRelevanceInput = {
+    fields: PortalContaOrderByRelevanceFieldEnum | PortalContaOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type PortalContaCountOrderByAggregateInput = {
+    clienteId?: SortOrder
+    nomeFantasia?: SortOrder
+    telefone?: SortOrder
+    contato?: SortOrder
+    cep?: SortOrder
+    logradouro?: SortOrder
+    numero?: SortOrder
+    complemento?: SortOrder
+    bairro?: SortOrder
+    cidade?: SortOrder
+    estado?: SortOrder
+    inscricaoEstadual?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PortalContaMaxOrderByAggregateInput = {
+    clienteId?: SortOrder
+    nomeFantasia?: SortOrder
+    telefone?: SortOrder
+    contato?: SortOrder
+    cep?: SortOrder
+    logradouro?: SortOrder
+    numero?: SortOrder
+    complemento?: SortOrder
+    bairro?: SortOrder
+    cidade?: SortOrder
+    estado?: SortOrder
+    inscricaoEstadual?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PortalContaMinOrderByAggregateInput = {
+    clienteId?: SortOrder
+    nomeFantasia?: SortOrder
+    telefone?: SortOrder
+    contato?: SortOrder
+    cep?: SortOrder
+    logradouro?: SortOrder
+    numero?: SortOrder
+    complemento?: SortOrder
+    bairro?: SortOrder
+    cidade?: SortOrder
+    estado?: SortOrder
+    inscricaoEstadual?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PortalContratoAceiteListRelationFilter = {
+    every?: PortalContratoAceiteWhereInput
+    some?: PortalContratoAceiteWhereInput
+    none?: PortalContratoAceiteWhereInput
+  }
+
+  export type PortalContratoAceiteOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type PortalContratoOrderByRelevanceInput = {
+    fields: PortalContratoOrderByRelevanceFieldEnum | PortalContratoOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type PortalContratoCountOrderByAggregateInput = {
+    id?: SortOrder
+    clienteId?: SortOrder
+    versao?: SortOrder
+    texto?: SortOrder
+    textoHash?: SortOrder
+    status?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PortalContratoMaxOrderByAggregateInput = {
+    id?: SortOrder
+    clienteId?: SortOrder
+    versao?: SortOrder
+    texto?: SortOrder
+    textoHash?: SortOrder
+    status?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PortalContratoMinOrderByAggregateInput = {
+    id?: SortOrder
+    clienteId?: SortOrder
+    versao?: SortOrder
+    texto?: SortOrder
+    textoHash?: SortOrder
+    status?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PortalContratoScalarRelationFilter = {
+    is?: PortalContratoWhereInput
+    isNot?: PortalContratoWhereInput
+  }
+
+  export type PortalContratoAceiteOrderByRelevanceInput = {
+    fields: PortalContratoAceiteOrderByRelevanceFieldEnum | PortalContratoAceiteOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type PortalContratoAceiteCountOrderByAggregateInput = {
+    id?: SortOrder
+    contratoId?: SortOrder
+    clienteId?: SortOrder
+    versao?: SortOrder
+    textoHash?: SortOrder
+    representanteNome?: SortOrder
+    representanteCpf?: SortOrder
+    representanteEmail?: SortOrder
+    empresaNome?: SortOrder
+    empresaCnpj?: SortOrder
+    ip?: SortOrder
+    userAgent?: SortOrder
+    aceitoEm?: SortOrder
+  }
+
+  export type PortalContratoAceiteMaxOrderByAggregateInput = {
+    id?: SortOrder
+    contratoId?: SortOrder
+    clienteId?: SortOrder
+    versao?: SortOrder
+    textoHash?: SortOrder
+    representanteNome?: SortOrder
+    representanteCpf?: SortOrder
+    representanteEmail?: SortOrder
+    empresaNome?: SortOrder
+    empresaCnpj?: SortOrder
+    ip?: SortOrder
+    userAgent?: SortOrder
+    aceitoEm?: SortOrder
+  }
+
+  export type PortalContratoAceiteMinOrderByAggregateInput = {
+    id?: SortOrder
+    contratoId?: SortOrder
+    clienteId?: SortOrder
+    versao?: SortOrder
+    textoHash?: SortOrder
+    representanteNome?: SortOrder
+    representanteCpf?: SortOrder
+    representanteEmail?: SortOrder
+    empresaNome?: SortOrder
+    empresaCnpj?: SortOrder
+    ip?: SortOrder
+    userAgent?: SortOrder
+    aceitoEm?: SortOrder
   }
 
   export type PortalCadastroOrderByRelevanceInput = {
@@ -51994,6 +56200,18 @@ export namespace Prisma {
     connect?: PortalAcessoWhereUniqueInput
   }
 
+  export type PortalContaCreateNestedOneWithoutClienteInput = {
+    create?: XOR<PortalContaCreateWithoutClienteInput, PortalContaUncheckedCreateWithoutClienteInput>
+    connectOrCreate?: PortalContaCreateOrConnectWithoutClienteInput
+    connect?: PortalContaWhereUniqueInput
+  }
+
+  export type PortalContratoCreateNestedOneWithoutClienteInput = {
+    create?: XOR<PortalContratoCreateWithoutClienteInput, PortalContratoUncheckedCreateWithoutClienteInput>
+    connectOrCreate?: PortalContratoCreateOrConnectWithoutClienteInput
+    connect?: PortalContratoWhereUniqueInput
+  }
+
   export type PedidoUncheckedCreateNestedManyWithoutClienteInput = {
     create?: XOR<PedidoCreateWithoutClienteInput, PedidoUncheckedCreateWithoutClienteInput> | PedidoCreateWithoutClienteInput[] | PedidoUncheckedCreateWithoutClienteInput[]
     connectOrCreate?: PedidoCreateOrConnectWithoutClienteInput | PedidoCreateOrConnectWithoutClienteInput[]
@@ -52067,6 +56285,18 @@ export namespace Prisma {
     create?: XOR<PortalAcessoCreateWithoutClienteInput, PortalAcessoUncheckedCreateWithoutClienteInput>
     connectOrCreate?: PortalAcessoCreateOrConnectWithoutClienteInput
     connect?: PortalAcessoWhereUniqueInput
+  }
+
+  export type PortalContaUncheckedCreateNestedOneWithoutClienteInput = {
+    create?: XOR<PortalContaCreateWithoutClienteInput, PortalContaUncheckedCreateWithoutClienteInput>
+    connectOrCreate?: PortalContaCreateOrConnectWithoutClienteInput
+    connect?: PortalContaWhereUniqueInput
+  }
+
+  export type PortalContratoUncheckedCreateNestedOneWithoutClienteInput = {
+    create?: XOR<PortalContratoCreateWithoutClienteInput, PortalContratoUncheckedCreateWithoutClienteInput>
+    connectOrCreate?: PortalContratoCreateOrConnectWithoutClienteInput
+    connect?: PortalContratoWhereUniqueInput
   }
 
   export type EnumTipoClienteFieldUpdateOperationsInput = {
@@ -52241,6 +56471,26 @@ export namespace Prisma {
     update?: XOR<XOR<PortalAcessoUpdateToOneWithWhereWithoutClienteInput, PortalAcessoUpdateWithoutClienteInput>, PortalAcessoUncheckedUpdateWithoutClienteInput>
   }
 
+  export type PortalContaUpdateOneWithoutClienteNestedInput = {
+    create?: XOR<PortalContaCreateWithoutClienteInput, PortalContaUncheckedCreateWithoutClienteInput>
+    connectOrCreate?: PortalContaCreateOrConnectWithoutClienteInput
+    upsert?: PortalContaUpsertWithoutClienteInput
+    disconnect?: PortalContaWhereInput | boolean
+    delete?: PortalContaWhereInput | boolean
+    connect?: PortalContaWhereUniqueInput
+    update?: XOR<XOR<PortalContaUpdateToOneWithWhereWithoutClienteInput, PortalContaUpdateWithoutClienteInput>, PortalContaUncheckedUpdateWithoutClienteInput>
+  }
+
+  export type PortalContratoUpdateOneWithoutClienteNestedInput = {
+    create?: XOR<PortalContratoCreateWithoutClienteInput, PortalContratoUncheckedCreateWithoutClienteInput>
+    connectOrCreate?: PortalContratoCreateOrConnectWithoutClienteInput
+    upsert?: PortalContratoUpsertWithoutClienteInput
+    disconnect?: PortalContratoWhereInput | boolean
+    delete?: PortalContratoWhereInput | boolean
+    connect?: PortalContratoWhereUniqueInput
+    update?: XOR<XOR<PortalContratoUpdateToOneWithWhereWithoutClienteInput, PortalContratoUpdateWithoutClienteInput>, PortalContratoUncheckedUpdateWithoutClienteInput>
+  }
+
   export type PedidoUncheckedUpdateManyWithoutClienteNestedInput = {
     create?: XOR<PedidoCreateWithoutClienteInput, PedidoUncheckedCreateWithoutClienteInput> | PedidoCreateWithoutClienteInput[] | PedidoUncheckedCreateWithoutClienteInput[]
     connectOrCreate?: PedidoCreateOrConnectWithoutClienteInput | PedidoCreateOrConnectWithoutClienteInput[]
@@ -52385,6 +56635,26 @@ export namespace Prisma {
     delete?: PortalAcessoWhereInput | boolean
     connect?: PortalAcessoWhereUniqueInput
     update?: XOR<XOR<PortalAcessoUpdateToOneWithWhereWithoutClienteInput, PortalAcessoUpdateWithoutClienteInput>, PortalAcessoUncheckedUpdateWithoutClienteInput>
+  }
+
+  export type PortalContaUncheckedUpdateOneWithoutClienteNestedInput = {
+    create?: XOR<PortalContaCreateWithoutClienteInput, PortalContaUncheckedCreateWithoutClienteInput>
+    connectOrCreate?: PortalContaCreateOrConnectWithoutClienteInput
+    upsert?: PortalContaUpsertWithoutClienteInput
+    disconnect?: PortalContaWhereInput | boolean
+    delete?: PortalContaWhereInput | boolean
+    connect?: PortalContaWhereUniqueInput
+    update?: XOR<XOR<PortalContaUpdateToOneWithWhereWithoutClienteInput, PortalContaUpdateWithoutClienteInput>, PortalContaUncheckedUpdateWithoutClienteInput>
+  }
+
+  export type PortalContratoUncheckedUpdateOneWithoutClienteNestedInput = {
+    create?: XOR<PortalContratoCreateWithoutClienteInput, PortalContratoUncheckedCreateWithoutClienteInput>
+    connectOrCreate?: PortalContratoCreateOrConnectWithoutClienteInput
+    upsert?: PortalContratoUpsertWithoutClienteInput
+    disconnect?: PortalContratoWhereInput | boolean
+    delete?: PortalContratoWhereInput | boolean
+    connect?: PortalContratoWhereUniqueInput
+    update?: XOR<XOR<PortalContratoUpdateToOneWithWhereWithoutClienteInput, PortalContratoUpdateWithoutClienteInput>, PortalContratoUncheckedUpdateWithoutClienteInput>
   }
 
   export type ProdutoComercialCreateNestedOneWithoutEstoqueVivoMixesReferenciaInput = {
@@ -52801,6 +57071,90 @@ export namespace Prisma {
     upsert?: ClienteUpsertWithoutPortalAcessoInput
     connect?: ClienteWhereUniqueInput
     update?: XOR<XOR<ClienteUpdateToOneWithWhereWithoutPortalAcessoInput, ClienteUpdateWithoutPortalAcessoInput>, ClienteUncheckedUpdateWithoutPortalAcessoInput>
+  }
+
+  export type ClienteCreateNestedOneWithoutPortalContaInput = {
+    create?: XOR<ClienteCreateWithoutPortalContaInput, ClienteUncheckedCreateWithoutPortalContaInput>
+    connectOrCreate?: ClienteCreateOrConnectWithoutPortalContaInput
+    connect?: ClienteWhereUniqueInput
+  }
+
+  export type ClienteUpdateOneRequiredWithoutPortalContaNestedInput = {
+    create?: XOR<ClienteCreateWithoutPortalContaInput, ClienteUncheckedCreateWithoutPortalContaInput>
+    connectOrCreate?: ClienteCreateOrConnectWithoutPortalContaInput
+    upsert?: ClienteUpsertWithoutPortalContaInput
+    connect?: ClienteWhereUniqueInput
+    update?: XOR<XOR<ClienteUpdateToOneWithWhereWithoutPortalContaInput, ClienteUpdateWithoutPortalContaInput>, ClienteUncheckedUpdateWithoutPortalContaInput>
+  }
+
+  export type ClienteCreateNestedOneWithoutPortalContratoInput = {
+    create?: XOR<ClienteCreateWithoutPortalContratoInput, ClienteUncheckedCreateWithoutPortalContratoInput>
+    connectOrCreate?: ClienteCreateOrConnectWithoutPortalContratoInput
+    connect?: ClienteWhereUniqueInput
+  }
+
+  export type PortalContratoAceiteCreateNestedManyWithoutContratoInput = {
+    create?: XOR<PortalContratoAceiteCreateWithoutContratoInput, PortalContratoAceiteUncheckedCreateWithoutContratoInput> | PortalContratoAceiteCreateWithoutContratoInput[] | PortalContratoAceiteUncheckedCreateWithoutContratoInput[]
+    connectOrCreate?: PortalContratoAceiteCreateOrConnectWithoutContratoInput | PortalContratoAceiteCreateOrConnectWithoutContratoInput[]
+    createMany?: PortalContratoAceiteCreateManyContratoInputEnvelope
+    connect?: PortalContratoAceiteWhereUniqueInput | PortalContratoAceiteWhereUniqueInput[]
+  }
+
+  export type PortalContratoAceiteUncheckedCreateNestedManyWithoutContratoInput = {
+    create?: XOR<PortalContratoAceiteCreateWithoutContratoInput, PortalContratoAceiteUncheckedCreateWithoutContratoInput> | PortalContratoAceiteCreateWithoutContratoInput[] | PortalContratoAceiteUncheckedCreateWithoutContratoInput[]
+    connectOrCreate?: PortalContratoAceiteCreateOrConnectWithoutContratoInput | PortalContratoAceiteCreateOrConnectWithoutContratoInput[]
+    createMany?: PortalContratoAceiteCreateManyContratoInputEnvelope
+    connect?: PortalContratoAceiteWhereUniqueInput | PortalContratoAceiteWhereUniqueInput[]
+  }
+
+  export type ClienteUpdateOneRequiredWithoutPortalContratoNestedInput = {
+    create?: XOR<ClienteCreateWithoutPortalContratoInput, ClienteUncheckedCreateWithoutPortalContratoInput>
+    connectOrCreate?: ClienteCreateOrConnectWithoutPortalContratoInput
+    upsert?: ClienteUpsertWithoutPortalContratoInput
+    connect?: ClienteWhereUniqueInput
+    update?: XOR<XOR<ClienteUpdateToOneWithWhereWithoutPortalContratoInput, ClienteUpdateWithoutPortalContratoInput>, ClienteUncheckedUpdateWithoutPortalContratoInput>
+  }
+
+  export type PortalContratoAceiteUpdateManyWithoutContratoNestedInput = {
+    create?: XOR<PortalContratoAceiteCreateWithoutContratoInput, PortalContratoAceiteUncheckedCreateWithoutContratoInput> | PortalContratoAceiteCreateWithoutContratoInput[] | PortalContratoAceiteUncheckedCreateWithoutContratoInput[]
+    connectOrCreate?: PortalContratoAceiteCreateOrConnectWithoutContratoInput | PortalContratoAceiteCreateOrConnectWithoutContratoInput[]
+    upsert?: PortalContratoAceiteUpsertWithWhereUniqueWithoutContratoInput | PortalContratoAceiteUpsertWithWhereUniqueWithoutContratoInput[]
+    createMany?: PortalContratoAceiteCreateManyContratoInputEnvelope
+    set?: PortalContratoAceiteWhereUniqueInput | PortalContratoAceiteWhereUniqueInput[]
+    disconnect?: PortalContratoAceiteWhereUniqueInput | PortalContratoAceiteWhereUniqueInput[]
+    delete?: PortalContratoAceiteWhereUniqueInput | PortalContratoAceiteWhereUniqueInput[]
+    connect?: PortalContratoAceiteWhereUniqueInput | PortalContratoAceiteWhereUniqueInput[]
+    update?: PortalContratoAceiteUpdateWithWhereUniqueWithoutContratoInput | PortalContratoAceiteUpdateWithWhereUniqueWithoutContratoInput[]
+    updateMany?: PortalContratoAceiteUpdateManyWithWhereWithoutContratoInput | PortalContratoAceiteUpdateManyWithWhereWithoutContratoInput[]
+    deleteMany?: PortalContratoAceiteScalarWhereInput | PortalContratoAceiteScalarWhereInput[]
+  }
+
+  export type PortalContratoAceiteUncheckedUpdateManyWithoutContratoNestedInput = {
+    create?: XOR<PortalContratoAceiteCreateWithoutContratoInput, PortalContratoAceiteUncheckedCreateWithoutContratoInput> | PortalContratoAceiteCreateWithoutContratoInput[] | PortalContratoAceiteUncheckedCreateWithoutContratoInput[]
+    connectOrCreate?: PortalContratoAceiteCreateOrConnectWithoutContratoInput | PortalContratoAceiteCreateOrConnectWithoutContratoInput[]
+    upsert?: PortalContratoAceiteUpsertWithWhereUniqueWithoutContratoInput | PortalContratoAceiteUpsertWithWhereUniqueWithoutContratoInput[]
+    createMany?: PortalContratoAceiteCreateManyContratoInputEnvelope
+    set?: PortalContratoAceiteWhereUniqueInput | PortalContratoAceiteWhereUniqueInput[]
+    disconnect?: PortalContratoAceiteWhereUniqueInput | PortalContratoAceiteWhereUniqueInput[]
+    delete?: PortalContratoAceiteWhereUniqueInput | PortalContratoAceiteWhereUniqueInput[]
+    connect?: PortalContratoAceiteWhereUniqueInput | PortalContratoAceiteWhereUniqueInput[]
+    update?: PortalContratoAceiteUpdateWithWhereUniqueWithoutContratoInput | PortalContratoAceiteUpdateWithWhereUniqueWithoutContratoInput[]
+    updateMany?: PortalContratoAceiteUpdateManyWithWhereWithoutContratoInput | PortalContratoAceiteUpdateManyWithWhereWithoutContratoInput[]
+    deleteMany?: PortalContratoAceiteScalarWhereInput | PortalContratoAceiteScalarWhereInput[]
+  }
+
+  export type PortalContratoCreateNestedOneWithoutAceitesInput = {
+    create?: XOR<PortalContratoCreateWithoutAceitesInput, PortalContratoUncheckedCreateWithoutAceitesInput>
+    connectOrCreate?: PortalContratoCreateOrConnectWithoutAceitesInput
+    connect?: PortalContratoWhereUniqueInput
+  }
+
+  export type PortalContratoUpdateOneRequiredWithoutAceitesNestedInput = {
+    create?: XOR<PortalContratoCreateWithoutAceitesInput, PortalContratoUncheckedCreateWithoutAceitesInput>
+    connectOrCreate?: PortalContratoCreateOrConnectWithoutAceitesInput
+    upsert?: PortalContratoUpsertWithoutAceitesInput
+    connect?: PortalContratoWhereUniqueInput
+    update?: XOR<XOR<PortalContratoUpdateToOneWithWhereWithoutAceitesInput, PortalContratoUpdateWithoutAceitesInput>, PortalContratoUncheckedUpdateWithoutAceitesInput>
   }
 
   export type ProdutoComercialCreateNestedOneWithoutPortalFotoInput = {
@@ -55440,6 +59794,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutGrupoInput = {
@@ -55470,6 +59826,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutGrupoInput = {
@@ -55980,6 +60338,68 @@ export namespace Prisma {
     create: XOR<PortalAcessoCreateWithoutClienteInput, PortalAcessoUncheckedCreateWithoutClienteInput>
   }
 
+  export type PortalContaCreateWithoutClienteInput = {
+    nomeFantasia?: string | null
+    telefone?: string
+    contato?: string
+    cep?: string
+    logradouro?: string
+    numero?: string
+    complemento?: string | null
+    bairro?: string
+    cidade?: string
+    estado?: string
+    inscricaoEstadual?: string | null
+    atualizadoEm?: Date | string
+  }
+
+  export type PortalContaUncheckedCreateWithoutClienteInput = {
+    nomeFantasia?: string | null
+    telefone?: string
+    contato?: string
+    cep?: string
+    logradouro?: string
+    numero?: string
+    complemento?: string | null
+    bairro?: string
+    cidade?: string
+    estado?: string
+    inscricaoEstadual?: string | null
+    atualizadoEm?: Date | string
+  }
+
+  export type PortalContaCreateOrConnectWithoutClienteInput = {
+    where: PortalContaWhereUniqueInput
+    create: XOR<PortalContaCreateWithoutClienteInput, PortalContaUncheckedCreateWithoutClienteInput>
+  }
+
+  export type PortalContratoCreateWithoutClienteInput = {
+    id?: string
+    versao: string
+    texto: string
+    textoHash: string
+    status?: string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    aceites?: PortalContratoAceiteCreateNestedManyWithoutContratoInput
+  }
+
+  export type PortalContratoUncheckedCreateWithoutClienteInput = {
+    id?: string
+    versao: string
+    texto: string
+    textoHash: string
+    status?: string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    aceites?: PortalContratoAceiteUncheckedCreateNestedManyWithoutContratoInput
+  }
+
+  export type PortalContratoCreateOrConnectWithoutClienteInput = {
+    where: PortalContratoWhereUniqueInput
+    create: XOR<PortalContratoCreateWithoutClienteInput, PortalContratoUncheckedCreateWithoutClienteInput>
+  }
+
   export type GrupoClienteUpsertWithoutClientesInput = {
     update: XOR<GrupoClienteUpdateWithoutClientesInput, GrupoClienteUncheckedUpdateWithoutClientesInput>
     create: XOR<GrupoClienteCreateWithoutClientesInput, GrupoClienteUncheckedCreateWithoutClientesInput>
@@ -56316,6 +60736,80 @@ export namespace Prisma {
     ativo?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalContaUpsertWithoutClienteInput = {
+    update: XOR<PortalContaUpdateWithoutClienteInput, PortalContaUncheckedUpdateWithoutClienteInput>
+    create: XOR<PortalContaCreateWithoutClienteInput, PortalContaUncheckedCreateWithoutClienteInput>
+    where?: PortalContaWhereInput
+  }
+
+  export type PortalContaUpdateToOneWithWhereWithoutClienteInput = {
+    where?: PortalContaWhereInput
+    data: XOR<PortalContaUpdateWithoutClienteInput, PortalContaUncheckedUpdateWithoutClienteInput>
+  }
+
+  export type PortalContaUpdateWithoutClienteInput = {
+    nomeFantasia?: NullableStringFieldUpdateOperationsInput | string | null
+    telefone?: StringFieldUpdateOperationsInput | string
+    contato?: StringFieldUpdateOperationsInput | string
+    cep?: StringFieldUpdateOperationsInput | string
+    logradouro?: StringFieldUpdateOperationsInput | string
+    numero?: StringFieldUpdateOperationsInput | string
+    complemento?: NullableStringFieldUpdateOperationsInput | string | null
+    bairro?: StringFieldUpdateOperationsInput | string
+    cidade?: StringFieldUpdateOperationsInput | string
+    estado?: StringFieldUpdateOperationsInput | string
+    inscricaoEstadual?: NullableStringFieldUpdateOperationsInput | string | null
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalContaUncheckedUpdateWithoutClienteInput = {
+    nomeFantasia?: NullableStringFieldUpdateOperationsInput | string | null
+    telefone?: StringFieldUpdateOperationsInput | string
+    contato?: StringFieldUpdateOperationsInput | string
+    cep?: StringFieldUpdateOperationsInput | string
+    logradouro?: StringFieldUpdateOperationsInput | string
+    numero?: StringFieldUpdateOperationsInput | string
+    complemento?: NullableStringFieldUpdateOperationsInput | string | null
+    bairro?: StringFieldUpdateOperationsInput | string
+    cidade?: StringFieldUpdateOperationsInput | string
+    estado?: StringFieldUpdateOperationsInput | string
+    inscricaoEstadual?: NullableStringFieldUpdateOperationsInput | string | null
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalContratoUpsertWithoutClienteInput = {
+    update: XOR<PortalContratoUpdateWithoutClienteInput, PortalContratoUncheckedUpdateWithoutClienteInput>
+    create: XOR<PortalContratoCreateWithoutClienteInput, PortalContratoUncheckedCreateWithoutClienteInput>
+    where?: PortalContratoWhereInput
+  }
+
+  export type PortalContratoUpdateToOneWithWhereWithoutClienteInput = {
+    where?: PortalContratoWhereInput
+    data: XOR<PortalContratoUpdateWithoutClienteInput, PortalContratoUncheckedUpdateWithoutClienteInput>
+  }
+
+  export type PortalContratoUpdateWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    versao?: StringFieldUpdateOperationsInput | string
+    texto?: StringFieldUpdateOperationsInput | string
+    textoHash?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    aceites?: PortalContratoAceiteUpdateManyWithoutContratoNestedInput
+  }
+
+  export type PortalContratoUncheckedUpdateWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    versao?: StringFieldUpdateOperationsInput | string
+    texto?: StringFieldUpdateOperationsInput | string
+    textoHash?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    aceites?: PortalContratoAceiteUncheckedUpdateManyWithoutContratoNestedInput
   }
 
   export type ProdutoComercialCreateWithoutEstoqueVivoMixesReferenciaInput = {
@@ -57356,6 +61850,8 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
+    portalConta?: PortalContaCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutPortalAcessoInput = {
@@ -57386,6 +61882,8 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
+    portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutPortalAcessoInput = {
@@ -57432,6 +61930,8 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
+    portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutPortalAcessoInput = {
@@ -57462,6 +61962,431 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
+    portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
+  }
+
+  export type ClienteCreateWithoutPortalContaInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+    grupo?: GrupoClienteCreateNestedOneWithoutClientesInput
+    pedidos?: PedidoCreateNestedManyWithoutClienteInput
+    interacoes?: InteracaoCreateNestedManyWithoutClienteInput
+    oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
+    mensagens?: MensagemCreateNestedManyWithoutClienteInput
+    execucoes?: ExecucaoApiCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
+  }
+
+  export type ClienteUncheckedCreateWithoutPortalContaInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    grupoId?: string | null
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+    pedidos?: PedidoUncheckedCreateNestedManyWithoutClienteInput
+    interacoes?: InteracaoUncheckedCreateNestedManyWithoutClienteInput
+    oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutClienteInput
+    mensagens?: MensagemUncheckedCreateNestedManyWithoutClienteInput
+    execucoes?: ExecucaoApiUncheckedCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteUncheckedCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
+  }
+
+  export type ClienteCreateOrConnectWithoutPortalContaInput = {
+    where: ClienteWhereUniqueInput
+    create: XOR<ClienteCreateWithoutPortalContaInput, ClienteUncheckedCreateWithoutPortalContaInput>
+  }
+
+  export type ClienteUpsertWithoutPortalContaInput = {
+    update: XOR<ClienteUpdateWithoutPortalContaInput, ClienteUncheckedUpdateWithoutPortalContaInput>
+    create: XOR<ClienteCreateWithoutPortalContaInput, ClienteUncheckedCreateWithoutPortalContaInput>
+    where?: ClienteWhereInput
+  }
+
+  export type ClienteUpdateToOneWithWhereWithoutPortalContaInput = {
+    where?: ClienteWhereInput
+    data: XOR<ClienteUpdateWithoutPortalContaInput, ClienteUncheckedUpdateWithoutPortalContaInput>
+  }
+
+  export type ClienteUpdateWithoutPortalContaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    grupo?: GrupoClienteUpdateOneWithoutClientesNestedInput
+    pedidos?: PedidoUpdateManyWithoutClienteNestedInput
+    interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
+    oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
+    mensagens?: MensagemUpdateManyWithoutClienteNestedInput
+    execucoes?: ExecucaoApiUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
+  }
+
+  export type ClienteUncheckedUpdateWithoutPortalContaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    grupoId?: NullableStringFieldUpdateOperationsInput | string | null
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedidos?: PedidoUncheckedUpdateManyWithoutClienteNestedInput
+    interacoes?: InteracaoUncheckedUpdateManyWithoutClienteNestedInput
+    oportunidades?: OportunidadeUncheckedUpdateManyWithoutClienteNestedInput
+    mensagens?: MensagemUncheckedUpdateManyWithoutClienteNestedInput
+    execucoes?: ExecucaoApiUncheckedUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUncheckedUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
+  }
+
+  export type ClienteCreateWithoutPortalContratoInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+    grupo?: GrupoClienteCreateNestedOneWithoutClientesInput
+    pedidos?: PedidoCreateNestedManyWithoutClienteInput
+    interacoes?: InteracaoCreateNestedManyWithoutClienteInput
+    oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
+    mensagens?: MensagemCreateNestedManyWithoutClienteInput
+    execucoes?: ExecucaoApiCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaCreateNestedOneWithoutClienteInput
+  }
+
+  export type ClienteUncheckedCreateWithoutPortalContratoInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    grupoId?: string | null
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+    pedidos?: PedidoUncheckedCreateNestedManyWithoutClienteInput
+    interacoes?: InteracaoUncheckedCreateNestedManyWithoutClienteInput
+    oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutClienteInput
+    mensagens?: MensagemUncheckedCreateNestedManyWithoutClienteInput
+    execucoes?: ExecucaoApiUncheckedCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteUncheckedCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
+  }
+
+  export type ClienteCreateOrConnectWithoutPortalContratoInput = {
+    where: ClienteWhereUniqueInput
+    create: XOR<ClienteCreateWithoutPortalContratoInput, ClienteUncheckedCreateWithoutPortalContratoInput>
+  }
+
+  export type PortalContratoAceiteCreateWithoutContratoInput = {
+    id?: string
+    clienteId: string
+    versao: string
+    textoHash: string
+    representanteNome: string
+    representanteCpf: string
+    representanteEmail: string
+    empresaNome: string
+    empresaCnpj: string
+    ip: string
+    userAgent: string
+    aceitoEm?: Date | string
+  }
+
+  export type PortalContratoAceiteUncheckedCreateWithoutContratoInput = {
+    id?: string
+    clienteId: string
+    versao: string
+    textoHash: string
+    representanteNome: string
+    representanteCpf: string
+    representanteEmail: string
+    empresaNome: string
+    empresaCnpj: string
+    ip: string
+    userAgent: string
+    aceitoEm?: Date | string
+  }
+
+  export type PortalContratoAceiteCreateOrConnectWithoutContratoInput = {
+    where: PortalContratoAceiteWhereUniqueInput
+    create: XOR<PortalContratoAceiteCreateWithoutContratoInput, PortalContratoAceiteUncheckedCreateWithoutContratoInput>
+  }
+
+  export type PortalContratoAceiteCreateManyContratoInputEnvelope = {
+    data: PortalContratoAceiteCreateManyContratoInput | PortalContratoAceiteCreateManyContratoInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ClienteUpsertWithoutPortalContratoInput = {
+    update: XOR<ClienteUpdateWithoutPortalContratoInput, ClienteUncheckedUpdateWithoutPortalContratoInput>
+    create: XOR<ClienteCreateWithoutPortalContratoInput, ClienteUncheckedCreateWithoutPortalContratoInput>
+    where?: ClienteWhereInput
+  }
+
+  export type ClienteUpdateToOneWithWhereWithoutPortalContratoInput = {
+    where?: ClienteWhereInput
+    data: XOR<ClienteUpdateWithoutPortalContratoInput, ClienteUncheckedUpdateWithoutPortalContratoInput>
+  }
+
+  export type ClienteUpdateWithoutPortalContratoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    grupo?: GrupoClienteUpdateOneWithoutClientesNestedInput
+    pedidos?: PedidoUpdateManyWithoutClienteNestedInput
+    interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
+    oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
+    mensagens?: MensagemUpdateManyWithoutClienteNestedInput
+    execucoes?: ExecucaoApiUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
+  }
+
+  export type ClienteUncheckedUpdateWithoutPortalContratoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    grupoId?: NullableStringFieldUpdateOperationsInput | string | null
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedidos?: PedidoUncheckedUpdateManyWithoutClienteNestedInput
+    interacoes?: InteracaoUncheckedUpdateManyWithoutClienteNestedInput
+    oportunidades?: OportunidadeUncheckedUpdateManyWithoutClienteNestedInput
+    mensagens?: MensagemUncheckedUpdateManyWithoutClienteNestedInput
+    execucoes?: ExecucaoApiUncheckedUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUncheckedUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
+  }
+
+  export type PortalContratoAceiteUpsertWithWhereUniqueWithoutContratoInput = {
+    where: PortalContratoAceiteWhereUniqueInput
+    update: XOR<PortalContratoAceiteUpdateWithoutContratoInput, PortalContratoAceiteUncheckedUpdateWithoutContratoInput>
+    create: XOR<PortalContratoAceiteCreateWithoutContratoInput, PortalContratoAceiteUncheckedCreateWithoutContratoInput>
+  }
+
+  export type PortalContratoAceiteUpdateWithWhereUniqueWithoutContratoInput = {
+    where: PortalContratoAceiteWhereUniqueInput
+    data: XOR<PortalContratoAceiteUpdateWithoutContratoInput, PortalContratoAceiteUncheckedUpdateWithoutContratoInput>
+  }
+
+  export type PortalContratoAceiteUpdateManyWithWhereWithoutContratoInput = {
+    where: PortalContratoAceiteScalarWhereInput
+    data: XOR<PortalContratoAceiteUpdateManyMutationInput, PortalContratoAceiteUncheckedUpdateManyWithoutContratoInput>
+  }
+
+  export type PortalContratoAceiteScalarWhereInput = {
+    AND?: PortalContratoAceiteScalarWhereInput | PortalContratoAceiteScalarWhereInput[]
+    OR?: PortalContratoAceiteScalarWhereInput[]
+    NOT?: PortalContratoAceiteScalarWhereInput | PortalContratoAceiteScalarWhereInput[]
+    id?: StringFilter<"PortalContratoAceite"> | string
+    contratoId?: StringFilter<"PortalContratoAceite"> | string
+    clienteId?: StringFilter<"PortalContratoAceite"> | string
+    versao?: StringFilter<"PortalContratoAceite"> | string
+    textoHash?: StringFilter<"PortalContratoAceite"> | string
+    representanteNome?: StringFilter<"PortalContratoAceite"> | string
+    representanteCpf?: StringFilter<"PortalContratoAceite"> | string
+    representanteEmail?: StringFilter<"PortalContratoAceite"> | string
+    empresaNome?: StringFilter<"PortalContratoAceite"> | string
+    empresaCnpj?: StringFilter<"PortalContratoAceite"> | string
+    ip?: StringFilter<"PortalContratoAceite"> | string
+    userAgent?: StringFilter<"PortalContratoAceite"> | string
+    aceitoEm?: DateTimeFilter<"PortalContratoAceite"> | Date | string
+  }
+
+  export type PortalContratoCreateWithoutAceitesInput = {
+    id?: string
+    versao: string
+    texto: string
+    textoHash: string
+    status?: string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    cliente: ClienteCreateNestedOneWithoutPortalContratoInput
+  }
+
+  export type PortalContratoUncheckedCreateWithoutAceitesInput = {
+    id?: string
+    clienteId: string
+    versao: string
+    texto: string
+    textoHash: string
+    status?: string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PortalContratoCreateOrConnectWithoutAceitesInput = {
+    where: PortalContratoWhereUniqueInput
+    create: XOR<PortalContratoCreateWithoutAceitesInput, PortalContratoUncheckedCreateWithoutAceitesInput>
+  }
+
+  export type PortalContratoUpsertWithoutAceitesInput = {
+    update: XOR<PortalContratoUpdateWithoutAceitesInput, PortalContratoUncheckedUpdateWithoutAceitesInput>
+    create: XOR<PortalContratoCreateWithoutAceitesInput, PortalContratoUncheckedCreateWithoutAceitesInput>
+    where?: PortalContratoWhereInput
+  }
+
+  export type PortalContratoUpdateToOneWithWhereWithoutAceitesInput = {
+    where?: PortalContratoWhereInput
+    data: XOR<PortalContratoUpdateWithoutAceitesInput, PortalContratoUncheckedUpdateWithoutAceitesInput>
+  }
+
+  export type PortalContratoUpdateWithoutAceitesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    versao?: StringFieldUpdateOperationsInput | string
+    texto?: StringFieldUpdateOperationsInput | string
+    textoHash?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneRequiredWithoutPortalContratoNestedInput
+  }
+
+  export type PortalContratoUncheckedUpdateWithoutAceitesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: StringFieldUpdateOperationsInput | string
+    versao?: StringFieldUpdateOperationsInput | string
+    texto?: StringFieldUpdateOperationsInput | string
+    textoHash?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ProdutoComercialCreateWithoutPortalFotoInput = {
@@ -57648,6 +62573,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutRegraComercialInput = {
@@ -57678,6 +62605,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutRegraComercialInput = {
@@ -57750,6 +62679,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutRegraComercialInput = {
@@ -57780,6 +62711,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type PrecoEspecialClienteUpsertWithWhereUniqueWithoutRegraInput = {
@@ -57826,6 +62759,8 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutLinksLegadoContaAzulInput = {
@@ -57856,6 +62791,8 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutLinksLegadoContaAzulInput = {
@@ -57902,6 +62839,8 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutLinksLegadoContaAzulInput = {
@@ -57932,6 +62871,8 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type RegraComercialClienteCreateWithoutPrecosEspeciaisInput = {
@@ -58206,6 +63147,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutPedidosOperacionaisInput = {
@@ -58236,6 +63179,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutPedidosOperacionaisInput = {
@@ -58553,6 +63498,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutPedidosOperacionaisInput = {
@@ -58583,6 +63530,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type UsuarioUpsertWithoutPedidosCriadosInput = {
@@ -59278,6 +64227,8 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutParadasEntregaInput = {
@@ -59308,6 +64259,8 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutParadasEntregaInput = {
@@ -59409,6 +64362,8 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutParadasEntregaInput = {
@@ -59439,6 +64394,8 @@ export namespace Prisma {
     avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type RotaEntregaCreateWithoutLocalizacoesInput = {
@@ -59918,6 +64875,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutAvariasOperacionaisInput = {
@@ -59948,6 +64907,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutAvariasOperacionaisInput = {
@@ -60179,6 +65140,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutAvariasOperacionaisInput = {
@@ -60209,6 +65172,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type ProdutoComercialUpsertWithoutAvariasPedidoInput = {
@@ -60589,6 +65554,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutPedidosInput = {
@@ -60619,6 +65586,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutPedidosInput = {
@@ -60797,6 +65766,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutPedidosInput = {
@@ -60827,6 +65798,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type ItemPedidoUpsertWithWhereUniqueWithoutPedidoInput = {
@@ -61239,6 +66212,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutInteracoesInput = {
@@ -61269,6 +66244,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutInteracoesInput = {
@@ -61315,6 +66292,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutInteracoesInput = {
@@ -61345,6 +66324,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteCreateWithoutOportunidadesInput = {
@@ -61375,6 +66356,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutOportunidadesInput = {
@@ -61405,6 +66388,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutOportunidadesInput = {
@@ -61494,6 +66479,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutOportunidadesInput = {
@@ -61524,6 +66511,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type UsuarioUpsertWithoutOportunidadesInput = {
@@ -61603,6 +66592,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutMensagensInput = {
@@ -61633,6 +66624,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutMensagensInput = {
@@ -61722,6 +66715,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutMensagensInput = {
@@ -61752,6 +66747,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type UsuarioUpsertWithoutMensagensInput = {
@@ -61831,6 +66828,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutExecucoesInput = {
@@ -61861,6 +66860,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutExecucoesInput = {
@@ -61907,6 +66908,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutExecucoesInput = {
@@ -61937,6 +66940,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type MensagemCreateManyAprovadorInput = {
@@ -62686,6 +67691,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutGrupoInput = {
@@ -62716,6 +67723,8 @@ export namespace Prisma {
     linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateManyWithoutGrupoInput = {
@@ -63629,6 +68638,66 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     mixId?: StringFieldUpdateOperationsInput | string
     quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+  }
+
+  export type PortalContratoAceiteCreateManyContratoInput = {
+    id?: string
+    clienteId: string
+    versao: string
+    textoHash: string
+    representanteNome: string
+    representanteCpf: string
+    representanteEmail: string
+    empresaNome: string
+    empresaCnpj: string
+    ip: string
+    userAgent: string
+    aceitoEm?: Date | string
+  }
+
+  export type PortalContratoAceiteUpdateWithoutContratoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: StringFieldUpdateOperationsInput | string
+    versao?: StringFieldUpdateOperationsInput | string
+    textoHash?: StringFieldUpdateOperationsInput | string
+    representanteNome?: StringFieldUpdateOperationsInput | string
+    representanteCpf?: StringFieldUpdateOperationsInput | string
+    representanteEmail?: StringFieldUpdateOperationsInput | string
+    empresaNome?: StringFieldUpdateOperationsInput | string
+    empresaCnpj?: StringFieldUpdateOperationsInput | string
+    ip?: StringFieldUpdateOperationsInput | string
+    userAgent?: StringFieldUpdateOperationsInput | string
+    aceitoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalContratoAceiteUncheckedUpdateWithoutContratoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: StringFieldUpdateOperationsInput | string
+    versao?: StringFieldUpdateOperationsInput | string
+    textoHash?: StringFieldUpdateOperationsInput | string
+    representanteNome?: StringFieldUpdateOperationsInput | string
+    representanteCpf?: StringFieldUpdateOperationsInput | string
+    representanteEmail?: StringFieldUpdateOperationsInput | string
+    empresaNome?: StringFieldUpdateOperationsInput | string
+    empresaCnpj?: StringFieldUpdateOperationsInput | string
+    ip?: StringFieldUpdateOperationsInput | string
+    userAgent?: StringFieldUpdateOperationsInput | string
+    aceitoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalContratoAceiteUncheckedUpdateManyWithoutContratoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: StringFieldUpdateOperationsInput | string
+    versao?: StringFieldUpdateOperationsInput | string
+    textoHash?: StringFieldUpdateOperationsInput | string
+    representanteNome?: StringFieldUpdateOperationsInput | string
+    representanteCpf?: StringFieldUpdateOperationsInput | string
+    representanteEmail?: StringFieldUpdateOperationsInput | string
+    empresaNome?: StringFieldUpdateOperationsInput | string
+    empresaCnpj?: StringFieldUpdateOperationsInput | string
+    ip?: StringFieldUpdateOperationsInput | string
+    userAgent?: StringFieldUpdateOperationsInput | string
+    aceitoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type PrecoEspecialClienteCreateManyRegraInput = {

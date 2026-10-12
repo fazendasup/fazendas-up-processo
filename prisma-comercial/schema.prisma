@@ -252,6 +252,8 @@ model Cliente {
   linksLegadoContaAzul ClienteLegadoContaAzulLink[]
   paradasEntrega ParadaEntrega[]
   portalAcesso PortalAcesso?
+  portalConta PortalConta?
+  portalContrato PortalContrato?
 
   @@index([tipo, statusRelacionamento])
   @@index([nome])
@@ -364,6 +366,68 @@ model PortalAcesso {
 
   @@index([conviteHash])
   @@map("portal_acessos")
+}
+
+/// Dados cadastrais editáveis na conta do site. O CNPJ permanece no cliente.
+model PortalConta {
+  clienteId          String   @id @map("cliente_id")
+  nomeFantasia       String?  @map("nome_fantasia")
+  telefone           String   @default("")
+  contato            String   @default("")
+  cep                String   @default("")
+  logradouro         String   @default("")
+  numero             String   @default("")
+  complemento        String?
+  bairro             String   @default("")
+  cidade             String   @default("")
+  estado             String   @default("")
+  inscricaoEstadual  String?  @map("inscricao_estadual")
+  atualizadoEm       DateTime @updatedAt @map("atualizado_em")
+
+  cliente Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  @@map("portal_contas")
+}
+
+/// Contrato de fornecimento recorrente, um por cliente. O texto aceito não é reescrito.
+model PortalContrato {
+  id         String   @id @default(cuid())
+  clienteId  String   @unique @map("cliente_id")
+  versao     String
+  texto      String   @db.Text
+  textoHash  String   @map("texto_hash") @db.Char(64)
+  status     String   @default("PENDENTE")
+  criadoEm   DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  cliente Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  aceites PortalContratoAceite[]
+
+  @@index([status])
+  @@map("portal_contratos")
+}
+
+/// Rastro de quem aceitou o contrato: pessoa, documento, rede e versão do texto.
+model PortalContratoAceite {
+  id                   String   @id @default(cuid())
+  contratoId           String   @map("contrato_id")
+  clienteId            String   @map("cliente_id")
+  versao               String
+  textoHash            String   @map("texto_hash") @db.Char(64)
+  representanteNome    String   @map("representante_nome")
+  representanteCpf     String   @map("representante_cpf") @db.VarChar(11)
+  representanteEmail   String   @map("representante_email")
+  empresaNome          String   @map("empresa_nome")
+  empresaCnpj          String   @map("empresa_cnpj")
+  ip                   String   @db.VarChar(64)
+  userAgent            String   @map("user_agent") @db.VarChar(512)
+  aceitoEm             DateTime @default(now()) @map("aceito_em")
+
+  contrato PortalContrato @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+
+  @@index([clienteId])
+  @@index([contratoId])
+  @@map("portal_contrato_aceites")
 }
 
 /// Pedido de cadastro vindo do site. Vai para o Conta Azul quando a API aceita.

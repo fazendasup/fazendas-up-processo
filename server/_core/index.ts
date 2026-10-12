@@ -471,6 +471,20 @@ async function startServer() {
     );
   }
 
+  try {
+    const { getComercialPrisma } = await import("../comercial/db");
+    const { garantirContratosDosClientesAtivos } = await import("../portal/contratoRecorrencia");
+    const preparados = await garantirContratosDosClientesAtivos(getComercialPrisma());
+    if (preparados > 0) {
+      console.log(`[portal] contratos de recorrência preparados: ${preparados}`);
+    }
+  } catch (e) {
+    console.warn(
+      "[portal] Contratos de recorrência não preparados:",
+      e instanceof Error ? e.message : e
+    );
+  }
+
   const { tryStartComercialIntegrationJobs } = await import(
     "../comercial/start-integration-jobs"
   );

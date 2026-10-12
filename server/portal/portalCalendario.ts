@@ -1,6 +1,7 @@
 /** Entrega B2B: 2 dias úteis, sem sábado, domingo ou feriado de Manaus. */
 
 export const MIN_ORDER_REAIS = 300;
+export const MIN_ORDER_RECORRENTE_REAIS = 150;
 export const LEAD_BUSINESS_DAYS = 2;
 const TIMEZONE = "America/Manaus";
 
