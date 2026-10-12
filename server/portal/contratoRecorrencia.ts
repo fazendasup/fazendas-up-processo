@@ -56,9 +56,6 @@ export function montarTextoContrato(input: {
     "",
     "8. Vigência",
     "O contrato vale por prazo indeterminado, a partir do aceite. O encerramento da recorrência produz efeito sobre as entregas que ainda não tenham se tornado firmes, na forma da cláusula 5. A atualização dos dados cadastrais não substitui o texto já aceito.",
-    "",
-    "9. Foro",
-    "Fica eleito o foro da comarca de Manaus, Amazonas.",
   ].join("\n");
 }
 
