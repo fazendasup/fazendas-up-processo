@@ -113,11 +113,11 @@ export function fichaDoProduto(nome: string): FichaProduto {
   });
 
   if (/frisee|excentric/.test(n)) return folha("Alface frisée, de folha fina e textura crocante.", "/produtos/frisee.jpg");
-  if (/americana/.test(n)) return folha("Alface americana, de cabeça fechada e folha crocante.", "/produtos/americana.jpg");
+  if (/americana/.test(n)) return folha("Alface americana, de cabeça fechada e folha crocante.", "/produtos/americana.jpg?v=1");
   if (/crespa roxa|roxa/.test(n) && /alface|crespa/.test(n)) {
-    return folha("Alface crespa roxa, de cor intensa e folha solta.", "/produtos/alface-roxa.jpg");
+    return folha("Alface crespa roxa, de cor intensa e folha solta.", "/produtos/alface-roxa.jpg?v=1");
   }
-  if (/alface/.test(n)) return folha("Alface crespa verde, de folha solta e sabor suave.", "/produtos/alface.jpg");
+  if (/alface/.test(n)) return folha("Alface crespa verde, de folha solta e sabor suave.", "/produtos/alface.jpg?v=1");
   if (/rucula/.test(n)) return folha("Rúcula de sabor marcado, para salada e finalização.", "/produtos/rucula.jpg", "Salada, pizza e finalização.");
   if (/manjericao/.test(n)) {
     return {

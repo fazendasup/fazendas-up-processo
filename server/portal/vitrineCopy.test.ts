@@ -12,7 +12,9 @@ describe("fichaDoProduto", () => {
     expect(fichaDoProduto("Batata Bolinha Kg").foto).not.toBe(fichaDoProduto("Batata Portuguesa Kg").foto);
     expect(fichaDoProduto("Mix de flores - Flores").grupo).toBe("Flores");
     expect(fichaDoProduto("Cenoura Higienizada e Descascada- 200g").grupo).toBe("Processados");
-    expect(fichaDoProduto("Alface Crespa Roxa 100g").foto).toBe("/produtos/alface-roxa.jpg");
+    expect(fichaDoProduto("Alface Crespa Roxa 100g").foto).toBe("/produtos/alface-roxa.jpg?v=1");
+    expect(fichaDoProduto("Alface Americana 150g").foto).toBe("/produtos/americana.jpg?v=1");
+    expect(fichaDoProduto("Alface Crespa 200g").foto).toBe("/produtos/alface.jpg?v=1");
     expect(fichaDoProduto("Rúcula").grupo).toBe("Folhas");
     expect(fichaDoProduto("Manjericão Folha Fina 60g").grupo).toBe("Ervas");
     expect(fichaDoProduto("Mix Clássico 80g").grupo).toBe("Saladas");
